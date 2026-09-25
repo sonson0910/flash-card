@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { applyLumiEnabled, LUMI_ENABLED_STORAGE_KEY, readLumiEnabled } from '../settings/lumi-preference';
 import {
   applyThemePreference,
   applyThemeToRoot,
@@ -10,6 +11,8 @@ import {
   type ThemeMode,
   type ThemePreference,
 } from './themePreference';
+
+const useLumiPreferenceLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 type ThemeContextValue = ThemePreference & {
   setFamily: (family: ThemeFamily) => void;
@@ -46,6 +49,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     applyThemeToRoot(preference, root);
   }, [preference, root]);
 
+  useLumiPreferenceLayoutEffect(() => {
+    applyLumiEnabled(readLumiEnabled(storage), null, root);
+  }, [root, storage]);
+
   useEffect(() => {
     if (preference.family !== 'crystal') return;
     void import('./loadThemeAssets').then(({ loadThemeAssets }) => loadThemeAssets('crystal'));
@@ -53,6 +60,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
+      if (event.key === LUMI_ENABLED_STORAGE_KEY) {
+        applyLumiEnabled(readLumiEnabled(storage), null, root);
+        return;
+      }
       if (event.key === THEME_FAMILY_STORAGE_KEY || event.key === 'lingoflash_theme' || event.key === THEME_FOLLOW_SYSTEM_STORAGE_KEY) {
         const next = readThemePreference(storage, getSystemThemeMode());
         preferenceRef.current = next;

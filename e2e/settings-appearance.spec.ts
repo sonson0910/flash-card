@@ -10,15 +10,20 @@ test('appearance choices switch live and follow the system until a manual choice
   await page.getByRole('radio', { name: /Midnight Aurora/ }).locator('..').click();
   await expect(page.locator('html')).toHaveAttribute('data-theme-family', 'classic');
   await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+  await expect(page.locator('[data-theme-preview="classic-dark"]')).toHaveAttribute('data-selected', 'true');
   await page.getByRole('radio', { name: /Ink & Paper/ }).locator('..').click();
   await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+  await expect(page.locator('[data-theme-preview="classic-light"]')).toHaveAttribute('data-selected', 'true');
 
   await page.getByRole('radio', { name: /Crystal Star/ }).locator('..').click();
   await expect(page.locator('html')).toHaveAttribute('data-theme-family', 'crystal');
+  await expect(page.locator('[data-theme-preview="crystal-light"]')).toHaveAttribute('data-selected', 'true');
   await page.getByRole('radio', { name: 'Starry Night' }).locator('..').click();
   await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+  await expect(page.locator('[data-theme-preview="crystal-dark"]')).toHaveAttribute('data-selected', 'true');
   await page.getByRole('radio', { name: 'Prism Day' }).locator('..').click();
   await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+  await expect(page.locator('[data-theme-preview="crystal-light"]')).toHaveAttribute('data-selected', 'true');
 
   await page.getByRole('switch', { name: /Follow system/ }).check();
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
@@ -31,12 +36,38 @@ test('appearance choices switch live and follow the system until a manual choice
   expect(await page.evaluate(() => (window as Window & { __appearanceMarker?: string }).__appearanceMarker)).toBe('mounted');
 });
 
+test('appearance previews carry the four Canvas token palettes', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'classic');
+    localStorage.setItem('lingoflash_theme', 'dark');
+  });
+  await page.goto('/?view=settings&locale=en');
+
+  await expect(page.locator('[data-theme-preview]')).toHaveCount(4);
+  const previews = await page.locator('[data-theme-preview]').evaluateAll(elements => Object.fromEntries(
+    elements.map(element => [element.getAttribute('data-theme-preview'), getComputedStyle(element).getPropertyValue('--preview-canvas').trim()]),
+  ));
+  expect(previews).toEqual({
+    'classic-dark': '#06161f',
+    'classic-light': '#f7f2e8',
+    'crystal-dark': '#04060c',
+    'crystal-light': '#dff1ff',
+  });
+});
+
 test('Lumi, motion and sound settings persist after reload', async ({ page }) => {
   await page.goto('/?view=settings&locale=en');
   await page.getByRole('radio', { name: /Crystal Star/ }).locator('..').click();
-  await page.getByRole('switch', { name: /^Lumi/ }).uncheck();
+  const lumi = page.getByRole('switch', { name: /^Lumi/ });
+  await expect(lumi).toBeChecked();
+  await expect(page.locator('[data-settings-lumi] [data-lumi-pose]')).toBeVisible();
+  await lumi.uncheck();
   await expect(page.locator('html')).toHaveAttribute('data-lumi', 'off');
   await expect(page.locator('[data-settings-lumi] [data-lumi-pose]')).toBeHidden();
+  await lumi.check();
+  await expect(page.locator('html')).toHaveAttribute('data-lumi', 'on');
+  await expect(page.locator('[data-settings-lumi] [data-lumi-pose]')).toBeVisible();
+  await lumi.uncheck();
   await page.getByRole('switch', { name: /Reduced motion/ }).check();
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'reduced');
   await page.getByRole('switch', { name: /Study sounds/ }).uncheck();
@@ -64,25 +95,72 @@ test('mobile shell opens settings and keeps the page inside 390px', async ({ pag
   expect(await page.locator('[data-async-content="settings"]').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
 });
 
+for (const motion of ['reduced', 'interrupted'] as const) {
+  test(`mobile navigation preserves destination focus with ${motion} motion`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: motion === 'reduced' ? 'reduce' : 'no-preference' });
+    await page.route('**/assets/settings-screen-*.js', async route => {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await route.continue();
+    });
+    await page.goto('/?view=library&locale=en');
+    const themeTrigger = page.getByRole('button', { name: 'Choose theme' });
+    await themeTrigger.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('menuitemradio', { name: 'Midnight Aurora' })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(themeTrigger).toBeFocused();
+    await page.getByRole('button', { name: 'Manage library' }).click();
+    await page.getByRole('menuitem', { name: 'Appearance settings' }).click();
+    if (motion === 'interrupted') await page.emulateMedia({ reducedMotion: 'reduce' });
+    const heading = page.getByRole('heading', { name: 'Make your study space yours' });
+    await expect(heading).toBeFocused();
+    await expect(heading).toBeInViewport();
+    await expect(page.locator('html')).toHaveAttribute('data-motion', 'system');
+    expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
+    await expect.poll(() => page.locator('[data-async-content="settings"]').evaluate(element =>
+      element.getAnimations({ subtree: true }).filter(animation => animation.playState === 'running').length,
+    )).toBe(0);
+  });
+}
+
 for (const theme of [
   { family: 'classic', mode: 'dark' },
   { family: 'classic', mode: 'light' },
   { family: 'crystal', mode: 'dark' },
   { family: 'crystal', mode: 'light' },
 ] as const) {
-  for (const width of [1440, 390]) {
-    test(`${theme.family} ${theme.mode} settings fit at ${width}px`, async ({ page }) => {
+  for (const { width, locale } of ['en', 'vi'].flatMap(locale => [1440, 390].map(width => ({ width, locale })))) {
+    test(`${theme.family} ${theme.mode} ${locale} settings fit at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.addInitScript(({ family, mode }) => {
         localStorage.setItem('sonflash_theme_family', family);
         localStorage.setItem('lingoflash_theme', mode);
       }, theme);
-      await page.goto('/?view=settings&locale=en');
-      await expect(page.getByRole('heading', { name: 'Make your study space yours' })).toBeVisible();
+      await page.goto(`/?view=settings&locale=${locale}`);
       const stage = page.locator('[data-async-content="settings"]');
+      await expect(stage.getByRole('heading', { level: 1 })).toBeVisible();
       expect(await stage.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
-      await page.screenshot({ path: test.info().outputPath(`settings-${theme.family}-${theme.mode}-${width}.png`) });
+      await page.screenshot({ path: test.info().outputPath(`settings-${theme.family}-${theme.mode}-${locale}-${width}.png`) });
+      const lastSwitch = stage.getByRole('switch').last();
+      await lastSwitch.focus();
+      await expect(lastSwitch).toBeFocused();
+      await expect(lastSwitch).toBeInViewport();
+      const switchGeometry = await lastSwitch.evaluate(element => {
+        const bounds = element.getBoundingClientRect();
+        const row = element.closest('label')!.getBoundingClientRect();
+        const target = document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+        return { width: bounds.width, height: bounds.height, rowHeight: row.height, reachable: target === element, appearance: getComputedStyle(element).appearance };
+      });
+      expect(switchGeometry.rowHeight).toBeGreaterThanOrEqual(44);
+      expect(switchGeometry.reachable).toBe(true);
+      expect(switchGeometry.appearance).toBe('none');
+      if (theme.family === 'classic') {
+        expect(switchGeometry.width).toBe(42);
+        expect(switchGeometry.height).toBe(24);
+      }
+      await page.screenshot({ path: test.info().outputPath(`settings-controls-${theme.family}-${theme.mode}-${locale}-${width}.png`) });
       const result = await new AxeBuilder({ page }).withRules(['color-contrast', 'aria-required-attr', 'button-name', 'landmark-one-main']).analyze();
       expect(result.violations.map(violation => violation.id)).toEqual([]);
     });

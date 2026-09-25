@@ -16,5 +16,8 @@ describe('SettingsScreen', () => {
     expect(html).toContain('role="switch"');
     expect(html).toContain('type="radio"');
     expect(html).toContain('min-h-11');
+    for (const preview of ['classic-dark', 'classic-light', 'crystal-dark', 'crystal-light']) {
+      expect(html).toContain(`data-theme-preview="${preview}"`);
+    }
   });
 });

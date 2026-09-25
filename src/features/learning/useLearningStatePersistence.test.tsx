@@ -2,7 +2,11 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
-import type { LearningPersistenceOptions, LearningPersistenceStats } from './learningPersistencePort';
+import type {
+  LearningPersistenceOptions,
+  LearningPersistenceStats,
+  RestoreDeviceCardResult,
+} from './learningPersistencePort';
 import type { LearningStateMutation } from './learningStateController';
 import type { LearningStatePersistencePort } from './useLearningState';
 import type { ReviewApplyResult, ReviewCommand } from '../../lib/cardReviewRepository';
@@ -155,6 +159,7 @@ const deleteMutation: LearningStateMutation = {
   operation: 'delete',
   intent: 'delete',
   cardId: card.id,
+  card,
   baseRevision: 3,
   libraryEpoch: 2,
   publication: { kind: 'delete', cardId: card.id },
@@ -169,6 +174,9 @@ function createHarness({
 } = {}) {
   const acknowledgeDevicePending = vi.fn(async () => undefined);
   const removeDeviceCard = vi.fn(async () => [pendingDelete]);
+  const restoreDeviceCard = vi.fn(async (restoreCard: CardData): ReturnType<LearningPersistenceOptions['restoreDeviceCard']> => ({
+    status: 'queued', card: restoreCard,
+  }));
   const updateCloudStats = vi.fn<(update: (current: LearningPersistenceStats) => LearningPersistenceStats) => void>();
   const updateCategoryFacets = vi.fn(async () => undefined);
   const addXp = vi.fn();
@@ -176,6 +184,8 @@ function createHarness({
     ownerId: 'user-a',
     verifiedEpoch,
     knownLibraryTotal: 1,
+    validateRestore: () => null,
+    restoreDeviceCard,
     findCard: cardId => cardId === card.id ? card : undefined,
     canPublishPatch: () => true,
     patchDeviceCards: vi.fn(async () => [patchResult]),
@@ -204,8 +214,10 @@ function createHarness({
 
   return {
     persistence: captured.persistence,
+    options,
     acknowledgeDevicePending,
     removeDeviceCard,
+    restoreDeviceCard,
     updateCloudStats,
     updateCategoryFacets,
     addXp,
@@ -418,6 +430,13 @@ describe('useLearningStatePersistence patch reconciliation', () => {
 
     await expect(harness.persistence.persist(deleteMutation)).resolves.toMatchObject({
       publication: { kind: 'delete', cardId: card.id },
+      deleteReceipt: {
+        finality: 'durably-queued',
+        ownerId: 'user-a',
+        operationId: 'cleanup-1',
+        libraryEpoch: 2,
+        deletedAt: '2026-08-09T00:00:05.000Z',
+      },
     });
     expect(mocks.deleteDeviceCardBackupIfNotNewerThan).toHaveBeenCalledWith('user-a', card.id, {
       libraryEpoch: 2,
@@ -475,6 +494,13 @@ describe('useLearningStatePersistence patch reconciliation', () => {
       ownerKey: 'user-a',
       operationId: 'cleanup-1',
       publication: { kind: 'delete', cardId: card.id },
+      deleteReceipt: {
+        finality: 'durably-queued',
+        ownerId: 'user-a',
+        operationId: 'cleanup-1',
+        libraryEpoch: 2,
+        deletedAt: pendingDelete.updatedAt,
+      },
     });
 
     expect(harness.removeDeviceCard).toHaveBeenCalledWith(card.id, {
@@ -483,6 +509,138 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     });
     expect(mocks.deleteCardWithTombstone).not.toHaveBeenCalled();
     expect(harness.acknowledgeDevicePending).not.toHaveBeenCalled();
+  });
+
+  it('restores a full offline card with an explicit owner epoch and does not award XP', async () => {
+    const harness = createHarness({ verifiedEpoch: null });
+    const undoToken = {
+      ownerKey: 'user-a', ownerId: 'user-a', card,
+      expectedLibraryEpoch: 2, deleteOperationId: 'cleanup-1',
+      deletedAt: pendingDelete.updatedAt, lifecycleId: 'delete-life-1', clearGeneration: 0,
+    };
+    const mutation: LearningStateMutation = {
+      ownerKey: 'user-a', operationId: 'restore-1', operation: 'restore', intent: 'restore',
+      undoToken, card, expectedLibraryEpoch: 2, operationCreatedAt: '2026-08-09T00:00:02.000Z',
+      publication: { kind: 'restore', card },
+    };
+
+    await expect(harness.persistence.persist(mutation)).resolves.toEqual({
+      ownerKey: 'user-a', operationId: 'restore-1',
+      publication: { kind: 'restore', card }, restoreFinality: 'durably-queued',
+    });
+    expect(harness.restoreDeviceCard).toHaveBeenCalledWith(card, {
+      ownerId: 'user-a', expectedLibraryEpoch: 2,
+      operationId: 'restore-1', operationCreatedAt: mutation.operationCreatedAt,
+    });
+    expect(harness.updateCloudStats).not.toHaveBeenCalled();
+    expect(harness.updateCategoryFacets).not.toHaveBeenCalled();
+    expect(harness.addXp).not.toHaveBeenCalled();
+  });
+
+  it('updates cloud stats once and leaves restore facet settlement to the atomic card write', async () => {
+    const harness = createHarness();
+    harness.restoreDeviceCard.mockResolvedValue({ status: 'restored', card });
+    const undoToken = {
+      ownerKey: 'user-a', ownerId: 'user-a', card,
+      expectedLibraryEpoch: 2, deleteOperationId: 'cleanup-1',
+      deletedAt: pendingDelete.updatedAt, lifecycleId: 'delete-life-stats', clearGeneration: 0,
+    };
+    const mutation: LearningStateMutation = {
+      ownerKey: 'user-a', operationId: 'restore-counts', operation: 'restore', intent: 'restore',
+      undoToken, card, expectedLibraryEpoch: 2, operationCreatedAt: '2026-08-09T00:00:02.000Z',
+      publication: { kind: 'restore', card },
+    };
+
+    await harness.persistence.persist(mutation);
+    await harness.persistence.persist(mutation);
+
+    expect(harness.updateCloudStats).toHaveBeenCalledOnce();
+    const updateStats = harness.updateCloudStats.mock.calls[0][0];
+    expect(updateStats({
+      total: 1, reviewed: 0, easy: 0, good: 0, hard: 0, unrated: 1,
+      bookmarked: 0, due: 0, legacyUnindexed: 0,
+    })).toMatchObject({ total: 2, unrated: 2 });
+    expect(harness.updateCategoryFacets).not.toHaveBeenCalled();
+    expect(harness.addXp).not.toHaveBeenCalled();
+  });
+
+  it('does not overwrite a concurrently recreated authoritative card', async () => {
+    const harness = createHarness();
+    harness.restoreDeviceCard.mockResolvedValue({ status: 'existing', card: { ...card, translation: 'concurrent' } });
+    const undoToken = {
+      ownerKey: 'user-a', ownerId: 'user-a', card,
+      expectedLibraryEpoch: 2, deleteOperationId: 'cleanup-1',
+      deletedAt: pendingDelete.updatedAt, lifecycleId: 'delete-life-existing', clearGeneration: 0,
+    };
+    const mutation: LearningStateMutation = {
+      ownerKey: 'user-a', operationId: 'restore-existing', operation: 'restore', intent: 'restore',
+      undoToken, card, expectedLibraryEpoch: 2, operationCreatedAt: '2026-08-09T00:00:02.000Z',
+      publication: { kind: 'restore', card },
+    };
+
+    await expect(harness.persistence.persist(mutation)).resolves.toMatchObject({
+      restoreFinality: 'conflict', restoreConflictReason: 'unsafe-existing',
+    });
+    expect(harness.updateCloudStats).not.toHaveBeenCalled();
+    expect(harness.updateCategoryFacets).not.toHaveBeenCalled();
+    expect(harness.addXp).not.toHaveBeenCalled();
+  });
+
+  it('does not produce a delete receipt when the durable delete queue fails', async () => {
+    const harness = createHarness();
+    harness.removeDeviceCard.mockRejectedValue(new Error('device queue unavailable'));
+
+    await expect(harness.persistence.persist(deleteMutation)).rejects.toThrow('left unchanged');
+    expect(mocks.deleteCardWithTombstone).not.toHaveBeenCalled();
+    expect(harness.updateCloudStats).not.toHaveBeenCalled();
+  });
+
+  it('returns a tombstone or recreation conflict without changing stats or awarding XP', async () => {
+    const harness = createHarness();
+    harness.restoreDeviceCard.mockResolvedValue({ status: 'conflict', reason: 'deleted-again' });
+    const undoToken = {
+      ownerKey: 'user-a', ownerId: 'user-a', card,
+      expectedLibraryEpoch: 2, deleteOperationId: 'cleanup-1',
+      deletedAt: pendingDelete.updatedAt, lifecycleId: 'delete-life-1', clearGeneration: 0,
+    };
+    const mutation: LearningStateMutation = {
+      ownerKey: 'user-a', operationId: 'restore-conflict', operation: 'restore', intent: 'restore',
+      undoToken, card, expectedLibraryEpoch: 2, operationCreatedAt: '2026-08-09T00:00:02.000Z',
+      publication: { kind: 'restore', card },
+    };
+
+    await expect(harness.persistence.persist(mutation)).resolves.toMatchObject({
+      restoreFinality: 'conflict', restoreConflictReason: 'deleted-again',
+    });
+    expect(harness.updateCloudStats).not.toHaveBeenCalled();
+    expect(harness.updateCategoryFacets).not.toHaveBeenCalled();
+    expect(harness.addXp).not.toHaveBeenCalled();
+  });
+
+  it('does not publish or update the new account after an in-flight restore changes owner', async () => {
+    const harness = createHarness();
+    let completeRestore!: (result: RestoreDeviceCardResult) => void;
+    harness.restoreDeviceCard.mockImplementation(() => new Promise(resolve => { completeRestore = resolve; }));
+    const undoToken = {
+      ownerKey: 'user-a', ownerId: 'user-a', card,
+      expectedLibraryEpoch: 2, deleteOperationId: 'cleanup-1',
+      deletedAt: pendingDelete.updatedAt, lifecycleId: 'delete-life-async', clearGeneration: 0,
+    };
+    const mutation: LearningStateMutation = {
+      ownerKey: 'user-a', operationId: 'restore-owner-switch', operation: 'restore', intent: 'restore',
+      undoToken, card, expectedLibraryEpoch: 2, operationCreatedAt: '2026-08-09T00:00:02.000Z',
+      publication: { kind: 'restore', card },
+    };
+    const pending = harness.persistence.persist(mutation);
+    harness.options.ownerId = 'user-b';
+    completeRestore({ status: 'restored', card });
+
+    await expect(pending).resolves.toMatchObject({
+      restoreFinality: 'conflict', restoreConflictReason: 'owner-changed',
+    });
+    expect(harness.updateCloudStats).not.toHaveBeenCalled();
+    expect(harness.updateCategoryFacets).not.toHaveBeenCalled();
+    expect(harness.addXp).not.toHaveBeenCalled();
   });
 
   it('clears library facets through the protected callable after card deletion', async () => {

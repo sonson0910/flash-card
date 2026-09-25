@@ -1,5 +1,6 @@
 import {
   Brain,
+  Check,
   ChevronDown,
   Eye,
   Flame,
@@ -18,6 +19,7 @@ import { Trans } from '@lingui/react';
 import { Lumi } from '../../components/lumi/Lumi';
 import { useTheme } from '../theme/ThemeProvider';
 import { readLumiEnabled } from '../settings/lumi-preference';
+import './today-caught-up.css';
 import type { LessonMode, TodayScreenActions, TodayScreenModel } from './dailyLearningPresentation';
 
 interface TodayScreenProps {
@@ -201,6 +203,97 @@ function StreakChip({ streak }: Pick<TodayScreenProps['model'], 'streak'>) {
   );
 }
 
+function CaughtUpPanel({ model, actions, showLumi }: TodayScreenProps & { readonly showLumi: boolean }) {
+  const { family, mode } = useTheme();
+  const isCrystal = family === 'crystal';
+  const summary = model.caughtUp ?? { availableNewCount: 0 };
+  const availableNewCount = Number.isSafeInteger(summary.availableNewCount) && summary.availableNewCount > 0
+    ? summary.availableNewCount
+    : 0;
+  const nextReview = summary.nextReview
+    && Number.isSafeInteger(summary.nextReview.cardCount)
+    && summary.nextReview.cardCount > 0
+    && summary.nextReview.label.trim().length > 0
+    ? summary.nextReview
+    : undefined;
+  const noNewCardsReason = availableNewCount === 0
+    ? msg({ id: 'today.caught-up.no-new-cards', message: 'No new cards are available in this daily plan.' })
+    : msg({ id: 'today.caught-up.lesson-unavailable', message: 'The new-card lesson is not available from this view yet.' });
+  return (
+    <article
+      aria-labelledby="today-caught-up-title"
+      className={`today-caught-up-panel${isCrystal ? ' today-caught-up-panel--crystal' : ''}`}
+      data-today-caught-up="true"
+    >
+      <div className="today-caught-up-panel-inner">
+        {isCrystal ? (
+          <div className="today-caught-up-motif" aria-hidden="true">
+            <span className="today-caught-up-star motion-reduce:animate-none">
+              <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+                <polygon points="50.0,52.0 38.2,35.7 50.0,4.0" fill="#ff5470" />
+                <polygon points="50.0,52.0 50.0,4.0 61.8,35.7" fill="#7a0820" />
+                <polygon points="50.0,52.0 61.8,35.7 95.7,37.2" fill="#ff5470" />
+                <polygon points="50.0,52.0 95.7,37.2 69.2,58.2" fill="#7a0820" />
+                <polygon points="50.0,52.0 69.2,58.2 78.2,90.8" fill="#ff5470" />
+                <polygon points="50.0,52.0 78.2,90.8 50.0,72.2" fill="#7a0820" />
+                <polygon points="50.0,52.0 50.0,72.2 21.8,90.8" fill="#ff5470" />
+                <polygon points="50.0,52.0 21.8,90.8 30.8,58.2" fill="#7a0820" />
+                <polygon points="50.0,52.0 30.8,58.2 4.3,37.2" fill="#ff5470" />
+                <polygon points="50.0,52.0 4.3,37.2 38.2,35.7" fill="#7a0820" />
+              </svg>
+            </span>
+            {showLumi
+              ? <Lumi pose="happy" size={108} eager className="today-caught-up-lumi crystal-ornament" />
+              : <span className="today-caught-up-lumi" />}
+          </div>
+        ) : (
+          <span className="today-caught-up-seal" aria-hidden="true">
+            <Check size={28} strokeWidth={2.2} />
+          </span>
+        )}
+        <h2 id="today-caught-up-title" className="today-caught-up-title">
+          <Trans id="today.caught-up.title" message="All caught" />{' '}
+          <span className={isCrystal ? 'today-caught-up-gold' : mode === 'dark' ? 'today-caught-up-dark-accent' : 'today-caught-up-light-accent'}>
+            <Trans id="today.caught-up.title-emphasis" message="up." />
+          </span>
+        </h2>
+        <div className="today-caught-up-status" role="status" aria-live="polite">
+          {nextReview && (
+            <p>
+              <Trans
+                id="today.caught-up.next-review"
+                message="Next review {when} · {count, plural, one {# card} other {# cards}}"
+                values={{ when: nextReview.label, count: nextReview.cardCount }}
+              />
+            </p>
+          )}
+          <p id="today-caught-up-learn-reason">
+            {nextReview ? <Trans id={noNewCardsReason.id} message={noNewCardsReason.message} /> : model.message}
+          </p>
+        </div>
+        <div className="today-caught-up-actions">
+          <button
+            type="button"
+            disabled
+            aria-describedby="today-caught-up-learn-reason"
+            className={`today-caught-up-button today-caught-up-primary${isCrystal ? '' : ` ${primaryButton}`}`}
+          >
+            <Trans id="today.caught-up.learn-new" message="Learn 5 new" />
+          </button>
+          <button
+            type="button"
+            onClick={actions.openPaths}
+            className={`today-caught-up-button today-caught-up-secondary${isCrystal ? '' : ` ${secondaryButton}`}`}
+          >
+            <Trans id="today.caught-up.browse-paths" message="Browse paths" />
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+
 export function TodayScreen({ model, actions }: TodayScreenProps) {
   const { family } = useTheme();
   const showLumi = family === 'crystal' && readLumiEnabled();
@@ -226,6 +319,25 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
             <button type="button" onClick={actions.openVocabulary} className={primaryButton}><Trans id="today.empty.add-vocabulary" message="Add vocabulary" /></button>
             <button type="button" onClick={actions.openPaths} className={secondaryButton}><Trans id="today.empty.open-paths" message="Explore learning paths" /></button>
           </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (model.status === 'caught-up') {
+    return (
+      <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl">
+        <header>
+          <p className="premium-kicker uppercase tracking-[0.16em]"><Trans id="today.kicker" message="Daily learning" /></p>
+          <PageHeading model={model} />
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <p className="text-sm font-bold text-[var(--sf-brand-text)]">{model.courseLabel ?? <Trans id="today.course.fallback" message="Your current course" />}</p>
+            <StreakChip streak={model.streak} />
+          </div>
+        </header>
+        {model.isOffline && <p className="mt-4 rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite"><Trans id="today.offline" message="Available offline · using saved learning data" /></p>}
+        <div className="mt-8 flex justify-center">
+          <CaughtUpPanel model={model} actions={actions} showLumi={showLumi} />
         </div>
       </section>
     );

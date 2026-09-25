@@ -29,17 +29,17 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: /pilot-mobile-review\.spec\.ts/,
+      testIgnore: /pilot-mobile-review\.spec\.ts|shell-share-workflow\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'firefox',
-      testIgnore: /pilot-mobile-review\.spec\.ts/,
+      testIgnore: /pilot-mobile-review\.spec\.ts|shell-share-workflow\.spec\.ts/,
       use: { ...devices['Desktop Firefox'] },
     },
     {
       name: 'webkit',
-      testIgnore: /pilot-mobile-review\.spec\.ts/,
+      testIgnore: /pilot-mobile-review\.spec\.ts|shell-share-workflow\.spec\.ts/,
       use: { ...devices['Desktop Safari'] },
     },
     {

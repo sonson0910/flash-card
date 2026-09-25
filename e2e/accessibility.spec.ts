@@ -71,7 +71,12 @@ test('library supports 320px reflow, 200% text and visible keyboard focus', asyn
 
   const manage = page.getByRole('button', { name: 'Manage library' });
   await manage.focus();
-  for (const name of [
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('menu', { name: 'Library management' })).toBeVisible();
+  const identityActions = await page.getByRole('menuitem', { name: 'Sign in & sync', exact: true }).count()
+    ? ['Sign in & sync'] : [];
+  const menuNames = [
+    ...identityActions,
     'Privacy',
     'Terms',
     'Extension privacy',
@@ -80,8 +85,9 @@ test('library supports 320px reflow, 200% text and visible keyboard focus', asyn
     /Card style:/,
     'Export library to Excel',
     'Clear the entire library',
-  ]) {
-    await page.keyboard.press('ArrowDown');
+  ];
+  for (const [index, name] of menuNames.entries()) {
+    if (index > 0) await page.keyboard.press('ArrowDown');
     await expect(page.getByRole('menuitem', { name, exact: typeof name === 'string' })).toBeFocused();
   }
   await page.keyboard.press('Escape');

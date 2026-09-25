@@ -36,6 +36,7 @@ import {
   type DeviceDeleteContext,
   type DevicePendingOperation,
   type DeviceReviewEffect,
+  type DeviceUpsertContext,
 } from '../../lib/deviceSync';
 import {
   applyCardPatchIfCurrent,
@@ -78,6 +79,7 @@ export const CLOUD_TRANSIENT_BACKOFF_MS = 60 * 1_000;
 const cloudSyncTimeoutMessage = 'Firebase did not respond in time. Your changes remain safe on this device; retry when the connection is stable.';
 const mirrorEpochChangedMessage = 'Cloud library changed while the local mirror was syncing.';
 const mirrorInterruptedMessage = 'The local card mirror sync was interrupted.';
+const CLOUD_WRITES_PAUSED = Symbol('cloud-writes-paused');
 const waitForCloudSyncStep = <T,>(operation: Promise<T>): Promise<T> =>
   withTimeout(operation, CLOUD_SYNC_STEP_TIMEOUT_MS, cloudSyncTimeoutMessage);
 
@@ -191,7 +193,7 @@ export function publishVerifiedEpochIfOwnerCurrent(
   expectedUserId: string,
   activeUserId: string | null,
   value: number,
-  publish: (epoch: LibraryEpoch) => void,
+  publish: (epoch: LibraryEpoch) => boolean,
 ): LibraryEpoch | null {
   if (
     activeUserId !== expectedUserId
@@ -199,8 +201,7 @@ export function publishVerifiedEpochIfOwnerCurrent(
     || value < 0
   ) return null;
   const verified = { userId: expectedUserId, value };
-  publish(verified);
-  return verified;
+  return publish(verified) ? verified : null;
 }
 
 export interface LibraryReplicaEvents {
@@ -216,7 +217,7 @@ export interface LibraryReplicaEvents {
   reportError: (message: string) => void;
   notify: (message: string) => void;
   settleReview: (opId: string, effect: DeviceReviewEffect) => void;
-  verifyEpoch: (epoch: LibraryEpoch) => void;
+  verifyEpoch: (epoch: LibraryEpoch) => boolean;
 }
 
 export type LibraryReplicaMutation =
@@ -232,15 +233,33 @@ export type LibraryReplicaMutation =
 
 export interface LibraryReplicaOptions {
   ownerId: string;
+  isBrowserOnline: () => boolean;
   getEpoch: () => LibraryEpoch | null;
   getCards: () => readonly CardData[];
   getEvents: () => LibraryReplicaEvents;
   getMirrorTotals: () => { cloudTotal: number; cloudStatsTotal: number };
   isOwnerCurrent: () => boolean;
+  canVerifyEpoch: () => boolean;
+  canPublishMutations: () => boolean;
   onError: (error: string | null) => void;
   onPendingCount: (count: number) => void;
   onSyncing: (syncing: boolean) => void;
 }
+
+export interface RestoreDeviceCardOptions {
+  ownerId: string | null;
+  expectedLibraryEpoch: number;
+  operationId: string;
+  operationCreatedAt: string;
+}
+
+export type RestoreDeviceCardResult =
+  | { status: 'restored' | 'queued' | 'existing'; card: CardData }
+  | {
+    status: 'conflict';
+    reason: 'owner-changed' | 'epoch-changed' | 'deleted-again' | 'unsafe-existing';
+    card?: CardData;
+  };
 
 export interface LibraryReplicaFlushOptions {
   manualRetry?: boolean;
@@ -250,17 +269,22 @@ export interface LibraryReplicaFlushOptions {
 
 export function createLibraryReplica({
   ownerId,
+  isBrowserOnline,
   getEpoch,
   getCards,
   getEvents,
   getMirrorTotals,
   isOwnerCurrent,
+  canVerifyEpoch,
+  canPublishMutations,
   onError,
   onPendingCount,
   onSyncing,
 }: LibraryReplicaOptions) {
   let pendingFlush: Promise<void> | null = null;
   let pendingMirrorRefresh: Promise<number> | null = null;
+  const canVerifyCloudEpoch = () => isOwnerCurrent() && canVerifyEpoch();
+  const canWriteCloud = () => isOwnerCurrent() && canPublishMutations();
 
   const readActiveEpoch = () => {
     const epoch = getEpoch();
@@ -290,8 +314,9 @@ export function createLibraryReplica({
   };
 
   const refreshVerifiedEpoch = async (minimumEpoch = 0): Promise<LibraryEpoch | null> => {
-    if (!db) return null;
+    if (!db || !canVerifyCloudEpoch()) return null;
     const value = await waitForCloudSyncStep(getLibraryEpoch(db, ownerId));
+    if (!canVerifyCloudEpoch()) return null;
     if (value < minimumEpoch) {
       throw new CardMutationPreconditionError('future-library-epoch');
     }
@@ -415,12 +440,195 @@ export function createLibraryReplica({
     return stageDelete(mutation.cardId, mutation.context);
   };
 
+  const restoreDeviceCard = async (
+    originalCard: CardData,
+    options: RestoreDeviceCardOptions,
+  ): Promise<RestoreDeviceCardResult> => {
+    if (options.ownerId !== ownerId || !isOwnerCurrent()) {
+      return { status: 'conflict', reason: 'owner-changed' };
+    }
+    if (!canWriteCloud()) return { status: 'conflict', reason: 'epoch-changed' };
+    if (
+      !Number.isSafeInteger(options.expectedLibraryEpoch)
+      || options.expectedLibraryEpoch < 0
+      || !/^[A-Za-z0-9_-]{1,128}$/.test(options.operationId)
+      || !Number.isFinite(Date.parse(options.operationCreatedAt))
+    ) return { status: 'conflict', reason: 'unsafe-existing' };
+    const activeEpoch = getEpoch();
+    if (
+      !activeEpoch
+      || activeEpoch.userId !== ownerId
+      || activeEpoch.value !== options.expectedLibraryEpoch
+    ) return { status: 'conflict', reason: 'epoch-changed' };
+
+    const restoredCandidate: CardData = {
+      ...originalCard,
+      libraryEpoch: options.expectedLibraryEpoch,
+    };
+    const operationContext: DeviceUpsertContext = {
+      operationId: options.operationId,
+      operationCreatedAt: options.operationCreatedAt,
+      libraryEpoch: options.expectedLibraryEpoch,
+      baseRevisions: { [restoredCandidate.id]: restoredCandidate.revision ?? 0 },
+      restore: true,
+    };
+    const cleanupCandidate = async () => {
+      const maximum = {
+        libraryEpoch: options.expectedLibraryEpoch,
+        revision: restoredCandidate.revision ?? 0,
+      };
+      await Promise.all([
+        deleteDeviceCardBackupIfNotNewerThan(ownerId, restoredCandidate.id, maximum).catch(cause => {
+          console.warn('An obsolete restore could not be removed from the device backup.', cause);
+        }),
+        deleteMirroredCardIfNotNewerThan(ownerId, restoredCandidate.id, maximum).catch(cause => {
+          console.warn('An obsolete restore could not be removed from the local mirror.', cause);
+        }),
+      ]);
+    };
+    const reconcileAuthoritativeCard = async (authoritativeCard: CardData) => {
+      try {
+        await mergeDeviceCardsStrict([authoritativeCard], 1, ownerId);
+      } catch (cause) {
+        if (!(cause instanceof DeviceBackupOwnerConflictError)) {
+          console.warn('The authoritative restored card could not be merged into the device backup.', cause);
+        }
+      }
+      try {
+        await upsertMirroredCardIfNotOlderThan(ownerId, authoritativeCard);
+      } catch (cause) {
+        console.warn('The authoritative restored card could not be written to the local mirror.', cause);
+      }
+      if (restoredCandidate.id !== authoritativeCard.id) await cleanupCandidate();
+    };
+
+    let serverEpochVerified = false;
+    if (db && isFirebaseConfigured && isBrowserOnline() && !isCloudBackoffActive(ownerId)) {
+      try {
+        const current = await waitForCloudSyncStep(getLibraryEpoch(db, ownerId));
+        if (!isOwnerCurrent()) return { status: 'conflict', reason: 'owner-changed' };
+        if (!canWriteCloud()) return { status: 'conflict', reason: 'epoch-changed' };
+        if (current !== options.expectedLibraryEpoch) {
+          return { status: 'conflict', reason: 'epoch-changed' };
+        }
+        serverEpochVerified = true;
+      } catch (cause) {
+        if (!isOwnerCurrent()) return { status: 'conflict', reason: 'owner-changed' };
+        console.warn('Restore is queued until the captured cloud epoch can be verified.', cause);
+      }
+    }
+
+    const queued = await queueDeviceUpserts(
+      [restoredCandidate],
+      Math.max(getMirrorTotals().cloudTotal, getMirrorTotals().cloudStatsTotal, getCards().length + 1),
+      ownerId,
+      false,
+      operationContext,
+    );
+    if (!isOwnerCurrent()) return { status: 'conflict', reason: 'owner-changed' };
+    const persistedOperation = queued.find(operation =>
+      operation.type === 'upsert' && operation.opId === options.operationId,
+    );
+    if (!persistedOperation) {
+      const pending = mergePendingOperations(await loadDevicePending(ownerId));
+      const newestForCard = pending.filter(operation =>
+        operation.ownerUserId === ownerId
+        && pendingOperationCardId(operation) === restoredCandidate.id,
+      ).at(-1);
+      await cleanupCandidate();
+      if (newestForCard?.type === 'delete' && newestForCard.updatedAt > options.operationCreatedAt) {
+        return { status: 'conflict', reason: 'deleted-again' };
+      }
+      return { status: 'conflict', reason: 'unsafe-existing' };
+    }
+
+    const pending = mergePendingOperations(await loadDevicePending(ownerId));
+    const newestForCard = pending.filter(operation =>
+      operation.ownerUserId === ownerId
+      && pendingOperationCardId(operation) === restoredCandidate.id,
+    ).at(-1);
+    if (newestForCard?.type === 'delete' && newestForCard.updatedAt > options.operationCreatedAt) {
+      await cleanupCandidate();
+      return { status: 'conflict', reason: 'deleted-again' };
+    }
+
+    try {
+      await upsertMirroredCardIfNotOlderThan(ownerId, restoredCandidate);
+    } catch (cause) {
+      console.warn('Restore is queued, but the local card mirror could not be updated.', cause);
+    }
+    if (!isOwnerCurrent()) return { status: 'conflict', reason: 'owner-changed' };
+    if (!canWriteCloud()) {
+      void refreshPending();
+      return { status: 'queued', card: restoredCandidate };
+    }
+    const latestEpoch = getEpoch();
+    if (
+      !latestEpoch
+      || latestEpoch.userId !== ownerId
+      || latestEpoch.value !== options.expectedLibraryEpoch
+    ) {
+      await cleanupCandidate();
+      return { status: 'conflict', reason: 'epoch-changed' };
+    }
+
+    if (serverEpochVerified && canWriteCloud() && db && isFirebaseConfigured && isBrowserOnline() && !isCloudBackoffActive(ownerId)) {
+      try {
+        const result = await waitForCloudSyncStep(createCardIfAbsent(db, ownerId, restoredCandidate, {
+          libraryEpoch: options.expectedLibraryEpoch,
+          baseRevision: persistedOperation.baseRevision,
+          opId: options.operationId,
+          operationCreatedAt: options.operationCreatedAt,
+          restore: true,
+        }));
+        if (!isOwnerCurrent()) return { status: 'conflict', reason: 'owner-changed' };
+        if (!canWriteCloud()) {
+          void refreshPending();
+          return { status: 'queued', card: restoredCandidate };
+        }
+        const currentEpoch = getEpoch();
+        if (
+          !currentEpoch
+          || currentEpoch.userId !== ownerId
+          || currentEpoch.value !== options.expectedLibraryEpoch
+        ) return { status: 'conflict', reason: 'epoch-changed' };
+        await reconcileAuthoritativeCard(result.card);
+        void refreshPending();
+        return result.created
+          ? { status: 'restored', card: result.card }
+          : { status: 'existing', card: result.card };
+      } catch (cause) {
+        const reason = cause instanceof CardMutationPreconditionError
+          ? cause.reason
+          : cause instanceof ProtectedFunctionError
+            && typeof (cause as ProtectedFunctionError & { mutationReason?: unknown }).mutationReason === 'string'
+            ? (cause as ProtectedFunctionError & { mutationReason: CardMutationPreconditionError['reason'] }).mutationReason
+            : null;
+        if (reason) {
+          await cleanupCandidate();
+          void refreshPending();
+          if (reason === 'deleted') return { status: 'conflict', reason: 'deleted-again' };
+          if (reason === 'stale-library-epoch' || reason === 'future-library-epoch') {
+            return { status: 'conflict', reason: 'epoch-changed' };
+          }
+          return { status: 'conflict', reason: 'unsafe-existing' };
+        }
+        if (isOwnerCurrent()) onError(getSyncErrorMessage(cause));
+        console.warn('Restore remains queued after a cloud write failure.', cause);
+      }
+    }
+
+    void refreshPending();
+    return { status: 'queued', card: restoredCandidate };
+  };
+
   const runFlush = async ({
     manualRetry = false,
     verifiedEpoch = null,
     isBrowserOnline,
   }: LibraryReplicaFlushOptions): Promise<void> => {
     const events = getEvents();
+    if (!canWriteCloud()) return;
     if (!db || !isFirebaseConfigured) {
       if (isOwnerCurrent()) onError('Cloud sync is not configured. Your changes remain safe on this device.');
       await refreshPending();
@@ -443,8 +651,10 @@ export function createLibraryReplica({
     if (activeEpoch === null) {
       try {
         const refreshed = await refreshVerifiedEpoch();
+        if (!canWriteCloud()) return;
         activeEpoch = (refreshed?.value ?? null) as number;
       } catch (cause) {
+        if (!canWriteCloud()) return;
         if (isOwnerCurrent()) {
           onError(getSyncErrorMessage(cause));
           events.setCloudAvailable(false);
@@ -453,6 +663,7 @@ export function createLibraryReplica({
         return;
       }
       if (activeEpoch === null) {
+        if (!canWriteCloud()) return;
         if (isOwnerCurrent()) {
           onError('Cloud generation could not be verified. Your changes remain safe on this device.');
         }
@@ -464,7 +675,10 @@ export function createLibraryReplica({
     const database = db;
     try {
       const result = await withDevicePendingFlush(ownerId, manualRetry, async lease => {
-      const assertLease = () => lease.assertOwnership();
+      const assertLease = async () => {
+        await lease.assertOwnership();
+        if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
+      };
       await assertLease();
       if (isOwnerCurrent()) {
         onSyncing(true);
@@ -473,9 +687,11 @@ export function createLibraryReplica({
       try {
       const pending = mergePendingOperations(await loadDevicePending(ownerId))
         .filter(operation => operation.ownerUserId === ownerId);
+      if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
       let plan = partitionPendingOperationsByLibraryEpoch(pending, activeEpoch);
       if (plan.future.length) {
         const refreshed = await refreshVerifiedEpoch(activeEpoch);
+        if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
         if (refreshed && refreshed.value > activeEpoch) {
           activeEpoch = refreshed.value;
           plan = partitionPendingOperationsByLibraryEpoch(pending, activeEpoch);
@@ -488,9 +704,12 @@ export function createLibraryReplica({
             libraryEpoch: Math.max(0, activeEpoch - 1),
             revision: Number.MAX_SAFE_INTEGER,
           }, lease);
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
           await deleteMirroredCardIfOlderThan(ownerId, cardId, activeEpoch);
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
         }
         await acknowledge(plan.stale, lease);
+        if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
       }
       if (plan.future.length && isOwnerCurrent()) {
         onError('Some changes belong to a newer library version than the cloud currently reports. They remain safe on this device; retry after cloud recovery.');
@@ -513,6 +732,7 @@ export function createLibraryReplica({
           writeEpoch,
         )),
       );
+      if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
       const flushed = [...verified.operationsAlreadyExisting];
       let deferredSyncError: string | null = null;
       for (let index = 0; index < verified.operationsAlreadyExisting.length; index += 1) {
@@ -526,6 +746,7 @@ export function createLibraryReplica({
             activeEpoch,
             lease,
           );
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
         }
       }
       const writes = partitionPendingOperationsForFlush(verified.operationsToWrite);
@@ -540,9 +761,13 @@ export function createLibraryReplica({
               baseRevision: creation.baseRevision,
               opId: creation.opId,
               operationCreatedAt: creation.updatedAt,
+              ...(creation.restore === true ? { restore: true as const } : {}),
             }),
           );
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
         } catch (cause) {
+          if (cause === CLOUD_WRITES_PAUSED) throw cause;
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
           if (cause instanceof CardMutationPreconditionError && cause.reason === 'deleted') {
             const maximum = {
               libraryEpoch: creation.libraryEpoch ?? activeEpoch,
@@ -550,7 +775,9 @@ export function createLibraryReplica({
             };
             try {
               await deleteDeviceCardBackupIfNotNewerThan(ownerId, creation.card.id, maximum, lease);
+              if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
               await deleteMirroredCardIfNotNewerThan(ownerId, creation.card.id, maximum);
+              if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
               if (isOwnerCurrent()) {
                 events.removeCard(creation.card.id);
                 events.removePracticeCard(creation.card.id);
@@ -571,6 +798,7 @@ export function createLibraryReplica({
           activeEpoch,
           lease,
         );
+        if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
         flushed.push(creation);
       }
       for (const deletion of writes.deletes) {
@@ -586,23 +814,29 @@ export function createLibraryReplica({
             command => deleteCardWithTombstone(database, ownerId, command),
           ),
         );
+        if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
         if (result.deleted) {
           const maximum = {
             libraryEpoch: result.tombstone.libraryEpoch,
             revision: Math.max(0, result.tombstone.revision - 1),
           };
           await deleteDeviceCardBackupIfNotNewerThan(ownerId, deletion.cardId, maximum, lease);
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
           await deleteMirroredCardIfNotNewerThan(ownerId, deletion.cardId, maximum);
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
           flushed.push(deletion);
         } else if (result.reason === 'stale-library-epoch') {
           const verifiedEpoch = await refreshVerifiedEpoch(activeEpoch);
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
           if (!verifiedEpoch) return;
           const latestEpoch = verifiedEpoch.value;
           await deleteDeviceCardBackupIfNotNewerThan(ownerId, deletion.cardId, {
             libraryEpoch: Math.max(0, latestEpoch - 1),
             revision: Number.MAX_SAFE_INTEGER,
           }, lease);
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
           await deleteMirroredCardIfOlderThan(ownerId, deletion.cardId, latestEpoch);
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
           flushed.push(deletion);
         } else if (isOwnerCurrent()) {
           events.reportError(result.reason === 'future-library-epoch'
@@ -649,10 +883,14 @@ export function createLibraryReplica({
               command => applyCardPatchIfCurrent(database, ownerId, command),
             ),
             );
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
         } catch (cause) {
+          if (cause === CLOUD_WRITES_PAUSED || !canWriteCloud()) return;
           if (!lastReview || !(cause instanceof ProtectedFunctionError) || cause.retryable) throw cause;
           const authoritative = await waitForCloudSyncStep(findCardById(database, ownerId, patch.cardId));
+          if (!canWriteCloud()) return;
           await restoreQueuedReviewFromAuthoritativeCard(ownerId, patch, authoritative, events, isOwnerCurrent, lease);
+          if (!canWriteCloud()) return;
           await assertLease();
           await acknowledge([patch], lease);
           acknowledgedOperations.add(patch);
@@ -694,14 +932,15 @@ export function createLibraryReplica({
           await patchMirroredCardBatch(ownerId, [{
             cardId: patch.cardId,
             fields: { ...authoritativeFields, schemaVersion: 2, ...metadata,
-              ...(reviewResult ? { appliedReviewOperationIds: reviewResult.card.appliedReviewOperationIds } : {}) },
+            ...(reviewResult ? { appliedReviewOperationIds: reviewResult.card.appliedReviewOperationIds } : {}) },
           }]);
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
           if (isOwnerCurrent()) {
             events.advanceCard(patch.cardId, advance);
             events.advancePracticeCard(patch.cardId, advance);
           }
           if (lastReview) {
-            if (!isOwnerCurrent()) continue;
+            if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
             if (patch.reviewEffect) {
               events.settleReview(patch.opId ?? `review-${patch.cardId}-${patch.updatedAt}`, patch.reviewEffect);
             }
@@ -712,13 +951,16 @@ export function createLibraryReplica({
           flushed.push(patch);
         } else if (result.reason === 'stale-library-epoch' && !lastReview) {
           const verifiedEpoch = await refreshVerifiedEpoch(activeEpoch);
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
           if (!verifiedEpoch) return;
           const latestEpoch = verifiedEpoch.value;
           await deleteDeviceCardBackupIfNotNewerThan(ownerId, patch.cardId, {
             libraryEpoch: Math.max(0, latestEpoch - 1),
             revision: Number.MAX_SAFE_INTEGER,
           }, lease);
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
           await deleteMirroredCardIfOlderThan(ownerId, patch.cardId, latestEpoch);
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
           flushed.push(patch);
         } else if (result.reason === 'missing') {
           const maximum = {
@@ -726,7 +968,9 @@ export function createLibraryReplica({
             revision: patch.baseRevision ?? 0,
           };
           await deleteDeviceCardBackupIfNotNewerThan(ownerId, patch.cardId, maximum, lease);
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
           await deleteMirroredCardIfNotNewerThan(ownerId, patch.cardId, maximum);
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
           if (isOwnerCurrent()) {
             events.removeCard(patch.cardId);
             events.removePracticeCard(patch.cardId);
@@ -738,7 +982,9 @@ export function createLibraryReplica({
           || result.reason === 'future-library-epoch'
           || result.reason === 'stale-library-epoch')) {
           const authoritative = await waitForCloudSyncStep(findCardById(database, ownerId, patch.cardId));
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
           await restoreQueuedReviewFromAuthoritativeCard(ownerId, patch, authoritative, events, isOwnerCurrent, lease);
+          if (!canWriteCloud()) throw CLOUD_WRITES_PAUSED;
           await assertLease();
           await acknowledge([patch], lease);
           acknowledgedOperations.add(patch);
@@ -764,6 +1010,7 @@ export function createLibraryReplica({
         }
       }
       } catch (cause) {
+      if (cause === CLOUD_WRITES_PAUSED || !canWriteCloud()) return;
       if (cause instanceof CardMutationPreconditionError && cause.reason === 'stale-library-epoch') {
         try {
           await refreshVerifiedEpoch(activeEpoch);
@@ -785,11 +1032,13 @@ export function createLibraryReplica({
       if (isOwnerCurrent()) onSyncing(false);
       }
       });
+      if (!canWriteCloud()) return;
       if (!result.acquired) {
         if (isOwnerCurrent()) onError('Another SonFlash tab is syncing these changes. They remain safe on this device; close the other tab or retry in a moment.');
         await refreshPending();
       }
     } catch (cause) {
+      if (cause === CLOUD_WRITES_PAUSED || !canWriteCloud()) return;
       console.warn('The device sync coordinator could not acquire a flush lease.', cause);
       const message = 'The device sync coordinator could not be reached. Your changes remain safe on this device; retry after checking the local app connection.';
       if (isOwnerCurrent()) { onError(message); events.reportError(message); }
@@ -882,6 +1131,7 @@ export function createLibraryReplica({
   };
 
   const retry = async (): Promise<void> => {
+    if (!canVerifyCloudEpoch()) return;
     if (isOwnerCurrent()) {
       onError(null);
       onSyncing(true);
@@ -891,19 +1141,21 @@ export function createLibraryReplica({
       const renderedEpoch = getEpoch();
       const minimumEpoch = renderedEpoch?.userId === ownerId ? renderedEpoch.value : 0;
       verifiedEpoch = await refreshVerifiedEpoch(minimumEpoch);
+      if (!canVerifyCloudEpoch()) return;
       if (verifiedEpoch) await refreshPending();
     } catch (cause) {
+      if (!canWriteCloud()) return;
       if (isOwnerCurrent()) {
         onError(getSyncErrorMessage(cause) || 'Cloud generation unverified. Changes remain safe on this device.');
       }
     } finally {
       if (isOwnerCurrent()) onSyncing(false);
     }
-    if (!verifiedEpoch || !isOwnerCurrent()) return;
+    if (!verifiedEpoch || !canWriteCloud()) return;
     await flush({ manualRetry: true, verifiedEpoch, isBrowserOnline: true });
   };
 
-  return { acknowledge, flush, refreshMirror, refreshPending, retry, stage };
+  return { acknowledge, flush, refreshMirror, refreshPending, restoreDeviceCard, retry, stage };
 }
 
 export type { DeviceDeleteContext, DevicePendingOperation };

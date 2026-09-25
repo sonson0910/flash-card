@@ -201,6 +201,129 @@ describe('device pending queue', () => {
     expect(operations[0].opId).toEqual(expect.any(String));
   });
 
+  it('persists restore upsert identity, timestamp, captured epoch and revision unchanged', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    const storage = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => { storage.set(key, value); },
+      removeItem: (key: string) => { storage.delete(key); },
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const restored = { ...card, libraryEpoch: 7, revision: 12, createdAt: '2024-01-01T00:00:00.000Z' };
+    const operationCreatedAt = '2026-09-25T06:15:00.000Z';
+
+    const operations = await queueDeviceUpserts([restored], 5, 'user-restore', false, {
+      operationId: 'restore-card-12',
+      operationCreatedAt,
+      libraryEpoch: 7,
+      baseRevisions: { [restored.id]: 12 },
+      restore: true,
+    });
+
+    expect(operations).toEqual([expect.objectContaining({
+      type: 'upsert',
+      operation: 'create',
+      opId: 'restore-card-12',
+      card: restored,
+      baseRevision: 12,
+      libraryEpoch: 7,
+      updatedAt: operationCreatedAt,
+      ownerUserId: 'user-restore',
+      restore: true,
+    })]);
+    const [, request] = fetchMock.mock.calls[1];
+    expect(JSON.parse(String(request?.body))).toMatchObject({
+      cards: [restored],
+      pending: [expect.objectContaining({
+        opId: 'restore-card-12',
+        updatedAt: operationCreatedAt,
+        baseRevision: 12,
+        libraryEpoch: 7,
+        ownerUserId: 'user-restore',
+        restore: true,
+      })],
+    });
+    expect(loadBrowserPending('user-restore')).toMatchObject([expect.objectContaining({
+      opId: 'restore-card-12',
+      restore: true,
+    })]);
+  });
+
+  it('uses the ownerless pending queue to let Undo supersede the original delete', async () => {
+    const restored = { ...card, libraryEpoch: 0, createdAt: '2024-01-01T00:00:00.000Z' };
+    const operationCreatedAt = '2026-09-25T06:20:00.000Z';
+    const originalDelete = {
+      type: 'delete' as const, operation: 'delete' as const, opId: 'guest-delete',
+      cardId: restored.id, baseRevision: 12, libraryEpoch: 0,
+      fieldMask: [] as Array<keyof CardData>, updatedAt: '2026-09-25T06:19:59.000Z',
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(Response.json({
+        cards: [], total: 0, pending: [originalDelete], ownerUserId: null,
+      }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const operations = await queueDeviceUpserts([restored], 1, undefined, false, {
+      operationId: 'guest-restore', operationCreatedAt, libraryEpoch: 0, restore: true,
+      baseRevisions: { [restored.id]: 12 },
+    });
+
+    expect(operations).toEqual([expect.objectContaining({
+      type: 'upsert', opId: 'guest-restore', card: restored,
+      updatedAt: operationCreatedAt, libraryEpoch: 0, baseRevision: 12,
+      restore: true,
+    })]);
+    const [, request] = fetchMock.mock.calls[1];
+    expect(JSON.parse(String(request?.body))).toMatchObject({
+      cards: [restored], mode: 'merge', ownerUserId: null,
+      pending: [expect.objectContaining({ type: 'upsert', opId: 'guest-restore', updatedAt: operationCreatedAt, restore: true })],
+    });
+  });
+
+  it('keeps a newer ownerless delete and does not copy an older Undo card into backup', async () => {
+    const restored = { ...card, libraryEpoch: 0 };
+    const laterDelete = {
+      type: 'delete' as const, operation: 'delete' as const, opId: 'guest-redelete',
+      cardId: restored.id, baseRevision: 12, libraryEpoch: 0,
+      fieldMask: [] as Array<keyof CardData>, updatedAt: '2026-09-25T06:20:01.000Z',
+    };
+    const fetchMock = vi.fn().mockResolvedValueOnce(Response.json({
+      cards: [], total: 0, pending: [laterDelete], ownerUserId: null,
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(queueDeviceUpserts([restored], 1, undefined, false, {
+      operationId: 'guest-old-undo', operationCreatedAt: '2026-09-25T06:20:00.000Z',
+      libraryEpoch: 0, baseRevisions: { [restored.id]: 12 },
+    })).resolves.toEqual([]);
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/device-cards');
+    expect(fetchMock.mock.calls[0][1]?.method).toBeUndefined();
+  });
+
+  it('does not let an older undo upsert replace a newer re-delete', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
+    await queueDeviceDeletes([card.id], 'user-restore-delete', {
+      libraryEpoch: 7,
+      baseRevisions: { [card.id]: 12 },
+    });
+    const [laterDelete] = await loadDevicePending('user-restore-delete');
+    const operationCreatedAt = new Date(Date.parse(laterDelete.updatedAt) - 1_000).toISOString();
+
+    const operations = await queueDeviceUpserts([{ ...card, libraryEpoch: 7, revision: 12 }], 1, 'user-restore-delete', false, {
+      operationId: 'restore-card-12',
+      operationCreatedAt,
+      libraryEpoch: 7,
+      baseRevisions: { [card.id]: 12 },
+    });
+
+    expect(operations).toEqual([]);
+    await expect(loadDevicePending('user-restore-delete')).resolves.toEqual([laterDelete]);
+  });
+
   it('marks an offline upsert for epoch binding without losing it from durable queue', async () => {
     const [operation] = await queueDeviceUpserts([card], 1, 'user-offline', true);
 

@@ -15,6 +15,7 @@ import {
   parseCreateCardRequest,
 } from '../src/cardPersistence.js';
 import { createHash } from 'node:crypto';
+import { libraryFacetRestoreOperationId } from '../src/libraryFacetPersistence.js';
 import {
   toCardAllocationHttpsError,
 } from '../src/index.js';
@@ -111,9 +112,10 @@ const transactionHarness = (
   return { database, transaction, writes, events };
 };
 
-const concurrentAllocationHarness = () => {
+const concurrentAllocationHarness = (seed: ReadonlyMap<string, DocumentSnapshot> = new Map()) => {
   const values = new Map<string, DocumentSnapshot>([
     ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+    ...seed,
   ]);
   let queue = Promise.resolve();
   const pathFor = (name: string, ownerId: string, subcollection: string, id: string) =>
@@ -535,16 +537,113 @@ describe('card persistence', () => {
       })],
       ['users/owner/card_tombstones/word-hello', snapshot(true, tombstone)],
     ]));
-    await expect(createCardForOwner(explicit.database, 'owner', card, {
+    await expect(createCardForOwner(explicit.database, 'owner', {
+      ...card,
+      createdAt: '2026-08-10T10:00:00.000Z',
+    }, {
       maximumCards: 5,
       libraryEpoch: 2,
       baseRevision: 0,
       opId: 'recreate-hello',
       operationCreatedAt: '2026-08-11T11:00:00.000Z',
-    })).resolves.toMatchObject({ created: true, card: { revision: 4 } });
+    })).resolves.toMatchObject({ created: true, restored: true, card: { revision: 4 } });
     expect(explicit.writes).toEqual(expect.arrayContaining([
       expect.objectContaining({ method: 'set', path: 'users/owner/cards/word-hello' }),
     ]));
+
+    const recapture = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/card_tombstones/word-hello', snapshot(true, tombstone)],
+    ]));
+    const result = await createCardForOwner(recapture.database, 'owner', {
+      ...card,
+      createdAt: '2026-08-11T11:00:00.000Z',
+    }, {
+      maximumCards: 5,
+      libraryEpoch: 2,
+      baseRevision: 0,
+      opId: 'capture-hello-again',
+      operationCreatedAt: '2026-08-11T11:00:00.000Z',
+    });
+    expect(result).toMatchObject({ created: true, card: { revision: 4 } });
+    expect(result).not.toHaveProperty('restored');
+  });
+
+  it('applies a queued restore facet delta once when create is retried', async () => {
+    const operationCreatedAt = new Date().toISOString();
+    const harness = concurrentAllocationHarness(new Map([
+      ['users/owner/profile/library_facets', snapshot(true, {
+        categories: { Basics: 2 }, complete: true, version: 1, updatedAt: operationCreatedAt,
+      })],
+    ]));
+    const options = {
+      maximumCards: 5,
+      libraryEpoch: 2,
+      baseRevision: 0,
+      opId: 'restore-hello',
+      operationCreatedAt,
+      restore: true as const,
+    };
+
+    await expect(createCardForOwner(harness.database, 'owner', card, options))
+      .resolves.toMatchObject({ created: true, restored: true });
+    await expect(createCardForOwner(harness.database, 'owner', card, options))
+      .resolves.toMatchObject({ created: false });
+
+    expect(harness.values.get('users/owner/profile/library_facets')?.data()).toMatchObject({
+      categories: { Basics: 3 }, complete: true, version: 1,
+    });
+    expect(harness.values.get(`users/owner/library_facet_receipts/${
+      libraryFacetRestoreOperationId('restore-hello', operationCreatedAt)
+    }`)?.exists).toBe(true);
+  });
+
+  it('accepts durable old restore operations while retaining future-skew rejection', async () => {
+    const operationCreatedAt = '2026-07-02T10:00:00.000Z';
+    const tombstone = {
+      cardId: 'word-hello', opId: 'delete-hello', libraryEpoch: 2,
+      revision: 3, deletedAt: '2026-07-01T10:00:00.000Z',
+    };
+    const oldRestore = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 1 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/card_tombstones/word-hello', snapshot(true, tombstone)],
+      ['users/owner/profile/library_facets', snapshot(true, {
+        categories: { Basics: 2 }, complete: false, version: 1, updatedAt: '2026-07-02T10:00:00.000Z',
+      })],
+    ]));
+    await expect(createCardForOwner(oldRestore.database, 'owner', {
+      ...card, createdAt: '2026-06-20T10:00:00.000Z',
+    }, {
+      maximumCards: 5, libraryEpoch: 2, baseRevision: 0,
+      opId: 'restore-hello-offline', operationCreatedAt, restore: true,
+    })).resolves.toMatchObject({ created: true, restored: true });
+    expect(oldRestore.writes.find(write => write.path === 'users/owner/profile/library_facets')?.data)
+      .toMatchObject({ categories: { Basics: 3 }, complete: false });
+
+    const futureTime = Date.now() + 6 * 60 * 1000;
+    const futureRestore = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 1 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/card_tombstones/word-hello', snapshot(true, tombstone)],
+    ]));
+    await expect(createCardForOwner(futureRestore.database, 'owner', {
+      ...card, createdAt: '2026-06-20T10:00:00.000Z',
+    }, {
+      maximumCards: 5, libraryEpoch: 2, baseRevision: 0,
+      opId: 'restore-hello-future', operationCreatedAt: new Date(futureTime).toISOString(), restore: true,
+    })).rejects.toThrow(/too far in the future/i);
+    expect(futureRestore.writes).toEqual([]);
   });
 
   it('accepts maximum-safe counters but rejects a tombstone increment at the ceiling', async () => {
@@ -601,6 +700,17 @@ describe('card persistence', () => {
     expect(() => parseCreateCardRequest({
       card: { ...card, explanation: 'x'.repeat(2_049) },
     })).toThrow(/explanation/i);
+  });
+
+  it('requires exact restore intent plus protocol metadata', () => {
+    const operationCreatedAt = new Date().toISOString();
+    expect(parseCreateCardRequest({
+      card, restore: true, opId: 'restore-hello', operationCreatedAt,
+    })).toMatchObject({ restore: true, opId: 'restore-hello', operationCreatedAt });
+    expect(() => parseCreateCardRequest({ card, restore: false })).toThrow(/restore/i);
+    expect(() => parseCreateCardRequest({ card, restore: true, operationCreatedAt })).toThrow(/metadata/i);
+    expect(() => parseCreateCardRequest({ card, restore: true, opId: 'invalid:restore', operationCreatedAt })).toThrow(/metadata/i);
+    expect(() => parseCreateCardRequest({ card, restore: true, opId: 'restore-hello' })).toThrow(/metadata/i);
   });
 
   it('rejects canonical output that expands beyond the existing identity and URL limits', () => {

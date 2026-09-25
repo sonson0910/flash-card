@@ -29,7 +29,11 @@ export interface LibraryScreenWorkspaceInput {
   catalog: { model: LibraryCatalogModel; actions: LibraryCatalogActions };
   session: { model: LibrarySessionModel; actions: LibrarySessionActions };
   intake: { model: IntakeSharingSessionModel; actions: IntakeSharingSessionActions };
-  learning: { actions: LearningWorkspaceActions };
+  learning: {
+    actions: Pick<LearningWorkspaceActions, 'toggleBookmark' | 'assignDeck' | 'updateCard'> & {
+      deleteCard(cardId: string): Promise<void>;
+    };
+  };
 }
 
 export interface LibraryScreenLibraryInput {
@@ -58,6 +62,7 @@ export interface LibraryScreenUiInput {
 export interface LibraryScreenCommandInput {
   startStudy(): Promise<void>;
   openCardCreator(): void;
+  openPaths(): void;
   changeNewDeckInput(value: string): void;
   createCustomDeck(name: string): Promise<void>;
   deleteCustomDeck(name: string): Promise<void>;
@@ -208,6 +213,7 @@ export function buildLibraryScreenContract({
       clearFilters: () => catalog.actions.replaceQuery(existingCardRevealState()),
     },
     tools: {
+      openPaths: commands.openPaths,
       importCards: event => { void intake.actions.importFile(event.target.files?.[0] ?? null); },
       importFile: file => { void intake.actions.importFile(file); },
       generateCard: async event => {

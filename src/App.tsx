@@ -3,7 +3,8 @@ import { AppRuntimeBoundary } from './app/AppRuntimeBoundary';
 import { useAppNavigation } from './features/navigation/useAppNavigation';
 import { getActiveUiLocale, loadCatalog } from './i18n/loadCatalog';
 import { Trans } from '@lingui/react';
-import './styles/shell.css';
+import { WorkspaceLoadingPanel } from './components/WorkspaceLoadingPanel';
+import './styles/app-bootstrap.css';
 
 const LandingPage = lazy(() => Promise.all([
   import('./features/landing/LandingPage'), loadCatalog(getActiveUiLocale(), 'landing'),
@@ -34,6 +35,7 @@ export default function App() {
   const [signInRequest, setSignInRequest] = useState(0);
   const [acknowledgedSignInRequest, setAcknowledgedSignInRequest] = useState(0);
   const [landingUser, setLandingUser] = useState<LandingUser | null>(null);
+  const [runtimeFailed, setRuntimeFailed] = useState(false);
 
   useEffect(() => {
     if (navigation.viewMode !== 'landing') setRuntimeActivated(true);
@@ -64,6 +66,7 @@ export default function App() {
     setAcknowledgedSignInRequest(previous => Math.max(previous, request));
   }, []);
   const handleRuntimeError = useCallback(() => {
+    setRuntimeFailed(true);
     navigation.setViewMode('landing');
   }, [navigation]);
   const retryRuntime = useCallback(() => {
@@ -75,7 +78,7 @@ export default function App() {
   return (
     <>
       <Fragment key="landing">
-        {navigation.viewMode === 'landing' && (
+        {navigation.viewMode === 'landing' && !runtimeFailed && (
           <Suspense fallback={<div className="app-loading crystal-starfield font-bold text-[var(--sf-brand-text)]"><Trans id="shell.loading.app" message="Loading SonFlash…" /></div>}>
             <LandingPage
               onEnterApp={enterApp}
@@ -91,7 +94,7 @@ export default function App() {
       <Fragment key="runtime">
         {runtimeActivated && (
           <AppRuntimeBoundary onError={handleRuntimeError} onRetry={retryRuntime}>
-            <Suspense fallback={navigation.viewMode === 'landing' ? null : <div className="app-loading crystal-starfield text-[var(--sf-text-muted)]" role="status"><Trans id="shell.loading.workspace" message="Loading workspace…" /></div>}>
+            <Suspense fallback={navigation.viewMode === 'landing' ? null : <div className="app-loading"><WorkspaceLoadingPanel /></div>}>
               <AppRuntime
                 navigation={navigation}
                 practiceOpenerRef={practiceOpenerRef}

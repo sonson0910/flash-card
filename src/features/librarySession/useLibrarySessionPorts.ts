@@ -56,7 +56,7 @@ export interface LibrarySessionPortsOptions {
 }
 
 export interface LibrarySessionPortsActions {
-  connectVerifiedEpoch(accept: (ownerId: string, epoch: number) => unknown): void;
+  connectVerifiedEpoch(accept: (ownerId: string, epoch: number) => boolean): void;
   connectReviewSettlement(settle: (opId: string, effect: DeviceReviewEffect) => void): void;
   resetCloudState(facetsComplete: boolean): void;
   markCloudUnavailable(unavailable: boolean): void;
@@ -85,7 +85,7 @@ export function createLibrarySessionPortsBinding(
   initialOptions: LibrarySessionPortsOptions,
 ): LibrarySessionPortsBinding {
   let options = initialOptions;
-  let acceptVerifiedEpoch: (ownerId: string, epoch: number) => unknown = () => false;
+  let acceptVerifiedEpoch: (ownerId: string, epoch: number) => boolean = () => false;
   const settledReviewIds = new Set<string>();
   let settleReview: (opId: string, effect: DeviceReviewEffect) => void = () => undefined;
 
@@ -113,7 +113,7 @@ export function createLibrarySessionPortsBinding(
       settleReview(opId, effect);
       settledReviewIds.add(opId);
     },
-    verifyEpoch: epoch => { acceptVerifiedEpoch(epoch.userId, epoch.value); },
+    verifyEpoch: epoch => acceptVerifiedEpoch(epoch.userId, epoch.value),
   };
 
   const session = {

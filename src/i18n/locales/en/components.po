@@ -815,8 +815,8 @@ msgstr "Clear the entire library?"
 
 #. js-lingui-explicit-id
 #: src/components/AppErrorBoundary.tsx:8
-msgid "shell.error-boundary.description"
-msgstr "Your saved data is safe. Reload the app to restore the interface."
+msgid "shell.error-boundary.description.recovery"
+msgstr "This screen hit an error. Reloading may restore the interface."
 
 #. js-lingui-explicit-id
 #: src/components/AppErrorBoundary.tsx:9
@@ -824,9 +824,14 @@ msgid "shell.error-boundary.reload"
 msgstr "Reload app"
 
 #. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:10
+msgid "shell.error-boundary.report-issue"
+msgstr "Report issue"
+
+#. js-lingui-explicit-id
 #: src/components/AppErrorBoundary.tsx:7
 msgid "shell.error-boundary.title"
-msgstr "SonFlash needs a reload"
+msgstr "Something went sideways."
 
 #. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:330
@@ -874,6 +879,11 @@ msgid "shell.loading.charts"
 msgstr "Loading charts"
 
 #. js-lingui-explicit-id
+#: src/components/WorkspaceLoadingPanel.tsx:20
+msgid "shell.loading.workspace"
+msgstr "Loading workspace…"
+
+#. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:304
 msgid "shell.practice-menu.close"
 msgstr "Close practice menu"
@@ -881,7 +891,7 @@ msgstr "Close practice menu"
 #. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:302
 msgid "shell.practice-menu.description"
-msgstr "Warm up differently — every answer still feeds the same memory schedule."
+msgstr "Choose a different way to practice with words from your library."
 
 #. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:300
@@ -1177,11 +1187,81 @@ msgid "shell.share.words-inside"
 msgstr "A few words inside"
 
 #. js-lingui-explicit-id
-#: src/components/ui/UndoToast.tsx:113
+#: src/components/WorkspaceSyncPanel.tsx:203
+msgid "shell.sync.panel.due-now"
+msgstr "Due now"
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:72
+msgid "shell.sync.panel.failure-caption"
+msgstr "Sync issue · needs attention"
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:134
+msgid "shell.sync.panel.failure-description"
+msgstr "Review the status details below and retry if available."
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:128
+msgid "shell.sync.panel.failure-label"
+msgstr "Sync needs attention"
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:131
+msgid "shell.sync.panel.failure-title"
+msgstr "Sync needs attention."
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:217
+msgid "shell.sync.panel.keep-reviewing"
+msgstr "Keep reviewing"
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:71
+msgid "shell.sync.panel.offline-caption"
+msgstr "Offline · still usable"
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:193
+msgid "shell.sync.panel.offline-cloud-fallback"
+msgstr "Cloud changes will wait until this device reconnects."
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:194
+msgid "shell.sync.panel.offline-local-only"
+msgstr "Offline. Your local library is available on this device."
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:230
+msgid "shell.sync.panel.pending-count"
+msgstr "{count, plural, one {<0>{formattedCount}</0> change queued} other {<0>{formattedCount}</0> changes queued}}"
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:148
+msgid "shell.sync.panel.retry"
+msgstr "Retry sync"
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:147
+msgid "shell.sync.panel.retrying"
+msgstr "Retrying sync…"
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:151
+msgid "shell.sync.panel.return-home"
+msgstr "Return home"
+
+#. js-lingui-explicit-id
+#: src/components/ui/UndoToast.tsx:149
 msgid "shell.undo.action"
 msgstr "Undo"
 
 #. js-lingui-explicit-id
-#: src/components/ui/UndoToast.tsx:119
+#: src/components/ui/UndoToast.tsx:156
 msgid "shell.undo.dismiss"
 msgstr "Dismiss notification"
+
+#. js-lingui-explicit-id
+#: src/components/ui/UndoToast.tsx:163
+msgid "shell.undo.window"
+msgstr "Undo is available for {seconds} seconds."

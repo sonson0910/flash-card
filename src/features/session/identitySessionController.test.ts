@@ -150,6 +150,7 @@ describe('identity session controller', () => {
       status: 'authenticated',
       owner: { id: 'b' },
       ownerEpoch: { ownerId: 'b', value: 7 },
+      authenticationRecovery: null,
     });
 
     ownerAEpoch.resolve(3);
@@ -240,14 +241,30 @@ describe('identity session controller', () => {
     session.start();
     session.start();
     await observers[1](owner('current'));
-    await observers[0](owner('stale'));
+    await observers[0](null);
 
     expect(session.getSnapshot()).toMatchObject({
       owner: { id: 'current' },
       ownerEpoch: { ownerId: 'current', value: 0 },
       canPublishMutations: true,
+      authenticationRecovery: null,
     });
-    expect(adapter.loadOwnerEpoch).not.toHaveBeenCalledWith('stale');
+    expect(adapter.loadOwnerEpoch).toHaveBeenCalledOnce();
+  });
+
+  it('keeps an initial Firebase signed-out observation anonymous without recovery', async () => {
+    const { adapter, emitOwner } = createFakeAdapter();
+    const session = createIdentitySessionController({ adapter });
+    session.start();
+
+    await emitOwner(null);
+
+    expect(session.getSnapshot()).toMatchObject({
+      status: 'anonymous',
+      owner: null,
+      canPublishMutations: false,
+      authenticationRecovery: null,
+    });
   });
 
   it('publishes the signed-in owner immediately while epoch verification continues', async () => {
@@ -313,6 +330,94 @@ describe('identity session controller', () => {
       ownerEpoch: null,
       canPublishMutations: false,
       error: 'Cloud offline. Changes stay local.',
+      authenticationRecovery: null,
+    });
+  });
+
+  it('keeps the owner context and blocks writes when Firebase loses the signed-in session', async () => {
+    const { adapter, emitOwner } = createFakeAdapter();
+    const epoch = deferred<number>();
+    vi.mocked(adapter.loadOwnerEpoch).mockReturnValue(epoch.promise);
+    const session = createIdentitySessionController({ adapter });
+    session.start();
+
+    const ownerTask = emitOwner(owner('session-owner'));
+    expect(session.getSnapshot()).toMatchObject({
+      owner: { id: 'session-owner' },
+      canPublishMutations: false,
+      authenticationRecovery: null,
+    });
+
+    await emitOwner(null);
+    expect(session.getSnapshot()).toMatchObject({
+      status: 'authenticated',
+      owner: { id: 'session-owner' },
+      ownerEpoch: null,
+      canPublishMutations: false,
+      authenticationRecovery: 'session-lost',
+    });
+
+    epoch.resolve(7);
+    await ownerTask;
+    expect(session.getSnapshot()).toMatchObject({
+      owner: { id: 'session-owner' },
+      ownerEpoch: null,
+      canPublishMutations: false,
+      authenticationRecovery: 'session-lost',
+    });
+    expect(session.acceptVerifiedOwnerEpoch('session-owner', 8)).toBe(false);
+    expect(session.getSnapshot().canPublishMutations).toBe(false);
+  });
+
+  it('clears recovery only after Auth confirms an owner again and dismissing errors preserves recovery', async () => {
+    const { adapter, emitOwner } = createFakeAdapter();
+    const session = createIdentitySessionController({ adapter });
+    session.start();
+    await emitOwner(owner('session-owner'));
+    await emitOwner(null);
+
+    vi.mocked(adapter.signInWithPopup).mockRejectedValue(Object.assign(
+      new Error('The network request failed.'),
+      { code: 'auth/network-request-failed' },
+    ));
+    await session.signIn();
+    expect(session.getSnapshot()).toMatchObject({ authenticationRecovery: 'session-lost' });
+
+    session.clearError();
+    expect(session.getSnapshot()).toMatchObject({
+      error: null,
+      authenticationRecovery: 'session-lost',
+      owner: { id: 'session-owner' },
+      canPublishMutations: false,
+    });
+
+    await emitOwner(owner('session-owner'));
+    expect(session.getSnapshot()).toMatchObject({
+      authenticationRecovery: null,
+      owner: { id: 'session-owner' },
+      ownerEpoch: { ownerId: 'session-owner', value: 0 },
+      canPublishMutations: true,
+    });
+  });
+
+  it('does not label Firestore permission failures as a lost authentication session', async () => {
+    const { adapter, emitOwner } = createFakeAdapter();
+    vi.mocked(adapter.readCachedOwnerEpoch).mockReturnValue(4);
+    vi.mocked(adapter.loadOwnerEpoch).mockRejectedValue(Object.assign(
+      new Error('Missing or insufficient permissions.'),
+      { code: 'permission-denied' },
+    ));
+    const session = createIdentitySessionController({ adapter });
+    session.start();
+
+    await emitOwner(owner('permission-owner'));
+
+    expect(session.getSnapshot()).toMatchObject({
+      owner: { id: 'permission-owner' },
+      ownerEpoch: null,
+      canPublishMutations: false,
+      authenticationRecovery: null,
+      error: 'Cloud offline. Changes stay local.',
     });
   });
 
@@ -354,6 +459,27 @@ describe('identity session controller', () => {
     epoch.resolve(9);
     await ownerTask;
     expect(session.getSnapshot().owner).toBeNull();
+  });
+
+  it('resets an existing recovery on an intentional sign-out without re-raising it', async () => {
+    const { adapter, emitOwner } = createFakeAdapter();
+    const session = createIdentitySessionController({ adapter });
+    session.start();
+    await emitOwner(owner('session-owner'));
+    await emitOwner(null);
+    expect(session.getSnapshot().authenticationRecovery).toBe('session-lost');
+    vi.mocked(adapter.signOut).mockImplementation(async () => {
+      await emitOwner(null);
+    });
+
+    await expect(session.signOut()).resolves.toEqual({ status: 'completed' });
+
+    expect(session.getSnapshot()).toMatchObject({
+      status: 'anonymous',
+      owner: null,
+      canPublishMutations: false,
+      authenticationRecovery: null,
+    });
   });
 
   it('maps popup-close and unauthorized-domain errors without leaking adapter values', async () => {

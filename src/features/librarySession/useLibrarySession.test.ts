@@ -79,6 +79,7 @@ const createDependencies = (authenticated = true) => {
     refreshPending: vi.fn(async () => 0),
     acknowledge: vi.fn(async () => undefined),
     upsertCards: vi.fn(async () => []),
+    restoreDeviceCard: vi.fn(async (restored: CardData) => ({ status: 'restored' as const, card: restored })),
     patchCards: vi.fn(async () => []),
     removeCard: vi.fn(async () => []),
     flush: vi.fn(async () => undefined),
@@ -94,6 +95,7 @@ const createDependencies = (authenticated = true) => {
       canPublishMutations: authenticated,
       isSigningIn: false,
       isSigningOut: false,
+      authenticationRecovery: null,
       error: null,
       ...identityActions,
     })),
@@ -165,6 +167,8 @@ describe('useLibrarySession facade', () => {
     expect(dependencies.useLibraryDeviceSync).toHaveBeenCalledWith(expect.objectContaining({
       owner: { uid: 'owner-1' },
       epoch: { userId: 'owner-1', value: 7 },
+      canVerifyEpoch: true,
+      canPublishMutations: true,
       cards: [card],
       query,
       currentPage: 2,
@@ -184,6 +188,53 @@ describe('useLibrarySession facade', () => {
     expect(session.model.sync).toEqual({ isSyncing: false, pendingCount: 2, error: null });
   });
 
+  it('keeps local ownership and pending writes while exposing authentication recovery', () => {
+    const { dependencies } = createDependencies();
+    const identity = dependencies.useIdentitySession();
+    vi.mocked(dependencies.useIdentitySession).mockReturnValue({
+      ...identity,
+      authenticationRecovery: 'session-lost',
+      ownerEpoch: null,
+      canPublishMutations: false,
+    });
+
+    const session = useLibrarySession(inputs, dependencies);
+
+    expect(session.model.identity).toMatchObject({
+      owner: { id: 'owner-1' },
+      authenticationRecovery: 'session-lost',
+      canPublishMutations: false,
+    });
+    expect(dependencies.useLibraryDeviceSync).toHaveBeenCalledWith(expect.objectContaining({
+      owner: { uid: 'owner-1' },
+      epoch: null,
+      canVerifyEpoch: false,
+      canPublishMutations: false,
+      cards: [card],
+    }));
+    expect(session.model.sync.pendingCount).toBe(2);
+  });
+
+  it('allows epoch verification retry for an authenticated owner whose initial epoch read failed', () => {
+    const { dependencies } = createDependencies();
+    const identity = dependencies.useIdentitySession();
+    vi.mocked(dependencies.useIdentitySession).mockReturnValue({
+      ...identity,
+      ownerEpoch: null,
+      canPublishMutations: false,
+      authenticationRecovery: null,
+    });
+
+    useLibrarySession(inputs, dependencies);
+
+    expect(dependencies.useLibraryDeviceSync).toHaveBeenCalledWith(expect.objectContaining({
+      owner: { uid: 'owner-1' },
+      epoch: null,
+      canVerifyEpoch: true,
+      canPublishMutations: false,
+    }));
+  });
+
   it('publishes narrow domain actions and consumer ports without re-wrapping them', () => {
     const { dependencies, identityActions, ownerActions, deviceFunctions } = createDependencies();
     const session = useLibrarySession(inputs, dependencies);
@@ -194,6 +245,7 @@ describe('useLibrarySession facade', () => {
     expect(session.ports.cards).toEqual({
       acknowledge: deviceFunctions.acknowledge,
       upsert: deviceFunctions.upsertCards,
+      restore: deviceFunctions.restoreDeviceCard,
       patch: deviceFunctions.patchCards,
       remove: deviceFunctions.removeCard,
     });

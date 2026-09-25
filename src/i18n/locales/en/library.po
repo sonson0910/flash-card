@@ -30,11 +30,13 @@ msgid "library.close"
 msgstr "Close"
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:214
 #: src/features/library/LibraryTools.tsx:539
 msgid "library.create.analysing"
 msgstr "AI is analysing"
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:214
 #: src/features/library/LibraryTools.tsx:540
 msgid "library.create.building"
 msgstr "Building your card"
@@ -50,6 +52,7 @@ msgid "library.create.check-library"
 msgstr "Check library"
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:203
 #: src/features/library/LibraryTools.tsx:556
 msgid "library.create.creating"
 msgstr "Creating card…"
@@ -65,6 +68,7 @@ msgid "library.create.help"
 msgstr "Definitions, phonetic audio, usage examples, and smart visuals auto-generated."
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:205
 #: src/features/library/LibraryTools.tsx:558
 msgid "library.create.importing"
 msgstr "Import in progress…"
@@ -80,6 +84,7 @@ msgid "library.create.title"
 msgstr "Create a card"
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:185
 #: src/features/library/LibraryTools.tsx:514
 msgid "library.create.word-label"
 msgstr "English word"
@@ -398,6 +403,58 @@ msgstr "Translation"
 #: src/features/cardEdit/EditCardDialog.tsx:68
 msgid "library.edit-card.word"
 msgstr "Word"
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:79
+msgid "library.empty.first-run-kicker"
+msgstr "Empty library · first run"
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:206
+msgid "library.empty.generate"
+msgstr "Generate card"
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:211
+msgid "library.empty.generate-help"
+msgstr "Add a word or phrase to generate a card."
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:221
+msgid "library.empty.import"
+msgstr "Import CSV / Excel"
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:88
+msgid "library.empty.lumi-link"
+msgstr "LUMI · LINK"
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:224
+msgid "library.empty.paths"
+msgstr "Browse paths"
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:218
+msgid "library.empty.scan"
+msgstr "Scan a text"
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:89
+#: src/features/library/EmptyLibraryPanel.tsx:119
+msgid "library.empty.title-emphasis"
+msgstr "first word."
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:89
+#: src/features/library/EmptyLibraryPanel.tsx:119
+msgid "library.empty.title-prefix"
+msgstr "Start with your"
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:193
+msgid "library.empty.word-placeholder"
+msgstr "Type a word or phrase…"
 
 #. js-lingui-explicit-id
 #: src/features/library/WordExtractorModal.tsx:245
@@ -771,6 +828,7 @@ msgid "library.import.action"
 msgstr "Import cards from Excel or CSV"
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:231
 #: src/features/library/LibraryTools.tsx:489
 msgid "library.import.choose-file"
 msgstr "Choose an Excel or CSV file"
@@ -786,6 +844,7 @@ msgid "library.import.completed-guidance"
 msgstr "Your new and existing cards are ready in the library."
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:72
 #: src/features/library/LibraryTools.tsx:120
 msgid "library.import.current-word"
 msgstr "Current word: {word}"
@@ -842,6 +901,7 @@ msgid "library.import.partial-guidance"
 msgstr "Retry the failed or skipped words later."
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:72
 #: src/features/library/LibraryTools.tsx:119
 msgid "library.import.progress"
 msgstr "Importing {current, number} of {total, number}"
@@ -852,12 +912,12 @@ msgid "library.import.summary"
 msgstr "{created, plural, one {# created} other {# created}} · {reused, plural, one {# already present} other {# already present}} · {failed, plural, one {# failed} other {# failed}} · {skipped, plural, one {# skipped} other {# skipped}}"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:134
+#: src/features/library/LibraryScreen.tsx:163
 msgid "library.loading.cards"
 msgstr "Loading library cards"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:170
+#: src/features/library/LibraryScreen.tsx:199
 msgid "library.loading.tools"
 msgstr "Loading library tools"
 

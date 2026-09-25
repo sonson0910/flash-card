@@ -1,31 +1,111 @@
 import type { Ref, ReactNode } from 'react';
-import { BarChart3, BookOpen, CloudUpload, Flame, House, Loader2, Map } from 'lucide-react';
+import { Flame } from 'lucide-react';
 import { Trans, useLingui } from '@lingui/react';
 import { msg } from '@lingui/core/macro';
+import { useTheme } from '../../features/theme/ThemeProvider';
 import { isPracticeView, type ShellViewMode, type SyncIdentityViewModel } from './shellTypes';
 import { getShellSyncStatus, type ShellSyncStatusInput } from './shellSyncStatus';
 import { LibraryManagementMenu } from './LibraryManagementMenu';
-import { CourseSwitcherSlot } from './CourseSwitcherSlot';
 import { LanguageMenu } from './LanguageMenu';
 import { ThemeMenu } from './ThemeMenu';
 import { localizeShellSyncStatus } from './localized-sync-status';
+import { CourseSwitcherSlot } from './CourseSwitcherSlot';
 
 export interface DesktopNavigationProps {
-  navigationRef?: Ref<HTMLElement>; viewMode: ShellViewMode; syncIdentity: SyncIdentityViewModel; syncStatus: ShellSyncStatusInput; isDarkMode: boolean; isExporting?: boolean; isLibraryMutationPending?: boolean; libraryCountLabel: string; onOpenLanding?: () => void; onOpenToday: () => void; onOpenLibrary: () => void; onOpenCatalog: () => void; onOpenProgress: () => void; onOpenSettings?: () => void; onSignIn: () => void | Promise<void>; onSignOut: () => void | Promise<void>; onExportLibrary?: () => void | Promise<void>; onClearLibrary?: (focusReturnTarget: HTMLButtonElement) => void;
+  navigationRef?: Ref<HTMLElement>;
+  viewMode: ShellViewMode;
+  syncIdentity: SyncIdentityViewModel;
+  syncStatus: ShellSyncStatusInput;
+  isDarkMode: boolean;
+  isExporting?: boolean;
+  isLibraryMutationPending?: boolean;
+  isRetryingSync?: boolean;
+  canSyncNow?: boolean;
+  sessionLost?: boolean;
+  libraryCountLabel: string;
+  streak?: number;
+  level?: number;
+  xp?: number;
+  courseSwitcher?: ReactNode;
+  onOpenLanding?: () => void;
+  onOpenToday: () => void;
+  onOpenLibrary: () => void;
+  onOpenCatalog: () => void;
+  onOpenProgress: () => void;
+  onOpenSettings?: () => void;
+  onSignIn: () => void | Promise<void>;
+  onSignOut: () => void | Promise<void>;
+  onRetrySync?: () => void | Promise<void>;
+  onExportLibrary?: () => void | Promise<void>;
+  onClearLibrary?: (focusReturnTarget: HTMLButtonElement) => void;
 }
 
-type NavigationItem = { view: ShellViewMode; icon: typeof House; label: ReactNode; action: () => void };
+type NavigationItem = { view: ShellViewMode; classic: ReactNode; crystal: ReactNode; action: () => void };
 
-export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncStatus, isExporting, isLibraryMutationPending, libraryCountLabel, onOpenLanding, onOpenToday, onOpenLibrary, onOpenCatalog, onOpenProgress, onOpenSettings, onSignIn, onSignOut, onExportLibrary, onClearLibrary }: DesktopNavigationProps) {
+function CrystalStar() {
+  return <svg viewBox="0 0 100 100" width="36" height="36" aria-hidden="true" className="claude-brand-star"><path d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" fill="#ff5470" /><path d="M50 4 62 36 96 37 69 59 78 91 50 72Z" fill="#7a0820" /></svg>;
+}
+
+export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncStatus, isExporting, isLibraryMutationPending, isRetryingSync, canSyncNow, sessionLost, libraryCountLabel, streak, level, xp, courseSwitcher, onOpenLanding, onOpenToday, onOpenLibrary, onOpenCatalog, onOpenProgress, onOpenSettings, onSignIn, onSignOut, onRetrySync, onExportLibrary, onClearLibrary }: DesktopNavigationProps) {
   const { _ } = useLingui();
+  const { family } = useTheme();
   const status = localizeShellSyncStatus(getShellSyncStatus(syncStatus), syncStatus, _);
-  const itemClass = (active: boolean) => `flex min-h-11 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none ${active ? 'bg-[var(--sf-surface-raised)] text-[var(--sf-text)]' : 'text-[var(--sf-text-muted)] hover:bg-[var(--sf-surface-control)] hover:text-[var(--sf-text)]'}`;
-  const navigation = [onOpenLanding && { view: 'landing' as const, icon: House, label: <Trans id="shell.nav.home" message="Home" />, action: onOpenLanding }, { view: 'today' as const, icon: Flame, label: <Trans id="shell.nav.today" message="Today" />, action: onOpenToday }, { view: 'catalog' as const, icon: Map, label: <Trans id="shell.nav.paths" message="Paths" />, action: onOpenCatalog }, { view: 'library' as const, icon: BookOpen, label: <Trans id="shell.nav.vocabulary" message="Vocabulary" />, action: onOpenLibrary }, { view: 'progress' as const, icon: BarChart3, label: <Trans id="shell.nav.progress" message="Progress" />, action: onOpenProgress }].filter(Boolean) as NavigationItem[];
-  return <nav ref={navigationRef} aria-label={_(msg({ id: 'shell.navigation.primary', message: 'Primary navigation' }))} data-shell-layer="primary" className={`${isPracticeView(viewMode) ? 'hidden' : 'flex'} app-navigation premium-surface relative z-30 mx-3 mt-3 min-h-16 shrink-0 flex-wrap items-center gap-3 overflow-visible rounded-2xl border border-[var(--sf-border)] px-3 md:mx-6 md:px-5 crystal-chamfer`}>
-    <span aria-hidden="true" className="crystal-starfield pointer-events-none absolute inset-0 -z-10 rounded-2xl opacity-0 motion-reduce:animate-none [html[data-theme-family=crystal]_&]:opacity-100" />
-    <button type="button" onClick={onOpenLanding ?? onOpenToday} data-gsap-brand aria-label="SonFlash" className="flex min-h-11 min-w-11 shrink-0 items-center gap-2 rounded-xl py-1.5 pr-2 focus-visible:outline-2 focus-visible:outline-offset-2"><span className="flex size-8 items-center justify-center overflow-hidden rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)]"><img src="/brand/sonflash-logo-192.png?v=3e7aaa58" alt="" className="size-8 object-cover" /></span><span className="hidden text-xl font-black tracking-[-0.04em] text-[var(--sf-text)] sm:inline">{'Son'}<span className="text-[var(--sf-brand-text)]">{'Flash'}</span></span></button>
-    <div className="hidden min-w-0 items-center gap-1 lg:flex">{navigation.map(({ view, icon: Icon, label, action }) => <button key={view} type="button" onClick={action} data-shell-active={viewMode === view ? 'true' : undefined} aria-current={viewMode === view ? 'page' : undefined} className={itemClass(viewMode === view)}><Icon size={15} aria-hidden="true" /><span>{label}</span></button>)}</div>
-    <CourseSwitcherSlot signedIn={syncIdentity.status === 'authenticated'} />
-    <div data-gsap-header-actions className="ml-auto flex min-h-11 items-center gap-1.5 sm:gap-2"><div className="hidden items-center gap-2 md:flex">{syncIdentity.status === 'loading' ? <Loader2 className="animate-spin text-[var(--sf-text-muted)]" size={16} aria-label={_(msg({ id: 'shell.sync.loading', message: 'Loading cloud sync' }))} /> : syncIdentity.status === 'authenticated' ? <><span className={`max-w-24 truncate text-[11px] font-bold ${status.healthy ? 'text-emerald-600' : status.kind === 'needs-attention' ? 'text-rose-600' : 'text-[var(--sf-brand-text)]'}`} role="status" aria-live="polite" aria-busy={status.busy} title={status.detail}>{status.headerLabel}</span><button type="button" onClick={onSignOut} className="flex size-11 items-center justify-center overflow-hidden rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-xs font-extrabold text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2" aria-label={_(msg({ id: 'shell.account.sign-out', message: 'Sign out of cloud sync' }))}>{syncIdentity.photoUrl ? <img src={syncIdentity.photoUrl} alt="" referrerPolicy="no-referrer" className="size-full object-cover" /> : <span>{syncIdentity.email?.charAt(0) || 'U'}</span>}</button></> : syncIdentity.isConfigured ? <button type="button" onClick={onSignIn} disabled={syncIdentity.isSigningIn} className="flex min-h-11 items-center gap-1.5 rounded-full bg-[var(--sf-brand)] px-3 text-xs font-extrabold text-[var(--sf-on-brand)] disabled:opacity-60"><CloudUpload size={15} aria-hidden="true" /><span>{syncIdentity.isSigningIn ? <Trans id="shell.sync.connecting" message="Connecting…" /> : <Trans id="shell.sync.sign-in" message="Sign in & sync" />}</span></button> : <span className="text-xs font-semibold text-[var(--sf-text-muted)]"><Trans id="shell.sync.device" message="On device" /></span>}</div><div className="flex md:hidden">{syncIdentity.status === 'loading' ? <span className="flex size-11 items-center justify-center" role="status" aria-label={_(msg({ id: 'shell.sync.loading', message: 'Loading cloud sync' }))}><Loader2 className="animate-spin text-[var(--sf-text-muted)]" size={16} aria-hidden="true" /></span> : syncIdentity.status === 'authenticated' ? <button type="button" onClick={onSignOut} className="flex size-11 items-center justify-center overflow-hidden rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-xs font-extrabold text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2" aria-label={_(msg({ id: 'shell.account.sign-out', message: 'Sign out of cloud sync' }))}>{syncIdentity.photoUrl ? <img src={syncIdentity.photoUrl} alt="" referrerPolicy="no-referrer" className="size-full object-cover" /> : <span>{syncIdentity.email?.charAt(0) || 'U'}</span>}</button> : syncIdentity.isConfigured ? <button type="button" onClick={onSignIn} disabled={syncIdentity.isSigningIn} className="flex size-11 items-center justify-center rounded-full bg-[var(--sf-brand)] text-[var(--sf-on-brand)] disabled:opacity-60" aria-label={_(msg({ id: 'shell.sync.sign-in', message: 'Sign in & sync' }))}><CloudUpload size={16} aria-hidden="true" /></button> : <span className="flex size-11 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)]" role="status" aria-label={_(msg({ id: 'shell.sync.device', message: 'On device' }))}><CloudUpload size={16} aria-hidden="true" /></span>}</div><LanguageMenu /><div className="[&>div]:flex [&>div]:items-center [&>div]:gap-1"><ThemeMenu onOpenSettings={onOpenSettings} /></div><LibraryManagementMenu isExporting={isExporting} isLibraryMutationPending={isLibraryMutationPending} onOpenSettings={onOpenSettings} onExportLibrary={onExportLibrary} onClearLibrary={onClearLibrary} /><span className="hidden rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 py-2 text-[11px] font-bold text-[var(--sf-brand-text)] xl:inline">{libraryCountLabel}</span></div>
-  </nav>;
+  const statusAnnouncement = sessionLost
+    ? _(msg({ id: 'shell.feedback.session-ended', message: 'Session ended' }))
+    : syncIdentity.status === 'loading'
+      ? _(msg({ id: 'shell.sync.checking', message: 'Checking cloud…' }))
+      : syncIdentity.status === 'signed-out'
+        ? syncIdentity.isSigningIn
+          ? _(msg({ id: 'shell.feedback.connecting', message: 'Connecting…' }))
+          : _(msg({ id: 'shell.sync.device', message: 'On this device' }))
+        : status.headerLabel;
+  const navigation: NavigationItem[] = [
+    { view: 'today', classic: <Trans id="shell.nav.today" message="Today" />, crystal: <Trans id="shell.nav.today" message="Today" />, action: onOpenToday },
+    { view: 'catalog', classic: <Trans id="shell.nav.paths" message="Paths" />, crystal: <Trans id="shell.nav.paths" message="Paths" />, action: onOpenCatalog },
+    { view: 'library', classic: <Trans id="shell.nav.vocabulary" message="Vocabulary" />, crystal: <Trans id="shell.nav.collection" message="Collection" />, action: onOpenLibrary },
+    { view: 'progress', classic: <Trans id="shell.nav.progress" message="Progress" />, crystal: <Trans id="shell.nav.progress" message="Progress" />, action: onOpenProgress },
+  ];
+  const hasStreak = typeof streak === 'number' && Number.isFinite(streak) && streak >= 0;
+  const hasLevel = typeof level === 'number' && Number.isFinite(level) && level >= 1;
+  const hasXp = typeof xp === 'number' && Number.isFinite(xp) && xp >= 0;
+  const levelStartXp = hasLevel ? 100 * (level - 1) ** 2 : 0;
+  const nextLevelXp = hasLevel ? 100 * level ** 2 : 0;
+  const levelProgress = hasLevel && hasXp ? Math.max(0, Math.min(100, ((xp - levelStartXp) / (nextLevelXp - levelStartXp)) * 100)) : 0;
+
+  return <header className={`claude-topbar relative z-30 shrink-0 ${isPracticeView(viewMode) ? 'hidden' : ''}`}>
+    <nav ref={navigationRef} aria-label={_(msg({ id: 'shell.navigation.primary', message: 'Primary navigation' }))} data-shell-layer="primary" className="app-navigation claude-topbar-nav flex h-full items-center">
+    <div className="claude-topbar-inner mx-auto flex w-full max-w-[1440px] items-center">
+      <button type="button" onClick={onOpenLanding ?? onOpenToday} data-gsap-brand aria-label="SonFlash" className="claude-brand shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2">
+        <span className="claude-brand-classic" aria-hidden="true"><Trans id="shell.brand.mark" message="S" /></span><CrystalStar />
+        <span className="claude-brand-name"><span>{family === 'crystal' ? 'SON' : 'Son'}</span><em>{family === 'crystal' ? 'FLASH' : 'Flash'}</em></span>
+      </button>
+      <div className="claude-nav-items hidden min-w-0 items-center lg:flex">{navigation.map(item => <button key={item.view} type="button" onClick={item.action} data-shell-active={viewMode === item.view ? 'true' : undefined} aria-current={viewMode === item.view ? 'page' : undefined} className="claude-nav-item"><span>{family === 'crystal' ? item.crystal : item.classic}</span></button>)}</div>
+      <CourseSwitcherSlot signedIn={syncIdentity.status === 'authenticated'}>{courseSwitcher}</CourseSwitcherSlot>
+      <div data-gsap-header-actions className="claude-shell-actions ml-auto flex items-center">
+        <ThemeMenu onOpenSettings={onOpenSettings} />
+        {hasStreak && <span className="claude-streak" aria-label={_(msg({ id: 'shell.streak', message: '{count} day streak' }).id, { count: streak })}><Flame size={15} fill="currentColor" aria-hidden="true" />{streak}</span>}
+        {hasLevel && <span className="claude-level" aria-label={hasXp ? _(msg({ id: 'shell.level', message: 'Level {level}, {xp} XP' }).id, { level, xp }) : _(msg({ id: 'shell.level.short', message: 'Lv {level}' }).id, { level })}><Trans id="shell.level.short" message="Lv {level}" values={{ level }} />{hasXp && <span className="claude-level-track" aria-hidden="true"><span style={{ width: `${levelProgress}%` }} /></span>}</span>}
+        <LanguageMenu />
+        <LibraryManagementMenu
+          isExporting={isExporting}
+          isLibraryMutationPending={isLibraryMutationPending}
+          onOpenSettings={onOpenSettings}
+          onExportLibrary={onExportLibrary}
+          onClearLibrary={onClearLibrary}
+          onSignIn={sessionLost || (syncIdentity.status === 'signed-out' && syncIdentity.isConfigured) ? onSignIn : undefined}
+          onSignOut={syncIdentity.status === 'authenticated' && !sessionLost ? onSignOut : undefined}
+          onRetrySync={onRetrySync}
+          isRetryingSync={isRetryingSync}
+          canSyncNow={canSyncNow}
+          sessionLost={sessionLost}
+          syncIdentity={syncIdentity}
+          syncStatus={status}
+          libraryCountLabel={libraryCountLabel}
+        />
+        <span className="sr-only" role="status" aria-live="polite" aria-busy={status.busy}>{statusAnnouncement}</span>
+        <span className="sr-only">{libraryCountLabel}</span>
+      </div>
+    </div>
+    </nav>
+  </header>;
 }

@@ -1,6 +1,7 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
+import { LUMI_ENABLED_STORAGE_KEY } from '../settings/lumi-preference';
 import { ThemeProvider, useTheme } from './ThemeProvider';
 
 vi.mock('./loadThemeAssets', () => ({ loadThemeAssets: vi.fn().mockResolvedValue(undefined) }));
@@ -15,7 +16,7 @@ class MemoryStorage {
 const installMinimalReactDom = () => {
   const rootElement = {
     classList: { add: vi.fn(), remove: vi.fn() },
-    dataset: {} as { themeFamily?: string },
+    dataset: {} as DOMStringMap,
   };
   const documentLike: Record<string, unknown> = {
     nodeType: 9,
@@ -101,6 +102,39 @@ it('follows OS mode changes and turns follow-system off after an explicit mode s
     await act(async () => { theme?.setMode('light'); });
     expect(theme).toMatchObject({ mode: 'light', followSystem: false });
     expect(storage.getItem('sonflash_theme_follow_system')).toBe('false');
+  } finally {
+    await act(async () => { root.unmount(); });
+  }
+});
+
+it('applies the saved Lumi preference on provider mount and synchronizes storage changes globally', async () => {
+  const storage = new MemoryStorage();
+  storage.setItem(LUMI_ENABLED_STORAGE_KEY, 'false');
+  const { container, rootElement } = installMinimalReactDom();
+  vi.stubGlobal('localStorage', storage);
+  let onStorage: ((event: StorageEvent) => void) | undefined;
+  vi.stubGlobal('addEventListener', (type: string, listener: EventListenerOrEventListenerObject) => {
+    if (type === 'storage' && typeof listener === 'function') onStorage = listener as (event: StorageEvent) => void;
+  });
+  vi.stubGlobal('removeEventListener', vi.fn());
+  const root = createRoot(container);
+  function Harness() { useTheme(); return null; }
+
+  try {
+    await act(async () => { root.render(<ThemeProvider><Harness /></ThemeProvider>); });
+    expect(rootElement.dataset.lumi).toBe('off');
+
+    await act(async () => {
+      storage.setItem(LUMI_ENABLED_STORAGE_KEY, 'true');
+      onStorage?.({ key: LUMI_ENABLED_STORAGE_KEY } as StorageEvent);
+    });
+    expect(rootElement.dataset.lumi).toBe('on');
+
+    await act(async () => {
+      storage.setItem(LUMI_ENABLED_STORAGE_KEY, 'false');
+      onStorage?.({ key: LUMI_ENABLED_STORAGE_KEY } as StorageEvent);
+    });
+    expect(rootElement.dataset.lumi).toBe('off');
   } finally {
     await act(async () => { root.unmount(); });
   }

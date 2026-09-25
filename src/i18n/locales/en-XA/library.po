@@ -30,11 +30,13 @@ msgid "library.close"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:214
 #: src/features/library/LibraryTools.tsx:539
 msgid "library.create.analysing"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:214
 #: src/features/library/LibraryTools.tsx:540
 msgid "library.create.building"
 msgstr ""
@@ -50,6 +52,7 @@ msgid "library.create.check-library"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:203
 #: src/features/library/LibraryTools.tsx:556
 msgid "library.create.creating"
 msgstr ""
@@ -65,6 +68,7 @@ msgid "library.create.help"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:205
 #: src/features/library/LibraryTools.tsx:558
 msgid "library.create.importing"
 msgstr ""
@@ -80,6 +84,7 @@ msgid "library.create.title"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:185
 #: src/features/library/LibraryTools.tsx:514
 msgid "library.create.word-label"
 msgstr ""
@@ -397,6 +402,58 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/features/cardEdit/EditCardDialog.tsx:68
 msgid "library.edit-card.word"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:79
+msgid "library.empty.first-run-kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:206
+msgid "library.empty.generate"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:211
+msgid "library.empty.generate-help"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:221
+msgid "library.empty.import"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:88
+msgid "library.empty.lumi-link"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:224
+msgid "library.empty.paths"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:218
+msgid "library.empty.scan"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:89
+#: src/features/library/EmptyLibraryPanel.tsx:119
+msgid "library.empty.title-emphasis"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:89
+#: src/features/library/EmptyLibraryPanel.tsx:119
+msgid "library.empty.title-prefix"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:193
+msgid "library.empty.word-placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -771,6 +828,7 @@ msgid "library.import.action"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:231
 #: src/features/library/LibraryTools.tsx:489
 msgid "library.import.choose-file"
 msgstr ""
@@ -786,6 +844,7 @@ msgid "library.import.completed-guidance"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:72
 #: src/features/library/LibraryTools.tsx:120
 msgid "library.import.current-word"
 msgstr ""
@@ -842,6 +901,7 @@ msgid "library.import.partial-guidance"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:72
 #: src/features/library/LibraryTools.tsx:119
 msgid "library.import.progress"
 msgstr ""
@@ -852,12 +912,12 @@ msgid "library.import.summary"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:134
+#: src/features/library/LibraryScreen.tsx:163
 msgid "library.loading.cards"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:170
+#: src/features/library/LibraryScreen.tsx:199
 msgid "library.loading.tools"
 msgstr ""
 

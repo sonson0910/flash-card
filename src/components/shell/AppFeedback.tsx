@@ -8,13 +8,15 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useLingui } from '@lingui/react';
 import { msg } from '@lingui/core/macro';
 import { getShellSyncStatus, type ShellSyncStatusInput } from './shellSyncStatus';
 import { localizeShellSyncStatus } from './localized-sync-status';
+import '../feedback-toast.css';
 
 export interface AppFeedbackProps {
+  children?: ReactNode;
   authError?: string | null;
   error?: string | null;
   notice?: string | null;
@@ -23,23 +25,12 @@ export interface AppFeedbackProps {
   onDismissError?: () => void;
   onDismissNotice?: () => void;
   onRetrySync?: () => void | Promise<void>;
+  sessionLost?: boolean;
+  onRetryAuth?: () => void | Promise<void>;
+  isRetryingAuth?: boolean;
 }
 
 type NotificationTone = 'danger' | 'warning' | 'success' | 'sync';
-
-const toneClasses: Record<NotificationTone, string> = {
-  danger: 'border-rose-300/70 bg-rose-50/95 text-rose-950 dark:border-rose-800/70 dark:bg-rose-950/90 dark:text-rose-100',
-  warning: 'border-amber-300/70 bg-amber-50/95 text-amber-950 dark:border-amber-800/70 dark:bg-amber-950/90 dark:text-amber-100',
-  success: 'border-emerald-300/70 bg-emerald-50/95 text-emerald-950 dark:border-emerald-800/70 dark:bg-emerald-950/90 dark:text-emerald-100',
-  sync: 'border-cyan-300/70 bg-cyan-50/95 text-cyan-950 dark:border-cyan-800/70 dark:bg-cyan-950/90 dark:text-cyan-100',
-};
-
-const iconClasses: Record<NotificationTone, string> = {
-  danger: 'bg-rose-600 text-white',
-  warning: 'bg-amber-500 text-slate-950',
-  success: 'bg-emerald-600 text-white',
-  sync: 'bg-cyan-600 text-white',
-};
 
 function NotificationToast({
   role,
@@ -51,6 +42,7 @@ function NotificationToast({
   dismissLabel,
   onDismiss,
   actionLabel,
+  actionBusyLabel,
   actionAriaLabel,
   onAction,
 }: {
@@ -63,6 +55,7 @@ function NotificationToast({
   dismissLabel?: string;
   onDismiss?: () => void;
   actionLabel?: string;
+  actionBusyLabel?: string;
   actionAriaLabel?: string;
   onAction?: () => void | Promise<void>;
 }) {
@@ -74,45 +67,49 @@ function NotificationToast({
       aria-live={role === 'alert' ? 'assertive' : 'polite'}
       aria-atomic="true"
       aria-busy={busy}
-      className={`notification-toast pointer-events-auto relative overflow-hidden rounded-2xl border p-3 backdrop-blur-xl ${toneClasses[tone]} crystal-chamfer-sm`}
+      className="notification-toast pointer-events-auto relative"
     >
-      <div className="relative z-10 flex items-start gap-3">
-        <span className={`notification-toast-icon mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl shadow-sm ${iconClasses[tone]}`}>
-          <Icon size={16} className={busy ? 'animate-spin motion-reduce:animate-none' : ''} aria-hidden="true" />
+      <div className="notification-toast-layout">
+        <span className="notification-toast-icon" aria-hidden="true">
+          {busy ? <span className="notification-toast-spinner animate-spin motion-reduce:animate-none" /> : <Icon size={16} />}
         </span>
-        <span className="min-w-0 flex-1">
-          <strong className="block text-xs font-black uppercase tracking-[0.08em]">{title}</strong>
-          <span className="mt-0.5 block text-xs leading-5 opacity-85">{message}</span>
+        <span className="notification-toast-copy">
+          <strong className="notification-toast-title">{title}</strong>
+          <span className="notification-toast-message">{message}</span>
+          {onAction && actionLabel ? (
+            <div className="notification-toast-actions">
+              <button
+                type="button"
+                onClick={() => { void onAction(); }}
+                disabled={busy}
+                aria-label={busy && actionBusyLabel ? actionBusyLabel : actionAriaLabel}
+                className="notification-toast-action"
+              >
+                <span className="notification-toast-action-label">
+                  {busy ? <Loader2 size={14} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <RotateCcw size={14} aria-hidden="true" />}
+                  {busy && actionBusyLabel ? actionBusyLabel : actionLabel}
+                </span>
+              </button>
+            </div>
+          ) : null}
         </span>
         {onDismiss && dismissLabel ? (
           <button
             type="button"
             onClick={onDismiss}
-            className="-mr-1 -mt-1 flex size-11 shrink-0 items-center justify-center rounded-xl opacity-70 transition-colors hover:bg-black/5 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-1 dark:hover:bg-white/10"
+            className="notification-toast-dismiss"
             aria-label={dismissLabel}
           >
             <X size={16} aria-hidden="true" />
           </button>
         ) : null}
       </div>
-      {onAction && actionLabel ? (
-        <div className="relative z-10 mt-2 flex justify-end">
-          <button
-            type="button"
-            onClick={() => { void onAction(); }}
-            aria-label={actionAriaLabel}
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-current/20 bg-white/55 px-3 text-xs font-black transition-colors hover:bg-white/85 focus-visible:outline-2 focus-visible:outline-offset-1 dark:bg-black/15 dark:hover:bg-black/25"
-          >
-            <RotateCcw size={14} aria-hidden="true" />
-            {actionLabel}
-          </button>
-        </div>
-      ) : null}
     </section>
   );
 }
 
 export function AppFeedback({
+  children,
   authError,
   error,
   notice,
@@ -121,6 +118,9 @@ export function AppFeedback({
   onDismissError,
   onDismissNotice,
   onRetrySync,
+  sessionLost = false,
+  onRetryAuth,
+  isRetryingAuth = false,
 }: AppFeedbackProps) {
   const { _ } = useLingui();
   const rawSync = syncStatus ? getShellSyncStatus(syncStatus) : null;
@@ -135,7 +135,7 @@ export function AppFeedback({
   }, [syncSignature]);
 
   const showSync = Boolean(syncSignature && dismissedSyncSignature !== syncSignature);
-  if (!authError && !error && !notice && !showSync) return null;
+  if (!sessionLost && !authError && !error && !notice && !showSync && !children) return null;
 
   const SyncIcon = sync?.busy ? Loader2 : sync?.kind === 'offline' ? WifiOff : CloudOff;
   const syncTone: NotificationTone = sync?.kind === 'needs-attention'
@@ -148,17 +148,35 @@ export function AppFeedback({
     <aside
       data-notification-viewport="true"
       aria-label={_(msg({ id: 'shell.feedback.notifications', message: 'Notifications' }))}
-      className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 top-[5.25rem] z-[70] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2 overflow-y-auto sm:right-6 lg:bottom-4"
+      className="app-feedback-stack pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 top-[5.25rem] z-[70] flex w-[min(25rem,calc(100vw-2rem))] flex-col justify-end overflow-y-auto sm:right-6 lg:bottom-4"
     >
-      {authError ? (
+      {sessionLost ? (
+        <NotificationToast
+          role="alert"
+          tone="danger"
+          title={_(msg({ id: 'shell.feedback.session-ended', message: 'Session ended' }))}
+          message={authError || _(msg({ id: 'shell.feedback.session-ended-detail', message: 'Sign in again to restore cloud sync.' }))}
+          Icon={AlertCircle}
+          busy={isRetryingAuth}
+          actionLabel={_(msg({ id: 'shell.feedback.sign-in-again', message: 'Sign in again' }))}
+          actionBusyLabel={_(msg({ id: 'shell.feedback.connecting', message: 'Connecting…' }))}
+          actionAriaLabel={_(msg({ id: 'shell.feedback.sign-in-again', message: 'Sign in again' }))}
+          onAction={onRetryAuth}
+        />
+      ) : authError ? (
         <NotificationToast
           role="alert"
           tone="danger"
           title={_(msg({ id: 'shell.feedback.account', message: 'Account' }))}
           message={authError}
           Icon={AlertCircle}
+          busy={isRetryingAuth}
           dismissLabel={_(msg({ id: 'shell.feedback.dismiss-sign-in', message: 'Dismiss sign-in message' }))}
           onDismiss={onDismissAuthError}
+          actionLabel={onRetryAuth ? _(msg({ id: 'shell.feedback.try-sign-in-again', message: 'Try again' })) : undefined}
+          actionBusyLabel={_(msg({ id: 'shell.feedback.connecting', message: 'Connecting…' }))}
+          actionAriaLabel={_(msg({ id: 'shell.feedback.try-sign-in-again', message: 'Try again' }))}
+          onAction={onRetryAuth}
         />
       ) : null}
       {error ? (
@@ -198,6 +216,7 @@ export function AppFeedback({
           onAction={sync.canRetry ? onRetrySync : undefined}
         />
       ) : null}
+      {children}
     </aside>
   );
 }

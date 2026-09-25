@@ -7,6 +7,10 @@ import type {
 } from 'firebase-admin/firestore';
 import { InputValidationError } from './inputValidation.js';
 import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
+import {
+  applyLibraryFacetMutationInTransaction,
+  libraryFacetRestoreOperationId,
+} from './libraryFacetPersistence.js';
 
 export const MAX_CARD_ALLOCATION = 5_000;
 const MAX_PROTOCOL_COUNTER = Number.MAX_SAFE_INTEGER;
@@ -40,6 +44,7 @@ export type CardRecord = Record<string, unknown>;
 export type CardAllocationResult = {
   created: boolean;
   card: DocumentData;
+  restored?: true;
 };
 
 export type CardAllocationRequest = {
@@ -48,6 +53,7 @@ export type CardAllocationRequest = {
   baseRevision?: number;
   opId?: string;
   operationCreatedAt?: string;
+  restore?: true;
 };
 
 type CardAllocationOptions = {
@@ -56,6 +62,7 @@ type CardAllocationOptions = {
   baseRevision?: number;
   opId?: string;
   operationCreatedAt?: string;
+  restore?: true;
 };
 
 const CARD_FIELDS = new Set([
@@ -412,7 +419,7 @@ export const canonicalCard = (value: unknown): CardRecord => {
 export const parseCreateCardRequest = (value: unknown): CardAllocationRequest => {
   const source = asRecord(value, 'Card allocation request must be an object.');
   if (Object.keys(source).some(key => !new Set([
-    'card', 'libraryEpoch', 'baseRevision', 'opId', 'operationCreatedAt',
+    'card', 'libraryEpoch', 'baseRevision', 'opId', 'operationCreatedAt', 'restore',
   ]).has(key))) {
     throw new InputValidationError('Card allocation request contains an unsupported field.');
   }
@@ -425,12 +432,21 @@ export const parseCreateCardRequest = (value: unknown): CardAllocationRequest =>
   const opId = source.opId === undefined ? undefined : boundedText(source.opId, 'opId', 128);
   if (source.opId !== undefined && !opId) throw new InputValidationError('Card opId is invalid.');
   const operationCreatedAt = optionalDate(source.operationCreatedAt, 'operationCreatedAt');
+  if (source.restore !== undefined && source.restore !== true) {
+    throw new InputValidationError('Card restore intent is invalid.');
+  }
+  if (source.restore === true && (
+    !opId
+    || !/^[A-Za-z0-9_-]{1,128}$/.test(opId)
+    || !operationCreatedAt
+  )) throw new InputValidationError('Card restore operation metadata is required.');
   return {
     card: canonicalCard(source.card),
     ...(libraryEpoch === undefined ? {} : { libraryEpoch }),
     ...(baseRevision === undefined ? {} : { baseRevision }),
     ...(opId === undefined ? {} : { opId }),
     ...(operationCreatedAt === undefined ? {} : { operationCreatedAt }),
+    ...(source.restore === true ? { restore: true } : {}),
   };
 };
 
@@ -593,6 +609,8 @@ export async function createCardForOwner(
     libraryEpoch,
     baseRevision,
     operationCreatedAt,
+    opId,
+    restore,
   }: CardAllocationOptions = {},
 ): Promise<CardAllocationResult> {
   if (!ownerId || ownerId.includes('/')) throw new InputValidationError('Card owner is invalid.');
@@ -601,6 +619,14 @@ export async function createCardForOwner(
   }
   const cardSource = asRecord(card, 'Card must be an object.');
   const normalizedCard = canonicalCard(cardSource);
+  if (restore && (
+    !opId
+    || !/^[A-Za-z0-9_-]{1,128}$/.test(opId)
+    || !operationCreatedAt
+  )) throw new InputValidationError('Card restore operation metadata is required.');
+  const restoreOperation = restore && opId && operationCreatedAt
+    ? { opId, operationCreatedAt }
+    : null;
   // Review receipts are server-owned. A forged create payload may carry the
   // field for shape compatibility, but it must never seed a duplicate receipt.
   delete normalizedCard.appliedReviewOperationIds;
@@ -700,6 +726,12 @@ export async function createCardForOwner(
       && Number.isFinite(operationTime)
       && Number.isFinite(deletionTime)
       && operationTime > deletionTime;
+    // Restoring retains the original creation time; a fresh capture starts a
+    // new card lifetime even when its word has a prior deletion tombstone.
+    const originalCreationTime = Date.parse(String(cardSource.createdAt ?? ''));
+    const restoresPriorCard = explicitlyRecreatesAfterDeletion
+      && Number.isFinite(originalCreationTime)
+      && originalCreationTime <= deletionTime;
     if (tombstoneRevision > requestedBaseRevision && !explicitlyRecreatesAfterDeletion) {
       throw new CardAllocationConflictError('deleted', 'The card was deleted by a newer operation.');
     }
@@ -711,9 +743,20 @@ export async function createCardForOwner(
       revision: tombstoneRevision > 0 ? nextProtocolCounter(tombstoneRevision, 'revision') : 1,
       libraryEpoch: currentEpoch,
     };
+    const applyRestoreFacetDelta = async () => {
+      if (!restoreOperation) return;
+      await applyLibraryFacetMutationInTransaction(database, transaction, ownerId, {
+        op: 'delta',
+        ownerId,
+        opId: libraryFacetRestoreOperationId(restoreOperation.opId, restoreOperation.operationCreatedAt),
+        operationCreatedAt: restoreOperation.operationCreatedAt,
+        delta: { [String(normalizedCard.category || 'Other')]: 1 },
+      });
+    };
     if (!hadIdentity) {
       const currentCount = safeStoredCardCount(usageSnapshot) ?? existingCardCount;
       if (currentCount >= maximumCards) throw new CardAllocationLimitError();
+      await applyRestoreFacetDelta();
       transaction.create(reservation, expectedReservation);
       if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
       else transaction.create(canonical, createdCard);
@@ -724,15 +767,18 @@ export async function createCardForOwner(
       return {
         created: true,
         card: serializeCardResponse(createdCard),
+        ...(restore || restoresPriorCard ? { restored: true as const } : {}),
       };
     }
 
+    await applyRestoreFacetDelta();
     if (existingCard && !existingReservation) transaction.create(reservation, expectedReservation);
     if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
     else transaction.create(canonical, createdCard);
     return {
       created: true,
       card: serializeCardResponse(createdCard),
+      ...(restore || restoresPriorCard ? { restored: true as const } : {}),
     };
   });
 }

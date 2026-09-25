@@ -730,8 +730,9 @@ export const createCard = onCall({
       baseRevision: input.baseRevision,
       opId: input.opId,
       operationCreatedAt: input.operationCreatedAt,
+      restore: input.restore,
     });
-    if (result.created) await emitPilotEvent(userId, 'capture_completed', key => ({
+    if (result.created && !result.restored) await emitPilotEvent(userId, 'capture_completed', key => ({
       origin: result.card.origin === 'ai' ? 'ai' : 'manual',
       cardRef: analyticsCardRef(userId, result.card.id, key),
     }));

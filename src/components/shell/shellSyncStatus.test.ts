@@ -49,6 +49,23 @@ describe('shell sync status', () => {
       headerLabel: 'Waiting to sync',
       footerLabel: 'Waiting to sync',
       healthy: false,
+      canRetry: true,
+    });
+  });
+
+  it('keeps offline pending work visible and waits for reconnection', () => {
+    expect(getShellSyncStatus({
+      isOnline: false,
+      isSyncing: false,
+      pendingCount: 2,
+      error: null,
+      cloudUnavailable: false,
+    })).toMatchObject({
+      kind: 'saving-offline',
+      detail: '2 changes are safe on this device and will sync when you reconnect.',
+      healthy: false,
+      busy: false,
+      canRetry: false,
     });
   });
 

@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   withDevicePendingFlush: vi.fn(async (_userId, _force, operation) => ({ acquired: true, value: await operation({ token: 'test', expiresAt: Infinity, assertOwnership: async () => undefined }) })),
   beginCardMirrorSync: vi.fn(),
   createCardIfAbsent: vi.fn(),
+  deleteCardWithTombstone: vi.fn(),
   deleteMirroredCardForGeneration: vi.fn(),
   deleteDeviceCardBackupIfNotNewerThan: vi.fn(),
   deleteMirroredCardIfNotNewerThan: vi.fn(),
@@ -68,6 +69,7 @@ vi.mock('../../lib/cardRepository', async () => {
   return {
     ...actual,
     createCardIfAbsent: mocks.createCardIfAbsent,
+    deleteCardWithTombstone: mocks.deleteCardWithTombstone,
     applyCardPatchIfCurrent: mocks.applyCardPatchIfCurrent,
     findCardByNormalizedWord: mocks.findCardByNormalizedWord,
     findCardById: mocks.findCardById,
@@ -121,18 +123,25 @@ const createEvents = () => ({
   reportError: vi.fn(),
   notify: vi.fn(),
   settleReview: vi.fn(),
-  verifyEpoch: vi.fn(),
+  verifyEpoch: vi.fn(() => true),
 });
 
 const createReplica = (
   cards: readonly CardData[] = [],
   events = createEvents(),
   isOwnerCurrent = () => true,
+  epoch: { userId: string; value: number } | null = { userId: 'owner-a', value: 3 },
+  isBrowserOnline = true,
+  canPublishMutations = () => true,
+  canVerifyEpoch = () => true,
 ) => createLibraryReplica({
   ownerId: 'owner-a',
-  getEpoch: () => ({ userId: 'owner-a', value: 3 }),
+  isBrowserOnline: () => isBrowserOnline,
+  getEpoch: () => epoch,
   getCards: () => cards,
   isOwnerCurrent,
+  canVerifyEpoch,
+  canPublishMutations,
   getMirrorTotals: () => ({ cloudTotal: 0, cloudStatsTotal: 0 }),
   onError: vi.fn(),
   onPendingCount: vi.fn(),
@@ -181,6 +190,80 @@ describe('Library Replica contract', () => {
     expect(events.refreshCloud).toHaveBeenCalledOnce();
   });
 
+  it.each(['create', 'delete', 'review'] as const)(
+    'does not flush queued %s mutations after session loss during epoch verification, then resumes after reauth',
+    async kind => {
+      let resolveEpoch!: (value: number) => void;
+      const delayedEpoch = new Promise<number>(resolve => { resolveEpoch = resolve; });
+      mocks.getLibraryEpoch.mockReturnValueOnce(delayedEpoch);
+      const candidate = card(`lost-session-${kind}`, { revision: 4, libraryEpoch: 3 });
+      const updatedAt = '2026-09-25T06:20:00.000Z';
+      const reviewedAt = new Date('2026-09-25T06:19:00.000Z');
+      const reviewFields = scheduleReview(candidate, 'good', reviewedAt);
+      const operation: DevicePendingOperation = kind === 'create'
+        ? {
+            type: 'upsert', operation: 'create', opId: `create-${kind}`, card: candidate,
+            fieldMask: [], baseRevision: 4, libraryEpoch: 3, updatedAt, ownerUserId: 'owner-a',
+          }
+        : kind === 'delete'
+          ? {
+              type: 'delete', operation: 'delete', opId: `delete-${kind}`, cardId: candidate.id,
+              fieldMask: [], baseRevision: 4, libraryEpoch: 3, updatedAt, ownerUserId: 'owner-a',
+            }
+          : {
+              type: 'patch', operation: 'review', opId: `review-${kind}`, cardId: candidate.id,
+              fields: reviewFields, fieldMask: Object.keys(reviewFields) as Array<keyof CardData>,
+              baseRevision: 4, libraryEpoch: 3, updatedAt, ownerUserId: 'owner-a',
+            };
+      let canPublish = true;
+      let canVerify = true;
+      mocks.loadDevicePending.mockResolvedValue([operation]);
+      mocks.findCardByNormalizedWord.mockResolvedValue(null);
+      mocks.createCardIfAbsent.mockResolvedValue({ created: true, card: { ...candidate, revision: 5 } });
+      mocks.deleteCardWithTombstone.mockResolvedValue({
+        deleted: true,
+        tombstone: { cardId: candidate.id, opId: `delete-${kind}`, libraryEpoch: 3, revision: 5, deletedAt: updatedAt },
+      });
+      mocks.applyReviewWithConflictRecovery.mockImplementation(async (command, apply) => apply(command));
+      mocks.applyReviewViaCallable.mockResolvedValue({
+        applied: true, duplicate: false, card: { ...candidate, ...reviewFields, revision: 5 },
+      });
+      const replica = createReplica(
+        [candidate],
+        createEvents(),
+        () => true,
+        null,
+        true,
+        () => canPublish,
+        () => canVerify,
+      );
+
+      const lostSessionFlush = replica.flush({ manualRetry: true, isBrowserOnline: true });
+      expect(mocks.getLibraryEpoch).toHaveBeenCalledOnce();
+      canPublish = false;
+      canVerify = false;
+      resolveEpoch(3);
+      await lostSessionFlush;
+
+      expect(mocks.createCardIfAbsent).not.toHaveBeenCalled();
+      expect(mocks.deleteCardWithTombstone).not.toHaveBeenCalled();
+      expect(mocks.applyReviewViaCallable).not.toHaveBeenCalled();
+      expect(mocks.acknowledgeDevicePending).not.toHaveBeenCalled();
+
+      await replica.retry();
+      expect(mocks.getLibraryEpoch).toHaveBeenCalledOnce();
+
+      canPublish = true;
+      canVerify = true;
+      await replica.retry();
+
+      if (kind === 'create') expect(mocks.createCardIfAbsent).toHaveBeenCalledOnce();
+      if (kind === 'delete') expect(mocks.deleteCardWithTombstone).toHaveBeenCalledOnce();
+      if (kind === 'review') expect(mocks.applyReviewViaCallable).toHaveBeenCalledOnce();
+      expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+    },
+  );
+
   it('stages creates with the verified owner epoch in the mirror and pending queue', async () => {
     const candidate = card('create-card');
     mocks.queueDeviceUpserts.mockResolvedValue([]);
@@ -191,6 +274,246 @@ describe('Library Replica contract', () => {
     const expected = expect.objectContaining({ id: candidate.id, libraryEpoch: 3 });
     expect(mocks.upsertMirroredCardBatch).toHaveBeenCalledWith('owner-a', [expected]);
     expect(mocks.queueDeviceUpserts).toHaveBeenCalledWith([expected], 8, 'owner-a', false);
+  });
+
+  it('restores a full card with its stable operation metadata and captured epoch', async () => {
+    const operationCreatedAt = '2026-09-25T06:20:00.000Z';
+    const original = card('restore-card', {
+      revision: 8,
+      libraryEpoch: 1,
+      createdAt: '2024-02-03T04:05:06.000Z',
+      category: 'IELTS',
+      customDeck: 'Deep learning',
+      origin: 'ai',
+      fsrs: {
+        due: '2026-09-26T00:00:00.000Z', stability: 4, difficulty: 5,
+        elapsedDays: 2, scheduledDays: 3, learningSteps: 0, reps: 7, lapses: 1, state: 2,
+      },
+      reviews: 7,
+      interval: 3,
+      easeFactor: 2.3,
+    });
+    const restored = { ...original, libraryEpoch: 3, revision: 10 };
+    const operation = {
+      type: 'upsert' as const, operation: 'create' as const, opId: 'restore-card-op',
+      card: { ...original, libraryEpoch: 3 }, baseRevision: 8, libraryEpoch: 3,
+      fieldMask: [] as (keyof CardData)[], updatedAt: operationCreatedAt, ownerUserId: 'owner-a',
+      restore: true as const,
+    };
+    mocks.queueDeviceUpserts.mockResolvedValue([operation]);
+    mocks.loadDevicePending.mockResolvedValue([operation]);
+    mocks.createCardIfAbsent.mockResolvedValue({ created: true, card: restored });
+    const replica = createReplica();
+
+    await expect(replica.restoreDeviceCard(original, {
+      ownerId: 'owner-a', expectedLibraryEpoch: 3, operationId: 'restore-card-op', operationCreatedAt,
+    })).resolves.toEqual({ status: 'restored', card: restored });
+
+    expect(mocks.queueDeviceUpserts).toHaveBeenCalledWith(
+      [{ ...original, libraryEpoch: 3 }],
+      1,
+      'owner-a',
+      false,
+      {
+        operationId: 'restore-card-op', operationCreatedAt, libraryEpoch: 3,
+        baseRevisions: { 'restore-card': 8 },
+        restore: true,
+      },
+    );
+    expect(mocks.createCardIfAbsent).toHaveBeenCalledWith(expect.anything(), 'owner-a', { ...original, libraryEpoch: 3 }, {
+      libraryEpoch: 3, baseRevision: 8, opId: 'restore-card-op', operationCreatedAt, restore: true,
+    });
+    expect(mocks.queueDeviceUpserts.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.createCardIfAbsent.mock.invocationCallOrder[0],
+    );
+    expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith('owner-a', restored);
+  });
+
+  it('replays a committed undo through the pending queue without creating or counting it twice', async () => {
+    const operationCreatedAt = '2026-09-25T06:20:00.000Z';
+    const original = card('replayed-restore', {
+      revision: 8, libraryEpoch: 1, createdAt: '2024-02-03T04:05:06.000Z',
+      customDeck: 'Deep learning', origin: 'ai', reviews: 7,
+    });
+    const operation = {
+      type: 'upsert' as const, operation: 'create' as const, opId: 'replayed-restore-op',
+      card: { ...original, libraryEpoch: 3 }, baseRevision: 8, libraryEpoch: 3,
+      fieldMask: [] as (keyof CardData)[], updatedAt: operationCreatedAt, ownerUserId: 'owner-a',
+      restore: true as const,
+    };
+    const authoritative = { ...original, libraryEpoch: 3, revision: 10 };
+    const events = createEvents();
+    mocks.queueDeviceUpserts.mockResolvedValue([operation]);
+    mocks.loadDevicePending.mockResolvedValue([operation]);
+    mocks.createCardIfAbsent
+      .mockResolvedValueOnce({ created: true, card: authoritative })
+      .mockResolvedValueOnce({ created: false, card: authoritative });
+    const replica = createReplica([], events);
+
+    await expect(replica.restoreDeviceCard(original, {
+      ownerId: 'owner-a', expectedLibraryEpoch: 3,
+      operationId: operation.opId, operationCreatedAt,
+    })).resolves.toEqual({ status: 'restored', card: authoritative });
+    expect(mocks.acknowledgeDevicePending).not.toHaveBeenCalled();
+    expect(events.setCloudTotal).not.toHaveBeenCalled();
+    expect(events.settleReview).not.toHaveBeenCalled();
+
+    mocks.findCardByNormalizedWord.mockResolvedValue(authoritative);
+    await replica.flush({
+      manualRetry: true,
+      verifiedEpoch: { userId: 'owner-a', value: 3 },
+      isBrowserOnline: true,
+    });
+
+    expect(mocks.createCardIfAbsent).toHaveBeenCalledTimes(2);
+    expect(mocks.createCardIfAbsent).toHaveBeenLastCalledWith(
+      expect.anything(), 'owner-a', { ...original, libraryEpoch: 3 }, {
+        libraryEpoch: 3, baseRevision: 8, opId: operation.opId, operationCreatedAt, restore: true,
+      },
+    );
+    expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+    expect(mocks.mergeDeviceCardsStrict).toHaveBeenLastCalledWith(
+      [authoritative], 1, 'owner-a', expect.any(Object),
+    );
+    expect(events.setCloudTotal).not.toHaveBeenCalled();
+    expect(events.settleReview).not.toHaveBeenCalled();
+  });
+
+  it('retains restore intent across a lost create response and queued retry', async () => {
+    const operationCreatedAt = '2026-09-25T06:20:00.000Z';
+    const original = card('lost-restore-response', {
+      revision: 8, libraryEpoch: 3, createdAt: '2024-02-03T04:05:06.000Z', category: 'IELTS',
+    });
+    const candidate = { ...original, libraryEpoch: 3 };
+    const operation = {
+      type: 'upsert' as const, operation: 'create' as const, opId: 'lost-restore-response-op',
+      card: candidate, baseRevision: 8, libraryEpoch: 3,
+      fieldMask: [] as (keyof CardData)[], updatedAt: operationCreatedAt, ownerUserId: 'owner-a',
+      restore: true as const,
+    };
+    const authoritative = { ...candidate, revision: 9 };
+    mocks.loadDevicePending.mockResolvedValue([operation]);
+    mocks.createCardIfAbsent
+      .mockRejectedValueOnce(new Error('response lost after server commit'))
+      .mockResolvedValueOnce({ created: false, card: authoritative });
+    const replica = createReplica();
+    const flushOptions = {
+      manualRetry: true,
+      verifiedEpoch: { userId: 'owner-a', value: 3 },
+      isBrowserOnline: true,
+    } as const;
+
+    await replica.flush(flushOptions);
+
+    expect(mocks.acknowledgeDevicePending).not.toHaveBeenCalled();
+    expect(mocks.createCardIfAbsent).toHaveBeenNthCalledWith(
+      1, expect.anything(), 'owner-a', candidate, {
+        libraryEpoch: 3, baseRevision: 8, opId: operation.opId, operationCreatedAt, restore: true,
+      },
+    );
+
+    await replica.flush(flushOptions);
+
+    expect(mocks.createCardIfAbsent).toHaveBeenNthCalledWith(
+      2, expect.anything(), 'owner-a', candidate, {
+        libraryEpoch: 3, baseRevision: 8, opId: operation.opId, operationCreatedAt, restore: true,
+      },
+    );
+    expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+  });
+
+  it('keeps offline undo queued at the captured epoch without rebinding it', async () => {
+    const operationCreatedAt = '2026-09-25T06:20:00.000Z';
+    const original = card('offline-restore', {
+      revision: 4, libraryEpoch: 1, createdAt: '2023-01-02T00:00:00.000Z',
+      origin: 'manual', customDeck: 'Travel', reviews: 9,
+    });
+    const operation = {
+      type: 'upsert' as const, operation: 'create' as const, opId: 'offline-restore-op',
+      card: { ...original, libraryEpoch: 3 }, baseRevision: 4, libraryEpoch: 3,
+      fieldMask: [] as (keyof CardData)[], updatedAt: operationCreatedAt, ownerUserId: 'owner-a',
+      restore: true as const,
+    };
+    mocks.queueDeviceUpserts.mockResolvedValue([operation]);
+    mocks.loadDevicePending.mockResolvedValue([operation]);
+    const replica = createReplica([], createEvents(), () => true, { userId: 'owner-a', value: 3 }, false);
+
+    await expect(replica.restoreDeviceCard(original, {
+      ownerId: 'owner-a', expectedLibraryEpoch: 3, operationId: 'offline-restore-op', operationCreatedAt,
+    })).resolves.toEqual({ status: 'queued', card: { ...original, libraryEpoch: 3 } });
+
+    expect(mocks.createCardIfAbsent).not.toHaveBeenCalled();
+    expect(mocks.queueDeviceUpserts).toHaveBeenCalledWith(
+      [{ ...original, libraryEpoch: 3 }], 1, 'owner-a', false,
+      { operationId: 'offline-restore-op', operationCreatedAt, libraryEpoch: 3, baseRevisions: { 'offline-restore': 4 }, restore: true },
+    );
+  });
+
+  it('blocks restore when the captured owner or epoch is no longer current', async () => {
+    const candidate = card('stale-restore');
+    const options = {
+      ownerId: 'owner-a', expectedLibraryEpoch: 3,
+      operationId: 'stale-restore-op', operationCreatedAt: '2026-09-25T06:20:00.000Z',
+    };
+    const changedOwner = createReplica([], createEvents(), () => false);
+    const changedEpoch = createReplica([], createEvents(), () => true, { userId: 'owner-a', value: 4 });
+
+    await expect(changedOwner.restoreDeviceCard(candidate, options)).resolves.toEqual({
+      status: 'conflict', reason: 'owner-changed',
+    });
+    await expect(changedEpoch.restoreDeviceCard(candidate, options)).resolves.toEqual({
+      status: 'conflict', reason: 'epoch-changed',
+    });
+    expect(mocks.queueDeviceUpserts).not.toHaveBeenCalled();
+    expect(mocks.createCardIfAbsent).not.toHaveBeenCalled();
+  });
+
+  it('does not publish an undo superseded by a newer re-delete', async () => {
+    const operationCreatedAt = '2026-09-25T06:20:00.000Z';
+    const original = card('redeleted-restore', { libraryEpoch: 3, revision: 5 });
+    const deletion = {
+      type: 'delete' as const, operation: 'delete' as const, opId: 'newer-delete',
+      cardId: original.id, baseRevision: 5, libraryEpoch: 3,
+      fieldMask: [] as (keyof CardData)[], updatedAt: '2026-09-25T06:20:01.000Z', ownerUserId: 'owner-a',
+    };
+    mocks.queueDeviceUpserts.mockResolvedValue([]);
+    mocks.loadDevicePending.mockResolvedValue([deletion]);
+    const replica = createReplica();
+
+    await expect(replica.restoreDeviceCard(original, {
+      ownerId: 'owner-a', expectedLibraryEpoch: 3, operationId: 'old-restore-op', operationCreatedAt,
+    })).resolves.toEqual({ status: 'conflict', reason: 'deleted-again' });
+
+    expect(mocks.deleteDeviceCardBackupIfNotNewerThan).toHaveBeenCalledWith(
+      'owner-a', original.id, { libraryEpoch: 3, revision: 5 },
+    );
+    expect(mocks.deleteMirroredCardIfNotNewerThan).toHaveBeenCalledWith(
+      'owner-a', original.id, { libraryEpoch: 3, revision: 5 },
+    );
+    expect(mocks.createCardIfAbsent).not.toHaveBeenCalled();
+    expect(mocks.upsertMirroredCardIfNotOlderThan).not.toHaveBeenCalled();
+  });
+
+  it('returns the authoritative card without replacing it when create detects an existing card', async () => {
+    const operationCreatedAt = '2026-09-25T06:20:00.000Z';
+    const original = card('existing-restore', { revision: 3, libraryEpoch: 3, origin: 'manual' });
+    const authoritative = { ...original, translation: 'authoritative translation', revision: 11 };
+    const operation = {
+      type: 'upsert' as const, operation: 'create' as const, opId: 'existing-restore-op',
+      card: original, baseRevision: 3, libraryEpoch: 3,
+      fieldMask: [] as (keyof CardData)[], updatedAt: operationCreatedAt, ownerUserId: 'owner-a',
+    };
+    mocks.queueDeviceUpserts.mockResolvedValue([operation]);
+    mocks.loadDevicePending.mockResolvedValue([operation]);
+    mocks.createCardIfAbsent.mockResolvedValue({ created: false, card: authoritative });
+    const replica = createReplica();
+
+    await expect(replica.restoreDeviceCard(original, {
+      ownerId: 'owner-a', expectedLibraryEpoch: 3, operationId: 'existing-restore-op', operationCreatedAt,
+    })).resolves.toEqual({ status: 'existing', card: authoritative });
+
+    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([authoritative], 1, 'owner-a');
+    expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith('owner-a', authoritative);
   });
 
   it('stages patches through the same owner-scoped interface', async () => {

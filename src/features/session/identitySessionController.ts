@@ -29,6 +29,7 @@ export interface IdentitySessionSnapshot {
   owner: IdentityOwner | null;
   ownerEpoch: { ownerId: string; value: number } | null;
   canPublishMutations: boolean;
+  authenticationRecovery: 'session-lost' | null;
   isSigningIn: boolean;
   isSigningOut: boolean;
   error: string | null;
@@ -82,6 +83,7 @@ export function createIdentitySessionController({
     owner: null,
     ownerEpoch: null,
     canPublishMutations: false,
+    authenticationRecovery: null,
     isSigningIn: false,
     isSigningOut: false,
     error: null,
@@ -104,6 +106,7 @@ export function createIdentitySessionController({
     owner: null,
     ownerEpoch: null,
     canPublishMutations: false,
+    authenticationRecovery: null,
     error,
   });
 
@@ -151,7 +154,18 @@ export function createIdentitySessionController({
       clearInitialOwnerTimer();
       const publication = ++ownerPublication;
       if (!owner) {
-        publishAnonymous();
+        if (snapshot.owner && !signingOut) {
+          // Keep the local owner context while cloud credentials recover.
+          publish({
+            status: 'authenticated',
+            ownerEpoch: null,
+            canPublishMutations: false,
+            authenticationRecovery: 'session-lost',
+            error: null,
+          });
+        } else {
+          publishAnonymous();
+        }
         return;
       }
 
@@ -161,13 +175,14 @@ export function createIdentitySessionController({
       // only a performance hint and never authorizes cloud writes; mutation
       // capability remains paused until the current owner is verified remotely.
       if (snapshot.owner?.id === owner.id) {
-        publish({ status: 'authenticated', owner, error: null });
+        publish({ status: 'authenticated', owner, authenticationRecovery: null, error: null });
       } else {
         publish({
           status: 'authenticated',
           owner,
           ownerEpoch: null,
           canPublishMutations: false,
+          authenticationRecovery: null,
           error: null,
         });
       }
@@ -287,7 +302,7 @@ export function createIdentitySessionController({
 
   const acceptVerifiedOwnerEpoch = (ownerId: string, value: number) => {
     const epoch = validEpoch(value);
-    if (!snapshot.owner || snapshot.owner.id !== ownerId || epoch === null) return false;
+    if (!snapshot.owner || snapshot.owner.id !== ownerId || epoch === null || snapshot.authenticationRecovery !== null) return false;
     if (snapshot.ownerEpoch?.ownerId === ownerId && epoch < snapshot.ownerEpoch.value) return false;
     try { adapter.cacheOwnerEpoch(ownerId, epoch); } catch { /* verified memory state remains valid */ }
     publish({ ownerEpoch: { ownerId, value: epoch }, canPublishMutations: true, error: null });

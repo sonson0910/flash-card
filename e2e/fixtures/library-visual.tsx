@@ -80,7 +80,7 @@ function LibraryFixture() {
     startStudy: asyncNoOp, openCardCreator: () => document.getElementById('new-word')?.focus(),
     grid: { changeSearch: setSearch, migrateLegacyCards: asyncNoOp, shareCategory: asyncNoOp, deleteCard: asyncNoOp, toggleBookmark: asyncNoOp, assignDeck: asyncNoOp, updateCard: async () => published, changePage: noOp, clearFilters: () => { setSearch(''); setCategory('All'); } },
     tools: {
-      importCards: noOp, importFile: noOp, generateCard: event => {
+      openPaths: noOp, importCards: noOp, importFile: noOp, generateCard: event => {
         event.preventDefault();
         setGenerationCount(count => count + 1);
         return Promise.resolve();

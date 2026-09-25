@@ -52,6 +52,13 @@ The application is designed around three principles:
 
 On phones, reveal a card before rating it. Swipe right for Good or left for Again, or use the four rating buttons; long answers scroll inside the card. The session recap counts 2 XP per committed review.
 
+Open **Manage library → Appearance settings** to choose Classic or Crystal, follow the
+system light/dark setting, or change Lumi, reduced motion and study-sound preferences.
+These preferences are saved on this device. Deleting a card offers Undo; restoring it
+keeps its learning history. Clearing the entire library requires confirmation and cancels
+any pending delete Undo. If a signed-in session expires, recover that session before
+queued changes can be published.
+
 ## Architecture
 
 ```mermaid

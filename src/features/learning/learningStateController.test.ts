@@ -55,7 +55,63 @@ const createFake = () => {
     snapshots: { library: { apply: apply('library') }, practice: { apply: apply('practice') } },
     now: () => new Date('2026-08-03T00:00:00.000Z'),
   });
-  return { controller, events, persisted, port, setOwner: (owner: string | null) => { ownerKey = owner; } };
+  return {
+    controller, events, persisted, port,
+    setOwner: (owner: string | null) => {
+      ownerKey = owner;
+      controller.invalidateUndoTokens();
+    },
+  };
+};
+
+const createUndoFake = (restoreConflict = false) => {
+  let ownerKey: string | null = 'user:a';
+  let ownerId: string | null = 'user-a';
+  let currentCard: CardData | undefined = card;
+  const persisted: LearningStateMutation[] = [];
+  const publications: LearningStatePublication[] = [];
+  const port: LearningStatePort = {
+    activeOwner: () => ownerKey,
+    activeOwnerId: () => ownerId,
+    findCard: cardId => currentCard?.id === cardId ? currentCard : undefined,
+    persist: async mutation => {
+      persisted.push(mutation);
+      if (mutation.operation === 'delete') {
+        return {
+          ...resultFor(mutation),
+          deleteReceipt: {
+            finality: 'durably-queued', ownerId,
+            operationId: 'device-delete-1',
+            libraryEpoch: mutation.libraryEpoch, deletedAt: '2026-08-09T00:00:01.000Z',
+          },
+        };
+      }
+      if (mutation.operation === 'restore') {
+        return restoreConflict
+          ? { ...resultFor(mutation), restoreFinality: 'conflict', restoreConflictReason: 'deleted-again' }
+          : { ...resultFor(mutation), restoreFinality: 'durably-queued' };
+      }
+      return resultFor(mutation);
+    },
+  };
+  const apply = (publication: LearningStatePublication) => {
+    publications.push(publication);
+    if (publication.kind === 'delete') currentCard = undefined;
+    else if (publication.kind === 'restore') currentCard = publication.card;
+    else if (publication.kind === 'clear') currentCard = undefined;
+  };
+  const controller = createLearningStateController({
+    port,
+    snapshots: { library: { apply }, practice: { apply } },
+  });
+  return {
+    controller, port, persisted, publications,
+    changeOwner(nextKey: string | null, nextId: string | null = nextKey?.replace('user:', 'user-') ?? null) {
+      ownerKey = nextKey;
+      ownerId = nextId;
+      controller.invalidateUndoTokens();
+    },
+  };
 };
 
 describe('learning state controller', () => {
@@ -129,6 +185,7 @@ describe('learning state controller', () => {
 
     expect(first).toEqual(duplicate);
     expect(repeated).toEqual(first);
+    expect('result' in first && first.result.undoToken).toBeUndefined();
     expect(attempts).toBe(2);
     expect(events).toEqual(['persist:1', 'persist:2', 'library:delete', 'practice:delete']);
   });
@@ -139,6 +196,67 @@ describe('learning state controller', () => {
     await expect(controller.patch(card.id, { translation: card.translation }, ['translation'], 'same')).resolves.toEqual({ status: 'noop' });
     await expect(controller.toggleBookmark('missing', 'missing')).resolves.toEqual({ status: 'missing-card' });
     expect(events).toEqual([]);
+  });
+
+  it('undoes a durably queued delete once with the original card and stable operation request', async () => {
+    const { controller, persisted, publications } = createUndoFake();
+    const deleted = await controller.delete(card.id, 'delete-offline');
+    const token = ('result' in deleted ? deleted.result.undoToken : undefined)!;
+    const request = {
+      operationId: 'restore-offline',
+      operationCreatedAt: '2026-08-09T00:00:02.000Z',
+    };
+
+    const [first, duplicate] = await Promise.all([
+      controller.restore(token, request),
+      controller.restore(token, request),
+    ]);
+
+    expect(deleted.status).toBe('durably-queued');
+    expect(token.card).toEqual(card);
+    expect(first).toEqual(duplicate);
+    expect(first).toMatchObject({ status: 'durably-queued', result: { restoreFinality: 'durably-queued' } });
+    expect(persisted.filter(mutation => mutation.operation === 'restore')).toHaveLength(1);
+    expect(publications.filter(publication => publication.kind === 'restore')).toEqual([
+      { kind: 'restore', card }, { kind: 'restore', card },
+    ]);
+  });
+
+  it('does not publish a cloud tombstone or re-delete conflict', async () => {
+    const { controller, persisted, publications } = createUndoFake(true);
+    const deleted = await controller.delete(card.id, 'delete-cloud');
+    const token = ('result' in deleted ? deleted.result.undoToken : undefined)!;
+
+    await expect(controller.restore(token, {
+      operationId: 'restore-after-redelete',
+      operationCreatedAt: '2026-08-09T00:00:02.000Z',
+    })).resolves.toMatchObject({
+      status: 'undo-conflict',
+      result: { restoreFinality: 'conflict', restoreConflictReason: 'deleted-again' },
+    });
+    expect(persisted.filter(mutation => mutation.operation === 'restore')).toHaveLength(1);
+    expect(publications.some(publication => publication.kind === 'restore')).toBe(false);
+  });
+
+  it('invalidates undo tokens after clear and an owner transition', async () => {
+    const clearCase = createUndoFake();
+    const deleted = await clearCase.controller.delete(card.id, 'delete-before-clear');
+    const token = ('result' in deleted ? deleted.result.undoToken : undefined)!;
+    await clearCase.controller.clear('clear-after-delete');
+    await expect(clearCase.controller.restore(token, {
+      operationId: 'restore-after-clear', operationCreatedAt: '2026-08-09T00:00:02.000Z',
+    })).resolves.toMatchObject({ status: 'undo-conflict' });
+    expect(clearCase.persisted.some(mutation => mutation.operation === 'restore')).toBe(false);
+
+    const ownerCase = createUndoFake();
+    const ownerDeleted = await ownerCase.controller.delete(card.id, 'delete-before-owner-change');
+    const ownerToken = ('result' in ownerDeleted ? ownerDeleted.result.undoToken : undefined)!;
+    ownerCase.changeOwner('user:b', 'user-b');
+    ownerCase.changeOwner('user:a', 'user-a');
+    await expect(ownerCase.controller.restore(ownerToken, {
+      operationId: 'restore-after-owner-change', operationCreatedAt: '2026-08-09T00:00:02.000Z',
+    })).resolves.toMatchObject({ status: 'undo-conflict' });
+    expect(ownerCase.persisted.some(mutation => mutation.operation === 'restore')).toBe(false);
   });
 
   it('keeps the controller source vendor-free', () => {

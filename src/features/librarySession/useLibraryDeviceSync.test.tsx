@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CardQueryState } from '../../lib/cardQuery';
 import { CardMutationPreconditionError } from '../../lib/cardRepository';
 import {
@@ -9,6 +9,8 @@ import {
   type DevicePendingOperation,
 } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
+import { ownerScopedCardCacheKey, serializeOwnerScopedCardCache } from '../library/ownerScopedCardCache';
+import { readLocalCardCache } from '../library/libraryStorage';
 import {
   publishVerifiedEpochIfOwnerCurrent,
   useLibraryDeviceSync,
@@ -198,7 +200,7 @@ const createEvents = (): LibraryDeviceSyncEvents => ({
   reportError: vi.fn(),
   notify: vi.fn(),
   settleReview: vi.fn(),
-  verifyEpoch: vi.fn(),
+  verifyEpoch: vi.fn(() => true),
 });
 
 const installMinimalReactDom = () => {
@@ -233,17 +235,25 @@ const installMinimalReactDom = () => {
 function createHarness({
   epoch = { userId: 'user-a', value: 2 },
   isBrowserOnline = false,
+  owner = { uid: 'user-a' },
+  canVerifyEpoch = owner !== null,
+  canPublishMutations = owner !== null,
 }: {
   epoch?: { userId: string; value: number } | null;
   isBrowserOnline?: boolean;
+  owner?: { uid: string } | null;
+  canVerifyEpoch?: boolean;
+  canPublishMutations?: boolean;
 } = {}) {
   const events = createEvents();
   let sync: ReturnType<typeof useLibraryDeviceSync> | undefined;
 
   function Harness() {
     sync = useLibraryDeviceSync({
-      owner: { uid: 'user-a' },
+      owner,
       epoch,
+      canVerifyEpoch,
+      canPublishMutations,
       cards: [],
       knownLibraryTotal: 0,
       cloudTotal: 0,
@@ -267,6 +277,7 @@ function createHarness({
 
 describe('useLibraryDeviceSync mirror cleanup', () => {
   beforeEach(() => {
+    vi.unstubAllGlobals();
     vi.clearAllMocks();
     mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => ({ acquired: true, value: await operation({ token: 'test', expiresAt: Infinity, assertOwnership: async () => undefined }) }));
     mocks.acknowledgeDevicePending.mockResolvedValue(undefined);
@@ -294,6 +305,143 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
         deletedAt: '2026-08-09T00:00:05.000Z',
       },
     });
+  });
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('queues the anonymous restore and persists the full card cache for reload and adoption', async () => {
+    const retained = {
+      ...card('guest-retained', 0), customDeck: 'IELTS', origin: 'manual' as const,
+      createdAt: '2023-04-05T00:00:00.000Z', reviews: 6,
+    };
+    const original = {
+      ...card('guest-restore', 0), customDeck: 'Travel', origin: 'ai' as const,
+      createdAt: '2024-01-02T00:00:00.000Z', reviews: 8,
+      fsrs: {
+        due: '2026-09-26T00:00:00.000Z', stability: 4, difficulty: 5,
+        elapsedDays: 2, scheduledDays: 3, learningSteps: 0, reps: 8, lapses: 1, state: 2,
+      },
+    };
+    const operationCreatedAt = '2026-09-25T06:20:00.000Z';
+    const operation = {
+      type: 'upsert' as const, operation: 'create' as const, opId: 'guest-restore-op',
+      card: original, baseRevision: 1, libraryEpoch: 0,
+      fieldMask: [] as Array<keyof CardData>, updatedAt: operationCreatedAt,
+      restore: true as const,
+    };
+    const values = new Map([[ownerScopedCardCacheKey, serializeOwnerScopedCardCache(null, [retained])]]);
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+      removeItem: (key: string) => { values.delete(key); },
+    });
+    mocks.queueDeviceUpserts.mockResolvedValue([operation]);
+    const { sync } = createHarness({ epoch: null, owner: null });
+    const options = {
+      ownerId: null, expectedLibraryEpoch: 0,
+      operationId: 'guest-restore-op', operationCreatedAt,
+    };
+
+    await expect(sync.restoreDeviceCard(original, options)).resolves.toEqual({
+      status: 'restored', card: original,
+    });
+
+    expect(mocks.queueDeviceUpserts).toHaveBeenCalledWith([original], 2, undefined, false, {
+      operationId: options.operationId,
+      operationCreatedAt,
+      libraryEpoch: 0,
+      baseRevisions: { [original.id]: 1 },
+      restore: true,
+    });
+    const cached = readLocalCardCache();
+    expect(cached.ownerId).toBeNull();
+    expect(cached.cards.map(candidate => candidate.id)).toEqual([retained.id, original.id]);
+    expect(cached.cards[1]).toMatchObject({
+      createdAt: original.createdAt, customDeck: original.customDeck, origin: original.origin,
+      reviews: original.reviews, fsrs: original.fsrs,
+    });
+    expect(mocks.createCardIfAbsent).not.toHaveBeenCalled();
+  });
+
+  it('blocks anonymous restore when a newer re-delete remains in the ownerless queue', async () => {
+    const original = { ...card('guest-redeleted', 0), createdAt: '2024-01-02T00:00:00.000Z' };
+    const deletion = {
+      type: 'delete' as const, operation: 'delete' as const, opId: 'guest-newer-delete',
+      cardId: original.id, baseRevision: 1, libraryEpoch: 0,
+      fieldMask: [] as Array<keyof CardData>, updatedAt: '2026-09-25T06:20:01.000Z',
+    };
+    const values = new Map([[ownerScopedCardCacheKey, serializeOwnerScopedCardCache(null, [])]]);
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+      removeItem: (key: string) => { values.delete(key); },
+    });
+    mocks.queueDeviceUpserts.mockResolvedValue([]);
+    mocks.loadDeviceCards.mockResolvedValue({
+      cards: [], total: 0, updatedAt: null, cloudSync: null,
+      pending: [deletion], ownerUserId: null,
+    });
+    const { sync } = createHarness({ epoch: null, owner: null });
+
+    await expect(sync.restoreDeviceCard(original, {
+      ownerId: null, expectedLibraryEpoch: 0, operationId: 'guest-old-restore',
+      operationCreatedAt: '2026-09-25T06:20:00.000Z',
+    })).resolves.toEqual({ status: 'conflict', reason: 'deleted-again' });
+
+    expect(readLocalCardCache()).toEqual({ ownerId: null, cards: [] });
+    expect(mocks.createCardIfAbsent).not.toHaveBeenCalled();
+  });
+
+  it('does not merge owner scoped cache cards into an anonymous restore', async () => {
+    const otherOwnersCard = card('other-owner-card', 2);
+    const values = new Map([[ownerScopedCardCacheKey, serializeOwnerScopedCardCache('user-other', [otherOwnersCard])]]);
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+      removeItem: (key: string) => { values.delete(key); },
+    });
+    const { sync } = createHarness({ epoch: null, owner: null });
+
+    await expect(sync.restoreDeviceCard(card('guest-restore', 0), {
+      ownerId: null, expectedLibraryEpoch: 0, operationId: 'guest-owner-safe',
+      operationCreatedAt: '2026-09-25T06:20:00.000Z',
+    })).resolves.toEqual({ status: 'conflict', reason: 'owner-changed' });
+    expect(mocks.queueDeviceUpserts).not.toHaveBeenCalled();
+  });
+
+  it('returns the current local card for duplicate anonymous restore instead of overwriting it', async () => {
+    const current = card('guest-restore', 0);
+    let sync: ReturnType<typeof useLibraryDeviceSync> | undefined;
+    const events = createEvents();
+    function Harness() {
+      sync = useLibraryDeviceSync({
+        owner: null,
+        epoch: null,
+        canVerifyEpoch: false,
+        canPublishMutations: false,
+        cards: [current],
+        knownLibraryTotal: 1,
+        cloudTotal: 0,
+        cloudStatsTotal: 0,
+        cardsPerPage: 9,
+        isBrowserOnline: false,
+        cloudReadUnavailable: false,
+        query,
+        queryKey: 'all',
+        currentPage: 1,
+        getPromotedCards: () => [],
+        events,
+      });
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+    if (!sync) throw new Error('Device sync hook did not initialize.');
+
+    await expect(sync.restoreDeviceCard({ ...current, translation: 'candidate overwrite' }, {
+      ownerId: null, expectedLibraryEpoch: 0, operationId: 'guest-restore-op',
+      operationCreatedAt: '2026-09-25T06:20:00.000Z',
+    })).resolves.toEqual({ status: 'existing', card: current });
+    expect(mocks.queueDeviceUpserts).not.toHaveBeenCalled();
   });
 
   it('keeps a cloud-confirmed delete queued when mirror deletion fails', async () => {
@@ -710,6 +858,8 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       useLibraryDeviceSync({
         owner,
         epoch,
+        canVerifyEpoch: true,
+        canPublishMutations: true,
         cards: [],
         knownLibraryTotal: 0,
         cloudTotal: 0,
@@ -755,6 +905,8 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       useLibraryDeviceSync({
         owner: { uid: 'user-a' },
         epoch: { userId: 'user-a', value: 2 },
+        canVerifyEpoch: true,
+        canPublishMutations: true,
         cards: [],
         knownLibraryTotal: 0,
         cloudTotal: 0,
@@ -803,6 +955,66 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     expect(mocks.findCardByNormalizedWord).not.toHaveBeenCalled();
   });
 
+  it('retries epoch verification for the same authenticated owner and flushes after publication rerenders', async () => {
+    const candidate = card('epoch-retry', 2);
+    const operation = pendingUpsert(candidate);
+    const events = createEvents();
+    let canPublishMutations = false;
+    let epoch: { userId: string; value: number } | null = null;
+    let isBrowserOnline = false;
+    let sync: ReturnType<typeof useLibraryDeviceSync> | undefined;
+    mocks.loadDevicePending.mockResolvedValue([operation]);
+    mocks.getLibraryEpoch.mockResolvedValue(2);
+    mocks.findCardByNormalizedWord.mockResolvedValue(null);
+    mocks.createCardIfAbsent.mockResolvedValue({ created: true, card: { ...candidate, revision: 2 } });
+
+    function Harness() {
+      sync = useLibraryDeviceSync({
+        owner: { uid: 'user-a' },
+        epoch,
+        canVerifyEpoch: true,
+        canPublishMutations,
+        cards: [],
+        knownLibraryTotal: 1,
+        cloudTotal: 0,
+        cloudStatsTotal: 0,
+        cardsPerPage: 9,
+        isBrowserOnline,
+        cloudReadUnavailable: false,
+        query,
+        queryKey: 'all',
+        currentPage: 1,
+        getPromotedCards: () => [],
+        events,
+      });
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => root.render(<Harness />));
+      expect(sync?.pendingCount).toBe(1);
+      expect(mocks.withDevicePendingFlush).not.toHaveBeenCalled();
+
+      await act(async () => sync?.retry());
+
+      expect(mocks.getLibraryEpoch).toHaveBeenCalledOnce();
+      expect(events.verifyEpoch).toHaveBeenCalledWith({ userId: 'user-a', value: 2 });
+      expect(mocks.createCardIfAbsent).not.toHaveBeenCalled();
+
+      canPublishMutations = true;
+      epoch = { userId: 'user-a', value: 2 };
+      isBrowserOnline = true;
+      await act(async () => root.render(<Harness />));
+
+      expect(mocks.createCardIfAbsent).toHaveBeenCalledOnce();
+      expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('joins an in-flight flush in the same tab instead of reporting its own lease as busy', async () => {
     let grantLease: (() => void) | undefined;
     mocks.loadDevicePending.mockResolvedValue([]);
@@ -830,6 +1042,15 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       publish,
     )).toBeNull();
     expect(publish).not.toHaveBeenCalled();
+
+    const rejectPublication = vi.fn(() => false);
+    expect(publishVerifiedEpochIfOwnerCurrent(
+      'user-a',
+      'user-a',
+      3,
+      rejectPublication,
+    )).toBeNull();
+    expect(rejectPublication).toHaveBeenCalledWith({ userId: 'user-a', value: 3 });
   });
 
   it('keeps a word-duplicate operation queued when device cleanup fails', async () => {
@@ -929,6 +1150,8 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       sync = useLibraryDeviceSync({
         owner: { uid: 'user-a' },
         epoch: { userId: 'user-a', value: 2 },
+        canVerifyEpoch: true,
+        canPublishMutations: true,
         cards: [],
         knownLibraryTotal: 0,
         cloudTotal: 0,
@@ -986,6 +1209,8 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       sync = useLibraryDeviceSync({
         owner: { uid: 'user-a' },
         epoch: { userId: 'user-a', value: 2 },
+        canVerifyEpoch: true,
+        canPublishMutations: true,
         cards: [],
         knownLibraryTotal: 1_167,
         cloudTotal: 1_167,

@@ -125,6 +125,22 @@ describe('owner library session controller', () => {
     expect(cache.decksOwnerId).toBe('owner-a');
   });
 
+  it('waits for a verified epoch before seeding a missing deck profile', () => {
+    const cache = new MemoryCache();
+    cache.decksOwnerId = 'owner-a';
+    cache.decks = ['IELTS'];
+    const adapter = fakeAdapter();
+    const controller = createOwnerLibrarySessionController({ adapter, cache });
+
+    controller.activate({ ownerId: 'owner-a', libraryEpoch: null, cloudTotal: 0 });
+    adapter.emitDecks('owner-a', null);
+    expect(adapter.seededDecks).toEqual([]);
+
+    controller.activate({ ownerId: 'owner-a', libraryEpoch: 7, cloudTotal: 0 });
+    adapter.emitDecks('owner-a', null);
+    expect(adapter.seededDecks).toEqual([{ ownerId: 'owner-a', decks: ['IELTS'] }]);
+  });
+
   it('keeps legacy indexing actionable when createdAt exists but query fields are still missing', async () => {
     const cache = new MemoryCache();
     const adapter = fakeAdapter();

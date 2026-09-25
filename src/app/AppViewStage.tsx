@@ -7,6 +7,7 @@ import type { IntakeSharingSessionActions } from '../features/intake/useIntakeSh
 import type { LearningStateOutcome } from '../features/learning/learningStateController';
 import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
 import { Trans } from '@lingui/react';
+import { WorkspaceLoadingPanel } from '../components/WorkspaceLoadingPanel';
 
 const CatalogWorkspace = lazy(() => Promise.all([
   import('../features/catalogWorkspace/CatalogWorkspace'), loadCatalog(getActiveUiLocale(), 'catalog'),
@@ -47,7 +48,7 @@ interface AppViewStageProps {
   readonly practiceContent: ReactNode;
 }
 
-const fallback = (message: ReactNode) => <div role="status" className="crystal-chamfer skeleton-sheen rounded-[26px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-8 text-center text-[var(--sf-text-muted)]">{message}</div>;
+const fallback = (message: ReactNode) => <WorkspaceLoadingPanel>{message}</WorkspaceLoadingPanel>;
 
 export function AppViewStage({
   viewMode, ownerId, isOffline, isDarkMode, headingRef, focusIntent, stats, streak, isStatsLoading, statsError, loadPracticePool, reviewCard,

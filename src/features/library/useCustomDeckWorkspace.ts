@@ -198,11 +198,12 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
         try {
           await current.mutations.add(current.owner.id, plan.name);
         } catch (cause) {
-          if (!isCurrentOwner()) return;
+          if (!isCurrentOwner() || !latestRef.current.owner.remoteAvailable) return;
           current.ports.warn('Custom deck profile could not be updated.', cause);
           current.ports.reportError(deckCreationFailureMessage);
           throw new Error(deckCreationFailureMessage);
         }
+        if (!isCurrentOwner() || !latestRef.current.owner.remoteAvailable) return;
       }
       if (!isCurrentOwner()) return;
       setDeckState({ ownerScope, decks: plan.decks });
@@ -221,6 +222,13 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
         .filter(card => card.customDeck === deckName)
         .map(card => ({ ...card, customDeck: null }));
       const changedIds = new Set(changedCards.map(card => card.id));
+      const remoteOwnerId = current.owner.id;
+      const remoteAccessAvailable = () => Boolean(
+        remoteOwnerId
+        && isCurrentOwner()
+        && latestRef.current.owner.id === remoteOwnerId
+        && latestRef.current.owner.remoteAvailable,
+      );
       const applyLocalResult = () => {
         if (!isCurrentOwner()) return;
         setDeckState({ ownerScope, decks: updated });
@@ -232,28 +240,35 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
 
       let assignmentsCleared = false;
       let deckProfileRemoved = false;
-      if (current.owner.id && current.owner.remoteAvailable) {
+      if (remoteOwnerId && current.owner.remoteAvailable) {
         try {
-          const leaseResult = await withDevicePendingFlush(current.owner.id, false, async lease => {
+          const leaseResult = await withDevicePendingFlush(remoteOwnerId, false, async lease => {
             await lease.assertOwnership();
-            await current.mutations.clearAssignments(current.owner.id!, deckName);
+            if (!remoteAccessAvailable()) return;
+            await current.mutations.clearAssignments(remoteOwnerId, deckName);
             assignmentsCleared = true;
+            if (!remoteAccessAvailable()) return;
             await lease.assertOwnership();
-            await current.mutations.removeProfile(current.owner.id!, deckName);
+            if (!remoteAccessAvailable()) return;
+            await current.mutations.removeProfile(remoteOwnerId, deckName);
             deckProfileRemoved = true;
+            if (!remoteAccessAvailable()) return;
             const pending = await current.ports.patchDeviceCards(
               changedCards.map(card => ({ card, fields: { customDeck: null } })),
               current.knownLibraryTotal,
             );
+            if (!remoteAccessAvailable()) return;
             await lease.assertOwnership();
+            if (!remoteAccessAvailable()) return;
             await current.ports.acknowledgeDevicePending(pending, lease);
           });
+          if (!isCurrentOwner() || !remoteAccessAvailable()) return;
           if (!leaseResult.acquired) throw new Error('Cloud sync is finishing another operation. Try deleting the deck again in a moment.');
         } catch (cause) {
-          if (!isCurrentOwner()) return;
+          if (!isCurrentOwner() || !remoteAccessAvailable()) return;
           current.ports.warn('Deck deletion could not complete atomically.', cause);
           const recovery = planDeckDeletionFailureRecovery(assignmentsCleared, deckProfileRemoved);
-          current.ports.recoverCloud(current.owner.id, recovery.message);
+          current.ports.recoverCloud(remoteOwnerId, recovery.message);
           if (recovery.applyLocalResult) {
             applyLocalResult();
             return;
@@ -263,6 +278,7 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
         }
       }
       if (!isCurrentOwner()) return;
+      if (remoteOwnerId && current.owner.remoteAvailable && !remoteAccessAvailable()) return;
       applyLocalResult();
     },
   }), [decks, ownerScope, ownerVersion]);

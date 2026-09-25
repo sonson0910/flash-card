@@ -3,7 +3,12 @@ import type { ReviewRating } from '../../lib/reviewScheduler';
 import type { DeviceDeleteContext, DevicePendingFlushLease, DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import { normalizeAssignedDeckName } from '../library/customDecks';
-import type { LearningStateOutcome, LearningStatePublication } from './learningStateController';
+import type {
+  LearningDeleteUndoToken,
+  LearningRestoreRequest,
+  LearningStateOutcome,
+  LearningStatePublication,
+} from './learningStateController';
 import {
   useLearningState,
   type LearningOperationIdFactory,
@@ -11,6 +16,8 @@ import {
 import type {
   LearningPersistenceHook,
   LearningPersistenceStats,
+  RestoreDeviceCardOptions,
+  RestoreDeviceCardResult,
 } from './learningPersistencePort';
 
 export type LearningWorkspaceStats = LearningPersistenceStats;
@@ -22,6 +29,7 @@ export interface LearningWorkspaceLibraryPort {
   publication: {
     patch(cardId: string, fields: Partial<CardData>): void;
     remove(cardId: string): void;
+    restore(card: CardData): void;
     clear(): void;
   };
 }
@@ -31,6 +39,7 @@ export interface LearningWorkspacePracticePort {
   publication: {
     patch(cardId: string, fields: Partial<CardData>): void;
     remove(cardId: string): void;
+    restore(card: CardData): void;
     clear(): void;
   };
 }
@@ -43,6 +52,7 @@ export interface LearningWorkspaceInfrastructurePorts {
     operation?: 'patch' | 'review',
   ): Promise<DevicePendingOperation[]>;
   removeDeviceCard(cardId: string, context?: DeviceDeleteContext): Promise<DevicePendingOperation[]>;
+  restoreDeviceCard(card: CardData, options: RestoreDeviceCardOptions): Promise<RestoreDeviceCardResult>;
   acknowledgeDevicePending(operations: readonly DevicePendingOperation[], lease?: DevicePendingFlushLease): Promise<void>;
   acceptVerifiedEpoch(ownerId: string, epoch: number): void;
   mutateCloudStats(update: (current: LearningWorkspaceStats) => LearningWorkspaceStats): void;
@@ -83,7 +93,8 @@ export interface LearningWorkspaceActions {
     fields: Partial<CardData>,
     options?: LearningCardUpdateOptions,
   ): Promise<LearningStateOutcome>;
-  deleteCard(cardId: string): Promise<void>;
+  deleteCard(cardId: string): Promise<LearningStateOutcome>;
+  restoreCard(token: LearningDeleteUndoToken): Promise<LearningStateOutcome>;
   clearLibrary(): Promise<void>;
 }
 
@@ -91,6 +102,8 @@ type SourceOverride = {
   source: CardData;
   expectedLifecycle?: string;
 };
+
+let fallbackRestoreOperationSequence = 0;
 
 export interface LearningWorkspaceDependencies {
   usePersistence: LearningPersistenceHook;
@@ -105,11 +118,25 @@ export function useLearningWorkspace(
   const latestRef = useRef(options);
   latestRef.current = options;
   const sourceOverridesRef = useRef(new Map<string, SourceOverride>());
+  const deleteTokensRef = useRef(new Map<string, LearningDeleteUndoToken>());
+  const restoreRequestsRef = useRef(new Map<string, LearningRestoreRequest>());
 
   const persistence = dependencies.usePersistence({
     ownerId: options.owner.id,
     verifiedEpoch: options.owner.verifiedEpoch,
     knownLibraryTotal: options.library.knownTotal,
+    validateRestore: token => {
+      const current = latestRef.current;
+      const ownerKey = current.owner.commandKey ?? current.owner.id ?? 'device';
+      if (ownerKey !== token.ownerKey || current.owner.id !== token.ownerId) return 'owner-changed';
+      if (current.owner.verifiedEpoch !== null && current.owner.verifiedEpoch !== token.expectedLibraryEpoch) {
+        return 'epoch-changed';
+      }
+      if (deleteTokensRef.current.get(token.card.id)?.lifecycleId !== token.lifecycleId) return 'deleted-again';
+      if (current.library.findCard(token.card.id) || current.practice.findCard(token.card.id)) return 'unsafe-existing';
+      return null;
+    },
+    restoreDeviceCard: (card, restoreOptions) => latestRef.current.ports.restoreDeviceCard(card, restoreOptions),
     findCard: cardId => sourceOverridesRef.current.get(cardId)?.source
       ?? latestRef.current.library.findCard(cardId)
       ?? latestRef.current.practice.findCard(cardId),
@@ -138,12 +165,14 @@ export function useLearningWorkspace(
     const library = latestRef.current.library.publication;
     if (publication.kind === 'patch') library.patch(publication.cardId, publication.fields);
     else if (publication.kind === 'delete') library.remove(publication.cardId);
+    else if (publication.kind === 'restore') library.restore(publication.card);
     else library.clear();
   };
   const publishPractice = (publication: LearningStatePublication) => {
     const practice = latestRef.current.practice.publication;
     if (publication.kind === 'patch') practice.patch(publication.cardId, publication.fields);
     else if (publication.kind === 'delete') practice.remove(publication.cardId);
+    else if (publication.kind === 'restore') practice.restore(publication.card);
     else practice.clear();
   };
   const commands = useLearningState({
@@ -191,8 +220,40 @@ export function useLearningWorkspace(
         }
       }
     },
-    deleteCard: async cardId => { await commands.deleteCard(cardId); },
-    clearLibrary: async () => { await commands.clearLibrary(); },
+    deleteCard: async cardId => {
+      const outcome = await commands.deleteCard(cardId);
+      const token = 'result' in outcome ? outcome.result.undoToken : undefined;
+      if (token) deleteTokensRef.current.set(cardId, token);
+      return outcome;
+    },
+    restoreCard: async token => {
+      let request = restoreRequestsRef.current.get(token.lifecycleId);
+      if (!request) {
+        const current = latestRef.current;
+        const operationId = current.createOperationId?.('restore', token.card.id)
+          ?? (globalThis.crypto?.randomUUID?.()
+            ?? `restore-${token.card.id}-${Date.now()}-${++fallbackRestoreOperationSequence}`);
+        const now = current.now?.() ?? new Date();
+        const afterDelete = Date.parse(token.deletedAt) + 1;
+        const operationCreatedAt = new Date(Math.max(now.getTime(), afterDelete)).toISOString();
+        request = { operationId, operationCreatedAt };
+        restoreRequestsRef.current.set(token.lifecycleId, request);
+        while (restoreRequestsRef.current.size > 500) {
+          const oldestLifecycle = restoreRequestsRef.current.keys().next().value as string | undefined;
+          if (!oldestLifecycle) break;
+          restoreRequestsRef.current.delete(oldestLifecycle);
+        }
+      }
+      const outcome = await commands.restoreCard(token, request);
+      if (outcome.status === 'published' || outcome.status === 'durably-queued' || outcome.status === 'undo-conflict') {
+        deleteTokensRef.current.delete(token.card.id);
+      }
+      return outcome;
+    },
+    clearLibrary: async () => {
+      await commands.clearLibrary();
+      deleteTokensRef.current.clear();
+    },
   }), [commands]);
 
   return { actions };

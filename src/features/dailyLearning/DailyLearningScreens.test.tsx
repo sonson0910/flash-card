@@ -47,6 +47,16 @@ const readyToday: TodayScreenModel = {
   placementAvailable: true,
 };
 
+const caughtUpToday: TodayScreenModel = {
+  status: 'caught-up',
+  isOffline: false,
+  message: 'No due or new cards are available in this daily plan.',
+  courseLabel: 'English ← Vietnamese',
+  plan: { total: 0, due: 0, weak: 0, fresh: 0, isShort: true },
+  placementAvailable: false,
+  caughtUp: { availableNewCount: 0 },
+};
+
 const lessonActions: LessonScreenActions = {
   chooseAnswer: vi.fn(),
   changeTextAnswer: vi.fn(),
@@ -160,9 +170,91 @@ describe('TodayScreen', () => {
     expect(html).toContain('Explore learning paths');
     expect(html).not.toContain('autofocus');
   });
+
+  it.each([
+    ['classic', 'light'],
+    ['classic', 'dark'],
+    ['crystal', 'light'],
+    ['crystal', 'dark'],
+  ])('renders the caught-up state in the %s %s theme without invented review facts', (family, mode) => {
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => ({
+        sonflash_theme_family: family,
+        lingoflash_theme: mode,
+        sonflash_lumi_enabled: 'false',
+      })[key] ?? null,
+    });
+    try {
+      const html = renderToStaticMarkup(<ThemeProvider><TodayScreen model={caughtUpToday} actions={todayActions} /></ThemeProvider>);
+
+      expect(html).toContain('data-today-caught-up="true"');
+      expect(html).toContain('class="today-caught-up-panel');
+      expect(html).toContain('All caught');
+      expect(html).toContain('No due or new cards are available in this daily plan.');
+      expect(html).toContain('Learn 5 new');
+      expect(html).toContain('disabled=""');
+      expect(html).toContain('aria-describedby="today-caught-up-learn-reason"');
+      expect(html).toContain('id="today-caught-up-learn-reason"');
+      expect(html).toContain('Browse paths');
+      expect(html).not.toContain('Next review');
+      expect(html).not.toContain('8 cards');
+      expect(html).not.toContain('data-lumi-pose="happy"');
+      if (family === 'crystal') {
+        expect(html).toContain('today-caught-up-panel--crystal');
+        expect(html).toContain('viewBox="0 0 100 100"');
+        expect(html).toContain('fill="#7a0820"');
+        expect(html).toContain('today-caught-up-gold');
+      }
+      else {
+        expect(html).toContain(`today-caught-up-${mode}-accent`);
+        expect(html).toContain('today-caught-up-seal');
+      }
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('renders next-review metadata only when an explicit complete-pool fixture supplies it', () => {
+    const html = renderToStaticMarkup(<TodayScreen
+      model={{ ...caughtUpToday, caughtUp: { availableNewCount: 0, nextReview: { label: 'tomorrow, 08:00', cardCount: 8 } } }}
+      actions={todayActions}
+    />);
+
+    expect(html).toContain('Next review tomorrow, 08:00 · 8 cards');
+    expect(html).toContain('No new cards are available in this daily plan.');
+  });
+
+  it('keeps the crystal completion message and actions available when Lumi is enabled with reduced-motion-safe decoration', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => ({ sonflash_theme_family: 'crystal', sonflash_lumi_enabled: 'true' })[key] ?? null,
+    });
+    try {
+      const html = renderToStaticMarkup(<ThemeProvider><TodayScreen model={caughtUpToday} actions={todayActions} /></ThemeProvider>);
+
+      expect(html).toContain('data-lumi-pose="happy"');
+      expect(html).toContain('motion-reduce:animate-none');
+      expect(html).toContain('No due or new cards are available in this daily plan.');
+      expect(html).toContain('Browse paths');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });
 
 describe('LessonScreen', () => {
+  it('keeps study guidance visible when Lumi is disabled', () => {
+    vi.stubGlobal('localStorage', { getItem: (key: string) => ({ sonflash_theme_family: 'crystal', sonflash_lumi_enabled: 'false' })[key] ?? null });
+    try {
+      const html = renderToStaticMarkup(<ThemeProvider><LessonScreen model={choiceLesson} actions={lessonActions} /></ThemeProvider>);
+
+      expect(html).toContain('Take your time. One clear answer at a time.');
+      expect(html).not.toContain('data-lumi-pose=');
+      expect(html).toContain('Submit answer');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('does not expose answer correctness or the expected answer before submission', () => {
     const html = renderToStaticMarkup(<LessonScreen model={choiceLesson} actions={lessonActions} />);
 
@@ -259,6 +351,29 @@ describe('LessonScreen', () => {
 });
 
 describe('PlacementScreen', () => {
+  it('keeps the diagnostic guidance visible when Lumi is disabled', () => {
+    vi.stubGlobal('localStorage', { getItem: (key: string) => ({ sonflash_theme_family: 'crystal', sonflash_lumi_enabled: 'false' })[key] ?? null });
+    const model: PlacementScreenModel = {
+      status: 'question',
+      message: 'Question 1 of 8.',
+      current: 1,
+      total: 8,
+      prompt: 'Choose the closest meaning.',
+      promptLanguage: 'en',
+      selectedId: null,
+      options: [{ id: 'a', label: 'First meaning' }, { id: 'b', label: 'Second meaning' }],
+    };
+    try {
+      const html = renderToStaticMarkup(<ThemeProvider><PlacementScreen model={model} actions={placementActions} /></ThemeProvider>);
+
+      expect(html).toContain('There is no score here. Choose what feels most familiar.');
+      expect(html).not.toContain('data-lumi-pose=');
+      expect(html).toContain('Submit answer');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('reports insufficient evidence without manufacturing a tier', () => {
     const model: PlacementScreenModel = {
       status: 'insufficient',

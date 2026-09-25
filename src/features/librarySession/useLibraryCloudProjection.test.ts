@@ -45,6 +45,7 @@ const session = (ownerId: string | null, options: {
     canPublishMutations: Boolean(ownerId),
     isSigningIn: false,
     isSigningOut: false,
+    authenticationRecovery: null,
     error: null,
   },
   owner: {

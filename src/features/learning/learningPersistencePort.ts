@@ -1,5 +1,9 @@
 import type { DeviceDeleteContext, DevicePendingFlushLease, DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
+import type {
+  LearningDeleteUndoToken,
+  LearningRestoreConflictReason,
+} from './learningStateController';
 import type { LearningStatePersistencePort } from './useLearningState';
 
 export interface LearningPersistenceStats {
@@ -14,10 +18,23 @@ export interface LearningPersistenceStats {
   legacyUnindexed: number;
 }
 
+export interface RestoreDeviceCardOptions {
+  ownerId: string | null;
+  expectedLibraryEpoch: number;
+  operationId: string;
+  operationCreatedAt: string;
+}
+
+export type RestoreDeviceCardResult =
+  | { status: 'restored' | 'queued' | 'existing'; card: CardData }
+  | { status: 'conflict'; reason: LearningRestoreConflictReason; card?: CardData };
+
 export interface LearningPersistenceOptions {
   ownerId: string | null;
   verifiedEpoch: number | null;
   knownLibraryTotal: number;
+  validateRestore(token: LearningDeleteUndoToken): LearningRestoreConflictReason | null;
+  restoreDeviceCard(card: CardData, options: RestoreDeviceCardOptions): Promise<RestoreDeviceCardResult>;
   findCard(cardId: string): CardData | undefined;
   canPublishPatch(cardId: string): boolean;
   patchDeviceCards(

@@ -3,6 +3,7 @@ import { Trans } from '@lingui/react';
 import type { LibraryScreenProps } from '../features/library/LibraryScreen';
 import type { PracticeWorkspace } from '../features/practice/usePracticeWorkspace';
 import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
+import { WorkspaceLoadingPanel } from '../components/WorkspaceLoadingPanel';
 
 const LibraryScreen = lazy(() => Promise.all([
   import('../features/library/LibraryScreen'), loadCatalog(getActiveUiLocale(), 'library'),
@@ -12,11 +13,7 @@ const PracticeScreen = lazy(() => Promise.all([
 ]).then(([module]) => ({ default: module.PracticeScreen })));
 
 export function AppViewFallback({ label }: { label: ReactNode }) {
-  return (
-    <div className="crystal-chamfer skeleton-sheen min-h-40 rounded-[26px] border border-[var(--sf-border)] bg-[var(--sf-surface)]" role="status">
-      <span className="sr-only">{label}</span>
-    </div>
-  );
+  return <WorkspaceLoadingPanel>{label}</WorkspaceLoadingPanel>;
 }
 
 export function AppDeferredLibraryView({ model, actions }: LibraryScreenProps) {

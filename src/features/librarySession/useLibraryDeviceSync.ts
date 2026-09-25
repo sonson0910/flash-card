@@ -8,6 +8,7 @@ import {
   acknowledgeDevicePending as acknowledgeStoredDevicePending,
   loadDeviceCards,
   mergeDeviceCards,
+  mergePendingOperations,
   queueDeviceDeletes, queueDevicePatches, queueDeviceUpserts,
   subscribeToDeviceCards,
   type DeviceDeleteContext,
@@ -15,17 +16,20 @@ import {
   type DevicePendingOperation,
 } from '../../lib/deviceSync';
 import { canUseDeviceBackupForSession } from '../../lib/sessionCards';
+import { cardLogicalKey } from '../../lib/cardIdentity';
 import type { CardData } from '../../types/card';
 import { db, isFirebaseConfigured } from '../../lib/firebase';
 import { getSyncErrorMessage, type CloudSyncEpoch } from '../sync/syncHealthModel';
 import {
   isCloudBackoffActive, normalizeCardForStorage,
-  normalizeLocalCards, persistLocalCardBackup,
+  normalizeLocalCards, persistLocalCardBackup, readLocalCardCache,
   writeLocalCardCache,
 } from '../library/libraryStorage';
 import { overlayRecentlyPromotedCards } from '../library/libraryPresentation';
 import {
   createLibraryReplica,
+  type RestoreDeviceCardOptions,
+  type RestoreDeviceCardResult,
   type LibraryEpoch as ReplicaEpoch,
   type LibraryReplicaEvents,
 } from './libraryReplica';
@@ -41,6 +45,8 @@ export interface LibraryDeviceSyncEvents extends LibraryReplicaEvents {
 export interface UseLibraryDeviceSyncOptions {
   owner: LibraryDeviceOwner | null;
   epoch: LibraryEpoch | null;
+  canVerifyEpoch: boolean;
+  canPublishMutations: boolean;
   cards: readonly CardData[];
   knownLibraryTotal: number;
   cloudTotal: number;
@@ -56,7 +62,7 @@ export interface UseLibraryDeviceSyncOptions {
 }
 
 export function useLibraryDeviceSync({
-  owner, epoch, cards, knownLibraryTotal, cloudTotal, cloudStatsTotal, cardsPerPage,
+  owner, epoch, canVerifyEpoch, canPublishMutations, cards, knownLibraryTotal, cloudTotal, cloudStatsTotal, cardsPerPage,
   isBrowserOnline, cloudReadUnavailable, query, queryKey, currentPage, getPromotedCards, events,
 }: UseLibraryDeviceSyncOptions) {
   const [isSyncing, setIsSyncing] = useState(false);
@@ -66,12 +72,18 @@ export function useLibraryDeviceSync({
   const epochUserId = epoch?.userId ?? null;
   const epochValue = epoch?.value ?? null;
   const ownerRef = useRef(ownerId);
+  const canVerifyEpochRef = useRef(canVerifyEpoch);
+  const canPublishMutationsRef = useRef(canPublishMutations);
+  const isBrowserOnlineRef = useRef(isBrowserOnline);
   const cardsRef = useRef(cards);
   const epochRef = useRef(epoch);
   const eventsRef = useRef(events);
   const cloudTotalRef = useRef(cloudTotal);
   const cloudStatsTotalRef = useRef(cloudStatsTotal);
   ownerRef.current = ownerId;
+  canVerifyEpochRef.current = canVerifyEpoch;
+  canPublishMutationsRef.current = canPublishMutations;
+  isBrowserOnlineRef.current = isBrowserOnline;
   cardsRef.current = cards;
   epochRef.current = epoch;
   eventsRef.current = events;
@@ -80,6 +92,7 @@ export function useLibraryDeviceSync({
 
   const replica = useMemo(() => ownerId ? createLibraryReplica({
     ownerId,
+    isBrowserOnline: () => isBrowserOnlineRef.current,
     getEpoch: () => epochRef.current,
     getCards: () => cardsRef.current,
     getEvents: () => eventsRef.current,
@@ -88,6 +101,8 @@ export function useLibraryDeviceSync({
       cloudStatsTotal: cloudStatsTotalRef.current,
     }),
     isOwnerCurrent: () => ownerRef.current === ownerId,
+    canVerifyEpoch: () => canVerifyEpochRef.current,
+    canPublishMutations: () => canPublishMutationsRef.current,
     onError: setError,
     onPendingCount: setPendingCount,
     onSyncing: setIsSyncing,
@@ -229,6 +244,84 @@ export function useLibraryDeviceSync({
     });
   }, [events, replica]);
 
+  const restoreDeviceCard = useCallback(async (
+    card: CardData,
+    options: RestoreDeviceCardOptions,
+  ): Promise<RestoreDeviceCardResult> => {
+    if (options.ownerId !== ownerId || ownerRef.current !== options.ownerId) {
+      return { status: 'conflict', reason: 'owner-changed' };
+    }
+    if (ownerId === null) {
+      if (options.expectedLibraryEpoch !== 0) return { status: 'conflict', reason: 'epoch-changed' };
+      if (
+        !/^[A-Za-z0-9_-]{1,128}$/.test(options.operationId)
+        || !Number.isFinite(Date.parse(options.operationCreatedAt))
+      ) return { status: 'conflict', reason: 'unsafe-existing' };
+      const candidateIdentity = cardLogicalKey(card);
+      const visibleExisting = cardsRef.current.find(candidate => candidate.id === card.id)
+        ?? (candidateIdentity
+          ? cardsRef.current.find(candidate => cardLogicalKey(candidate) === candidateIdentity)
+          : undefined);
+      if (visibleExisting) return { status: 'existing', card: visibleExisting };
+      const cache = readLocalCardCache();
+      if (cache.ownerId !== null) return { status: 'conflict', reason: 'owner-changed' };
+      const localCards = normalizeLocalCards([...cardsRef.current, ...cache.cards]);
+      const existing = localCards.find(candidate => candidate.id === card.id)
+        ?? (candidateIdentity
+          ? localCards.find(candidate => cardLogicalKey(candidate) === candidateIdentity)
+          : undefined);
+      if (existing) return { status: 'existing', card: existing };
+      const restoredCard = { ...card, libraryEpoch: 0 };
+      const queued = await queueDeviceUpserts(
+        [restoredCard],
+        Math.max(knownLibraryTotal, localCards.length + 1),
+        undefined,
+        false,
+        {
+          operationId: options.operationId,
+          operationCreatedAt: options.operationCreatedAt,
+          libraryEpoch: 0,
+          baseRevisions: { [restoredCard.id]: restoredCard.revision ?? 0 },
+          restore: true,
+        },
+      );
+      if (ownerRef.current !== null || options.ownerId !== ownerRef.current) {
+        return { status: 'conflict', reason: 'owner-changed' };
+      }
+      const queuedRestore = queued.some(operation =>
+        operation.type === 'upsert' && operation.opId === options.operationId,
+      );
+      if (!queuedRestore) {
+        const backup = await loadDeviceCards();
+        const latestOperation = backup?.ownerUserId === null
+          ? mergePendingOperations(backup.pending)
+            .filter(operation => (operation.type === 'upsert' ? operation.card.id : operation.cardId) === restoredCard.id)
+            .at(-1)
+          : undefined;
+        if (
+          latestOperation?.type === 'delete'
+          && Date.parse(latestOperation.updatedAt) > Date.parse(options.operationCreatedAt)
+        ) return { status: 'conflict', reason: 'deleted-again' };
+        return { status: 'conflict', reason: 'unsafe-existing' };
+      }
+      const latestCache = readLocalCardCache();
+      if (latestCache.ownerId !== null) return { status: 'conflict', reason: 'owner-changed' };
+      const latestCards = normalizeLocalCards([...cardsRef.current, ...latestCache.cards]);
+      const concurrentExisting = latestCards.find(candidate => candidate.id === card.id)
+        ?? (candidateIdentity
+          ? latestCards.find(candidate => cardLogicalKey(candidate) === candidateIdentity)
+          : undefined);
+      if (concurrentExisting) return { status: 'existing', card: concurrentExisting };
+      const nextCards = normalizeLocalCards([...latestCards, restoredCard]);
+      if (!writeLocalCardCache(nextCards, null)) {
+        return { status: 'conflict', reason: 'unsafe-existing' };
+      }
+      return { status: 'restored', card: restoredCard };
+    }
+    if (!replica) return { status: 'conflict', reason: 'owner-changed' };
+    return replica.restoreDeviceCard(card, options);
+  }, [knownLibraryTotal, ownerId, replica]);
+
   const flush = useCallback((
     manualRetry = false,
     verifiedEpoch: CloudSyncEpoch | null = null,
@@ -238,13 +331,13 @@ export function useLibraryDeviceSync({
   }, [isBrowserOnline, replica]);
 
   useEffect(() => {
-    if (!ownerId || !db || !isFirebaseConfigured || !isBrowserOnline || pendingCount < 1) return;
+    if (!ownerId || !canPublishMutations || !db || !isFirebaseConfigured || !isBrowserOnline || pendingCount < 1) return;
     const tryFlush = () => void flush();
     tryFlush();
     window.addEventListener('focus', tryFlush);
     const interval = window.setInterval(tryFlush, 60_000);
     return () => { window.removeEventListener('focus', tryFlush); window.clearInterval(interval); };
-  }, [flush, isBrowserOnline, ownerId, pendingCount]);
+  }, [canPublishMutations, flush, isBrowserOnline, ownerId, pendingCount]);
 
   const syncMirror = useCallback((force = false): Promise<number> => {
     if (!replica) return Promise.resolve(0);
@@ -290,7 +383,7 @@ export function useLibraryDeviceSync({
     await replica.retry();
   }, [flush, isSyncing, replica]);
 
-  return { isSyncing, pendingCount, error, getFallback, refreshPending, acknowledge, upsertCards, patchCards, removeCard, flush, syncMirror, syncNow, retry };
+  return { isSyncing, pendingCount, error, getFallback, refreshPending, acknowledge, upsertCards, patchCards, removeCard, restoreDeviceCard, flush, syncMirror, syncNow, retry };
 }
 
 export type { DevicePendingOperation };

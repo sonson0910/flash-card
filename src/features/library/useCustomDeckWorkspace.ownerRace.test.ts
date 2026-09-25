@@ -139,6 +139,7 @@ const createWorkspaceHarness = (cards: readonly CardData[] = []) => {
     ownerId: string | null,
     remoteDecks: readonly string[] | null,
     identityReady = true,
+    remoteAvailable = Boolean(ownerId),
   ) => {
     hookRuntime.effectCursor = 0;
     hookRuntime.refCursor = 0;
@@ -146,7 +147,7 @@ const createWorkspaceHarness = (cards: readonly CardData[] = []) => {
     return useCustomDeckWorkspace({
       ...stableOptions,
       identityReady,
-      owner: { id: ownerId, remoteAvailable: Boolean(ownerId) },
+      owner: { id: ownerId, remoteAvailable },
       remoteDecks,
     });
   };
@@ -194,7 +195,7 @@ describe('useCustomDeckWorkspace owner isolation', () => {
     expect(firstSignedOutRender.model.decks).toEqual([]);
   });
 
-  it('does not publish an owner-a deletion after the workspace switches to owner-b', async () => {
+  it('stops an in-flight owner-a deletion after the workspace switches to owner-b', async () => {
     const ownerACard: CardData = {
       id: 'owner-a-card',
       word: 'private',
@@ -227,9 +228,9 @@ describe('useCustomDeckWorkspace owner isolation', () => {
     clearAssignments.resolve(undefined);
     await deletePromise;
 
-    expect(mutations.removeProfile).toHaveBeenCalledWith('owner-a', 'Owner A private deck');
-    expect(ports.patchDeviceCards).toHaveBeenCalledOnce();
-    expect(ports.acknowledgeDevicePending).toHaveBeenCalledOnce();
+    expect(mutations.removeProfile).not.toHaveBeenCalled();
+    expect(ports.patchDeviceCards).not.toHaveBeenCalled();
+    expect(ports.acknowledgeDevicePending).not.toHaveBeenCalled();
     const ownerBAfterLateDelete = render('owner-b', null);
     expect(ownerBAfterLateDelete.model.decks).toEqual(ownerBDecks);
     expect(cacheWrites).not.toContainEqual({ ownerId: 'owner-b', decks: [] });
@@ -245,6 +246,7 @@ describe('useCustomDeckWorkspace owner isolation', () => {
     const ownerAWorkspace = render('owner-a', ['Owner A private deck']);
     flushEffects();
     const deletePromise = ownerAWorkspace.actions.deleteDeck('Owner A private deck');
+    await vi.waitFor(() => expect(mutations.clearAssignments).toHaveBeenCalledOnce());
 
     render('owner-b', ['Owner B private deck']);
     flushEffects();
@@ -303,6 +305,106 @@ describe('useCustomDeckWorkspace owner isolation', () => {
 
     expect(cacheWrites).toEqual([]);
     expect(render('owner-b', null).model.decks).toEqual(['Owner B private deck']);
+  });
+
+  it('keeps local deck creation available without remote writes while owner mutation access is paused', async () => {
+    const { cacheWrites, mutations, render } = createWorkspaceHarness();
+    const decks = ['Owner A private deck'];
+    const workspace = render('owner-a', decks, true, false);
+    flushEffects();
+    cacheWrites.length = 0;
+
+    await workspace.actions.createDeck('Local deck');
+
+    expect(mutations.add).not.toHaveBeenCalled();
+    expect(cacheWrites).toContainEqual({ ownerId: 'owner-a', decks: [...decks, 'Local deck'] });
+  });
+
+  it('keeps local deck deletion available without remote writes while owner mutation access is paused', async () => {
+    const ownerACard: CardData = {
+      id: 'owner-a-card',
+      word: 'private',
+      translation: 'riêng tư',
+      explanation: '',
+      phonetic: '',
+      emoji: '🔒',
+      category: 'Other',
+      audioUrl: null,
+      imageUrl: null,
+      customDeck: 'Owner A private deck',
+    };
+    const decks = ['Owner A private deck'];
+    const { cacheWrites, mutations, ports, render } = createWorkspaceHarness([ownerACard]);
+    const workspace = render('owner-a', decks, true, false);
+    flushEffects();
+    cacheWrites.length = 0;
+
+    await workspace.actions.deleteDeck('Owner A private deck');
+
+    expect(mutations.clearAssignments).not.toHaveBeenCalled();
+    expect(mutations.removeProfile).not.toHaveBeenCalled();
+    expect(ports.patchDeviceCards).not.toHaveBeenCalled();
+    expect(ports.acknowledgeDevicePending).not.toHaveBeenCalled();
+    expect(cacheWrites).toContainEqual({ ownerId: 'owner-a', decks: [] });
+  });
+
+  it('stops an in-flight same-owner creation after mutation access is paused', async () => {
+    const remoteCreate = deferred<undefined>();
+    const decks = ['Owner A private deck'];
+    const { cacheWrites, mutations, render } = createWorkspaceHarness();
+    mutations.add.mockImplementation(() => remoteCreate.promise);
+
+    const workspace = render('owner-a', decks);
+    flushEffects();
+    cacheWrites.length = 0;
+    const createPromise = workspace.actions.createDeck('Late local deck');
+    await vi.waitFor(() => expect(mutations.add).toHaveBeenCalledOnce());
+
+    render('owner-a', decks, true, false);
+    flushEffects();
+    cacheWrites.length = 0;
+    remoteCreate.resolve(undefined);
+    await createPromise;
+
+    expect(cacheWrites).toEqual([]);
+  });
+
+  it('stops an in-flight same-owner deletion before later remote writes after access is paused', async () => {
+    const ownerACard: CardData = {
+      id: 'owner-a-card',
+      word: 'private',
+      translation: 'riêng tư',
+      explanation: '',
+      phonetic: '',
+      emoji: '🔒',
+      category: 'Other',
+      audioUrl: null,
+      imageUrl: null,
+      customDeck: 'Owner A private deck',
+    };
+    const clearAssignments = deferred<undefined>();
+    const decks = ['Owner A private deck'];
+    const { cacheWrites, mutations, ports, render } = createWorkspaceHarness([ownerACard]);
+    mutations.clearAssignments.mockImplementation(() => clearAssignments.promise);
+
+    const workspace = render('owner-a', decks);
+    flushEffects();
+    cacheWrites.length = 0;
+    const deletePromise = workspace.actions.deleteDeck('Owner A private deck');
+    await vi.waitFor(() => expect(mutations.clearAssignments).toHaveBeenCalledOnce());
+
+    render('owner-a', decks, true, false);
+    flushEffects();
+    cacheWrites.length = 0;
+    clearAssignments.resolve(undefined);
+    await deletePromise;
+
+    expect(mutations.removeProfile).not.toHaveBeenCalled();
+    expect(ports.patchDeviceCards).not.toHaveBeenCalled();
+    expect(ports.acknowledgeDevicePending).not.toHaveBeenCalled();
+    expect(cacheWrites).toEqual([]);
+    expect(ports.publishCards).not.toHaveBeenCalled();
+    expect(ports.publishPractice).not.toHaveBeenCalled();
   });
 
   it('does not surface an in-flight owner-a creation failure to owner-b', async () => {

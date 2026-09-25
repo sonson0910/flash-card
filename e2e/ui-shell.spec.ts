@@ -1,6 +1,18 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+test('the first-use create action focuses the visible word field', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript(() => {
+    localStorage.setItem('lingoflash_cards_scoped_v1', JSON.stringify({ version: 1, ownerId: null, cards: [] }));
+  });
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1:4173)/, route => route.abort());
+  await page.goto('/?view=library&locale=en');
+  await expect(page.locator('[data-empty-library-panel]')).toBeVisible();
+  await page.locator('[data-library-create-action]').click();
+  await expect(page.locator('#empty-library-word')).toBeFocused();
+});
+
 test('mobile shell switches language and theme without reloading', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/?view=library');

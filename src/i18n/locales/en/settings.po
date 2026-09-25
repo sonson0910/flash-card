@@ -14,121 +14,121 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:82
+#: src/features/settings/settings-screen.tsx:85
 msgid "settings.appearance.description"
 msgstr "Changes apply right away and stay after you return."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:82
+#: src/features/settings/settings-screen.tsx:85
 msgid "settings.appearance.title"
 msgstr "Appearance"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:88
+#: src/features/settings/settings-screen.tsx:91
 msgid "settings.crystal-mode.day"
 msgstr "Prism Day"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:88
+#: src/features/settings/settings-screen.tsx:91
 msgid "settings.crystal-mode.label"
 msgstr "Crystal Star mode"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:88
+#: src/features/settings/settings-screen.tsx:91
 msgid "settings.crystal-mode.night"
 msgstr "Starry Night"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:78
+#: src/features/settings/settings-screen.tsx:81
 msgid "settings.description"
 msgstr "Choose a look and tune the details that help you focus."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:89
+#: src/features/settings/settings-screen.tsx:92
 msgid "settings.follow-system.description"
 msgstr "Match your device’s light or dark setting."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:89
+#: src/features/settings/settings-screen.tsx:92
 msgid "settings.follow-system.label"
 msgstr "Follow system"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:76
+#: src/features/settings/settings-screen.tsx:79
 msgid "settings.kicker"
 msgstr "Settings"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:89
+#: src/features/settings/settings-screen.tsx:92
 msgid "settings.lumi.description"
 msgstr "Show your Crystal Star study companion."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:89
+#: src/features/settings/settings-screen.tsx:92
 msgid "settings.lumi.label"
 msgstr "Lumi"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:90
+#: src/features/settings/settings-screen.tsx:93
 msgid "settings.preview.note"
 msgstr "Your choices are shown in the live previews above."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:89
+#: src/features/settings/settings-screen.tsx:92
 msgid "settings.reduced-motion.description"
 msgstr "Limit movement and animated effects."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:89
+#: src/features/settings/settings-screen.tsx:92
 msgid "settings.reduced-motion.label"
 msgstr "Reduced motion"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:89
+#: src/features/settings/settings-screen.tsx:92
 msgid "settings.sound.description"
 msgstr "Play feedback sounds while you study."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:89
+#: src/features/settings/settings-screen.tsx:92
 msgid "settings.sound.label"
 msgstr "Study sounds"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:86
+#: src/features/settings/settings-screen.tsx:89
 msgid "settings.theme.crystal"
 msgstr "Crystal Star"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:86
+#: src/features/settings/settings-screen.tsx:89
 msgid "settings.theme.crystal.description"
 msgstr "A sparkling study space with Lumi."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:83
+#: src/features/settings/settings-screen.tsx:86
 msgid "settings.theme.label"
 msgstr "Theme"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:84
+#: src/features/settings/settings-screen.tsx:87
 msgid "settings.theme.midnight"
 msgstr "Midnight Aurora"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:84
+#: src/features/settings/settings-screen.tsx:87
 msgid "settings.theme.midnight.description"
 msgstr "A deep, calm night palette."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:85
+#: src/features/settings/settings-screen.tsx:88
 msgid "settings.theme.paper"
 msgstr "Ink & Paper"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:85
+#: src/features/settings/settings-screen.tsx:88
 msgid "settings.theme.paper.description"
 msgstr "A warm, bright reading surface."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:77
+#: src/features/settings/settings-screen.tsx:80
 msgid "settings.title"
 msgstr "Make your study space yours"

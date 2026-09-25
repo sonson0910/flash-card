@@ -919,6 +919,7 @@ export async function findCardsByNormalizedWords(
 export interface CreateCardIfAbsentResult {
   card: CardData;
   created: boolean;
+  restored?: true;
 }
 
 export type CardMutationPreconditionReason =
@@ -932,6 +933,7 @@ export interface CreateCardIfAbsentOptions {
   baseRevision?: number;
   opId?: string;
   operationCreatedAt?: string;
+  restore?: true;
 }
 
 export class CardMutationPreconditionError extends Error {
@@ -1476,8 +1478,10 @@ const parseCallableCardResponse = (value: unknown): CreateCardIfAbsentResult => 
   }
   const envelope = value as Record<string, unknown>;
   if (
-    Object.keys(envelope).length !== 2
+    (Object.keys(envelope).length !== 2
+      && !(Object.keys(envelope).length === 3 && envelope.restored === true))
     || typeof envelope.created !== 'boolean'
+    || (envelope.restored === true && envelope.created !== true)
     || !envelope.card
     || typeof envelope.card !== 'object'
     || Array.isArray(envelope.card)
@@ -1503,7 +1507,7 @@ const parseCallableCardResponse = (value: unknown): CreateCardIfAbsentResult => 
   if (card.id !== rawCard.id || card.normalizedWord !== normalizeCardWord(rawCard.normalizedWord)) {
     throw new CardCallableResponseError();
   }
-  return { created: envelope.created, card };
+  return { created: envelope.created, card, ...(envelope.restored === true ? { restored: true } : {}) };
 };
 
 export async function createCardIfAbsent(
@@ -1526,6 +1530,7 @@ export async function createCardIfAbsent(
           baseRevision?: number;
           opId?: string;
           operationCreatedAt?: string;
+          restore?: true;
         },
         CreateCardIfAbsentResult
       >(getFunctions(firebaseApp, 'asia-southeast1'), 'createCard');
@@ -1537,6 +1542,7 @@ export async function createCardIfAbsent(
           ...(options.baseRevision === undefined ? {} : { baseRevision: options.baseRevision }),
           ...(options.opId === undefined ? {} : { opId: options.opId }),
           ...(options.operationCreatedAt === undefined ? {} : { operationCreatedAt: options.operationCreatedAt }),
+          ...(options.restore === undefined ? {} : { restore: options.restore }),
         });
         return parseCallableCardResponse(response.data);
       } catch (error) {

@@ -21,10 +21,19 @@ msgid "flashcard.ai-disclosure"
 msgstr "AI-generated content may be incorrect. Please check the meaning."
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:29
-#: src/components/shell/DesktopNavigation.tsx:29
+#: src/components/shell/LibraryManagementMenu.tsx:295
 msgid "shell.account.sign-out"
 msgstr "Sign out of cloud sync"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:79
+msgid "shell.brand.mark"
+msgstr "S"
+
+#. js-lingui-explicit-id
+#: src/app/use-library-mutation-feedback.ts:47
+msgid "shell.card.delete-failed"
+msgstr "The card could not be deleted. Please try again."
 
 #. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:370
@@ -52,14 +61,10 @@ msgid "shell.clear.title"
 msgstr "Clear the entire library?"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherSlot.tsx:14
-msgid "shell.course.current"
-msgstr "English ← Tiếng Việt"
-
-#. js-lingui-explicit-id
+#: src/app/app-runtime-error.tsx:11
 #: src/components/AppErrorBoundary.tsx:8
-msgid "shell.error-boundary.description"
-msgstr "Your saved data is safe. Reload the app to restore the interface."
+msgid "shell.error-boundary.description.recovery"
+msgstr "This screen hit an error. Reloading may restore the interface."
 
 #. js-lingui-explicit-id
 #: src/components/AppErrorBoundary.tsx:9
@@ -67,42 +72,58 @@ msgid "shell.error-boundary.reload"
 msgstr "Reload app"
 
 #. js-lingui-explicit-id
-#: src/components/AppErrorBoundary.tsx:7
-msgid "shell.error-boundary.title"
-msgstr "SonFlash needs a reload"
+#: src/app/app-runtime-error.tsx:15
+#: src/components/AppErrorBoundary.tsx:10
+msgid "shell.error-boundary.report-issue"
+msgstr "Report issue"
 
 #. js-lingui-explicit-id
-#: src/components/shell/AppFeedback.tsx:157
+#: src/components/AppErrorBoundary.tsx:7
+msgid "shell.error-boundary.title"
+msgstr "Something went sideways."
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:170
+#: src/components/shell/LibraryManagementMenu.tsx:176
 msgid "shell.feedback.account"
 msgstr "Account"
 
 #. js-lingui-explicit-id
-#: src/components/shell/AppFeedback.tsx:160
+#: src/components/shell/AppFeedback.tsx:162
+#: src/components/shell/AppFeedback.tsx:177
+#: src/components/shell/DesktopNavigation.tsx:59
+#: src/components/shell/LibraryManagementMenu.tsx:177
+#: src/components/shell/LibraryManagementMenu.tsx:192
+msgid "shell.feedback.connecting"
+msgstr "Connecting…"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:174
 msgid "shell.feedback.dismiss-sign-in"
 msgstr "Dismiss sign-in message"
 
 #. js-lingui-explicit-id
-#: src/components/shell/AppFeedback.tsx:182
+#: src/components/shell/AppFeedback.tsx:200
 msgid "shell.feedback.dismiss-success"
 msgstr "Dismiss success message"
 
 #. js-lingui-explicit-id
-#: src/components/shell/AppFeedback.tsx:194
+#: src/components/shell/AppFeedback.tsx:212
 msgid "shell.feedback.dismiss-sync"
 msgstr "Dismiss sync status"
 
 #. js-lingui-explicit-id
-#: src/components/shell/AppFeedback.tsx:171
+#: src/components/shell/AppFeedback.tsx:189
 msgid "shell.feedback.dismiss-system"
 msgstr "Dismiss system message"
 
 #. js-lingui-explicit-id
-#: src/components/shell/AppFeedback.tsx:179
+#: src/components/shell/AppFeedback.tsx:197
 msgid "shell.feedback.done"
 msgstr "Done"
 
 #. js-lingui-explicit-id
-#: src/components/shell/AppFeedback.tsx:168
+#: src/components/shell/AppFeedback.tsx:186
 msgid "shell.feedback.needs-attention"
 msgstr "Needs attention"
 
@@ -112,14 +133,40 @@ msgid "shell.feedback.notifications"
 msgstr "Notifications"
 
 #. js-lingui-explicit-id
-#: src/components/shell/AppFeedback.tsx:196
+#: src/components/shell/AppFeedback.tsx:214
 msgid "shell.feedback.retry"
 msgstr "Retry"
 
 #. js-lingui-explicit-id
-#: src/components/shell/AppFeedback.tsx:197
+#: src/components/shell/AppFeedback.tsx:215
 msgid "shell.feedback.retry-sync"
 msgstr "Retry syncing your library"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:157
+#: src/components/shell/DesktopNavigation.tsx:54
+#: src/components/shell/LibraryManagementMenu.tsx:187
+msgid "shell.feedback.session-ended"
+msgstr "Session ended"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:158
+#: src/components/shell/LibraryManagementMenu.tsx:196
+msgid "shell.feedback.session-ended-detail"
+msgstr "Sign in again to restore cloud sync."
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:161
+#: src/components/shell/AppFeedback.tsx:163
+#: src/components/shell/LibraryManagementMenu.tsx:288
+msgid "shell.feedback.sign-in-again"
+msgstr "Sign in again"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:176
+#: src/components/shell/AppFeedback.tsx:178
+msgid "shell.feedback.try-sign-in-again"
+msgstr "Try again"
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFooter.tsx:33
@@ -242,9 +289,20 @@ msgid "shell.language.open"
 msgstr "Choose language"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:247
+#: src/app/AppRuntime.tsx:294
 msgid "shell.learning-workspace"
 msgstr "Learning workspace"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:87
+msgid "shell.level"
+msgstr "Level {level}, {xp} XP"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:87
+#: src/components/shell/DesktopNavigation.tsx:87
+msgid "shell.level.short"
+msgstr "Lv {level}"
 
 #. js-lingui-explicit-id
 #: src/features/library/libraryViewModel.ts:71
@@ -262,23 +320,23 @@ msgid "shell.library-count.cloud-paused"
 msgstr "Cloud paused"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:121
+#: src/components/shell/LibraryManagementMenu.tsx:260
 msgid "shell.library-menu.label"
 msgstr "Library management"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:104
-#: src/components/shell/LibraryManagementMenu.tsx:108
+#: src/components/shell/LibraryManagementMenu.tsx:211
+#: src/components/shell/LibraryManagementMenu.tsx:215
 msgid "shell.library-menu.trigger"
 msgstr "Manage library"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:138
+#: src/components/shell/LibraryManagementMenu.tsx:310
 msgid "shell.library-menu.zen-toggle-description"
 msgstr "Toggle between Standard Learning mode and Zen Minimalist Glass mode"
 
 #. js-lingui-explicit-id
-#: src/App.tsx:79
+#: src/App.tsx:82
 msgid "shell.loading.app"
 msgstr "Loading SonFlash…"
 
@@ -288,131 +346,133 @@ msgid "shell.loading.charts"
 msgstr "Loading charts"
 
 #. js-lingui-explicit-id
-#: src/app/AppDeferredViews.tsx:24
+#: src/app/AppDeferredViews.tsx:21
 msgid "shell.loading.library"
 msgstr "Loading library"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:57
+#: src/app/AppViewStage.tsx:58
 msgid "shell.loading.paths"
 msgstr "Preparing learning paths…"
 
 #. js-lingui-explicit-id
-#: src/app/AppDeferredViews.tsx:41
+#: src/app/AppDeferredViews.tsx:38
 msgid "shell.loading.practice"
 msgstr "Loading practice"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:71
+#: src/app/AppViewStage.tsx:72
 msgid "shell.loading.progress"
 msgstr "Preparing learning progress…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:72
+#: src/app/AppViewStage.tsx:73
 msgid "shell.loading.settings"
 msgstr "Preparing appearance settings…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:65
+#: src/app/AppViewStage.tsx:66
 msgid "shell.loading.today"
 msgstr "Preparing today’s learning plan…"
 
 #. js-lingui-explicit-id
-#: src/App.tsx:94
-msgid "shell.loading.workspace"
-msgstr "Loading workspace…"
-
-#. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:129
+#: src/components/shell/LibraryManagementMenu.tsx:303
 msgid "shell.menu.account-data"
 msgstr "Account data"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:130
+#: src/components/shell/LibraryManagementMenu.tsx:304
 msgid "shell.menu.appearance-settings"
 msgstr "Appearance settings"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:141
+#: src/components/shell/LibraryManagementMenu.tsx:313
 msgid "shell.menu.card-style-standard"
 msgstr "Card style: Standard"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:141
+#: src/components/shell/LibraryManagementMenu.tsx:313
 msgid "shell.menu.card-style-zen"
 msgstr "Card style: Zen Glass"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:172
+#: src/components/shell/LibraryManagementMenu.tsx:343
 msgid "shell.menu.clear-library"
 msgstr "Clear the entire library"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:155
+#: src/components/shell/LibraryManagementMenu.tsx:324
 msgid "shell.menu.export"
 msgstr "Export library to Excel"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:155
+#: src/components/shell/LibraryManagementMenu.tsx:324
 msgid "shell.menu.exporting"
 msgstr "Exporting library…"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:128
+#: src/components/shell/LibraryManagementMenu.tsx:301
 msgid "shell.menu.extension-privacy"
 msgstr "Extension privacy"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:126
+#: src/components/shell/LibraryManagementMenu.tsx:299
 msgid "shell.menu.privacy"
 msgstr "Privacy"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:127
+#: src/components/shell/LibraryManagementMenu.tsx:300
 msgid "shell.menu.terms"
 msgstr "Terms"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:23
-msgid "shell.nav.home"
-msgstr "Home"
+#: src/components/shell/DesktopNavigation.tsx:65
+#: src/components/shell/FloatingMobileNav.tsx:18
+msgid "shell.nav.collection"
+msgstr "Collection"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:23
-#: src/components/shell/FloatingMobileNav.tsx:8
+#: src/components/shell/DesktopNavigation.tsx:64
+#: src/components/shell/DesktopNavigation.tsx:64
+#: src/components/shell/FloatingMobileNav.tsx:17
+#: src/components/shell/FloatingMobileNav.tsx:23
 msgid "shell.nav.paths"
 msgstr "Paths"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:23
-#: src/components/shell/FloatingMobileNav.tsx:8
+#: src/components/shell/DesktopNavigation.tsx:66
+#: src/components/shell/DesktopNavigation.tsx:66
+#: src/components/shell/FloatingMobileNav.tsx:19
+#: src/components/shell/FloatingMobileNav.tsx:25
 msgid "shell.nav.progress"
 msgstr "Progress"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:23
-#: src/components/shell/FloatingMobileNav.tsx:8
+#: src/components/shell/DesktopNavigation.tsx:63
+#: src/components/shell/DesktopNavigation.tsx:63
+#: src/components/shell/FloatingMobileNav.tsx:16
+#: src/components/shell/FloatingMobileNav.tsx:22
 msgid "shell.nav.today"
 msgstr "Today"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:23
-#: src/components/shell/FloatingMobileNav.tsx:8
+#: src/components/shell/DesktopNavigation.tsx:65
+#: src/components/shell/FloatingMobileNav.tsx:24
 msgid "shell.nav.vocabulary"
 msgstr "Vocabulary"
 
 #. js-lingui-explicit-id
-#: src/components/shell/FloatingMobileNav.tsx:13
+#: src/components/shell/FloatingMobileNav.tsx:27
 msgid "shell.navigation.mobile"
 msgstr "Mobile navigation"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:24
+#: src/components/shell/DesktopNavigation.tsx:76
 msgid "shell.navigation.primary"
 msgstr "Primary navigation"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:289
+#: src/app/AppRuntime.tsx:350
 msgid "shell.opening-dialog"
 msgstr "Opening dialog"
 
@@ -442,12 +502,12 @@ msgid "shell.practice-menu.title"
 msgstr "Choose a practice mode"
 
 #. js-lingui-explicit-id
-#: src/app/app-runtime-error.tsx:12
+#: src/app/app-runtime-error.tsx:10
 msgid "shell.runtime-error.message"
 msgstr "Workspace could not load."
 
 #. js-lingui-explicit-id
-#: src/app/app-runtime-error.tsx:18
+#: src/app/app-runtime-error.tsx:12
 #: src/app/AppRuntimeBoundary.tsx:32
 msgid "shell.runtime-error.retry"
 msgstr "Retry workspace"
@@ -736,135 +796,170 @@ msgid "shell.skip-content"
 msgstr "Skip to content"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:22
-#: src/components/shell/localized-sync-status.ts:23
+#: src/components/shell/DesktopNavigation.tsx:86
+msgid "shell.streak"
+msgstr "{count} day streak"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:56
+#: src/components/shell/LibraryManagementMenu.tsx:189
+#: src/components/shell/localized-sync-status.ts:62
+#: src/components/shell/localized-sync-status.ts:63
 msgid "shell.sync.checking"
 msgstr "Checking cloud…"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:24
+#: src/components/shell/localized-sync-status.ts:64
 msgid "shell.sync.checking-detail"
 msgstr "Verifying your cloud session."
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:29
-msgid "shell.sync.connecting"
-msgstr "Connecting…"
-
-#. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:29
-#: src/components/shell/DesktopNavigation.tsx:29
+#: src/components/shell/DesktopNavigation.tsx:60
+#: src/components/shell/LibraryManagementMenu.tsx:193
 msgid "shell.sync.device"
-msgstr "On device"
+msgstr "On this device"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:29
-#: src/components/shell/DesktopNavigation.tsx:29
-msgid "shell.sync.loading"
-msgstr "Loading cloud sync"
+#: src/components/shell/localized-sync-status.ts:15
+msgid "shell.sync.error.access-denied"
+msgstr "Cloud access was denied. Your changes are safe on this device; sign in again or ask the app administrator to update Firebase access, then retry."
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:64
-#: src/components/shell/localized-sync-status.ts:65
+#: src/components/shell/localized-sync-status.ts:33
+msgid "shell.sync.error.configuration"
+msgstr "This app and its cloud configuration are out of sync. Your changes are safe; update the cloud configuration, then retry."
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:39
+msgid "shell.sync.error.generic"
+msgstr "Sync is temporarily unavailable. Your changes are still safe on this device."
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:27
+msgid "shell.sync.error.quota"
+msgstr "Firebase's daily read limit has been reached. Changes stay safe on this device until the quota resets."
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:9
+msgid "shell.sync.error.storage-blocked"
+msgstr "Another SonFlash tab is blocking local sync storage. Close other SonFlash tabs, then retry syncing. Your changes remain safe on this device."
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:21
+msgid "shell.sync.error.unavailable"
+msgstr "Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically."
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:104
+#: src/components/shell/localized-sync-status.ts:105
 msgid "shell.sync.needs-attention"
 msgstr "Needs attention"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:28
+#: src/components/shell/LibraryManagementMenu.tsx:273
+msgid "shell.sync.now"
+msgstr "Sync now"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:68
 msgid "shell.sync.offline"
 msgstr "Offline"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:29
+#: src/components/shell/localized-sync-status.ts:69
 msgid "shell.sync.offline-cache"
 msgstr "Offline, using cache"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:30
+#: src/components/shell/localized-sync-status.ts:70
 msgid "shell.sync.offline-detail"
 msgstr "Your library is available offline."
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:17
+#: src/components/shell/localized-sync-status.ts:57
 msgid "shell.sync.online"
 msgstr "Online"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:34
+#: src/components/shell/localized-sync-status.ts:74
 msgid "shell.sync.paused"
 msgstr "Cloud paused"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:35
+#: src/components/shell/localized-sync-status.ts:75
 msgid "shell.sync.paused-cache"
 msgstr "Cloud paused, using cache"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:36
+#: src/components/shell/localized-sync-status.ts:76
 msgid "shell.sync.paused-detail"
 msgstr "Live cloud updates are unavailable. Showing the last successful local copy."
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:48
-#: src/components/shell/localized-sync-status.ts:49
+#: src/components/shell/localized-sync-status.ts:88
+#: src/components/shell/localized-sync-status.ts:89
 msgid "shell.sync.queued"
 msgstr "Waiting to sync"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:52
+#: src/components/shell/localized-sync-status.ts:92
 msgid "shell.sync.queued-many"
 msgstr "{count} changes are safe on this device and waiting to sync."
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:51
+#: src/components/shell/localized-sync-status.ts:91
 msgid "shell.sync.queued-one"
 msgstr "1 change is safe on this device and waiting to sync."
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:18
+#: src/app/AppRuntime.tsx:221
+msgid "shell.sync.retry-failed"
+msgstr "Sync could not finish. Your changes remain on this device. Try again."
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:58
 msgid "shell.sync.saved-detail"
 msgstr "All changes are saved."
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:40
-#: src/components/shell/localized-sync-status.ts:41
+#: src/components/shell/localized-sync-status.ts:80
+#: src/components/shell/localized-sync-status.ts:81
 msgid "shell.sync.saving-offline"
 msgstr "Saving offline"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:44
+#: src/components/shell/localized-sync-status.ts:84
 msgid "shell.sync.saving-offline-many"
 msgstr "{count} changes are safe on this device and will sync when you reconnect."
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:43
+#: src/components/shell/localized-sync-status.ts:83
 msgid "shell.sync.saving-offline-one"
 msgstr "1 change is safe on this device and will sync when you reconnect."
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:29
-#: src/components/shell/DesktopNavigation.tsx:29
+#: src/components/shell/LibraryManagementMenu.tsx:289
 msgid "shell.sync.sign-in"
 msgstr "Sign in & sync"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:16
+#: src/components/shell/localized-sync-status.ts:56
 msgid "shell.sync.synced"
 msgstr "Synced"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:56
-#: src/components/shell/localized-sync-status.ts:57
+#: src/components/shell/localized-sync-status.ts:96
+#: src/components/shell/localized-sync-status.ts:97
 msgid "shell.sync.syncing"
 msgstr "Syncing"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:60
+#: src/components/shell/localized-sync-status.ts:100
 msgid "shell.sync.syncing-check"
 msgstr "Checking your library for changes."
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:59
+#: src/components/shell/localized-sync-status.ts:99
 msgid "shell.sync.syncing-count"
 msgstr "Syncing {count} changes to your library."
 
@@ -910,11 +1005,27 @@ msgid "shell.theme.quick-toggle"
 msgstr "Switch light and dark mode"
 
 #. js-lingui-explicit-id
-#: src/components/ui/UndoToast.tsx:113
+#: src/components/ui/UndoToast.tsx:149
 msgid "shell.undo.action"
 msgstr "Undo"
 
 #. js-lingui-explicit-id
-#: src/components/ui/UndoToast.tsx:119
+#: src/app/use-library-mutation-feedback.ts:31
+msgid "shell.undo.card-deleted"
+msgstr "Card deleted."
+
+#. js-lingui-explicit-id
+#: src/components/ui/UndoToast.tsx:156
 msgid "shell.undo.dismiss"
 msgstr "Dismiss notification"
+
+#. js-lingui-explicit-id
+#: src/app/use-library-mutation-feedback.ts:36
+#: src/app/use-library-mutation-feedback.ts:40
+msgid "shell.undo.restore-failed"
+msgstr "This card could not be restored. Please check your library and try again."
+
+#. js-lingui-explicit-id
+#: src/components/ui/UndoToast.tsx:163
+msgid "shell.undo.window"
+msgstr "Undo is available for {seconds} seconds."

@@ -30,7 +30,7 @@ export const evidencedStudyStreak = (
 
 export interface TodayScreenModel {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
-  readonly status: 'loading' | 'empty' | 'ready' | 'offline' | 'error';
+  readonly status: 'loading' | 'empty' | 'caught-up' | 'ready' | 'offline' | 'error';
   readonly isOffline: boolean;
   readonly message: string;
   /** Optional until the course context reaches the daily-learning workspace. */
@@ -39,6 +39,14 @@ export interface TodayScreenModel {
   readonly streak?: number;
   readonly plan: DailyPlanPresentation | null;
   readonly placementAvailable: boolean;
+  /** Counts use the loaded daily plan; next-review facts require a complete pool. */
+  readonly caughtUp?: {
+    readonly availableNewCount: number;
+    readonly nextReview?: {
+      readonly label: string;
+      readonly cardCount: number;
+    };
+  };
 }
 
 export interface TodayScreenActions {

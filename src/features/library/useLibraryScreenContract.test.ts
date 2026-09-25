@@ -68,6 +68,7 @@ const createInput = () => {
   const commands = {
     startStudy: vi.fn(async () => undefined),
     openCardCreator: vi.fn(),
+    openPaths: vi.fn(),
     changeNewDeckInput: vi.fn(),
     createCustomDeck: vi.fn(async () => undefined),
     deleteCustomDeck: vi.fn(async () => undefined),
@@ -90,6 +91,7 @@ const createInput = () => {
             canPublishMutations: true,
             isSigningIn: false,
             isSigningOut: false,
+            authenticationRecovery: null,
             error: null,
           },
           owner: {
@@ -218,6 +220,8 @@ describe('library screen contract', () => {
     expect(sessionActions.sync.retry).not.toHaveBeenCalled();
     expect(learningActions.deleteCard).toHaveBeenCalledWith('word-apple');
     expect(contract.actions.startStudy).toBe(commands.startStudy);
+    contract.actions.tools.openPaths();
+    expect(commands.openPaths).toHaveBeenCalledOnce();
   });
 
   it('reuses the full contract while immutable input groups are unchanged', () => {

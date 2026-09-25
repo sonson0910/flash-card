@@ -30,11 +30,13 @@ msgid "library.close"
 msgstr "Đóng"
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:214
 #: src/features/library/LibraryTools.tsx:539
 msgid "library.create.analysing"
 msgstr "AI đang phân tích"
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:214
 #: src/features/library/LibraryTools.tsx:540
 msgid "library.create.building"
 msgstr "Đang tạo thẻ của bạn"
@@ -50,6 +52,7 @@ msgid "library.create.check-library"
 msgstr "Kiểm tra thư viện"
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:203
 #: src/features/library/LibraryTools.tsx:556
 msgid "library.create.creating"
 msgstr "Đang tạo thẻ…"
@@ -65,6 +68,7 @@ msgid "library.create.help"
 msgstr "Định nghĩa, âm thanh phiên âm, ví dụ sử dụng và hình ảnh thông minh được tạo tự động."
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:205
 #: src/features/library/LibraryTools.tsx:558
 msgid "library.create.importing"
 msgstr "Đang nhập…"
@@ -80,6 +84,7 @@ msgid "library.create.title"
 msgstr "Tạo thẻ"
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:185
 #: src/features/library/LibraryTools.tsx:514
 msgid "library.create.word-label"
 msgstr "Từ tiếng Anh"
@@ -398,6 +403,58 @@ msgstr "Bản dịch"
 #: src/features/cardEdit/EditCardDialog.tsx:68
 msgid "library.edit-card.word"
 msgstr "Từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:79
+msgid "library.empty.first-run-kicker"
+msgstr "Thư viện trống · bắt đầu nào"
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:206
+msgid "library.empty.generate"
+msgstr "Tạo thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:211
+msgid "library.empty.generate-help"
+msgstr "Thêm một từ hoặc cụm từ để tạo thẻ."
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:221
+msgid "library.empty.import"
+msgstr "Nhập CSV / Excel"
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:88
+msgid "library.empty.lumi-link"
+msgstr "LUMI · LINK"
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:224
+msgid "library.empty.paths"
+msgstr "Xem lộ trình"
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:218
+msgid "library.empty.scan"
+msgstr "Quét văn bản"
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:89
+#: src/features/library/EmptyLibraryPanel.tsx:119
+msgid "library.empty.title-emphasis"
+msgstr "từ đầu tiên."
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:89
+#: src/features/library/EmptyLibraryPanel.tsx:119
+msgid "library.empty.title-prefix"
+msgstr "Bắt đầu với"
+
+#. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:193
+msgid "library.empty.word-placeholder"
+msgstr "Nhập một từ hoặc cụm từ…"
 
 #. js-lingui-explicit-id
 #: src/features/library/WordExtractorModal.tsx:245
@@ -771,6 +828,7 @@ msgid "library.import.action"
 msgstr "Nhập thẻ từ Excel hoặc CSV"
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:231
 #: src/features/library/LibraryTools.tsx:489
 msgid "library.import.choose-file"
 msgstr "Chọn tệp Excel hoặc CSV"
@@ -786,6 +844,7 @@ msgid "library.import.completed-guidance"
 msgstr "Các thẻ mới và hiện có của bạn đã sẵn sàng trong thư viện."
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:72
 #: src/features/library/LibraryTools.tsx:120
 msgid "library.import.current-word"
 msgstr "Từ hiện tại: {word}"
@@ -842,6 +901,7 @@ msgid "library.import.partial-guidance"
 msgstr "Hãy thử lại các từ thất bại hoặc đã bỏ qua sau."
 
 #. js-lingui-explicit-id
+#: src/features/library/EmptyLibraryPanel.tsx:72
 #: src/features/library/LibraryTools.tsx:119
 msgid "library.import.progress"
 msgstr "Đang nhập {current, number} trên {total, number}"
@@ -852,12 +912,12 @@ msgid "library.import.summary"
 msgstr "{created, plural, one {# đã tạo} other {# đã tạo}} · {reused, plural, one {# đã có sẵn} other {# đã có sẵn}} · {failed, plural, one {# thất bại} other {# thất bại}} · {skipped, plural, one {# đã bỏ qua} other {# đã bỏ qua}}"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:134
+#: src/features/library/LibraryScreen.tsx:163
 msgid "library.loading.cards"
 msgstr "Đang tải thẻ thư viện"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:170
+#: src/features/library/LibraryScreen.tsx:199
 msgid "library.loading.tools"
 msgstr "Đang tải công cụ thư viện"
 

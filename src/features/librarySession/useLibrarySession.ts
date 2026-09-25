@@ -70,6 +70,7 @@ export interface LibrarySessionIdentityModel {
   canPublishMutations: boolean;
   isSigningIn: boolean;
   isSigningOut: boolean;
+  authenticationRecovery: IdentitySessionBinding['authenticationRecovery'];
   error: string | null;
 }
 
@@ -97,6 +98,7 @@ export interface LibrarySessionConsumerPorts {
   cards: {
     acknowledge: DeviceSyncBinding['acknowledge'];
     upsert: DeviceSyncBinding['upsertCards'];
+    restore: DeviceSyncBinding['restoreDeviceCard'];
     patch: DeviceSyncBinding['patchCards'];
     remove: DeviceSyncBinding['removeCard'];
   };
@@ -120,6 +122,11 @@ export function useLibrarySession(
 ): LibrarySessionFacade {
   const identity = hooks.useIdentitySession();
   const ownerId = identity.owner?.id ?? null;
+  const canVerifyEpoch = identity.status === 'authenticated'
+    && identity.owner?.id === ownerId
+    && identity.authenticationRecovery === null
+    && !identity.isSigningIn
+    && !identity.isSigningOut;
   const verifiedEpoch = identity.ownerEpoch?.ownerId === ownerId
     ? identity.ownerEpoch.value
     : null;
@@ -138,6 +145,8 @@ export function useLibrarySession(
   const sync = hooks.useLibraryDeviceSync({
     owner: ownerId === null ? null : { uid: ownerId },
     epoch,
+    canVerifyEpoch,
+    canPublishMutations: identity.canPublishMutations,
     cards: library.cards,
     knownLibraryTotal: library.knownTotal,
     cloudTotal: library.cloudTotal,
@@ -173,6 +182,7 @@ export function useLibrarySession(
         canPublishMutations: identity.canPublishMutations,
         isSigningIn: identity.isSigningIn,
         isSigningOut: identity.isSigningOut,
+        authenticationRecovery: identity.authenticationRecovery,
         error: identity.error,
       },
       owner: owner.model,
@@ -200,6 +210,7 @@ export function useLibrarySession(
       cards: {
         acknowledge: sync.acknowledge,
         upsert: sync.upsertCards,
+        restore: sync.restoreDeviceCard,
         patch: sync.patchCards,
         remove: sync.removeCard,
       },

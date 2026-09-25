@@ -8,12 +8,14 @@ i18n.load('en', { 'shell.course.current': 'English ← Tiếng Việt' });
 i18n.activate('en');
 
 describe('CourseSwitcherSlot', () => {
-  it('keeps a signed-in course chip available below 480px and omits it when signed out', () => {
+  it('renders only supplied course UI for an authenticated account', () => {
     const signedIn = renderToStaticMarkup(<I18nProvider i18n={i18n}><CourseSwitcherSlot signedIn /></I18nProvider>);
     const signedOut = renderToStaticMarkup(<I18nProvider i18n={i18n}><CourseSwitcherSlot signedIn={false} /></I18nProvider>);
-    expect(signedIn).toContain('max-[479px]:flex');
-    expect(signedIn).toContain('max-[479px]:basis-full');
-    expect(signedIn).toContain('English ← Tiếng Việt');
+    const realCourseUi = renderToStaticMarkup(<I18nProvider i18n={i18n}><CourseSwitcherSlot signedIn><button type="button">Spanish → English</button></CourseSwitcherSlot></I18nProvider>);
+    expect(signedIn).toBe('');
     expect(signedOut).toBe('');
+    expect(realCourseUi).toContain('claude-course-switcher-slot');
+    expect(realCourseUi).toContain('Spanish → English');
+    expect(realCourseUi).not.toContain('English ← Tiếng Việt');
   });
 });

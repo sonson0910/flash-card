@@ -4,6 +4,46 @@ import type { ShellSyncStatus, ShellSyncStatusInput } from './shellSyncStatus';
 
 type Translate = typeof i18n._;
 
+function localizeSyncError(detail: string, translate: Translate): string {
+  if (detail.startsWith('Another SonFlash tab is blocking local sync storage.')) {
+    return translate(msg({
+      id: 'shell.sync.error.storage-blocked',
+      message: 'Another SonFlash tab is blocking local sync storage. Close other SonFlash tabs, then retry syncing. Your changes remain safe on this device.',
+    }));
+  }
+  if (detail.startsWith('Cloud access was denied.')) {
+    return translate(msg({
+      id: 'shell.sync.error.access-denied',
+      message: 'Cloud access was denied. Your changes are safe on this device; sign in again or ask the app administrator to update Firebase access, then retry.',
+    }));
+  }
+  if (detail.startsWith('Cloud is temporarily unreachable.')) {
+    return translate(msg({
+      id: 'shell.sync.error.unavailable',
+      message: 'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.',
+    }));
+  }
+  if (detail.startsWith("Firebase's daily read limit has been reached.")) {
+    return translate(msg({
+      id: 'shell.sync.error.quota',
+      message: "Firebase's daily read limit has been reached. Changes stay safe on this device until the quota resets.",
+    }));
+  }
+  if (detail.startsWith('This app and its cloud configuration are out of sync.')) {
+    return translate(msg({
+      id: 'shell.sync.error.configuration',
+      message: 'This app and its cloud configuration are out of sync. Your changes are safe; update the cloud configuration, then retry.',
+    }));
+  }
+  if (detail.startsWith('Sync is temporarily unavailable.')) {
+    return translate(msg({
+      id: 'shell.sync.error.generic',
+      message: 'Sync is temporarily unavailable. Your changes are still safe on this device.',
+    }));
+  }
+  return detail;
+}
+
 export function localizeShellSyncStatus(
   status: ShellSyncStatus,
   input: ShellSyncStatusInput,
@@ -63,6 +103,7 @@ export function localizeShellSyncStatus(
       ...status,
       headerLabel: translate(msg({ id: 'shell.sync.needs-attention', message: 'Needs attention' })),
       footerLabel: translate(msg({ id: 'shell.sync.needs-attention', message: 'Needs attention' })),
+      detail: localizeSyncError(status.detail, translate),
     };
   }
 }

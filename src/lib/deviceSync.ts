@@ -66,6 +66,8 @@ interface DeviceOperationMetadata {
   ownerUserId?: string;
   /** Persisted, idempotent reward for a review which commits after a restart. */
   reviewEffect?: DeviceReviewEffect;
+  /** Marks the create command as restoring a deleted card, so the server settles its facet atomically. */
+  restore?: true;
 }
 
 export interface DeviceReviewEffect {
@@ -82,6 +84,14 @@ export interface DeviceCardPatch {
   fields: Partial<CardData>;
   operation?: Extract<CardMutationKind, 'patch' | 'review'>;
   reviewEffect?: DeviceReviewEffect;
+}
+
+export interface DeviceUpsertContext {
+  operationId?: string;
+  operationCreatedAt?: string;
+  libraryEpoch?: number;
+  baseRevisions?: Readonly<Record<string, number>>;
+  restore?: true;
 }
 
 export function resolveDeviceBackupOwner(
@@ -356,22 +366,48 @@ export async function queueDeviceUpserts(
   total = cards.length,
   userId?: string,
   requiresEpochBinding = false,
+  context: DeviceUpsertContext = {},
 ): Promise<DevicePendingOperation[]> {
   if (cards.length === 0) return [];
+  const updatedAt = context.operationCreatedAt ?? new Date().toISOString();
+  if (!Number.isFinite(Date.parse(updatedAt))) throw new Error('Invalid device upsert operation timestamp.');
+  if (context.operationId !== undefined && (!context.operationId || context.operationId.length > 512)) {
+    throw new Error('Invalid device upsert operation id.');
+  }
   const pending = cards.map(card => ({
     type: 'upsert' as const,
     operation: 'create' as const,
-    opId: createOperationId(),
+    opId: context.operationId
+      ? `${context.operationId}${cards.length > 1 ? `-${card.id}` : ''}`
+      : createOperationId(),
     card,
-    baseRevision: card.revision ?? 0,
+    baseRevision: context.baseRevisions?.[card.id] ?? card.revision ?? 0,
     fieldMask: [] as (keyof CardData)[],
-    libraryEpoch: requiresEpochBinding ? -1 : card.libraryEpoch ?? 0,
-    updatedAt: new Date().toISOString(),
+    libraryEpoch: requiresEpochBinding ? -1 : context.libraryEpoch ?? card.libraryEpoch ?? 0,
+    updatedAt,
     ...(userId ? { ownerUserId: userId } : {}),
+    ...(context.restore === true ? { restore: true as const } : {}),
   }));
-  if (userId) await persistDevicePending(userId, pending);
-  await saveDeviceCards(cards, Math.max(cards.length, total), pending, 'merge', userId ?? null);
-  return pending;
+  let persisted = userId ? await persistDevicePending(userId, pending) : pending;
+  if (context.operationId) {
+    const backup = await loadDeviceCards();
+    const backupMatchesOwner = userId
+      ? backup?.ownerUserId === userId
+      : backup?.ownerUserId === null;
+    if (backupMatchesOwner && backup) {
+      const merged = mergePendingOperations([...backup.pending, ...persisted]);
+      persisted = userId ? await persistDevicePending(userId, merged) : merged;
+    }
+  }
+  const operationIds = new Set(pending.map(operation => operation.opId));
+  const queued = persisted.filter((operation): operation is Extract<DevicePendingOperation, { type: 'upsert' }> =>
+    operation.type === 'upsert' && Boolean(operation.opId && operationIds.has(operation.opId)),
+  );
+  if (queued.length === 0) return [];
+  const queuedCardIds = new Set(queued.map(operation => operation.card.id));
+  const queuedCards = cards.filter(card => queuedCardIds.has(card.id));
+  await saveDeviceCards(queuedCards, Math.max(queuedCards.length, total), persisted, 'merge', userId ?? null);
+  return queued;
 }
 
 export async function queueDevicePatches(
@@ -719,6 +755,7 @@ function normalizePendingOperation(value: unknown): DevicePendingOperation | nul
         ? Number(source.libraryEpoch)
         : card.libraryEpoch ?? 0,
       fieldMask: [],
+      ...(source.restore === true ? { restore: true as const } : {}),
     };
   }
   return null;

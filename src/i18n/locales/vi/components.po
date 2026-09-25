@@ -815,8 +815,8 @@ msgstr "Xóa toàn bộ thư viện?"
 
 #. js-lingui-explicit-id
 #: src/components/AppErrorBoundary.tsx:8
-msgid "shell.error-boundary.description"
-msgstr "Dữ liệu đã lưu của bạn vẫn an toàn. Hãy tải lại ứng dụng để khôi phục giao diện."
+msgid "shell.error-boundary.description.recovery"
+msgstr "Màn hình này gặp lỗi. Tải lại có thể khôi phục giao diện."
 
 #. js-lingui-explicit-id
 #: src/components/AppErrorBoundary.tsx:9
@@ -824,9 +824,14 @@ msgid "shell.error-boundary.reload"
 msgstr "Tải lại ứng dụng"
 
 #. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:10
+msgid "shell.error-boundary.report-issue"
+msgstr "Báo cáo sự cố"
+
+#. js-lingui-explicit-id
 #: src/components/AppErrorBoundary.tsx:7
 msgid "shell.error-boundary.title"
-msgstr "SonFlash cần được tải lại"
+msgstr "Đã xảy ra lỗi."
 
 #. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:330
@@ -874,6 +879,11 @@ msgid "shell.loading.charts"
 msgstr "Đang tải biểu đồ"
 
 #. js-lingui-explicit-id
+#: src/components/WorkspaceLoadingPanel.tsx:20
+msgid "shell.loading.workspace"
+msgstr "Đang tải không gian học tập…"
+
+#. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:304
 msgid "shell.practice-menu.close"
 msgstr "Đóng menu luyện tập"
@@ -881,7 +891,7 @@ msgstr "Đóng menu luyện tập"
 #. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:302
 msgid "shell.practice-menu.description"
-msgstr "Luyện tập theo cách khác — mọi câu trả lời vẫn được đưa vào cùng lịch ghi nhớ."
+msgstr "Chọn cách luyện tập khác với các từ trong thư viện của bạn."
 
 #. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:300
@@ -1177,11 +1187,81 @@ msgid "shell.share.words-inside"
 msgstr "Một vài từ bên trong"
 
 #. js-lingui-explicit-id
-#: src/components/ui/UndoToast.tsx:113
+#: src/components/WorkspaceSyncPanel.tsx:203
+msgid "shell.sync.panel.due-now"
+msgstr "Đến hạn ôn"
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:72
+msgid "shell.sync.panel.failure-caption"
+msgstr "Lỗi đồng bộ · cần xử lý"
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:134
+msgid "shell.sync.panel.failure-description"
+msgstr "Xem chi tiết trạng thái bên dưới rồi thử lại nếu có thể."
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:128
+msgid "shell.sync.panel.failure-label"
+msgstr "Cần xử lý đồng bộ"
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:131
+msgid "shell.sync.panel.failure-title"
+msgstr "Đồng bộ cần được xử lý."
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:217
+msgid "shell.sync.panel.keep-reviewing"
+msgstr "Tiếp tục ôn tập"
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:71
+msgid "shell.sync.panel.offline-caption"
+msgstr "Ngoại tuyến · vẫn dùng được"
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:193
+msgid "shell.sync.panel.offline-cloud-fallback"
+msgstr "Thay đổi trên đám mây sẽ được đồng bộ khi thiết bị này kết nối lại."
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:194
+msgid "shell.sync.panel.offline-local-only"
+msgstr "Đang ngoại tuyến. Thư viện trên thiết bị này vẫn dùng được."
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:230
+msgid "shell.sync.panel.pending-count"
+msgstr "{count, plural, one {Đang chờ <0>{formattedCount}</0> thay đổi} other {Đang chờ <0>{formattedCount}</0> thay đổi}}"
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:148
+msgid "shell.sync.panel.retry"
+msgstr "Đồng bộ lại"
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:147
+msgid "shell.sync.panel.retrying"
+msgstr "Đang đồng bộ lại…"
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:151
+msgid "shell.sync.panel.return-home"
+msgstr "Về trang chủ"
+
+#. js-lingui-explicit-id
+#: src/components/ui/UndoToast.tsx:149
 msgid "shell.undo.action"
 msgstr "Hoàn tác"
 
 #. js-lingui-explicit-id
-#: src/components/ui/UndoToast.tsx:119
+#: src/components/ui/UndoToast.tsx:156
 msgid "shell.undo.dismiss"
 msgstr "Đóng thông báo"
+
+#. js-lingui-explicit-id
+#: src/components/ui/UndoToast.tsx:163
+msgid "shell.undo.window"
+msgstr "Có thể hoàn tác trong {seconds} giây."

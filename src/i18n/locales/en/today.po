@@ -438,7 +438,7 @@ msgid "today.activity.preparing"
 msgstr "Preparing activity…"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:224
+#: src/features/dailyLearning/TodayScreen.tsx:317
 msgid "today.adult-statement"
 msgstr "SonFlash is for learners aged 18 and over."
 
@@ -453,47 +453,83 @@ msgid "today.answer.incorrect"
 msgstr "Not quite."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:253
+#: src/features/dailyLearning/TodayScreen.tsx:288
+msgid "today.caught-up.browse-paths"
+msgstr "Browse paths"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayScreen.tsx:281
+msgid "today.caught-up.learn-new"
+msgstr "Learn 5 new"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayScreen.tsx:221
+msgid "today.caught-up.lesson-unavailable"
+msgstr "The new-card lesson is not available from this view yet."
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayScreen.tsx:263
+msgid "today.caught-up.next-review"
+msgstr "Next review {when} · {count, plural, one {# card} other {# cards}}"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayScreen.tsx:220
+msgid "today.caught-up.no-new-cards"
+msgstr "No new cards are available in this daily plan."
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayScreen.tsx:255
+msgid "today.caught-up.title"
+msgstr "All caught"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayScreen.tsx:257
+msgid "today.caught-up.title-emphasis"
+msgstr "up."
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayScreen.tsx:334
+#: src/features/dailyLearning/TodayScreen.tsx:365
 msgid "today.course.fallback"
 msgstr "Your current course"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:226
+#: src/features/dailyLearning/TodayScreen.tsx:319
 msgid "today.empty.add-vocabulary"
 msgstr "Add vocabulary"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:223
+#: src/features/dailyLearning/TodayScreen.tsx:316
 msgid "today.empty.description"
 msgstr "Add a word you care about, or begin with a reviewed learning path."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:220
+#: src/features/dailyLearning/TodayScreen.tsx:313
 msgid "today.empty.kicker"
 msgstr "Start here"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:227
+#: src/features/dailyLearning/TodayScreen.tsx:320
 msgid "today.empty.open-paths"
 msgstr "Explore learning paths"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:222
+#: src/features/dailyLearning/TodayScreen.tsx:315
 msgid "today.empty.title"
 msgstr "Build your first learning plan"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:239
+#: src/features/dailyLearning/TodayScreen.tsx:351
 msgid "today.error.kicker"
 msgstr "Plan unavailable"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:242
+#: src/features/dailyLearning/TodayScreen.tsx:354
 msgid "today.error.retry"
 msgstr "Try again"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:240
+#: src/features/dailyLearning/TodayScreen.tsx:352
 msgid "today.error.title"
 msgstr "Today needs attention"
 
@@ -528,8 +564,9 @@ msgid "today.instruction.spelling"
 msgstr "Spell the vocabulary item"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:214
-#: src/features/dailyLearning/TodayScreen.tsx:251
+#: src/features/dailyLearning/TodayScreen.tsx:307
+#: src/features/dailyLearning/TodayScreen.tsx:331
+#: src/features/dailyLearning/TodayScreen.tsx:363
 msgid "today.kicker"
 msgstr "Daily learning"
 
@@ -564,7 +601,7 @@ msgid "today.lesson.sync-pending"
 msgstr "Review saved on this device and waiting to sync."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:258
+#: src/features/dailyLearning/TodayScreen.tsx:370
 msgid "today.lumi.ready"
 msgstr "Lumi is ready to study with you."
 
@@ -574,17 +611,17 @@ msgid "today.mode.active-recall"
 msgstr "Active recall"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:37
+#: src/features/dailyLearning/TodayScreen.tsx:39
 msgid "today.mode.active-recall.description"
 msgstr "Recall the answer without choices."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:37
+#: src/features/dailyLearning/TodayScreen.tsx:39
 msgid "today.mode.active-recall.label"
 msgstr "Active recall"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:37
+#: src/features/dailyLearning/TodayScreen.tsx:39
 msgid "today.mode.active-recall.tag"
 msgstr "Deep memory"
 
@@ -594,17 +631,17 @@ msgid "today.mode.cloze"
 msgstr "Cloze"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:40
+#: src/features/dailyLearning/TodayScreen.tsx:42
 msgid "today.mode.cloze.description"
 msgstr "Complete a real example sentence."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:40
+#: src/features/dailyLearning/TodayScreen.tsx:42
 msgid "today.mode.cloze.label"
 msgstr "Cloze"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:40
+#: src/features/dailyLearning/TodayScreen.tsx:42
 msgid "today.mode.cloze.tag"
 msgstr "Context"
 
@@ -614,17 +651,17 @@ msgid "today.mode.listening"
 msgstr "Listening"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:38
+#: src/features/dailyLearning/TodayScreen.tsx:40
 msgid "today.mode.listening.description"
 msgstr "Listen, then identify the word."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:38
+#: src/features/dailyLearning/TodayScreen.tsx:40
 msgid "today.mode.listening.label"
 msgstr "Listening"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:38
+#: src/features/dailyLearning/TodayScreen.tsx:40
 msgid "today.mode.listening.tag"
 msgstr "Ear training"
 
@@ -634,17 +671,17 @@ msgid "today.mode.recognition"
 msgstr "Recognition"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:36
+#: src/features/dailyLearning/TodayScreen.tsx:38
 msgid "today.mode.recognition.description"
 msgstr "Choose the meaning you recognize."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:36
+#: src/features/dailyLearning/TodayScreen.tsx:38
 msgid "today.mode.recognition.label"
 msgstr "Recognition"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:36
+#: src/features/dailyLearning/TodayScreen.tsx:38
 msgid "today.mode.recognition.tag"
 msgstr "Quick recall"
 
@@ -654,17 +691,17 @@ msgid "today.mode.sentence-building"
 msgstr "Sentence building"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:41
+#: src/features/dailyLearning/TodayScreen.tsx:43
 msgid "today.mode.sentence-building.description"
 msgstr "Put every word occurrence in order."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:41
+#: src/features/dailyLearning/TodayScreen.tsx:43
 msgid "today.mode.sentence-building.label"
 msgstr "Sentence building"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:41
+#: src/features/dailyLearning/TodayScreen.tsx:43
 msgid "today.mode.sentence-building.tag"
 msgstr "Structure"
 
@@ -674,27 +711,28 @@ msgid "today.mode.spelling"
 msgstr "Spelling"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:39
+#: src/features/dailyLearning/TodayScreen.tsx:41
 msgid "today.mode.spelling.description"
 msgstr "Type the word from its meaning."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:39
+#: src/features/dailyLearning/TodayScreen.tsx:41
 msgid "today.mode.spelling.label"
 msgstr "Spelling"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:39
+#: src/features/dailyLearning/TodayScreen.tsx:41
 msgid "today.mode.spelling.tag"
 msgstr "Precision"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:256
+#: src/features/dailyLearning/TodayScreen.tsx:338
+#: src/features/dailyLearning/TodayScreen.tsx:368
 msgid "today.offline"
 msgstr "Available offline · using saved learning data"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:266
+#: src/features/dailyLearning/TodayScreen.tsx:378
 msgid "today.placement.action"
 msgstr "Take placement check"
 
@@ -709,7 +747,7 @@ msgid "today.placement.core"
 msgstr "Core"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:265
+#: src/features/dailyLearning/TodayScreen.tsx:377
 msgid "today.placement.description"
 msgstr "Take a diagnostic check. It will not change your review history or unlock content."
 
@@ -729,7 +767,7 @@ msgid "today.placement.intro"
 msgstr "Check your current vocabulary evidence in 6–12 questions."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:263
+#: src/features/dailyLearning/TodayScreen.tsx:375
 msgid "today.placement.kicker"
 msgstr "Optional"
 
@@ -744,73 +782,78 @@ msgid "today.placement.result"
 msgstr "Your answers suggest starting here."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:264
+#: src/features/dailyLearning/TodayScreen.tsx:376
 msgid "today.placement.title"
 msgstr "Not sure where to begin?"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:93
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:376
+msgid "today.plan.caught-up"
+msgstr "No due or new cards are available in this daily plan."
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayScreen.tsx:95
 msgid "today.plan.continue-review"
 msgstr "Continue review"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:375
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:377
 msgid "today.plan.empty"
 msgstr "Add vocabulary or return when a reviewed card is due."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:78
+#: src/features/dailyLearning/TodayScreen.tsx:80
 msgid "today.plan.kicker"
 msgstr "Daily focus"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:97
+#: src/features/dailyLearning/TodayScreen.tsx:99
 msgid "today.plan.order"
 msgstr "Daily plan order"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:373
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:374
 msgid "today.plan.preparing"
 msgstr "Preparing a bounded daily plan…"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:376
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:378
 msgid "today.plan.ready"
 msgstr "Your plan is ready."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningScreens.test.tsx:360
-#: src/features/dailyLearning/TodayScreen.tsx:84
+#: src/features/dailyLearning/DailyLearningScreens.test.tsx:474
+#: src/features/dailyLearning/TodayScreen.tsx:86
 msgid "today.plan.sequence"
 msgstr "{count, plural, one {# item is} other {# items are}} sequenced from scheduled review to first look."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:376
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:378
 msgid "today.plan.short"
 msgstr "A shorter plan is ready."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:80
+#: src/features/dailyLearning/TodayScreen.tsx:82
 msgid "today.plan.short-chip"
 msgstr "Short plan"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:85
+#: src/features/dailyLearning/TodayScreen.tsx:87
 msgid "today.plan.short-description"
 msgstr "There are fewer than 10 eligible cards today. You can still complete this shorter plan."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:93
+#: src/features/dailyLearning/TodayScreen.tsx:95
 msgid "today.plan.start-recognition"
 msgstr "Start recognition lesson"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:83
+#: src/features/dailyLearning/TodayScreen.tsx:85
 msgid "today.plan.subtitle"
 msgstr "Build memory in the right order."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:82
+#: src/features/dailyLearning/TodayScreen.tsx:84
 msgid "today.plan.title"
 msgstr "Your daily plan"
 
@@ -820,32 +863,32 @@ msgid "today.pool.error"
 msgstr "The daily practice pool could not be prepared."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:124
+#: src/features/dailyLearning/TodayScreen.tsx:126
 msgid "today.practice.description"
 msgstr "Use another exercise when you want a different kind of recall."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:121
+#: src/features/dailyLearning/TodayScreen.tsx:123
 msgid "today.practice.kicker"
 msgstr "Extra practice"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:126
+#: src/features/dailyLearning/TodayScreen.tsx:128
 msgid "today.practice.more"
 msgstr "More practice"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:154
+#: src/features/dailyLearning/TodayScreen.tsx:156
 msgid "today.practice.more-modes"
 msgstr "More lesson modes"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:123
+#: src/features/dailyLearning/TodayScreen.tsx:125
 msgid "today.practice.title"
 msgstr "Practice your way"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:224
+#: src/features/dailyLearning/TodayScreen.tsx:317
 msgid "today.privacy"
 msgstr "Privacy"
 
@@ -886,76 +929,76 @@ msgid "today.question.progress"
 msgstr "Question {current} of {total}."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:52
+#: src/features/dailyLearning/TodayScreen.tsx:54
 msgid "today.stage.due.count"
 msgstr "{count, plural, one {# due} other {# due}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:52
+#: src/features/dailyLearning/TodayScreen.tsx:54
 msgid "today.stage.due.description"
 msgstr "Bring scheduled words back first."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:52
+#: src/features/dailyLearning/TodayScreen.tsx:54
 msgid "today.stage.due.title"
 msgstr "Review due"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:54
+#: src/features/dailyLearning/TodayScreen.tsx:56
 msgid "today.stage.fresh.count"
 msgstr "{count, plural, one {# new} other {# new}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:54
+#: src/features/dailyLearning/TodayScreen.tsx:56
 msgid "today.stage.fresh.description"
 msgstr "Meet new vocabulary after review."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:54
+#: src/features/dailyLearning/TodayScreen.tsx:56
 msgid "today.stage.fresh.title"
 msgstr "First look"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:53
+#: src/features/dailyLearning/TodayScreen.tsx:55
 msgid "today.stage.weak.count"
 msgstr "{count, plural, one {# weak} other {# weak}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:53
+#: src/features/dailyLearning/TodayScreen.tsx:55
 msgid "today.stage.weak.description"
 msgstr "Practice words that need another pass."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:53
+#: src/features/dailyLearning/TodayScreen.tsx:55
 msgid "today.stage.weak.title"
 msgstr "Strengthen"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:184
+#: src/features/dailyLearning/TodayScreen.tsx:186
 msgid "today.streak.chip"
 msgstr "{count, plural, one {# study day} other {# study days}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:196
+#: src/features/dailyLearning/TodayScreen.tsx:198
 msgid "today.streak.close"
 msgstr "Close streak details"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:194
+#: src/features/dailyLearning/TodayScreen.tsx:196
 msgid "today.streak.description"
 msgstr "You have studied for {count, plural, one {# day in a row} other {# days in a row}}. Keep choosing the next helpful study step."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:193
+#: src/features/dailyLearning/TodayScreen.tsx:195
 msgid "today.streak.title"
 msgstr "Your study rhythm"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:224
+#: src/features/dailyLearning/TodayScreen.tsx:317
 msgid "today.terms"
 msgstr "Terms"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:62
+#: src/features/dailyLearning/TodayScreen.tsx:64
 msgid "today.title"
 msgstr "Today"

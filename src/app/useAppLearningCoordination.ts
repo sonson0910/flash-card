@@ -4,6 +4,7 @@ import { getReducedMotionScrollBehavior } from '../lib/motion';
 import { cardWordKey } from '../lib/cardIdentity';
 import { retainCardsForSession } from '../lib/sessionCards';
 import type { CardData } from '../types/card';
+import type { UndoToastItem } from '../components/ui/UndoToast';
 import { useIntakeSharingSession } from '../features/intake/useIntakeSharingSession';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../features/language/languageProfile';
 import { useCardMediaHydration } from '../features/library/useCardMediaHydration';
@@ -27,6 +28,7 @@ import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { usePracticeWorkspace } from '../features/practice/usePracticeWorkspace';
 import { appDependencies } from './appDependencies';
 import type { AppLibraryRuntime } from './useAppLibraryRuntime';
+import { useLibraryMutationFeedback } from './use-library-mutation-feedback';
 interface UseAppLearningCoordinationOptions {
   library: AppLibraryRuntime;
   viewMode: AppViewMode;
@@ -37,6 +39,7 @@ interface UseAppLearningCoordinationOptions {
   shareOpenerRef: RefObject<HTMLElement | null>;
   reportError(message: string | null): void;
   notify(message: string | null): void;
+  offerUndo(ownerId: string | null, toast: UndoToastItem | null): void;
 }
 export function useAppLearningCoordination({
   library,
@@ -48,6 +51,7 @@ export function useAppLearningCoordination({
   shareOpenerRef,
   reportError,
   notify,
+  offerUndo,
 }: UseAppLearningCoordinationOptions) {
   const { model, actions, ports } = library;
   const { cards, user, cloudStats, knownLibraryTotal, libraryEpochState, ownerLibrary, librarySession, externalLibraryBusy, cardsPerPage, catalog } = model;
@@ -130,6 +134,14 @@ export function useAppLearningCoordination({
       isPatchCurrent: (cardId, expectedLifecycle) => !expectedLifecycle
         || mediaHydration.actions.isLifecycleCurrent(cardId, expectedLifecycle),
       publication: {
+        restore: card => {
+          ports.recentlyPromotedCardsRef.current.set(cardWordKey(card), card);
+          ports.setCards(current => {
+            const next = retainCardsForSession([card, ...current.filter(candidate => candidate.id !== card.id)], Boolean(user), cardsPerPage);
+            writeLocalCardCache(next, user?.uid ?? null);
+            return next;
+          });
+        },
         patch: (cardId, fields) => ports.setCards(current => {
           const updated = current.map(card => card.id === cardId ? { ...card, ...fields } : card);
           writeLocalCardCache(
@@ -147,18 +159,21 @@ export function useAppLearningCoordination({
           ports.cardsRef.current.forEach(card => mediaHydration.actions.invalidateCard(card.id));
           ports.setCards([]);
           ports.session.actions.owner.discardCards();
+          offerUndo(user?.uid ?? null, null);
         },
       },
     },
     practice: {
       findCard: cardId => practiceWorkspace.snapshotRef.current.findCard(cardId),
       publication: {
+        restore: card => practiceWorkspace.snapshotRef.current.restoreCard(card),
         patch: (cardId, fields) => practiceWorkspace.snapshotRef.current.updateCard(cardId, fields),
         remove: cardId => practiceWorkspace.snapshotRef.current.removeCard(cardId),
         clear: () => practiceWorkspace.snapshotRef.current.clear(),
       },
     },
     ports: {
+      restoreDeviceCard: ports.session.ports.cards.restore,
       patchDeviceCards: ports.session.ports.cards.patch,
       removeDeviceCard: ports.session.ports.cards.remove,
       acknowledgeDevicePending: ports.session.ports.cards.acknowledge,
@@ -183,7 +198,7 @@ export function useAppLearningCoordination({
     identityReady: librarySession.identity.status !== 'loading',
     owner: {
       id: user?.uid ?? null,
-      remoteAvailable: Boolean(appDependencies.configuration.cloudAvailable && user),
+      remoteAvailable: Boolean(appDependencies.configuration.cloudAvailable && user && librarySession.identity.canPublishMutations),
     },
     remoteDecks: user && ownerLibrary.ownerId === user.uid ? ownerLibrary.decks : null,
     cards,
@@ -269,13 +284,10 @@ export function useAppLearningCoordination({
     rememberOpener(shareOpenerRef);
     return intakeSharing.actions.shareCategory(category);
   };
-  const deleteCard = useCallback(async (id: string) => {
-    try {
-      await learningCommands.deleteCard(id);
-    } catch (cause) {
-      reportError(cause instanceof Error ? cause.message : 'The card could not be deleted. Please try again.');
-    }
-  }, [learningCommands, reportError]);
+  const { deleteCard, clearAll } = useLibraryMutationFeedback({
+    ownerId: user?.uid ?? null, activeOwnerIdRef: ports.activeOwnerIdRef,
+    commands: learningCommands, isLibraryBusy, setClearConfirm, reportError, offerUndo,
+  });
   const libraryScreen = useLibraryScreenContract({
     workspace: {
       catalog: { model: catalog, actions: catalogActions },
@@ -305,29 +317,17 @@ export function useAppLearningCoordination({
     },
     commands: {
       startStudy: practiceWorkspace.actions.startStudy,
+      openPaths: () => setViewMode('catalog'),
       openCardCreator: () => {
         const scrollBehavior = getReducedMotionScrollBehavior();
-        document.getElementById('library-tools')?.scrollIntoView({ behavior: scrollBehavior, block: 'start' });
-        window.setTimeout(() => document.getElementById('new-word')?.focus(), scrollBehavior === 'auto' ? 0 : 350);
+        document.querySelector<HTMLElement>('#empty-library-word, #library-tools')?.scrollIntoView({ behavior: scrollBehavior, block: 'start' });
+        window.setTimeout(() => document.querySelector<HTMLElement>('#empty-library-word, #new-word')?.focus(), scrollBehavior === 'auto' ? 0 : 350);
       },
       changeNewDeckInput: deckWorkspace.actions.changeNewDeckInput,
       createCustomDeck: deckWorkspace.actions.createDeck,
       deleteCustomDeck: deckWorkspace.actions.deleteDeck,
     },
   });
-  const clearAll = async () => {
-    if (!canStartLibraryClear(isLibraryBusy)) {
-      reportError('Wait for the current card generation or import to finish before clearing the library.');
-      return;
-    }
-    setClearConfirm(false);
-    try {
-      await learningCommands.clearLibrary();
-    } catch (cause) {
-      reportError(cause instanceof Error ? cause.message : 'The library could not be cleared. Please try again.');
-    }
-  };
-
   return {
     model: {
       libraryScreen,

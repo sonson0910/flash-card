@@ -205,7 +205,7 @@ export function createOwnerLibrarySessionController({
 
     let deckSeedRequested = false;
     const seedDecks = (decks: string[]) => {
-      if (deckSeedRequested || decks.length === 0) return Promise.resolve();
+      if (libraryEpoch === null || deckSeedRequested || decks.length === 0) return Promise.resolve();
       deckSeedRequested = true;
       return adapter.seedDeckProfile(ownerId, decks).catch(() => {
         if (active(ownerId, activationGeneration)) {

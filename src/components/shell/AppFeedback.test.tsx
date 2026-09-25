@@ -66,6 +66,35 @@ describe('AppFeedback', () => {
     expect(html.match(/data-notification-toast="true"/g)).toHaveLength(1);
   });
 
+  it('keeps an undo child in the same bottom-right stack after notifications', () => {
+    const html = renderFeedback(<AppFeedback><span data-undo-toast="true">Undo item</span></AppFeedback>);
+
+    expect(html).toContain('class="app-feedback-stack');
+    expect(html).toContain('bottom-[calc(5.5rem+env(safe-area-inset-bottom))]');
+    expect(html).toContain('lg:bottom-4');
+    expect(html.indexOf('data-undo-toast="true"')).toBeGreaterThan(html.indexOf('data-notification-viewport="true"'));
+  });
+
+  it('keeps observed session loss persistent and offers the real sign-in callback', () => {
+    const html = renderFeedback(<AppFeedback sessionLost onRetryAuth={vi.fn()} />);
+
+    expect(html).toContain('Session ended');
+    expect(html).toContain('Sign in again to restore cloud sync.');
+    expect(html).toContain('aria-label="Sign in again"');
+    expect(html).not.toContain('Dismiss sign-in message');
+    expect(html).toContain('role="alert"');
+  });
+
+  it('shows the actual auth retry busy state without clearing session recovery', () => {
+    const html = renderFeedback(<AppFeedback sessionLost isRetryingAuth onRetryAuth={vi.fn()} />);
+
+    expect(html).toContain('aria-busy="true"');
+    expect(html).toContain('aria-label="Connecting…"');
+    expect(html).toContain('Connecting…');
+    expect(html).toContain('disabled=""');
+    expect(html).toContain('Session ended');
+  });
+
   it('keeps initial cloud verification out of the notification stack', () => {
     const html = renderFeedback(
       <AppFeedback

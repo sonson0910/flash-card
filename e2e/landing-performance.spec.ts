@@ -59,7 +59,7 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Choose a practice mode' })).toBeHidden();
 
-  await page.getByRole('button', { name: 'Home', exact: true }).click();
+  await page.getByRole('button', { name: 'SonFlash', exact: true }).click();
   await expect(page.locator('video[data-hero-video]')).toHaveCount(4);
   await page.getByRole('button', { name: 'Vocabulary', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'Vocabulary library' })).toBeVisible();
@@ -110,7 +110,8 @@ test('failed runtime import restores landing and retries with a fresh runtime en
   expect(requests.filter(url => cloudRequest.test(url))).toEqual([]);
 
   await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
-  await expect(page.getByRole('heading', { name: /Remember words\. Use them when it matters\./ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Workspace could not load.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Remember words\. Use them when it matters\./ })).toBeHidden();
   await expect(page.getByRole('button', { name: 'Retry workspace', exact: true })).toBeVisible();
   await expect(page).toHaveURL('http://127.0.0.1:4173/');
 

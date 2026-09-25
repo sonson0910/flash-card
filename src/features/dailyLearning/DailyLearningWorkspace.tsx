@@ -368,14 +368,19 @@ export default function DailyLearningWorkspace({
     courseLabel: `${courseLanguageNames.of(ENGLISH_TO_VIETNAMESE_PROFILE.source.code) || ENGLISH_TO_VIETNAMESE_PROFILE.source.displayName} ← ${courseLanguageNames.of(ENGLISH_TO_VIETNAMESE_PROFILE.target.code) || ENGLISH_TO_VIETNAMESE_PROFILE.target.displayName}`,
     status: activePool.status === 'loading' ? 'loading'
       : activePool.status === 'error' ? 'error'
-        : !plan?.items.length ? 'empty' : isOffline ? 'offline' : 'ready',
+        : plan?.items.length === 0 && activePool.cards.length > 0 ? 'caught-up'
+          : !plan?.items.length ? 'empty' : isOffline ? 'offline' : 'ready',
     isOffline,
     message: activePool.status === 'loading' ? _(msg({ id: 'today.plan.preparing', message: 'Preparing a bounded daily plan…' }))
       : activePool.status === 'error' ? activePool.error
-        : !plan?.items.length ? _(msg({ id: 'today.plan.empty', message: 'Add vocabulary or return when a reviewed card is due.' }))
-          : plan.isShort ? _(msg({ id: 'today.plan.short', message: 'A shorter plan is ready.' })) : _(msg({ id: 'today.plan.ready', message: 'Your plan is ready.' })),
+        : plan?.items.length === 0 && activePool.cards.length > 0 ? _(msg({ id: 'today.plan.caught-up', message: 'No due or new cards are available in this daily plan.' }))
+          : !plan?.items.length ? _(msg({ id: 'today.plan.empty', message: 'Add vocabulary or return when a reviewed card is due.' }))
+            : plan.isShort ? _(msg({ id: 'today.plan.short', message: 'A shorter plan is ready.' })) : _(msg({ id: 'today.plan.ready', message: 'Your plan is ready.' })),
     plan: plan ? { total: plan.counts.total, due: plan.counts.due, weak: plan.counts.weak, fresh: plan.counts.new, isShort: plan.isShort } : null,
     placementAvailable: availablePlacement.status === 'ready',
+    ...(plan?.items.length === 0 && activePool.cards.length > 0
+      ? { caughtUp: { availableNewCount: plan.counts.new } }
+      : {}),
   };
   return <TodayScreen model={todayModel} actions={{
     openVocabulary, openPaths, retry: () => void load(), continueReview: () => void continueReview(), startLesson,

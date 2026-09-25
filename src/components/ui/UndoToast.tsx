@@ -1,19 +1,28 @@
-import { RotateCcw, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useEffect, useRef, useState, type FocusEvent } from 'react';
 import { Trans } from '@lingui/react';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
+import '../feedback-toast.css';
 
 export interface UndoToastItem {
   id: string;
   message: string;
+  subject?: string;
   onUndo: () => void;
   durationMs?: number;
+}
+
+export function isUndoKeyboardShortcut(event: Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'altKey' | 'shiftKey' | 'target'>) {
+  if (event.key.toLowerCase() !== 'z' || (!event.metaKey && !event.ctrlKey) || event.altKey || event.shiftKey) return false;
+  const target = event.target as { closest?: (selector: string) => Element | null } | null;
+  return !target?.closest?.('input, textarea, select, [role="textbox"], [contenteditable]:not([contenteditable="false"])');
 }
 
 interface UndoToastProps {
   toast: UndoToastItem | null;
   onDismiss: () => void;
+  stacked?: boolean;
 }
 
 export function createUndoTimeout(duration: number, onElapsed: () => void) {
@@ -37,11 +46,12 @@ export function createUndoTimeout(duration: number, onElapsed: () => void) {
   return { pause, resume, dispose: pause };
 }
 
-export function UndoToast({ toast, onDismiss }: UndoToastProps) {
+export function UndoToast({ toast, onDismiss, stacked = false }: UndoToastProps) {
   const { _ } = useLingui();
-  const duration = toast?.durationMs ?? 5000;
+  const duration = toast?.durationMs ?? 6000;
   const onDismissRef = useRef(onDismiss);
   const dismissedRef = useRef(false);
+  const onUndoRef = useRef(toast?.onUndo);
   const timeoutRef = useRef<ReturnType<typeof createUndoTimeout> | null>(null);
   const hoveredRef = useRef(false);
   const focusedRef = useRef(false);
@@ -54,6 +64,8 @@ export function UndoToast({ toast, onDismiss }: UndoToastProps) {
     else timeoutRef.current?.resume();
     setPaused(shouldPause);
   };
+
+  onUndoRef.current = toast?.onUndo;
 
   const dismissOnce = () => {
     if (dismissedRef.current) return false;
@@ -70,11 +82,31 @@ export function UndoToast({ toast, onDismiss }: UndoToastProps) {
     return () => timeoutRef.current?.dispose();
   }, [duration, toast?.id]);
 
+  useEffect(() => {
+    if (!toast) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (dismissedRef.current || !isUndoKeyboardShortcut(event)) return;
+      event.preventDefault();
+      if (dismissOnce()) onUndoRef.current?.();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [toast?.id]);
+
   if (!toast) return null;
+  const shortcut = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
+    ? '⌘Z'
+    : 'Ctrl+Z';
+  const positionClasses = stacked
+    ? 'relative z-[75] w-full'
+    : 'fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 z-[75] w-[min(25rem,calc(100vw-2rem))] sm:right-6 lg:bottom-4';
 
   return (
     <div
-      role="alert"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      data-undo-toast="true"
       onPointerEnter={() => {
         hoveredRef.current = true;
         updatePause();
@@ -93,40 +125,47 @@ export function UndoToast({ toast, onDismiss }: UndoToastProps) {
           updatePause();
         }
       }}
-      className="crystal-chamfer-sm fixed bottom-6 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between gap-3 overflow-hidden border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-[var(--sf-text)] shadow-2xl animate-bounce-short"
+      className={`notification-toast undo-toast pointer-events-auto ${positionClasses}`}
     >
-      <div className="flex items-center gap-3 min-w-0">
-        <span className="text-xs font-semibold text-[var(--sf-text)] truncate">
-          {toast.message}
-        </span>
-      </div>
+      <span className={`undo-toast-message${toast.subject ? ' undo-toast-message--with-subject' : ''}`}>
+        <span className="undo-toast-copy">{toast.message}</span>
+        {toast.subject ? (
+          <>
+            <span aria-hidden="true">·</span>
+            <span className="undo-toast-subject">{toast.subject}</span>
+          </>
+        ) : null}
+      </span>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="undo-toast-actions">
         <button
           type="button"
           onClick={() => {
-            if (dismissOnce()) toast.onUndo();
+            if (dismissOnce()) onUndoRef.current?.();
           }}
-          className="flex min-h-11 items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
+          aria-keyshortcuts="Meta+Z Control+Z"
+          className="undo-toast-action"
         >
-          <RotateCcw size={13} />
           <span><Trans id="shell.undo.action" message="Undo" /></span>
+          <kbd className="undo-toast-shortcut">{shortcut}</kbd>
         </button>
         <button
           type="button"
           onClick={dismissOnce}
-          className="flex size-11 items-center justify-center rounded-lg text-[var(--sf-text-muted)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)]"
+          className="undo-toast-dismiss"
           aria-label={_(msg({ id: 'shell.undo.dismiss', message: 'Dismiss notification' }))}
         >
-          <X size={14} />
+          <X size={14} aria-hidden="true" />
         </button>
       </div>
 
-      {/* Countdown progress line */}
-      <div className="absolute bottom-0 left-0 h-1 w-full bg-[var(--sf-surface-muted)]">
+      <span className="sr-only">
+        <Trans id="shell.undo.window" message="Undo is available for {seconds} seconds." values={{ seconds: Math.ceil(duration / 1000) }} />
+      </span>
+      <div className="undo-toast-progress-track" aria-hidden="true">
         <div
           key={toast.id}
-          className="undo-toast-progress h-full origin-left bg-amber-500"
+          className="undo-toast-progress"
           style={{ animationDuration: `${duration}ms`, animationPlayState: paused ? 'paused' : 'running' }}
         />
       </div>

@@ -39,6 +39,20 @@ describe('buildDailyPlan', () => {
     expect(plan.isShort).toBe(true);
   });
 
+  it('can have a non-empty source pool with no cards in the current daily plan', () => {
+    const pool = [card('scheduled-later', {
+      reviews: 3,
+      difficulty: 'good',
+      correctStreak: 4,
+      nextReviewDate: '2026-09-01T08:00:00.000Z',
+    })];
+    const plan = buildDailyPlan(pool, { now: new Date('2026-08-04T08:00:00.000Z') });
+
+    expect(pool).toHaveLength(1);
+    expect(plan.items).toEqual([]);
+    expect(plan.counts).toEqual({ due: 0, weak: 0, new: 0, total: 0 });
+  });
+
   it('deduplicates logical words, remains deterministic and caps the plan at fifteen', () => {
     const cards = Array.from({ length: 20 }, (_, index) => card(`word-${String(index).padStart(2, '0')}`));
     cards.push(card('duplicate-document', { word: 'WORD-00', normalizedWord: 'word-00' }));

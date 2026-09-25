@@ -6,7 +6,7 @@ import { AppFeedback } from '../components/shell/AppFeedback';
 import { AppFooter } from '../components/shell/AppFooter';
 import { DesktopNavigation } from '../components/shell/DesktopNavigation';
 import { FloatingMobileNav } from '../components/shell/FloatingMobileNav';
-import { UndoToast } from '../components/ui/UndoToast';
+import { UndoToast, type UndoToastItem } from '../components/ui/UndoToast';
 import { LEARNING_WORKSPACE_ID, SkipToContentLink } from '../components/shell/SkipToContentLink';
 import { useOverlayState } from '../features/overlays/useOverlayState';
 import { appDependencies } from './appDependencies';
@@ -20,8 +20,14 @@ import { useBrowserExtensionImport } from '../features/browserExtension/useBrows
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { APP_VIEW_HEADINGS } from '../features/navigation/app-view-headings';
+import { evidencedStudyStreak } from '../features/dailyLearning/dailyLearningPresentation';
+import { getShellSyncStatus } from '../components/shell/shellSyncStatus';
+import { localizeShellSyncStatus } from '../components/shell/localized-sync-status';
+import { isCardDue } from '../lib/srs';
+import '../styles/shell.css';
 
 const AppOverlays = lazy(() => import('../components/AppOverlays').then(module => ({ default: module.AppOverlays })));
+const WorkspaceSyncPanel = lazy(() => import('../components/WorkspaceSyncPanel').then(module => ({ default: module.WorkspaceSyncPanel })));
 
 export interface LandingUser {
   readonly displayName?: string | null;
@@ -48,6 +54,7 @@ export default function AppRuntime({
 }: AppRuntimeProps) {
   const { _ } = useLingui();
   const [error, setError] = useState<string | null>(null);
+  const [isRetryingSync, setIsRetryingSync] = useState(false);
   const clearError = useCallback((message: string) => {
     setError(current => current === message ? null : current);
   }, []);
@@ -88,6 +95,21 @@ export default function AppRuntime({
     clearError,
     notify: setNotice,
   });
+  const undoOwnerRef = useRef<string | null | undefined>(undefined);
+  const currentOwnerId = library.model.user?.uid ?? null;
+  const currentOwnerRef = useRef(currentOwnerId);
+  currentOwnerRef.current = currentOwnerId;
+  const offerUndo = useCallback((ownerId: string | null, toast: UndoToastItem | null) => {
+    if (ownerId !== currentOwnerRef.current) return;
+    undoOwnerRef.current = toast ? ownerId : undefined;
+    setUndoToast(toast);
+  }, [setUndoToast]);
+  useEffect(() => {
+    if (undoOwnerRef.current !== currentOwnerId) {
+      undoOwnerRef.current = undefined;
+      setUndoToast(null);
+    }
+  }, [currentOwnerId, setUndoToast]);
   const learning = useAppLearningCoordination({
     library,
     viewMode,
@@ -98,6 +120,7 @@ export default function AppRuntime({
     shareOpenerRef,
     reportError: setError,
     notify: setNotice,
+    offerUndo,
   });
   const {
     cards,
@@ -119,6 +142,10 @@ export default function AppRuntime({
   const practiceActions = learning.actions.practice;
   const intakeActions = learning.actions.intakeSharing;
   const identity = librarySession.identity;
+  const syncStatus = localizeShellSyncStatus(getShellSyncStatus(shellSyncStatus), shellSyncStatus, _);
+  const showWorkspaceSync = viewMode === 'library'
+    && !identity.authenticationRecovery
+    && ['needs-attention', 'offline', 'saving-offline'].includes(syncStatus.kind);
   const isShareModalOpen = intakeSharing.share.isShareDialogOpen || intakeSharing.share.isLoading;
   const handlePracticeStageKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (practiceSession.mode !== 'study' || event.defaultPrevented || event.nativeEvent.isComposing) return;
@@ -184,14 +211,23 @@ export default function AppRuntime({
     openClearOverlay(focusReturnTarget, canClearLibrary);
   const handleSignIn = async () => { await library.actions.signIn(); };
   const handleSignOut = async () => { await library.actions.signOut(); };
+  const handleRetrySync = async () => {
+    if (isRetryingSync) return;
+    setIsRetryingSync(true);
+    setError(current => current === librarySession.cloud.error ? null : current);
+    try {
+      await library.actions.retrySync();
+    } catch {
+      setError(_(msg({ id: 'shell.sync.retry-failed', message: 'Sync could not finish. Your changes remain on this device. Try again.' })));
+    } finally {
+      setIsRetryingSync(false);
+    }
+  };
 
   if (!visible) return null;
 
   return (
-    <div ref={appShellRef} className={`app-canvas min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden selection:bg-cyan-500/20 transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
-      <div className="ambient-orb ambient-orb-a" aria-hidden="true" />
-      <div className="ambient-orb ambient-orb-b" aria-hidden="true" />
-      <div className="ambient-orb ambient-orb-c" aria-hidden="true" />
+    <div ref={appShellRef} data-view={viewMode} className={`app-canvas claude-app-shell min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
       <SkipToContentLink />
 
       <DesktopNavigation
@@ -216,6 +252,9 @@ export default function AppRuntime({
         isExporting={isExporting}
         isLibraryMutationPending={isLibraryBusy}
         libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
+        streak={evidencedStudyStreak(libraryScreen.model.overview.streak, libraryScreen.overlays.stats.xpChartData)}
+        level={libraryScreen.model.overview.level}
+        xp={libraryScreen.model.overview.xp}
         onOpenLanding={() => setViewMode('landing')}
         onOpenToday={() => setViewMode('today')}
         onOpenLibrary={() => setViewMode('library')}
@@ -224,35 +263,57 @@ export default function AppRuntime({
         onOpenSettings={() => setViewMode('settings')}
         onSignIn={handleSignIn}
         onSignOut={handleSignOut}
+        onRetrySync={handleRetrySync}
+        isRetryingSync={isRetryingSync}
+        sessionLost={Boolean(identity.authenticationRecovery)}
+        canSyncNow={identity.status === 'authenticated' && !identity.authenticationRecovery && isBrowserOnline && Boolean(user)}
         onExportLibrary={library.actions.exportLibrary}
         onClearLibrary={openClearConfirm}
       />
 
       <AppFeedback
-        authError={user ? null : identity.error}
+        authError={user && !identity.authenticationRecovery ? null : identity.error}
+        sessionLost={identity.authenticationRecovery === 'session-lost'}
+        isRetryingAuth={identity.isSigningIn}
+        onRetryAuth={handleSignIn}
         error={isShareModalOpen && error === intakeSharing.share.error ? null : error}
         notice={notice}
-        syncStatus={shellSyncStatus}
+        syncStatus={showWorkspaceSync ? undefined : shellSyncStatus}
         onDismissAuthError={library.actions.clearAuthError}
         onDismissError={() => setError(null)}
         onDismissNotice={() => setNotice(null)}
-        onRetrySync={() => {
-          setError(current => current === librarySession.cloud.error ? null : current);
-          return library.actions.retrySync();
-        }}
-      />
+        onRetrySync={handleRetrySync}
+      >
+        {undoToast && undoOwnerRef.current === currentOwnerId && !identity.authenticationRecovery ? (
+          <UndoToast stacked toast={undoToast} onDismiss={() => setUndoToast(null)} />
+        ) : null}
+      </AppFeedback>
       <main
         id={LEARNING_WORKSPACE_ID}
         tabIndex={0}
         aria-label={_(msg({ id: 'shell.learning-workspace', message: 'Learning workspace' }))}
-        className="flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
+        className="claude-workspace flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
       >
-        <div onKeyDown={handlePracticeStageKeyDown} className="relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8">
+        <div onKeyDown={handlePracticeStageKeyDown} className="claude-workspace-inner relative w-full max-w-[1440px] mx-auto px-5 pt-5 pb-28 sm:px-8 lg:px-11 lg:pt-3 lg:pb-8">
           {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && viewMode !== 'settings' && (
             <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{_(APP_VIEW_HEADINGS[viewMode])}</h1>
           )}
           <div ref={viewStageRef} data-app-view-stage className="min-h-full">
-            <AppViewStage
+            {showWorkspaceSync ? (
+              <Suspense fallback={null}>
+                <WorkspaceSyncPanel
+                  status={syncStatus}
+                  cloudSyncEnabled={Boolean(user && appDependencies.configuration.cloudConfigured)}
+                  pendingCount={shellSyncStatus.pendingCount}
+                  dueCards={cards.filter(isCardDue)}
+                  canReview={cards.length > 0}
+                  isRetrying={isRetryingSync}
+                  onReview={practiceActions.startStudy}
+                  onRetry={handleRetrySync}
+                  onReturnHome={() => setViewMode('today')}
+                />
+              </Suspense>
+            ) : <AppViewStage
               viewMode={viewMode}
               ownerId={user?.uid ?? null}
               isOffline={!isBrowserOnline}
@@ -274,7 +335,7 @@ export default function AppRuntime({
               openMorePractice={openPractice}
               libraryContent={<AppDeferredLibraryView model={libraryScreen.model} actions={libraryScreen.actions} />}
               practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} addXp={practiceAddXp} />}
-            />
+            />}
           </div>
         </div>
       </main>
@@ -330,8 +391,6 @@ export default function AppRuntime({
           />
         </Suspense>
       )}
-
-      <UndoToast toast={undoToast} onDismiss={() => setUndoToast(null)} />
 
       {/* Floating Mobile Bottom Navigation */}
       <FloatingMobileNav

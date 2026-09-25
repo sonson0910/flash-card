@@ -1,10 +1,28 @@
-import { Download, Loader2, Settings2, Sparkles, Trash2 } from 'lucide-react';
+import {
+  AlertCircle,
+  BookOpen,
+  CheckCircle2,
+  Cloud,
+  Download,
+  Loader2,
+  LogIn,
+  LogOut,
+  RefreshCw,
+  Settings2,
+  Shield,
+  Sparkles,
+  Trash2,
+  UserRound,
+  WifiOff,
+} from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { Trans, useLingui } from '@lingui/react';
+import { msg } from '@lingui/core/macro';
 import { useZenGlassMode } from '../../lib/useZenGlassMode';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
-import { Trans } from '@lingui/react';
-import { msg } from '@lingui/core/macro';
-import { useLingui } from '@lingui/react';
+import type { SyncIdentityViewModel } from './shellTypes';
+import type { ShellSyncStatus } from './shellSyncStatus';
+import './account-menu.css';
 
 interface LibraryManagementMenuProps {
   readonly isExporting?: boolean;
@@ -12,9 +30,18 @@ interface LibraryManagementMenuProps {
   readonly onExportLibrary?: () => void | Promise<void>;
   readonly onClearLibrary?: (focusReturnTarget: HTMLButtonElement) => void;
   readonly onOpenSettings?: () => void;
+  readonly onSignIn?: () => void | Promise<void>;
+  readonly onSignOut?: () => void | Promise<void>;
+  readonly onRetrySync?: () => void | Promise<void>;
+  readonly isRetryingSync?: boolean;
+  readonly canSyncNow?: boolean;
+  readonly sessionLost?: boolean;
+  readonly syncIdentity: SyncIdentityViewModel;
+  readonly syncStatus: ShellSyncStatus;
+  readonly libraryCountLabel: string;
 }
 
-const menuItemClass = 'crystal-chamfer-sm flex min-h-11 w-full items-center gap-3 px-3 py-2.5 text-left text-xs font-bold text-[var(--sf-text)] transition-colors hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
+const menuItemClass = 'account-menu-item flex min-h-11 w-full items-center gap-3 px-3 py-2.5 text-left text-xs font-bold text-[var(--sf-text)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
 const PlanUsageMeter = lazy(() => Promise.all([
   import('../../features/plan/PlanUsageMeter'), loadCatalog(getActiveUiLocale(), 'billing'),
 ]).then(([module]) => ({ default: module.PlanUsageMeter })));
@@ -25,12 +52,62 @@ const AccountDataSection = lazy(() => Promise.all([
   import('../../features/account/AccountDataSection'), loadCatalog(getActiveUiLocale(), 'account'),
 ]).then(([module]) => ({ default: module.AccountDataSection })));
 
+function getIdentityLabel(identity: SyncIdentityViewModel, accountLabel: string, connectingLabel: string): string {
+  if (identity.status === 'authenticated') {
+    return identity.displayName?.trim() || identity.email?.trim() || accountLabel;
+  }
+  if (identity.status === 'loading' || (identity.status === 'signed-out' && identity.isSigningIn)) {
+    return connectingLabel;
+  }
+  return accountLabel;
+}
+
+function getIdentityInitials(identity: SyncIdentityViewModel): string | null {
+  if (identity.status !== 'authenticated') return null;
+  const name = identity.displayName?.trim();
+  if (name) return name.split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase();
+  return identity.email?.trim().slice(0, 1).toUpperCase() || null;
+}
+
+function AccountAvatar({ identity, compact = false }: { identity: SyncIdentityViewModel; compact?: boolean }) {
+  if (identity.status === 'authenticated' && identity.photoUrl) {
+    return <img src={identity.photoUrl} alt="" referrerPolicy="no-referrer" className="account-menu-avatar-image" />;
+  }
+  if (identity.status === 'loading' || (identity.status === 'signed-out' && identity.isSigningIn)) {
+    return <Loader2 size={compact ? 18 : 19} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />;
+  }
+  const initials = getIdentityInitials(identity);
+  if (initials) return <span aria-hidden="true">{initials}</span>;
+  return <UserRound size={compact ? 18 : 19} aria-hidden="true" />;
+}
+
+function getStatusIcon(kind: string, busy: boolean) {
+  if (busy) return Loader2;
+  if (kind === 'synced') return CheckCircle2;
+  if (kind === 'offline') return WifiOff;
+  if (kind === 'needs-attention') return AlertCircle;
+  return Cloud;
+}
+
+function shouldShowSyncNow(identity: SyncIdentityViewModel, sessionLost: boolean, canSyncNow: boolean, hasRetryCallback: boolean) {
+  return canSyncNow && hasRetryCallback && !sessionLost && identity.status === 'authenticated';
+}
+
 export function LibraryManagementMenu({
   isExporting = false,
   isLibraryMutationPending = false,
   onExportLibrary,
   onClearLibrary,
   onOpenSettings,
+  onSignIn,
+  onSignOut,
+  onRetrySync,
+  isRetryingSync = false,
+  canSyncNow = false,
+  sessionLost = false,
+  syncIdentity,
+  syncStatus,
+  libraryCountLabel,
 }: LibraryManagementMenuProps) {
   const { _ } = useLingui();
   const [isZenMode, setZenMode] = useZenGlassMode();
@@ -96,8 +173,38 @@ export function LibraryManagementMenu({
     }
   };
 
+  const accountLabel = _(msg({ id: 'shell.feedback.account', message: 'Account' }));
+  const connectingLabel = _(msg({ id: 'shell.feedback.connecting', message: 'Connecting…' }));
+  const identityLabel = getIdentityLabel(syncIdentity, accountLabel, connectingLabel);
+  const statusKind = sessionLost
+    ? 'session-lost'
+    : syncIdentity.status === 'loading'
+      ? 'checking'
+      : syncIdentity.status === 'signed-out'
+        ? syncIdentity.isSigningIn ? 'syncing' : 'device'
+        : syncStatus.kind;
+  const statusLabel = sessionLost
+    ? _(msg({ id: 'shell.feedback.session-ended', message: 'Session ended' }))
+    : syncIdentity.status === 'loading'
+      ? _(msg({ id: 'shell.sync.checking', message: 'Checking cloud…' }))
+      : syncIdentity.status === 'signed-out'
+        ? syncIdentity.isSigningIn
+          ? _(msg({ id: 'shell.feedback.connecting', message: 'Connecting…' }))
+          : _(msg({ id: 'shell.sync.device', message: 'On this device' }))
+        : syncStatus.headerLabel;
+  const statusDetail = sessionLost
+    ? _(msg({ id: 'shell.feedback.session-ended-detail', message: 'Sign in again to restore cloud sync.' }))
+    : syncIdentity.status === 'authenticated'
+      ? syncStatus.detail
+      : '';
+  const statusBusy = !sessionLost && (syncStatus.busy || isRetryingSync || (syncIdentity.status === 'signed-out' && syncIdentity.isSigningIn));
+  const StatusIcon = sessionLost ? AlertCircle : getStatusIcon(statusKind, statusBusy);
+  const showSyncNow = shouldShowSyncNow(syncIdentity, sessionLost, canSyncNow, Boolean(onRetrySync));
+  const canSignIn = Boolean(onSignIn && (sessionLost || (syncIdentity.status === 'signed-out' && syncIdentity.isConfigured)));
+  const canSignOut = Boolean(onSignOut && syncIdentity.status === 'authenticated' && !sessionLost);
+
   return (
-    <div ref={rootRef} className="relative z-20 w-fit">
+    <div ref={rootRef} className="account-menu-root relative z-20 w-fit">
       <button
         ref={triggerRef}
         type="button"
@@ -106,72 +213,139 @@ export function LibraryManagementMenu({
         aria-expanded={isOpen}
         aria-controls="library-management-menu"
         title={_(msg({ id: 'shell.library-menu.trigger', message: 'Manage library' }))}
-        style={{ minHeight: 44 }}
         onClick={() => setIsOpen(open => !open)}
         onKeyDown={handleTriggerKeyDown}
-        className="crystal-chamfer-sm liquid-control flex size-11 shrink-0 items-center justify-center border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text)] shadow-xs transition-colors hover:border-[var(--sf-brand)] hover:text-[var(--sf-brand-text)] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+        className="account-menu-trigger claude-account-trigger flex size-11 shrink-0 items-center justify-center border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
       >
-        <Settings2 size={18} aria-hidden="true" />
+        <AccountAvatar identity={syncIdentity} compact />
       </button>
       {isOpen && (
-        <div
-          ref={menuRef}
-          id="library-management-menu"
-          role="menu"
-          aria-label={_(msg({ id: 'shell.library-menu.label', message: 'Library management' }))}
-          onKeyDown={handleMenuKeyDown}
-          className="crystal-chamfer absolute right-0 top-full z-50 mt-2 w-64 border border-[var(--sf-border)] bg-[var(--sf-surface)] p-2 text-[var(--sf-text)] shadow-2xl backdrop-blur-2xl transition-[opacity,transform] duration-150"
-        >
-          <Suspense fallback={null}><PlanUsageMeter source="menu" onOpenUpgrade={() => { setIsOpen(false); setUpgradeOpen(true); }} /></Suspense>
-          <a role="menuitem" href="/privacy.html" className={menuItemClass}><Trans id="shell.menu.privacy" message="Privacy" /></a>
-          <a role="menuitem" href="/terms.html" className={menuItemClass}><Trans id="shell.menu.terms" message="Terms" /></a>
-          <a role="menuitem" href="/browser-extension-privacy.html" className={menuItemClass}><Trans id="shell.menu.extension-privacy" message="Extension privacy" /></a>
-          <button type="button" role="menuitem" className={menuItemClass} onClick={() => { setIsOpen(false); setAccountDataOpen(true); }}><Trans id="shell.menu.account-data" message="Account data" /></button>
-          {onOpenSettings && <button type="button" role="menuitem" className={menuItemClass} onClick={() => { setIsOpen(false); onOpenSettings(); }}><Settings2 size={17} aria-hidden="true" className="shrink-0" /><Trans id="shell.menu.appearance-settings" message="Appearance settings" /></button>}
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setZenMode(prev => !prev);
-            }}
-            className={menuItemClass}
-            title={_(msg({ id: 'shell.library-menu.zen-toggle-description', message: 'Toggle between Standard Learning mode and Zen Minimalist Glass mode' }))}
-          >
-            <Sparkles size={17} aria-hidden="true" className={isZenMode ? 'text-cyan-600 dark:text-cyan-400 shrink-0 animate-pulse' : 'text-slate-400 shrink-0'} />
-            <span className="truncate">{isZenMode ? <Trans id="shell.menu.card-style-zen" message="Card style: Zen Glass" /> : <Trans id="shell.menu.card-style-standard" message="Card style: Standard" />}</span>
-          </button>
-          {onExportLibrary && (
-            <button
-              type="button"
-              role="menuitem"
-              disabled={isExporting}
-              onClick={() => {
-                setIsOpen(false);
-                void onExportLibrary();
-              }}
-              className={menuItemClass}
+        <div className="account-menu-panel absolute right-0 top-full z-50 mt-2 text-[var(--sf-text)]">
+          <div className="account-menu-surface">
+            <div className="account-menu-identity">
+              <span className="account-menu-avatar"><AccountAvatar identity={syncIdentity} /></span>
+              <div className="account-menu-identity-copy">
+                <div className="account-menu-name">{identityLabel}</div>
+                {syncIdentity.status === 'authenticated' && syncIdentity.email && syncIdentity.email !== identityLabel && (
+                  <div className="account-menu-email" title={syncIdentity.email}>{syncIdentity.email}</div>
+                )}
+              </div>
+            </div>
+
+            <div
+              className="account-menu-status"
+              data-status-kind={statusKind}
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              aria-busy={statusBusy}
+              aria-label={`${statusLabel}${statusDetail ? `. ${statusDetail}` : ''} ${libraryCountLabel}`}
             >
-              {isExporting ? <Loader2 size={17} className="animate-spin text-cyan-600 shrink-0" aria-hidden="true" /> : <Download size={17} aria-hidden="true" className="shrink-0" />}
-              <span className="truncate">{isExporting ? <Trans id="shell.menu.exporting" message="Exporting library…" /> : <Trans id="shell.menu.export" message="Export library to Excel" />}</span>
-            </button>
-          )}
-          {onClearLibrary && (
-            <button
-              type="button"
-              role="menuitem"
-              disabled={isLibraryMutationPending}
-              onClick={() => {
-                const focusReturnTarget = triggerRef.current;
-                if (!focusReturnTarget) return;
-                setIsOpen(false);
-                onClearLibrary(focusReturnTarget);
-              }}
-              className={`${menuItemClass} text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30`}
+              <span className="account-menu-status-icon" aria-hidden="true">
+                {statusBusy ? <Loader2 size={15} className="animate-spin motion-reduce:animate-none" /> : <StatusIcon size={15} />}
+              </span>
+              <span className="account-menu-status-copy">
+                <span className="account-menu-status-label">{statusLabel}</span>
+                {statusDetail && <span className="account-menu-status-detail">{statusDetail}</span>}
+              </span>
+              <span className="account-menu-count"><BookOpen size={13} aria-hidden="true" />{libraryCountLabel}</span>
+            </div>
+
+            <Suspense fallback={null}><PlanUsageMeter source="menu" onOpenUpgrade={() => { setIsOpen(false); setUpgradeOpen(true); }} /></Suspense>
+
+            <div
+              ref={menuRef}
+              id="library-management-menu"
+              role="menu"
+              aria-label={_(msg({ id: 'shell.library-menu.label', message: 'Library management' }))}
+              onKeyDown={handleMenuKeyDown}
             >
-              <Trash2 size={17} aria-hidden="true" className="shrink-0" />
-              <span className="truncate"><Trans id="shell.menu.clear-library" message="Clear the entire library" /></span>
-            </button>
-          )}
+              {(showSyncNow || canSignIn || canSignOut) && <div className="account-menu-divider" aria-hidden="true" />}
+              {showSyncNow && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={`${menuItemClass} account-menu-sync-action`}
+                  disabled={statusBusy || isRetryingSync}
+                  onClick={() => { setIsOpen(false); void onRetrySync?.(); }}
+                >
+                  {isRetryingSync || syncStatus.busy ? <Loader2 size={17} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <RefreshCw size={17} aria-hidden="true" />}
+                  <Trans id="shell.sync.now" message="Sync now" />
+                </button>
+              )}
+              {canSignIn && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={syncIdentity.status === 'signed-out' && syncIdentity.isSigningIn}
+                  className={`${menuItemClass} account-menu-primary-action`}
+                  onClick={() => { setIsOpen(false); void onSignIn?.(); }}
+                >
+                  {syncIdentity.status === 'signed-out' && syncIdentity.isSigningIn
+                    ? <Loader2 size={17} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                    : <LogIn size={17} aria-hidden="true" />}
+                  {sessionLost
+                    ? <Trans id="shell.feedback.sign-in-again" message="Sign in again" />
+                    : <Trans id="shell.sync.sign-in" message="Sign in & sync" />}
+                </button>
+              )}
+              {canSignOut && (
+                <button type="button" role="menuitem" className={menuItemClass} onClick={() => { setIsOpen(false); void onSignOut?.(); }}>
+                  <LogOut size={17} aria-hidden="true" />
+                  <Trans id="shell.account.sign-out" message="Sign out of cloud sync" />
+                </button>
+              )}
+              {(canSignIn || canSignOut) && <div className="account-menu-divider" aria-hidden="true" />}
+              <a role="menuitem" href="/privacy.html" className={menuItemClass}><Shield size={17} aria-hidden="true" /><Trans id="shell.menu.privacy" message="Privacy" /></a>
+              <a role="menuitem" href="/terms.html" className={menuItemClass}><Shield size={17} aria-hidden="true" /><Trans id="shell.menu.terms" message="Terms" /></a>
+              <a role="menuitem" href="/browser-extension-privacy.html" className={menuItemClass}><Shield size={17} aria-hidden="true" /><Trans id="shell.menu.extension-privacy" message="Extension privacy" /></a>
+              <div className="account-menu-divider" aria-hidden="true" />
+              <button type="button" role="menuitem" className={menuItemClass} onClick={() => { setIsOpen(false); setAccountDataOpen(true); }}><Settings2 size={17} aria-hidden="true" /><Trans id="shell.menu.account-data" message="Account data" /></button>
+              {onOpenSettings && <button type="button" role="menuitem" className={menuItemClass} onClick={() => { setIsOpen(false); onOpenSettings(); }}><Settings2 size={17} aria-hidden="true" /><Trans id="shell.menu.appearance-settings" message="Appearance settings" /></button>}
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => setZenMode(prev => !prev)}
+                className={menuItemClass}
+                title={_(msg({ id: 'shell.library-menu.zen-toggle-description', message: 'Toggle between Standard Learning mode and Zen Minimalist Glass mode' }))}
+              >
+                <Sparkles size={17} aria-hidden="true" className={isZenMode ? 'text-cyan-600 dark:text-cyan-400 shrink-0 animate-pulse' : 'text-slate-400 shrink-0'} />
+                <span className="truncate">{isZenMode ? <Trans id="shell.menu.card-style-zen" message="Card style: Zen Glass" /> : <Trans id="shell.menu.card-style-standard" message="Card style: Standard" />}</span>
+              </button>
+              {onExportLibrary && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={isExporting}
+                  onClick={() => { setIsOpen(false); void onExportLibrary(); }}
+                  className={menuItemClass}
+                >
+                  {isExporting ? <Loader2 size={17} className="animate-spin text-cyan-600 shrink-0 motion-reduce:animate-none" aria-hidden="true" /> : <Download size={17} aria-hidden="true" className="shrink-0" />}
+                  <span className="truncate">{isExporting ? <Trans id="shell.menu.exporting" message="Exporting library…" /> : <Trans id="shell.menu.export" message="Export library to Excel" />}</span>
+                </button>
+              )}
+              {onClearLibrary && (
+                <>
+                  <div className="account-menu-divider" aria-hidden="true" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={isLibraryMutationPending}
+                    onClick={() => {
+                      const focusReturnTarget = triggerRef.current;
+                      if (!focusReturnTarget) return;
+                      setIsOpen(false);
+                      onClearLibrary(focusReturnTarget);
+                    }}
+                    className={`${menuItemClass} account-menu-danger-action`}
+                  >
+                    <Trash2 size={17} aria-hidden="true" className="shrink-0" />
+                    <span className="truncate"><Trans id="shell.menu.clear-library" message="Clear the entire library" /></span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
       {upgradeOpen && <Suspense fallback={null}><UpgradeDialog open={upgradeOpen} onOpenChange={open => {
@@ -186,4 +360,5 @@ export function LibraryManagementMenu({
   );
 }
 
+export { getIdentityInitials, getIdentityLabel, shouldShowSyncNow };
 export type { LibraryManagementMenuProps };

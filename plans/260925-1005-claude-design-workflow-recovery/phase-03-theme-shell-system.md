@@ -1,6 +1,6 @@
 ---
 title: "Dựng lại shell, theme và system states từ Canvas"
-status: todo
+status: completed
 ---
 
 # 03. Dựng lại shell, theme và system states từ Canvas
@@ -8,6 +8,8 @@ status: todo
 ## Kết quả và phụ thuộc
 
 01; nền cho mọi màn.
+
+Hoàn tất local ngày 25/09/2026. [Báo cáo nghiệm thu](../reports/verification-260925-1710-shell-system.md) ghi source tree, gates, ảnh đối chiếu và các workflow còn thuộc phase sau. Chưa deploy.
 
 Ước lượng: 2–3 ngày. Đây là công sức kỹ thuật dự kiến, không phải hạn giao; bao gồm sửa và verify phần phase. Trạng thái hiện tại lấy từ audit, chưa task nào được đánh dấu đạt chỉ vì có patch.
 
@@ -33,13 +35,13 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 
 ## Checklist
 
-- [ ] 03.1 — Lấy kích thước header/nav, khoảng cách, font, active tab, avatar, XP và quick theme toggle từ source; không giữ shell cũ rồi chỉ đổi màu.
-- [ ] 03.2 — Làm mobile nav/menu, safe-area và scrolling theo AnimeMobile/Mobile*; icon/label/focus và account panel đầy đủ.
-- [ ] 03.3 — Làm loading/skeleton, empty, offline/sync pending, expired session, error boundary, toast/undo/retry theo board.
-- [ ] 03.4 — Hoàn thiện Appearance: mọi theme đổi trực tiếp, system follow, light/dark within family, Lumi và reduced motion, sound.
-- [ ] 03.5 — Loại style/layout cũ trong phạm vi đã thay sau khi so hình đạt; kiểm tra legal/18+ và analytics ở shell.
-- [ ] Đối chiếu Canvas từng state của phase theo board/artboard inventory; reviewer kiểm tra cả hành vi và hình thức.
-- [ ] Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log.
+- [x] 03.1 — Lấy kích thước header/nav, khoảng cách, font, active tab, avatar, XP và quick theme toggle từ source; không giữ shell cũ rồi chỉ đổi màu.
+- [x] 03.2 — Làm mobile nav/menu, safe-area và scrolling theo AnimeMobile/Mobile*; icon/label/focus và account panel đầy đủ.
+- [x] 03.3 — Làm loading/skeleton, empty, offline/sync pending, expired session, error boundary, toast/undo/retry theo board.
+- [x] 03.4 — Hoàn thiện Appearance: mọi theme đổi trực tiếp, system follow, light/dark within family, Lumi và reduced motion, sound.
+- [x] 03.5 — Loại style/layout cũ trong phạm vi đã thay sau khi so hình đạt; kiểm tra legal/18+ và analytics ở shell.
+- [x] Đối chiếu Canvas từng state của phase theo board/artboard inventory; reviewer kiểm tra cả hành vi và hình thức.
+- [x] Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log.
 
 ## Verification
 

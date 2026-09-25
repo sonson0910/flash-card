@@ -85,10 +85,10 @@ describe('library session ports binding', () => {
     const binding = createLibrarySessionPortsBinding({ ownerAdapter, publications: publish });
     const acceptEpoch = vi.fn(() => true);
 
-    binding.ports.session.deviceEvents.verifyEpoch({ userId: 'owner-a', value: 4 });
+    expect(binding.ports.session.deviceEvents.verifyEpoch({ userId: 'owner-a', value: 4 })).toBe(false);
     expect(acceptEpoch).not.toHaveBeenCalled();
     binding.actions.connectVerifiedEpoch(acceptEpoch);
-    binding.ports.session.deviceEvents.verifyEpoch({ userId: 'owner-a', value: 4 });
+    expect(binding.ports.session.deviceEvents.verifyEpoch({ userId: 'owner-a', value: 4 })).toBe(true);
     binding.actions.resetCloudState(true);
     binding.actions.markCloudUnavailable(true);
     binding.actions.refreshCloud();

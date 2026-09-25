@@ -1,14 +1,21 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
-import { LibraryScreen, type LibraryScreenActions, type LibraryScreenModel } from './LibraryScreen';
+import { LibraryScreen, shouldShowFirstUseLibraryPanel, type LibraryScreenActions, type LibraryScreenModel } from './LibraryScreen';
+import { i18n } from '@lingui/core';
 import { setFormatLocale } from '../../lib/format';
+
+beforeEach(() => {
+  i18n.load('en', {});
+  i18n.activate('en');
+});
 
 vi.mock('@lingui/react', () => ({
   Trans: ({ message }: { message: string }) => message,
+  useLingui: () => ({ i18n }),
 }));
 
 const publishedUpdateOutcome: LearningStateOutcome = {
@@ -60,7 +67,7 @@ const actions: LibraryScreenActions = {
     changePage: vi.fn(), clearFilters: vi.fn(),
   },
   tools: {
-    importCards: vi.fn(), importFile: vi.fn(), generateCard: vi.fn(async () => undefined), changeWordInput: vi.fn(),
+    openPaths: vi.fn(), importCards: vi.fn(), importFile: vi.fn(), generateCard: vi.fn(async () => undefined), changeWordInput: vi.fn(),
     changeSearch: vi.fn(), changeStarredOnly: vi.fn(), changeDifficulty: vi.fn(),
     changePartOfSpeech: vi.fn(), changeDate: vi.fn(), changeNewDeckInput: vi.fn(),
     createCustomDeck: vi.fn(async () => undefined), changeCustomDeck: vi.fn(),
@@ -68,11 +75,59 @@ const actions: LibraryScreenActions = {
   },
 };
 
-function renderLibrary() {
-  return renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
+function renderLibrary(currentModel = model) {
+  return renderToStaticMarkup(<LibraryScreen model={currentModel} actions={actions} />);
 }
 
 describe('LibraryScreen', () => {
+  it('shows the first-use panel only for a known empty library without loading, search, or migration state', () => {
+    const empty: LibraryScreenModel = {
+      ...model,
+      overview: { ...model.overview, total: 0 },
+      grid: { ...model.grid, searchQuery: '', filteredCards: [], paginatedCards: [], libraryCount: 0 },
+      tools: { ...model.tools, libraryCount: 0, cards: [] },
+    };
+
+    expect(shouldShowFirstUseLibraryPanel(empty)).toBe(true);
+    expect(shouldShowFirstUseLibraryPanel({ ...empty, grid: { ...empty.grid, searchQuery: 'focus' } })).toBe(false);
+    expect(shouldShowFirstUseLibraryPanel({ ...empty, grid: { ...empty.grid, isPageLoading: true } })).toBe(false);
+    expect(shouldShowFirstUseLibraryPanel({ ...empty, grid: { ...empty.grid, cloudReadUnavailable: true } })).toBe(false);
+    expect(shouldShowFirstUseLibraryPanel({ ...empty, grid: { ...empty.grid, legacyCardsPending: 1 } })).toBe(false);
+    expect(shouldShowFirstUseLibraryPanel({ ...empty, grid: { ...empty.grid, legacyIssue: { kind: 'cloud-access', message: 'Retry sync', retryable: true } } })).toBe(false);
+  });
+
+  it('renders the first-use panel with its real actions and one import input', () => {
+    const empty: LibraryScreenModel = {
+      ...model,
+      overview: { ...model.overview, total: 0 },
+      grid: { ...model.grid, searchQuery: '', filteredCards: [], paginatedCards: [], libraryCount: 0 },
+      tools: { ...model.tools, libraryCount: 0, cards: [] },
+    };
+    const html = renderLibrary(empty);
+
+    expect(html).toContain('data-empty-library-panel="true"');
+    expect(html).toContain('Generate card');
+    expect(html).toContain('Scan a text');
+    expect(html).toContain('Import CSV / Excel');
+    expect(html).toContain('Browse paths');
+    expect(html.match(/type="file"/g)).toHaveLength(1);
+    expect(html).not.toContain('data-primary-learning-action="true"');
+  });
+
+  it('keeps the original ready grid and tools flow when the empty results come from a search', () => {
+    const emptySearch: LibraryScreenModel = {
+      ...model,
+      overview: { ...model.overview, total: 0 },
+      grid: { ...model.grid, searchQuery: 'focus', filteredCards: [], paginatedCards: [], libraryCount: 0 },
+      tools: { ...model.tools, searchQuery: 'focus', libraryCount: 0, cards: [] },
+    };
+    const html = renderLibrary(emptySearch);
+
+    expect(html).not.toContain('data-empty-library-panel="true"');
+    expect(html).toContain('lg:col-span-9');
+    expect(html).toContain('lg:col-span-3');
+  });
+
   it('keeps a compact vocabulary heading and real library actions above the collection', () => {
     const html = renderLibrary();
 

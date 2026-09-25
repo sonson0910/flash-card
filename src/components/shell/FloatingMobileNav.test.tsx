@@ -8,7 +8,7 @@ i18n.load('en', { 'shell.nav.today': 'Today', 'shell.nav.paths': 'Paths', 'shell
 i18n.activate('en');
 
 describe('FloatingMobileNav', () => {
-  it('renders navigation tabs without a dead practice button', () => {
+  it('renders the full-width four-tab shell rail without a dead practice button', () => {
     const html = renderToStaticMarkup(<I18nProvider i18n={i18n}>
       <FloatingMobileNav
         activeView="today"
@@ -23,10 +23,21 @@ describe('FloatingMobileNav', () => {
     expect(html).not.toContain('>Library</span>');
     expect(html).toContain('Paths');
     expect(html).toContain('data-shell-layer="mobile"');
-    expect(html).toContain('premium-surface');
+    expect(html).toContain('claude-mobile-nav');
+    expect(html).not.toContain('premium-surface');
     expect(html).toContain('lg:hidden');
     expect(html).not.toContain('md:hidden');
     expect(html).toContain('data-shell-active="true"');
     expect(html).not.toContain('>Home</span>');
+  });
+
+  it('keeps progress as the real route while crystal Friends navigation is pending', () => {
+    const html = renderToStaticMarkup(<I18nProvider i18n={i18n}>
+      <FloatingMobileNav activeView="progress" onSelectView={vi.fn()} />
+    </I18nProvider>);
+
+    expect(html).toContain('aria-current="page"');
+    expect(html).toContain('Progress');
+    expect(html).not.toContain('Friends');
   });
 });

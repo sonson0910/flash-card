@@ -8,6 +8,7 @@ import type {
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySessionController';
 import { LibraryOverview } from './LibraryOverview';
+import { EmptyLibraryPanel } from './EmptyLibraryPanel';
 import type { AiGenerationAccess } from './aiGenerationAccess';
 
 const LibraryCardGrid = lazy(() => import('./LibraryCardGrid').then(module => ({ default: module.LibraryCardGrid })));
@@ -86,6 +87,7 @@ export interface LibraryScreenActions {
     clearFilters: () => void;
   };
   tools: {
+    openPaths: () => void;
     importCards: (event: ChangeEvent<HTMLInputElement>) => void;
     importFile: (file: File) => void;
     generateCard: (event: FormEvent) => Promise<void>;
@@ -108,6 +110,16 @@ export interface LibraryScreenProps {
   actions: LibraryScreenActions;
 }
 
+export function shouldShowFirstUseLibraryPanel(model: LibraryScreenModel): boolean {
+  return model.grid.libraryCount === 0
+    && model.grid.searchQuery.trim() === ''
+    && !model.grid.isPageLoading
+    && !model.grid.cloudReadUnavailable
+    && model.grid.legacyCardsPending === 0
+    && model.grid.legacyIssue === null
+    && !model.grid.isMigratingLegacy;
+}
+
 function DeferredLibraryFallback({ label }: { label: ReactNode }) {
   return (
     <div className="skeleton-sheen min-h-40 rounded-[26px] border border-[var(--sf-border)]" role="status">
@@ -121,6 +133,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
   const internalFileInputRef = useRef<HTMLInputElement | null>(null);
   const headingRef = model.grid.libraryHeadingRef ?? internalHeadingRef;
   const fileInputRef = model.tools.fileInputRef ?? internalFileInputRef;
+  const showFirstUsePanel = shouldShowFirstUseLibraryPanel(model);
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -129,7 +142,23 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
         onStartStudy={actions.startStudy}
         onCreateCard={actions.openCardCreator}
       />
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 xl:gap-8">
+      {showFirstUsePanel ? (
+        <EmptyLibraryPanel
+          fileInputRef={fileInputRef}
+          wordInput={model.tools.wordInput}
+          onWordInputChange={actions.tools.changeWordInput}
+          onGenerate={actions.tools.generateCard}
+          onImport={actions.tools.importCards}
+          onOpenPaths={actions.tools.openPaths}
+          isLoading={model.tools.isLoading}
+          isGenerating={model.tools.isGenerating}
+          isImporting={model.tools.isImporting}
+          generationAccess={model.tools.generationAccess}
+          importProgress={model.tools.importProgress}
+          importResult={model.tools.importResult}
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 xl:gap-8">
         <div data-library-region="collection" className="lg:order-2 lg:col-span-9">
           <Suspense fallback={<DeferredLibraryFallback label={<Trans id="library.loading.cards" message="Loading library cards" />} />}>
             <LibraryCardGrid
@@ -211,6 +240,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
           </Suspense>
         </div>
       </div>
+      )}
     </div>
   );
 }

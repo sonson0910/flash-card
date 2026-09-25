@@ -815,12 +815,17 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/AppErrorBoundary.tsx:8
-msgid "shell.error-boundary.description"
+msgid "shell.error-boundary.description.recovery"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/AppErrorBoundary.tsx:9
 msgid "shell.error-boundary.reload"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:10
+msgid "shell.error-boundary.report-issue"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -871,6 +876,11 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:341
 msgid "shell.loading.charts"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceLoadingPanel.tsx:20
+msgid "shell.loading.workspace"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -1177,11 +1187,81 @@ msgid "shell.share.words-inside"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/ui/UndoToast.tsx:113
+#: src/components/WorkspaceSyncPanel.tsx:203
+msgid "shell.sync.panel.due-now"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:72
+msgid "shell.sync.panel.failure-caption"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:134
+msgid "shell.sync.panel.failure-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:128
+msgid "shell.sync.panel.failure-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:131
+msgid "shell.sync.panel.failure-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:217
+msgid "shell.sync.panel.keep-reviewing"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:71
+msgid "shell.sync.panel.offline-caption"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:193
+msgid "shell.sync.panel.offline-cloud-fallback"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:194
+msgid "shell.sync.panel.offline-local-only"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:230
+msgid "shell.sync.panel.pending-count"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:148
+msgid "shell.sync.panel.retry"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:147
+msgid "shell.sync.panel.retrying"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/WorkspaceSyncPanel.tsx:151
+msgid "shell.sync.panel.return-home"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/ui/UndoToast.tsx:149
 msgid "shell.undo.action"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/ui/UndoToast.tsx:119
+#: src/components/ui/UndoToast.tsx:156
 msgid "shell.undo.dismiss"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/ui/UndoToast.tsx:163
+msgid "shell.undo.window"
 msgstr ""

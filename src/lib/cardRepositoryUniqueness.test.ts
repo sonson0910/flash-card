@@ -639,7 +639,7 @@ describe('createCardIfAbsent', () => {
     firebaseRuntime.isFirebaseConfigured = true;
     firebaseRuntime.protectedFunctionsCapability.available = true;
     const callable = vi.fn().mockResolvedValue({
-      data: { created: true, card: callableCard },
+      data: { created: true, card: callableCard, restored: true },
     });
     functionsRuntime.httpsCallable.mockReturnValue(callable);
 
@@ -648,8 +648,10 @@ describe('createCardIfAbsent', () => {
       baseRevision: 2,
       opId: 'create-quite-1',
       operationCreatedAt: '2026-08-23T00:00:00.000Z',
+      restore: true,
     })).resolves.toMatchObject({
       created: true,
+      restored: true,
       card: {
         id: 'word-quite',
         normalizedWord: 'quite',
@@ -668,6 +670,7 @@ describe('createCardIfAbsent', () => {
       baseRevision: 2,
       opId: 'create-quite-1',
       operationCreatedAt: '2026-08-23T00:00:00.000Z',
+      restore: true,
     });
   });
 

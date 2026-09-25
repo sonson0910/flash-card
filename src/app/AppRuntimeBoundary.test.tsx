@@ -7,7 +7,7 @@ import { AppRuntimeBoundary } from './AppRuntimeBoundary';
 import AppRuntimeError from './app-runtime-error';
 
 describe('AppRuntimeBoundary', () => {
-  it('keeps the landing recovery affordance after a runtime chunk error', () => {
+  it('provides a retry action after a runtime chunk error', () => {
     const onError = vi.fn();
     const onRetry = vi.fn();
     const error = new Error('Failed to fetch dynamically imported module');
@@ -20,7 +20,8 @@ describe('AppRuntimeBoundary', () => {
     expect(onError).toHaveBeenCalledWith(error);
     i18n.load('en', {});
     i18n.activate('en');
-    expect(renderToStaticMarkup(<I18nProvider i18n={i18n}><AppRuntimeError onRetry={onRetry} /></I18nProvider>)).toContain('Workspace could not load');
+    const errorHtml = renderToStaticMarkup(<I18nProvider i18n={i18n}><AppRuntimeError onRetry={onRetry} /></I18nProvider>);
+    expect(errorHtml.match(/<h1>(.*?)<\/h1>/)?.[1].replace(/<[^>]+>/g, '')).toBe('Workspace could not load.');
     expect(renderToStaticMarkup(<I18nProvider i18n={i18n}>{boundary.render()}</I18nProvider>)).toContain('Retry workspace');
 
     const fallback = boundary.render() as ReactElement<{ fallback: ReactNode }>;

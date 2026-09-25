@@ -88,6 +88,8 @@ describe('AppDeferredViews', () => {
 
     expect(html).toContain('role="status"');
     expect(html).toContain('skeleton-sheen');
-    expect(html).toContain('<span class="sr-only">Loading library</span>');
+    expect(html).toContain('aria-busy="true"');
+    expect(html).toContain('class="workspace-loading-label"');
+    expect(html.replace(/<[^>]+>/g, '')).toBe('Loading library');
   });
 });
