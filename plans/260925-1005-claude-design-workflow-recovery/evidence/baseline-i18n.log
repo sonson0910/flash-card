@@ -1,0 +1,106 @@
+
+> lingoflash@1.0.0 i18n:check
+> node scripts/check-i18n-catalogs.mjs
+
+
+> lingoflash@1.0.0 i18n:extract
+> lingui extract --clean
+
+✔ Done in 1s
+Catalog statistics for src/i18n/locales/{locale}/landing:
+┌─────────────┬─────────────┬─────────┐
+│ Language    │ Total count │ Missing │
+├─────────────┼─────────────┼─────────┤
+│ en (source) │     61      │    -    │
+│ vi          │     61      │    0    │
+└─────────────┴─────────────┴─────────┘
+
+Catalog statistics for src/i18n/locales/{locale}/shell:
+┌─────────────┬─────────────┬─────────┐
+│ Language    │ Total count │ Missing │
+├─────────────┼─────────────┼─────────┤
+│ en (source) │     156     │    -    │
+│ vi          │     156     │    0    │
+└─────────────┴─────────────┴─────────┘
+
+Catalog statistics for src/i18n/locales/{locale}/components:
+┌─────────────┬─────────────┬─────────┐
+│ Language    │ Total count │ Missing │
+├─────────────┼─────────────┼─────────┤
+│ en (source) │     208     │    -    │
+│ vi          │     208     │    0    │
+└─────────────┴─────────────┴─────────┘
+
+Catalog statistics for src/i18n/locales/{locale}/today:
+┌─────────────┬─────────────┬─────────┐
+│ Language    │ Total count │ Missing │
+├─────────────┼─────────────┼─────────┤
+│ en (source) │     188     │    -    │
+│ vi          │     188     │    0    │
+└─────────────┴─────────────┴─────────┘
+
+Catalog statistics for src/i18n/locales/{locale}/practice:
+┌─────────────┬─────────────┬─────────┐
+│ Language    │ Total count │ Missing │
+├─────────────┼─────────────┼─────────┤
+│ en (source) │     147     │    -    │
+│ vi          │     147     │    0    │
+└─────────────┴─────────────┴─────────┘
+
+Catalog statistics for src/i18n/locales/{locale}/library:
+┌─────────────┬─────────────┬─────────┐
+│ Language    │ Total count │ Missing │
+├─────────────┼─────────────┼─────────┤
+│ en (source) │     206     │    -    │
+│ vi          │     206     │    0    │
+└─────────────┴─────────────┴─────────┘
+
+Catalog statistics for src/i18n/locales/{locale}/progress:
+┌─────────────┬─────────────┬─────────┐
+│ Language    │ Total count │ Missing │
+├─────────────┼─────────────┼─────────┤
+│ en (source) │     55      │    -    │
+│ vi          │     55      │    0    │
+└─────────────┴─────────────┴─────────┘
+
+Catalog statistics for src/i18n/locales/{locale}/billing:
+┌─────────────┬─────────────┬─────────┐
+│ Language    │ Total count │ Missing │
+├─────────────┼─────────────┼─────────┤
+│ en (source) │      0      │    -    │
+│ vi          │      0      │    0    │
+└─────────────┴─────────────┴─────────┘
+
+Catalog statistics for src/i18n/locales/{locale}/settings:
+┌─────────────┬─────────────┬─────────┐
+│ Language    │ Total count │ Missing │
+├─────────────┼─────────────┼─────────┤
+│ en (source) │     24      │    -    │
+│ vi          │     24      │    0    │
+└─────────────┴─────────────┴─────────┘
+
+Catalog statistics for src/i18n/locales/{locale}/catalog:
+┌─────────────┬─────────────┬─────────┐
+│ Language    │ Total count │ Missing │
+├─────────────┼─────────────┼─────────┤
+│ en (source) │     111     │    -    │
+│ vi          │     111     │    0    │
+└─────────────┴─────────────┴─────────┘
+
+Catalog statistics for src/i18n/locales/{locale}/account:
+┌─────────────┬─────────────┬─────────┐
+│ Language    │ Total count │ Missing │
+├─────────────┼─────────────┼─────────┤
+│ en (source) │      0      │    -    │
+│ vi          │      0      │    0    │
+└─────────────┴─────────────┴─────────┘
+
+(Use "npm run i18n:extract" to update catalogs with new messages.)
+(Use "npm run i18n:compile" to compile catalogs for production. Alternatively, use bundler plugins: https://lingui.dev/ref/cli#compiling-catalogs-in-ci)
+
+> lingoflash@1.0.0 i18n:compile
+> lingui compile --strict
+
+Compiling message catalogs…
+Done in 1s
+Checked 11 catalogs: extraction is stable and en/vi message coverage is complete.

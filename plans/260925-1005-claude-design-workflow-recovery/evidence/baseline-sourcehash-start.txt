@@ -1,0 +1,161 @@
+captured_utc=2026-09-25T04:54:43.503743+00:00
+revision=8d1ec44e3af7e08e45b90454c887055a902ef7d2
+hash_scope=all tracked and non-ignored worktree files except plans/ and local tooling metadata (.claude/, .serena/, .ui-snapshot/, .codegraph/)
+file_count=1632
+aggregate_sha256=cd2c28c3440b97d3bb342c3140939b522a8f3dc77b53ecc982dd5275a5a41264
+worktree_status_begin
+ M .codegraph/.gitignore
+ M README.md
+ M docs/runbooks/vn-pilot-operations.md
+ M firestore.rules
+ M firestore.rules.test.ts
+ M firestoreRulesSource.test.ts
+ M functions/src/inputValidation.ts
+ M functions/src/legacySharedDeckMigration.ts
+ M functions/src/sharedDeckPersistence.ts
+ M functions/test/inputValidation.test.ts
+ M functions/test/legacySharedDeckMigration.test.ts
+ M functions/test/sharedDeckPersistence.test.ts
+ M plans/260923-2000-vn-ielts-paid-pilot/decision-log.md
+ M src/app/AppRuntime.tsx
+ M src/components/shell/AppNavigation.test.tsx
+ M src/components/shell/DesktopNavigation.tsx
+ M src/components/shell/LanguageMenu.tsx
+ M src/components/shell/LibraryManagementMenu.tsx
+ M src/components/shell/ThemeMenu.tsx
+ M src/components/stats/AchievementsMatrix.tsx
+ M src/components/stats/StatsCharts.tsx
+ M src/components/study/ReviewControls.tsx
+ M src/features/account/AccountDataSection.tsx
+ M src/features/billing/UpgradeDialog.tsx
+ M src/features/cardReport/ReportCardDialog.tsx
+ M src/features/catalogWorkspace/CatalogScreen.tsx
+ M src/features/dailyLearning/PlacementScreen.tsx
+ M src/features/dailyLearning/ProgressScreen.tsx
+ M src/features/dailyLearning/TodayScreen.tsx
+ M src/features/landing/LandingPage.tsx
+ M src/features/library/AiDialogueModal.tsx
+ M src/features/library/LibraryCardGrid.test.tsx
+ M src/features/library/LibraryCardGrid.tsx
+ M src/features/library/LibraryOverview.tsx
+ M src/features/library/LibraryScreen.test.tsx
+ M src/features/library/LibraryScreen.tsx
+ M src/features/library/WordExtractorModal.tsx
+ M src/features/plan/PlanUsageMeter.tsx
+ M src/features/practice/PracticeScreen.tsx
+ M src/features/practice/QuizView.tsx
+ M src/features/practice/SessionRecapModal.tsx
+ M src/features/practice/ShadowingView.tsx
+ M src/features/practice/SpellingView.tsx
+ M src/features/practice/StoryView.tsx
+ M src/features/practice/StudyView.tsx
+ M src/features/practice/WordMatchView.tsx
+ M src/features/settings/settings-screen.css
+ M src/features/settings/settings-screen.tsx
+ M src/features/sharing/sharedDeckService.test.ts
+ M src/features/sharing/sharedDeckService.ts
+ M src/features/sharing/sharedDeckSessionController.test.ts
+ M src/features/sharing/sharedDeckSessionController.ts
+ M src/i18n/locales/en-XA/catalog.po
+ M src/i18n/locales/en-XA/landing.po
+ M src/i18n/locales/en-XA/library.po
+ M src/i18n/locales/en-XA/practice.po
+ M src/i18n/locales/en-XA/shell.po
+ M src/i18n/locales/en-XA/today.po
+ M src/i18n/locales/en/catalog.po
+ M src/i18n/locales/en/landing.po
+ M src/i18n/locales/en/library.po
+ M src/i18n/locales/en/practice.po
+ M src/i18n/locales/en/shell.po
+ M src/i18n/locales/en/today.po
+ M src/i18n/locales/vi/catalog.po
+ M src/i18n/locales/vi/landing.po
+ M src/i18n/locales/vi/library.po
+ M src/i18n/locales/vi/practice.po
+ M src/i18n/locales/vi/shell.po
+ M src/i18n/locales/vi/today.po
+ M src/styles/shell.css
+?? .claude/
+?? .serena/
+?? .ui-snapshot/
+?? docs/superpowers/plans/2026-09-04-repository-remediation.md
+?? plans/260923-1831-global-multilingual-launch/backend/
+?? plans/260923-1831-global-multilingual-launch/decisions.md
+?? plans/260923-1831-global-multilingual-launch/frontend/contract-needs.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-01-design-source-capture.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-03-theme-system-and-fonts.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-04-data-access-ports.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-05-shell-redesign.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-06-flashcard-and-study-redesign.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-07-daily-learning-redesign.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-08-practice-modes-redesign.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-09-library-and-dialogs-redesign.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-10-paths-progress-redesign.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-11-target-language-packs.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-12-courses-onboarding-settings.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-13-auth-session-ui.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-14-api-adapters-and-offline-sync.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-15-extension-i18n-rebrand-routing.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-16-landing-and-seo-locales.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-17-static-hosting-and-firebase-removal.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-18-locale-rollout-and-translation.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-19-release-quality-gates.md
+?? plans/260923-1831-global-multilingual-launch/frontend/phase-20-uploads-quota-and-plan-usage.md
+?? plans/260923-1831-global-multilingual-launch/frontend/plan.md
+?? plans/260923-1831-global-multilingual-launch/plan.md
+?? plans/260923-1831-global-multilingual-launch/shared-phase-monorepo-conversion.md
+?? plans/260925-0906-shared-deck-language-metadata/
+?? plans/260925-0907-post-ui-launch-roadmap/
+?? plans/260925-0930-claude-design-fidelity/
+?? plans/260925-1005-claude-design-workflow-recovery/
+?? plans/reports/audit-260925-1005-claude-design-workflow-gaps.md
+?? plans/reports/brainstormer-260923-1920-gamification-and-pro-gating.md
+?? plans/reports/firebase-cost-audit-260923-1854-measured-usage-projection.md
+?? plans/reports/global-launch-260923-1749-readiness-plan.md
+?? plans/reports/gpt-strategy-response-260923-1948-business-review.md
+?? plans/reports/handoff-260923-2200-codex-full-context.md
+?? plans/reports/handoff-260924-1610-codex-ui-redesign.md
+?? plans/reports/handoff-260925-0920-codex-post-ui-roadmap.md
+?? plans/reports/implementer-260924-1806-theme-shadow-fix.md
+?? plans/reports/implementer-260924-1816-shell-feedback.md
+?? plans/reports/implementer-260924-1816-shell-navigation.md
+?? plans/reports/implementer-260924-2254-practice-core-views.md
+?? plans/reports/implementer-260924-2254-practice-direction.md
+?? plans/reports/implementer-260924-2254-practice-game-views.md
+?? plans/reports/implementer-260924-2254-practice-mode-menu.md
+?? plans/reports/implementer-260924-2300-practice-visual.md
+?? plans/reports/implementer-260924-2304-practice-vi-catalog.md
+?? plans/reports/implementer-260924-2304-vi-practice-catalog.md
+?? plans/reports/implementer-260925-0021-spreadsheet-mini-imports.md
+?? plans/reports/measurement-260923-2144-gemini-card-cost-and-availability.md
+?? plans/reports/red-team-260923-2030-vn-ielts-paid-pilot.md
+?? plans/reports/researcher-260923-1245-flashcard-ux-benchmark.md
+?? plans/reports/researcher-260923-1400-wow-visual-color-direction.md
+?? plans/reports/researcher-260923-1500-anime-ui-direction.md
+?? plans/reports/researcher-260923-1530-evergarden-ui-direction.md
+?? plans/reports/researcher-260923-1800-global-launch-market.md
+?? plans/reports/researcher-260923-1800-language-demand-by-market.md
+?? plans/reports/researcher-260923-1840-ai-content-generation-providers.md
+?? plans/reports/researcher-260923-1840-self-hosted-backend-stack-cost.md
+?? plans/reports/researcher-260923-1900-customer-and-region-research.md
+?? plans/reports/researcher-260923-1910-optimal-backend-hosting-decision.md
+?? plans/reports/review-260923-1949-gpt-strategy-response-vs-decisions.md
+?? plans/reports/review-260924-0953-pilot-phase-03-and-staging-prep.md
+?? plans/reports/unit-economics-260923-2010-pricing-and-infrastructure.md
+?? plans/reports/worker-260924-1858-follow-system-theme-persistence.md
+?? plans/reports/worker-260924-1900-reduced-motion.md
+?? plans/reports/worker-260924-1901-settings-appearance.md
+?? plans/reports/worker-260925-0105-landing-seo-generation.md
+?? plans/reports/worker-260925-0105-locale-navigation.md
+?? plans/reports/worker-260925-0122-landing-visual-validation.md
+?? plans/reports/worker-260925-1002-shared-deck-language-handoff.md
+?? src/assets/landing/anime-immediate.jpg
+?? src/assets/landing/anime-instant.jpg
+?? src/assets/landing/anime-spelling.jpg
+?? src/features/catalogWorkspace/catalog-workspace.css
+?? src/features/dailyLearning/daily-learning-canvas.css
+?? src/features/landing/landing-page.css
+?? src/features/library/library-canvas.css
+?? src/features/practice/practice-board.css
+?? zen-preview.html
+worktree_status_end

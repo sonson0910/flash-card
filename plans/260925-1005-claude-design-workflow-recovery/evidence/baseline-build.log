@@ -1,0 +1,187 @@
+command=npm run build
+start_utc=2026-09-25T04:57:55.308140+00:00
+
+
+> lingoflash@1.0.0 build
+> vite build && node scripts/generate-locale-pages.mjs && node scripts/generate-build-metadata.mjs
+
+vite v6.4.3 building for production...
+transforming...
+✓ 2074 modules transformed.
+rendering chunks...
+[plugin vite:reporter]
+(!) /mnt/Projects/startup/flash-card/src/lib/reviewScheduler.ts is dynamically imported by /mnt/Projects/startup/flash-card/src/features/learning/learningStateController.ts but also statically imported by /mnt/Projects/startup/flash-card/src/lib/cardReviewRepository.ts, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/index.html                                                     3.46 kB │ gzip:   1.32 kB
+dist/assets/sonflash-logo-80-Cjocdyh6.png                           7.33 kB
+dist/assets/geist-cyrillic-ext-wght-normal-DjL33-gN.woff2           7.42 kB
+dist/assets/geist-mono-vietnamese-D8KDMBhC.woff2                    7.72 kB
+dist/assets/geist-vietnamese-wght-normal-6IgcOCM7.woff2             8.00 kB
+dist/assets/playfair-display-vietnamese-BFcv9A5S.woff2              9.06 kB
+dist/assets/kanit-400-vietnamese-DRI8YWyb.woff2                    10.61 kB
+dist/assets/kanit-900-italic-vietnamese-B-Krr5Dj.woff2             10.77 kB
+dist/assets/kanit-800-italic-vietnamese-DSPAZqal.woff2             11.11 kB
+dist/assets/nunito-vietnamese-U01xdrZh.woff2                       13.10 kB
+dist/assets/nunito-italic-vietnamese-5K55R7rt.woff2                14.77 kB
+dist/assets/geist-mono-latin-ext-DrnZ1wKl.woff2                    14.78 kB
+dist/assets/geist-cyrillic-wght-normal-BEAKL7Jp.woff2              15.08 kB
+dist/assets/geist-latin-ext-wght-normal-DC-KSUi6.woff2             16.51 kB
+dist/assets/kanit-400-latin-BUlsQXH3.woff2                         19.30 kB
+dist/assets/fraunces-vietnamese-Czevyj-6.woff2                     19.70 kB
+dist/assets/kanit-400-latin-ext-B2xPf58u.woff2                     20.08 kB
+dist/assets/kanit-900-italic-latin-ext-B5ll73i5.woff2              20.18 kB
+dist/assets/kanit-900-italic-latin-JaryeH73.woff2                  20.54 kB
+dist/assets/kanit-800-italic-latin-ext-6KbsJe4c.woff2              20.65 kB
+dist/assets/kanit-800-italic-latin-CViYSe9y.woff2                  20.84 kB
+dist/assets/instrument-serif-latin-regular-DnYpCC2O.woff2          21.03 kB
+dist/assets/geist-latin-wght-normal-BgDaEnEv.woff2                 29.40 kB
+dist/assets/geist-mono-latin-B_7UjwxQ.woff2                        29.90 kB
+dist/assets/nunito-latin-ext-CXYtwYOx.woff2                        35.59 kB
+dist/assets/playfair-display-latin-CSUZDoAs.woff2                  38.46 kB
+dist/assets/nunito-italic-latin-ext-CmZo11nB.woff2                 39.07 kB
+dist/assets/nunito-latin-BzFMHfZw.woff2                            39.13 kB
+dist/assets/nunito-italic-latin-ZB3Aladm.woff2                     41.76 kB
+dist/assets/anime-instant-B4oYEQzC.jpg                             42.39 kB
+dist/assets/lumi-chibi-w3fH8fHN.webp                               45.13 kB
+dist/assets/anime-immediate-Aibo4ULZ.jpg                           45.29 kB
+dist/assets/fraunces-latin-ext-CJcjJNj7.woff2                      59.39 kB
+dist/assets/lumi-hero-BxOs3T-u.webp                                65.46 kB
+dist/assets/fraunces-latin-DihXLNYH.woff2                          67.30 kB
+dist/assets/lumi-oops-BbOU-hDo.webp                                80.47 kB
+dist/assets/lumi-hint-Bf8wA4mW.webp                                85.15 kB
+dist/assets/lumi-proud-DEmQVaij.webp                               86.37 kB
+dist/assets/lumi-happy-OZ5eovza.webp                               87.93 kB
+dist/assets/lumi-thinking-DUrEjEZr.webp                            90.96 kB
+dist/assets/lumi-idle-BIpwelq_.webp                                94.50 kB
+dist/assets/lumi-sleepy-COGytb5U.webp                              95.43 kB
+dist/assets/lumi-sad-BBWuiQDd.webp                                118.04 kB
+dist/assets/train-window-u8G4oSPy.webp                            207.67 kB
+dist/assets/anime-spelling-DMxqEYPZ.jpg                           213.91 kB
+dist/assets/spreadsheetParser.worker-DYoIaFtA.js                  356.32 kB
+dist/assets/noto-sans-kr-korean-400-Cpkvcr56.woff2                542.29 kB
+dist/assets/noto-sans-jp-japanese-400-4dGCN58M.woff2              979.06 kB
+dist/assets/golden-hour.av1-dqQPGUBt.mp4                        1,019.08 kB
+dist/assets/noto-sans-sc-chinese-simplified-400-DS5SpWNO.woff2  1,141.54 kB
+dist/assets/quiet-dawn.av1-I7aeR2Z3.mp4                         1,836.68 kB
+dist/assets/still-water.av1-CrHz4665.mp4                        1,872.42 kB
+dist/assets/deep-woods.av1-cgTDfhdS.mp4                         1,955.84 kB
+dist/assets/golden-hour.h264-Crwg1sw4.mp4                       2,155.57 kB
+dist/assets/still-water.h264-CxYhI59R.mp4                       2,417.31 kB
+dist/assets/deep-woods.h264-D5PGW6xq.mp4                        2,659.58 kB
+dist/assets/quiet-dawn.h264-BP5qBYbl.mp4                        2,855.79 kB
+dist/assets/crystal-ornaments-BikYLUBl.css                          1.03 kB │ gzip:   0.42 kB
+dist/assets/settings-screen-co8bkXg-.css                            3.47 kB │ gzip:   1.03 kB
+dist/assets/crystal-fonts-wfZlIbob.css                              4.88 kB │ gzip:   0.61 kB
+dist/assets/PracticeScreen-DvBvCPy5.css                             6.25 kB │ gzip:   1.51 kB
+dist/assets/CatalogWorkspace-Ds2OTuyp.css                           9.19 kB │ gzip:   2.20 kB
+dist/assets/LandingPage-DtLzzj2S.css                               10.13 kB │ gzip:   2.78 kB
+dist/assets/Flashcard-BcWRZTqV.css                                 11.19 kB │ gzip:   2.81 kB
+dist/assets/daily-learning-canvas-CnhnIgsF.css                     15.08 kB │ gzip:   2.92 kB
+dist/assets/LibraryScreen-DE_iK0jT.css                             15.84 kB │ gzip:   3.22 kB
+dist/assets/index-DJBH81AX.css                                    193.97 kB │ gzip:  29.26 kB
+dist/assets/account-BAG7NPv8.js                                     0.05 kB │ gzip:   0.07 kB
+dist/assets/billing-BAG7NPv8.js                                     0.05 kB │ gzip:   0.07 kB
+dist/assets/account-afYSiK_J.js                                     0.05 kB │ gzip:   0.07 kB
+dist/assets/billing-afYSiK_J.js                                     0.05 kB │ gzip:   0.07 kB
+dist/assets/firestoreDocumentIdentity-DnxZ0PB1.js                   0.26 kB │ gzip:   0.22 kB
+dist/assets/chevron-down-CtUQjp4h.js                                0.29 kB │ gzip:   0.24 kB
+dist/assets/chevron-left-B2TIynHB.js                                0.30 kB │ gzip:   0.24 kB
+dist/assets/chevron-right-DlVou4lS.js                               0.30 kB │ gzip:   0.24 kB
+dist/assets/lumi-preference-DC_ZLolb.js                             0.31 kB │ gzip:   0.22 kB
+dist/assets/circle-x-BEe4Q6y6.js                                    0.37 kB │ gzip:   0.27 kB
+dist/assets/mic-EF_jtzW9.js                                         0.40 kB │ gzip:   0.30 kB
+dist/assets/headphones-wkexWFgx.js                                  0.40 kB │ gzip:   0.28 kB
+dist/assets/circle-question-mark-DSiCGP_U.js                        0.41 kB │ gzip:   0.31 kB
+dist/assets/eye-DWhn0sTf.js                                         0.42 kB │ gzip:   0.30 kB
+dist/assets/zap-DhBanjCU.js                                         0.43 kB │ gzip:   0.31 kB
+dist/assets/triangle-alert-DEe_jK_V.js                              0.43 kB │ gzip:   0.31 kB
+dist/assets/search-CBG0CZ-0.js                                      0.44 kB │ gzip:   0.31 kB
+dist/assets/award-ChawCNJj.js                                       0.44 kB │ gzip:   0.32 kB
+dist/assets/pen-line-B1GLXolg.js                                    0.44 kB │ gzip:   0.32 kB
+dist/assets/refresh-cw-DfMnxsNq.js                                  0.49 kB │ gzip:   0.32 kB
+dist/assets/share-2-C1hoO5E9.js                                     0.52 kB │ gzip:   0.33 kB
+dist/assets/pseudo-s7U8KBr3.js                                      0.55 kB │ gzip:   0.33 kB
+dist/assets/volume-2-D7uHuUla.js                                    0.56 kB │ gzip:   0.37 kB
+dist/assets/layers-B_S9Dcu1.js                                      0.59 kB │ gzip:   0.34 kB
+dist/assets/image-off--ONvETCT.js                                   0.64 kB │ gzip:   0.40 kB
+dist/assets/star-BIutraRL.js                                        0.64 kB │ gzip:   0.40 kB
+dist/assets/brain-CsjaHZHn.js                                       0.74 kB │ gzip:   0.41 kB
+dist/assets/GsapEntrance-Cr_LzaKA.js                                0.75 kB │ gzip:   0.49 kB
+dist/assets/CountUp-CZkiRIYF.js                                     0.75 kB │ gzip:   0.45 kB
+dist/assets/speechMatch-BftRf38p.js                                 0.82 kB │ gzip:   0.50 kB
+dist/assets/Lumi-B8z3e0Ru.js                                        0.89 kB │ gzip:   0.53 kB
+dist/assets/loadThemeAssets-ZFEb4rI4.js                             0.93 kB │ gzip:   0.51 kB
+dist/assets/index-jXv9xOzu.js                                       1.07 kB │ gzip:   0.65 kB
+dist/assets/catalogLearningStateFirebaseReader-BZGibjD4.js          1.11 kB │ gzip:   0.68 kB
+dist/assets/app-runtime-error-SALkuXj0.js                           1.38 kB │ gzip:   0.75 kB
+dist/assets/settings-Rz8k16Do.js                                    1.42 kB │ gzip:   0.58 kB
+dist/assets/settings-CSdn0pI6.js                                    1.62 kB │ gzip:   0.73 kB
+dist/assets/index-DWTk4eKH.js                                       1.84 kB │ gzip:   0.68 kB
+dist/assets/analytics-GhLteve8.js                                   2.00 kB │ gzip:   1.04 kB
+dist/assets/progress-CseTiSpT.js                                    2.51 kB │ gzip:   0.86 kB
+dist/assets/x-BqFFl1c9.js                                           2.68 kB │ gzip:   1.33 kB
+dist/assets/accountDataService-D4_pXRl5.js                          2.97 kB │ gzip:   1.42 kB
+dist/assets/progress-Bmeq1T0W.js                                    3.02 kB │ gzip:   1.18 kB
+dist/assets/catalogRuntime-BVQk39Pa.js                              3.56 kB │ gzip:   1.48 kB
+dist/assets/browserExtensionImportRuntime-DopqF6Jr.js               3.90 kB │ gzip:   1.75 kB
+dist/assets/PlanUsageMeter-BQ1TQzfH.js                              4.02 kB │ gzip:   1.96 kB
+dist/assets/landing-uK96nJAi.js                                     4.19 kB │ gzip:   1.52 kB
+dist/assets/gemini-qiyqtQX_.js                                      4.27 kB │ gzip:   1.78 kB
+dist/assets/PracticeScreen-nvE1Xqzl.js                              4.79 kB │ gzip:   1.78 kB
+dist/assets/landing-9J4GlfTZ.js                                     5.05 kB │ gzip:   1.92 kB
+dist/assets/multilingualFirebaseReader-BU_2DJYl.js                  5.08 kB │ gzip:   2.11 kB
+dist/assets/UpgradeDialog-DCJaLWUl.js                               5.82 kB │ gzip:   2.42 kB
+dist/assets/StoryView-DkSiEAy7.js                                   5.95 kB │ gzip:   1.90 kB
+dist/assets/AccountDataSection-B1zVKvZX.js                          6.48 kB │ gzip:   2.51 kB
+dist/assets/ReportCardDialog-BpumePdW.js                            7.07 kB │ gzip:   2.91 kB
+dist/assets/catalog-C_dEKw5t.js                                     7.08 kB │ gzip:   2.21 kB
+dist/assets/AppRuntimeRetry.virtual-Dh2gCSZ4.js                     7.97 kB │ gzip:   3.25 kB
+dist/assets/AppRuntimeInitial.virtual-Dh2gCSZ4.js                   7.97 kB │ gzip:   3.25 kB
+dist/assets/EditCardDialog-Btt4Bmu-.js                              8.11 kB │ gzip:   2.56 kB
+dist/assets/catalog-DTg9F8rZ.js                                     8.31 kB │ gzip:   2.68 kB
+dist/assets/shell-vF3rMnXJ.js                                       8.48 kB │ gzip:   2.60 kB
+dist/assets/LibraryScreen-BEsmz-Wc.js                               8.62 kB │ gzip:   2.78 kB
+dist/assets/ShadowingView-BEJHBR42.js                               8.78 kB │ gzip:   2.96 kB
+dist/assets/practice-BKeTD_bV.js                                    9.27 kB │ gzip:   2.73 kB
+dist/assets/SpellingView-CaNY3Zym.js                                9.42 kB │ gzip:   2.84 kB
+dist/assets/settings-screen-D7KzOFE3.js                             9.63 kB │ gzip:   2.91 kB
+dist/assets/LibraryCardGrid-DsKk2FNl.js                            10.13 kB │ gzip:   3.71 kB
+dist/assets/practice-zm8n4bh7.js                                   10.20 kB │ gzip:   3.11 kB
+dist/assets/firebase-functions-gtiLwxL0.js                         10.22 kB │ gzip:   3.64 kB
+dist/assets/shell-CzjFsaHQ.js                                      10.36 kB │ gzip:   3.14 kB
+dist/assets/WordMatchView-BfIXkLH0.js                              10.47 kB │ gzip:   3.08 kB
+dist/assets/schemaV3Validation-pNUqevYJ.js                         11.00 kB │ gzip:   3.44 kB
+dist/assets/QuizView-CnfnaYxl.js                                   11.16 kB │ gzip:   3.36 kB
+dist/assets/today-CIqyezmf.js                                      11.33 kB │ gzip:   3.16 kB
+dist/assets/PlacementScreen-Bhgn6sPl.js                            11.93 kB │ gzip:   3.17 kB
+dist/assets/components-Bhjb6hhn.js                                 12.15 kB │ gzip:   3.63 kB
+dist/assets/library-BdWh8hhy.js                                    12.96 kB │ gzip:   3.43 kB
+dist/assets/today-DuTSRWXy.js                                      13.34 kB │ gzip:   3.72 kB
+dist/assets/components-BLhhuAST.js                                 13.78 kB │ gzip:   4.19 kB
+dist/assets/ProgressWorkspace-CUZFZhY0.js                          13.78 kB │ gzip:   4.40 kB
+dist/assets/LessonScreen-B7--LOpc.js                               13.94 kB │ gzip:   3.65 kB
+dist/assets/StatsCharts-2zRcsQ0I.js                                13.99 kB │ gzip:   4.38 kB
+dist/assets/library-CjMSka9h.js                                    14.71 kB │ gzip:   3.90 kB
+dist/assets/AppOverlays-Cu1TEXTj.js                                25.15 kB │ gzip:   6.78 kB
+dist/assets/LandingPage-BS8NUz5y.js                                27.02 kB │ gzip:   6.88 kB
+dist/assets/index-C-hqhAz3.js                                      28.34 kB │ gzip:  10.14 kB
+dist/assets/catalogIndex-CwLpYWfA.js                               29.43 kB │ gzip:   8.58 kB
+dist/assets/RecoverableActionFeedback-VO0Zh_67.js                  30.03 kB │ gzip:   9.17 kB
+dist/assets/StudyView-FSksLciB.js                                  31.09 kB │ gzip:   9.24 kB
+dist/assets/index-BVOd1oAH.js                                      33.16 kB │ gzip:  11.18 kB
+dist/assets/DailyLearningWorkspace-Biym49xG.js                     43.01 kB │ gzip:  12.74 kB
+dist/assets/LibraryTools-pObXGbXK.js                               47.70 kB │ gzip:  11.21 kB
+dist/assets/CatalogWorkspace-mI4RSNEM.js                           59.00 kB │ gzip:  16.54 kB
+dist/assets/index-DiWW2f6S.js                                      70.15 kB │ gzip:  27.30 kB
+dist/assets/Flashcard-B58R-UmU.js                                  93.17 kB │ gzip:  22.49 kB
+dist/assets/react-DAEiWaYk.js                                     191.96 kB │ gzip:  60.10 kB
+dist/assets/xlsx.mini.min-0LzlttM_.js                             254.18 kB │ gzip:  82.55 kB
+dist/assets/dailyLearningPresentation-yOxIO9xA.js                 361.99 kB │ gzip: 112.98 kB
+dist/assets/firebase--KHTylw3.js                                  445.45 kB │ gzip: 131.53 kB
+✓ built in 11.81s
+Generated 2 localized landing pages and sitemap.xml.
+Wrote immutable build metadata to dist/health.json.
+
+exit_code=0
+end_utc=2026-09-25T04:58:07.911047+00:00
