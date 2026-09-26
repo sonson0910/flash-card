@@ -72,7 +72,7 @@ export function ReviewControls({
         : error ?? _(msg({ id: 'review.prompt', message: 'How well did you remember this card?' }));
   return (
     <section
-      className="crystal-chamfer relative mb-6 flex w-full max-w-xl flex-col items-center gap-3 rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-3 shadow-[var(--sf-panel-shadow)] backdrop-blur-xl sm:p-4"
+      className="practice-rating-board crystal-chamfer relative mb-6 flex w-full max-w-xl flex-col items-center gap-3 rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-3 shadow-[var(--sf-panel-shadow)] backdrop-blur-xl sm:p-4"
       aria-label={_(msg({ id: 'review.strength', message: 'Rate memory strength' }))}
     >
       <p className="text-center text-sm font-bold text-[var(--sf-text)] text-balance" aria-live="polite" role={error && !saving && !reviewed ? 'alert' : undefined}>

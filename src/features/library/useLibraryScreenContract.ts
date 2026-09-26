@@ -218,7 +218,8 @@ export function buildLibraryScreenContract({
       importFile: file => { void intake.actions.importFile(file); },
       generateCard: async event => {
         event.preventDefault();
-        await intake.actions.generate();
+        commands.openCardCreator();
+        await intake.actions.cardCreator.generatePreview();
       },
       changeWordInput: intake.actions.changeDraft,
       changeSearch: catalog.actions.changeSearch,

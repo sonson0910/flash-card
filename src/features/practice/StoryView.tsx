@@ -68,7 +68,7 @@ export function StoryView({
 
   return (
     <div
-      className="mx-auto flex max-w-6xl flex-col items-center py-4 sm:py-8"
+      className="practice-board practice-board--story mx-auto flex max-w-6xl flex-col items-center py-4 sm:py-8"
       aria-busy={loading}
     >
       <p

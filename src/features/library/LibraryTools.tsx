@@ -33,9 +33,14 @@ import type {
   SpreadsheetImportProgress,
   SpreadsheetImportResult,
 } from '../importExport/spreadsheetImportService';
+import {
+  SpreadsheetImportDialog,
+  downloadSpreadsheetImportErrorReport,
+} from '../importExport/SpreadsheetImportDialog';
 import { dateLabelToQueryDate, displayCardDate } from './libraryPresentation';
 import type { AiGenerationAccess } from './aiGenerationAccess';
 import { AiDialogueModal } from './AiDialogueModal';
+import { DeckCreationDialog, type LibraryDialogPhase } from './LibraryDialogOverlays';
 import { WordExtractorModal } from './WordExtractorModal';
 const PlanUsageMeter = lazy(() => Promise.all([
   import('../plan/PlanUsageMeter'), loadCatalog(getActiveUiLocale(), 'billing'),
@@ -374,37 +379,58 @@ export function LibraryTools({
   const [deckPendingDeletion, setDeckPendingDeletion] = useState<string | null>(null);
   const [isCreatingDeck, setIsCreatingDeck] = useState(false);
   const [deckCreationError, setDeckCreationError] = useState(false);
+  const [deckCreationPhase, setDeckCreationPhase] = useState<LibraryDialogPhase>('idle');
   const [isDeletingDeck, setIsDeletingDeck] = useState(false);
   const [deckDeletionError, setDeckDeletionError] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(
     activePartOfSpeech !== 'All' || activeDifficulty !== 'All' || activeDate !== 'All',
   );
   const [showDeckCreator, setShowDeckCreator] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importFileName, setImportFileName] = useState<string | null>(null);
   const [showDialogueModal, setShowDialogueModal] = useState(false);
   const [showExtractorModal, setShowExtractorModal] = useState(false);
   const isComposingWordRef = useRef(false);
 
   const deckDeletionRestoreRef = useRef<HTMLButtonElement | null>(null);
+  const deckCreatorRestoreRef = useRef<HTMLButtonElement | null>(null);
+  const importRestoreRef = useRef<HTMLButtonElement | null>(null);
   const pendingDeckCardCount = deckPendingDeletion
     ? cards.filter(card => card.customDeck === deckPendingDeletion).length
     : 0;
   const canSubmitWord = Boolean(wordInput.trim()) && !isLoading;
 
+  const handleImportChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setImportFileName(file.name);
+    setImportDialogOpen(true);
+    onImport(event);
+  };
+
+  const handleImportFile = (file: File) => {
+    setImportFileName(file.name);
+    setImportDialogOpen(true);
+    importFile(file);
+  };
+
   const handleCreateDeck = async () => {
     if (!newDeckInput.trim() || isCreatingDeck) return;
     setIsCreatingDeck(true);
-      setDeckCreationError(false);
+    setDeckCreationError(false);
+    setDeckCreationPhase('working');
     try {
       await createDeckThenClearInput(
-        newDeckInput,
+        newDeckInput.trim(),
         createCustomDeck,
         () => {
           setNewDeckInput('');
-          setShowDeckCreator(false);
         },
       );
+      setDeckCreationPhase('success');
     } catch {
       setDeckCreationError(true);
+      setDeckCreationPhase('failure');
     } finally {
       setIsCreatingDeck(false);
     }
@@ -435,6 +461,10 @@ export function LibraryTools({
   useEffect(() => {
     if (activeAdvancedFilterCount > 0) setShowAdvancedFilters(true);
   }, [activeAdvancedFilterCount]);
+
+  useEffect(() => {
+    if (isImporting) setImportDialogOpen(true);
+  }, [isImporting]);
 
   const clearAllFilters = () => {
     setSearchQuery('');
@@ -476,6 +506,7 @@ export function LibraryTools({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
+            ref={importRestoreRef}
             disabled={isLoading}
             data-tool-priority="secondary"
             className="flex min-h-12 min-w-12 items-center justify-center rounded-xl border border-transparent bg-transparent text-[var(--sf-text-muted)] transition-colors hover:border-[var(--sf-border)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-brand-text)] disabled:opacity-50"
@@ -488,7 +519,7 @@ export function LibraryTools({
               name="card-import"
               aria-label={i18n._(msg({ id: 'library.import.choose-file', message: 'Choose an Excel or CSV file' }))}
               ref={fileInputRef}
-              onChange={onImport}
+              onChange={handleImportChange}
               disabled={isLoading}
               className="hidden"
               accept=".xlsx, .xls, .csv"
@@ -496,7 +527,7 @@ export function LibraryTools({
           </button>
         </div>
 
-        <SpreadsheetImportStatus progress={importProgress} result={importResult} />
+        {!importDialogOpen ? <SpreadsheetImportStatus progress={importProgress} result={importResult} /> : null}
 
         <form
           onSubmit={event => {
@@ -601,11 +632,12 @@ export function LibraryTools({
         <WordExtractorModal
           open={showExtractorModal}
           onOpenChange={setShowExtractorModal}
+          cards={cards}
           onImportWords={words => {
             if (words.length > 0) {
               const csvContent = 'word\n' + words.map(w => `"${w.replace(/"/g, '""')}"`).join('\n');
               const file = new File([csvContent], 'extracted_words.csv', { type: 'text/csv' });
-              importFile(file);
+              handleImportFile(file);
             }
           }}
         />
@@ -801,28 +833,18 @@ export function LibraryTools({
                 </h3>
                 <button
                   type="button"
-                  onClick={() => setShowDeckCreator(!showDeckCreator)}
+                  ref={deckCreatorRestoreRef}
+                  onClick={() => {
+                    setDeckCreationError(false);
+                    setDeckCreationPhase('idle');
+                    setShowDeckCreator(!showDeckCreator);
+                  }}
                   className="flex min-h-11 items-center gap-1 text-[11px] font-bold text-[var(--sf-brand-text)] hover:underline"
                 >
                   <Plus size={13} />
                   <span>{showDeckCreator ? <Trans id="library.deck.cancel" message="Cancel" /> : <Trans id="library.deck.new" message="New deck" />}</span>
                 </button>
               </div>
-
-              {showDeckCreator && (
-                <DeckCreationForm
-                  value={newDeckInput}
-                  onChange={value => {
-                    setDeckCreationError(false);
-                    setNewDeckInput(value);
-                  }}
-                  onSubmit={() => {
-                    void handleCreateDeck();
-                  }}
-                  isCreating={isCreatingDeck}
-                  error={deckCreationError}
-                />
-              )}
 
               <div className="flex max-h-[140px] flex-wrap gap-1.5 overflow-y-auto pr-1 scrollbar-none">
                 <DeckButton active={activeCustomDeck === 'All'} onClick={() => setActiveCustomDeck('All')} icon={<Layers3 size={13} />} label={i18n._(msg({ id: 'library.decks.all', message: 'All decks' }))} buttonRef={deckDeletionRestoreRef} />
@@ -928,6 +950,38 @@ export function LibraryTools({
         restoreFocusRef={deckDeletionRestoreRef}
         isDeleting={isDeletingDeck}
         error={deckDeletionError}
+      />
+
+      <DeckCreationDialog
+        open={showDeckCreator}
+        onOpenChange={open => {
+          if (!open && !isCreatingDeck) {
+            setShowDeckCreator(false);
+            setDeckCreationError(false);
+            setDeckCreationPhase('idle');
+          }
+        }}
+        value={newDeckInput}
+        onChange={value => {
+          setDeckCreationError(false);
+          setDeckCreationPhase('idle');
+          setNewDeckInput(value);
+        }}
+        onSubmit={() => { void handleCreateDeck(); }}
+        status={deckCreationPhase}
+        errorMessage={deckCreationError ? i18n._(msg({ id: 'library.deck.create-error', message: 'Could not create this deck. Check your connection and try again.' })) : null}
+        restoreFocusRef={deckCreatorRestoreRef}
+      />
+
+      <SpreadsheetImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        fileName={importFileName}
+        isImporting={isImporting}
+        progress={importProgress}
+        result={importResult}
+        onDownloadErrorReport={importResult ? () => { void downloadSpreadsheetImportErrorReport(importFileName, importResult); } : undefined}
+        restoreFocusRef={importRestoreRef}
       />
     </aside>
   );

@@ -89,6 +89,154 @@ describe('card intake controller', () => {
     expect(reportFailure).toHaveBeenLastCalledWith(persistFailure);
   });
 
+  it('stages an AI preview and saves only after an explicit save action', async () => {
+    const { port, persistCards } = createFakePort();
+    const intake = createCardIntakeController({ port, now: () => '2026-09-25T00:00:00.000Z' });
+
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'apple', context: 'A red apple.', deck: 'General' });
+    const preview = await intake.cardCreator.generatePreview();
+
+    expect(preview).toMatchObject({ status: 'preview', card: { word: 'apple', origin: 'ai' } });
+    expect(persistCards).not.toHaveBeenCalled();
+    expect(intake.getSnapshot().cardCreator).toMatchObject({
+      open: true,
+      stage: 'preview',
+      completedAiRequests: 1,
+      preview: { word: 'apple', customDeck: 'General' },
+    });
+
+    const saved = await intake.cardCreator.save();
+    expect(saved).toMatchObject({ status: 'saved', card: { word: 'apple', origin: 'ai' } });
+    expect(persistCards).toHaveBeenCalledOnce();
+    expect(port.generateCard).toHaveBeenCalledOnce();
+    expect(intake.getSnapshot().cardCreator.open).toBe(false);
+  });
+
+  it('reuses one AI operation ID for transport retry and refreshes it for deliberate regeneration', async () => {
+    const { port } = createFakePort();
+    vi.mocked(port.generateCard)
+      .mockRejectedValueOnce(new Error('temporary network error'))
+      .mockResolvedValueOnce({
+        card: { ...card('apple'), translation: 'táo cũ', phonetic: '/a/' },
+        mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }),
+      })
+      .mockResolvedValueOnce({
+        card: {
+          ...card('apple'), translation: 'táo mới', explanation: 'A fruit.', phonetic: '/b/',
+          exampleSentence: 'A new example.', exampleTranslation: 'Ví dụ mới.',
+          cefrLevel: 'B2', wordFamily: { noun: 'apples' },
+        },
+        mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }),
+      });
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'apple' });
+
+    await expect(intake.cardCreator.generatePreview()).resolves.toMatchObject({ status: 'failed' });
+    await expect(intake.cardCreator.generatePreview()).resolves.toMatchObject({ status: 'preview' });
+    const firstOperationId = vi.mocked(port.generateCard).mock.calls[0][0].operationId;
+    const retryOperationId = vi.mocked(port.generateCard).mock.calls[1][0].operationId;
+    expect(retryOperationId).toBe(firstOperationId);
+
+    const regenerated = await intake.cardCreator.regenerate(['meaning']);
+    expect(regenerated).toMatchObject({ status: 'preview', card: { translation: 'táo mới' } });
+    const deliberateOperationId = vi.mocked(port.generateCard).mock.calls[2][0].operationId;
+    expect(deliberateOperationId).not.toBe(retryOperationId);
+    expect(intake.getSnapshot().cardCreator.preview).toMatchObject({
+      id: 'word-apple',
+      translation: 'táo mới',
+      phonetic: '/a/',
+    });
+  });
+
+  it('merges selected regeneration fields without changing identity or learning state', async () => {
+    const { port } = createFakePort();
+    const original = {
+      ...card('apple'),
+      translation: 'táo',
+      phonetic: '/a/',
+      difficulty: 'good' as const,
+      reviews: 4,
+      bookmarked: true,
+      lexemeId: 'lexeme-apple',
+      language: 'en',
+      translationLanguage: 'vi',
+      normalizedLemma: 'apple',
+      senseKey: 'fruit',
+    };
+    vi.mocked(port.generateCard)
+      .mockResolvedValueOnce({ card: original, mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }) })
+      .mockResolvedValueOnce({
+        card: {
+          ...original,
+          id: 'new-id', word: 'attacker', translation: 'quả táo mới', phonetic: '/new/',
+          difficulty: 'hard', reviews: 99, bookmarked: false,
+        },
+        mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }),
+      });
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'apple' });
+    await intake.cardCreator.generatePreview();
+    await intake.cardCreator.regenerate(['meaning']);
+
+    expect(intake.getSnapshot().cardCreator.preview).toMatchObject({
+      id: 'word-apple',
+      word: 'apple',
+      translation: 'quả táo mới',
+      phonetic: '/a/',
+      difficulty: 'good',
+      reviews: 4,
+      bookmarked: true,
+      lexemeId: 'lexeme-apple',
+      language: 'en',
+      translationLanguage: 'vi',
+      normalizedLemma: 'apple',
+      senseKey: 'fruit',
+    });
+    expect(port.persistCards).not.toHaveBeenCalled();
+  });
+
+  it('fences a late generation result after cancel and restores opener focus', async () => {
+    const { port } = createFakePort();
+    const generation = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();
+    vi.mocked(port.generateCard).mockReturnValue(generation.promise);
+    const focus = vi.fn();
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open({ focus } as unknown as HTMLElement);
+    intake.cardCreator.updateDraft({ word: 'apple' });
+    const pending = intake.cardCreator.generatePreview();
+    intake.cardCreator.cancel();
+    generation.resolve({ card: card('apple'), mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }) });
+
+    await expect(pending).resolves.toEqual({ status: 'cancelled' });
+    expect(port.persistCards).not.toHaveBeenCalled();
+    expect(focus).toHaveBeenCalledOnce();
+    expect(intake.getSnapshot().cardCreator).toMatchObject({ open: false, preview: null });
+  });
+
+  it('creates and saves a manual card without invoking AI', async () => {
+    const { port, persistCards } = createFakePort();
+    const intake = createCardIntakeController({ port, now: () => '2026-09-25T00:00:00.000Z' });
+    intake.cardCreator.open();
+    intake.cardCreator.createManualDraft({
+      word: 'bonjour',
+      translation: 'xin chào',
+      explanation: 'A greeting.',
+      deck: 'Travel',
+    });
+
+    const result = await intake.cardCreator.save();
+    expect(result).toMatchObject({ status: 'saved', card: {
+      word: 'bonjour', translation: 'xin chào', origin: 'manual', customDeck: 'Travel',
+    } });
+    expect(port.generateCard).not.toHaveBeenCalled();
+    expect(persistCards).toHaveBeenCalledWith([
+      expect.objectContaining({ word: 'bonjour', origin: 'manual', translation: 'xin chào' }),
+    ], 'generate');
+  });
+
   it('validates the draft before lookup and uses the active language profile for identity', async () => {
     const { port } = createFakePort();
     const intake = createCardIntakeController({ port, language: ENGLISH_TO_VIETNAMESE_PROFILE });

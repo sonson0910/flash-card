@@ -24,6 +24,12 @@ vi.mock('react', async importOriginal => {
           : value;
       }] as const;
     },
+    useRef: <T,>(initial: T) => {
+      const index = hooks.cursor++;
+      if (!(index in hooks.states)) hooks.states[index] = { current: initial };
+      return hooks.states[index] as { current: T };
+    },
+    useEffect: (effect: () => void) => { effect(); },
   };
 });
 
@@ -70,6 +76,15 @@ const findAllByType = (node: unknown, type: string): Tree[] => {
   return out;
 };
 
+const findAllByText = (node: unknown, text: string): Tree[] => {
+  const out: Tree[] = [];
+  walk(node, element => {
+    const children = JSON.stringify(element.props?.children) ?? '';
+    if (element.type === 'button' && children.includes(text)) out.push(element);
+  });
+  return out;
+};
+
 const card: CardData = {
   id: 'card-1', word: 'lead', translation: 'chì', explanation: 'A metal.', phonetic: '', emoji: '',
   category: 'General', audioUrl: null, imageUrl: null, exampleSentence: 'Old example.',
@@ -83,8 +98,10 @@ const render = (props: Parameters<typeof EditCardDialog>[0]) => {
   const formProps = findByProp(tree, 'onSubmit')?.props ?? {};
   const errorProps = findByProp(tree, 'role')?.props;
   return {
+    tree,
     submit: formProps.onSubmit as (event: { preventDefault(): void }) => Promise<void>,
     textareas: findAllByType(tree, 'textarea'),
+    buttons: findAllByType(tree, 'button'),
     errorText: errorProps?.children as string | undefined,
   };
 };
@@ -170,5 +187,61 @@ describe('EditCardDialog', () => {
     hooks.locale = 'vi';
     const localized = render({ card, open: true, onOpenChange, onSave });
     expect(localized.errorText).toBe('Không thể lưu thay đổi. Hãy thử lại.');
+  });
+
+  it('asks before closing a dirty sheet and discards only after the explicit confirmation', () => {
+    const onOpenChange = vi.fn();
+    let view = render({ card, open: true, onOpenChange, onSave: vi.fn() });
+    (view.textareas[translationFieldIndex]!.props!.onChange as (event: { target: { value: string } }) => void)(
+      { target: { value: 'dẫn đầu' } },
+    );
+    view = render({ card, open: true, onOpenChange, onSave: vi.fn() });
+
+    const closeButton = view.buttons.find(button => button.props?.['aria-label'] === 'Close editor');
+    expect(closeButton).toBeDefined();
+    (closeButton!.props!.onClick as () => void)();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+
+    view = render({ card, open: true, onOpenChange, onSave: vi.fn() });
+    const discardButton = findAllByText(view.tree, 'Discard changes')[0];
+    expect(discardButton).toBeDefined();
+    (discardButton!.props!.onClick as () => void)();
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('keeps save pending, exposes retry after a failure, and closes after the retry succeeds', async () => {
+    const onOpenChange = vi.fn();
+    let resolveFirst: (outcome: LearningStateOutcome) => void = () => {};
+    const firstSave = new Promise<LearningStateOutcome>(resolve => { resolveFirst = resolve; });
+    const onSave = vi.fn()
+      .mockReturnValueOnce(firstSave)
+      .mockResolvedValueOnce({ status: 'published', result: { ownerKey: 'o', operationId: 'op', publication: { kind: 'patch', cardId: card.id, fields: {} } } });
+    let view = render({ card, open: true, onOpenChange, onSave });
+    (view.textareas[translationFieldIndex]!.props!.onChange as (event: { target: { value: string } }) => void)(
+      { target: { value: 'dẫn đầu' } },
+    );
+    view = render({ card, open: true, onOpenChange, onSave });
+
+    const pendingSubmit = view.submit({ preventDefault: vi.fn() });
+    view = render({ card, open: true, onOpenChange, onSave });
+    const pendingSave = view.buttons.find(button => button.props?.type === 'submit');
+    expect(pendingSave?.props?.disabled).toBe(true);
+
+    resolveFirst({ status: 'missing-card' });
+    await pendingSubmit;
+    view = render({ card, open: true, onOpenChange, onSave });
+    expect(findAllByText(view.tree, 'Retry save')).toHaveLength(1);
+
+    await view.submit({ preventDefault: vi.fn() });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onSave).toHaveBeenCalledTimes(2);
+  });
+
+  it('prevents Radix autofocus from landing on the close button so the meaning field receives focus', () => {
+    const view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+    const autoFocus = findByProp(view.tree, 'onOpenAutoFocus')?.props?.onOpenAutoFocus as ((event: { preventDefault(): void }) => void);
+    const event = { preventDefault: vi.fn() };
+    autoFocus(event);
+    expect(event.preventDefault).toHaveBeenCalledTimes(1);
   });
 });

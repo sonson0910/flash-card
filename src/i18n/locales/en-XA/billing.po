@@ -12,3 +12,79 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:49
+#: src/features/billing/UpgradeDialog.tsx:72
+msgid "billing.dialog.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:62
+msgid "billing.upgrade.consent"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:47
+msgid "billing.upgrade.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:25
+msgid "billing.upgrade.error.load"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:36
+msgid "billing.upgrade.error.submit"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:45
+msgid "billing.upgrade.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:52
+msgid "billing.upgrade.loading"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:56
+msgid "billing.upgrade.offer.cards"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:54
+msgid "billing.upgrade.offer.duration"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:55
+msgid "billing.upgrade.offer.fallback-price"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:57
+msgid "billing.upgrade.offer.no-renew"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:59
+msgid "billing.upgrade.recorded"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:73
+msgid "billing.upgrade.submit.busy"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:73
+msgid "billing.upgrade.submit.idle"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:46
+msgid "billing.upgrade.title"
+msgstr ""

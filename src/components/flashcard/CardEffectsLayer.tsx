@@ -86,21 +86,45 @@ interface CardEffectsLayerProps {
   isHovered?: boolean;
   spotlightBackground?: string;
   holo?: boolean;
+  wings?: boolean;
+  tier?: 'new' | 'learning' | 'mastered';
 }
 
-export function CardEffectsLayer({ aura, spotlightRef, isHovered = false, spotlightBackground, holo = false }: CardEffectsLayerProps) {
+export function CardEffectsLayer({
+  aura,
+  spotlightRef,
+  isHovered = false,
+  spotlightBackground,
+  holo = false,
+  wings = false,
+  tier = 'new',
+}: CardEffectsLayerProps) {
   return (
     <>
       {aura && (
         <div
-          className="pointer-events-none absolute -inset-3 sm:-inset-4 z-0 rounded-[44px] opacity-0 blur-xl transition-opacity duration-300 ease-out will-change-[opacity] group-hover:opacity-35 group-focus-within:opacity-35"
+          data-card-effect="aura"
+          className="flashcard-canvas-aura pointer-events-none absolute -inset-3 sm:-inset-4 z-0 rounded-[44px] opacity-0 blur-xl transition-opacity duration-300 ease-out will-change-[opacity] group-hover:opacity-35 group-focus-within:opacity-35"
           style={{ background: `radial-gradient(ellipse at 50% 38%, ${aura.core} 0%, ${aura.mid} 45%, ${aura.outer} 70%, transparent 85%)` }}
           aria-hidden="true"
         />
       )}
+      {wings && (
+        <div
+          data-card-effect="hover-wings"
+          data-card-effect-tier={tier}
+          data-card-hovered={isHovered ? 'true' : 'false'}
+          className="flashcard-hover-wings absolute -inset-6 z-[1] pointer-events-none"
+          aria-hidden="true"
+        >
+          <span className="flashcard-wing flashcard-wing-left crystal-wing" />
+          <span className="flashcard-wing flashcard-wing-right crystal-wing" />
+        </div>
+      )}
       {spotlightRef && (
         <div
           ref={spotlightRef}
+          data-card-effect="spotlight"
           className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-200"
           style={{
             background: spotlightBackground,
@@ -108,7 +132,13 @@ export function CardEffectsLayer({ aura, spotlightRef, isHovered = false, spotli
           }}
         />
       )}
-      {holo && <div className="flashcard-holo" aria-hidden="true" />}
+      {holo && (
+        <>
+          <div data-card-effect="holo" className="flashcard-holo" aria-hidden="true" />
+          <div data-card-effect="specular" className="flashcard-canvas-specular" aria-hidden="true" />
+          <div data-card-effect="tier-rim" data-card-effect-tier={tier} className="flashcard-tier-rim" aria-hidden="true" />
+        </>
+      )}
     </>
   );
 }

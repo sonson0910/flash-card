@@ -12,3 +12,79 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:49
+#: src/features/billing/UpgradeDialog.tsx:72
+msgid "billing.dialog.close"
+msgstr "Đóng"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:62
+msgid "billing.upgrade.consent"
+msgstr "Dành cho người từ 18 tuổi. Bằng cách đăng ký, bạn đồng ý với <terms>Điều khoản</terms> và <privacy>Chính sách riêng tư</privacy>."
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:47
+msgid "billing.upgrade.description"
+msgstr "Thẻ AI cùng chất lượng với gói Free, với nhiều lượt tạo hơn."
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:25
+msgid "billing.upgrade.error.load"
+msgstr "Không tải được gói Pro. Hãy thử lại sau."
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:36
+msgid "billing.upgrade.error.submit"
+msgstr "Chưa ghi nhận được yêu cầu. Hãy thử lại sau."
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:45
+msgid "billing.upgrade.kicker"
+msgstr "SonFlash Pro"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:52
+msgid "billing.upgrade.loading"
+msgstr "Đang tải thông tin gói…"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:56
+msgid "billing.upgrade.offer.cards"
+msgstr "{count, plural, one {# thẻ AI trong thời hạn gói} other {# thẻ AI trong thời hạn gói}}"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:54
+msgid "billing.upgrade.offer.duration"
+msgstr "Pro · {days, plural, one {# ngày} other {# ngày}}"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:55
+msgid "billing.upgrade.offer.fallback-price"
+msgstr "79.000 ₫ + VAT"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:57
+msgid "billing.upgrade.offer.no-renew"
+msgstr "Không tự động gia hạn. Hiện chưa thu tiền hoặc mở thanh toán."
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:59
+msgid "billing.upgrade.recorded"
+msgstr "Đã ghi nhận mong muốn mua. Người sáng lập sẽ liên hệ với bạn khi mở bán."
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:73
+msgid "billing.upgrade.submit.busy"
+msgstr "Đang ghi nhận…"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:73
+msgid "billing.upgrade.submit.idle"
+msgstr "Đăng ký mua khi mở bán"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:46
+msgid "billing.upgrade.title"
+msgstr "Thêm nhịp cho việc học"

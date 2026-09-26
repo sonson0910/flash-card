@@ -560,11 +560,11 @@ describe('intake session ownership guard', () => {
     );
     const generation = source.slice(
       source.indexOf("const generateCard:"),
-      source.indexOf("const persistCards:"),
+      source.indexOf("const persistCardsInternal:"),
     );
     const persistence = source.slice(
+      source.indexOf("const persistCardsInternal:"),
       source.indexOf("const persistCards:"),
-      source.indexOf("persistStructured:"),
     );
 
     expect(generation).toMatch(/await\s+waitForInitialMedia/);

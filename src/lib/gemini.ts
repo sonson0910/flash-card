@@ -66,11 +66,20 @@ export const withNetworkRetry = async <T>(operation: () => Promise<T>): Promise<
     () => { expired = true; });
 };
 
+export const PART_OF_SPEECH_HINTS = [
+  'noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction',
+  'determiner', 'interjection', 'phrasal verb', 'auxiliary verb', 'modal verb',
+  'article', 'numeral', 'idiom', 'phrase',
+] as const;
+
+export type PartOfSpeechHint = typeof PART_OF_SPEECH_HINTS[number];
+
 export interface WordGenerationOptions {
   operationId?: string;
   context?: string;
   sourceLanguage?: string;
   targetLanguage?: string;
+  partOfSpeech?: PartOfSpeechHint;
 }
 
 const languageCode = (value: unknown, fallback: string): string => {
@@ -84,7 +93,9 @@ export async function generateWordInfo(word: string, options: WordGenerationOpti
   const context = typeof options.context === 'string'
     ? options.context.replace(/\s+/g, ' ').trim().slice(0, 500)
     : '';
-  const hasStructuredInput = Boolean(context || options.sourceLanguage || options.targetLanguage);
+  const hasStructuredInput = Boolean(
+    context || options.sourceLanguage || options.targetLanguage || options.partOfSpeech,
+  );
   const input = hasStructuredInput ? {
     term: safeWord,
     language: {
@@ -92,6 +103,7 @@ export async function generateWordInfo(word: string, options: WordGenerationOpti
       target: languageCode(options.targetLanguage, 'vi'),
     },
     ...(context ? { context } : {}),
+    ...(options.partOfSpeech ? { partOfSpeech: options.partOfSpeech } : {}),
   } : safeWord;
   return parseWordInfo(await withNetworkRetry(() => callProductionAI<unknown>('word', input, operationId)));
 }

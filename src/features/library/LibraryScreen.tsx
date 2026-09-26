@@ -1,5 +1,7 @@
-import { lazy, Suspense, useRef, type ChangeEvent, type FormEvent, type ReactNode, type RefObject } from 'react';
-import { Trans } from '@lingui/react';
+import { lazy, Suspense, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode, type RefObject } from 'react';
+import { Bookmark, LayoutGrid, List } from 'lucide-react';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react';
 import type { CardData } from '../../types/card';
 import type {
   SpreadsheetImportProgress,
@@ -10,6 +12,8 @@ import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySession
 import { LibraryOverview } from './LibraryOverview';
 import { EmptyLibraryPanel } from './EmptyLibraryPanel';
 import type { AiGenerationAccess } from './aiGenerationAccess';
+import { getLibraryCardTier, isLibraryCardDue } from './libraryViewModel';
+import './library-canvas.css';
 
 const LibraryCardGrid = lazy(() => import('./LibraryCardGrid').then(module => ({ default: module.LibraryCardGrid })));
 const LibraryTools = lazy(() => import('./LibraryTools').then(module => ({ default: module.LibraryTools })));
@@ -44,6 +48,8 @@ export interface LibraryScreenModel {
     totalPages: number;
     hasNextCloudPage: boolean;
     libraryCount: number;
+    /** Optional controller-backed status for the Canvas rail. */
+    activeLearningFilter?: LibraryFilter;
   };
   tools: {
     fileInputRef?: RefObject<HTMLInputElement | null>;
@@ -85,6 +91,8 @@ export interface LibraryScreenActions {
     updateCard: (cardId: string, fields: Partial<CardData>) => Promise<LearningStateOutcome>;
     changePage: (page: number) => void;
     clearFilters: () => void;
+    /** Optional union filter bridge for cloud-backed Learning cards. */
+    changeLearningFilter?: (value: LibraryFilter) => void;
   };
   tools: {
     openPaths: () => void;
@@ -110,6 +118,11 @@ export interface LibraryScreenProps {
   actions: LibraryScreenActions;
 }
 
+export type LibraryFilter = 'all' | 'due' | 'new' | 'learning' | 'mastered';
+export type LibraryViewMode = 'grid' | 'list';
+
+export const cardIsDue = isLibraryCardDue;
+
 export function shouldShowFirstUseLibraryPanel(model: LibraryScreenModel): boolean {
   return model.grid.libraryCount === 0
     && model.grid.searchQuery.trim() === ''
@@ -131,16 +144,52 @@ function DeferredLibraryFallback({ label }: { label: ReactNode }) {
 export function LibraryScreen({ model, actions }: LibraryScreenProps) {
   const internalHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const internalFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [localFilter, setLocalFilter] = useState<LibraryFilter | null>(null);
+  const [viewMode, setViewMode] = useState<LibraryViewMode>('grid');
   const headingRef = model.grid.libraryHeadingRef ?? internalHeadingRef;
   const fileInputRef = model.tools.fileInputRef ?? internalFileInputRef;
+  const activeFilter = model.grid.activeLearningFilter ?? localFilter ?? (
+    model.tools.activeDifficulty === 'due'
+      ? 'due'
+      : model.tools.activeDifficulty === 'unrated'
+        ? 'new'
+        : model.tools.activeDifficulty === 'easy'
+          ? 'mastered'
+          : model.tools.activeDifficulty === 'good' || model.tools.activeDifficulty === 'hard'
+            ? 'learning'
+            : 'all'
+  );
+  const hasLearningFilterBridge = Boolean(actions.grid.changeLearningFilter);
+  const visibleCards = activeFilter === 'learning' && !hasLearningFilterBridge
+    ? model.grid.filteredCards.filter(card => getLibraryCardTier(card) === 'learning')
+    : model.grid.filteredCards;
+  const visiblePageCards = activeFilter === 'learning' && !hasLearningFilterBridge
+    ? model.grid.paginatedCards.filter(card => getLibraryCardTier(card) === 'learning')
+    : model.grid.paginatedCards;
   const showFirstUsePanel = shouldShowFirstUseLibraryPanel(model);
 
+  const changeFilter = (filter: LibraryFilter) => {
+    setLocalFilter(filter);
+    if (actions.grid.changeLearningFilter) {
+      actions.grid.changeLearningFilter(filter);
+      return;
+    }
+    actions.tools.changeStarredOnly(false);
+    if (filter === 'all' || filter === 'learning') actions.tools.changeDifficulty('All');
+    if (filter === 'due') actions.tools.changeDifficulty('due');
+    if (filter === 'new') actions.tools.changeDifficulty('unrated');
+    if (filter === 'mastered') actions.tools.changeDifficulty('easy');
+  };
+
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="library-canvas space-y-5 sm:space-y-6">
       <LibraryOverview
         {...model.overview}
         onStartStudy={actions.startStudy}
         onCreateCard={actions.openCardCreator}
+        searchQuery={model.grid.searchQuery}
+        onSearchChange={actions.grid.changeSearch}
+        deckCount={model.tools.customDecks.length + 1}
       />
       {showFirstUsePanel ? (
         <EmptyLibraryPanel
@@ -158,8 +207,17 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
           importResult={model.tools.importResult}
         />
       ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 xl:gap-8">
-        <div data-library-region="collection" className="lg:order-2 lg:col-span-9">
+        <LibraryCanvasRail
+          model={model}
+          actions={actions}
+          activeFilter={activeFilter}
+          onFilterChange={changeFilter}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        />
+      )}
+      <div data-library-region="collection">
+        {!showFirstUsePanel && (
           <Suspense fallback={<DeferredLibraryFallback label={<Trans id="library.loading.cards" message="Loading library cards" />} />}>
             <LibraryCardGrid
               isAuthenticated={model.isAuthenticated}
@@ -171,12 +229,12 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               isMigratingLegacy={model.grid.isMigratingLegacy}
               libraryHeadingRef={headingRef}
               activeCategory={model.grid.activeCategory}
-              filteredCards={model.grid.filteredCards}
+              filteredCards={visibleCards}
               shareCategory={actions.grid.shareCategory}
               isSharing={model.grid.isSharing}
               startStudy={actions.startStudy}
               currentPage={model.grid.currentPage}
-              paginatedCards={model.grid.paginatedCards}
+              paginatedCards={visiblePageCards}
               isPageLoading={model.grid.isPageLoading}
               cloudReadUnavailable={model.grid.cloudReadUnavailable}
               importProgress={model.grid.importProgress}
@@ -192,10 +250,15 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               libraryCount={model.grid.libraryCount}
               onClearFilters={actions.grid.clearFilters}
               isGenerating={model.tools.isGenerating || model.tools.isLoading}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
             />
           </Suspense>
-        </div>
-        <div data-library-region="tools" className="lg:order-1 lg:col-span-3 lg:self-start">
+        )}
+      </div>
+      {!showFirstUsePanel && <details className="library-canvas-tools" data-library-region="tools">
+        <summary><Trans id="library.tools.more" message="More library tools" /></summary>
+        <div>
           <Suspense fallback={<DeferredLibraryFallback label={<Trans id="library.loading.tools" message="Loading library tools" />} />}>
             <LibraryTools
               fileInputRef={fileInputRef}
@@ -239,8 +302,48 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
             />
           </Suspense>
         </div>
-      </div>
-      )}
+      </details>}
     </div>
   );
+}
+
+function LibraryCanvasRail({
+  model,
+  actions,
+  activeFilter,
+  onFilterChange,
+  viewMode,
+  onViewModeChange,
+}: {
+  model: LibraryScreenModel;
+  actions: LibraryScreenActions;
+  activeFilter: LibraryFilter;
+  onFilterChange: (value: LibraryFilter) => void;
+  viewMode: LibraryViewMode;
+  onViewModeChange: (value: LibraryViewMode) => void;
+}) {
+  const { tools } = model;
+  const { i18n } = useLingui();
+  const filter = (key: string, label: ReactNode, selected: boolean, onClick: () => void) => <button key={key} type="button" aria-pressed={selected} className={selected ? 'is-active' : ''} onClick={onClick}>{label}</button>;
+  const deck = (key: string, name: ReactNode, selected: boolean, count: number, onClick: () => void) => <button key={key} type="button" role="tab" aria-selected={selected} className={selected ? 'is-active' : ''} onClick={onClick}><span>{name}</span><small>{count}</small></button>;
+  const filterMark = (mark: ReactNode) => <span className="library-filter-mark" aria-hidden="true">{mark}</span>;
+  return <div className="library-canvas-rail">
+    <div className="library-canvas-decks" role="tablist" aria-label={i18n._(msg({ id: 'library.decks.nav-label', message: 'Decks' }))}>
+      {deck('all-decks', <Trans id="library.decks.all" message="All decks" />, tools.activeCustomDeck === 'All', tools.libraryCount, () => actions.tools.changeCustomDeck('All'))}
+      {tools.customDecks.map(deckName => deck(deckName, deckName, tools.activeCustomDeck === deckName, tools.cards.filter(card => card.customDeck === deckName).length, () => actions.tools.changeCustomDeck(deckName)))}
+    </div>
+    <div className="library-canvas-filters">
+      {filter('all', <>{filterMark('∗')}<Trans id="library.filters.all" message="All" /></>, activeFilter === 'all', () => onFilterChange('all'))}
+      {filter('due', <>{filterMark('!')}<Trans id="library.filters.due-short" message="Due" /></>, activeFilter === 'due', () => onFilterChange('due'))}
+      {filter('new', <>{filterMark(<Trans id="library.card.grade.new" message="Bud" />)}<Trans id="library.card.tier.new" message="New" /></>, activeFilter === 'new', () => onFilterChange('new'))}
+      {filter('learning', <>{filterMark(<Trans id="library.card.grade.learning" message="Bloom" />)}<Trans id="library.filters.learning" message="Learning" /></>, activeFilter === 'learning', () => onFilterChange('learning'))}
+      {filter('mastered', <>{filterMark(<Trans id="library.card.grade.mastered" message="Star" />)}<Trans id="library.filters.mastered" message="Mastered" /></>, activeFilter === 'mastered', () => onFilterChange('mastered'))}
+      {filter('starred', <><Bookmark size={13} fill="currentColor"/><Trans id="library.filters.starred" message="Starred" /></>, tools.showStarredOnly, () => actions.tools.changeStarredOnly(!tools.showStarredOnly))}
+      <span aria-hidden="true" className="library-canvas-rail-divider" />
+      <div className="library-canvas-view-toggle" role="group" aria-label={i18n._(msg({ id: 'library.view.label', message: 'View' }))}>
+        <button type="button" aria-label={i18n._(msg({ id: 'library.view.grid', message: 'Grid view' }))} aria-pressed={viewMode === 'grid'} className={viewMode === 'grid' ? 'is-active' : ''} onClick={() => onViewModeChange('grid')}><LayoutGrid size={15} aria-hidden="true" /></button>
+        <button type="button" aria-label={i18n._(msg({ id: 'library.view.list', message: 'List view' }))} aria-pressed={viewMode === 'list'} className={viewMode === 'list' ? 'is-active' : ''} onClick={() => onViewModeChange('list')}><List size={15} aria-hidden="true" /></button>
+      </div>
+    </div>
+  </div>;
 }

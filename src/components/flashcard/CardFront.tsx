@@ -55,17 +55,30 @@ export function CardFront({
   deckButtonRef, frontFlipRef, focusAfterFlipRef, showCardSide,
 }: CardFrontProps) {
   const { _, i18n } = useLingui();
-  if (isZenMode) return <ZenCardFront tier={tier} data={data} faceRef={faceRef} playAudio={playAudio} focusAfterFlipRef={focusAfterFlipRef} showCardSide={showCardSide} />;
+  if (isZenMode) return <ZenCardFront
+    tier={tier}
+    data={data}
+    faceRef={faceRef}
+    spotlightRef={spotlightRef}
+    spotlightBackground={spotlightBackground}
+    isHovered={isHovered}
+    playAudio={playAudio}
+    isPlayingAudio={isPlayingAudio}
+    focusAfterFlipRef={focusAfterFlipRef}
+    showCardSide={showCardSide}
+  />;
   return (
     <div
       ref={faceRef}
+      data-card-face="front"
+      data-card-mode="standard"
       style={{ transformOrigin: 'center center', borderRadius: '32px' }}
       className="flashcard-panel flashcard-face absolute flex h-full w-full flex-col overflow-hidden rounded-[32px]"
     >
 
-          <CardEffectsLayer spotlightRef={spotlightRef} isHovered={isHovered} spotlightBackground={spotlightBackground} holo />
+          <CardEffectsLayer spotlightRef={spotlightRef} isHovered={isHovered} spotlightBackground={spotlightBackground} holo tier={tier} />
           <div className="group/image relative h-[44%] w-full overflow-hidden bg-transparent">
-            <div className={`h-full w-full transition-[filter] duration-500 ease-out ${isBlindMode ? 'scale-110 blur-2xl saturate-50' : ''}`} aria-hidden={isBlindMode}>
+            <div data-card-effect="blind-image" className={`h-full w-full transition-[filter] duration-500 ease-out ${isBlindMode ? 'scale-110 blur-2xl saturate-50' : ''}`} aria-hidden={isBlindMode}>
               {supportedImageUrl ? <CardImage src={supportedImageUrl} alt={i18n._(msg({ id: 'flashcard.image.illustration', message: 'Illustration for {word}' }).id, { word: data.word })} priority={imagePriority} /> : (
                 <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-[var(--sf-text-muted)]" role="img" aria-label={i18n._(msg({ id: 'flashcard.image.none', message: 'No image for {word}' }).id, { word: data.word })}>
                   <span className="liquid-control flex size-16 items-center justify-center rounded-full"><ImageOff size={28} strokeWidth={1.5} /></span>
@@ -134,6 +147,7 @@ export function CardFront({
                       data-card-control
                       onPointerDown={event => event.stopPropagation()}
                       onClick={playAudio}
+                      data-card-effect="audio"
                       className={`touch-manipulation flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-black transition-all cursor-pointer ${
                         isPlayingAudio ? 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.3)]' : 'text-[var(--sf-brand-text)] hover:bg-cyan-500/10'
                       }`}
@@ -281,14 +295,28 @@ export function CardFront({
   );
 }
 
-function ZenCardFront({ tier, data, faceRef, playAudio, focusAfterFlipRef, showCardSide }: Pick<CardFrontProps, 'tier' | 'data' | 'faceRef' | 'playAudio' | 'focusAfterFlipRef' | 'showCardSide'>) {
+function ZenCardFront({
+  tier,
+  data,
+  faceRef,
+  spotlightRef,
+  spotlightBackground,
+  isHovered,
+  playAudio,
+  isPlayingAudio,
+  focusAfterFlipRef,
+  showCardSide,
+}: Pick<CardFrontProps, 'tier' | 'data' | 'faceRef' | 'spotlightRef' | 'spotlightBackground' | 'isHovered' | 'playAudio' | 'isPlayingAudio' | 'focusAfterFlipRef' | 'showCardSide'>) {
   const { _ } = useLingui();
   return (
 <div
               ref={faceRef}
+              data-card-face="front"
+              data-card-mode="zen"
               style={{ transformOrigin: 'center center', borderRadius: '32px' }}
               className="flashcard-panel flashcard-face zen-glass-slab relative flex h-full w-full flex-col justify-between overflow-hidden rounded-[32px] p-7 pt-20 sm:p-9 sm:pt-20 text-center text-white select-none"
             >
+              <CardEffectsLayer spotlightRef={spotlightRef} isHovered={isHovered} spotlightBackground={spotlightBackground} holo tier={tier} />
               {/* Top Rim Specular Star Sparkle from Mockup */}
               <div className="pointer-events-none absolute left-[22%] -top-2.5 z-30 flex items-center justify-center" aria-hidden="true">
                 <span className="text-white text-base font-black drop-shadow-[0_0_8px_#ffffff] select-none">✦</span>
@@ -307,19 +335,22 @@ function ZenCardFront({ tier, data, faceRef, playAudio, focusAfterFlipRef, showC
                   <button
                     type="button"
                     data-card-control
+                    data-card-effect="audio"
                     onPointerDown={e => e.stopPropagation()}
                     onClick={playAudio}
                     className="flex min-h-11 min-w-11 items-center justify-center gap-[3px] p-1 text-cyan-400 hover:text-cyan-300 transition-all hover:scale-110 cursor-pointer"
                     title={_(msg({ id: 'flashcard.audio.listen-pronunciation', message: 'Listen to pronunciation' }))}
                     aria-label={_(msg({ id: 'flashcard.audio.listen-pronunciation', message: 'Listen to pronunciation' }))}
                   >
-                    <span className="flex h-5 items-center gap-[3.5px]">
-                      <span className="w-[3px] h-2 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
-                      <span className="w-[3px] h-3.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
-                      <span className="w-[3px] h-5 bg-cyan-400 rounded-full shadow-[0_0_10px_#22d3ee]" />
-                      <span className="w-[3px] h-3.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
-                      <span className="w-[3px] h-2 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
-                    </span>
+                    {isPlayingAudio ? (
+                      <span data-audio-waves="active" className="flex h-5 items-center gap-[3.5px]" aria-hidden="true">
+                        <span className="wave-bar-1 w-[3px] h-2 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
+                        <span className="wave-bar-2 w-[3px] h-3.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
+                        <span className="wave-bar-3 w-[3px] h-5 bg-cyan-400 rounded-full shadow-[0_0_10px_#22d3ee]" />
+                        <span className="wave-bar-4 w-[3px] h-3.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
+                        <span className="flashcard-audio-wave-bar w-[3px] h-2 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
+                      </span>
+                    ) : <Volume2 size={15} aria-hidden="true" />}
                   </button>
                 </div>
 

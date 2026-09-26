@@ -131,6 +131,23 @@ describe('Card Intake Pipeline contract', () => {
     expect(context.addXp).toHaveBeenCalledWith(10);
   });
 
+  it('reuses one local persistence operation when a save is retried unchanged', async () => {
+    const context = createContext();
+    const candidate = card('retry-card');
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await expect(pipeline.persistCards([candidate], 'generate')).resolves.toEqual([
+      { card: candidate, created: true },
+    ]);
+    await expect(pipeline.persistCards([candidate], 'generate')).resolves.toEqual([
+      { card: candidate, created: true },
+    ]);
+
+    expect(context.upsertDeviceCards).toHaveBeenCalledOnce();
+    expect(context.publishCards).toHaveBeenCalledOnce();
+    expect(context.addXp).toHaveBeenCalledOnce();
+  });
+
   it('reveals an existing card on a refreshed first page without requiring reload', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const existing = card('existing-card');

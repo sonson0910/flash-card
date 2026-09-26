@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useRef, type RefObject } from 'react';
 import { buildVocabularyImageQuery, fetchImageUrl, isRetryableImageSearchError, isSupportedImageUrl } from '../lib/images';
-import { getReducedMotionScrollBehavior } from '../lib/motion';
 import { cardWordKey } from '../lib/cardIdentity';
 import { retainCardsForSession } from '../lib/sessionCards';
 import type { CardData } from '../types/card';
@@ -319,9 +318,8 @@ export function useAppLearningCoordination({
       startStudy: practiceWorkspace.actions.startStudy,
       openPaths: () => setViewMode('catalog'),
       openCardCreator: () => {
-        const scrollBehavior = getReducedMotionScrollBehavior();
-        document.querySelector<HTMLElement>('#empty-library-word, #library-tools')?.scrollIntoView({ behavior: scrollBehavior, block: 'start' });
-        window.setTimeout(() => document.querySelector<HTMLElement>('#empty-library-word, #new-word')?.focus(), scrollBehavior === 'auto' ? 0 : 350);
+        const opener = document.activeElement;
+        intakeSharing.actions.cardCreator.open(opener instanceof HTMLElement ? opener : undefined);
       },
       changeNewDeckInput: deckWorkspace.actions.changeNewDeckInput,
       createCustomDeck: deckWorkspace.actions.createDeck,

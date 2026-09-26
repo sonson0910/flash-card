@@ -12,3 +12,84 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:67
+msgid "account.data.delete.busy"
+msgstr "Deleting…"
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:67
+msgid "account.data.delete.confirm"
+msgstr "Confirm permanent deletion"
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:64
+msgid "account.data.delete.confirm-label"
+msgstr "Type <phrase>XÓA TÀI KHOẢN</phrase>"
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:60
+msgid "account.data.delete.open"
+msgstr "Delete my account"
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:35
+msgid "account.data.delete.started"
+msgstr "The account deletion request is recorded and will finish on the server. You have been signed out of this device."
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:62
+msgid "account.data.delete.warning"
+msgstr "Cards, review schedule, and Pro access will be permanently deleted. The pilot does not charge money. You need to sign in with Google again to confirm."
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:53
+msgid "account.data.description"
+msgstr "Download a copy of your data or delete your account."
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:42
+msgid "account.data.error.delete"
+msgstr "The account wasn't fully deleted. Contact support if the error continues."
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:26
+msgid "account.data.error.export"
+msgstr "Couldn't download account data. Please try again later."
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:41
+msgid "account.data.error.local-cleanup"
+msgstr "The account was deleted on the server, but device data wasn't fully cleared. Clear SonFlash site data in your browser."
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:58
+msgid "account.data.export.excel"
+msgstr "Download cards as Excel"
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:59
+msgid "account.data.export.json"
+msgstr "Download account data (JSON)"
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:59
+msgid "account.data.export.json.busy"
+msgstr "Exporting…"
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:51
+msgid "account.data.kicker"
+msgstr "Privacy"
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:52
+msgid "account.data.title"
+msgstr "Account data"
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:55
+#: src/features/account/AccountDataSection.tsx:71
+msgid "account.dialog.close"
+msgstr "Close"

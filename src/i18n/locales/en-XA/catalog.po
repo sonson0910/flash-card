@@ -14,291 +14,291 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:152
+#: src/features/catalogWorkspace/CatalogScreen.tsx:153
 msgid "catalog.action.continue-review"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:345
+#: src/features/catalogWorkspace/CatalogScreen.tsx:346
 msgid "catalog.action.load-more"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:153
+#: src/features/catalogWorkspace/CatalogScreen.tsx:154
 msgid "catalog.action.open-vocabulary"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:130
+#: src/features/catalogWorkspace/CatalogScreen.tsx:131
 msgid "catalog.action.retry"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:240
+#: src/features/catalogWorkspace/CatalogScreen.tsx:241
 msgid "catalog.card.add-action"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:239
+#: src/features/catalogWorkspace/CatalogScreen.tsx:240
 msgid "catalog.card.add-failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:218
+#: src/features/catalogWorkspace/CatalogScreen.tsx:219
 msgid "catalog.card.add-to-library"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:215
+#: src/features/catalogWorkspace/CatalogScreen.tsx:216
 msgid "catalog.card.adding"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:227
+#: src/features/catalogWorkspace/CatalogScreen.tsx:228
 msgid "catalog.card.cefr"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:232
-#: src/features/catalogWorkspace/CatalogScreen.tsx:232
+#: src/features/catalogWorkspace/CatalogScreen.tsx:233
+#: src/features/catalogWorkspace/CatalogScreen.tsx:233
 msgid "catalog.card.collocations"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:231
-#: src/features/catalogWorkspace/CatalogScreen.tsx:231
+#: src/features/catalogWorkspace/CatalogScreen.tsx:232
+#: src/features/catalogWorkspace/CatalogScreen.tsx:232
 msgid "catalog.card.example"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:213
+#: src/features/catalogWorkspace/CatalogScreen.tsx:214
 msgid "catalog.card.in-library"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:238
+#: src/features/catalogWorkspace/CatalogScreen.tsx:239
 msgid "catalog.card.learning-context"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:236
+#: src/features/catalogWorkspace/CatalogScreen.tsx:237
 msgid "catalog.card.license"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:236
+#: src/features/catalogWorkspace/CatalogScreen.tsx:237
 msgid "catalog.card.license-missing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:230
-#: src/features/catalogWorkspace/CatalogScreen.tsx:230
+#: src/features/catalogWorkspace/CatalogScreen.tsx:231
+#: src/features/catalogWorkspace/CatalogScreen.tsx:231
 msgid "catalog.card.meaning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:237
+#: src/features/catalogWorkspace/CatalogScreen.tsx:238
 msgid "catalog.card.review"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:237
+#: src/features/catalogWorkspace/CatalogScreen.tsx:238
 msgid "catalog.card.review-missing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:235
+#: src/features/catalogWorkspace/CatalogScreen.tsx:236
 msgid "catalog.card.source"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:235
+#: src/features/catalogWorkspace/CatalogScreen.tsx:236
 msgid "catalog.card.source-missing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:217
+#: src/features/catalogWorkspace/CatalogScreen.tsx:218
 msgid "catalog.card.try-adding-again"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:340
+#: src/features/catalogWorkspace/CatalogScreen.tsx:341
 msgid "catalog.empty.filtered"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:340
+#: src/features/catalogWorkspace/CatalogScreen.tsx:341
 msgid "catalog.empty.path"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:340
+#: src/features/catalogWorkspace/CatalogScreen.tsx:341
 msgid "catalog.empty.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:311
+#: src/features/catalogWorkspace/CatalogScreen.tsx:312
 msgid "catalog.explorer.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:201
+#: src/features/catalogWorkspace/CatalogScreen.tsx:202
 msgid "catalog.filter.all"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:322
+#: src/features/catalogWorkspace/CatalogScreen.tsx:323
 msgid "catalog.filters.cefr"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:327
-#: src/features/catalogWorkspace/CatalogScreen.tsx:340
+#: src/features/catalogWorkspace/CatalogScreen.tsx:328
+#: src/features/catalogWorkspace/CatalogScreen.tsx:341
 msgid "catalog.filters.clear"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:324
+#: src/features/catalogWorkspace/CatalogScreen.tsx:325
 msgid "catalog.filters.part-of-speech"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:321
+#: src/features/catalogWorkspace/CatalogScreen.tsx:322
 msgid "catalog.filters.search"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:321
+#: src/features/catalogWorkspace/CatalogScreen.tsx:322
 msgid "catalog.filters.search-placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:325
+#: src/features/catalogWorkspace/CatalogScreen.tsx:326
 msgid "catalog.filters.skill"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:314
+#: src/features/catalogWorkspace/CatalogScreen.tsx:315
 msgid "catalog.filters.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:323
+#: src/features/catalogWorkspace/CatalogScreen.tsx:324
 msgid "catalog.filters.topic"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:56
+#: src/features/catalogWorkspace/CatalogScreen.tsx:57
 msgid "catalog.language.coming-soon"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:337
+#: src/features/catalogWorkspace/CatalogScreen.tsx:338
 msgid "catalog.loading.matches"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:345
+#: src/features/catalogWorkspace/CatalogScreen.tsx:346
 msgid "catalog.loading.more"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:345
+#: src/features/catalogWorkspace/CatalogScreen.tsx:346
 msgid "catalog.loading.next-page"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:150
+#: src/features/catalogWorkspace/CatalogScreen.tsx:151
 msgid "catalog.personal.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:144
+#: src/features/catalogWorkspace/CatalogScreen.tsx:145
 msgid "catalog.personal.keep-learning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:144
+#: src/features/catalogWorkspace/CatalogScreen.tsx:145
 msgid "catalog.personal.keep-learning-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:150
+#: src/features/catalogWorkspace/CatalogScreen.tsx:151
 msgid "catalog.personal.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:145
+#: src/features/catalogWorkspace/CatalogScreen.tsx:146
 msgid "catalog.personal.mastered"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:145
+#: src/features/catalogWorkspace/CatalogScreen.tsx:146
 msgid "catalog.personal.mastered-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:158
+#: src/features/catalogWorkspace/CatalogScreen.tsx:159
 msgid "catalog.personal.path-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:143
+#: src/features/catalogWorkspace/CatalogScreen.tsx:144
 msgid "catalog.personal.review-due"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:143
+#: src/features/catalogWorkspace/CatalogScreen.tsx:144
 msgid "catalog.personal.review-due-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:82
+#: src/features/catalogWorkspace/CatalogScreen.tsx:83
 msgid "catalog.personal.status-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:150
+#: src/features/catalogWorkspace/CatalogScreen.tsx:151
 msgid "catalog.personal.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:64
+#: src/features/catalogWorkspace/CatalogScreen.tsx:65
 msgid "catalog.status.available-offline"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:105
+#: src/features/catalogWorkspace/CatalogScreen.tsx:106
 msgid "catalog.status.check-reviewed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:107
+#: src/features/catalogWorkspace/CatalogScreen.tsx:108
 msgid "catalog.status.connect-first-download"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:117
+#: src/features/catalogWorkspace/CatalogScreen.tsx:118
 msgid "catalog.status.error-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:102
+#: src/features/catalogWorkspace/CatalogScreen.tsx:103
 msgid "catalog.status.no-drafts"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:109
+#: src/features/catalogWorkspace/CatalogScreen.tsx:110
 msgid "catalog.status.release-pending"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:122
+#: src/features/catalogWorkspace/CatalogScreen.tsx:123
 msgid "catalog.status.technical-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:102
+#: src/features/catalogWorkspace/CatalogScreen.tsx:103
 msgid "catalog.status.unavailable-title"
 msgstr ""
 
@@ -399,108 +399,108 @@ msgid "catalog.workspace.updating"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:261
+#: src/features/catalogWorkspace/CatalogScreen.tsx:262
 msgid "paths.catalog.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:258
+#: src/features/catalogWorkspace/CatalogScreen.tsx:259
 msgid "paths.catalog.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:285
+#: src/features/catalogWorkspace/CatalogScreen.tsx:286
 msgid "paths.current.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:288
+#: src/features/catalogWorkspace/CatalogScreen.tsx:289
 msgid "paths.current.progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:291
+#: src/features/catalogWorkspace/CatalogScreen.tsx:292
 msgid "paths.current.roadmap"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:292
+#: src/features/catalogWorkspace/CatalogScreen.tsx:293
 msgid "paths.current.roadmap-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:300
+#: src/features/catalogWorkspace/CatalogScreen.tsx:301
 msgid "paths.goal.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:300
+#: src/features/catalogWorkspace/CatalogScreen.tsx:301
 msgid "paths.goal.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:269
+#: src/features/catalogWorkspace/CatalogScreen.tsx:270
 msgid "paths.language.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:175
+#: src/features/catalogWorkspace/CatalogScreen.tsx:176
 msgid "paths.metric.mastered"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:175
+#: src/features/catalogWorkspace/CatalogScreen.tsx:176
 msgid "paths.metric.started"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:175
+#: src/features/catalogWorkspace/CatalogScreen.tsx:176
 msgid "paths.metric.words"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:260
+#: src/features/catalogWorkspace/CatalogScreen.tsx:261
 msgid "paths.personal.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:257
+#: src/features/catalogWorkspace/CatalogScreen.tsx:258
 msgid "paths.personal.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:305
+#: src/features/catalogWorkspace/CatalogScreen.tsx:306
 msgid "paths.roadmap.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:305
+#: src/features/catalogWorkspace/CatalogScreen.tsx:306
 msgid "paths.roadmap.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:172
-#: src/features/catalogWorkspace/CatalogScreen.tsx:188
+#: src/features/catalogWorkspace/CatalogScreen.tsx:173
+#: src/features/catalogWorkspace/CatalogScreen.tsx:189
 msgid "paths.selected"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:40
+#: src/features/catalogWorkspace/CatalogScreen.tsx:41
 msgid "paths.tier-state.available"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:42
+#: src/features/catalogWorkspace/CatalogScreen.tsx:43
 msgid "paths.tier-state.completed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:41
+#: src/features/catalogWorkspace/CatalogScreen.tsx:42
 msgid "paths.tier-state.in-progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:43
+#: src/features/catalogWorkspace/CatalogScreen.tsx:44
 msgid "paths.tier-state.locked"
 msgstr ""
 
@@ -535,12 +535,12 @@ msgid "paths.tier.foundation.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:190
+#: src/features/catalogWorkspace/CatalogScreen.tsx:191
 msgid "paths.tier.progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:267
+#: src/features/catalogWorkspace/CatalogScreen.tsx:268
 msgid "paths.title"
 msgstr ""
 

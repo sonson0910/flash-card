@@ -12,3 +12,84 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:67
+msgid "account.data.delete.busy"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:67
+msgid "account.data.delete.confirm"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:64
+msgid "account.data.delete.confirm-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:60
+msgid "account.data.delete.open"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:35
+msgid "account.data.delete.started"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:62
+msgid "account.data.delete.warning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:53
+msgid "account.data.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:42
+msgid "account.data.error.delete"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:26
+msgid "account.data.error.export"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:41
+msgid "account.data.error.local-cleanup"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:58
+msgid "account.data.export.excel"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:59
+msgid "account.data.export.json"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:59
+msgid "account.data.export.json.busy"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:51
+msgid "account.data.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:52
+msgid "account.data.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:55
+#: src/features/account/AccountDataSection.tsx:71
+msgid "account.dialog.close"
+msgstr ""

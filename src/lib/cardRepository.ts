@@ -44,9 +44,11 @@ import {
   createCardIdentityReservation,
   createCardIdentityReservationId,
   dedupeCardsByNormalizedWord,
+  effectiveCardTargetLanguage as effectiveIdentityTargetLanguage,
   isCardIdentityReservationForWord,
   isMatchingCardIdentityReservation,
   normalizeCardWord,
+  normalizeCardLanguage,
   preferCardWithLearningProgress,
 } from './cardIdentity';
 import type { RealtimeChangeType } from './realtimeSync';
@@ -69,6 +71,26 @@ import {
   selectMutableCardPatch,
   type CardTombstone,
 } from './cardMutationProtocol';
+import {
+  CourseIndexNotReadyError,
+  countCourseCards,
+  deleteCourseIndexMirrors,
+  fetchCourseCardPage,
+  fetchCoursePracticeCards,
+  readCourseIndexMirrorTargets,
+  subscribeCourseCardPage,
+  writeCourseIndexMirrors,
+  type CourseIndexMirrorTarget,
+  type CourseIndexStaleHandler,
+} from './course-card-index-repository';
+import type { CourseQueryContext } from './course-card-index';
+
+export {
+  CourseIndexNotReadyError,
+  CourseQueryIndexNotReadyError,
+  CourseIndexStaleError,
+  CourseQueryIndexStaleError,
+} from './course-card-index-repository';
 
 export interface CardPage {
   items: CardData[];
@@ -89,6 +111,8 @@ export interface FetchCardPageOptions {
   filters: CardQueryState;
   cursor?: DocumentSnapshot | null;
   pageSize?: number;
+  courseContext?: CourseQueryContext;
+  onStale?: CourseIndexStaleHandler;
 }
 
 export interface LibraryFacets {
@@ -116,6 +140,8 @@ interface StoredLegacyMigrationProgress extends LegacyMigrationProgress {
 export interface PracticeCardOptions {
   includeFuture?: boolean;
   now?: Date;
+  courseContext?: CourseQueryContext;
+  onStale?: CourseIndexStaleHandler;
 }
 
 const EMPTY_FILTERS: CardQueryState = {
@@ -130,6 +156,22 @@ const EMPTY_FILTERS: CardQueryState = {
 
 const UNSUPPORTED_CARD_QUERY_MESSAGE = 'The selected filters cannot be combined. Remove either the date, due, or prefix filter and try again.';
 
+const courseContextForQuery = (
+  filters: CardQueryState,
+  courseContext: CourseQueryContext | undefined,
+): CourseQueryContext | null => {
+  const courseRequested = Boolean(filters.courseId || filters.targetLanguage || courseContext);
+  if (!courseRequested) return null;
+  if (!courseContext) throw new CourseIndexNotReadyError('A ready course query context is required.');
+  if (filters.courseId && filters.courseId !== courseContext.courseId) {
+    throw new CourseIndexNotReadyError('The course query context does not match the selected course.');
+  }
+  if (filters.targetLanguage && filters.targetLanguage !== courseContext.targetLanguage) {
+    throw new CourseIndexNotReadyError('The course query context does not match the selected target.');
+  }
+  return courseContext;
+};
+
 export class UnsupportedCardQueryError extends Error {
   readonly code = 'unsupported-card-query';
 
@@ -142,6 +184,7 @@ export class UnsupportedCardQueryError extends Error {
 export type CardQueryIndexField = { fieldPath: string; order: 'ASCENDING' | 'DESCENDING' };
 
 const equalityIndexFields = (filters: CardQueryState): CardQueryIndexField[] => [
+  ...(filters.targetLanguage ? [{ fieldPath: 'targetLanguage', order: 'ASCENDING' as const }] : []),
   ...(filters.category ? [{ fieldPath: 'category', order: 'ASCENDING' as const }] : []),
   ...(filters.customDeck ? [{ fieldPath: 'customDeck', order: 'ASCENDING' as const }] : []),
   ...(filters.difficulty && filters.difficulty !== 'due'
@@ -309,7 +352,22 @@ export async function fetchCardPage({
   filters,
   cursor = null,
   pageSize = CLOUD_PAGE_SIZE,
+  courseContext,
+  onStale,
 }: FetchCardPageOptions): Promise<CardPage> {
+  const selectedCourse = courseContextForQuery(filters, courseContext);
+  if (selectedCourse) {
+    assertSupportedCardQuery(filters);
+    return fetchCourseCardPage({
+      db,
+      userId,
+      filters,
+      context: selectedCourse,
+      cursor,
+      pageSize,
+      onStale,
+    });
+  }
   const snapshot = await getDocs(buildCardsQuery(db, userId, filters, cursor, [
     limit(pageSize + 1),
   ]));
@@ -325,10 +383,37 @@ export async function fetchCardPage({
 }
 
 export function subscribeCardPage(
-  { db, userId, filters, cursor = null, pageSize = CLOUD_PAGE_SIZE }: FetchCardPageOptions,
+  {
+    db,
+    userId,
+    filters,
+    cursor = null,
+    pageSize = CLOUD_PAGE_SIZE,
+    courseContext,
+    onStale,
+  }: FetchCardPageOptions,
   onPage: (page: RealtimeCardPage) => void,
   onError: (error: Error) => void,
 ): Unsubscribe {
+  let selectedCourse: CourseQueryContext | null;
+  try {
+    selectedCourse = courseContextForQuery(filters, courseContext);
+  } catch (error) {
+    onError(error instanceof Error ? error : new Error(String(error)));
+    return () => undefined;
+  }
+  if (selectedCourse) {
+    assertSupportedCardQuery(filters);
+    return subscribeCourseCardPage({
+      db,
+      userId,
+      filters,
+      context: selectedCourse,
+      cursor,
+      pageSize,
+      onStale,
+    }, onPage, onError);
+  }
   return onSnapshot(buildCardsQuery(db, userId, filters, cursor, [
     limit(pageSize + 1),
   ]), snapshot => {
@@ -347,7 +432,18 @@ export function subscribeCardPage(
   }, onError);
 }
 
-export async function countCards(db: Firestore, userId: string, filters: CardQueryState): Promise<number> {
+export async function countCards(
+  db: Firestore,
+  userId: string,
+  filters: CardQueryState,
+  courseContext?: CourseQueryContext,
+  onStale?: CourseIndexStaleHandler,
+): Promise<number> {
+  const selectedCourse = courseContextForQuery(filters, courseContext);
+  if (selectedCourse) {
+    assertSupportedCardQuery(filters);
+    return countCourseCards(db, userId, filters, selectedCourse, onStale);
+  }
   assertSupportedCardQuery(filters);
   const prefix = normalizePrefixSearch(filters.wordPrefix);
   const prefixConstraints: QueryConstraint[] = prefix ? [
@@ -683,6 +779,17 @@ export async function fetchPracticeCards(
   maximum = 50,
   options: PracticeCardOptions = {},
 ): Promise<CardData[]> {
+  if (options.courseContext) {
+    return fetchCoursePracticeCards({
+      db,
+      userId,
+      context: options.courseContext,
+      maximum,
+      includeFuture: options.includeFuture,
+      now: options.now,
+      onStale: options.onStale,
+    });
+  }
   const maximumCards = Math.max(1, Math.min(100, Math.floor(maximum)));
   const now = options.now ?? new Date();
   let dueCards: CardData[] = [];
@@ -776,6 +883,19 @@ function requestedLibraryEpoch(
     : null;
 }
 
+const requestedCardTargetLanguage = (
+  card: Pick<CardData, 'language'> | null,
+): CardData['language'] | null => {
+  if (!card || card.language === undefined) return 'en';
+  const target = effectiveIdentityTargetLanguage(card);
+  return target;
+};
+
+const cardMatchesTargetLanguage = (
+  card: Partial<CardData>,
+  targetLanguage: CardData['language'],
+): boolean => effectiveIdentityTargetLanguage(card) === targetLanguage;
+
 function cardHasExplicitLibraryEpoch(
   card: Partial<CardData>,
   libraryEpoch: number,
@@ -799,7 +919,7 @@ export async function findCardById(
 export async function findCardByNormalizedWord(
   db: Firestore,
   userId: string,
-  word: string | Pick<CardData, 'word' | 'normalizedWord' | 'lexemeId'>,
+  word: string | Pick<CardData, 'word' | 'normalizedWord' | 'lexemeId' | 'language'>,
   libraryEpoch?: number,
 ): Promise<CardData | null> {
   const requestedCard = typeof word === 'string' ? null : word;
@@ -807,16 +927,23 @@ export async function findCardByNormalizedWord(
   const normalizedWord = normalizePrefixSearch(requestedWord);
   const activeLibraryEpoch = requestedLibraryEpoch(libraryEpoch);
   if (activeLibraryEpoch === null) return null;
+  const targetLanguage = requestedCardTargetLanguage(requestedCard);
+  if (!targetLanguage) return null;
+  const targetConstraint: QueryConstraint[] = targetLanguage === 'en'
+    ? []
+    : [where('language', '==', targetLanguage)];
   if (requestedCard?.lexemeId) {
     const snapshot = await getDocsFromServer(query(
       cardsCollection(db, userId),
       where('lexemeId', '==', requestedCard.lexemeId),
       where('libraryEpoch', '==', activeLibraryEpoch),
+      ...targetConstraint,
       limit(1),
     ));
     const matched = snapshot.docs
       .filter(card => cardHasExplicitLibraryEpoch(card.data() as Partial<CardData>, activeLibraryEpoch))
       .map(card => normalizeCardData(card.data() as Partial<CardData>, card.id))
+      .filter(card => cardMatchesTargetLanguage(card, targetLanguage))
       .find(card => cardLogicalKey(card) === `lexeme:${requestedCard.lexemeId}`);
     return matched ?? null;
   }
@@ -824,6 +951,7 @@ export async function findCardByNormalizedWord(
     cardsCollection(db, userId),
     where('normalizedWord', '==', normalizedWord),
     where('libraryEpoch', '==', activeLibraryEpoch),
+    ...targetConstraint,
     limit(CARD_MATCHES_PER_WORD_LIMIT),
   ));
   const normalizedMatches = normalizedSnapshot.docs
@@ -834,6 +962,7 @@ export async function findCardByNormalizedWord(
   if (normalizedMatches.length > 0) {
     return normalizedMatches
       .map(card => normalizeCardData(card.data() as Partial<CardData>, card.id))
+      .filter(card => cardMatchesTargetLanguage(card, targetLanguage))
       .reduce(preferCardWithLearningProgress);
   }
 
@@ -842,15 +971,18 @@ export async function findCardByNormalizedWord(
   const exactWordSnapshot = await getDocsFromServer(query(
     cardsCollection(db, userId),
     where('word', 'in', legacyWordVariants(requestedWord)),
+    ...targetConstraint,
     limit(CARD_MATCHES_PER_WORD_LIMIT),
   ));
   const exactWordMatches = exactWordSnapshot.docs
-    .filter(card => explicitCardLibraryEpoch(card.data() as Partial<CardData>) === null);
+    .filter(card => explicitCardLibraryEpoch(card.data() as Partial<CardData>) === null)
+    .filter(card => cardMatchesTargetLanguage(card.data() as Partial<CardData>, targetLanguage));
   if (exactWordMatches.length > 0) {
     await Promise.all(exactWordMatches.map(card =>
       repairNormalizedWord(db, userId, card, normalizedWord)));
     return exactWordMatches
       .map(card => normalizeCardData(card.data() as Partial<CardData>, card.id))
+      .filter(card => cardMatchesTargetLanguage(card, targetLanguage))
       .reduce(preferCardWithLearningProgress);
   }
 
@@ -862,13 +994,23 @@ export async function findCardsByNormalizedWords(
   userId: string,
   words: string[],
   libraryEpoch?: number,
+  targetLanguage?: string,
 ): Promise<Map<string, CardData>> {
   const normalizedWords = [...new Set(words.map(normalizePrefixSearch).filter(Boolean))];
   const requestedWords = new Set(normalizedWords);
   const matches = new Map<string, CardData>();
   const activeLibraryEpoch = requestedLibraryEpoch(libraryEpoch);
   if (activeLibraryEpoch === null) return matches;
+  const requestedTargetLanguage = targetLanguage === undefined
+    ? undefined
+    : effectiveIdentityTargetLanguage({ language: targetLanguage });
+  if (targetLanguage !== undefined && !requestedTargetLanguage) return matches;
+  const targetConstraint: QueryConstraint[] = requestedTargetLanguage === undefined
+    || requestedTargetLanguage === 'en'
+    ? []
+    : [where('language', '==', requestedTargetLanguage)];
   const remember = (card: CardData) => {
+    if (requestedTargetLanguage && !cardMatchesTargetLanguage(card, requestedTargetLanguage)) return;
     const key = cardWordKey(card);
     if (!requestedWords.has(key)) return;
     const existing = matches.get(key);
@@ -880,6 +1022,7 @@ export async function findCardsByNormalizedWords(
       cardsCollection(db, userId),
       where('normalizedWord', 'in', chunk),
       where('libraryEpoch', '==', activeLibraryEpoch),
+      ...targetConstraint,
       limit(chunk.length * CARD_MATCHES_PER_WORD_LIMIT),
     ));
     snapshot.docs
@@ -903,6 +1046,7 @@ export async function findCardsByNormalizedWords(
     const snapshot = await getDocs(query(
       cardsCollection(db, userId),
       where('word', 'in', chunk),
+      ...targetConstraint,
       limit(chunk.length * CARD_MATCHES_PER_WORD_LIMIT),
     ));
     const currentMatches = snapshot.docs
@@ -959,7 +1103,23 @@ const normalizeCardForMutation = (
 ): CardData => Object.fromEntries(
   Object.entries(normalizeCardData(card, cardId))
     .filter(([, value]) => value !== undefined),
-) as unknown as CardData;
+  ) as unknown as CardData;
+
+const prepareTargetAwareCardForCreate = (
+  card: CardData,
+  options: CreateCardIfAbsentOptions,
+): CardData => {
+  // Plain target-scoped cards use the additive target identity. Canonical
+  // lexeme cards still go through the stricter tuple validation.
+  if (card.language && !card.lexemeId && !card.senseKey && !card.normalizedLemma) {
+    const { language, ...legacyIdentityFields } = card;
+    return {
+      ...prepareCardForCreate(legacyIdentityFields as CardData, options),
+      language,
+    };
+  }
+  return prepareCardForCreate(card, options);
+};
 
 const libraryStateRef = (db: Firestore, userId: string) =>
   doc(db, 'users', userId, 'profile', 'library_state');
@@ -1028,6 +1188,19 @@ export async function applyCardPatchIfCurrent(
     const cardSnapshot = await transaction.get(cardRef);
     if (!cardSnapshot.exists()) return { applied: false, reason: 'missing' };
     const storedCard = cardSnapshot.data() as Partial<CardData>;
+    if (storedCard.language !== undefined && !normalizeCardLanguage(storedCard.language)) {
+      throw new CardMutationPreconditionError('identity-conflict');
+    }
+    let mirrorTargets: readonly CourseIndexMirrorTarget[] | null = null;
+    const readMirrorTargets = async (): Promise<readonly CourseIndexMirrorTarget[]> => {
+      if (mirrorTargets) return mirrorTargets;
+      mirrorTargets = await readCourseIndexMirrorTargets(transaction, db, userId, serverEpoch);
+      return mirrorTargets;
+    };
+    const mirrorCard = async (card: Partial<CardData>): Promise<void> => {
+      const targets = await readMirrorTargets();
+      if (targets.length > 0) writeCourseIndexMirrors(transaction, db, userId, targets, card);
+    };
     const storedEpoch = explicitCardLibraryEpoch(storedCard);
     // A reset makes pre-reset cards stale by design. Normal patches must not
     // revive them in the new epoch; an explicit create/re-import can do that.
@@ -1079,6 +1252,7 @@ export async function applyCardPatchIfCurrent(
       && cardAlreadyHasPatch(storedCard, command.fields, command.fieldMask);
     if (hasRevisionConflict && (!alreadyHasPatch || !needsIdentityClaim)) {
       if (alreadyHasPatch) {
+        await mirrorCard({ ...storedCard, id: command.cardId });
         return { applied: true, revision: currentRevision };
       }
       return { applied: false, reason: 'revision-conflict', currentRevision };
@@ -1128,38 +1302,55 @@ export async function applyCardPatchIfCurrent(
         schemaVersion: 1 as const,
         cardId: command.cardId,
         normalizedWord: identityToClaim,
+        ...(
+          normalizeCardLanguage(storedCard.language) && normalizeCardLanguage(storedCard.language) !== 'en'
+            ? { targetLanguage: normalizeCardLanguage(storedCard.language) }
+            : {}
+        ),
       };
+      const reservationTargetLanguage = 'targetLanguage' in reservation
+        ? reservation.targetLanguage
+        : undefined;
       const reservationRef = doc(
         db,
         'users',
         userId,
         'card_reservations',
-        createCardIdentityReservationId(identityToClaim),
+        createCardIdentityReservationId(identityToClaim, reservationTargetLanguage),
       );
       const reservationSnapshot = await transaction.get(reservationRef);
       if (
         reservationSnapshot.exists()
-        && !isMatchingCardIdentityReservation(reservationSnapshot.data(), reservation)
+        && !isMatchingCardIdentityReservation(
+          reservationSnapshot.data(),
+          reservation,
+        )
       ) {
         throw new CardMutationPreconditionError('identity-conflict');
       }
       if (!reservationSnapshot.exists()) {
+        await readMirrorTargets();
         transaction.set(reservationRef, reservation, { merge: false });
       }
     }
 
     if (hasRevisionConflict) {
-      if (alreadyHasPatch) return { applied: true, revision: currentRevision };
+      if (alreadyHasPatch) {
+        await mirrorCard({ ...storedCard, id: command.cardId });
+        return { applied: true, revision: currentRevision };
+      }
       return { applied: false, reason: 'revision-conflict', currentRevision };
     }
 
     if (isCurrentProtocolCard && Object.keys(patch).length > 0) {
+      await readMirrorTargets();
       transaction.set(cardRef, {
         ...patch,
         revision: nextRevision,
         updatedAt: serverTimestamp(),
       }, { merge: true });
     } else if (!isCurrentProtocolCard) {
+      await readMirrorTargets();
       const legacyPatch = {
         ...patch,
         // Upgrade only the protocol and identity fields required for this
@@ -1172,6 +1363,17 @@ export async function applyCardPatchIfCurrent(
         updatedAt: serverTimestamp(),
       };
       transaction.set(cardRef, legacyPatch, { merge: true });
+    }
+    if (isCurrentProtocolCard && Object.keys(patch).length === 0) {
+      await mirrorCard({ ...storedCard, id: command.cardId });
+    } else {
+      await mirrorCard({
+        ...(isCurrentProtocolCard ? storedCard : sanitizedLegacyCard ?? storedCard),
+        ...patch,
+        id: command.cardId,
+        revision: nextRevision,
+        libraryEpoch: serverEpoch,
+      });
     }
     return {
       applied: true,
@@ -1211,6 +1413,12 @@ export async function deleteCardWithTombstone(
 
     const cardSnapshot = await transaction.get(cardRef);
     const tombstoneSnapshot = await transaction.get(tombstoneRef);
+    let mirrorTargets: readonly CourseIndexMirrorTarget[] | null = null;
+    const readMirrorTargets = async (): Promise<readonly CourseIndexMirrorTarget[]> => {
+      if (mirrorTargets) return mirrorTargets;
+      mirrorTargets = await readCourseIndexMirrorTargets(transaction, db, userId, serverEpoch);
+      return mirrorTargets;
+    };
     const cardRevision = cardSnapshot.exists()
       ? normalizedLibraryEpoch((cardSnapshot.data() as Record<string, unknown>).revision)
       : command.baseRevision;
@@ -1227,6 +1435,8 @@ export async function deleteCardWithTombstone(
         (tombstoneSnapshot.data() as Record<string, unknown>).libraryEpoch,
       ) === serverEpoch
     ) {
+      const targets = await readMirrorTargets();
+      if (targets.length > 0) deleteCourseIndexMirrors(transaction, db, userId, targets, command.cardId);
       return {
         deleted: true,
         tombstone: tombstoneSnapshot.data() as CardTombstone,
@@ -1239,12 +1449,16 @@ export async function deleteCardWithTombstone(
         (tombstoneSnapshot.data() as Record<string, unknown>).libraryEpoch,
       ) === serverEpoch
     ) {
+      const targets = await readMirrorTargets();
+      if (targets.length > 0) deleteCourseIndexMirrors(transaction, db, userId, targets, command.cardId);
       return {
         deleted: true,
         tombstone: tombstoneSnapshot.data() as CardTombstone,
       };
     }
     if (!cardSnapshot.exists() && !tombstoneSnapshot.exists()) {
+      const targets = await readMirrorTargets();
+      if (targets.length > 0) deleteCourseIndexMirrors(transaction, db, userId, targets, command.cardId);
       return {
         deleted: true,
         tombstone: buildCardTombstone({
@@ -1271,8 +1485,10 @@ export async function deleteCardWithTombstone(
       baseRevision,
       deletedAt: new Date().toISOString(),
     });
+    const targets = await readMirrorTargets();
     transaction.set(tombstoneRef, tombstone, { merge: false });
     if (cardSnapshot.exists()) transaction.delete(cardRef);
+    if (targets.length > 0) deleteCourseIndexMirrors(transaction, db, userId, targets, command.cardId);
     return { deleted: true, tombstone };
   });
 }
@@ -1283,7 +1499,16 @@ async function createCardIfAbsentLocally(
   card: CardData,
   options: CreateCardIfAbsentOptions = {},
 ): Promise<CreateCardIfAbsentResult> {
-  const proposedReservation = createCardIdentityReservation(card.normalizedWord || card.word);
+  const targetLanguage = card.language === undefined
+    ? undefined
+    : normalizeCardLanguage(card.language);
+  if (card.language !== undefined && !targetLanguage) {
+    throw new CardMutationPreconditionError('identity-conflict');
+  }
+  const proposedReservation = createCardIdentityReservation(
+    card.normalizedWord || card.word,
+    targetLanguage || undefined,
+  );
   if (
     !proposedReservation.normalizedWord
     || normalizeCardWord(card.word) !== proposedReservation.normalizedWord
@@ -1295,7 +1520,7 @@ async function createCardIfAbsentLocally(
     'users',
     userId,
     'card_reservations',
-    createCardIdentityReservationId(proposedReservation.normalizedWord),
+    createCardIdentityReservationId(proposedReservation.normalizedWord, proposedReservation.targetLanguage),
   );
   const stateRef = libraryStateRef(db, userId);
   return runTransaction(db, async transaction => {
@@ -1314,12 +1539,13 @@ async function createCardIfAbsentLocally(
       if (!isCardIdentityReservationForWord(
         storedReservation,
         proposedReservation.normalizedWord,
+        proposedReservation.targetLanguage,
       )) {
         throw new CardMutationPreconditionError('identity-conflict');
       }
       reservation = storedReservation;
     }
-    const stableCard = prepareCardForCreate(
+    const stableCard = prepareTargetAwareCardForCreate(
       normalizeCardForMutation({
         ...card,
         id: reservation.cardId,
@@ -1331,6 +1557,16 @@ async function createCardIfAbsentLocally(
     const tombstoneRef = cardTombstoneRef(db, userId, reservation.cardId);
     const tombstoneSnapshot = await transaction.get(tombstoneRef);
     const existing = await transaction.get(cardRef);
+    let mirrorTargets: readonly CourseIndexMirrorTarget[] | null = null;
+    const readMirrorTargets = async (): Promise<readonly CourseIndexMirrorTarget[]> => {
+      if (mirrorTargets) return mirrorTargets;
+      mirrorTargets = await readCourseIndexMirrorTargets(transaction, db, userId, serverEpoch);
+      return mirrorTargets;
+    };
+    const mirrorCard = async (authoritativeCard: Partial<CardData>): Promise<void> => {
+      const targets = await readMirrorTargets();
+      if (targets.length > 0) writeCourseIndexMirrors(transaction, db, userId, targets, authoritativeCard);
+    };
     const claimReservation = () => {
       if (!reservationSnapshot.exists()) {
         transaction.set(reservationRef, proposedReservation, { merge: false });
@@ -1348,6 +1584,9 @@ async function createCardIfAbsentLocally(
           : '';
         const normalizedExisting = normalizeCardData(existingData, reservation.cardId);
         if (normalizeCardWord(existingData.word) !== reservation.normalizedWord) {
+          throw new CardMutationPreconditionError('identity-conflict');
+        }
+        if (effectiveIdentityTargetLanguage(normalizedExisting) !== (targetLanguage || 'en')) {
           throw new CardMutationPreconditionError('identity-conflict');
         }
         if (cardWordKey(normalizedExisting) !== reservation.normalizedWord) {
@@ -1378,14 +1617,18 @@ async function createCardIfAbsentLocally(
             revision: nextProtocolCounter(normalizedLibraryEpoch(existingData.revision), 'revision'),
             libraryEpoch: serverEpoch,
           };
+          await readMirrorTargets();
           claimReservation();
           transaction.set(cardRef, {
             ...upgradedCard,
             updatedAt: serverTimestamp(),
           }, { merge: false });
+          await mirrorCard(upgradedCard);
           return { card: upgradedCard, created: false };
         }
+        await readMirrorTargets();
         claimReservation();
+        await mirrorCard(normalizedExisting);
         return {
           card: normalizedExisting,
           created: false,
@@ -1414,11 +1657,13 @@ async function createCardIfAbsentLocally(
     const createdCard = tombstoneRevision > 0
       ? { ...stableCard, revision: nextProtocolCounter(tombstoneRevision, 'revision') }
       : stableCard;
+    await readMirrorTargets();
     claimReservation();
     transaction.set(cardRef, {
       ...createdCard,
       updatedAt: serverTimestamp(),
     });
+    await mirrorCard(createdCard);
     return { card: createdCard, created: true };
   });
 }

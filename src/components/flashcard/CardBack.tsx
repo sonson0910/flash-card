@@ -24,7 +24,7 @@ interface CardBackProps {
   canDelete: boolean;
   onUpdateCard?: (cardId: string, updatedFields: Partial<CardData>) => void | Promise<LearningStateOutcome>;
   setShowReportDialog: Dispatch<SetStateAction<boolean>>;
-  setShowEditDialog: Dispatch<SetStateAction<boolean>>;
+  setShowEditDialog: (open: boolean) => void;
   audioSpeed: 1 | 0.75;
   toggleAudioSpeed: (event: MouseEvent | PointerEvent) => void;
   playAudio: (event: MouseEvent | PointerEvent) => void;
@@ -52,10 +52,27 @@ export function CardBack({
   setShowAiModal, backFlipRef, focusAfterFlipRef, showCardSide,
 }: CardBackProps) {
   const { _, i18n } = useLingui();
-  if (isZenMode) return <ZenCardBack tier={tier} data={data} faceRef={faceRef} onUpdateCard={onUpdateCard} setShowReportDialog={setShowReportDialog} setShowEditDialog={setShowEditDialog} backFlipRef={backFlipRef} focusAfterFlipRef={focusAfterFlipRef} showCardSide={showCardSide} />;
+  if (isZenMode) return <ZenCardBack
+    tier={tier}
+    data={data}
+    faceRef={faceRef}
+    spotlightRef={spotlightRef}
+    spotlightBackground={spotlightBackground}
+    isHovered={isHovered}
+    playAudio={playAudio}
+    isPlayingAudio={isPlayingAudio}
+    onUpdateCard={onUpdateCard}
+    setShowReportDialog={setShowReportDialog}
+    setShowEditDialog={setShowEditDialog}
+    backFlipRef={backFlipRef}
+    focusAfterFlipRef={focusAfterFlipRef}
+    showCardSide={showCardSide}
+  />;
   return (
     <div
       ref={faceRef}
+      data-card-face="back"
+      data-card-mode="standard"
       style={{ transformOrigin: 'center center', borderRadius: '32px' }}
       className="flashcard-panel flashcard-back absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[32px] text-slate-900 dark:text-white"
     >
@@ -63,7 +80,7 @@ export function CardBack({
           {/* Diagonal Glass Sheen Reflection */}
           <div className="pointer-events-none absolute inset-0 rounded-[32px] bg-gradient-to-br from-white/[0.08] via-transparent to-transparent opacity-70 z-10" aria-hidden="true" />
 
-          <CardEffectsLayer spotlightRef={spotlightRef} isHovered={isHovered} spotlightBackground={spotlightBackground} holo />
+          <CardEffectsLayer spotlightRef={spotlightRef} isHovered={isHovered} spotlightBackground={spotlightBackground} holo tier={tier} />
           <div className="pointer-events-none absolute -bottom-20 -right-20 size-72 rounded-full border border-slate-200/40 bg-slate-100/20 dark:border-white/10 dark:bg-white/5" aria-hidden="true" />
           <div className={`absolute top-5 flex flex-wrap items-center gap-2 ${canDelete ? 'left-16' : 'left-5'}`}>
             <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300">
@@ -120,6 +137,7 @@ export function CardBack({
                       data-card-control
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={playAudio}
+                      data-card-effect="audio"
                       style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
                       className={`touch-manipulation flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 text-xs font-black transition-all cursor-pointer ${
                         isPlayingAudio ? 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.3)]' : 'text-[var(--sf-brand-text)] hover:bg-cyan-500/10'
@@ -269,13 +287,32 @@ export function CardBack({
   );
 }
 
-function ZenCardBack({ tier, data, faceRef, onUpdateCard, setShowReportDialog, setShowEditDialog, backFlipRef, focusAfterFlipRef, showCardSide }: Pick<CardBackProps, 'tier' | 'data' | 'faceRef' | 'onUpdateCard' | 'setShowReportDialog' | 'setShowEditDialog' | 'backFlipRef' | 'focusAfterFlipRef' | 'showCardSide'>) {
+function ZenCardBack({
+  tier,
+  data,
+  faceRef,
+  spotlightRef,
+  spotlightBackground,
+  isHovered,
+  playAudio,
+  isPlayingAudio,
+  onUpdateCard,
+  setShowReportDialog,
+  setShowEditDialog,
+  backFlipRef,
+  focusAfterFlipRef,
+  showCardSide,
+}: Pick<CardBackProps, 'tier' | 'data' | 'faceRef' | 'spotlightRef' | 'spotlightBackground' | 'isHovered' | 'playAudio' | 'isPlayingAudio' | 'onUpdateCard' | 'setShowReportDialog' | 'setShowEditDialog' | 'backFlipRef' | 'focusAfterFlipRef' | 'showCardSide'>) {
+  const { _ } = useLingui();
   return (
 <div
             ref={faceRef}
+            data-card-face="back"
+            data-card-mode="zen"
             style={{ transformOrigin: 'center center', borderRadius: '32px' }}
             className="flashcard-panel flashcard-back zen-glass-slab relative flex h-full w-full flex-col justify-between overflow-hidden rounded-[32px] p-7 pt-20 sm:p-9 sm:pt-20 text-center text-white select-none"
           >
+            <CardEffectsLayer spotlightRef={spotlightRef} isHovered={isHovered} spotlightBackground={spotlightBackground} holo tier={tier} />
             {/* Top Rim Specular Star Sparkle from Mockup */}
             <div className="pointer-events-none absolute left-[22%] -top-2.5 z-30 flex items-center justify-center" aria-hidden="true">
               <span className="text-white text-base font-black drop-shadow-[0_0_8px_#ffffff] select-none">✦</span>
@@ -304,6 +341,24 @@ function ZenCardBack({ tier, data, faceRef, onUpdateCard, setShowReportDialog, s
                     {data.explanationTranslation}
                   </p>
                 )}
+                <button
+                  type="button"
+                  data-card-control
+                  data-card-effect="audio"
+                  onPointerDown={event => event.stopPropagation()}
+                  onClick={playAudio}
+                  className="mx-auto mt-3 flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 text-cyan-200 transition-colors hover:bg-cyan-400/20"
+                  aria-label={_(msg({ id: 'flashcard.audio.play-pronunciation', message: 'Play pronunciation' }))}
+                >
+                  {isPlayingAudio ? (
+                    <span data-audio-waves="active" className="flex h-3 items-center gap-0.5" aria-hidden="true">
+                      <span className="wave-bar-1 w-0.5 rounded-full bg-current" />
+                      <span className="wave-bar-2 w-0.5 rounded-full bg-current" />
+                      <span className="wave-bar-3 w-0.5 rounded-full bg-current" />
+                      <span className="wave-bar-4 w-0.5 rounded-full bg-current" />
+                    </span>
+                  ) : <Volume2 size={14} aria-hidden="true" />}
+                </button>
               </div>
               {data.origin === 'ai' && (
                 <p data-ai-disclosure className="mt-3 max-w-lg text-xs font-medium text-cyan-100/90">

@@ -340,6 +340,10 @@ export function createCardIntakePipeline({
   };
   const mediaSessions = new WeakMap<CardData, IntakeSessionToken>();
   const compensatedDuplicateSettlements = new Set<string>();
+  const persistedCardOperations = new Map<
+    string,
+    Promise<Array<{ card: CardData; created: boolean }>>
+  >();
 
   const findExisting: CardIntakeControllerPort['findExisting'] = async words => {
     const current = getContext();
@@ -485,6 +489,7 @@ export function createCardIntakePipeline({
       );
     }
     const normalizedWord = request.language.normalize(request.term).slice(0, 80);
+    const partOfSpeechHint = normalizePartOfSpeech(request.partOfSpeechHint);
     const requestedDeck = typeof request.requestedDeck === 'string'
       ? request.requestedDeck.trim().slice(0, 128)
       : '';
@@ -502,6 +507,7 @@ export function createCardIntakePipeline({
     const wordInfo = await generateWordInfo(normalizedWord, {
       ...(request.operationId ? { operationId: request.operationId } : {}),
       context: request.context,
+      ...(partOfSpeechHint ? { partOfSpeechHint } : {}),
       sourceLanguage: request.language.source.code,
       targetLanguage: request.language.target.code,
     });
@@ -553,7 +559,7 @@ export function createCardIntakePipeline({
     };
   };
 
-  const persistCards: CardIntakeControllerPort['persistCards'] = async (cards, source) => {
+  const persistCardsInternal: CardIntakeControllerPort['persistCards'] = async (cards, source) => {
     const current = getContext();
     const session = sessionGuard.capture();
     const candidates = [...cards];
@@ -699,8 +705,28 @@ export function createCardIntakePipeline({
     return results;
   };
 
+  const persistCards: CardIntakeControllerPort['persistCards'] = async (cards, source) => {
+    if (cards.length !== 1) return persistCardsInternal(cards, source);
+    const candidate = cards[0];
+    const key = `${source}:${candidate.id}:${JSON.stringify(candidate)}`;
+    const existing = persistedCardOperations.get(key);
+    if (existing) return existing;
+    const operation = persistCardsInternal(cards, source);
+    persistedCardOperations.set(key, operation);
+    try {
+      return await operation;
+    } catch (cause) {
+      persistedCardOperations.delete(key);
+      throw cause;
+    }
+  };
+
   const pipeline: CardIntakePipeline = {
-    replaceOwner: ownerId => sessionGuard.replaceOwner(ownerId),
+    replaceOwner: ownerId => {
+      const previousOwnerId = sessionGuard.capture().ownerId;
+      sessionGuard.replaceOwner(ownerId);
+      if (previousOwnerId !== ownerId) persistedCardOperations.clear();
+    },
     captureSession: () => {
       const session = sessionGuard.capture();
       return () => sessionGuard.isCurrent(session);

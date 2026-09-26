@@ -42,6 +42,7 @@ export interface PracticeSessionController {
     isStarting: boolean;
     reviewStatus: 'idle' | 'saving' | 'sync-pending' | 'saved' | 'error';
     reviewError: string | null;
+    isPaused?: boolean;
   };
   quiz: ReturnType<typeof usePracticeGames>;
   commands: {
@@ -55,6 +56,7 @@ export interface PracticeSessionController {
     reveal: () => void;
     setRecallMode: (mode: RecallMode) => void;
     setStudyIndex: (index: number) => void;
+    setStudyEditorOpen: (cardId: string, open: boolean) => void;
     submitStudyRating: (rating: ReviewRating) => Promise<StudyRatingSettlement>;
   };
   learning: PracticeLearningActions;
@@ -132,6 +134,10 @@ export function usePracticeSession({
   const [savingReviewCardId, setSavingReviewCardId] = useState<string | null>(null);
   const [syncPendingReviewCardId, setSyncPendingReviewCardId] = useState<string | null>(null);
   const [reviewFailure, setReviewFailure] = useState<{ cardId: string; message: string } | null>(null);
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const editorRef = useRef<{ ownerToken: number; cardId: string } | null>(null);
+  if (editorRef.current?.ownerToken !== ownerSessionToken) editorRef.current = null;
+  const isEditorOpen = () => editorRef.current?.ownerToken === ownerSessionToken;
 
   const openPracticeView = useCallback((view: Exclude<PracticeViewMode, 'library'>) => {
     onSessionStarted?.();
@@ -157,11 +163,13 @@ export function usePracticeSession({
     setSavingReviewCardId(null);
     setSyncPendingReviewCardId(null);
     setReviewFailure(null);
+    setEditingCardId(null);
     quiz.reset();
     practiceStateSessionRef.current = ownerSessionToken;
   }, [ownerSessionToken]);
 
   const startStudy = useCallback(async () => {
+    if (editorRef.current) return;
     const result = await lifecycle.prepare(
       'study',
       async () => createPracticeSnapshot(await withTimeout(
@@ -197,13 +205,19 @@ export function usePracticeSession({
 
   const activeCardId = scopedStudyCards[studyIndex]?.id;
   useEffect(() => {
+    if (editorRef.current && editorRef.current.cardId !== activeCardId) {
+      editorRef.current = null;
+      setEditingCardId(null);
+    }
+  }, [activeCardId]);
+  useEffect(() => {
     setRevealed(false);
     setReviewedCardId(activeCardId && lifecycle.isReviewed(activeCardId) ? activeCardId : null);
   }, [activeCardId, lifecycle, recallMode, studyIndex]);
 
   const submitStudyRating = useCallback(async (rating: ReviewRating) => {
     const operationSession = ownerSessionToken;
-    if (!lifecycle.isCurrent(operationSession) || !lifecycle.isActive('study')) return 'ignored' as const;
+    if (!lifecycle.isCurrent(operationSession) || !lifecycle.isActive('study') || isEditorOpen()) return 'ignored' as const;
     const activeCard = studyCardsRef.current[studyIndex];
     if (!activeCard || !revealed) return 'ignored' as const;
     if (!lifecycle.claimReview(activeCard.id)) return 'ignored' as const;
@@ -242,6 +256,7 @@ export function usePracticeSession({
   }, [learning, lifecycle, ownerSessionToken, reportError, revealed, studyIndex]);
 
   const close = useCallback(() => {
+    if (editorRef.current) return;
     if (mode === 'quiz') quiz.clearQuiz();
     if (mode === 'spelling') quiz.clearSpelling();
     if (mode === 'story') quiz.clearStory();
@@ -305,6 +320,7 @@ export function usePracticeSession({
           isStarting: isStartingStudy,
           reviewStatus: activeReviewStatus,
           reviewError: activeReviewError,
+          isPaused: Boolean(editingCardId && editorRef.current?.cardId === editingCardId),
         }
       : {
           cards: [],
@@ -315,6 +331,7 @@ export function usePracticeSession({
           isStarting: false,
           reviewStatus: 'idle',
           reviewError: null,
+          isPaused: false,
         },
     quiz: scopedQuiz,
     commands: {
@@ -325,9 +342,20 @@ export function usePracticeSession({
       startShadowing: quiz.startShadowing,
       generateStory: quiz.generateStory,
       close,
-      reveal: () => setRevealed(true),
-      setRecallMode,
-      setStudyIndex,
+      reveal: () => { if (!isEditorOpen()) setRevealed(true); },
+      setRecallMode: value => { if (!isEditorOpen()) setRecallMode(value); },
+      setStudyIndex: value => { if (!isEditorOpen()) setStudyIndex(value); },
+      setStudyEditorOpen: (cardId, open) => {
+        if (!lifecycle.isCurrent(ownerSessionToken)) return;
+        if (open) {
+          if (!lifecycle.isActive('study') || cardId !== activeCardId) return;
+          editorRef.current = { ownerToken: ownerSessionToken, cardId };
+          setEditingCardId(cardId);
+        } else if (editorRef.current?.cardId === cardId) {
+          editorRef.current = null;
+          setEditingCardId(null);
+        }
+      },
       submitStudyRating,
     },
     learning,

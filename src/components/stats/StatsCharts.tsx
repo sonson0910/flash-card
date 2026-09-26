@@ -78,7 +78,7 @@ export default function StatsCharts({ data }: StatsChartsProps) {
   const noHistory = _(text.noHistory); const noData = _(text.noData);
   const memoryLabels: Record<string, string> = { Mastered: _(text.mastered), Learning: _(text.learning), 'Not reviewed': _(text.notReviewed) };
   const memoryEntries = data.difficultyChart.map(entry => ({ ...entry, name: memoryLabels[entry.name] ?? entry.name, color: memoryColors[entry.name] ?? 'var(--sf-heat-2)' }));
-  return <div className="space-y-5">
+  return <div className="stats-canvas">
     <section className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 text-[var(--sf-text)] sm:p-7 shadow-[0_28px_70px_-52px_var(--sf-shadow)]" aria-labelledby="xp-chart-title">
       <div className="mb-5"><p className="premium-kicker uppercase tracking-[0.14em]">{_(text.learningActivity)}</p><h2 id="xp-chart-title" className="mt-2 text-balance text-xl font-black tracking-tight">{_(text.dailyXp)}</h2><p className="mt-1 text-pretty text-sm text-[var(--sf-text-muted)]">{_(text.activityDescription)}</p></div>
       <div className="mb-6 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 shadow-xs"><p className="mb-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--sf-text-muted)]">{_(text.heatmapTitle)}</p><ActivityHeatmap entries={data.xpChartData} /></div>

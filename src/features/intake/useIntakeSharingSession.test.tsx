@@ -180,7 +180,7 @@ describe('useIntakeSharingSession', () => {
     expect(Object.keys(actions!)).toEqual([
       'changeDraft', 'clearDraft', 'generate', 'importFile', 'adoptCards', 'shareCategory',
       'acceptShared', 'cancelShared', 'revokeShare', 'dismissShareLink', 'showShareDialog',
-      'clearShareError', 'clearError', 'clearNotice', 'invalidateCard',
+      'clearShareError', 'clearError', 'clearNotice', 'invalidateCard', 'cardCreator',
     ]);
     actions!.changeDraft('salut');
     expect(draft.write).toHaveBeenCalledWith('salut');

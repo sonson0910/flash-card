@@ -28,6 +28,7 @@ interface StudyViewProps {
   reviewedCardId: string | null;
   reviewStatus?: 'idle' | 'saving' | 'sync-pending' | 'saved' | 'error';
   reviewError?: string | null;
+  paused?: boolean;
   customDecks: string[];
   onClose: () => void;
   onRecallMode: (mode: RecallMode) => void;
@@ -37,6 +38,7 @@ interface StudyViewProps {
   onUpdateCard: (cardId: string, fields: Partial<CardData>) => void;
   onRate: (rating: ReviewRating) => Promise<StudyRatingSettlement>;
   onIndex: (index: number) => void;
+  onEditorOpenChange?: (cardId: string, open: boolean) => void;
 }
 
 type StudyKeyboardEvent = Pick<KeyboardEvent, 'altKey' | 'ctrlKey' | 'defaultPrevented' | 'key' | 'metaKey' | 'preventDefault' | 'shiftKey' | 'target'> & {
@@ -85,6 +87,7 @@ export function StudyView({
   reviewedCardId,
   reviewStatus = 'idle',
   reviewError = null,
+  paused = false,
   customDecks,
   onClose,
   onRecallMode,
@@ -94,6 +97,7 @@ export function StudyView({
   onUpdateCard,
   onRate,
   onIndex,
+  onEditorOpenChange,
 }: StudyViewProps) {
   const { _, i18n } = useLingui();
   const previousIndexRef = useRef(index);
@@ -155,6 +159,7 @@ export function StudyView({
   }, [lumiReaction]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (paused) return;
     if (shouldIgnoreStudyCardTouch(e.target, e.currentTarget)) return;
     const touch = e.touches[0];
     touchStartRef.current = { x: touch.clientX, y: touch.clientY };
@@ -209,7 +214,7 @@ export function StudyView({
   };
 
   const handleRating = async (rating: ReviewRating) => {
-    if (!card || ratingInFlightRef.current) return;
+    if (paused || !card || ratingInFlightRef.current) return;
     ratingInFlightRef.current = true;
     try {
       const settlement = await onRate(rating);
@@ -245,6 +250,7 @@ export function StudyView({
   };
 
   const handleStudyShortcut = useCallback((event: StudyKeyboardEvent, surface: HTMLDivElement) => {
+    if (paused || !card) return;
     if (event.defaultPrevented || event.nativeEvent?.isComposing || event.isComposing) return;
     const target = event.target as { closest?: (selectors: string) => Element | null } | null;
     if (target?.closest?.('button, a, input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [data-radix-popper-content-wrapper]')) return;
@@ -277,14 +283,14 @@ export function StudyView({
       event.preventDefault();
       surface.querySelector<HTMLButtonElement>(`[data-study-card] [aria-label="${_(msg({ id: 'flashcard.audio.check-pronunciation', message: 'Check pronunciation' }))}"]`)?.click();
     }
-  }, [_, card.bookmarked, cards.length, handleRating, index, onBookmark, onIndex, onReveal, revealed]);
+  }, [_, card?.bookmarked, cards.length, handleRating, index, onBookmark, onIndex, onReveal, paused, revealed]);
 
   if (!card) return null;
 
   return (
-    <div ref={studySurfaceRef} tabIndex={-1} data-study-session onKeyDown={event => handleStudyShortcut(event, event.currentTarget)} className="mx-auto flex h-full max-w-5xl flex-col items-center px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-5 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+    <div ref={studySurfaceRef} tabIndex={-1} data-study-session onKeyDown={event => handleStudyShortcut(event, event.currentTarget)} className="practice-board practice-board--study mx-auto flex h-full max-w-5xl flex-col items-center px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-5 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
       <div className="mb-4 flex w-full items-center justify-between gap-3">
-        <button type="button" onClick={onClose} className="crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none" aria-label={_(msg({ id: 'study.close', message: 'Close study mode' }))}>
+        <button type="button" onClick={onClose} disabled={paused} className="crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none" aria-label={_(msg({ id: 'study.close', message: 'Close study mode' }))}>
           <X size={24} aria-hidden="true" />
         </button>
         <div data-study-progress role="progressbar" aria-label={_(msg({ id: 'study.progress', message: 'Study progress' }))} aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={index + 1} className="crystal-chamfer min-w-0 flex-1 max-w-xl border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] px-4 py-2.5 text-center shadow-[var(--sf-panel-shadow)]">
@@ -335,6 +341,7 @@ export function StudyView({
               customDecks={customDecks}
               onAssignDeck={onAssignDeck}
               onUpdateCard={onUpdateCard}
+              onEditOpenChange={open => onEditorOpenChange?.(card.id, open)}
             />
           ) : (
             <ActiveRecallPrompt
@@ -352,7 +359,7 @@ export function StudyView({
         )}
       </div>
 
-      <div ref={ratingRef} data-study-rating className="w-full max-w-xl scroll-mt-4">
+      <div ref={ratingRef} inert={paused || undefined} data-study-rating className="w-full max-w-xl scroll-mt-4">
         <ReviewControls
           revealed={revealed}
           reviewed={reviewedCardId === card.id}
@@ -369,11 +376,11 @@ export function StudyView({
       </div>
 
       <div className="flex items-center gap-4 sm:gap-6">
-        <button type="button" onClick={() => onIndex(Math.max(0, index - 1))} disabled={index === 0} className="crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-3 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] transition hover:border-[var(--sf-brand)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50" aria-label={_(msg({ id: 'study.previous-card', message: 'Previous card' }))}>
+        <button type="button" onClick={() => onIndex(Math.max(0, index - 1))} disabled={paused || index === 0} className="crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-3 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] transition hover:border-[var(--sf-brand)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50" aria-label={_(msg({ id: 'study.previous-card', message: 'Previous card' }))}>
           <ChevronLeft size={24} aria-hidden="true" />
         </button>
         <div className="crystal-chamfer-sm border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-3 font-mono font-bold tabular-nums text-[var(--sf-brand-text)]">{index + 1} / {cards.length}</div>
-        <button data-color-role="primary" type="button" onClick={() => onIndex(Math.min(cards.length - 1, index + 1))} disabled={index === cards.length - 1} className="crystal-chamfer-sm min-h-11 min-w-11 bg-[var(--sf-brand)] p-3 text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] hover:text-white active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none disabled:opacity-50" aria-label={_(msg({ id: 'study.next-card', message: 'Next card' }))}>
+        <button data-color-role="primary" type="button" onClick={() => onIndex(Math.min(cards.length - 1, index + 1))} disabled={paused || index === cards.length - 1} className="crystal-chamfer-sm min-h-11 min-w-11 bg-[var(--sf-brand)] p-3 text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] hover:text-white active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none disabled:opacity-50" aria-label={_(msg({ id: 'study.next-card', message: 'Next card' }))}>
           <ChevronRight size={24} aria-hidden="true" />
         </button>
       </div>

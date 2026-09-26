@@ -173,6 +173,7 @@ const expectEmptyPracticeState = (session: ReturnType<typeof usePracticeSession>
     isStarting: false,
     reviewStatus: 'idle',
     reviewError: null,
+    isPaused: false,
   });
   expect(session.quiz).toMatchObject({
     quizQuestions: [],
@@ -213,6 +214,49 @@ describe('usePracticeSession owner isolation', () => {
       story: 'A generated story.',
       translation: 'Một câu chuyện được tạo.',
     });
+  });
+
+  it('pauses review and navigation while editing, then resumes the same revealed card', async () => {
+    const { render, learning } = createSessionHarness([card(1), card(2)]);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+    const activeId = session.study.cards[session.study.index].id;
+    session.commands.setStudyEditorOpen(activeId, true);
+    session.commands.setStudyIndex(1);
+    session.commands.setRecallMode('native-to-target');
+    expect(await session.commands.submitStudyRating('good')).toBe('ignored');
+    expect(learning.reviewCard).not.toHaveBeenCalled();
+    session = render();
+    expect(session.study).toMatchObject({ index: 0, revealed: true, recallMode: 'adaptive', isPaused: true });
+    session.commands.setStudyEditorOpen('another-card', false);
+    expect(render().study.isPaused).toBe(true);
+    session.snapshot.updateCard(activeId, { translation: 'edited meaning' });
+    session.commands.setStudyEditorOpen(activeId, false);
+    session = renderAfterEffects(render);
+    expect(session.study).toMatchObject({ index: 0, revealed: true, recallMode: 'adaptive', isPaused: false });
+    expect(session.study.cards[0]).toMatchObject({ id: activeId, translation: 'edited meaning' });
+    expect(await session.commands.submitStudyRating('good')).toBe('committed');
+    expect(learning.reviewCard).toHaveBeenCalledWith(activeId, 'good');
+  });
+
+  it('ignores an editor from a replaced owner session', async () => {
+    const { render } = createSessionHarness([card(1)]);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    const staleEditor = session.commands.setStudyEditorOpen;
+    staleEditor(session.study.cards[0].id, true);
+    render({ ownerId: 'owner-b' });
+    session = renderAfterEffects(render);
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    staleEditor(session.study.cards[0].id, true);
+    expect(render().study.isPaused).toBe(false);
   });
 
   it.each([

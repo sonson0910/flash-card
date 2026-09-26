@@ -1,4 +1,8 @@
+import { i18n } from '@lingui/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+i18n.load('en', {});
+i18n.activate('en');
 
 const runtime = vi.hoisted(() => ({
   app: { name: 'test-app' },
@@ -42,7 +46,7 @@ describe('cardReportService', () => {
   });
 
   it('rejects invalid reports before calling the backend', async () => {
-    await expect(submitCardReport({ cardId: '../card', reason: 'other' })).rejects.toThrow(/không hợp lệ/i);
+    await expect(submitCardReport({ cardId: '../card', reason: 'other' })).rejects.toThrow(/invalid/i);
     await expect(submitCardReport({ cardId: 'card', reason: 'other', note: 'x'.repeat(281) })).rejects.toThrow(/280/i);
     expect(runtime.httpsCallable).not.toHaveBeenCalled();
   });
@@ -61,29 +65,30 @@ describe('reportCardFailureMessage', () => {
 
   it('gives a distinct message for each classified failure kind', () => {
     expect(reportCardFailureMessage(protectedError('authentication', 'unauthenticated')))
-      .toBe('Bạn cần đăng nhập để báo cáo thẻ. Hãy đăng nhập rồi thử lại.');
+      .toBe('You need to sign in to report a card. Please sign in and try again.');
     expect(reportCardFailureMessage(protectedError('permission', 'permission-denied')))
-      .toBe('Không có quyền báo cáo thẻ này. Hãy đăng nhập lại rồi thử.');
+      .toBe("You don't have permission to report this card. Please sign in again and try.");
     expect(reportCardFailureMessage(protectedError('quota', 'resource-exhausted')))
-      .toBe('Bạn đã báo cáo quá nhiều lần trong thời gian ngắn. Hãy thử lại sau.');
+      .toBe("You've reported too many times in a short period. Please try again later.");
     expect(reportCardFailureMessage(protectedError('network', 'unavailable')))
-      .toBe('Không kết nối được máy chủ báo cáo. Hãy kiểm tra mạng rồi thử lại.');
+      .toBe("Couldn't reach the report server. Please check your connection and try again.");
     expect(reportCardFailureMessage(protectedError('configuration', 'failed-precondition')))
-      .toBe('Dịch vụ báo cáo thẻ chưa sẵn sàng. Hãy thử lại sau.');
+      .toBe('The card reporting service is not ready yet. Please try again later.');
     expect(reportCardFailureMessage(protectedError('unknown', 'unknown')))
-      .toBe('Không gửi được báo cáo. Hãy thử lại hoặc liên hệ hỗ trợ.');
+      .toBe("Couldn't send the report. Please try again or contact support.");
   });
 
   it('gives a specific message when the card no longer exists', () => {
     expect(reportCardFailureMessage(protectedError('configuration', 'not-found')))
-      .toBe('Không tìm thấy thẻ để báo cáo. Thẻ có thể đã bị xóa.');
+      .toBe('Card not found to report. It may have been deleted.');
   });
 
   it('surfaces a client-side validation message as-is', () => {
-    expect(reportCardFailureMessage(new Error('Ghi chú tối đa 280 ký tự.'))).toBe('Ghi chú tối đa 280 ký tự.');
+    expect(reportCardFailureMessage(new Error('The note can be at most 280 characters.')))
+      .toBe('The note can be at most 280 characters.');
   });
 
   it('falls back to a generic connection message for an unrecognized failure', () => {
-    expect(reportCardFailureMessage('not an error')).toBe('Không gửi được báo cáo. Hãy kiểm tra kết nối rồi thử lại.');
+    expect(reportCardFailureMessage('not an error')).toBe("Couldn't send the report. Please check your connection and try again.");
   });
 });

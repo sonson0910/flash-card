@@ -14,83 +14,748 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:900
+#: src/features/library/LibraryCardGrid.tsx:313
+#: src/features/library/LibraryDialogOverlays.tsx:158
+msgid "common.cancel"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:135
+#: src/features/library/LibraryCardGrid.tsx:312
+#: src/features/library/LibraryDialogOverlays.tsx:455
+msgid "common.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:135
+#: src/features/library/LibraryDialogOverlays.tsx:158
+#: src/features/library/LibraryDialogOverlays.tsx:311
+msgid "common.done"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:406
+msgid "common.retry"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:301
+msgid "flashcard.edit"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:44
+msgid "flashcard.memory-hook"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:256
+msgid "library.bulk.assign"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:257
+msgid "library.bulk.bookmark"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:255
+msgid "library.bulk.choose-deck"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:258
+msgid "library.bulk.clear"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:255
+msgid "library.bulk.deck-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:260
+msgid "library.bulk.error"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:253
+msgid "library.bulk.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:251
+msgid "library.bulk.select-page"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:254
+msgid "library.bulk.selected"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:255
+msgid "library.bulk.unassigned"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:18
+msgid "library.canvas.search-placeholder"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:302
+msgid "library.card.bookmark"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:303
+msgid "library.card.delete"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:312
+msgid "library.card.detail-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:234
+msgid "library.card.due-now"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:229
+#: src/features/library/LibraryScreen.tsx:339
+msgid "library.card.grade.learning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:230
+#: src/features/library/LibraryScreen.tsx:340
+msgid "library.card.grade.mastered"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:227
+#: src/features/library/LibraryScreen.tsx:338
+msgid "library.card.grade.new"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:297
+msgid "library.card.open-details"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:300
+#: src/features/library/LibraryCardGrid.tsx:300
+msgid "library.card.select"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:289
+msgid "library.card.starred"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:224
+msgid "library.card.tier.learning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:225
+msgid "library.card.tier.mastered"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:222
+#: src/features/library/LibraryScreen.tsx:338
+msgid "library.card.tier.new"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:233
+msgid "library.card.unseen"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:293
+msgid "library.card.word"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:922
 msgid "library.categories.all"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:885
+#: src/features/library/LibraryTools.tsx:907
 msgid "library.categories.title"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:211
+msgid "library.clear.cards"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:247
+msgid "library.clear.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:328
+msgid "library.clear.confirm"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:282
+msgid "library.clear.confirm-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:212
+msgid "library.clear.decks"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:256
+msgid "library.clear.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:270
+msgid "library.clear.export"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:267
+msgid "library.clear.export-copy"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:303
+msgid "library.clear.failure"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:316
+msgid "library.clear.keep"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:241
+msgid "library.clear.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:213
+msgid "library.clear.mastered"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:278
+msgid "library.clear.success"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:242
+msgid "library.clear.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:328
+msgid "library.clear.try-again"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:298
+msgid "library.clear.working"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:96
+#: src/features/intake/CreateCardDialog.tsx:52
 #: src/features/library/AiDialogueModal.tsx:150
-#: src/features/library/WordExtractorModal.tsx:132
+#: src/features/library/LibraryDialogOverlays.tsx:90
+#: src/features/library/WordExtractorModal.tsx:166
 msgid "library.close"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:85
+#: src/features/intake/CreateCardDialog.tsx:730
+#: src/features/intake/CreateCardDialog.tsx:736
+msgid "library.create-card.add-manually"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:57
+msgid "library.create-card.audio"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:60
+#: src/features/intake/CreateCardDialog.tsx:316
+msgid "library.create-card.cefr"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:61
+msgid "library.create-card.cefr-placeholder"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:39
+msgid "library.create-card.context"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:40
+msgid "library.create-card.context-placeholder"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:82
+msgid "library.create-card.deck-reason.plan-limit"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:63
+#: src/features/intake/CreateCardDialog.tsx:340
+msgid "library.create-card.definition"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:50
+#: src/features/intake/CreateCardDialog.tsx:605
+msgid "library.create-card.description.ai"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:51
+#: src/features/intake/CreateCardDialog.tsx:605
+msgid "library.create-card.description.manual"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:84
+msgid "library.create-card.duplicate"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:78
+#: src/features/intake/CreateCardDialog.tsx:708
+msgid "library.create-card.empty-preview"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:96
+msgid "library.create-card.error.authentication"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:98
+msgid "library.create-card.error.configuration"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:104
+msgid "library.create-card.error.deck-unavailable"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:105
+msgid "library.create-card.error.default"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:103
+msgid "library.create-card.error.duplicate"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:106
+msgid "library.create-card.error.empty-word"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:107
+msgid "library.create-card.error.generate-deck"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:101
+msgid "library.create-card.error.generation"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:100
+msgid "library.create-card.error.invalid"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:109
+msgid "library.create-card.error.manual-deck"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:108
+msgid "library.create-card.error.manual-fields"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:97
+msgid "library.create-card.error.permission"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:94
+msgid "library.create-card.error.quota"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:110
+msgid "library.create-card.error.regenerate-selection"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:102
+msgid "library.create-card.error.save"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:99
+msgid "library.create-card.error.timeout"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:95
+msgid "library.create-card.error.unavailable"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:64
+#: src/features/intake/CreateCardDialog.tsx:354
+msgid "library.create-card.example"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:66
+msgid "library.create-card.example-sentence"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:68
+msgid "library.create-card.example-translation"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:65
+msgid "library.create-card.examples"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:92
+#: src/features/intake/CreateCardDialog.tsx:739
+msgid "library.create-card.generate-preview"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:88
+msgid "library.create-card.generating"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:47
+#: src/features/intake/CreateCardDialog.tsx:602
+msgid "library.create-card.kicker.ai"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:48
+#: src/features/intake/CreateCardDialog.tsx:602
+msgid "library.create-card.kicker.manual"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:71
+#: src/features/intake/CreateCardDialog.tsx:694
+msgid "library.create-card.manual-details"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:62
+#: src/features/intake/CreateCardDialog.tsx:328
+msgid "library.create-card.meaning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:37
+msgid "library.create-card.optional"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:41
+#: src/features/intake/CreateCardDialog.tsx:647
+msgid "library.create-card.part-of-speech"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:45
+msgid "library.create-card.pos.adjective"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:46
+msgid "library.create-card.pos.adverb"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:42
+msgid "library.create-card.pos.auto"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:43
+msgid "library.create-card.pos.noun"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:44
+msgid "library.create-card.pos.verb"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:77
+#: src/features/intake/CreateCardDialog.tsx:708
+msgid "library.create-card.preparing"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:53
+#: src/features/intake/CreateCardDialog.tsx:295
+msgid "library.create-card.preview.ai-draft"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:55
+#: src/features/intake/CreateCardDialog.tsx:296
+msgid "library.create-card.preview.edit-generated"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:56
+#: src/features/intake/CreateCardDialog.tsx:296
+msgid "library.create-card.preview.edit-manual"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:54
+#: src/features/intake/CreateCardDialog.tsx:295
+msgid "library.create-card.preview.manual-draft"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:58
+#: src/features/intake/CreateCardDialog.tsx:304
+msgid "library.create-card.pronunciation"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:59
+msgid "library.create-card.pronunciation-placeholder"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:83
+#: src/features/intake/CreateCardDialog.tsx:721
+msgid "library.create-card.ready-after-saving"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:87
+#: src/features/intake/CreateCardDialog.tsx:737
+msgid "library.create-card.regenerate"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:74
+msgid "library.create-card.regenerate-group"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:76
+#: src/features/intake/CreateCardDialog.tsx:678
+msgid "library.create-card.regenerate-hint"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:75
+#: src/features/intake/CreateCardDialog.tsx:678
+msgid "library.create-card.regenerate-selected"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:89
+msgid "library.create-card.regenerating"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:86
+#: src/features/intake/CreateCardDialog.tsx:735
+msgid "library.create-card.request-count"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:91
+#: src/features/intake/CreateCardDialog.tsx:739
+#: src/features/intake/CreateCardDialog.tsx:739
+msgid "library.create-card.save"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:79
+msgid "library.create-card.save-to"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:90
+msgid "library.create-card.saving"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:49
+#: src/features/intake/CreateCardDialog.tsx:603
+msgid "library.create-card.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:67
+#: src/features/intake/CreateCardDialog.tsx:367
+msgid "library.create-card.translation"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:80
+msgid "library.create-card.unassigned"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:81
+msgid "library.create-card.unavailable"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:73
+#: src/features/intake/CreateCardDialog.tsx:695
+msgid "library.create-card.use-ai-draft"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:38
+msgid "library.create-card.word"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:69
+#: src/features/intake/CreateCardDialog.tsx:381
+msgid "library.create-card.word-family"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:70
+msgid "library.create-card.word-family-field"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:117
+msgid "library.create-card.word-family.adjective"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:118
+msgid "library.create-card.word-family.adverb"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:115
+msgid "library.create-card.word-family.noun"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:116
+msgid "library.create-card.word-family.verb"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:72
+#: src/features/intake/CreateCardDialog.tsx:694
+msgid "library.create-card.your-card"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/features/library/EmptyLibraryPanel.tsx:214
-#: src/features/library/LibraryTools.tsx:539
+#: src/features/library/LibraryTools.tsx:570
 msgid "library.create.analysing"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/EmptyLibraryPanel.tsx:214
-#: src/features/library/LibraryTools.tsx:540
+#: src/features/library/LibraryTools.tsx:571
 msgid "library.create.building"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:560
+#: src/features/library/LibraryTools.tsx:591
 msgid "library.create.busy"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:563
+#: src/features/library/LibraryTools.tsx:594
 msgid "library.create.check-library"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/EmptyLibraryPanel.tsx:203
-#: src/features/library/LibraryTools.tsx:556
+#: src/features/library/LibraryTools.tsx:587
 msgid "library.create.creating"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:562
+#: src/features/library/LibraryTools.tsx:593
 msgid "library.create.generate"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:590
+#: src/features/library/LibraryTools.tsx:621
 msgid "library.create.help"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/EmptyLibraryPanel.tsx:205
-#: src/features/library/LibraryTools.tsx:558
+#: src/features/library/LibraryTools.tsx:589
 msgid "library.create.importing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:459
+#: src/features/library/LibraryTools.tsx:489
 msgid "library.create.sign-in-help"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:472
+#: src/features/library/LibraryTools.tsx:502
 msgid "library.create.title"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/EmptyLibraryPanel.tsx:185
-#: src/features/library/LibraryTools.tsx:514
+#: src/features/library/LibraryTools.tsx:545
 msgid "library.create.word-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:526
+#: src/features/library/LibraryTools.tsx:557
 msgid "library.create.word-placeholder"
 msgstr ""
 
@@ -115,128 +780,213 @@ msgid "library.date.yesterday"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:808
+#: src/features/library/LibraryTools.tsx:845
 msgid "library.deck.cancel"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:274
+#: src/features/library/LibraryTools.tsx:279
 msgid "library.deck.cards-kept"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:224
+#: src/features/library/LibraryTools.tsx:229
 msgid "library.deck.create"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:227
+#: src/features/library/LibraryDialogOverlays.tsx:170
+msgid "library.deck.create-again"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:122
+#: src/features/library/LibraryTools.tsx:232
+#: src/features/library/LibraryTools.tsx:972
 msgid "library.deck.create-error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:221
+#: src/features/library/LibraryTools.tsx:226
 msgid "library.deck.create-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:224
+#: src/features/library/LibraryDialogOverlays.tsx:150
+msgid "library.deck.created"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:145
+#: src/features/library/LibraryTools.tsx:229
 msgid "library.deck.creating"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:221
+#: src/features/library/LibraryTools.tsx:226
 msgid "library.deck.creating-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:288
+#: src/features/library/LibraryDialogOverlays.tsx:106
+msgid "library.deck.creation-name-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:170
+msgid "library.deck.creation-submit"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:293
 msgid "library.deck.delete"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:872
+#: src/features/library/LibraryTools.tsx:894
 msgid "library.deck.delete-action"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:288
+#: src/features/library/LibraryTools.tsx:293
 msgid "library.deck.delete-again"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:255
+#: src/features/library/LibraryTools.tsx:260
 msgid "library.deck.delete-assignment"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:268
+#: src/features/library/LibraryTools.tsx:273
 msgid "library.deck.delete-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:276
+#: src/features/library/LibraryTools.tsx:281
 msgid "library.deck.delete-error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:871
+#: src/features/library/LibraryTools.tsx:893
 msgid "library.deck.delete-this"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:266
+#: src/features/library/LibraryTools.tsx:271
 msgid "library.deck.delete-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:288
+#: src/features/library/LibraryTools.tsx:293
 msgid "library.deck.deleting"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:278
+#: src/features/library/LibraryDialogOverlays.tsx:85
+msgid "library.deck.dialog-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:82
+msgid "library.deck.dialog-kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:83
+msgid "library.deck.dialog-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:283
 msgid "library.deck.keep"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:210
+#: src/features/library/LibraryTools.tsx:215
 msgid "library.deck.name-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:213
+#: src/features/library/LibraryDialogOverlays.tsx:113
+#: src/features/library/LibraryTools.tsx:218
 msgid "library.deck.name-placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:808
+#: src/features/library/LibraryTools.tsx:845
 msgid "library.deck.new"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:273
+#: src/features/library/LibraryTools.tsx:278
 msgid "library.deck.removed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:274
+#: src/features/library/LibraryDialogOverlays.tsx:12
+msgid "library.deck.suggestion.ielts-writing"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:14
+msgid "library.deck.suggestion.toeic-600"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:13
+msgid "library.deck.suggestion.travel"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:127
+msgid "library.deck.suggestions"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:128
+msgid "library.deck.try"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:279
 msgid "library.deck.unassigned"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:828
+#: src/features/library/LibraryScreen.tsx:332
+#: src/features/library/LibraryTools.tsx:850
 msgid "library.decks.all"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:800
+#: src/features/library/LibraryScreen.tsx:331
+msgid "library.decks.nav-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:832
 msgid "library.decks.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:833
+#: src/features/library/LibraryTools.tsx:855
 msgid "library.decks.unassigned"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:313
+msgid "library.delete.confirm"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:313
+msgid "library.delete.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:313
+msgid "library.delete.title"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -320,87 +1070,143 @@ msgid "library.dialogue.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:106
+#: src/features/cardEdit/EditCardDialog.tsx:278
+msgid "library.edit-card.back-to-card"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:280
 msgid "library.edit-card.cancel"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:63
+#: src/features/cardEdit/EditCardDialog.tsx:230
+msgid "library.edit-card.card-fields"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:195
 msgid "library.edit-card.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:60
+#: src/features/cardEdit/EditCardDialog.tsx:268
+msgid "library.edit-card.contract-note"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:190
 msgid "library.edit-card.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:87
+#: src/features/cardEdit/EditCardDialog.tsx:304
+msgid "library.edit-card.discard-confirm"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:298
+msgid "library.edit-card.discard-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:297
+msgid "library.edit-card.discard-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:204
+msgid "library.edit-card.draft-preview"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:161
+msgid "library.edit-card.editing-badge"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:278
+msgid "library.edit-card.esc-key"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:38
 msgid "library.edit-card.example"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:88
+#: src/features/cardEdit/EditCardDialog.tsx:40
 msgid "library.edit-card.example-translation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:83
+#: src/features/cardEdit/EditCardDialog.tsx:34
 msgid "library.edit-card.explanation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:85
+#: src/features/cardEdit/EditCardDialog.tsx:36
 msgid "library.edit-card.explanation-translation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:103
+#: src/features/cardEdit/EditCardDialog.tsx:272
 msgid "library.edit-card.history-note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:31
+#: src/features/cardEdit/EditCardDialog.tsx:100
 msgid "library.edit-card.invalid-content"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:57
+#: src/features/cardEdit/EditCardDialog.tsx:301
+msgid "library.edit-card.keep-editing"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:184
 msgid "library.edit-card.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:72
-msgid "library.edit-card.pronunciation"
+#: src/features/cardEdit/EditCardDialog.tsx:237
+msgid "library.edit-card.part-of-speech"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:108
+#: src/features/cardEdit/EditCardDialog.tsx:284
 msgid "library.edit-card.save"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:30
+#: src/features/cardEdit/EditCardDialog.tsx:99
 msgid "library.edit-card.save-failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:108
+#: src/features/cardEdit/EditCardDialog.tsx:284
 msgid "library.edit-card.saving"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:58
+#: src/features/cardEdit/EditCardDialog.tsx:187
 msgid "library.edit-card.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:81
+#: src/features/cardEdit/EditCardDialog.tsx:32
 msgid "library.edit-card.translation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:68
+#: src/features/cardEdit/EditCardDialog.tsx:166
+#: src/features/cardEdit/EditCardDialog.tsx:214
+msgid "library.edit-card.unsaved-badge"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:233
 msgid "library.edit-card.word"
 msgstr ""
 
@@ -457,687 +1263,931 @@ msgid "library.empty.word-placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:245
+#: src/features/library/WordExtractorModal.tsx:220
+msgid "library.extract.already-owned"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:285
 msgid "library.extract.create-selected"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:124
+#: src/features/library/WordExtractorModal.tsx:158
 msgid "library.extract.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:195
+#: src/features/library/WordExtractorModal.tsx:232
 msgid "library.extract.deselect-all"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:29
+#: src/features/library/WordExtractorModal.tsx:40
 msgid "library.extract.error.account-daily-spend"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:30
+#: src/features/library/WordExtractorModal.tsx:41
 msgid "library.extract.error.ai-card-quota"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:31
+#: src/features/library/WordExtractorModal.tsx:42
 msgid "library.extract.error.ai-daily-allowance"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:36
+#: src/features/library/WordExtractorModal.tsx:47
 msgid "library.extract.error.default"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:32
+#: src/features/library/WordExtractorModal.tsx:43
 msgid "library.extract.error.operation-in-flight"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:33
+#: src/features/library/WordExtractorModal.tsx:44
 msgid "library.extract.error.quota"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:28
+#: src/features/library/WordExtractorModal.tsx:39
 msgid "library.extract.error.service-daily-cap"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:117
+#: src/features/library/WordExtractorModal.tsx:151
 msgid "library.extract.eyebrow"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:184
+#: src/features/library/WordExtractorModal.tsx:218
 msgid "library.extract.found"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:141
+#: src/features/library/WordExtractorModal.tsx:269
+msgid "library.extract.in-library"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:175
 msgid "library.extract.input-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:148
+#: src/features/library/WordExtractorModal.tsx:182
 msgid "library.extract.input-placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:169
+#: src/features/library/WordExtractorModal.tsx:203
 msgid "library.extract.loading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:196
+#: src/features/library/WordExtractorModal.tsx:233
 msgid "library.extract.select-all"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:174
+#: src/features/library/WordExtractorModal.tsx:208
 msgid "library.extract.submit"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:121
+#: src/features/library/WordExtractorModal.tsx:155
 msgid "library.extract.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:743
+#: src/features/library/LibraryScreen.tsx:336
+msgid "library.filters.all"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:775
 msgid "library.filters.all-statuses"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:722
+#: src/features/library/LibraryTools.tsx:754
 msgid "library.filters.all-word-types"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:772
+#: src/features/library/LibraryTools.tsx:804
 msgid "library.filters.clear-date"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:762
+#: src/features/library/LibraryTools.tsx:794
 msgid "library.filters.cloud-date-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:756
+#: src/features/library/LibraryTools.tsx:788
 msgid "library.filters.date-created"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:779
+#: src/features/library/LibraryTools.tsx:811
 msgid "library.filters.date-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:744
+#: src/features/library/LibraryTools.tsx:776
 msgid "library.filters.due"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:746
+#: src/features/library/LibraryCardGrid.tsx:287
+#: src/features/library/LibraryScreen.tsx:337
+msgid "library.filters.due-short"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryScreen.tsx:339
+#: src/features/library/LibraryTools.tsx:778
 msgid "library.filters.learning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:745
+#: src/features/library/LibraryScreen.tsx:340
+#: src/features/library/LibraryTools.tsx:777
 msgid "library.filters.mastered"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:735
+#: src/features/library/LibraryTools.tsx:767
 msgid "library.filters.memory-status"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:738
+#: src/features/library/LibraryTools.tsx:770
 msgid "library.filters.memory-status-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:697
+#: src/features/library/LibraryTools.tsx:729
 msgid "library.filters.more"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:747
+#: src/features/library/LibraryTools.tsx:779
 msgid "library.filters.needs-practice"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:748
+#: src/features/library/LibraryTools.tsx:780
 msgid "library.filters.not-reviewed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:714
+#: src/features/library/LibraryTools.tsx:746
 msgid "library.filters.part-of-speech"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:717
+#: src/features/library/LibraryTools.tsx:749
 msgid "library.filters.part-of-speech-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:632
+#: src/features/library/LibraryTools.tsx:664
 msgid "library.filters.reset"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:641
+#: src/features/library/LibraryTools.tsx:673
 msgid "library.filters.search-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:653
+#: src/features/library/LibraryTools.tsx:685
 msgid "library.filters.search-placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:683
+#: src/features/library/LibraryScreen.tsx:341
+#: src/features/library/LibraryTools.tsx:715
 msgid "library.filters.starred"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:680
+#: src/features/library/LibraryTools.tsx:712
 msgid "library.filters.starred-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:622
+#: src/features/library/LibraryTools.tsx:654
 msgid "library.filters.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:277
+#: src/features/library/LibraryCardGrid.tsx:268
 msgid "library.grid.clear-filters"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:274
+#: src/features/library/LibraryCardGrid.tsx:267
 msgid "library.grid.cloud-unavailable-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:271
+#: src/features/library/LibraryCardGrid.tsx:266
 msgid "library.grid.cloud-unavailable-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:381
-msgid "library.grid.crafting-card"
+#: src/features/library/LibraryCardGrid.tsx:246
+msgid "library.grid.collection-caption"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:277
+#: src/features/library/LibraryCardGrid.tsx:268
 msgid "library.grid.create-first"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:227
-msgid "library.grid.description"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:274
+#: src/features/library/LibraryCardGrid.tsx:267
 msgid "library.grid.empty-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:271
+#: src/features/library/LibraryCardGrid.tsx:266
 msgid "library.grid.empty-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:259
+#: src/features/library/LibraryCardGrid.tsx:262
 msgid "library.grid.generating"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:137
+#: src/features/library/LibraryCardGrid.tsx:142
 msgid "library.grid.import-progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:281
-msgid "library.grid.learning-flow"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:139
+#: src/features/library/LibraryCardGrid.tsx:144
 msgid "library.grid.loading-page"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:343
+#: src/features/library/LibraryCardGrid.tsx:309
 msgid "library.grid.next-page"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:274
+#: src/features/library/LibraryCardGrid.tsx:267
 msgid "library.grid.no-match-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:271
+#: src/features/library/LibraryCardGrid.tsx:266
 msgid "library.grid.no-match-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:199
-msgid "library.grid.open-filters"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:337
+#: src/features/library/LibraryCardGrid.tsx:309
 msgid "library.grid.page"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:253
+#: src/features/library/LibraryCardGrid.tsx:308
 msgid "library.grid.page-loaded"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:248
-msgid "library.grid.preparing"
+#: src/features/library/LibraryCardGrid.tsx:309
+msgid "library.grid.pages-nav"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:332
+#: src/features/library/LibraryCardGrid.tsx:309
 msgid "library.grid.previous-page"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:184
+#: src/features/library/LibraryOverview.tsx:18
 msgid "library.grid.search-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:192
-msgid "library.grid.search-placeholder"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:239
+#: src/features/library/LibraryCardGrid.tsx:247
 msgid "library.grid.share"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:236
-msgid "library.grid.share-deck"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:237
-msgid "library.grid.sign-in-to-share"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:283
-msgid "library.grid.step.capture.copy"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:283
-msgid "library.grid.step.capture.title"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:284
-msgid "library.grid.step.context.copy"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:284
-msgid "library.grid.step.context.title"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:285
-msgid "library.grid.step.review.copy"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:285
-msgid "library.grid.step.review.title"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:248
+#: src/features/library/LibraryCardGrid.tsx:247
 msgid "library.grid.study-now"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:225
+#: src/features/library/LibraryCardGrid.tsx:246
 msgid "library.grid.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:482
-#: src/features/library/LibraryTools.tsx:483
+#: src/features/library/LibraryTools.tsx:513
+#: src/features/library/LibraryTools.tsx:514
 msgid "library.import.action"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:114
+msgid "library.import.background"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/features/library/EmptyLibraryPanel.tsx:231
-#: src/features/library/LibraryTools.tsx:489
+#: src/features/library/LibraryTools.tsx:520
 msgid "library.import.choose-file"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:141
+#: src/features/importExport/SpreadsheetImportDialog.tsx:159
+#: src/features/library/LibraryTools.tsx:146
 msgid "library.import.complete"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:147
+#: src/features/importExport/SpreadsheetImportDialog.tsx:173
+msgid "library.import.completed-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:152
 msgid "library.import.completed-guidance"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:149
+msgid "library.import.created"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:149
+msgid "library.import.created-hint"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/features/library/EmptyLibraryPanel.tsx:72
-#: src/features/library/LibraryTools.tsx:120
+#: src/features/library/LibraryTools.tsx:125
 msgid "library.import.current-word"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:141
+#: src/features/importExport/SpreadsheetImportDialog.tsx:90
+msgid "library.import.dialog-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:129
+msgid "library.import.download-errors"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:146
 msgid "library.import.failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:157
+#: src/features/importExport/SpreadsheetImportDialog.tsx:186
+msgid "library.import.failed-empty"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:152
+msgid "library.import.failed-hint"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:190
+msgid "library.import.failed-items"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:184
+msgid "library.import.failed-parse"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:182
+msgid "library.import.failed-read"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:188
+msgid "library.import.failed-save"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:180
+msgid "library.import.failed-size"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:162
 msgid "library.import.failure-empty"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:159
+#: src/features/library/LibraryTools.tsx:164
 msgid "library.import.failure-items"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:155
+#: src/features/library/LibraryTools.tsx:160
 msgid "library.import.failure-parse"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:153
+#: src/features/library/LibraryTools.tsx:158
 msgid "library.import.failure-read"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:161
+#: src/features/library/LibraryTools.tsx:166
 msgid "library.import.failure-save"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:151
+#: src/features/library/LibraryTools.tsx:156
 msgid "library.import.failure-size"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:482
-#: src/features/library/LibraryTools.tsx:483
+#: src/features/library/LibraryTools.tsx:513
+#: src/features/library/LibraryTools.tsx:514
 msgid "library.import.in-progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:141
+#: src/features/importExport/SpreadsheetImportDialog.tsx:89
+msgid "library.import.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:199
+msgid "library.import.mapping-required"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:166
+msgid "library.import.mapping-service"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:197
+msgid "library.import.mapping-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:159
+#: src/features/library/LibraryTools.tsx:146
 msgid "library.import.partial"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:149
+#: src/features/importExport/SpreadsheetImportDialog.tsx:176
+msgid "library.import.partial-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:154
 msgid "library.import.partial-guidance"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:109
+msgid "library.import.preparing"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:107
 #: src/features/library/EmptyLibraryPanel.tsx:72
-#: src/features/library/LibraryTools.tsx:119
+#: src/features/library/LibraryTools.tsx:124
 msgid "library.import.progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:143
+#: src/features/importExport/SpreadsheetImportDialog.tsx:113
+msgid "library.import.progress-fallback"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:165
+msgid "library.import.retry-guidance"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:150
+msgid "library.import.reused"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:150
+msgid "library.import.reused-hint"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:93
+msgid "library.import.rows-count"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:151
+msgid "library.import.skipped"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:151
+msgid "library.import.skipped-hint"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:159
+msgid "library.import.status-failed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:148
 msgid "library.import.summary"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:163
+#: src/features/importExport/SpreadsheetImportDialog.tsx:152
+msgid "library.import.summary-failed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:119
+msgid "library.import.waiting"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:92
+msgid "library.import.waiting-file"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:421
+msgid "library.insights.category"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:427
+msgid "library.insights.category-partial"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:391
+msgid "library.insights.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:389
+msgid "library.insights.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:431
+msgid "library.insights.difficulty"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:416
+msgid "library.insights.due"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:409
+msgid "library.insights.empty"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:405
+msgid "library.insights.failure"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:387
+msgid "library.insights.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:415
+msgid "library.insights.learning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:400
+msgid "library.insights.loading"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:414
+msgid "library.insights.mastered"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:422
+msgid "library.insights.no-category"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:432
+msgid "library.insights.no-difficulty"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:442
+msgid "library.insights.no-xp"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:453
+msgid "library.insights.open-progress"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:388
+msgid "library.insights.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:413
+msgid "library.insights.total"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:441
+msgid "library.insights.xp"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:443
+msgid "library.insights.xp-chart"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:444
+msgid "library.insights.xp-point"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:441
+msgid "library.insights.xp-total"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:312
+#: src/features/library/LibraryScreen.tsx:221
 msgid "library.loading.cards"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:199
+#: src/features/library/LibraryScreen.tsx:262
 msgid "library.loading.tools"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryOverview.tsx:49
+#: src/features/library/LibraryOverview.tsx:16
+msgid "library.overview.across-decks"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:19
 msgid "library.overview.create-card"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryOverview.tsx:42
-msgid "library.overview.description"
+#: src/features/library/LibraryOverview.tsx:16
+msgid "library.overview.deck-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryOverview.tsx:55
-msgid "library.overview.due-today"
+#: src/features/library/LibraryOverview.tsx:16
+msgid "library.overview.due"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryOverview.tsx:38
+#: src/features/library/LibraryOverview.tsx:16
+#: src/features/library/LibraryOverview.tsx:16
 msgid "library.overview.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryOverview.tsx:57
-msgid "library.overview.level"
+#: src/features/library/LibraryOverview.tsx:17
+msgid "library.overview.lumi"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryOverview.tsx:54
-msgid "library.overview.library"
+#: src/features/library/LibraryOverview.tsx:17
+msgid "library.overview.lumi-signature"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryOverview.tsx:56
-msgid "library.overview.mastered"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryOverview.tsx:46
-msgid "library.overview.preparing"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryOverview.tsx:46
-msgid "library.overview.review-due"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryOverview.tsx:46
-msgid "library.overview.start-review"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryOverview.tsx:57
-msgid "library.overview.streak"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryOverview.tsx:40
-msgid "library.overview.title"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:93
-msgid "library.part-of-speech.adjective"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:94
-msgid "library.part-of-speech.adverb"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:103
-msgid "library.part-of-speech.article"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:101
-msgid "library.part-of-speech.auxiliary-verb"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:97
-msgid "library.part-of-speech.conjunction"
+#: src/features/library/LibraryOverview.tsx:16
+msgid "library.overview.words"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryTools.tsx:98
-msgid "library.part-of-speech.determiner"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:105
-msgid "library.part-of-speech.idiom"
+msgid "library.part-of-speech.adjective"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryTools.tsx:99
-msgid "library.part-of-speech.interjection"
+msgid "library.part-of-speech.adverb"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:102
-msgid "library.part-of-speech.modal-verb"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:91
-msgid "library.part-of-speech.noun"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:104
-msgid "library.part-of-speech.numeral"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:100
-msgid "library.part-of-speech.phrasal-verb"
+#: src/features/library/LibraryTools.tsx:108
+msgid "library.part-of-speech.article"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryTools.tsx:106
-msgid "library.part-of-speech.phrase"
+msgid "library.part-of-speech.auxiliary-verb"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:102
+msgid "library.part-of-speech.conjunction"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:103
+msgid "library.part-of-speech.determiner"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:110
+msgid "library.part-of-speech.idiom"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:104
+msgid "library.part-of-speech.interjection"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:107
+msgid "library.part-of-speech.modal-verb"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryTools.tsx:96
+msgid "library.part-of-speech.noun"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:109
+msgid "library.part-of-speech.numeral"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:105
+msgid "library.part-of-speech.phrasal-verb"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:111
+msgid "library.part-of-speech.phrase"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:101
 msgid "library.part-of-speech.preposition"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:95
+#: src/features/library/LibraryTools.tsx:100
 msgid "library.part-of-speech.pronoun"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:92
+#: src/features/library/LibraryTools.tsx:97
 msgid "library.part-of-speech.verb"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:575
+#: src/features/library/LibraryCardGrid.tsx:250
+msgid "library.sort.alphabetical"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:250
+msgid "library.sort.due"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:250
+msgid "library.sort.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:250
+msgid "library.sort.recent"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:606
 msgid "library.tools.dialogue"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:584
+#: src/features/library/LibraryScreen.tsx:260
+msgid "library.tools.more"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:615
 msgid "library.tools.scan"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:97
-msgid "library.upgrade.cloud-access-description"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:71
+#: src/features/library/LibraryCardGrid.tsx:81
 msgid "library.upgrade.help-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:70
+#: src/features/library/LibraryCardGrid.tsx:80
 msgid "library.upgrade.paused-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:82
+#: src/features/library/LibraryCardGrid.tsx:90
 msgid "library.upgrade.pending-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:81
+#: src/features/library/LibraryCardGrid.tsx:89
 msgid "library.upgrade.pending-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:76
+#: src/features/library/LibraryCardGrid.tsx:84
 msgid "library.upgrade.retry"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:94
+#: src/features/library/LibraryCardGrid.tsx:76
 msgid "library.upgrade.sign-in-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:85
+#: src/features/library/LibraryCardGrid.tsx:91
 msgid "library.upgrade.start"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:99
+#: src/features/library/LibraryCardGrid.tsx:77
 msgid "library.upgrade.temporary-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:91
+#: src/features/library/LibraryCardGrid.tsx:74
 msgid "library.upgrade.trusted-migration-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:75
 #: src/features/library/LibraryCardGrid.tsx:84
+#: src/features/library/LibraryCardGrid.tsx:91
 msgid "library.upgrade.upgrading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:71
+#: src/features/library/LibraryScreen.tsx:344
+msgid "library.view.grid"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryScreen.tsx:343
+msgid "library.view.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryScreen.tsx:345
+msgid "library.view.list"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryViewModel.ts:111
 msgid "shell.library-count.cached-cloud"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:74
+#: src/features/library/libraryViewModel.ts:114
 msgid "shell.library-count.cards"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:72
+#: src/features/library/libraryViewModel.ts:112
 msgid "shell.library-count.cloud-paused"
 msgstr ""

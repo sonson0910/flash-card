@@ -7,6 +7,46 @@ import type { CardData } from '../../types/card';
 import type { LibraryDifficulty } from '../catalog/libraryCatalogQuery';
 import { formatCardDate, groupCardsByDate } from './libraryPresentation';
 
+export type LibraryCardTier = 'new' | 'learning' | 'mastered';
+export type LibrarySortOrder = 'recent' | 'alphabetical' | 'due';
+
+/**
+ * Canvas calls the three learner states Bud, Bloom, and Star. The card model
+ * stores the compatible review fields instead, so keep this mapping in one
+ * place for both the grid and its filter controls.
+ */
+export function getLibraryCardTier(card: CardData): LibraryCardTier {
+  const hasReview = (card.reviews ?? 0) > 0
+    || Boolean(card.reviewHistory?.length)
+    || (card.fsrs?.reps ?? 0) > 0
+    || Boolean(card.nextReviewDate);
+  if (!hasReview) return 'new';
+  if (card.difficulty === 'easy' || (card.interval ?? card.fsrs?.scheduledDays ?? 0) >= 21) return 'mastered';
+  return 'learning';
+}
+
+export function isLibraryCardDue(card: CardData, now = Date.now()): boolean {
+  const due = card.nextReviewDate ?? card.fsrs?.due;
+  if (!due) return false;
+  const timestamp = new Date(due).getTime();
+  return Number.isFinite(timestamp) && timestamp <= now;
+}
+
+export function sortLibraryCards(cards: readonly CardData[], order: LibrarySortOrder): CardData[] {
+  const sorted = [...cards];
+  if (order === 'alphabetical') {
+    return sorted.sort((left, right) => left.word.localeCompare(right.word, undefined, { sensitivity: 'base' }));
+  }
+  if (order === 'due') {
+    return sorted.sort((left, right) => {
+      const leftDue = new Date(left.nextReviewDate ?? left.fsrs?.due ?? '9999-12-31').getTime();
+      const rightDue = new Date(right.nextReviewDate ?? right.fsrs?.due ?? '9999-12-31').getTime();
+      return leftDue - rightDue || left.word.localeCompare(right.word, undefined, { sensitivity: 'base' });
+    });
+  }
+  return sortCardsByActivity(sorted);
+}
+
 export interface LibraryDifficultySummary {
   total: number;
   reviewed: number;

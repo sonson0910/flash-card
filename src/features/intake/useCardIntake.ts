@@ -8,6 +8,7 @@ import {
   type CardIntakeDraftPort,
   type CardIntakeSnapshot,
 } from './cardIntakeController';
+import type { CardCreatorActions } from './card-creator-model';
 
 type IntakeController = ReturnType<typeof createCardIntakeController>;
 
@@ -38,6 +39,7 @@ export interface CardIntakeActions {
   invalidateCard(cardId: string): void;
   clearError(): void;
   clearSharedAdoptionError(): void;
+  cardCreator: CardCreatorActions;
 }
 
 export interface CardIntakeBindingOwner {
@@ -99,6 +101,16 @@ export function createCardIntakeBindingOwner(
     invalidateCard: cardId => controller.invalidateCard(cardId),
     clearError: () => controller.clearError(),
     clearSharedAdoptionError: () => controller.clearSharedAdoptionError(),
+    cardCreator: {
+      open: opener => controller.cardCreator.open(opener),
+      updateDraft: patch => controller.cardCreator.updateDraft(patch),
+      generatePreview: () => controller.cardCreator.generatePreview(),
+      updatePreview: patch => controller.cardCreator.updatePreview(patch),
+      regenerate: fields => controller.cardCreator.regenerate(fields),
+      createManualDraft: fields => controller.cardCreator.createManualDraft(fields),
+      save: () => controller.cardCreator.save(),
+      cancel: () => controller.cardCreator.cancel(),
+    },
   };
 
   return {

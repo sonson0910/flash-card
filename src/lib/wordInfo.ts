@@ -51,7 +51,7 @@ const optionalWordFamily = (value: unknown) => {
   const adv = typeof obj.adv === 'string' ? obj.adv.trim().slice(0, 100) : undefined;
   if (!noun && !verb && !adj && !adv) return undefined;
   return Object.fromEntries(
-    Object.entries({ noun, verb, adj, adv }).filter(([, item]) => item !== undefined),
+    Object.entries({ noun, verb, adj, adv }).filter(([, item]) => Boolean(item)),
   ) as WordInfo['wordFamily'];
 };
 

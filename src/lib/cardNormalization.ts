@@ -1,5 +1,12 @@
-import type { CardData } from '../types/card';
+import {
+  LEGACY_CARD_LANGUAGE,
+  LEGACY_CARD_TRANSLATION_LANGUAGE,
+  type CardData,
+  type CardLanguageFields,
+  type CardLanguagePair,
+} from '../types/card';
 import { normalizePartOfSpeech, normalizePrefixSearch } from './cardQuery';
+import { normalizeCardLanguage } from './cardIdentity';
 import { isSupportedAudioUrl, isSupportedImageUrl } from './mediaUrlPolicy';
 
 const asText = (value: unknown, fallback = '') =>
@@ -7,6 +14,50 @@ const asText = (value: unknown, fallback = '') =>
 
 const boundedText = (value: unknown, maximum: number, fallback = '') =>
   asText(value, fallback).trim().slice(0, maximum);
+
+/** Explicit non-string language metadata must remain distinguishable from omission. */
+export const INVALID_CARD_LANGUAGE_MARKER = '__invalid__';
+
+const normalizeStoredLanguage = (value: unknown): string | undefined => {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string') return INVALID_CARD_LANGUAGE_MARKER;
+  return normalizeCardLanguage(value) || boundedText(value, 64) || INVALID_CARD_LANGUAGE_MARKER;
+};
+
+export const isSupportedCardTranslationLanguage = (value: unknown): boolean => {
+  const normalized = normalizeCardLanguage(value);
+  return normalized === 'en' || normalized === 'vi';
+};
+
+export const isValidCardLanguageFields = (value: CardLanguageFields): boolean => (
+  (value.language === undefined || Boolean(normalizeCardLanguage(value.language)))
+  && (value.translationLanguage === undefined || isSupportedCardTranslationLanguage(value.translationLanguage))
+);
+
+/** Resolve legacy omissions for reads without adding defaults to the stored card. */
+export function effectiveCardLanguagePair(value: CardLanguageFields): CardLanguagePair {
+  const language = value.language === undefined
+    ? LEGACY_CARD_LANGUAGE
+    : normalizeCardLanguage(value.language);
+  const translationLanguage = value.translationLanguage === undefined
+    ? LEGACY_CARD_TRANSLATION_LANGUAGE
+    : isSupportedCardTranslationLanguage(value.translationLanguage)
+      ? normalizeCardLanguage(value.translationLanguage)
+      : '';
+  if (!language || !translationLanguage) throw new TypeError('Card language fields are invalid.');
+  return {
+    language,
+    translationLanguage,
+  };
+}
+
+export function effectiveCardLanguage(value: CardLanguageFields): string {
+  return effectiveCardLanguagePair(value).language;
+}
+
+export function effectiveCardTranslationLanguage(value: CardLanguageFields): string {
+  return effectiveCardLanguagePair(value).translationLanguage;
+}
 
 const validIsoDate = (value: unknown): string | undefined => {
   if (
@@ -118,6 +169,8 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
   const sortTouchedAt = validIsoDate(raw.sortTouchedAt);
   const nextReviewDate = validIsoDate(raw.nextReviewDate);
   const customDeck = typeof raw.customDeck === 'string' ? boundedText(raw.customDeck, 128) || null : null;
+  const language = normalizeStoredLanguage(raw.language);
+  const translationLanguage = normalizeStoredLanguage(raw.translationLanguage);
 
   return {
     id,
@@ -125,7 +178,8 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
     // Canonical identity is optional for legacy cards but must survive every
     // read/normalization path when a V3-compatible card supplies it.
     ...(boundedText(raw.lexemeId, 128) ? { lexemeId: boundedText(raw.lexemeId, 128) } : {}),
-    ...(boundedText(raw.language, 64) ? { language: boundedText(raw.language, 64) } : {}),
+    ...(language !== undefined ? { language } : {}),
+    ...(translationLanguage !== undefined ? { translationLanguage } : {}),
     ...(boundedText(raw.senseKey, 128) ? { senseKey: boundedText(raw.senseKey, 128) } : {}),
     ...(boundedText(raw.normalizedLemma, 256) ? { normalizedLemma: boundedText(raw.normalizedLemma, 256) } : {}),
     word,

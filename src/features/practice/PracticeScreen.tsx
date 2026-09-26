@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ReactNode } from 'react';
 import { Trans } from '@lingui/react';
 import type { PracticeWorkspace } from './usePracticeWorkspace';
+import './practice-board.css';
 
 const QuizView = lazy(() => import('./QuizView').then(module => ({ default: module.QuizView })));
 const SpellingView = lazy(() => import('./SpellingView').then(module => ({ default: module.SpellingView })));
@@ -42,6 +43,7 @@ export function PracticeScreen({
           reviewedCardId={study.reviewedCardId}
           reviewStatus={study.reviewStatus}
           reviewError={study.reviewError}
+          paused={study.isPaused}
           customDecks={customDecks}
           onClose={commands.close}
           onRecallMode={commands.setRecallMode}
@@ -51,6 +53,7 @@ export function PracticeScreen({
           onUpdateCard={learning.updateCard}
           onRate={commands.submitStudyRating}
           onIndex={commands.setStudyIndex}
+          onEditorOpenChange={commands.setStudyEditorOpen}
         />
       </Suspense>
     );

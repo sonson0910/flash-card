@@ -109,6 +109,42 @@ describe('production AI protected-service capability', () => {
       '123e4567-e89b-42d3-a456-426614174000', '123e4567-e89b-42d3-a456-426614174000',
       '123e4567-e89b-42d3-a456-426614174000',
     ]);
+    expect(runtime.callable.mock.calls[0]?.[0].input).toBe('apple');
+  });
+
+  it('keeps legacy string requests bare and adds a POS hint only to structured input', async () => {
+    runtime.callable.mockResolvedValue({ data: { result: {
+      translation: 'dẫn đầu', explanation: 'To guide.', explanationTranslation: 'Dẫn dắt.', phonetic: '/liːd/',
+      emoji: '🎭', category: 'General', partOfSpeech: 'verb', cefrLevel: 'B1',
+      exampleSentence: 'She leads the team.', exampleTranslation: 'Cô ấy dẫn dắt đội.',
+      collocations: [], synonyms: [], antonyms: [], register: 'neutral', commonMistake: '', imageSearchQuery: 'lead actor',
+    } } });
+
+    await generateWordInfo('lead', { operationId: '123e4567-e89b-42d3-a456-426614174000' });
+    await generateWordInfo('lead', {
+      operationId: '123e4567-e89b-42d3-a456-426614174001',
+      partOfSpeech: 'verb',
+    });
+    await generateWordInfo('lead', {
+      operationId: '123e4567-e89b-42d3-a456-426614174002',
+      partOfSpeech: 'noun',
+    });
+
+    expect(runtime.callable.mock.calls[0]?.[0].input).toBe('lead');
+    expect(runtime.callable.mock.calls[1]?.[0].input).toEqual({
+      term: 'lead',
+      language: { source: 'en', target: 'vi' },
+      partOfSpeech: 'verb',
+    });
+    expect(runtime.callable.mock.calls[2]?.[0].input).toEqual({
+      term: 'lead',
+      language: { source: 'en', target: 'vi' },
+      partOfSpeech: 'noun',
+    });
+    expect(runtime.callable.mock.calls[0]?.[0].input)
+      .not.toEqual(runtime.callable.mock.calls[1]?.[0].input);
+    expect(runtime.callable.mock.calls[1]?.[0].input)
+      .not.toEqual(runtime.callable.mock.calls[2]?.[0].input);
   });
 
   it('sends bounded structured word context to the protected callable', async () => {

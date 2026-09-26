@@ -14,11 +14,161 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:58
+msgid "cardReport.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:61
+msgid "cardReport.dialog.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:57
+msgid "cardReport.error.authentication"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:61
+msgid "cardReport.error.configuration"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:65
+msgid "cardReport.error.fallback"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:60
+msgid "cardReport.error.network"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:56
+msgid "cardReport.error.not-found"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:58
+msgid "cardReport.error.permission"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:59
+msgid "cardReport.error.quota"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:50
+msgid "cardReport.error.submit-failed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:62
+msgid "cardReport.error.unknown"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:55
+msgid "cardReport.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:84
+msgid "cardReport.note.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:84
+msgid "cardReport.note.optional"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:92
+msgid "cardReport.note.placeholder"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:99
+msgid "cardReport.privacy-hint"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:73
+msgid "cardReport.reason.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:14
+msgid "cardReport.reason.offensive"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:15
+msgid "cardReport.reason.other"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:11
+msgid "cardReport.reason.wrong-example"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:13
+msgid "cardReport.reason.wrong-image"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:10
+msgid "cardReport.reason.wrong-meaning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:12
+msgid "cardReport.reason.wrong-pronunciation"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:103
+msgid "cardReport.submit"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:103
+msgid "cardReport.submit.busy"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:68
+msgid "cardReport.submitted"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:56
+msgid "cardReport.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:29
+msgid "cardReport.validation.card-id"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:35
+msgid "cardReport.validation.note-length"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:32
+msgid "cardReport.validation.reason"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:417
 #: src/components/AppOverlays.tsx:434
 #: src/components/AppOverlays.tsx:560
-#: src/components/flashcard/CardBack.tsx:89
-#: src/components/flashcard/CardBack.tsx:310
+#: src/components/flashcard/CardBack.tsx:106
+#: src/components/flashcard/CardBack.tsx:365
 msgid "flashcard.ai-disclosure"
 msgstr ""
 
@@ -83,262 +233,263 @@ msgid "flashcard.ai.work-examples"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:239
+#: src/components/flashcard/CardBack.tsx:257
 msgid "flashcard.ask-ai-tutor"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:239
+#: src/components/flashcard/CardBack.tsx:257
 msgid "flashcard.ask-ai-tutor-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:152
-#: src/components/flashcard/CardFront.tsx:165
-#: src/components/flashcard/CardFront.tsx:166
+#: src/components/flashcard/CardBack.tsx:170
+#: src/components/flashcard/CardFront.tsx:179
+#: src/components/flashcard/CardFront.tsx:180
 msgid "flashcard.audio.check-pronunciation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:252
+#: src/components/Flashcard.tsx:269
 msgid "flashcard.audio.failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:313
-#: src/components/flashcard/CardFront.tsx:314
+#: src/components/flashcard/CardFront.tsx:342
+#: src/components/flashcard/CardFront.tsx:343
 msgid "flashcard.audio.listen-pronunciation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:174
+#: src/components/flashcard/CardFront.tsx:188
 msgid "flashcard.audio.listening"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:127
-#: src/components/flashcard/CardBack.tsx:128
-#: src/components/flashcard/CardFront.tsx:140
-#: src/components/flashcard/CardFront.tsx:141
+#: src/components/flashcard/CardBack.tsx:145
+#: src/components/flashcard/CardBack.tsx:146
+#: src/components/flashcard/CardBack.tsx:351
+#: src/components/flashcard/CardFront.tsx:154
+#: src/components/flashcard/CardFront.tsx:155
 msgid "flashcard.audio.play-pronunciation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:153
+#: src/components/flashcard/CardBack.tsx:171
 msgid "flashcard.audio.practice-pronunciation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:113
-#: src/components/flashcard/CardFront.tsx:127
+#: src/components/flashcard/CardBack.tsx:130
+#: src/components/flashcard/CardFront.tsx:140
 msgid "flashcard.audio.toggle-speed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:112
+#: src/components/flashcard/CardBack.tsx:129
 msgid "flashcard.audio.toggle-speed-back"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:126
+#: src/components/flashcard/CardFront.tsx:139
 msgid "flashcard.audio.toggle-speed-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:237
+#: src/components/Flashcard.tsx:254
 msgid "flashcard.audio.unsupported"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:265
+#: src/components/flashcard/CardBack.tsx:283
 msgid "flashcard.back-to-english"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:411
+#: src/components/Flashcard.tsx:432
 msgid "flashcard.card.meaning-revealed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:405
+#: src/components/Flashcard.tsx:422
 msgid "flashcard.card.showing-meaning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:405
+#: src/components/Flashcard.tsx:422
 msgid "flashcard.card.showing-word"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:405
+#: src/components/Flashcard.tsx:422
 msgid "flashcard.card.status"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:411
+#: src/components/Flashcard.tsx:432
 msgid "flashcard.card.word-revealed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:88
+#: src/components/flashcard/CardFront.tsx:101
 msgid "flashcard.category"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:469
-#: src/components/flashcard/CardFront.tsx:300
+#: src/components/Flashcard.tsx:490
+#: src/components/flashcard/CardFront.tsx:328
 msgid "flashcard.cefr-level"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:237
-#: src/components/flashcard/CardFront.tsx:241
+#: src/components/flashcard/CardFront.tsx:251
+#: src/components/flashcard/CardFront.tsx:255
 msgid "flashcard.deck.choose"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:241
+#: src/components/flashcard/CardFront.tsx:255
 msgid "flashcard.deck.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:241
+#: src/components/flashcard/CardFront.tsx:255
 msgid "flashcard.deck.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:243
+#: src/components/flashcard/CardFront.tsx:257
 msgid "flashcard.deck.unassigned"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:180
+#: src/components/flashcard/CardFront.tsx:194
 msgid "flashcard.definition.hidden"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:215
+#: src/components/flashcard/CardFront.tsx:229
 msgid "flashcard.definition.listen"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:231
+#: src/components/flashcard/CardFront.tsx:245
 msgid "flashcard.definition.practice"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:429
+#: src/components/Flashcard.tsx:450
 msgid "flashcard.delete.cancel"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:433
-#: src/components/Flashcard.tsx:656
-#: src/components/Flashcard.tsx:657
+#: src/components/Flashcard.tsx:454
+#: src/components/Flashcard.tsx:677
+#: src/components/Flashcard.tsx:678
 msgid "flashcard.delete.confirm"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:427
+#: src/components/Flashcard.tsx:448
 msgid "flashcard.delete.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:426
+#: src/components/Flashcard.tsx:447
 msgid "flashcard.delete.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:590
+#: src/components/Flashcard.tsx:611
 msgid "flashcard.details.antonyms"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:498
+#: src/components/Flashcard.tsx:519
 msgid "flashcard.details.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:539
+#: src/components/Flashcard.tsx:560
 msgid "flashcard.details.collocations"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:617
+#: src/components/Flashcard.tsx:638
 msgid "flashcard.details.common-mistake"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:515
+#: src/components/Flashcard.tsx:536
 msgid "flashcard.details.example"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:567
+#: src/components/Flashcard.tsx:588
 msgid "flashcard.details.synonyms"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:456
+#: src/components/Flashcard.tsx:477
 msgid "flashcard.details.vocabulary"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:193
+#: src/components/flashcard/CardBack.tsx:211
 msgid "flashcard.dismiss-translation-error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:666
-#: src/components/Flashcard.tsx:666
-#: src/components/flashcard/CardBack.tsx:95
-#: src/components/flashcard/CardBack.tsx:316
+#: src/components/Flashcard.tsx:687
+#: src/components/Flashcard.tsx:687
+#: src/components/flashcard/CardBack.tsx:112
+#: src/components/flashcard/CardBack.tsx:371
 msgid "flashcard.edit"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:168
+#: src/components/flashcard/CardBack.tsx:186
 msgid "flashcard.explanation.subtitle"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:167
+#: src/components/flashcard/CardBack.tsx:185
 msgid "flashcard.explanation.vietnamese"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:210
+#: src/components/flashcard/CardBack.tsx:228
 msgid "flashcard.explore-more"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:211
+#: src/components/flashcard/CardBack.tsx:229
 msgid "flashcard.explore-more-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:716
+#: src/components/Flashcard.tsx:738
 msgid "flashcard.hints.hide"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:717
+#: src/components/Flashcard.tsx:739
 msgid "flashcard.hints.hide-content"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:717
+#: src/components/Flashcard.tsx:739
 msgid "flashcard.hints.reveal"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:716
+#: src/components/Flashcard.tsx:738
 msgid "flashcard.hints.show"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/ActiveRecallPrompt.tsx:78
-#: src/components/flashcard/CardFront.tsx:69
+#: src/components/flashcard/CardFront.tsx:82
 msgid "flashcard.image.illustration"
 msgstr ""
 
@@ -348,7 +499,7 @@ msgid "flashcard.image.loading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:70
+#: src/components/flashcard/CardFront.tsx:83
 msgid "flashcard.image.none"
 msgstr ""
 
@@ -358,45 +509,45 @@ msgid "flashcard.image.none-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:72
+#: src/components/flashcard/CardFront.tsx:85
 #: src/components/flashcard/CardImage.tsx:58
 msgid "flashcard.image.unavailable"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:70
-#: src/components/flashcard/CardBack.tsx:288
+#: src/components/flashcard/CardBack.tsx:87
+#: src/components/flashcard/CardBack.tsx:325
 msgid "flashcard.language.vietnamese"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:221
+#: src/components/flashcard/CardBack.tsx:239
 msgid "flashcard.learning-details-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:227
+#: src/components/flashcard/CardBack.tsx:245
 msgid "flashcard.lexicon-context"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:227
+#: src/components/flashcard/CardBack.tsx:245
 msgid "flashcard.lexicon-context-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:153
-#: src/components/flashcard/CardFront.tsx:218
+#: src/components/flashcard/CardFront.tsx:167
+#: src/components/flashcard/CardFront.tsx:232
 msgid "flashcard.listen"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:83
+#: src/components/flashcard/CardBack.tsx:100
 msgid "flashcard.meaning.vietnamese"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:202
+#: src/components/flashcard/CardBack.tsx:220
 msgid "flashcard.memory-hook"
 msgstr ""
 
@@ -427,7 +578,7 @@ msgid "flashcard.mnemonic.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:98
+#: src/components/flashcard/CardBack.tsx:115
 msgid "flashcard.original-word"
 msgstr ""
 
@@ -437,7 +588,7 @@ msgid "flashcard.part-of-speech-prefix"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:207
+#: src/components/flashcard/CardFront.tsx:221
 msgid "flashcard.quiz"
 msgstr ""
 
@@ -467,12 +618,12 @@ msgid "flashcard.quiz.select-option"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:204
+#: src/components/flashcard/CardFront.tsx:218
 msgid "flashcard.quiz.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:234
+#: src/components/flashcard/CardFront.tsx:248
 msgid "flashcard.read-aloud"
 msgstr ""
 
@@ -572,91 +723,91 @@ msgid "flashcard.recall.visual-recall"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:93
-#: src/components/flashcard/CardBack.tsx:314
+#: src/components/flashcard/CardBack.tsx:110
+#: src/components/flashcard/CardBack.tsx:369
 msgid "flashcard.report"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:341
+#: src/components/flashcard/CardBack.tsx:396
 msgid "flashcard.return-to-english"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:257
+#: src/components/flashcard/CardBack.tsx:275
 msgid "flashcard.return-to-english-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:276
-#: src/components/flashcard/CardFront.tsx:347
+#: src/components/flashcard/CardFront.tsx:290
+#: src/components/flashcard/CardFront.tsx:378
 msgid "flashcard.reveal-meaning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:263
+#: src/components/flashcard/CardFront.tsx:277
 msgid "flashcard.reveal-meaning-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:326
+#: src/components/Flashcard.tsx:343
 msgid "flashcard.speech.failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:325
+#: src/components/Flashcard.tsx:342
 msgid "flashcard.speech.permission-blocked"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:346
+#: src/components/Flashcard.tsx:363
 msgid "flashcard.speech.start-failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:295
+#: src/components/Flashcard.tsx:312
 msgid "flashcard.speech.unsupported"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:698
-#: src/components/Flashcard.tsx:699
+#: src/components/Flashcard.tsx:720
+#: src/components/Flashcard.tsx:721
 msgid "flashcard.star.add"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:698
-#: src/components/Flashcard.tsx:699
+#: src/components/Flashcard.tsx:720
+#: src/components/Flashcard.tsx:721
 msgid "flashcard.star.remove"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:103
+#: src/components/flashcard/CardFront.tsx:116
 msgid "flashcard.status.due"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:109
+#: src/components/flashcard/CardFront.tsx:122
 msgid "flashcard.status.learning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:109
+#: src/components/flashcard/CardFront.tsx:122
 msgid "flashcard.status.mastered"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:109
+#: src/components/flashcard/CardFront.tsx:122
 msgid "flashcard.status.needs-practice"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:98
+#: src/components/flashcard/CardFront.tsx:111
 msgid "flashcard.status.new"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:77
+#: src/components/flashcard/CardBack.tsx:94
 msgid "flashcard.status.overdue"
 msgstr ""
 
@@ -686,60 +837,60 @@ msgid "flashcard.syllables.primary-stress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:365
+#: src/components/flashcard/CardFront.tsx:396
 msgctxt "crystal.tier"
 msgid "flashcard.tier.crystal.learning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:366
+#: src/components/flashcard/CardFront.tsx:397
 msgctxt "crystal.tier"
 msgid "flashcard.tier.crystal.mastered"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:364
+#: src/components/flashcard/CardFront.tsx:395
 msgctxt "crystal.tier"
 msgid "flashcard.tier.crystal.new"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:368
+#: src/components/flashcard/CardFront.tsx:399
 msgid "flashcard.tier.learning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:369
+#: src/components/flashcard/CardFront.tsx:400
 msgid "flashcard.tier.mastered"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:367
+#: src/components/flashcard/CardFront.tsx:398
 msgid "flashcard.tier.new"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:185
+#: src/components/flashcard/CardBack.tsx:203
 msgid "flashcard.translate-explanation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:183
+#: src/components/flashcard/CardBack.tsx:201
 msgid "flashcard.translating"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:50
+#: src/components/Flashcard.tsx:52
 msgid "flashcard.translation.failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:191
+#: src/components/flashcard/CardBack.tsx:209
 msgid "flashcard.try-again"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:77
+#: src/components/flashcard/CardFront.tsx:90
 msgid "flashcard.visual-hint.hidden"
 msgstr ""
 

@@ -102,7 +102,7 @@ export function QuizView({
       />
     );
   return (
-    <div className="mx-auto flex max-w-6xl flex-col items-center py-4 sm:py-8">
+    <div className="practice-board practice-board--quiz mx-auto flex max-w-6xl flex-col items-center py-4 sm:py-8">
       {showResults ? (
         <GsapEntrance
           animationKey="quiz-results"

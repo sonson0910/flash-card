@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CLOUD_PAGE_SIZE,
   calculateTotalPages,
+  cardMatchesQuery,
   createLocalCardPage,
   createDailyPracticePivot,
   createPage,
@@ -244,5 +245,47 @@ describe('queryStateKey', () => {
     expect(queryStateKey(base)).not.toBe(queryStateKey({ ...base, bookmarkedOnly: true }));
     expect(queryStateKey(base)).not.toBe(queryStateKey({ ...base, wordPrefix: 'hello' }));
     expect(queryStateKey(base)).not.toBe(queryStateKey({ ...base, partOfSpeech: 'verb' }));
+    expect(queryStateKey(base)).not.toBe(queryStateKey({
+      ...base,
+      courseId: 'english-course',
+      targetLanguage: 'en',
+    }));
+    expect(queryStateKey({ ...base, courseId: 'english-course', targetLanguage: 'en' }))
+      .not.toBe(queryStateKey({ ...base, courseId: 'korean-course', targetLanguage: 'ko' }));
   });
+});
+
+describe('course target filtering', () => {
+  const base = {
+    word: 'lead',
+    translation: '',
+    explanation: '',
+    phonetic: '',
+    emoji: '📘',
+    category: 'Other',
+    audioUrl: null,
+    imageUrl: null,
+  } satisfies Partial<CardData>;
+
+  it('uses English for legacy cards and ignores translation language for membership', () => {
+    const english = { ...base, id: 'english-card', translationLanguage: 'vi' } as CardData;
+    const korean = { ...base, id: 'korean-card', language: 'ko', translationLanguage: 'en' } as CardData;
+
+    expect(cardMatchesQuery(english, { ...emptyFilters(), targetLanguage: 'en' })).toBe(true);
+    expect(cardMatchesQuery(korean, { ...emptyFilters(), targetLanguage: 'en' })).toBe(false);
+    expect(cardMatchesQuery(korean, { ...emptyFilters(), targetLanguage: 'ko' })).toBe(true);
+    expect(cardMatchesQuery(english, { ...emptyFilters(), targetLanguage: 'ko' })).toBe(false);
+  });
+
+  function emptyFilters(): CardQueryState {
+    return {
+      category: null,
+      customDeck: null,
+      difficulty: null,
+      partOfSpeech: null,
+      bookmarkedOnly: false,
+      createdDate: null,
+      wordPrefix: '',
+    };
+  }
 });

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { i18n } from '@lingui/core';
 import type { CardData } from '../../types/card';
 import { EMPTY_LIBRARY_STATS } from '../librarySession/cloudLibraryPageController';
+import { createInitialCardCreatorModel } from '../intake/card-creator-model';
 import {
   buildLibraryScreenContract,
   createLibraryScreenContractBuilder,
@@ -53,6 +54,12 @@ const createInput = () => {
     sync: { syncNow: vi.fn(), retry: vi.fn(async () => undefined) },
   };
   const intakeActions = {
+    cardCreator: {
+      open: vi.fn(), updateDraft: vi.fn(), updatePreview: vi.fn(), createManualDraft: vi.fn(), cancel: vi.fn(),
+      generatePreview: vi.fn(async () => ({ status: 'busy' as const })),
+      regenerate: vi.fn(async () => ({ status: 'busy' as const })),
+      save: vi.fn(async () => ({ status: 'busy' as const })),
+    },
     changeDraft: vi.fn(), clearDraft: vi.fn(), generate: vi.fn(async () => ({ status: 'busy' as const })),
     importFile: vi.fn(async () => ({ status: 'missing' as const })), shareCategory: vi.fn(async () => ({ status: 'invalid' as const })),
     acceptShared: vi.fn(async () => ({ status: 'missing' as const })), cancelShared: vi.fn(),
@@ -111,6 +118,7 @@ const createInput = () => {
       intake: {
         model: {
           draft: 'pear', importProgress: null, importResult: null, error: null, notice: null, isBusy: false,
+          cardCreator: createInitialCardCreatorModel(),
           isSubmitting: false, isImporting: false, isAdoptingSharedDeck: false,
           share: {
             error: null, isLoading: false, isShareDialogOpen: false, activeShareId: null,
@@ -212,7 +220,10 @@ describe('library screen contract', () => {
     await contract.actions.grid.deleteCard('word-apple');
 
     expect(preventDefault).toHaveBeenCalledOnce();
-    expect(intakeActions.generate).toHaveBeenCalledOnce();
+    expect(commands.openCardCreator).toHaveBeenCalledOnce();
+    expect(intakeActions.cardCreator.generatePreview).toHaveBeenCalledOnce();
+    expect(commands.openCardCreator.mock.invocationCallOrder[0]).toBeLessThan(intakeActions.cardCreator.generatePreview.mock.invocationCallOrder[0]);
+    expect(intakeActions.generate).not.toHaveBeenCalled();
     expect(intakeActions.importFile).toHaveBeenCalledWith(file);
     expect(intakeActions.shareCategory).toHaveBeenCalledWith('IELTS');
     expect(sessionActions.owner.migrateLegacy).toHaveBeenCalledOnce();

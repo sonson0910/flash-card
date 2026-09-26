@@ -1,6 +1,28 @@
 export type LegacyDifficulty = 'easy' | 'good' | 'hard' | 'unrated';
 export type ReviewRatingValue = 'again' | 'hard' | 'good' | 'easy';
 
+/** BCP 47 language code retained as a string for forward-compatible packs. */
+export type CardLanguageCode = string;
+
+/**
+ * Language metadata is additive and independent from canonical lexeme
+ * identity. Missing fields are interpreted by the read helpers as the legacy
+ * English-to-Vietnamese pair without being written back to the card.
+ */
+export interface CardLanguageFields {
+  language?: CardLanguageCode;
+  /** Wave-1 meaning languages are English or Vietnamese. */
+  translationLanguage?: CardLanguageCode;
+}
+
+export interface CardLanguagePair {
+  language: CardLanguageCode;
+  translationLanguage: CardLanguageCode;
+}
+
+export const LEGACY_CARD_LANGUAGE = 'en' as const;
+export const LEGACY_CARD_TRANSLATION_LANGUAGE = 'vi' as const;
+
 export interface CardData {
   /**
    * Optional during the v1/v2 compatibility window. New cards are written as
@@ -18,9 +40,9 @@ export interface CardData {
   origin?: 'ai' | 'manual';
   /** Additive V3 identity. Omitted records retain legacy word identity. */
   lexemeId?: string;
-  language?: string;
+  language?: CardLanguageCode;
   /** Language of stored meaning and translated examples; legacy cards use Vietnamese. */
-  translationLanguage?: string;
+  translationLanguage?: CardLanguageCode;
   senseKey?: string;
   word: string;
   normalizedWord?: string;

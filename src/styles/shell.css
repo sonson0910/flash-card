@@ -103,6 +103,7 @@ html[data-theme-family=crystal]:not(.dark) .claude-mobile-nav-item[data-shell-ac
   .claude-shell-actions { gap: 2px; }
   .claude-theme-quick-toggle,.claude-theme-picker,.claude-language-menu > button,.claude-account-trigger { width: 45px; }
 }
+.claude-app-shell[data-view=study] .claude-workspace-inner,.claude-app-shell[data-view=quiz] .claude-workspace-inner,.claude-app-shell[data-view=spelling] .claude-workspace-inner,.claude-app-shell[data-view=story] .claude-workspace-inner,.claude-app-shell[data-view=match] .claude-workspace-inner,.claude-app-shell[data-view=shadowing] .claude-workspace-inner { max-width: none; padding: 0; }
 
 /* Statistics and achievements are rendered only inside the loaded application. */
 @keyframes chart-line-reveal {

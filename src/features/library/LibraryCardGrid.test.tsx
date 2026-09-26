@@ -101,10 +101,22 @@ describe('library collection hierarchy', () => {
     const source = readFileSync(fileURLToPath(new URL('./LibraryCardGrid.tsx', import.meta.url)), 'utf8');
 
     expect(source).toContain('data-library-card-collection="true"');
-    expect(source).toContain('library.grid.loading-page');
-    expect(source).toContain('library.grid.import-progress');
+    expect(source).toContain('getLibraryGridLoadingLabel');
+    expect(source).toContain('library-canvas-card-grid');
     expect(source).toContain('formatNumber(currentPage)');
     expect(source).not.toMatch(/liquid-glass lg:hidden/);
     expect(source).not.toMatch(/liquid-glass mx-auto mt-10/);
+  });
+});
+
+describe('compact card detail access', () => {
+  it('keeps the complete Flashcard interaction surface behind each compact card', () => {
+    const source = readFileSync(fileURLToPath(new URL('./LibraryCardGrid.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain("import('../../components/Flashcard')");
+    expect(source).toContain('onAssignDeck={(id, deck) => void assignDeck(id, deck)}');
+    expect(source).toContain('onUpdateCard={updateCard}');
+    expect(source).toContain('onToggleBookmark={id => void toggleBookmark(id)}');
+    expect(source).toContain('onDelete={async id => { await afterDelete(id); setDetailCard(null); }}');
   });
 });

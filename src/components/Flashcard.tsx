@@ -7,6 +7,7 @@ import gsap from 'gsap';
 import { AudioLines, BookOpen, Eye, EyeOff, Pencil, Sparkles, Star, Trash2, X } from 'lucide-react';
 import React, { lazy, Suspense, useEffect, useState, useRef } from 'react';
 import '../styles/flashcard-effects.css';
+import './flashcard/flashcard-canvas.css';
 import { isSupportedImageUrl } from '../lib/images';
 import { playFlipSound, playRewardSound } from '../lib/interactionSounds';
 import { triggerHaptic } from '../lib/haptics';
@@ -34,18 +35,19 @@ const EditCardDialog = lazy(() => Promise.all([
 
 gsap.registerPlugin(useGSAP);
 
-interface FlashcardProps {
+export interface FlashcardProps {
   data: CardData;
   onDelete?: (id: string) => void | Promise<void>;
   onToggleBookmark?: (id: string) => void;
   customDecks?: string[];
   onAssignDeck?: (cardId: string, deckName: string | null) => void;
   onUpdateCard?: (cardId: string, updatedFields: Partial<CardData>) => void | Promise<LearningStateOutcome>;
+  onEditOpenChange?: (open: boolean) => void;
   initialSide?: 'front' | 'back';
   imagePriority?: boolean;
 }
 
-export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggleBookmark, customDecks = [], onAssignDeck, onUpdateCard, initialSide = 'front', imagePriority = false }: FlashcardProps) {
+export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggleBookmark, customDecks = [], onAssignDeck, onUpdateCard, onEditOpenChange, initialSide = 'front', imagePriority = false }: FlashcardProps) {
   const { _, i18n } = useLingui();
   const translationFailureMessage = _(msg({ id: 'flashcard.translation.failed', message: 'The explanation could not be translated. Check your connection and try again.' }));
   const supportedImageUrl = isSupportedImageUrl(data.imageUrl) ? data.imageUrl : null;
@@ -85,12 +87,27 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const [showAiModal, setShowAiModal] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const editDialogOpenRef = useRef(false);
+  const latestEditOpenChangeRef = useRef(onEditOpenChange);
+  latestEditOpenChangeRef.current = onEditOpenChange;
   const [isBlindMode, setIsBlindMode] = useState(false);
   const [audioSpeed, setAudioSpeed] = useState<1.0 | 0.75>(1.0);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [showQuickQuiz, setShowQuickQuiz] = useState(false);
   const [isZenMode] = useZenGlassMode();
   const reduceMotion = useReducedMotion();
+
+  const setEditDialogOpen = (open: boolean) => {
+    editDialogOpenRef.current = open;
+    setShowEditDialog(open);
+    onEditOpenChange?.(open);
+  };
+
+  useEffect(() => () => {
+    if (!editDialogOpenRef.current) return;
+    editDialogOpenRef.current = false;
+    latestEditOpenChangeRef.current?.(false);
+  }, []);
 
   const showCardSide = (side: 'front' | 'back') => {
     const nextFlipped = side === 'back';
@@ -406,8 +423,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       data-card-side={isFlipped ? 'back' : 'front'}
       data-card-tier={cardTier}
       data-flip-animation={reduceMotion ? 'reduced' : 'spatial'}
+      data-card-mode={isZenMode ? 'zen' : 'standard'}
+      data-card-hovered={isHovered ? 'true' : 'false'}
+      data-card-blind={isBlindMode ? 'true' : 'false'}
+      data-card-effects="tilt spotlight aura flip star blind audio tier-rim hover-wings"
     >
-      <CardEffectsLayer aura={aura} />
+      <CardEffectsLayer aura={aura} wings tier={cardTier} isHovered={isHovered} />
       <span className="sr-only" aria-live="polite">{isFlipped ? <Trans id="flashcard.card.meaning-revealed" message="Vietnamese meaning revealed" /> : <Trans id="flashcard.card.word-revealed" message="English word revealed" />}</span>
       <AlertDialog.Root
         open={showConfirmDelete}
@@ -644,7 +665,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       )}
       {showEditDialog && onUpdateCard && (
         <Suspense fallback={null}>
-          <EditCardDialog card={data} open={showEditDialog} onOpenChange={setShowEditDialog} onSave={onUpdateCard} />
+          <EditCardDialog card={data} open={showEditDialog} onOpenChange={setEditDialogOpen} onSave={onUpdateCard} />
         </Suspense>
       )}
       {onDelete && (
@@ -661,7 +682,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       )}
       {onDelete && onUpdateCard && !isFlipped && (
         <button type="button" data-card-control onPointerDown={event => event.stopPropagation()}
-          onClick={event => { event.stopPropagation(); setShowEditDialog(true); }}
+          onClick={event => { event.stopPropagation(); setEditDialogOpen(true); }}
           className="absolute left-16 top-4 z-[45] flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/35 bg-slate-950/48 text-white shadow-lg backdrop-blur-2xl"
           title={_(msg({ id: 'flashcard.edit', message: 'Edit card' }))} aria-label={_(msg({ id: 'flashcard.edit', message: 'Edit card' }))}><Pencil size={16} /></button>
       )}
@@ -673,6 +694,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               ref={starButtonRef}
               type="button"
               data-color-role="reward"
+              data-card-effect="star-pop"
               onMouseEnter={event => {
                 if (reduceMotion) return;
                 gsap.to(event.currentTarget, { scale: 1.05, rotation: 6, duration: 0.18, ease: 'power3.out', overwrite: 'auto' });
@@ -784,7 +806,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           canDelete={Boolean(onDelete)}
           onUpdateCard={onUpdateCard}
           setShowReportDialog={setShowReportDialog}
-          setShowEditDialog={setShowEditDialog}
+          setShowEditDialog={setEditDialogOpen}
           audioSpeed={audioSpeed}
           toggleAudioSpeed={toggleAudioSpeed}
           playAudio={playAudio}

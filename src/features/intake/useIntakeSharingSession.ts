@@ -13,6 +13,7 @@ import type {
 import { useSharedDeckSession } from '../sharing/useSharedDeckSession';
 import type { CardIntakeControllerPort, CardIntakeDraftPort } from './cardIntakeController';
 import { useCardIntake, type CardIntakeActions } from './useCardIntake';
+import type { CardCreatorActions, CardCreatorModel } from './card-creator-model';
 import {
   spreadsheetRequestFromFile,
 } from './spreadsheetFileRequest';
@@ -69,6 +70,7 @@ export interface IntakeSharingSessionModel {
   isSubmitting: boolean;
   isImporting: boolean;
   isAdoptingSharedDeck: boolean;
+  cardCreator: CardCreatorModel;
   share: {
     error: string | null;
     isLoading: boolean;
@@ -103,6 +105,7 @@ export interface IntakeSharingSessionActions {
   clearError(): void;
   clearNotice(): void;
   invalidateCard(cardId: string): void;
+  cardCreator: CardCreatorActions;
 }
 
 const browserDraft: CardIntakeDraftPort = {
@@ -119,10 +122,22 @@ const browserDraft: CardIntakeDraftPort = {
     try {
       const raw = globalThis.sessionStorage?.getItem('lingoflash_word_operation');
       if (!raw) return null;
-      const value = JSON.parse(raw) as { word?: unknown; context?: unknown; languageId?: unknown; id?: unknown };
+      const value = JSON.parse(raw) as {
+        word?: unknown;
+        context?: unknown;
+        languageId?: unknown;
+        id?: unknown;
+        partOfSpeech?: unknown;
+      };
       return typeof value.word === 'string' && typeof value.context === 'string'
         && typeof value.languageId === 'string' && typeof value.id === 'string'
-        ? { word: value.word, context: value.context, languageId: value.languageId, id: value.id }
+        ? {
+          word: value.word,
+          context: value.context,
+          languageId: value.languageId,
+          id: value.id,
+          ...(typeof value.partOfSpeech === 'string' ? { partOfSpeech: value.partOfSpeech } : {}),
+        }
         : null;
     } catch { return null; }
   },
@@ -270,6 +285,7 @@ dependencies: IntakeSharingSessionDependencies,
     },
     clearNotice: sharedDeck.actions.clearNotice,
     invalidateCard: cardIntake.actions.invalidateCard,
+    cardCreator: cardIntake.actions.cardCreator,
   }), [cardIntake.actions, importFile, shareCategory, sharedDeck.actions]);
 
   const model = useMemo<IntakeSharingSessionModel>(() => ({
@@ -287,6 +303,7 @@ dependencies: IntakeSharingSessionDependencies,
     isSubmitting: cardIntake.model.isSubmitting,
     isImporting: cardIntake.model.isImporting,
     isAdoptingSharedDeck: cardIntake.model.isAdoptingSharedDeck,
+    cardCreator: cardIntake.model.cardCreator,
     share: {
       error: facadeError ?? sharedDeck.model.error,
       isLoading: isPreparingShare || sharedDeck.model.isLoading,

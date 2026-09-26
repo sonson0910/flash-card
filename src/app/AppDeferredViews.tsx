@@ -2,6 +2,7 @@ import { lazy, Suspense, type ReactNode } from 'react';
 import { Trans } from '@lingui/react';
 import type { LibraryScreenProps } from '../features/library/LibraryScreen';
 import type { PracticeWorkspace } from '../features/practice/usePracticeWorkspace';
+import type { CreateCardDialogProps } from '../features/intake/CreateCardDialog';
 import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
 import { WorkspaceLoadingPanel } from '../components/WorkspaceLoadingPanel';
 
@@ -11,6 +12,18 @@ const LibraryScreen = lazy(() => Promise.all([
 const PracticeScreen = lazy(() => Promise.all([
   import('../features/practice/PracticeScreen'), loadCatalog(getActiveUiLocale(), 'practice'),
 ]).then(([module]) => ({ default: module.PracticeScreen })));
+const CreateCardDialog = lazy(() => Promise.all([
+  import('../features/intake/CreateCardDialog'), loadCatalog(getActiveUiLocale(), 'library'),
+]).then(([module]) => ({ default: module.CreateCardDialog })));
+
+export function AppDeferredCreateCardDialog(props: CreateCardDialogProps) {
+  if (!props.model.open) return null;
+  return (
+    <Suspense fallback={<span className="sr-only" role="status"><Trans id="shell.opening-dialog" message="Opening dialog" /></span>}>
+      <CreateCardDialog {...props} />
+    </Suspense>
+  );
+}
 
 export function AppViewFallback({ label }: { label: ReactNode }) {
   return <WorkspaceLoadingPanel>{label}</WorkspaceLoadingPanel>;

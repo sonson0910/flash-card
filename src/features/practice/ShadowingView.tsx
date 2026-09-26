@@ -151,7 +151,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
   const nativeLanguage = card.translationLanguage || 'vi';
 
   return (
-    <div className="mx-auto flex h-full max-w-6xl flex-col px-1 py-3 sm:px-4 sm:py-6">
+    <div className="practice-board practice-board--shadowing mx-auto flex h-full max-w-6xl flex-col px-1 py-3 sm:px-4 sm:py-6">
       <div className="mb-7 flex w-full items-center justify-between gap-3">
         <button
           type="button"

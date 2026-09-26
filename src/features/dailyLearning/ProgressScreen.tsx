@@ -7,6 +7,7 @@ import { CountUp } from '../../components/motion/CountUp';
 import { Lumi } from '../../components/lumi/Lumi';
 import { useTheme } from '../theme/ThemeProvider';
 import { readLumiEnabled } from '../settings/lumi-preference';
+import './daily-learning-canvas.css';
 import type { ProgressScreenProps } from './dailyLearningPresentation';
 
 const primaryClass = 'brand-action crystal-chamfer min-h-11 rounded-2xl bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition duration-200 hover:bg-[var(--sf-brand-hover)] active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';

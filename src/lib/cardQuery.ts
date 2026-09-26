@@ -1,6 +1,8 @@
 import type { CardData } from '../types/card';
 import { isCardDue } from './srs';
 import { normalizeCardWord } from './cardIdentity';
+import { effectiveCardTargetLanguage } from './course-card-index';
+import type { SupportedTargetLanguage } from './course-card-index';
 
 export const CLOUD_PAGE_SIZE = 9;
 
@@ -12,6 +14,8 @@ export interface CardQueryState {
   bookmarkedOnly: boolean;
   createdDate: string | null;
   wordPrefix: string;
+  courseId?: string | null;
+  targetLanguage?: SupportedTargetLanguage | null;
 }
 
 export const PART_OF_SPEECH_OPTIONS = [
@@ -88,6 +92,7 @@ export function prioritizePracticeCards<T extends { id: string }>(dueCards: T[],
 }
 
 export function cardMatchesQuery(card: CardData, filters: CardQueryState): boolean {
+  if (filters.targetLanguage && effectiveCardTargetLanguage(card.language) !== filters.targetLanguage) return false;
   if (filters.category && card.category !== filters.category) return false;
   if (filters.partOfSpeech && normalizePartOfSpeech(card.partOfSpeech) !== filters.partOfSpeech) return false;
   if (filters.customDeck === 'unassigned' && card.customDeck) return false;

@@ -19,7 +19,67 @@ i18n.load('en', {});
 i18n.activate('en');
 const renderCard = (node: ReactNode) => renderToStaticMarkup(<I18nProvider i18n={i18n}>{node}</I18nProvider>);
 
+const effectCard = {
+  id: 'canvas-effects-contract',
+  word: 'luminous',
+  translation: 'phát sáng',
+  explanation: 'Giving off light.',
+  phonetic: '/ˈluːmɪnəs/',
+  emoji: '✨',
+  category: 'Science',
+  audioUrl: null,
+  imageUrl: null,
+  origin: 'ai' as const,
+  difficulty: 'easy' as const,
+};
+
 describe('Flashcard mobile controls', () => {
+  it('keeps the Canvas effect hooks on the live card and preserves edit lifecycle callbacks', () => {
+    const html = renderCard(
+      <Flashcard
+        data={effectCard}
+        onToggleBookmark={vi.fn()}
+        onUpdateCard={vi.fn()}
+        onEditOpenChange={vi.fn()}
+      />,
+    );
+    const source = cardSurfaceSource;
+
+    expect(html).toContain('data-card-effects="tilt spotlight aura flip star blind audio tier-rim hover-wings"');
+    expect(html).toContain('data-card-effect="hover-wings"');
+    expect(html).toContain('data-card-effect="star-pop"');
+    expect(html).toContain('data-card-effect="blind-image"');
+    expect(html).toContain('data-card-effect="audio"');
+    expect(source).toContain('onEditOpenChange?: (open: boolean) => void;');
+    expect(source).toContain('onOpenChange={setEditDialogOpen}');
+  });
+
+  it('renders the revealed face with Canvas effect layers and disclosure actions', () => {
+    const html = renderCard(
+      <Flashcard
+        data={effectCard}
+        initialSide="back"
+        onUpdateCard={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain('data-card-face="back"');
+    expect(html).toContain('data-card-effect="spotlight"');
+    expect(html).toContain('data-card-effect="holo"');
+    expect(html).toContain('data-card-effect="specular"');
+    expect(html).toContain('data-card-effect="tier-rim"');
+    expect(html).toContain('data-ai-disclosure="true"');
+  });
+
+  it('keeps Crystal wings and reduced motion as local card-only styles', () => {
+    const canvasStyles = readFileSync(fileURLToPath(new URL('./flashcard/flashcard-canvas.css', import.meta.url)), 'utf8');
+
+    expect(canvasStyles).toContain(':root[data-theme-family="crystal"]');
+    expect(canvasStyles).toContain('.flashcard-hover-wings');
+    expect(canvasStyles).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(canvasStyles).toContain('html[data-motion="reduced"] .flashcard-hover-wings');
+  });
+
   it('keeps pronunciation controls left-aligned on mobile and right-aligned from sm upward', () => {
     const source = cardSurfaceSource;
 

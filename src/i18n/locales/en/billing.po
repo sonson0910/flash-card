@@ -12,3 +12,79 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:49
+#: src/features/billing/UpgradeDialog.tsx:72
+msgid "billing.dialog.close"
+msgstr "Close"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:62
+msgid "billing.upgrade.consent"
+msgstr "For learners aged 18 and over. By registering, you agree to the <terms>Terms</terms> and the <privacy>Privacy Policy</privacy>."
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:47
+msgid "billing.upgrade.description"
+msgstr "The same AI card quality as Free, with more generations."
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:25
+msgid "billing.upgrade.error.load"
+msgstr "Couldn't load the Pro plan. Please try again later."
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:36
+msgid "billing.upgrade.error.submit"
+msgstr "Your request wasn't recorded. Please try again later."
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:45
+msgid "billing.upgrade.kicker"
+msgstr "SonFlash Pro"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:52
+msgid "billing.upgrade.loading"
+msgstr "Loading plan details…"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:56
+msgid "billing.upgrade.offer.cards"
+msgstr "{count, plural, one {# AI card} other {# AI cards}} for the plan duration"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:54
+msgid "billing.upgrade.offer.duration"
+msgstr "Pro · {days, plural, one {# day} other {# days}}"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:55
+msgid "billing.upgrade.offer.fallback-price"
+msgstr "79,000 ₫ + VAT"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:57
+msgid "billing.upgrade.offer.no-renew"
+msgstr "No auto-renewal. Payment is not being collected or opened yet."
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:59
+msgid "billing.upgrade.recorded"
+msgstr "Your purchase interest is recorded. The founder will reach out when sales open."
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:73
+msgid "billing.upgrade.submit.busy"
+msgstr "Recording…"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:73
+msgid "billing.upgrade.submit.idle"
+msgstr "Register interest for launch"
+
+#. js-lingui-explicit-id
+#: src/features/billing/UpgradeDialog.tsx:46
+msgid "billing.upgrade.title"
+msgstr "Add momentum to your learning"

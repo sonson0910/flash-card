@@ -109,7 +109,7 @@ export function SpellingView({
       targetLanguage,
     ) || targetLanguage;
   return (
-    <div className="mx-auto flex max-w-6xl flex-col items-center py-4 sm:py-8">
+    <div className="practice-board practice-board--spelling mx-auto flex max-w-6xl flex-col items-center py-4 sm:py-8">
       {showResults ? (
         <GsapEntrance
           animationKey="spelling-results"

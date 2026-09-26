@@ -364,6 +364,32 @@ describe('findCardByNormalizedWord', () => {
       0,
     )).resolves.toMatchObject({ id: 'current-card' });
   });
+
+  it('scopes fallback word lookup by the requested non-English target', async () => {
+    firestore.getDocs.mockResolvedValueOnce(snapshot([{
+      id: 'word-ko-lead',
+      data: {
+        word: 'lead',
+        normalizedWord: 'lead',
+        language: 'ko',
+        translation: '납',
+        libraryEpoch: 0,
+        revision: 1,
+      },
+    }]));
+
+    await expect(findCardByNormalizedWord(
+      {} as never,
+      'user-1',
+      { word: 'lead', normalizedWord: 'lead', language: 'ko' },
+      0,
+    )).resolves.toMatchObject({ id: 'word-ko-lead', language: 'ko' });
+    expect(firestore.getDocs.mock.calls[0]?.[0]).toEqual(expect.objectContaining({
+      args: expect.arrayContaining([
+        expect.objectContaining({ type: 'where', args: ['language', '==', 'ko'] }),
+      ]),
+    }));
+  });
 });
 
 describe('findCardById', () => {
@@ -950,7 +976,12 @@ describe('createCardIfAbsent', () => {
       get: vi.fn(async (reference: { args?: unknown[] }) => {
         const path = reference.args?.at(-1);
         const collectionName = reference.args?.at(-2);
-        if (path === 'library_state' || collectionName === 'card_tombstones') {
+        if (
+          path === 'library_state'
+          || path === 'course_query_index'
+          || collectionName === 'course_query_generations'
+          || collectionName === 'card_tombstones'
+        ) {
           return { exists: (): boolean => false };
         }
         if (collectionName === 'card_reservations') {
@@ -1011,13 +1042,61 @@ describe('createCardIfAbsent', () => {
       reference.args?.at(-2) === 'card_reservations')).toHaveLength(1);
   });
 
+  it('keeps same-spelling English and non-English cards on separate local identities', async () => {
+    const records = new Map<string, Record<string, unknown>>();
+    const set = vi.fn((reference: { args?: unknown[] }, data: Record<string, unknown>) => {
+      records.set((reference.args ?? []).join('/'), data);
+    });
+    const remove = vi.fn((reference: { args?: unknown[] }) => {
+      records.delete((reference.args ?? []).join('/'));
+    });
+    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
+      get: vi.fn(async (reference: { args?: unknown[] }) => {
+        const value = records.get((reference.args ?? []).join('/'));
+        return value
+          ? { exists: (): boolean => true, data: () => value }
+          : { exists: (): boolean => false };
+      }),
+      set,
+      delete: remove,
+    }));
+    const baseCard = {
+      id: 'temporary',
+      word: 'lead',
+      normalizedWord: 'lead',
+      translation: 'meaning',
+      explanation: '',
+      phonetic: '',
+      emoji: '📝',
+      category: 'Other',
+      audioUrl: null,
+      imageUrl: null,
+    };
+
+    const english = await createCardIfAbsent({} as never, 'user-1', baseCard, { libraryEpoch: 0 });
+    const korean = await createCardIfAbsent({} as never, 'user-1', { ...baseCard, language: 'ko' }, { libraryEpoch: 0 });
+    const koreanRetry = await createCardIfAbsent({} as never, 'user-1', { ...baseCard, id: 'another-id', language: 'ko' }, { libraryEpoch: 0 });
+
+    expect(english.card.id).toBe('word-lead');
+    expect(korean.card.id).not.toBe(english.card.id);
+    expect(korean.card.language).toBe('ko');
+    expect(koreanRetry).toMatchObject({ created: false, card: { id: korean.card.id, language: 'ko' } });
+    expect([...records.keys()].filter(key => key.includes('/cards/'))).toHaveLength(2);
+    expect([...records.values()].filter(value => value.targetLanguage === 'ko')).toHaveLength(1);
+  });
+
   it('recreates a missing card at the immutable id stored by an existing reservation', async () => {
     const set = vi.fn();
     firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
       get: vi.fn(async (reference: { args?: unknown[] }) => {
         const path = reference.args?.at(-1);
         const collectionName = reference.args?.at(-2);
-        if (path === 'library_state' || collectionName === 'card_tombstones') {
+        if (
+          path === 'library_state'
+          || path === 'course_query_index'
+          || collectionName === 'course_query_generations'
+          || collectionName === 'card_tombstones'
+        ) {
           return { exists: (): boolean => false };
         }
         if (collectionName === 'card_reservations') {
@@ -2146,6 +2225,87 @@ describe('createCardIfAbsent', () => {
     );
   });
 
+  it('mirrors an authoritative patch to active and building course generations atomically', async () => {
+    const set = vi.fn();
+    const authoritative = {
+      id: 'word-lead',
+      word: 'lead',
+      normalizedWord: 'lead',
+      language: 'ko',
+      translation: '납',
+      explanation: '',
+      phonetic: '',
+      emoji: '📝',
+      category: 'Other',
+      audioUrl: null,
+      imageUrl: null,
+      schemaVersion: 2,
+      revision: 2,
+      libraryEpoch: 3,
+      bookmarked: false,
+    };
+    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
+      get: vi.fn(async (reference: { args?: unknown[] }) => {
+        const args = reference.args ?? [];
+        const path = args.at(-1);
+        const collectionName = args.at(-2);
+        if (path === 'library_state') return { exists: (): boolean => true, data: () => ({ libraryEpoch: 3 }) };
+        if (path === 'course_query_index') {
+          return {
+            exists: (): boolean => true,
+            data: () => ({
+              schemaVersion: 1,
+              projectionVersion: 1,
+              libraryEpoch: 3,
+              activeGenerationId: 'generation-active',
+              buildingGenerationId: 'generation-building',
+            }),
+          };
+        }
+        if (args.includes('course_query_generations') && collectionName !== 'cards') {
+          return {
+            exists: (): boolean => true,
+            data: () => ({
+              schemaVersion: 1,
+              projectionVersion: 1,
+              libraryEpoch: 3,
+              status: path === 'generation-building' ? 'building' : 'ready',
+              lastCardId: null,
+              scanned: 0,
+              leaseToken: null,
+              leaseExpiresAt: null,
+              startedAt: '2026-09-25T00:00:00.000Z',
+            }),
+          };
+        }
+        if (collectionName === 'cards' && !args.includes('course_query_generations')) {
+          return { exists: (): boolean => true, data: () => authoritative };
+        }
+        return { exists: (): boolean => false };
+      }),
+      set,
+    }));
+
+    await expect(applyCardPatchIfCurrent({} as never, 'user-1', {
+      cardId: 'word-lead',
+      fields: { bookmarked: true },
+      fieldMask: ['bookmarked'],
+      baseRevision: 2,
+      libraryEpoch: 3,
+    })).resolves.toEqual({ applied: true, revision: 3 });
+
+    const sidecarWrites = set.mock.calls.filter(([reference]) => {
+      const args = (reference as { args?: unknown[] }).args ?? [];
+      const collection = args[0] as { args?: unknown[] } | undefined;
+      return collection?.args?.includes('course_query_generations') === true;
+    });
+    expect(sidecarWrites).toHaveLength(2);
+    expect(sidecarWrites.map(([, data]) => data)).toEqual([
+      expect.objectContaining({ targetLanguage: 'ko', sourceRevision: 3, sourceLibraryEpoch: 3 }),
+      expect.objectContaining({ targetLanguage: 'ko', sourceRevision: 3, sourceLibraryEpoch: 3 }),
+    ]);
+  });
+
   it('rejects a current-card patch at the maximum safe revision before writing', async () => {
     const maxSafe = Number.MAX_SAFE_INTEGER;
     const set = vi.fn();
@@ -2224,6 +2384,68 @@ describe('createCardIfAbsent', () => {
       { merge: false },
     );
     expect(remove).toHaveBeenCalledWith(expect.anything());
+  });
+
+  it('deletes active and building course mirrors with the card tombstone', async () => {
+    const set = vi.fn();
+    const remove = vi.fn();
+    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
+      get: vi.fn(async (reference: { args?: unknown[] }) => {
+        const args = reference.args ?? [];
+        const path = args.at(-1);
+        const collectionName = args.at(-2);
+        if (path === 'library_state') return { exists: (): boolean => true, data: () => ({ libraryEpoch: 3 }) };
+        if (path === 'course_query_index') {
+          return {
+            exists: (): boolean => true,
+            data: () => ({
+              schemaVersion: 1,
+              projectionVersion: 1,
+              libraryEpoch: 3,
+              activeGenerationId: 'generation-active',
+              buildingGenerationId: 'generation-building',
+            }),
+          };
+        }
+        if (args.includes('course_query_generations') && collectionName !== 'cards') {
+          return {
+            exists: (): boolean => true,
+            data: () => ({
+              schemaVersion: 1,
+              projectionVersion: 1,
+              libraryEpoch: 3,
+              status: path === 'generation-building' ? 'building' : 'ready',
+              lastCardId: null,
+              scanned: 0,
+              leaseToken: null,
+              leaseExpiresAt: null,
+              startedAt: '2026-09-25T00:00:00.000Z',
+            }),
+          };
+        }
+        if (collectionName === 'cards' && !args.includes('course_query_generations')) {
+          return { exists: (): boolean => true, data: () => ({ revision: 2, libraryEpoch: 3 }) };
+        }
+        if (collectionName === 'card_tombstones') return { exists: (): boolean => false };
+        return { exists: (): boolean => false };
+      }),
+      set,
+      delete: remove,
+    }));
+
+    await expect(deleteCardWithTombstone({} as never, 'user-1', {
+      cardId: 'word-lead',
+      opId: 'delete-lead',
+      libraryEpoch: 3,
+      baseRevision: 2,
+    })).resolves.toMatchObject({ deleted: true, tombstone: { revision: 3, libraryEpoch: 3 } });
+
+    const sidecarDeletes = remove.mock.calls.filter(([reference]) => {
+      const args = (reference as { args?: unknown[] }).args ?? [];
+      const collection = args[0] as { args?: unknown[] } | undefined;
+      return collection?.args?.includes('course_query_generations') === true;
+    });
+    expect(sidecarDeletes).toHaveLength(2);
   });
 
   it('acknowledges a different same-epoch delete when the card is already gone', async () => {

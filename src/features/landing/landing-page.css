@@ -1,0 +1,59 @@
+.landing-canvas { font-family: Geist, "Segoe UI", system-ui, sans-serif; }
+.landing-header { min-height: 84px; }
+.landing-header > a .font-serif-hero { font-family: Fraunces, Georgia, serif; font-weight: 500; }
+.landing-hero { max-width: 1280px; margin-inline: auto; }
+.landing-copy h1 { font-family: Fraunces, Georgia, serif; font-weight: 450; }
+.landing-copy > p:first-child { letter-spacing: .01em; }
+.landing-card > div:last-child { border-radius: 28px; }
+.landing-atmospheres { border-left: 0; padding-left: 0; }
+html[data-theme-family="classic"] .landing-canvas { background-image: radial-gradient(circle at 74% 40%, color-mix(in srgb, var(--sf-brand) 9%, transparent), transparent 27%); }
+html[data-theme-family="classic"] .landing-copy h1 { font-size: clamp(4.5rem, 8vw, 7.2rem); line-height: .91; letter-spacing: -.055em; }
+html[data-theme-family="classic"] .landing-copy h1 em, html[data-theme-family="classic"] .landing-copy h1 i { color: var(--sf-brand-text); }
+html[data-theme-family="crystal"] .landing-header { font-family: var(--sf-font-display, Geist, sans-serif); font-style: italic; text-transform: uppercase; letter-spacing: .055em; }
+.landing-crystal-mark,.landing-crystal-brand { display: none; }
+html[data-theme-family="crystal"] .landing-classic-mark,html[data-theme-family="crystal"] .landing-classic-brand { display: none; }
+html[data-theme-family="crystal"] .landing-crystal-mark { display: block; filter: drop-shadow(0 0 10px rgb(255 42 77 / .7)); }
+html[data-theme-family="crystal"] .landing-crystal-brand { display: inline; color: var(--sf-text); font: italic 900 26px Kanit,Nunito,sans-serif; letter-spacing: .01em; }
+html[data-theme-family="crystal"] .landing-crystal-brand em { color: var(--sf-brand-text); }
+.landing-theme-toggle { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid var(--sf-border); background: var(--sf-surface-control); color: var(--sf-text); clip-path: var(--nk-chamfer-sm); }
+html[data-theme-family="crystal"] .landing-copy h1 { font-family: var(--sf-font-display, Geist, sans-serif); font-style: italic; font-weight: 900; text-shadow: 0 5px 0 color-mix(in srgb, var(--sf-brand-hover) 80%, #7a0820); }
+html[data-theme-family="crystal"] .landing-card > div:last-child { clip-path: polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px); border-radius: 0; }
+@media (min-width: 1024px) { .landing-header { padding-inline: 16px; } .landing-hero { grid-template-columns: minmax(0, 1fr) 500px !important; gap: 56px; } .landing-card { max-width: 380px; } }
+@media (max-width: 639px) { .landing-header { min-height: 64px; } .landing-copy h1 { font-size: clamp(3.5rem, 18vw, 5.5rem) !important; } .landing-card { max-width: 320px; } .landing-atmospheres { margin-top: 8px; } }
+
+/* Direct port of AnimeLanding's full-bleed Crystal Star composition. */
+.crystal-landing-hero { position: relative; flex: none; width: calc(100% + 96px); height: calc(100svh - 84px); min-height: 760px; margin-inline: -48px; display: grid; grid-template-columns: 640px minmax(0, 1fr); align-items: start; overflow: hidden; padding: 32px 0 76px 80px; }
+.crystal-landing-hero::before { position: absolute; inset: 0 -8vw; z-index: -2; content: ""; background: radial-gradient(ellipse at 74% 38%, color-mix(in srgb, var(--sf-brand) 38%, transparent), transparent 28%), radial-gradient(ellipse at 36% 105%, color-mix(in srgb, var(--sf-brand-hover) 38%, transparent), transparent 35%), var(--sf-canvas); }
+.crystal-landing-hero::after { position: absolute; inset: 0; z-index: -1; content: ""; opacity: .58; background-image: radial-gradient(circle at 12% 14%, #fff 0 1px, transparent 1.5px), radial-gradient(circle at 53% 9%, #fff 0 2px, transparent 3px), radial-gradient(circle at 88% 25%, #fff 0 1px, transparent 1.5px), radial-gradient(circle at 70% 78%, #fff 0 1px, transparent 1.5px); }
+.crystal-copy { position: relative; z-index: 2; max-width: 620px; padding: 0; }
+.crystal-badge { display: inline-flex; padding: 8px 18px; transform: skewX(-16deg); background: var(--sf-brand); color: var(--sf-on-brand); font: 800 italic .78rem/1 Geist, sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+.crystal-copy h1 { margin: 28px 0 0; font-family: var(--sf-font-display, Geist, sans-serif); font-size: 112px; font-style: italic; font-weight: 900; line-height: .92; letter-spacing: -.01em; text-transform: uppercase; background: linear-gradient(180deg, #2a1040 0%, #150a28 45%, #b30f33 60%, #ff2a4d 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 5px 0 #7a0820) drop-shadow(0 0 30px rgb(255 42 77 / .6)); }
+.crystal-tagline { margin: 28px 0 0; max-width: 570px; color: var(--sf-text); font-family: var(--sf-font-display, Geist, sans-serif); font-size: clamp(1.5rem, 2.3vw, 2rem); font-style: italic; font-weight: 800; line-height: 1.2; }
+.crystal-description { max-width: 530px; margin-top: 16px; color: var(--sf-text-muted); font-size: 1rem; line-height: 1.65; }
+.crystal-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 32px; }
+.crystal-primary, .crystal-secondary { min-height: 58px; padding: 0 28px; border: 0; clip-path: polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px); font-family: var(--sf-font-display, Geist, sans-serif); font-size: 1rem; font-style: italic; font-weight: 900; letter-spacing: .045em; text-transform: uppercase; cursor: pointer; }
+.crystal-primary { display: inline-flex; align-items: center; gap: 10px; background: var(--sf-brand); color: var(--sf-on-brand); box-shadow: 0 12px 28px -12px var(--sf-brand); }
+.crystal-secondary { color: var(--sf-text); background: color-mix(in srgb, var(--sf-surface) 86%, transparent); box-shadow: inset 0 0 0 1px var(--sf-border); }
+.crystal-card-stage { position: relative; align-self: stretch; min-height: 610px; }
+.crystal-card-stage::before, .crystal-card-stage::after { position: absolute; content: ""; pointer-events: none; }
+.crystal-card-stage::before { top: 34px; right: -70px; width: 390px; height: 480px; opacity: .66; background: linear-gradient(130deg, transparent 27%, color-mix(in srgb, var(--sf-brand) 74%, transparent) 28% 43%, transparent 44%), linear-gradient(162deg, transparent 24%, color-mix(in srgb, var(--sf-brand-hover) 84%, transparent) 25% 49%, transparent 50%), linear-gradient(116deg, transparent 38%, color-mix(in srgb, var(--sf-brand) 52%, transparent) 39% 64%, transparent 65%); clip-path: polygon(48% 0,62% 20%,100% 6%,78% 45%,100% 72%,61% 60%,44% 100%,32% 64%,0 77%,23% 43%,0 21%,37% 28%); }
+.crystal-card-stage::after { bottom: -50px; left: 10%; width: 250px; height: 155px; opacity: .58; background: linear-gradient(55deg, transparent 32%, var(--sf-brand) 33% 47%, transparent 48%), linear-gradient(112deg, transparent 24%, var(--sf-brand-hover) 25% 43%, transparent 44%); clip-path: polygon(0 100%,14% 22%,29% 100%,44% 36%,58% 100%,76% 0,100% 100%); }
+.crystal-flare { position: absolute; top: 10%; left: 50%; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--sf-brand) 50%, transparent), transparent 68%); filter: blur(18px); }
+.crystal-demo-card { position: absolute; width: 230px; height: 310px; padding: 18px; overflow: hidden; clip-path: polygon(18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%,0 18px); background: linear-gradient(145deg, #11182b, #070b15); box-shadow: inset 0 0 0 3px var(--sf-brand), 0 24px 35px -18px #000; color: #fff; display: flex; flex-direction: column; }
+.crystal-demo-card::before { display: none; }
+.crystal-demo-card > img { position: absolute; top: 3px; right: 3px; left: 3px; width: calc(100% - 6px); height: 46%; object-fit: cover; clip-path: polygon(0 0,100% 0,100% 80%,0 100%); }
+.crystal-demo-card span, .crystal-demo-card strong, .crystal-demo-card small, .crystal-demo-card b { position: relative; }
+.crystal-demo-card span { align-self: flex-start; padding: 5px 9px; margin-top: 2px; background: var(--sf-brand); font-size: .62rem; font-weight: 900; text-transform: uppercase; }
+.crystal-demo-card span i { margin-right: 4px; color: #fff; font-style: italic; font-size: .84rem; }
+.crystal-demo-card strong { margin-top: auto; font-family: var(--sf-font-display, Geist, sans-serif); font-size: 2rem; font-style: italic; line-height: 1; }
+.crystal-demo-card small { margin-top: 6px; color: #bac7d8; font-family: ui-monospace, monospace; }
+.crystal-demo-card b { margin-top: auto; color: #ff90a3; font-family: var(--sf-font-display, Geist, sans-serif); font-size: 1.12rem; font-style: italic; }
+.crystal-demo-left { top: 29%; left: 18%; transform: rotate(-14deg); opacity: .9; }
+.crystal-demo-right { top: 25%; right: 2%; transform: rotate(14deg); opacity: .9; }
+.crystal-demo-main { z-index: 2; top: 14%; left: 57%; transform: translateX(-50%); box-shadow: inset 0 0 0 3px #ffe28c, 0 30px 45px -18px #000; }
+.crystal-hero-lumi { position: absolute; z-index: 3; bottom: 50px; left: -14%; width: 225px; height: 575px; max-width: none; object-fit: contain; filter: drop-shadow(0 12px 18px rgb(0 0 0 / .6)); }
+.crystal-ribbon { position: absolute; right: -5%; bottom: 14px; left: -5%; display: flex; justify-content: center; gap: clamp(20px, 5vw, 76px); height: 58px; padding: 0 36px; overflow: hidden; transform: skewY(-1.5deg); background: var(--sf-brand); box-shadow: 0 0 32px color-mix(in srgb, var(--sf-brand) 65%, transparent); color: var(--sf-on-brand); font-family: var(--sf-font-display, Geist, sans-serif); font-size: .9rem; font-style: italic; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; align-items: center; white-space: nowrap; }
+html[data-theme-family="crystal"] .landing-atmospheres { display: none; }
+html[data-theme-family="crystal"] .landing-header { transform: translateY(-20px); }
+@media (max-width: 900px) { .crystal-landing-hero { width: 100%; height: auto; min-height: 720px; margin: 0; grid-template-columns: 1fr; row-gap: 28px; padding: 42px 0 76px; } .crystal-card-stage { min-height: 330px; margin-top: 0; overflow: hidden; } .crystal-demo-card { width: 160px; height: 215px; padding: 12px; } .crystal-demo-card strong { font-size: 1.45rem; } .crystal-demo-left { left: 18%; } .crystal-demo-right { right: 4%; } .crystal-demo-main { left: 57%; } .crystal-hero-lumi { left: 4%; width: 135px; height: 340px; } }
+@media (max-width: 639px) { .crystal-landing-hero { min-height: 720px; padding-bottom: 72px; } .crystal-copy { min-width: 0; padding-left: 0; } .crystal-copy h1 { max-width: 100%; font-size: clamp(3rem, 16vw, 4rem); overflow-wrap: anywhere; } .crystal-tagline { font-size: 1.35rem; } .crystal-description { max-width: 21rem; font-size: .93rem; } .crystal-actions { display: grid; grid-template-columns: 1fr; max-width: 18rem; margin-top: 20px; } .crystal-primary, .crystal-secondary { width: 100%; min-height: 48px; padding-inline: 14px; font-size: .78rem; white-space: nowrap; justify-content: center; } .crystal-card-stage { min-width: 0; min-height: 290px; overflow: hidden; } .crystal-demo-card { width: 142px; height: 205px; } .crystal-demo-left { left: 2%; } .crystal-demo-main { left: 57%; } .crystal-demo-right { display: none; } .crystal-hero-lumi { bottom: 8px; left: 3%; width: 116px; height: 305px; } .crystal-ribbon { justify-content: flex-start; gap: 30px; font-size: .72rem; } }

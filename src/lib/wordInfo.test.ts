@@ -20,11 +20,13 @@ describe('parseWordInfo', () => {
       register: 'neutral',
       commonMistake: '',
       imageSearchQuery: 'person sprinting outdoors running shoes',
+      wordFamily: { noun: 'runner', verb: 'run', adj: '', adv: '  ' },
     });
 
     expect(result.collocations).toHaveLength(4);
     expect(result.cefrLevel).toBe('A1');
     expect(result.imageSearchQuery).toBe('person sprinting outdoors running shoes');
+    expect(result.wordFamily).toEqual({ noun: 'runner', verb: 'run' });
   });
 
   it('rejects malformed required AI output', () => {

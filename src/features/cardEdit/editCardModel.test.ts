@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
-import { createEditCardDraft, editCardPatch, isSuccessfulEditCardSave } from './editCardModel';
+import {
+  createEditCardDraft,
+  editCardPatch,
+  isEditCardDraftDirty,
+  isSuccessfulEditCardSave,
+  previewEditCard,
+} from './editCardModel';
 
 const card = { id: 'card-1', word: 'lead', translation: 'chì', explanation: 'A metal.', origin: 'ai', nextReviewDate: '2026-09-24' } as CardData;
 
@@ -11,6 +17,18 @@ describe('card text editing', () => {
     draft.translation = 'dẫn đầu';
     draft.exampleSentence = 'She leads the team.';
     expect(editCardPatch(card, draft)).toEqual({ translation: 'dẫn đầu', exampleSentence: 'She leads the team.' });
+  });
+
+  it('patches IPA and memory hook through the verified card mutation fields', () => {
+    const openedCard = { ...card, phonetic: '/liːd/', mnemonic: 'Lead the team.' };
+    const draft = createEditCardDraft(openedCard);
+    draft.phonetic = '/lɛd/';
+    draft.mnemonic = 'A lead weight is heavy.';
+
+    expect(editCardPatch(openedCard, draft)).toEqual({
+      phonetic: '/lɛd/',
+      mnemonic: 'A lead weight is heavy.',
+    });
   });
 
   it('requires a meaning and enforces normalized card text bounds', () => {
@@ -31,6 +49,32 @@ describe('card text editing', () => {
     expect(editCardPatch(openedCard, draft)).toEqual({ translation: 'dẫn đầu' });
     // Diffing against the live card instead would wrongly reintroduce the pre-sync exampleSentence.
     expect(editCardPatch(liveCard, draft)).toEqual({ translation: 'dẫn đầu', exampleSentence: 'Old example.' });
+  });
+
+  it('marks only normalized draft changes dirty and previews them without touching review state', () => {
+    const openedCard = {
+      ...card,
+      phonetic: '/liːd/',
+      mnemonic: 'Lead the team.',
+      revision: 4,
+      fsrs: {
+        due: '2026-09-24', stability: 2, difficulty: 4, elapsedDays: 1,
+        scheduledDays: 2, learningSteps: 0, reps: 3, lapses: 0, state: 2,
+      },
+      reviewHistory: [{ rating: 'good' as const, reviewedAt: '2026-09-20', scheduledDays: 2, elapsedDays: 1 }],
+    };
+    const draft = createEditCardDraft(openedCard);
+    expect(isEditCardDraftDirty(openedCard, draft)).toBe(false);
+
+    draft.mnemonic = '  A lead weight is heavy.  ';
+    expect(isEditCardDraftDirty(openedCard, draft)).toBe(true);
+
+    const preview = previewEditCard(openedCard, draft);
+    expect(preview.mnemonic).toBe('  A lead weight is heavy.  ');
+    expect(preview.phonetic).toBe('/liːd/');
+    expect(preview.revision).toBe(4);
+    expect(preview.fsrs).toEqual(openedCard.fsrs);
+    expect(preview.reviewHistory).toEqual(openedCard.reviewHistory);
   });
 });
 

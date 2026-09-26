@@ -305,17 +305,17 @@ msgid "shell.level.short"
 msgstr "Lv {level}"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:71
+#: src/features/library/libraryViewModel.ts:111
 msgid "shell.library-count.cached-cloud"
 msgstr "{cached, number} đã lưu tạm / {cloud, number} trên đám mây"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:74
+#: src/features/library/libraryViewModel.ts:114
 msgid "shell.library-count.cards"
 msgstr "{count, plural, other {# thẻ}}"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:72
+#: src/features/library/libraryViewModel.ts:112
 msgid "shell.library-count.cloud-paused"
 msgstr "Đồng bộ đám mây đã tạm dừng"
 
@@ -346,7 +346,7 @@ msgid "shell.loading.charts"
 msgstr "Đang tải biểu đồ"
 
 #. js-lingui-explicit-id
-#: src/app/AppDeferredViews.tsx:21
+#: src/app/AppDeferredViews.tsx:34
 msgid "shell.loading.library"
 msgstr "Đang tải thư viện"
 
@@ -356,7 +356,7 @@ msgid "shell.loading.paths"
 msgstr "Đang chuẩn bị các lộ trình học…"
 
 #. js-lingui-explicit-id
-#: src/app/AppDeferredViews.tsx:38
+#: src/app/AppDeferredViews.tsx:51
 msgid "shell.loading.practice"
 msgstr "Đang tải bài luyện tập"
 
@@ -472,7 +472,8 @@ msgid "shell.navigation.primary"
 msgstr "Điều hướng chính"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:350
+#: src/app/AppDeferredViews.tsx:22
+#: src/app/AppRuntime.tsx:356
 msgid "shell.opening-dialog"
 msgstr "Đang mở hộp thoại"
 

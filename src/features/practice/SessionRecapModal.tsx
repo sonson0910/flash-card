@@ -8,6 +8,7 @@ import { CountUp } from '../../components/motion/CountUp';
 import { formatNumber } from '../../lib/format';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import type { CardData } from '../../types/card';
+import './practice-board.css';
 
 interface SessionRecapModalProps {
   open: boolean;
@@ -32,7 +33,7 @@ export function SessionRecapModal({ open, onClose, onRetryWeak, totalCards, good
         <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm" />
         <Dialog.Content
           data-session-recap
-          className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-2xl outline-none sm:p-7 [html[data-theme-family=crystal]_&]:crystal-chamfer"
+          className="practice-recap-board fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-2xl outline-none sm:p-7 [html[data-theme-family=crystal]_&]:crystal-chamfer"
           aria-describedby="session-recap-description"
         >
           <div aria-hidden="true" className="pointer-events-none absolute inset-x-10 top-0 h-24 bg-[radial-gradient(ellipse_at_top,var(--sf-surface-raised),transparent_70%)] opacity-70" />

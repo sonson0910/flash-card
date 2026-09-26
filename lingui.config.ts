@@ -6,10 +6,16 @@ const areas = {
     'src/features/library/libraryViewModel.ts',
     'src/components/RecoverableActionFeedback.tsx', 'src/components/ui/UndoToast.tsx',
   ],
-  components: ['src/components/*.tsx', 'src/components/flashcard', 'src/components/motion', 'src/components/study', 'src/components/ui'],
+  components: [
+    'src/components/*.tsx', 'src/components/flashcard', 'src/components/motion', 'src/components/study', 'src/components/ui',
+    'src/features/cardReport',
+  ],
   today: ['src/features/dailyLearning'],
   practice: ['src/features/practice'],
-  library: ['src/features/library', 'src/features/cardEdit/EditCardDialog.tsx'],
+  library: [
+    'src/features/library', 'src/features/cardEdit/EditCardDialog.tsx',
+    'src/features/intake', 'src/features/importExport/SpreadsheetImportDialog.tsx',
+  ],
   catalog: ['src/features/catalogWorkspace', 'src/features/catalog'],
   progress: ['src/components/stats'],
   billing: ['src/features/billing', 'src/features/plan'],

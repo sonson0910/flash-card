@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { CardData } from '../types/card';
-import { normalizeCardData } from './cardNormalization';
+import { effectiveCardTargetLanguage } from './cardIdentity';
+import {
+  effectiveCardLanguage,
+  effectiveCardLanguagePair,
+  effectiveCardTranslationLanguage,
+  INVALID_CARD_LANGUAGE_MARKER,
+  isValidCardLanguageFields,
+  normalizeCardData,
+} from './cardNormalization';
 
 describe('normalizeCardData', () => {
   it('upgrades a legacy synced card to the current render schema', () => {
@@ -64,6 +72,68 @@ describe('normalizeCardData', () => {
       lastOpenedAt: '2026-07-23T00:00:00.000Z',
       sortTouchedAt: '2026-07-23T00:00:00.000Z',
     });
+  });
+
+  it('reads legacy omissions as English to Vietnamese without adding fields to the normalized card', () => {
+    const source = { word: 'legacy', translation: 'cũ' };
+    const card = normalizeCardData(source, 'legacy-card');
+
+    expect(card.language).toBeUndefined();
+    expect(card.translationLanguage).toBeUndefined();
+    expect(effectiveCardLanguagePair(card)).toEqual({ language: 'en', translationLanguage: 'vi' });
+    expect(effectiveCardLanguage(card)).toBe('en');
+    expect(effectiveCardTranslationLanguage(card)).toBe('vi');
+    expect(source).not.toHaveProperty('language');
+    expect(source).not.toHaveProperty('translationLanguage');
+  });
+
+  it('preserves independent target and translation language fields for plain cards', () => {
+    const card = normalizeCardData({
+      word: '안녕',
+      translation: 'xin chào',
+      language: ' KO ',
+      translationLanguage: ' VI ',
+    }, 'korean-card');
+
+    expect(card).toMatchObject({ language: 'ko', translationLanguage: 'vi' });
+    expect(effectiveCardLanguagePair(card)).toEqual({ language: 'ko', translationLanguage: 'vi' });
+    expect(isValidCardLanguageFields(card)).toBe(true);
+  });
+
+  it('keeps legacy compatibility when only one valid language field is present', () => {
+    const targetOnly = normalizeCardData({ word: '안녕', language: 'ko' }, 'target-only');
+    const translationOnly = normalizeCardData({ word: 'hello', translationLanguage: 'en' }, 'translation-only');
+
+    expect(effectiveCardLanguagePair(targetOnly)).toEqual({ language: 'ko', translationLanguage: 'vi' });
+    expect(effectiveCardLanguagePair(translationOnly)).toEqual({ language: 'en', translationLanguage: 'en' });
+  });
+
+  it('retains malformed explicit language metadata so callers can reject it', () => {
+    const card = normalizeCardData({
+      word: 'safe',
+      language: 'english',
+      translationLanguage: 'zh-hant-123456789',
+    }, 'malformed-language');
+
+    expect(card.language).toBe('english');
+    expect(card.translationLanguage).toBe('zh-hant-123456789');
+    expect(isValidCardLanguageFields({ language: 'english' })).toBe(false);
+    expect(isValidCardLanguageFields({ translationLanguage: 'fr' })).toBe(false);
+    expect(() => effectiveCardLanguagePair({ language: 'english' })).toThrow(/language fields are invalid/i);
+    expect(() => effectiveCardLanguagePair(card)).toThrow(/language fields are invalid/i);
+  });
+
+  it.each([42, null, ['ko']])('keeps non-string target metadata distinguishable from omission: %o', value => {
+    const card = normalizeCardData({
+      word: 'safe',
+      language: value as unknown as CardData['language'],
+      translationLanguage: value as unknown as CardData['translationLanguage'],
+    }, `invalid-${String(value)}`);
+
+    expect(card.language).toBe(INVALID_CARD_LANGUAGE_MARKER);
+    expect(card.translationLanguage).toBe(INVALID_CARD_LANGUAGE_MARKER);
+    expect(effectiveCardTargetLanguage(card)).toBeNull();
+    expect(() => effectiveCardLanguagePair(card)).toThrow(/language fields are invalid/i);
   });
 
   it('preserves only supported immutable content origins', () => {

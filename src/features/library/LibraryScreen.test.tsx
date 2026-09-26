@@ -4,9 +4,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
-import { LibraryScreen, shouldShowFirstUseLibraryPanel, type LibraryScreenActions, type LibraryScreenModel } from './LibraryScreen';
-import { i18n } from '@lingui/core';
+import { cardIsDue, LibraryScreen, shouldShowFirstUseLibraryPanel, type LibraryScreenActions, type LibraryScreenModel } from './LibraryScreen';
 import { setFormatLocale } from '../../lib/format';
+import { i18n } from '@lingui/core';
 
 beforeEach(() => {
   i18n.load('en', {});
@@ -96,7 +96,7 @@ describe('LibraryScreen', () => {
     expect(shouldShowFirstUseLibraryPanel({ ...empty, grid: { ...empty.grid, legacyIssue: { kind: 'cloud-access', message: 'Retry sync', retryable: true } } })).toBe(false);
   });
 
-  it('renders the first-use panel with its real actions and one import input', () => {
+  it('replaces generic empty CTAs with the Canvas first-use actions and one real import input', () => {
     const empty: LibraryScreenModel = {
       ...model,
       overview: { ...model.overview, total: 0 },
@@ -106,15 +106,18 @@ describe('LibraryScreen', () => {
     const html = renderLibrary(empty);
 
     expect(html).toContain('data-empty-library-panel="true"');
+    expect(html).toContain('Start with your');
     expect(html).toContain('Generate card');
     expect(html).toContain('Scan a text');
     expect(html).toContain('Import CSV / Excel');
     expect(html).toContain('Browse paths');
     expect(html.match(/type="file"/g)).toHaveLength(1);
-    expect(html).not.toContain('data-primary-learning-action="true"');
+    expect(html).not.toContain('Your first word starts here');
+    expect(html).not.toContain('library-canvas-tools');
+    expect(html).not.toContain('library-canvas-rail');
   });
 
-  it('keeps the original ready grid and tools flow when the empty results come from a search', () => {
+  it('leaves the current search-empty flow in place instead of presenting first-use onboarding', () => {
     const emptySearch: LibraryScreenModel = {
       ...model,
       overview: { ...model.overview, total: 0 },
@@ -124,16 +127,21 @@ describe('LibraryScreen', () => {
     const html = renderLibrary(emptySearch);
 
     expect(html).not.toContain('data-empty-library-panel="true"');
-    expect(html).toContain('lg:col-span-9');
-    expect(html).toContain('lg:col-span-3');
+    expect(html).toContain('library-canvas-rail');
+    expect(html).toContain('library-canvas-tools');
   });
 
+  it('uses scheduled review dates, including FSRS due dates, for the Due filter', () => {
+    const now = Date.parse('2026-09-25T12:00:00Z');
+    expect(cardIsDue({ ...card, nextReviewDate: '2026-09-25T11:59:59Z' }, now)).toBe(true);
+    expect(cardIsDue({ ...card, fsrs: { due: '2026-09-25T11:59:59Z', stability: 1, difficulty: 1, elapsedDays: 0, scheduledDays: 0, learningSteps: 0, reps: 0, lapses: 0, state: 0 } }, now)).toBe(true);
+    expect(cardIsDue({ ...card, nextReviewDate: '2026-09-26T00:00:00Z' }, now)).toBe(false);
+  });
   it('keeps a compact vocabulary heading and real library actions above the collection', () => {
     const html = renderLibrary();
 
-    expect(html).toMatch(/<h2[^>]*id="learning-home-heading"[^>]*>\s*Your library\s*<\/h2>/);
-    expect(html).not.toContain('<h1');
-    expect(html).toContain('data-primary-learning-action="true"');
+    expect(html).toMatch(/<h1[^>]*id="learning-home-heading"[^>]*>\s*Vocabulary\s*<\/h1>/);
+    expect(html).toContain('library-canvas-heading');
     expect(html).toContain('data-library-create-action="true"');
     expect(html).toContain('data-library-evidence="true"');
     expect(html).not.toContain('min-h-[260px]');
@@ -143,18 +151,18 @@ describe('LibraryScreen', () => {
     const html = renderLibrary();
 
     expect(html).toContain('data-library-region="collection"');
-    expect(html).toContain('lg:col-span-9');
+    expect(html).toContain('library-canvas-rail');
     expect(html).toContain('data-library-region="tools"');
-    expect(html).toContain('lg:col-span-3');
+    expect(html).toContain('library-canvas-tools');
   });
 
   it('keeps real total and due evidence in one compact strip', () => {
     const html = renderLibrary();
 
     expect(html).toContain('data-library-evidence="true"');
-    expect(html).toContain('Library');
-    expect(html).toContain('Due today');
-    expect(html).toContain('grid grid-cols-2 overflow-hidden');
+    expect(html).toContain('words');
+    expect(html).toContain('due today');
+    expect(html).toContain('library-canvas-summary');
   });
 
   it('formats library evidence with the active Vietnamese locale', () => {
@@ -172,7 +180,7 @@ describe('LibraryScreen', () => {
 
   it('keeps status popups out of the library content flow and preserves accessible lazy fallbacks', () => {
     const html = renderLibrary();
-    const overviewIndex = html.indexOf('Your library');
+    const overviewIndex = html.indexOf('Vocabulary');
     const cardsFallbackIndex = html.indexOf('Loading library cards');
     const toolsFallbackIndex = html.indexOf('Loading library tools');
 
@@ -182,7 +190,7 @@ describe('LibraryScreen', () => {
     expect(html).toContain('role="status"');
     expect(html).not.toContain('max-w-xl sm:ml-auto');
     expect(html).not.toContain('Syncing your library');
-    expect(html).toContain('grid grid-cols-1 gap-6 lg:grid-cols-12 xl:gap-8');
+    expect(html).toContain('library-canvas-rail');
   });
 
   it('keeps library presentation sources vendor- and setter-type-free', () => {

@@ -14,12 +14,12 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:278
+#: src/features/practice/StudyView.tsx:284
 msgid "flashcard.audio.check-pronunciation"
 msgstr "Kiểm tra phát âm"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:275
+#: src/features/practice/StudyView.tsx:281
 msgid "flashcard.audio.play-pronunciation"
 msgstr "Phát âm"
 
@@ -168,32 +168,32 @@ msgid "practice.feedback.incorrect-prefix"
 msgstr "Chưa đúng. Đáp án đúng là"
 
 #. js-lingui-explicit-id
-#: src/features/practice/PracticeScreen.tsx:98
+#: src/features/practice/PracticeScreen.tsx:101
 msgid "practice.loading.match"
 msgstr "Đang tải ghép từ"
 
 #. js-lingui-explicit-id
-#: src/features/practice/PracticeScreen.tsx:60
+#: src/features/practice/PracticeScreen.tsx:63
 msgid "practice.loading.quiz"
 msgstr "Đang tải bài kiểm tra"
 
 #. js-lingui-explicit-id
-#: src/features/practice/PracticeScreen.tsx:109
+#: src/features/practice/PracticeScreen.tsx:112
 msgid "practice.loading.shadowing"
 msgstr "Đang tải luyện nhại theo"
 
 #. js-lingui-explicit-id
-#: src/features/practice/PracticeScreen.tsx:78
+#: src/features/practice/PracticeScreen.tsx:81
 msgid "practice.loading.spelling"
 msgstr "Đang tải luyện chính tả"
 
 #. js-lingui-explicit-id
-#: src/features/practice/PracticeScreen.tsx:120
+#: src/features/practice/PracticeScreen.tsx:123
 msgid "practice.loading.story"
 msgstr "Đang tải câu chuyện"
 
 #. js-lingui-explicit-id
-#: src/features/practice/PracticeScreen.tsx:36
+#: src/features/practice/PracticeScreen.tsx:37
 msgid "practice.loading.study"
 msgstr "Đang tải phiên học"
 
@@ -604,163 +604,163 @@ msgid "practice.story.vocabulary-subtitle"
 msgstr "Câu chuyện được tạo từ từ vựng của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:50
+#: src/features/practice/SessionRecapModal.tsx:51
 msgid "recap.close"
 msgstr "Đóng phần tổng kết"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:68
+#: src/features/practice/SessionRecapModal.tsx:69
 msgid "recap.continue"
 msgstr "Tiếp tục học"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:47
+#: src/features/practice/SessionRecapModal.tsx:48
 msgid "recap.description"
 msgstr "Đây là những gì bạn đã củng cố hôm nay."
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:60
+#: src/features/practice/SessionRecapModal.tsx:61
 msgid "recap.mastered"
 msgstr "Đã nhớ"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:61
+#: src/features/practice/SessionRecapModal.tsx:62
 msgid "recap.needs-review"
 msgstr "Cần xem lại"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:55
+#: src/features/practice/SessionRecapModal.tsx:56
 msgid "recap.retained"
 msgstr "Ghi nhớ"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:67
+#: src/features/practice/SessionRecapModal.tsx:68
 msgid "recap.retry-weak"
 msgstr "Ôn lại {count, plural, other {# từ}}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:54
+#: src/features/practice/SessionRecapModal.tsx:55
 msgid "recap.reviewed"
 msgstr "Đã ôn"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:46
+#: src/features/practice/SessionRecapModal.tsx:47
 msgid "recap.title"
 msgstr "Hoàn thành phiên học"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:60
 #: src/features/practice/SessionRecapModal.tsx:61
+#: src/features/practice/SessionRecapModal.tsx:62
 msgid "recap.word-count"
 msgstr "{count, plural, other {# từ}}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:64
+#: src/features/practice/SessionRecapModal.tsx:65
 msgid "recap.words-to-reinforce"
 msgstr "Từ cần củng cố ({count})"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:56
+#: src/features/practice/SessionRecapModal.tsx:57
 msgid "recap.xp-earned"
 msgstr "XP nhận được"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:293
+#: src/features/practice/StudyView.tsx:299
 msgid "study.card-count"
 msgstr "Thẻ {current} / {total}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:287
+#: src/features/practice/StudyView.tsx:293
 msgid "study.close"
 msgstr "Đóng chế độ học"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:376
+#: src/features/practice/StudyView.tsx:383
 msgid "study.next-card"
 msgstr "Thẻ tiếp theo"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:372
+#: src/features/practice/StudyView.tsx:379
 msgid "study.previous-card"
 msgstr "Thẻ trước"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:290
-#: src/features/practice/StudyView.tsx:292
+#: src/features/practice/StudyView.tsx:296
+#: src/features/practice/StudyView.tsx:298
 msgid "study.progress"
 msgstr "Tiến độ học"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:303
+#: src/features/practice/StudyView.tsx:309
 msgid "study.recall-mode"
 msgstr "Chế độ gợi nhớ"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:306
+#: src/features/practice/StudyView.tsx:312
 msgid "study.recall-mode.adaptive"
 msgstr "Độ khó thích ứng"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:310
+#: src/features/practice/StudyView.tsx:316
 msgid "study.recall-mode.cloze"
 msgstr "Điền vào câu"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:308
+#: src/features/practice/StudyView.tsx:314
 msgid "study.recall-mode.image-to-word"
 msgstr "Hình ảnh → Từ"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:309
+#: src/features/practice/StudyView.tsx:315
 msgid "study.recall-mode.listen-to-word"
 msgstr "Nghe → Từ"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:307
+#: src/features/practice/StudyView.tsx:313
 msgid "study.recall-mode.native-to-target"
 msgstr "{nativeLanguage} → {targetLanguage}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:305
+#: src/features/practice/StudyView.tsx:311
 msgid "study.recall-mode.target-to-native"
 msgstr "{targetLanguage} → {nativeLanguage}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:394
+#: src/features/practice/StudyView.tsx:401
 msgid "study.shortcut.flip-card"
 msgstr "Lật thẻ"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:395
+#: src/features/practice/StudyView.tsx:402
 msgid "study.shortcut.previous-next"
 msgstr "Trước / tiếp"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:396
+#: src/features/practice/StudyView.tsx:403
 msgid "study.shortcut.rate-memory"
 msgstr "Đánh giá ghi nhớ"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:397
+#: src/features/practice/StudyView.tsx:404
 msgid "study.shortcut.star-play-speak"
 msgstr "Gắn sao / nghe / nói"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:392
+#: src/features/practice/StudyView.tsx:399
 msgid "study.shortcuts"
 msgstr "Phím tắt học tập"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:324
+#: src/features/practice/StudyView.tsx:330
 msgid "study.swipe.again"
 msgstr "LẠI 👎"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:319
+#: src/features/practice/StudyView.tsx:325
 msgid "study.swipe.good"
 msgstr "TỐT 👍"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:366
+#: src/features/practice/StudyView.tsx:373
 msgid "study.sync-pending"
 msgstr "Lượt ôn đã lưu trên thiết bị và đang chờ đồng bộ."

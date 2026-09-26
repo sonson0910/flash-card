@@ -36,7 +36,7 @@ test('deleting and undoing a device card preserves learning data after reload', 
   }, card);
   await page.route(/^https?:\/\/(?!127\.0\.0\.1:4173)/, route => route.abort());
   await page.goto('/?view=library&locale=en');
-  const flashcard = page.getByRole('group', { name: /^resilient flashcard\./ });
+  const flashcard = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'resilient', exact: true }) });
   await expect(flashcard).toBeVisible();
   await flashcard.getByRole('button', { name: 'Delete card' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete card' }).click();
@@ -66,7 +66,7 @@ test('clearing the library dismisses an invalidated delete Undo', async ({ page 
   }, card);
   await page.route(/^https?:\/\/(?!127\.0\.0\.1:4173)/, route => route.abort());
   await page.goto('/?view=library&locale=en');
-  const flashcard = page.getByRole('group', { name: /^resilient flashcard\./ });
+  const flashcard = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'resilient', exact: true }) });
   await flashcard.getByRole('button', { name: 'Delete card' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete card' }).click();
   const undo = page.locator('[data-undo-toast]');

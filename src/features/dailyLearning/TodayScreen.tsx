@@ -19,6 +19,7 @@ import { Trans } from '@lingui/react';
 import { Lumi } from '../../components/lumi/Lumi';
 import { useTheme } from '../theme/ThemeProvider';
 import { readLumiEnabled } from '../settings/lumi-preference';
+import './daily-learning-canvas.css';
 import './today-caught-up.css';
 import type { LessonMode, TodayScreenActions, TodayScreenModel } from './dailyLearningPresentation';
 
@@ -113,95 +114,6 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
     </section>
   );
 }
-function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
-  return (
-    <section aria-labelledby="practice-mode-heading" className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-1.5">
-            <Zap size={14} className="text-cyan-700 dark:text-cyan-400" />
-            <p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="today.practice.kicker" message="Extra practice" /></p>
-          </div>
-          <h2 id="practice-mode-heading" className="mt-1 text-xl font-black tracking-tight"><Trans id="today.practice.title" message="Practice your way" /></h2>
-          <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans id="today.practice.description" message="Use another exercise when you want a different kind of recall." /></p>
-        </div>
-        <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-11 rounded-full px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 cursor-pointer"><Trans id="today.practice.more" message="More practice" /></button>
-      </div>
-      <div className="mt-5 grid grid-cols-1 gap-3 border-t border-[var(--sf-border)] pt-5 sm:grid-cols-3">
-          {featuredLessonModes.map((mode) => (
-            <button
-              key={mode.id}
-              type="button"
-              data-practice-mode="true"
-              onClick={() => actions.startLesson(mode.id)}
-              className="practice-bento-card min-h-24 rounded-xl group flex flex-col justify-between p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)]"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className={`flex size-9 items-center justify-center rounded-xl border bg-gradient-to-br ${mode.accentColor} shadow-xs transition-transform duration-200 group-hover:scale-110`}>
-                  <mode.Icon size={18} />
-                </div>
-                <span className="rounded-full border border-slate-200/90 bg-slate-100/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
-                  <Trans id={mode.tag.id} message={mode.tag.message} />
-                </span>
-              </div>
-              <div className="mt-3">
-                <span className="block text-sm font-black text-[var(--sf-text)] group-hover:text-[var(--sf-brand)] transition-colors"><Trans id={mode.label.id} message={mode.label.message} /></span>
-                <span className="mt-0.5 block text-xs leading-5 text-[var(--sf-text-muted)]"><Trans id={mode.description.id} message={mode.description.message} /></span>
-              </div>
-            </button>
-          ))}
-      </div>
-      <details className="group mt-3">
-        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-xl px-2 text-sm font-bold text-[var(--sf-brand-text)] hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden">
-          <span><Trans id="today.practice.more-modes" message="More lesson modes" /></span>
-          <ChevronDown size={16} className="transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
-        </summary>
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {additionalLessonModes.map((mode) => (
-            <button
-              key={mode.id}
-              type="button"
-              data-practice-catalog-mode="true"
-              onClick={() => actions.startLesson(mode.id)}
-              className="practice-bento-card min-h-20 rounded-xl p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)]"
-            >
-              <span className="flex items-center gap-2 font-black text-[var(--sf-text)]"><mode.Icon size={17} className="text-[var(--sf-brand-text)]" /><Trans id={mode.label.id} message={mode.label.message} /></span>
-              <span className="mt-1 block text-xs leading-5 text-[var(--sf-text-muted)]"><Trans id={mode.description.id} message={mode.description.message} /></span>
-            </button>
-          ))}
-        </div>
-      </details>
-    </section>
-  );
-}
-
-function StreakChip({ streak }: Pick<TodayScreenProps['model'], 'streak'>) {
-  if (streak === undefined || streak < 1) return null;
-
-  return (
-    <Dialog.Root>
-      <Dialog.Trigger asChild>
-        <button type="button" className="liquid-control crystal-chamfer-sm inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-bold text-[var(--sf-text)] transition-transform hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none">
-          <Flame size={16} className="text-orange-500" aria-hidden="true" />
-          <Trans id="today.streak.chip" message="{count, plural, one {# study day} other {# study days}}" values={{ count: streak }} />
-        </button>
-      </Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/72 backdrop-blur-sm motion-reduce:backdrop-blur-none" />
-        <Dialog.Content className="liquid-glass crystal-chamfer fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[28px] border border-[var(--sf-border)] p-6 text-[var(--sf-text)] shadow-2xl focus-visible:outline-2 focus-visible:outline-offset-2">
-          <div className="flex items-start gap-4">
-            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-orange-500/12 text-orange-500"><Flame size={22} aria-hidden="true" /></span>
-            <div className="min-w-0 flex-1">
-              <Dialog.Title className="text-balance text-xl font-black"><Trans id="today.streak.title" message="Your study rhythm" /></Dialog.Title>
-              <Dialog.Description className="mt-2 text-pretty text-sm leading-6 text-[var(--sf-text-muted)]"><Trans id="today.streak.description" message="You have studied for {count, plural, one {# day in a row} other {# days in a row}}. Keep choosing the next helpful study step." values={{ count: streak }} /></Dialog.Description>
-            </div>
-            <Dialog.Close className="flex size-11 shrink-0 items-center justify-center rounded-xl text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2" aria-label={i18n._(msg({ id: 'today.streak.close', message: 'Close streak details' }).id)}><X size={18} aria-hidden="true" /></Dialog.Close>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
-  );
-}
 
 function CaughtUpPanel({ model, actions, showLumi }: TodayScreenProps & { readonly showLumi: boolean }) {
   const { family, mode } = useTheme();
@@ -293,31 +205,121 @@ function CaughtUpPanel({ model, actions, showLumi }: TodayScreenProps & { readon
   );
 }
 
+function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
+  return (
+    <section aria-labelledby="practice-mode-heading" className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-1.5">
+            <Zap size={14} className="text-cyan-700 dark:text-cyan-400" />
+            <p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="today.practice.kicker" message="Extra practice" /></p>
+          </div>
+          <h2 id="practice-mode-heading" className="mt-1 text-xl font-black tracking-tight"><Trans id="today.practice.title" message="Practice your way" /></h2>
+          <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans id="today.practice.description" message="Use another exercise when you want a different kind of recall." /></p>
+        </div>
+        <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-11 rounded-full px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 cursor-pointer"><Trans id="today.practice.more" message="More practice" /></button>
+      </div>
+      <div className="mt-5 grid grid-cols-1 gap-3 border-t border-[var(--sf-border)] pt-5 sm:grid-cols-3">
+          {featuredLessonModes.map((mode) => (
+            <button
+              key={mode.id}
+              type="button"
+              data-practice-mode="true"
+              onClick={() => actions.startLesson(mode.id)}
+              className="practice-bento-card min-h-24 rounded-xl group flex flex-col justify-between p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)]"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className={`flex size-9 items-center justify-center rounded-xl border bg-gradient-to-br ${mode.accentColor} shadow-xs transition-transform duration-200 group-hover:scale-110`}>
+                  <mode.Icon size={18} />
+                </div>
+                <span className="rounded-full border border-slate-200/90 bg-slate-100/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+                  <Trans id={mode.tag.id} message={mode.tag.message} />
+                </span>
+              </div>
+              <div className="mt-3">
+                <span className="block text-sm font-black text-[var(--sf-text)] group-hover:text-[var(--sf-brand)] transition-colors"><Trans id={mode.label.id} message={mode.label.message} /></span>
+                <span className="mt-0.5 block text-xs leading-5 text-[var(--sf-text-muted)]"><Trans id={mode.description.id} message={mode.description.message} /></span>
+              </div>
+            </button>
+          ))}
+      </div>
+      <details className="group mt-3">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-xl px-2 text-sm font-bold text-[var(--sf-brand-text)] hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden">
+          <span><Trans id="today.practice.more-modes" message="More lesson modes" /></span>
+          <ChevronDown size={16} className="transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
+        </summary>
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {additionalLessonModes.map((mode) => (
+            <button
+              key={mode.id}
+              type="button"
+              data-practice-catalog-mode="true"
+              onClick={() => actions.startLesson(mode.id)}
+              className="practice-bento-card min-h-20 rounded-xl p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)]"
+            >
+              <span className="flex items-center gap-2 font-black text-[var(--sf-text)]"><mode.Icon size={17} className="text-[var(--sf-brand-text)]" /><Trans id={mode.label.id} message={mode.label.message} /></span>
+              <span className="mt-1 block text-xs leading-5 text-[var(--sf-text-muted)]"><Trans id={mode.description.id} message={mode.description.message} /></span>
+            </button>
+          ))}
+        </div>
+      </details>
+    </section>
+  );
+}
+
+function StreakChip({ streak }: Pick<TodayScreenProps['model'], 'streak'>) {
+  if (streak === undefined || streak < 1) return null;
+
+  return (
+    <Dialog.Root>
+      <Dialog.Trigger asChild>
+        <button type="button" className="liquid-control crystal-chamfer-sm inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-bold text-[var(--sf-text)] transition-transform hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none">
+          <Flame size={16} className="text-orange-500" aria-hidden="true" />
+          <Trans id="today.streak.chip" message="{count, plural, one {# study day} other {# study days}}" values={{ count: streak }} />
+        </button>
+      </Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/72 backdrop-blur-sm motion-reduce:backdrop-blur-none" />
+        <Dialog.Content className="liquid-glass crystal-chamfer fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[28px] border border-[var(--sf-border)] p-6 text-[var(--sf-text)] shadow-2xl focus-visible:outline-2 focus-visible:outline-offset-2">
+          <div className="flex items-start gap-4">
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-orange-500/12 text-orange-500"><Flame size={22} aria-hidden="true" /></span>
+            <div className="min-w-0 flex-1">
+              <Dialog.Title className="text-balance text-xl font-black"><Trans id="today.streak.title" message="Your study rhythm" /></Dialog.Title>
+              <Dialog.Description className="mt-2 text-pretty text-sm leading-6 text-[var(--sf-text-muted)]"><Trans id="today.streak.description" message="You have studied for {count, plural, one {# day in a row} other {# days in a row}}. Keep choosing the next helpful study step." values={{ count: streak }} /></Dialog.Description>
+            </div>
+            <Dialog.Close className="flex size-11 shrink-0 items-center justify-center rounded-xl text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2" aria-label={i18n._(msg({ id: 'today.streak.close', message: 'Close streak details' }).id)}><X size={18} aria-hidden="true" /></Dialog.Close>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
 
 export function TodayScreen({ model, actions }: TodayScreenProps) {
   const { family } = useTheme();
   const showLumi = family === 'crystal' && readLumiEnabled();
   if (model.status === 'loading') {
-    return <section aria-labelledby="daily-today-heading" aria-busy="true" className="mx-auto max-w-6xl"><PageHeading model={model} /><div className="skeleton-sheen mt-6 min-h-52 rounded-[28px] border border-[var(--sf-border)]" role="status" aria-live="polite"><span className="sr-only">{model.message}</span></div></section>;
+    return <section aria-labelledby="daily-today-heading" aria-busy="true" className="daily-canvas daily-canvas-today"><p className="premium-kicker uppercase tracking-[.16em]"><Trans id="today.kicker" message="Daily learning" /></p><PageHeading model={model} /><div className="daily-facet-panel skeleton-sheen mt-6 min-h-52" role="status" aria-live="polite"><span className="sr-only">{model.message}</span></div></section>;
   }
 
   if (model.status === 'empty') {
     return (
-      <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl">
-        <p className="premium-kicker uppercase tracking-[0.16em]"><Trans id="today.kicker" message="Daily learning" /></p>
-        <PageHeading model={model} />
-        <div className="liquid-glass mt-6 max-w-3xl rounded-[28px] border border-[var(--sf-border)] p-6 sm:p-8 shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
-          {showLumi && <Lumi pose="sleepy" size={76} className="crystal-ornament mb-4" />}
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-800 dark:text-cyan-300">
-            <Sparkles size={13} className="text-cyan-600 dark:text-cyan-400" />
-            <Trans id="today.empty.kicker" message="Start here" />
-          </span>
-          <h2 className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl"><Trans id="today.empty.title" message="Build your first learning plan" /></h2>
-          <p className="mt-3 max-w-xl text-pretty leading-7 text-[var(--sf-text-muted)]" role="status" aria-live="polite">{model.message} <Trans id="today.empty.description" message="Add a word you care about, or begin with a reviewed learning path." /></p>
-          <p className="mt-2 text-sm text-[var(--sf-text-muted)]"><Trans id="today.adult-statement" message="SonFlash is for learners aged 18 and over." /> <a href="/privacy.html" className="underline"><Trans id="today.privacy" message="Privacy" /></a> · <a href="/terms.html" className="underline"><Trans id="today.terms" message="Terms" /></a></p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <button type="button" onClick={actions.openVocabulary} className={primaryButton}><Trans id="today.empty.add-vocabulary" message="Add vocabulary" /></button>
-            <button type="button" onClick={actions.openPaths} className={secondaryButton}><Trans id="today.empty.open-paths" message="Explore learning paths" /></button>
+      <section aria-labelledby="daily-today-heading" className="daily-canvas daily-canvas-today daily-zero">
+        <div className="daily-zero-copy">
+          <p className="premium-kicker uppercase tracking-[0.16em]"><Trans id="today.kicker" message="Daily learning" /></p>
+          <PageHeading model={model} />
+          <p className="daily-zero-lede" role="status" aria-live="polite">{model.message} <Trans id="today.empty.description" message="Add a word you care about, or begin with a reviewed learning path." /></p>
+        </div>
+        <div className="daily-facet-panel daily-zero-panel">
+          <div className="daily-zero-lumi">{showLumi && <Lumi pose="sleepy" size={150} className="crystal-ornament" />}</div>
+          <div className="daily-zero-panel-copy">
+            <span className="daily-eyebrow"><Sparkles size={14} aria-hidden="true" /><Trans id="today.empty.kicker" message="Start here" /></span>
+            <h2><Trans id="today.empty.title" message="Build your first learning plan" /></h2>
+            <p><Trans id="today.adult-statement" message="SonFlash is for learners aged 18 and over." /> <a href="/privacy.html"><Trans id="today.privacy" message="Privacy" /></a> · <a href="/terms.html"><Trans id="today.terms" message="Terms" /></a></p>
+            <div className="daily-zero-actions">
+              <button type="button" onClick={actions.openVocabulary} className={`${primaryButton} daily-facet-action`}><Trans id="today.empty.add-vocabulary" message="Add vocabulary" /></button>
+              <button type="button" onClick={actions.openPaths} className={`${secondaryButton} daily-ghost-action`}><Trans id="today.empty.open-paths" message="Explore learning paths" /></button>
+            </div>
           </div>
         </div>
       </section>
@@ -326,7 +328,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
 
   if (model.status === 'caught-up') {
     return (
-      <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl">
+      <section aria-labelledby="daily-today-heading" className="daily-canvas mx-auto max-w-6xl">
         <header>
           <p className="premium-kicker uppercase tracking-[0.16em]"><Trans id="today.kicker" message="Daily learning" /></p>
           <PageHeading model={model} />
@@ -345,7 +347,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
 
   if (model.status === 'error') {
     return (
-      <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl">
+      <section aria-labelledby="daily-today-heading" className="daily-canvas daily-canvas-today">
         <PageHeading model={model} />
         <div className="mt-6 max-w-3xl rounded-[28px] border border-rose-500/70 bg-[var(--sf-surface)] p-6 sm:p-8" role="alert" aria-live="assertive">
           <p className="premium-kicker uppercase tracking-[0.16em]"><Trans id="today.error.kicker" message="Plan unavailable" /></p>
@@ -358,7 +360,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
   }
 
   return (
-    <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl space-y-5 sm:space-y-6">
+    <section aria-labelledby="daily-today-heading" className="daily-canvas daily-canvas-today mx-auto max-w-6xl space-y-5 sm:space-y-6">
       <header>
         <p className="premium-kicker uppercase tracking-[0.16em]"><Trans id="today.kicker" message="Daily learning" /></p>
         <PageHeading model={model} />

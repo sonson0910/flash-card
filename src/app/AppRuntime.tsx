@@ -10,7 +10,7 @@ import { UndoToast, type UndoToastItem } from '../components/ui/UndoToast';
 import { LEARNING_WORKSPACE_ID, SkipToContentLink } from '../components/shell/SkipToContentLink';
 import { useOverlayState } from '../features/overlays/useOverlayState';
 import { appDependencies } from './appDependencies';
-import { AppDeferredLibraryView, AppDeferredPracticeView } from './AppDeferredViews';
+import { AppDeferredCreateCardDialog, AppDeferredLibraryView, AppDeferredPracticeView } from './AppDeferredViews';
 import { AppViewStage } from './AppViewStage';
 import { useAppLibraryRuntime } from './useAppLibraryRuntime';
 import { useAppLearningCoordination } from './useAppLearningCoordination';
@@ -148,7 +148,7 @@ export default function AppRuntime({
     && ['needs-attention', 'offline', 'saving-offline'].includes(syncStatus.kind);
   const isShareModalOpen = intakeSharing.share.isShareDialogOpen || intakeSharing.share.isLoading;
   const handlePracticeStageKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (practiceSession.mode !== 'study' || event.defaultPrevented || event.nativeEvent.isComposing) return;
+    if (practiceSession.mode !== 'study' || practiceSession.study.isPaused || event.defaultPrevented || event.nativeEvent.isComposing) return;
     const target = event.target as { closest?: (selectors: string) => Element | null } | null;
     if (target?.closest?.('button, a, input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [data-radix-popper-content-wrapper]')) return;
     const noModifiers = !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
@@ -344,6 +344,12 @@ export default function AppRuntime({
         viewMode={viewMode}
         libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
         syncStatus={shellSyncStatus}
+      />
+
+      <AppDeferredCreateCardDialog
+        model={intakeSharing.cardCreator}
+        actions={intakeActions.cardCreator}
+        deckOptions={customDecks}
       />
 
       {(hasMountedOverlays || isShareModalOpen || Boolean(intakeSharing.share.activeShareId)) && (

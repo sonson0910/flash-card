@@ -19,6 +19,7 @@ import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { Trans } from '@lingui/react';
 import { formatNumber } from '../../lib/format';
+import './catalog-workspace.css';
 import { catalogTierMessages, catalogTrackMessages } from './catalogPresentation';
 import type {
   CatalogAvailabilityStatus,
@@ -145,7 +146,7 @@ function PersonalLibraryPaths({
     { label: msg({ id: 'catalog.personal.mastered', message: 'Mastered' }), value: library.learned, copy: msg({ id: 'catalog.personal.mastered-description', message: 'Cards already retained with confidence.' }) },
   ];
   return (
-    <section aria-labelledby="personal-paths-heading" className="overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
+    <section aria-labelledby="personal-paths-heading" className="catalog-personal-paths overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
       <div className="grid gap-5 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <div className="min-w-0"><p className="premium-kicker uppercase tracking-[0.16em]"><Trans id="catalog.personal.kicker" message="Built from your library" /></p><h2 id="personal-paths-heading" className="mt-2 text-balance text-2xl font-black tracking-tight sm:text-3xl"><Trans id="catalog.personal.title" message="Your personal paths" /></h2><p className="mt-2 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]"><Trans id="catalog.personal.description" message="Use your {count} saved cards now. No draft catalog vocabulary is mixed into these paths." values={{ count: formatNumber(library.total) }} /></p></div>
         <div className="flex flex-wrap gap-3 lg:justify-end">
@@ -167,7 +168,7 @@ function TrackCard({ track, selected, onSelect }: { track: CatalogTrackPresentat
   const copy = catalogTrackMessages[track.id];
   const progress = track.total === 0 ? 0 : Math.round((track.mastered / track.total) * 100);
   return (
-    <button type="button" onClick={onSelect} aria-pressed={selected} className={`group relative min-h-52 overflow-hidden rounded-[22px] border p-5 text-left shadow-[0_18px_48px_-38px_var(--sf-shadow)] transition-all hover:-translate-y-1 hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transform-none motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm ${selected ? 'border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] ring-1 ring-[var(--sf-brand)]/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
+    <button type="button" onClick={onSelect} aria-pressed={selected} className={`catalog-track-card group relative min-h-52 overflow-hidden rounded-[22px] border p-5 text-left shadow-[0_18px_48px_-38px_var(--sf-shadow)] transition-all hover:-translate-y-1 hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transform-none motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm ${selected ? 'border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] ring-1 ring-[var(--sf-brand)]/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
       <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-2 ${selected ? 'bg-[var(--sf-brand)]' : 'bg-[var(--sf-border)] group-hover:bg-[var(--sf-brand)]'}`} />
       <span className="relative flex items-center justify-between gap-3"><span className="text-xl font-black tracking-tight">{i18n._(copy.label)}</span>{selected && <span className="inline-flex items-center gap-1 rounded-full border border-[var(--sf-brand)]/30 bg-[var(--sf-brand)]/10 px-2 py-1 text-[11px] font-black text-[var(--sf-brand-text)]"><Check aria-hidden="true" className="size-3.5" /><Trans id="paths.selected" message="Selected" /></span>}</span>
       <span className="relative mt-2 block text-sm leading-6 text-[var(--sf-text-muted)]">{i18n._(copy.description)}</span>
@@ -183,7 +184,7 @@ function TierStep({ tier, selected, onSelect }: { tier: CatalogTierPresentation;
   const isLocked = tier.state === 'locked';
   return (
     <li className="min-w-0 flex-1">
-      <button type="button" onClick={onSelect} disabled={isLocked} aria-pressed={selected} className={`h-full min-h-12 w-full rounded-2xl border p-4 text-left transition-all hover:border-cyan-400 focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-70 ${selected ? 'border-cyan-400 bg-cyan-50 shadow-[inset_4px_0_0_#0891B2] dark:bg-cyan-950/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
+      <button type="button" onClick={onSelect} disabled={isLocked} aria-pressed={selected} className={`catalog-tier-step h-full min-h-12 w-full rounded-2xl border p-4 text-left transition-all hover:border-cyan-400 focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-70 ${selected ? 'border-cyan-400 bg-cyan-50 shadow-[inset_4px_0_0_#0891B2] dark:bg-cyan-950/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
         <span className="flex items-center gap-2 text-sm font-bold"><Icon className="size-4 shrink-0" aria-hidden="true" />{i18n._(stateLabel)}</span>
         <span className="mt-2 block text-lg font-black">{i18n._(copy.label)}{tier.cefrRange && ` · ${tier.cefrRange}`}{selected && <> · <Trans id="paths.selected" message="Selected" /></>}</span>
         <span className="mt-1 block text-sm text-[var(--sf-text-muted)]">{i18n._(copy.description)}</span>
@@ -218,7 +219,7 @@ function VocabularyCard({ card, onAdd }: { card: CatalogVocabularyPresentation; 
         : i18n._(msg({ id: 'catalog.card.add-to-library', message: 'Add to library' }));
   return (
     <article
-      className="min-w-0 break-words rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-sm"
+      className="catalog-vocabulary-card min-w-0 break-words rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-sm"
       style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 320px' }}
       aria-labelledby={`catalog-word-${card.id}`}
     >
@@ -261,8 +262,8 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
     : i18n._(msg({ id: 'paths.catalog.description', message: 'Choose a reviewed language catalog, follow a level-by-level path, and keep downloaded words available offline.' }));
 
   return (
-    <section className="mx-auto w-full min-w-0 max-w-7xl space-y-6 sm:space-y-8" aria-labelledby="catalog-heading">
-      <header className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.32fr)] lg:items-end">
+    <section className="catalog-canvas mx-auto w-full min-w-0 max-w-7xl space-y-6 sm:space-y-8" aria-labelledby="catalog-heading">
+      <header className="catalog-heading grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.32fr)] lg:items-end">
         <div><p className="premium-kicker uppercase tracking-[0.16em]">{kicker}</p>
         <h1 id="catalog-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl"><Trans id="paths.title" message="Language paths" /></h1>
         <p className="mt-3 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)] sm:text-base">{description}</p></div>
@@ -278,7 +279,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
       {isPersonal && model.personalLibrary && <PersonalLibraryPaths library={model.personalLibrary} actions={actions} />}
 
       {isReady && <>
-        {activeTrack && activeTrackCopy && <section aria-labelledby="catalog-current-path-heading" className="liquid-glass crystal-chamfer relative overflow-hidden rounded-[28px] border border-[var(--sf-border)] p-6 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-8">
+        {activeTrack && activeTrackCopy && <section aria-labelledby="catalog-current-path-heading" className="catalog-current-path liquid-glass crystal-chamfer relative overflow-hidden rounded-[28px] border border-[var(--sf-border)] p-6 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-8">
           {isCrystal && <span aria-hidden="true" className="crystal-starfield pointer-events-none absolute inset-0 opacity-70 motion-reduce:animate-none" />}
           <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.46fr)] lg:items-end">
             <div className="min-w-0">
@@ -287,7 +288,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
               <p className="mt-3 max-w-xl text-pretty leading-7 text-[var(--sf-text-muted)]">{i18n._(activeTrackCopy.description)}</p>
               <p className="mt-5 text-sm font-bold text-[var(--sf-brand-text)]"><Trans id="paths.current.progress" message="{started} started · {mastered} mastered" values={{ started: formatNumber(activeTrack.started), mastered: formatNumber(activeTrack.mastered) }} /></p>
             </div>
-            <div className="rounded-[22px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+            <div className="catalog-roadmap-panel rounded-[22px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
               <p className="text-xs font-black uppercase tracking-[0.14em] text-[var(--sf-text-muted)]"><Trans id="paths.current.roadmap" message="Roadmap" /></p>
               <ol className="mt-4 space-y-3" aria-label={i18n._(msg({ id: 'paths.current.roadmap-label', message: 'Current path roadmap' }))}>
                 {model.tiers.map((tier, index) => <li key={tier.id} className="flex items-center gap-3 text-sm"><span aria-hidden="true" className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${tier.id === model.selectedTier ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)]'}`}>{index + 1}</span><span className={tier.id === model.selectedTier ? 'font-black text-[var(--sf-text)]' : 'font-semibold text-[var(--sf-text-muted)]'}>{i18n._(catalogTierMessages[tier.id].label)}</span></li>)}
@@ -296,17 +297,17 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
           </div>
         </section>}
 
-        <section aria-labelledby="catalog-tracks-heading" className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 sm:p-5">
+        <section aria-labelledby="catalog-tracks-heading" className="catalog-shelf rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 sm:p-5">
           <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="paths.goal.kicker" message="Choose your goal" /></p><h2 id="catalog-tracks-heading" className="mt-1 text-xl font-black tracking-tight"><Trans id="paths.goal.title" message="Choose the path that fits your next goal" /></h2></div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">{model.tracks.map(track => <TrackCard key={track.id} track={track} selected={track.id === model.selectedTrack} onSelect={() => actions.selectTrack(track.id)} />)}</div>
         </section>
 
-        <section aria-labelledby="catalog-roadmap-heading">
+        <section aria-labelledby="catalog-roadmap-heading" className="catalog-roadmap">
           <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="paths.roadmap.kicker" message="Your roadmap" /></p><h2 id="catalog-roadmap-heading" className="mt-1 text-2xl font-black tracking-tight"><Trans id="paths.roadmap.title" message="Foundation to advanced" /></h2></div>
           <ol className="grid grid-cols-1 gap-3 md:grid-cols-3">{model.tiers.map(tier => <TierStep key={tier.id} tier={tier} selected={tier.id === model.selectedTier} onSelect={() => actions.selectTier(tier.id)} />)}</ol>
         </section>
 
-        <section aria-labelledby="catalog-vocabulary-heading" aria-busy={model.isLoadingPage || model.isLoadingMore}>
+        <section aria-labelledby="catalog-vocabulary-heading" className="catalog-explorer" aria-busy={model.isLoadingPage || model.isLoadingMore}>
           <div className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-5">
             <div className="flex items-center gap-2"><Layers3 className="size-5" aria-hidden="true" /><h2 id="catalog-vocabulary-heading" className="text-xl font-black tracking-tight"><Trans id="catalog.explorer.title" message="Vocabulary explorer" /></h2></div>
             <details className="group mt-3" open>

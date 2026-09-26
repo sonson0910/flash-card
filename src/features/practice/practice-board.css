@@ -1,0 +1,132 @@
+/* Directly ported from the Canvas practice boards.  Component markup keeps the
+   real session state/actions; these board rules supply their paper and Crystal
+   presentation without changing interaction selectors. */
+.practice-board {
+  --practice-line: color-mix(in srgb, var(--sf-border) 86%, transparent);
+  position: relative;
+  isolation: isolate;
+  width: min(100%, 960px);
+  min-height: min(720px, 100dvh);
+  padding-inline: clamp(12px, 3vw, 32px);
+}
+.practice-board::before {
+  position: absolute;
+  z-index: -1;
+  inset: 72px 0 auto;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--sf-brand) 10%, transparent), transparent 68%);
+  content: '';
+  filter: blur(12px);
+  pointer-events: none;
+}
+.practice-board > div:first-child > button:first-child,
+.practice-board--match > div:first-child > button,
+.practice-board--shadowing > div:first-child > button,
+.practice-board--study > div:first-child > button {
+  border-color: var(--practice-line);
+  box-shadow: inset 0 1px rgb(255 255 255 / .12);
+}
+.practice-board :is(article, aside, [role='status']) {
+  border-color: var(--practice-line);
+}
+.practice-board--quiz [aria-labelledby='quiz-question-heading'] > :not(.absolute),
+.practice-board--spelling [aria-labelledby='spelling-question-heading'] {
+  border-radius: 24px;
+}
+.practice-board--quiz [aria-labelledby='quiz-question-heading'] > :first-of-type {
+  min-height: 260px;
+  border: 1px solid var(--practice-line);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--sf-surface-glass) 92%, transparent), color-mix(in srgb, var(--sf-brand) 6%, var(--sf-surface)));
+  box-shadow: var(--sf-panel-shadow), inset 0 1px rgb(255 255 255 / .18);
+}
+.practice-board--quiz [aria-labelledby='quiz-question-heading'] button:not([data-color-role]),
+.practice-board--spelling form button:not([data-color-role]) {
+  border-color: var(--practice-line);
+  box-shadow: 0 6px 18px -15px var(--sf-shadow), inset 0 1px rgb(255 255 255 / .12);
+}
+.practice-board--spelling [aria-labelledby='spelling-question-heading'] {
+  min-height: 430px;
+  background: linear-gradient(145deg, var(--sf-surface-glass), color-mix(in srgb, var(--sf-brand) 5%, var(--sf-surface)));
+}
+.practice-board--spelling input {
+  border-color: var(--practice-line) !important;
+  background: color-mix(in srgb, var(--sf-surface) 86%, transparent) !important;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / .05);
+}
+.practice-board--story article {
+  min-height: 430px;
+  background: linear-gradient(145deg, var(--sf-surface-glass), color-mix(in srgb, var(--sf-brand) 4%, var(--sf-surface)));
+}
+.practice-board--story article p { font-family: var(--sf-font-display, Georgia, serif); }
+.practice-board--story aside { position: sticky; top: 16px; }
+.practice-board--match > div:first-child,
+.practice-board--shadowing > div:first-child { border-bottom: 1px solid var(--practice-line); padding-bottom: 14px; }
+.practice-board--match button[lang] {
+  min-height: 64px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, var(--sf-surface-glass), color-mix(in srgb, var(--sf-surface) 88%, transparent));
+}
+.practice-board--match button[lang]:hover { transform: translateY(-1px); box-shadow: 0 13px 22px -20px var(--sf-shadow); }
+.practice-board--match .rounded-full.border-4 { box-shadow: 0 16px 40px -26px var(--sf-shadow), inset 0 1px rgb(255 255 255 / .18); }
+.practice-board--shadowing h2 { font-family: var(--sf-font-display, Georgia, serif); }
+.practice-board--shadowing section > div.border-y {
+  border: 1px solid var(--practice-line);
+  border-radius: 20px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--sf-surface-glass) 90%, transparent), color-mix(in srgb, var(--sf-brand) 4%, var(--sf-surface)));
+  box-shadow: inset 0 1px rgb(255 255 255 / .12);
+}
+.practice-board--shadowing button.size-20 { box-shadow: 0 16px 36px -15px var(--sf-shadow), 0 0 0 8px color-mix(in srgb, var(--sf-brand) 10%, transparent); }
+.practice-board--study [data-study-progress] { border-radius: 18px; box-shadow: inset 0 1px rgb(255 255 255 / .14), var(--sf-panel-shadow); }
+.practice-board--study [data-study-card] { max-width: 680px; }
+.practice-board--study [data-study-rating] { max-width: 680px; }
+.practice-rating-board { border-color: var(--practice-line, var(--sf-border)) !important; }
+.practice-rating-board button { border-radius: 14px; }
+.practice-recap-board {
+  isolation: isolate;
+  overflow: hidden;
+  border-color: var(--practice-line, var(--sf-border)) !important;
+  background:
+    radial-gradient(ellipse at 50% -15%, color-mix(in srgb, var(--sf-brand) 18%, transparent), transparent 50%),
+    var(--sf-surface) !important;
+  box-shadow: 0 28px 86px -34px var(--sf-shadow), inset 0 1px rgb(255 255 255 / .16) !important;
+}
+.practice-recap-board > div:nth-of-type(2) > div {
+  min-height: 92px;
+  border-color: var(--practice-line, var(--sf-border));
+  box-shadow: inset 0 1px rgb(255 255 255 / .14);
+}
+.practice-recap-board > div:nth-of-type(3) {
+  border-color: var(--practice-line, var(--sf-border));
+  background: color-mix(in srgb, var(--sf-surface-raised) 88%, transparent);
+  box-shadow: inset 0 1px rgb(255 255 255 / .12);
+}
+.practice-recap-board button { min-height: 44px; }
+:root[data-theme-family='crystal'] .practice-recap-board {
+  background:
+    radial-gradient(ellipse at 50% -4%, rgb(255 42 77 / .24), transparent 52%),
+    linear-gradient(145deg, color-mix(in srgb, var(--sf-surface) 94%, #162342), var(--sf-surface)) !important;
+}
+:root[data-theme-family='crystal'] .practice-recap-board [role='heading'],
+:root[data-theme-family='crystal'] .practice-recap-board [data-count-up] { font-style: italic; }
+:root[data-theme-family='crystal'] .practice-board::before {
+  background: radial-gradient(ellipse at 50% 10%, rgb(255 42 77 / .17), transparent 64%), radial-gradient(ellipse at 72% 48%, rgb(68 141 255 / .13), transparent 70%);
+}
+:root[data-theme-family='crystal'] .practice-board :is(h1, h2, h3) { font-family: var(--sf-font-display, Kanit, sans-serif); font-style: italic; }
+:root[data-theme-family='crystal'] .practice-board :is(article, aside, [aria-labelledby$='question-heading'], .practice-rating-board) { clip-path: var(--sf-chamfer, none); }
+@media (max-width: 640px) {
+  .practice-board { min-height: auto; padding-inline: 12px; }
+  .practice-board::before { inset-inline: -20px; top: 36px; height: 230px; }
+  .practice-board--quiz [aria-labelledby='quiz-question-heading'] > :first-of-type { min-height: 210px; }
+  .practice-board--spelling [aria-labelledby='spelling-question-heading'] { min-height: 360px; }
+  .practice-board--story article { min-height: auto; }
+  .practice-board--story aside { position: static; }
+  .practice-board--match button[lang] { min-height: 56px; }
+  .practice-board--shadowing section > div.border-y { border-radius: 16px; }
+  .practice-recap-board { width: calc(100% - 1rem); max-height: calc(100dvh - 1rem); padding: 16px; }
+  .practice-recap-board > div:nth-of-type(2) { gap: 6px; }
+  .practice-recap-board > div:nth-of-type(2) > div { min-height: 76px; padding: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .practice-board *, .practice-board *::before, .practice-board *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
