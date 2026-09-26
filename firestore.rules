@@ -86,13 +86,19 @@ service cloud.firestore {
         && value <= 9007199254740991;
     }
 
-    function isCurrentProtocolCard(userId, data) {
+    // epoch is the caller's single currentLibraryEpoch(userId) lookup, passed
+    // in rather than recomputed here. The cards/{cardId} update rule was
+    // measured to call currentLibraryEpoch(userId) independently from this
+    // function (old and new data), canUpdateCurrentCard, and the course-index
+    // mirror check, which alone consumed a large share of the Rules
+    // per-request 1,000-expression ceiling.
+    function isCurrentProtocolCard(data, epoch) {
       return data.keys().hasAll(['schemaVersion', 'revision', 'libraryEpoch'])
         && data.schemaVersion == 2
         && isValidProtocolCounter(data.revision)
         && data.revision > 0
         && isValidProtocolCounter(data.libraryEpoch)
-        && data.libraryEpoch == currentLibraryEpoch(userId);
+        && data.libraryEpoch == epoch;
     }
 
     function isLegacyCard(data) {
@@ -132,15 +138,15 @@ service cloud.firestore {
         );
     }
 
-    function canUpdateCurrentCard(userId, data) {
-      return isCurrentProtocolCard(userId, data)
+    function canUpdateCurrentCard(data, epoch) {
+      return isCurrentProtocolCard(data, epoch)
         && isNextCardRevision(resource.data, data.revision)
         && (
           (!resource.data.keys().hasAny(['libraryEpoch'])
-            && currentLibraryEpoch(userId) == 0)
+            && epoch == 0)
           || (
             resource.data.libraryEpoch is int
-            && resource.data.libraryEpoch == currentLibraryEpoch(userId)
+            && resource.data.libraryEpoch == epoch
           )
         );
     }
@@ -430,6 +436,27 @@ service cloud.firestore {
       return hashing.sha256(normalizedWord).toHexString().lower();
     }
 
+    // English reservations retain the historic word-only hash. Other target
+    // languages are scoped by the same NUL-delimited identity used by the
+    // browser and trusted allocation paths.
+    function targetCardReservationId(targetLanguage, normalizedWord) {
+      return cardReservationId(targetLanguage + '\u0000' + normalizedWord);
+    }
+
+    function isValidStoredCardLanguage(value) {
+      return value is string
+        && value.size() <= 16
+        && value.matches('^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$');
+    }
+
+    function isValidStoredTranslationLanguage(value) {
+      return value in ['en', 'vi'];
+    }
+
+    function isValidCourseTargetLanguage(value) {
+      return value in ['en', 'ko', 'ja', 'zh'];
+    }
+
     function isValidCardReservation(reservationId, data) {
       return (data.keys().hasAll(['schemaVersion', 'cardId', 'normalizedWord'])
           && data.keys().hasOnly(['schemaVersion', 'cardId', 'normalizedWord'])
@@ -439,6 +466,16 @@ service cloud.firestore {
           && data.normalizedWord.size() > 0
           && data.normalizedWord.size() <= 256
           && reservationId == cardReservationId(data.normalizedWord))
+        || (data.keys().hasAll(['schemaVersion', 'cardId', 'normalizedWord', 'targetLanguage'])
+          && data.keys().hasOnly(['schemaVersion', 'cardId', 'normalizedWord', 'targetLanguage'])
+          && data.schemaVersion == 1
+          && isValidId(data.cardId)
+          && data.normalizedWord is string
+          && data.normalizedWord.size() > 0
+          && data.normalizedWord.size() <= 256
+          && isValidStoredCardLanguage(data.targetLanguage)
+          && data.targetLanguage != 'en'
+          && reservationId == targetCardReservationId(data.targetLanguage, data.normalizedWord))
         || (data.keys().hasAll(['schemaVersion', 'cardId', 'lexemeId'])
           && data.keys().hasOnly(['schemaVersion', 'cardId', 'lexemeId'])
           && data.schemaVersion == 2
@@ -449,14 +486,27 @@ service cloud.firestore {
     }
 
     function hasMatchingCardReservation(userId, cardId, data) {
-      let canonical = data.keys().hasAll(['lexemeId']) ? 'lexeme:' + data.lexemeId : data.normalizedWord;
+      let hasLanguage = data.keys().hasAny(['language']);
+      let language = data.get('language', '');
+      let hasValidLanguage = !hasLanguage || isValidStoredCardLanguage(language);
+      let canonical = data.keys().hasAll(['lexemeId'])
+        ? 'lexeme:' + data.lexemeId
+        : (hasLanguage && language != 'en'
+          ? language + '\u0000' + data.normalizedWord
+          : data.normalizedWord);
       let reservationId = cardReservationId(canonical);
       let reservation = /databases/$(database)/documents/users/$(userId)/card_reservations/$(reservationId);
       let reservationData = getAfter(reservation).data;
       return canonical is string
+        && hasValidLanguage
         && existsAfter(reservation)
+        && isValidCardReservation(reservationId, reservationData)
         && reservationData.cardId == cardId
-        && ((reservationData.schemaVersion == 1 && reservationData.normalizedWord == data.normalizedWord)
+        && ((reservationData.schemaVersion == 1
+          && reservationData.normalizedWord == data.normalizedWord
+          && ((language == '' || language == 'en')
+            ? !reservationData.keys().hasAny(['targetLanguage'])
+            : reservationData.targetLanguage == language))
           || (reservationData.schemaVersion == 2 && reservationData.lexemeId == data.lexemeId));
     }
 
@@ -495,14 +545,14 @@ service cloud.firestore {
         && get(lexeme).data.senseKey == data.senseKey;
     }
 
-    function hasValidCardIdentityUpdate(userId, cardId, data) {
+    function hasValidCardIdentityUpdate(userId, cardId, data, epoch) {
       return (
         hasCardIdentity(resource.data)
         && hasCardIdentity(data)
         && resource.data.normalizedWord == data.normalizedWord
         && resource.data.word == data.word
         && (
-          isCurrentProtocolCard(userId, resource.data)
+          isCurrentProtocolCard(resource.data, epoch)
           || hasMatchingCardReservation(userId, cardId, data)
         )
       ) || (
@@ -595,6 +645,15 @@ service cloud.firestore {
     // still cross the same bounds as a canonical application write. This also
     // keeps a boundary-valid update below Rules' expression limit: a one-field
     // update does not revalidate every unrelated nested list and history entry.
+    // Grouped behind one cheap group-level changed.hasAny(...) gate per
+    // block. A single flat &&-chain of 43 independent per-field guards
+    // always pays for every guard on any successful update (a passing
+    // update never makes an early && operand false, so nothing short-
+    // circuits away), which was measured to consume most of the Rules
+    // per-request 1,000-expression ceiling even for a one-field patch. An
+    // untouched group's individual guards are skipped entirely once the
+    // group-level check is false; a touched group still runs the exact
+    // same per-field validators as before.
     function isValidChangedCardFields(data, changed) {
       let fields = data.keys();
       let audioUrl = data.get('audioUrl', null);
@@ -602,55 +661,110 @@ service cloud.firestore {
       let customDeck = data.get('customDeck', null);
       let wordFamily = data.get('wordFamily', null);
       let fsrs = data.get('fsrs', null);
-      return (!changed.hasAny(['id']) || isBoundedText(data.get('id', ''), 128))
-        && (!changed.hasAny(['origin']) || data.get('origin', '') in ['ai', 'manual'])
-        && (!changed.hasAny(['word']) || isBoundedText(data.get('word', ''), 256))
-        && (!changed.hasAny(['normalizedWord']) || isBoundedText(data.get('normalizedWord', ''), 256))
-        && (!changed.hasAny(['normalizedLemma']) || isBoundedText(data.get('normalizedLemma', ''), 256))
-        && (!changed.hasAny(['lexemeId']) || isBoundedText(data.get('lexemeId', ''), 128))
-        && (!changed.hasAny(['language']) || isBoundedText(data.get('language', ''), 64))
-        && (!changed.hasAny(['senseKey']) || isBoundedText(data.get('senseKey', ''), 128))
-        && (!changed.hasAny(['translation']) || isBoundedText(data.get('translation', ''), 256))
-        && (!changed.hasAny(['explanation']) || isBoundedText(data.get('explanation', ''), 2048))
-        && (!changed.hasAny(['explanationTranslation']) || isBoundedText(data.get('explanationTranslation', ''), 2048))
-        && (!changed.hasAny(['phonetic']) || isBoundedText(data.get('phonetic', ''), 256))
-        && (!changed.hasAny(['category']) || isBoundedText(data.get('category', ''), 128))
-        && (!changed.hasAny(['emoji']) || isBoundedText(data.get('emoji', ''), 64))
-        && (!changed.hasAny(['audioUrl']) || audioUrl == null || isTrustedAudioUrl(audioUrl))
-        && (!changed.hasAny(['imageUrl']) || imageUrl == null || isTrustedImageUrl(imageUrl))
-        && (!changed.hasAny(['imageSearchQuery']) || isOptionalBoundedText(data, 'imageSearchQuery', 256))
-        && (!changed.hasAny(['createdAt']) || isBoundedText(data.get('createdAt', ''), 128))
-        && (!changed.hasAny(['updatedAt']) || isOptionalTimestampOrText(data, 'updatedAt', 128))
-        && (!changed.hasAny(['lastOpenedAt']) || isOptionalBoundedText(data, 'lastOpenedAt', 128))
-        && (!changed.hasAny(['sortTouchedAt']) || isOptionalBoundedText(data, 'sortTouchedAt', 128))
-        && (!changed.hasAny(['customDeck']) || customDeck == null || isBoundedText(customDeck, 128))
-        && (!changed.hasAny(['nextReviewDate']) || isOptionalBoundedText(data, 'nextReviewDate', 128))
-        && (!changed.hasAny(['difficulty']) || data.get('difficulty', '') in ['easy', 'good', 'hard', 'unrated'])
-        && (!changed.hasAny(['bookmarked']) || data.get('bookmarked', false) is bool)
-        && (!changed.hasAny(['reviews']) || (data.get('reviews', 0) is int && data.get('reviews', 0) >= 0 && data.get('reviews', 0) <= 9007199254740991))
-        && (!changed.hasAny(['interval']) || (data.get('interval', 0) is number && data.get('interval', 0) >= 0 && data.get('interval', 0) <= 9007199254740991))
-        && (!changed.hasAny(['easeFactor']) || (data.get('easeFactor', 0) is number && data.get('easeFactor', 0) >= 0 && data.get('easeFactor', 0) <= 5))
-        && (!changed.hasAny(['correctStreak']) || (data.get('correctStreak', 0) is int && data.get('correctStreak', 0) >= 0 && data.get('correctStreak', 0) <= 9007199254740991))
-        && (!changed.hasAny(['partOfSpeech']) || isOptionalBoundedText(data, 'partOfSpeech', 64))
-        && (!changed.hasAny(['cefrLevel']) || isOptionalBoundedText(data, 'cefrLevel', 8))
-        && (!changed.hasAny(['exampleSentence']) || isOptionalBoundedText(data, 'exampleSentence', 2048))
-        && (!changed.hasAny(['exampleTranslation']) || isOptionalBoundedText(data, 'exampleTranslation', 2048))
-        && (!changed.hasAny(['register']) || isOptionalBoundedText(data, 'register', 64))
-        && (!changed.hasAny(['commonMistake']) || isOptionalBoundedText(data, 'commonMistake', 2048))
-        && (!changed.hasAny(['mnemonic']) || isOptionalBoundedText(data, 'mnemonic', 2048))
-        && (!changed.hasAny(['wordFamily']) || wordFamily == null || isValidCardWordFamily(wordFamily))
-        && (!changed.hasAny(['collocations']) || !fields.hasAny(['collocations']) || isValidBoundedStringList(data.collocations))
-        && (!changed.hasAny(['synonyms']) || !fields.hasAny(['synonyms']) || isValidBoundedStringList(data.synonyms))
-        && (!changed.hasAny(['antonyms']) || !fields.hasAny(['antonyms']) || isValidBoundedStringList(data.antonyms))
-        && (!changed.hasAny(['reviewHistory']) || !fields.hasAny(['reviewHistory']) || isValidReviewHistory(data.reviewHistory))
-        && (!changed.hasAny(['fsrs']) || fsrs == null || isValidCardFsrs(fsrs));
+      return (
+        !changed.hasAny(['id', 'origin', 'word', 'normalizedWord', 'normalizedLemma', 'lexemeId', 'senseKey'])
+        || (
+          (!changed.hasAny(['id']) || isBoundedText(data.get('id', ''), 128))
+          && (!changed.hasAny(['origin']) || data.get('origin', '') in ['ai', 'manual'])
+          && (!changed.hasAny(['word']) || isBoundedText(data.get('word', ''), 256))
+          && (!changed.hasAny(['normalizedWord']) || isBoundedText(data.get('normalizedWord', ''), 256))
+          && (!changed.hasAny(['normalizedLemma']) || isBoundedText(data.get('normalizedLemma', ''), 256))
+          && (!changed.hasAny(['lexemeId']) || isBoundedText(data.get('lexemeId', ''), 128))
+          && (!changed.hasAny(['senseKey']) || isBoundedText(data.get('senseKey', ''), 128))
+        )
+      )
+      && (
+        !changed.hasAny(['language', 'translationLanguage'])
+        || (
+          (!changed.hasAny(['language']) || isValidStoredCardLanguage(data.get('language', '')))
+          && (!changed.hasAny(['translationLanguage']) || isValidStoredTranslationLanguage(data.get('translationLanguage', '')))
+        )
+      )
+      && (
+        !changed.hasAny(['translation', 'explanation', 'explanationTranslation', 'phonetic', 'category', 'emoji'])
+        || (
+          (!changed.hasAny(['translation']) || isBoundedText(data.get('translation', ''), 256))
+          && (!changed.hasAny(['explanation']) || isBoundedText(data.get('explanation', ''), 2048))
+          && (!changed.hasAny(['explanationTranslation']) || isBoundedText(data.get('explanationTranslation', ''), 2048))
+          && (!changed.hasAny(['phonetic']) || isBoundedText(data.get('phonetic', ''), 256))
+          && (!changed.hasAny(['category']) || isBoundedText(data.get('category', ''), 128))
+          && (!changed.hasAny(['emoji']) || isBoundedText(data.get('emoji', ''), 64))
+        )
+      )
+      && (
+        !changed.hasAny(['audioUrl', 'imageUrl', 'imageSearchQuery'])
+        || (
+          (!changed.hasAny(['audioUrl']) || audioUrl == null || isTrustedAudioUrl(audioUrl))
+          && (!changed.hasAny(['imageUrl']) || imageUrl == null || isTrustedImageUrl(imageUrl))
+          && (!changed.hasAny(['imageSearchQuery']) || isOptionalBoundedText(data, 'imageSearchQuery', 256))
+        )
+      )
+      && (
+        !changed.hasAny(['createdAt', 'updatedAt', 'lastOpenedAt', 'sortTouchedAt', 'customDeck'])
+        || (
+          (!changed.hasAny(['createdAt']) || isBoundedText(data.get('createdAt', ''), 128))
+          && (!changed.hasAny(['updatedAt']) || isOptionalTimestampOrText(data, 'updatedAt', 128))
+          && (!changed.hasAny(['lastOpenedAt']) || isOptionalBoundedText(data, 'lastOpenedAt', 128))
+          && (!changed.hasAny(['sortTouchedAt']) || isOptionalBoundedText(data, 'sortTouchedAt', 128))
+          && (!changed.hasAny(['customDeck']) || customDeck == null || isBoundedText(customDeck, 128))
+        )
+      )
+      && (
+        !changed.hasAny(['nextReviewDate', 'difficulty', 'bookmarked', 'reviews', 'interval', 'easeFactor', 'correctStreak'])
+        || (
+          (!changed.hasAny(['nextReviewDate']) || isOptionalBoundedText(data, 'nextReviewDate', 128))
+          && (!changed.hasAny(['difficulty']) || data.get('difficulty', '') in ['easy', 'good', 'hard', 'unrated'])
+          && (!changed.hasAny(['bookmarked']) || data.get('bookmarked', false) is bool)
+          && (!changed.hasAny(['reviews']) || (data.get('reviews', 0) is int && data.get('reviews', 0) >= 0 && data.get('reviews', 0) <= 9007199254740991))
+          && (!changed.hasAny(['interval']) || (data.get('interval', 0) is number && data.get('interval', 0) >= 0 && data.get('interval', 0) <= 9007199254740991))
+          && (!changed.hasAny(['easeFactor']) || (data.get('easeFactor', 0) is number && data.get('easeFactor', 0) >= 0 && data.get('easeFactor', 0) <= 5))
+          && (!changed.hasAny(['correctStreak']) || (data.get('correctStreak', 0) is int && data.get('correctStreak', 0) >= 0 && data.get('correctStreak', 0) <= 9007199254740991))
+        )
+      )
+      && (
+        !changed.hasAny(['partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation', 'register', 'commonMistake', 'mnemonic', 'wordFamily'])
+        || (
+          (!changed.hasAny(['partOfSpeech']) || isOptionalBoundedText(data, 'partOfSpeech', 64))
+          && (!changed.hasAny(['cefrLevel']) || isOptionalBoundedText(data, 'cefrLevel', 8))
+          && (!changed.hasAny(['exampleSentence']) || isOptionalBoundedText(data, 'exampleSentence', 2048))
+          && (!changed.hasAny(['exampleTranslation']) || isOptionalBoundedText(data, 'exampleTranslation', 2048))
+          && (!changed.hasAny(['register']) || isOptionalBoundedText(data, 'register', 64))
+          && (!changed.hasAny(['commonMistake']) || isOptionalBoundedText(data, 'commonMistake', 2048))
+          && (!changed.hasAny(['mnemonic']) || isOptionalBoundedText(data, 'mnemonic', 2048))
+          && (!changed.hasAny(['wordFamily']) || wordFamily == null || isValidCardWordFamily(wordFamily))
+        )
+      )
+      && (
+        !changed.hasAny(['collocations', 'synonyms', 'antonyms', 'reviewHistory', 'fsrs'])
+        || (
+          (!changed.hasAny(['collocations']) || !fields.hasAny(['collocations']) || isValidBoundedStringList(data.collocations))
+          && (!changed.hasAny(['synonyms']) || !fields.hasAny(['synonyms']) || isValidBoundedStringList(data.synonyms))
+          && (!changed.hasAny(['antonyms']) || !fields.hasAny(['antonyms']) || isValidBoundedStringList(data.antonyms))
+          && (!changed.hasAny(['reviewHistory']) || !fields.hasAny(['reviewHistory']) || isValidReviewHistory(data.reviewHistory))
+          && (!changed.hasAny(['fsrs']) || fsrs == null || isValidCardFsrs(fsrs))
+        )
+      );
     }
 
+    // wasCanonical (full 30-key hasAll on the OLD document) is replaced by a
+    // cheaper equivalent: a canonical field can only stop being present if a
+    // canonical key was actually removed in this diff, which
+    // mapDiff.removedKeys() answers in one pass instead of a second 30-item
+    // hasAll. If nothing canonical was removed the guard passes without ever
+    // needing isCanonical; if something was removed, isCanonical is false
+    // too (that key is now missing), so the outcome matches the original
+    // "was fully canonical implies must stay fully canonical" check exactly.
+    // This and reusing one data.diff(resource.data) call for both `changed`
+    // and the removed-keys check were measured to matter: the Rules
+    // per-request 1,000-expression ceiling is otherwise nearly exhausted by
+    // this function alone, on every card update regardless of which fields
+    // actually changed.
     function isValidCardUpdate(data) {
       let fields = data.keys();
       let previousFields = resource.data.keys();
-      let changed = data.diff(resource.data).affectedKeys();
-      let isCanonical = fields.hasAll([
+      let mapDiff = data.diff(resource.data);
+      let changed = mapDiff.affectedKeys();
+      let canonicalFields = [
         'id', 'word', 'normalizedWord', 'translation', 'explanation',
         'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
         'imageUrl', 'imageSearchQuery', 'createdAt', 'bookmarked', 'customDeck',
@@ -658,18 +772,11 @@ service cloud.firestore {
         'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
         'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
         'reviewHistory'
-      ]);
-      let wasCanonical = previousFields.hasAll([
-        'id', 'word', 'normalizedWord', 'translation', 'explanation',
-        'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
-        'imageUrl', 'imageSearchQuery', 'createdAt', 'bookmarked', 'customDeck',
-        'difficulty', 'reviews', 'interval', 'easeFactor', 'correctStreak',
-        'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
-        'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
-        'reviewHistory'
-      ]);
+      ];
+      let isCanonical = fields.hasAll(canonicalFields);
+      let removedCanonicalKey = mapDiff.removedKeys().hasAny(canonicalFields);
       return fields.hasOnly([
-          'id', 'origin', 'lexemeId', 'language', 'senseKey', 'word', 'normalizedWord', 'normalizedLemma', 'translation', 'explanation',
+          'id', 'origin', 'lexemeId', 'language', 'translationLanguage', 'senseKey', 'word', 'normalizedWord', 'normalizedLemma', 'translation', 'explanation',
           'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
           'imageUrl', 'imageSearchQuery', 'createdAt', 'lastOpenedAt', 'updatedAt',
           'sortTouchedAt', 'schemaVersion', 'revision', 'libraryEpoch',
@@ -679,17 +786,331 @@ service cloud.firestore {
           'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
           'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds'
         ])
-        && (!wasCanonical || isCanonical)
+        && (!removedCanonicalKey || isCanonical)
         && !changed.hasAny(['origin'])
+        && !changed.hasAny(['language', 'translationLanguage'])
         && (isCanonical || fields.hasAll(['id', 'word', 'translation']))
-        && (!fields.hasAny(['lexemeId', 'language', 'senseKey'])
-          || (fields.hasAll(['lexemeId', 'language', 'senseKey', 'partOfSpeech'])
+        && (!fields.hasAny(['lexemeId', 'senseKey', 'normalizedLemma'])
+          || (fields.hasAll(['lexemeId', 'language', 'senseKey', 'partOfSpeech', 'normalizedLemma'])
             && hasValidCanonicalLexemeMetadata(data)
-            && (!previousFields.hasAny(['lexemeId', 'language', 'senseKey'])
+            && (!previousFields.hasAny(['lexemeId', 'senseKey', 'normalizedLemma'])
               || (data.lexemeId == resource.data.lexemeId
                 && data.language == resource.data.language
-                && data.senseKey == resource.data.senseKey))))
+                && data.senseKey == resource.data.senseKey
+                && data.partOfSpeech == resource.data.partOfSpeech
+                && data.normalizedLemma == resource.data.normalizedLemma))))
         && isValidChangedCardFields(data, changed);
+    }
+
+    function isCanonicalCourseIndexTimestamp(value) {
+      return value is string
+        && value.size() == 24
+        && value.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$');
+    }
+
+    // The projection builder trims and normalizes source strings. Rules cannot
+    // reproduce NFKC/date parsing, so direct client mirror writes are accepted
+    // only for already-canonical values and for defaults whose output is exact.
+    function isCanonicalCourseIndexText(value, maximum) {
+      return value is string
+        && value.size() <= maximum
+        && value.matches('^[^\\s](?:.*[^\\s])?$');
+    }
+
+    function courseIndexNormalizedWordMatches(source, projection) {
+      let normalized = source.get('normalizedWord', '');
+      let word = source.get('word', '');
+      return (
+        normalized is string
+        && normalized.size() > 0
+        && isCanonicalCourseIndexText(normalized, 256)
+        && projection.normalizedWord == normalized
+      ) || (
+        (!source.keys().hasAny(['normalizedWord']) || normalized == '')
+        && word is string
+        && (word == '' || isCanonicalCourseIndexText(word, 256))
+        && projection.normalizedWord == word.lower()
+      );
+    }
+
+    function courseIndexCategoryMatches(source, projection) {
+      let value = source.get('category', null);
+      return (
+        !(value is string)
+        || value == ''
+        || value.matches('^\\s+$')
+      )
+        ? projection.category == 'Other'
+        : isCanonicalCourseIndexText(value, 128)
+          && projection.category == value;
+    }
+
+    function courseIndexPartOfSpeechMatches(source, projection) {
+      let value = source.get('partOfSpeech', '');
+      return !(value is string) || value == ''
+        ? projection.partOfSpeech == ''
+        : value.size() <= 64
+          && value.matches('^[A-Za-z]+(?: [A-Za-z]+)*$')
+          && projection.partOfSpeech == value.lower();
+    }
+
+    function courseIndexCustomDeckMatches(source, projection) {
+      let value = source.get('customDeck', null);
+      return (
+        !(value is string)
+        || value == ''
+        || value.matches('^\\s+$')
+      )
+        ? projection.customDeck == null
+        : isCanonicalCourseIndexText(value, 128)
+          && projection.customDeck == value;
+    }
+
+    function courseIndexDifficultyMatches(source, projection) {
+      let value = source.get('difficulty', '');
+      return value is string && value in ['easy', 'good', 'hard', 'unrated']
+        ? projection.difficulty == value
+        : projection.difficulty == 'unrated';
+    }
+
+    function courseIndexBookmarkMatches(source, projection) {
+      return source.get('bookmarked', false) == true
+        ? projection.bookmarked == true
+        : projection.bookmarked == false;
+    }
+
+    function courseIndexCreatedAtMatches(source, projection) {
+      let value = source.get('createdAt', null);
+      return value is string
+        ? isCanonicalCourseIndexTimestamp(value) && projection.createdAt == value
+        : projection.createdAt == '1970-01-01T00:00:00.000Z';
+    }
+
+    function courseIndexNextReviewDateMatches(source, projection) {
+      let value = source.get('nextReviewDate', null);
+      return value is string
+        ? isCanonicalCourseIndexTimestamp(value)
+          && projection.keys().hasAny(['nextReviewDate'])
+          && projection.nextReviewDate == value
+        : !projection.keys().hasAny(['nextReviewDate']);
+    }
+
+    function isCourseIndexProjectionEquivalent(cardId, source, projection) {
+      let sourceLanguage = source.get('language', '');
+      let hasExplicitLanguage = source.keys().hasAny(['language']);
+      let sourceEpoch = source.get('libraryEpoch', null);
+      let sourceRevision = source.get('revision', null);
+      return projection.keys().hasAll([
+          'schemaVersion', 'cardId', 'targetLanguage', 'sourceLibraryEpoch', 'sourceRevision',
+          'normalizedWord', 'category', 'partOfSpeech', 'customDeck', 'difficulty',
+          'bookmarked', 'createdAt'
+        ])
+        && projection.keys().hasOnly([
+          'schemaVersion', 'cardId', 'targetLanguage', 'sourceLibraryEpoch', 'sourceRevision',
+          'normalizedWord', 'category', 'partOfSpeech', 'customDeck', 'difficulty',
+          'bookmarked', 'createdAt', 'nextReviewDate'
+        ])
+        && projection.schemaVersion == 1
+        && isValidId(cardId)
+        && projection.cardId == cardId
+        && isValidCourseTargetLanguage(projection.targetLanguage)
+        && (
+          (!hasExplicitLanguage && projection.targetLanguage == 'en')
+          || (
+            hasExplicitLanguage
+            && isValidCourseTargetLanguage(sourceLanguage)
+            && projection.targetLanguage == sourceLanguage
+          )
+        )
+        && isValidProtocolCounter(projection.sourceLibraryEpoch)
+        && (
+          (isValidProtocolCounter(sourceEpoch) && projection.sourceLibraryEpoch == sourceEpoch)
+          || (!isValidProtocolCounter(sourceEpoch) && projection.sourceLibraryEpoch == 0)
+        )
+        && (
+          (isValidProtocolCounter(projection.sourceRevision)
+            && isValidProtocolCounter(sourceRevision)
+            && projection.sourceRevision == sourceRevision)
+          || (projection.sourceRevision == null && !isValidProtocolCounter(sourceRevision))
+        )
+        && projection.normalizedWord is string
+        && projection.normalizedWord.size() <= 256
+        && projection.category is string
+        && projection.category.size() <= 128
+        && projection.partOfSpeech is string
+        && projection.partOfSpeech.size() <= 64
+        && (projection.customDeck == null || isBoundedText(projection.customDeck, 128))
+        && projection.difficulty in ['easy', 'good', 'hard', 'unrated']
+        && projection.bookmarked is bool
+        && isCanonicalCourseIndexTimestamp(projection.createdAt)
+        && (!projection.keys().hasAny(['nextReviewDate']) || isCanonicalCourseIndexTimestamp(projection.nextReviewDate))
+        && courseIndexNormalizedWordMatches(source, projection)
+        && courseIndexCategoryMatches(source, projection)
+        && courseIndexPartOfSpeechMatches(source, projection)
+        && courseIndexCustomDeckMatches(source, projection)
+        && courseIndexDifficultyMatches(source, projection)
+        && courseIndexBookmarkMatches(source, projection)
+        && courseIndexCreatedAtMatches(source, projection)
+        && courseIndexNextReviewDateMatches(source, projection);
+    }
+
+    // The pointer and generation documents read below are Admin-SDK-only
+    // (their own match blocks deny every direct client create/update/delete),
+    // so trusted server code is the only writer and already guarantees their
+    // exact shape. The Rules per-request expression ceiling (1,000; see
+    // https://firebase.google.com/docs/firestore/security/rules-structure)
+    // is nearly exhausted by the pre-existing isValidCardUpdate/
+    // isValidChangedCardFields chain alone, so the update-path course-index
+    // check below is written for minimum expression cost, not merely
+    // "shortest correct check": it trusts pointer/generation shape instead
+    // of re-deriving it, and proves mirror freshness via the revision that
+    // already links a card write to its same-transaction projection write
+    // (see hasCourseIndexSourceMutation/sourceRevision in the projection's
+    // own create/update rule below) instead of re-comparing every field.
+    // isCompatibleCourseIndexGeneration keeps full validation for the
+    // projection and delete paths, which have expression headroom.
+    function isCurrentCourseIndexPointer(userId) {
+      let pointer = /databases/$(database)/documents/users/$(userId)/profile/course_query_index;
+      return existsAfter(pointer)
+        ? (
+          getAfter(pointer).data.schemaVersion == 1
+          && isValidProtocolCounter(getAfter(pointer).data.libraryEpoch)
+          && getAfter(pointer).data.libraryEpoch == currentLibraryEpoch(userId)
+          && (
+            getAfter(pointer).data.activeGenerationId == null
+            || isValidId(getAfter(pointer).data.activeGenerationId)
+          )
+          && (
+            getAfter(pointer).data.buildingGenerationId == null
+            || isValidId(getAfter(pointer).data.buildingGenerationId)
+          )
+        )
+        : false;
+    }
+
+    function isCompatibleCourseIndexGeneration(userId, generationId) {
+      let generation = /databases/$(database)/documents/users/$(userId)/course_query_generations/$(generationId);
+      return existsAfter(generation)
+        ? (
+          getAfter(generation).data.schemaVersion == 1
+          && getAfter(generation).data.libraryEpoch == currentLibraryEpoch(userId)
+          && getAfter(generation).data.status in ['building', 'ready']
+        )
+        : false;
+    }
+
+    // Minimum-cost mirror-freshness proof for the cards/{cardId} update path.
+    // A projection row can only be created/updated in the same transaction as
+    // a source mutation, and its own rule requires
+    // sourceRevision == getAfter(source).revision. A card update itself
+    // always advances revision by exactly one (canUpdateCurrentCard). So a
+    // projection row whose cardId and sourceRevision match this write's new
+    // revision could only have been written together with this exact update;
+    // a stale (untouched-this-transaction) row keeps its old sourceRevision
+    // and fails this check. This intentionally skips the pointer/generation
+    // shape re-validation and the per-field match helpers that the
+    // projection's own create/update rule already enforces.
+    function hasCourseIndexMirrorUpdate(userId, generationId, cardId, revision) {
+      let projection = /databases/$(database)/documents/users/$(userId)/course_query_generations/$(generationId)/cards/$(cardId);
+      return existsAfter(projection) && getAfter(projection).data.sourceRevision == revision;
+    }
+
+    function hasCourseIndexMirrorDelete(userId, generationId, cardId) {
+      let projection = /databases/$(database)/documents/users/$(userId)/course_query_generations/$(generationId)/cards/$(cardId);
+      return isCompatibleCourseIndexGeneration(userId, generationId)
+        ? !existsAfter(projection)
+        : true;
+    }
+
+    // source's own scalar fields (libraryEpoch, revision) are read out once
+    // here and passed on as plain values, not the source map itself: passing
+    // the whole ~40-field card map two calls deep and dereferencing a field
+    // on it there, alongside a second document's getAfter(...).data, was
+    // measured to cost far more than reading the same two scalars once at
+    // this shallower call depth and threading them down instead.
+    function hasCourseIndexMirrorsForUpdate(userId, cardId, source) {
+      let pointer = /databases/$(database)/documents/users/$(userId)/profile/course_query_index;
+      let libraryEpoch = source.get('libraryEpoch', null);
+      let revision = source.get('revision', 0);
+      // A pointer whose libraryEpoch no longer matches the current library is
+      // stale: it is about to be/being invalidated and does not describe the
+      // course index for this write, so it must not block an otherwise
+      // legitimate card patch that does not touch mirrors. canUpdateCurrentCard
+      // (evaluated earlier in the same allow-update chain) already proves
+      // source.libraryEpoch == currentLibraryEpoch(userId), so comparing
+      // against libraryEpoch here is equivalent to, but far cheaper than, a
+      // fresh currentLibraryEpoch(userId) call.
+      return existsAfter(pointer) && getAfter(pointer).data.libraryEpoch == libraryEpoch
+        ? (
+          (
+            getAfter(pointer).data.activeGenerationId == null
+              ? true
+              : hasCourseIndexMirrorUpdate(userId, getAfter(pointer).data.activeGenerationId, cardId, revision)
+          )
+          && (
+            getAfter(pointer).data.buildingGenerationId == null
+              ? true
+              : hasCourseIndexMirrorUpdate(userId, getAfter(pointer).data.buildingGenerationId, cardId, revision)
+          )
+        )
+        : true;
+    }
+
+    function hasCourseIndexMirrorsForDelete(userId, cardId) {
+      let pointer = /databases/$(database)/documents/users/$(userId)/profile/course_query_index;
+      return isCurrentCourseIndexPointer(userId)
+        ? (
+          (
+            getAfter(pointer).data.activeGenerationId == null
+              ? true
+              : hasCourseIndexMirrorDelete(userId, getAfter(pointer).data.activeGenerationId, cardId)
+          )
+          && (
+            getAfter(pointer).data.buildingGenerationId == null
+              ? true
+              : hasCourseIndexMirrorDelete(userId, getAfter(pointer).data.buildingGenerationId, cardId)
+          )
+        )
+        : true;
+    }
+
+    function hasCourseIndexSourceMutation(userId, cardId) {
+      let source = /databases/$(database)/documents/users/$(userId)/cards/$(cardId);
+      return exists(source)
+        && existsAfter(source)
+        && getAfter(source).data.diff(get(source).data).affectedKeys().size() > 0;
+    }
+
+    function hasCourseIndexSourceDelete(userId, cardId) {
+      let source = /databases/$(database)/documents/users/$(userId)/cards/$(cardId);
+      return exists(source) && !existsAfter(source);
+    }
+
+    // One shared currentLibraryEpoch(userId) lookup for the whole update
+    // chain (see isCurrentProtocolCard above). Wrapping the update condition
+    // in a function is what makes a single `let epoch = ...` possible; an
+    // `allow update: if <expr>` clause cannot declare its own `let`.
+    function canPatchOwnedCard(userId, cardId, data) {
+      let epoch = currentLibraryEpoch(userId);
+      return !hasActiveLibraryMigrationFence(userId)
+        && data.id == cardId
+        && isValidCardUpdate(data)
+        && hasValidCardIdentityUpdate(userId, cardId, data, epoch)
+        && (
+          !data.diff(resource.data).affectedKeys().hasAny([
+            'difficulty', 'nextReviewDate', 'reviews', 'interval', 'easeFactor',
+            'correctStreak', 'fsrs', 'reviewHistory', 'appliedReviewOperationIds'
+          ])
+          || (
+            canInitializeLegacyDifficulty(data)
+            && !data.diff(resource.data).affectedKeys().hasAny([
+              'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
+              'fsrs', 'reviewHistory', 'appliedReviewOperationIds'
+            ])
+          )
+        )
+        && canUpdateCurrentCard(data, epoch)
+        && hasCourseIndexMirrorsForUpdate(userId, cardId, data);
     }
 
     // Target match rules for Cards
@@ -699,31 +1120,32 @@ service cloud.firestore {
       // the App Check-protected createCard callable, while updates/deletes keep
       // their owner-scoped revision and tombstone barriers below.
       allow create: if false;
-      allow update: if isOwner(userId)
-        && !hasActiveLibraryMigrationFence(userId)
-        && request.resource.data.id == cardId
-        && isValidCardUpdate(request.resource.data)
-        && hasValidCardIdentityUpdate(userId, cardId, request.resource.data)
-        && (
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-            'difficulty', 'nextReviewDate', 'reviews', 'interval', 'easeFactor',
-            'correctStreak', 'fsrs', 'reviewHistory', 'appliedReviewOperationIds'
-          ])
-          || (
-            canInitializeLegacyDifficulty(request.resource.data)
-            && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-              'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
-              'fsrs', 'reviewHistory', 'appliedReviewOperationIds'
-            ])
-          )
-        )
-        && canUpdateCurrentCard(userId, request.resource.data);
+      allow update: if isOwner(userId) && canPatchOwnedCard(userId, cardId, request.resource.data);
       allow delete: if isOwner(userId)
         && !hasActiveLibraryMigrationFence(userId)
         && (
           isOldCardGeneration(userId, resource.data)
           || hasValidDeletionBarrier(userId, cardId, resource.data)
+        )
+        && hasCourseIndexMirrorsForDelete(userId, cardId);
+    }
+
+    // Projection rows are derived data. A client may touch one only in the
+    // same transaction as a source-card mutation, and only with the exact
+    // post-mutation projection for a current active/building generation.
+    match /users/{userId}/course_query_generations/{generationId}/cards/{cardId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && isCompatibleCourseIndexGeneration(userId, generationId)
+        && hasCourseIndexSourceMutation(userId, cardId)
+        && isCourseIndexProjectionEquivalent(
+          cardId,
+          getAfter(/databases/$(database)/documents/users/$(userId)/cards/$(cardId)).data,
+          request.resource.data,
         );
+      allow delete: if isOwner(userId)
+        && isCompatibleCourseIndexGeneration(userId, generationId)
+        && hasCourseIndexSourceDelete(userId, cardId);
     }
 
     // A permanent user-scoped claim for one normalized card identity.
@@ -770,6 +1192,23 @@ service cloud.firestore {
         && resource.data.libraryEpoch is int
         && request.resource.data.libraryEpoch >= resource.data.libraryEpoch;
       allow delete: if false;
+    }
+
+    // Course profile and query-index control state are server-owned. Owners
+    // may read their own documents; callable/Admin code performs every write.
+    match /users/{userId}/profile/courses {
+      allow read: if isOwner(userId);
+      allow create, update, delete: if false;
+    }
+
+    match /users/{userId}/profile/course_query_index {
+      allow read: if isOwner(userId);
+      allow create, update, delete: if false;
+    }
+
+    match /users/{userId}/course_query_generations/{generationId} {
+      allow read: if isOwner(userId);
+      allow create, update, delete: if false;
     }
 
     match /users/{userId}/profile/stats {
@@ -853,6 +1292,8 @@ service cloud.firestore {
     match /users/{userId}/profile/{profileDocId} {
       // Keep the supported-name exclusions visible to source-level guards.
       // profileDocId != 'library_state'
+      // profileDocId != 'courses'
+      // profileDocId != 'course_query_index'
       // profileDocId != 'stats'
       // profileDocId != 'plan'
       // profileDocId != 'xp_history'

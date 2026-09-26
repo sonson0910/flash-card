@@ -17,8 +17,16 @@ export function parsePurchaseIntentRequest(value: unknown): { trigger: 'quota' |
   return { trigger: source.trigger };
 }
 
+export const PART_OF_SPEECH_HINTS = [
+  'noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction',
+  'determiner', 'interjection', 'phrasal verb', 'auxiliary verb', 'modal verb',
+  'article', 'numeral', 'idiom', 'phrase',
+] as const;
+
+export type PartOfSpeechHint = typeof PART_OF_SPEECH_HINTS[number];
+
 type VocabularyRequest =
-  | { action: 'word'; word: string; operationId?: string; context?: string; language?: { source: string; target: string } }
+  | { action: 'word'; word: string; operationId?: string; context?: string; language?: { source: string; target: string }; partOfSpeech?: PartOfSpeechHint }
   | { action: 'story'; words: string[] }
   | { action: 'translate'; text: string };
 
@@ -126,13 +134,58 @@ const boundedLanguageCode = (value: unknown, invalidMessage: string, lowercase =
   return lowercase ? text.toLowerCase() : text;
 };
 
+const parsePartOfSpeechHint = (value: unknown): PartOfSpeechHint | undefined => {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string' || value.trim().length === 0 || value.trim().length > 64) {
+    throw new InputValidationError('Part of speech hint is invalid.');
+  }
+  const normalized = value.trim().toLocaleLowerCase('en-US');
+  if (!PART_OF_SPEECH_HINTS.includes(normalized as PartOfSpeechHint)) {
+    throw new InputValidationError('Part of speech hint is invalid.');
+  }
+  return normalized as PartOfSpeechHint;
+};
+
 export const isCanonicalLanguageCode = (value: unknown): value is string => (
   typeof value === 'string'
   && value.length <= 16
   && /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(value)
 );
 
-const canonicalLexemeId = (language: string, lemma: string, partOfSpeech: string, senseKey: string): string => {
+export const isSupportedCardTranslationLanguage = (value: unknown): value is 'en' | 'vi' => (
+  value === 'en' || value === 'vi'
+);
+
+export type CardLanguageFields = {
+  language?: string;
+  translationLanguage?: string;
+};
+
+/**
+ * Validate card language metadata independently from the canonical lexeme
+ * tuple. Wave-1 meaning languages are en/vi. Legacy cards may provide either
+ * field; missing values are resolved to en/vi by read models and are not
+ * written here.
+ */
+export const parseCardLanguagePair = (value: unknown): CardLanguageFields => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new InputValidationError('Card language fields must be an object.');
+  }
+  const source = value as Record<string, unknown>;
+  const result: CardLanguageFields = {};
+  for (const field of ['language', 'translationLanguage'] as const) {
+    if (source[field] === undefined) continue;
+    const code = boundedLanguageCode(source[field], 'Card language codes are invalid.', true);
+    if (!isCanonicalLanguageCode(code)) throw new InputValidationError('Card language codes are invalid.');
+    if (field === 'translationLanguage' && !isSupportedCardTranslationLanguage(code)) {
+      throw new InputValidationError('Card language codes are invalid.');
+    }
+    result[field] = code;
+  }
+  return result;
+};
+
+export const canonicalLexemeId = (language: string, lemma: string, partOfSpeech: string, senseKey: string): string => {
   const component = (value: string, lowercase = false) => {
     const normalized = value.normalize('NFKC').trim().replace(/\s+/g, ' ');
     return lowercase ? normalized.toLowerCase() : normalized;
@@ -251,7 +304,7 @@ export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
       throw new InputValidationError('A word is required.');
     }
     const input = data.input as Record<string, unknown>;
-    assertAllowedFields(input, ['term', 'context', 'language'], 'Unsupported word input field.');
+    assertAllowedFields(input, ['term', 'context', 'language', 'partOfSpeech'], 'Unsupported word input field.');
     const word = boundedText(input.term, 80);
     if (!word) throw new InputValidationError('A word is required.');
     if (input.context !== undefined && typeof input.context !== 'string') {
@@ -259,12 +312,14 @@ export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
     }
     const context = boundedText(input.context, 500).replace(/\s+/g, ' ');
     const language = parseWordLanguage(input.language);
+    const partOfSpeech = parsePartOfSpeechHint(input.partOfSpeech);
     return {
       action,
       word,
       ...(operationId ? { operationId } : {}),
       ...(context ? { context } : {}),
       ...(language ? { language } : {}),
+      ...(partOfSpeech ? { partOfSpeech } : {}),
     };
   }
 
@@ -320,17 +375,27 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
       throw new InputValidationError('A shared card origin is invalid.');
     }
     const lexemeId = boundedText(card.lexemeId, 128);
-    const language = boundedLanguageCode(card.language, 'A shared card has an invalid lexeme identity.');
     const senseKey = boundedText(card.senseKey, 128);
     const partOfSpeech = boundedText(card.partOfSpeech, 64);
     const normalizedLemma = boundedText(card.normalizedLemma, 256) || word;
-    const hasCanonicalIdentity = Boolean(lexemeId || language || senseKey);
-    if (hasCanonicalIdentity && (!isCanonicalLanguageCode(language) || !senseKey || !partOfSpeech
+    const hasCanonicalIdentity = Boolean(lexemeId || senseKey || card.normalizedLemma !== undefined);
+    const language = card.language === undefined
+      ? undefined
+      : typeof card.language === 'string' && card.language.trim().length <= 16
+        ? boundedLanguageCode(card.language, 'A shared card has an invalid language code.', true)
+        : '';
+    if (card.language !== undefined && !isCanonicalLanguageCode(language)) {
+      throw new InputValidationError(hasCanonicalIdentity
+        ? 'A shared card has an invalid lexeme identity.'
+        : 'A shared card has an invalid language code.');
+    }
+    if (hasCanonicalIdentity && (!language || !senseKey || !partOfSpeech
       || lexemeId !== canonicalLexemeId(language, normalizedLemma, partOfSpeech, senseKey))) {
       throw new InputValidationError('A shared card has an invalid lexeme identity.');
     }
     return {
       ...(hasCanonicalIdentity ? { lexemeId, language, senseKey, normalizedLemma } : {}),
+      ...(!hasCanonicalIdentity && language ? { language } : {}),
       word,
       translation,
       ...(origin ? { origin } : {}),

@@ -5,12 +5,20 @@ import type {
   Firestore,
   Transaction,
 } from 'firebase-admin/firestore';
-import { InputValidationError } from './inputValidation.js';
+import {
+  canonicalLexemeId,
+  InputValidationError,
+  parseCardLanguagePair,
+} from './inputValidation.js';
 import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
 import {
   applyLibraryFacetMutationInTransaction,
   libraryFacetRestoreOperationId,
 } from './libraryFacetPersistence.js';
+import {
+  mirrorCourseCardIndexInTransaction,
+  prepareCourseCardIndexMirrorInTransaction,
+} from './course-card-index-persistence.js';
 
 export const MAX_CARD_ALLOCATION = 5_000;
 const MAX_PROTOCOL_COUNTER = Number.MAX_SAFE_INTEGER;
@@ -66,7 +74,7 @@ type CardAllocationOptions = {
 };
 
 const CARD_FIELDS = new Set([
-  'id', 'origin', 'lexemeId', 'language', 'senseKey', 'word', 'normalizedWord', 'normalizedLemma', 'translation', 'explanation', 'explanationTranslation',
+  'id', 'origin', 'lexemeId', 'language', 'translationLanguage', 'senseKey', 'word', 'normalizedWord', 'normalizedLemma', 'translation', 'explanation', 'explanationTranslation',
   'phonetic', 'category', 'emoji', 'audioUrl', 'imageUrl', 'imageSearchQuery',
   'createdAt', 'updatedAt', 'lastOpenedAt', 'sortTouchedAt', 'schemaVersion', 'revision', 'libraryEpoch',
   'bookmarked', 'customDeck', 'difficulty', 'nextReviewDate', 'reviews', 'interval',
@@ -284,22 +292,27 @@ const stableCardId = (word: string): string => {
   return `word-${slug ? `${slug}-` : ''}${hash}`;
 };
 
-const reservationId = (word: string): string => createHash('sha256')
-  .update(normalizedWord(word))
-  .digest('hex');
+const targetIdentityValue = (word: string, targetLanguage: string): string =>
+  `${targetLanguage}\u0000${normalizedWord(word)}`;
 
-const canonicalLexemeId = (language: string, lemma: string, partOfSpeech: string, senseKey: string): string => {
-  const component = (value: string, lowercase = false) => {
-    const normalized = value.normalize('NFKC').trim().replace(/\s+/g, ' ');
-    if (!normalized) throw new InputValidationError('Card lexeme identity is incomplete.');
-    return lowercase ? normalized.toLowerCase() : normalized;
-  };
-  const tuple = JSON.stringify([
-    component(language, true), component(lemma), component(partOfSpeech, true), component(senseKey, true),
-  ]);
-  const bytes = Buffer.from(tuple, 'utf8').toString('hex');
-  return `lexeme-${stableCardId(`\u0000${bytes}`).replace(/^word-/, '')}`;
+const targetAwareCardId = (word: string, targetLanguage: string): string => {
+  if (targetLanguage === 'en') return stableCardId(word);
+  const normalized = normalizedWord(word);
+  const slug = normalized
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+  const hash = createHash('sha256').update(targetIdentityValue(normalized, targetLanguage)).digest('hex').slice(0, 24);
+  return `word-${targetLanguage}-${slug ? `${slug}-` : ''}${hash}`;
 };
+
+const reservationId = (identity: string, targetLanguage?: string): string => createHash('sha256')
+  .update(targetLanguage && targetLanguage !== 'en'
+    ? `${targetLanguage}\u0000${identity}`
+    : identity)
+  .digest('hex');
 
 export const canonicalCard = (value: unknown): CardRecord => {
   const source = asRecord(value, 'Card must be an object.');
@@ -330,11 +343,16 @@ export const canonicalCard = (value: unknown): CardRecord => {
   if (source.revision !== undefined) nonNegativeInteger(source.revision, 'revision', 0);
   if (source.libraryEpoch !== undefined) nonNegativeInteger(source.libraryEpoch, 'libraryEpoch', 0);
   const lexemeId = source.lexemeId === undefined ? undefined : boundedText(source.lexemeId, 'lexemeId', 128);
-  const language = source.language === undefined ? undefined : boundedText(source.language, 'language', 64);
+  const languageFields = parseCardLanguagePair({
+    language: source.language,
+    translationLanguage: source.translationLanguage,
+  });
+  const language = languageFields.language;
+  const translationLanguage = languageFields.translationLanguage;
   const senseKey = source.senseKey === undefined ? undefined : boundedText(source.senseKey, 'senseKey', 128);
   const partOfSpeech = source.partOfSpeech === undefined ? undefined : boundedText(source.partOfSpeech, 'partOfSpeech', 64);
   const normalizedLemma = source.normalizedLemma === undefined ? undefined : boundedText(source.normalizedLemma, 'normalizedLemma', 256);
-  const hasCanonicalIdentity = lexemeId !== undefined || language !== undefined || senseKey !== undefined;
+  const hasCanonicalIdentity = lexemeId !== undefined || senseKey !== undefined || normalizedLemma !== undefined;
   if (hasCanonicalIdentity) {
     const lemma = normalizedLemma || suppliedIdentity;
     if (!lexemeId || !language || !senseKey || !partOfSpeech || !lemma || lexemeId !== canonicalLexemeId(language, lemma, partOfSpeech, senseKey)) {
@@ -355,11 +373,13 @@ export const canonicalCard = (value: unknown): CardRecord => {
   const now = new Date().toISOString();
   const createdAt = optionalDate(source.createdAt, 'createdAt') ?? now;
   const result: CardRecord = {
-    id: hasCanonicalIdentity ? lexemeId as string : stableCardId(identity),
+    id: hasCanonicalIdentity ? lexemeId as string : targetAwareCardId(identity, language ?? 'en'),
     ...(source.origin === undefined ? {} : { origin: source.origin }),
     word,
     normalizedWord: identity,
-    ...(hasCanonicalIdentity ? { lexemeId, language, senseKey, normalizedLemma: normalizedLemma || suppliedIdentity } : {}),
+    ...(language === undefined ? {} : { language }),
+    ...(translationLanguage === undefined ? {} : { translationLanguage }),
+    ...(hasCanonicalIdentity ? { lexemeId, senseKey, normalizedLemma: normalizedLemma || suppliedIdentity } : {}),
     translation: boundedText(source.translation, 'translation', 256),
     explanation: boundedText(source.explanation, 'explanation', 2_048),
     explanationTranslation: boundedText(source.explanationTranslation, 'explanationTranslation', 2_048),
@@ -473,15 +493,30 @@ const safeStoredCardCount = (snapshot: DocumentSnapshot): number | null => {
 
 const readEpoch = (snapshot: DocumentSnapshot): number => safeStoredCounter(snapshot, 'libraryEpoch');
 
-const isMatchingIdentity = (value: CardRecord, identity: string): boolean =>
+// A plain (non-lexeme) identity is scoped by its target language so that the
+// same spelling in different target languages (e.g. English and Korean)
+// never collides on the same reservation, card ID, or matching logic. The
+// English/omitted target keeps the legacy word-only shape.
+const isTargetScoped = (targetLanguage: string | undefined): targetLanguage is string =>
+  Boolean(targetLanguage) && targetLanguage !== 'en';
+
+const isMatchingIdentity = (value: CardRecord, identity: string, targetLanguage?: string): boolean =>
   typeof value.cardId === 'string'
   && value.cardId.length <= 128
   && /^[a-zA-Z0-9_-]+$/.test(value.cardId)
   && (identity.startsWith('lexeme:')
     ? value.lexemeId === identity.slice('lexeme:'.length) && value.schemaVersion === 2
-    : value.normalizedWord === identity && value.schemaVersion === 1);
+    : value.normalizedWord === identity && value.schemaVersion === 1
+      && (isTargetScoped(targetLanguage)
+        ? value.targetLanguage === targetLanguage
+        : !Object.prototype.hasOwnProperty.call(value, 'targetLanguage')));
 
-const cardMatchesIdentity = (value: CardRecord, identity: string, id: string): boolean =>
+const cardMatchesIdentity = (
+  value: CardRecord,
+  identity: string,
+  id: string,
+  targetLanguage?: string,
+): boolean =>
   (value.id === undefined || value.id === id)
   && (identity.startsWith('lexeme:')
     ? value.lexemeId === identity.slice('lexeme:'.length)
@@ -489,26 +524,33 @@ const cardMatchesIdentity = (value: CardRecord, identity: string, id: string): b
       && (
     value.normalizedWord === undefined
     || normalizedWord(typeof value.normalizedWord === 'string' ? value.normalizedWord : '') === identity
-      ));
+      )
+      && (isTargetScoped(targetLanguage)
+        ? typeof value.language === 'string' && value.language.toLowerCase() === targetLanguage
+        : value.language === undefined || value.language === 'en'));
 
 const isStrictCurrentCard = (
   value: CardRecord,
   id: string,
   identity: string,
   libraryEpoch: number,
+  targetLanguage?: string,
 ): boolean => value.id === id
-  && cardMatchesIdentity(value, identity, id)
+  && cardMatchesIdentity(value, identity, id, targetLanguage)
   && value.schemaVersion === 2
   && Number.isSafeInteger(value.revision)
   && Number(value.revision) >= 1
   && value.libraryEpoch === libraryEpoch;
 
-const createReservation = (identity: string, id: string): CardRecord => ({
+const createReservation = (identity: string, id: string, targetLanguage?: string): CardRecord => ({
   schemaVersion: identity.startsWith('lexeme:') ? 2 : 1,
   cardId: id,
   ...(identity.startsWith('lexeme:')
     ? { lexemeId: identity.slice('lexeme:'.length) }
-    : { normalizedWord: identity }),
+    : {
+        normalizedWord: identity,
+        ...(isTargetScoped(targetLanguage) ? { targetLanguage } : {}),
+      }),
 });
 
 const asIsoDate = (value: unknown): unknown => {
@@ -619,13 +661,16 @@ export async function createCardForOwner(
   }
   const cardSource = asRecord(card, 'Card must be an object.');
   const normalizedCard = canonicalCard(cardSource);
+  const restoreCreatedAt = restore && operationCreatedAt
+    ? optionalDate(operationCreatedAt, 'operationCreatedAt')
+    : undefined;
   if (restore && (
     !opId
     || !/^[A-Za-z0-9_-]{1,128}$/.test(opId)
-    || !operationCreatedAt
+    || !restoreCreatedAt
   )) throw new InputValidationError('Card restore operation metadata is required.');
-  const restoreOperation = restore && opId && operationCreatedAt
-    ? { opId, operationCreatedAt }
+  const restoreOperation = restore && opId && restoreCreatedAt
+    ? { opId, operationCreatedAt: restoreCreatedAt }
     : null;
   // Review receipts are server-owned. A forged create payload may carry the
   // field for shape compatibility, but it must never seed a duplicate receipt.
@@ -633,11 +678,17 @@ export async function createCardForOwner(
   const identity = typeof normalizedCard.lexemeId === 'string'
     ? `lexeme:${normalizedCard.lexemeId}`
     : normalizedCard.normalizedWord as string;
+  // Only a plain (non-lexeme) identity is target-scoped; canonical lexeme
+  // identity already encodes its language inside the lexeme tuple.
+  const plainTargetLanguage = identity.startsWith('lexeme:')
+    ? undefined
+    : (typeof normalizedCard.language === 'string' ? normalizedCard.language : undefined);
   const proposedId = normalizedCard.id as string;
   const owner = ownerDocument(database, ownerId);
   const libraryState = owner.collection('profile').doc('library_state');
   const resourceUsage = owner.collection('profile').doc('resource_usage');
-  const reservation = owner.collection('card_reservations').doc(reservationId(identity));
+  const reservation = owner.collection('card_reservations')
+    .doc(reservationId(identity, plainTargetLanguage));
   let existingCardCount: number;
   try {
     const countSnapshot = await owner.collection('cards').count().get();
@@ -658,7 +709,7 @@ export async function createCardForOwner(
     const existingReservation = reservationSnapshot.exists
       ? reservationSnapshot.data() as CardRecord
       : null;
-    if (existingReservation && !isMatchingIdentity(existingReservation, identity)) {
+    if (existingReservation && !isMatchingIdentity(existingReservation, identity, plainTargetLanguage)) {
       throw new CardAllocationConflictError('identity-conflict', 'The card identity reservation conflicts with the request.');
     }
     const id = existingReservation?.cardId as string | undefined ?? proposedId;
@@ -681,9 +732,9 @@ export async function createCardForOwner(
       );
     }
 
-    const expectedReservation = createReservation(identity, id);
+    const expectedReservation = createReservation(identity, id, plainTargetLanguage);
     const existingCard = cardSnapshot.exists ? cardSnapshot.data() as CardRecord : null;
-    if (existingCard && !cardMatchesIdentity(existingCard, identity, id)) {
+    if (existingCard && !cardMatchesIdentity(existingCard, identity, id, plainTargetLanguage)) {
       throw new CardAllocationConflictError('identity-conflict', 'The canonical card identity conflicts with the request.');
     }
 
@@ -700,10 +751,11 @@ export async function createCardForOwner(
     );
     const hadIdentity = Boolean(existingReservation || existingCard);
     if (existingCard && !isOldGeneration) {
-      const isStrictCurrent = isStrictCurrentCard(existingCard, id, identity, currentEpoch);
+      const isStrictCurrent = isStrictCurrentCard(existingCard, id, identity, currentEpoch, plainTargetLanguage);
       const normalizedExisting = isStrictCurrent
         ? existingCard
         : canonicalExistingCard(existingCard, id, identity, currentEpoch);
+      await mirrorCourseCardIndexInTransaction(database, transaction, ownerId, id, normalizedExisting);
       if (!isStrictCurrent) {
         transaction.set(canonical, normalizedExisting, { merge: false });
       }
@@ -753,10 +805,18 @@ export async function createCardForOwner(
         delta: { [String(normalizedCard.category || 'Other')]: 1 },
       });
     };
+    const preparedMirror = await prepareCourseCardIndexMirrorInTransaction(
+      database,
+      transaction,
+      ownerId,
+      id,
+      createdCard,
+    );
     if (!hadIdentity) {
       const currentCount = safeStoredCardCount(usageSnapshot) ?? existingCardCount;
       if (currentCount >= maximumCards) throw new CardAllocationLimitError();
       await applyRestoreFacetDelta();
+      preparedMirror.apply();
       transaction.create(reservation, expectedReservation);
       if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
       else transaction.create(canonical, createdCard);
@@ -772,6 +832,7 @@ export async function createCardForOwner(
     }
 
     await applyRestoreFacetDelta();
+    preparedMirror.apply();
     if (existingCard && !existingReservation) transaction.create(reservation, expectedReservation);
     if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
     else transaction.create(canonical, createdCard);

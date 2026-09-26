@@ -58,6 +58,18 @@ const card = {
   reviewHistory: [],
 };
 
+const indexGeneration = (status: 'ready' | 'building') => ({
+  schemaVersion: 1,
+  projectionVersion: 1,
+  libraryEpoch: 2,
+  status,
+  lastCardId: null,
+  scanned: 0,
+  leaseToken: status === 'building' ? 'lease-token' : null,
+  leaseExpiresAt: status === 'building' ? Date.now() + 180_000 : null,
+  startedAt: '2026-08-01T00:00:00.000Z',
+});
+
 const canonicalLexemeId = () => {
   const tuple = JSON.stringify(['en', 'lead', 'noun', 'metal']);
   const bytes = Buffer.from(tuple).toString('hex');
@@ -90,23 +102,18 @@ const transactionHarness = (
       return transaction;
     }),
   } as unknown as Transaction;
-  const database = {
-    collection: (name: string) => ({
-      count: () => ({
-        get: vi.fn(async () => ({ data: () => ({ count: existingCardCount }) })),
-      }),
-      doc: (ownerId: string) => ({
-        path: `${name}/${ownerId}`,
-        collection: (subcollection: string) => ({
-          count: () => ({
-            get: vi.fn(async () => ({ data: () => ({ count: existingCardCount }) })),
-          }),
-          doc: (documentId: string) => ({
-            path: `${name}/${ownerId}/${subcollection}/${documentId}`,
-          }),
-        }),
-      }),
+  const nestedCollection = (path: string) => ({
+    count: () => ({
+      get: vi.fn(async () => ({ data: () => ({ count: existingCardCount }) })),
     }),
+    doc: (documentId: string) => nestedDoc(`${path}/${documentId}`),
+  });
+  const nestedDoc = (path: string) => ({
+    path,
+    collection: (subcollection: string) => nestedCollection(`${path}/${subcollection}`),
+  });
+  const database = {
+    collection: (name: string) => nestedCollection(name),
     runTransaction: vi.fn(async (update: (value: Transaction) => Promise<unknown>) => update(transaction)),
   } as unknown as Firestore;
   return { database, transaction, writes, events };
@@ -194,7 +201,67 @@ describe('card persistence', () => {
         data: expect.objectContaining({ cardCount: 5 }),
       }),
     ]));
-    expect(harness.transaction.get).toHaveBeenCalledTimes(6);
+    expect(harness.transaction.get).toHaveBeenCalledTimes(7);
+  });
+
+  it('keeps a plain Korean card separate from an English card with the same spelling and preserves translationLanguage', async () => {
+    const englishHarness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+    ]));
+    const englishResult = await createCardForOwner(englishHarness.database, 'owner', card, {
+      maximumCards: 5,
+      libraryEpoch: 2,
+    });
+    expect(englishResult).toMatchObject({ created: true, card: { id: 'word-hello' } });
+    expect(englishResult.card.language).toBeUndefined();
+
+    const koreanCard = { ...card, language: 'ko', translationLanguage: 'vi' };
+    const koreanHarness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+    ]));
+    const koreanResult = await createCardForOwner(koreanHarness.database, 'owner', koreanCard, {
+      maximumCards: 5,
+      libraryEpoch: 2,
+    });
+    expect(koreanResult).toMatchObject({
+      created: true,
+      card: { language: 'ko', translationLanguage: 'vi' },
+    });
+    expect(koreanResult.card.id).not.toBe(englishResult.card.id);
+    expect(koreanResult.card.id).toMatch(/^word-ko-/);
+
+    const englishReservationWrite = englishHarness.writes.find(write => write.path.startsWith('users/owner/card_reservations/'));
+    const koreanReservationWrite = koreanHarness.writes.find(write => write.path.startsWith('users/owner/card_reservations/'));
+    expect(englishReservationWrite?.path).not.toBe(koreanReservationWrite?.path);
+    expect(englishReservationWrite?.data).not.toHaveProperty('targetLanguage');
+    expect(koreanReservationWrite?.data).toMatchObject({ targetLanguage: 'ko', normalizedWord: 'hello' });
+  });
+
+  it('mirrors a created card into the active and building generations in the same transaction', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+      ['users/owner/profile/course_query_index', snapshot(true, {
+        schemaVersion: 1,
+        projectionVersion: 1,
+        libraryEpoch: 2,
+        activeGenerationId: 'active-generation',
+        buildingGenerationId: 'building-generation',
+      })],
+      ['users/owner/course_query_generations/active-generation', snapshot(true, indexGeneration('ready'))],
+      ['users/owner/course_query_generations/building-generation', snapshot(true, indexGeneration('building'))],
+    ]));
+
+    await expect(createCardForOwner(harness.database, 'owner', card, {
+      maximumCards: 5,
+      libraryEpoch: 2,
+    })).resolves.toMatchObject({ created: true });
+    expect(harness.writes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'users/owner/course_query_generations/active-generation/cards/word-hello' }),
+      expect.objectContaining({ path: 'users/owner/course_query_generations/building-generation/cards/word-hello' }),
+    ]));
   });
 
   it('does not seed server-owned review receipts from a forged create payload', async () => {

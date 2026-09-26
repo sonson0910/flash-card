@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PILOT_CONFIG_DEFAULTS } from '../src/pilotConfig.js';
 import { AiQuotaError } from '../src/aiQuota.js';
@@ -89,6 +89,38 @@ describe('generateVocabulary callable', () => {
       code: 'failed-precondition', details: { reason: 'operation-request-mismatch' },
     });
     expect(runMeteredGemini).not.toHaveBeenCalled();
+  });
+
+  it('binds part of speech to the operation fingerprint and generation prompt', async () => {
+    reserveWordOperation.mockResolvedValue({ kind: 'reserved', attemptId: 'attempt-1', periodKey: 'free-2026-09' });
+    // Avoid analytics here; the settle conflict returns only after prompt creation.
+    settleWordOperation.mockResolvedValue(false);
+    const { generateVocabulary } = await import('../src/index.js');
+    const operationId = randomUUID();
+    for (const partOfSpeech of ['noun', 'verb']) {
+      await expect(generateVocabulary.run({
+        auth: { uid: 'owner-1' },
+        data: { action: 'word', input: { term: 'record', partOfSpeech }, operationId },
+      } as never)).rejects.toMatchObject({ code: 'unavailable' });
+    }
+    expect(reserveWordOperation.mock.calls[0][2]).toBe(operationId);
+    expect(reserveWordOperation.mock.calls[1][2]).toBe(operationId);
+    expect(reserveWordOperation.mock.calls[0][3]).not.toBe(reserveWordOperation.mock.calls[1][3]);
+    const request = JSON.parse(runMeteredGemini.mock.calls[1][0].contents);
+    expect(request.contents).toContain('requested part of speech "verb"');
+    expect(request.config.responseSchema.properties.wordFamily.properties).toHaveProperty('noun');
+    expect(request.config.responseSchema.properties).toHaveProperty('mnemonic');
+  });
+
+  it('preserves the fingerprint of requests without a part-of-speech hint', async () => {
+    reserveWordOperation.mockResolvedValue({ kind: 'completed', result: { translation: 'cached' } });
+    const { generateVocabulary } = await import('../src/index.js');
+    await generateVocabulary.run({
+      auth: { uid: 'owner-1' }, data: { action: 'word', input: 'apple', operationId: randomUUID() },
+    } as never);
+    expect(reserveWordOperation.mock.calls[0][3]).toBe(
+      createHash('sha256').update(JSON.stringify({ word: 'apple' })).digest('hex'),
+    );
   });
 
   it('refunds the reservation but rethrows the original error when the budget check fails', async () => {

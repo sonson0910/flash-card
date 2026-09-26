@@ -5,6 +5,7 @@ import { InputValidationError } from './inputValidation.js';
 import { canonicalCard, serializeCardResponse, type CardRecord } from './cardPersistence.js';
 import { scheduleReviewTransition } from './reviewScheduler.js';
 import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
+import { mirrorCourseCardIndexInTransaction } from './course-card-index-persistence.js';
 
 export const MAX_REVIEW_HISTORY = 100;
 export const MAX_REVIEW_OPERATION_IDS = 100;
@@ -386,6 +387,15 @@ export async function applyReviewForOwner(
       schemaVersion: 2,
       updatedAt: FieldValue.serverTimestamp(),
     };
+    await mirrorCourseCardIndexInTransaction(database, transaction, ownerId, request.cardId, {
+      ...candidate,
+      ...canonicalFields,
+      appliedReviewOperationIds: nextOperationIds,
+      revision: nextRevision,
+      libraryEpoch: serverEpoch,
+      schemaVersion: 2,
+      updatedAt,
+    });
     transaction.set(cardRef, persisted, { merge: true });
     const responseCard = serializeCardResponse({
       ...candidate,

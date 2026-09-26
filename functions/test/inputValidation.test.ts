@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   InputValidationError,
+  PART_OF_SPEECH_HINTS,
+  canonicalLexemeId,
   calculateSharedDeckPayloadBytes,
   sharedDeckRequestFingerprint,
+  parseCardLanguagePair,
   parseCreateSharedDeckRequest,
   parseDuplicateCleanupRequest,
   parseImageRequest,
@@ -59,6 +62,30 @@ describe('parseVocabularyRequest', () => {
     expect(parsed.action === 'word' ? parsed.context?.length ?? 0 : 0).toBeLessThanOrEqual(500);
   });
 
+  it('accepts a canonical optional part-of-speech hint', () => {
+    expect(parseVocabularyRequest({
+      action: 'word',
+      input: { term: 'lead', partOfSpeech: ' PHRASAL VERB ' },
+    })).toEqual({
+      action: 'word',
+      word: 'lead',
+      partOfSpeech: 'phrasal verb',
+    });
+    expect(PART_OF_SPEECH_HINTS).toContain('phrasal verb');
+  });
+
+  it.each([
+    { partOfSpeech: 'substantive' },
+    { partOfSpeech: 'noun'.repeat(20) },
+    { partOfSpeech: 42 },
+    { partOfSpeech: '' },
+  ])('rejects an invalid or unbounded part-of-speech hint: %o', hint => {
+    expect(() => parseVocabularyRequest({
+      action: 'word',
+      input: { term: 'lead', ...hint },
+    })).toThrowError(new InputValidationError('Part of speech hint is invalid.'));
+  });
+
   it('rejects malformed or unexpected structured word input', () => {
     expect(() => parseVocabularyRequest({
       action: 'word',
@@ -112,6 +139,37 @@ describe('parseImageRequest', () => {
 });
 
 describe('shared deck validation', () => {
+  it('validates card language fields independently of lexeme identity', () => {
+    expect(parseCardLanguagePair({ language: 'KO', translationLanguage: 'VI' }))
+      .toEqual({ language: 'ko', translationLanguage: 'vi' });
+    expect(parseCardLanguagePair({ language: 'ko' })).toEqual({ language: 'ko' });
+    expect(parseCardLanguagePair({ translationLanguage: 'en' }))
+      .toEqual({ translationLanguage: 'en' });
+  });
+
+  it.each([
+    { language: 'english' },
+    { translationLanguage: 'zh-hant-123456789' },
+    { translationLanguage: 'fr' },
+    { language: 42 },
+  ])('rejects malformed independent card language fields: %o', fields => {
+    expect(() => parseCardLanguagePair(fields)).toThrow(/language codes are invalid/i);
+  });
+
+  it('accepts a plain target card while keeping partial canonical lexeme tuples rejected', () => {
+    expect(parseCreateSharedDeckRequest({
+      category: 'Shared',
+      cards: [{ word: '안녕', translation: 'xin chào', language: 'KO' }],
+    }).cards[0]).toMatchObject({ word: '안녕', language: 'ko' });
+
+    expect(() => parseCreateSharedDeckRequest({
+      category: 'Shared',
+      cards: [{
+        word: 'lead', translation: 'kim loại', language: 'ko', normalizedLemma: 'lead', partOfSpeech: 'noun',
+      }],
+    })).toThrow(/lexeme identity/i);
+  });
+
   it('accepts an optional complete normalized deck language pair', () => {
     expect(parseCreateSharedDeckRequest({
       category: 'Shared', targetLanguage: 'EN', nativeLanguage: 'VI',
@@ -173,6 +231,10 @@ describe('shared deck validation', () => {
     expect(parseCreateSharedDeckRequest({ category: 'Shared', cards: [{
       word: 'lead', translation: 'kim loại', lexemeId, language: 'en', senseKey: 'metal', partOfSpeech: 'noun',
     }]}).cards[0]).toMatchObject({ lexemeId, language: 'en', senseKey: 'metal', partOfSpeech: 'noun' });
+    const koreanLexemeId = canonicalLexemeId('ko', 'lead', 'noun', 'metal');
+    expect(parseCreateSharedDeckRequest({ category: 'Shared', cards: [{
+      word: 'lead', translation: '납', lexemeId: koreanLexemeId, language: 'ko', senseKey: 'metal', partOfSpeech: 'noun',
+    }]}).cards[0]).toMatchObject({ lexemeId: koreanLexemeId, language: 'ko' });
     expect(() => parseCreateSharedDeckRequest({ category: 'Shared', cards: [{
       word: 'lead', translation: 'kim loại', lexemeId, language: 'en', partOfSpeech: 'noun',
     }] })).toThrow(/lexeme identity/i);
