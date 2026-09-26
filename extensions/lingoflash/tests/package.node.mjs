@@ -8,10 +8,23 @@ import { assertZipMatchesFiles, collectExtensionFiles } from '../../../scripts/b
 
 const extensionRoot = fileURLToPath(new URL('..', import.meta.url));
 const expectedFiles = [
+  '_locales/en/messages.json',
+  '_locales/vi/messages.json',
   'app-bridge.js',
   'background-core.js',
   'background-ui.js',
   'background.js',
+  'design-fonts.css',
+  'design-tokens.css',
+  'fonts/fraunces/fraunces-latin-ext.woff2',
+  'fonts/fraunces/fraunces-latin.woff2',
+  'fonts/fraunces/fraunces-vietnamese.woff2',
+  'fonts/geist-mono/geist-mono-latin-ext.woff2',
+  'fonts/geist-mono/geist-mono-latin.woff2',
+  'fonts/geist-mono/geist-mono-vietnamese.woff2',
+  'fonts/geist/geist-latin-ext-wght-normal.woff2',
+  'fonts/geist/geist-latin-wght-normal.woff2',
+  'fonts/geist/geist-vietnamese-wght-normal.woff2',
   'icons/icon-128.png',
   'icons/icon-16.png',
   'icons/icon-32.png',

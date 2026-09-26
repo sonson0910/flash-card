@@ -26,6 +26,10 @@ const {
   normalizeSelectedText,
   selectionValidation,
   validateAppUrl,
+  t,
+  normalizeDueCount,
+  normalizeDueCountMetadata,
+  MAX_DUE_COUNT,
 } = globalThis.LingoFlashExtension;
 
 test('normalizes browser selection', () => {
@@ -51,8 +55,17 @@ test('normalizes settings to safe bounded defaults', () => {
     quickTranslateSource: 'auto',
     quickTranslateTarget: 'vi',
     selectionIconSites: [],
+    themeFamily: 'classic',
+    colorScheme: 'system',
   });
   assert.deepEqual(normalizeSettings(null), DEFAULT_SETTINGS);
+  assert.deepEqual(normalizeSettings({ themeFamily: 'crystal', colorScheme: 'dark' }), {
+    ...DEFAULT_SETTINGS,
+    themeFamily: 'crystal',
+    colorScheme: 'dark',
+  });
+  assert.equal(normalizeSettings({ themeFamily: 'neon' }).themeFamily, 'classic');
+  assert.equal(normalizeSettings({ colorScheme: 'midnight' }).colorScheme, 'system');
   assert.equal(normalizeSettings({ bubbleDurationMs: null }).bubbleDurationMs, DEFAULT_SETTINGS.bubbleDurationMs);
   assert.equal(normalizeSettings({ bubbleDurationMs: '' }).bubbleDurationMs, DEFAULT_SETTINGS.bubbleDurationMs);
 });
@@ -258,6 +271,62 @@ test('purges stale local history even when the history setting is disabled', asy
 
   assert.equal(history.length, 0);
   assert.deepEqual(values.get('lingoflash_recent_lookups').map(item => item.text), ['new']);
+});
+
+test('falls back to the caller-supplied text outside a real i18n runtime', () => {
+  assert.equal(t('missingKey', [], 'Chưa gán'), 'Chưa gán');
+  assert.equal(t('missingKey'), '');
+});
+
+test('localizeDocument upgrades text only when a real i18n runtime resolves a different message', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { runInNewContext } = await import('node:vm');
+  const source = await readFile(new URL('../shared.js', import.meta.url), 'utf8');
+  const makeElement = (i18nKey, textContent) => ({
+    dataset: { i18n: i18nKey },
+    textContent,
+    children: [],
+  });
+  const untouched = makeElement('shortcutConfigure', 'Cấu hình phím tắt');
+  const translated = makeElement('shortcutConfigure', 'Cấu hình phím tắt');
+  const document = {
+    querySelectorAll: () => [untouched],
+  };
+  const contextNoI18n = {
+    chrome: undefined,
+    browser: undefined,
+    document,
+    URL, URLSearchParams, TextEncoder, TextDecoder, Uint8Array, Uint32Array,
+    Promise, Error, String, Number, Array, Object, Math, Date,
+    crypto: globalThis.crypto, btoa, atob,
+  };
+  contextNoI18n.globalThis = contextNoI18n;
+  runInNewContext(source, contextNoI18n);
+  contextNoI18n.LingoFlashExtension.localizeDocument(document);
+  assert.equal(untouched.textContent, 'Cấu hình phím tắt');
+
+  const contextWithI18n = {
+    chrome: { i18n: { getMessage: name => (name === 'shortcutConfigure' ? 'Configure shortcuts' : '') } },
+    document: { querySelectorAll: () => [translated] },
+    URL, URLSearchParams, TextEncoder, TextDecoder, Uint8Array, Uint32Array,
+    Promise, Error, String, Number, Array, Object, Math, Date,
+    crypto: globalThis.crypto, btoa, atob,
+  };
+  contextWithI18n.globalThis = contextWithI18n;
+  runInNewContext(source, contextWithI18n);
+  contextWithI18n.LingoFlashExtension.localizeDocument(contextWithI18n.document);
+  assert.equal(translated.textContent, 'Configure shortcuts');
+});
+
+test('bounds and validates due-count metadata like deck metadata', () => {
+  assert.equal(normalizeDueCount(12), 12);
+  assert.equal(normalizeDueCount(-1), null);
+  assert.equal(normalizeDueCount(1.5), null);
+  assert.equal(normalizeDueCount(MAX_DUE_COUNT + 500), MAX_DUE_COUNT);
+  assert.deepEqual(normalizeDueCountMetadata({ scope: 'a'.repeat(12), count: 7 }), { scope: 'a'.repeat(12), count: 7 });
+  assert.equal(normalizeDueCountMetadata({ scope: '', count: 7 }), null);
+  assert.equal(normalizeDueCountMetadata({ scope: 'a'.repeat(12), count: -1 }), null);
+  assert.equal(normalizeDueCountMetadata(null), null);
 });
 
 test('locks the extension to the production LingoFlash origin', () => {

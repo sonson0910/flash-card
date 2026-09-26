@@ -315,6 +315,51 @@ test('retries an unacknowledged deck metadata clear after a transient runtime fa
     && call.args[0]?.type === 'CLEAR_DECK_METADATA').length >= 2);
 });
 
+test('relays a real due count only from same-origin app messages (07.6)', async () => {
+  const bridge = await createBridgeContext({ response: { ok: true, verified: false } });
+  bridge.dispatchMessage({
+    source: bridge.bridgeGlobal,
+    origin: 'https://encoded-hangout-433912-h2.web.app',
+    data: {
+      source: 'lingoflash-web-app',
+      type: 'LINGOFLASH_EXTENSION_DUE_COUNT',
+      payload: { scope: 'opaque_scope_123456', count: 12 },
+    },
+  });
+  bridge.dispatchMessage({
+    source: bridge.bridgeGlobal,
+    origin: 'https://encoded-hangout-433912-h2.web.app',
+    data: {
+      source: 'evil',
+      type: 'LINGOFLASH_EXTENSION_DUE_COUNT',
+      payload: { scope: 'evil_scope_123456', count: 999 },
+    },
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  const relayed = bridge.calls.filter(call => call.type === 'runtime.sendMessage')
+    .map(call => call.args[0])
+    .find(message => message.type === 'SYNC_DUE_COUNT');
+  assert.deepEqual(relayed.payload, { scope: 'opaque_scope_123456', count: 12 });
+  assert.equal(bridge.calls.filter(call => call.type === 'runtime.sendMessage'
+    && call.args[0].type === 'SYNC_DUE_COUNT').length, 1);
+});
+
+test('retries an unacknowledged due-count clear after a transient runtime failure (07.6)', async () => {
+  const bridge = await createBridgeContext({ response: { ok: false } });
+  bridge.dispatchMessage({
+    source: bridge.bridgeGlobal,
+    origin: 'https://encoded-hangout-433912-h2.web.app',
+    data: {
+      source: 'lingoflash-web-app',
+      type: 'LINGOFLASH_EXTENSION_DUE_COUNT_CLEAR',
+      payload: { scope: 'opaque_scope_123456' },
+    },
+  });
+  await new Promise(resolve => setTimeout(resolve, 300));
+  assert.ok(bridge.calls.filter(call => call.type === 'runtime.sendMessage'
+    && call.args[0]?.type === 'CLEAR_DUE_COUNT').length >= 2);
+});
+
 test('removes a forged hash and forwards it only as a draft-only intent', async () => {
   const bridge = await createBridgeContext({ response: { ok: true, verified: false } });
   assert.equal(bridge.currentUrl(), 'https://encoded-hangout-433912-h2.web.app/?view=library');

@@ -1,20 +1,51 @@
-# LingoFlash Browser Extension v1.6.3
+# SonFlash Browser Extension v1.6.3
 
-A Manifest V3 WebExtension for Chrome-compatible browsers and Safari.
+A Manifest V3 WebExtension for Chrome-compatible browsers and Safari. The
+folder, storage keys, and internal protocol identifiers are still named
+`lingoflash`/`LingoFlash` by design — only user-visible branding moved to
+SonFlash (07.1); see the phase report for the reasoning.
 
 ## Daily flow
 
 1. Select an English word or short phrase (maximum 80 characters).
 2. Press `Ctrl+Shift+L` (`Command+Shift+L` on macOS), use the selection context menu, or use the popup.
 3. A loading card appears beside the selected text on the current page.
-4. The extension starts one inactive LingoFlash worker tab. The app reuses its authenticated Firebase/App Check session, generates the complete card, and persists it through the existing intake pipeline.
+4. The extension starts one inactive SonFlash worker tab. The app reuses its authenticated Firebase/App Check session, generates the complete card, and persists it through the existing intake pipeline.
 5. The app sends a bounded result to the extension. The worker tab closes automatically and the translation appears inline on the original page.
 
-The extension never switches the active tab during this flow. A visible LingoFlash tab is opened only when the user explicitly chooses **Đăng nhập / mở thư viện**, or when authentication is required and the user clicks the sign-in link.
+The extension never switches the active tab during this flow. A visible SonFlash tab is opened only when the user explicitly chooses **Đăng nhập / mở thư viện**, or when authentication is required and the user clicks the sign-in link.
 
 ## First-time setup
 
-Open LingoFlash once from the extension popup and sign in. The browser keeps the normal web-app session. Later additions run in an inactive temporary tab and close automatically.
+Open SonFlash once from the extension popup and sign in. The browser keeps the normal web-app session. Later additions run in an inactive temporary tab and close automatically.
+
+## Language and appearance
+
+The popup, options page, in-page result bubble, and context menu are fully
+localized through Chrome's `i18n` API (`_locales/en`, `_locales/vi`); Chrome
+picks English or Vietnamese from the browser's own UI language automatically,
+with the shipped markup already carrying the Vietnamese `default_locale` copy
+so the page is correct even before any script runs. Popup and options pages
+self-host the same Fraunces/Geist/Geist Mono fonts the main app uses (see
+`fonts/SOURCES.md`) so they render correctly without a network request; the
+in-page result bubble and the floating selection icon are injected into
+arbitrary web pages and intentionally use system font fallbacks instead of
+requiring a `web_accessible_resources` manifest change.
+
+Options exposes a light/dark/system appearance toggle for the Classic
+("Midnight Aurora" dark / "Ink & Paper" light) design family. The Crystal
+Star family and full artboard-level geometry parity with the Canvas source
+are not implemented yet; see the phase report for what remains.
+
+## Due-card badge
+
+The library link in the popup can show a real, synced due-card count (07.6).
+It is always driven by state the signed-in app actually posted through the
+same-origin bridge — like deck names, it is session-only, scoped, and retired
+on account switch so a previous account's count can never leak. It stays
+hidden (no placeholder number) until the app has synced a real value; the
+small app-side change needed to start sending it is out of this phase's file
+ownership and is tracked in the phase report.
 
 ## Security
 

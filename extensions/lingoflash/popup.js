@@ -6,7 +6,14 @@ const {
   MAX_TEXT_LENGTH,
   normalizeSelectedText,
   selectionValidation,
+  t,
+  localizeDocument,
+  applyColorScheme,
+  readSettings,
 } = globalThis.LingoFlashExtension;
+
+localizeDocument(document);
+void readSettings().then(settings => applyColorScheme(settings.colorScheme)).catch(() => undefined);
 
 const selectionInput = document.getElementById('selection');
 const requestedDeckSelect = document.getElementById('requested-deck');
@@ -25,6 +32,7 @@ const recentList = document.getElementById('recent-list');
 const clearHistoryButton = document.getElementById('clear-history');
 const selectionIconToggle = document.getElementById('selection-icon-toggle');
 const selectionIconStatus = document.getElementById('selection-icon-status');
+const dueCountSuffix = document.getElementById('due-count-suffix');
 const resultCard = document.getElementById('result-card');
 const resultWord = document.getElementById('result-word');
 const resultTranslation = document.getElementById('result-translation');
@@ -74,11 +82,11 @@ const renderResultCard = ({ word = '', translation = '', phonetic = '', explanat
       resultExplanation.hidden = !explanation;
     }
     if (resultExample) {
-      resultExample.textContent = example ? `Ví dụ: ${example}` : '';
+      resultExample.textContent = example ? t('resultExamplePrefix', [example], `Ví dụ: ${example}`) : '';
       resultExample.hidden = !example;
     }
     if (resultExampleTranslation) {
-      resultExampleTranslation.textContent = exampleTranslation ? `Dịch ví dụ: ${exampleTranslation}` : '';
+      resultExampleTranslation.textContent = exampleTranslation ? t('resultExampleTranslationPrefix', [exampleTranslation], `Dịch ví dụ: ${exampleTranslation}`) : '';
       resultExampleTranslation.hidden = !exampleTranslation;
     }
   }
@@ -95,9 +103,10 @@ const renderResultCard = ({ word = '', translation = '', phonetic = '', explanat
     if (resultSpeak.dataset.speechState === 'playing') {
       try { globalThis.speechSynthesis?.cancel?.(); } catch {}
     }
-    setSpeechState(resultSpeak, 'idle', `Nghe phát âm ${word}`);
+    const speakLabel = t('resultSpeakAriaLabel', [word], `Nghe phát âm ${word}`);
+    setSpeechState(resultSpeak, 'idle', speakLabel);
     resultSpeak.disabled = !speechSupported();
-    resultSpeak.onclick = () => speakText(word, resultSpeak, speechLocale || sourceLanguage || 'en-US', `Nghe phát âm ${word}`);
+    resultSpeak.onclick = () => speakText(word, resultSpeak, speechLocale || sourceLanguage || 'en-US', speakLabel);
   }
 };
 
@@ -118,7 +127,7 @@ const updateInputState = () => {
     const unsupported = !speechSupported();
     speechSupportStatus.hidden = !unsupported;
     speechSupportStatus.textContent = unsupported
-      ? 'Trình duyệt này không hỗ trợ phát âm.'
+      ? t('speechUnsupported', undefined, 'Trình duyệt này không hỗ trợ phát âm.')
       : '';
   }
 };
@@ -145,16 +154,16 @@ const renderSelectionIconSite = state => {
   selectionIconToggle.disabled = protectedUrl;
   selectionIconToggle.setAttribute('aria-pressed', selectionIconSite?.enabled === true ? 'true' : 'false');
   if (protectedUrl) {
-    selectionIconToggle.textContent = 'Không khả dụng';
-    setSelectionIconStatus('Trang này không hỗ trợ floating icon.');
+    selectionIconToggle.textContent = t('floatingIconUnavailable', undefined, 'Không khả dụng');
+    setSelectionIconStatus(t('floatingIconStatusUnsupported', undefined, 'Trang này không hỗ trợ floating icon.'));
     return;
   }
   if (selectionIconSite?.enabled === true) {
-    selectionIconToggle.textContent = 'Tắt';
-    setSelectionIconStatus('Đã cấp quyền và bật trên website này.');
+    selectionIconToggle.textContent = t('floatingIconOn', undefined, 'Tắt');
+    setSelectionIconStatus(t('floatingIconStatusOn', undefined, 'Đã cấp quyền và bật trên website này.'));
   } else {
-    selectionIconToggle.textContent = 'Bật';
-    setSelectionIconStatus('Tắt mặc định; cần cấp quyền cho website này.');
+    selectionIconToggle.textContent = t('floatingIconOff', undefined, 'Bật');
+    setSelectionIconStatus(t('floatingIconStatusOff', undefined, 'Tắt mặc định; cần cấp quyền cho website này.'));
   }
 };
 
@@ -162,12 +171,12 @@ const loadSelectionIconSite = async () => {
   if (!selectionIconToggle) return;
   try {
     const response = await sendMessage({ type: 'GET_ACTIVE_SITE' });
-    if (!response?.ok) throw new Error(response?.error || 'Không thể đọc trạng thái website.');
+    if (!response?.ok) throw new Error(response?.error || t('errorReadActiveSite', undefined, 'Không thể đọc trạng thái website.'));
     renderSelectionIconSite(response);
   } catch {
     selectionIconToggle.disabled = true;
-    selectionIconToggle.textContent = 'Không khả dụng';
-    setSelectionIconStatus('Không thể đọc quyền website hiện tại.');
+    selectionIconToggle.textContent = t('floatingIconUnavailable', undefined, 'Không khả dụng');
+    setSelectionIconStatus(t('errorReadActiveSiteGeneric', undefined, 'Không thể đọc quyền website hiện tại.'));
   }
 };
 
@@ -179,26 +188,26 @@ const toggleSelectionIconSite = async () => {
   try {
     if (selectionIconSite.enabled) {
       const removed = await apiCall(extensionApi.permissions, 'remove', { origins: [pattern] });
-      if (removed === false) throw new Error('Trình duyệt không thu hồi được quyền website.');
+      if (removed === false) throw new Error(t('errorPermissionRevoke', undefined, 'Trình duyệt không thu hồi được quyền website.'));
       const response = await sendMessage({ type: 'DISABLE_SELECTION_ICON_SITE', pattern });
-      if (!response?.ok) throw new Error(response?.error || 'Không thể tắt floating icon.');
+      if (!response?.ok) throw new Error(response?.error || t('errorDisableFloatingIcon', undefined, 'Không thể tắt floating icon.'));
       renderSelectionIconSite({ ...selectionIconSite, enabled: false });
       return;
     }
     // Keep permissions.request directly in this click handler: browsers reject
     // permission prompts that are initiated by a background message/timer.
     const granted = await apiCall(extensionApi.permissions, 'request', { origins: [pattern] });
-    if (granted !== true) throw new Error('Bạn chưa cấp quyền cho website này.');
+    if (granted !== true) throw new Error(t('errorPermissionMissing', undefined, 'Bạn chưa cấp quyền cho website này.'));
     permissionGrantedThisAttempt = true;
     const response = await sendMessage({ type: 'ENABLE_SELECTION_ICON_SITE', pattern });
-    if (!response?.ok) throw new Error(response?.error || 'Không thể bật floating icon.');
+    if (!response?.ok) throw new Error(response?.error || t('errorEnableFloatingIcon', undefined, 'Không thể bật floating icon.'));
     renderSelectionIconSite({ ...selectionIconSite, enabled: true });
   } catch (error) {
     if (permissionGrantedThisAttempt) {
       try { await apiCall(extensionApi.permissions, 'remove', { origins: [pattern] }); } catch {}
     }
     renderSelectionIconSite(selectionIconSite);
-    setSelectionIconStatus(error instanceof Error ? error.message : 'Không thể cập nhật quyền website.', 'error');
+    setSelectionIconStatus(error instanceof Error ? error.message : t('errorUpdateSitePermission', undefined, 'Không thể cập nhật quyền website.'), 'error');
   }
 };
 
@@ -218,33 +227,34 @@ const nextSpeechRequestId = button => {
 
 const isCurrentSpeechRequest = (button, requestId) => button && speechRequestIds.get(button) === requestId;
 
-const speakText = (value, button = speakSelectionButton, lang = 'en-US', label = 'Nghe phát âm đoạn đã chọn') => {
+const speakText = (value, button = speakSelectionButton, lang = 'en-US', label) => {
+  const resolvedLabel = label ?? t('speakSelectionAriaLabel', undefined, 'Nghe phát âm đoạn đã chọn');
   const text = normalizeSelectedText(value);
   const speech = globalThis.speechSynthesis;
   const Utterance = globalThis.SpeechSynthesisUtterance;
   if (!text || !speech || typeof speech.speak !== 'function' || typeof Utterance !== 'function') {
     if (button) button.disabled = true;
-    setStatus('Trình duyệt không hỗ trợ phát âm.', 'error');
+    setStatus(t('speechUnsupportedGeneric', undefined, 'Trình duyệt không hỗ trợ phát âm.'), 'error');
     return false;
   }
   const requestId = nextSpeechRequestId(button);
-  setSpeechState(button, 'playing', label);
+  setSpeechState(button, 'playing', resolvedLabel);
   try {
     speech.cancel?.();
     const utterance = new Utterance(text);
     utterance.lang = speechLocaleForLanguage(lang);
     utterance.rate = 0.88;
     utterance.onend = () => {
-      if (isCurrentSpeechRequest(button, requestId)) setSpeechState(button, 'ended', label);
+      if (isCurrentSpeechRequest(button, requestId)) setSpeechState(button, 'ended', resolvedLabel);
     };
     utterance.onerror = () => {
-      if (isCurrentSpeechRequest(button, requestId)) setSpeechState(button, 'error', label);
+      if (isCurrentSpeechRequest(button, requestId)) setSpeechState(button, 'error', resolvedLabel);
     };
     speech.speak(utterance);
     return true;
   } catch {
-    if (isCurrentSpeechRequest(button, requestId)) setSpeechState(button, 'error', label);
-    setStatus('Không thể phát âm đoạn này.', 'error');
+    if (isCurrentSpeechRequest(button, requestId)) setSpeechState(button, 'error', resolvedLabel);
+    setStatus(t('speechFailed', undefined, 'Không thể phát âm đoạn này.'), 'error');
     return false;
   }
 };
@@ -257,26 +267,26 @@ const applyQuickAddStatus = payload => {
   }
   const text = typeof payload.text === 'string' ? payload.text : '';
   if (payload.status === 'loading-save') {
-    setStatus('Đang tạo flashcard ở nền…');
+    setStatus(t('statusCreatingBackground', undefined, 'Đang tạo flashcard ở nền…'));
     return;
   }
   const inlineSuffix = payload.inlineShown === false
-    ? ' Không thể hiển thị trên trang này; kết quả vẫn được giữ an toàn.'
+    ? t('statusInlineNotShown', undefined, ' Không thể hiển thị trên trang này; kết quả vẫn được giữ an toàn.')
     : '';
   if (payload.status === 'created') {
-    setStatus(`Đã tạo và lưu “${text}”.${inlineSuffix}`, 'success');
+    setStatus(t('statusCreatedSaved', [text, inlineSuffix], `Đã tạo và lưu “${text}”.${inlineSuffix}`), 'success');
     if (payload.translation) {
       renderResultCard({ word: text, translation: payload.translation, phonetic: payload.phonetic, explanation: payload.explanation, example: payload.exampleSentence, exampleTranslation: payload.exampleTranslation, sourceLanguage: payload.sourceLanguage, speechLocale: payload.speechLocale, canSave: false });
     }
   } else if (payload.status === 'existing') {
-    setStatus(`“${text}” đã có trong thư viện.${inlineSuffix}`, 'success');
+    setStatus(t('statusAlreadyInLibrary', [text, inlineSuffix], `“${text}” đã có trong thư viện.${inlineSuffix}`), 'success');
     if (payload.translation) {
       renderResultCard({ word: text, translation: payload.translation, phonetic: payload.phonetic, explanation: payload.explanation, example: payload.exampleSentence, exampleTranslation: payload.exampleTranslation, sourceLanguage: payload.sourceLanguage, speechLocale: payload.speechLocale, canSave: false });
     }
   } else if (payload.status === 'auth-required') {
-    setStatus('Cần đăng nhập LingoFlash để hoàn tất việc lưu flashcard.', 'error');
+    setStatus(t('statusAuthRequired', undefined, 'Cần đăng nhập SonFlash để hoàn tất việc lưu flashcard.'), 'error');
   } else if (payload.status === 'error') {
-    setStatus(payload.message || 'Không thể tạo hoặc lưu flashcard này.', 'error');
+    setStatus(payload.message || t('statusGenericError', undefined, 'Không thể tạo hoặc lưu flashcard này.'), 'error');
   } else {
     return;
   }
@@ -290,7 +300,7 @@ extensionApi.runtime?.onMessage?.addListener?.(message => {
 const loadSelection = async () => {
   try {
     const response = await sendMessage({ type: 'GET_SELECTION' });
-    if (!response?.ok) throw new Error(response?.error || 'Không thể đọc đoạn đã chọn.');
+    if (!response?.ok) throw new Error(response?.error || t('errorReadSelection', undefined, 'Không thể đọc đoạn đã chọn.'));
     const text = normalizeSelectedText(response.text);
     if (text && !selectionInputTouched && !selectionInput.value.trim()) {
       selectionInput.value = text;
@@ -315,12 +325,12 @@ const loadSelection = async () => {
 const loadShortcuts = async () => {
   const renderShortcut = (element, value) => {
     const assigned = typeof value === 'string' && value.trim();
-    element.textContent = assigned ? value.trim() : 'Chưa gán';
+    element.textContent = assigned ? value.trim() : t('shortcutUnassigned', undefined, 'Chưa gán');
     element.dataset.assigned = assigned ? 'true' : 'false';
   };
   try {
     const response = await sendMessage({ type: 'GET_SHORTCUTS' });
-    if (!response?.ok) throw new Error(response?.error || 'Không thể đọc phím tắt.');
+    if (!response?.ok) throw new Error(response?.error || t('errorReadShortcuts', undefined, 'Không thể đọc phím tắt.'));
     renderShortcut(saveShortcutValue, response.saveShortcut);
     renderShortcut(translateShortcutValue, response.translateShortcut);
     if (openShortcutsButton) openShortcutsButton.hidden = response.shortcutSettingsAvailable === false;
@@ -382,13 +392,14 @@ const renderRecentLookups = items => {
     copy.append(text, translation);
     const actions = document.createElement('div');
     actions.className = 'recent-actions';
-    const speaker = makeRecentButton('Nghe', `Nghe phát âm ${item.text}`, () => speakText(item.text, speaker, item.sourceLanguage, `Nghe phát âm ${item.text}`));
+    const speakLabel = t('recentSpeakAriaLabel', [item.text], `Nghe phát âm ${item.text}`);
+    const speaker = makeRecentButton(t('recentSpeakLabel', undefined, 'Nghe'), speakLabel, () => speakText(item.text, speaker, item.sourceLanguage, speakLabel));
     addSvgIcon(speaker, 'volume');
     speaker.disabled = !speechSupported();
     speaker.dataset.speechState = 'idle';
     actions.append(speaker);
     if (item.kind === 'translate') {
-      actions.append(makeRecentButton('Lưu thẻ', `Lưu ${item.text} thành flashcard`, () => {
+      actions.append(makeRecentButton(t('recentSaveLabel', undefined, 'Lưu thẻ'), t('recentSaveAriaLabel', [item.text], `Lưu ${item.text} thành flashcard`), () => {
         selectionInput.value = item.text;
         updateInputState();
         void runMode('ADD_SELECTION');
@@ -415,12 +426,12 @@ const loadDecks = async () => {
   updateInputState();
   try {
     const response = await sendMessage({ type: 'GET_DECKS' });
-    if (!response?.ok) throw new Error(response?.error || 'Không thể đọc danh sách deck.');
+    if (!response?.ok) throw new Error(response?.error || t('errorReadRecentUnavailable', undefined, 'Không thể đọc danh sách deck.'));
     const decks = Array.isArray(response?.decks) ? response.decks : [];
     requestedDeckSelect.replaceChildren();
     const shared = document.createElement('option');
     shared.value = '';
-    shared.textContent = 'Thư viện chung';
+    shared.textContent = t('deckSharedOption', undefined, 'Thư viện chung');
     requestedDeckSelect.append(shared);
     decks.slice(0, 100).forEach(deck => {
       if (typeof deck !== 'string' || !deck.trim()) return;
@@ -434,15 +445,15 @@ const loadDecks = async () => {
     decksReady = true;
     if (deckStatus) {
       deckStatus.textContent = decks.length
-        ? `${decks.length} deck đã đồng bộ.`
-        : 'Chưa có deck tùy chỉnh; đang dùng Thư viện chung.';
+        ? t('deckSyncedCount', [decks.length], `${decks.length} deck đã đồng bộ.`)
+        : t('deckSyncEmpty', undefined, 'Chưa có deck tùy chỉnh; đang dùng Thư viện chung.');
       delete deckStatus.dataset.tone;
     }
   } catch {
     decksReady = false;
     requestedDeckSelect.disabled = true;
     if (deckStatus) {
-      deckStatus.textContent = 'Chưa đồng bộ được deck; hãy mở LingoFlash một lần.';
+      deckStatus.textContent = t('deckSyncError', undefined, 'Chưa đồng bộ được deck; hãy mở SonFlash một lần.');
       deckStatus.dataset.tone = 'error';
     }
   } finally {
@@ -453,7 +464,7 @@ const loadDecks = async () => {
 const runMode = async type => {
   if (isBusy) return;
   if (type === 'ADD_SELECTION' && !decksReady) {
-    setStatus('Chưa đồng bộ được deck; hãy mở LingoFlash một lần.', 'error');
+    setStatus(t('statusDeckNotSynced', undefined, 'Chưa đồng bộ được deck; hãy mở SonFlash một lần.'), 'error');
     return;
   }
   const validation = selectionValidation(selectionInput.value);
@@ -464,20 +475,20 @@ const runMode = async type => {
 
   setBusy(true);
   setStatus(type === 'TRANSLATE_SELECTION'
-    ? 'Đang dịch nhanh bằng Google Translate…'
-    : 'Đang tạo flashcard ở nền bằng đúng 1 lần AI…');
+    ? t('statusTranslating', undefined, 'Đang dịch nhanh bằng Google Translate…')
+    : t('statusCreatingSave', undefined, 'Đang tạo flashcard ở nền bằng đúng 1 lần AI…'));
 
   try {
     const requestedDeck = type === 'ADD_SELECTION' && requestedDeckSelect?.value
       ? String(requestedDeckSelect.value).trim().slice(0, 128)
       : '';
     const response = await sendMessage({ type, text: validation.text, ...(requestedDeck ? { requestedDeck } : {}) });
-    if (!response?.ok) throw new Error(response?.error || 'Không thể khởi động LingoFlash.');
+    if (!response?.ok) throw new Error(response?.error || t('errorStartExtension', undefined, 'Không thể khởi động SonFlash.'));
     if (type === 'TRANSLATE_SELECTION') {
       if (response.inlineShown === false) {
-        setStatus(`Bản dịch: ${response.translation || 'Không có kết quả.'}`, 'success');
+        setStatus(t('statusTranslateResult', [response.translation || 'Không có kết quả.'], `Bản dịch: ${response.translation || 'Không có kết quả.'}`), 'success');
       } else {
-        setStatus('Đã dịch. Kết quả đang hiển thị trên trang.', 'success');
+        setStatus(t('statusTranslateShown', undefined, 'Đã dịch. Kết quả đang hiển thị trên trang.'), 'success');
       }
       if (response.translation) {
         renderResultCard({ word: validation.text, translation: response.translation, sourceLanguage: response.sourceLanguage, speechLocale: response.speechLocale, canSave: true });
@@ -485,7 +496,7 @@ const runMode = async type => {
       setBusy(false);
     } else {
       activeQuickAddId = response.id;
-      setStatus('Đã bắt đầu tạo + lưu. Bạn có thể tiếp tục đọc trang.', 'success');
+      setStatus(t('statusQuickAddStarted', undefined, 'Đã bắt đầu tạo + lưu. Bạn có thể tiếp tục đọc trang.'), 'success');
       const pending = pendingQuickAddStatuses.get(activeQuickAddId);
       if (pending) {
         pendingQuickAddStatuses.delete(activeQuickAddId);
@@ -516,7 +527,7 @@ selectionInput.addEventListener('input', () => {
 
 openShortcutsButton?.addEventListener('click', () => {
   void sendMessage({ type: 'OPEN_SHORTCUTS' }).then(response => {
-    if (!response?.ok) throw new Error(response?.error || 'Không thể mở cài đặt phím tắt.');
+    if (!response?.ok) throw new Error(response?.error || t('errorOpenShortcuts', undefined, 'Không thể mở cài đặt phím tắt.'));
     globalThis.close();
   }).catch(error => setStatus(error instanceof Error ? error.message : String(error), 'error'));
 });
@@ -529,9 +540,9 @@ speakSelectionButton.addEventListener('click', () => speakText(selectionInput.va
 
 clearHistoryButton.addEventListener('click', () => {
   void sendMessage({ type: 'CLEAR_RECENT_LOOKUPS' }).then(response => {
-    if (!response?.ok) throw new Error(response?.error || 'Không thể xóa lịch sử.');
+    if (!response?.ok) throw new Error(response?.error || t('errorClearHistory', undefined, 'Không thể xóa lịch sử.'));
     renderRecentLookups([]);
-    setStatus('Đã xóa lịch sử tra cứu.', 'success');
+    setStatus(t('statusHistoryCleared', undefined, 'Đã xóa lịch sử tra cứu.'), 'success');
   }).catch(error => setStatus(error instanceof Error ? error.message : String(error), 'error'));
 });
 
@@ -541,9 +552,29 @@ selectionIconToggle?.addEventListener('click', () => {
 
 document.getElementById('open-app').addEventListener('click', () => {
   void sendMessage({ type: 'OPEN_APP' }).then(response => {
-    if (!response?.ok) throw new Error(response?.error || 'Không thể mở LingoFlash.');
+    if (!response?.ok) throw new Error(response?.error || t('errorOpenApp', undefined, 'Không thể mở SonFlash.'));
     globalThis.close();
   }).catch(error => setStatus(error instanceof Error ? error.message : String(error), 'error'));
 });
 
-void Promise.all([loadSelection(), loadShortcuts(), loadRecentLookups(), loadDecks(), loadSelectionIconSite()]);
+// 07.6: the due-count badge only ever shows a real, background-synced value
+// (kept in the extension's own storage, scoped like deck metadata) — it is
+// hidden, never a placeholder number, until the signed-in app has synced one.
+const loadDueCount = async () => {
+  if (!dueCountSuffix) return;
+  try {
+    const response = await sendMessage({ type: 'GET_DUE_COUNT' });
+    if (response?.ok && Number.isSafeInteger(response.count) && response.count >= 0) {
+      dueCountSuffix.textContent = t('dueCountBadge', [response.count], `· ${response.count} thẻ đến hạn`);
+      dueCountSuffix.hidden = false;
+    } else {
+      dueCountSuffix.hidden = true;
+      dueCountSuffix.textContent = '';
+    }
+  } catch {
+    dueCountSuffix.hidden = true;
+    dueCountSuffix.textContent = '';
+  }
+};
+
+void Promise.all([loadSelection(), loadShortcuts(), loadRecentLookups(), loadDecks(), loadSelectionIconSite(), loadDueCount()]);

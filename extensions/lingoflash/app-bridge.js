@@ -12,6 +12,12 @@
   const VERIFY_IMPORT_TYPE = 'VERIFY_IMPORT_INTENT';
   const DECK_METADATA_TYPE = 'LINGOFLASH_EXTENSION_DECK_METADATA';
   const DECK_METADATA_CLEAR_TYPE = 'LINGOFLASH_EXTENSION_DECK_METADATA_CLEAR';
+  // 07.6: due count follows the exact same app -> bridge -> background relay
+  // as deck metadata. Nothing yet posts DUE_COUNT_TYPE from the app; see the
+  // phase report for the small src/features/browserExtension addition needed
+  // to complete real delivery end to end.
+  const DUE_COUNT_TYPE = 'LINGOFLASH_EXTENSION_DUE_COUNT';
+  const DUE_COUNT_CLEAR_TYPE = 'LINGOFLASH_EXTENSION_DUE_COUNT_CLEAR';
   const IMPORT_HASH_KEY = 'lf-import';
   const IMPORT_STORAGE_KEY = 'lingoflash_browser_extension_import';
   const UNVERIFIED_STORAGE_KEY = 'lingoflash_browser_extension_draft_import';
@@ -99,6 +105,16 @@
     }).catch(() => {
       if (attemptsRemaining > 0) {
         globalThis.setTimeout(() => relayDeckMetadataClear(payload, attemptsRemaining - 1), DECK_METADATA_CLEAR_RETRY_MS);
+      }
+    });
+  };
+
+  const relayDueCountClear = (payload, attemptsRemaining = DECK_METADATA_CLEAR_RETRIES) => {
+    void sendRuntimeMessage({ type: 'CLEAR_DUE_COUNT', payload }).then(response => {
+      if (response?.ok !== true) throw new Error('Due count clear was not acknowledged.');
+    }).catch(() => {
+      if (attemptsRemaining > 0) {
+        globalThis.setTimeout(() => relayDueCountClear(payload, attemptsRemaining - 1), DECK_METADATA_CLEAR_RETRY_MS);
       }
     });
   };
@@ -384,6 +400,14 @@
     }
     if (message.type === DECK_METADATA_CLEAR_TYPE) {
       relayDeckMetadataClear(message.payload);
+      return;
+    }
+    if (message.type === DUE_COUNT_TYPE) {
+      void sendRuntimeMessage({ type: 'SYNC_DUE_COUNT', payload: message.payload }).catch(() => undefined);
+      return;
+    }
+    if (message.type === DUE_COUNT_CLEAR_TYPE) {
+      relayDueCountClear(message.payload);
       return;
     }
     if (message.type !== APP_RESULT_TYPE) return;

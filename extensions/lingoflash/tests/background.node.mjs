@@ -658,6 +658,74 @@ test('fails closed for popup deck reads after clear delivery fails and the worke
   assert.deepEqual([...(await sendRuntimeMessage(restarted, { type: 'GET_DECKS' })).decks], ['Owner B']);
 });
 
+test('syncs a real due count from the app origin and scopes it like deck metadata (07.6)', async () => {
+  const worker = await createWorkerContext();
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+
+  const before = await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' });
+  assert.equal(before.ok, true);
+  assert.equal(before.count, null);
+
+  const synced = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_a_123456', count: 12 },
+  }, sender);
+  assert.equal(synced.ok, true);
+  assert.equal(synced.count, 12);
+
+  const after = await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' });
+  assert.equal(after.ok, true);
+  assert.equal(after.count, 12);
+
+  const wrongOrigin = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'attacker_scope_123456', count: 999 },
+  }, { ...sender, url: 'https://example.com/?view=library' });
+  assert.equal(wrongOrigin.ok, false);
+  assert.match(wrongOrigin.error, /Nguồn due-count/);
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' })).count, 12);
+});
+
+test('never leaks a previous account due count after reconnect/account switch (07.6)', async () => {
+  const worker = await createWorkerContext();
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_a_123456', count: 12 },
+  }, sender);
+
+  // The clear delivery never reached the first worker. A restarted worker has
+  // the session metadata but no active-scope proof, so the popup gets no
+  // prior-owner count until the app re-syncs.
+  const restarted = await createWorkerContext({ storageEntries: [...worker.storageValues.entries()] });
+  const stale = await sendRuntimeMessage(restarted, { type: 'GET_DUE_COUNT' });
+  assert.equal(stale.ok, true);
+  assert.equal(stale.count, null);
+
+  const reproof = await sendRuntimeMessage(restarted, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_b_123456', count: 3 },
+  }, { url: restarted.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+  assert.equal(reproof.ok, true);
+  assert.equal((await sendRuntimeMessage(restarted, { type: 'GET_DUE_COUNT' })).count, 3);
+
+  const cleared = await sendRuntimeMessage(restarted, {
+    type: 'CLEAR_DUE_COUNT',
+    payload: { scope: 'opaque_scope_b_123456' },
+  }, { url: restarted.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+  assert.equal(cleared.ok, true);
+  assert.equal(cleared.cleared, true);
+  assert.equal((await sendRuntimeMessage(restarted, { type: 'GET_DUE_COUNT' })).count, null);
+
+  // A retired scope can never resurface a due count even if replayed.
+  const replay = await sendRuntimeMessage(restarted, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_b_123456', count: 3 },
+  }, { url: restarted.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+  assert.equal(replay.ok, false);
+  assert.match(replay.error, /hết hiệu lực/);
+});
+
 test('owns settings mutations in the background and preserves concurrent site opt-ins', async () => {
   const worker = await createWorkerContext({
     storageEntries: [[

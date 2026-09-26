@@ -144,6 +144,15 @@
     // self-contained and cannot rely on the service-worker closure.
     const id = 'lingoflash-inline-translation-host';
     const speechStatusId = `${id}-speech-status`;
+    // Content scripts and executeScript-injected functions keep access to
+    // chrome.i18n; this falls back to the same literal SonFlash copy outside
+    // a real extension runtime (e.g. unit tests).
+    const bt = (name, substitutions, fallback) => {
+      try {
+        const resolved = (globalThis.browser ?? globalThis.chrome)?.i18n?.getMessage(name, substitutions);
+        return typeof resolved === 'string' && resolved ? resolved : fallback;
+      } catch { return fallback; }
+    };
     const speechSupportedInPage = () => Boolean(
       globalThis.speechSynthesis && typeof globalThis.speechSynthesis.speak === 'function'
         && typeof globalThis.SpeechSynthesisUtterance === 'function',
@@ -178,26 +187,27 @@
     const setSpeechState = (button, state, label) => {
       if (button.dataset) button.dataset.speechState = state;
       else button.setAttribute('data-speech-state', state);
-      const suffix = state === 'playing' ? ' (đang phát)' : state === 'error' ? ' (lỗi)' : '';
+      const suffix = state === 'playing' ? bt('bubbleSpeechPlayingSuffix', undefined, ' (đang phát)') : state === 'error' ? bt('bubbleSpeechErrorSuffix', undefined, ' (lỗi)') : '';
       button.setAttribute('aria-label', `${label}${suffix}`);
     };
-    const speakTextInPage = (value, lang = 'en-US', button = null, label = 'Nghe phát âm') => {
+    const speakTextInPage = (value, lang = 'en-US', button = null, label) => {
+      const resolvedLabel = label ?? bt('bubbleSpeakDefaultLabel', undefined, 'Nghe phát âm');
       const text = typeof value === 'string' ? value.trim() : '';
       const speech = globalThis.speechSynthesis;
       const Utterance = globalThis.SpeechSynthesisUtterance;
       if (!text || !speech || typeof speech.speak !== 'function' || typeof Utterance !== 'function') return false;
-      if (button) setSpeechState(button, 'playing', label);
+      if (button) setSpeechState(button, 'playing', resolvedLabel);
       try {
         speech.cancel?.();
         const utterance = new Utterance(text);
         utterance.lang = speechLocale(lang);
         utterance.rate = 0.88;
-        utterance.onend = () => { if (button) setSpeechState(button, 'ended', label); };
-        utterance.onerror = () => { if (button) setSpeechState(button, 'error', label); };
+        utterance.onend = () => { if (button) setSpeechState(button, 'ended', resolvedLabel); };
+        utterance.onerror = () => { if (button) setSpeechState(button, 'error', resolvedLabel); };
         speech.speak(utterance);
         return true;
       } catch {
-        if (button) setSpeechState(button, 'error', label);
+        if (button) setSpeechState(button, 'error', resolvedLabel);
         return false;
       }
     };
@@ -207,7 +217,7 @@
       button.className = 'speak';
       const icon = svgIconInPage('volume');
       if (icon) button.append(icon);
-      else button.textContent = 'Nghe';
+      else button.textContent = bt('recentSpeakLabel', undefined, 'Nghe');
       button.title = label;
       const supported = speechSupportedInPage();
       button.disabled = !supported;
@@ -232,10 +242,11 @@
     const card = document.createElement('section'); card.className = 'c'; card.setAttribute('role', 'status'); card.setAttribute('aria-live', 'polite');
     const head = document.createElement('div'); head.className = 'h';
     const info = document.createElement('div');
-    const brand = document.createElement('div'); brand.className = 'b'; brand.textContent = payload.version ? `LINGOFLASH v${payload.version}` : 'LINGOFLASH';
+    const brand = document.createElement('div'); brand.className = 'b'; brand.textContent = payload.version ? bt('bubbleBrand', [payload.version], `SONFLASH v${payload.version}`) : bt('bubbleBrandNoVersion', undefined, 'SONFLASH');
     const source = document.createElement('div'); source.className = 's'; source.textContent = payload.text || '';
     const sourceLine = document.createElement('div'); sourceLine.className = 'source-line';
-    const sourceSpeaker = speechButtonInPage(payload.text || '', `Nghe phát âm ${payload.text || 'từ đã chọn'}`, payload.speechLocale);
+    const sourceFallback = payload.text || bt('bubbleDefaultWordFallback', undefined, 'từ đã chọn');
+    const sourceSpeaker = speechButtonInPage(payload.text || '', bt('bubbleSpeakSelectionLabel', [sourceFallback], `Nghe phát âm ${sourceFallback}`), payload.speechLocale);
     sourceLine.append(source, sourceSpeaker);
     info.append(brand, sourceLine);
     if (!speechSupportedInPage()) {
@@ -244,11 +255,11 @@
       speechHelp.className = 'speech-help';
       speechHelp.setAttribute('role', 'status');
       speechHelp.setAttribute('aria-live', 'polite');
-      speechHelp.textContent = 'Trình duyệt này không hỗ trợ phát âm.';
+      speechHelp.textContent = bt('bubbleSpeechUnsupported', undefined, 'Trình duyệt này không hỗ trợ phát âm.');
       info.append(speechHelp);
     }
     if (payload.modeLabel) { const mode = document.createElement('span'); mode.className = 'm'; mode.textContent = payload.modeLabel; info.append(mode); }
-    const close = document.createElement('button'); close.className = 'x'; close.type = 'button'; close.setAttribute('aria-label', 'Đóng kết quả LingoFlash');
+    const close = document.createElement('button'); close.className = 'x'; close.type = 'button'; close.setAttribute('aria-label', bt('bubbleCloseAriaLabel', undefined, 'Đóng kết quả SonFlash'));
     const closeIcon = svgIconInPage('close');
     if (closeIcon) close.append(closeIcon);
     else close.textContent = 'Đóng';
@@ -257,46 +268,46 @@
     if (String(payload.status).startsWith('loading')) {
       const line = document.createElement('div'); line.className = 'load'; line.setAttribute('role', 'status'); line.setAttribute('aria-live', 'polite');
       const spinner = document.createElement('span'); spinner.className = 'spin'; spinner.setAttribute('aria-hidden', 'true');
-      line.append(spinner, document.createTextNode(payload.status === 'loading-save' ? 'Đang tạo và lưu flashcard…' : 'Đang dịch nhanh…')); card.append(line);
+      line.append(spinner, document.createTextNode(payload.status === 'loading-save' ? bt('bubbleLoadingSave', undefined, 'Đang tạo và lưu flashcard…') : bt('bubbleLoadingTranslate', undefined, 'Đang dịch nhanh…'))); card.append(line);
     } else if (['translated','created','existing'].includes(payload.status)) {
-      const text = document.createElement('div'); text.className = 't'; text.textContent = payload.translation || 'Đã xử lý'; card.append(text);
-      if (payload.aiGenerated) { const disclosure = document.createElement('div'); disclosure.className = 'e'; disclosure.textContent = 'Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa.'; card.append(disclosure); }
+      const text = document.createElement('div'); text.className = 't'; text.textContent = payload.translation || bt('bubbleResult', undefined, 'Đã xử lý'); card.append(text);
+      if (payload.aiGenerated) { const disclosure = document.createElement('div'); disclosure.className = 'e'; disclosure.textContent = bt('bubbleAiDisclosure', undefined, 'Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa.'); card.append(disclosure); }
       if (payload.phonetic) { const p = document.createElement('div'); p.className = 'p'; p.textContent = payload.phonetic; card.append(p); }
       if (payload.explanation) { const e = document.createElement('div'); e.className = 'e'; e.textContent = payload.explanation; card.append(e); }
       if (payload.exampleSentence) {
         const exampleLine = document.createElement('div'); exampleLine.className = 'example-line';
-        const e = document.createElement('div'); e.className = 'e'; e.textContent = `Ví dụ: ${payload.exampleSentence}`;
-        exampleLine.append(e, speechButtonInPage(payload.exampleSentence, 'Nghe phát âm câu ví dụ', payload.speechLocale));
+        const e = document.createElement('div'); e.className = 'e'; e.textContent = bt('bubbleExamplePrefix', [payload.exampleSentence], `Ví dụ: ${payload.exampleSentence}`);
+        exampleLine.append(e, speechButtonInPage(payload.exampleSentence, bt('bubbleSpeakExampleLabel', undefined, 'Nghe phát âm câu ví dụ'), payload.speechLocale));
         card.append(exampleLine);
       }
-      if (payload.exampleTranslation) { const e = document.createElement('div'); e.className = 'e'; e.textContent = `Dịch ví dụ: ${payload.exampleTranslation}`; card.append(e); }
-      const ok = document.createElement('div'); ok.className = 'ok'; ok.textContent = payload.status === 'translated' ? 'Chỉ dịch • không lưu • không dùng quota AI' : payload.status === 'existing' ? 'Đã có trong thư viện' : 'Đã thêm vào thư viện'; card.append(ok);
+      if (payload.exampleTranslation) { const e = document.createElement('div'); e.className = 'e'; e.textContent = bt('bubbleExampleTranslationPrefix', [payload.exampleTranslation], `Dịch ví dụ: ${payload.exampleTranslation}`); card.append(e); }
+      const ok = document.createElement('div'); ok.className = 'ok'; ok.textContent = payload.status === 'translated' ? bt('bubbleTranslatedOnly', undefined, 'Chỉ dịch • không lưu • không dùng quota AI') : payload.status === 'existing' ? bt('bubbleExisting', undefined, 'Đã có trong thư viện') : bt('bubbleCreated', undefined, 'Đã thêm vào thư viện'); card.append(ok);
     } else {
       const e = document.createElement('div'); e.className = payload.status === 'auth-required' ? 'e' : 'err';
       if (payload.status === 'auth-required') {
-        e.append(document.createTextNode('Cần đăng nhập LingoFlash để hoàn tất. '));
+        e.append(document.createTextNode(bt('bubbleAuthRequired', undefined, 'Cần đăng nhập SonFlash để hoàn tất. ')));
         try {
           const login = new URL(payload.loginUrl || '');
           if (login.origin === 'https://encoded-hangout-433912-h2.web.app') {
-            const link = document.createElement('a'); link.href = login.toString(); link.target = '_blank'; link.rel = 'noopener'; link.textContent = 'Đăng nhập / mở thư viện'; e.append(link);
+            const link = document.createElement('a'); link.href = login.toString(); link.target = '_blank'; link.rel = 'noopener'; link.textContent = bt('bubbleAuthLink', undefined, 'Đăng nhập / mở thư viện'); e.append(link);
           }
         } catch {}
-      } else e.textContent = payload.message || 'Không thể xử lý. Hãy thử lại.';
+      } else e.textContent = payload.message || bt('bubbleGenericError', undefined, 'Không thể xử lý. Hãy thử lại.');
       card.append(e);
       if (payload.status === 'error' && typeof payload.retryId === 'string') {
         const retry = document.createElement('button');
-        retry.type = 'button'; retry.className = 'speak'; retry.textContent = 'Thử lại từ này';
+        retry.type = 'button'; retry.className = 'speak'; retry.textContent = bt('bubbleRetry', undefined, 'Thử lại từ này');
         retry.style.marginTop = '8px';
         retry.onclick = () => {
           const runtime = (globalThis.browser ?? globalThis.chrome)?.runtime;
           if (!runtime?.sendMessage) return;
           retry.disabled = true;
-          retry.textContent = 'Đang thử lại…';
+          retry.textContent = bt('bubbleRetrying', undefined, 'Đang thử lại…');
           const finish = response => {
             if (response?.ok === true) return;
             retry.disabled = false;
-            retry.textContent = 'Thử lại từ này';
-            e.textContent = response?.error || runtime.lastError?.message || 'Không thể thử lại. Hãy mở extension và chọn từ lần nữa.';
+            retry.textContent = bt('bubbleRetry', undefined, 'Thử lại từ này');
+            e.textContent = response?.error || runtime.lastError?.message || bt('bubbleRetryFailed', undefined, 'Không thể thử lại. Hãy mở extension và chọn từ lần nữa.');
           };
           try {
             const message = { type: 'RETRY_QUICK_ADD', id: payload.retryId };

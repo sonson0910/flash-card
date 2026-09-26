@@ -14,12 +14,21 @@
   const RECENT_LOOKUPS_STORAGE_KEY = 'lingoflash_recent_lookups';
   const DECK_METADATA_STORAGE_KEY = 'lingoflash_extension_deck_metadata';
   const DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY = 'lingoflash_extension_deck_retired_scopes';
+  // Due count follows the exact same session-only, scope-retirement pattern as
+  // deck metadata: it is real study state synced from the signed-in app, never
+  // fabricated, and must not leak a previous account's number after
+  // reconnect/account switch (07.6).
+  const DUE_COUNT_STORAGE_KEY = 'lingoflash_extension_due_count';
+  const DUE_COUNT_RETIRED_SCOPES_STORAGE_KEY = 'lingoflash_extension_due_count_retired_scopes';
+  const MAX_DUE_COUNT = 9_999;
   const MAX_DECKS = 100;
   const MAX_DECK_NAME_LENGTH = 128;
   const MAX_DECK_SCOPE_LENGTH = 128;
   const MAX_SELECTION_ICON_SITES = 100;
   const MAX_RECENT_LOOKUPS = 10;
   const RECENT_LOOKUP_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+  const THEME_FAMILIES = ['classic', 'crystal'];
+  const COLOR_SCHEMES = ['system', 'dark', 'light'];
   const DEFAULT_SETTINGS = Object.freeze({
     autoSpeak: false,
     bubbleDurationMs: 12_000,
@@ -27,6 +36,11 @@
     quickTranslateSource: 'auto',
     quickTranslateTarget: 'vi',
     selectionIconSites: [],
+    // Appearance mirrors the app's Classic/Crystal Star theme families so the
+    // extension can move onto the same Canvas boards in both (07.1). Purely a
+    // local display preference; never sent anywhere.
+    themeFamily: 'classic',
+    colorScheme: 'system',
   });
 
   const promiseExtensionApi = globalThis.browser ?? null;
@@ -123,6 +137,8 @@
       quickTranslateSource: candidate.quickTranslateSource === 'en' ? 'en' : DEFAULT_SETTINGS.quickTranslateSource,
       quickTranslateTarget: candidate.quickTranslateTarget === 'vi' ? 'vi' : DEFAULT_SETTINGS.quickTranslateTarget,
       selectionIconSites: normalizeSelectionIconSites(candidate.selectionIconSites),
+      themeFamily: THEME_FAMILIES.includes(candidate.themeFamily) ? candidate.themeFamily : DEFAULT_SETTINGS.themeFamily,
+      colorScheme: COLOR_SCHEMES.includes(candidate.colorScheme) ? candidate.colorScheme : DEFAULT_SETTINGS.colorScheme,
     };
   };
 
@@ -456,6 +472,81 @@
     return [...seen];
   };
 
+  const normalizeDueCount = value => Number.isSafeInteger(value) && value >= 0
+    ? Math.min(value, MAX_DUE_COUNT)
+    : null;
+
+  const normalizeDueCountMetadata = value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const scope = normalizeDeckScope(value.scope);
+    const count = normalizeDueCount(value.count);
+    if (!scope || count === null) return null;
+    return { scope, count };
+  };
+
+  // Reuses the deck-metadata retirement pattern so a due count synced under a
+  // previous scope can never resurface after reconnect/account switch.
+  const normalizeRetiredDueCountScopes = normalizeRetiredDeckScopes;
+
+  // Applies data-i18n* attributes to a static document. Every localizable
+  // element ships its default_locale (vi) copy directly in the markup so the
+  // page is correct even before this runs; this only upgrades it when the
+  // browser's i18n runtime resolves a different UI language (en).
+  // Only writes back when the resolved text actually differs from the
+  // shipped default_locale copy already in the DOM. This keeps rich markup
+  // (e.g. <strong> emphasis) intact for the vi default and for any test/dev
+  // context without a real i18n runtime, while still fully replacing text
+  // (flattening inline markup, an accepted trade-off) when the browser's UI
+  // language resolves a different message.
+  const localizeIfChanged = (current, resolved, apply) => { if (resolved !== current) apply(resolved); };
+  const localizeElement = element => {
+    const dataset = element?.dataset;
+    if (!dataset) return;
+    if (dataset.i18n) {
+      const current = element.textContent;
+      localizeIfChanged(current, t(dataset.i18n, undefined, current), value => { element.textContent = value; });
+    }
+    if (dataset.i18nAriaLabel) {
+      const current = element.getAttribute('aria-label') || '';
+      localizeIfChanged(current, t(dataset.i18nAriaLabel, undefined, current), value => element.setAttribute('aria-label', value));
+    }
+    if (dataset.i18nPlaceholder && 'placeholder' in element) {
+      const current = element.placeholder || '';
+      localizeIfChanged(current, t(dataset.i18nPlaceholder, undefined, current), value => { element.placeholder = value; });
+    }
+    if (dataset.i18nTitle) {
+      const current = element.title || '';
+      localizeIfChanged(current, t(dataset.i18nTitle, undefined, current), value => { element.title = value; });
+    }
+  };
+  // Applies the saved colorScheme (system/dark/light) as a data-scheme
+  // attribute design-tokens.css reads. "system" removes any override so the
+  // prefers-color-scheme media query in design-tokens.css decides.
+  const applyColorScheme = scheme => {
+    const root = globalThis.document?.documentElement;
+    if (!root?.setAttribute) return;
+    if (scheme === 'dark' || scheme === 'light') root.setAttribute('data-scheme', scheme);
+    else root.removeAttribute('data-scheme');
+  };
+
+  const localizeDocument = (root = globalThis.document) => {
+    if (typeof root?.querySelectorAll !== 'function') return;
+    root.querySelectorAll('[data-i18n],[data-i18n-aria-label],[data-i18n-placeholder],[data-i18n-title]').forEach(localizeElement);
+  };
+
+  const i18nApi = () => (globalThis.browser ?? globalThis.chrome)?.i18n ?? null;
+  // Chrome/Firefox resolve getMessage() against the browser's own UI locale
+  // automatically; outside a real extension runtime (unit tests, Node) this
+  // safely degrades to the caller-supplied fallback so behavior never regresses.
+  const t = (name, substitutions, fallback = '') => {
+    try {
+      const resolved = i18nApi()?.getMessage(name, substitutions);
+      return typeof resolved === 'string' && resolved ? resolved : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
   const recentLookupKey = value => `${value.text.toLocaleLowerCase()}::${value.sourceLanguage}->${value.targetLanguage}`;
 
   const readRecentLookupsUnlocked = async () => {
@@ -520,6 +611,9 @@
     SETTINGS_STORAGE_KEY,
     DECK_METADATA_STORAGE_KEY,
     DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY,
+    DUE_COUNT_STORAGE_KEY,
+    DUE_COUNT_RETIRED_SCOPES_STORAGE_KEY,
+    MAX_DUE_COUNT,
     MAX_DECKS,
     MAX_DECK_NAME_LENGTH,
     MAX_DECK_SCOPE_LENGTH,
@@ -527,6 +621,8 @@
     RECENT_LOOKUPS_STORAGE_KEY,
     MAX_RECENT_LOOKUPS,
     RECENT_LOOKUP_TTL_MS,
+    THEME_FAMILIES,
+    COLOR_SCHEMES,
     DEFAULT_SETTINGS,
     extensionApi,
     transientStorage,
@@ -550,6 +646,12 @@
     normalizeDeckCollection,
     normalizeDeckMetadata,
     normalizeRetiredDeckScopes,
+    normalizeDueCount,
+    normalizeDueCountMetadata,
+    normalizeRetiredDueCountScopes,
+    t,
+    localizeDocument,
+    applyColorScheme,
     readRecentLookups,
     recordRecentLookup,
     clearRecentLookups,

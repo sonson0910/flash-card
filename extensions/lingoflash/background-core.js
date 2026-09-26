@@ -2,10 +2,12 @@
 
 (() => {
   const {
-    APP_ORIGIN, DEFAULT_APP_URL, IMPORT_PROTOCOL_VERSION, MAX_CONTEXT_LENGTH, DECK_METADATA_STORAGE_KEY, DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY, extensionApi, transientStorage, deckMetadataStorage, usesPromiseApi,
+    APP_ORIGIN, DEFAULT_APP_URL, IMPORT_PROTOCOL_VERSION, MAX_CONTEXT_LENGTH, DECK_METADATA_STORAGE_KEY, DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY,
+    DUE_COUNT_STORAGE_KEY, DUE_COUNT_RETIRED_SCOPES_STORAGE_KEY, extensionApi, transientStorage, deckMetadataStorage, usesPromiseApi,
     apiCall, buildImportUrl, createImportNonce, createIntentId, isValidImportNonce, selectionValidation, normalizeSilentImportIntent,
     readSettings, writeUserSettings, updateSelectionIconSites, readRecentLookups, recordRecentLookup, clearRecentLookups, normalizeDeckScope, normalizeDeckMetadata, normalizeRetiredDeckScopes,
-    normalizeSelectionIconSites, selectionIconSitePatternFromUrl, isProtectedSelectionIconUrl,
+    normalizeDueCountMetadata, normalizeRetiredDueCountScopes,
+    normalizeSelectionIconSites, selectionIconSitePatternFromUrl, isProtectedSelectionIconUrl, t,
   } = globalThis.LingoFlashExtension;
   const { captureSelectionFromPage, renderInlineBubble } = globalThis.LingoFlashExtensionUi;
   const VERSION = extensionApi.runtime.getManifest().version;
@@ -53,6 +55,12 @@
   let quickAddCapacityTail = Promise.resolve();
   let deckMetadataTail = Promise.resolve();
   let confirmedDeckScope = '';
+  let dueCountTail = Promise.resolve();
+  // 07.6: mirrors confirmedDeckScope exactly. A due count is only ever served
+  // to the popup once its scope has been confirmed by the current app-bridge
+  // sync, so a reconnect or account switch can never surface a stale count
+  // synced under a previous account.
+  let confirmedDueCountScope = '';
   let selectionIconRegistrationTail = Promise.resolve();
   const bounded = (v,n) => typeof v === 'string' ? v.trim().slice(0,n) : '';
   const key = id => `${JOB_KEY_PREFIX}${id}`;
@@ -112,6 +120,27 @@
     const previous = deckMetadataTail;
     let release;
     deckMetadataTail = new Promise(resolve => { release = resolve; });
+    await previous.catch(() => undefined);
+    try { return await work(); } finally { release(); }
+  };
+  const readDueCountMetadata = async () => {
+    const stored = (await apiCall(deckMetadataStorage, 'get', DUE_COUNT_STORAGE_KEY))?.[DUE_COUNT_STORAGE_KEY];
+    return normalizeDueCountMetadata(stored);
+  };
+  const readRetiredDueCountScopes = async () => {
+    try {
+      const stored = (await apiCall(deckMetadataStorage, 'get', DUE_COUNT_RETIRED_SCOPES_STORAGE_KEY))?.[DUE_COUNT_RETIRED_SCOPES_STORAGE_KEY];
+      return normalizeRetiredDueCountScopes(stored);
+    } catch { return []; }
+  };
+  const retireDueCountScope = async scope => {
+    const retired = normalizeRetiredDueCountScopes([...(await readRetiredDueCountScopes()), scope]);
+    await apiCall(deckMetadataStorage, 'set', { [DUE_COUNT_RETIRED_SCOPES_STORAGE_KEY]: retired });
+  };
+  const withDueCountLock = async work => {
+    const previous = dueCountTail;
+    let release;
+    dueCountTail = new Promise(resolve => { release = resolve; });
     await previous.catch(() => undefined);
     try { return await work(); } finally { release(); }
   };
@@ -289,6 +318,37 @@
       if (current?.scope === scope) await apiCall(deckMetadataStorage, 'remove', DECK_METADATA_STORAGE_KEY);
       await retireDeckScope(scope);
       if (confirmedDeckScope === scope) confirmedDeckScope = '';
+      return { cleared: current?.scope === scope };
+    });
+  };
+
+  // 07.6: due count follows the exact deck-metadata contract (session-only
+  // storage, per-scope retirement, origin-checked writes) so the popup badge
+  // is always real, current-account study state and never a leaked or
+  // fabricated number.
+  const syncDueCount = async (payload, sender) => {
+    if (!appOriginIsValid(sender)) throw new Error('Nguồn due-count không hợp lệ.');
+    const metadata = normalizeDueCountMetadata(payload);
+    if (!metadata) throw new Error('Due-count không hợp lệ.');
+    return withDueCountLock(async () => {
+      const retiredScopes = await readRetiredDueCountScopes();
+      if (retiredScopes.includes(metadata.scope)) throw new Error('Scope due-count đã hết hiệu lực.');
+      const current = await readDueCountMetadata();
+      if (current?.scope && current.scope !== metadata.scope) await retireDueCountScope(current.scope);
+      await apiCall(deckMetadataStorage, 'set', { [DUE_COUNT_STORAGE_KEY]: metadata });
+      confirmedDueCountScope = metadata.scope;
+      return { count: metadata.count };
+    });
+  };
+  const clearDueCount = async (payload, sender) => {
+    if (!appOriginIsValid(sender)) throw new Error('Nguồn due-count không hợp lệ.');
+    const scope = normalizeDeckScope(payload?.scope);
+    if (!scope) throw new Error('Scope due-count không hợp lệ.');
+    return withDueCountLock(async () => {
+      const current = await readDueCountMetadata();
+      if (current?.scope === scope) await apiCall(deckMetadataStorage, 'remove', DUE_COUNT_STORAGE_KEY);
+      await retireDueCountScope(scope);
+      if (confirmedDueCountScope === scope) confirmedDueCountScope = '';
       return { cleared: current?.scope === scope };
     });
   };
@@ -607,7 +667,7 @@
     return {url};
   };
   const invocationError = async (tabId,e,text='') => show(tabId,{status:'error',text,message:e instanceof Error?e.message:String(e)});
-  const installMenus = () => { if (!extensionApi.contextMenus) return; void (async()=>{ try{await apiCall(extensionApi.contextMenus,'removeAll');}catch{} try{await apiCall(extensionApi.contextMenus,'create',{id:CONTEXT_TRANSLATE_ID,title:'Dịch nhanh “%s” — không lưu',contexts:['selection']}); await apiCall(extensionApi.contextMenus,'create',{id:CONTEXT_SAVE_ID,title:'Dịch + thêm “%s” vào LingoFlash',contexts:['selection']});}catch{} })(); };
+  const installMenus = () => { if (!extensionApi.contextMenus) return; void (async()=>{ try{await apiCall(extensionApi.contextMenus,'removeAll');}catch{} try{await apiCall(extensionApi.contextMenus,'create',{id:CONTEXT_TRANSLATE_ID,title:t('contextMenuTranslateOnly',undefined,'SonFlash: Dịch nhanh “%s” — không lưu'),contexts:['selection']}); await apiCall(extensionApi.contextMenus,'create',{id:CONTEXT_SAVE_ID,title:t('contextMenuTranslateSave',undefined,'SonFlash: Dịch + thêm “%s” vào thư viện'),contexts:['selection']});}catch{} })(); };
   extensionApi.runtime?.onInstalled?.addListener(() => { installMenus(); void sweepExpiredJobs(); void syncSelectionIconRegistration().catch(() => undefined); });
   extensionApi.runtime?.onStartup?.addListener(() => { installMenus(); void sweepExpiredJobs(); void syncSelectionIconRegistration().catch(() => undefined); });
   installMenus();
@@ -683,6 +743,13 @@
     }
     if(type==='SYNC_DECK_METADATA')return{ok:true,...await syncDeckMetadata(m.payload,sender)};
     if(type==='CLEAR_DECK_METADATA')return{ok:true,...await clearDeckMetadata(m.payload,sender)};
+    if(type==='SYNC_DUE_COUNT')return{ok:true,...await syncDueCount(m.payload,sender)};
+    if(type==='CLEAR_DUE_COUNT')return{ok:true,...await clearDueCount(m.payload,sender)};
+    if(type==='GET_DUE_COUNT'){
+      const metadata=await readDueCountMetadata();
+      const count=metadata && metadata.scope===confirmedDueCountScope ? metadata.count : null;
+      return{ok:true,count};
+    }
     if(type==='GET_DECKS'){
       const metadata=await readDeckMetadata();
       if(!metadata || metadata.scope !== confirmedDeckScope)throw new Error('Deck chưa được đồng bộ; hãy mở LingoFlash một lần.');

@@ -16,6 +16,15 @@
     'addons.mozilla.org',
   ]);
   const extensionApi = globalThis.browser ?? globalThis.chrome;
+  // Self-contained: this file is registered directly as a content script (not
+  // serialized), so it keeps persistent access to chrome.i18n; falls back to
+  // the same literal SonFlash copy outside a real extension runtime.
+  const t = (name, substitutions, fallback) => {
+    try {
+      const resolved = extensionApi?.i18n?.getMessage(name, substitutions);
+      return typeof resolved === 'string' && resolved ? resolved : fallback;
+    } catch { return fallback; }
+  };
   let host = null;
   let selectedText = '';
   let timer = null;
@@ -106,7 +115,7 @@
     `;
     const button = document.createElement('button');
     button.type = 'button';
-    button.setAttribute('aria-label', 'Dịch và tạo flashcard bằng LingoFlash');
+    button.setAttribute('aria-label', t('selectionIconAriaLabel', undefined, 'Dịch và tạo flashcard bằng SonFlash'));
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', '0 0 24 24');
     svg.setAttribute('width', '18');

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
+import { createI18nMock } from './i18n-test-helper.mjs';
 
 const sharedSource = await readFile(new URL('../shared.js', import.meta.url), 'utf8');
 const popupSource = await readFile(new URL('../popup.js', import.meta.url), 'utf8');
@@ -81,6 +82,7 @@ const createPopupContext = async ({
   shortcutSettingsAvailable = true,
   deckLoadError = false,
   deckResponseError = false,
+  dueCount = null,
 } = {}) => {
   const ids = [
     'selection', 'requested-deck', 'character-count', 'translate-button', 'add-button', 'speak-selection', 'speech-support-status', 'status',
@@ -88,6 +90,7 @@ const createPopupContext = async ({
     'recent-lookups', 'recent-list', 'clear-history', 'selection-icon-toggle', 'selection-icon-status',
     'result-card', 'result-badge', 'result-close', 'result-word', 'result-translation', 'result-details',
     'result-phonetic', 'result-explanation', 'result-example', 'result-example-translation', 'result-actions', 'result-speak', 'result-save', 'deck-status',
+    'due-count-suffix',
   ];
   const elements = new Map(ids.map(id => [id, new FakeElement()]));
   const runtimeMessages = [];
@@ -124,6 +127,9 @@ const createPopupContext = async ({
       }
       if (message.type === 'ADD_SELECTION') {
         return Promise.resolve({ ok: true, id: 'job_123456789', text: 'resilient' });
+      }
+      if (message.type === 'GET_DUE_COUNT') {
+        return Promise.resolve({ ok: true, count: dueCount });
       }
       return Promise.resolve({ ok: true });
     },
@@ -163,6 +169,7 @@ const createPopupContext = async ({
     close: () => { closeCalls += 1; },
     browser: {
       runtime,
+      i18n: createI18nMock('vi'),
       permissions: {
         request(details) { permissionCalls.push({ type: 'request', details }); return Promise.resolve(true); },
         remove(details) { permissionCalls.push({ type: 'remove', details }); return Promise.resolve(true); },
@@ -235,12 +242,12 @@ test('explains when custom decks are not synchronized', async () => {
   assert.match(empty.elements.get('deck-status').textContent, /chưa có deck/i);
 
   const unavailable = await createPopupContext({ deckLoadError: true });
-  assert.match(unavailable.elements.get('deck-status').textContent, /mở LingoFlash/i);
+  assert.match(unavailable.elements.get('deck-status').textContent, /mở SonFlash/i);
   assert.equal(unavailable.elements.get('requested-deck').disabled, true);
   assert.equal(unavailable.elements.get('add-button').disabled, true);
 
   const rejected = await createPopupContext({ deckResponseError: true });
-  assert.match(rejected.elements.get('deck-status').textContent, /mở LingoFlash/i);
+  assert.match(rejected.elements.get('deck-status').textContent, /mở SonFlash/i);
 });
 
 test('hides Chrome shortcut settings on browsers that cannot open them', async () => {
@@ -418,7 +425,7 @@ test('connects the speech support explanation to the button and keeps focus visi
 
 test('declares data-flow disclosure and reduced-motion support in the popup', () => {
   assert.match(popupHtmlSource, /Google Translate/);
-  assert.match(popupHtmlSource, /LingoFlash\/Gemini/);
+  assert.match(popupHtmlSource, /SonFlash\/Gemini/);
   assert.match(popupHtmlSource, /chỉ hỗ trợ tiếng Anh/);
   assert.match(popupHtmlSource, /id="speak-selection"[\s\S]*<svg/);
   assert.match(popupHtmlSource, /id="result-close"[\s\S]*<svg/);
@@ -472,4 +479,15 @@ test('clears recent lookup history from the popup', async () => {
   await new Promise(resolve => setImmediate(resolve));
   assert.ok(popup.runtimeMessages.some(message => message.type === 'CLEAR_RECENT_LOOKUPS'));
   assert.equal(popup.elements.get('recent-lookups').hidden, true);
+});
+
+test('shows a real synced due count next to the library link, never a placeholder', async () => {
+  const withCount = await createPopupContext({ dueCount: 12 });
+  assert.ok(withCount.runtimeMessages.some(message => message.type === 'GET_DUE_COUNT'));
+  assert.equal(withCount.elements.get('due-count-suffix').hidden, false);
+  assert.equal(withCount.elements.get('due-count-suffix').textContent, '· 12 thẻ đến hạn');
+
+  const withoutCount = await createPopupContext({ dueCount: null });
+  assert.equal(withoutCount.elements.get('due-count-suffix').hidden, true);
+  assert.equal(withoutCount.elements.get('due-count-suffix').textContent, '');
 });
