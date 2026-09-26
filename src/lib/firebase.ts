@@ -2,6 +2,7 @@ import { initializeApp, getApp, getApps, type FirebaseApp, type FirebaseOptions 
 import {
   initializeAppCheck,
   ReCaptchaEnterpriseProvider,
+  ReCaptchaV3Provider,
   type AppCheck,
 } from 'firebase/app-check';
 import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
@@ -49,7 +50,11 @@ if (isFirebaseConfigured) {
           (globalThis as typeof globalThis & { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
         }
         appCheckInstance = initializeAppCheck(appInstance, {
-          provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
+          // reCAPTCHA v3 has no per-assessment fee; Enterprise stays selectable until
+          // the console key is switched, because a provider/key mismatch fails every token.
+          provider: import.meta.env.VITE_FIREBASE_APP_CHECK_PROVIDER === 'v3'
+            ? new ReCaptchaV3Provider(appCheckSiteKey)
+            : new ReCaptchaEnterpriseProvider(appCheckSiteKey),
           isTokenAutoRefreshEnabled: true,
         });
       } catch (appCheckError) {
@@ -62,8 +67,7 @@ if (isFirebaseConfigured) {
     try {
       dbInstance = initializeFirestore(appInstance, {
         // Safari can leave Firestore's persistent multi-tab queue wedged after
-        // rapid local dev reloads. SonFlash owns its durable offline queue and
-        // card mirror, so memory cache avoids that second lease coordinator.
+        // rapid local dev reloads, so it falls back to the memory cache there.
         localCache: isSafariBrowser()
           ? memoryLocalCache()
           : persistentLocalCache({ tabManager: persistentMultipleTabManager() }),

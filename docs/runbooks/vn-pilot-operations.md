@@ -138,6 +138,19 @@ The owner still needs to choose **static guide vs shared document** and a **feed
 
 The final 10-23 decision records continue/fix/change ICP with the plan's metrics and denominators. Keep this runbook as operating procedure; use the pilot decision log for dated evidence and decisions.
 
+## App Check provider switch (one-time)
+
+reCAPTCHA Enterprise bills each assessment beyond the free tier. reCAPTCHA v3 has no assessment fee. The web app picks the provider from `VITE_FIREBASE_APP_CHECK_PROVIDER`: `v3` uses `ReCaptchaV3Provider`, and any other value uses Enterprise.
+
+To switch a target:
+
+1. Create a reCAPTCHA v3 key restricted to that target's domains.
+2. Register it in Firebase Console → App Check → the Web app, with the reCAPTCHA provider.
+3. Build with `VITE_FIREBASE_APP_CHECK_PROVIDER=v3` and `VITE_FIREBASE_APP_CHECK_SITE_KEY` set to the v3 key.
+4. Deploy, and run the smoke test (sign in, create a card, review) before removing the Enterprise registration.
+
+A provider/key mismatch fails every App Check token and protected calls stop working, so switch staging first.
+
 ## Card language backfill (one-time)
 
 Card creation now always writes an explicit `language` field so course-scoped queries can filter `users/{uid}/cards` directly instead of relying on "missing field means en". Cards written before that change may still be missing `language`. Run `node scripts/backfill-card-language.mjs --project <id>` to find and repair them; it is a dry run by default and only reports counts. Add `--apply` to write `language: 'en'` to documents where the field is absent — it never touches a document that already has `language` set, and it defaults `--database` to the pilot's single named database (`ai-studio-945b4052-4462-4668-8936-277f09f07a37`), which staging and production share. Before every batch commit in `--apply` mode, the script writes a timestamped JSON backup of the pre-write data for every document in that batch to `artifacts/backfill-card-language/`; keep that directory until the backfill is confirmed correct in the Firebase console, then delete it rather than committing it. The scan is paged and checkpointed, so an interrupted run can continue with `--resume`; re-running the script at any point, resumed or from scratch, is a safe no-op once every legacy document has been backfilled. Requires ambient Google Cloud credentials for the target project (`gcloud auth application-default login` or `GOOGLE_APPLICATION_CREDENTIALS`); the script never accepts or prints credentials, and refuses to run without an explicit `--project`.
