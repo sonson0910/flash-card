@@ -5,12 +5,17 @@ import { planStructuredImportMutation, type SortableCardData } from './spreadshe
 import {
   MAX_SPREADSHEET_FILE_BYTES,
   SpreadsheetReadError,
+  SpreadsheetUnsupportedFormatError,
 } from './spreadsheetWorkbook';
 import type { SpreadsheetWorkbook } from './spreadsheetWorkbook';
 
 const DEFAULT_MAX_AI_CARDS = 30;
 
-export { MAX_SPREADSHEET_FILE_BYTES, SpreadsheetReadError } from './spreadsheetWorkbook';
+export {
+  MAX_SPREADSHEET_FILE_BYTES,
+  SpreadsheetReadError,
+  SpreadsheetUnsupportedFormatError,
+} from './spreadsheetWorkbook';
 export type { SpreadsheetWorkbook } from './spreadsheetWorkbook';
 
 export interface SpreadsheetImportRequest {
@@ -296,6 +301,12 @@ export function createSpreadsheetImportService({
       if (error instanceof SpreadsheetImportStaleError) throw error;
       assertActive();
       diagnostics.workbookFailed?.(error);
+      if (error instanceof SpreadsheetUnsupportedFormatError) {
+        const message = error.message;
+        assertActive();
+        feedback.error(message);
+        return { status: 'failed', reason: 'read', summary, message };
+      }
       if (error instanceof SpreadsheetReadError) {
         const message = 'Could not read this spreadsheet. Make sure it is a valid Excel or CSV file, then try again.';
         assertActive();

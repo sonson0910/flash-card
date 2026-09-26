@@ -1,19 +1,9 @@
-import { CLOUD_PAGE_SIZE, type CardQueryState } from '../../lib/cardQuery';
 import { isCloudQuotaError, isRetryableCloudError } from '../../lib/cloudError';
 import { withTimeout } from '../../lib/async';
-import { mergeDeviceCards } from '../../lib/deviceSync';
 import type { LibraryStats } from '../../lib/libraryStats';
 import { normalizeCardData } from '../../lib/cardNormalization';
 import { dedupeCardsByNormalizedWord } from '../../lib/cardIdentity';
-import { selectCardsVisibleForSession } from '../../lib/sessionCards';
 import type { CardData } from '../../types/card';
-import {
-  legacyCardCacheKey,
-  legacyCardOwnerCacheKey,
-  ownerScopedCardCacheKey,
-  parseOwnerScopedCardCache,
-  serializeOwnerScopedCardCache,
-} from './ownerScopedCardCache';
 
 export interface CachedCloudPage {
   queryKey: string;
@@ -84,48 +74,6 @@ export const normalizeLocalCards = (value: unknown): CardData[] => Array.isArray
     }))
   : [];
 
-export const readLocalCardCache = (): {
-  ownerId: string | null | undefined;
-  cards: CardData[];
-} => {
-  try {
-    const scoped = parseOwnerScopedCardCache(localStorage.getItem(ownerScopedCardCacheKey));
-    if (scoped) {
-      removeLocalValue(legacyCardCacheKey);
-      removeLocalValue(legacyCardOwnerCacheKey);
-      return { ownerId: scoped.ownerId, cards: normalizeLocalCards(scoped.cards) };
-    }
-    return {
-      ownerId: localStorage.getItem(legacyCardOwnerCacheKey),
-      cards: normalizeLocalCards(readLocalJson<unknown>(legacyCardCacheKey, [])),
-    };
-  } catch {
-    return { ownerId: undefined, cards: [] };
-  }
-};
-
-export const writeLocalCardCache = (
-  cards: readonly CardData[],
-  ownerId: string | null,
-): boolean => {
-  const written = writeLocalValue(
-    ownerScopedCardCacheKey,
-    serializeOwnerScopedCardCache(ownerId, normalizeLocalCards(cards)),
-  );
-  if (written) {
-    removeLocalValue(legacyCardCacheKey);
-    removeLocalValue(legacyCardOwnerCacheKey);
-  }
-  return written;
-};
-
-export const removeLocalCardCache = (): boolean => {
-  const scoped = removeLocalValue(ownerScopedCardCacheKey);
-  const legacyCards = removeLocalValue(legacyCardCacheKey);
-  const legacyOwner = removeLocalValue(legacyCardOwnerCacheKey);
-  return scoped && legacyCards && legacyOwner;
-};
-
 export const isCloudBackoffActive = (userId: string) => {
   try {
     return Number(localStorage.getItem(cloudBackoffCacheKey(userId)) || 0) > Date.now();
@@ -161,53 +109,10 @@ export const markImageNegativeCache = (
 export const clearImageNegativeCache = (ownerId: string | null, cardId: string) =>
   removeLocalValue(imageNegativeCacheKey(ownerId, cardId));
 
-export const persistLocalCardBackup = (
-  cards: CardData[],
-  maximum = CLOUD_PAGE_SIZE,
-  total = cards.length,
-  ownerUserId?: string | null,
-) => {
-  const boundedCards = cards.slice(0, maximum);
-  if (boundedCards.length === 0) return;
-  writeLocalCardCache(boundedCards, ownerUserId ?? null);
-  void mergeDeviceCards(boundedCards, Math.max(total, boundedCards.length), ownerUserId);
-};
-
 export const waitForInitialMedia = (
   mediaPromise: Promise<{ audioUrl: string | null; imageUrl: string | null }>,
   timeoutMs = 2500,
 ) => withTimeout(mediaPromise, timeoutMs).catch(() => null);
-
-export const getBoundedCloudFallback = (
-  userId: string,
-  queryKey: string,
-  page: number,
-  filters: CardQueryState,
-  pageSize: number,
-): { items: CardData[]; total: number; hasNext: boolean } | null => {
-  const cachedValue = readLocalJson<unknown>(cloudPageCacheKey(userId), null);
-  const cachedPage = cachedValue && typeof cachedValue === 'object' && !Array.isArray(cachedValue)
-    ? cachedValue as Partial<CachedCloudPage>
-    : null;
-  if (cachedPage && cachedPage.queryKey === queryKey && cachedPage.page === page
-    && Array.isArray(cachedPage.items) && typeof cachedPage.total === 'number') {
-    const items = normalizeLocalCards(cachedPage.items).slice(0, pageSize);
-    if (items.length > 0) return { items, total: ((page - 1) * pageSize) + items.length, hasNext: false };
-  }
-
-  const isDefaultFirstPage = page === 1 && filters.wordPrefix === ''
-    && !filters.category && !filters.customDeck && !filters.difficulty
-    && !filters.partOfSpeech && !filters.bookmarkedOnly && !filters.createdDate;
-  if (!isDefaultFirstPage) return null;
-  const local = readLocalCardCache();
-  if (local.ownerId === undefined) return null;
-  const localBackup = selectCardsVisibleForSession(
-    local.cards,
-    local.ownerId,
-    userId,
-  ).slice(0, pageSize);
-  return localBackup.length > 0 ? { items: localBackup, total: localBackup.length, hasNext: false } : null;
-};
 
 export const isQuotaError = isCloudQuotaError;
 

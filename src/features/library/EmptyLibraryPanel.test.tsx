@@ -64,7 +64,7 @@ describe('EmptyLibraryPanel', () => {
     expect(html).toContain('Scan a text');
     expect(html).toContain('Import CSV / Excel');
     expect(html).toContain('Browse paths');
-    expect(html).toContain('accept=".csv,.xlsx,.xls"');
+    expect(html).toContain('accept=".csv,.xlsx"');
     expect(html).toContain('id="empty-library-word"');
     expect(html).toContain('type="submit"');
   });

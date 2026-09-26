@@ -71,26 +71,6 @@ import {
   selectMutableCardPatch,
   type CardTombstone,
 } from './cardMutationProtocol';
-import {
-  CourseIndexNotReadyError,
-  countCourseCards,
-  deleteCourseIndexMirrors,
-  fetchCourseCardPage,
-  fetchCoursePracticeCards,
-  readCourseIndexMirrorTargets,
-  subscribeCourseCardPage,
-  writeCourseIndexMirrors,
-  type CourseIndexMirrorTarget,
-  type CourseIndexStaleHandler,
-} from './course-card-index-repository';
-import type { CourseQueryContext } from './course-card-index';
-
-export {
-  CourseIndexNotReadyError,
-  CourseQueryIndexNotReadyError,
-  CourseIndexStaleError,
-  CourseQueryIndexStaleError,
-} from './course-card-index-repository';
 
 export interface CardPage {
   items: CardData[];
@@ -111,8 +91,6 @@ export interface FetchCardPageOptions {
   filters: CardQueryState;
   cursor?: DocumentSnapshot | null;
   pageSize?: number;
-  courseContext?: CourseQueryContext;
-  onStale?: CourseIndexStaleHandler;
 }
 
 export interface LibraryFacets {
@@ -140,8 +118,8 @@ interface StoredLegacyMigrationProgress extends LegacyMigrationProgress {
 export interface PracticeCardOptions {
   includeFuture?: boolean;
   now?: Date;
-  courseContext?: CourseQueryContext;
-  onStale?: CourseIndexStaleHandler;
+  /** Course-scoped practice filters the primary collection by target language. */
+  targetLanguage?: string;
 }
 
 const EMPTY_FILTERS: CardQueryState = {
@@ -156,22 +134,6 @@ const EMPTY_FILTERS: CardQueryState = {
 
 const UNSUPPORTED_CARD_QUERY_MESSAGE = 'The selected filters cannot be combined. Remove either the date, due, or prefix filter and try again.';
 
-const courseContextForQuery = (
-  filters: CardQueryState,
-  courseContext: CourseQueryContext | undefined,
-): CourseQueryContext | null => {
-  const courseRequested = Boolean(filters.courseId || filters.targetLanguage || courseContext);
-  if (!courseRequested) return null;
-  if (!courseContext) throw new CourseIndexNotReadyError('A ready course query context is required.');
-  if (filters.courseId && filters.courseId !== courseContext.courseId) {
-    throw new CourseIndexNotReadyError('The course query context does not match the selected course.');
-  }
-  if (filters.targetLanguage && filters.targetLanguage !== courseContext.targetLanguage) {
-    throw new CourseIndexNotReadyError('The course query context does not match the selected target.');
-  }
-  return courseContext;
-};
-
 export class UnsupportedCardQueryError extends Error {
   readonly code = 'unsupported-card-query';
 
@@ -184,7 +146,7 @@ export class UnsupportedCardQueryError extends Error {
 export type CardQueryIndexField = { fieldPath: string; order: 'ASCENDING' | 'DESCENDING' };
 
 const equalityIndexFields = (filters: CardQueryState): CardQueryIndexField[] => [
-  ...(filters.targetLanguage ? [{ fieldPath: 'targetLanguage', order: 'ASCENDING' as const }] : []),
+  ...(filters.targetLanguage ? [{ fieldPath: 'language', order: 'ASCENDING' as const }] : []),
   ...(filters.category ? [{ fieldPath: 'category', order: 'ASCENDING' as const }] : []),
   ...(filters.customDeck ? [{ fieldPath: 'customDeck', order: 'ASCENDING' as const }] : []),
   ...(filters.difficulty && filters.difficulty !== 'due'
@@ -288,6 +250,9 @@ function dateRange(date: string): { start: string; end: string } | null {
 
 function filterConstraints(filters: CardQueryState): QueryConstraint[] {
   const constraints: QueryConstraint[] = [];
+  // Course-scoped queries filter the primary collection directly by target
+  // language before any order/limit clause; there is no separate index sidecar.
+  if (filters.targetLanguage) constraints.push(where('language', '==', filters.targetLanguage));
   if (filters.category) constraints.push(where('category', '==', filters.category));
   if (filters.partOfSpeech) constraints.push(where('partOfSpeech', '==', filters.partOfSpeech));
   if (filters.customDeck === 'unassigned') constraints.push(where('customDeck', '==', null));
@@ -352,22 +317,7 @@ export async function fetchCardPage({
   filters,
   cursor = null,
   pageSize = CLOUD_PAGE_SIZE,
-  courseContext,
-  onStale,
 }: FetchCardPageOptions): Promise<CardPage> {
-  const selectedCourse = courseContextForQuery(filters, courseContext);
-  if (selectedCourse) {
-    assertSupportedCardQuery(filters);
-    return fetchCourseCardPage({
-      db,
-      userId,
-      filters,
-      context: selectedCourse,
-      cursor,
-      pageSize,
-      onStale,
-    });
-  }
   const snapshot = await getDocs(buildCardsQuery(db, userId, filters, cursor, [
     limit(pageSize + 1),
   ]));
@@ -389,31 +339,10 @@ export function subscribeCardPage(
     filters,
     cursor = null,
     pageSize = CLOUD_PAGE_SIZE,
-    courseContext,
-    onStale,
   }: FetchCardPageOptions,
   onPage: (page: RealtimeCardPage) => void,
   onError: (error: Error) => void,
 ): Unsubscribe {
-  let selectedCourse: CourseQueryContext | null;
-  try {
-    selectedCourse = courseContextForQuery(filters, courseContext);
-  } catch (error) {
-    onError(error instanceof Error ? error : new Error(String(error)));
-    return () => undefined;
-  }
-  if (selectedCourse) {
-    assertSupportedCardQuery(filters);
-    return subscribeCourseCardPage({
-      db,
-      userId,
-      filters,
-      context: selectedCourse,
-      cursor,
-      pageSize,
-      onStale,
-    }, onPage, onError);
-  }
   return onSnapshot(buildCardsQuery(db, userId, filters, cursor, [
     limit(pageSize + 1),
   ]), snapshot => {
@@ -436,14 +365,7 @@ export async function countCards(
   db: Firestore,
   userId: string,
   filters: CardQueryState,
-  courseContext?: CourseQueryContext,
-  onStale?: CourseIndexStaleHandler,
 ): Promise<number> {
-  const selectedCourse = courseContextForQuery(filters, courseContext);
-  if (selectedCourse) {
-    assertSupportedCardQuery(filters);
-    return countCourseCards(db, userId, filters, selectedCourse, onStale);
-  }
   assertSupportedCardQuery(filters);
   const prefix = normalizePrefixSearch(filters.wordPrefix);
   const prefixConstraints: QueryConstraint[] = prefix ? [
@@ -779,24 +701,17 @@ export async function fetchPracticeCards(
   maximum = 50,
   options: PracticeCardOptions = {},
 ): Promise<CardData[]> {
-  if (options.courseContext) {
-    return fetchCoursePracticeCards({
-      db,
-      userId,
-      context: options.courseContext,
-      maximum,
-      includeFuture: options.includeFuture,
-      now: options.now,
-      onStale: options.onStale,
-    });
-  }
   const maximumCards = Math.max(1, Math.min(100, Math.floor(maximum)));
   const now = options.now ?? new Date();
+  const languageConstraint: QueryConstraint[] = options.targetLanguage
+    ? [where('language', '==', options.targetLanguage)]
+    : [];
   let dueCards: CardData[] = [];
   let queueError: unknown;
   try {
     const dueSnapshot = await getDocs(query(
       cardsCollection(db, userId),
+      ...languageConstraint,
       where('nextReviewDate', '<=', now.toISOString()),
       orderBy('nextReviewDate', 'asc'),
       limit(maximumCards),
@@ -812,6 +727,7 @@ export async function fetchPracticeCards(
     try {
       const newSnapshot = await getDocs(query(
         cardsCollection(db, userId),
+        ...languageConstraint,
         where('difficulty', '==', 'unrated'),
         orderBy('createdAt', 'desc'),
         limit(maximumCards - dueCards.length),
@@ -834,6 +750,7 @@ export async function fetchPracticeCards(
   const pivot = createDailyPracticePivot(userId, now);
   const rotatedSnapshot = await getDocs(query(
     cardsCollection(db, userId),
+    ...languageConstraint,
     orderBy(documentId(), 'asc'),
     startAt(pivot),
     limit(sampleSize),
@@ -843,6 +760,7 @@ export async function fetchPracticeCards(
   if (rotatedCards.length < sampleSize) {
     const wrappedSnapshot = await getDocs(query(
       cardsCollection(db, userId),
+      ...languageConstraint,
       orderBy(documentId(), 'asc'),
       limit(sampleSize - rotatedCards.length),
     ));
@@ -1110,9 +1028,13 @@ const prepareTargetAwareCardForCreate = (
   options: CreateCardIfAbsentOptions,
 ): CardData => {
   // Plain target-scoped cards use the additive target identity. Canonical
-  // lexeme cards still go through the stricter tuple validation.
-  if (card.language && !card.lexemeId && !card.senseKey && !card.normalizedLemma) {
-    const { language, ...legacyIdentityFields } = card;
+  // lexeme cards still go through the stricter tuple validation. Card
+  // creation always writes an explicit language (defaulting to the legacy
+  // English target) so course-scoped queries never depend on a missing
+  // field meaning "en".
+  if (!card.lexemeId && !card.senseKey && card.normalizedLemma === undefined) {
+    const language = card.language || 'en';
+    const { language: _existingLanguage, ...legacyIdentityFields } = card;
     return {
       ...prepareCardForCreate(legacyIdentityFields as CardData, options),
       language,
@@ -1191,16 +1113,6 @@ export async function applyCardPatchIfCurrent(
     if (storedCard.language !== undefined && !normalizeCardLanguage(storedCard.language)) {
       throw new CardMutationPreconditionError('identity-conflict');
     }
-    let mirrorTargets: readonly CourseIndexMirrorTarget[] | null = null;
-    const readMirrorTargets = async (): Promise<readonly CourseIndexMirrorTarget[]> => {
-      if (mirrorTargets) return mirrorTargets;
-      mirrorTargets = await readCourseIndexMirrorTargets(transaction, db, userId, serverEpoch);
-      return mirrorTargets;
-    };
-    const mirrorCard = async (card: Partial<CardData>): Promise<void> => {
-      const targets = await readMirrorTargets();
-      if (targets.length > 0) writeCourseIndexMirrors(transaction, db, userId, targets, card);
-    };
     const storedEpoch = explicitCardLibraryEpoch(storedCard);
     // A reset makes pre-reset cards stale by design. Normal patches must not
     // revive them in the new epoch; an explicit create/re-import can do that.
@@ -1252,7 +1164,6 @@ export async function applyCardPatchIfCurrent(
       && cardAlreadyHasPatch(storedCard, command.fields, command.fieldMask);
     if (hasRevisionConflict && (!alreadyHasPatch || !needsIdentityClaim)) {
       if (alreadyHasPatch) {
-        await mirrorCard({ ...storedCard, id: command.cardId });
         return { applied: true, revision: currentRevision };
       }
       return { applied: false, reason: 'revision-conflict', currentRevision };
@@ -1329,28 +1240,24 @@ export async function applyCardPatchIfCurrent(
         throw new CardMutationPreconditionError('identity-conflict');
       }
       if (!reservationSnapshot.exists()) {
-        await readMirrorTargets();
         transaction.set(reservationRef, reservation, { merge: false });
       }
     }
 
     if (hasRevisionConflict) {
       if (alreadyHasPatch) {
-        await mirrorCard({ ...storedCard, id: command.cardId });
         return { applied: true, revision: currentRevision };
       }
       return { applied: false, reason: 'revision-conflict', currentRevision };
     }
 
     if (isCurrentProtocolCard && Object.keys(patch).length > 0) {
-      await readMirrorTargets();
       transaction.set(cardRef, {
         ...patch,
         revision: nextRevision,
         updatedAt: serverTimestamp(),
       }, { merge: true });
     } else if (!isCurrentProtocolCard) {
-      await readMirrorTargets();
       const legacyPatch = {
         ...patch,
         // Upgrade only the protocol and identity fields required for this
@@ -1363,17 +1270,6 @@ export async function applyCardPatchIfCurrent(
         updatedAt: serverTimestamp(),
       };
       transaction.set(cardRef, legacyPatch, { merge: true });
-    }
-    if (isCurrentProtocolCard && Object.keys(patch).length === 0) {
-      await mirrorCard({ ...storedCard, id: command.cardId });
-    } else {
-      await mirrorCard({
-        ...(isCurrentProtocolCard ? storedCard : sanitizedLegacyCard ?? storedCard),
-        ...patch,
-        id: command.cardId,
-        revision: nextRevision,
-        libraryEpoch: serverEpoch,
-      });
     }
     return {
       applied: true,
@@ -1413,12 +1309,6 @@ export async function deleteCardWithTombstone(
 
     const cardSnapshot = await transaction.get(cardRef);
     const tombstoneSnapshot = await transaction.get(tombstoneRef);
-    let mirrorTargets: readonly CourseIndexMirrorTarget[] | null = null;
-    const readMirrorTargets = async (): Promise<readonly CourseIndexMirrorTarget[]> => {
-      if (mirrorTargets) return mirrorTargets;
-      mirrorTargets = await readCourseIndexMirrorTargets(transaction, db, userId, serverEpoch);
-      return mirrorTargets;
-    };
     const cardRevision = cardSnapshot.exists()
       ? normalizedLibraryEpoch((cardSnapshot.data() as Record<string, unknown>).revision)
       : command.baseRevision;
@@ -1435,8 +1325,6 @@ export async function deleteCardWithTombstone(
         (tombstoneSnapshot.data() as Record<string, unknown>).libraryEpoch,
       ) === serverEpoch
     ) {
-      const targets = await readMirrorTargets();
-      if (targets.length > 0) deleteCourseIndexMirrors(transaction, db, userId, targets, command.cardId);
       return {
         deleted: true,
         tombstone: tombstoneSnapshot.data() as CardTombstone,
@@ -1449,16 +1337,12 @@ export async function deleteCardWithTombstone(
         (tombstoneSnapshot.data() as Record<string, unknown>).libraryEpoch,
       ) === serverEpoch
     ) {
-      const targets = await readMirrorTargets();
-      if (targets.length > 0) deleteCourseIndexMirrors(transaction, db, userId, targets, command.cardId);
       return {
         deleted: true,
         tombstone: tombstoneSnapshot.data() as CardTombstone,
       };
     }
     if (!cardSnapshot.exists() && !tombstoneSnapshot.exists()) {
-      const targets = await readMirrorTargets();
-      if (targets.length > 0) deleteCourseIndexMirrors(transaction, db, userId, targets, command.cardId);
       return {
         deleted: true,
         tombstone: buildCardTombstone({
@@ -1485,10 +1369,8 @@ export async function deleteCardWithTombstone(
       baseRevision,
       deletedAt: new Date().toISOString(),
     });
-    const targets = await readMirrorTargets();
     transaction.set(tombstoneRef, tombstone, { merge: false });
     if (cardSnapshot.exists()) transaction.delete(cardRef);
-    if (targets.length > 0) deleteCourseIndexMirrors(transaction, db, userId, targets, command.cardId);
     return { deleted: true, tombstone };
   });
 }
@@ -1557,16 +1439,6 @@ async function createCardIfAbsentLocally(
     const tombstoneRef = cardTombstoneRef(db, userId, reservation.cardId);
     const tombstoneSnapshot = await transaction.get(tombstoneRef);
     const existing = await transaction.get(cardRef);
-    let mirrorTargets: readonly CourseIndexMirrorTarget[] | null = null;
-    const readMirrorTargets = async (): Promise<readonly CourseIndexMirrorTarget[]> => {
-      if (mirrorTargets) return mirrorTargets;
-      mirrorTargets = await readCourseIndexMirrorTargets(transaction, db, userId, serverEpoch);
-      return mirrorTargets;
-    };
-    const mirrorCard = async (authoritativeCard: Partial<CardData>): Promise<void> => {
-      const targets = await readMirrorTargets();
-      if (targets.length > 0) writeCourseIndexMirrors(transaction, db, userId, targets, authoritativeCard);
-    };
     const claimReservation = () => {
       if (!reservationSnapshot.exists()) {
         transaction.set(reservationRef, proposedReservation, { merge: false });
@@ -1617,18 +1489,14 @@ async function createCardIfAbsentLocally(
             revision: nextProtocolCounter(normalizedLibraryEpoch(existingData.revision), 'revision'),
             libraryEpoch: serverEpoch,
           };
-          await readMirrorTargets();
           claimReservation();
           transaction.set(cardRef, {
             ...upgradedCard,
             updatedAt: serverTimestamp(),
           }, { merge: false });
-          await mirrorCard(upgradedCard);
           return { card: upgradedCard, created: false };
         }
-        await readMirrorTargets();
         claimReservation();
-        await mirrorCard(normalizedExisting);
         return {
           card: normalizedExisting,
           created: false,
@@ -1657,13 +1525,11 @@ async function createCardIfAbsentLocally(
     const createdCard = tombstoneRevision > 0
       ? { ...stableCard, revision: nextProtocolCounter(tombstoneRevision, 'revision') }
       : stableCard;
-    await readMirrorTargets();
     claimReservation();
     transaction.set(cardRef, {
       ...createdCard,
       updatedAt: serverTimestamp(),
     });
-    await mirrorCard(createdCard);
     return { card: createdCard, created: true };
   });
 }

@@ -49,7 +49,7 @@ function CrystalStar() {
 export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncStatus, isExporting, isLibraryMutationPending, isRetryingSync, canSyncNow, sessionLost, libraryCountLabel, streak, level, xp, courseSwitcher, onOpenLanding, onOpenToday, onOpenLibrary, onOpenCatalog, onOpenProgress, onOpenSettings, onSignIn, onSignOut, onRetrySync, onExportLibrary, onClearLibrary }: DesktopNavigationProps) {
   const { _ } = useLingui();
   const { family } = useTheme();
-  const status = localizeShellSyncStatus(getShellSyncStatus(syncStatus), syncStatus, _);
+  const status = localizeShellSyncStatus(getShellSyncStatus(syncStatus), _);
   const statusAnnouncement = sessionLost
     ? _(msg({ id: 'shell.feedback.session-ended', message: 'Session ended' }))
     : syncIdentity.status === 'loading'

@@ -8,13 +8,10 @@ import '../../src/styles/shell.css';
 import { AppOverlays } from '../../src/components/AppOverlays';
 import { ApplicationErrorPanel } from '../../src/components/ApplicationErrorPanel';
 import { WorkspaceLoadingPanel } from '../../src/components/WorkspaceLoadingPanel';
-import { WorkspaceSyncPanel } from '../../src/components/WorkspaceSyncPanel';
 import { AppFeedback } from '../../src/components/shell/AppFeedback';
 import { AppFooter } from '../../src/components/shell/AppFooter';
 import { DesktopNavigation } from '../../src/components/shell/DesktopNavigation';
 import { FloatingMobileNav } from '../../src/components/shell/FloatingMobileNav';
-import { getShellSyncStatus } from '../../src/components/shell/shellSyncStatus';
-import { localizeShellSyncStatus } from '../../src/components/shell/localized-sync-status';
 import { UndoToast, type UndoToastItem } from '../../src/components/ui/UndoToast';
 import { ThemeProvider, useTheme } from '../../src/features/theme/ThemeProvider';
 import { TodayScreen } from '../../src/features/dailyLearning/TodayScreen';
@@ -290,14 +287,12 @@ function ShellShareFixture() {
   if (!ready) return null;
 
   const syncStatus = feedbackSync === 'offline'
-    ? { isOnline: false, isSyncing: false, pendingCount: 3, error: null, cloudUnavailable: false }
+    ? { isOnline: false, error: null, cloudUnavailable: false }
     : feedbackSync === 'error'
-      ? { isOnline: true, isSyncing: false, pendingCount: 3, error: 'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.', cloudUnavailable: false }
-      : feedbackSync === 'syncing'
-        ? { isOnline: true, isSyncing: true, pendingCount: 3, error: null, cloudUnavailable: false }
-        : feedbackSync === 'checking'
-          ? { isOnline: true, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: false, isCheckingCloud: true }
-        : { isOnline: true, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: false };
+      ? { isOnline: true, error: 'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.', cloudUnavailable: false }
+      : feedbackSync === 'checking'
+        ? { isOnline: true, error: null, cloudUnavailable: false, isCheckingCloud: true }
+        : { isOnline: true, error: null, cloudUnavailable: false };
   const authIdentity = identityMode === 'authenticated'
     ? { status: 'authenticated' as const, displayName: 'Mina Tran', email: 'mina@example.test', photoUrl: null }
     : identityMode === 'signed-out'
@@ -336,13 +331,11 @@ function ShellShareFixture() {
     openMorePractice: recordTodayAction('more-practice'),
   };
   const standaloneSystemPanel = view === 'system' && (state === 'error' || state === 'loading');
-  const showWorkspaceSync = view === 'system' && (state === 'sync-error' || state === 'offline');
   const fixtureViewMode = view === 'today-caught-up' ? 'today' : 'library';
-  const workspaceSyncStatus = localizeShellSyncStatus(getShellSyncStatus(syncStatus), syncStatus, _);
 
   return (
     <div data-shell-share-fixture data-view={standaloneSystemPanel ? undefined : fixtureViewMode} className={standaloneSystemPanel ? 'min-h-dvh' : 'app-canvas claude-app-shell min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden transition-colors relative'}>
-      {view !== 'system' || state === 'sync-error' || state === 'offline' ? (
+      {view !== 'system' ? (
         <DesktopNavigation
           viewMode={fixtureViewMode}
           syncIdentity={authIdentity}
@@ -389,23 +382,6 @@ function ShellShareFixture() {
         <div className="app-loading">
           <WorkspaceLoadingPanel />
         </div>
-      ) : view === 'system' ? (
-        <main id="learning-workspace" tabIndex={0} aria-label="Learning workspace" className="claude-workspace flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin focus-visible:outline-2 focus-visible:outline-offset-[-2px]">
-          <div className="claude-workspace-inner relative w-full max-w-[1440px] mx-auto px-5 pt-5 pb-28 sm:px-8 lg:px-11 lg:pt-3 lg:pb-8">
-            <h1 className="sr-only">{state === 'offline' ? 'Offline workspace' : 'Sync needs attention'}</h1>
-            <WorkspaceSyncPanel
-              status={workspaceSyncStatus}
-              cloudSyncEnabled
-              pendingCount={3}
-              dueCards={state === 'offline' ? shareCards.slice(0, 2) : []}
-              canReview={state === 'offline'}
-              isRetrying={feedbackSync === 'syncing'}
-              onReview={() => setFixtureAction('workspace-sync:review')}
-              onRetry={handleSyncRetry}
-              onReturnHome={() => setFixtureAction('workspace-sync:home')}
-            />
-          </div>
-        </main>
       ) : view === 'today-caught-up' ? (
         <main id="learning-workspace" tabIndex={0} aria-label="Learning workspace" className="claude-workspace flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin focus-visible:outline-2 focus-visible:outline-offset-[-2px]">
           <div className="claude-workspace-inner relative w-full max-w-[1440px] mx-auto px-5 pt-5 pb-28 sm:px-8 lg:px-11 lg:pt-3 lg:pb-8">
@@ -499,12 +475,6 @@ function ShellShareFixture() {
           {view === 'combined' && undoToast ? <UndoToast toast={undoToast} onDismiss={() => setUndoToast(null)} stacked /> : null}
         </AppFeedback>
       ) : null}
-      {showWorkspaceSync ? (
-        <AppFeedback
-          syncStatus={undefined}
-          onRetrySync={handleSyncRetry}
-        />
-      ) : null}
       {view === 'share' ? (
         <>
           <AppFeedback
@@ -566,7 +536,7 @@ function ShellShareFixture() {
       <output data-account-clear-count hidden>{accountActionCounts.clear}</output>
       <output data-account-clear-focus hidden>{accountClearFocusTarget}</output>
       <output data-fixture-gate-ready hidden>{pendingGate ?? ''}</output>
-      {view !== 'system' || state === 'sync-error' || state === 'offline' ? <FloatingMobileNav activeView={fixtureViewMode} onSelectView={noOp} /> : null}
+      {view !== 'system' ? <FloatingMobileNav activeView={fixtureViewMode} onSelectView={noOp} /> : null}
     </div>
   );
 }

@@ -48,8 +48,6 @@ describe('AppFeedback', () => {
       <AppFeedback
         syncStatus={{
           isOnline: true,
-          isSyncing: false,
-          pendingCount: 0,
           error: null,
           cloudUnavailable: true,
         }}
@@ -100,9 +98,7 @@ describe('AppFeedback', () => {
       <AppFeedback
         syncStatus={{
           isOnline: true,
-          isSyncing: false,
           isCheckingCloud: true,
-          pendingCount: 0,
           error: null,
           cloudUnavailable: true,
         }}

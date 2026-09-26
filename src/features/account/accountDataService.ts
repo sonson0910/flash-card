@@ -1,12 +1,8 @@
 import { auth, app } from '../../lib/firebase';
-import { clearMirroredCards } from '../../lib/cardMirror';
-import { clearDevicePending, saveDeviceCards } from '../../lib/deviceSync';
 import { gamificationStorageKeys } from '../gamification/gamificationStorage';
 import {
   cloudBackoffCacheKey, cloudFacetsCacheKey, cloudPageCacheKey, cloudStatsCacheKey,
 } from '../library/libraryStorage';
-import { legacyCardCacheKey, legacyCardOwnerCacheKey, ownerScopedCardCacheKey,
-  parseOwnerScopedCardCache } from '../library/ownerScopedCardCache';
 
 const region = 'asia-southeast1';
 export class LocalAccountCleanupError extends Error {}
@@ -36,20 +32,12 @@ export function removeOwnerLocalKeys(storage: Pick<Storage, 'getItem' | 'removeI
     ...Object.values(gamificationStorageKeys(uid)),
     cloudPageCacheKey(uid), cloudStatsCacheKey(uid), cloudFacetsCacheKey(uid), cloudBackoffCacheKey(uid),
     `lingoflash_library_epoch_${encodeURIComponent(uid)}`,
-    `lingoflash_pending_writes_${encodeURIComponent(uid)}`,
     'lingoflash_shared_deck_operation_v1',
   ];
   for (const key of keys) storage.removeItem(key);
   for (let index = storage.length - 1; index >= 0; index--) {
     const key = storage.key(index);
     if (key?.startsWith(`lingoflash_no_image_v1_${encodeURIComponent(uid)}_`)) storage.removeItem(key);
-  }
-  if (parseOwnerScopedCardCache(storage.getItem(ownerScopedCardCacheKey))?.ownerId === uid) {
-    storage.removeItem(ownerScopedCardCacheKey);
-  }
-  if (storage.getItem(legacyCardOwnerCacheKey) === uid) {
-    storage.removeItem(legacyCardCacheKey);
-    storage.removeItem(legacyCardOwnerCacheKey);
   }
   session.removeItem('lingoflash_word_draft');
   session.removeItem('lingoflash_word_operation');
@@ -58,15 +46,10 @@ export function removeOwnerLocalKeys(storage: Pick<Storage, 'getItem' | 'removeI
 }
 
 export async function clearLocalAccountData(uid: string): Promise<void> {
-  const results = await Promise.allSettled([
-    clearMirroredCards(uid), clearDevicePending(uid),
-  ]);
-  try { removeOwnerLocalKeys(localStorage, sessionStorage, uid); }
-  catch (error) { results.push({ status: 'rejected', reason: error }); }
-  try { await saveDeviceCards([], 0, [], 'replace', uid); }
-  catch (error) { results.push({ status: 'rejected', reason: error }); }
-  if (results.some(result => result.status === 'rejected')) {
-    throw new LocalAccountCleanupError('Account was deleted, but local cleanup failed.');
+  try {
+    removeOwnerLocalKeys(localStorage, sessionStorage, uid);
+  } catch (error) {
+    throw new LocalAccountCleanupError('Account was deleted, but local cleanup failed.', { cause: error });
   }
 }
 

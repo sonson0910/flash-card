@@ -17,7 +17,7 @@ describe('AppFooter', () => {
   };
 
   it('renders online library status without announcing its decorative dot', () => {
-    const html = renderFooter({ viewMode: 'library', libraryCountLabel: '12 WORDS', syncStatus: { isOnline: true, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: false } });
+    const html = renderFooter({ viewMode: 'library', libraryCountLabel: '12 WORDS', syncStatus: { isOnline: true, error: null, cloudUnavailable: false } });
 
     expect(html).toContain('LIBRARY: 12 WORDS');
     expect(html).toContain('app-footer-bar');
@@ -32,17 +32,17 @@ describe('AppFooter', () => {
   });
 
   it('preserves the cache fallback labels', () => {
-    const offlineHtml = renderFooter({ viewMode: 'library', libraryCountLabel: '12 WORDS', syncStatus: { isOnline: false, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: true } });
-    const pausedHtml = renderFooter({ viewMode: 'library', libraryCountLabel: '12 WORDS', syncStatus: { isOnline: true, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: true } });
+    const offlineHtml = renderFooter({ viewMode: 'library', libraryCountLabel: '12 WORDS', syncStatus: { isOnline: false, error: null, cloudUnavailable: true } });
+    const pausedHtml = renderFooter({ viewMode: 'library', libraryCountLabel: '12 WORDS', syncStatus: { isOnline: true, error: null, cloudUnavailable: true } });
 
-    expect(offlineHtml).toContain('Offline, using cache');
-    expect(pausedHtml).toContain('Cloud paused, using cache');
+    expect(offlineHtml).toContain('Offline');
+    expect(pausedHtml).toContain('Cloud paused');
   });
 
-  it('shows pending sync work instead of a generic online label', () => {
-    const html = renderFooter({ viewMode: 'library', libraryCountLabel: '12 WORDS', syncStatus: { isOnline: true, isSyncing: false, pendingCount: 12, error: null, cloudUnavailable: false } });
+  it('surfaces a needs-attention error label instead of a generic online label', () => {
+    const html = renderFooter({ viewMode: 'library', libraryCountLabel: '12 WORDS', syncStatus: { isOnline: true, error: 'Sign in again to continue.', cloudUnavailable: false } });
 
-    expect(html).toContain('Waiting to sync');
+    expect(html).toContain('Needs attention');
     expect(html).not.toContain('>Online<');
   });
 });

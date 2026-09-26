@@ -2,23 +2,32 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CardIntakePortOptions } from './cardIntakePortContract';
-import {
-  createCardIntakePipeline,
-  StaleIntakeSessionError,
-} from './cardIntakePipeline';
+import { createCardIntakePipeline } from './cardIntakePipeline';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
 
 const generationRuntime = vi.hoisted(() => ({
   generateWordInfo: vi.fn(),
 }));
 
-vi.mock('../../lib/firebase', () => ({ db: null, isFirebaseConfigured: false }));
+const repositoryRuntime = vi.hoisted(() => ({
+  createCardIfAbsent: vi.fn(async (_db: unknown, _ownerId: string, card: { id: string }) => ({ card, created: true })),
+}));
+
+vi.mock('../../lib/firebase', () => ({ db: {}, isFirebaseConfigured: true }));
 vi.mock('../../lib/audio', () => ({ fetchAudioUrl: vi.fn(async () => null) }));
 vi.mock('../../lib/images', () => ({ fetchImageUrl: vi.fn(async () => null) }));
 vi.mock('../../lib/gemini', () => ({ generateWordInfo: generationRuntime.generateWordInfo }));
+vi.mock('../../lib/cardRepository', () => ({
+  createCardIfAbsent: repositoryRuntime.createCardIfAbsent,
+  createLibraryFacetOperationId: () => 'facet-op',
+  deriveLibraryFacetOperationId: (id: string, suffix: string) => `${id}:${suffix}`,
+  findCardByNormalizedWord: vi.fn(async () => null),
+  findCardsByNormalizedWords: vi.fn(async () => new Map()),
+}));
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  repositoryRuntime.createCardIfAbsent.mockClear();
 });
 
 const card = (id: string) => ({
@@ -58,8 +67,6 @@ const createContext = (): CardIntakePortOptions => ({
   cardsPerPage: 9,
   getCards: () => [],
   publishCards: vi.fn(),
-  upsertDeviceCards: vi.fn(async () => []),
-  acknowledgeDevicePending: vi.fn(async () => undefined),
   patchCard: vi.fn(async () => undefined),
   hydrateExisting: vi.fn(),
   rememberPromoted: vi.fn(),
@@ -89,6 +96,7 @@ describe('Card Intake Pipeline contract', () => {
     expect(hookSource).toContain('replaceOwner(options.ownerId)');
     expect(hookSource).not.toMatch(/firebase|cardRepository|cardMirror|deviceSync/);
     expect(pipelineSource).not.toMatch(/from ['"]react['"]|useRef\(/);
+    expect(pipelineSource).not.toMatch(/cardMirror|deviceSync/);
   });
 
   it('keeps one stable intent interface while the owner generation advances', () => {
@@ -115,7 +123,7 @@ describe('Card Intake Pipeline contract', () => {
     expect(pipeline).toMatchObject(methods);
   });
 
-  it('publishes a queued card optimistically through the current owner context', async () => {
+  it('publishes a new card optimistically, then confirms it against the cloud', async () => {
     const context = createContext();
     const candidate = card('queued-card');
     const pipeline = createCardIntakePipeline({
@@ -126,9 +134,9 @@ describe('Card Intake Pipeline contract', () => {
       { card: candidate, created: true },
     ]);
 
-    expect(context.upsertDeviceCards).toHaveBeenCalledWith([candidate], 1);
     expect(context.publishCards).toHaveBeenCalledWith([candidate]);
     expect(context.addXp).toHaveBeenCalledWith(10);
+    await vi.waitFor(() => expect(repositoryRuntime.createCardIfAbsent).toHaveBeenCalledWith({}, 'owner-a', candidate, { libraryEpoch: 3 }));
   });
 
   it('reuses one local persistence operation when a save is retried unchanged', async () => {
@@ -143,13 +151,11 @@ describe('Card Intake Pipeline contract', () => {
       { card: candidate, created: true },
     ]);
 
-    expect(context.upsertDeviceCards).toHaveBeenCalledOnce();
     expect(context.publishCards).toHaveBeenCalledOnce();
     expect(context.addXp).toHaveBeenCalledOnce();
   });
 
   it('reveals an existing card on a refreshed first page without requiring reload', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const existing = card('existing-card');
     const context = {
       ...createContext(),
@@ -164,8 +170,6 @@ describe('Card Intake Pipeline contract', () => {
     expect(context.resetCatalog).toHaveBeenCalledOnce();
     expect(context.resetCloudPage).toHaveBeenCalledOnce();
     expect(context.focusLibrary).toHaveBeenCalledOnce();
-    await vi.waitFor(() => expect(warn).toHaveBeenCalled());
-    warn.mockRestore();
   });
 
   it('rejects signed-out development generation before any AI call', async () => {
@@ -210,24 +214,30 @@ describe('Card Intake Pipeline contract', () => {
     expect(generated.card.origin).toBe('ai');
   });
 
-  it('rejects late optimistic publication after an A-to-B owner switch', async () => {
-    const queued = deferred<[]>();
-    const ownerA = {
-      ...createContext(),
-      upsertDeviceCards: vi.fn(() => queued.promise),
-    };
+  it('does not touch the new owner state when a stale cloud settlement fails after an owner switch', async () => {
+    const queued = deferred<void>();
+    const ownerA = createContext();
+    const ownerB = { ...createContext(), ownerId: 'owner-b', libraryEpoch: 4 };
+    const candidate = card('late-a-card');
     let context: CardIntakePortOptions = ownerA;
+    repositoryRuntime.createCardIfAbsent.mockImplementationOnce(async () => {
+      await queued.promise;
+      throw new Error('cloud write failed');
+    });
     const pipeline = createCardIntakePipeline({
       getContext: () => context,
     });
 
-    const persistence = pipeline.persistCards([card('late-a-card')], 'shared');
-    context = { ...createContext(), ownerId: 'owner-b', libraryEpoch: 4 };
+    const persistence = pipeline.persistCards([candidate], 'shared');
+    // The optimistic publish for owner-a happens synchronously, before any owner switch can occur.
+    expect(ownerA.publishCards).toHaveBeenCalledWith([candidate]);
+    context = ownerB;
     pipeline.replaceOwner('owner-b');
-    queued.resolve([]);
+    queued.resolve();
 
-    await expect(persistence).rejects.toBeInstanceOf(StaleIntakeSessionError);
-    expect(ownerA.publishCards).not.toHaveBeenCalled();
-    expect(ownerA.addXp).not.toHaveBeenCalled();
+    await expect(persistence).resolves.toEqual([{ card: candidate, created: true }]);
+    await vi.waitFor(() => expect(repositoryRuntime.createCardIfAbsent).toHaveBeenCalled());
+    expect(ownerB.publishCards).not.toHaveBeenCalled();
+    expect(ownerA.setCloudUnavailable).not.toHaveBeenCalled();
   });
 });

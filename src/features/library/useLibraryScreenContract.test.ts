@@ -49,9 +49,7 @@ const createInput = () => {
         scanned: 2,
         complete: true,
       })),
-      discardCards: vi.fn(),
     },
-    sync: { syncNow: vi.fn(), retry: vi.fn(async () => undefined) },
   };
   const intakeActions = {
     cardCreator: {
@@ -102,10 +100,9 @@ const createInput = () => {
             error: null,
           },
           owner: {
-            ownerId: 'owner-1', cards: [], decks: ['IELTS'], legacyPending: 2,
+            ownerId: 'owner-1', decks: ['IELTS'], legacyPending: 2,
             legacyIssue: null, isMigratingLegacy: false, status: 'ready', error: null,
           },
-          sync: { isSyncing: false, pendingCount: 1, error: null },
           cloud: {
             ownerId: 'owner-1', queryKey: 'all', page: 1, items: [apple], total: 4,
             hasNext: false, isLoading: false, cloudUnavailable: false, error: null,
@@ -228,7 +225,6 @@ describe('library screen contract', () => {
     expect(intakeActions.shareCategory).toHaveBeenCalledWith('IELTS');
     expect(sessionActions.owner.migrateLegacy).toHaveBeenCalledOnce();
     expect(catalogActions.replaceQuery).toHaveBeenCalledWith(expect.objectContaining({ category: 'All', page: 1 }));
-    expect(sessionActions.sync.retry).not.toHaveBeenCalled();
     expect(learningActions.deleteCard).toHaveBeenCalledWith('word-apple');
     expect(contract.actions.startStudy).toBe(commands.startStudy);
     contract.actions.tools.openPaths();

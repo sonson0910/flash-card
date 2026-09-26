@@ -21,13 +21,9 @@ import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { APP_VIEW_HEADINGS } from '../features/navigation/app-view-headings';
 import { evidencedStudyStreak } from '../features/dailyLearning/dailyLearningPresentation';
-import { getShellSyncStatus } from '../components/shell/shellSyncStatus';
-import { localizeShellSyncStatus } from '../components/shell/localized-sync-status';
-import { isCardDue } from '../lib/srs';
 import '../styles/shell.css';
 
 const AppOverlays = lazy(() => import('../components/AppOverlays').then(module => ({ default: module.AppOverlays })));
-const WorkspaceSyncPanel = lazy(() => import('../components/WorkspaceSyncPanel').then(module => ({ default: module.WorkspaceSyncPanel })));
 
 export interface LandingUser {
   readonly displayName?: string | null;
@@ -142,10 +138,6 @@ export default function AppRuntime({
   const practiceActions = learning.actions.practice;
   const intakeActions = learning.actions.intakeSharing;
   const identity = librarySession.identity;
-  const syncStatus = localizeShellSyncStatus(getShellSyncStatus(shellSyncStatus), shellSyncStatus, _);
-  const showWorkspaceSync = viewMode === 'library'
-    && !identity.authenticationRecovery
-    && ['needs-attention', 'offline', 'saving-offline'].includes(syncStatus.kind);
   const isShareModalOpen = intakeSharing.share.isShareDialogOpen || intakeSharing.share.isLoading;
   const handlePracticeStageKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (practiceSession.mode !== 'study' || practiceSession.study.isPaused || event.defaultPrevented || event.nativeEvent.isComposing) return;
@@ -207,6 +199,12 @@ export default function AppRuntime({
       library.actions.signIn,
     );
   }, [library.actions.signIn, onSignInRequestHandled, signInRequest]);
+  useEffect(() => {
+    // The workspace only renders for an authenticated owner. Once identity
+    // resolves to signed-out, bounce back to the landing page and its sign-in.
+    if (identity.status === 'loading' || user || viewMode === 'landing') return;
+    setViewMode('landing');
+  }, [identity.status, setViewMode, user, viewMode]);
   const openClearConfirm = (focusReturnTarget: HTMLButtonElement) =>
     openClearOverlay(focusReturnTarget, canClearLibrary);
   const handleSignIn = async () => { await library.actions.signIn(); };
@@ -225,6 +223,7 @@ export default function AppRuntime({
   };
 
   if (!visible) return null;
+  if (identity.status !== 'loading' && !user && viewMode !== 'landing') return null;
 
   return (
     <div ref={appShellRef} data-view={viewMode} className={`app-canvas claude-app-shell min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
@@ -278,7 +277,7 @@ export default function AppRuntime({
         onRetryAuth={handleSignIn}
         error={isShareModalOpen && error === intakeSharing.share.error ? null : error}
         notice={notice}
-        syncStatus={showWorkspaceSync ? undefined : shellSyncStatus}
+        syncStatus={shellSyncStatus}
         onDismissAuthError={library.actions.clearAuthError}
         onDismissError={() => setError(null)}
         onDismissNotice={() => setNotice(null)}
@@ -299,21 +298,7 @@ export default function AppRuntime({
             <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{_(APP_VIEW_HEADINGS[viewMode])}</h1>
           )}
           <div ref={viewStageRef} data-app-view-stage className="min-h-full">
-            {showWorkspaceSync ? (
-              <Suspense fallback={null}>
-                <WorkspaceSyncPanel
-                  status={syncStatus}
-                  cloudSyncEnabled={Boolean(user && appDependencies.configuration.cloudConfigured)}
-                  pendingCount={shellSyncStatus.pendingCount}
-                  dueCards={cards.filter(isCardDue)}
-                  canReview={cards.length > 0}
-                  isRetrying={isRetryingSync}
-                  onReview={practiceActions.startStudy}
-                  onRetry={handleRetrySync}
-                  onReturnHome={() => setViewMode('today')}
-                />
-              </Suspense>
-            ) : <AppViewStage
+            <AppViewStage
               viewMode={viewMode}
               ownerId={user?.uid ?? null}
               isOffline={!isBrowserOnline}
@@ -335,7 +320,7 @@ export default function AppRuntime({
               openMorePractice={openPractice}
               libraryContent={<AppDeferredLibraryView model={libraryScreen.model} actions={libraryScreen.actions} />}
               practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} addXp={practiceAddXp} />}
-            />}
+            />
           </div>
         </div>
       </main>

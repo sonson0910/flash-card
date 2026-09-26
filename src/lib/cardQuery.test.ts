@@ -247,11 +247,10 @@ describe('queryStateKey', () => {
     expect(queryStateKey(base)).not.toBe(queryStateKey({ ...base, partOfSpeech: 'verb' }));
     expect(queryStateKey(base)).not.toBe(queryStateKey({
       ...base,
-      courseId: 'english-course',
       targetLanguage: 'en',
     }));
-    expect(queryStateKey({ ...base, courseId: 'english-course', targetLanguage: 'en' }))
-      .not.toBe(queryStateKey({ ...base, courseId: 'korean-course', targetLanguage: 'ko' }));
+    expect(queryStateKey({ ...base, targetLanguage: 'en' }))
+      .not.toBe(queryStateKey({ ...base, targetLanguage: 'ko' }));
   });
 });
 

@@ -43,8 +43,6 @@ const intakeOptions = (): CardIntakePortOptions => ({
   cardsPerPage: 9,
   getCards: () => [],
   publishCards: vi.fn(),
-  upsertDeviceCards: async () => [],
-  acknowledgeDevicePending: async () => undefined,
   patchCard: async () => undefined,
   hydrateExisting: vi.fn(),
   rememberPromoted: vi.fn(),
@@ -278,8 +276,6 @@ describe('useIntakeSharingSession', () => {
     const ownerB = intakeOptions();
     ownerA.ownerId = 'owner-a';
     ownerB.ownerId = 'owner-b';
-    ownerA.upsertDeviceCards = vi.fn(ownerA.upsertDeviceCards);
-    ownerB.upsertDeviceCards = vi.fn(ownerB.upsertDeviceCards);
     ownerA.getCards = () => [card('apple')];
     ownerB.getCards = () => [card('apple')];
     ownerA.patchCard = vi.fn(ownerA.patchCard);
@@ -338,8 +334,6 @@ describe('useIntakeSharingSession', () => {
       vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
       await act(async () => { await Promise.resolve(); });
 
-      expect(ownerA.upsertDeviceCards).not.toHaveBeenCalled();
-      expect(ownerB.upsertDeviceCards).not.toHaveBeenCalled();
       expect(ownerA.patchCard).not.toHaveBeenCalled();
       expect(ownerB.patchCard).not.toHaveBeenCalled();
       expect(ownerA.publishCards).not.toHaveBeenCalled();

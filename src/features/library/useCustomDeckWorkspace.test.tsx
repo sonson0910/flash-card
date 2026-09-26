@@ -3,20 +3,6 @@ import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
-
-const deviceSyncMocks = vi.hoisted(() => ({
-  withDevicePendingFlush: vi.fn(async (_ownerId, _force, operation): Promise<
-    { acquired: false } | { acquired: true; value: unknown }
-  > => ({
-    acquired: true,
-    value: await operation({ token: 'lease', expiresAt: Infinity, assertOwnership: async () => undefined }),
-  })),
-}));
-
-vi.mock('../../lib/deviceSync', async () => ({
-  ...(await vi.importActual<typeof import('../../lib/deviceSync')>('../../lib/deviceSync')),
-  withDevicePendingFlush: deviceSyncMocks.withDevicePendingFlush,
-}));
 import {
   readCachedDecksForIdentity,
   useCustomDeckWorkspace,
@@ -65,8 +51,6 @@ const setup = () => {
   };
   const ports = {
     assignCard: vi.fn(async () => undefined),
-    patchDeviceCards: vi.fn(async () => []),
-    acknowledgeDevicePending: vi.fn(async () => undefined),
     publishCards: vi.fn(),
     publishPractice: vi.fn(),
     chooseAllDecks: vi.fn(),
@@ -160,9 +144,6 @@ describe('useCustomDeckWorkspace', () => {
 
     expect(mutations.clearAssignments).toHaveBeenCalledWith('owner-1', 'IELTS');
     expect(mutations.removeProfile).toHaveBeenCalledWith('owner-1', 'IELTS');
-    expect(ports.patchDeviceCards).toHaveBeenCalledWith([
-      { card: { ...assignedCard, customDeck: null }, fields: { customDeck: null } },
-    ], 1);
     expect(ports.publishCards).toHaveBeenCalledWith(new Set(['word-focus']), { customDeck: null });
     expect(ports.publishPractice).toHaveBeenCalledWith(new Set(['word-focus']), { customDeck: null });
     expect(ports.chooseAllDecks).toHaveBeenCalledOnce();
@@ -179,14 +160,5 @@ describe('useCustomDeckWorkspace', () => {
     expect(ports.publishPractice).not.toHaveBeenCalled();
     expect(ports.reportError).toHaveBeenCalledWith(expect.stringContaining('could not be deleted'));
     expect(ports.recoverCloud).toHaveBeenCalledOnce();
-  });
-
-  it('does not begin a deck deletion when another flush holds the lease', async () => {
-    deviceSyncMocks.withDevicePendingFlush.mockResolvedValueOnce({ acquired: false });
-    const { actions, mutations, ports } = setup();
-
-    await expect(actions.deleteDeck('IELTS')).rejects.toThrow('deck could not be deleted');
-    expect(mutations.clearAssignments).not.toHaveBeenCalled();
-    expect(ports.acknowledgeDevicePending).not.toHaveBeenCalled();
   });
 });

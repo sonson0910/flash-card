@@ -85,6 +85,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.0.4",
     "fake-indexeddb": "^6.2.5",
+    "firebase-admin": "^13.10.0",
     "firebase-tools": "15.29.0",
     "tailwindcss": "^4.1.14",
     "terser": "^5.51.2",

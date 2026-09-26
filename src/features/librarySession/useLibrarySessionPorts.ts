@@ -1,11 +1,7 @@
 import { useRef } from 'react';
 import type { CardData } from '../../types/card';
-import type { DeviceReviewEffect } from '../../lib/deviceSync';
 import type { LibrarySessionInputPorts } from './useLibrarySession';
-import type {
-  OwnerLibraryCache,
-  OwnerLibrarySessionAdapter,
-} from './ownerLibrarySessionController';
+import type { OwnerLibrarySessionAdapter } from './ownerLibrarySessionController';
 
 export interface LibrarySessionPortStats {
   total: number;
@@ -20,16 +16,6 @@ export interface LibrarySessionPortStats {
 }
 
 export interface LibrarySessionPortPublications {
-  library: {
-    replace(cards: CardData[]): void;
-    advance(cardId: string, advance: (card: CardData) => CardData): void;
-    remove(cardId: string): void;
-  };
-  practice: {
-    find(cardId: string): CardData | undefined;
-    advance(cardId: string, advance: (card: CardData) => CardData): void;
-    remove(cardId: string): void;
-  };
   cloud: {
     total(total: number): void;
     stats(stats: LibrarySessionPortStats): void;
@@ -42,22 +28,15 @@ export interface LibrarySessionPortPublications {
     resetPage(): void;
     previousPage(): void;
   };
-  feedback: {
-    error(message: string): void;
-    notice(message: string): void;
-  };
   promotedCards(): readonly CardData[];
 }
 
 export interface LibrarySessionPortsOptions {
   ownerAdapter: OwnerLibrarySessionAdapter;
-  ownerCache?: OwnerLibraryCache;
   publications: LibrarySessionPortPublications;
 }
 
 export interface LibrarySessionPortsActions {
-  connectVerifiedEpoch(accept: (ownerId: string, epoch: number) => boolean): void;
-  connectReviewSettlement(settle: (opId: string, effect: DeviceReviewEffect) => void): void;
   resetCloudState(facetsComplete: boolean): void;
   markCloudUnavailable(unavailable: boolean): void;
   refreshCloud(): void;
@@ -85,47 +64,13 @@ export function createLibrarySessionPortsBinding(
   initialOptions: LibrarySessionPortsOptions,
 ): LibrarySessionPortsBinding {
   let options = initialOptions;
-  let acceptVerifiedEpoch: (ownerId: string, epoch: number) => boolean = () => false;
-  const settledReviewIds = new Set<string>();
-  let settleReview: (opId: string, effect: DeviceReviewEffect) => void = () => undefined;
-
-  const deviceEvents: LibrarySessionInputPorts['deviceEvents'] = {
-    advanceCard: (cardId, advance) => options.publications.library.advance(cardId, advance),
-    removeCard: cardId => options.publications.library.remove(cardId),
-    findPracticeCard: cardId => options.publications.practice.find(cardId),
-    advancePracticeCard: (cardId, advance) => options.publications.practice.advance(cardId, advance),
-    removePracticeCard: cardId => options.publications.practice.remove(cardId),
-    resetPage: () => options.publications.navigation.resetPage(),
-    refreshCloud: () => options.publications.cloud.refresh(),
-    setCloudAvailable: available => options.publications.cloud.unavailable(!available),
-    setCloudTotal: total => options.publications.cloud.total(total),
-    publishDeviceCards: cards => options.publications.library.replace(cards),
-    publishDevicePage: (cards, total, hasNext) => {
-      options.publications.library.replace(cards);
-      options.publications.cloud.total(total);
-      options.publications.cloud.hasNextPage(hasNext);
-    },
-    previousPage: () => options.publications.navigation.previousPage(),
-    reportError: message => options.publications.feedback.error(message),
-    notify: message => options.publications.feedback.notice(message),
-    settleReview: (opId, effect) => {
-      if (settledReviewIds.has(opId)) return;
-      settleReview(opId, effect);
-      settledReviewIds.add(opId);
-    },
-    verifyEpoch: epoch => acceptVerifiedEpoch(epoch.userId, epoch.value),
-  };
 
   const session = {
     get ownerAdapter() { return options.ownerAdapter; },
-    get ownerCache() { return options.ownerCache; },
-    deviceEvents,
     getPromotedCards: () => options.publications.promotedCards(),
   } satisfies LibrarySessionInputPorts;
   const ports = { session };
   const actions: LibrarySessionPortsActions = {
-    connectVerifiedEpoch: accept => { acceptVerifiedEpoch = accept; },
-    connectReviewSettlement: settle => { settleReview = settle; },
     resetCloudState: facetsComplete => {
       options.publications.cloud.facets({}, facetsComplete);
       options.publications.cloud.stats({ ...EMPTY_STATS });

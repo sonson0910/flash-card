@@ -4,7 +4,6 @@ import {
   hasImageNegativeCache,
   isCloudBackoffActive,
   markImageNegativeCache,
-  readLocalCardCache,
   readLocalJson,
   removeLocalValue,
   waitForInitialMedia,
@@ -104,26 +103,5 @@ describe('library browser storage safeguards', () => {
     } finally {
       vi.useRealTimers();
     }
-  });
-
-  it('removes residual legacy keys when the scoped guest cache is authoritative', () => {
-    const values = new Map<string, string>([
-      ['lingoflash_cards_scoped_v1', JSON.stringify({
-        version: 1,
-        ownerId: null,
-        cards: [{ id: 'scoped-card', word: 'resilient' }],
-      })],
-      ['lingoflash_cards', JSON.stringify([{ id: 'legacy-card', word: 'stale' }])],
-      ['lingoflash_cards_owner', 'stale-owner'],
-    ]);
-    vi.stubGlobal('localStorage', {
-      getItem: (key: string) => values.get(key) ?? null,
-      setItem: (key: string, value: string) => { values.set(key, value); },
-      removeItem: (key: string) => { values.delete(key); },
-    });
-
-    expect(readLocalCardCache()).toMatchObject({ ownerId: null, cards: [{ id: 'scoped-card' }] });
-    expect(values.has('lingoflash_cards')).toBe(false);
-    expect(values.has('lingoflash_cards_owner')).toBe(false);
   });
 });

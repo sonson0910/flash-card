@@ -1,7 +1,11 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { i18n } from '@lingui/core';
 import { describe, expect, it, vi } from 'vitest';
 import * as XLSX from '@e965/xlsx';
+
+i18n.load('en', {});
+i18n.activate('en');
 import {
   loadSpreadsheetWorkbook,
   MAX_SPREADSHEET_CELLS,
@@ -15,6 +19,7 @@ import {
   preflightWorksheetXml,
   preflightSharedStringsXml,
   SpreadsheetReadError,
+  SpreadsheetUnsupportedFormatError,
 } from './spreadsheetWorkbook';
 import { cardsToSpreadsheetRows } from './spreadsheetModel';
 
@@ -291,34 +296,46 @@ describe('spreadsheet workbook loader', () => {
       .resolves.toMatchObject({ structuredRows: [{ PK: 'apple', Translation: 'táo' }] });
   });
 
-  it('accepts real XLS and rejects renamed XLSX/CFB content', async () => {
+  it('rejects .xls by extension alone with a clear re-save message, regardless of content', async () => {
     const sheet = XLSX.utils.aoa_to_sheet([
       ['Word', 'Translation'],
       ['apple', 'táo'],
     ]);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, sheet, 'Cards');
-    const xlsBytes = XLSX.write(workbook, { type: 'array', bookType: 'xls' });
-    await expect(loadSpreadsheetWorkbook(new File([xlsBytes], 'cards.xls', { type: 'text/plain' })))
-      .resolves.toMatchObject({ structuredRows: [{ Word: 'apple', Translation: 'táo' }] });
-
     const xlsxBytes = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
-    await expect(loadSpreadsheetWorkbook(new File([xlsxBytes], 'cards.xls', { type: 'application/octet-stream' })))
-      .rejects.toThrow(/extension|magic|format/i);
-    await expect(loadSpreadsheetWorkbook(new File([xlsBytes], 'cards.xlsx', { type: '' })))
+
+    const renamedXlsx = loadSpreadsheetWorkbook(new File([xlsxBytes], 'cards.xls', { type: 'application/octet-stream' }));
+    await expect(renamedXlsx).rejects.toThrow(SpreadsheetUnsupportedFormatError);
+    await expect(renamedXlsx).rejects.toThrow(/xls.*(?:re-save|resave)|re-save.*\.xlsx.*\.csv/i);
+
+    const plainTextXls = loadSpreadsheetWorkbook(new File([textEncoder.encode('Word\napple')], 'cards.xls', { type: 'text/plain' }));
+    await expect(plainTextXls).rejects.toThrow(SpreadsheetUnsupportedFormatError);
+  });
+
+  it('rejects renamed XLSX/CSV content whose bytes do not match the extension', async () => {
+    const sheet = XLSX.utils.aoa_to_sheet([
+      ['Word', 'Translation'],
+      ['apple', 'táo'],
+    ]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, sheet, 'Cards');
+    const xlsxBytes = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+
+    await expect(loadSpreadsheetWorkbook(new File([textEncoder.encode('not a zip')], 'cards.xlsx', { type: '' })))
       .rejects.toThrow(/extension|magic|format/i);
     await expect(loadSpreadsheetWorkbook(new File([zipArchive()], 'cards.csv', { type: 'text/plain' })))
       .rejects.toThrow(/ZIP|CSV|format/i);
-    await expect(loadSpreadsheetWorkbook(new File([
-      new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]),
-    ], 'cards.csv', { type: 'text/plain' }))).rejects.toThrow(/CFB|CSV|format/i);
+    await expect(loadSpreadsheetWorkbook(new File([xlsxBytes], 'cards.xlsx', { type: '' })))
+      .resolves.toMatchObject({ structuredRows: [{ Word: 'apple', Translation: 'táo' }] });
   });
 
-  it('keeps legacy XLS parsing off the caller thread', async () => {
+  it('parses xlsx and csv directly on the caller thread through the mini build, with no worker fallback', () => {
     const source = readFileSync(fileURLToPath(new URL('./spreadsheetWorkbook.ts', import.meta.url)), 'utf8');
-    expect(source).toMatch(/parseLegacyWorkbook|spreadsheetParser\.worker/);
-    expect(source).toMatch(/LEGACY_WORKER_TIMEOUT_MS/);
-    expect(source).toMatch(/worker\.terminate\(\)/);
+    expect(source).not.toMatch(/spreadsheetParser\.worker|parseLegacyWorkbook|new Worker\(|worker_threads/);
+    expect(source).toMatch(/@e965\/xlsx\/dist\/xlsx\.mini\.min/);
+    expect(source).not.toMatch(/from\s+['"]@e965\/xlsx['"]/);
+    expect(existsSync(fileURLToPath(new URL('./spreadsheetParser.worker.mjs', import.meta.url)))).toBe(false);
   });
 
   it('loads a small XLSX workbook with dense array parsing', async () => {

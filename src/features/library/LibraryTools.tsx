@@ -522,7 +522,7 @@ export function LibraryTools({
               onChange={handleImportChange}
               disabled={isLoading}
               className="hidden"
-              accept=".xlsx, .xls, .csv"
+              accept=".xlsx, .csv"
             />
           </button>
         </div>

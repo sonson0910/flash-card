@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { withDevicePendingFlush, type DevicePendingFlushLease, type DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import { planCustomDeckCreation, normalizeCustomDeckCollection } from './customDecks';
 import { planDeckDeletionFailureRecovery } from './libraryMutationRecovery';
@@ -33,11 +32,6 @@ export interface CustomDeckWorkspaceOptions {
   cache?: CustomDeckCachePort;
   ports: {
     assignCard(cardId: string, deckName: string | null): Promise<void>;
-    patchDeviceCards(
-      changes: readonly { card: CardData; fields: Partial<CardData> }[],
-      nextTotal: number,
-    ): Promise<DevicePendingOperation[]>;
-    acknowledgeDevicePending(operations: readonly DevicePendingOperation[], lease?: DevicePendingFlushLease): Promise<void>;
     publishCards(cardIds: ReadonlySet<string>, fields: Partial<CardData>): void;
     publishPractice(cardIds: ReadonlySet<string>, fields: Partial<CardData>): void;
     chooseAllDecks(): void;
@@ -242,28 +236,13 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
       let deckProfileRemoved = false;
       if (remoteOwnerId && current.owner.remoteAvailable) {
         try {
-          const leaseResult = await withDevicePendingFlush(remoteOwnerId, false, async lease => {
-            await lease.assertOwnership();
-            if (!remoteAccessAvailable()) return;
-            await current.mutations.clearAssignments(remoteOwnerId, deckName);
-            assignmentsCleared = true;
-            if (!remoteAccessAvailable()) return;
-            await lease.assertOwnership();
-            if (!remoteAccessAvailable()) return;
-            await current.mutations.removeProfile(remoteOwnerId, deckName);
-            deckProfileRemoved = true;
-            if (!remoteAccessAvailable()) return;
-            const pending = await current.ports.patchDeviceCards(
-              changedCards.map(card => ({ card, fields: { customDeck: null } })),
-              current.knownLibraryTotal,
-            );
-            if (!remoteAccessAvailable()) return;
-            await lease.assertOwnership();
-            if (!remoteAccessAvailable()) return;
-            await current.ports.acknowledgeDevicePending(pending, lease);
-          });
+          if (!remoteAccessAvailable()) return;
+          await current.mutations.clearAssignments(remoteOwnerId, deckName);
+          assignmentsCleared = true;
+          if (!remoteAccessAvailable()) return;
+          await current.mutations.removeProfile(remoteOwnerId, deckName);
+          deckProfileRemoved = true;
           if (!isCurrentOwner() || !remoteAccessAvailable()) return;
-          if (!leaseResult.acquired) throw new Error('Cloud sync is finishing another operation. Try deleting the deck again in a moment.');
         } catch (cause) {
           if (!isCurrentOwner() || !remoteAccessAvailable()) return;
           current.ports.warn('Deck deletion could not complete atomically.', cause);

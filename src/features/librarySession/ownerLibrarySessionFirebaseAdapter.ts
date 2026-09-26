@@ -4,8 +4,6 @@ import {
   clearCustomDeckAssignments,
   getLegacyCardQueryMigrationProgress,
 } from '../../lib/cardRepository';
-import { queueDeviceUpserts } from '../../lib/deviceSync';
-import { normalizeCardForStorage } from '../library/libraryStorage';
 import { migrateLegacyLibraryWithAdmin } from './legacyLibraryMigrationService';
 import type { OwnerLibrarySessionAdapter } from './ownerLibrarySessionController';
 
@@ -21,21 +19,6 @@ export function createOwnerLibrarySessionFirebaseAdapter({
   const available = configured && database !== null;
   return {
     available,
-    queueCardMigration: async (ownerId, cards, libraryEpoch) => {
-      await queueDeviceUpserts(
-        cards.map(card => normalizeCardForStorage({ ...card, libraryEpoch })),
-        cards.length,
-        ownerId,
-      );
-    },
-    seedDeckProfile: async (ownerId, decks) => {
-      if (!database || decks.length === 0) return;
-      await setDoc(
-        doc(database, 'users', ownerId, 'profile', 'custom_decks'),
-        { decks: arrayUnion(...decks) },
-        { merge: true },
-      );
-    },
     subscribeDeckProfile: (ownerId, onDecks, onError) => {
       if (!database) return () => undefined;
       return onSnapshot(

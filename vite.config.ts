@@ -5,7 +5,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import productionFirebaseConfig from './firebase-applet-config.json';
-import { sharedDeviceStorePlugin } from './dev/sharedDeviceStoreAdapter';
 
 const runtimeSourceId = path.resolve(__dirname, 'src/app/AppRuntime.tsx');
 const runtimeInitialId = path.resolve(__dirname, 'src/app/AppRuntimeInitial.virtual.tsx');
@@ -72,7 +71,6 @@ export default defineConfig(({ mode }) => {
       react({ babel: { plugins: ['@lingui/babel-plugin-lingui-macro'] } }),
       lingui(),
       tailwindcss(),
-      sharedDeviceStorePlugin(),
       appRuntimeVariantsPlugin(),
     ],
     esbuild: {
@@ -89,7 +87,7 @@ export default defineConfig(({ mode }) => {
       // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: {
-        ignored: ['**/.lingoflash-device-sync/**', '**/.worktrees/**'],
+        ignored: ['**/.worktrees/**'],
       },
     },
     build: {

@@ -88,78 +88,6 @@ const seedCurrentCard = (
   await reservedCardBatch(database, userId, documentId, card).commit();
 });
 
-const COURSE_INDEX_EPOCH_ISO = '1970-01-01T00:00:00.000Z';
-
-const courseIndexProjection = (
-  card: Record<string, unknown>,
-  cardId: string,
-): Record<string, unknown> => ({
-  schemaVersion: 1,
-  cardId,
-  targetLanguage: typeof card.language === 'string' ? card.language : 'en',
-  sourceLibraryEpoch: typeof card.libraryEpoch === 'number' ? card.libraryEpoch : 0,
-  sourceRevision: typeof card.revision === 'number' ? card.revision : null,
-  normalizedWord: typeof card.normalizedWord === 'string' && card.normalizedWord
-    ? card.normalizedWord
-    : String(card.word ?? '').toLowerCase(),
-  category: typeof card.category === 'string' && card.category ? card.category : 'Other',
-  partOfSpeech: typeof card.partOfSpeech === 'string' ? card.partOfSpeech.toLowerCase() : '',
-  customDeck: typeof card.customDeck === 'string' && card.customDeck ? card.customDeck : null,
-  difficulty: typeof card.difficulty === 'string'
-    && ['easy', 'good', 'hard', 'unrated'].includes(card.difficulty)
-    ? card.difficulty
-    : 'unrated',
-  bookmarked: card.bookmarked === true,
-  createdAt: typeof card.createdAt === 'string' ? card.createdAt : COURSE_INDEX_EPOCH_ISO,
-  ...(typeof card.nextReviewDate === 'string' ? { nextReviewDate: card.nextReviewDate } : {}),
-});
-
-const courseIndexGeneration = (
-  libraryEpoch: number,
-  status: 'building' | 'ready' = 'ready',
-): Record<string, unknown> => ({
-  schemaVersion: 1,
-  projectionVersion: 1,
-  libraryEpoch,
-  status,
-  lastCardId: null,
-  scanned: 0,
-  leaseToken: null,
-  leaseExpiresAt: null,
-  startedAt: '2026-08-01T00:00:00.000Z',
-  ...(status === 'ready' ? { completedAt: '2026-08-01T00:00:00.000Z' } : {}),
-});
-
-const seedCourseIndex = (
-  testEnvironment: RulesTestEnvironment,
-  userId: string,
-  cardId: string,
-  card: Record<string, unknown>,
-  libraryEpoch: number,
-  generationIds: string[] = ['course-index-active', 'course-index-building'],
-): Promise<void> => testEnvironment.withSecurityRulesDisabled(async context => {
-  const database = context.firestore();
-  await setDoc(doc(database, `users/${userId}/profile/library_state`), {
-    schemaVersion: 2,
-    libraryEpoch,
-  });
-  await setDoc(doc(database, `users/${userId}/profile/course_query_index`), {
-    schemaVersion: 1,
-    projectionVersion: 1,
-    libraryEpoch,
-    activeGenerationId: generationIds[0] ?? null,
-    buildingGenerationId: generationIds[1] ?? null,
-  });
-  for (const generationId of generationIds) {
-    await setDoc(doc(database, `users/${userId}/course_query_generations/${generationId}`),
-      courseIndexGeneration(libraryEpoch, generationId === generationIds[1] ? 'building' : 'ready'));
-    await setDoc(
-      doc(database, `users/${userId}/course_query_generations/${generationId}/cards/${cardId}`),
-      courseIndexProjection(card, cardId),
-    );
-  }
-});
-
 const validSharedCard = (id = 'card-1'): ReturnType<typeof legacyCard> & {
   audioUrl: string | null;
   imageUrl: string | null;
@@ -1953,116 +1881,15 @@ describe('Firestore security rules', () => {
     }));
   });
 
-  it('keeps course profiles and query-index documents owner-readable and server-owned', async () => {
+  it('keeps course profiles owner-readable and server-owned', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const intruder = testEnvironment.authenticatedContext('intruder').firestore();
     const card = validCard('course-control-card');
     await seedCurrentCard(testEnvironment, 'owner', 'course-control-card', card);
-    await seedCourseIndex(testEnvironment, 'owner', 'course-control-card', card, 0, ['course-control-generation']);
 
     await assertSucceeds(getDoc(doc(owner, 'users/owner/profile/courses')));
-    await assertSucceeds(getDoc(doc(owner, 'users/owner/profile/course_query_index')));
-    await assertSucceeds(getDoc(doc(owner, 'users/owner/course_query_generations/course-control-generation')));
-    await assertSucceeds(getDoc(doc(owner, 'users/owner/course_query_generations/course-control-generation/cards/course-control-card')));
     await assertFails(getDoc(doc(intruder, 'users/owner/profile/courses')));
-    await assertFails(getDoc(doc(intruder, 'users/owner/profile/course_query_index')));
-    await assertFails(getDoc(doc(intruder, 'users/owner/course_query_generations/course-control-generation')));
     await assertFails(setDoc(doc(owner, 'users/owner/profile/courses'), { courses: [], activeCourseId: null }));
-    await assertFails(setDoc(doc(owner, 'users/owner/profile/course_query_index'), {
-      schemaVersion: 1,
-      projectionVersion: 1,
-      libraryEpoch: 0,
-      activeGenerationId: null,
-      buildingGenerationId: null,
-    }));
-    await assertFails(setDoc(doc(owner, 'users/owner/course_query_generations/owner-write'), courseIndexGeneration(0)));
-  });
-
-  it('requires exact active and building mirrors for a client card patch', async () => {
-    const owner = testEnvironment.authenticatedContext('owner').firestore();
-    const cardId = 'course-patch-card';
-    const card = { ...validCard(cardId), category: 'Study', partOfSpeech: 'noun' };
-    await seedCurrentCard(testEnvironment, 'owner', cardId, card);
-    await seedCourseIndex(testEnvironment, 'owner', cardId, card, 0);
-    const next = { ...card, bookmarked: true, revision: 2 };
-    const batch = writeBatch(owner);
-    batch.update(doc(owner, `users/owner/cards/${cardId}`), { bookmarked: true, revision: 2 });
-    batch.set(doc(owner, `users/owner/course_query_generations/course-index-active/cards/${cardId}`), courseIndexProjection(next, cardId));
-    batch.set(doc(owner, `users/owner/course_query_generations/course-index-building/cards/${cardId}`), courseIndexProjection(next, cardId));
-    await assertSucceeds(batch.commit());
-
-    const missingMirror = writeBatch(owner);
-    missingMirror.update(doc(owner, `users/owner/cards/${cardId}`), { bookmarked: false, revision: 3 });
-    missingMirror.set(doc(owner, `users/owner/course_query_generations/course-index-active/cards/${cardId}`), courseIndexProjection({ ...next, bookmarked: false, revision: 3 }, cardId));
-    await assertFails(missingMirror.commit());
-  });
-
-  it('rejects tampered or arbitrary projection writes', async () => {
-    const owner = testEnvironment.authenticatedContext('owner').firestore();
-    const cardId = 'course-tamper-card';
-    const card = validCard(cardId);
-    await seedCurrentCard(testEnvironment, 'owner', cardId, card);
-    await seedCourseIndex(testEnvironment, 'owner', cardId, card, 0, ['course-tamper-generation']);
-    const projectionRef = doc(owner, `users/owner/course_query_generations/course-tamper-generation/cards/${cardId}`);
-
-    await assertFails(setDoc(projectionRef, courseIndexProjection(card, cardId)));
-    const tampered = { ...courseIndexProjection({ ...card, bookmarked: true, revision: 2 }, cardId), category: 'tampered' };
-    const batch = writeBatch(owner);
-    batch.update(doc(owner, `users/owner/cards/${cardId}`), { bookmarked: true, revision: 2 });
-    batch.set(projectionRef, tampered);
-    await assertFails(batch.commit());
-  });
-
-  it('accepts a dual mirror delete with its tombstone and rejects a skipped row', async () => {
-    const owner = testEnvironment.authenticatedContext('owner').firestore();
-    const cardId = 'course-delete-card';
-    const card = validCard(cardId);
-    await seedCurrentCard(testEnvironment, 'owner', cardId, card);
-    await seedCourseIndex(testEnvironment, 'owner', cardId, card, 0);
-    const tombstone = {
-      cardId,
-      opId: 'delete-course-card',
-      libraryEpoch: 0,
-      revision: 2,
-      deletedAt: '2026-08-01T00:00:00.000Z',
-    };
-    const batch = writeBatch(owner);
-    batch.delete(doc(owner, `users/owner/cards/${cardId}`));
-    batch.set(doc(owner, `users/owner/card_tombstones/${cardId}`), tombstone);
-    batch.delete(doc(owner, `users/owner/course_query_generations/course-index-active/cards/${cardId}`));
-    batch.delete(doc(owner, `users/owner/course_query_generations/course-index-building/cards/${cardId}`));
-    await assertSucceeds(batch.commit());
-
-    const skippedCardId = 'course-delete-skipped-card';
-    const skippedCard = validCard(skippedCardId);
-    await seedCurrentCard(testEnvironment, 'owner', skippedCardId, skippedCard);
-    await seedCourseIndex(testEnvironment, 'owner', skippedCardId, skippedCard, 0);
-    const skipped = writeBatch(owner);
-    skipped.delete(doc(owner, `users/owner/cards/${skippedCardId}`));
-    skipped.set(doc(owner, `users/owner/card_tombstones/${skippedCardId}`), {
-      ...tombstone,
-      cardId: skippedCardId,
-      opId: 'delete-course-card-skipped',
-    });
-    await assertFails(skipped.commit());
-  });
-
-  it('does not let a stale index epoch block a current-library card patch', async () => {
-    const owner = testEnvironment.authenticatedContext('owner').firestore();
-    const cardId = 'course-stale-index-card';
-    const card = { ...validCard(cardId), libraryEpoch: 1 };
-    await seedCurrentCard(testEnvironment, 'owner', cardId, card);
-    await seedCourseIndex(testEnvironment, 'owner', cardId, card, 0, ['course-stale-generation']);
-    await testEnvironment.withSecurityRulesDisabled(async context => {
-      await setDoc(doc(context.firestore(), 'users/owner/profile/library_state'), {
-        schemaVersion: 2,
-        libraryEpoch: 1,
-      });
-    });
-    await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
-      bookmarked: true,
-      revision: 2,
-    }));
   });
 
   it('keeps language metadata independent from plain identity while preserving immutability', async () => {
@@ -2074,7 +1901,6 @@ describe('Firestore security rules', () => {
       translationLanguage: 'vi',
     };
     await seedCurrentCard(testEnvironment, 'owner', cardId, card);
-    await seedCourseIndex(testEnvironment, 'owner', cardId, card, 0, ['course-ko-generation']);
     await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
       bookmarked: true,
       revision: 2,
@@ -2094,7 +1920,6 @@ describe('Firestore security rules', () => {
     const cardId = 'course-invalid-language-card';
     const card = { ...validCard(cardId), language: 42 };
     await seedCurrentCard(testEnvironment, 'owner', cardId, card);
-    await seedCourseIndex(testEnvironment, 'owner', cardId, card, 0, ['course-invalid-language-generation']);
     await assertFails(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
       bookmarked: true,
       revision: 2,
@@ -2127,7 +1952,7 @@ describe('Firestore security rules', () => {
       audioUrl: null,
       imageUrl: null,
       imageSearchQuery: '',
-      createdAt: COURSE_INDEX_EPOCH_ISO,
+      createdAt: '1970-01-01T00:00:00.000Z',
       bookmarked: false,
       customDeck: null,
       difficulty: 'unrated',

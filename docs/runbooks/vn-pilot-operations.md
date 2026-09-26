@@ -1,6 +1,6 @@
 # VN IELTS paid-pilot operations
 
-This is a human-gated runbook. **W0 is not complete; G1 is blocked.** The owner authorized a staging-only deployment on 2026-09-24. Rules, Functions and Hosting are live on staging, but the sign-in → capture → review smoke has not passed. Production must remain unchanged until the owner records an explicit go and uses the protected production workflows. Never commit credentials, print secret values, or infer a pass from a successful build/HTTP response.
+This is a human-gated runbook. **W0 passed on staging; G1 is blocked.** The 2026-09-24 sign-in → capture → review smoke is recorded in the pilot decision log. Production must remain unchanged until the owner records an explicit go and uses the protected production workflows. Never commit credentials, print secret values, or infer a pass from a successful build/HTTP response.
 
 ## Targets and current state
 
@@ -137,6 +137,10 @@ For the read-only weekly cohort report, build Functions and run `node functions/
 The owner still needs to choose **static guide vs shared document** and a **feedback channel**. Do not publish a cohort guide or invite learners until those choices, W0 smoke, paid-tier/quota, spend cap and owner go are recorded. After approval, the one-page Vietnamese guide must cover extension install, Google sign-in, capture from a real passage, phone review, Free/Pro allowances and how Pro is granted for this pilot.
 
 The final 10-23 decision records continue/fix/change ICP with the plan's metrics and denominators. Keep this runbook as operating procedure; use the pilot decision log for dated evidence and decisions.
+
+## Card language backfill (one-time)
+
+Card creation now always writes an explicit `language` field so course-scoped queries can filter `users/{uid}/cards` directly instead of relying on "missing field means en". Cards written before that change may still be missing `language`. Run `node scripts/backfill-card-language.mjs --project <id>` to find and repair them; it is a dry run by default and only reports counts. Add `--apply` to write `language: 'en'` to documents where the field is absent — it never touches a document that already has `language` set, and it defaults `--database` to the pilot's single named database (`ai-studio-945b4052-4462-4668-8936-277f09f07a37`), which staging and production share. Before every batch commit in `--apply` mode, the script writes a timestamped JSON backup of the pre-write data for every document in that batch to `artifacts/backfill-card-language/`; keep that directory until the backfill is confirmed correct in the Firebase console, then delete it rather than committing it. The scan is paged and checkpointed, so an interrupted run can continue with `--resume`; re-running the script at any point, resumed or from scratch, is a safe no-op once every legacy document has been backfilled. Requires ambient Google Cloud credentials for the target project (`gcloud auth application-default login` or `GOOGLE_APPLICATION_CREDENTIALS`); the script never accepts or prints credentials, and refuses to run without an explicit `--project`.
 
 ## Related authority
 

@@ -20,7 +20,6 @@ import {
   isCloudBackoffActive,
   markImageNegativeCache,
   removeLocalValue,
-  writeLocalCardCache,
 } from '../features/library/libraryStorage';
 import { useLearningWorkspace, type LearningWorkspaceActions } from '../features/learning/useLearningWorkspace';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
@@ -135,20 +134,11 @@ export function useAppLearningCoordination({
       publication: {
         restore: card => {
           ports.recentlyPromotedCardsRef.current.set(cardWordKey(card), card);
-          ports.setCards(current => {
-            const next = retainCardsForSession([card, ...current.filter(candidate => candidate.id !== card.id)], Boolean(user), cardsPerPage);
-            writeLocalCardCache(next, user?.uid ?? null);
-            return next;
-          });
+          ports.setCards(current =>
+            retainCardsForSession([card, ...current.filter(candidate => candidate.id !== card.id)], cardsPerPage));
         },
-        patch: (cardId, fields) => ports.setCards(current => {
-          const updated = current.map(card => card.id === cardId ? { ...card, ...fields } : card);
-          writeLocalCardCache(
-            retainCardsForSession(updated, Boolean(user), cardsPerPage),
-            user?.uid ?? null,
-          );
-          return updated;
-        }),
+        patch: (cardId, fields) => ports.setCards(current =>
+          current.map(card => card.id === cardId ? { ...card, ...fields } : card)),
         remove: cardId => {
           mediaHydration.actions.invalidateCard(cardId);
           ports.setCards(current => current.filter(card => card.id !== cardId));
@@ -157,7 +147,6 @@ export function useAppLearningCoordination({
           ports.browser.actions.bumpHydrationSession();
           ports.cardsRef.current.forEach(card => mediaHydration.actions.invalidateCard(card.id));
           ports.setCards([]);
-          ports.session.actions.owner.discardCards();
           offerUndo(user?.uid ?? null, null);
         },
       },
@@ -172,10 +161,6 @@ export function useAppLearningCoordination({
       },
     },
     ports: {
-      restoreDeviceCard: ports.session.ports.cards.restore,
-      patchDeviceCards: ports.session.ports.cards.patch,
-      removeDeviceCard: ports.session.ports.cards.remove,
-      acknowledgeDevicePending: ports.session.ports.cards.acknowledge,
       acceptVerifiedEpoch: ports.session.actions.identity.acceptVerifiedOwnerEpoch,
       mutateCloudStats: ports.setCloudStats,
       publishCategoryFacets: ports.updateCategoryFacets,
@@ -189,10 +174,6 @@ export function useAppLearningCoordination({
     },
   }, appDependencies.sessions.learningWorkspace).actions;
   learningActionsRef.current = learningCommands;
-  ports.sessionPorts.connectReviewSettlement((opId, effect) => {
-    addXp(effect.xp, `review:${opId}`);
-    ports.refreshCloud();
-  });
   const deckWorkspace = useCustomDeckWorkspace({
     identityReady: librarySession.identity.status !== 'loading',
     owner: {
@@ -206,8 +187,6 @@ export function useAppLearningCoordination({
     mutations: appDependencies.adapters.ownerDecks,
     ports: {
       assignCard: learningCommands.assignDeck,
-      patchDeviceCards: ports.session.ports.cards.patch,
-      acknowledgeDevicePending: ports.session.ports.cards.acknowledge,
       publishCards: (cardIds, fields) => ports.setCards(previous => previous.map(card =>
         cardIds.has(card.id) ? { ...card, ...fields } : card)),
       publishPractice: (cardIds, fields) => practiceWorkspace.snapshotRef.current.updateCards(cardIds, fields),
@@ -254,8 +233,6 @@ export function useAppLearningCoordination({
       cardsPerPage,
       getCards: () => ports.cardsRef.current,
       publishCards: ports.setCards,
-      upsertDeviceCards: ports.session.ports.cards.upsert,
-      acknowledgeDevicePending: ports.session.ports.cards.acknowledge,
       patchCard: handleUpdateCard,
       hydrateExisting: card => {
         clearImageNegativeCache(user?.uid ?? null, card.id);
@@ -294,7 +271,7 @@ export function useAppLearningCoordination({
         model: librarySession,
         actions: {
           ...ports.session.actions,
-          owner: { migrateLegacy: actions.migrateLegacyCards, discardCards: ports.session.actions.owner.discardCards },
+          owner: { migrateLegacy: actions.migrateLegacyCards },
         },
       },
       intake: { model: intakeSharing.model, actions: { ...intakeSharing.actions, shareCategory } },

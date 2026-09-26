@@ -30,7 +30,7 @@ describe('bulk library mutation recovery', () => {
     expect(planDeckDeletionFailureRecovery(false, false).message).toContain('partially completed');
   });
 
-  it('advances and publishes the epoch before clearing pending writes or deleting cards', async () => {
+  it('advances and publishes the epoch before deleting cards', async () => {
     const order: string[] = [];
 
     await expect(runEpochProtectedLibraryClear({
@@ -41,9 +41,6 @@ describe('bulk library mutation recovery', () => {
       onEpochAdvanced: epoch => {
         order.push(`publish-${epoch}`);
       },
-      clearPending: async () => {
-        order.push('clear-pending');
-      },
       deleteCards: async () => {
         order.push('delete-cards');
       },
@@ -52,7 +49,6 @@ describe('bulk library mutation recovery', () => {
     expect(order).toEqual([
       'increment',
       'publish-4',
-      'clear-pending',
       'delete-cards',
     ]);
   });

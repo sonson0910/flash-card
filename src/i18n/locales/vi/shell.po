@@ -289,7 +289,7 @@ msgid "shell.language.open"
 msgstr "Chọn ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:294
+#: src/app/AppRuntime.tsx:293
 msgid "shell.learning-workspace"
 msgstr "Không gian học tập"
 
@@ -473,7 +473,7 @@ msgstr "Điều hướng chính"
 
 #. js-lingui-explicit-id
 #: src/app/AppDeferredViews.tsx:22
-#: src/app/AppRuntime.tsx:356
+#: src/app/AppRuntime.tsx:341
 msgid "shell.opening-dialog"
 msgstr "Đang mở hộp thoại"
 
@@ -804,13 +804,13 @@ msgstr "Chuỗi {count} ngày"
 #. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:56
 #: src/components/shell/LibraryManagementMenu.tsx:189
-#: src/components/shell/localized-sync-status.ts:62
-#: src/components/shell/localized-sync-status.ts:63
+#: src/components/shell/localized-sync-status.ts:20
+#: src/components/shell/localized-sync-status.ts:21
 msgid "shell.sync.checking"
 msgstr "Đang kiểm tra đám mây…"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:64
+#: src/components/shell/localized-sync-status.ts:22
 msgid "shell.sync.checking-detail"
 msgstr "Đang xác minh phiên đám mây của bạn."
 
@@ -821,38 +821,8 @@ msgid "shell.sync.device"
 msgstr "Trên thiết bị này"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:15
-msgid "shell.sync.error.access-denied"
-msgstr "Quyền truy cập đám mây bị từ chối. Thay đổi vẫn an toàn trên thiết bị này; hãy đăng nhập lại hoặc nhờ quản trị viên ứng dụng cập nhật quyền Firebase, rồi thử đồng bộ lại."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:33
-msgid "shell.sync.error.configuration"
-msgstr "Cấu hình đám mây không khớp với ứng dụng. Các thay đổi vẫn an toàn; hãy cập nhật cấu hình rồi thử lại."
-
-#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:38
 #: src/components/shell/localized-sync-status.ts:39
-msgid "shell.sync.error.generic"
-msgstr "Hiện không thể đồng bộ. Các thay đổi vẫn an toàn trên thiết bị này."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:27
-msgid "shell.sync.error.quota"
-msgstr "Đã đạt giới hạn đọc hằng ngày của Firebase. Thay đổi vẫn an toàn trên thiết bị này cho đến khi hạn mức được đặt lại."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:9
-msgid "shell.sync.error.storage-blocked"
-msgstr "Một tab SonFlash khác đang chặn bộ nhớ đồng bộ cục bộ. Hãy đóng các tab SonFlash khác, rồi thử đồng bộ lại. Thay đổi vẫn an toàn trên thiết bị này."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:21
-msgid "shell.sync.error.unavailable"
-msgstr "Hiện không thể kết nối với đám mây. Thay đổi vẫn an toàn trên thiết bị này và sẽ tự đồng bộ lại."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:104
-#: src/components/shell/localized-sync-status.ts:105
 msgid "shell.sync.needs-attention"
 msgstr "Cần chú ý"
 
@@ -862,81 +832,41 @@ msgid "shell.sync.now"
 msgstr "Đồng bộ ngay"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:68
+#: src/components/shell/localized-sync-status.ts:26
+#: src/components/shell/localized-sync-status.ts:27
 msgid "shell.sync.offline"
 msgstr "Ngoại tuyến"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:69
-msgid "shell.sync.offline-cache"
-msgstr "Ngoại tuyến, đang dùng bản lưu tạm"
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:70
+#: src/components/shell/localized-sync-status.ts:28
 msgid "shell.sync.offline-detail"
 msgstr "Thư viện của bạn vẫn dùng được khi ngoại tuyến."
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:57
+#: src/components/shell/localized-sync-status.ts:15
 msgid "shell.sync.online"
 msgstr "Trực tuyến"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:74
+#: src/components/shell/localized-sync-status.ts:32
+#: src/components/shell/localized-sync-status.ts:33
 msgid "shell.sync.paused"
 msgstr "Đám mây đã tạm dừng"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:75
-msgid "shell.sync.paused-cache"
-msgstr "Đám mây đã tạm dừng, đang dùng bản lưu tạm"
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:76
+#: src/components/shell/localized-sync-status.ts:34
 msgid "shell.sync.paused-detail"
 msgstr "Không thể cập nhật trực tiếp từ đám mây. Đang hiển thị bản sao cục bộ được đồng bộ thành công gần nhất."
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:88
-#: src/components/shell/localized-sync-status.ts:89
-msgid "shell.sync.queued"
-msgstr "Đang chờ đồng bộ"
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:92
-msgid "shell.sync.queued-many"
-msgstr "{count} thay đổi đã được lưu an toàn trên thiết bị này và đang chờ đồng bộ."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:91
-msgid "shell.sync.queued-one"
-msgstr "1 thay đổi đã được lưu an toàn trên thiết bị này và đang chờ đồng bộ."
-
-#. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:221
+#: src/app/AppRuntime.tsx:219
 msgid "shell.sync.retry-failed"
 msgstr "Không thể hoàn tất đồng bộ. Các thay đổi vẫn được giữ trên thiết bị này. Hãy thử lại."
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:58
+#: src/components/shell/localized-sync-status.ts:16
 msgid "shell.sync.saved-detail"
 msgstr "Mọi thay đổi đã được lưu."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:80
-#: src/components/shell/localized-sync-status.ts:81
-msgid "shell.sync.saving-offline"
-msgstr "Đang lưu ngoại tuyến"
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:84
-msgid "shell.sync.saving-offline-many"
-msgstr "{count} thay đổi đã được lưu an toàn trên thiết bị này và sẽ đồng bộ khi bạn kết nối lại."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:83
-msgid "shell.sync.saving-offline-one"
-msgstr "1 thay đổi đã được lưu an toàn trên thiết bị này và sẽ đồng bộ khi bạn kết nối lại."
 
 #. js-lingui-explicit-id
 #: src/components/shell/LibraryManagementMenu.tsx:289
@@ -944,25 +874,9 @@ msgid "shell.sync.sign-in"
 msgstr "Đăng nhập & đồng bộ"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:56
+#: src/components/shell/localized-sync-status.ts:14
 msgid "shell.sync.synced"
 msgstr "Đã đồng bộ"
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:96
-#: src/components/shell/localized-sync-status.ts:97
-msgid "shell.sync.syncing"
-msgstr "Đang đồng bộ"
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:100
-msgid "shell.sync.syncing-check"
-msgstr "Đang kiểm tra thay đổi trong thư viện của bạn."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:99
-msgid "shell.sync.syncing-count"
-msgstr "Đang đồng bộ {count} thay đổi vào thư viện của bạn."
 
 #. js-lingui-explicit-id
 #: src/components/shell/ThemeMenu.tsx:32

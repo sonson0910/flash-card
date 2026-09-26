@@ -86,8 +86,8 @@ describe('library Firestore query index contract', () => {
     const signatures = new Set<string>();
     for (const state of queryStates()) {
       if (isMixedRangeFamily(state)) continue;
-      const fields = cardQueryIndexFields({ ...state, courseId: 'course-ko', targetLanguage: 'ko' });
-      expect(fields[0]).toEqual({ fieldPath: 'targetLanguage', order: 'ASCENDING' });
+      const fields = cardQueryIndexFields({ ...state, targetLanguage: 'ko' });
+      expect(fields[0]).toEqual({ fieldPath: 'language', order: 'ASCENDING' });
       expect(isManifestCovered(fields)).toBe(true);
       signatures.add(JSON.stringify(fields));
     }

@@ -111,16 +111,6 @@ export function useAppLibraryRuntime({
   const sessionPorts = useLibrarySessionPorts({
     ownerAdapter: appDependencies.adapters.ownerLibrary,
     publications: {
-      library: {
-        replace: setCards,
-        advance: (cardId, advance) => setCards(previous => previous.map(card => card.id === cardId ? advance(card) : card)),
-        remove: cardId => setCards(previous => previous.filter(card => card.id !== cardId)),
-      },
-      practice: {
-        find: cardId => practicePublicationRef.current.findCard(cardId),
-        advance: (cardId, advance) => practicePublicationRef.current.updateCard(cardId, advance),
-        remove: cardId => practicePublicationRef.current.removeCard(cardId),
-      },
       cloud: {
         total: setCloudTotal,
         stats: setCloudStats,
@@ -133,7 +123,6 @@ export function useAppLibraryRuntime({
         refresh: () => setCloudRefresh(previous => previous + 1),
       },
       navigation: { resetPage: () => catalogActions.goToPage(1), previousPage: catalogActions.goToPreviousPage },
-      feedback: { error: reportError, notice: notify },
       promotedCards: () => [...recentlyPromotedCardsRef.current.values()],
     },
   });
@@ -147,17 +136,13 @@ export function useAppLibraryRuntime({
       statsOpen: isStatsOpen || viewMode === 'progress',
     },
     library: {
-      cards,
       knownTotal: Math.max(cloudTotal, cloudStats.total, cards.length),
       cloudTotal,
       cloudStatsTotal: cloudStats.total,
-      browserOnline: browserCapabilities.model.isOnline,
-      cloudUnavailable: cloudReadUnavailable,
     },
     ports: sessionPorts.ports.session,
   }, appDependencies.sessions.libraryHooks);
   const identitySession = librarySession.model.identity;
-  sessionPorts.actions.connectVerifiedEpoch(librarySession.actions.identity.acceptVerifiedOwnerEpoch);
   const user = useMemo(() => identitySession.owner ? {
     uid: identitySession.owner.id,
     displayName: identitySession.owner.displayName,
@@ -171,10 +156,8 @@ export function useAppLibraryRuntime({
   const knownLibraryTotal = user ? Math.max(cloudTotal, cloudStats.total, cards.length) : cards.length;
   const shellSyncStatus = {
     isOnline: browserCapabilities.model.isOnline,
-    isSyncing: librarySession.model.sync.isSyncing,
     isCheckingCloud: Boolean(user && !identitySession.canPublishMutations && !identitySession.error),
-    pendingCount: librarySession.model.sync.pendingCount,
-    error: librarySession.model.sync.error ?? identitySession.error,
+    error: identitySession.error,
     cloudUnavailable: cloudReadUnavailable,
   };
   cardsRef.current = cards;
@@ -203,7 +186,6 @@ export function useAppLibraryRuntime({
   }), [catalogActions, clearError, notify, reportError]);
   useLibraryCloudProjection({
     session: librarySession.model,
-    cards,
     page: catalog.page,
     publication: cloudProjectionPublication,
   });
@@ -233,7 +215,6 @@ export function useAppLibraryRuntime({
   const signOut = async () => {
     const result = await librarySession.actions.identity.signOut();
     if (result.status !== 'completed') return;
-    librarySession.actions.owner.discardCards();
     setCards([]);
   };
 
@@ -256,12 +237,11 @@ export function useAppLibraryRuntime({
     actions: {
       catalog: catalogActions,
       exportLibrary,
-      syncNow: librarySession.actions.sync.syncNow,
       signIn: librarySession.actions.identity.signIn,
       signOut,
       migrateLegacyCards,
       clearAuthError: librarySession.actions.identity.clearError,
-      retrySync: librarySession.actions.sync.retry,
+      retrySync: async () => { setCloudRefresh(value => value + 1); },
     },
     ports: {
       setCards,

@@ -15,10 +15,6 @@ import {
   applyLibraryFacetMutationInTransaction,
   libraryFacetRestoreOperationId,
 } from './libraryFacetPersistence.js';
-import {
-  mirrorCourseCardIndexInTransaction,
-  prepareCourseCardIndexMirrorInTransaction,
-} from './course-card-index-persistence.js';
 
 export const MAX_CARD_ALLOCATION = 5_000;
 const MAX_PROTOCOL_COUNTER = Number.MAX_SAFE_INTEGER;
@@ -359,6 +355,11 @@ export const canonicalCard = (value: unknown): CardRecord => {
       throw new InputValidationError('Card lexeme identity does not match its tuple.');
     }
   }
+  // Card creation always writes an explicit language (defaulting to the
+  // legacy English target) so course-scoped queries never depend on a
+  // missing field meaning "en". Canonical lexeme identity already requires
+  // an explicit language above.
+  const effectiveLanguage = hasCanonicalIdentity ? language : (language ?? 'en');
 
   const difficulty = source.difficulty === undefined ? 'unrated' : source.difficulty;
   if (typeof difficulty !== 'string' || !CARD_DIFFICULTIES.has(difficulty)) {
@@ -373,11 +374,11 @@ export const canonicalCard = (value: unknown): CardRecord => {
   const now = new Date().toISOString();
   const createdAt = optionalDate(source.createdAt, 'createdAt') ?? now;
   const result: CardRecord = {
-    id: hasCanonicalIdentity ? lexemeId as string : targetAwareCardId(identity, language ?? 'en'),
+    id: hasCanonicalIdentity ? lexemeId as string : targetAwareCardId(identity, effectiveLanguage ?? 'en'),
     ...(source.origin === undefined ? {} : { origin: source.origin }),
     word,
     normalizedWord: identity,
-    ...(language === undefined ? {} : { language }),
+    ...(effectiveLanguage === undefined ? {} : { language: effectiveLanguage }),
     ...(translationLanguage === undefined ? {} : { translationLanguage }),
     ...(hasCanonicalIdentity ? { lexemeId, senseKey, normalizedLemma: normalizedLemma || suppliedIdentity } : {}),
     translation: boundedText(source.translation, 'translation', 256),
@@ -755,7 +756,6 @@ export async function createCardForOwner(
       const normalizedExisting = isStrictCurrent
         ? existingCard
         : canonicalExistingCard(existingCard, id, identity, currentEpoch);
-      await mirrorCourseCardIndexInTransaction(database, transaction, ownerId, id, normalizedExisting);
       if (!isStrictCurrent) {
         transaction.set(canonical, normalizedExisting, { merge: false });
       }
@@ -805,18 +805,10 @@ export async function createCardForOwner(
         delta: { [String(normalizedCard.category || 'Other')]: 1 },
       });
     };
-    const preparedMirror = await prepareCourseCardIndexMirrorInTransaction(
-      database,
-      transaction,
-      ownerId,
-      id,
-      createdCard,
-    );
     if (!hadIdentity) {
       const currentCount = safeStoredCardCount(usageSnapshot) ?? existingCardCount;
       if (currentCount >= maximumCards) throw new CardAllocationLimitError();
       await applyRestoreFacetDelta();
-      preparedMirror.apply();
       transaction.create(reservation, expectedReservation);
       if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
       else transaction.create(canonical, createdCard);
@@ -832,7 +824,6 @@ export async function createCardForOwner(
     }
 
     await applyRestoreFacetDelta();
-    preparedMirror.apply();
     if (existingCard && !existingReservation) transaction.create(reservation, expectedReservation);
     if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
     else transaction.create(canonical, createdCard);

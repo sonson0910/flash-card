@@ -453,10 +453,6 @@ service cloud.firestore {
       return value in ['en', 'vi'];
     }
 
-    function isValidCourseTargetLanguage(value) {
-      return value in ['en', 'ko', 'ja', 'zh'];
-    }
-
     function isValidCardReservation(reservationId, data) {
       return (data.keys().hasAll(['schemaVersion', 'cardId', 'normalizedWord'])
           && data.keys().hasOnly(['schemaVersion', 'cardId', 'normalizedWord'])
@@ -789,6 +785,15 @@ service cloud.firestore {
         && (!removedCanonicalKey || isCanonical)
         && !changed.hasAny(['origin'])
         && !changed.hasAny(['language', 'translationLanguage'])
+        // language/translationLanguage are immutable after creation (the
+        // guard above), so an update never introduces a malformed value
+        // through this diff; it only ever carries an already-stored value
+        // forward. Revalidating it here still catches a card whose stored
+        // value predates this shape (or was written directly), so an
+        // unrelated field update can never silently keep coasting on a
+        // corrupt language forever.
+        && (!fields.hasAny(['language']) || isValidStoredCardLanguage(data.language))
+        && (!fields.hasAny(['translationLanguage']) || isValidStoredTranslationLanguage(data.translationLanguage))
         && (isCanonical || fields.hasAll(['id', 'word', 'translation']))
         && (!fields.hasAny(['lexemeId', 'senseKey', 'normalizedLemma'])
           || (fields.hasAll(['lexemeId', 'language', 'senseKey', 'partOfSpeech', 'normalizedLemma'])
@@ -800,290 +805,6 @@ service cloud.firestore {
                 && data.partOfSpeech == resource.data.partOfSpeech
                 && data.normalizedLemma == resource.data.normalizedLemma))))
         && isValidChangedCardFields(data, changed);
-    }
-
-    function isCanonicalCourseIndexTimestamp(value) {
-      return value is string
-        && value.size() == 24
-        && value.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$');
-    }
-
-    // The projection builder trims and normalizes source strings. Rules cannot
-    // reproduce NFKC/date parsing, so direct client mirror writes are accepted
-    // only for already-canonical values and for defaults whose output is exact.
-    function isCanonicalCourseIndexText(value, maximum) {
-      return value is string
-        && value.size() <= maximum
-        && value.matches('^[^\\s](?:.*[^\\s])?$');
-    }
-
-    function courseIndexNormalizedWordMatches(source, projection) {
-      let normalized = source.get('normalizedWord', '');
-      let word = source.get('word', '');
-      return (
-        normalized is string
-        && normalized.size() > 0
-        && isCanonicalCourseIndexText(normalized, 256)
-        && projection.normalizedWord == normalized
-      ) || (
-        (!source.keys().hasAny(['normalizedWord']) || normalized == '')
-        && word is string
-        && (word == '' || isCanonicalCourseIndexText(word, 256))
-        && projection.normalizedWord == word.lower()
-      );
-    }
-
-    function courseIndexCategoryMatches(source, projection) {
-      let value = source.get('category', null);
-      return (
-        !(value is string)
-        || value == ''
-        || value.matches('^\\s+$')
-      )
-        ? projection.category == 'Other'
-        : isCanonicalCourseIndexText(value, 128)
-          && projection.category == value;
-    }
-
-    function courseIndexPartOfSpeechMatches(source, projection) {
-      let value = source.get('partOfSpeech', '');
-      return !(value is string) || value == ''
-        ? projection.partOfSpeech == ''
-        : value.size() <= 64
-          && value.matches('^[A-Za-z]+(?: [A-Za-z]+)*$')
-          && projection.partOfSpeech == value.lower();
-    }
-
-    function courseIndexCustomDeckMatches(source, projection) {
-      let value = source.get('customDeck', null);
-      return (
-        !(value is string)
-        || value == ''
-        || value.matches('^\\s+$')
-      )
-        ? projection.customDeck == null
-        : isCanonicalCourseIndexText(value, 128)
-          && projection.customDeck == value;
-    }
-
-    function courseIndexDifficultyMatches(source, projection) {
-      let value = source.get('difficulty', '');
-      return value is string && value in ['easy', 'good', 'hard', 'unrated']
-        ? projection.difficulty == value
-        : projection.difficulty == 'unrated';
-    }
-
-    function courseIndexBookmarkMatches(source, projection) {
-      return source.get('bookmarked', false) == true
-        ? projection.bookmarked == true
-        : projection.bookmarked == false;
-    }
-
-    function courseIndexCreatedAtMatches(source, projection) {
-      let value = source.get('createdAt', null);
-      return value is string
-        ? isCanonicalCourseIndexTimestamp(value) && projection.createdAt == value
-        : projection.createdAt == '1970-01-01T00:00:00.000Z';
-    }
-
-    function courseIndexNextReviewDateMatches(source, projection) {
-      let value = source.get('nextReviewDate', null);
-      return value is string
-        ? isCanonicalCourseIndexTimestamp(value)
-          && projection.keys().hasAny(['nextReviewDate'])
-          && projection.nextReviewDate == value
-        : !projection.keys().hasAny(['nextReviewDate']);
-    }
-
-    function isCourseIndexProjectionEquivalent(cardId, source, projection) {
-      let sourceLanguage = source.get('language', '');
-      let hasExplicitLanguage = source.keys().hasAny(['language']);
-      let sourceEpoch = source.get('libraryEpoch', null);
-      let sourceRevision = source.get('revision', null);
-      return projection.keys().hasAll([
-          'schemaVersion', 'cardId', 'targetLanguage', 'sourceLibraryEpoch', 'sourceRevision',
-          'normalizedWord', 'category', 'partOfSpeech', 'customDeck', 'difficulty',
-          'bookmarked', 'createdAt'
-        ])
-        && projection.keys().hasOnly([
-          'schemaVersion', 'cardId', 'targetLanguage', 'sourceLibraryEpoch', 'sourceRevision',
-          'normalizedWord', 'category', 'partOfSpeech', 'customDeck', 'difficulty',
-          'bookmarked', 'createdAt', 'nextReviewDate'
-        ])
-        && projection.schemaVersion == 1
-        && isValidId(cardId)
-        && projection.cardId == cardId
-        && isValidCourseTargetLanguage(projection.targetLanguage)
-        && (
-          (!hasExplicitLanguage && projection.targetLanguage == 'en')
-          || (
-            hasExplicitLanguage
-            && isValidCourseTargetLanguage(sourceLanguage)
-            && projection.targetLanguage == sourceLanguage
-          )
-        )
-        && isValidProtocolCounter(projection.sourceLibraryEpoch)
-        && (
-          (isValidProtocolCounter(sourceEpoch) && projection.sourceLibraryEpoch == sourceEpoch)
-          || (!isValidProtocolCounter(sourceEpoch) && projection.sourceLibraryEpoch == 0)
-        )
-        && (
-          (isValidProtocolCounter(projection.sourceRevision)
-            && isValidProtocolCounter(sourceRevision)
-            && projection.sourceRevision == sourceRevision)
-          || (projection.sourceRevision == null && !isValidProtocolCounter(sourceRevision))
-        )
-        && projection.normalizedWord is string
-        && projection.normalizedWord.size() <= 256
-        && projection.category is string
-        && projection.category.size() <= 128
-        && projection.partOfSpeech is string
-        && projection.partOfSpeech.size() <= 64
-        && (projection.customDeck == null || isBoundedText(projection.customDeck, 128))
-        && projection.difficulty in ['easy', 'good', 'hard', 'unrated']
-        && projection.bookmarked is bool
-        && isCanonicalCourseIndexTimestamp(projection.createdAt)
-        && (!projection.keys().hasAny(['nextReviewDate']) || isCanonicalCourseIndexTimestamp(projection.nextReviewDate))
-        && courseIndexNormalizedWordMatches(source, projection)
-        && courseIndexCategoryMatches(source, projection)
-        && courseIndexPartOfSpeechMatches(source, projection)
-        && courseIndexCustomDeckMatches(source, projection)
-        && courseIndexDifficultyMatches(source, projection)
-        && courseIndexBookmarkMatches(source, projection)
-        && courseIndexCreatedAtMatches(source, projection)
-        && courseIndexNextReviewDateMatches(source, projection);
-    }
-
-    // The pointer and generation documents read below are Admin-SDK-only
-    // (their own match blocks deny every direct client create/update/delete),
-    // so trusted server code is the only writer and already guarantees their
-    // exact shape. The Rules per-request expression ceiling (1,000; see
-    // https://firebase.google.com/docs/firestore/security/rules-structure)
-    // is nearly exhausted by the pre-existing isValidCardUpdate/
-    // isValidChangedCardFields chain alone, so the update-path course-index
-    // check below is written for minimum expression cost, not merely
-    // "shortest correct check": it trusts pointer/generation shape instead
-    // of re-deriving it, and proves mirror freshness via the revision that
-    // already links a card write to its same-transaction projection write
-    // (see hasCourseIndexSourceMutation/sourceRevision in the projection's
-    // own create/update rule below) instead of re-comparing every field.
-    // isCompatibleCourseIndexGeneration keeps full validation for the
-    // projection and delete paths, which have expression headroom.
-    function isCurrentCourseIndexPointer(userId) {
-      let pointer = /databases/$(database)/documents/users/$(userId)/profile/course_query_index;
-      return existsAfter(pointer)
-        ? (
-          getAfter(pointer).data.schemaVersion == 1
-          && isValidProtocolCounter(getAfter(pointer).data.libraryEpoch)
-          && getAfter(pointer).data.libraryEpoch == currentLibraryEpoch(userId)
-          && (
-            getAfter(pointer).data.activeGenerationId == null
-            || isValidId(getAfter(pointer).data.activeGenerationId)
-          )
-          && (
-            getAfter(pointer).data.buildingGenerationId == null
-            || isValidId(getAfter(pointer).data.buildingGenerationId)
-          )
-        )
-        : false;
-    }
-
-    function isCompatibleCourseIndexGeneration(userId, generationId) {
-      let generation = /databases/$(database)/documents/users/$(userId)/course_query_generations/$(generationId);
-      return existsAfter(generation)
-        ? (
-          getAfter(generation).data.schemaVersion == 1
-          && getAfter(generation).data.libraryEpoch == currentLibraryEpoch(userId)
-          && getAfter(generation).data.status in ['building', 'ready']
-        )
-        : false;
-    }
-
-    // Minimum-cost mirror-freshness proof for the cards/{cardId} update path.
-    // A projection row can only be created/updated in the same transaction as
-    // a source mutation, and its own rule requires
-    // sourceRevision == getAfter(source).revision. A card update itself
-    // always advances revision by exactly one (canUpdateCurrentCard). So a
-    // projection row whose cardId and sourceRevision match this write's new
-    // revision could only have been written together with this exact update;
-    // a stale (untouched-this-transaction) row keeps its old sourceRevision
-    // and fails this check. This intentionally skips the pointer/generation
-    // shape re-validation and the per-field match helpers that the
-    // projection's own create/update rule already enforces.
-    function hasCourseIndexMirrorUpdate(userId, generationId, cardId, revision) {
-      let projection = /databases/$(database)/documents/users/$(userId)/course_query_generations/$(generationId)/cards/$(cardId);
-      return existsAfter(projection) && getAfter(projection).data.sourceRevision == revision;
-    }
-
-    function hasCourseIndexMirrorDelete(userId, generationId, cardId) {
-      let projection = /databases/$(database)/documents/users/$(userId)/course_query_generations/$(generationId)/cards/$(cardId);
-      return isCompatibleCourseIndexGeneration(userId, generationId)
-        ? !existsAfter(projection)
-        : true;
-    }
-
-    // source's own scalar fields (libraryEpoch, revision) are read out once
-    // here and passed on as plain values, not the source map itself: passing
-    // the whole ~40-field card map two calls deep and dereferencing a field
-    // on it there, alongside a second document's getAfter(...).data, was
-    // measured to cost far more than reading the same two scalars once at
-    // this shallower call depth and threading them down instead.
-    function hasCourseIndexMirrorsForUpdate(userId, cardId, source) {
-      let pointer = /databases/$(database)/documents/users/$(userId)/profile/course_query_index;
-      let libraryEpoch = source.get('libraryEpoch', null);
-      let revision = source.get('revision', 0);
-      // A pointer whose libraryEpoch no longer matches the current library is
-      // stale: it is about to be/being invalidated and does not describe the
-      // course index for this write, so it must not block an otherwise
-      // legitimate card patch that does not touch mirrors. canUpdateCurrentCard
-      // (evaluated earlier in the same allow-update chain) already proves
-      // source.libraryEpoch == currentLibraryEpoch(userId), so comparing
-      // against libraryEpoch here is equivalent to, but far cheaper than, a
-      // fresh currentLibraryEpoch(userId) call.
-      return existsAfter(pointer) && getAfter(pointer).data.libraryEpoch == libraryEpoch
-        ? (
-          (
-            getAfter(pointer).data.activeGenerationId == null
-              ? true
-              : hasCourseIndexMirrorUpdate(userId, getAfter(pointer).data.activeGenerationId, cardId, revision)
-          )
-          && (
-            getAfter(pointer).data.buildingGenerationId == null
-              ? true
-              : hasCourseIndexMirrorUpdate(userId, getAfter(pointer).data.buildingGenerationId, cardId, revision)
-          )
-        )
-        : true;
-    }
-
-    function hasCourseIndexMirrorsForDelete(userId, cardId) {
-      let pointer = /databases/$(database)/documents/users/$(userId)/profile/course_query_index;
-      return isCurrentCourseIndexPointer(userId)
-        ? (
-          (
-            getAfter(pointer).data.activeGenerationId == null
-              ? true
-              : hasCourseIndexMirrorDelete(userId, getAfter(pointer).data.activeGenerationId, cardId)
-          )
-          && (
-            getAfter(pointer).data.buildingGenerationId == null
-              ? true
-              : hasCourseIndexMirrorDelete(userId, getAfter(pointer).data.buildingGenerationId, cardId)
-          )
-        )
-        : true;
-    }
-
-    function hasCourseIndexSourceMutation(userId, cardId) {
-      let source = /databases/$(database)/documents/users/$(userId)/cards/$(cardId);
-      return exists(source)
-        && existsAfter(source)
-        && getAfter(source).data.diff(get(source).data).affectedKeys().size() > 0;
-    }
-
-    function hasCourseIndexSourceDelete(userId, cardId) {
-      let source = /databases/$(database)/documents/users/$(userId)/cards/$(cardId);
-      return exists(source) && !existsAfter(source);
     }
 
     // One shared currentLibraryEpoch(userId) lookup for the whole update
@@ -1109,8 +830,7 @@ service cloud.firestore {
             ])
           )
         )
-        && canUpdateCurrentCard(data, epoch)
-        && hasCourseIndexMirrorsForUpdate(userId, cardId, data);
+        && canUpdateCurrentCard(data, epoch);
     }
 
     // Target match rules for Cards
@@ -1126,26 +846,7 @@ service cloud.firestore {
         && (
           isOldCardGeneration(userId, resource.data)
           || hasValidDeletionBarrier(userId, cardId, resource.data)
-        )
-        && hasCourseIndexMirrorsForDelete(userId, cardId);
-    }
-
-    // Projection rows are derived data. A client may touch one only in the
-    // same transaction as a source-card mutation, and only with the exact
-    // post-mutation projection for a current active/building generation.
-    match /users/{userId}/course_query_generations/{generationId}/cards/{cardId} {
-      allow read: if isOwner(userId);
-      allow create, update: if isOwner(userId)
-        && isCompatibleCourseIndexGeneration(userId, generationId)
-        && hasCourseIndexSourceMutation(userId, cardId)
-        && isCourseIndexProjectionEquivalent(
-          cardId,
-          getAfter(/databases/$(database)/documents/users/$(userId)/cards/$(cardId)).data,
-          request.resource.data,
         );
-      allow delete: if isOwner(userId)
-        && isCompatibleCourseIndexGeneration(userId, generationId)
-        && hasCourseIndexSourceDelete(userId, cardId);
     }
 
     // A permanent user-scoped claim for one normalized card identity.
@@ -1197,16 +898,6 @@ service cloud.firestore {
     // Course profile and query-index control state are server-owned. Owners
     // may read their own documents; callable/Admin code performs every write.
     match /users/{userId}/profile/courses {
-      allow read: if isOwner(userId);
-      allow create, update, delete: if false;
-    }
-
-    match /users/{userId}/profile/course_query_index {
-      allow read: if isOwner(userId);
-      allow create, update, delete: if false;
-    }
-
-    match /users/{userId}/course_query_generations/{generationId} {
       allow read: if isOwner(userId);
       allow create, update, delete: if false;
     }
@@ -1293,7 +984,6 @@ service cloud.firestore {
       // Keep the supported-name exclusions visible to source-level guards.
       // profileDocId != 'library_state'
       // profileDocId != 'courses'
-      // profileDocId != 'course_query_index'
       // profileDocId != 'stats'
       // profileDocId != 'plan'
       // profileDocId != 'xp_history'

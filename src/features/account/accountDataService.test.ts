@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { gamificationStorageKeys } from '../gamification/gamificationStorage';
-import { ownerScopedCardCacheKey, serializeOwnerScopedCardCache } from '../library/ownerScopedCardCache';
 import { deleteAccount, LocalAccountCleanupError, removeOwnerLocalKeys } from './accountDataService';
 
 describe('account deletion local cleanup', () => {
@@ -13,7 +12,6 @@ describe('account deletion local cleanup', () => {
       ['lingoflash_cloud_page_owner-b', 'keep'],
       ['lingoflash_no_image_v1_owner-a_card', 'private'],
       ['lingoflash_no_image_v1_owner-b_card', 'keep'],
-      [ownerScopedCardCacheKey, serializeOwnerScopedCardCache('owner-a', [{ id: 'private' }])],
       ['lingoflash_shared_deck_operation_v1', 'private'],
     ]);
     const session = new Map([['lingoflash_word_draft', 'private'], ['lingoflash_word_operation', 'private']]);
@@ -25,7 +23,6 @@ describe('account deletion local cleanup', () => {
     };
     removeOwnerLocalKeys(storage, { removeItem: key => { session.delete(key); } }, 'owner-a');
     for (const key of Object.values(gamificationStorageKeys('owner-a'))) expect(values.has(key)).toBe(false);
-    expect(values.has(ownerScopedCardCacheKey)).toBe(false);
     expect(values.has('lingoflash_no_image_v1_owner-a_card')).toBe(false);
     expect(values.has('lingoflash_shared_deck_operation_v1')).toBe(false);
     expect(values.get('lingoflash_cloud_page_owner-b')).toBe('keep');
@@ -47,12 +44,6 @@ const authentication = vi.hoisted(() => ({
   signOut: vi.fn(),
 }));
 
-const localData = vi.hoisted(() => ({
-  clearMirroredCards: vi.fn(),
-  clearDevicePending: vi.fn(),
-  saveDeviceCards: vi.fn(),
-}));
-
 vi.mock('firebase/functions', () => ({
   getFunctions: functions.getFunctions,
   httpsCallable: functions.httpsCallable,
@@ -67,15 +58,6 @@ vi.mock('firebase/auth', () => ({
 vi.mock('../../lib/firebase', () => ({
   auth: authentication.auth,
   app: {},
-}));
-
-vi.mock('../../lib/cardMirror', () => ({
-  clearMirroredCards: localData.clearMirroredCards,
-}));
-
-vi.mock('../../lib/deviceSync', () => ({
-  clearDevicePending: localData.clearDevicePending,
-  saveDeviceCards: localData.saveDeviceCards,
 }));
 
 const fakeStorage = () => {
@@ -97,9 +79,6 @@ describe('deleteAccount', () => {
     authentication.auth.currentUser = { uid: 'user-1', getIdToken: vi.fn(async () => 'fresh-token') };
     authentication.reauthenticateWithPopup.mockResolvedValue(undefined);
     authentication.signOut.mockResolvedValue(undefined);
-    localData.clearMirroredCards.mockResolvedValue(undefined);
-    localData.clearDevicePending.mockResolvedValue(undefined);
-    localData.saveDeviceCards.mockResolvedValue(undefined);
     functions.getFunctions.mockReturnValue({ region: 'asia-southeast1' });
     functions.httpsCallable.mockReturnValue(functions.callable);
   });
@@ -116,7 +95,6 @@ describe('deleteAccount', () => {
     );
     expect(functions.callable).toHaveBeenCalledWith({ confirmation: 'XÓA TÀI KHOẢN'.normalize('NFC') });
     expect(authentication.signOut).toHaveBeenCalledOnce();
-    expect(localData.clearMirroredCards).toHaveBeenCalledWith('user-1');
   });
 
   it('rethrows a validation error without clearing local data or signing out', async () => {
@@ -125,7 +103,6 @@ describe('deleteAccount', () => {
     await expect(deleteAccount('wrong phrase')).rejects.toThrow('bad phrase');
 
     expect(authentication.signOut).not.toHaveBeenCalled();
-    expect(localData.clearMirroredCards).not.toHaveBeenCalled();
   });
 
   it('treats a timeout or internal error as a started deletion and still clears local data', async () => {
@@ -135,13 +112,14 @@ describe('deleteAccount', () => {
 
     expect(result).toBe('started');
     expect(authentication.signOut).toHaveBeenCalledOnce();
-    expect(localData.clearMirroredCards).toHaveBeenCalledWith('user-1');
-    expect(localData.clearDevicePending).toHaveBeenCalledWith('user-1');
   });
 
   it('signs out even when local cleanup fails after a started deletion', async () => {
     functions.callable.mockRejectedValue(Object.assign(new Error('internal'), { code: 'functions/internal' }));
-    localData.clearMirroredCards.mockRejectedValue(new Error('indexeddb unavailable'));
+    vi.stubGlobal('localStorage', {
+      ...fakeStorage(),
+      removeItem: () => { throw new Error('storage unavailable'); },
+    });
 
     await expect(deleteAccount('XÓA TÀI KHOẢN')).rejects.toBeInstanceOf(LocalAccountCleanupError);
 

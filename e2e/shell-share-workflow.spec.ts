@@ -301,22 +301,6 @@ for (const theme of themes) {
       await expectReducedMotion(page, `${matrixName}-error`);
       await capture(page, testInfo, `system-error-${matrixName}`);
 
-      await openFixture(page, { ...routeBase, view: 'system', state: 'sync-error' });
-      await expect(page.locator('.workspace-sync-panel--failure')).toBeVisible();
-      await expect(page.locator('.workspace-sync-panel--failure .workspace-sync-button--primary')).toBeEnabled();
-      await expect(page.locator('[data-notification-toast]')).toHaveCount(0);
-      await expectAccessibleAndContained(page, `${matrixName}-sync-error`);
-      await expectReducedMotion(page, `${matrixName}-sync-error`);
-      await capture(page, testInfo, `system-sync-error-${matrixName}`);
-
-      await openFixture(page, { ...routeBase, view: 'system', state: 'offline' });
-      await expect(page.locator('.workspace-sync-panel--offline')).toBeVisible();
-      await expect(page.locator('.workspace-sync-panel--offline .workspace-sync-button--primary')).toBeEnabled();
-      await expect(page.getByText('adapt')).toBeVisible();
-      await expectAccessibleAndContained(page, `${matrixName}-offline`);
-      await expectReducedMotion(page, `${matrixName}-offline`);
-      await capture(page, testInfo, `system-offline-${matrixName}`);
-
       await openFixture(page, { ...routeBase, view: 'today-caught-up' });
       await expect(page.locator('[data-today-caught-up="true"]')).toBeVisible();
       await expect(page.locator('[data-today-caught-up="true"] .today-caught-up-primary')).toBeDisabled();
@@ -473,12 +457,6 @@ test('account feedback dismissal, retry and menu identity actions use real shell
   await page.getByRole('button', { name: 'Dismiss success message' }).click();
   await page.getByRole('button', { name: 'Dismiss sync status' }).click();
   await expect(page.locator('[data-notification-toast]')).toHaveCount(0);
-
-  await openFixture(page, { view: 'system', state: 'sync-error', locale: 'en' });
-  await page.getByRole('button', { name: 'Retry sync' }).click();
-  await expect(page.locator('[data-sync-retry-count]')).toHaveText('1');
-  await expect(page.locator('[data-fixture-sync-status]')).toContainText('syncing');
-  await expect(page.locator('.workspace-sync-panel')).toHaveCount(0);
 
   await openFixture(page, { view: 'account', locale: 'en' });
   const trigger = page.getByRole('button', { name: 'Manage library' });

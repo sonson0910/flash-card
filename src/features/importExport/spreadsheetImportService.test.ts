@@ -6,6 +6,7 @@ import { createLexemeId } from '../multilingual/lexemeIdentity';
 import {
   createSpreadsheetImportService,
   SpreadsheetImportStaleError,
+  SpreadsheetUnsupportedFormatError,
   type CardIntakePort,
   type SpreadsheetImportFeedbackPort,
 } from './spreadsheetImportService';
@@ -264,6 +265,21 @@ describe('spreadsheet import service', () => {
       message: 'No cards were imported: 2 items failed. Check your sign-in and connection, then try again.',
     });
     expect(events).toContain(`error:${result.message}`);
+  });
+
+  it('surfaces the specific .xls re-save message instead of the generic read failure', async () => {
+    const { events, feedback, cards } = createFakePorts();
+    const importer = createSpreadsheetImportService({ cards, feedback });
+    const specificMessage = "Legacy .xls files aren't supported. Re-save the file as .xlsx or .csv, then try again.";
+
+    const result = await importer.import({
+      sizeBytes: 1024,
+      loadWorkbook: async () => { throw new SpreadsheetUnsupportedFormatError(specificMessage); },
+    });
+
+    expect(result).toMatchObject({ status: 'failed', reason: 'read', message: specificMessage });
+    expect(events).toContain(`error:${specificMessage}`);
+    expect(events).not.toContain('error:Could not read this spreadsheet. Make sure it is a valid Excel or CSV file, then try again.');
   });
 
   it('reports workbook failures and runs cleanup in deterministic order', async () => {

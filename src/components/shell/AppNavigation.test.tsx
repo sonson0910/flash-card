@@ -25,7 +25,7 @@ describe('app shell navigation', () => {
       <DesktopNavigation
         viewMode="library"
         syncIdentity={{ status: 'signed-out', isConfigured: false, isSigningIn: false }}
-        syncStatus={{ isOnline: true, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: false }}
+        syncStatus={{ isOnline: true, error: null, cloudUnavailable: false }}
         isDarkMode
         libraryCountLabel="0 WORDS"
         onOpenToday={vi.fn()}
@@ -48,7 +48,7 @@ describe('app shell navigation', () => {
       <DesktopNavigation
         viewMode="library"
         syncIdentity={{ status: 'authenticated', displayName: 'Learner', email: 'learner@example.com', photoUrl: null }}
-        syncStatus={{ isOnline: true, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: false }}
+        syncStatus={{ isOnline: true, error: null, cloudUnavailable: false }}
         isDarkMode={false}
         libraryCountLabel="8 WORDS"
         streak={5}
@@ -90,12 +90,12 @@ describe('app shell navigation', () => {
     expect(html).not.toContain('liquid-glass hidden lg:flex');
   });
 
-  it('does not label an authenticated account as synced while changes are queued', () => {
+  it('does not label an authenticated account as synced while the cloud listener is paused', () => {
     const html = renderNavigation(
       <DesktopNavigation
         viewMode="library"
         syncIdentity={{ status: 'authenticated', displayName: 'Learner', email: 'learner@example.com', photoUrl: null }}
-        syncStatus={{ isOnline: true, isSyncing: false, pendingCount: 12, error: null, cloudUnavailable: false }}
+        syncStatus={{ isOnline: true, error: null, cloudUnavailable: true }}
         isDarkMode={false}
         libraryCountLabel="8 WORDS"
         onOpenToday={vi.fn()}
@@ -107,7 +107,7 @@ describe('app shell navigation', () => {
       />,
     );
 
-    expect(html).toContain('Waiting to sync');
+    expect(html).toContain('Cloud paused');
     expect(html).not.toContain('>Synced<');
     expect(html).not.toContain('claude-streak');
     expect(html).not.toContain('claude-level');
@@ -118,7 +118,7 @@ describe('app shell navigation', () => {
       <DesktopNavigation
         viewMode="library"
         syncIdentity={{ status: 'signed-out', isConfigured: false, isSigningIn: false }}
-        syncStatus={{ isOnline: true, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: false }}
+        syncStatus={{ isOnline: true, error: null, cloudUnavailable: false }}
         isDarkMode={false}
         libraryCountLabel="8 WORDS"
         onOpenToday={vi.fn()}
@@ -140,7 +140,7 @@ describe('app shell navigation', () => {
       <DesktopNavigation
         viewMode="library"
         syncIdentity={{ status: 'authenticated', displayName: 'Learner', email: 'learner@example.com', photoUrl: null }}
-        syncStatus={{ isOnline: true, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: false }}
+        syncStatus={{ isOnline: true, error: null, cloudUnavailable: false }}
         isDarkMode={false}
         libraryCountLabel="8 WORDS"
         sessionLost

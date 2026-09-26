@@ -289,7 +289,7 @@ msgid "shell.language.open"
 msgstr "Choose language"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:294
+#: src/app/AppRuntime.tsx:293
 msgid "shell.learning-workspace"
 msgstr "Learning workspace"
 
@@ -473,7 +473,7 @@ msgstr "Primary navigation"
 
 #. js-lingui-explicit-id
 #: src/app/AppDeferredViews.tsx:22
-#: src/app/AppRuntime.tsx:356
+#: src/app/AppRuntime.tsx:341
 msgid "shell.opening-dialog"
 msgstr "Opening dialog"
 
@@ -804,13 +804,13 @@ msgstr "{count} day streak"
 #. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:56
 #: src/components/shell/LibraryManagementMenu.tsx:189
-#: src/components/shell/localized-sync-status.ts:62
-#: src/components/shell/localized-sync-status.ts:63
+#: src/components/shell/localized-sync-status.ts:20
+#: src/components/shell/localized-sync-status.ts:21
 msgid "shell.sync.checking"
 msgstr "Checking cloud…"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:64
+#: src/components/shell/localized-sync-status.ts:22
 msgid "shell.sync.checking-detail"
 msgstr "Verifying your cloud session."
 
@@ -821,38 +821,8 @@ msgid "shell.sync.device"
 msgstr "On this device"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:15
-msgid "shell.sync.error.access-denied"
-msgstr "Cloud access was denied. Your changes are safe on this device; sign in again or ask the app administrator to update Firebase access, then retry."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:33
-msgid "shell.sync.error.configuration"
-msgstr "This app and its cloud configuration are out of sync. Your changes are safe; update the cloud configuration, then retry."
-
-#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:38
 #: src/components/shell/localized-sync-status.ts:39
-msgid "shell.sync.error.generic"
-msgstr "Sync is temporarily unavailable. Your changes are still safe on this device."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:27
-msgid "shell.sync.error.quota"
-msgstr "Firebase's daily read limit has been reached. Changes stay safe on this device until the quota resets."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:9
-msgid "shell.sync.error.storage-blocked"
-msgstr "Another SonFlash tab is blocking local sync storage. Close other SonFlash tabs, then retry syncing. Your changes remain safe on this device."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:21
-msgid "shell.sync.error.unavailable"
-msgstr "Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:104
-#: src/components/shell/localized-sync-status.ts:105
 msgid "shell.sync.needs-attention"
 msgstr "Needs attention"
 
@@ -862,81 +832,41 @@ msgid "shell.sync.now"
 msgstr "Sync now"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:68
+#: src/components/shell/localized-sync-status.ts:26
+#: src/components/shell/localized-sync-status.ts:27
 msgid "shell.sync.offline"
 msgstr "Offline"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:69
-msgid "shell.sync.offline-cache"
-msgstr "Offline, using cache"
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:70
+#: src/components/shell/localized-sync-status.ts:28
 msgid "shell.sync.offline-detail"
 msgstr "Your library is available offline."
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:57
+#: src/components/shell/localized-sync-status.ts:15
 msgid "shell.sync.online"
 msgstr "Online"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:74
+#: src/components/shell/localized-sync-status.ts:32
+#: src/components/shell/localized-sync-status.ts:33
 msgid "shell.sync.paused"
 msgstr "Cloud paused"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:75
-msgid "shell.sync.paused-cache"
-msgstr "Cloud paused, using cache"
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:76
+#: src/components/shell/localized-sync-status.ts:34
 msgid "shell.sync.paused-detail"
 msgstr "Live cloud updates are unavailable. Showing the last successful local copy."
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:88
-#: src/components/shell/localized-sync-status.ts:89
-msgid "shell.sync.queued"
-msgstr "Waiting to sync"
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:92
-msgid "shell.sync.queued-many"
-msgstr "{count} changes are safe on this device and waiting to sync."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:91
-msgid "shell.sync.queued-one"
-msgstr "1 change is safe on this device and waiting to sync."
-
-#. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:221
+#: src/app/AppRuntime.tsx:219
 msgid "shell.sync.retry-failed"
 msgstr "Sync could not finish. Your changes remain on this device. Try again."
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:58
+#: src/components/shell/localized-sync-status.ts:16
 msgid "shell.sync.saved-detail"
 msgstr "All changes are saved."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:80
-#: src/components/shell/localized-sync-status.ts:81
-msgid "shell.sync.saving-offline"
-msgstr "Saving offline"
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:84
-msgid "shell.sync.saving-offline-many"
-msgstr "{count} changes are safe on this device and will sync when you reconnect."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:83
-msgid "shell.sync.saving-offline-one"
-msgstr "1 change is safe on this device and will sync when you reconnect."
 
 #. js-lingui-explicit-id
 #: src/components/shell/LibraryManagementMenu.tsx:289
@@ -944,25 +874,9 @@ msgid "shell.sync.sign-in"
 msgstr "Sign in & sync"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:56
+#: src/components/shell/localized-sync-status.ts:14
 msgid "shell.sync.synced"
 msgstr "Synced"
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:96
-#: src/components/shell/localized-sync-status.ts:97
-msgid "shell.sync.syncing"
-msgstr "Syncing"
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:100
-msgid "shell.sync.syncing-check"
-msgstr "Checking your library for changes."
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:99
-msgid "shell.sync.syncing-count"
-msgstr "Syncing {count} changes to your library."
 
 #. js-lingui-explicit-id
 #: src/components/shell/ThemeMenu.tsx:32

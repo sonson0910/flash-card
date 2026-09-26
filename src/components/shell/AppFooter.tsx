@@ -11,7 +11,7 @@ export interface AppFooterProps {
 
 export function AppFooter({ viewMode, libraryCountLabel, syncStatus }: AppFooterProps) {
   const { _ } = useLingui();
-  const status = localizeShellSyncStatus(getShellSyncStatus(syncStatus), syncStatus, _);
+  const status = localizeShellSyncStatus(getShellSyncStatus(syncStatus), _);
   const statusTone = status.healthy
     ? 'text-emerald-700 dark:text-emerald-400'
     : status.kind === 'needs-attention'

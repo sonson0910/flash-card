@@ -1,6 +1,5 @@
 import { useMemo, useRef } from 'react';
 import type { ReviewRating } from '../../lib/reviewScheduler';
-import type { DeviceDeleteContext, DevicePendingFlushLease, DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import { normalizeAssignedDeckName } from '../library/customDecks';
 import type {
@@ -16,8 +15,6 @@ import {
 import type {
   LearningPersistenceHook,
   LearningPersistenceStats,
-  RestoreDeviceCardOptions,
-  RestoreDeviceCardResult,
 } from './learningPersistencePort';
 
 export type LearningWorkspaceStats = LearningPersistenceStats;
@@ -45,15 +42,6 @@ export interface LearningWorkspacePracticePort {
 }
 
 export interface LearningWorkspaceInfrastructurePorts {
-  patchDeviceCards(
-    changes: readonly { card: CardData; fields: Partial<CardData> }[],
-    nextTotal?: number,
-    operationId?: string,
-    operation?: 'patch' | 'review',
-  ): Promise<DevicePendingOperation[]>;
-  removeDeviceCard(cardId: string, context?: DeviceDeleteContext): Promise<DevicePendingOperation[]>;
-  restoreDeviceCard(card: CardData, options: RestoreDeviceCardOptions): Promise<RestoreDeviceCardResult>;
-  acknowledgeDevicePending(operations: readonly DevicePendingOperation[], lease?: DevicePendingFlushLease): Promise<void>;
   acceptVerifiedEpoch(ownerId: string, epoch: number): void;
   mutateCloudStats(update: (current: LearningWorkspaceStats) => LearningWorkspaceStats): void;
   publishCategoryFacets(deltas: Record<string, number>, operationId?: string): Promise<void>;
@@ -136,7 +124,6 @@ export function useLearningWorkspace(
       if (current.library.findCard(token.card.id) || current.practice.findCard(token.card.id)) return 'unsafe-existing';
       return null;
     },
-    restoreDeviceCard: (card, restoreOptions) => latestRef.current.ports.restoreDeviceCard(card, restoreOptions),
     findCard: cardId => sourceOverridesRef.current.get(cardId)?.source
       ?? latestRef.current.library.findCard(cardId)
       ?? latestRef.current.practice.findCard(cardId),
@@ -144,11 +131,6 @@ export function useLearningWorkspace(
       const override = sourceOverridesRef.current.get(cardId);
       return latestRef.current.library.isPatchCurrent(cardId, override?.expectedLifecycle);
     },
-    patchDeviceCards: (changes, total, operationId, operation) => operation
-      ? latestRef.current.ports.patchDeviceCards(changes, total, operationId, operation)
-      : latestRef.current.ports.patchDeviceCards(changes, total, operationId),
-    removeDeviceCard: (cardId, context) => latestRef.current.ports.removeDeviceCard(cardId, context),
-    acknowledgeDevicePending: (operations, lease) => latestRef.current.ports.acknowledgeDevicePending(operations, lease),
     acceptVerifiedEpoch: (ownerId, epoch) => latestRef.current.ports.acceptVerifiedEpoch(ownerId, epoch),
     updateCloudStats: update => latestRef.current.ports.mutateCloudStats(update),
     updateCategoryFacets: (deltas, operationId) => latestRef.current.ports.publishCategoryFacets(deltas, operationId),

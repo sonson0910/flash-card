@@ -227,7 +227,7 @@ function EmptyLibraryActions({
           ref={fileInputRef}
           className="empty-library__file-input"
           type="file"
-          accept=".csv,.xlsx,.xls"
+          accept=".csv,.xlsx"
           aria-label={i18n._(msg({ id: 'library.import.choose-file', message: 'Choose an Excel or CSV file' }))}
           tabIndex={-1}
           disabled={isBusy}

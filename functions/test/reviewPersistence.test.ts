@@ -89,42 +89,11 @@ const reviewRequest = (overrides: Partial<ReviewRequest> = {}): ReviewRequest =>
   ...overrides,
 });
 
-const harness = (card = baseCard(), fenced = false, withIndex = false) => {
+const harness = (card = baseCard(), fenced = false) => {
   const values = new Map<string, DocumentSnapshot>([
     ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
     ['users/owner/cards/word-focus', snapshot(true, card)],
     ...(fenced ? [['users/owner/profile/library_migration_fence', snapshot(true, { schemaVersion: 1, active: true })] as const] : []),
-    ...(withIndex ? [
-      ['users/owner/profile/course_query_index', snapshot(true, {
-        schemaVersion: 1,
-        projectionVersion: 1,
-        libraryEpoch: 2,
-        activeGenerationId: 'active-generation',
-        buildingGenerationId: 'building-generation',
-      })] as const,
-      ['users/owner/course_query_generations/active-generation', snapshot(true, {
-        schemaVersion: 1,
-        projectionVersion: 1,
-        libraryEpoch: 2,
-        status: 'ready',
-        lastCardId: null,
-        scanned: 0,
-        leaseToken: null,
-        leaseExpiresAt: null,
-        startedAt: '2026-08-01T00:00:00.000Z',
-      })] as const,
-      ['users/owner/course_query_generations/building-generation', snapshot(true, {
-        schemaVersion: 1,
-        projectionVersion: 1,
-        libraryEpoch: 2,
-        status: 'building',
-        lastCardId: null,
-        scanned: 0,
-        leaseToken: 'lease-token',
-        leaseExpiresAt: Date.now() + 180_000,
-        startedAt: '2026-08-01T00:00:00.000Z',
-      })] as const,
-    ] : []),
   ]);
   const writes: Array<{ path: string; data: DocumentData }> = [];
   const transaction = {
@@ -183,19 +152,6 @@ describe('review persistence', () => {
         expiresAt: expect.any(Date),
       }),
     });
-  });
-
-  it('mirrors the server-scheduled review into active and building generations atomically', async () => {
-    const test = harness(baseCard(), false, true);
-    await expect(applyReviewForOwner(test.database, 'owner', reviewRequest())).resolves.toMatchObject({
-      applied: true,
-      duplicate: false,
-    });
-    expect(test.writes).toEqual(expect.arrayContaining([
-      expect.objectContaining({ path: 'users/owner/course_query_generations/active-generation/cards/word-focus' }),
-      expect.objectContaining({ path: 'users/owner/course_query_generations/building-generation/cards/word-focus' }),
-      expect.objectContaining({ path: 'users/owner/cards/word-focus' }),
-    ]));
   });
 
   it('does not treat a legacy bounded operation ID as a receipt without its fingerprint', async () => {

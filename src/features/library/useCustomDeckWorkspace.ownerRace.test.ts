@@ -1,18 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
 
-const deviceSyncMocks = vi.hoisted(() => ({
-  withDevicePendingFlush: vi.fn(async (_ownerId, _force, operation) => ({
-    acquired: true,
-    value: await operation({ token: 'lease', expiresAt: Infinity, assertOwnership: async () => undefined }),
-  })),
-}));
-
-vi.mock('../../lib/deviceSync', async () => ({
-  ...(await vi.importActual<typeof import('../../lib/deviceSync')>('../../lib/deviceSync')),
-  withDevicePendingFlush: deviceSyncMocks.withDevicePendingFlush,
-}));
-
 type EffectRecord = {
   cleanup?: () => void;
   dependencies?: readonly unknown[];
@@ -124,8 +112,6 @@ const createWorkspaceHarness = (cards: readonly CardData[] = []) => {
     cache,
     ports: {
       assignCard: vi.fn(async () => undefined),
-      patchDeviceCards: vi.fn(async () => []),
-      acknowledgeDevicePending: vi.fn(async () => undefined),
       publishCards: vi.fn(),
       publishPractice: vi.fn(),
       chooseAllDecks: vi.fn(),
@@ -229,8 +215,6 @@ describe('useCustomDeckWorkspace owner isolation', () => {
     await deletePromise;
 
     expect(mutations.removeProfile).not.toHaveBeenCalled();
-    expect(ports.patchDeviceCards).not.toHaveBeenCalled();
-    expect(ports.acknowledgeDevicePending).not.toHaveBeenCalled();
     const ownerBAfterLateDelete = render('owner-b', null);
     expect(ownerBAfterLateDelete.model.decks).toEqual(ownerBDecks);
     expect(cacheWrites).not.toContainEqual({ ownerId: 'owner-b', decks: [] });
@@ -334,7 +318,7 @@ describe('useCustomDeckWorkspace owner isolation', () => {
       customDeck: 'Owner A private deck',
     };
     const decks = ['Owner A private deck'];
-    const { cacheWrites, mutations, ports, render } = createWorkspaceHarness([ownerACard]);
+    const { cacheWrites, mutations, render } = createWorkspaceHarness([ownerACard]);
     const workspace = render('owner-a', decks, true, false);
     flushEffects();
     cacheWrites.length = 0;
@@ -343,8 +327,6 @@ describe('useCustomDeckWorkspace owner isolation', () => {
 
     expect(mutations.clearAssignments).not.toHaveBeenCalled();
     expect(mutations.removeProfile).not.toHaveBeenCalled();
-    expect(ports.patchDeviceCards).not.toHaveBeenCalled();
-    expect(ports.acknowledgeDevicePending).not.toHaveBeenCalled();
     expect(cacheWrites).toContainEqual({ ownerId: 'owner-a', decks: [] });
   });
 
@@ -400,8 +382,6 @@ describe('useCustomDeckWorkspace owner isolation', () => {
     await deletePromise;
 
     expect(mutations.removeProfile).not.toHaveBeenCalled();
-    expect(ports.patchDeviceCards).not.toHaveBeenCalled();
-    expect(ports.acknowledgeDevicePending).not.toHaveBeenCalled();
     expect(cacheWrites).toEqual([]);
     expect(ports.publishCards).not.toHaveBeenCalled();
     expect(ports.publishPractice).not.toHaveBeenCalled();
