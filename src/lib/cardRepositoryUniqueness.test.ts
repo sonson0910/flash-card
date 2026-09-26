@@ -2510,7 +2510,7 @@ describe('legacy card maintenance', () => {
     )).resolves.toEqual({ scanned: 42, complete: true });
   });
 
-  it('clears deck assignments through the v2 transaction protocol', async () => {
+  it('clears deck assignments through the bulk mutation callable', async () => {
     firestore.getDocs
       .mockResolvedValueOnce(snapshot([{
         id: 'legacy-deck-card',
@@ -2523,43 +2523,29 @@ describe('legacy card maintenance', () => {
       }]))
       .mockResolvedValueOnce(snapshot([]));
     firestore.getDoc.mockResolvedValue({ exists: () => false });
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        const collectionName = reference.args?.at(-2);
-        if (path === 'library_state' || collectionName === 'card_reservations') {
-          return { exists: (): boolean => false };
-        }
-        return {
-          exists: (): boolean => true,
-          data: () => ({
-            id: 'legacy-deck-card',
-            word: 'legacy',
-            translation: 'cũ',
-            customDeck: 'Old deck',
-          }),
-        };
-      }),
-      set: firestore.transactionSet,
-    }));
+    const callable = vi.fn().mockResolvedValueOnce({
+      data: { results: [{ cardId: 'legacy-deck-card', op: 'patch', applied: true, revision: 1 }] },
+    });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
 
     await expect(clearCustomDeckAssignments(
       {} as never,
       'user-1',
       'Old deck',
     )).resolves.toBeUndefined();
-    expect(firestore.transactionSet).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        customDeck: null,
-        schemaVersion: 2,
-        normalizedWord: 'legacy',
-        revision: 1,
-        libraryEpoch: 0,
-        updatedAt: { type: 'server-timestamp' },
-      }),
-      { merge: true },
-    );
+    expect(functionsRuntime.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'bulkMutateCards');
+    expect(callable).toHaveBeenCalledWith({
+      libraryEpoch: 0,
+      patches: [{
+        cardId: 'legacy-deck-card',
+        baseRevision: 0,
+        fields: { customDeck: null },
+        fieldMask: ['customDeck'],
+      }],
+      deletes: [],
+    });
   });
 
   it('refreshes the library epoch after a stale deck patch', async () => {
@@ -2588,15 +2574,16 @@ describe('legacy card maintenance', () => {
         exists: () => true,
         data: () => ({ libraryEpoch: 2 }),
       });
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        return path === 'library_state'
-          ? { exists: () => true, data: () => ({ libraryEpoch: 2 }) }
-          : { exists: () => true, data: () => deckCard.data };
-      }),
-      set: firestore.transactionSet,
-    }));
+    const callable = vi.fn()
+      .mockResolvedValueOnce({
+        data: { results: [{ cardId: 'stale-epoch-card', op: 'patch', applied: false, reason: 'stale-library-epoch' }] },
+      })
+      .mockResolvedValueOnce({
+        data: { results: [{ cardId: 'stale-epoch-card', op: 'patch', applied: true, revision: 5 }] },
+      });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
 
     await expect(clearCustomDeckAssignments(
       {} as never,
@@ -2604,14 +2591,15 @@ describe('legacy card maintenance', () => {
       'Old deck',
     )).resolves.toBeUndefined();
     expect(firestore.getDoc).toHaveBeenCalledTimes(2);
-    expect(firestore.transactionSet).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ customDeck: null, revision: 5 }),
-      { merge: true },
-    );
+    expect(callable).toHaveBeenCalledTimes(2);
+    expect(callable.mock.calls[0][0]).toMatchObject({ libraryEpoch: 1 });
+    expect(callable.mock.calls[1][0]).toMatchObject({
+      libraryEpoch: 2,
+      patches: [expect.objectContaining({ cardId: 'stale-epoch-card', baseRevision: 4 })],
+    });
   });
 
-  it('retries a conflicting deck patch only while the card remains in that deck', async () => {
+  it('retries a conflicting deck patch on the next query with a fresh revision', async () => {
     const queriedCard = {
       id: 'conflicting-card',
       data: {
@@ -2624,39 +2612,41 @@ describe('legacy card maintenance', () => {
         libraryEpoch: 3,
       },
     };
-    const currentCard = { ...queriedCard.data, revision: 9 };
+    const requeriedCard = { ...queriedCard, data: { ...queriedCard.data, revision: 9 } };
     firestore.getDocs
       .mockResolvedValueOnce(snapshot([queriedCard]))
+      .mockResolvedValueOnce(snapshot([requeriedCard]))
       .mockResolvedValueOnce(snapshot([]));
-    firestore.getDoc.mockImplementation(async (reference: { args?: unknown[] }) => {
-      const path = reference.args?.at(-1);
-      return path === 'library_state'
-        ? { exists: () => true, data: () => ({ libraryEpoch: 3 }) }
-        : { exists: () => true, data: () => currentCard };
-    });
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        return path === 'library_state'
-          ? { exists: () => true, data: () => ({ libraryEpoch: 3 }) }
-          : { exists: () => true, data: () => currentCard };
-      }),
-      set: firestore.transactionSet,
-    }));
+    firestore.getDoc.mockResolvedValue({ exists: () => true, data: () => ({ libraryEpoch: 3 }) });
+    const callable = vi.fn()
+      .mockResolvedValueOnce({
+        data: { results: [{ cardId: 'conflicting-card', op: 'patch', applied: false, reason: 'revision-conflict', currentRevision: 9 }] },
+      })
+      .mockResolvedValueOnce({
+        data: { results: [{ cardId: 'conflicting-card', op: 'patch', applied: true, revision: 10 }] },
+      });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
 
     await expect(clearCustomDeckAssignments(
       {} as never,
       'user-1',
       'Old deck',
     )).resolves.toBeUndefined();
-    expect(firestore.transactionSet).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ customDeck: null, revision: 10 }),
-      { merge: true },
-    );
+    expect(callable).toHaveBeenCalledTimes(2);
+    expect(callable.mock.calls[0][0]).toMatchObject({
+      patches: [expect.objectContaining({ cardId: 'conflicting-card', baseRevision: 8 })],
+    });
+    expect(callable.mock.calls[1][0]).toMatchObject({
+      patches: [expect.objectContaining({ cardId: 'conflicting-card', baseRevision: 9 })],
+    });
+    // The libraryEpoch is only re-read on a stale-library-epoch reason; a
+    // plain revision conflict must not trigger an extra getDoc round trip.
+    expect(firestore.getDoc).toHaveBeenCalledTimes(1);
   });
 
-  it('preserves a concurrent reassignment when retrying a deck patch', async () => {
+  it('preserves a concurrent reassignment away from the deck being cleared', async () => {
     const queriedCard = {
       id: 'reassigned-card',
       data: {
@@ -2669,39 +2659,28 @@ describe('legacy card maintenance', () => {
         libraryEpoch: 3,
       },
     };
-    const reassignedCard = {
-      ...queriedCard.data,
-      customDeck: 'New deck',
-      revision: 9,
-    };
     firestore.getDocs
       .mockResolvedValueOnce(snapshot([queriedCard]))
+      // The card moved to a different deck before the retry query ran, so
+      // the live `customDeck == 'Old deck'` filter naturally excludes it.
       .mockResolvedValueOnce(snapshot([]));
-    firestore.getDoc.mockImplementation(async (reference: { args?: unknown[] }) => {
-      const path = reference.args?.at(-1);
-      return path === 'library_state'
-        ? { exists: () => true, data: () => ({ libraryEpoch: 3 }) }
-        : { exists: () => true, data: () => reassignedCard };
+    firestore.getDoc.mockResolvedValue({ exists: () => true, data: () => ({ libraryEpoch: 3 }) });
+    const callable = vi.fn().mockResolvedValueOnce({
+      data: { results: [{ cardId: 'reassigned-card', op: 'patch', applied: false, reason: 'revision-conflict', currentRevision: 9 }] },
     });
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        return path === 'library_state'
-          ? { exists: () => true, data: () => ({ libraryEpoch: 3 }) }
-          : { exists: () => true, data: () => reassignedCard };
-      }),
-      set: firestore.transactionSet,
-    }));
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
 
     await expect(clearCustomDeckAssignments(
       {} as never,
       'user-1',
       'Old deck',
     )).resolves.toBeUndefined();
-    expect(firestore.transactionSet).not.toHaveBeenCalled();
+    expect(callable).toHaveBeenCalledTimes(1);
   });
 
-  it('waits for sibling deck mutations to settle before reporting a batch failure', async () => {
+  it('waits for sibling deck mutations to settle before reporting a migration-fallback failure', async () => {
     const documents = [
       {
         id: 'failing-card',
@@ -2728,6 +2707,20 @@ describe('legacy card maintenance', () => {
         await siblingGate;
         return { applied: true, revision: 2 };
       });
+    // Both cards fail the bulk callable's simplified identity check, so
+    // they fall back to the single-card migration path, which is where
+    // the sibling-wait concurrency guarantee still applies.
+    const callable = vi.fn().mockResolvedValueOnce({
+      data: {
+        results: [
+          { cardId: 'failing-card', op: 'patch', applied: false, reason: 'requires-migration' },
+          { cardId: 'in-flight-card', op: 'patch', applied: false, reason: 'requires-migration' },
+        ],
+      },
+    });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
 
     let settled = false;
     let rejection: unknown;
@@ -2760,20 +2753,19 @@ describe('legacy card maintenance', () => {
         revision: 2,
       },
     };
-    firestore.getDocs
-      .mockResolvedValueOnce(snapshot([deckCard]))
-      .mockResolvedValueOnce(snapshot([]));
+    firestore.getDocs.mockResolvedValueOnce(snapshot([deckCard]));
     firestore.getDoc.mockResolvedValue({
       exists: () => true,
-      data: () => ({ libraryEpoch: 3 }),
+      data: () => ({ libraryEpoch: 2 }),
     });
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async () => ({
-        exists: () => true,
-        data: () => ({ libraryEpoch: 2 }),
-      })),
-      set: firestore.transactionSet,
-    }));
+    const httpsError = Object.assign(new Error('failed-precondition'), {
+      code: 'functions/failed-precondition',
+      details: { reason: 'future-library-epoch' },
+    });
+    const callable = vi.fn().mockRejectedValueOnce(httpsError);
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
 
     await expect(clearCustomDeckAssignments(
       {} as never,
@@ -2781,7 +2773,7 @@ describe('legacy card maintenance', () => {
       'Old deck',
     )).rejects.toThrow('Card mutation rejected: future-library-epoch.');
     expect(firestore.getDocs).toHaveBeenCalledTimes(1);
-    expect(firestore.transactionSet).not.toHaveBeenCalled();
+    expect(callable).toHaveBeenCalledTimes(1);
   });
 
   it('fails a repeated non-empty deck batch that cannot make progress', async () => {
@@ -2797,37 +2789,21 @@ describe('legacy card maintenance', () => {
         libraryEpoch: 0,
       },
     };
-    let currentRevision = 1;
     firestore.getDocs.mockImplementation(async () => {
       if (firestore.getDocs.mock.calls.length > 3) {
         throw new Error('deck query exceeded its safety bound');
       }
       return snapshot([conflictingCard]);
     });
-    firestore.getDoc.mockImplementation(async (reference: { args?: unknown[] }) => {
-      const path = reference.args?.at(-1);
-      return path === 'library_state'
-        ? { exists: () => false }
-        : {
-            exists: () => true,
-            data: () => ({ ...conflictingCard.data, revision: currentRevision }),
-          };
-    });
-    firestore.runTransaction.mockImplementation(async (_db, callback) => {
-      currentRevision += 1;
-      return callback({
-        get: vi.fn(async (reference: { args?: unknown[] }) => {
-          const path = reference.args?.at(-1);
-          return path === 'library_state'
-            ? { exists: (): boolean => false }
-            : {
-                exists: (): boolean => true,
-                data: () => ({ ...conflictingCard.data, revision: currentRevision }),
-              };
-        }),
-        set: firestore.transactionSet,
-      });
-    });
+    firestore.getDoc.mockResolvedValue({ exists: () => false });
+    const callable = vi.fn().mockImplementation(async () => ({
+      data: {
+        results: [{ cardId: 'moving-conflict-card', op: 'patch', applied: false, reason: 'revision-conflict', currentRevision: 2 }],
+      },
+    }));
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
 
     await expect(clearCustomDeckAssignments(
       {} as never,
@@ -2835,8 +2811,8 @@ describe('legacy card maintenance', () => {
       'Old deck',
     )).rejects.toThrow('same card batch made no progress');
     expect(firestore.getDocs).toHaveBeenCalledTimes(3);
-    expect(firestore.runTransaction).toHaveBeenCalledTimes(9);
-    expect(firestore.transactionSet).not.toHaveBeenCalled();
+    expect(callable).toHaveBeenCalledTimes(3);
+    expect(firestore.runTransaction).not.toHaveBeenCalled();
   });
 
   it('restarts a versionless completed scan and claims a fully current card identity', async () => {

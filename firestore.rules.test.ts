@@ -164,13 +164,18 @@ describe('Firestore security rules', () => {
     await assertFails(getDoc(doc(signedOut, 'users/owner/cards/card-1')));
   });
 
-  it('blocks direct owner mutations while the server migration fence is active', async () => {
+  it('blocks direct owner mutations while the merged migration fence field is active', async () => {
     await seedCurrentCard(testEnvironment, 'owner', 'card-1', validCard());
     await testEnvironment.withSecurityRulesDisabled(async context => {
-      await setDoc(doc(context.firestore(), 'users/owner/profile/library_migration_fence'), {
-        schemaVersion: 1,
-        active: true,
-      });
+      // The fence now lives on profile/library_state itself (folded in
+      // alongside libraryEpoch) rather than on a standalone
+      // profile/library_migration_fence document, so a card update rule
+      // evaluation only pays for one dependent-document read instead of two.
+      await setDoc(doc(context.firestore(), 'users/owner/profile/library_state'), {
+        schemaVersion: 2,
+        libraryEpoch: 0,
+        libraryMigrationFenceActive: true,
+      }, { merge: true });
     });
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     await assertFails(updateDoc(doc(owner, 'users/owner/cards/card-1'), { word: 'blocked' }));
@@ -185,6 +190,81 @@ describe('Firestore security rules', () => {
       complete: false,
       scanned: 0,
       updatedAt: '2026-08-24T00:00:00.000Z',
+    }));
+  });
+
+  it('no longer honors the legacy standalone fence document from Rules', async () => {
+    // The migration engine (functions/src/legacyLibraryMigrationFirestore.ts)
+    // still writes this document for its own lease/resume bookkeeping, but
+    // Rules now only read the merged field on profile/library_state. Seeding
+    // only the legacy document must not block a direct owner write, or the
+    // update/delete hot paths would silently regress back to two dependent
+    // reads because of an OR against this second document path.
+    await seedCurrentCard(testEnvironment, 'owner', 'card-1', validCard());
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'users/owner/profile/library_migration_fence'), {
+        schemaVersion: 1,
+        active: true,
+      });
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    await assertSucceeds(updateDoc(doc(owner, 'users/owner/cards/card-1'), {
+      translation: 'not blocked',
+      revision: 2,
+    }));
+  });
+
+  it('keeps epoch conflict enforcement working once the merged fence field clears', async () => {
+    await seedCurrentCard(testEnvironment, 'owner', 'epoch-after-fence', validCard('epoch-after-fence'));
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'users/owner/profile/library_state'), {
+        schemaVersion: 2,
+        libraryEpoch: 0,
+        libraryMigrationFenceActive: true,
+      }, { merge: true });
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    await assertFails(updateDoc(doc(owner, 'users/owner/cards/epoch-after-fence'), {
+      revision: 2,
+      translation: 'blocked while fenced',
+    }));
+    // Clearing the field the way the migration engine does (a field-level
+    // merge, never a whole-document replace) must restore normal epoch
+    // enforcement without disturbing libraryEpoch.
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'users/owner/profile/library_state'), {
+        libraryMigrationFenceActive: deleteField(),
+      }, { merge: true });
+    });
+    await assertSucceeds(updateDoc(doc(owner, 'users/owner/cards/epoch-after-fence'), {
+      revision: 2,
+      translation: 'allowed after fence clears',
+    }));
+    await assertFails(writeReservedCard(owner, 'owner', 'future-epoch-after-fence', {
+      ...validCard('future-epoch-after-fence'),
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 1,
+    }));
+  });
+
+  it('never lets a client introduce or change the merged fence field itself', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    await assertFails(setDoc(doc(owner, 'users/owner/profile/library_state'), {
+      schemaVersion: 2,
+      libraryEpoch: 0,
+      libraryMigrationFenceActive: true,
+    }));
+    await assertSucceeds(setDoc(doc(owner, 'users/owner/profile/library_state'), {
+      schemaVersion: 2,
+      libraryEpoch: 0,
+    }));
+    await assertFails(updateDoc(doc(owner, 'users/owner/profile/library_state'), {
+      libraryEpoch: 1,
+      libraryMigrationFenceActive: true,
+    }));
+    await assertSucceeds(updateDoc(doc(owner, 'users/owner/profile/library_state'), {
+      libraryEpoch: 1,
     }));
   });
 

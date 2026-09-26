@@ -19,6 +19,7 @@ import { lazy, Suspense, useCallback, useMemo, useRef, useState, type KeyboardEv
 import { Trans, useLingui } from '@lingui/react';
 import type { CardData } from '../../types/card';
 import type { LearningStateOutcome } from '../learning/learningStateController';
+import type { BulkCardFieldPatchRequest } from '../learning/learningPersistencePort';
 import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySessionController';
 import { formatNumber } from '../../lib/format';
 import { getLibraryCardTier, isLibraryCardDue, sortLibraryCards, type LibrarySortOrder } from './libraryViewModel';
@@ -54,6 +55,7 @@ interface LibraryCardGridProps {
   toggleBookmark: (cardId: string) => Promise<void>;
   customDecks: string[];
   assignDeck: (cardId: string, deckName: string | null) => Promise<void>;
+  bulkPatchCards: (patches: readonly BulkCardFieldPatchRequest[]) => Promise<void>;
   updateCard: (cardId: string, fields: Partial<CardData>) => Promise<LearningStateOutcome>;
   totalPages: number;
   setCurrentPage?: (value: number | ((previous: number) => number)) => void;
@@ -64,6 +66,21 @@ interface LibraryCardGridProps {
   isGenerating?: boolean;
   viewMode?: LibraryViewMode;
   onViewModeChange?: (value: LibraryViewMode) => void;
+}
+
+/** One patch per selected card, all targeting the same deck (or unassigned). */
+export function buildBulkDeckAssignPatches(
+  cards: readonly Pick<CardData, 'id'>[],
+  targetDeck: string | null,
+): BulkCardFieldPatchRequest[] {
+  return cards.map(card => ({ cardId: card.id, fields: { customDeck: targetDeck } }));
+}
+
+/** Each card toggles from its own current bookmark state, not a shared value. */
+export function buildBulkBookmarkPatches(
+  cards: readonly Pick<CardData, 'id' | 'bookmarked'>[],
+): BulkCardFieldPatchRequest[] {
+  return cards.map(card => ({ cardId: card.id, fields: { bookmarked: !card.bookmarked } }));
 }
 
 export function getLegacyUpgradePresentation({ pending, migrating, issue }: { pending: number; migrating: boolean; issue: LegacyMigrationIssue | null }) {
@@ -104,6 +121,7 @@ export function LibraryCardGrid({
   updateCard,
   customDecks,
   assignDeck,
+  bulkPatchCards,
   currentPage,
   totalPages,
   onPageChange,
@@ -208,13 +226,13 @@ export function LibraryCardGrid({
     if (!bulkDeck) return;
     void runBulk(async () => {
       const target = bulkDeck === '__unassigned__' ? null : bulkDeck;
-      await Promise.all(selectedCards.map(card => assignDeck(card.id, target)));
+      await bulkPatchCards(buildBulkDeckAssignPatches(selectedCards, target));
     });
   };
 
   const bulkBookmark = () => {
     void runBulk(async () => {
-      await Promise.all(selectedCards.map(card => toggleBookmark(card.id)));
+      await bulkPatchCards(buildBulkBookmarkPatches(selectedCards));
     });
   };
 

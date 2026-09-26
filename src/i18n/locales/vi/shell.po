@@ -289,7 +289,7 @@ msgid "shell.language.open"
 msgstr "Chọn ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:293
+#: src/app/AppRuntime.tsx:297
 msgid "shell.learning-workspace"
 msgstr "Không gian học tập"
 
@@ -473,7 +473,7 @@ msgstr "Điều hướng chính"
 
 #. js-lingui-explicit-id
 #: src/app/AppDeferredViews.tsx:22
-#: src/app/AppRuntime.tsx:341
+#: src/app/AppRuntime.tsx:345
 msgid "shell.opening-dialog"
 msgstr "Đang mở hộp thoại"
 
@@ -859,7 +859,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Không thể cập nhật trực tiếp từ đám mây. Đang hiển thị bản sao cục bộ được đồng bộ thành công gần nhất."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:219
+#: src/app/AppRuntime.tsx:223
 msgid "shell.sync.retry-failed"
 msgstr "Không thể hoàn tất đồng bộ. Các thay đổi vẫn được giữ trên thiết bị này. Hãy thử lại."
 

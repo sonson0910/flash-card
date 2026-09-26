@@ -14,6 +14,7 @@ import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 
 const mocks = vi.hoisted(() => ({
   applyCardPatchIfCurrent: vi.fn(),
+  bulkPatchCards: vi.fn(),
   createCardIfAbsent: vi.fn(),
   deleteAllCards: vi.fn(),
   clearLibraryFacets: vi.fn(),
@@ -29,6 +30,7 @@ vi.mock('../../lib/cardRepository', async () => {
   return {
     ...actual,
     applyCardPatchIfCurrent: mocks.applyCardPatchIfCurrent,
+    bulkPatchCards: mocks.bulkPatchCards,
     createCardIfAbsent: mocks.createCardIfAbsent,
     deleteAllCards: mocks.deleteAllCards,
     clearLibraryFacets: mocks.clearLibraryFacets,
@@ -485,5 +487,106 @@ describe('useLearningStatePersistence patch reconciliation', () => {
 
     await expect(harness.persistence.persist(clearMutation)).rejects.toThrow();
     expect(mocks.deleteAllCards).not.toHaveBeenCalled();
+  });
+});
+
+describe('useLearningStatePersistence bulk patching', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('sends one bulk request built from each card\'s own known revision', async () => {
+    mocks.bulkPatchCards.mockResolvedValue({
+      libraryEpoch: 2,
+      outcomes: [{ cardId: card.id, applied: true, revision: 4 }],
+    });
+    const harness = createHarness();
+
+    const outcomes = await harness.persistence.persistBulkPatch!([
+      { cardId: card.id, fields: { bookmarked: true } },
+    ]);
+
+    expect(mocks.bulkPatchCards).toHaveBeenCalledTimes(1);
+    expect(mocks.bulkPatchCards).toHaveBeenCalledWith(
+      { kind: 'database' },
+      'user-a',
+      [{ cardId: card.id, baseRevision: 3, fields: { bookmarked: true }, fieldMask: ['bookmarked'] }],
+    );
+    expect(outcomes).toEqual([{
+      cardId: card.id,
+      applied: true,
+      publication: {
+        kind: 'patch',
+        cardId: card.id,
+        fields: {
+          bookmarked: true,
+          schemaVersion: 2,
+          revision: 4,
+          libraryEpoch: 2,
+          updatedAt: expect.any(String),
+        },
+      },
+    }]);
+    expect(harness.updateCloudStats).toHaveBeenCalledTimes(1);
+    expect(harness.acceptVerifiedEpoch).not.toHaveBeenCalled();
+  });
+
+  it('skips a card that is not locally known instead of including it in the callable request', async () => {
+    mocks.bulkPatchCards.mockResolvedValue({
+      libraryEpoch: 2,
+      outcomes: [{ cardId: card.id, applied: true, revision: 4 }],
+    });
+    const harness = createHarness();
+
+    const outcomes = await harness.persistence.persistBulkPatch!([
+      { cardId: card.id, fields: { customDeck: 'Deck A' } },
+      { cardId: 'word-unknown', fields: { customDeck: 'Deck A' } },
+    ]);
+
+    expect(mocks.bulkPatchCards).toHaveBeenCalledWith(
+      { kind: 'database' },
+      'user-a',
+      [{ cardId: card.id, baseRevision: 3, fields: { customDeck: 'Deck A' }, fieldMask: ['customDeck'] }],
+    );
+    expect(outcomes).toEqual([
+      { cardId: card.id, applied: true, publication: expect.objectContaining({ kind: 'patch', cardId: card.id }) },
+      { cardId: 'word-unknown', applied: false },
+    ]);
+  });
+
+  it('reports an error and returns a failed outcome for a card the batch could not apply', async () => {
+    mocks.bulkPatchCards.mockResolvedValue({
+      libraryEpoch: 2,
+      outcomes: [{ cardId: card.id, applied: false, reason: 'revision-conflict', currentRevision: 9 }],
+    });
+    const harness = createHarness();
+
+    const outcomes = await harness.persistence.persistBulkPatch!([
+      { cardId: card.id, fields: { bookmarked: true } },
+    ]);
+
+    expect(outcomes).toEqual([{ cardId: card.id, applied: false }]);
+    expect(harness.reportError).toHaveBeenCalled();
+    expect(harness.updateCloudStats).not.toHaveBeenCalled();
+  });
+
+  it('accepts the settled epoch when the bulk batch resolved it against a drifted generation', async () => {
+    mocks.bulkPatchCards.mockResolvedValue({
+      libraryEpoch: 3,
+      outcomes: [{ cardId: card.id, applied: true, revision: 5 }],
+    });
+    const harness = createHarness();
+
+    await harness.persistence.persistBulkPatch!([{ cardId: card.id, fields: { bookmarked: true } }]);
+
+    expect(harness.acceptVerifiedEpoch).toHaveBeenCalledWith('user-a', 3);
+  });
+
+  it('rejects immediately when the cloud library is not ready', async () => {
+    const harness = createHarness({ verifiedEpoch: null });
+
+    await expect(harness.persistence.persistBulkPatch!([{ cardId: card.id, fields: { bookmarked: true } }]))
+      .rejects.toThrow('Cloud library storage is not ready yet. Try again in a moment.');
+    expect(mocks.bulkPatchCards).not.toHaveBeenCalled();
   });
 });

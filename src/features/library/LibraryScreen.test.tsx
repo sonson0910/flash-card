@@ -63,7 +63,8 @@ const actions: LibraryScreenActions = {
   grid: {
     changeSearch: vi.fn(), migrateLegacyCards: vi.fn(async () => undefined), shareCategory: vi.fn(async () => undefined),
     deleteCard: vi.fn(async () => undefined), toggleBookmark: vi.fn(async () => undefined),
-    assignDeck: vi.fn(async () => undefined), updateCard: vi.fn(async () => publishedUpdateOutcome),
+    assignDeck: vi.fn(async () => undefined), bulkPatchCards: vi.fn(async () => undefined),
+    updateCard: vi.fn(async () => publishedUpdateOutcome),
     changePage: vi.fn(), clearFilters: vi.fn(),
   },
   tools: {
@@ -140,7 +141,12 @@ describe('LibraryScreen', () => {
   it('keeps a compact vocabulary heading and real library actions above the collection', () => {
     const html = renderLibrary();
 
-    expect(html).toMatch(/<h1[^>]*id="learning-home-heading"[^>]*>\s*Vocabulary\s*<\/h1>/);
+    // The page's one canonical <h1> is AppRuntime's sr-only, focus-managed
+    // "Vocabulary library" heading (src/app/AppRuntime.tsx); this canvas
+    // kicker is a visual sub-heading, so it must not also be an <h1> (see
+    // e2e/app-shell-remediation.spec.ts's "library exposes one canonical
+    // heading" test).
+    expect(html).toMatch(/<h2[^>]*id="learning-home-heading"[^>]*>\s*Vocabulary\s*<\/h2>/);
     expect(html).toContain('library-canvas-heading');
     expect(html).toContain('data-library-create-action="true"');
     expect(html).toContain('data-library-evidence="true"');

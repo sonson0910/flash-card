@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const cards = [
   'resemblance', 'serendipity', 'eloquent', 'resilient',
@@ -22,21 +22,13 @@ const cards = [
   customDeck: null,
 }));
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(initialCards => {
-    localStorage.setItem('lingoflash_cards_scoped_v1', JSON.stringify({
-      version: 1,
-      ownerId: null,
-      cards: initialCards,
-    }));
-    localStorage.removeItem('lingoflash_cards');
-    localStorage.removeItem('lingoflash_cards_owner');
-    localStorage.setItem('lingoflash_theme', 'light');
-  }, cards);
+test.beforeEach(async ({ page, seedCards }) => {
+  await page.addInitScript(() => { localStorage.setItem('lingoflash_theme', 'light'); });
+  await seedCards(cards);
 });
 
-test('motion tokens expose one compact timing language', async ({ page }) => {
-  await page.goto('/');
+test('motion tokens expose one compact timing language', async ({ page, signIn }) => {
+  await signIn(page, '/?view=today');
   const tokens = await page.evaluate(() => {
     const styles = getComputedStyle(document.documentElement);
     return Object.fromEntries([
@@ -58,13 +50,13 @@ test('motion tokens expose one compact timing language', async ({ page }) => {
   expect(normalizeDecimals(tokens['--ease-out-expo'])).toBe('cubic-bezier(0.16, 1, 0.3, 1)');
 });
 
-test('ambient glow stays static on mobile to avoid continuous blurred animation', async ({ page }) => {
+test('ambient glow stays static on mobile to avoid continuous blurred animation', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await signIn(page, '/?view=today');
   await expect(page.locator('.ambient-orb').first()).toHaveCSS('animation-name', 'none');
 });
 
-test('data saver disables ambient motion at desktop sizes', async ({ page }) => {
+test('data saver disables ambient motion at desktop sizes', async ({ page, signIn }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'connection', {
       configurable: true,
@@ -76,15 +68,15 @@ test('data saver disables ambient motion at desktop sizes', async ({ page }) => 
     });
   });
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
+  await signIn(page, '/?view=today');
 
   await expect(page.locator('html')).toHaveAttribute('data-save-data', 'true');
   await expect(page.locator('.ambient-orb').first()).toHaveCSS('display', 'none');
 });
 
-test('dialog overlay and content use coordinated entrance animations', async ({ page }) => {
+test('dialog overlay and content use coordinated entrance animations', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
   await page.getByRole('button', { name: 'Manage library' }).click();
   await page.getByRole('menuitem', { name: 'Clear the entire library' }).click();
 
@@ -96,9 +88,9 @@ test('dialog overlay and content use coordinated entrance animations', async ({ 
   await expect(dialog).toHaveAttribute('data-gsap-entrance', 'result');
 });
 
-test('utility hover physics stay restrained while reward remains expressive', async ({ page }) => {
+test('utility hover physics stay restrained while reward remains expressive', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(700);
   const star = page
@@ -121,9 +113,9 @@ test('utility hover physics stay restrained while reward remains expressive', as
   expect(await hoveredScale()).toBeLessThanOrEqual(1.07);
 });
 
-test('only the first six library cards are marked for the initial stagger', async ({ page }) => {
+test('only the first six library cards are marked for the initial stagger', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
   const introducedCards = page.locator('[data-library-intro-index]');
 
   await expect(introducedCards).toHaveCount(6);

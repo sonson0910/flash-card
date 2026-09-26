@@ -529,6 +529,16 @@
     else root.removeAttribute('data-scheme');
   };
 
+  // Sets documentElement[data-theme-family] so design-tokens.css can scope its
+  // Crystal Star variable block independently of the light/dark data-scheme
+  // attribute above. Always writes a bounded value, defaulting to classic for
+  // anything outside THEME_FAMILIES.
+  const applyThemeFamily = family => {
+    const root = globalThis.document?.documentElement;
+    if (!root?.setAttribute) return;
+    root.setAttribute('data-theme-family', THEME_FAMILIES.includes(family) ? family : 'classic');
+  };
+
   const localizeDocument = (root = globalThis.document) => {
     if (typeof root?.querySelectorAll !== 'function') return;
     root.querySelectorAll('[data-i18n],[data-i18n-aria-label],[data-i18n-placeholder],[data-i18n-title]').forEach(localizeElement);
@@ -652,6 +662,7 @@
     t,
     localizeDocument,
     applyColorScheme,
+    applyThemeFamily,
     readRecentLookups,
     recordRecentLookup,
     clearRecentLookups,

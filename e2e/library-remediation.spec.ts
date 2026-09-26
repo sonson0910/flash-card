@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const libraryCards = Array.from({ length: 12 }, (_, index) => ({
   id: `library-remediation-${index}`,
@@ -17,14 +17,12 @@ const libraryCards = Array.from({ length: 12 }, (_, index) => ({
   customDeck: null,
 }));
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, seedCards, signIn, blockExternalNetwork }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.addInitScript(cards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(cards));
-    localStorage.removeItem('lingoflash_cards_owner');
-    localStorage.setItem('lingoflash_theme', 'light');
-  }, libraryCards);
-  await page.goto('/?view=library');
+  await page.addInitScript(() => { localStorage.setItem('lingoflash_theme', 'light'); });
+  await seedCards(libraryCards);
+  await blockExternalNetwork(page);
+  await signIn(page, '/?view=library');
   await expect(page.locator('#library-card-grid').getByRole('heading', { name: 'Your library' })).toBeVisible();
 });
 

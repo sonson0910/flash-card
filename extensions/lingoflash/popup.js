@@ -9,11 +9,15 @@ const {
   t,
   localizeDocument,
   applyColorScheme,
+  applyThemeFamily,
   readSettings,
 } = globalThis.LingoFlashExtension;
 
 localizeDocument(document);
-void readSettings().then(settings => applyColorScheme(settings.colorScheme)).catch(() => undefined);
+void readSettings().then(settings => {
+  applyColorScheme(settings.colorScheme);
+  applyThemeFamily(settings.themeFamily);
+}).catch(() => undefined);
 
 const selectionInput = document.getElementById('selection');
 const requestedDeckSelect = document.getElementById('requested-deck');

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const longWord = 'counterintelligence';
 const longCategory = 'AcademicCategoryWithoutBreaks'.repeat(4);
@@ -39,18 +39,17 @@ const richCard = {
   explanationTranslation: richVietnameseExplanation,
 };
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(storedCards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(storedCards));
-    localStorage.removeItem('lingoflash_cards_owner');
+test.beforeEach(async ({ page, seedCards }) => {
+  await page.addInitScript(() => {
     localStorage.setItem('lingoflash_theme', 'light');
     localStorage.removeItem('sonflash_zen_glass_mode');
-  }, [card, richCard]);
+  });
+  await seedCards([card, richCard]);
 });
 
-test('study reveal keeps progress visible and scrolls rating controls into view', async ({ page }) => {
+test('study reveal keeps progress visible and scrolls rating controls into view', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
 
   await page.getByRole('button', { name: /Start a review|Review \d+ due/ }).first().click();
   await expect(page.locator('[data-study-progress]')).toBeVisible();
@@ -64,9 +63,9 @@ test('study reveal keeps progress visible and scrolls rating controls into view'
   }).toBe(true);
 });
 
-test('long vocabulary content wraps without horizontal loss on both faces', async ({ page }) => {
+test('long vocabulary content wraps without horizontal loss on both faces', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 320, height: 700 });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
 
   const front = page.locator('.flashcard-face').first();
   const wordHeading = front.getByRole('heading', { name: longWord });
@@ -98,8 +97,8 @@ test('long vocabulary content wraps without horizontal loss on both faces', asyn
   }
 });
 
-test('settled card faces do not keep a 3D transform on their text', async ({ page }) => {
-  await page.goto('/?view=library');
+test('settled card faces do not keep a 3D transform on their text', async ({ page, signIn }) => {
+  await signIn(page, '/?view=library');
 
   const cardShell = page.locator('.flashcard-shell').first();
   const hasPersistent3dTransform = () => cardShell.evaluate(element =>
@@ -114,9 +113,9 @@ test('settled card faces do not keep a 3D transform on their text', async ({ pag
   await expect.poll(hasPersistent3dTransform, { timeout: 2_000 }).toBe(false);
 });
 
-test('card change uses a spatial flip while returning to a crisp settled layer', async ({ page }) => {
+test('card change uses a spatial flip while returning to a crisp settled layer', async ({ page, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
 
   const card = page.locator('.flashcard-shell').first();
   await expect(card).toHaveAttribute('data-flip-animation', 'spatial');
@@ -126,8 +125,8 @@ test('card change uses a spatial flip while returning to a crisp settled layer',
   await expect(page.getByRole('button', { name: new RegExp(`Return to the English side of ${longWord}`) })).toBeFocused();
 });
 
-test('Vietnamese explanation renders generated Markdown as editorial content', async ({ page }) => {
-  await page.goto('/?view=library');
+test('Vietnamese explanation renders generated Markdown as editorial content', async ({ page, signIn }) => {
+  await signIn(page, '/?view=library');
 
   const richFlashcard = page.getByRole('group', { name: /resemblance flashcard/i });
   await richFlashcard.getByRole('button', { name: /Reveal the Vietnamese meaning of resemblance/ }).click();
@@ -147,9 +146,9 @@ test('Vietnamese explanation renders generated Markdown as editorial content', a
   expect(visibleText).not.toContain('* *');
 });
 
-test('reduced-motion users receive an immediate 2D face change', async ({ page }) => {
+test('reduced-motion users receive an immediate 2D face change', async ({ page, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
 
   await page.getByRole('button', { name: new RegExp(`Reveal the Vietnamese meaning of ${longWord}`) }).click();
   const back = page.locator('.flashcard-back').first();
@@ -165,9 +164,9 @@ test('reduced-motion users receive an immediate 2D face change', async ({ page }
   expect(parseFloat(settledStyle.transitionDuration)).toBeLessThanOrEqual(0.001);
 });
 
-test('AI disclosure stays visible and guest report actions stay hidden in standard and Zen cards', async ({ page }) => {
+test('AI disclosure stays visible and guest report actions stay hidden in standard and Zen cards', async ({ page, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
   const card = page.getByRole('group', { name: /counterintelligence flashcard/i });
   await card.getByRole('button', { name: /Reveal the Vietnamese meaning/ }).click();
   await expect(card.locator('[data-ai-disclosure]')).toBeVisible();
@@ -182,10 +181,10 @@ test('AI disclosure stays visible and guest report actions stay hidden in standa
   await expect(zenCard.getByRole('button', { name: 'Báo thẻ sai' })).toHaveCount(0);
 });
 
-test('closing card dialogs restores focus to a surviving control', async ({ page }) => {
+test('closing card dialogs restores focus to a surviving control', async ({ page, signIn }) => {
   test.setTimeout(60_000);
 
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
 
   const deleteButton = page.getByRole('button', { name: 'Delete card' }).first();
   await deleteButton.click();

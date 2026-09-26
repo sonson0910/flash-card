@@ -198,13 +198,19 @@ describe('card intake controller', () => {
     expect(port.persistCards).not.toHaveBeenCalled();
   });
 
-  it('fences a late generation result after cancel and restores opener focus', async () => {
+  it('fences a late generation result after cancel and exposes the opener for the dialog to refocus', async () => {
     const { port } = createFakePort();
     const generation = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();
     vi.mocked(port.generateCard).mockReturnValue(generation.promise);
     const focus = vi.fn();
     const intake = createCardIntakeController({ port });
     intake.cardCreator.open({ focus } as unknown as HTMLElement);
+    // The controller publishes the opener on the model instead of calling
+    // .focus() itself: Radix's Dialog FocusScope is still trapped at the
+    // instant a close publishes, so only the dialog's own onCloseAutoFocus
+    // (which fires after the trap releases) can safely restore focus. See
+    // the focusTarget doc comment on CardCreatorModel.
+    expect(intake.getSnapshot().cardCreator.focusTarget).toMatchObject({ focus });
     intake.cardCreator.updateDraft({ word: 'apple' });
     const pending = intake.cardCreator.generatePreview();
     intake.cardCreator.cancel();
@@ -212,8 +218,8 @@ describe('card intake controller', () => {
 
     await expect(pending).resolves.toEqual({ status: 'cancelled' });
     expect(port.persistCards).not.toHaveBeenCalled();
-    expect(focus).toHaveBeenCalledOnce();
-    expect(intake.getSnapshot().cardCreator).toMatchObject({ open: false, preview: null });
+    expect(focus).not.toHaveBeenCalled();
+    expect(intake.getSnapshot().cardCreator).toMatchObject({ open: false, preview: null, focusTarget: null });
   });
 
   it('creates and saves a manual card without invoking AI', async () => {

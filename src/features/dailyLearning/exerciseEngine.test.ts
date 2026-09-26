@@ -115,6 +115,18 @@ describe('exercise engine', () => {
     expect(evaluateExerciseAnswer(spelling, 'goodbye')).not.toHaveProperty('rating');
   });
 
+  it('segments an unspaced Chinese example sentence into sentence-building tokens', () => {
+    const source = card('zh-sentence', {
+      word: '学习',
+      exampleSentence: '我每天都学习中文。',
+    });
+    const exercise = buildExercise(source, [source], 'sentence-building');
+    expect(exercise.mode).toBe('sentence-building');
+    if (exercise.mode !== 'sentence-building') throw new Error('Expected sentence exercise');
+    expect(exercise.answerTokens.length).toBeGreaterThanOrEqual(3);
+    expect(exercise.answerTokens.every(token => token.text.length < '我每天都学习中文。'.length)).toBe(true);
+  });
+
   it('infers the typed-answer policy from the expected vocabulary script', () => {
     const kana = buildExercise(card('kana', { word: '学び', translation: 'learning' }), [], 'spelling');
     expect(kana).toMatchObject({ mode: 'spelling', scoringPolicy: 'kana' });

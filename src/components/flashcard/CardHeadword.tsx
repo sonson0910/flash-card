@@ -1,6 +1,7 @@
 import { Trans } from '@lingui/react';
 import { AudioLines } from 'lucide-react';
 import type { CardData } from '../../types/card';
+import { ReadingToggle } from './ReadingToggle';
 import { SyllableStressBadge } from './SyllableStressBadge';
 
 function renderLuminescentPhonetic(phonetic?: string | null, onDarkSurface = false) {
@@ -49,6 +50,7 @@ export function CardHeadword({ card, variant = 'standard' }: CardHeadwordProps) 
         </span>
       </div>
       <SyllableStressBadge card={card} onDarkSurface={variant !== 'standard'} />
+      <ReadingToggle card={card} onDarkSurface={variant !== 'standard'} />
     </div>
   );
 }

@@ -488,7 +488,7 @@ msgid "flashcard.hints.show"
 msgstr "Hiện gợi ý"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:78
+#: src/components/flashcard/ActiveRecallPrompt.tsx:82
 #: src/components/flashcard/CardFront.tsx:82
 msgid "flashcard.image.illustration"
 msgstr "Minh họa cho {word}"
@@ -583,7 +583,7 @@ msgid "flashcard.original-word"
 msgstr "Từ gốc"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardHeadword.tsx:39
+#: src/components/flashcard/CardHeadword.tsx:40
 msgid "flashcard.part-of-speech-prefix"
 msgstr "Từ loại:"
 
@@ -628,12 +628,32 @@ msgid "flashcard.read-aloud"
 msgstr "Đọc to"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:104
+#: src/components/flashcard/ReadingToggle.tsx:57
+msgid "flashcard.reading.toggle-aria"
+msgstr "Hiện {label} cho {word}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ReadingToggle.tsx:54
+msgid "flashcard.reading.toggle-furigana"
+msgstr "Cách đọc"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ReadingToggle.tsx:55
+msgid "flashcard.reading.toggle-pinyin"
+msgstr "Pinyin"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ReadingToggle.tsx:52
+msgid "flashcard.reading.toggle-romanization"
+msgstr "Phiên âm La-tinh"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:108
 msgid "flashcard.recall.answer"
 msgstr "Câu trả lời của bạn"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:115
+#: src/components/flashcard/ActiveRecallPrompt.tsx:119
 msgid "flashcard.recall.answer-placeholder"
 msgstr "Nhập câu trả lời…"
 
@@ -643,12 +663,12 @@ msgid "flashcard.recall.audio-recall"
 msgstr "Gợi nhớ qua âm thanh"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:123
+#: src/components/flashcard/ActiveRecallPrompt.tsx:127
 msgid "flashcard.recall.check"
 msgstr "Kiểm tra"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:103
+#: src/components/flashcard/ActiveRecallPrompt.tsx:107
 msgid "flashcard.recall.check-answer"
 msgstr "Kiểm tra câu trả lời"
 
@@ -658,17 +678,17 @@ msgid "flashcard.recall.complete-missing-word"
 msgstr "Điền từ còn thiếu"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:128
+#: src/components/flashcard/ActiveRecallPrompt.tsx:132
 msgid "flashcard.recall.correct"
 msgstr "Đúng rồi. Hãy hiện đáp án để so sánh."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:128
+#: src/components/flashcard/ActiveRecallPrompt.tsx:132
 msgid "flashcard.recall.incorrect"
 msgstr "Chưa đúng. Hãy thử lại hoặc hiện đáp án để kiểm tra."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:101
+#: src/components/flashcard/ActiveRecallPrompt.tsx:105
 msgid "flashcard.recall.instructions"
 msgstr "Nhớ trước, rồi nhập câu trả lời để kiểm tra."
 
@@ -693,17 +713,17 @@ msgid "flashcard.recall.native-meaning"
 msgstr "Nhớ lại nghĩa {language}"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:84
+#: src/components/flashcard/ActiveRecallPrompt.tsx:88
 msgid "flashcard.recall.no-illustration"
 msgstr "Không có hình minh họa"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:93
+#: src/components/flashcard/ActiveRecallPrompt.tsx:97
 msgid "flashcard.recall.play-word"
 msgstr "Phát từ để luyện nghe"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:137
+#: src/components/flashcard/ActiveRecallPrompt.tsx:141
 msgid "flashcard.recall.reveal"
 msgstr "Hiện đáp án"
 
@@ -812,27 +832,27 @@ msgid "flashcard.status.overdue"
 msgstr "Quá hạn ôn tập"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/SyllableStressBadge.tsx:50
+#: src/components/flashcard/SyllableStressBadge.tsx:55
 msgid "flashcard.syllables"
 msgstr "Âm tiết:"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/SyllableStressBadge.tsx:46
+#: src/components/flashcard/SyllableStressBadge.tsx:51
 msgid "flashcard.syllables.breakdown"
 msgstr "Tách âm tiết của {word}"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/SyllableStressBadge.tsx:47
+#: src/components/flashcard/SyllableStressBadge.tsx:52
 msgid "flashcard.syllables.help"
 msgstr "Âm tiết và trọng âm. Chạm vào âm tiết để nghe cách phát âm."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/SyllableStressBadge.tsx:67
+#: src/components/flashcard/SyllableStressBadge.tsx:72
 msgid "flashcard.syllables.item"
 msgstr "Âm tiết: {syllable}"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/SyllableStressBadge.tsx:67
+#: src/components/flashcard/SyllableStressBadge.tsx:72
 msgid "flashcard.syllables.primary-stress"
 msgstr "Trọng âm chính: {syllable}"
 

@@ -42,6 +42,11 @@ import {
   parseCreateCardRequest,
 } from './cardPersistence.js';
 import {
+  applyBulkCardMutationsForOwner,
+  BulkMutationEpochError,
+  parseBulkCardMutationRequest,
+} from './bulkCardMutationPersistence.js';
+import {
   parseCardReportRequest,
   reportCardForOwner,
   ReportedCardNotFoundError,
@@ -137,6 +142,7 @@ const MAX_SHARED_DECK_REVOCATIONS_PER_HOUR = 120;
 const MAX_GAMIFICATION_SAVES_PER_HOUR = 120;
 const MAX_CARD_CREATIONS_PER_HOUR = 120;
 const MAX_CARD_REVIEWS_PER_HOUR = 600;
+const MAX_BULK_CARD_MUTATIONS_PER_HOUR = 120;
 const MAX_LIBRARY_FACET_UPDATES_PER_HOUR = 120;
 const MAX_COURSE_PROFILE_MUTATIONS_PER_HOUR = 120;
 const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
@@ -483,6 +489,17 @@ export const generateVocabulary = onCall({
     const partOfSpeechInstruction = partOfSpeech
       ? `\nUse the requested part of speech ${JSON.stringify(partOfSpeech)} to choose the sense and examples.`
       : '';
+    // The default phonetic instruction below asks for IPA, which fits English (and any
+    // other source language not listed here). ko/ja/zh use a different learner-facing
+    // reading convention, so their phonetic field needs a distinct instruction instead.
+    const phoneticInstructionByLanguage: Readonly<Record<string, string>> = {
+      ja: 'the reading in hiragana (add katakana only for loanword segments actually written in katakana)',
+      zh: 'Hanyu Pinyin with tone marks (e.g. nǐ hǎo), spacing syllables to match the word’s written segmentation',
+    };
+    const phoneticInstruction = language?.source ? phoneticInstructionByLanguage[language.source] : undefined;
+    const phoneticFieldInstruction = phoneticInstruction
+      ? `\nFor the phonetic field, provide ${phoneticInstruction} instead of IPA.`
+      : '';
     try {
     await consumeBudget(
       userId,
@@ -496,7 +513,7 @@ export const generateVocabulary = onCall({
     const result = await callGemini(userId, 'word', {
       model: MODEL,
       contents: `You are a ${languageLabel} dictionary and vocabulary teacher.
-Provide information for the word represented by this JSON string: ${JSON.stringify(word)}.${contextInstruction}${partOfSpeechInstruction}
+Provide information for the word represented by this JSON string: ${JSON.stringify(word)}.${contextInstruction}${partOfSpeechInstruction}${phoneticFieldInstruction}
 Return concise translation, explanation, explanationTranslation, IPA phonetic, one emoji, category,
 partOfSpeech, cefrLevel (A1-C2), exampleSentence, exampleTranslation, up to four collocations,
 synonyms and antonyms, register, a concise commonMistake (or empty string), a mnemonic,
@@ -997,6 +1014,35 @@ const reviewCardHandler = (strict: boolean) => async (request: CallableRequest<u
 // strict-rejection reasons they cannot safely interpret as final results.
 export const reviewCard = onCall(reviewCardOptions, reviewCardHandler(false));
 export const reviewCardV2 = onCall(reviewCardOptions, reviewCardHandler(true));
+
+export const bulkMutateCards = onCall({
+  region: REGION,
+  secrets: [analyticsPseudonymKey],
+  enforceAppCheck,
+  timeoutSeconds: 30,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = await requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseBulkCardMutationRequest(request.data));
+  await consumeBudget(userId, 'bulk-card-mutation', MAX_BULK_CARD_MUTATIONS_PER_HOUR,
+    'Bulk card update limit reached. Try again later.');
+  try {
+    return await applyBulkCardMutationsForOwner(database, userId, input);
+  } catch (error) {
+    if (error instanceof LegacyLibraryMigrationFenceError) {
+      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+    }
+    if (error instanceof BulkMutationEpochError) {
+      throw new HttpsError('failed-precondition', 'The bulk card mutation precondition failed.', { reason: error.reason });
+    }
+    if (error instanceof InputValidationError) throw new HttpsError('invalid-argument', error.message);
+    console.error('Bulk card mutation failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'Bulk card mutation failed.');
+  }
+});
 
 const createSharedDeckOptions = {
   region: REGION,

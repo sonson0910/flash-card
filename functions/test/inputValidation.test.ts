@@ -201,6 +201,29 @@ describe('shared deck validation', () => {
   });
 
   it.each([
+    { source: 'ko', target: 'en' },
+    { source: 'ja', target: 'vi' },
+    { source: 'zh', target: 'en' },
+  ])('accepts every launched word-generation source paired with a supported meaning language: %o', language => {
+    expect(parseVocabularyRequest({
+      action: 'word',
+      input: { term: 'hello', language },
+    })).toEqual({ action: 'word', word: 'hello', language });
+  });
+
+  it.each([
+    { source: 'fr', target: 'vi' },
+    { source: 'en', target: 'ja' },
+    { source: 'en', target: 'en' },
+    { source: 'de', target: 'vi' },
+  ])('rejects a canonically-shaped but unsupported word language pair: %o', language => {
+    expect(() => parseVocabularyRequest({
+      action: 'word',
+      input: { term: 'hello', language },
+    })).toThrow(/language pair is not supported/i);
+  });
+
+  it.each([
     { source: 'zh-hant-123456789', target: 'vi' },
     { source: 'en', target: 'zh-hant-123456789' },
   ])('rejects overlong word language codes: %o', language => {

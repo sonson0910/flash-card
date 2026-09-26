@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const cards = [
   'analyse', 'benefit', 'context', 'develop', 'evidence', 'focus',
@@ -24,17 +24,17 @@ const cards = [
 
 const emptyTodayHoverContrastTest = 'empty Today primary action retains compliant contrast while hovered';
 
-test.beforeEach(async ({ page }, testInfo) => {
-  await page.addInitScript(initialCards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));
-    localStorage.removeItem('lingoflash_cards_owner');
+test.beforeEach(async ({ page, seedCards, blockExternalNetwork }, testInfo) => {
+  await page.addInitScript(() => {
     localStorage.setItem('lingoflash_theme', 'dark');
-  }, testInfo.title === emptyTodayHoverContrastTest ? [] : cards);
+  });
+  await blockExternalNetwork(page);
+  if (testInfo.title !== emptyTodayHoverContrastTest) await seedCards(cards);
 });
 
-test('Today is the default four-part shell and completes the answer-feedback-rating transition', async ({ page }) => {
+test('Today is the default four-part shell and completes the answer-feedback-rating transition', async ({ page, signIn }) => {
   test.setTimeout(60_000);
-  await page.goto('/');
+  await signIn(page, '/?view=today');
 
   await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Your daily plan' })).toBeVisible();
@@ -83,8 +83,8 @@ test('Today is the default four-part shell and completes the answer-feedback-rat
   await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 });
 
-test('placement is diagnostic and Progress is a real URL-backed lazy workspace', async ({ page }) => {
-  await page.goto('/?lesson=placement');
+test('placement is diagnostic and Progress is a real URL-backed lazy workspace', async ({ page, signIn }) => {
+  await signIn(page, '/?view=today&lesson=placement');
   await expect(page.getByRole('heading', { name: 'Placement check' })).toBeVisible();
   await expect(page.getByText(/does not change learning history/i)).toBeVisible();
   await page.getByRole('button', { name: 'Start placement check' }).click();
@@ -107,8 +107,8 @@ test('placement is diagnostic and Progress is a real URL-backed lazy workspace',
   expect(progressAxe.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([]);
 });
 
-test('Today and legacy Vocabulary routes satisfy serious WCAG checks', async ({ page }) => {
-  await page.goto('/');
+test('Today and legacy Vocabulary routes satisfy serious WCAG checks', async ({ page, signIn }) => {
+  await signIn(page, '/?view=today');
   await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
   const today = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(today.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([]);
@@ -118,8 +118,8 @@ test('Today and legacy Vocabulary routes satisfy serious WCAG checks', async ({ 
   await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
 });
 
-test(emptyTodayHoverContrastTest, async ({ page }) => {
-  await page.goto('/');
+test(emptyTodayHoverContrastTest, async ({ page, signIn }) => {
+  await signIn(page, '/?view=today');
   const openVocabulary = page.getByRole('button', { name: 'Add vocabulary' });
   await expect(openVocabulary).toBeVisible();
   await openVocabulary.hover();
@@ -130,9 +130,9 @@ test(emptyTodayHoverContrastTest, async ({ page }) => {
   expect(hoveredToday.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([]);
 });
 
-test('Today reflows at 320px with 200% text without horizontal loss', async ({ page }) => {
+test('Today reflows at 320px with 200% text without horizontal loss', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 320, height: 640 });
-  await page.goto('/');
+  await signIn(page, '/?view=today');
   await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
   await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Recognition/ })).toBeVisible();

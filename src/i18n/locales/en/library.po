@@ -14,14 +14,14 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:313
+#: src/features/library/LibraryCardGrid.tsx:331
 #: src/features/library/LibraryDialogOverlays.tsx:158
 msgid "common.cancel"
 msgstr "Cancel"
 
 #. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:135
-#: src/features/library/LibraryCardGrid.tsx:312
+#: src/features/library/LibraryCardGrid.tsx:330
 #: src/features/library/LibraryDialogOverlays.tsx:455
 msgid "common.close"
 msgstr "Close"
@@ -39,7 +39,7 @@ msgid "common.retry"
 msgstr "Retry"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:301
+#: src/features/library/LibraryCardGrid.tsx:319
 msgid "flashcard.edit"
 msgstr "Edit card"
 
@@ -49,137 +49,137 @@ msgid "flashcard.memory-hook"
 msgstr "Memory hook"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:256
+#: src/features/library/LibraryCardGrid.tsx:274
 msgid "library.bulk.assign"
 msgstr "Assign"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:257
+#: src/features/library/LibraryCardGrid.tsx:275
 msgid "library.bulk.bookmark"
 msgstr "Bookmark"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:255
+#: src/features/library/LibraryCardGrid.tsx:273
 msgid "library.bulk.choose-deck"
 msgstr "Choose deck"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:258
+#: src/features/library/LibraryCardGrid.tsx:276
 msgid "library.bulk.clear"
 msgstr "Clear"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:255
+#: src/features/library/LibraryCardGrid.tsx:273
 msgid "library.bulk.deck-label"
 msgstr "Move selected cards to deck"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:260
+#: src/features/library/LibraryCardGrid.tsx:278
 msgid "library.bulk.error"
 msgstr "Some cards could not be updated. Try again."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:253
+#: src/features/library/LibraryCardGrid.tsx:271
 msgid "library.bulk.label"
 msgstr "Bulk card tools"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:251
+#: src/features/library/LibraryCardGrid.tsx:269
 msgid "library.bulk.select-page"
 msgstr "Select page"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:254
+#: src/features/library/LibraryCardGrid.tsx:272
 msgid "library.bulk.selected"
 msgstr "{count} selected"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:255
+#: src/features/library/LibraryCardGrid.tsx:273
 msgid "library.bulk.unassigned"
 msgstr "Unassigned"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryOverview.tsx:18
 msgid "library.canvas.search-placeholder"
-msgstr "Search words or meanings"
+msgstr "Search words or meanings…"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:302
+#: src/features/library/LibraryCardGrid.tsx:320
 msgid "library.card.bookmark"
 msgstr "Bookmark card"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:303
+#: src/features/library/LibraryCardGrid.tsx:321
 msgid "library.card.delete"
 msgstr "Delete card"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:312
+#: src/features/library/LibraryCardGrid.tsx:330
 msgid "library.card.detail-title"
 msgstr "Card details"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:234
+#: src/features/library/LibraryCardGrid.tsx:252
 msgid "library.card.due-now"
 msgstr "Due now"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:229
-#: src/features/library/LibraryScreen.tsx:339
+#: src/features/library/LibraryCardGrid.tsx:247
+#: src/features/library/LibraryScreen.tsx:342
 msgid "library.card.grade.learning"
 msgstr "Bloom"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:230
-#: src/features/library/LibraryScreen.tsx:340
+#: src/features/library/LibraryCardGrid.tsx:248
+#: src/features/library/LibraryScreen.tsx:343
 msgid "library.card.grade.mastered"
 msgstr "Star"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:227
-#: src/features/library/LibraryScreen.tsx:338
+#: src/features/library/LibraryCardGrid.tsx:245
+#: src/features/library/LibraryScreen.tsx:341
 msgid "library.card.grade.new"
 msgstr "Bud"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:297
+#: src/features/library/LibraryCardGrid.tsx:315
 msgid "library.card.open-details"
 msgstr "Open card"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:300
-#: src/features/library/LibraryCardGrid.tsx:300
+#: src/features/library/LibraryCardGrid.tsx:318
+#: src/features/library/LibraryCardGrid.tsx:318
 msgid "library.card.select"
 msgstr "Select card"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:289
+#: src/features/library/LibraryCardGrid.tsx:307
 msgid "library.card.starred"
 msgstr "Starred"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:224
+#: src/features/library/LibraryCardGrid.tsx:242
 msgid "library.card.tier.learning"
 msgstr "Learning"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:225
+#: src/features/library/LibraryCardGrid.tsx:243
 msgid "library.card.tier.mastered"
 msgstr "Mastered"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:222
-#: src/features/library/LibraryScreen.tsx:338
+#: src/features/library/LibraryCardGrid.tsx:240
+#: src/features/library/LibraryScreen.tsx:341
 msgid "library.card.tier.new"
 msgstr "New"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:233
+#: src/features/library/LibraryCardGrid.tsx:251
 msgid "library.card.unseen"
 msgstr "Unseen"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:293
+#: src/features/library/LibraryCardGrid.tsx:311
 msgid "library.card.word"
 msgstr "word"
 
@@ -284,8 +284,8 @@ msgstr "Close"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:85
-#: src/features/intake/CreateCardDialog.tsx:730
-#: src/features/intake/CreateCardDialog.tsx:736
+#: src/features/intake/CreateCardDialog.tsx:750
+#: src/features/intake/CreateCardDialog.tsx:756
 msgid "library.create-card.add-manually"
 msgstr "Add manually"
 
@@ -328,13 +328,13 @@ msgstr "Definition"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:50
-#: src/features/intake/CreateCardDialog.tsx:605
+#: src/features/intake/CreateCardDialog.tsx:625
 msgid "library.create-card.description.ai"
 msgstr "SonFlash drafts the card — you decide what stays."
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:51
-#: src/features/intake/CreateCardDialog.tsx:605
+#: src/features/intake/CreateCardDialog.tsx:625
 msgid "library.create-card.description.manual"
 msgstr "Add the details you already know, then save the card."
 
@@ -345,7 +345,7 @@ msgstr "A card for {word} already exists in your library. Choose another word or
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:78
-#: src/features/intake/CreateCardDialog.tsx:708
+#: src/features/intake/CreateCardDialog.tsx:728
 msgid "library.create-card.empty-preview"
 msgstr "Your generated card preview will appear here."
 
@@ -457,7 +457,7 @@ msgstr "Examples"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:92
-#: src/features/intake/CreateCardDialog.tsx:739
+#: src/features/intake/CreateCardDialog.tsx:759
 msgid "library.create-card.generate-preview"
 msgstr "Generate preview"
 
@@ -468,19 +468,19 @@ msgstr "Generating…"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:47
-#: src/features/intake/CreateCardDialog.tsx:602
+#: src/features/intake/CreateCardDialog.tsx:622
 msgid "library.create-card.kicker.ai"
 msgstr "NEW CARD"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:48
-#: src/features/intake/CreateCardDialog.tsx:602
+#: src/features/intake/CreateCardDialog.tsx:622
 msgid "library.create-card.kicker.manual"
 msgstr "MANUAL CARD"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:71
-#: src/features/intake/CreateCardDialog.tsx:694
+#: src/features/intake/CreateCardDialog.tsx:714
 msgid "library.create-card.manual-details"
 msgstr "MANUAL DETAILS"
 
@@ -497,7 +497,7 @@ msgstr "optional"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:41
-#: src/features/intake/CreateCardDialog.tsx:647
+#: src/features/intake/CreateCardDialog.tsx:667
 msgid "library.create-card.part-of-speech"
 msgstr "Part of speech"
 
@@ -528,7 +528,7 @@ msgstr "verb"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:77
-#: src/features/intake/CreateCardDialog.tsx:708
+#: src/features/intake/CreateCardDialog.tsx:728
 msgid "library.create-card.preparing"
 msgstr "SonFlash is preparing your card…"
 
@@ -569,13 +569,13 @@ msgstr "/pronunciation/"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:83
-#: src/features/intake/CreateCardDialog.tsx:721
+#: src/features/intake/CreateCardDialog.tsx:741
 msgid "library.create-card.ready-after-saving"
 msgstr "Ready after saving"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:87
-#: src/features/intake/CreateCardDialog.tsx:737
+#: src/features/intake/CreateCardDialog.tsx:757
 msgid "library.create-card.regenerate"
 msgstr "Regenerate"
 
@@ -586,13 +586,13 @@ msgstr "Regenerate selected card details"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:76
-#: src/features/intake/CreateCardDialog.tsx:678
+#: src/features/intake/CreateCardDialog.tsx:698
 msgid "library.create-card.regenerate-hint"
 msgstr "Each completed generation uses one AI request"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:75
-#: src/features/intake/CreateCardDialog.tsx:678
+#: src/features/intake/CreateCardDialog.tsx:698
 msgid "library.create-card.regenerate-selected"
 msgstr "Regenerate selected details"
 
@@ -603,14 +603,14 @@ msgstr "Regenerating…"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:86
-#: src/features/intake/CreateCardDialog.tsx:735
+#: src/features/intake/CreateCardDialog.tsx:755
 msgid "library.create-card.request-count"
 msgstr "{count, plural, one {# AI request completed} other {# AI requests completed}}"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:91
-#: src/features/intake/CreateCardDialog.tsx:739
-#: src/features/intake/CreateCardDialog.tsx:739
+#: src/features/intake/CreateCardDialog.tsx:759
+#: src/features/intake/CreateCardDialog.tsx:759
 msgid "library.create-card.save"
 msgstr "Save card"
 
@@ -626,7 +626,7 @@ msgstr "Saving…"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:49
-#: src/features/intake/CreateCardDialog.tsx:603
+#: src/features/intake/CreateCardDialog.tsx:623
 msgid "library.create-card.title"
 msgstr "Add a word"
 
@@ -648,7 +648,7 @@ msgstr "Unavailable"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:73
-#: src/features/intake/CreateCardDialog.tsx:695
+#: src/features/intake/CreateCardDialog.tsx:715
 msgid "library.create-card.use-ai-draft"
 msgstr "Use AI draft"
 
@@ -690,7 +690,7 @@ msgstr "verb"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:72
-#: src/features/intake/CreateCardDialog.tsx:694
+#: src/features/intake/CreateCardDialog.tsx:714
 msgid "library.create-card.your-card"
 msgstr "Your card"
 
@@ -954,13 +954,13 @@ msgid "library.deck.unassigned"
 msgstr "Unassigned"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:332
+#: src/features/library/LibraryScreen.tsx:335
 #: src/features/library/LibraryTools.tsx:850
 msgid "library.decks.all"
 msgstr "All decks"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:331
+#: src/features/library/LibraryScreen.tsx:334
 msgid "library.decks.nav-label"
 msgstr "Decks"
 
@@ -975,17 +975,17 @@ msgid "library.decks.unassigned"
 msgstr "Unassigned"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:313
+#: src/features/library/LibraryCardGrid.tsx:331
 msgid "library.delete.confirm"
 msgstr "Delete card"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:313
+#: src/features/library/LibraryCardGrid.tsx:331
 msgid "library.delete.description"
 msgstr "This will permanently remove {word} from your library."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:313
+#: src/features/library/LibraryCardGrid.tsx:331
 msgid "library.delete.title"
 msgstr "Delete card?"
 
@@ -1363,7 +1363,7 @@ msgid "library.extract.title"
 msgstr "Scan text"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:336
+#: src/features/library/LibraryScreen.tsx:339
 msgid "library.filters.all"
 msgstr "All"
 
@@ -1403,19 +1403,19 @@ msgid "library.filters.due"
 msgstr "Due for review"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:287
-#: src/features/library/LibraryScreen.tsx:337
+#: src/features/library/LibraryCardGrid.tsx:305
+#: src/features/library/LibraryScreen.tsx:340
 msgid "library.filters.due-short"
 msgstr "Due"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:339
+#: src/features/library/LibraryScreen.tsx:342
 #: src/features/library/LibraryTools.tsx:778
 msgid "library.filters.learning"
 msgstr "Learning"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:340
+#: src/features/library/LibraryScreen.tsx:343
 #: src/features/library/LibraryTools.tsx:777
 msgid "library.filters.mastered"
 msgstr "Mastered"
@@ -1471,7 +1471,7 @@ msgid "library.filters.search-placeholder"
 msgstr "Search English words…"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:341
+#: src/features/library/LibraryScreen.tsx:344
 #: src/features/library/LibraryTools.tsx:715
 msgid "library.filters.starred"
 msgstr "Starred"
@@ -1487,87 +1487,87 @@ msgid "library.filters.title"
 msgstr "Filters"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:268
+#: src/features/library/LibraryCardGrid.tsx:286
 msgid "library.grid.clear-filters"
 msgstr "Clear filters"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:267
+#: src/features/library/LibraryCardGrid.tsx:285
 msgid "library.grid.cloud-unavailable-description"
 msgstr "Your cloud cards are safe. Try again after the read quota resets, or create a card now and keep learning from this device."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:266
+#: src/features/library/LibraryCardGrid.tsx:284
 msgid "library.grid.cloud-unavailable-title"
 msgstr "Cloud is taking a short break"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:246
+#: src/features/library/LibraryCardGrid.tsx:264
 msgid "library.grid.collection-caption"
 msgstr "Your words, ready when you are."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:268
+#: src/features/library/LibraryCardGrid.tsx:286
 msgid "library.grid.create-first"
 msgstr "Create your first card"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:267
+#: src/features/library/LibraryCardGrid.tsx:285
 msgid "library.grid.empty-description"
 msgstr "Add a word and SonFlash will turn it into a vivid card with meaning, context, pronunciation, and a relevant image."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:266
+#: src/features/library/LibraryCardGrid.tsx:284
 msgid "library.grid.empty-title"
 msgstr "Your first word starts here"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:262
+#: src/features/library/LibraryCardGrid.tsx:280
 msgid "library.grid.generating"
 msgstr "Creating new flashcard with AI…"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:142
+#: src/features/library/LibraryCardGrid.tsx:160
 msgid "library.grid.import-progress"
 msgstr "Creating {current} of {total}"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:144
+#: src/features/library/LibraryCardGrid.tsx:162
 msgid "library.grid.loading-page"
 msgstr "Loading page {page}"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:309
+#: src/features/library/LibraryCardGrid.tsx:327
 msgid "library.grid.next-page"
 msgstr "Next library page"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:267
+#: src/features/library/LibraryCardGrid.tsx:285
 msgid "library.grid.no-match-description"
 msgstr "Clear the active filters to return to your complete vocabulary library."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:266
+#: src/features/library/LibraryCardGrid.tsx:284
 msgid "library.grid.no-match-title"
 msgstr "No cards match this view"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:309
+#: src/features/library/LibraryCardGrid.tsx:327
 msgid "library.grid.page"
 msgstr "Page {current} / {total}"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:308
+#: src/features/library/LibraryCardGrid.tsx:326
 msgid "library.grid.page-loaded"
 msgstr "Page {page} loaded with {count, plural, one {# card} other {# cards}}."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:309
+#: src/features/library/LibraryCardGrid.tsx:327
 msgid "library.grid.pages-nav"
 msgstr "Library pages"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:309
+#: src/features/library/LibraryCardGrid.tsx:327
 msgid "library.grid.previous-page"
 msgstr "Previous library page"
 
@@ -1577,17 +1577,17 @@ msgid "library.grid.search-label"
 msgstr "Search words"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:247
+#: src/features/library/LibraryCardGrid.tsx:265
 msgid "library.grid.share"
 msgstr "Share"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:247
+#: src/features/library/LibraryCardGrid.tsx:265
 msgid "library.grid.study-now"
 msgstr "Study now"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:246
+#: src/features/library/LibraryCardGrid.tsx:264
 msgid "library.grid.title"
 msgstr "Your library"
 
@@ -1945,13 +1945,13 @@ msgid "library.insights.xp-total"
 msgstr "{count, number} XP"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:312
-#: src/features/library/LibraryScreen.tsx:221
+#: src/features/library/LibraryCardGrid.tsx:330
+#: src/features/library/LibraryScreen.tsx:223
 msgid "library.loading.cards"
 msgstr "Loading library cards"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:262
+#: src/features/library/LibraryScreen.tsx:265
 msgid "library.loading.tools"
 msgstr "Loading library tools"
 
@@ -2077,22 +2077,22 @@ msgid "library.part-of-speech.verb"
 msgstr "Verb"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:250
+#: src/features/library/LibraryCardGrid.tsx:268
 msgid "library.sort.alphabetical"
 msgstr "A to Z"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:250
+#: src/features/library/LibraryCardGrid.tsx:268
 msgid "library.sort.due"
 msgstr "Due first"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:250
+#: src/features/library/LibraryCardGrid.tsx:268
 msgid "library.sort.label"
 msgstr "Sort"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:250
+#: src/features/library/LibraryCardGrid.tsx:268
 msgid "library.sort.recent"
 msgstr "Recently active"
 
@@ -2102,7 +2102,7 @@ msgid "library.tools.dialogue"
 msgstr "AI Dialogue"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:260
+#: src/features/library/LibraryScreen.tsx:263
 msgid "library.tools.more"
 msgstr "More library tools"
 
@@ -2112,68 +2112,68 @@ msgid "library.tools.scan"
 msgstr "Scan Text"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:81
+#: src/features/library/LibraryCardGrid.tsx:98
 msgid "library.upgrade.help-title"
 msgstr "Library upgrade needs administrator help"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:80
+#: src/features/library/LibraryCardGrid.tsx:97
 msgid "library.upgrade.paused-title"
 msgstr "Library upgrade paused"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:90
+#: src/features/library/LibraryCardGrid.tsx:107
 msgid "library.upgrade.pending-description"
 msgstr "Securely upgrades the library in resumable batches while preserving study progress."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:89
+#: src/features/library/LibraryCardGrid.tsx:106
 msgid "library.upgrade.pending-title"
 msgstr "{count, plural, one {# older card needs} other {# older cards need}} a one-time library upgrade"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:84
+#: src/features/library/LibraryCardGrid.tsx:101
 msgid "library.upgrade.retry"
 msgstr "Retry upgrade"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:76
+#: src/features/library/LibraryCardGrid.tsx:93
 msgid "library.upgrade.sign-in-description"
 msgstr "Sign in again, then retry the library upgrade. Your cards remain safe."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:91
+#: src/features/library/LibraryCardGrid.tsx:108
 msgid "library.upgrade.start"
 msgstr "Upgrade library"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:77
+#: src/features/library/LibraryCardGrid.tsx:94
 msgid "library.upgrade.temporary-description"
 msgstr "The library upgrade is temporarily unavailable. Your cards remain safe; check your connection and retry."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:74
+#: src/features/library/LibraryCardGrid.tsx:91
 msgid "library.upgrade.trusted-migration-description"
 msgstr "Some older cards need a secure one-time migration. Your cards are safe; an administrator must complete this repair."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryCardGrid.tsx:84
-#: src/features/library/LibraryCardGrid.tsx:91
+#: src/features/library/LibraryCardGrid.tsx:101
+#: src/features/library/LibraryCardGrid.tsx:108
 msgid "library.upgrade.upgrading"
 msgstr "Upgrading…"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:344
+#: src/features/library/LibraryScreen.tsx:347
 msgid "library.view.grid"
 msgstr "Grid view"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:343
+#: src/features/library/LibraryScreen.tsx:346
 msgid "library.view.label"
 msgstr "View"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:345
+#: src/features/library/LibraryScreen.tsx:348
 msgid "library.view.list"
 msgstr "List view"
 

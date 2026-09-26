@@ -3,7 +3,15 @@ import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { createServer, type ViteDevServer } from 'vite';
 
 const fixturePath = '/e2e/fixtures/daily-recap.html';
-const fixtureOrigin = 'http://127.0.0.1:4175';
+// Base port for this spec's own Vite fixture server, offset per-worker below.
+// See practice-visual.spec.ts for why: `fullyParallel: false` still lets
+// different spec files run concurrently on separate workers, and four
+// unrelated -visual specs each bound a strictPort Vite server to this exact
+// literal port, so two running on different workers at once raced for the
+// same socket.
+const FIXTURE_PORT_BASE = 4375;
+let fixturePort = FIXTURE_PORT_BASE;
+let fixtureOrigin = `http://127.0.0.1:${fixturePort}`;
 const themes = [
   { family: 'classic', mode: 'light' },
   { family: 'classic', mode: 'dark' },
@@ -47,11 +55,13 @@ async function attachRecap(page: Page, testInfo: TestInfo, name: string) {
   await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
 }
 
-test.beforeAll(async () => {
+test.beforeAll(async ({}, testInfo) => {
+  fixturePort = FIXTURE_PORT_BASE + testInfo.parallelIndex;
+  fixtureOrigin = `http://127.0.0.1:${fixturePort}`;
   fixtureServer = await createServer({
     configFile: 'vite.config.ts',
     appType: 'mpa',
-    server: { host: '127.0.0.1', port: 4175, strictPort: true },
+    server: { host: '127.0.0.1', port: fixturePort, strictPort: true },
     optimizeDeps: { entries: ['e2e/fixtures/daily-recap.html'] },
   });
   await fixtureServer.listen();

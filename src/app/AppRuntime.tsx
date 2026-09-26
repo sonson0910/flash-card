@@ -17,6 +17,7 @@ import { useAppLearningCoordination } from './useAppLearningCoordination';
 import { consumeLandingSignInRequest } from './landingSignInRequest';
 import { AppShellMotion } from '../components/motion/AppShellMotion';
 import { useBrowserExtensionImport } from '../features/browserExtension/useBrowserExtensionImport';
+import { useExtensionDueCountBridge } from '../features/extensionBridge/useExtensionDueCountBridge';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { APP_VIEW_HEADINGS } from '../features/navigation/app-view-headings';
@@ -125,6 +126,7 @@ export default function AppRuntime({
     shellSyncStatus,
     isBrowserOnline,
     isExporting,
+    cloudStats,
   } = library.model;
   const {
     libraryScreen,
@@ -167,15 +169,16 @@ export default function AppRuntime({
       void practiceSession.learning.toggleBookmark(card.id);
     }
   }, [practiceActions, practiceSession]);
+  const libraryReady = Boolean(
+    user
+    && librarySession.owner.ownerId === user.uid
+    && librarySession.owner.status === 'ready'
+  );
   useBrowserExtensionImport({
     ownerId: user?.uid ?? null,
     identityLoading: identity.status === 'loading',
     customDecks,
-    libraryReady: Boolean(
-      user
-      && librarySession.owner.ownerId === user.uid
-      && librarySession.owner.status === 'ready'
-    ),
+    libraryReady,
     isBusy: isLibraryBusy,
     changeDraft: intakeActions.changeDraft,
     generate: intakeActions.generate,
@@ -183,6 +186,7 @@ export default function AppRuntime({
     notify: message => setNotice(message),
     reportError: message => setError(message),
   });
+  useExtensionDueCountBridge({ ownerId: user?.uid ?? null, ready: libraryReady, dueCount: cloudStats.due });
   const handledSignInRequestRef = useRef(0);
   useEffect(() => {
     onLandingUserChange(user ? {

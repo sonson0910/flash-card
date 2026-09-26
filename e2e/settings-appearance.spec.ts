@@ -1,9 +1,9 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
-test('appearance choices switch live and follow the system until a manual choice', async ({ page }) => {
+test('appearance choices switch live and follow the system until a manual choice', async ({ page, signIn }) => {
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
-  await page.goto('/?view=settings&locale=en');
+  await signIn(page, '/?view=settings&locale=en');
   await expect(page.getByRole('heading', { name: 'Make your study space yours' })).toBeVisible();
   await page.evaluate(() => Object.defineProperty(window, '__appearanceMarker', { value: 'mounted' }));
 
@@ -36,12 +36,12 @@ test('appearance choices switch live and follow the system until a manual choice
   expect(await page.evaluate(() => (window as Window & { __appearanceMarker?: string }).__appearanceMarker)).toBe('mounted');
 });
 
-test('appearance previews carry the four Canvas token palettes', async ({ page }) => {
+test('appearance previews carry the four Canvas token palettes', async ({ page, signIn }) => {
   await page.addInitScript(() => {
     localStorage.setItem('sonflash_theme_family', 'classic');
     localStorage.setItem('lingoflash_theme', 'dark');
   });
-  await page.goto('/?view=settings&locale=en');
+  await signIn(page, '/?view=settings&locale=en');
 
   await expect(page.locator('[data-theme-preview]')).toHaveCount(4);
   const previews = await page.locator('[data-theme-preview]').evaluateAll(elements => Object.fromEntries(
@@ -55,8 +55,8 @@ test('appearance previews carry the four Canvas token palettes', async ({ page }
   });
 });
 
-test('Lumi, motion and sound settings persist after reload', async ({ page }) => {
-  await page.goto('/?view=settings&locale=en');
+test('Lumi, motion and sound settings persist after reload', async ({ page, signIn }) => {
+  await signIn(page, '/?view=settings&locale=en');
   await page.getByRole('radio', { name: /Crystal Star/ }).locator('..').click();
   const lumi = page.getByRole('switch', { name: /^Lumi/ });
   await expect(lumi).toBeChecked();
@@ -80,13 +80,13 @@ test('Lumi, motion and sound settings persist after reload', async ({ page }) =>
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'reduced');
 });
 
-test('mobile shell opens settings and keeps the page inside 390px', async ({ page }) => {
+test('mobile shell opens settings and keeps the page inside 390px', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.route('**/assets/settings-screen-*.js', async route => {
     await new Promise(resolve => setTimeout(resolve, 900));
     await route.continue();
   });
-  await page.goto('/?view=library&locale=en');
+  await signIn(page, '/?view=library&locale=en');
   await page.getByRole('button', { name: 'Manage library' }).click();
   await page.getByRole('menuitem', { name: 'Appearance settings' }).click();
   await expect(page).toHaveURL(/view=settings/);
@@ -96,14 +96,14 @@ test('mobile shell opens settings and keeps the page inside 390px', async ({ pag
 });
 
 for (const motion of ['reduced', 'interrupted'] as const) {
-  test(`mobile navigation preserves destination focus with ${motion} motion`, async ({ page }) => {
+  test(`mobile navigation preserves destination focus with ${motion} motion`, async ({ page, signIn }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ reducedMotion: motion === 'reduced' ? 'reduce' : 'no-preference' });
     await page.route('**/assets/settings-screen-*.js', async route => {
       await new Promise(resolve => setTimeout(resolve, 500));
       await route.continue();
     });
-    await page.goto('/?view=library&locale=en');
+    await signIn(page, '/?view=library&locale=en');
     const themeTrigger = page.getByRole('button', { name: 'Choose theme' });
     await themeTrigger.focus();
     await page.keyboard.press('Enter');
@@ -131,14 +131,14 @@ for (const theme of [
   { family: 'crystal', mode: 'light' },
 ] as const) {
   for (const { width, locale } of ['en', 'vi'].flatMap(locale => [1440, 390].map(width => ({ width, locale })))) {
-    test(`${theme.family} ${theme.mode} ${locale} settings fit at ${width}px`, async ({ page }) => {
+    test(`${theme.family} ${theme.mode} ${locale} settings fit at ${width}px`, async ({ page, signIn }) => {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.addInitScript(({ family, mode }) => {
         localStorage.setItem('sonflash_theme_family', family);
         localStorage.setItem('lingoflash_theme', mode);
       }, theme);
-      await page.goto(`/?view=settings&locale=${locale}`);
+      await signIn(page, `/?view=settings&locale=${locale}`);
       const stage = page.locator('[data-async-content="settings"]');
       await expect(stage.getByRole('heading', { level: 1 })).toBeVisible();
       expect(await stage.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);

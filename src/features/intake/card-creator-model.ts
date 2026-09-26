@@ -59,6 +59,20 @@ export interface CardCreatorModel {
   completedAiRequests: number;
   duplicate: CardData | null;
   error: CardCreateError | null;
+  /**
+   * The element that had focus when the dialog opened. Radix's Dialog
+   * FocusScope still traps focus at the instant this model publishes the
+   * closed state (React has not yet unmounted Dialog.Content), so the
+   * caller must not call `.focus()` on this element itself — it would be
+   * immediately overridden by the still-active trap. Instead, the dialog
+   * mirrors this value into a ref and restores focus from its own
+   * `onCloseAutoFocus`, which fires after the trap actually releases (see
+   * CreateCardDialog.tsx and the matching restoreLibraryDialogFocus pattern
+   * in LibraryDialogOverlays.tsx). Typed as the minimal focusable shape
+   * (matching CardCreatorFocusTarget in cardIntakeController.ts) rather than
+   * the full HTMLElement so controller tests can pass a plain stub.
+   */
+  focusTarget: Pick<HTMLElement, 'focus'> | null;
 }
 
 export type CardCreateResult =
@@ -97,4 +111,5 @@ export const createInitialCardCreatorModel = (): CardCreatorModel => ({
   completedAiRequests: 0,
   duplicate: null,
   error: null,
+  focusTarget: null,
 });

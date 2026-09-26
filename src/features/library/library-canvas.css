@@ -29,7 +29,7 @@
   display: none;
 }
 
-.library-canvas-title h1 {
+.library-canvas-title h2 {
   margin: .25rem 0 0;
   color: var(--sf-text);
   font-family: Fraunces, Georgia, serif;
@@ -828,7 +828,7 @@
   color: var(--sf-text-muted);
 }
 
-:root[data-theme-family="crystal"] .library-canvas-title h1 {
+:root[data-theme-family="crystal"] .library-canvas-title h2 {
   background: linear-gradient(180deg, #0d1a33 0%, #0d1a33 45%, #b30f33 62%, #ff2a4d 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -840,7 +840,7 @@
   text-transform: uppercase;
 }
 
-:root[data-theme-family="crystal"].dark .library-canvas-title h1 {
+:root[data-theme-family="crystal"].dark .library-canvas-title h2 {
   background: linear-gradient(180deg, #fff 0%, #ffe3ea 45%, #ff8fa3 60%, #fff 100%);
   -webkit-background-clip: text;
   background-clip: text;

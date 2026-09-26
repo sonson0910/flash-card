@@ -30,6 +30,7 @@ const {
   normalizeDueCount,
   normalizeDueCountMetadata,
   MAX_DUE_COUNT,
+  applyThemeFamily,
 } = globalThis.LingoFlashExtension;
 
 test('normalizes browser selection', () => {
@@ -68,6 +69,39 @@ test('normalizes settings to safe bounded defaults', () => {
   assert.equal(normalizeSettings({ colorScheme: 'midnight' }).colorScheme, 'system');
   assert.equal(normalizeSettings({ bubbleDurationMs: null }).bubbleDurationMs, DEFAULT_SETTINGS.bubbleDurationMs);
   assert.equal(normalizeSettings({ bubbleDurationMs: '' }).bubbleDurationMs, DEFAULT_SETTINGS.bubbleDurationMs);
+});
+
+test('applyThemeFamily sets a bounded data-theme-family attribute, defaulting unknown families to classic', () => {
+  const attributes = new Map();
+  const previousDocument = globalThis.document;
+  globalThis.document = {
+    documentElement: {
+      setAttribute: (name, value) => attributes.set(name, value),
+      removeAttribute: name => attributes.delete(name),
+    },
+  };
+  try {
+    applyThemeFamily('crystal');
+    assert.equal(attributes.get('data-theme-family'), 'crystal');
+    applyThemeFamily('classic');
+    assert.equal(attributes.get('data-theme-family'), 'classic');
+    applyThemeFamily('not-a-real-family');
+    assert.equal(attributes.get('data-theme-family'), 'classic');
+    applyThemeFamily(undefined);
+    assert.equal(attributes.get('data-theme-family'), 'classic');
+  } finally {
+    globalThis.document = previousDocument;
+  }
+});
+
+test('applyThemeFamily is a no-op without a document (e.g. before the DOM is ready)', () => {
+  const previousDocument = globalThis.document;
+  globalThis.document = undefined;
+  try {
+    assert.doesNotThrow(() => applyThemeFamily('crystal'));
+  } finally {
+    globalThis.document = previousDocument;
+  }
 });
 
 test('normalizes the opt-in selection-icon site allowlist and excludes protected URLs', () => {

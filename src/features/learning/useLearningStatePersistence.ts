@@ -10,6 +10,7 @@ import { selectMutableCardPatch } from '../../lib/cardMutationProtocol';
 import { isCardDue } from '../../lib/srs';
 import {
   applyCardPatchIfCurrent,
+  bulkPatchCards,
   clearLibraryFacets,
   CardMutationPreconditionError,
   createCardIfAbsent,
@@ -38,9 +39,15 @@ import type {
   LearningStateMutationResult,
   LearningStatePublication,
 } from './learningStateController';
-import type { LearningPersistenceOptions } from './learningPersistencePort';
+import type {
+  BulkCardFieldPatchOutcome,
+  BulkCardFieldPatchRequest,
+  LearningPersistenceOptions,
+} from './learningPersistencePort';
 import type { LearningStatePersistencePort } from './useLearningState';
 import type { CardData } from '../../types/card';
+
+const BULK_PATCHABLE_FIELDS = ['customDeck', 'bookmarked'] as const;
 
 const resultFor = (
   mutation: LearningStateMutation,
@@ -420,6 +427,101 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
       }
 
       return resultFor(mutation);
+    },
+    persistBulkPatch: async patches => {
+      const current = latestRef.current;
+      const ownerId = current.ownerId;
+      if (!ownerId || current.verifiedEpoch === null || !db || !isFirebaseConfigured) {
+        throw new Error('Cloud library storage is not ready yet. Try again in a moment.');
+      }
+      const database = db;
+
+      const sources = new Map<string, CardData>();
+      const commands: Array<{
+        cardId: string;
+        baseRevision: number;
+        fields: BulkCardFieldPatchRequest['fields'];
+        fieldMask: readonly (typeof BULK_PATCHABLE_FIELDS)[number][];
+      }> = [];
+      for (const patch of patches) {
+        const source = current.findCard(patch.cardId);
+        if (!source) continue;
+        const fieldMask = BULK_PATCHABLE_FIELDS.filter(
+          field => Object.prototype.hasOwnProperty.call(patch.fields, field),
+        );
+        if (fieldMask.length === 0) continue;
+        sources.set(patch.cardId, source);
+        commands.push({ cardId: patch.cardId, baseRevision: source.revision ?? 0, fields: patch.fields, fieldMask });
+      }
+      if (commands.length === 0) {
+        return patches.map(patch => ({ cardId: patch.cardId, applied: false }));
+      }
+
+      let batch: Awaited<ReturnType<typeof bulkPatchCards>>;
+      try {
+        batch = await bulkPatchCards(database, ownerId, commands);
+      } catch (cause) {
+        console.warn('Bulk card update could not be saved.', cause);
+        current.setCloudUnavailable(true);
+        if (isRetryableSyncError(cause)) {
+          if (isQuotaError(cause)) cacheCloudBackoff(ownerId);
+          current.reportError('Cloud is temporarily unavailable. Try again in a moment.');
+        } else if (cause instanceof CardMutationPreconditionError && cause.reason === 'future-library-epoch') {
+          current.reportError('Cloud library generation changed. Try again in a moment.');
+        } else {
+          current.reportError('The update could not be saved. Please try again.');
+        }
+        throw cause;
+      }
+
+      if (batch.libraryEpoch !== current.verifiedEpoch) {
+        current.acceptVerifiedEpoch(ownerId, batch.libraryEpoch);
+      }
+
+      const commandsById = new Map(commands.map(command => [command.cardId, command]));
+      const resultsById = new Map(batch.outcomes.map(outcome => [outcome.cardId, outcome]));
+      let bookmarkDelta = 0;
+      const outcomes: BulkCardFieldPatchOutcome[] = patches.map(patch => {
+        const command = commandsById.get(patch.cardId);
+        const source = sources.get(patch.cardId);
+        const result = resultsById.get(patch.cardId);
+        if (!command || !source || !result || !result.applied) return { cardId: patch.cardId, applied: false };
+        const metadata = {
+          revision: result.revision,
+          libraryEpoch: batch.libraryEpoch,
+          updatedAt: new Date().toISOString(),
+        };
+        const advanced = applySuccessfulPatchMetadata(source, command.fields, metadata, command.fieldMask);
+        if (Object.prototype.hasOwnProperty.call(command.fields, 'bookmarked')) {
+          bookmarkDelta += command.fields.bookmarked ? 1 : -1;
+        }
+        return {
+          cardId: patch.cardId,
+          applied: true,
+          publication: {
+            kind: 'patch',
+            cardId: patch.cardId,
+            fields: {
+              ...selectMutableCardPatch(command.fields, command.fieldMask),
+              schemaVersion: advanced.schemaVersion,
+              revision: advanced.revision,
+              libraryEpoch: advanced.libraryEpoch,
+              updatedAt: advanced.updatedAt,
+            },
+          },
+        };
+      });
+
+      if (bookmarkDelta !== 0) {
+        current.updateCloudStats(stats => ({
+          ...stats,
+          bookmarked: Math.max(0, stats.bookmarked + bookmarkDelta),
+        }));
+      }
+      if (outcomes.some(outcome => !outcome.applied)) {
+        current.reportError('Some cards could not be updated. Try again.');
+      }
+      return outcomes;
     },
   };
 

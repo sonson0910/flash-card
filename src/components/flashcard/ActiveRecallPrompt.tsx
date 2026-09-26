@@ -54,6 +54,10 @@ export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable }:
 
   const checkAnswer = (event: FormEvent) => {
     event.preventDefault();
+    // An IME composing a Hangul/kana/pinyin candidate can trigger the
+    // Enter-to-submit form event before the learner has confirmed their
+    // input; ignore that submit instead of checking a half-typed answer.
+    if ((event.nativeEvent as SubmitEvent & { isComposing?: boolean }).isComposing) return;
     if (!answerInput.trim()) return;
     setAnswerCorrect(isRecallAnswerCorrect(answerInput, prompt.answer));
   };

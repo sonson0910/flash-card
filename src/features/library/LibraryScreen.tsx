@@ -8,6 +8,7 @@ import type {
   SpreadsheetImportResult,
 } from '../importExport/spreadsheetImportService';
 import type { LearningStateOutcome } from '../learning/learningStateController';
+import type { BulkCardFieldPatchRequest } from '../learning/learningPersistencePort';
 import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySessionController';
 import { LibraryOverview } from './LibraryOverview';
 import { EmptyLibraryPanel } from './EmptyLibraryPanel';
@@ -88,6 +89,7 @@ export interface LibraryScreenActions {
     deleteCard: (cardId: string) => Promise<void>;
     toggleBookmark: (cardId: string) => Promise<void>;
     assignDeck: (cardId: string, deckName: string | null) => Promise<void>;
+    bulkPatchCards: (patches: readonly BulkCardFieldPatchRequest[]) => Promise<void>;
     updateCard: (cardId: string, fields: Partial<CardData>) => Promise<LearningStateOutcome>;
     changePage: (page: number) => void;
     clearFilters: () => void;
@@ -243,6 +245,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               toggleBookmark={actions.grid.toggleBookmark}
               customDecks={model.grid.customDecks}
               assignDeck={actions.grid.assignDeck}
+              bulkPatchCards={actions.grid.bulkPatchCards}
               updateCard={actions.grid.updateCard}
               totalPages={model.grid.totalPages}
               onPageChange={actions.grid.changePage}

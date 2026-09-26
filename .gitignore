@@ -3,7 +3,6 @@ build/
 dist/
 .firebase/
 firebase.staging.json
-.lingoflash-device-sync/
 .worktrees/
 coverage/
 playwright-report/

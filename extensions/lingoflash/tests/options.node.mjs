@@ -31,3 +31,12 @@ test('options exposes pending feedback and explicit empty permission state witho
   assert.match(source, /selectionIconEmpty\.hidden/);
   assert.doesNotMatch(css, /min-width:\s*360px/);
 });
+
+test('options exposes a Classic/Crystal Star theme family choice that persists through the shared settings flow', () => {
+  assert.match(html, /name="theme-family"[^>]*value="classic"/);
+  assert.match(html, /name="theme-family"[^>]*value="crystal"/);
+  assert.match(source, /themeFamilyInputs/);
+  assert.match(source, /applyThemeFamily/);
+  assert.match(source, /checkedThemeFamily/);
+  assert.match(source, /themeFamily:\s*checkedThemeFamily/);
+});

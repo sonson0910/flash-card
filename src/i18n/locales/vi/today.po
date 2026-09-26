@@ -19,7 +19,7 @@ msgid "daily.lesson.answer-feedback"
 msgstr "Phản hồi câu trả lời"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:44
+#: src/features/dailyLearning/LessonScreen.tsx:50
 msgid "daily.lesson.back-to-today"
 msgstr "Quay lại Hôm nay"
 
@@ -34,7 +34,7 @@ msgid "daily.lesson.choose-answer"
 msgstr "Chọn một câu trả lời"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:44
+#: src/features/dailyLearning/LessonScreen.tsx:50
 msgid "daily.lesson.complete"
 msgstr "Hoàn thành bài học"
 
@@ -44,17 +44,17 @@ msgid "daily.lesson.correct-answer"
 msgstr "Đáp án đúng:"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.exit"
 msgstr "Thoát bài học"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.lumi-copy"
 msgstr "Cứ từ từ. Mỗi lần một câu trả lời rõ ràng."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.lumi-label"
 msgstr "Lumi ở đây"
 
@@ -64,22 +64,22 @@ msgid "daily.lesson.no-words"
 msgstr "Chưa có từ nào được chọn."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.play-audio"
 msgstr "Phát âm thanh"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.progress-label"
 msgstr "Tiến độ bài học"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.prompt"
 msgstr "Lời nhắc"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.question-progress"
 msgstr "Câu {current} trên {total}"
 
@@ -149,12 +149,12 @@ msgid "daily.lesson.sentence-help"
 msgstr "Chọn từng từ theo thứ tự. Chọn lại từ đó để bỏ."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:44
+#: src/features/dailyLearning/LessonScreen.tsx:50
 msgid "daily.lesson.session-complete-kicker"
 msgstr "Hoàn thành phiên học"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.submit"
 msgstr "Gửi câu trả lời"
 
@@ -164,12 +164,12 @@ msgid "daily.lesson.sync-pending"
 msgstr "Lượt ôn đã được lưu trên thiết bị này và đang chờ đồng bộ."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.sync-pending-count"
 msgstr "{count, plural, one {# lượt ôn đã được lưu trên thiết bị này và đang chờ đồng bộ.} other {# lượt ôn đã được lưu trên thiết bị này và đang chờ đồng bộ.}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.title"
 msgstr "Bài học"
 

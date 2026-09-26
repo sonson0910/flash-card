@@ -133,7 +133,15 @@ export function useAppLibraryRuntime({
       page: catalog.page,
       pageSize: cardsPerPage,
       refreshKey: cloudRefresh,
-      statsOpen: isStatsOpen || viewMode === 'progress',
+      // CatalogScreen's personal-path summary (Review due / Keep learning /
+      // Mastered) reads library.dueToday/learning/learned, which for an
+      // authenticated user come from cloudStats rather than a local scan of
+      // `cards` (see selectLibraryStats in libraryViewModel.ts). Cloud stats
+      // are only fetched while this flag is true, so the catalog/paths view
+      // needs to opt in the same way the progress view already does, or an
+      // authenticated visitor sees an all-zero summary even with data in the
+      // library.
+      statsOpen: isStatsOpen || viewMode === 'progress' || viewMode === 'catalog',
     },
     library: {
       knownTotal: Math.max(cloudTotal, cloudStats.total, cards.length),
@@ -175,6 +183,7 @@ export function useAppLibraryRuntime({
     },
     resetCloud: () => {
       setCloudTotal(0);
+      setCloudStats(EMPTY_CLOUD_STATS);
       setCloudCategoryCounts({});
       setCloudFacetsComplete(false);
     },

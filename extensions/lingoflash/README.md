@@ -26,16 +26,19 @@ localized through Chrome's `i18n` API (`_locales/en`, `_locales/vi`); Chrome
 picks English or Vietnamese from the browser's own UI language automatically,
 with the shipped markup already carrying the Vietnamese `default_locale` copy
 so the page is correct even before any script runs. Popup and options pages
-self-host the same Fraunces/Geist/Geist Mono fonts the main app uses (see
-`fonts/SOURCES.md`) so they render correctly without a network request; the
-in-page result bubble and the floating selection icon are injected into
-arbitrary web pages and intentionally use system font fallbacks instead of
-requiring a `web_accessible_resources` manifest change.
+self-host the same Fraunces/Geist/Geist Mono fonts (Classic) and Kanit/Nunito
+fonts (Crystal Star) the main app uses (see `fonts/SOURCES.md`) so they render
+correctly without a network request; the in-page result bubble and the
+floating selection icon are injected into arbitrary web pages and
+intentionally use system font fallbacks instead of requiring a
+`web_accessible_resources` manifest change.
 
-Options exposes a light/dark/system appearance toggle for the Classic
-("Midnight Aurora" dark / "Ink & Paper" light) design family. The Crystal
-Star family and full artboard-level geometry parity with the Canvas source
-are not implemented yet; see the phase report for what remains.
+Options exposes a theme family toggle (Classic / Crystal Star) and a
+light/dark/system appearance toggle for whichever family is selected: Classic
+is "Midnight Aurora" (dark) / "Ink & Paper" (light), Crystal Star is "Starry
+Night" (dark) / "Prism Day" (light). Full artboard-level geometry parity with
+the Canvas source (beyond the shared token/color/font values both families
+already use) is not implemented yet; see the phase report for what remains.
 
 ## Due-card badge
 

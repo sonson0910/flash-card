@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const card = {
   id: 'flashcard-locale',
@@ -24,13 +24,9 @@ for (const locale of [
   { query: 'vi', document: 'vi', tier: 'Mới' },
   { query: 'pseudo', document: 'en-XA', tier: /\[New/ },
 ] as const) {
-  test(`card languages and tier label render with ${locale.query} UI locale`, async ({ page }) => {
-    await page.addInitScript(storedCard => {
-      localStorage.setItem('lingoflash_cards_scoped_v1', JSON.stringify({ version: 1, ownerId: null, cards: [storedCard] }));
-      localStorage.setItem('lingoflash_cards', JSON.stringify([storedCard]));
-      localStorage.removeItem('lingoflash_cards_owner');
-    }, card);
-    await page.goto(`/?view=library&locale=${locale.query}`);
+  test(`card languages and tier label render with ${locale.query} UI locale`, async ({ page, seedCards, signIn }) => {
+    await seedCards([card]);
+    await signIn(page, `/?view=library&locale=${locale.query}`);
 
     const shell = page.locator('.flashcard-shell');
     await expect(page.locator('html')).toHaveAttribute('lang', locale.document);
@@ -45,13 +41,9 @@ for (const locale of [
   });
 }
 
-test('changing the UI locale updates a mounted card while content languages stay fixed', async ({ page }) => {
-  await page.addInitScript(storedCard => {
-    localStorage.setItem('lingoflash_cards_scoped_v1', JSON.stringify({ version: 1, ownerId: null, cards: [storedCard] }));
-    localStorage.setItem('lingoflash_cards', JSON.stringify([storedCard]));
-    localStorage.removeItem('lingoflash_cards_owner');
-  }, card);
-  await page.goto('/?view=library');
+test('changing the UI locale updates a mounted card while content languages stay fixed', async ({ page, seedCards, signIn }) => {
+  await seedCards([card]);
+  await signIn(page, '/?view=library');
 
   const shell = page.locator('.flashcard-shell');
   await expect(shell.locator('[data-card-tier-label]')).toHaveText('New');

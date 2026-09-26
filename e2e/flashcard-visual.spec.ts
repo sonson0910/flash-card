@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
+import type { Locator, Page } from '@playwright/test';
 
 const cardPhoto = readFileSync('docs/design/sonflash-redesign/canvas/assets/blob/ed058680c239cce56bb63500ca7dd0e4.jpg');
 
@@ -103,29 +104,21 @@ async function expectNoMetadataControlOverlap(shell: Locator, metadata: Locator[
   }
 }
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, seedCards }) => {
   await page.route(card.imageUrl, route => route.fulfill({ body: cardPhoto, contentType: 'image/jpeg' }));
-  await page.addInitScript(storedCard => {
-    localStorage.setItem('lingoflash_cards_scoped_v1', JSON.stringify({
-      version: 1,
-      ownerId: null,
-      cards: [storedCard],
-    }));
-    localStorage.setItem('lingoflash_cards', JSON.stringify([storedCard]));
-    localStorage.removeItem('lingoflash_cards_owner');
-  }, card);
+  await seedCards([card]);
 });
 
 for (const theme of themes) {
   for (const viewport of viewports) {
-    test(`${theme.family} ${theme.mode} card front and back pass visual acceptance at ${viewport.name}`, async ({ page }, testInfo) => {
+    test(`${theme.family} ${theme.mode} card front and back pass visual acceptance at ${viewport.name}`, async ({ page, signIn }, testInfo) => {
       await page.setViewportSize(viewport);
       await page.emulateMedia({ reducedMotion: 'no-preference' });
       await page.addInitScript(({ family, mode }) => {
         localStorage.setItem('sonflash_theme_family', family);
         localStorage.setItem('lingoflash_theme', mode);
       }, theme);
-      await page.goto('/?view=library&locale=en');
+      await signIn(page, '/?view=library&locale=en');
 
       const root = page.locator('html');
       const shell = page.getByRole('group', { name: /luminous flashcard/i });
@@ -159,7 +152,7 @@ for (const theme of themes) {
 
 for (const theme of themes) {
   for (const viewport of viewports) {
-    test(`${theme.family} ${theme.mode} Zen card keeps both faces opaque and readable at ${viewport.name}`, async ({ page }, testInfo) => {
+    test(`${theme.family} ${theme.mode} Zen card keeps both faces opaque and readable at ${viewport.name}`, async ({ page, signIn }, testInfo) => {
       await page.setViewportSize(viewport);
       await page.emulateMedia({ reducedMotion: 'no-preference' });
       await page.addInitScript(({ family, mode }) => {
@@ -167,7 +160,7 @@ for (const theme of themes) {
         localStorage.setItem('lingoflash_theme', mode);
         localStorage.setItem('sonflash_zen_glass_mode', 'true');
       }, theme);
-      await page.goto('/?view=library&locale=en');
+      await signIn(page, '/?view=library&locale=en');
 
       const root = page.locator('html');
       const shell = page.getByRole('group', { name: /luminous flashcard/i });
@@ -207,14 +200,14 @@ for (const theme of themes) {
   }
 }
 
-test('reduced motion changes the card face without spatial animation', async ({ page }) => {
+test('reduced motion changes the card face without spatial animation', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addInitScript(() => {
     localStorage.setItem('sonflash_theme_family', 'crystal');
     localStorage.setItem('lingoflash_theme', 'dark');
   });
-  await page.goto('/?view=library&locale=en');
+  await signIn(page, '/?view=library&locale=en');
 
   const shell = page.getByRole('group', { name: /luminous flashcard/i });
   await expect(shell).toHaveAttribute('data-flip-animation', 'reduced');

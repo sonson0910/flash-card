@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const card = {
   id: 'flashcard-effects',
@@ -20,24 +20,18 @@ const card = {
   customDeck: null,
 };
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(storedCard => {
-    localStorage.setItem('lingoflash_cards_scoped_v1', JSON.stringify({
-      version: 1,
-      ownerId: null,
-      cards: [storedCard],
-    }));
-    localStorage.setItem('lingoflash_cards', JSON.stringify([storedCard]));
-    localStorage.removeItem('lingoflash_cards_owner');
+test.beforeEach(async ({ page, seedCards }) => {
+  await page.addInitScript(() => {
     localStorage.setItem('lingoflash_theme', 'light');
     HTMLMediaElement.prototype.play = () => Promise.resolve();
     HTMLMediaElement.prototype.pause = () => undefined;
-  }, card);
+  });
+  await seedCards([card]);
 });
 
-test('card effects retain their observable desktop states', async ({ page }) => {
+test('card effects retain their observable desktop states', async ({ page, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
 
   const shell = page.getByRole('group', { name: /luminous flashcard/i });
   const face = shell.locator('.flashcard-face');
@@ -76,9 +70,9 @@ test('card effects retain their observable desktop states', async ({ page }) => 
   await expect(shell.locator('.flashcard-back')).toBeVisible();
 });
 
-test('reduced motion keeps card effects static while retaining accessible states', async ({ page }) => {
+test('reduced motion keeps card effects static while retaining accessible states', async ({ page, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
 
   const shell = page.getByRole('group', { name: /luminous flashcard/i });
   const face = shell.locator('.flashcard-face');

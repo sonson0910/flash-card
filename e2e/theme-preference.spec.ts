@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const themes = [
   { family: 'classic', mode: 'dark' },
@@ -39,9 +39,9 @@ test('system color preference applies only without a saved mode', async ({ page 
   await expect(page.locator('html')).toHaveClass(/\bdark\b/);
 });
 
-test('a fresh runtime follows system light without saving a choice', async ({ page }) => {
+test('a fresh runtime follows system light without saving a choice', async ({ page, signIn }) => {
   await page.emulateMedia({ colorScheme: 'light' });
-  await page.goto('/?view=today');
+  await signIn(page, '/?view=today');
   await expect(page.locator('[data-app-view-stage]')).toBeVisible();
   await page.waitForTimeout(250);
   await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
@@ -137,12 +137,12 @@ for (const theme of themes) {
 }
 
 for (const mode of ['dark', 'light'] as const) {
-  test(`crystal ${mode} runtime controls have readable text`, async ({ page }) => {
+  test(`crystal ${mode} runtime controls have readable text`, async ({ page, signIn }) => {
     await page.addInitScript(savedMode => {
       localStorage.setItem('sonflash_theme_family', 'crystal');
       localStorage.setItem('lingoflash_theme', savedMode);
     }, mode);
-    await page.goto('/?view=today');
+    await signIn(page, '/?view=today');
     await expect(page.locator('[data-app-view-stage]')).toBeVisible();
     const results = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
     expect(results.violations.map(({ id, nodes }) => ({ id, targets: nodes.map(node => node.target) }))).toEqual([]);

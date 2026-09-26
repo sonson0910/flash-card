@@ -2,7 +2,18 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { createServer, type ViteDevServer } from 'vite';
 
-const fixtureOrigin = 'http://127.0.0.1:4175';
+// Base port for this spec's own Vite fixture server. `playwright.config.ts` has
+// `fullyParallel: false`, so different spec files (not just tests within one
+// file) can still run concurrently on separate workers; four unrelated
+// -visual specs each ran their own strictPort Vite server on this exact port,
+// so any two of them scheduled on different workers at once raced for the
+// same socket and one hit EADDRINUSE ("Port 4175 is already in use"). Offset
+// by Playwright's parallelIndex, which is guaranteed distinct across workers
+// that are actually running at the same time, per
+// https://playwright.dev/docs/api/class-testinfo#test-info-parallel-index.
+const FIXTURE_PORT_BASE = 4175;
+let fixturePort = FIXTURE_PORT_BASE;
+let fixtureOrigin = `http://127.0.0.1:${fixturePort}`;
 const fixturePath = '/e2e/fixtures/practice-visual.html';
 const themes = [
   { family: 'classic', mode: 'light' }, { family: 'classic', mode: 'dark' },
@@ -41,8 +52,10 @@ async function expectScreen(page: Page, testInfo: TestInfo, name: string) {
   await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
 }
 
-test.beforeAll(async () => {
-  fixtureServer = await createServer({ configFile: 'vite.config.ts', appType: 'mpa', server: { host: '127.0.0.1', port: 4175, strictPort: true }, optimizeDeps: { entries: ['e2e/fixtures/practice-visual.html'] } });
+test.beforeAll(async ({}, testInfo) => {
+  fixturePort = FIXTURE_PORT_BASE + testInfo.parallelIndex;
+  fixtureOrigin = `http://127.0.0.1:${fixturePort}`;
+  fixtureServer = await createServer({ configFile: 'vite.config.ts', appType: 'mpa', server: { host: '127.0.0.1', port: fixturePort, strictPort: true }, optimizeDeps: { entries: ['e2e/fixtures/practice-visual.html'] } });
   await fixtureServer.listen();
 });
 test.afterAll(async () => { await fixtureServer?.close(); });
@@ -65,7 +78,7 @@ for (const theme of themes) for (const viewport of viewports) {
     page.on('pageerror', error => { throw error; });
     await page.setViewportSize(viewport);
     await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
-    await page.route(/^https?:\/\/(?!127\.0\.0\.1:4175)/, route => route.abort());
+    await page.route(new RegExp(`^https?://(?!127\\.0\\.0\\.1:${fixturePort})`), route => route.abort());
     await page.addInitScript(({ family, mode }) => {
       localStorage.setItem('sonflash_theme_family', family);
       localStorage.setItem('lingoflash_theme', mode);
@@ -92,7 +105,7 @@ for (const theme of themes) for (const viewport of viewports) {
     page.on('pageerror', error => { throw error; });
     await page.setViewportSize(viewport);
     await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
-    await page.route(/^https?:\/\/(?!127\.0\.0\.1:4175)/, route => route.abort());
+    await page.route(new RegExp(`^https?://(?!127\\.0\\.0\\.1:${fixturePort})`), route => route.abort());
     await page.addInitScript(({ family, mode }) => {
       localStorage.setItem('sonflash_theme_family', family);
       localStorage.setItem('lingoflash_theme', mode);

@@ -1,8 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
-test('personal catalog status follows a live interface-language change', async ({ page }) => {
-  await page.goto('/?view=catalog');
+test('personal catalog status follows a live interface-language change', async ({ page, signIn }) => {
+  await signIn(page, '/?view=catalog');
   await expect(page.getByText('Add your first vocabulary cards to start a personal path.')).toBeVisible();
 
   await page.getByRole('button', { name: 'Choose language' }).click();
@@ -71,8 +71,8 @@ test('Paths is lazy, URL-addressable, useful without a shared release and access
   }
 });
 
-test('a direct Catalog URL never invents reviewed vocabulary or an installable release', async ({ page }) => {
-  await page.goto('/?view=catalog&lang=ja');
+test('a direct Catalog URL never invents reviewed vocabulary or an installable release', async ({ page, signIn }) => {
+  await signIn(page, '/?view=catalog&lang=ja');
 
   await expect(page).toHaveURL(/view=catalog/);
   await expect(page.getByRole('heading', { name: 'Language paths' })).toBeVisible();

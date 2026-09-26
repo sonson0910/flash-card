@@ -1,4 +1,5 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures/firebase-emulator';
+import type { Locator } from '@playwright/test';
 import { createServer, type ViteDevServer } from 'vite';
 
 const layouts = [
@@ -44,8 +45,8 @@ async function expectTargets(locator: Locator, label: string) {
   }
 }
 
-async function openLibrary(page: Page) {
-  await page.goto('/?view=library');
+async function openLibrary(page: Page, navigate: (page: Page, url: string) => Promise<void> = async (p, url) => { await p.goto(url); }) {
+  await navigate(page, '/?view=library');
   await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
 }
 
@@ -71,17 +72,18 @@ test.afterAll(async () => {
 });
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(seedCards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(seedCards));
-    localStorage.removeItem('lingoflash_cards_owner');
+  await page.addInitScript(() => {
     localStorage.setItem('lingoflash_theme', 'light');
-  }, cards);
+  });
 });
 
-test('LibraryTools, Flashcard, and CardMnemonicSection measure at least 44px in both layouts', async ({ page }) => {
+test('LibraryTools, Flashcard, and CardMnemonicSection measure at least 44px in both layouts', async ({ page, seedCards, signIn }) => {
+  await seedCards(cards);
+  let signedIn = false;
   for (const layout of layouts) {
     await page.setViewportSize({ width: layout.width, height: layout.height });
-    await openLibrary(page);
+    if (signedIn) await openLibrary(page);
+    else { await openLibrary(page, signIn); signedIn = true; }
     await applyLayout(page, layout);
 
     const tools = page.locator('#library-tools');
@@ -126,10 +128,13 @@ test('undo pauses on hover and focus, then dismisses once after the remaining ti
   }
 });
 
-test('Shadowing and SessionRecapModal controls measure at least 44px in both layouts', async ({ page }) => {
+test('Shadowing and SessionRecapModal controls measure at least 44px in both layouts', async ({ page, seedCards, signIn }) => {
+  await seedCards(cards);
+  let signedIn = false;
   for (const layout of layouts) {
     await page.setViewportSize({ width: layout.width, height: layout.height });
-    await page.goto('/');
+    if (signedIn) await page.goto('/?view=today');
+    else { await signIn(page, '/?view=today'); signedIn = true; }
     await applyLayout(page, layout);
     await page.getByRole('button', { name: 'More practice' }).click();
     await page.getByRole('button', { name: 'Shadowing Arena' }).click();

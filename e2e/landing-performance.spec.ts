@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const cloudRequest = /firebase|googleapis|recaptcha|identitytoolkit|securetoken|\/api\/device-cards/i;
 const runtimeCloudScript = /\/assets\/(?:AppRuntime|firebase|firebase-functions)[^/]*\.js$/i;
@@ -20,11 +20,8 @@ const landingCards = Array.from({ length: 6 }, (_, index) => ({
   customDeck: null,
 }));
 
-test('cold landing is cloud-free and warm runtime stays mounted across navigation', async ({ page }) => {
-  await page.addInitScript(initialCards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));
-    localStorage.removeItem('lingoflash_cards_owner');
-  }, landingCards);
+test('cold landing is cloud-free and warm runtime stays mounted across navigation', async ({ page, seedCards, signInInPlace }) => {
+  await seedCards(landingCards);
   const requests: string[] = [];
   let documentRequests = 0;
   page.on('request', request => {
@@ -45,6 +42,17 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
   }
 
   expect(requests.filter(url => cloudRequest.test(url))).toEqual([]);
+  // Sign-in happens in place (no navigation) so documentRequests below still
+  // reflects exactly one document load; Today now requires an authenticated
+  // owner since guest/local-only mode was removed. window.__SONFLASH_TEST__
+  // is only installed once AppRuntime's lazy chunk evaluates, which only
+  // happens once the view leaves 'landing' — so this priming click mounts
+  // that chunk first (a client-side state change, not a navigation).
+  // AppRuntime's signed-out effect immediately bounces viewMode back to
+  // 'landing', but the chunk and its hook stay loaded for the rest of the
+  // test, so the real click below (already present) succeeds once signed in.
+  await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
+  await signInInPlace(page);
   await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
   await page.getByRole('button', { name: 'More practice' }).click();
@@ -92,11 +100,8 @@ test('atmosphere controls activate every video without moving the page', async (
   }
 });
 
-test('failed runtime import restores landing and retries with a fresh runtime entry', async ({ page }) => {
-  await page.addInitScript(initialCards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));
-    localStorage.removeItem('lingoflash_cards_owner');
-  }, landingCards);
+test('failed runtime import restores landing and retries with a fresh runtime entry', async ({ page, seedCards, signInInPlace }) => {
+  await seedCards(landingCards);
   const requests: string[] = [];
   let documentRequests = 0;
   let blockRuntime = true;
@@ -119,6 +124,11 @@ test('failed runtime import restores landing and retries with a fresh runtime en
   await page.getByRole('button', { name: 'Retry workspace', exact: true }).click();
   await expect(page).toHaveURL(/runtime-retry=\d+/);
   await expect(page.getByRole('button', { name: 'Start learning', exact: true }).first()).toBeVisible();
+  // Same priming click as the top test: this retry reload landed back on
+  // the (view-less) landing URL, so AppRuntimeRetry's chunk and its hook
+  // have not loaded yet either.
+  await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
+  await signInInPlace(page);
   await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
   expect(documentRequests).toBe(2);

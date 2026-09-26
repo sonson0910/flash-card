@@ -488,7 +488,7 @@ msgid "flashcard.hints.show"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:78
+#: src/components/flashcard/ActiveRecallPrompt.tsx:82
 #: src/components/flashcard/CardFront.tsx:82
 msgid "flashcard.image.illustration"
 msgstr ""
@@ -583,7 +583,7 @@ msgid "flashcard.original-word"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardHeadword.tsx:39
+#: src/components/flashcard/CardHeadword.tsx:40
 msgid "flashcard.part-of-speech-prefix"
 msgstr ""
 
@@ -628,12 +628,32 @@ msgid "flashcard.read-aloud"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:104
+#: src/components/flashcard/ReadingToggle.tsx:57
+msgid "flashcard.reading.toggle-aria"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ReadingToggle.tsx:54
+msgid "flashcard.reading.toggle-furigana"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ReadingToggle.tsx:55
+msgid "flashcard.reading.toggle-pinyin"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ReadingToggle.tsx:52
+msgid "flashcard.reading.toggle-romanization"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:108
 msgid "flashcard.recall.answer"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:115
+#: src/components/flashcard/ActiveRecallPrompt.tsx:119
 msgid "flashcard.recall.answer-placeholder"
 msgstr ""
 
@@ -643,12 +663,12 @@ msgid "flashcard.recall.audio-recall"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:123
+#: src/components/flashcard/ActiveRecallPrompt.tsx:127
 msgid "flashcard.recall.check"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:103
+#: src/components/flashcard/ActiveRecallPrompt.tsx:107
 msgid "flashcard.recall.check-answer"
 msgstr ""
 
@@ -658,17 +678,17 @@ msgid "flashcard.recall.complete-missing-word"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:128
+#: src/components/flashcard/ActiveRecallPrompt.tsx:132
 msgid "flashcard.recall.correct"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:128
+#: src/components/flashcard/ActiveRecallPrompt.tsx:132
 msgid "flashcard.recall.incorrect"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:101
+#: src/components/flashcard/ActiveRecallPrompt.tsx:105
 msgid "flashcard.recall.instructions"
 msgstr ""
 
@@ -693,17 +713,17 @@ msgid "flashcard.recall.native-meaning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:84
+#: src/components/flashcard/ActiveRecallPrompt.tsx:88
 msgid "flashcard.recall.no-illustration"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:93
+#: src/components/flashcard/ActiveRecallPrompt.tsx:97
 msgid "flashcard.recall.play-word"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:137
+#: src/components/flashcard/ActiveRecallPrompt.tsx:141
 msgid "flashcard.recall.reveal"
 msgstr ""
 
@@ -812,27 +832,27 @@ msgid "flashcard.status.overdue"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/SyllableStressBadge.tsx:50
+#: src/components/flashcard/SyllableStressBadge.tsx:55
 msgid "flashcard.syllables"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/SyllableStressBadge.tsx:46
+#: src/components/flashcard/SyllableStressBadge.tsx:51
 msgid "flashcard.syllables.breakdown"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/SyllableStressBadge.tsx:47
+#: src/components/flashcard/SyllableStressBadge.tsx:52
 msgid "flashcard.syllables.help"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/SyllableStressBadge.tsx:67
+#: src/components/flashcard/SyllableStressBadge.tsx:72
 msgid "flashcard.syllables.item"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/SyllableStressBadge.tsx:67
+#: src/components/flashcard/SyllableStressBadge.tsx:72
 msgid "flashcard.syllables.primary-stress"
 msgstr ""
 

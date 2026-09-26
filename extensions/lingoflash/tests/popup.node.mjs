@@ -14,6 +14,11 @@ test('selection permission failure rolls back the newly granted origin', () => {
   assert.match(popupSource, /permissions.*remove|remove.*permissions/s);
 });
 
+test('popup applies the saved theme family on boot alongside the color scheme', () => {
+  assert.match(popupSource, /applyThemeFamily/);
+  assert.match(popupSource, /applyThemeFamily\(settings\.themeFamily\)/);
+});
+
 test('popup removes a newly granted site permission when background enable fails', async () => {
   const popup = await createPopupContext({
     activeSite: { ok: true, pattern: 'https://example.com/*', protected: false, enabled: false },

@@ -1,21 +1,19 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
-test('the first-use create action focuses the visible word field', async ({ page }) => {
+test('the first-use create action focuses the visible word field', async ({ page, signIn, blockExternalNetwork }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.addInitScript(() => {
-    localStorage.setItem('lingoflash_cards_scoped_v1', JSON.stringify({ version: 1, ownerId: null, cards: [] }));
-  });
-  await page.route(/^https?:\/\/(?!127\.0\.0\.1:4173)/, route => route.abort());
-  await page.goto('/?view=library&locale=en');
+  await blockExternalNetwork(page);
+  // A fresh emulator test user already starts with zero cards; no seeding needed.
+  await signIn(page, '/?view=library&locale=en');
   await expect(page.locator('[data-empty-library-panel]')).toBeVisible();
   await page.locator('[data-library-create-action]').click();
   await expect(page.locator('#empty-library-word')).toBeFocused();
 });
 
-test('mobile shell switches language and theme without reloading', async ({ page }) => {
+test('mobile shell switches language and theme without reloading', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   const shell = page.locator('[data-shell-layer="primary"]');
   await expect(shell).toBeVisible();
@@ -41,10 +39,10 @@ test('mobile shell switches language and theme without reloading', async ({ page
   await expect(page.locator('html')).toHaveClass(/\bdark\b/);
 });
 
-test('pseudo locale keeps 360px shell controls inside the viewport', async ({ page }) => {
+test('pseudo locale keeps 360px shell controls inside the viewport', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 360, height: 780 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/?view=today&locale=pseudo');
+  await signIn(page, '/?view=today&locale=pseudo');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en-XA');
   const shell = page.locator('[data-shell-layer="primary"]');
   await expect(shell).toBeVisible();
@@ -60,14 +58,14 @@ test('pseudo locale keeps 360px shell controls inside the viewport', async ({ pa
 for (const family of ['classic', 'crystal'] as const) {
   for (const mode of ['dark', 'light'] as const) {
     for (const width of [1440, 390]) {
-      test(`${family} ${mode} shell fits at ${width}px`, async ({ page }) => {
+      test(`${family} ${mode} shell fits at ${width}px`, async ({ page, signIn }) => {
         await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await page.addInitScript(({ family, mode }) => {
           localStorage.setItem('sonflash_theme_family', family);
           localStorage.setItem('lingoflash_theme', mode);
         }, { family, mode });
-        await page.goto('/?view=today&locale=en');
+        await signIn(page, '/?view=today&locale=en');
         const shell = page.locator('[data-shell-layer="primary"]');
         await expect(shell).toBeVisible();
         expect(await shell.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);

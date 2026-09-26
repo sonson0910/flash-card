@@ -5,8 +5,15 @@ import {
   ReCaptchaV3Provider,
   type AppCheck,
 } from 'firebase/app-check';
-import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
 import {
+  connectAuthEmulator,
+  getAuth,
+  GoogleAuthProvider,
+  signInWithCustomToken,
+  type Auth,
+} from 'firebase/auth';
+import {
+  connectFirestoreEmulator,
   getFirestore,
   initializeFirestore,
   memoryLocalCache,
@@ -18,10 +25,20 @@ import productionFirebaseConfig from '../../firebase-applet-config.json';
 import { resolveProtectedFunctionsCapability } from './protectedFunctionsCapability';
 
 type SonFlashFirebaseConfig = FirebaseOptions & { firestoreDatabaseId?: string };
+// Build-time flag for the Playwright suite, so production bundles drop the emulator branch.
+const isE2eEmulatorBuild = import.meta.env.VITE_SONFLASH_E2E_EMULATOR === 'true';
 const selectedFirebaseConfig = import.meta.env.VITE_SONFLASH_FIREBASE_CONFIG?.trim();
-const firebaseConfig = (selectedFirebaseConfig
-  ? JSON.parse(selectedFirebaseConfig)
-  : import.meta.env.MODE === 'test' ? productionFirebaseConfig : {}) as SonFlashFirebaseConfig;
+const firebaseConfig = (isE2eEmulatorBuild
+  ? {
+    apiKey: 'demo-api-key',
+    authDomain: 'demo-lingoflash.firebaseapp.com',
+    projectId: 'demo-lingoflash',
+    appId: 'demo-app-id',
+    firestoreDatabaseId: productionFirebaseConfig.firestoreDatabaseId,
+  }
+  : selectedFirebaseConfig
+    ? JSON.parse(selectedFirebaseConfig)
+    : import.meta.env.MODE === 'test' ? productionFirebaseConfig : {}) as SonFlashFirebaseConfig;
 
 export const isFirebaseConfigured = !!(firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey.trim() !== "");
 const appCheckSiteKey = import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY?.trim() ?? '';
@@ -77,9 +94,23 @@ if (isFirebaseConfigured) {
     }
     authInstance = getAuth(appInstance);
     googleProviderInstance = new GoogleAuthProvider();
+    if (isE2eEmulatorBuild && dbInstance) {
+      connectEmulatorsForTests(authInstance, dbInstance);
+    }
   } catch (err) {
     console.error("Failed to initialize Firebase with current configuration:", err);
   }
+}
+
+function connectEmulatorsForTests(auth: Auth, db: Firestore) {
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  (window as Window & { __SONFLASH_TEST__?: unknown }).__SONFLASH_TEST__ = {
+    signInWithCustomToken: async (token: string) => {
+      await signInWithCustomToken(auth, token);
+    },
+    getCurrentUid: () => auth.currentUser?.uid ?? null,
+  };
 }
 
 export const protectedFunctionsCapability = resolveProtectedFunctionsCapability({

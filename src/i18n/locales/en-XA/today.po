@@ -19,7 +19,7 @@ msgid "daily.lesson.answer-feedback"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:44
+#: src/features/dailyLearning/LessonScreen.tsx:50
 msgid "daily.lesson.back-to-today"
 msgstr ""
 
@@ -34,7 +34,7 @@ msgid "daily.lesson.choose-answer"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:44
+#: src/features/dailyLearning/LessonScreen.tsx:50
 msgid "daily.lesson.complete"
 msgstr ""
 
@@ -44,17 +44,17 @@ msgid "daily.lesson.correct-answer"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.exit"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.lumi-copy"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.lumi-label"
 msgstr ""
 
@@ -64,22 +64,22 @@ msgid "daily.lesson.no-words"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.play-audio"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.progress-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.prompt"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.question-progress"
 msgstr ""
 
@@ -149,12 +149,12 @@ msgid "daily.lesson.sentence-help"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:44
+#: src/features/dailyLearning/LessonScreen.tsx:50
 msgid "daily.lesson.session-complete-kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.submit"
 msgstr ""
 
@@ -164,12 +164,12 @@ msgid "daily.lesson.sync-pending"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.sync-pending-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.title"
 msgstr ""
 

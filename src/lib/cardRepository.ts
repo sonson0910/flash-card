@@ -63,6 +63,12 @@ import {
   runProtectedFunction,
 } from './protectedFunctionsCapability';
 import {
+  BulkMutationEpochConflictError,
+  bulkMutateCardsViaCallable,
+  type BulkCardMutationItemResult,
+  type BulkCardPatchCommand,
+} from './bulkCardMutationRepository';
+import {
   cardAlreadyHasPatch,
   buildCardTombstone,
   MAX_PROTOCOL_COUNTER,
@@ -757,7 +763,12 @@ export async function fetchPracticeCards(
   ));
   const rotatedCards = rotatedSnapshot.docs.map(card => normalizeCardData(card.data() as Partial<CardData>, card.id));
 
-  if (rotatedCards.length < sampleSize) {
+  // The rotated page can run off the end of the collection before filling
+  // sampleSize, but prioritizePracticeCards below only keeps the first
+  // maximumCards cards anyway. A wrap-around query that starts from the
+  // beginning is only worth its read cost when the combined pool is still
+  // short of that cap; otherwise every card it would return is discarded.
+  if (rotatedCards.length < sampleSize && scheduledCards.length + rotatedCards.length < maximumCards) {
     const wrappedSnapshot = await getDocs(query(
       cardsCollection(db, userId),
       ...languageConstraint,
@@ -1721,6 +1732,10 @@ const customDeckBatchKey = (documents: readonly QueryDocumentSnapshot[]): string
     }))
     .sort((left, right) => left.id.localeCompare(right.id)));
 
+// Firestore's per-batch write ceiling (500) minus headroom; matches the
+// server callable's own bound so one query page always fits in one call.
+const CUSTOM_DECK_CLEAR_BATCH_SIZE = 400;
+
 export async function clearCustomDeckAssignments(
   db: Firestore,
   userId: string,
@@ -1733,18 +1748,33 @@ export async function clearCustomDeckAssignments(
     const snapshot = await getDocs(query(
       cardsCollection(db, userId),
       where('customDeck', '==', deckName),
-      limit(400),
+      limit(CUSTOM_DECK_CLEAR_BATCH_SIZE),
     ));
     if (snapshot.empty) return;
     const batchKey = customDeckBatchKey(snapshot.docs);
-    const results = await mapWithConcurrencyUntilFailure(snapshot.docs, 8, cardDocument =>
-      clearCustomDeckAssignmentIfCurrent(
-        db,
-        userId,
-        deckName,
-        cardDocument,
-        libraryEpoch,
-      ));
+
+    // One Admin SDK callable replaces one client `runTransaction` per card:
+    // Firestore Rules evaluate once per callable invocation instead of once
+    // per document, cutting this bulk patch from ~10 billed rule reads per
+    // card to a single per-batch server transaction.
+    let results: BulkCardMutationItemResult[];
+    try {
+      results = await bulkMutateCardsViaCallable(db, userId, libraryEpoch, snapshot.docs.map(cardDocument => ({
+        cardId: cardDocument.id,
+        baseRevision: normalizedLibraryEpoch((cardDocument.data() as Partial<CardData>).revision),
+        fields: { customDeck: null },
+        fieldMask: ['customDeck'] as const,
+      })));
+    } catch (error) {
+      if (error instanceof BulkMutationEpochConflictError) {
+        if (error.reason === 'future-library-epoch') {
+          throw new CardMutationPreconditionError('future-library-epoch');
+        }
+        libraryEpoch = await getLibraryEpoch(db, userId);
+        continue;
+      }
+      throw error;
+    }
 
     if (results.some(result => !result.applied && result.reason === 'future-library-epoch')) {
       throw new CardMutationPreconditionError('future-library-epoch');
@@ -1760,7 +1790,20 @@ export async function clearCustomDeckAssignments(
       libraryEpoch = refreshedEpoch;
     }
 
-    if (epochAdvanced || results.some(result => result.applied)) {
+    // A card that has not gone through the identity/reservation protocol
+    // cannot be validated by the bulk callable's simplified check; fall back
+    // to the single-card path, which can upgrade it in place.
+    const byId = new Map(snapshot.docs.map(cardDocument => [cardDocument.id, cardDocument]));
+    const migrationCandidates = results
+      .filter(result => !result.applied && result.reason === 'requires-migration')
+      .map(result => byId.get(result.cardId))
+      .filter((cardDocument): cardDocument is QueryDocumentSnapshot => Boolean(cardDocument));
+    if (migrationCandidates.length > 0) {
+      await mapWithConcurrencyUntilFailure(migrationCandidates, 8, cardDocument =>
+        clearCustomDeckAssignmentIfCurrent(db, userId, deckName, cardDocument, libraryEpoch));
+    }
+
+    if (epochAdvanced || migrationCandidates.length > 0 || results.some(result => result.applied)) {
       stalledBatchKey = null;
       stalledBatchCount = 0;
       continue;
@@ -1774,6 +1817,133 @@ export async function clearCustomDeckAssignments(
       );
     }
   }
+}
+
+export type BulkCardPatchOutcome =
+  | { cardId: string; applied: true; revision: number }
+  | { cardId: string; applied: false; reason: 'missing' | 'revision-conflict' | 'conflict'; currentRevision?: number };
+
+export interface BulkCardPatchBatchResult {
+  /** The library epoch that was actually in effect when the batch settled. */
+  libraryEpoch: number;
+  outcomes: BulkCardPatchOutcome[];
+}
+
+// A fixed, caller-supplied card list (unlike clearCustomDeckAssignments' live
+// query sweep) cannot be re-queried for progress, so epoch drift gets a
+// bounded number of retries instead of an unbounded stalled-batch loop.
+const BULK_PATCH_EPOCH_RETRY_LIMIT = 3;
+
+/**
+ * Patches an explicit, caller-known list of cards (e.g. a Library multi-select
+ * action) in one Admin SDK callable instead of one client `runTransaction` per
+ * card. Mirrors `clearCustomDeckAssignments`'s conflict handling: a card whose
+ * protocol needs upgrading falls back to the single-card `applyCardPatchIfCurrent`
+ * path; a genuine `revision-conflict` is reported back as a failure rather than
+ * retried, since the caller (not this function) owns re-reading the card and
+ * deciding whether to retry.
+ */
+export async function bulkPatchCards(
+  db: Firestore,
+  userId: string,
+  patches: readonly BulkCardPatchCommand[],
+): Promise<BulkCardPatchBatchResult> {
+  if (patches.length === 0) return { libraryEpoch: await getLibraryEpoch(db, userId), outcomes: [] };
+
+  let libraryEpoch = await getLibraryEpoch(db, userId);
+  const outcomes = new Map<string, BulkCardPatchOutcome>();
+  const pending = new Map(patches.map(patch => [patch.cardId, patch]));
+
+  for (let attempt = 0; attempt < BULK_PATCH_EPOCH_RETRY_LIMIT && pending.size > 0; attempt += 1) {
+    const requestBatch = [...pending.values()];
+    let results: BulkCardMutationItemResult[];
+    try {
+      results = await bulkMutateCardsViaCallable(
+        db,
+        userId,
+        libraryEpoch,
+        requestBatch.map(patch => ({ ...patch, fieldMask: [...patch.fieldMask] })),
+      );
+    } catch (error) {
+      if (error instanceof BulkMutationEpochConflictError) {
+        if (error.reason === 'future-library-epoch') {
+          throw new CardMutationPreconditionError('future-library-epoch');
+        }
+        libraryEpoch = await getLibraryEpoch(db, userId);
+        continue;
+      }
+      throw error;
+    }
+
+    if (results.some(result => !result.applied && result.reason === 'future-library-epoch')) {
+      throw new CardMutationPreconditionError('future-library-epoch');
+    }
+
+    const migrationCandidates: BulkCardPatchCommand[] = [];
+    let epochDrifted = false;
+    for (const result of results) {
+      if (result.op !== 'patch') continue;
+      const request = pending.get(result.cardId);
+      if (!request) continue;
+      if (result.applied) {
+        outcomes.set(result.cardId, { cardId: result.cardId, applied: true, revision: result.revision });
+        pending.delete(result.cardId);
+      } else if (result.reason === 'requires-migration') {
+        migrationCandidates.push(request);
+        pending.delete(result.cardId);
+      } else if (result.reason === 'stale-library-epoch') {
+        // Left pending; retried below once the epoch has been refreshed.
+        epochDrifted = true;
+      } else if (result.reason === 'revision-conflict') {
+        outcomes.set(result.cardId, {
+          cardId: result.cardId,
+          applied: false,
+          reason: 'revision-conflict',
+          currentRevision: result.currentRevision,
+        });
+        pending.delete(result.cardId);
+      } else {
+        outcomes.set(result.cardId, { cardId: result.cardId, applied: false, reason: 'missing' });
+        pending.delete(result.cardId);
+      }
+    }
+
+    if (migrationCandidates.length > 0) {
+      await mapWithConcurrencyUntilFailure(migrationCandidates, 8, async request => {
+        try {
+          const result = await applyCardPatchIfCurrent(db, userId, {
+            cardId: request.cardId,
+            fields: request.fields,
+            fieldMask: request.fieldMask,
+            baseRevision: request.baseRevision,
+            libraryEpoch,
+          });
+          outcomes.set(request.cardId, result.applied
+            ? { cardId: request.cardId, applied: true, revision: result.revision }
+            : result.reason === 'revision-conflict'
+              ? { cardId: request.cardId, applied: false, reason: 'revision-conflict', currentRevision: result.currentRevision }
+              : { cardId: request.cardId, applied: false, reason: 'missing' });
+        } catch (error) {
+          if (error instanceof CardMutationPreconditionError) {
+            outcomes.set(request.cardId, { cardId: request.cardId, applied: false, reason: 'conflict' });
+            return;
+          }
+          throw error;
+        }
+      });
+    }
+
+    if (epochDrifted) libraryEpoch = await getLibraryEpoch(db, userId);
+  }
+
+  for (const cardId of pending.keys()) {
+    if (!outcomes.has(cardId)) outcomes.set(cardId, { cardId, applied: false, reason: 'revision-conflict' });
+  }
+
+  return {
+    libraryEpoch,
+    outcomes: patches.map(patch => outcomes.get(patch.cardId) ?? { cardId: patch.cardId, applied: false, reason: 'missing' }),
+  };
 }
 
 export async function fetchAllCardsOnDemand(

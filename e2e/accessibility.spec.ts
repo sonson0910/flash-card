@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const guestCards = ['accessible', 'inclusive'].map((word, index) => ({
   id: `axe-${index}`,
@@ -18,13 +18,11 @@ const guestCards = ['accessible', 'inclusive'].map((word, index) => ({
   customDeck: null,
 }));
 
-test('guest library has no serious or critical automated WCAG violations', async ({ page }) => {
+test('signed-in library has no serious or critical automated WCAG violations', async ({ page, seedCards, signIn, blockExternalNetwork }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.addInitScript(cards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(cards));
-    localStorage.removeItem('lingoflash_cards_owner');
-  }, guestCards);
-  await page.goto('/?view=library&locale=en');
+  await seedCards(guestCards);
+  await blockExternalNetwork(page);
+  await signIn(page, '/?view=library&locale=en');
   await expect(page.locator('#library-card-grid').getByRole('heading', { name: 'Your library' })).toBeVisible();
   await expect(page.locator('#library-card-grid')).toHaveAttribute('aria-busy', 'false');
 
@@ -46,13 +44,11 @@ test('guest library has no serious or critical automated WCAG violations', async
   expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
 });
 
-test('library supports 320px reflow, 200% text and visible keyboard focus', async ({ page }) => {
+test('library supports 320px reflow, 200% text and visible keyboard focus', async ({ page, seedCards, signIn, blockExternalNetwork }) => {
   await page.setViewportSize({ width: 320, height: 640 });
-  await page.addInitScript(cards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(cards));
-    localStorage.removeItem('lingoflash_cards_owner');
-  }, guestCards);
-  await page.goto('/?view=library&locale=en');
+  await seedCards(guestCards);
+  await blockExternalNetwork(page);
+  await signIn(page, '/?view=library&locale=en');
   await page.locator('html').evaluate(element => { element.style.fontSize = '200%'; });
   await expect(page.locator('#library-card-grid').getByRole('heading', { name: 'Your library' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
@@ -73,8 +69,17 @@ test('library supports 320px reflow, 200% text and visible keyboard focus', asyn
   await manage.focus();
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('menu', { name: 'Library management' })).toBeVisible();
-  const identityActions = await page.getByRole('menuitem', { name: 'Sign in & sync', exact: true }).count()
-    ? ['Sign in & sync'] : [];
+  // The menu renders, in this fixed DOM order: an authenticated+online "Sync
+  // now" action (LibraryManagementMenu.tsx's shouldShowSyncNow — true for
+  // this fixture's always-authenticated, always-online test user), then
+  // exactly one of "Sign in & sync" (signed out) or the authenticated
+  // account's real accessible name "Sign out of cloud sync" (not the
+  // shorter "Sign out" this list used to check for, which never matches and
+  // silently produced an empty prefix).
+  const identityActions: string[] = [];
+  if (await page.getByRole('menuitem', { name: 'Sync now', exact: true }).count()) identityActions.push('Sync now');
+  if (await page.getByRole('menuitem', { name: 'Sign in & sync', exact: true }).count()) identityActions.push('Sign in & sync');
+  else if (await page.getByRole('menuitem', { name: 'Sign out of cloud sync', exact: true }).count()) identityActions.push('Sign out of cloud sync');
   const menuNames = [
     ...identityActions,
     'Privacy',

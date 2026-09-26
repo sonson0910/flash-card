@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
+import type { Page, TestInfo } from '@playwright/test';
 
 const cards = Array.from({ length: 12 }, (_, index) => {
   const word = ['analyse', 'benefit', 'context', 'develop', 'evidence', 'focus', 'generate', 'hypothesis', 'identify', 'justify', 'knowledge', 'language'][index];
@@ -87,18 +88,14 @@ async function expectReducedProgressMotion(page: Page) {
   expect(durations.every(duration => duration <= 0.001)).toBe(true);
 }
 
-test.beforeEach(async ({ page }) => {
-  await page.route(/^https?:\/\/(?!127\.0\.0\.1:4173)/, route => route.abort());
-  await page.addInitScript(initialCards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));
-    localStorage.setItem('lingoflash_cards_scoped_v1', JSON.stringify({ version: 1, ownerId: null, cards: initialCards }));
-    localStorage.removeItem('lingoflash_cards_owner');
-  }, cards);
+test.beforeEach(async ({ page, seedCards, blockExternalNetwork }) => {
+  await blockExternalNetwork(page);
+  await seedCards(cards);
 });
 
 for (const theme of themes) {
   for (const viewport of viewports) {
-    test(`${theme.family} ${theme.mode} daily learning screens are visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
+    test(`${theme.family} ${theme.mode} daily learning screens are visually accessible at ${viewport.name}`, async ({ page, testUser, signIn }, testInfo) => {
       await page.setViewportSize(viewport);
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.addInitScript(({ family, mode }) => {
@@ -107,7 +104,7 @@ for (const theme of themes) {
         localStorage.setItem('sonflash_theme_follow_system', 'false');
       }, theme);
 
-      await page.goto('/?locale=en');
+      await signIn(page, '/?view=today&locale=en');
       const root = page.locator('html');
       await expect(root).toHaveAttribute('data-theme-family', theme.family);
       if (theme.mode === 'dark') await expect(root).toHaveClass(/\bdark\b/);
@@ -119,14 +116,14 @@ for (const theme of themes) {
       await expectAccessibleAndContained(page, 'Today');
       await attachScreen(page, testInfo, `${theme.family}-${theme.mode}-${viewport.name}-today`);
 
-      await page.evaluate(() => {
+      await page.evaluate(uid => {
         const now = new Date();
         const day = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        localStorage.setItem('lingoflash_gamification:anonymous:snapshot', JSON.stringify({
+        localStorage.setItem(`lingoflash_gamification:${uid}:snapshot`, JSON.stringify({
           version: 1,
           snapshot: { streak: 3, xp: 30, lastActive: now.toDateString(), history: { [day]: 30 } },
         }));
-      });
+      }, testUser.uid);
       await page.reload();
       await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
       await page.getByRole('button', { name: '3 study days' }).click();
@@ -142,7 +139,7 @@ for (const theme of themes) {
       await expectAccessibleAndContained(page, 'Lesson');
       await attachScreen(page, testInfo, `${theme.family}-${theme.mode}-${viewport.name}-lesson`);
 
-      await page.goto('/?lesson=placement&locale=en');
+      await page.goto('/?view=today&lesson=placement&locale=en');
       await expect(page.getByRole('heading', { level: 1, name: 'Placement check' })).toBeVisible();
       await page.getByRole('button', { name: 'Start placement check' }).click();
       await expect(page.getByRole('progressbar', { name: 'Placement progress' })).toBeVisible();

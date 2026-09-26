@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
   FieldPath,
+  FieldValue,
   Timestamp,
   type DocumentData,
   type DocumentSnapshot,
@@ -155,6 +156,44 @@ const reservationRef = (database: Firestore, ownerId: string, normalizedWord: st
 
 const libraryStateRef = (database: Firestore, ownerId: string) =>
   ownerRef(database, ownerId).collection('profile').doc('library_state');
+
+// Firestore Rules read this flag off profile/library_state (the same
+// document already fetched for currentLibraryEpoch) instead of the
+// standalone profile/library_migration_fence document, so a card update
+// rule evaluation costs one dependent-document read instead of two, and a
+// card delete rule evaluation costs three instead of four. The standalone
+// fence document below remains the durable source of truth for this
+// migration engine's own lease/resume state; this field is a mirror written
+// alongside every fence activation and cleared alongside every fence
+// deactivation, never on its own.
+const LIBRARY_MIGRATION_FENCE_MIRROR_FIELD = 'libraryMigrationFenceActive';
+
+// Field-level merge so an in-progress or absent library_state doc is backed
+// with the caller's already-read epoch instead of being created with only
+// the mirror field (which would leave currentLibraryEpoch() reading a
+// libraryEpoch-less document once the fence clears).
+const setLibraryMigrationFenceMirror = (
+  transaction: Transaction,
+  database: Firestore,
+  ownerId: string,
+  libraryEpoch: number,
+): void => {
+  transaction.set(libraryStateRef(database, ownerId), {
+    schemaVersion: 2,
+    libraryEpoch,
+    [LIBRARY_MIGRATION_FENCE_MIRROR_FIELD]: true,
+  }, { merge: true });
+};
+
+const clearLibraryMigrationFenceMirror = (
+  transaction: Transaction,
+  database: Firestore,
+  ownerId: string,
+): void => {
+  transaction.set(libraryStateRef(database, ownerId), {
+    [LIBRARY_MIGRATION_FENCE_MIRROR_FIELD]: FieldValue.delete(),
+  }, { merge: true });
+};
 
 const migrationProgressRef = (database: Firestore, ownerId: string) =>
   ownerRef(database, ownerId).collection('profile').doc('query_migration');
@@ -852,6 +891,7 @@ const beginMigrationFence = async (
       appliedGroupCount: resumed.appliedGroupCount,
       appliedSourceCount: resumed.appliedSourceCount,
     }, now), { merge: false });
+    setLibraryMigrationFenceMirror(transaction, database, ownerId, currentEpoch);
     return resumed;
   }
   if (
@@ -893,6 +933,7 @@ const beginMigrationFence = async (
     appliedGroupCount: fence.appliedGroupCount,
     appliedSourceCount: fence.appliedSourceCount,
   }, now), { merge: false });
+  setLibraryMigrationFenceMirror(transaction, database, ownerId, currentEpoch);
   return fence;
 });
 
@@ -980,6 +1021,7 @@ export const clearZeroProgressFence = async (
     updatedAt: now,
   }, { merge: true });
   transaction.delete(fenceReference);
+  clearLibraryMigrationFenceMirror(transaction, database, ownerId);
 });
 
 const ensureBackupRoot = async (
@@ -1547,6 +1589,7 @@ const finalizeMigration = async (
   }, { merge: true });
   transaction.set(discoveryJobRef(database, ownerId, fence.jobId), discoveryJobData(updatedJob, now), { merge: false });
   transaction.delete(migrationFenceReference(database, ownerId));
+  clearLibraryMigrationFenceMirror(transaction, database, ownerId);
   return {
     ownerKey: '',
     jobId: fence.jobId,
@@ -1657,6 +1700,7 @@ export async function abortLegacyLibraryMigration(
       leaseExpiresAt: null,
     }, now), { merge: false });
     transaction.delete(migrationFenceReference(database, ownerId));
+    clearLibraryMigrationFenceMirror(transaction, database, ownerId);
   });
 }
 
@@ -2080,6 +2124,7 @@ export async function rollbackLegacyLibraryMigration(
         leaseExpiresAt: null,
       }, stableTimestamp(active)), { merge: false });
       transaction.delete(migrationFenceReference(database, ownerId));
+      clearLibraryMigrationFenceMirror(transaction, database, ownerId);
     });
     return { rolledBack: preflight.plans.length, complete: true };
   } catch (error) {

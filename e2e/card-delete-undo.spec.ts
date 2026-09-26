@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const card = {
   id: 'delete-undo-card',
@@ -25,17 +25,12 @@ const card = {
   reviewHistory: [{ rating: 'good', reviewedAt: '2026-09-23T08:00:00.000Z', elapsedDays: 4, scheduledDays: 8 }],
 };
 
-test('deleting and undoing a device card preserves learning data after reload', async ({ page }) => {
+test('deleting and undoing a device card preserves learning data after reload', async ({ page, db, testUser, seedCards, signIn, blockExternalNetwork }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.addInitScript(initialCard => {
-    if (sessionStorage.getItem('delete-undo-seeded')) return;
-    localStorage.setItem('lingoflash_cards', JSON.stringify([initialCard]));
-    localStorage.removeItem('lingoflash_cards_owner');
-    localStorage.setItem('lingoflash_theme', 'light');
-    sessionStorage.setItem('delete-undo-seeded', 'true');
-  }, card);
-  await page.route(/^https?:\/\/(?!127\.0\.0\.1:4173)/, route => route.abort());
-  await page.goto('/?view=library&locale=en');
+  await seedCards([card]);
+  await blockExternalNetwork(page);
+  await page.addInitScript(() => { localStorage.setItem('lingoflash_theme', 'light'); });
+  await signIn(page, '/?view=library&locale=en');
   const flashcard = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'resilient', exact: true }) });
   await expect(flashcard).toBeVisible();
   await flashcard.getByRole('button', { name: 'Delete card' }).click();
@@ -46,26 +41,26 @@ test('deleting and undoing a device card preserves learning data after reload', 
   await undo.getByRole('button', { name: /^Undo/ }).click();
   await expect(undo).toHaveCount(0);
   await expect(flashcard).toBeVisible();
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('lingoflash_cards_scoped_v1') ?? 'null'))).toEqual({
-    version: 1,
-    ownerId: null,
-    cards: [expect.objectContaining(card)],
-  });
+  const { id: _cardId, ...expectedFields } = card;
+  const cardDoc = db.collection('users').doc(testUser.uid).collection('cards').doc(card.id);
+  // Firestore is the single source of truth post-migration; assert the
+  // persisted document directly instead of the retired
+  // lingoflash_cards_scoped_v1 localStorage mirror.
+  await expect.poll(async () => (await cardDoc.get()).exists).toBe(true);
+  expect((await cardDoc.get()).data()).toMatchObject(expectedFields);
 
   await page.reload();
   await expect(flashcard).toBeVisible();
   await expect(undo).toHaveCount(0);
-  const restored = await page.evaluate(() => JSON.parse(localStorage.getItem('lingoflash_cards_scoped_v1') ?? 'null'));
-  expect(restored).toEqual({ version: 1, ownerId: null, cards: [expect.objectContaining(card)] });
+  expect((await cardDoc.get()).exists).toBe(true);
+  expect((await cardDoc.get()).data()).toMatchObject(expectedFields);
 });
 
-test('clearing the library dismisses an invalidated delete Undo', async ({ page }) => {
+test('clearing the library dismisses an invalidated delete Undo', async ({ page, db, testUser, seedCards, signIn, blockExternalNetwork }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.addInitScript(initialCard => {
-    localStorage.setItem('lingoflash_cards_scoped_v1', JSON.stringify({ version: 1, ownerId: null, cards: [initialCard] }));
-  }, card);
-  await page.route(/^https?:\/\/(?!127\.0\.0\.1:4173)/, route => route.abort());
-  await page.goto('/?view=library&locale=en');
+  await seedCards([card]);
+  await blockExternalNetwork(page);
+  await signIn(page, '/?view=library&locale=en');
   const flashcard = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'resilient', exact: true }) });
   await flashcard.getByRole('button', { name: 'Delete card' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete card' }).click();
@@ -77,5 +72,8 @@ test('clearing the library dismisses an invalidated delete Undo', async ({ page 
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete everything' }).click();
   await expect(undo).toHaveCount(0);
   await expect(flashcard).toHaveCount(0);
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('lingoflash_cards_scoped_v1') ?? 'null')?.cards)).toEqual([]);
+  await expect.poll(async () => {
+    const snapshot = await db.collection('users').doc(testUser.uid).collection('cards').get();
+    return snapshot.docs.map(doc => doc.id);
+  }).toEqual([]);
 });

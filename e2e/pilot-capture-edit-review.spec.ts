@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const card = {
   id: 'pilot-edit-card', word: 'lead', normalizedWord: 'lead', translation: 'chì',
@@ -8,13 +8,10 @@ const card = {
   difficulty: 'unrated', customDeck: null, reviews: 0,
 };
 
-test('an AI card can be edited, bookmarked and reviewed from the local queue', async ({ page }) => {
+test('an AI card can be edited, bookmarked and reviewed from the local queue', async ({ page, seedCards, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.addInitScript(value => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify([value]));
-    localStorage.removeItem('lingoflash_cards_owner');
-  }, card);
-  await page.goto('/?view=library');
+  await seedCards([card]);
+  await signIn(page, '/?view=library');
   const flashcard = page.getByRole('group', { name: /lead flashcard/i });
   await flashcard.getByRole('button', { name: 'Edit card' }).click();
   const dialog = page.getByRole('dialog', { name: 'Sửa thẻ' });

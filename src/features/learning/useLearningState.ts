@@ -10,12 +10,22 @@ import {
   type LearningRestoreRequest,
   type LearningStateOutcome,
   type LearningStateSnapshotsPort,
+  type BulkCardFieldPatchOutcome,
+  type BulkCardFieldPatchRequest,
 } from './learningStateController';
 
 export interface LearningStatePersistencePort {
   ownerId?(): string | null;
   findCard(cardId: string): CardData | undefined;
   persist(mutation: LearningStateMutation): Promise<LearningStateMutationResult>;
+  /**
+   * Optional: patches many cards through one bulk-mutation callable instead
+   * of one `persist` call per card. Absent for persistence ports that do not
+   * back a Library multi-select action (e.g. test doubles).
+   */
+  persistBulkPatch?(
+    patches: readonly BulkCardFieldPatchRequest[],
+  ): Promise<BulkCardFieldPatchOutcome[]>;
 }
 
 export type LearningOperationIdFactory = (

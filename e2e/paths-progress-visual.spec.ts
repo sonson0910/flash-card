@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
+import type { Page, TestInfo } from '@playwright/test';
 import { createServer, type ViteDevServer } from 'vite';
 
 const fixedTime = new Date('2026-09-24T12:00:00.000Z');
@@ -46,7 +47,15 @@ const viewports = [
   { name: '390px', width: 390, height: 844 },
 ] as const;
 
-const catalogFixtureOrigin = 'http://127.0.0.1:4175';
+// Base port for this spec's own Vite fixture server, offset per-worker below.
+// See practice-visual.spec.ts for why: `fullyParallel: false` still lets
+// different spec files run concurrently on separate workers, and four
+// unrelated -visual specs each bound a strictPort Vite server to this exact
+// literal port, so two running on different workers at once raced for the
+// same socket.
+const CATALOG_FIXTURE_PORT_BASE = 4475;
+let catalogFixturePort = CATALOG_FIXTURE_PORT_BASE;
+let catalogFixtureOrigin = `http://127.0.0.1:${catalogFixturePort}`;
 const catalogFixturePath = '/catalog-ready-fixture.html';
 const catalogFixtureModuleId = '/virtual/catalog-ready-fixture.tsx';
 let catalogFixtureServer: ViteDevServer | undefined;
@@ -133,21 +142,24 @@ async function attachScreen(page: Page, testInfo: TestInfo, name: string) {
   await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
 }
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, testUser, seedCards, blockExternalNetwork }) => {
   await page.clock.install({ time: fixedTime });
-  await page.route(/^https?:\/\/(?!127\.0\.0\.1:(?:4173|4175))/, route => route.abort());
-  await page.addInitScript(({ initialCards, history }) => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));
-    localStorage.setItem('lingoflash_cards_scoped_v1', JSON.stringify({ version: 1, ownerId: null, cards: initialCards }));
-    localStorage.removeItem('lingoflash_cards_owner');
-    localStorage.setItem('lingoflash_gamification:anonymous:snapshot', JSON.stringify({
+  // beforeAll (below) runs before any beforeEach/test in this worker, so
+  // catalogFixturePort is already set to this worker's value by the time
+  // this executes.
+  await blockExternalNetwork(page, [catalogFixturePort]);
+  await page.addInitScript(({ uid, history }) => {
+    localStorage.setItem(`lingoflash_gamification:${uid}:snapshot`, JSON.stringify({
       version: 1,
       snapshot: { streak: 2, xp: 547, lastActive: 'Wed Sep 23 2026', history },
     }));
-  }, { initialCards: cards, history: xpHistory });
+  }, { uid: testUser.uid, history: xpHistory });
+  await seedCards(cards);
 });
 
-test.beforeAll(async () => {
+test.beforeAll(async ({}, testInfo) => {
+  catalogFixturePort = CATALOG_FIXTURE_PORT_BASE + testInfo.parallelIndex;
+  catalogFixtureOrigin = `http://127.0.0.1:${catalogFixturePort}`;
   catalogFixtureServer = await createServer({
     configFile: 'vite.config.ts',
     appType: 'spa',
@@ -162,8 +174,17 @@ test.beforeAll(async () => {
         });
       },
     }],
-    server: { host: '127.0.0.1', port: 4175, strictPort: true, preTransformRequests: false },
-    optimizeDeps: { noDiscovery: true, include: [] },
+    server: { host: '127.0.0.1', port: catalogFixturePort, strictPort: true, preTransformRequests: false },
+    // No `optimizeDeps` override: this fixture serves a synthetic HTML page
+    // (no real entry file on disk for Vite to crawl), and a former
+    // `noDiscovery: true, include: []` here skipped esbuild's CJS-to-ESM
+    // interop pre-bundling for every CJS dependency the rendered tree needs —
+    // not just `@messageformat/parser` (Lingui's ICU plural compilation,
+    // "does not provide an export named 'parse'") but also `react-dom`
+    // itself ("does not provide an export named 'createRoot'"), served raw
+    // and crashing with a blank page. Explicitly listing each offender is
+    // whack-a-mole against Vite's own dependency graph; let Vite's default
+    // on-demand discovery pre-bundle whatever this tree actually imports.
   });
   await catalogFixtureServer.listen();
 });
@@ -174,7 +195,7 @@ test.afterAll(async () => {
 
 for (const theme of themes) {
   for (const viewport of viewports) {
-    test(`${theme.family} ${theme.mode} Paths and Progress are visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
+    test(`${theme.family} ${theme.mode} Paths and Progress are visually accessible at ${viewport.name}`, async ({ page, signIn }, testInfo) => {
       await page.setViewportSize(viewport);
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.addInitScript(({ family, mode }) => {
@@ -183,7 +204,7 @@ for (const theme of themes) {
         localStorage.setItem('sonflash_theme_follow_system', 'false');
       }, theme);
 
-      await page.goto('/?view=catalog&locale=en');
+      await signIn(page, '/?view=catalog&locale=en');
       const root = page.locator('html');
       await expect(root).toHaveAttribute('data-theme-family', theme.family);
       if (theme.mode === 'dark') await expect(root).toHaveClass(/\bdark\b/);

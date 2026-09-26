@@ -614,7 +614,7 @@ export function createCardIntakeController({
     try { draftPort?.clearOperation?.(); } catch { /* storage is optional */ }
   };
 
-  const closeCardCreator = (restoreFocus: boolean) => {
+  const closeCardCreator = () => {
     creatorLifecycle += 1;
     creatorInvocation += 1;
     if (activeOperation === 'creator-generate' || activeOperation === 'creator-save') {
@@ -622,12 +622,13 @@ export function createCardIntakeController({
     }
     clearCreatorOperation();
     clearDraft();
-    const opener = creatorFocusTarget;
     creatorFocusTarget = null;
+    // The dialog itself restores focus from its own onCloseAutoFocus (after
+    // Radix's FocusScope trap has actually released) using the focusTarget
+    // captured below in openCardCreator. Calling .focus() here would run
+    // while Dialog.Content is still mounted and get overridden by that
+    // still-active trap — see the doc comment on CardCreatorModel.focusTarget.
     publish({ isSubmitting: false, cardCreator: createInitialCardCreatorModel() });
-    if (restoreFocus) {
-      try { opener?.focus(); } catch { /* focus return is best effort */ }
-    }
   };
 
   const openCardCreator = (opener?: HTMLElement) => {
@@ -645,6 +646,7 @@ export function createCardIntakeController({
         ...createEmptyCardCreatorDraft(),
         word: snapshot.draft,
       }),
+      focusTarget: creatorFocusTarget,
     });
   };
 
@@ -995,7 +997,7 @@ export function createCardIntakeController({
           error => diagnostics.mediaFailed?.(persisted.card, error),
         )
         : Promise.resolve();
-      closeCardCreator(true);
+      closeCardCreator();
       return { status: 'saved', card: persisted.card, mediaTask };
     } catch (error) {
       if (!isCreatorInvocationCurrent(invocation, lifecycle, controllerGeneration)) {
@@ -1013,7 +1015,7 @@ export function createCardIntakeController({
     }
   };
 
-  const cancelCardCreator = () => closeCardCreator(true);
+  const cancelCardCreator = () => closeCardCreator();
 
   const importSpreadsheet = async (request: SpreadsheetImportRequest): Promise<IntakeOperationResult> => {
     if (activeOperation) {

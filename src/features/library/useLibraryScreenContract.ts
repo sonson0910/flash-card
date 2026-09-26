@@ -30,7 +30,7 @@ export interface LibraryScreenWorkspaceInput {
   session: { model: LibrarySessionModel; actions: LibrarySessionActions };
   intake: { model: IntakeSharingSessionModel; actions: IntakeSharingSessionActions };
   learning: {
-    actions: Pick<LearningWorkspaceActions, 'toggleBookmark' | 'assignDeck' | 'updateCard'> & {
+    actions: Pick<LearningWorkspaceActions, 'toggleBookmark' | 'assignDeck' | 'updateCard' | 'bulkPatchCards'> & {
       deleteCard(cardId: string): Promise<void>;
     };
   };
@@ -208,6 +208,7 @@ export function buildLibraryScreenContract({
       deleteCard: learning.actions.deleteCard,
       toggleBookmark: learning.actions.toggleBookmark,
       assignDeck: learning.actions.assignDeck,
+      bulkPatchCards: learning.actions.bulkPatchCards,
       updateCard: learning.actions.updateCard,
       changePage: catalog.actions.goToPage,
       clearFilters: () => catalog.actions.replaceQuery(existingCardRevealState()),

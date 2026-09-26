@@ -33,8 +33,13 @@
 
           <fieldset>
             <legend data-i18n="optionsAppearanceLegend">Giao diện</legend>
+            <p class="field-help" data-i18n="optionsThemeFamilyHint">Chọn bộ giao diện Classic hoặc Crystal Star.</p>
+            <div class="scheme-row" role="radiogroup" aria-label="Bộ giao diện" data-i18n-aria-label="optionsThemeFamilyLegend">
+              <label class="scheme-option"><input type="radio" name="theme-family" id="theme-family-classic" value="classic"><span data-i18n="optionsThemeFamilyClassic">Classic</span></label>
+              <label class="scheme-option"><input type="radio" name="theme-family" id="theme-family-crystal" value="crystal"><span data-i18n="optionsThemeFamilyCrystal">Crystal Star</span></label>
+            </div>
             <p class="field-help" data-i18n="optionsAppearanceHint">Chọn giao diện extension theo sáng/tối, hoặc theo hệ thống.</p>
-            <div class="scheme-row" role="radiogroup" aria-label="Giao diện">
+            <div class="scheme-row" role="radiogroup" aria-label="Sáng/tối" data-i18n-aria-label="optionsSchemeLegend">
               <label class="scheme-option"><input type="radio" name="color-scheme" id="scheme-system" value="system"><span data-i18n="optionsSchemeSystem">Theo hệ thống</span></label>
               <label class="scheme-option"><input type="radio" name="color-scheme" id="scheme-dark" value="dark"><span data-i18n="optionsSchemeDark">Tối</span></label>
               <label class="scheme-option"><input type="radio" name="color-scheme" id="scheme-light" value="light"><span data-i18n="optionsSchemeLight">Sáng</span></label>

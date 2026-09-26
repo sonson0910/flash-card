@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
+import type { Page } from '@playwright/test';
 
 const card = {
   id: 'mobile-review-card', word: 'resilience', normalizedWord: 'resilience',
@@ -10,16 +11,18 @@ const card = {
   difficulty: 'unrated', customDeck: null, reviews: 0,
 };
 
-async function openReview(page: Page, zen = false) {
+type SeedCards = (cards: readonly (typeof card)[]) => Promise<void>;
+type SignIn = (page: Page, url: string) => Promise<void>;
+
+async function openReview(page: Page, seedCards: SeedCards, signIn: SignIn, zen = false) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.addInitScript(({ value, zen }) => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify([value]));
-    localStorage.removeItem('lingoflash_cards_owner');
+  await page.addInitScript(zen => {
     localStorage.setItem('lingoflash_theme', 'light');
     if (zen) localStorage.setItem('sonflash_zen_glass_mode', 'true');
     else localStorage.removeItem('sonflash_zen_glass_mode');
-  }, { value: card, zen });
-  await page.goto('/?view=library');
+  }, zen);
+  await seedCards([card]);
+  await signIn(page, '/?view=library');
   await page.getByRole('button', { name: /Start a review|Review \d+ due/ }).first().click();
 }
 
@@ -40,9 +43,9 @@ async function touchPath(page: Page, selector: string, dx: number, dy: number) {
 }
 
 for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 740, height: 360 }]) {
-  test(`review fits ${viewport.width}×${viewport.height} without horizontal overflow`, async ({ page }) => {
+  test(`review fits ${viewport.width}×${viewport.height} without horizontal overflow`, async ({ page, seedCards, signIn }) => {
     await page.setViewportSize(viewport);
-    await openReview(page);
+    await openReview(page, seedCards, signIn);
     const reveal = page.getByRole('button', { name: 'Reveal answer' });
     await expect(reveal).toBeVisible();
     await reveal.click();
@@ -65,16 +68,16 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
   });
 }
 
-test('tap rates a card and reports its pending sync honestly', async ({ page }) => {
-  await openReview(page);
+test('tap rates a card and reports its pending sync honestly', async ({ page, seedCards, signIn }) => {
+  await openReview(page, seedCards, signIn);
   await page.getByRole('button', { name: 'Reveal answer' }).tap();
   await page.getByRole('region', { name: 'Rate memory strength' }).getByRole('button', { name: /Good/ }).tap();
   await expect(page.locator('[data-study-provisional]')).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Session Complete!' })).toHaveCount(0);
 });
 
-test('vertical card scroll does not rate; horizontal swipe does', async ({ page }) => {
-  await openReview(page);
+test('vertical card scroll does not rate; horizontal swipe does', async ({ page, seedCards, signIn }) => {
+  await openReview(page, seedCards, signIn);
   await page.getByRole('button', { name: 'Reveal answer' }).tap();
   await touchPath(page, '[data-study-card] [data-card-content="revealed"]', -130, -230);
   await expect(page.locator('[data-study-provisional]')).toHaveCount(0);
@@ -82,9 +85,9 @@ test('vertical card scroll does not rate; horizontal swipe does', async ({ page 
   await expect(page.locator('[data-study-provisional]')).toBeVisible();
 });
 
-test('long Zen answer scrolls inside the card', async ({ page }) => {
+test('long Zen answer scrolls inside the card', async ({ page, seedCards, signIn }) => {
   await page.setViewportSize({ width: 740, height: 360 });
-  await openReview(page, true);
+  await openReview(page, seedCards, signIn, true);
   await page.getByRole('button', { name: 'Reveal answer' }).tap();
   const content = page.locator('[data-study-card] [data-card-content="revealed"]');
   await expect(content).toBeVisible();
@@ -101,10 +104,10 @@ test('long Zen answer scrolls inside the card', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Return to English' })).toBeVisible();
 });
 
-test('touch drag stays responsive under 4× CPU throttle', async ({ page, browserName, context }) => {
+test('touch drag stays responsive under 4× CPU throttle', async ({ page, browserName, context, seedCards, signIn }) => {
   test.skip(process.env.PILOT_PERF_CHECK !== '1', 'Run this measurement alone with PILOT_PERF_CHECK=1 and --workers=1');
   test.skip(browserName !== 'chromium', 'CPU throttling is available through Chromium DevTools');
-  await openReview(page);
+  await openReview(page, seedCards, signIn);
   await page.getByRole('button', { name: 'Reveal answer' }).tap();
   const cdp = await context.newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });

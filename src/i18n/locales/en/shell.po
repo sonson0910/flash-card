@@ -289,7 +289,7 @@ msgid "shell.language.open"
 msgstr "Choose language"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:293
+#: src/app/AppRuntime.tsx:297
 msgid "shell.learning-workspace"
 msgstr "Learning workspace"
 
@@ -473,7 +473,7 @@ msgstr "Primary navigation"
 
 #. js-lingui-explicit-id
 #: src/app/AppDeferredViews.tsx:22
-#: src/app/AppRuntime.tsx:341
+#: src/app/AppRuntime.tsx:345
 msgid "shell.opening-dialog"
 msgstr "Opening dialog"
 
@@ -859,7 +859,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Live cloud updates are unavailable. Showing the last successful local copy."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:219
+#: src/app/AppRuntime.tsx:223
 msgid "shell.sync.retry-failed"
 msgstr "Sync could not finish. Your changes remain on this device. Try again."
 

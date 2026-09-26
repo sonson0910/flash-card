@@ -75,9 +75,19 @@ service cloud.firestore {
         : 0;
     }
 
+    // The fence flag lives on profile/library_state (see isValidLibraryState)
+    // rather than on a standalone profile/library_migration_fence document.
+    // Every caller of this function already calls currentLibraryEpoch(userId)
+    // (or hasLibraryEpochState(userId)) in the same rule evaluation, so this
+    // get() lands on a document path Firestore has already cached for this
+    // request and costs no additional dependent-document read. A missing
+    // library_state doc, or one without the field, means "not fenced" — the
+    // same default a missing standalone fence doc gave before this document
+    // shape was merged.
     function hasActiveLibraryMigrationFence(userId) {
-      return exists(/databases/$(database)/documents/users/$(userId)/profile/library_migration_fence)
-        && get(/databases/$(database)/documents/users/$(userId)/profile/library_migration_fence).data.active == true;
+      return hasLibraryEpochState(userId)
+        && get(/databases/$(database)/documents/users/$(userId)/profile/library_state)
+          .data.get('libraryMigrationFenceActive', false) == true;
     }
 
     function isValidProtocolCounter(value) {
@@ -319,11 +329,20 @@ service cloud.firestore {
         ));
     }
 
+    // libraryMigrationFenceActive is an optional field: the legacy migration
+    // engine (Admin SDK, bypasses these Rules) field-merges it onto this same
+    // document alongside libraryEpoch so a single get() on this one path
+    // answers both "current epoch" and "is a migration fence active" instead
+    // of needing a second dependent-document read on a standalone fence doc.
+    // A client set()/update() through these Rules only ever touches
+    // schemaVersion/libraryEpoch, so the field must stay optional here rather
+    // than required.
     function isValidLibraryState(data) {
       return data.keys().hasAll(['schemaVersion', 'libraryEpoch'])
-        && data.keys().hasOnly(['schemaVersion', 'libraryEpoch'])
+        && data.keys().hasOnly(['schemaVersion', 'libraryEpoch', 'libraryMigrationFenceActive'])
         && data.schemaVersion == 2
-        && isValidProtocolCounter(data.libraryEpoch);
+        && isValidProtocolCounter(data.libraryEpoch)
+        && (!data.keys().hasAny(['libraryMigrationFenceActive']) || data.libraryMigrationFenceActive is bool);
     }
 
     function isValidCustomDeckProfile(data) {
@@ -884,14 +903,20 @@ service cloud.firestore {
 
     match /users/{userId}/profile/library_state {
       allow read: if isOwner(userId);
+      // Only the trusted migration engine (Admin SDK, bypasses these Rules)
+      // may set libraryMigrationFenceActive; a client create/update can never
+      // introduce or change it, so a client cannot self-fence or clear an
+      // active fence by shaping its own write payload.
       allow create: if isOwner(userId)
         && !hasActiveLibraryMigrationFence(userId)
-        && isValidLibraryState(request.resource.data);
+        && isValidLibraryState(request.resource.data)
+        && !request.resource.data.keys().hasAny(['libraryMigrationFenceActive']);
       allow update: if isOwner(userId)
         && !hasActiveLibraryMigrationFence(userId)
         && isValidLibraryState(request.resource.data)
         && resource.data.libraryEpoch is int
-        && request.resource.data.libraryEpoch >= resource.data.libraryEpoch;
+        && request.resource.data.libraryEpoch >= resource.data.libraryEpoch
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['libraryMigrationFenceActive']);
       allow delete: if false;
     }
 

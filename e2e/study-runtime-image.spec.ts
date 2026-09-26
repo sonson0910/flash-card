@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const cardWithBrokenRuntimeImage = {
   id: 'runtime-image-failure',
@@ -16,13 +16,10 @@ const cardWithBrokenRuntimeImage = {
   difficulty: 'hard',
 };
 
-test('a runtime image error moves Image to Word study to a usable text cue', async ({ page }) => {
+test('a runtime image error moves Image to Word study to a usable text cue', async ({ page, seedCards, signIn }) => {
   await page.route('https://images.pexels.com/**', route => route.abort('failed'));
-  await page.addInitScript(card => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify([card]));
-    localStorage.removeItem('lingoflash_cards_owner');
-  }, cardWithBrokenRuntimeImage);
-  await page.goto('/?view=library');
+  await seedCards([cardWithBrokenRuntimeImage]);
+  await signIn(page, '/?view=library');
 
   await page.getByRole('button', { name: /Start review|Review \d+ due/ }).click();
   const recallMode = page.getByLabel('Recall mode');

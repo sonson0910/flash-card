@@ -1,4 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
+
+const emptyStateTestTitle = 'Today and Progress empty states expose concrete next actions without initial autofocus';
 
 const cards = [
   'serendipity', 'resilient', 'curious', 'flourish', 'meticulous', 'eloquent',
@@ -25,17 +27,18 @@ const cards = [
   customDeck: 'IELTS',
 }));
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(initialCards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));
-    localStorage.removeItem('lingoflash_cards_owner');
-    localStorage.setItem('lingoflash_custom_decks', JSON.stringify(['IELTS']));
+test.beforeEach(async ({ page, seedCards, blockExternalNetwork }, testInfo) => {
+  await page.addInitScript(() => {
     localStorage.setItem('lingoflash_theme', 'dark');
-  }, cards);
+  });
+  await blockExternalNetwork(page);
+  // The empty-state test intentionally starts from zero cards; every fresh
+  // emulator test user already has none, so it simply skips seeding.
+  if (testInfo.title !== emptyStateTestTitle) await seedCards(cards);
 });
 
-test('library exposes one canonical heading and a keyboard-operable skip link', async ({ page, browserName }) => {
-  await page.goto('/?view=library');
+test('library exposes one canonical heading and a keyboard-operable skip link', async ({ page, signIn, browserName }) => {
+  await signIn(page, '/?view=library');
 
   const skipLink = page.getByRole('link', { name: 'Skip to content' });
   const main = page.locator('main#learning-workspace');
@@ -59,7 +62,7 @@ test('library exposes one canonical heading and a keyboard-operable skip link', 
   await expect(main).toBeFocused();
 });
 
-test('shell settles when WebKit animation signals and the timer fallback both stall', async ({ page }) => {
+test('shell settles when WebKit animation signals and the timer fallback both stall', async ({ page, signIn }) => {
   await page.addInitScript(() => {
     Object.defineProperty(Animation.prototype, 'finished', {
       configurable: true,
@@ -83,15 +86,17 @@ test('shell settles when WebKit animation signals and the timer fallback both st
     }) as typeof window.setTimeout;
   });
 
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
 
   await expect(page.locator('nav.app-navigation')).toHaveAttribute('data-motion-state', 'ready');
 });
 
-test('tablet shell keeps every visible header control in bounds and nav targets at least 44px tall', async ({ page }) => {
+test('tablet shell keeps every visible header control in bounds and nav targets at least 44px tall', async ({ page, signIn }) => {
+  let signedIn = false;
   for (const width of [768, 800, 920, 1024]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto('/');
+    if (signedIn) await page.goto('/?view=today');
+    else { await signIn(page, '/?view=today'); signedIn = true; }
     await expect(page.locator('nav.app-navigation')).toHaveAttribute('data-motion-state', 'ready');
 
     const controls = page.locator('nav.app-navigation button:visible');
@@ -109,9 +114,9 @@ test('tablet shell keeps every visible header control in bounds and nav targets 
   }
 });
 
-test('mobile library settings menu stays in bounds and restores trigger focus', async ({ page }) => {
+test('mobile library settings menu stays in bounds and restores trigger focus', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
 
   const manage = page.getByRole('button', { name: 'Manage library' });
   await manage.click();
@@ -126,8 +131,8 @@ test('mobile library settings menu stays in bounds and restores trigger focus', 
   await expect(manage).toBeFocused();
 });
 
-test('starring a card preserves the current library page', async ({ page }) => {
-  await page.goto('/?view=library&page=2');
+test('starring a card preserves the current library page', async ({ page, signIn }) => {
+  await signIn(page, '/?view=library&page=2');
   await expect(page.getByText('Page 2 / 2')).toBeVisible();
 
   await page.getByRole('button', { name: 'Remove star' }).first().click();
@@ -136,10 +141,12 @@ test('starring a card preserves the current library page', async ({ page }) => {
   await expect.poll(() => new URL(page.url()).searchParams.get('page')).toBe('2');
 });
 
-test('Today practice choices reflow in short portrait and landscape viewports', async ({ page }) => {
+test('Today practice choices reflow in short portrait and landscape viewports', async ({ page, signIn }) => {
+  let signedIn = false;
   for (const viewport of [{ width: 320, height: 480 }, { width: 667, height: 320 }]) {
     await page.setViewportSize(viewport);
-    await page.goto('/');
+    if (signedIn) await page.goto('/?view=today');
+    else { await signIn(page, '/?view=today'); signedIn = true; }
     const choices = page.locator('[data-practice-mode="true"]');
     await expect(choices).toHaveCount(3);
     for (let index = 0; index < 3; index += 1) {
@@ -154,9 +161,9 @@ test('Today practice choices reflow in short portrait and landscape viewports', 
   }
 });
 
-test('the destructive library dialog restores focus to its stable opener', async ({ page }) => {
+test('the destructive library dialog restores focus to its stable opener', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
 
   const manage = page.getByRole('button', { name: 'Manage library' });
   await manage.click();
@@ -166,12 +173,8 @@ test('the destructive library dialog restores focus to its stable opener', async
   await expect(manage).toBeFocused();
 });
 
-test('Today and Progress empty states expose concrete next actions without initial autofocus', async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('lingoflash_cards', '[]');
-    localStorage.removeItem('lingoflash_cards_owner');
-  });
-  await page.goto('/');
+test('Today and Progress empty states expose concrete next actions without initial autofocus', async ({ page, signIn }) => {
+  await signIn(page, '/?view=today');
   await expect.poll(() => page.evaluate(() => document.activeElement === document.body)).toBe(true);
   await expect(page.getByRole('button', { name: 'Add vocabulary' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Explore learning paths' })).toBeVisible();
@@ -181,8 +184,8 @@ test('Today and Progress empty states expose concrete next actions without initi
   await expect(page.getByRole('button', { name: 'Add vocabulary' })).toBeVisible();
 });
 
-test('library query state deep-links and responds to browser history without dropping unrelated params', async ({ page }) => {
-  await page.goto('/?view=library&utm_source=audit&category=Test%20deck&deck=IELTS&difficulty=hard&pos=noun&starred=1&date=Today&page=2');
+test('library query state deep-links and responds to browser history without dropping unrelated params', async ({ page, signIn }) => {
+  await signIn(page, '/?view=library&utm_source=audit&category=Test%20deck&deck=IELTS&difficulty=hard&pos=noun&starred=1&date=Today&page=2');
 
   await expect(page.getByRole('heading', { name: 'Test deck' })).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'Filter by part of speech' })).toHaveValue('noun');
@@ -201,9 +204,9 @@ test('library query state deep-links and responds to browser history without dro
   await expect(page.getByText('Page 2 / 2')).toBeVisible();
 });
 
-test('mobile library presents the card grid before tools and the filter shortcut reaches tools', async ({ page }) => {
+test('mobile library presents the card grid before tools and the filter shortcut reaches tools', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
 
   const tools = page.locator('#library-tools');
   const grid = page.locator('#library-card-grid');
@@ -221,9 +224,9 @@ test('mobile library presents the card grid before tools and the filter shortcut
   await expect(tools).toBeInViewport();
 });
 
-test('study shortcuts require modifiers for single-character commands and views expose a focused heading', async ({ page }) => {
+test('study shortcuts require modifiers for single-character commands and views expose a focused heading', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
 
   await page.getByRole('button', { name: /Start a review|Review \d+ due/ }).click();
   const studyHeading = page.getByRole('heading', { level: 1, name: 'Study session' });

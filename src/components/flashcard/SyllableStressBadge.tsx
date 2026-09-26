@@ -5,6 +5,7 @@ import React, { useMemo } from 'react';
 import { parseSyllables, type SyllablePart } from '../../lib/syllableParser';
 import { triggerHaptic } from '../../lib/haptics';
 import { speechLocaleFor } from '../../lib/speechLocale';
+import { resolveLanguagePackId } from '../../features/languagePacks/registry';
 import type { CardData } from '../../types/card';
 
 interface SyllableStressBadgeProps {
@@ -21,9 +22,13 @@ export const SyllableStressBadge = React.memo(function SyllableStressBadge({
   const { _, i18n } = useLingui();
   const { word, phonetic } = card;
   const targetLanguage = card.language || 'en';
+  // English-only: the vowel-cluster heuristic and IPA stress markers below
+  // only model English syllabification. Non-English packs get a reading
+  // toggle (romanization/furigana/pinyin) instead, rendered by CardHeadword.
+  const isEnglishPack = resolveLanguagePackId(card.language) === 'en';
   const analysis = useMemo(() => parseSyllables(word, phonetic), [word, phonetic]);
 
-  if (!analysis.hasMultipleSyllables || analysis.syllables.length <= 1) {
+  if (!isEnglishPack || !analysis.hasMultipleSyllables || analysis.syllables.length <= 1) {
     return null;
   }
 

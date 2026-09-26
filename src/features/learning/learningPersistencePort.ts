@@ -5,6 +5,8 @@ import type {
 } from './learningStateController';
 import type { LearningStatePersistencePort } from './useLearningState';
 
+export type { BulkCardFieldPatchOutcome, BulkCardFieldPatchRequest } from './learningStateController';
+
 export interface LearningPersistenceStats {
   total: number;
   reviewed: number;

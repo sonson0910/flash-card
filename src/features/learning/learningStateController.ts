@@ -461,3 +461,13 @@ export function createLearningStateController({
     },
   };
 }
+
+/** The only fields a Library multi-select bulk action mutates today. */
+export interface BulkCardFieldPatchRequest {
+  cardId: string;
+  fields: { customDeck?: string | null; bookmarked?: boolean };
+}
+
+export type BulkCardFieldPatchOutcome =
+  | { cardId: string; applied: true; publication: LearningStatePublication }
+  | { cardId: string; applied: false };

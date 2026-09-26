@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { i18n } from '@lingui/core';
-import { getLegacyUpgradePresentation } from './LibraryCardGrid';
+import { buildBulkBookmarkPatches, buildBulkDeckAssignPatches, getLegacyUpgradePresentation } from './LibraryCardGrid';
 
 beforeEach(() => {
   i18n.load('en', {
@@ -106,6 +106,54 @@ describe('library collection hierarchy', () => {
     expect(source).toContain('formatNumber(currentPage)');
     expect(source).not.toMatch(/liquid-glass lg:hidden/);
     expect(source).not.toMatch(/liquid-glass mx-auto mt-10/);
+  });
+});
+
+describe('bulk patch construction', () => {
+  it('builds one patch per selected card, all targeting the chosen deck', () => {
+    const patches = buildBulkDeckAssignPatches(
+      [{ id: 'card-a' }, { id: 'card-b' }, { id: 'card-c' }],
+      'Deck A',
+    );
+
+    expect(patches).toEqual([
+      { cardId: 'card-a', fields: { customDeck: 'Deck A' } },
+      { cardId: 'card-b', fields: { customDeck: 'Deck A' } },
+      { cardId: 'card-c', fields: { customDeck: 'Deck A' } },
+    ]);
+  });
+
+  it('clears the deck assignment when the unassigned target is chosen', () => {
+    expect(buildBulkDeckAssignPatches([{ id: 'card-a' }], null)).toEqual([
+      { cardId: 'card-a', fields: { customDeck: null } },
+    ]);
+  });
+
+  it('computes each card\'s explicit bookmark target instead of one shared value', () => {
+    const patches = buildBulkBookmarkPatches([
+      { id: 'card-a', bookmarked: false },
+      { id: 'card-b', bookmarked: true },
+    ]);
+
+    expect(patches).toEqual([
+      { cardId: 'card-a', fields: { bookmarked: true } },
+      { cardId: 'card-b', fields: { bookmarked: false } },
+    ]);
+  });
+
+  it('returns no patches for an empty selection', () => {
+    expect(buildBulkDeckAssignPatches([], 'Deck A')).toEqual([]);
+    expect(buildBulkBookmarkPatches([])).toEqual([]);
+  });
+});
+
+describe('bulk actions call the batched callable once per action', () => {
+  it('replaced the per-card Promise.all fan-out with a single bulkPatchCards call', () => {
+    const source = readFileSync(fileURLToPath(new URL('./LibraryCardGrid.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('await bulkPatchCards(buildBulkDeckAssignPatches(selectedCards, target));');
+    expect(source).toContain('await bulkPatchCards(buildBulkBookmarkPatches(selectedCards));');
+    expect(source).not.toMatch(/Promise\.all\(selectedCards\.map/);
   });
 });
 

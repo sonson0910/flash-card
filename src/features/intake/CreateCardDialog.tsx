@@ -402,6 +402,13 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
   const wordInputRef = useRef<HTMLInputElement | null>(null);
   const audioPlaybackRef = useRef<WordAudioPlayback | null>(null);
   const previousOpenRef = useRef(model.open);
+  // Mirrors model.focusTarget so it survives past the moment closeCardCreator
+  // resets the model to null: onCloseAutoFocus needs the opener captured at
+  // open time, but by the time it fires (after unmount) the fresh render has
+  // already cleared model.focusTarget. Only overwrite while a target is
+  // present, so the last real opener stays available for the close handler.
+  const openerRef = useRef<Pick<HTMLElement, 'focus'> | null>(null);
+  if (model.focusTarget) openerRef.current = model.focusTarget;
   const [manualMode, setManualMode] = useState(model.mode === 'manual');
   const [manualDraft, setManualDraft] = useState(() => manualDraftFrom(model));
   const [selectedFields, setSelectedFields] = useState<Set<CardGenerationField>>(
@@ -587,6 +594,19 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
           onOpenAutoFocus={event => {
             event.preventDefault();
             wordInputRef.current?.focus();
+          }}
+          onCloseAutoFocus={event => {
+            // Restore focus to the element that opened the dialog (mirrored
+            // into openerRef above), matching the onCloseAutoFocus +
+            // manual-restore pattern used by every other dialog in this
+            // codebase (see restoreLibraryDialogFocus in
+            // LibraryDialogOverlays.tsx). This must happen here, not in
+            // cardIntakeController's close action, because this handler is
+            // the first point after Radix's FocusScope trap has actually
+            // released; calling .focus() any earlier gets overridden by
+            // that still-active trap.
+            event.preventDefault();
+            openerRef.current?.focus();
           }}
           onEscapeKeyDown={event => {
             if (model.stage === 'saving') event.preventDefault();

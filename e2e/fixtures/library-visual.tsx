@@ -78,7 +78,7 @@ function LibraryFixture() {
   };
   const actions: LibraryScreenActions = {
     startStudy: asyncNoOp, openCardCreator: () => document.getElementById('new-word')?.focus(),
-    grid: { changeSearch: setSearch, migrateLegacyCards: asyncNoOp, shareCategory: asyncNoOp, deleteCard: asyncNoOp, toggleBookmark: asyncNoOp, assignDeck: asyncNoOp, updateCard: async () => published, changePage: noOp, clearFilters: () => { setSearch(''); setCategory('All'); } },
+    grid: { changeSearch: setSearch, migrateLegacyCards: asyncNoOp, shareCategory: asyncNoOp, deleteCard: asyncNoOp, toggleBookmark: asyncNoOp, assignDeck: asyncNoOp, bulkPatchCards: asyncNoOp, updateCard: async () => published, changePage: noOp, clearFilters: () => { setSearch(''); setCategory('All'); } },
     tools: {
       openPaths: noOp, importCards: noOp, importFile: noOp, generateCard: event => {
         event.preventDefault();

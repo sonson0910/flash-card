@@ -1,7 +1,7 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
-test('first Vietnamese library visit and live English switch translate the create surface', async ({ page }) => {
-  await page.goto('/?view=library&locale=vi');
+test('first Vietnamese library visit and live English switch translate the create surface', async ({ page, signIn }) => {
+  await signIn(page, '/?view=library&locale=vi');
 
   const overview = page.locator('[data-library-region="overview"]');
   const wordInput = page.locator('#new-word');

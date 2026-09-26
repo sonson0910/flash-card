@@ -206,6 +206,23 @@ const assertAllowedFields = (
   if (Object.keys(source).some(key => !allowed.includes(key))) throw new InputValidationError(message);
 };
 
+/**
+ * Word-generation source languages with a shipped language pack (headword
+ * script handling, romanization/furigana/pinyin reading, speech scoring).
+ * Adding a language here without a pack lets learners request generation for
+ * a language the UI and speech pipeline cannot render or score correctly, so
+ * this list is intentionally the same set as `LANGUAGE_PACK_IDS`.
+ */
+const SUPPORTED_WORD_LANGUAGE_SOURCES = ['en', 'ko', 'ja', 'zh'] as const;
+/** Meaning languages the generation prompt is tuned to translate into. */
+const SUPPORTED_WORD_LANGUAGE_TARGETS = ['en', 'vi'] as const;
+
+export const isSupportedWordLanguagePair = (source: string, target: string): boolean => (
+  (SUPPORTED_WORD_LANGUAGE_SOURCES as readonly string[]).includes(source)
+  && (SUPPORTED_WORD_LANGUAGE_TARGETS as readonly string[]).includes(target)
+  && source !== target
+);
+
 const parseWordLanguage = (value: unknown): { source: string; target: string } | undefined => {
   if (value === undefined) return undefined;
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -217,6 +234,9 @@ const parseWordLanguage = (value: unknown): { source: string; target: string } |
   const target = boundedLanguageCode(language.target, 'Word language codes are invalid.', true);
   if (!isCanonicalLanguageCode(source) || !isCanonicalLanguageCode(target)) {
     throw new InputValidationError('Word language codes are invalid.');
+  }
+  if (!isSupportedWordLanguagePair(source, target)) {
+    throw new InputValidationError('This language pair is not supported for generation yet.');
   }
   return { source, target };
 };

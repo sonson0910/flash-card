@@ -13,6 +13,7 @@ import {
   type LearningOperationIdFactory,
 } from './useLearningState';
 import type {
+  BulkCardFieldPatchRequest,
   LearningPersistenceHook,
   LearningPersistenceStats,
 } from './learningPersistencePort';
@@ -84,6 +85,12 @@ export interface LearningWorkspaceActions {
   deleteCard(cardId: string): Promise<LearningStateOutcome>;
   restoreCard(token: LearningDeleteUndoToken): Promise<LearningStateOutcome>;
   clearLibrary(): Promise<void>;
+  /**
+   * Patches many cards (customDeck/bookmarked only, the Library multi-select
+   * fields) through one bulk-mutation callable. Throws if any card in the
+   * batch failed to apply, so callers can surface a single bulk error.
+   */
+  bulkPatchCards(patches: readonly BulkCardFieldPatchRequest[]): Promise<void>;
 }
 
 type SourceOverride = {
@@ -236,7 +243,22 @@ export function useLearningWorkspace(
       await commands.clearLibrary();
       deleteTokensRef.current.clear();
     },
-  }), [commands]);
+    bulkPatchCards: async patches => {
+      if (!persistence.persistBulkPatch) {
+        throw new Error('Bulk card update is not available.');
+      }
+      if (patches.length === 0) return;
+      const outcomes = await persistence.persistBulkPatch(patches);
+      for (const outcome of outcomes) {
+        if (!outcome.applied) continue;
+        publishLibrary(outcome.publication);
+        publishPractice(outcome.publication);
+      }
+      if (outcomes.some(outcome => !outcome.applied)) {
+        throw new Error('Some cards could not be updated.');
+      }
+    },
+  }), [commands, persistence]);
 
   return { actions };
 }

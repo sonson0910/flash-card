@@ -19,7 +19,7 @@ msgid "daily.lesson.answer-feedback"
 msgstr "Answer feedback"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:44
+#: src/features/dailyLearning/LessonScreen.tsx:50
 msgid "daily.lesson.back-to-today"
 msgstr "Back to Today"
 
@@ -34,7 +34,7 @@ msgid "daily.lesson.choose-answer"
 msgstr "Choose one answer"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:44
+#: src/features/dailyLearning/LessonScreen.tsx:50
 msgid "daily.lesson.complete"
 msgstr "Lesson complete"
 
@@ -44,17 +44,17 @@ msgid "daily.lesson.correct-answer"
 msgstr "Correct answer:"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.exit"
 msgstr "Exit lesson"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.lumi-copy"
 msgstr "Take your time. One clear answer at a time."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.lumi-label"
 msgstr "Lumi is here"
 
@@ -64,22 +64,22 @@ msgid "daily.lesson.no-words"
 msgstr "No words selected yet."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.play-audio"
 msgstr "Play audio"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.progress-label"
 msgstr "Lesson progress"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.prompt"
 msgstr "Prompt"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.question-progress"
 msgstr "Question {current} of {total}"
 
@@ -149,12 +149,12 @@ msgid "daily.lesson.sentence-help"
 msgstr "Select each word occurrence in order. Select it again to remove it."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:44
+#: src/features/dailyLearning/LessonScreen.tsx:50
 msgid "daily.lesson.session-complete-kicker"
 msgstr "Session complete"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.submit"
 msgstr "Submit answer"
 
@@ -164,12 +164,12 @@ msgid "daily.lesson.sync-pending"
 msgstr "Review saved on this device and waiting to sync."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.sync-pending-count"
 msgstr "{count, plural, one {# review saved on this device and waiting to sync.} other {# reviews saved on this device and waiting to sync.}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:45
+#: src/features/dailyLearning/LessonScreen.tsx:51
 msgid "daily.lesson.title"
 msgstr "Lesson"
 

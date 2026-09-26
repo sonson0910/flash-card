@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
 import type { LearningStateMutation, LearningStateMutationResult } from './learningStateController';
-import type { LearningPersistenceHook } from './learningPersistencePort';
+import type { BulkCardFieldPatchOutcome, BulkCardFieldPatchRequest, LearningPersistenceHook } from './learningPersistencePort';
 import {
   useLearningWorkspace,
   type LearningWorkspaceActions,
@@ -31,12 +31,14 @@ const sourceCard: CardData = {
 function createPersistenceStub() {
   const persistCalls: LearningStateMutation[] = [];
   let restoreOverride: ((mutation: LearningStateMutation) => Promise<LearningStateMutationResult>) | null = null;
+  let bulkPatchOverride: ((patches: readonly BulkCardFieldPatchRequest[]) => Promise<BulkCardFieldPatchOutcome[]>) | null = null;
   let capturedOptions: Parameters<LearningPersistenceHook>[0] | undefined;
   const usePersistence: LearningPersistenceHook = options => {
     capturedOptions = options;
     return {
       ownerId: () => options.ownerId,
       findCard: cardId => options.findCard(cardId),
+      ...(bulkPatchOverride ? { persistBulkPatch: bulkPatchOverride } : {}),
       persist: async mutation => {
         persistCalls.push(mutation);
         if (mutation.operation === 'restore') {
@@ -81,6 +83,9 @@ function createPersistenceStub() {
     persistCalls,
     setRestoreOverride(handler: (mutation: LearningStateMutation) => Promise<LearningStateMutationResult>) {
       restoreOverride = handler;
+    },
+    setBulkPatchOverride(handler: (patches: readonly BulkCardFieldPatchRequest[]) => Promise<BulkCardFieldPatchOutcome[]>) {
+      bulkPatchOverride = handler;
     },
     getCapturedOptions() {
       if (!capturedOptions) throw new Error('usePersistence has not been called yet.');
@@ -203,7 +208,7 @@ describe('useLearningWorkspace', () => {
     renderToStaticMarkup(<Harness />);
 
     expect(Object.keys(actions!)).toEqual([
-      'toggleBookmark', 'assignDeck', 'reviewCard', 'updateCard', 'deleteCard', 'restoreCard', 'clearLibrary',
+      'toggleBookmark', 'assignDeck', 'reviewCard', 'updateCard', 'deleteCard', 'restoreCard', 'clearLibrary', 'bulkPatchCards',
     ]);
     await actions!.toggleBookmark(sourceCard.id);
     expect(setup.libraryPatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
@@ -333,5 +338,70 @@ describe('useLearningWorkspace', () => {
 
     expect(outcome).toEqual({ status: 'missing-card' });
     expect(stub.persistCalls).toHaveLength(0);
+  });
+
+  it('publishes every applied bulk patch to both bindings through one persistence call', async () => {
+    const setup = options();
+    const stub = createPersistenceStub();
+    const persistBulkPatch = vi.fn(async (patches: readonly BulkCardFieldPatchRequest[]): Promise<BulkCardFieldPatchOutcome[]> =>
+      patches.map(patch => ({
+        cardId: patch.cardId,
+        applied: true,
+        publication: { kind: 'patch', cardId: patch.cardId, fields: patch.fields },
+      })));
+    stub.setBulkPatchOverride(persistBulkPatch);
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness() {
+      actions = useLearningWorkspace(setup.value, { usePersistence: stub.usePersistence }).actions;
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+
+    await actions!.bulkPatchCards([
+      { cardId: 'word-focus', fields: { bookmarked: true } },
+      { cardId: 'word-other', fields: { bookmarked: true } },
+    ]);
+
+    expect(persistBulkPatch).toHaveBeenCalledTimes(1);
+    expect(setup.libraryPatch).toHaveBeenCalledWith('word-focus', { bookmarked: true });
+    expect(setup.libraryPatch).toHaveBeenCalledWith('word-other', { bookmarked: true });
+    expect(setup.practicePatch).toHaveBeenCalledWith('word-focus', { bookmarked: true });
+    expect(setup.practicePatch).toHaveBeenCalledWith('word-other', { bookmarked: true });
+  });
+
+  it('publishes the cards that applied and rejects when any card in the batch failed', async () => {
+    const setup = options();
+    const stub = createPersistenceStub();
+    stub.setBulkPatchOverride(async patches => [
+      { cardId: patches[0].cardId, applied: true, publication: { kind: 'patch', cardId: patches[0].cardId, fields: patches[0].fields } },
+      { cardId: patches[1].cardId, applied: false },
+    ]);
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness() {
+      actions = useLearningWorkspace(setup.value, { usePersistence: stub.usePersistence }).actions;
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+
+    await expect(actions!.bulkPatchCards([
+      { cardId: 'word-focus', fields: { bookmarked: true } },
+      { cardId: 'word-conflict', fields: { bookmarked: true } },
+    ])).rejects.toThrow('Some cards could not be updated.');
+    expect(setup.libraryPatch).toHaveBeenCalledWith('word-focus', { bookmarked: true });
+    expect(setup.libraryPatch).not.toHaveBeenCalledWith('word-conflict', expect.anything());
+  });
+
+  it('rejects when the injected persistence hook does not support bulk patching', async () => {
+    const setup = options();
+    const stub = createPersistenceStub();
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness() {
+      actions = useLearningWorkspace(setup.value, { usePersistence: stub.usePersistence }).actions;
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+
+    await expect(actions!.bulkPatchCards([{ cardId: 'word-focus', fields: { bookmarked: true } }]))
+      .rejects.toThrow('Bulk card update is not available.');
   });
 });

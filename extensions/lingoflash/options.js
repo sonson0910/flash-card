@@ -10,6 +10,7 @@ const {
   t,
   localizeDocument,
   applyColorScheme,
+  applyThemeFamily,
 } = globalThis.LingoFlashExtension;
 
 localizeDocument(document);
@@ -21,6 +22,7 @@ const recentLookupsEnabled = document.getElementById('recent-lookups-enabled');
 const quickTranslateSource = document.getElementById('quick-translate-source');
 const quickTranslateTarget = document.getElementById('quick-translate-target');
 const colorSchemeInputs = document.querySelectorAll?.('input[name="color-scheme"]') ?? [];
+const themeFamilyInputs = document.querySelectorAll?.('input[name="theme-family"]') ?? [];
 const status = document.getElementById('settings-status');
 const selectionIconSiteInput = document.getElementById('selection-icon-site');
 const addSelectionIconSiteButton = document.getElementById('add-selection-icon-site');
@@ -52,6 +54,8 @@ const applySettings = settings => {
   quickTranslateTarget.value = settings.quickTranslateTarget;
   for (const input of colorSchemeInputs) input.checked = input.value === (settings.colorScheme || 'system');
   applyColorScheme(settings.colorScheme);
+  for (const input of themeFamilyInputs) input.checked = input.value === (settings.themeFamily || 'classic');
+  applyThemeFamily(settings.themeFamily);
 };
 
 const sendMessage = message => apiCall(extensionApi.runtime, 'sendMessage', message);
@@ -150,6 +154,10 @@ for (const input of colorSchemeInputs) {
   input.addEventListener('change', () => { if (input.checked) applyColorScheme(input.value); });
 }
 
+for (const input of themeFamilyInputs) {
+  input.addEventListener('change', () => { if (input.checked) applyThemeFamily(input.value); });
+}
+
 form.addEventListener('submit', event => {
   event.preventDefault();
   if (saveButton?.disabled) return;
@@ -160,6 +168,7 @@ form.addEventListener('submit', event => {
   form.setAttribute('aria-busy', 'true');
   setStatus(t('optionsSaving', undefined, 'Đang lưu…'));
   const checkedScheme = [...colorSchemeInputs].find(input => input.checked)?.value;
+  const checkedThemeFamily = [...themeFamilyInputs].find(input => input.checked)?.value;
   void sendMessage({
     type: 'UPDATE_USER_SETTINGS',
     changes: {
@@ -169,6 +178,7 @@ form.addEventListener('submit', event => {
       quickTranslateSource: quickTranslateSource.value,
       quickTranslateTarget: quickTranslateTarget.value,
       ...(checkedScheme ? { colorScheme: checkedScheme } : {}),
+      ...(checkedThemeFamily ? { themeFamily: checkedThemeFamily } : {}),
     },
   }).then(response => {
     if (!response?.ok || !response.settings) throw new Error(response?.error || t('optionsSaveFailed', undefined, 'Không thể lưu cài đặt.'));
