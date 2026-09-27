@@ -138,7 +138,6 @@ export function useAppNavigation({
   ));
   const [viewFocusIntent, setViewFocusIntent] = useState(0);
   const viewHeadingRef = useRef<HTMLHeadingElement | null>(null);
-  const libraryHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const previousViewModeRef = useRef(viewMode);
   const currentViewModeRef = useRef(viewMode);
   const pendingViewFocusIntentRef = useRef(false);
@@ -177,21 +176,12 @@ export function useAppNavigation({
       viewBrowser.pushState(location);
     }
   }, [viewBrowser]);
-  const focusLibraryHeading = useCallback(() => {
-    const frame = scheduler.requestAnimationFrame(() => {
-      focusHeadingWithMotionPreference(libraryHeadingRef.current, prefersReducedMotion);
-    });
-    return () => scheduler.cancelAnimationFrame(frame);
-  }, [prefersReducedMotion, scheduler]);
-
   return {
     viewMode,
     setViewMode,
     viewHeading: APP_VIEW_HEADINGS[viewMode].message,
     viewHeadingRef,
     viewFocusIntent,
-    libraryHeadingRef,
-    focusLibraryHeading,
     isDarkMode,
   };
 }
