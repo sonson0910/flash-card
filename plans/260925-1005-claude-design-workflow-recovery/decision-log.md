@@ -283,3 +283,15 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
 - Unit progress/Continue và review-activity projection trong
   [contract-paths-progress-canvas.md](contract-paths-progress-canvas.md) là đề xuất
   riêng đang chờ quyết định; các read/write nêu ở đó chưa được duyệt cho code.
+
+## 2026-09-28 — Owner duyệt UniDic cho Japanese pitch wave 1
+
+- Dùng subset tĩnh từ UniDic Kana Accent 2.1.2 của NINJAL, SHA-256 và điều kiện
+  khớp/loại mơ hồ theo [contract-japanese-pitch-accent.md](contract-japanese-pitch-accent.md).
+  Chọn licence BSD và giữ attribution. German article thuộc wave 2.
+- Thêm optional `japanesePitchAccent` vào card hiện có. Create và trusted headword
+  rename tự suy metadata từ subset; client không thể sửa field. Card cũ và từ
+  không khớp chỉ hiện kana. Không backfill production trong lần này.
+- Chi phí Firebase: **0 document reads, 0 document writes, 0 subscriptions,
+  0 queries mới**. Card có field sẽ tăng bytes và index storage; không tạo
+  lookup nguồn qua Firestore hoặc gọi AI thêm. Chỉ code/test local, không deploy.
