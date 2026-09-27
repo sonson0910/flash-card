@@ -212,6 +212,7 @@ for (const theme of themes) {
       if (theme.mode === 'dark') await expect(root).toHaveClass(/\bdark\b/);
       else await expect(root).not.toHaveClass(/\bdark\b/);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Continue review' })).toBeVisible();
       await expectAccessibleAndContained(page, 'Paths');
       await expectReducedMotion(page, 'Paths');
       await attachScreen(page, testInfo, `paths-${theme.family}-${theme.mode}-${viewport.name}`);
