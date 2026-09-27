@@ -93,6 +93,22 @@ describe('WebWordsPage', () => {
     expect(html).toContain('Untitled capture');
   });
 
+  it('renders persisted source context as plain text without fabricating one when it is absent', () => {
+    setState({
+      status: 'ready',
+      groups: [{
+        key: 'url:https://example.com/piece', site: 'example.com', title: 'A piece', url: 'https://example.com/piece', day: 'Today',
+        cards: [webCard({ source: { context: 'The <mark>ephemeral</mark> bloom lasted one morning.' } }), webCard({ id: 'card-2' })],
+      }],
+    });
+
+    const html = render();
+    expect(html).toContain('The &lt;mark&gt;ephemeral&lt;/mark&gt; bloom lasted one morning.');
+    expect(html).not.toContain('<mark>ephemeral</mark>');
+    expect(html).toContain('ephemeral');
+    expect(html).not.toContain('Sentence unavailable');
+  });
+
   it('shows the selection footer and count only once at least one word is selected', () => {
     setState({
       status: 'ready',

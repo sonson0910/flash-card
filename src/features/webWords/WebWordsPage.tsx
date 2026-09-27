@@ -39,9 +39,12 @@ function ArticleGroupCard({
   const { _ } = useLingui();
   const heading = group.title || group.site || _(msg({ id: 'webWords.group.untitled', message: 'Untitled capture' }));
   return (
-    <li className="rounded-[22px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div className="min-w-0">
+    <li className="overflow-hidden rounded-[22px] border border-[var(--sf-border)] bg-[var(--sf-surface)] shadow-sm">
+      <div className="flex flex-wrap items-center gap-3 border-b border-[var(--sf-border)] px-4 py-3 sm:px-5 sm:py-4">
+        <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--sf-brand)] font-black text-[var(--sf-on-brand)]" aria-hidden="true">
+          {heading.slice(0, 1).toUpperCase()}
+        </div>
+        <div className="min-w-0 flex-1">
           <p className="truncate font-black text-[var(--sf-text)]">
             {isDisplayableSourceUrl(group.url) ? (
               <a href={group.url} target="_blank" rel="noopener noreferrer" className="underline-offset-4 hover:underline">{heading}</a>
@@ -49,14 +52,15 @@ function ArticleGroupCard({
               <span>{heading}</span>
             )}
           </p>
-          {group.site && <p className="text-xs font-semibold text-[var(--sf-text-muted)]">{group.site}</p>}
+          <p className="text-xs font-semibold text-[var(--sf-text-muted)]">
+            {[group.site, displayCardDate(group.day)].filter(Boolean).join(' · ')}
+          </p>
         </div>
-        <span className="shrink-0 text-xs font-bold text-[var(--sf-text-muted)]">{displayCardDate(group.day)}</span>
       </div>
-      <ul className="mt-3">
+      <ul>
         {group.cards.map(card => (
-          <li key={card.id} className="flex items-center gap-3 border-b border-[var(--sf-border)] py-2 last:border-b-0">
-            <label className="flex min-w-0 flex-1 items-center gap-3">
+          <li key={card.id} className="grid gap-3 border-b border-[var(--sf-border)] px-4 py-3 last:border-b-0 sm:grid-cols-[minmax(9rem,11rem)_minmax(0,1fr)] sm:gap-4 sm:px-5">
+            <label className="flex min-w-0 items-start gap-3">
               <input
                 type="checkbox"
                 checked={selectedCardIds.has(card.id)}
@@ -64,10 +68,15 @@ function ArticleGroupCard({
                 aria-label={_(msg({ id: 'webWords.card.select-label', message: 'Select {word}' }).id, { word: card.word })}
                 className="size-4 shrink-0 accent-[var(--sf-brand)]"
               />
-              <span className="min-w-0 truncate font-bold text-[var(--sf-text)]">{card.word}</span>
-              {card.translation && <span className="min-w-0 truncate text-sm text-[var(--sf-text-muted)]">{card.translation}</span>}
+              <span className="min-w-0">
+                <span className="block break-words font-black text-[var(--sf-text)]">{card.word}</span>
+                {card.translation && <span className="mt-1 block break-words text-sm text-[var(--sf-text-muted)]">{card.translation}</span>}
+              </span>
             </label>
-            <CardTierBadge tier={getLibraryCardTier(card)} />
+            <div className="min-w-0">
+              {card.source?.context && <p className="text-sm leading-6 text-[var(--sf-text-muted)]">{card.source.context}</p>}
+              <div className="mt-2"><CardTierBadge tier={getLibraryCardTier(card)} /></div>
+            </div>
           </li>
         ))}
       </ul>
@@ -89,7 +98,7 @@ export function WebWordsPage({ onClose }: WebWordsPageProps) {
     <Dialog.Root open onOpenChange={open => { if (!open) onClose(); }}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/72 backdrop-blur-sm motion-reduce:backdrop-blur-none" />
-        <Dialog.Content className="liquid-glass crystal-chamfer fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[28px] border border-[var(--sf-border)] shadow-2xl">
+        <Dialog.Content className="liquid-glass crystal-chamfer fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[1328px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[28px] border border-[var(--sf-border)] shadow-2xl">
           <header className="flex items-start justify-between gap-4 border-b border-[var(--sf-border)] p-5 sm:p-6">
             <div className="min-w-0">
               <Dialog.Title className="text-balance text-2xl font-black tracking-tight"><Trans id="webWords.page.title" message="Web words" /></Dialog.Title>
@@ -164,7 +173,7 @@ export function WebWordsPage({ onClose }: WebWordsPageProps) {
             )}
             {state.status === 'ready' && (
               <>
-                <ul className="space-y-4">
+                <ul className="grid gap-4 xl:grid-cols-2">
                   {state.groups.map(group => (
                     <ArticleGroupCard key={group.key} group={group} selectedCardIds={state.selectedCardIds} onToggleSelected={actions.toggleSelected} />
                   ))}
