@@ -340,7 +340,7 @@ describe('Flashcard language presentation', () => {
     expect(source).toContain("editorContext?.kind === 'review'");
     expect(source).toContain('hangul-breakdown-slot');
     const styles = readFileSync(fileURLToPath(new URL('./flashcard/hangul-breakdown.css', import.meta.url)), 'utf8');
-    expect(styles).toContain('left: calc(50% + 310px)');
+    expect(styles).toContain('left: calc(50% + 354px)');
   });
 
   it.each(['en', 'vi', 'en-XA', 'ja'])('renders the stored word and language spans with %s UI locale', locale => {
