@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { CourseContext, type CourseGateValue } from '../courses/CourseGate';
 import { OnboardingGate } from './OnboardingGate';
-import { OnboardingJourney } from './OnboardingJourney';
+import { onboardingCourseInput, OnboardingJourney } from './OnboardingJourney';
 
 i18n.load('en', {});
 i18n.activate('en');
@@ -51,5 +51,19 @@ describe('OnboardingGate', () => {
     expect(html).toContain('Tiếng Việt');
     expect(html).toContain('English');
     expect(html).toContain('Continue');
+  });
+
+  it('keeps selected goal details and Chinese script in the course creation input', () => {
+    expect(onboardingCourseInput({
+      targetLanguage: 'zh', nativeLanguage: 'vi', goalKind: 'hsk', goalLevel: ' HSK 4 ', goalTargetDate: '2027-01-17', zhScript: 'hant',
+    })).toEqual({
+      targetLanguage: 'zh', nativeLanguage: 'vi', goals: [{ kind: 'hsk', level: 'HSK 4', targetDate: '2027-01-17' }], preferences: { zhScript: 'hant' },
+    });
+    expect(onboardingCourseInput({
+      targetLanguage: 'ja', nativeLanguage: 'vi', goalKind: null, goalLevel: '', goalTargetDate: '', zhScript: null,
+    })).toEqual({ targetLanguage: 'ja', nativeLanguage: 'vi', goals: [] });
+    expect(onboardingCourseInput({
+      targetLanguage: 'zh', nativeLanguage: 'vi', goalKind: null, goalLevel: '', goalTargetDate: '', zhScript: null,
+    })).toEqual({ targetLanguage: 'zh', nativeLanguage: 'vi', goals: [], preferences: { zhScript: 'hans' } });
   });
 });

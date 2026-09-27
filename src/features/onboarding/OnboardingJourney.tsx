@@ -3,7 +3,7 @@ import { Trans, useLingui } from '@lingui/react';
 import { useEffect, useState } from 'react';
 import { useSetUiLocale, useUiLocale } from '../../i18n/I18nProvider';
 import { useCourseSession } from '../courses/CourseGate';
-import { COURSE_TARGET_LANGUAGES, type CourseNativeLanguage, type CourseTargetLanguage } from '../courses/courseModel';
+import { COURSE_TARGET_LANGUAGES, type CourseNativeLanguage, type CourseTargetLanguage, type CreateCourseInput } from '../courses/courseModel';
 import { goalKindsFor } from '../courses/courseGoalCatalog';
 import { TARGET_LANGUAGE_FLAG, TARGET_LANGUAGE_LABEL } from '../courses/courseLanguageLabels';
 import { DAILY_PACE_OPTIONS, writeDailyPace, type DailyPace } from '../settings/dailyPacePreference';
@@ -22,6 +22,27 @@ export interface OnboardingJourneyProps {
   readonly ownerId: string;
 }
 
+export const onboardingCourseInput = ({
+  targetLanguage,
+  nativeLanguage,
+  goalKind,
+  goalLevel,
+  goalTargetDate,
+  zhScript,
+}: {
+  readonly targetLanguage: CourseTargetLanguage;
+  readonly nativeLanguage: CourseNativeLanguage;
+  readonly goalKind: string | null;
+  readonly goalLevel: string;
+  readonly goalTargetDate: string;
+  readonly zhScript: 'hans' | 'hant' | null;
+}): CreateCourseInput => ({
+  targetLanguage,
+  nativeLanguage,
+  goals: goalKind ? [{ kind: goalKind, level: goalLevel.trim() || null, targetDate: goalTargetDate || null }] : [],
+  ...(targetLanguage === 'zh' ? { preferences: { zhScript: zhScript ?? 'hans' } } : {}),
+});
+
 /**
  * The branched sign-in-only onboarding journey. Every step writes real state
  * (UI locale, a real course/goal via `useCourseSession()`, real starter
@@ -38,6 +59,9 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   const [nativeLanguage, setNativeLanguage] = useState<CourseNativeLanguage>(uiLocale === 'en' ? 'en' : 'vi');
   const [targetLanguage, setTargetLanguage] = useState<CourseTargetLanguage | null>(null);
   const [goalKind, setGoalKind] = useState<string | null>(null);
+  const [goalLevel, setGoalLevel] = useState('');
+  const [goalTargetDate, setGoalTargetDate] = useState('');
+  const [zhScript, setZhScript] = useState<'hans' | 'hant' | null>(null);
   const [pace, setPace] = useState<DailyPace>(10);
   const [ahaOutcome, setAhaOutcome] = useState<StarterCardOutcome | 'pending' | 'error' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +83,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
 
   const targetOptions = COURSE_TARGET_LANGUAGES.filter(language => language !== nativeLanguage);
   const goalOptions = targetLanguage ? goalKindsFor(targetLanguage) : [];
+  const selectedGoal = goalOptions.find(option => option.kind === goalKind);
   const stepIndex = ['language', 'target', 'goal', 'pace', 'aha', 'reminder'].indexOf(step) + 1;
 
   const goNext = () => { const next = nextOnboardingStep(step); if (next) setStep(next); };
@@ -78,11 +103,9 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   const finish = async () => {
     if (!targetLanguage) return;
     setError(null);
-    const result = await actions.createCourse({
-      targetLanguage,
-      nativeLanguage,
-      goals: goalKind ? [{ kind: goalKind }] : [],
-    });
+    const result = await actions.createCourse(onboardingCourseInput({
+      targetLanguage, nativeLanguage, goalKind, goalLevel, goalTargetDate, zhScript,
+    }));
     if (!result.ok) { setError(result.error.message); return; }
     writeDailyPace(pace);
     clearOnboardingResumeStep(ownerId);
@@ -113,7 +136,15 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
       {step === 'target' && <>
         <h2 className="font-serif-hero text-4xl font-bold tracking-tight sm:text-5xl"><Trans id="onboarding.target.title" message="What are you learning?" /></h2>
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          {targetOptions.map(language => <button key={language} type="button" className={optionButtonClass(targetLanguage === language)} onClick={() => setTargetLanguage(language)}>
+          {targetOptions.map(language => <button key={language} type="button" className={optionButtonClass(targetLanguage === language)} onClick={() => {
+            if (language !== targetLanguage) {
+              setGoalKind(null);
+              setGoalLevel('');
+              setGoalTargetDate('');
+            }
+            setTargetLanguage(language);
+            if (language !== 'zh') setZhScript(null);
+          }}>
             <span>{TARGET_LANGUAGE_FLAG[language]} {_(TARGET_LANGUAGE_LABEL[language])}</span>
           </button>)}
         </div>
@@ -130,6 +161,20 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
           <button type="button" className={optionButtonClass(goalKind === null)} onClick={() => setGoalKind(null)}><Trans id="onboarding.goal.none" message="No specific goal yet" /></button>
           {goalOptions.map(option => <button key={option.kind} type="button" className={optionButtonClass(goalKind === option.kind)} onClick={() => setGoalKind(option.kind)}>{_(option.label)}</button>)}
         </div>
+        {selectedGoal && <div className="mt-4 grid max-w-2xl gap-3 sm:grid-cols-2">
+          <label className="text-sm font-bold text-[var(--sf-text)]"><Trans id="course.goal.add.level-label" message="Level or target (optional)" />
+            <input className="mt-1 block min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 text-sm text-[var(--sf-text)]" value={goalLevel} onChange={event => setGoalLevel(event.target.value)} placeholder={_(selectedGoal.levelHint)} maxLength={32} />
+          </label>
+          <label className="text-sm font-bold text-[var(--sf-text)]"><Trans id="course.goal.add.date-label" message="Exam or target date (optional)" />
+            <input type="date" className="mt-1 block min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 text-sm text-[var(--sf-text)]" value={goalTargetDate} onChange={event => setGoalTargetDate(event.target.value)} />
+          </label>
+        </div>}
+        {targetLanguage === 'zh' && <label className="mt-4 block max-w-2xl text-sm font-bold text-[var(--sf-text)]"><Trans id="settings.course.script" message="Chinese script" />
+          <select className="mt-1 block min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 text-sm text-[var(--sf-text)]" value={zhScript ?? 'hans'} onChange={event => setZhScript(event.target.value as 'hans' | 'hant')}>
+            <option value="hans"><Trans id="settings.course.script.simplified" message="Simplified" /></option>
+            <option value="hant"><Trans id="settings.course.script.traditional" message="Traditional" /></option>
+          </select>
+        </label>}
         <div className="mt-10 flex justify-between gap-3">
           <button type="button" className={secondaryButtonClass} onClick={goBack}><Trans id="onboarding.back" message="Back" /></button>
           <button type="button" className={primaryButtonClass} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button>

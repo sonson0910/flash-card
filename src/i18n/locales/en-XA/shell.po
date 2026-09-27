@@ -14,55 +14,56 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:37
-#: src/components/shell/CourseSwitcherControl.tsx:37
+#: src/components/shell/CourseSwitcherControl.tsx:41
+#: src/components/shell/CourseSwitcherControl.tsx:41
 msgid "course.action.archive"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:36
-#: src/components/shell/CourseSwitcherControl.tsx:36
+#: src/components/shell/CourseSwitcherControl.tsx:40
+#: src/components/shell/CourseSwitcherControl.tsx:40
 msgid "course.action.manage-goals"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:38
-#: src/components/shell/CourseSwitcherControl.tsx:38
+#: src/components/shell/CourseSwitcherControl.tsx:42
+#: src/components/shell/CourseSwitcherControl.tsx:42
 msgid "course.action.reopen"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:66
+#: src/components/shell/CourseSwitcherControl.tsx:70
 msgid "course.create.cancel"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:59
+#: src/components/shell/CourseSwitcherControl.tsx:63
 msgid "course.create.native-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:51
+#: src/components/shell/CourseSwitcherControl.tsx:55
 msgid "course.create.no-target-left"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:65
+#: src/components/shell/CourseSwitcherControl.tsx:69
 msgid "course.create.submit"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:54
+#: src/components/shell/CourseSwitcherControl.tsx:58
 msgid "course.create.target-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:121
+#: src/components/shell/CourseSwitcherControl.tsx:125
 msgid "course.error.generic"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/courses/CourseGoalsPanel.tsx:62
+#: src/features/onboarding/OnboardingJourney.tsx:168
 msgid "course.goal.add.date-label"
 msgstr ""
 
@@ -73,6 +74,7 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/courses/CourseGoalsPanel.tsx:58
+#: src/features/onboarding/OnboardingJourney.tsx:165
 msgid "course.goal.add.level-label"
 msgstr ""
 
@@ -254,37 +256,37 @@ msgid "course.language.zh"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:34
+#: src/components/shell/CourseSwitcherControl.tsx:38
 msgid "course.status.active"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:33
+#: src/components/shell/CourseSwitcherControl.tsx:37
 msgid "course.status.archived"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:137
+#: src/components/shell/CourseSwitcherControl.tsx:141
 msgid "course.switcher.add"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:118
+#: src/components/shell/CourseSwitcherControl.tsx:122
 msgid "course.switcher.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:114
+#: src/components/shell/CourseSwitcherControl.tsx:118
 msgid "course.switcher.dialog-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:111
+#: src/components/shell/CourseSwitcherControl.tsx:115
 msgid "course.switcher.no-active"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:117
+#: src/components/shell/CourseSwitcherControl.tsx:121
 msgid "course.switcher.title"
 msgstr ""
 
@@ -301,124 +303,126 @@ msgid "flashcard.ai-disclosure"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:148
+#: src/features/onboarding/OnboardingJourney.tsx:201
 msgid "onboarding.aha.create"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:153
+#: src/features/onboarding/OnboardingJourney.tsx:206
 msgid "onboarding.aha.error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:159
+#: src/features/onboarding/OnboardingJourney.tsx:212
 msgid "onboarding.aha.none-added"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:151
+#: src/features/onboarding/OnboardingJourney.tsx:204
 msgid "onboarding.aha.pending"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:160
+#: src/features/onboarding/OnboardingJourney.tsx:213
 msgid "onboarding.aha.quota-note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:149
+#: src/features/onboarding/OnboardingJourney.tsx:121
+#: src/features/onboarding/OnboardingJourney.tsx:202
 msgid "onboarding.aha.skip"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:147
+#: src/features/onboarding/OnboardingJourney.tsx:200
 msgid "onboarding.aha.subtitle"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:158
+#: src/features/onboarding/OnboardingJourney.tsx:211
 msgid "onboarding.aha.success"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:145
+#: src/features/onboarding/OnboardingJourney.tsx:198
 msgid "onboarding.aha.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:113
-#: src/features/onboarding/OnboardingJourney.tsx:126
-#: src/features/onboarding/OnboardingJourney.tsx:139
+#: src/features/onboarding/OnboardingJourney.tsx:152
+#: src/features/onboarding/OnboardingJourney.tsx:179
+#: src/features/onboarding/OnboardingJourney.tsx:192
+#: src/features/onboarding/OnboardingJourney.tsx:222
 msgid "onboarding.back"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:102
-#: src/features/onboarding/OnboardingJourney.tsx:114
-#: src/features/onboarding/OnboardingJourney.tsx:127
-#: src/features/onboarding/OnboardingJourney.tsx:140
-#: src/features/onboarding/OnboardingJourney.tsx:154
-#: src/features/onboarding/OnboardingJourney.tsx:161
+#: src/features/onboarding/OnboardingJourney.tsx:133
+#: src/features/onboarding/OnboardingJourney.tsx:153
+#: src/features/onboarding/OnboardingJourney.tsx:180
+#: src/features/onboarding/OnboardingJourney.tsx:193
+#: src/features/onboarding/OnboardingJourney.tsx:207
+#: src/features/onboarding/OnboardingJourney.tsx:214
 msgid "onboarding.continue"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:169
+#: src/features/onboarding/OnboardingJourney.tsx:223
 msgid "onboarding.finish"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:122
+#: src/features/onboarding/OnboardingJourney.tsx:161
 msgid "onboarding.goal.none"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:120
+#: src/features/onboarding/OnboardingJourney.tsx:159
 msgid "onboarding.goal.subtitle"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:119
+#: src/features/onboarding/OnboardingJourney.tsx:158
 msgid "onboarding.goal.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:95
+#: src/features/onboarding/OnboardingJourney.tsx:126
 msgid "onboarding.language.subtitle"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:94
+#: src/features/onboarding/OnboardingJourney.tsx:125
 msgid "onboarding.language.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:135
+#: src/features/onboarding/OnboardingJourney.tsx:188
 msgid "onboarding.pace.option"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:132
+#: src/features/onboarding/OnboardingJourney.tsx:185
 msgid "onboarding.pace.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:167
+#: src/features/onboarding/OnboardingJourney.tsx:220
 msgid "onboarding.reminder.not-ready"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:166
+#: src/features/onboarding/OnboardingJourney.tsx:219
 msgid "onboarding.reminder.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:106
+#: src/features/onboarding/OnboardingJourney.tsx:137
 msgid "onboarding.target.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:92
+#: src/features/onboarding/OnboardingJourney.tsx:115
 msgid "onboarding.title"
 msgstr ""
 
@@ -450,6 +454,21 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/components/shell/LibraryManagementMenu.tsx:245
 msgid "rewards.title.word-collector"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:172
+msgid "settings.course.script"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:174
+msgid "settings.course.script.simplified"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:175
+msgid "settings.course.script.traditional"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -677,17 +696,17 @@ msgid "shell.level.short"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:111
+#: src/features/library/libraryViewModel.ts:113
 msgid "shell.library-count.cached-cloud"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:114
+#: src/features/library/libraryViewModel.ts:116
 msgid "shell.library-count.cards"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:112
+#: src/features/library/libraryViewModel.ts:114
 msgid "shell.library-count.cloud-paused"
 msgstr ""
 
@@ -708,7 +727,7 @@ msgid "shell.library-menu.zen-toggle-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/App.tsx:75
+#: src/App.tsx:82
 msgid "shell.loading.app"
 msgstr ""
 

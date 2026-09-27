@@ -44,7 +44,8 @@ test('course switcher exposes goals, switches active courses, and keeps course s
   await expect(settings.getByRole('switch')).toHaveCount(1);
 });
 
-test('a new signed-in learner advances from language selection to a target choice', async ({ page, signIn, blockExternalNetwork }) => {
+test('a new signed-in learner advances from language selection to a target choice', async ({ page, db, testUser, signIn, blockExternalNetwork }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   await blockExternalNetwork(page);
   await signIn(page, '/?view=today&locale=en');
 
@@ -57,4 +58,26 @@ test('a new signed-in learner advances from language selection to a target choic
   await expect(continueButton).toBeDisabled();
   await dialog.getByRole('button', { name: /Korean/ }).click();
   await expect(continueButton).toBeEnabled();
+  await continueButton.click();
+  await dialog.getByRole('button', { name: 'TOPIK', exact: true }).click();
+  await expect(dialog.getByRole('textbox', { name: 'Level or target (optional)' })).toBeVisible();
+  await dialog.getByRole('textbox', { name: 'Level or target (optional)' }).fill('TOPIK II');
+  await dialog.getByLabel('Exam or target date (optional)').fill('2027-01-17');
+  await page.screenshot({ path: testInfo.outputPath('onboarding-goal-details.png'), animations: 'disabled', caret: 'hide' });
+  await dialog.getByRole('button', { name: 'Back' }).click();
+  await dialog.getByRole('button', { name: /Chinese/ }).click();
+  await continueButton.click();
+  await expect(dialog.getByRole('textbox', { name: 'Level or target (optional)' })).toHaveCount(0);
+  await expect(dialog.getByLabel('Chinese script')).toHaveValue('hans');
+  await dialog.getByLabel('Chinese script').selectOption('hant');
+  await expect(dialog.getByLabel('Chinese script')).toHaveValue('hant');
+  await page.screenshot({ path: testInfo.outputPath('onboarding-chinese-script.png'), animations: 'disabled', caret: 'hide' });
+  await continueButton.click();
+  await expect(dialog.getByRole('heading', { name: 'How many cards a day?' })).toBeVisible();
+  await continueButton.click();
+  await dialog.getByRole('button', { name: 'Skip for now' }).last().click();
+  await dialog.getByRole('button', { name: 'Start learning' }).click();
+  await expect(dialog).toHaveCount(0);
+  const profile = (await db.collection('users').doc(testUser.uid).collection('profile').doc('courses').get()).data();
+  expect(profile?.courses?.find((course: { targetLanguage: string }) => course.targetLanguage === 'zh')?.preferences?.zhScript).toBe('hant');
 });
