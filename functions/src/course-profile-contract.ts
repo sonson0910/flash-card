@@ -67,6 +67,7 @@ export interface CreateCourseInput {
   readonly nativeLanguage: CourseNativeLanguage;
   readonly goals?: readonly CreateGoalInput[];
   readonly preferences?: Partial<CoursePreferences>;
+  readonly activateOnCreate?: boolean;
 }
 
 export interface UpdateCourseInput {
@@ -293,9 +294,10 @@ export const normalizeCreateCourseInput = (value: unknown): {
   nativeLanguage: CourseNativeLanguage;
   goals: readonly CreateGoalInput[];
   preferences: CoursePreferences;
+  activateOnCreate?: boolean;
 } => {
   const record = optionalRecordAt(value, 'course', [
-    'targetLanguage', 'nativeLanguage', 'goals', 'preferences',
+    'targetLanguage', 'nativeLanguage', 'goals', 'preferences', 'activateOnCreate',
   ]);
   const rawGoals = arrayAt(hasOwn(record, 'goals') ? record.goals : [], 'course.goals');
   if (rawGoals.length > MAX_GOALS_PER_COURSE) {
@@ -338,6 +340,9 @@ export const normalizeCreateCourseInput = (value: unknown): {
     nativeLanguage: enumAt(record.nativeLanguage, 'course.nativeLanguage', COURSE_NATIVE_LANGUAGES),
     goals,
     preferences,
+    ...(hasOwn(record, 'activateOnCreate')
+      ? { activateOnCreate: booleanAt(record.activateOnCreate, 'course.activateOnCreate') }
+      : {}),
   };
 };
 

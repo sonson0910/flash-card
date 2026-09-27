@@ -59,7 +59,7 @@ test('a new signed-in learner advances from language selection to a target choic
   await dialog.getByRole('button', { name: /Korean/ }).click();
   await expect(continueButton).toBeEnabled();
   await continueButton.click();
-  await dialog.getByRole('button', { name: 'TOPIK', exact: true }).click();
+  await dialog.getByRole('button', { name: /^TOPIK\b/ }).click();
   await expect(dialog.getByRole('textbox', { name: 'Level or target (optional)' })).toBeVisible();
   await dialog.getByRole('textbox', { name: 'Level or target (optional)' }).fill('TOPIK II');
   await dialog.getByLabel('Exam or target date (optional)').fill('2027-01-17');
@@ -78,6 +78,9 @@ test('a new signed-in learner advances from language selection to a target choic
   await dialog.getByRole('button', { name: 'Skip for now' }).last().click();
   await dialog.getByRole('button', { name: 'Start learning' }).click();
   await expect(dialog).toHaveCount(0);
+  await expect(page.locator('.claude-course-switcher-trigger')).toHaveText(/Chinese/);
   const profile = (await db.collection('users').doc(testUser.uid).collection('profile').doc('courses').get()).data();
-  expect(profile?.courses?.find((course: { targetLanguage: string }) => course.targetLanguage === 'zh')?.preferences?.zhScript).toBe('hant');
+  const selectedCourse = profile?.courses?.find((course: { targetLanguage: string }) => course.targetLanguage === 'zh');
+  expect(selectedCourse?.preferences?.zhScript).toBe('hant');
+  expect(profile?.activeCourseId).toBe(selectedCourse?.id);
 });

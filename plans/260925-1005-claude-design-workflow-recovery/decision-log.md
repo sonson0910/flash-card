@@ -304,3 +304,16 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
   và `MobilePaywall`; không đánh dấu Canvas MATCH chỉ vì snapshot app pass.
 - Quyết định này không thêm Firestore read/write/subscription. Phase 15 vẫn
   khóa theo quyết định kinh doanh và không được triển khai trong lượt này.
+
+## 2026-09-28 — Owner duyệt active course khi hoàn thành onboarding
+
+- Duyệt [contract-onboarding-course-activation.md](contract-onboarding-course-activation.md):
+  `createCourse` nhận optional `activateOnCreate` (mặc định `false`). Onboarding
+  và incoming share gửi `true`; tạo course trong switcher giữ mặc định.
+- Server quyết định active course trong transaction theo cờ request, kể cả
+  khi transaction retry sau một create khác. Legacy English vẫn được giữ.
+  Same-target conflict vẫn trả lỗi; tab khác cần reload để thấy thay đổi.
+- Chi phí mỗi create thành công vẫn là transaction hiện có: 1 document read,
+  1 document write. **0 reads, writes, queries, subscriptions và callable calls
+  mới**; không đổi persisted schema hay Firestore Rules. Chỉ code/test local,
+  không deploy.

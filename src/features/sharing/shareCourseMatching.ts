@@ -64,6 +64,7 @@ export function createSharedDeckCoursePort(courseSession: {
           await courseSession.actions.createCourse({
             targetLanguage: decision.targetLanguage,
             nativeLanguage: decision.nativeLanguage,
+            activateOnCreate: true,
           });
           return;
         }

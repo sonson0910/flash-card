@@ -133,6 +133,17 @@ describe('Firebase course adapter', () => {
         },
       },
     });
+    await adapter.createCourse('owner-a', {
+      targetLanguage: 'ja', nativeLanguage: 'vi', activateOnCreate: true,
+    });
+    expect(call).toHaveBeenLastCalledWith('createCourse', {
+      ownerId: 'owner-a',
+      input: {
+        targetLanguage: 'ja', nativeLanguage: 'vi', goals: [],
+        preferences: { pronunciationVariant: null, showRomanization: false, zhScript: null },
+        activateOnCreate: true,
+      },
+    });
   });
 
   it('never hides callable failures behind a local profile', async () => {

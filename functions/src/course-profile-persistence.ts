@@ -271,7 +271,7 @@ const createCourse = (
   const course = createCourseRecord({ id: courseId, input, createdAt: clock(), goals });
   return parseCourseProfile({
     courses: [...profile.courses, course],
-    activeCourseId: profile.activeCourseId ?? course.id,
+    activeCourseId: input.activateOnCreate ? course.id : profile.activeCourseId ?? course.id,
   });
 };
 

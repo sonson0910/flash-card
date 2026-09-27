@@ -72,7 +72,7 @@ describe('createSharedDeckCoursePort', () => {
       actions: actions as never,
     });
     await expect(port.ensureCourseForIncomingShare(previewWithPair('ko', 'vi'))).resolves.toBeUndefined();
-    expect(actions.createCourse).toHaveBeenCalledWith({ targetLanguage: 'ko', nativeLanguage: 'vi' });
+    expect(actions.createCourse).toHaveBeenCalledWith({ targetLanguage: 'ko', nativeLanguage: 'vi', activateOnCreate: true });
   });
 
   it('does nothing when the deck already matches the active course', async () => {

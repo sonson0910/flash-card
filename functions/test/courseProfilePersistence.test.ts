@@ -18,7 +18,7 @@ const snapshot = (exists: boolean, data?: DocumentData): DocumentSnapshot => ({
 
 const profilePath = 'users/owner/profile/courses';
 
-const harness = (initial?: DocumentData) => {
+const harness = (initial?: DocumentData, retryWith?: DocumentData) => {
   const values = new Map<string, DocumentData>(initial === undefined ? [] : [[profilePath, initial]]);
   const writes: Array<{ path: string; data: DocumentData }> = [];
   const transaction = {
@@ -41,9 +41,16 @@ const harness = (initial?: DocumentData) => {
         path: `${name}/${ownerId}`,
       }),
     }),
-    runTransaction: vi.fn(async (callback: (value: Transaction) => Promise<unknown>) => callback(transaction)),
+    runTransaction: vi.fn(async (callback: (value: Transaction) => Promise<unknown>) => {
+      if (retryWith) {
+        await callback(transaction);
+        values.set(profilePath, retryWith);
+        writes.length = 0;
+      }
+      return callback(transaction);
+    }),
   } as unknown as Firestore;
-  return { database, writes, values };
+  return { database, writes, values, transaction };
 };
 
 const deterministicIds = () => {
@@ -79,6 +86,14 @@ describe('course profile persistence', () => {
       ownerId: 'owner',
       input: { targetLanguage: 'fr', nativeLanguage: 'vi' },
     })).toThrow(/unsupported value/);
+    expect(parseCourseProfileMutationRequest('createCourse', {
+      ownerId: 'owner',
+      input: { targetLanguage: 'ko', nativeLanguage: 'vi', activateOnCreate: true },
+    })).toMatchObject({ input: { activateOnCreate: true } });
+    expect(() => parseCourseProfileMutationRequest('createCourse', {
+      ownerId: 'owner',
+      input: { targetLanguage: 'ko', nativeLanguage: 'vi', activateOnCreate: 'true' },
+    })).toThrow(/expected a boolean/);
     expect(() => parseCourseProfileMutationRequest('createCourse', {
       ownerId: 'owner',
       input: { targetLanguage: 'ko', nativeLanguage: 'vi' },
@@ -99,7 +114,7 @@ describe('course profile persistence', () => {
     })).toThrow(/at most 32 goals/);
   });
 
-  it('creates against an absent profile with the deterministic legacy course and one transaction write', async () => {
+  it('preserves legacy English by default when creating against an absent profile', async () => {
     const test = harness();
     const request = parseCourseProfileMutationRequest('createCourse', {
       ownerId: 'owner',
@@ -124,6 +139,54 @@ describe('course profile persistence', () => {
     expect(test.writes).toHaveLength(1);
     expect(test.writes[0]).toMatchObject({ path: profilePath, data: result });
     expect(Object.keys(test.writes[0]?.data ?? {})).toEqual(['courses', 'activeCourseId']);
+  });
+
+  it('keeps the existing active course when adding to a stored profile', async () => {
+    const test = harness(createLegacyCourseProfile());
+    const request = parseCourseProfileMutationRequest('createCourse', {
+      ownerId: 'owner', input: { targetLanguage: 'ko', nativeLanguage: 'vi' },
+    });
+    const result = await applyCourseProfileMutation(test.database, 'owner', request, {
+      createId: deterministicIds(), now,
+    });
+
+    expect(result.activeCourseId).toBe('legacy-en-vi');
+    expect(result.courses).toHaveLength(2);
+    expect(test.writes).toHaveLength(1);
+  });
+
+  it('activates the requested course even after a competing create forces a transaction retry', async () => {
+    const competing = harness(createLegacyCourseProfile());
+    const competingProfile = await applyCourseProfileMutation(competing.database, 'owner',
+      parseCourseProfileMutationRequest('createCourse', {
+        ownerId: 'owner', input: { targetLanguage: 'ja', nativeLanguage: 'vi', activateOnCreate: true },
+      }), { createId: deterministicIds(), now });
+    const test = harness(undefined, competingProfile);
+    const result = await applyCourseProfileMutation(test.database, 'owner',
+      parseCourseProfileMutationRequest('createCourse', {
+        ownerId: 'owner', input: { targetLanguage: 'ko', nativeLanguage: 'vi', activateOnCreate: true },
+      }), { createId: deterministicIds(), now });
+
+    expect(test.transaction.get).toHaveBeenCalledTimes(2);
+    expect(result.activeCourseId).toBe('course-2');
+    expect(result.courses.map(course => course.targetLanguage)).toEqual(['en', 'ja', 'ko']);
+    expect(test.writes).toHaveLength(1);
+    expect(test.writes[0]?.data).toEqual(result);
+  });
+
+  it('keeps the same-target conflict after a competing create forces a retry', async () => {
+    const competing = harness(createLegacyCourseProfile());
+    const request = parseCourseProfileMutationRequest('createCourse', {
+      ownerId: 'owner', input: { targetLanguage: 'ko', nativeLanguage: 'vi', activateOnCreate: true },
+    });
+    const competingProfile = await applyCourseProfileMutation(competing.database, 'owner', request,
+      { createId: deterministicIds(), now });
+    const test = harness(undefined, competingProfile);
+
+    await expect(applyCourseProfileMutation(test.database, 'owner', request,
+      { createId: deterministicIds(), now })).rejects.toMatchObject({ reason: 'course-exists' });
+    expect(test.transaction.get).toHaveBeenCalledTimes(2);
+    expect(test.writes).toEqual([]);
   });
 
   it('serializes archive and re-open policies, including duplicate archived targets', async () => {

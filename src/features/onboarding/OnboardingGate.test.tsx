@@ -59,13 +59,13 @@ describe('OnboardingGate', () => {
     expect(onboardingCourseInput({
       targetLanguage: 'zh', nativeLanguage: 'vi', goalKind: 'hsk', goalLevel: ' HSK 4 ', goalTargetDate: '2027-01-17', zhScript: 'hant',
     })).toEqual({
-      targetLanguage: 'zh', nativeLanguage: 'vi', goals: [{ kind: 'hsk', level: 'HSK 4', targetDate: '2027-01-17' }], preferences: { zhScript: 'hant' },
+      targetLanguage: 'zh', nativeLanguage: 'vi', activateOnCreate: true, goals: [{ kind: 'hsk', level: 'HSK 4', targetDate: '2027-01-17' }], preferences: { zhScript: 'hant' },
     });
     expect(onboardingCourseInput({
       targetLanguage: 'ja', nativeLanguage: 'vi', goalKind: null, goalLevel: '', goalTargetDate: '', zhScript: null,
-    })).toEqual({ targetLanguage: 'ja', nativeLanguage: 'vi', goals: [] });
+    })).toEqual({ targetLanguage: 'ja', nativeLanguage: 'vi', activateOnCreate: true, goals: [] });
     expect(onboardingCourseInput({
       targetLanguage: 'zh', nativeLanguage: 'vi', goalKind: null, goalLevel: '', goalTargetDate: '', zhScript: null,
-    })).toEqual({ targetLanguage: 'zh', nativeLanguage: 'vi', goals: [], preferences: { zhScript: 'hans' } });
+    })).toEqual({ targetLanguage: 'zh', nativeLanguage: 'vi', activateOnCreate: true, goals: [], preferences: { zhScript: 'hans' } });
   });
 });

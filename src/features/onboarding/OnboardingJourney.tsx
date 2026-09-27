@@ -41,6 +41,7 @@ export const onboardingCourseInput = ({
 }): CreateCourseInput => ({
   targetLanguage,
   nativeLanguage,
+  activateOnCreate: true,
   goals: goalKind ? [{ kind: goalKind, level: goalLevel.trim() || null, targetDate: goalTargetDate || null }] : [],
   ...(targetLanguage === 'zh' ? { preferences: { zhScript: zhScript ?? 'hans' } } : {}),
 });
