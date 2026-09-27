@@ -29,10 +29,9 @@ describe('countCardsDueTomorrow', () => {
     mocks.getCountFromServer.mockReset();
   });
 
-  it('uses one aggregate count for the next local calendar day in the selected language', async () => {
+  it('counts cards due by the end of the next local day, backlog included, in one aggregate', async () => {
     mocks.getCountFromServer.mockResolvedValue({ data: () => ({ count: 3 }) });
     const now = new Date(2026, 8, 27, 23, 50);
-    const start = new Date(2026, 8, 28).toISOString();
     const end = new Date(2026, 8, 29).toISOString();
 
     await expect(countCardsDueTomorrow({} as never, 'owner-1', 'ko', now)).resolves.toBe(3);
@@ -40,7 +39,6 @@ describe('countCardsDueTomorrow', () => {
     expect(vi.mocked(query).mock.calls[0]).toEqual([
       { type: 'collection', args: [{}, 'users', 'owner-1', 'cards'] },
       { type: 'where', args: ['language', '==', 'ko'] },
-      { type: 'where', args: ['nextReviewDate', '>=', start] },
       { type: 'where', args: ['nextReviewDate', '<', end] },
     ]);
   });
@@ -49,6 +47,6 @@ describe('countCardsDueTomorrow', () => {
     mocks.getCountFromServer.mockResolvedValue({ data: () => ({ count: 0 }) });
     await expect(countCardsDueTomorrow({} as never, 'owner-1', undefined, new Date(2026, 11, 31))).resolves.toBe(0);
     expect(mocks.getCountFromServer).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(query).mock.calls[0]).toHaveLength(3);
+    expect(vi.mocked(query).mock.calls[0]).toHaveLength(2);
   });
 });
