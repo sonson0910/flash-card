@@ -33,6 +33,7 @@ import {
   outstandingItems,
   readDailySessionPointer,
   readPendingFreshPriority,
+  SESSION_STAGE_ORDER,
   writeDailySessionPointer,
   type DailySessionStats,
   type SessionStageId,
@@ -509,6 +510,8 @@ export default function DailyLearningWorkspace({
     const stats: SessionBridgeStat[] = completedCount > 0
       ? [{ label: _(msg({ id: 'session.bridge.stat.completed', message: 'Completed' })), value: String(completedCount) }]
       : [];
+    const preview = nextStage === 'new' ? multiStage.stagePlan.fresh[0]?.card
+      : nextStage === 'match' ? multiStage.stagePlan.match.cards[0] : undefined;
     const skipReason = nextStage === 'match' && multiStage.stagePlan.match.skipReason
       ? _(msg({ id: 'session.stage.match.skip-reason', message: 'Not enough distinct word pairs are available today, so Word Match is skipped.' }))
       : undefined;
@@ -517,11 +520,15 @@ export default function DailyLearningWorkspace({
       completedStage,
       nextStage,
       completedLabel: i18n._(msg({ id: 'session.bridge.completed', message: '{stage} done' }).id, { stage: stageLabels[completedStage] }),
-      nextLabel: nextStage === 'recap'
-        ? _(msg({ id: 'session.bridge.recap-label', message: 'See your recap' }))
-        : i18n._(msg({ id: 'session.bridge.next-label', message: 'Next up: {stage}' }).id, { stage: stageLabels[nextStage] }),
+      nextLabel: stageLabels[nextStage],
       nextDescription: stageDescriptions[nextStage],
       stats,
+      stages: SESSION_STAGE_ORDER.map(id => ({
+        id, label: stageLabels[id],
+        completed: SESSION_STAGE_ORDER.indexOf(id) <= SESSION_STAGE_ORDER.indexOf(completedStage),
+        current: id === nextStage,
+      })),
+      ...(preview ? { previewCard: { word: preview.word, translation: preview.translation, phonetic: preview.phonetic, category: preview.category, language: preview.language ?? targetLanguage } } : {}),
       ...(skipReason ? { skipReason } : {}),
       canSkipNextStage: nextStage === 'match' && nextCount > 0,
       liveMessage: skipReason ?? (nextStage === 'recap'

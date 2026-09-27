@@ -32,6 +32,10 @@ html[data-theme-family=classic]:not(.dark) .claude-nav-item[data-shell-active=tr
 .claude-workspace-inner { min-height: 100%; }
 .claude-app-shell .app-footer-bar { display: none; }
 
+/* The bridge owns the viewport while the regular app navigation stays mounted. */
+.claude-app-shell:has([data-session-shell="bridge"]) :is(.claude-topbar, .claude-mobile-nav) { display: none; }
+.claude-app-shell:has([data-session-shell="bridge"]) .claude-workspace-inner { max-width: none; padding: 0; }
+
 html[data-theme-family=crystal] .claude-app-shell { font-family: Nunito, sans-serif; background: var(--sf-canvas); }
 html[data-theme-family=crystal] .claude-app-shell::before { opacity: 1; background-image: var(--nk-stars); mix-blend-mode: normal; }
 html[data-theme-family=crystal]:not(.dark) .claude-app-shell { background: radial-gradient(ellipse 50% 40% at 70% 20%,rgb(255 190 215 / .55),transparent 70%),radial-gradient(ellipse 45% 40% at 20% 80%,rgb(255 84 112 / .18),transparent 70%),linear-gradient(115deg,#a9dcff 0%,#c7ebff 24%,#b5e6ff 46%,#c9f6f4 66%,#9fd6ff 88%,#b8e4ff 100%); }

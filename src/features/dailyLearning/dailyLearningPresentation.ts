@@ -157,6 +157,8 @@ export interface SessionBridgeModel {
   readonly nextLabel: string;
   readonly nextDescription: string;
   readonly stats: readonly SessionBridgeStat[];
+  readonly stages: readonly { id: SessionBridgeStageId; label: string; completed: boolean; current: boolean }[];
+  readonly previewCard?: { word: string; translation: string; phonetic: string; category: string; language: string };
   /** Set when the upcoming stage has no eligible content and will be skipped automatically. */
   readonly skipReason?: string;
   /** True when the upcoming stage has real content the learner may voluntarily bypass. */
