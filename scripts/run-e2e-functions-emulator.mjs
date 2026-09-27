@@ -49,7 +49,11 @@ const extraArgs = process.argv.slice(2);
 // emulators:exec runs its command through a shell, so every argument is
 // single-quoted to keep values like `-g "two words"` as one argv entry.
 const shellQuote = value => `'${String(value).replaceAll("'", `'\\''`)}'`;
-const playwrightCommand = ['npx', 'playwright', 'test', '--workers=2', ...extraArgs].map(shellQuote).join(' ');
+// All workers share one Functions emulator; with two, the rate limiter's
+// Firestore budget read misses its deadline and callables stall past the
+// specs' visibility waits. Pass --workers to override.
+const workerArgs = extraArgs.some(arg => arg.startsWith('--workers') || arg === '-j') ? [] : ['--workers=1'];
+const playwrightCommand = ['npx', 'playwright', 'test', ...workerArgs, ...extraArgs].map(shellQuote).join(' ');
 
 /** Restores or removes a file to its exact prior state, once, regardless of how it is called. */
 function once(fn) {
