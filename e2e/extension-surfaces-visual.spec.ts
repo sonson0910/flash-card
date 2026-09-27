@@ -140,3 +140,34 @@ test('extension in-page renderer captures result and quota states', async ({ pag
     await attach(page, testInfo, `extension-in-page-${name}`);
   }
 });
+
+test('extension in-page renderer captures a Korean selection with Vietnamese quick translation', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.setContent('<main lang="ko"><h1>경제 뉴스</h1><p>한국은행은 기준금리를 동결하기로 <mark id="selected-word">결정</mark>했다.</p></main>');
+  await page.addScriptTag({ path: join(extensionRoot, 'background-ui.js') });
+  const selection = await page.evaluate(() => {
+    const selectedWord = document.getElementById('selected-word');
+    if (!selectedWord?.firstChild) throw new Error('Korean selection fixture is unavailable.');
+    const range = document.createRange();
+    range.selectNodeContents(selectedWord);
+    const browserSelection = window.getSelection();
+    browserSelection?.removeAllRanges();
+    browserSelection?.addRange(range);
+    return (window as any).LingoFlashExtensionUi.captureSelectionFromPage();
+  });
+  expect(selection.text).toBe('결정');
+  expect(selection.context).toContain('기준금리를 동결하기로 결정했다.');
+
+  await page.evaluate(payload => (window as any).LingoFlashExtensionUi.renderInlineBubble(payload), {
+    status: 'translated', text: selection.text, translation: 'quyết định', sourceLanguage: 'ko', targetLanguage: 'vi', speechLocale: 'ko-KR',
+    anchor: { left: 180, bottom: 180 }, bubbleDurationMs: 0,
+  });
+  const host = page.locator('#lingoflash-inline-translation-host');
+  const result = host.getByRole('status').filter({ hasText: 'quyết định' });
+  await expect(host).toBeVisible();
+  await expect(result).toHaveAttribute('aria-live', 'polite');
+  await expect(result).toContainText('Chỉ dịch • không lưu • không dùng quota AI');
+  await expect(host.getByRole('button', { name: 'Nghe phát âm 결정' })).toBeVisible();
+  await expect(host.getByRole('button', { name: 'Đóng kết quả SonFlash' })).toBeVisible();
+  await attach(page, testInfo, 'extension-in-page-korean-vietnamese-translation');
+});
