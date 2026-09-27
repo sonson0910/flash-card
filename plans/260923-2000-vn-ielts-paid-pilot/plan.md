@@ -1,7 +1,7 @@
 ---
 title: "VN IELTS paid beta on Firebase (30 days; start date set by the owner)"
 description: "Make capture-to-review reliable, grant Pro by operator and measure willingness to pay (the gateway waits for business registration), and meter AI cost per account, on the existing Firebase stack."
-status: pending
+status: in-progress
 priority: P1
 effort: 19.75 developer-days plus about 1.5 days of pilot operations, plus founder time for interviews, onboarding and support
 branch: fix/open-code-review-remediation-20260921
@@ -28,6 +28,15 @@ created: 2026-09-23
 >   Gemini key must move to a paid tier; that is a G1 go condition.
 > - **Approved:** G2b for analytics, a final purge 65 minutes after deletion, streak owned by the client, and a
 >   `getPilotOffer` callable.
+
+## Execution status — 2026-09-27
+
+Code for phases 01–08 is committed; phases 09 and 10 stay deferred. W0 passed on 2026-09-24: the
+authorized staging rollout, the app ID correction and the browser smoke are recorded in the
+[decision log](decision-log.md), and the redesigned UI was previewed on staging Hosting on
+2026-09-25. Still open, all owner steps: gates G1, G2, G2b and G3, the production rollout, learner
+recruitment and onboarding, and the pilot exit decision. Plan dates stay placeholders until the
+owner sets the beta start.
 
 ## Execution status — 2026-09-24
 
