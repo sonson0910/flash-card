@@ -69,12 +69,12 @@
 :root[data-theme-family='crystal'] .catalog-personal-paths > div:first-child .premium-kicker { color: #ff2a4d; }
 
 @media (min-width: 1024px) {
-  .catalog-canvas > .catalog-current-path { width: min(100%, 50rem); float: left; margin-right: 1.625rem; }
-  .catalog-current-path > div { grid-template-columns: minmax(0, 1fr) minmax(21rem, .7fr) !important; }
-  .catalog-canvas > .catalog-shelf { min-height: 25rem; padding-top: .5rem !important; }
-  .catalog-shelf > div:last-child { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-  .catalog-shelf .catalog-track-card { min-height: 11.25rem !important; }
-  .catalog-shelf .catalog-track-card > span:nth-child(4) { margin-top: 1rem !important; }
+  .catalog-canvas > .catalog-current-path { width: 48%; min-height: 27rem; float: left; margin-right: 1.625rem; }
+  .catalog-current-path > div { display: flex !important; min-height: 22.75rem; flex-direction: column; align-items: stretch; }
+  .catalog-current-path .catalog-roadmap-panel { margin-top: auto; }
+  .catalog-canvas > .catalog-shelf { min-height: 27rem; padding-top: .5rem !important; }
+  .catalog-shelf > div:last-child { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .catalog-shelf .catalog-track-card { min-height: 17rem !important; }
   .catalog-roadmap { clear: both; }
 }
 @media (max-width: 639px) {
