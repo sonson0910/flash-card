@@ -194,6 +194,26 @@ test('the destructive library dialog restores focus to its stable opener', async
   await expect(manage).toBeFocused();
 });
 
+test('learning insights open from the library menu and lead to Progress', async ({ page, signIn }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page, '/?view=library');
+
+  const manage = page.getByRole('button', { name: 'Manage library' });
+  await manage.click();
+  await page.getByRole('menuitem', { name: 'Learning insights' }).click();
+  const insights = page.getByRole('dialog', { name: 'Learning insights' });
+  await expect(insights).toBeVisible();
+  await insights.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(insights).toBeHidden();
+  await expect(manage).toBeFocused();
+
+  await manage.click();
+  await page.getByRole('menuitem', { name: 'Learning insights' }).click();
+  await page.getByRole('dialog', { name: 'Learning insights' }).getByRole('button', { name: 'Open full Progress →' }).click();
+  await expect(page.getByRole('dialog', { name: 'Learning insights' })).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'Progress' })).toBeVisible();
+});
+
 test('Today and Progress empty states expose concrete next actions without initial autofocus', async ({ page, seedCourseProfile, signIn }) => {
   // An existing course profile keeps first-run onboarding out of the empty states under test.
   await seedCourseProfile();

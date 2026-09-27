@@ -5,6 +5,7 @@ import { Trans, useLingui } from '@lingui/react';
 import { AlertTriangle, Check, Download, Loader2, Plus, RotateCcw, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
+import { formatNumber } from '../../lib/format';
 import './library-dialog-overlays.css';
 
 export type LibraryDialogPhase = 'idle' | 'working' | 'success' | 'failure';
@@ -260,7 +261,7 @@ export function LibraryClearDialog({
 
             {counts.length > 0 ? (
               <div className="library-dialog-stat-grid">
-                {counts.map(count => <div key={count.id} className="library-dialog-stat"><strong>{count.value.toLocaleString()}</strong><span>{count.label}</span></div>)}
+                {counts.map(count => <div key={count.id} className="library-dialog-stat"><strong>{formatNumber(count.value)}</strong><span>{count.label}</span></div>)}
               </div>
             ) : null}
 
@@ -396,7 +397,8 @@ export function LibraryInsightsDialog({
             </Dialog.Close>
           </header>
 
-          <div className="library-dialog-body library-dialog-body--insights">
+          {/* Focusable so keyboard users can scroll the body when it overflows a short viewport. */}
+          <div className="library-dialog-body library-dialog-body--insights" tabIndex={0}>
             {isLoading ? (
               <div className="library-dialog-loading" role="status" aria-live="polite">
                 <Loader2 size={24} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -424,7 +426,7 @@ export function LibraryInsightsDialog({
                     <h3 id="library-insights-category-title"><Trans id="library.insights.category" message="By category" /></h3>
                     {stats.categoryChart.length === 0 ? <p className="library-dialog-muted"><Trans id="library.insights.no-category" message="No category data yet." /></p> : (
                       <ul className="library-insights-bars">
-                        {stats.categoryChart.map(item => <li key={item.name}><div><span>{item.name}</span><strong>{item.value.toLocaleString()}</strong></div><span className="library-insights-track"><span style={{ width: `${Math.round((item.value / maxCategory) * 100)}%` }} /></span></li>)}
+                        {stats.categoryChart.map(item => <li key={item.name}><div><span>{item.name}</span><strong>{formatNumber(item.value)}</strong></div><span className="library-insights-track"><span style={{ width: `${Math.round((item.value / maxCategory) * 100)}%` }} /></span></li>)}
                       </ul>
                     )}
                     {stats.categoryChartIsPartial ? <p className="library-dialog-note"><Trans id="library.insights.category-partial" message="Some cloud categories are still loading." /></p> : null}
@@ -434,7 +436,7 @@ export function LibraryInsightsDialog({
                     <h3 id="library-insights-difficulty-title"><Trans id="library.insights.difficulty" message="Difficulty" /></h3>
                     {stats.difficultyChart.length === 0 ? <p className="library-dialog-muted"><Trans id="library.insights.no-difficulty" message="No review ratings yet." /></p> : (
                       <ul className="library-insights-bars">
-                        {stats.difficultyChart.map(item => <li key={item.name}><div><span>{item.name}</span><strong>{item.value.toLocaleString()}</strong></div><span className="library-insights-track library-insights-track--warm"><span style={{ width: `${Math.round((item.value / maxDifficulty) * 100)}%` }} /></span></li>)}
+                        {stats.difficultyChart.map(item => <li key={item.name}><div><span>{item.name}</span><strong>{formatNumber(item.value)}</strong></div><span className="library-insights-track library-insights-track--warm"><span style={{ width: `${Math.round((item.value / maxDifficulty) * 100)}%` }} /></span></li>)}
                       </ul>
                     )}
                   </section>
@@ -465,5 +467,5 @@ export function LibraryInsightsDialog({
 }
 
 function InsightMetric({ label, value, accent = false }: { label: ReactNode; value: number; accent?: boolean }) {
-  return <div className={`library-dialog-stat${accent ? ' library-dialog-stat--accent' : ''}`}><span>{label}</span><strong>{value.toLocaleString()}</strong></div>;
+  return <div className={`library-dialog-stat${accent ? ' library-dialog-stat--accent' : ''}`}><span>{label}</span><strong>{formatNumber(value)}</strong></div>;
 }

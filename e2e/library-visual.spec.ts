@@ -143,7 +143,7 @@ const dialogViews = [
   // above it) instead of a generic "Review shared deck"/"ready to share"
   // phrase. The fixture (library-visual.tsx) always uses category "IELTS".
   ['share', 'Share “IELTS”'], ['share-in', 'IELTS'],
-  ['clear', 'Clear the entire library?'], ['insights', 'Your learning rhythm'],
+  ['clear', 'Clear the entire library?'], ['insights', 'Learning insights'],
 ] as const;
 const inlineViews = [['deck-new', 'Create a deck'], ['import', 'Import cards']] as const;
 

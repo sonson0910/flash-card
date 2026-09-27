@@ -15,26 +15,26 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryCardGrid.tsx:360
-#: src/features/library/LibraryDialogOverlays.tsx:159
+#: src/features/library/LibraryDialogOverlays.tsx:160
 msgid "common.cancel"
 msgstr "Hủy"
 
 #. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:135
 #: src/features/library/LibraryCardGrid.tsx:351
-#: src/features/library/LibraryDialogOverlays.tsx:458
+#: src/features/library/LibraryDialogOverlays.tsx:460
 msgid "common.close"
 msgstr "Đóng"
 
 #. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:135
-#: src/features/library/LibraryDialogOverlays.tsx:159
-#: src/features/library/LibraryDialogOverlays.tsx:313
+#: src/features/library/LibraryDialogOverlays.tsx:160
+#: src/features/library/LibraryDialogOverlays.tsx:314
 msgid "common.done"
 msgstr "Xong"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:409
+#: src/features/library/LibraryDialogOverlays.tsx:411
 msgid "common.retry"
 msgstr "Thử lại"
 
@@ -194,82 +194,82 @@ msgid "library.categories.title"
 msgstr "Danh mục"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:212
+#: src/features/library/LibraryDialogOverlays.tsx:213
 msgid "library.clear.cards"
 msgstr "thẻ"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:249
+#: src/features/library/LibraryDialogOverlays.tsx:250
 msgid "library.clear.close"
 msgstr "Đóng hộp thoại xóa thư viện"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:330
+#: src/features/library/LibraryDialogOverlays.tsx:331
 msgid "library.clear.confirm"
 msgstr "Xóa toàn bộ"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:284
+#: src/features/library/LibraryDialogOverlays.tsx:285
 msgid "library.clear.confirm-label"
 msgstr "Nhập {token} để xác nhận"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:213
+#: src/features/library/LibraryDialogOverlays.tsx:214
 msgid "library.clear.decks"
 msgstr "deck"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:258
+#: src/features/library/LibraryDialogOverlays.tsx:259
 msgid "library.clear.description"
 msgstr "Thao tác này xóa vĩnh viễn mọi thẻ, deck và lịch sử ôn tập trên tất cả thiết bị đã đồng bộ. Không thể hoàn tác."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:272
+#: src/features/library/LibraryDialogOverlays.tsx:273
 msgid "library.clear.export"
 msgstr "Xuất dữ liệu"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:269
+#: src/features/library/LibraryDialogOverlays.tsx:270
 msgid "library.clear.export-copy"
 msgstr "Sao lưu trước — xuất toàn bộ dữ liệu."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:305
+#: src/features/library/LibraryDialogOverlays.tsx:306
 msgid "library.clear.failure"
 msgstr "Không thể xóa thư viện. Kiểm tra kết nối và thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:318
+#: src/features/library/LibraryDialogOverlays.tsx:319
 msgid "library.clear.keep"
 msgstr "Giữ thư viện"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:243
+#: src/features/library/LibraryDialogOverlays.tsx:244
 msgid "library.clear.kicker"
 msgstr "Vùng nguy hiểm"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:214
+#: src/features/library/LibraryDialogOverlays.tsx:215
 msgid "library.clear.mastered"
 msgstr "từ đã thành thạo"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:280
+#: src/features/library/LibraryDialogOverlays.tsx:281
 msgid "library.clear.success"
 msgstr "Thư viện của bạn đã được xóa."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:244
+#: src/features/library/LibraryDialogOverlays.tsx:245
 msgid "library.clear.title"
 msgstr "Xóa toàn bộ thư viện?"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:330
+#: src/features/library/LibraryDialogOverlays.tsx:331
 msgid "library.clear.try-again"
 msgstr "Thử lại"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:300
+#: src/features/library/LibraryDialogOverlays.tsx:301
 msgid "library.clear.working"
 msgstr "Đang xóa thư viện…"
 
@@ -277,7 +277,7 @@ msgstr "Đang xóa thư viện…"
 #: src/features/importExport/SpreadsheetImportDialog.tsx:96
 #: src/features/intake/CreateCardDialog.tsx:52
 #: src/features/library/AiDialogueModal.tsx:150
-#: src/features/library/LibraryDialogOverlays.tsx:91
+#: src/features/library/LibraryDialogOverlays.tsx:92
 #: src/features/library/WordExtractorModal.tsx:166
 msgid "library.close"
 msgstr "Đóng"
@@ -795,12 +795,12 @@ msgid "library.deck.create"
 msgstr "Tạo"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:171
+#: src/features/library/LibraryDialogOverlays.tsx:172
 msgid "library.deck.create-again"
 msgstr "Thử lại"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:123
+#: src/features/library/LibraryDialogOverlays.tsx:124
 #: src/features/library/LibraryTools.tsx:232
 #: src/features/library/LibraryTools.tsx:972
 msgid "library.deck.create-error"
@@ -812,12 +812,12 @@ msgid "library.deck.create-label"
 msgstr "Tạo bộ thẻ"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:151
+#: src/features/library/LibraryDialogOverlays.tsx:152
 msgid "library.deck.created"
 msgstr "Đã tạo deck. Bạn có thể gán thẻ vào deck này từ thư viện."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:146
+#: src/features/library/LibraryDialogOverlays.tsx:147
 #: src/features/library/LibraryTools.tsx:229
 msgid "library.deck.creating"
 msgstr "Đang tạo…"
@@ -828,12 +828,12 @@ msgid "library.deck.creating-label"
 msgstr "Đang tạo bộ thẻ"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:107
+#: src/features/library/LibraryDialogOverlays.tsx:108
 msgid "library.deck.creation-name-label"
 msgstr "Tên deck"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:171
+#: src/features/library/LibraryDialogOverlays.tsx:172
 msgid "library.deck.creation-submit"
 msgstr "Tạo deck"
 
@@ -883,17 +883,17 @@ msgid "library.deck.deleting"
 msgstr "Đang xóa…"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:86
+#: src/features/library/LibraryDialogOverlays.tsx:87
 msgid "library.deck.dialog-description"
 msgstr "Nhóm từ theo kỳ thi, chuyến đi, cuốn sách — bất cứ gì bạn thích."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:83
+#: src/features/library/LibraryDialogOverlays.tsx:84
 msgid "library.deck.dialog-kicker"
 msgstr "Xưởng deck"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:84
+#: src/features/library/LibraryDialogOverlays.tsx:85
 msgid "library.deck.dialog-title"
 msgstr "Deck mới"
 
@@ -908,7 +908,7 @@ msgid "library.deck.name-label"
 msgstr "Tên bộ thẻ mới"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:114
+#: src/features/library/LibraryDialogOverlays.tsx:115
 #: src/features/library/LibraryTools.tsx:218
 msgid "library.deck.name-placeholder"
 msgstr "IELTS, Du lịch…"
@@ -924,27 +924,27 @@ msgid "library.deck.removed"
 msgstr "Đã xóa bộ thẻ"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:13
+#: src/features/library/LibraryDialogOverlays.tsx:14
 msgid "library.deck.suggestion.ielts-writing"
 msgstr "IELTS Writing"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:15
+#: src/features/library/LibraryDialogOverlays.tsx:16
 msgid "library.deck.suggestion.toeic-600"
 msgstr "TOEIC 600"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:14
+#: src/features/library/LibraryDialogOverlays.tsx:15
 msgid "library.deck.suggestion.travel"
 msgstr "Du lịch"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:128
+#: src/features/library/LibraryDialogOverlays.tsx:129
 msgid "library.deck.suggestions"
 msgstr "Gợi ý tên deck"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:129
+#: src/features/library/LibraryDialogOverlays.tsx:130
 msgid "library.deck.try"
 msgstr "Thử"
 
@@ -1902,112 +1902,112 @@ msgid "library.import.xls-unsupported"
 msgstr "Không hỗ trợ tệp .xls cũ. Hãy lưu lại tệp dưới dạng .xlsx hoặc .csv rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:424
+#: src/features/library/LibraryDialogOverlays.tsx:426
 msgid "library.insights.category"
 msgstr "Theo danh mục"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:430
+#: src/features/library/LibraryDialogOverlays.tsx:432
 msgid "library.insights.category-partial"
 msgstr "Một số danh mục trên cloud vẫn đang tải."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:394
+#: src/features/library/LibraryDialogOverlays.tsx:395
 msgid "library.insights.close"
 msgstr "Đóng thống kê học tập"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:392
+#: src/features/library/LibraryDialogOverlays.tsx:393
 msgid "library.insights.description"
 msgstr "Góc nhìn trung thực về độ nhớ và đà ôn tập của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:434
+#: src/features/library/LibraryDialogOverlays.tsx:436
 msgid "library.insights.difficulty"
 msgstr "Độ khó"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:419
+#: src/features/library/LibraryDialogOverlays.tsx:421
 msgid "library.insights.due"
 msgstr "Đến hạn hôm nay"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:412
+#: src/features/library/LibraryDialogOverlays.tsx:414
 msgid "library.insights.empty"
 msgstr "Chưa đủ dữ liệu học tập để hiển thị thống kê."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:408
+#: src/features/library/LibraryDialogOverlays.tsx:410
 msgid "library.insights.failure"
 msgstr "Không thể tải thống kê học tập. Hãy thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:390
+#: src/features/library/LibraryDialogOverlays.tsx:391
 msgid "library.insights.kicker"
 msgstr "Thống kê · 30 ngày qua"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:418
+#: src/features/library/LibraryDialogOverlays.tsx:420
 msgid "library.insights.learning"
 msgstr "Đang học"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:403
+#: src/features/library/LibraryDialogOverlays.tsx:405
 msgid "library.insights.loading"
 msgstr "Đang tải dữ liệu học tập của bạn…"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:417
+#: src/features/library/LibraryDialogOverlays.tsx:419
 msgid "library.insights.mastered"
 msgstr "Đã thành thạo"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:425
+#: src/features/library/LibraryDialogOverlays.tsx:427
 msgid "library.insights.no-category"
 msgstr "Chưa có dữ liệu danh mục."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:435
+#: src/features/library/LibraryDialogOverlays.tsx:437
 msgid "library.insights.no-difficulty"
 msgstr "Chưa có đánh giá ôn tập nào."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:445
+#: src/features/library/LibraryDialogOverlays.tsx:447
 msgid "library.insights.no-xp"
 msgstr "Hoàn thành một lượt ôn tập để bắt đầu biểu đồ hoạt động."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:456
+#: src/features/library/LibraryDialogOverlays.tsx:458
 msgid "library.insights.open-progress"
 msgstr "Mở trang Tiến trình đầy đủ →"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:391
+#: src/features/library/LibraryDialogOverlays.tsx:392
 msgid "library.insights.title"
 msgstr "Thống kê học tập"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:416
+#: src/features/library/LibraryDialogOverlays.tsx:418
 msgid "library.insights.total"
 msgstr "Tổng số thẻ"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:444
+#: src/features/library/LibraryDialogOverlays.tsx:446
 msgid "library.insights.xp"
 msgstr "XP · hoạt động gần đây"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:446
+#: src/features/library/LibraryDialogOverlays.tsx:448
 msgid "library.insights.xp-chart"
 msgstr "Hoạt động XP gần đây"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:447
+#: src/features/library/LibraryDialogOverlays.tsx:449
 msgid "library.insights.xp-point"
 msgstr "{date}: {xp, number} XP"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:444
+#: src/features/library/LibraryDialogOverlays.tsx:446
 msgid "library.insights.xp-total"
 msgstr "{count, number} XP"
 

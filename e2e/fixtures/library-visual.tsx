@@ -112,7 +112,7 @@ function LibraryFixture() {
     dismissShareDialog: noOp, showShareDialog: noOp, acceptSharedDeck: asyncNoOp, cancelSharedDeck: noOp, canRevokeShare: dialog === 'share', revokeShare: asyncNoOp, isSharing: false,
     isPracticeMenuOpen: false, setIsPracticeMenuOpen: noOp, startQuiz: asyncNoOp, startSpelling: asyncNoOp, startMatch: asyncNoOp, startShadowing: asyncNoOp, practiceCards: cards, visibleLibraryCount: cards.length, generateStory: asyncNoOp,
     isStatsOpen: dialog === 'insights', setIsStatsOpen: noOp, statsData: stats, isDarkMode: matchMedia('(prefers-color-scheme: dark)').matches,
-    showClearConfirm: dialog === 'clear', setShowClearConfirm: noOp, clearAll: asyncNoOp, onExportLibrary: noOp, isLoading: false,
+    showClearConfirm: dialog === 'clear', setShowClearConfirm: noOp, clearAll: asyncNoOp, onExportLibrary: noOp, onOpenProgress: noOp, isLoading: false,
     shareOpenerRef: { current: null }, practiceOpenerRef: { current: null }, statsOpenerRef: { current: null }, clearOpenerRef: { current: null },
   };
   return <main data-library-visual-view className="min-h-screen px-4 py-5 sm:px-8 sm:py-8">

@@ -37,6 +37,7 @@ export interface DesktopNavigationProps {
   onRetrySync?: () => void | Promise<void>;
   onExportLibrary?: () => void | Promise<void>;
   onClearLibrary?: (focusReturnTarget: HTMLButtonElement) => void;
+  onOpenInsights?: (focusReturnTarget: HTMLButtonElement) => void;
 }
 
 type NavigationItem = { view: ShellViewMode; classic: ReactNode; crystal: ReactNode; action: () => void };
@@ -45,7 +46,7 @@ function CrystalStar() {
   return <svg viewBox="0 0 100 100" width="36" height="36" aria-hidden="true" className="claude-brand-star"><path d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" fill="#ff5470" /><path d="M50 4 62 36 96 37 69 59 78 91 50 72Z" fill="#7a0820" /></svg>;
 }
 
-export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncStatus, isExporting, isLibraryMutationPending, isRetryingSync, canSyncNow, sessionLost, libraryCountLabel, streak, level, xp, onOpenLanding, onOpenToday, onOpenLibrary, onOpenCatalog, onOpenProgress, onOpenSettings, onSignIn, onSignOut, onRetrySync, onExportLibrary, onClearLibrary }: DesktopNavigationProps) {
+export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncStatus, isExporting, isLibraryMutationPending, isRetryingSync, canSyncNow, sessionLost, libraryCountLabel, streak, level, xp, onOpenLanding, onOpenToday, onOpenLibrary, onOpenCatalog, onOpenProgress, onOpenSettings, onSignIn, onSignOut, onRetrySync, onExportLibrary, onClearLibrary, onOpenInsights }: DesktopNavigationProps) {
   const { _ } = useLingui();
   const { family } = useTheme();
   const status = localizeShellSyncStatus(getShellSyncStatus(syncStatus), _);
@@ -91,6 +92,7 @@ export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncS
           onOpenSettings={onOpenSettings}
           onExportLibrary={onExportLibrary}
           onClearLibrary={onClearLibrary}
+          onOpenInsights={onOpenInsights}
           onSignIn={sessionLost || (syncIdentity.status === 'signed-out' && syncIdentity.isConfigured) ? onSignIn : undefined}
           onSignOut={syncIdentity.status === 'authenticated' && !sessionLost ? onSignOut : undefined}
           onRetrySync={onRetrySync}

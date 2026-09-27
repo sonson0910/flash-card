@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type R
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { AlertTriangle, BarChart3, Check, Clock3, Copy, Link2, Loader2, Share2, ShieldCheck, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, Copy, Link2, Loader2, Share2, ShieldCheck, Trash2, X } from 'lucide-react';
 import type { SharedDeckIncomingPreview, SharedDeckLanguagePair, SharedDeckOutgoingPreview, SharedDeckTruncation } from '../features/sharing/sharedDeckSessionController';
 import { cn } from '../lib/cn';
 import { copyTextToClipboard } from '../lib/recoverableActions';
@@ -15,14 +15,13 @@ import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
 import type { CardData } from '../types/card';
 import './share-dialog.css';
 
-const StatsCharts = lazy(() => Promise.all([
-  import('./stats/StatsCharts'), loadCatalog(getActiveUiLocale(), 'progress'),
-]).then(([component]) => component));
-
 // The typed confirmation guards the one action that deletes every synced card.
 const LibraryClearDialog = lazy(() => Promise.all([
   import('../features/library/LibraryDialogOverlays'), loadCatalog(getActiveUiLocale(), 'library'),
 ]).then(([module]) => ({ default: module.LibraryClearDialog })));
+const LibraryInsightsDialog = lazy(() => Promise.all([
+  import('../features/library/LibraryDialogOverlays'), loadCatalog(getActiveUiLocale(), 'library'),
+]).then(([module]) => ({ default: module.LibraryInsightsDialog })));
 
 interface StatsData {
   total: number;
@@ -73,6 +72,7 @@ interface AppOverlaysProps {
   statsOpenerRef: RefObject<HTMLElement | null>;
   clearOpenerRef: RefObject<HTMLElement | null>;
   onExportLibrary?: () => void;
+  onOpenProgress?: () => void;
 }
 
 const overlayClass = 'crystal-starfield fixed inset-0 z-50 bg-[var(--sf-scrim)]';
@@ -136,7 +136,7 @@ export function AppOverlays({
   isPracticeMenuOpen, setIsPracticeMenuOpen, startQuiz,
   startSpelling, startMatch, startShadowing, practiceCards, visibleLibraryCount, generateStory, isStatsOpen, setIsStatsOpen,
   statsData, isDarkMode, showClearConfirm, setShowClearConfirm, clearAll, isLoading,
-  shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef, onExportLibrary,
+  shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef, onExportLibrary, onOpenProgress,
 }: AppOverlaysProps) {
   const { _, i18n } = useLingui();
   const [copied, setCopied] = useState(false);
@@ -318,39 +318,17 @@ export function AppOverlays({
         </Dialog.Portal>
       </Dialog.Root>
 
-      <Dialog.Root open={isStatsOpen} onOpenChange={setIsStatsOpen}>
-        <Dialog.Portal>
-          <Dialog.Overlay data-motion-overlay className={overlayClass} />
-          <Dialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, statsOpenerRef)}>
-            <GsapEntrance animationKey={isStatsOpen} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-h-[calc(100dvh-2rem)] max-w-5xl overflow-y-auto p-0')}>
-              <div className="mb-6 flex items-start justify-between gap-4 border-b border-[var(--sf-border)] px-5 py-5 sm:mb-8 sm:px-8">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)]"><BarChart3 size={23} /></div>
-                  <div>
-                    <p className="premium-kicker text-[11px] uppercase tracking-[0.14em]"><Trans id="shell.insights.kicker" message="Learning insights" /></p>
-                    <Dialog.Title className="mt-1 text-balance text-2xl font-black text-[var(--sf-text)]"><Trans id="shell.insights.title" message="Your learning rhythm" /></Dialog.Title>
-                    <Dialog.Description className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans id="shell.insights.description" message="A clear view of your memory strength and review momentum." /></Dialog.Description>
-                  </div>
-                </div>
-                <Dialog.Close className="liquid-control flex size-11 shrink-0 items-center justify-center rounded-full text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2" aria-label={_(msg({ id: 'shell.insights.close', message: 'Close learning insights' }))}><X size={18} /></Dialog.Close>
-              </div>
-
-              <div className="px-5 pb-5 sm:px-8 sm:pb-8">
-                <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                  <StatMetric label={<Trans id="shell.insights.total-cards" message="Total cards" />} value={statsData.total} tone="cyan" />
-                  <StatMetric label={<Trans id="shell.insights.mastered" message="Mastered" />} value={statsData.learned} tone="emerald" />
-                  <StatMetric label={<Trans id="shell.insights.learning" message="Learning" />} value={statsData.learning} tone="slate" />
-                  <StatMetric label={<Trans id="shell.insights.due-today" message="Due today" />} value={statsData.dueToday} tone="amber" icon={Clock3} />
-                </div>
-
-                <Suspense fallback={<div className="crystal-chamfer skeleton-sheen min-h-72 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)]" role="status"><span className="sr-only"><Trans id="shell.loading.charts" message="Loading charts" /></span></div>}>
-                  <StatsCharts darkMode={isDarkMode} data={statsData} />
-                </Suspense>
-              </div>
-            </GsapEntrance>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+      {isStatsOpen && (
+        <Suspense fallback={null}>
+          <LibraryInsightsDialog
+            open
+            onOpenChange={setIsStatsOpen}
+            stats={statsData.total > 0 ? statsData : null}
+            restoreFocusRef={statsOpenerRef}
+            onOpenProgress={onOpenProgress ? () => { setIsStatsOpen(false); onOpenProgress(); } : undefined}
+          />
+        </Suspense>
+      )}
 
       {showClearConfirm && (
         <Suspense fallback={null}>
@@ -617,25 +595,5 @@ function PracticeChoice({ icon: Icon, title, duration, description, unavailableL
       <span className="min-w-0 flex-1"><span className="flex items-baseline gap-2"><span className="font-bold text-[var(--sf-text)]">{busy ? <Trans id="shell.practice-menu.preparing" message="Preparing…" /> : title}</span><span className="font-mono text-[11px] text-[var(--sf-text-muted)]">{duration}</span></span><span className="mt-0.5 block text-pretty text-xs leading-relaxed text-[var(--sf-text-muted)]">{description}</span></span>
       {unavailableLabel ? <span className="shrink-0 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] px-2 py-1 text-[11px] font-semibold text-[var(--sf-text-muted)]">{unavailableLabel}</span> : null}
     </button>
-  );
-}
-
-export function StatMetric({ label, value, tone, icon: Icon }: {
-  label: ReactNode;
-  value: number;
-  tone: 'cyan' | 'emerald' | 'slate' | 'amber';
-  icon?: typeof Clock3;
-}) {
-  const tones = {
-    cyan: 'text-[var(--sf-brand-text)]',
-    emerald: 'text-emerald-700 dark:text-emerald-300',
-    slate: 'text-[var(--sf-text)]',
-    amber: 'text-amber-700 dark:text-amber-300',
-  };
-  return (
-    <div className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 sm:p-5">
-      <div className={cn('flex items-center gap-2 text-3xl font-black tabular-nums', tones[tone])}>{Icon && <Icon size={20} />} {formatNumber(value)}</div>
-      <div className="mt-1 text-xs font-bold text-[var(--sf-text-muted)]">{label}</div>
-    </div>
   );
 }

@@ -3,7 +3,7 @@
 .library-dialog-frame { position: fixed; inset: 50% auto auto 50%; z-index: 51; width: min(calc(100vw - 2rem), 40rem); max-height: calc(100dvh - 2rem); overflow: auto; transform: translate(-50%, -50%); border: 1px solid var(--sf-border); border-radius: 24px; background: var(--sf-dialog-bg, var(--sf-surface)); color: var(--sf-text); box-shadow: 0 30px 60px -28px var(--sf-shadow); outline: none; }
 .library-dialog-frame--manage { width: min(calc(100vw - 2rem), 34rem); }
 .library-dialog-frame--danger { width: min(calc(100vw - 2rem), 38rem); border-color: color-mix(in srgb, var(--sf-danger, #e0173f) 50%, var(--sf-border)); }
-.library-dialog-frame--insights { width: min(calc(100vw - 2rem), 48rem); }
+.library-dialog-frame--insights { display: flex; flex-direction: column; width: min(calc(100vw - 2rem), 48rem); overflow: hidden; }
 .library-dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--sf-border); padding: 1.25rem 1.25rem 1rem; }
 .library-dialog-heading-with-icon { display: flex; min-width: 0; align-items: flex-start; gap: .75rem; }
 .library-dialog-kicker { margin: 0; color: var(--sf-text-muted); font-family: var(--font-display, inherit); font-size: .7rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
@@ -17,7 +17,8 @@
 .library-dialog-body { display: flex; flex-direction: column; gap: 1rem; padding: 1.25rem; }
 .library-dialog-body--manage { gap: 1.25rem; }
 .library-dialog-body--danger { gap: 1rem; }
-.library-dialog-body--insights { min-height: 20rem; }
+.library-dialog-body--insights { min-height: min(20rem, 40dvh); flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; }
+.library-dialog-body--insights:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: -2px; }
 .library-dialog-field { display: flex; flex-direction: column; gap: .4rem; color: var(--sf-text-muted); font-size: .76rem; font-weight: 750; }
 .library-dialog-field input { min-height: 3rem; width: 100%; box-sizing: border-box; border: 1px solid var(--sf-border); border-radius: 12px; background: var(--sf-surface-control, var(--sf-surface-raised)); padding: .5rem .8rem; color: var(--sf-text); font: inherit; font-family: var(--font-display, inherit); font-size: 1.05rem; outline: none; }
 .library-dialog-field input:focus { border-color: var(--sf-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-brand) 22%, transparent); }

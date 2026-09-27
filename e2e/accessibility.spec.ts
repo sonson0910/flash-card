@@ -99,6 +99,7 @@ test('library supports 320px reflow, 200% text and visible keyboard focus', asyn
     'Account data',
     'Appearance settings',
     /Card style:/,
+    'Learning insights',
     'Export library to Excel',
     'Clear the entire library',
   ];

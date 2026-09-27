@@ -10,7 +10,6 @@ import {
   PracticeModeChoices,
   ShareImportActions,
   ShareManagementButton,
-  StatMetric,
 } from './AppOverlays';
 import { getPracticeModes, registerPracticeMode, resolvePracticeModeAction, wordMatchEligibleCardCount } from '../features/practice/practiceModeRegistry';
 import { setFormatLocale } from '../lib/format';
@@ -133,17 +132,6 @@ describe('share overlays', () => {
     const languageNames = new Intl.DisplayNames(['vi'], { type: 'language' });
     expect(html).toContain(languageNames.of('ko'));
     expect(html).toContain(languageNames.of('en'));
-    expect(html).toContain('1.200');
-    i18n.activate('en');
-    setFormatLocale('en');
-  });
-
-  it('formats insight metric counts with the active locale', () => {
-    i18n.load('vi', {});
-    i18n.activate('vi');
-    setFormatLocale('vi');
-    const html = renderToStaticMarkup(<LinguiProvider i18n={i18n}><StatMetric label="Cards" value={1_200} tone="cyan" /></LinguiProvider>);
-
     expect(html).toContain('1.200');
     i18n.activate('en');
     setFormatLocale('en');

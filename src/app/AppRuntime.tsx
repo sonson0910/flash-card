@@ -112,6 +112,7 @@ export default function AppRuntime({
     clearOpenerRef,
     rememberOpener,
     openPractice,
+    openStats,
     openClearConfirm: openClearOverlay,
     undoToast,
     setUndoToast,
@@ -365,6 +366,7 @@ export default function AppRuntime({
         canSyncNow={identity.status === 'authenticated' && !identity.authenticationRecovery && isBrowserOnline && Boolean(user)}
         onExportLibrary={library.actions.exportLibrary}
         onClearLibrary={openClearConfirm}
+        onOpenInsights={openStats}
       />
 
       <AppFeedback
@@ -478,6 +480,7 @@ export default function AppRuntime({
             statsOpenerRef={statsOpenerRef}
             clearOpenerRef={clearOpenerRef}
             onExportLibrary={library.actions.exportLibrary}
+            onOpenProgress={() => setViewMode('progress')}
           />
         </Suspense>
       )}

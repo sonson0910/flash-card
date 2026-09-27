@@ -1,5 +1,6 @@
 import {
   AlertCircle,
+  BarChart3,
   BookOpen,
   CheckCircle2,
   Cloud,
@@ -29,6 +30,7 @@ interface LibraryManagementMenuProps {
   readonly isLibraryMutationPending?: boolean;
   readonly onExportLibrary?: () => void | Promise<void>;
   readonly onClearLibrary?: (focusReturnTarget: HTMLButtonElement) => void;
+  readonly onOpenInsights?: (focusReturnTarget: HTMLButtonElement) => void;
   readonly onOpenSettings?: () => void;
   readonly onSignIn?: () => void | Promise<void>;
   readonly onSignOut?: () => void | Promise<void>;
@@ -98,6 +100,7 @@ export function LibraryManagementMenu({
   isLibraryMutationPending = false,
   onExportLibrary,
   onClearLibrary,
+  onOpenInsights,
   onOpenSettings,
   onSignIn,
   onSignOut,
@@ -312,6 +315,22 @@ export function LibraryManagementMenu({
                 <Sparkles size={17} aria-hidden="true" className={isZenMode ? 'text-cyan-600 dark:text-cyan-400 shrink-0 animate-pulse' : 'text-slate-400 shrink-0'} />
                 <span className="truncate">{isZenMode ? <Trans id="shell.menu.card-style-zen" message="Card style: Zen Glass" /> : <Trans id="shell.menu.card-style-standard" message="Card style: Standard" />}</span>
               </button>
+              {onOpenInsights && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    const focusReturnTarget = triggerRef.current;
+                    if (!focusReturnTarget) return;
+                    setIsOpen(false);
+                    onOpenInsights(focusReturnTarget);
+                  }}
+                  className={menuItemClass}
+                >
+                  <BarChart3 size={17} aria-hidden="true" className="shrink-0" />
+                  <span className="truncate"><Trans id="shell.menu.insights" message="Learning insights" /></span>
+                </button>
+              )}
               {onExportLibrary && (
                 <button
                   type="button"

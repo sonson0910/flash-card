@@ -12,6 +12,7 @@ import {
   LibraryInsightsDialog,
   type LibraryInsightsStats,
 } from './LibraryDialogOverlays';
+import { setFormatLocale } from '../../lib/format';
 
 i18n.load('en', {});
 i18n.activate('en');
@@ -140,5 +141,14 @@ describe('library dialog overlays', () => {
     );
     expect(failure).toContain('Offline');
     expect(failure).toContain('Retry');
+  });
+
+  it('formats insight counts with the active UI locale', () => {
+    setFormatLocale('vi');
+    const html = renderMarkup(
+      <LibraryInsightsDialog open onOpenChange={vi.fn()} stats={{ ...stats, total: 1_200 }} />,
+    );
+    setFormatLocale('en');
+    expect(html).toContain('1.200');
   });
 });

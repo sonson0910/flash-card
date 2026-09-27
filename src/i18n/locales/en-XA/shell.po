@@ -289,14 +289,14 @@ msgid "course.switcher.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:151
+#: src/app/AppRuntime.tsx:152
 msgid "extension.import.course-mismatch-confirm"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:409
-#: src/components/AppOverlays.tsx:426
-#: src/components/AppOverlays.tsx:552
+#: src/components/AppOverlays.tsx:387
+#: src/components/AppOverlays.tsx:404
+#: src/components/AppOverlays.tsx:530
 msgid "flashcard.ai-disclosure"
 msgstr ""
 
@@ -423,12 +423,12 @@ msgid "onboarding.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:295
+#: src/components/shell/LibraryManagementMenu.tsx:298
 msgid "shell.account.sign-out"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:78
+#: src/components/shell/DesktopNavigation.tsx:79
 msgid "shell.brand.mark"
 msgstr ""
 
@@ -461,16 +461,16 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:170
-#: src/components/shell/LibraryManagementMenu.tsx:176
+#: src/components/shell/LibraryManagementMenu.tsx:179
 msgid "shell.feedback.account"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:162
 #: src/components/shell/AppFeedback.tsx:177
-#: src/components/shell/DesktopNavigation.tsx:58
-#: src/components/shell/LibraryManagementMenu.tsx:177
-#: src/components/shell/LibraryManagementMenu.tsx:192
+#: src/components/shell/DesktopNavigation.tsx:59
+#: src/components/shell/LibraryManagementMenu.tsx:180
+#: src/components/shell/LibraryManagementMenu.tsx:195
 msgid "shell.feedback.connecting"
 msgstr ""
 
@@ -521,21 +521,21 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:157
-#: src/components/shell/DesktopNavigation.tsx:53
-#: src/components/shell/LibraryManagementMenu.tsx:187
+#: src/components/shell/DesktopNavigation.tsx:54
+#: src/components/shell/LibraryManagementMenu.tsx:190
 msgid "shell.feedback.session-ended"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:158
-#: src/components/shell/LibraryManagementMenu.tsx:196
+#: src/components/shell/LibraryManagementMenu.tsx:199
 msgid "shell.feedback.session-ended-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:161
 #: src/components/shell/AppFeedback.tsx:163
-#: src/components/shell/LibraryManagementMenu.tsx:288
+#: src/components/shell/LibraryManagementMenu.tsx:291
 msgid "shell.feedback.sign-in-again"
 msgstr ""
 
@@ -616,46 +616,6 @@ msgid "shell.heading.today"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:335
-msgid "shell.insights.close"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:332
-msgid "shell.insights.description"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:343
-msgid "shell.insights.due-today"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:330
-msgid "shell.insights.kicker"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:342
-msgid "shell.insights.learning"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:341
-msgid "shell.insights.mastered"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:331
-msgid "shell.insights.title"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:340
-msgid "shell.insights.total-cards"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/components/shell/LanguageMenu.tsx:26
 msgid "shell.language.menu"
 msgstr ""
@@ -666,18 +626,18 @@ msgid "shell.language.open"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:390
+#: src/app/AppRuntime.tsx:392
 msgid "shell.learning-workspace"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:86
+#: src/components/shell/DesktopNavigation.tsx:87
 msgid "shell.level"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:86
-#: src/components/shell/DesktopNavigation.tsx:86
+#: src/components/shell/DesktopNavigation.tsx:87
+#: src/components/shell/DesktopNavigation.tsx:87
 msgid "shell.level.short"
 msgstr ""
 
@@ -697,29 +657,24 @@ msgid "shell.library-count.cloud-paused"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:260
+#: src/components/shell/LibraryManagementMenu.tsx:263
 msgid "shell.library-menu.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:211
-#: src/components/shell/LibraryManagementMenu.tsx:215
+#: src/components/shell/LibraryManagementMenu.tsx:214
+#: src/components/shell/LibraryManagementMenu.tsx:218
 msgid "shell.library-menu.trigger"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:310
+#: src/components/shell/LibraryManagementMenu.tsx:313
 msgid "shell.library-menu.zen-toggle-description"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/App.tsx:82
 msgid "shell.loading.app"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:346
-msgid "shell.loading.charts"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -753,87 +708,92 @@ msgid "shell.loading.today"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:303
+#: src/components/shell/LibraryManagementMenu.tsx:306
 msgid "shell.menu.account-data"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:304
+#: src/components/shell/LibraryManagementMenu.tsx:307
 msgid "shell.menu.appearance-settings"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:313
+#: src/components/shell/LibraryManagementMenu.tsx:316
 msgid "shell.menu.card-style-standard"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:313
+#: src/components/shell/LibraryManagementMenu.tsx:316
 msgid "shell.menu.card-style-zen"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:343
+#: src/components/shell/LibraryManagementMenu.tsx:362
 msgid "shell.menu.clear-library"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:324
+#: src/components/shell/LibraryManagementMenu.tsx:343
 msgid "shell.menu.export"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:324
+#: src/components/shell/LibraryManagementMenu.tsx:343
 msgid "shell.menu.exporting"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:301
+#: src/components/shell/LibraryManagementMenu.tsx:304
 msgid "shell.menu.extension-privacy"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:299
+#: src/components/shell/LibraryManagementMenu.tsx:331
+msgid "shell.menu.insights"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:302
 msgid "shell.menu.privacy"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:300
+#: src/components/shell/LibraryManagementMenu.tsx:303
 msgid "shell.menu.terms"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:64
+#: src/components/shell/DesktopNavigation.tsx:65
 #: src/components/shell/FloatingMobileNav.tsx:18
 msgid "shell.nav.collection"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:63
-#: src/components/shell/DesktopNavigation.tsx:63
+#: src/components/shell/DesktopNavigation.tsx:64
+#: src/components/shell/DesktopNavigation.tsx:64
 #: src/components/shell/FloatingMobileNav.tsx:17
 #: src/components/shell/FloatingMobileNav.tsx:23
 msgid "shell.nav.paths"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:65
-#: src/components/shell/DesktopNavigation.tsx:65
+#: src/components/shell/DesktopNavigation.tsx:66
+#: src/components/shell/DesktopNavigation.tsx:66
 #: src/components/shell/FloatingMobileNav.tsx:19
 #: src/components/shell/FloatingMobileNav.tsx:25
 msgid "shell.nav.progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:62
-#: src/components/shell/DesktopNavigation.tsx:62
+#: src/components/shell/DesktopNavigation.tsx:63
+#: src/components/shell/DesktopNavigation.tsx:63
 #: src/components/shell/FloatingMobileNav.tsx:16
 #: src/components/shell/FloatingMobileNav.tsx:22
 msgid "shell.nav.today"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:64
+#: src/components/shell/DesktopNavigation.tsx:65
 #: src/components/shell/FloatingMobileNav.tsx:24
 msgid "shell.nav.vocabulary"
 msgstr ""
@@ -844,13 +804,13 @@ msgid "shell.navigation.mobile"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:75
+#: src/components/shell/DesktopNavigation.tsx:76
 msgid "shell.navigation.primary"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/app/AppDeferredViews.tsx:22
-#: src/app/AppRuntime.tsx:439
+#: src/app/AppRuntime.tsx:441
 msgid "shell.opening-dialog"
 msgstr ""
 
@@ -870,7 +830,7 @@ msgid "shell.practice-menu.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:617
+#: src/components/AppOverlays.tsx:595
 msgid "shell.practice-menu.preparing"
 msgstr ""
 
@@ -891,51 +851,51 @@ msgid "shell.runtime-error.retry"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:450
+#: src/components/AppOverlays.tsx:428
 msgid "shell.share.add-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:450
+#: src/components/AppOverlays.tsx:428
 msgid "shell.share.add-none"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:450
+#: src/components/AppOverlays.tsx:428
 msgid "shell.share.adding"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:235
 #: src/components/AppOverlays.tsx:236
-#: src/components/AppOverlays.tsx:391
-#: src/components/AppOverlays.tsx:502
+#: src/components/AppOverlays.tsx:369
+#: src/components/AppOverlays.tsx:480
 msgid "shell.share.all-library"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:540
+#: src/components/AppOverlays.tsx:518
 msgid "shell.share.behavior"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:447
+#: src/components/AppOverlays.tsx:425
 msgid "shell.share.cancel"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:390
-#: src/components/AppOverlays.tsx:511
+#: src/components/AppOverlays.tsx:368
+#: src/components/AppOverlays.tsx:489
 msgid "shell.share.cards"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:397
+#: src/components/AppOverlays.tsx:375
 msgid "shell.share.cards-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:391
+#: src/components/AppOverlays.tsx:369
 msgid "shell.share.category"
 msgstr ""
 
@@ -945,48 +905,48 @@ msgid "shell.share.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:527
+#: src/components/AppOverlays.tsx:505
 msgid "shell.share.copied"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:392
+#: src/components/AppOverlays.tsx:370
 msgid "shell.share.copy"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:392
+#: src/components/AppOverlays.tsx:370
 msgid "shell.share.copy-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:533
+#: src/components/AppOverlays.tsx:511
 msgid "shell.share.copy-failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:526
+#: src/components/AppOverlays.tsx:504
 msgid "shell.share.copy-link"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:553
+#: src/components/AppOverlays.tsx:531
 msgid "shell.share.copy-private"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:527
+#: src/components/AppOverlays.tsx:505
 msgid "shell.share.copy-short"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:534
+#: src/components/AppOverlays.tsx:512
 msgid "shell.share.dismiss-copy-error"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:252
-#: src/components/AppOverlays.tsx:388
+#: src/components/AppOverlays.tsx:366
 msgid "shell.share.dismiss-error"
 msgstr ""
 
@@ -1006,28 +966,28 @@ msgid "shell.share.empty-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:427
-#: src/components/AppOverlays.tsx:547
+#: src/components/AppOverlays.tsx:405
+#: src/components/AppOverlays.tsx:525
 msgid "shell.share.expires-on"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:543
+#: src/components/AppOverlays.tsx:521
 msgid "shell.share.fact-edits"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:542
+#: src/components/AppOverlays.tsx:520
 msgid "shell.share.fact-private"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:544
+#: src/components/AppOverlays.tsx:522
 msgid "shell.share.fact-revoke"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:387
+#: src/components/AppOverlays.tsx:365
 msgid "shell.share.importing"
 msgstr ""
 
@@ -1047,7 +1007,7 @@ msgid "shell.share.incoming-kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:424
+#: src/components/AppOverlays.tsx:402
 msgid "shell.share.incoming-safeguard"
 msgstr ""
 
@@ -1059,27 +1019,27 @@ msgid "shell.share.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:471
+#: src/components/AppOverlays.tsx:449
 msgid "shell.share.language-pair"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:469
+#: src/components/AppOverlays.tsx:447
 msgid "shell.share.languages"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:538
+#: src/components/AppOverlays.tsx:516
 msgid "shell.share.link-copied"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:525
+#: src/components/AppOverlays.tsx:503
 msgid "shell.share.link-input"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:522
+#: src/components/AppOverlays.tsx:500
 msgid "shell.share.link-label"
 msgstr ""
 
@@ -1089,27 +1049,27 @@ msgid "shell.share.loading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:575
+#: src/components/AppOverlays.tsx:553
 msgid "shell.share.manage"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:397
+#: src/components/AppOverlays.tsx:375
 msgid "shell.share.more-cards"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:419
+#: src/components/AppOverlays.tsx:397
 msgid "shell.share.no-cards"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:419
+#: src/components/AppOverlays.tsx:397
 msgid "shell.share.no-sample-preview"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:408
+#: src/components/AppOverlays.tsx:386
 msgid "shell.share.no-translation"
 msgstr ""
 
@@ -1124,7 +1084,7 @@ msgid "shell.share.outgoing-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:550
+#: src/components/AppOverlays.tsx:528
 msgid "shell.share.privacy-warning"
 msgstr ""
 
@@ -1139,32 +1099,32 @@ msgid "shell.share.revoking"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:400
+#: src/components/AppOverlays.tsx:378
 msgid "shell.share.sample-vocabulary"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:471
+#: src/components/AppOverlays.tsx:449
 msgid "shell.share.target-unspecified"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:471
+#: src/components/AppOverlays.tsx:449
 msgid "shell.share.translation-unspecified"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:518
+#: src/components/AppOverlays.tsx:496
 msgid "shell.share.truncation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:506
+#: src/components/AppOverlays.tsx:484
 msgid "shell.share.updating"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:396
+#: src/components/AppOverlays.tsx:374
 msgid "shell.share.words-inside"
 msgstr ""
 
@@ -1174,13 +1134,13 @@ msgid "shell.skip-content"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:85
+#: src/components/shell/DesktopNavigation.tsx:86
 msgid "shell.streak"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:55
-#: src/components/shell/LibraryManagementMenu.tsx:189
+#: src/components/shell/DesktopNavigation.tsx:56
+#: src/components/shell/LibraryManagementMenu.tsx:192
 #: src/components/shell/localized-sync-status.ts:20
 #: src/components/shell/localized-sync-status.ts:21
 msgid "shell.sync.checking"
@@ -1192,8 +1152,8 @@ msgid "shell.sync.checking-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:59
-#: src/components/shell/LibraryManagementMenu.tsx:193
+#: src/components/shell/DesktopNavigation.tsx:60
+#: src/components/shell/LibraryManagementMenu.tsx:196
 msgid "shell.sync.device"
 msgstr ""
 
@@ -1204,7 +1164,7 @@ msgid "shell.sync.needs-attention"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:273
+#: src/components/shell/LibraryManagementMenu.tsx:276
 msgid "shell.sync.now"
 msgstr ""
 
@@ -1236,7 +1196,7 @@ msgid "shell.sync.paused-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:313
+#: src/app/AppRuntime.tsx:314
 msgid "shell.sync.retry-failed"
 msgstr ""
 
@@ -1246,7 +1206,7 @@ msgid "shell.sync.saved-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:289
+#: src/components/shell/LibraryManagementMenu.tsx:292
 msgid "shell.sync.sign-in"
 msgstr ""
 

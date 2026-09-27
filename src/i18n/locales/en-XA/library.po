@@ -15,26 +15,26 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryCardGrid.tsx:360
-#: src/features/library/LibraryDialogOverlays.tsx:159
+#: src/features/library/LibraryDialogOverlays.tsx:160
 msgid "common.cancel"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:135
 #: src/features/library/LibraryCardGrid.tsx:351
-#: src/features/library/LibraryDialogOverlays.tsx:458
+#: src/features/library/LibraryDialogOverlays.tsx:460
 msgid "common.close"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:135
-#: src/features/library/LibraryDialogOverlays.tsx:159
-#: src/features/library/LibraryDialogOverlays.tsx:313
+#: src/features/library/LibraryDialogOverlays.tsx:160
+#: src/features/library/LibraryDialogOverlays.tsx:314
 msgid "common.done"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:409
+#: src/features/library/LibraryDialogOverlays.tsx:411
 msgid "common.retry"
 msgstr ""
 
@@ -194,82 +194,82 @@ msgid "library.categories.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:212
+#: src/features/library/LibraryDialogOverlays.tsx:213
 msgid "library.clear.cards"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:249
+#: src/features/library/LibraryDialogOverlays.tsx:250
 msgid "library.clear.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:330
+#: src/features/library/LibraryDialogOverlays.tsx:331
 msgid "library.clear.confirm"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:284
+#: src/features/library/LibraryDialogOverlays.tsx:285
 msgid "library.clear.confirm-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:213
+#: src/features/library/LibraryDialogOverlays.tsx:214
 msgid "library.clear.decks"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:258
+#: src/features/library/LibraryDialogOverlays.tsx:259
 msgid "library.clear.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:272
+#: src/features/library/LibraryDialogOverlays.tsx:273
 msgid "library.clear.export"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:269
+#: src/features/library/LibraryDialogOverlays.tsx:270
 msgid "library.clear.export-copy"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:305
+#: src/features/library/LibraryDialogOverlays.tsx:306
 msgid "library.clear.failure"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:318
+#: src/features/library/LibraryDialogOverlays.tsx:319
 msgid "library.clear.keep"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:243
+#: src/features/library/LibraryDialogOverlays.tsx:244
 msgid "library.clear.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:214
+#: src/features/library/LibraryDialogOverlays.tsx:215
 msgid "library.clear.mastered"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:280
+#: src/features/library/LibraryDialogOverlays.tsx:281
 msgid "library.clear.success"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:244
+#: src/features/library/LibraryDialogOverlays.tsx:245
 msgid "library.clear.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:330
+#: src/features/library/LibraryDialogOverlays.tsx:331
 msgid "library.clear.try-again"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:300
+#: src/features/library/LibraryDialogOverlays.tsx:301
 msgid "library.clear.working"
 msgstr ""
 
@@ -277,7 +277,7 @@ msgstr ""
 #: src/features/importExport/SpreadsheetImportDialog.tsx:96
 #: src/features/intake/CreateCardDialog.tsx:52
 #: src/features/library/AiDialogueModal.tsx:150
-#: src/features/library/LibraryDialogOverlays.tsx:91
+#: src/features/library/LibraryDialogOverlays.tsx:92
 #: src/features/library/WordExtractorModal.tsx:166
 msgid "library.close"
 msgstr ""
@@ -795,12 +795,12 @@ msgid "library.deck.create"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:171
+#: src/features/library/LibraryDialogOverlays.tsx:172
 msgid "library.deck.create-again"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:123
+#: src/features/library/LibraryDialogOverlays.tsx:124
 #: src/features/library/LibraryTools.tsx:232
 #: src/features/library/LibraryTools.tsx:972
 msgid "library.deck.create-error"
@@ -812,12 +812,12 @@ msgid "library.deck.create-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:151
+#: src/features/library/LibraryDialogOverlays.tsx:152
 msgid "library.deck.created"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:146
+#: src/features/library/LibraryDialogOverlays.tsx:147
 #: src/features/library/LibraryTools.tsx:229
 msgid "library.deck.creating"
 msgstr ""
@@ -828,12 +828,12 @@ msgid "library.deck.creating-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:107
+#: src/features/library/LibraryDialogOverlays.tsx:108
 msgid "library.deck.creation-name-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:171
+#: src/features/library/LibraryDialogOverlays.tsx:172
 msgid "library.deck.creation-submit"
 msgstr ""
 
@@ -883,17 +883,17 @@ msgid "library.deck.deleting"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:86
+#: src/features/library/LibraryDialogOverlays.tsx:87
 msgid "library.deck.dialog-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:83
+#: src/features/library/LibraryDialogOverlays.tsx:84
 msgid "library.deck.dialog-kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:84
+#: src/features/library/LibraryDialogOverlays.tsx:85
 msgid "library.deck.dialog-title"
 msgstr ""
 
@@ -908,7 +908,7 @@ msgid "library.deck.name-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:114
+#: src/features/library/LibraryDialogOverlays.tsx:115
 #: src/features/library/LibraryTools.tsx:218
 msgid "library.deck.name-placeholder"
 msgstr ""
@@ -924,27 +924,27 @@ msgid "library.deck.removed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:13
+#: src/features/library/LibraryDialogOverlays.tsx:14
 msgid "library.deck.suggestion.ielts-writing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:15
+#: src/features/library/LibraryDialogOverlays.tsx:16
 msgid "library.deck.suggestion.toeic-600"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:14
+#: src/features/library/LibraryDialogOverlays.tsx:15
 msgid "library.deck.suggestion.travel"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:128
+#: src/features/library/LibraryDialogOverlays.tsx:129
 msgid "library.deck.suggestions"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:129
+#: src/features/library/LibraryDialogOverlays.tsx:130
 msgid "library.deck.try"
 msgstr ""
 
@@ -1902,112 +1902,112 @@ msgid "library.import.xls-unsupported"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:424
+#: src/features/library/LibraryDialogOverlays.tsx:426
 msgid "library.insights.category"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:430
+#: src/features/library/LibraryDialogOverlays.tsx:432
 msgid "library.insights.category-partial"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:394
+#: src/features/library/LibraryDialogOverlays.tsx:395
 msgid "library.insights.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:392
+#: src/features/library/LibraryDialogOverlays.tsx:393
 msgid "library.insights.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:434
+#: src/features/library/LibraryDialogOverlays.tsx:436
 msgid "library.insights.difficulty"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:419
+#: src/features/library/LibraryDialogOverlays.tsx:421
 msgid "library.insights.due"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:412
+#: src/features/library/LibraryDialogOverlays.tsx:414
 msgid "library.insights.empty"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:408
+#: src/features/library/LibraryDialogOverlays.tsx:410
 msgid "library.insights.failure"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:390
+#: src/features/library/LibraryDialogOverlays.tsx:391
 msgid "library.insights.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:418
+#: src/features/library/LibraryDialogOverlays.tsx:420
 msgid "library.insights.learning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:403
+#: src/features/library/LibraryDialogOverlays.tsx:405
 msgid "library.insights.loading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:417
+#: src/features/library/LibraryDialogOverlays.tsx:419
 msgid "library.insights.mastered"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:425
+#: src/features/library/LibraryDialogOverlays.tsx:427
 msgid "library.insights.no-category"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:435
+#: src/features/library/LibraryDialogOverlays.tsx:437
 msgid "library.insights.no-difficulty"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:445
+#: src/features/library/LibraryDialogOverlays.tsx:447
 msgid "library.insights.no-xp"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:456
+#: src/features/library/LibraryDialogOverlays.tsx:458
 msgid "library.insights.open-progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:391
+#: src/features/library/LibraryDialogOverlays.tsx:392
 msgid "library.insights.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:416
+#: src/features/library/LibraryDialogOverlays.tsx:418
 msgid "library.insights.total"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:444
+#: src/features/library/LibraryDialogOverlays.tsx:446
 msgid "library.insights.xp"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:446
+#: src/features/library/LibraryDialogOverlays.tsx:448
 msgid "library.insights.xp-chart"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:447
+#: src/features/library/LibraryDialogOverlays.tsx:449
 msgid "library.insights.xp-point"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:444
+#: src/features/library/LibraryDialogOverlays.tsx:446
 msgid "library.insights.xp-total"
 msgstr ""
 
