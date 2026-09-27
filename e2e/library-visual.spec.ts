@@ -145,7 +145,7 @@ const dialogViews = [
   ['share', 'Share “IELTS”'], ['share-in', 'IELTS'],
   ['clear', 'Clear the entire library?'], ['insights', 'Learning insights'],
 ] as const;
-const inlineViews = [['deck-new', 'Create a deck'], ['import', 'Import cards']] as const;
+const inlineViews = [['import', 'Import cards']] as const;
 
 for (const theme of themes) for (const viewport of viewports) {
   test(`${theme.family} ${theme.mode} Library dialog surfaces are visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {

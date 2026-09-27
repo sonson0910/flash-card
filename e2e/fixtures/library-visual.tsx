@@ -4,7 +4,7 @@ import '../../src/index.css';
 import { ThemeProvider } from '../../src/features/theme/ThemeProvider';
 import { AppOverlays } from '../../src/components/AppOverlays';
 import { EditCardDialog } from '../../src/features/cardEdit/EditCardDialog';
-import { DeckCreationForm, DeckDeletionDialog, SpreadsheetImportStatus } from '../../src/features/library/LibraryTools';
+import { DeckDeletionDialog, SpreadsheetImportStatus } from '../../src/features/library/LibraryTools';
 import { LibraryScreen, type LibraryScreenActions, type LibraryScreenModel } from '../../src/features/library/LibraryScreen';
 import { I18nProvider, useUiLocale } from '../../src/i18n/I18nProvider';
 import { loadCatalog } from '../../src/i18n/loadCatalog';
@@ -117,10 +117,6 @@ function LibraryFixture() {
   };
   return <main data-library-visual-view className="min-h-screen px-4 py-5 sm:px-8 sm:py-8">
     <LibraryScreen model={model} actions={actions} />
-    {dialog === 'deck-new' && <section data-library-inline-visual className="mx-auto mt-8 max-w-md rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-xl">
-      <h2 className="mb-4 font-display text-2xl font-bold">Create a deck</h2>
-      <DeckCreationForm value="Academic words" onChange={noOp} onSubmit={noOp} isCreating={false} error={false} />
-    </section>}
     {dialog === 'import' && <section data-library-inline-visual className="mx-auto mt-8 max-w-md rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-xl">
       <h2 className="mb-4 font-display text-2xl font-bold">Import cards</h2>
       <SpreadsheetImportStatus progress={null} result={{ status: 'partial', summary: { total: 12, created: 8, reused: 2, failed: 1, skipped: 1 }, message: 'Import partly finished. You can retry the remaining cards later.' }} />

@@ -39,7 +39,7 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 
 ## Checklist
 
-- [ ] 13.1 — Đối chiếu từng dòng board/artboard với route/action, state và test; tìm orphan button/view/menu. — Audit 2026-09-27 xong phần đếm: 245 covered, 36 implemented-untested, 9 missing (AnimeReveal ceremonies thuộc 04; drill LangPractice/AnimeLangPractice thuộc 09), 51 out-of-scope-locked. Orphan: `openStats` không caller (insights không tới được), `DeckCreationForm` và `LumiBubble` chỉ còn trong test/không dùng, nút "Learn 5 new" ở `TodayScreen` luôn disabled; `LibraryClearDialog` đã nối (`33e94e2`). Course switcher/goals/settings/onboarding (10) chưa có test render. Chưa tick vì orphan và missing còn mở.
+- [ ] 13.1 — Đối chiếu từng dòng board/artboard với route/action, state và test; tìm orphan button/view/menu. — Audit 2026-09-27 xong phần đếm: 245 covered, 36 implemented-untested, 9 missing (AnimeReveal ceremonies thuộc 04; drill LangPractice/AnimeLangPractice thuộc 09), 51 out-of-scope-locked. Đã xử lý các orphan được chỉ ra: `openStats` nối vào menu Library và dialog Insights, `LumiBubble` và `DeckCreationForm` không còn caller đã gỡ cùng test/fixture/baseline cũ, caught-up Today mở Vocabulary; `LibraryClearDialog` đã nối. Course switcher/goals/settings/onboarding cần xác minh render test mới. Chưa tick vì 9 artboard missing và các luồng kiểm thử khác còn mở.
 - [ ] 13.2 — Chạy journey tổng: new→onboard→course→capture/create→daily→edit→recap→weekly→reminder; legacy/offline/account switch; share/extension.
 - [ ] 13.3 — So Canvas trực tiếp bốn theme × desktop/mobile và trạng thái critical; gate a11y, motion, vi/en/pseudo và languages được mở.
 - [ ] 13.4 — Chạy toàn bộ gates và cross-browser critical flows; review cross-module/contract/performance.

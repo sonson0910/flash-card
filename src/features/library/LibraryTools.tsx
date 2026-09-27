@@ -188,52 +188,6 @@ export async function deleteDeckThenCloseDialog(
   closeDialog();
 }
 
-export function DeckCreationForm({
-  value,
-  onChange,
-  onSubmit,
-  isCreating,
-  error,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  onSubmit: () => void;
-  isCreating: boolean;
-  error: boolean;
-}) {
-  return (
-    <div className="mb-3">
-      <form
-        onSubmit={event => {
-          event.preventDefault();
-          onSubmit();
-        }}
-        className="flex gap-2"
-      >
-        <input
-          type="text"
-          aria-label={i18n._(msg({ id: 'library.deck.name-label', message: 'New deck name' }))}
-          value={value}
-          onChange={event => onChange(event.target.value)}
-          placeholder={i18n._(msg({ id: 'library.deck.name-placeholder', message: 'IELTS, Travel…' }))}
-          disabled={isCreating}
-          className="min-h-11 min-w-0 flex-1 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none disabled:cursor-wait disabled:opacity-70"
-        />
-        <button
-          type="submit"
-          disabled={isCreating || !value.trim()}
-          className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--sf-brand)] px-3 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label={isCreating ? i18n._(msg({ id: 'library.deck.creating-label', message: 'Creating deck' })) : i18n._(msg({ id: 'library.deck.create-label', message: 'Create deck' }))}
-        >
-          {isCreating ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <Plus size={15} aria-hidden="true" />}
-          <span>{isCreating ? <Trans id="library.deck.creating" message="Creating…" /> : <Trans id="library.deck.create" message="Create" />}</span>
-        </button>
-      </form>
-      {error ? <p role="alert" className="mt-2 text-xs font-semibold leading-relaxed text-rose-700 dark:text-rose-300"><Trans id="library.deck.create-error" message="Could not create this deck. Check your connection and try again." /></p> : null}
-    </div>
-  );
-}
-
 export function restoreDeckDeletionFocus(
   event: { preventDefault: () => void },
   restoreFocusRef?: RefObject<HTMLButtonElement | null>,

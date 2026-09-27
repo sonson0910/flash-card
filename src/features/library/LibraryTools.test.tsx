@@ -8,7 +8,6 @@ import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import type { AiGenerationAccess } from './aiGenerationAccess';
 import {
-  DeckCreationForm,
   DeckDeletionDialogContent,
   LibraryTools,
   SpreadsheetImportStatus,
@@ -149,8 +148,11 @@ describe('quick learning tools', () => {
 describe('library touch targets', () => {
   it('keeps filters, deck controls, and creation actions at least 44px tall', () => {
     const source = readFileSync(fileURLToPath(new URL('./LibraryTools.tsx', import.meta.url)), 'utf8');
+    const dialogSource = readFileSync(fileURLToPath(new URL('./LibraryDialogOverlays.tsx', import.meta.url)), 'utf8');
+    const dialogCss = readFileSync(fileURLToPath(new URL('./library-dialog-overlays.css', import.meta.url)), 'utf8');
 
-    expect(source).toContain('flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--sf-brand)]');
+    expect(dialogSource).toContain('className="library-dialog-button library-dialog-button--primary"');
+    expect(dialogCss).toMatch(/\.library-dialog-button\s*\{[^}]*min-height:\s*2\.75rem/);
     expect(source).toContain('flex size-11 items-center justify-center rounded-lg');
     expect(source).toContain('flex min-h-11 min-w-11 items-center gap-1.5 rounded-full border px-3 py-1');
   });
@@ -279,16 +281,7 @@ describe('custom deck mutation feedback', () => {
     expect(closeDialog).not.toHaveBeenCalled();
   });
 
-  it('renders explicit pending and retryable error feedback', () => {
-    const creatingHtml = renderMarkup(
-      <DeckCreationForm
-        value="TOEIC"
-        onChange={vi.fn()}
-        onSubmit={vi.fn()}
-        isCreating
-        error
-      />,
-    );
+  it('renders explicit pending and retryable deletion error feedback', () => {
     const deletingHtml = renderMarkup(
       <AlertDialog.Root open>
         <DeckDeletionDialogContent
@@ -301,22 +294,11 @@ describe('custom deck mutation feedback', () => {
       </AlertDialog.Root>,
     );
 
-    expect(creatingHtml).toContain('Creating…');
-    expect(creatingHtml).toContain('role="alert"');
-    expect(creatingHtml).toContain('Could not create this deck.');
     expect(deletingHtml).toContain('Deleting…');
     expect(deletingHtml).toContain('role="alert"');
     expect(deletingHtml).toContain('Could not finish deleting this deck.');
   });
 
-  it('renders deck errors from the active catalog instead of a stored English string', () => {
-    i18n.activate('vi');
-    const html = renderMarkup(
-      <DeckCreationForm value="TOEIC" onChange={vi.fn()} onSubmit={vi.fn()} isCreating={false} error />,
-    );
-
-    expect(html).toContain('Không thể tạo bộ thẻ này.');
-  });
 });
 
 describe('DeckDeletionDialog', () => {
