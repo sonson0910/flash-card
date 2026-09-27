@@ -12,6 +12,10 @@ html[data-theme-family="classic"] .landing-copy h1 em, html[data-theme-family="c
 html[data-theme-family="crystal"] .landing-header { font-family: var(--sf-font-display, Geist, sans-serif); font-style: italic; letter-spacing: .02em; }
 html[data-theme-family="crystal"] .landing-header .brand-action { text-transform: uppercase; letter-spacing: .055em; }
 .landing-header :is(a, button) { white-space: nowrap; }
+.landing-header summary { list-style: none; }
+.landing-header summary::marker { content: ""; }
+.landing-header summary::-webkit-details-marker { display: none; }
+.landing-header summary > svg { width: 19px; height: 19px; flex: none; }
 .landing-crystal-mark,.landing-crystal-brand { display: none; }
 html[data-theme-family="crystal"] .landing-classic-mark,html[data-theme-family="crystal"] .landing-classic-brand { display: none; }
 html[data-theme-family="crystal"] .landing-crystal-mark { display: block; filter: drop-shadow(0 0 10px rgb(255 42 77 / .7)); }

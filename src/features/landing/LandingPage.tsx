@@ -820,59 +820,6 @@ export function LandingPage({
           </div>
         </section>
         <section
-          id="pricing"
-          aria-labelledby="pricing-heading"
-          className="border-t border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-16 sm:px-8 lg:px-12"
-        >
-          <div className="mx-auto max-w-5xl">
-            <p className="text-sm font-bold text-[var(--sf-brand-text)]">
-              <Trans id="landing.pricing.eyebrow" message="Free to start, Pro when you want more" />
-            </p>
-            <h2
-              id="pricing-heading"
-              className="mt-3 text-3xl font-black tracking-tight sm:text-4xl"
-            >
-              <Trans id="landing.pricing.title" message="Pricing & access" />
-            </h2>
-            <div className="mt-8 grid gap-8 lg:grid-cols-2">
-              <div className="rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8 [html[data-theme-family=crystal]_&]:crystal-chamfer">
-                <div className="grid grid-cols-3 items-end gap-2 border-b border-[var(--sf-border)] pb-3">
-                  <span className="font-serif-hero text-lg"><Trans id="landing.pricing.free-vs-pro.title" message="Free vs Pro" /></span>
-                  <span className="text-center text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="landing.pricing.free-vs-pro.free" message="Free" /></span>
-                  <span className="text-center text-xs font-bold text-[var(--sf-brand-text)]"><Trans id="landing.pricing.free-vs-pro.pro" message="Pro" /></span>
-                </div>
-                {pricingRows.map(row => (
-                  <div key={row.id} className="grid grid-cols-3 items-center gap-2 border-b border-[var(--sf-border)] py-3 text-sm last:border-b-0">
-                    <span>{row.label}</span>
-                    <span className="text-center font-mono text-xs text-[var(--sf-text-muted)]">{row.free}</span>
-                    <span className="text-center font-mono text-xs font-semibold">{row.pro}</span>
-                  </div>
-                ))}
-                <p className="mt-5 font-serif-hero text-2xl">
-                  <Trans id="landing.pricing.price" message="Pro is 79,000 ₫ (about US$7.99)." />
-                </p>
-                <p className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]">
-                  <Trans
-                    id="landing.pricing.purchase-note"
-                    message="Registering your interest does not charge you. Purchases are not open yet — we will follow up by email when they are."
-                  />
-                </p>
-              </div>
-              <div>
-                <h3 className="text-xl font-black tracking-tight"><Trans id="landing.pricing.faq.title" message="Questions" /></h3>
-                <dl className="mt-4 space-y-4 border-l border-[var(--sf-border)] pl-5">
-                  {pricingFaq.map(item => (
-                    <div key={item.id}>
-                      <dt className="font-bold">{item.question}</dt>
-                      <dd className="mt-1 text-sm leading-6 text-[var(--sf-text-muted)]">{item.answer}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            </div>
-          </div>
-        </section>
-        <section
           id="how-it-works"
           aria-labelledby="features-heading"
           className="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-12"
@@ -1119,6 +1066,59 @@ export function LandingPage({
                 />
                 <ArrowRight size={17} aria-hidden="true" />
               </button>
+            </div>
+          </div>
+        </section>
+        <section
+          id="pricing"
+          aria-labelledby="pricing-heading"
+          className="border-t border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-16 sm:px-8 lg:px-12"
+        >
+          <div className="mx-auto max-w-5xl">
+            <p className="text-sm font-bold text-[var(--sf-brand-text)]">
+              <Trans id="landing.pricing.eyebrow" message="Free to start, Pro when you want more" />
+            </p>
+            <h2
+              id="pricing-heading"
+              className="mt-3 text-3xl font-black tracking-tight sm:text-4xl"
+            >
+              <Trans id="landing.pricing.title" message="Pricing & access" />
+            </h2>
+            <div className="mt-8 grid gap-8 lg:grid-cols-2">
+              <div className="rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8 [html[data-theme-family=crystal]_&]:crystal-chamfer">
+                <div className="grid grid-cols-3 items-end gap-2 border-b border-[var(--sf-border)] pb-3">
+                  <span className="font-serif-hero text-lg"><Trans id="landing.pricing.free-vs-pro.title" message="Free vs Pro" /></span>
+                  <span className="text-center text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="landing.pricing.free-vs-pro.free" message="Free" /></span>
+                  <span className="text-center text-xs font-bold text-[var(--sf-brand-text)]"><Trans id="landing.pricing.free-vs-pro.pro" message="Pro" /></span>
+                </div>
+                {pricingRows.map(row => (
+                  <div key={row.id} className="grid grid-cols-3 items-center gap-2 border-b border-[var(--sf-border)] py-3 text-sm last:border-b-0">
+                    <span>{row.label}</span>
+                    <span className="text-center font-mono text-xs text-[var(--sf-text-muted)]">{row.free}</span>
+                    <span className="text-center font-mono text-xs font-semibold">{row.pro}</span>
+                  </div>
+                ))}
+                <p className="mt-5 font-serif-hero text-2xl">
+                  <Trans id="landing.pricing.price" message="Pro is 79,000 ₫ (about US$7.99)." />
+                </p>
+                <p className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]">
+                  <Trans
+                    id="landing.pricing.purchase-note"
+                    message="Registering your interest does not charge you. Purchases are not open yet — we will follow up by email when they are."
+                  />
+                </p>
+              </div>
+              <div>
+                <h3 className="text-xl font-black tracking-tight"><Trans id="landing.pricing.faq.title" message="Questions" /></h3>
+                <dl className="mt-4 space-y-4 border-l border-[var(--sf-border)] pl-5">
+                  {pricingFaq.map(item => (
+                    <div key={item.id}>
+                      <dt className="font-bold">{item.question}</dt>
+                      <dd className="mt-1 text-sm leading-6 text-[var(--sf-text-muted)]">{item.answer}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
             </div>
           </div>
         </section>

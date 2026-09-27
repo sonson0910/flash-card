@@ -60,6 +60,13 @@ for (const theme of themes) for (const locale of locales) for (const viewport of
     await expect(page.getByRole('link', { name: /terms|điều khoản/i }).last()).toBeVisible();
     await expect(page.getByText(/18\+|18 tuổi trở lên|aged 18 and over/i)).toBeVisible();
     await expect(page.locator('main')).not.toContainText(/249[.,]?000|949[.,]?000|student.*50%|7-day.*trial|reverse.*trial/i);
+    if (viewport.name === 'mobile') {
+      const menuIcon = page.locator('.landing-header summary > svg').first();
+      await expect(menuIcon).toBeVisible();
+      const iconBox = await menuIcon.boundingBox();
+      expect(iconBox?.width).toBeGreaterThanOrEqual(18);
+      expect(iconBox?.height).toBeGreaterThanOrEqual(18);
+    }
     await expectAccessibleAndContained(page, name);
     await expectReducedMotion(page, name);
     await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true, animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });

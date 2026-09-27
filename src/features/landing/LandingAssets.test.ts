@@ -66,14 +66,23 @@ describe('landing asset delivery contract', () => {
     expect(landingPageCssSource).toMatch(/@media \(max-width: 900px\) \{ \.crystal-landing-hero \{[^}]*row-gap: 28px;/);
   });
 
+  it('renders the mobile navigation icon without the native summary marker', () => {
+    expect(landingSource).toContain('<summary');
+    expect(landingPageCssSource).toContain('.landing-header summary::marker { content: ""; }');
+    expect(landingPageCssSource).toContain('.landing-header summary > svg { width: 19px; height: 19px; flex: none; }');
+  });
+
   it('defers non-critical landing imagery instead of loading everything eagerly', () => {
-    expect(landingSource).toContain('src={trainWindow}');
-    expect(landingSource).toMatch(/src=\{trainWindow\}[\s\S]{0,120}loading="lazy"/);
-    expect(landingSource).toMatch(/src=\{animeSpelling\}[\s\S]{0,40}loading="lazy"/);
-    expect(landingSource).toMatch(/src=\{animeImmediate\}[\s\S]{0,40}loading="lazy"/);
+    expect(landingSource).toMatch(/src=\{trainWindow\}\s+width=\{2752\}\s+height=\{1536\}[\s\S]{0,120}loading="lazy"[\s\S]{0,80}fetchPriority="low"/);
+    expect(landingSource).toMatch(/src=\{animeSpelling\}\s+width=\{1000\}\s+height=\{667\}[\s\S]{0,40}loading="lazy"/);
+    expect(landingSource).toMatch(/src=\{animeImmediate\}\s+width=\{1000\}\s+height=\{667\}[\s\S]{0,40}loading="lazy"/);
     // The most prominent collage card and the header mark stay eager/high-priority for LCP.
-    expect(landingSource).toMatch(/src=\{sonflashLogo\}[\s\S]{0,80}fetchPriority="high"/);
-    expect(landingSource).toMatch(/src=\{animeInstant\}[\s\S]{0,40}fetchPriority="high"/);
+    expect(landingSource).toMatch(/src=\{sonflashLogo\}\s+width=\{36\}\s+height=\{36\}[\s\S]{0,100}fetchPriority="high"/);
+    expect(landingSource).toMatch(/src=\{animeInstant\}\s+width=\{1000\}\s+height=\{667\}[\s\S]{0,40}fetchPriority="high"/);
+  });
+
+  it('keeps the Classic Canvas learning flow before the pricing section', () => {
+    expect(landingSource.indexOf('id="how-it-works"')).toBeLessThan(landingSource.indexOf('id="pricing"'));
   });
 
   it('makes footer and consent legal links keyboard-focus visible', () => {

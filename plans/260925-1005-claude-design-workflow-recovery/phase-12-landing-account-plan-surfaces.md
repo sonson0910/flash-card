@@ -103,6 +103,12 @@ Không wiring vào pipeline deploy staging (`staging:deploy:hosting` trong `pack
 - `train-window.webp` cố ý giữ `loading="lazy"` và `fetchPriority="low"`: đây là texture nền opacity 4%, còn phép đo LCP ghi ở 12.5 xác định H1 là LCP trong bốn theme. Thay đổi này không tạo Firestore read, write hay subscription.
 - Còn lại cho B2: kiểm tra/sửa icon menu tại 390px; đối chiếu lại Classic hero và thứ tự section với `LandingScreen-*`/`LandingSales-*`; thay baseline copy “Pilot access”; rồi chụp và so Canvas desktop/mobile trước khi đóng checklist visual ở dòng 46.
 
+## Cập nhật B2 (2026-09-27)
+
+- Mobile menu giữ native `details` để bảo toàn keyboard/Escape hiện có, nhưng reset cả `summary::marker` lẫn marker WebKit và ép hai SVG trực tiếp là 19×19, không co trong nút 44×44. Baseline cũ ở 390px chỉ vẽ marker khoảng 2px trong cả hai family.
+- Classic đặt lại phần `how-it-works` ngay sau hero, trước pricing, theo thứ tự hero → ba lợi ích của `LandingScreen-*`; pricing thật giữ nguyên sau các phần sản phẩm. Không thêm các số người dùng, ratings hoặc testimonial dựng trong `LandingSales-*`.
+- Đã xem ảnh Canvas `LandingScreen-{dark,light}`/`LandingSales-dark` và PNG Playwright thực tế 1440×900/390×844. Menu mobile có SVG 19×19 ở cả Classic/Crystal; header Crystal 1440 không tràn. Cập nhật đúng 16 baseline landing EN/VI do cả hai locale đổi thứ tự section; EN đồng thời bỏ copy cũ “Pilot access”. `LandingAssets.test.ts` 10/10; Chromium `landing-visual`, `landing-performance`, `landing-locales` 27/27 pass sau khi cập nhật. Dòng Canvas toàn phase vẫn mở vì các state account/pilot khác chưa được đối chiếu đủ.
+
 
 
 landing locale/visual/performance tests, check-locale-pages.mjs; pilot/account/report/quota component tests; E2E sign-in return/export/delete confirmation với fixtures; gates chung.
