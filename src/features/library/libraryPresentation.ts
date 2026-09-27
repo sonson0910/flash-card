@@ -16,6 +16,14 @@ export function formatCardDate(dateValue?: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+/** Returns whole days until a scheduled review, leaving due or invalid dates to the caller. */
+export function getRelativeReviewDays(reviewDate?: string, now = Date.now()): number | null {
+  if (!reviewDate) return null;
+  const reviewTime = new Date(reviewDate).getTime();
+  if (!Number.isFinite(reviewTime) || reviewTime <= now) return null;
+  return Math.max(1, Math.ceil((reviewTime - now) / (24 * 60 * 60 * 1000)));
+}
+
 export function displayCardDate(label: string, locale: string = getActiveUiLocale()): string {
   if (label === 'All') return i18n._(msg({ id: 'library.date.all', message: 'All dates' }));
   if (label === 'Today') return i18n._(msg({ id: 'library.date.today', message: 'Today' }));

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { i18n } from '@lingui/core';
 import { buildBulkBookmarkPatches, buildBulkDeckAssignPatches, getLegacyUpgradePresentation } from './LibraryCardGrid';
+import { getRelativeReviewDays } from './libraryPresentation';
 
 beforeEach(() => {
   i18n.load('en', {
@@ -106,6 +107,23 @@ describe('library collection hierarchy', () => {
     expect(source).toContain('formatNumber(currentPage)');
     expect(source).not.toMatch(/liquid-glass lg:hidden/);
     expect(source).not.toMatch(/liquid-glass mx-auto mt-10/);
+  });
+});
+
+describe('library card review metadata', () => {
+  it('uses the scheduled review date for a whole-day relative label without rounding a future review down to today', () => {
+    const now = Date.parse('2026-09-28T10:00:00.000Z');
+
+    expect(getRelativeReviewDays('2026-09-29T09:00:00.000Z', now)).toBe(1);
+    expect(getRelativeReviewDays('2026-09-30T10:00:00.000Z', now)).toBe(2);
+  });
+
+  it('leaves absent, invalid, and due dates for the grid to label as unseen or due now', () => {
+    const now = Date.parse('2026-09-28T10:00:00.000Z');
+
+    expect(getRelativeReviewDays(undefined, now)).toBeNull();
+    expect(getRelativeReviewDays('not-a-date', now)).toBeNull();
+    expect(getRelativeReviewDays('2026-09-28T10:00:00.000Z', now)).toBeNull();
   });
 });
 

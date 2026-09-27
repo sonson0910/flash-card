@@ -113,6 +113,8 @@ for (const theme of themes) for (const viewport of viewports) {
     if (theme.family === 'crystal') await expect(page.locator('#sonflash-crystal-theme')).toHaveAttribute('href', '/theme-crystal.css');
     if (theme.family === 'crystal') await expect(page.locator('.library-word-grade').first()).toBeVisible();
     else await expect(page.locator('.library-word-grade').first()).toBeHidden();
+    await expect(page.getByText('/əˈdæpt/')).toBeVisible();
+    await expect(page.getByText('in 2d')).toBeVisible();
     await expectAccessibleAndContained(page, name);
     await expectReducedMotion(page, name);
     await expectScreen(page, testInfo, name);

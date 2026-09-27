@@ -21,9 +21,10 @@ import type { CardData } from '../../types/card';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { BulkCardFieldPatchRequest } from '../learning/learningPersistencePort';
 import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySessionController';
-import { formatNumber } from '../../lib/format';
+import { formatNumber, formatRelativeTime } from '../../lib/format';
 import { getLibraryCardTier, isLibraryCardDue, sortLibraryCards, type LibrarySortOrder } from './libraryViewModel';
 import { getLibraryGridLoadingLabel } from './libraryLoading';
+import { getRelativeReviewDays } from './libraryPresentation';
 
 const EditCardDialog = lazy(() => import('../cardEdit/EditCardDialog').then(module => ({ default: module.EditCardDialog })));
 const Flashcard = lazy(() => import('../../components/Flashcard').then(module => ({ default: module.Flashcard })));
@@ -271,7 +272,10 @@ export function LibraryCardGrid({
     const due = card.nextReviewDate ?? card.fsrs?.due;
     if (!due) return catalog._(msg({ id: 'library.card.unseen', message: 'Unseen' }));
     if (isLibraryCardDue(card)) return catalog._(msg({ id: 'library.card.due-now', message: 'Due now' }));
-    return new Intl.DateTimeFormat(catalog.locale === 'pseudo' || catalog.locale === 'en-XA' ? 'en' : catalog.locale, { month: 'short', day: 'numeric' }).format(new Date(due));
+    const days = getRelativeReviewDays(due);
+    return days === null
+      ? catalog._(msg({ id: 'library.card.unseen', message: 'Unseen' }))
+      : formatRelativeTime(days, 'day', { numeric: 'always', style: 'narrow' });
   };
   const cardIsInteractive = (event: MouseEvent<HTMLElement>) => {
     const target = event.target;
@@ -331,7 +335,7 @@ export function LibraryCardGrid({
             <div className="library-word-body">
               <p className="library-word-meta"><i aria-hidden="true"/> {tierLabel(cardTier)} <span aria-hidden="true">·</span> {card.partOfSpeech ?? <Trans id="library.card.word" message="word" />}</p>
               <h3 lang={card.language}>{card.word}</h3>
-              <code>{card.phonetic}</code>
+              {card.phonetic && <code>{card.phonetic}</code>}
               <div className="library-word-translation-row"><p className="library-word-translation">{card.translation}</p><span>{nextLabel(card)}</span></div>
               <button type="button" ref={node => { if (node && detailCardId === card.id) detailTriggerRef.current = node; }} className="library-word-open" onClick={event => { event.stopPropagation(); openCard(card, event.currentTarget); }}><Trans id="library.card.open-details" message="Open card" /></button>
             </div>

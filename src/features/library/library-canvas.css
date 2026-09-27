@@ -1085,7 +1085,7 @@
   .library-canvas-card-grid { gap: .65rem; }
   .library-word-body h3 { font-size: 1.2rem; }
   .library-word-meta { font-size: .58rem; }
-  .library-word-translation-row > span { display: none; }
+  .library-word-translation-row { align-items: flex-start; flex-direction: column; gap: .2rem; }
 }
 
 @media (max-width: 720px) {
