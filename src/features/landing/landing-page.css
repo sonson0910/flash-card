@@ -9,7 +9,9 @@
 html[data-theme-family="classic"] .landing-canvas { background-image: radial-gradient(circle at 74% 40%, color-mix(in srgb, var(--sf-brand) 9%, transparent), transparent 27%); }
 html[data-theme-family="classic"] .landing-copy h1 { font-size: clamp(4.5rem, 8vw, 7.2rem); line-height: .91; letter-spacing: -.055em; }
 html[data-theme-family="classic"] .landing-copy h1 em, html[data-theme-family="classic"] .landing-copy h1 i { color: var(--sf-brand-text); }
-html[data-theme-family="crystal"] .landing-header { font-family: var(--sf-font-display, Geist, sans-serif); font-style: italic; text-transform: uppercase; letter-spacing: .055em; }
+html[data-theme-family="crystal"] .landing-header { font-family: var(--sf-font-display, Geist, sans-serif); font-style: italic; letter-spacing: .02em; }
+html[data-theme-family="crystal"] .landing-header .brand-action { text-transform: uppercase; letter-spacing: .055em; }
+.landing-header :is(a, button) { white-space: nowrap; }
 .landing-crystal-mark,.landing-crystal-brand { display: none; }
 html[data-theme-family="crystal"] .landing-classic-mark,html[data-theme-family="crystal"] .landing-classic-brand { display: none; }
 html[data-theme-family="crystal"] .landing-crystal-mark { display: block; filter: drop-shadow(0 0 10px rgb(255 42 77 / .7)); }

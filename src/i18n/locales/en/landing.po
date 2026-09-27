@@ -34,33 +34,33 @@ msgid "landing.atmosphere.still-water"
 msgstr "Still Water"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:621
+#: src/features/landing/LandingPage.tsx:625
 msgid "landing.brand.crystal-wordmark"
 msgstr "SON<0>FLASH</0>"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:619
-#: src/features/landing/LandingPage.tsx:1181
+#: src/features/landing/LandingPage.tsx:623
+#: src/features/landing/LandingPage.tsx:1185
 msgid "landing.brand.plain"
 msgstr "SonFlash"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1166
+#: src/features/landing/LandingPage.tsx:1170
 msgid "landing.closing.consent"
 msgstr "SonFlash is for learners aged 18 and over. By signing in, you agree to the <terms>Terms</terms> and have read the <privacy>Privacy Policy</privacy>."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1141
+#: src/features/landing/LandingPage.tsx:1145
 msgid "landing.closing.description"
 msgstr "Start with the cards ready today, then make each new word easier to find again."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1126
+#: src/features/landing/LandingPage.tsx:1130
 msgid "landing.closing.eyebrow"
 msgstr "Your next word is waiting"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1135
+#: src/features/landing/LandingPage.tsx:1139
 msgid "landing.closing.title"
 msgstr "Build a vocabulary you can reach for."
 
@@ -151,12 +151,12 @@ msgid "landing.demo.tier.new"
 msgstr "New"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:954
+#: src/features/landing/LandingPage.tsx:958
 msgid "landing.extension.description"
 msgstr "The SonFlash Chrome extension turns any selected word or passage into a flashcard without leaving the page."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:945
+#: src/features/landing/LandingPage.tsx:949
 msgid "landing.extension.eyebrow"
 msgstr "Save from anywhere"
 
@@ -191,22 +191,22 @@ msgid "landing.extension.feature.save.title"
 msgstr "Right-click to save"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:951
+#: src/features/landing/LandingPage.tsx:955
 msgid "landing.extension.title"
 msgstr "Learn from the page you're already on."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:894
+#: src/features/landing/LandingPage.tsx:898
 msgid "landing.features.description"
 msgstr "SonFlash keeps context, recall, and the next useful review close together."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:879
+#: src/features/landing/LandingPage.tsx:883
 msgid "landing.features.eyebrow"
 msgstr "A calmer learning loop"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:888
+#: src/features/landing/LandingPage.tsx:892
 msgid "landing.features.title"
 msgstr "Keep the words you meet."
 
@@ -251,32 +251,32 @@ msgid "landing.flow.read.title"
 msgstr "Read it clearly"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1200
+#: src/features/landing/LandingPage.tsx:1204
 msgid "landing.footer.copyright"
 msgstr "© {year} SonFlash"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1183
+#: src/features/landing/LandingPage.tsx:1187
 msgid "landing.footer.description"
 msgstr "for intentional vocabulary learning."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1197
+#: src/features/landing/LandingPage.tsx:1201
 msgid "landing.footer.extension"
 msgstr "Extension"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1191
+#: src/features/landing/LandingPage.tsx:1195
 msgid "landing.footer.privacy"
 msgstr "Privacy Policy"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1194
+#: src/features/landing/LandingPage.tsx:1198
 msgid "landing.footer.terms"
 msgstr "Terms"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:796
+#: src/features/landing/LandingPage.tsx:800
 msgid "landing.hero.atmosphere"
 msgstr "Choose an atmosphere"
 
@@ -299,15 +299,15 @@ msgstr "English vocabulary, remembered"
 #. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:314
 #: src/features/landing/LandingPage.tsx:391
-#: src/features/landing/LandingPage.tsx:1161
+#: src/features/landing/LandingPage.tsx:1165
 msgid "landing.hero.sign-in"
 msgstr "Sign in to sync"
 
 #. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:313
 #: src/features/landing/LandingPage.tsx:382
-#: src/features/landing/LandingPage.tsx:688
-#: src/features/landing/LandingPage.tsx:1152
+#: src/features/landing/LandingPage.tsx:692
+#: src/features/landing/LandingPage.tsx:1156
 msgid "landing.hero.start"
 msgstr "Start learning"
 
@@ -323,47 +323,47 @@ msgid "landing.language.label"
 msgstr "Interface language"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1007
+#: src/features/landing/LandingPage.tsx:1011
 msgid "landing.languages.description"
 msgstr "SonFlash currently teaches English vocabulary, with meanings shown in English or Vietnamese. These vocabulary packs are in development and are not yet available to switch to."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:998
+#: src/features/landing/LandingPage.tsx:1002
 msgid "landing.languages.eyebrow"
 msgstr "Where SonFlash is headed"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1022
+#: src/features/landing/LandingPage.tsx:1026
 msgid "landing.languages.pack.chinese"
 msgstr "中文 · Chinese"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1019
+#: src/features/landing/LandingPage.tsx:1023
 msgid "landing.languages.pack.english"
 msgstr "English"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1021
+#: src/features/landing/LandingPage.tsx:1025
 msgid "landing.languages.pack.japanese"
 msgstr "日本語 · Japanese"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1020
+#: src/features/landing/LandingPage.tsx:1024
 msgid "landing.languages.pack.korean"
 msgstr "한국어 · Korean"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1028
+#: src/features/landing/LandingPage.tsx:1032
 msgid "landing.languages.status.available"
 msgstr "Available now"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1029
+#: src/features/landing/LandingPage.tsx:1033
 msgid "landing.languages.status.in-progress"
 msgstr "In progress"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1004
+#: src/features/landing/LandingPage.tsx:1008
 msgid "landing.languages.title"
 msgstr "English today. More languages on the way."
 
@@ -378,108 +378,108 @@ msgid "landing.meta.title"
 msgstr "SonFlash — Remember words. Use them when it matters."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1072
+#: src/features/landing/LandingPage.tsx:1076
 msgid "landing.methods.context.description"
 msgstr "A clear card gives each word room to make sense."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1066
+#: src/features/landing/LandingPage.tsx:1070
 msgid "landing.methods.context.title"
 msgstr "See the meaning in context"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1058
+#: src/features/landing/LandingPage.tsx:1062
 msgid "landing.methods.description"
 msgstr "Your feedback helps plan a useful next review with FSRS scheduling."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1112
+#: src/features/landing/LandingPage.tsx:1116
 msgid "landing.methods.open-library"
 msgstr "Open your library"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1096
+#: src/features/landing/LandingPage.tsx:1100
 msgid "landing.methods.preview.caption"
 msgstr "Built for the words you actually meet."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1102
+#: src/features/landing/LandingPage.tsx:1106
 msgid "landing.methods.preview.quote"
 msgstr "A vocabulary is useful when you can reach for it."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1086
+#: src/features/landing/LandingPage.tsx:1090
 msgid "landing.methods.recall.description"
 msgstr "Four familiar ratings keep the choice quick."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1080
+#: src/features/landing/LandingPage.tsx:1084
 msgid "landing.methods.recall.title"
 msgstr "Judge your recall honestly"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1052
+#: src/features/landing/LandingPage.tsx:1056
 msgid "landing.methods.title"
 msgstr "Review what is ready."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:704
+#: src/features/landing/LandingPage.tsx:708
 msgid "landing.mobile-menu.open"
 msgstr "Open navigation menu"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:724
+#: src/features/landing/LandingPage.tsx:728
 msgid "landing.mobile-nav.label"
 msgstr "Mobile navigation"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:643
-#: src/features/landing/LandingPage.tsx:749
+#: src/features/landing/LandingPage.tsx:647
+#: src/features/landing/LandingPage.tsx:753
 msgid "landing.nav.curriculum"
 msgstr "Curriculum"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:656
-#: src/features/landing/LandingPage.tsx:766
+#: src/features/landing/LandingPage.tsx:660
+#: src/features/landing/LandingPage.tsx:770
 msgid "landing.nav.extension"
 msgstr "Extension"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:636
-#: src/features/landing/LandingPage.tsx:736
+#: src/features/landing/LandingPage.tsx:640
+#: src/features/landing/LandingPage.tsx:740
 msgid "landing.nav.how-it-works"
 msgstr "How it works"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:625
+#: src/features/landing/LandingPage.tsx:629
 msgid "landing.nav.label"
 msgstr "Landing navigation"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:662
-#: src/features/landing/LandingPage.tsx:773
+#: src/features/landing/LandingPage.tsx:666
+#: src/features/landing/LandingPage.tsx:777
 msgid "landing.nav.languages"
 msgstr "Languages"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:668
-#: src/features/landing/LandingPage.tsx:780
+#: src/features/landing/LandingPage.tsx:672
+#: src/features/landing/LandingPage.tsx:784
 msgid "landing.nav.pricing"
 msgstr "Pricing & access"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:680
+#: src/features/landing/LandingPage.tsx:684
 msgid "landing.nav.sign-in"
 msgstr "Sign in"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:650
-#: src/features/landing/LandingPage.tsx:759
+#: src/features/landing/LandingPage.tsx:654
+#: src/features/landing/LandingPage.tsx:763
 msgid "landing.nav.vocabulary"
 msgstr "Vocabulary"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:825
+#: src/features/landing/LandingPage.tsx:829
 msgid "landing.pricing.eyebrow"
 msgstr "Free to start, Pro when you want more"
 
@@ -514,32 +514,32 @@ msgid "landing.pricing.faq.free.question"
 msgstr "Is the free plan really free?"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:858
+#: src/features/landing/LandingPage.tsx:862
 msgid "landing.pricing.faq.title"
 msgstr "Questions"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:837
+#: src/features/landing/LandingPage.tsx:841
 msgid "landing.pricing.free-vs-pro.free"
 msgstr "Free"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:838
+#: src/features/landing/LandingPage.tsx:842
 msgid "landing.pricing.free-vs-pro.pro"
 msgstr "Pro"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:836
+#: src/features/landing/LandingPage.tsx:840
 msgid "landing.pricing.free-vs-pro.title"
 msgstr "Free vs Pro"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:848
+#: src/features/landing/LandingPage.tsx:852
 msgid "landing.pricing.price"
 msgstr "Pro is 79,000 ₫ (about US$7.99)."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:851
+#: src/features/landing/LandingPage.tsx:855
 msgid "landing.pricing.purchase-note"
 msgstr "Registering your interest does not charge you. Purchases are not open yet — we will follow up by email when they are."
 
@@ -564,7 +564,7 @@ msgid "landing.pricing.row.reviews"
 msgstr "Reviews & spaced scheduling"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:831
+#: src/features/landing/LandingPage.tsx:835
 msgid "landing.pricing.title"
 msgstr "Pricing & access"
 
@@ -613,6 +613,6 @@ msgid "landing.ribbon.spaced-review"
 msgstr "Spaced review"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:672
+#: src/features/landing/LandingPage.tsx:676
 msgid "shell.theme.quick-toggle"
 msgstr "Switch light and dark mode"

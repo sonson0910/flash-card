@@ -316,9 +316,9 @@ function CrystalLandingHero({ onEnterApp, onSignIn, user, showLumi }: Pick<Landi
     </div>
     <div className="crystal-card-stage" aria-label={_(msg({ id: 'landing.demo.cards.label', message: 'Sample English vocabulary cards' }))}>
       <div className="crystal-flare" aria-hidden="true" />
-      <article className="crystal-demo-card crystal-demo-left" aria-hidden="true"><img src={animeSpelling} alt="" loading="lazy" decoding="async" /><span><i><Trans id="landing.demo.grade.bud" message="Bud" /></i>{' '}<Trans id="landing.demo.tier.new" message="New" /></span><strong>{crystalDemoWords.spelling.word}</strong><small>{crystalDemoWords.spelling.ipa}</small><b><Trans id="landing.demo.meaning.spelling" message="spelling" /></b></article>
-      <article className="crystal-demo-card crystal-demo-right" aria-hidden="true"><img src={animeImmediate} alt="" loading="lazy" decoding="async" /><span><i><Trans id="landing.demo.grade.bloom" message="Bloom" /></i>{' '}<Trans id="landing.demo.tier.learning" message="Learning" /></span><strong>{crystalDemoWords.immediate.word}</strong><small>{crystalDemoWords.immediate.ipa}</small><b><Trans id="landing.demo.meaning.immediate" message="without delay" /></b></article>
-      <article className="crystal-demo-card crystal-demo-main"><img src={animeInstant} alt="" decoding="async" fetchPriority="high" /><span><i><Trans id="landing.demo.grade.star" message="Star" /></i>{' '}<Trans id="landing.demo.tier.mastered" message="Mastered" /></span><strong>{crystalDemoWords.instant.word}</strong><small>{crystalDemoWords.instant.ipa}</small><b><Trans id="landing.demo.meaning.instant" message="a moment" /></b></article>
+      <article className="crystal-demo-card crystal-demo-left" aria-hidden="true"><img src={animeSpelling} width={1000} height={667} alt="" loading="lazy" decoding="async" /><span><i><Trans id="landing.demo.grade.bud" message="Bud" /></i>{' '}<Trans id="landing.demo.tier.new" message="New" /></span><strong>{crystalDemoWords.spelling.word}</strong><small>{crystalDemoWords.spelling.ipa}</small><b><Trans id="landing.demo.meaning.spelling" message="spelling" /></b></article>
+      <article className="crystal-demo-card crystal-demo-right" aria-hidden="true"><img src={animeImmediate} width={1000} height={667} alt="" loading="lazy" decoding="async" /><span><i><Trans id="landing.demo.grade.bloom" message="Bloom" /></i>{' '}<Trans id="landing.demo.tier.learning" message="Learning" /></span><strong>{crystalDemoWords.immediate.word}</strong><small>{crystalDemoWords.immediate.ipa}</small><b><Trans id="landing.demo.meaning.immediate" message="without delay" /></b></article>
+      <article className="crystal-demo-card crystal-demo-main"><img src={animeInstant} width={1000} height={667} alt="" decoding="async" fetchPriority="high" /><span><i><Trans id="landing.demo.grade.star" message="Star" /></i>{' '}<Trans id="landing.demo.tier.mastered" message="Mastered" /></span><strong>{crystalDemoWords.instant.word}</strong><small>{crystalDemoWords.instant.ipa}</small><b><Trans id="landing.demo.meaning.instant" message="a moment" /></b></article>
       {showLumi && <Lumi pose="hero" eager className="crystal-hero-lumi" />}
     </div>
     <div className="crystal-ribbon" aria-hidden="true"><span><Trans id="landing.ribbon.spaced-review" message="Spaced review" /></span><span><Trans id="landing.ribbon.context-first" message="Context first" /></span><span><Trans id="landing.ribbon.learn-at-your-pace" message="Learn at your pace" /></span><span><Trans id="landing.ribbon.chrome-extension" message="Chrome extension" /></span></div>
@@ -589,6 +589,8 @@ export function LandingPage({
           </div>
           <img
             src={trainWindow}
+            width={2752}
+            height={1536}
             alt=""
             aria-hidden="true"
             loading="lazy"
@@ -609,6 +611,8 @@ export function LandingPage({
               >
                 <img
                   src={sonflashLogo}
+                  width={36}
+                  height={36}
                   alt=""
                   decoding="async"
                   fetchPriority="high"
