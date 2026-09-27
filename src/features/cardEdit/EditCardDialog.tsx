@@ -316,7 +316,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
             <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--sf-border)] px-5 pb-4 pt-4 sm:px-7 sm:pt-5 md:px-[26px]">
               <div className="min-w-0">
                 <p className="font-display text-[11px] font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]">
-                  {context ? <Trans id="library.edit-card.review-kicker" message="Card {current} of {total}" values={context} /> : <Trans id="library.edit-card.kicker" message="Card editor" />}
+                  {context ? <Trans id="library.edit-card.review-kicker" message="Card {current} of {total}" values={{ current: context.current, total: context.total }} /> : <Trans id="library.edit-card.kicker" message="Card editor" />}
                 </p>
                 <Dialog.Title className="mt-1 font-serif text-3xl font-bold tracking-tight text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:font-black [html[data-theme-family=crystal]_&]:italic">
                   <Trans id="library.edit-card.title" message="Edit card" />
