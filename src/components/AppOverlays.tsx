@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AlertTriangle, BarChart3, Check, Clock3, Copy, Link2, Loader2, Share2, ShieldCheck, Trash2, X } from 'lucide-react';
 import type { SharedDeckIncomingPreview, SharedDeckLanguagePair, SharedDeckOutgoingPreview, SharedDeckTruncation } from '../features/sharing/sharedDeckSessionController';
@@ -19,6 +18,11 @@ import './share-dialog.css';
 const StatsCharts = lazy(() => Promise.all([
   import('./stats/StatsCharts'), loadCatalog(getActiveUiLocale(), 'progress'),
 ]).then(([component]) => component));
+
+// The typed confirmation guards the one action that deletes every synced card.
+const LibraryClearDialog = lazy(() => Promise.all([
+  import('../features/library/LibraryDialogOverlays'), loadCatalog(getActiveUiLocale(), 'library'),
+]).then(([module]) => ({ default: module.LibraryClearDialog })));
 
 interface StatsData {
   total: number;
@@ -68,6 +72,7 @@ interface AppOverlaysProps {
   practiceOpenerRef: RefObject<HTMLElement | null>;
   statsOpenerRef: RefObject<HTMLElement | null>;
   clearOpenerRef: RefObject<HTMLElement | null>;
+  onExportLibrary?: () => void;
 }
 
 const overlayClass = 'crystal-starfield fixed inset-0 z-50 bg-[var(--sf-scrim)]';
@@ -131,7 +136,7 @@ export function AppOverlays({
   isPracticeMenuOpen, setIsPracticeMenuOpen, startQuiz,
   startSpelling, startMatch, startShadowing, practiceCards, visibleLibraryCount, generateStory, isStatsOpen, setIsStatsOpen,
   statsData, isDarkMode, showClearConfirm, setShowClearConfirm, clearAll, isLoading,
-  shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef,
+  shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef, onExportLibrary,
 }: AppOverlaysProps) {
   const { _, i18n } = useLingui();
   const [copied, setCopied] = useState(false);
@@ -347,33 +352,20 @@ export function AppOverlays({
         </Dialog.Portal>
       </Dialog.Root>
 
-      <AlertDialog.Root open={showClearConfirm} onOpenChange={setShowClearConfirm}>
-        <AlertDialog.Portal>
-          <AlertDialog.Overlay data-motion-overlay className={overlayClass} />
-          <AlertDialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, clearOpenerRef)}>
-            <GsapEntrance animationKey={showClearConfirm} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-w-md overflow-hidden p-0')}>
-              <div className="flex items-start gap-4 border-b border-[var(--sf-border)] px-5 py-5 sm:px-7">
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-rose-700 text-white shadow-lg shadow-rose-700/25"><AlertTriangle size={22} aria-hidden="true" /></div>
-                <div className="min-w-0">
-                  <p className="premium-kicker text-[11px] uppercase tracking-[0.14em] text-rose-700 dark:text-rose-300"><Trans id="shell.clear.kicker" message="Danger zone" /></p>
-                  <AlertDialog.Title className="mt-1 text-balance text-2xl font-black text-[var(--sf-text)]"><Trans id="shell.clear.title" message="Clear the entire library?" /></AlertDialog.Title>
-                </div>
-              </div>
-              <AlertDialog.Description className="px-5 py-5 text-pretty leading-relaxed text-[var(--sf-text-muted)] sm:px-7"><Trans id="shell.clear.description" message="Every card in the current library will be deleted. This action cannot be undone." /></AlertDialog.Description>
-              <div className="flex flex-col-reverse gap-3 border-t border-[var(--sf-border)] px-5 py-4 sm:flex-row sm:justify-end sm:px-7">
-                <AlertDialog.Cancel className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-2 font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"><Trans id="shell.clear.keep" message="Keep library" /></AlertDialog.Cancel>
-                <AlertDialog.Action
-                  onClick={() => void clearAll()}
-                  disabled={isLoading}
-                  className="min-h-11 rounded-xl bg-rose-700 px-4 py-2 font-semibold text-white transition-colors hover:bg-rose-800 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Trans id="shell.clear.confirm" message="Delete everything" />
-                </AlertDialog.Action>
-              </div>
-            </GsapEntrance>
-          </AlertDialog.Content>
-        </AlertDialog.Portal>
-      </AlertDialog.Root>
+      {showClearConfirm && (
+        <Suspense fallback={null}>
+          <LibraryClearDialog
+            open
+            onOpenChange={setShowClearConfirm}
+            onConfirm={() => { if (!isLoading) void clearAll(); }}
+            status="idle"
+            restoreFocusRef={clearOpenerRef}
+            cardCount={statsData.total > 0 ? statsData.total : undefined}
+            masteredCount={statsData.total > 0 ? statsData.learned : undefined}
+            onExport={onExportLibrary}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

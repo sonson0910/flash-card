@@ -477,6 +477,7 @@ export default function AppRuntime({
             practiceOpenerRef={overlayPracticeOpenerRef}
             statsOpenerRef={statsOpenerRef}
             clearOpenerRef={clearOpenerRef}
+            onExportLibrary={library.actions.exportLibrary}
           />
         </Suspense>
       )}

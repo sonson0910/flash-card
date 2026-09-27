@@ -4,6 +4,7 @@ import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { AlertTriangle, Check, Download, Loader2, Plus, RotateCcw, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import './library-dialog-overlays.css';
 
 export type LibraryDialogPhase = 'idle' | 'working' | 'success' | 'failure';
@@ -226,14 +227,15 @@ export function LibraryClearDialog({
       }}
     >
       <AlertDialog.Portal>
-        <AlertDialog.Overlay className="library-dialog-overlay library-dialog-overlay--danger" />
+        <AlertDialog.Overlay data-motion-overlay className="library-dialog-overlay library-dialog-overlay--danger" />
         <AlertDialog.Content
-          className="library-dialog-frame library-dialog-frame--danger"
+          asChild
           onCloseAutoFocus={event => restoreLibraryDialogFocus(event, restoreFocusRef)}
           onEscapeKeyDown={event => {
             if (isWorking) event.preventDefault();
           }}
         >
+          <GsapEntrance animationKey={open} variant="result" data-motion-dialog="true" className="library-dialog-frame library-dialog-frame--danger">
           <header className="library-dialog-header">
             <div className="library-dialog-heading-with-icon">
               <span className="library-dialog-danger-icon" aria-hidden="true"><AlertTriangle size={22} /></span>
@@ -330,6 +332,7 @@ export function LibraryClearDialog({
               </>
             )}
           </footer>
+          </GsapEntrance>
         </AlertDialog.Content>
       </AlertDialog.Portal>
     </AlertDialog.Root>

@@ -80,7 +80,10 @@ test('clearing the library dismisses an invalidated delete Undo', async ({ page,
   await undo.hover();
   await page.getByRole('button', { name: 'Manage library' }).click();
   await page.getByRole('menuitem', { name: 'Clear the entire library' }).click();
-  await page.getByRole('alertdialog').getByRole('button', { name: 'Delete everything' }).click();
+  const clearDialog = page.getByRole('alertdialog', { name: 'Clear the entire library?' });
+  await expect(clearDialog.getByRole('button', { name: 'Delete everything' })).toBeDisabled();
+  await clearDialog.getByRole('textbox', { name: 'Type DELETE to confirm' }).fill('DELETE');
+  await clearDialog.getByRole('button', { name: 'Delete everything' }).click();
   await expect(undo).toHaveCount(0);
   await expect(flashcard).toHaveCount(0);
   await expect.poll(async () => {
