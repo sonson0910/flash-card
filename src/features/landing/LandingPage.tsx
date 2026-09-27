@@ -4,17 +4,13 @@ import { Trans, useLingui } from "@lingui/react";
 import {
   ArrowRight,
   Bell,
-  BookOpen,
   Brain,
   Globe2,
-  Headphones,
   Languages as LanguagesIcon,
-  Layers,
   Menu,
   Moon,
   MousePointerClick,
   Puzzle,
-  Sparkles,
   Sun,
   ToggleLeft,
   X,
@@ -98,7 +94,6 @@ const videos = [
 const learningFlow = [
   {
     id: "capture",
-    icon: Sparkles,
     title: <Trans id="landing.flow.capture.title" message="Keep the context" />,
     description: (
       <Trans
@@ -109,7 +104,6 @@ const learningFlow = [
   },
   {
     id: "read",
-    icon: BookOpen,
     title: <Trans id="landing.flow.read.title" message="Read it clearly" />,
     description: (
       <Trans
@@ -120,28 +114,11 @@ const learningFlow = [
   },
   {
     id: "practice",
-    icon: Headphones,
     title: <Trans id="landing.flow.practice.title" message="Practise recall" />,
     description: (
       <Trans
         id="landing.flow.practice.description"
         message="Review, listen, spell, or speak when that is the useful next step."
-      />
-    ),
-  },
-  {
-    id: "library",
-    icon: Layers,
-    title: (
-      <Trans
-        id="landing.flow.library.title"
-        message="Return when it is ready"
-      />
-    ),
-    description: (
-      <Trans
-        id="landing.flow.library.description"
-        message="Your cards and scheduled reviews stay together in one personal library."
       />
     ),
   },
@@ -436,7 +413,16 @@ function ClassicLandingHero({
               style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
               className="crystal-chamfer relative overflow-hidden rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-card-bg)] p-3 shadow-[0_28px_70px_-35px_var(--sf-shadow)]"
             >
-              <div className="rounded-[1.45rem] bg-[var(--sf-surface-raised)] px-6 py-9 sm:px-8">
+              <div className="rounded-[1.45rem] bg-[var(--sf-surface-raised)] px-6 py-7 sm:px-8">
+                <img
+                  src={animeImmediate}
+                  width={1000}
+                  height={667}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="mb-5 h-28 w-full rounded-2xl object-cover"
+                />
                 <p className="text-xs font-black uppercase tracking-[.16em] text-[var(--sf-text-muted)]">
                   <Trans id="landing.demo.part-of-speech" message="Noun" />
                 </p>
@@ -464,7 +450,7 @@ function ClassicLandingHero({
               }}
               className="crystal-chamfer overflow-hidden rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-card-bg)] p-3 shadow-[0_28px_70px_-35px_var(--sf-shadow)]"
             >
-              <div className="flex h-full flex-col justify-center rounded-[1.45rem] bg-[var(--sf-surface-raised)] px-6 py-9 sm:px-8">
+              <div className="flex h-full flex-col justify-center rounded-[1.45rem] bg-[var(--sf-surface-raised)] px-6 py-7 sm:px-8">
                 <p className="font-bold">
                   <Trans
                     id="landing.demo.meaning"
@@ -821,63 +807,23 @@ export function LandingPage({
         </section>
         <section
           id="how-it-works"
-          aria-labelledby="features-heading"
-          className="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-12"
+          className="mx-auto max-w-7xl px-5 pb-8 sm:px-8 lg:px-12"
+          aria-labelledby="classic-features-heading"
         >
-          <div className="grid gap-12 lg:grid-cols-[minmax(15rem,.7fr)_minmax(0,1.3fr)] lg:gap-24">
-            <header>
-              <p className="text-sm font-bold text-[var(--sf-brand-text)]">
-                <Trans
-                  id="landing.features.eyebrow"
-                  message="A calmer learning loop"
-                />
-              </p>
-              <h2
-                id="features-heading"
-                className="mt-4 max-w-md text-balance text-4xl font-black tracking-tight sm:text-5xl"
-              >
-                <Trans
-                  id="landing.features.title"
-                  message="Keep the words you meet."
-                />
-              </h2>
-              <p className="mt-5 max-w-md leading-7 text-[var(--sf-text-muted)]">
-                <Trans
-                  id="landing.features.description"
-                  message="SonFlash keeps context, recall, and the next useful review close together."
-                />
-              </p>
-            </header>
-            <ol className="border-t border-[var(--sf-border)]">
-              {learningFlow.map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <li
-                    key={item.id}
-                    className="grid gap-4 border-b border-[var(--sf-border)] py-7 sm:grid-cols-[3rem_minmax(0,1fr)]"
-                  >
-                    <div
-                      className="flex size-11 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--sf-brand)_12%,transparent)] text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
-                      aria-hidden="true"
-                    >
-                      <Icon size={19} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-[var(--sf-brand-text)]">
-                        0{index + 1}
-                      </p>
-                      <h3 className="mt-2 text-2xl font-black tracking-tight">
-                        {item.title}
-                      </h3>
-                      <p className="mt-2 max-w-2xl leading-7 text-[var(--sf-text-muted)]">
-                        {item.description}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
+          <h2 id="classic-features-heading" className="sr-only">
+            <Trans id="landing.features.title" message="Keep the words you meet." />
+          </h2>
+          <ol className="grid gap-5 border-t border-[var(--sf-border)] pt-6 sm:grid-cols-3">
+            {learningFlow.map((item, index) => (
+              <li key={item.id} className="flex gap-4">
+                <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-xl text-[var(--sf-brand-text)]">{index + 1}</span>
+                <div>
+                  <h3 className="text-xl font-semibold">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]">{item.description}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </section>
         <section
           id="extension"

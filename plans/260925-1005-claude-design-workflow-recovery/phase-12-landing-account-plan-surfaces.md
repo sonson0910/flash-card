@@ -111,6 +111,12 @@ Không wiring vào pipeline deploy staging (`staging:deploy:hosting` trong `pack
 - Classic đặt lại phần `how-it-works` ngay sau hero, trước pricing, theo thứ tự hero → ba lợi ích của `LandingScreen-*`; pricing thật giữ nguyên sau các phần sản phẩm. Không thêm các số người dùng, ratings hoặc testimonial dựng trong `LandingSales-*`.
 - Đã xem ảnh Canvas `LandingScreen-{dark,light}`/`LandingSales-dark` và PNG Playwright thực tế 1440×900/390×844. Menu mobile có SVG 19×19 ở cả Classic/Crystal; header Crystal 1440 không tràn. Cập nhật đúng 16 baseline landing EN/VI do cả hai locale đổi thứ tự section; EN đồng thời bỏ copy cũ “Pilot access”. `LandingAssets.test.ts` 10/10; Chromium `landing-visual`, `landing-performance`, `landing-locales` 27/27 pass sau khi cập nhật. Dòng Canvas toàn phase vẫn mở vì các state account/pilot khác chưa được đối chiếu đủ.
 
+## Cập nhật B2 — verify lại (2026-09-28)
+
+- Đã xem PNG actual cho `classic dark vi` ở 390×844 rồi mới thay baseline còn cũ; trang có menu SVG nhìn thấy, không overflow control, và thứ tự hero → ba lợi ích → product sections → pricing đúng hướng `LandingScreen`/`LandingSales`. Sau đó `e2e/landing-visual.spec.ts` Chromium pass **20/20** không đổi baseline thêm.
+- `e2e/landing-locales.spec.ts` pass **4/4**. Hai case đầu của `landing-performance` pass; case runtime retry còn đỏ lặp lại sau khi Docker journal về 0: quan sát `AppRuntimeInitial.virtual` hai lần rồi `AppRuntimeRetry.virtual`, trong khi assertion hiện yêu cầu đúng hai request. Đây là runtime/test shared ở `src/App.tsx` / `e2e/landing-performance.spec.ts`, không sửa trong lane Landing và không che assertion.
+- `LandingPage.tsx` chỉ đổi markup/asset layout của landing và các kích thước nội tại ảnh; không thêm Firestore read, write hay subscription. `train-window.webp` tiếp tục lazy, ưu tiên thấp vì là texture opacity 4% và H1 vẫn là LCP.
+
 
 
 landing locale/visual/performance tests, check-locale-pages.mjs; pilot/account/report/quota component tests; E2E sign-in return/export/delete confirmation với fixtures; gates chung.
