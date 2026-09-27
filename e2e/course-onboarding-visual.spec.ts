@@ -100,3 +100,32 @@ for (const theme of themes) for (const viewport of viewports) {
     await expectScreen(page, testInfo, `course-settings-${theme.family}-${theme.mode}-${viewport.name}`);
   });
 }
+
+test('mobile onboarding keeps selected options and actions clear through the study setup', async ({ page, signIn, blockExternalNetwork }, testInfo) => {
+  await prepareTheme(page, themes[0], viewports[1]);
+  await blockExternalNetwork(page);
+  await signIn(page, '/?view=today&locale=en');
+  const onboarding = page.getByRole('dialog', { name: 'Set up your course' });
+  await onboarding.getByRole('button', { name: 'Continue' }).click();
+
+  const korean = onboarding.getByRole('button', { name: /Korean/ });
+  await korean.click();
+  await expect(korean).toHaveAttribute('aria-pressed', 'true');
+  await expectScreen(page, testInfo, 'course-onboarding-target-classic-light-mobile');
+  await onboarding.getByRole('button', { name: 'Continue' }).click();
+
+  const topik = onboarding.getByRole('button', { name: /^TOPIK Target level/ });
+  await topik.click();
+  await expect(topik).toHaveAttribute('aria-pressed', 'true');
+  await expectScreen(page, testInfo, 'course-onboarding-goal-classic-light-mobile');
+  await onboarding.getByRole('button', { name: 'Continue' }).click();
+
+  const pace = onboarding.getByRole('button', { name: /10 cards \/ day/ });
+  await expect(pace).toHaveAttribute('aria-pressed', 'true');
+  await expectScreen(page, testInfo, 'course-onboarding-pace-classic-light-mobile');
+  for (const name of ['Back', 'Continue']) {
+    const button = onboarding.getByRole('button', { name });
+    const box = await button.boundingBox();
+    expect(box?.width, `${name} spans the mobile content width`).toBeGreaterThan(300);
+  }
+});

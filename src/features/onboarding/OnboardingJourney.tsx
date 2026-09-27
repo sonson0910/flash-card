@@ -1,5 +1,6 @@
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
+import { Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSetUiLocale, useUiLocale } from '../../i18n/I18nProvider';
 import { useCourseSession } from '../courses/CourseGate';
@@ -16,7 +17,8 @@ import {
 
 const primaryButtonClass = 'min-h-11 rounded-xl bg-[var(--sf-brand)] px-4 text-sm font-bold text-[var(--sf-on-brand)] disabled:opacity-60';
 const secondaryButtonClass = 'min-h-11 rounded-xl border border-[var(--sf-border)] px-4 text-sm font-bold text-[var(--sf-text)]';
-const optionButtonClass = (active: boolean) => `flex min-h-11 w-full flex-col items-start justify-center rounded-xl border px-4 text-left text-sm font-semibold transition-colors ${active ? 'border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)]' : 'border-[var(--sf-border)] text-[var(--sf-text)] hover:bg-[var(--sf-surface-muted)]'}`;
+const optionButtonClass = (active: boolean) => `relative flex min-h-20 w-full flex-col items-start justify-center rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${active ? 'border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)]' : 'border-[var(--sf-border)] text-[var(--sf-text)] hover:bg-[var(--sf-surface-muted)]'}`;
+const footerClass = 'mt-10 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between';
 
 export interface OnboardingJourneyProps {
   readonly ownerId: string;
@@ -125,18 +127,20 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
         <div className="max-w-3xl"><h2 className="font-serif-hero text-4xl font-bold tracking-tight sm:text-5xl"><Trans id="onboarding.language.title" message="Choose your language" /></h2>
         <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--sf-text-muted)]"><Trans id="onboarding.language.subtitle" message="This sets the app's interface and the language your explanations will be written in." /></p></div>
         <div className="mt-8 grid max-w-4xl gap-3 sm:grid-cols-2">
-          {(['vi', 'en'] as const).map(locale => <button key={locale} type="button" className={optionButtonClass(nativeLanguage === locale)}
+          {(['vi', 'en'] as const).map(locale => <button key={locale} type="button" aria-pressed={nativeLanguage === locale} className={optionButtonClass(nativeLanguage === locale)}
             onClick={() => { setNativeLanguage(locale); void setUiLocale(locale); }}>
-            {locale === 'vi' ? 'Tiếng Việt' : 'English'}
+            <span lang={locale} className="font-serif-hero text-lg font-bold">{locale === 'vi' ? 'Tiếng Việt' : 'English'}</span>
+            <span aria-hidden="true" className="mt-1 text-xs font-bold uppercase tracking-[0.14em] opacity-70">{locale}</span>
+            {nativeLanguage === locale && <Check aria-hidden="true" size={18} className="absolute right-3 top-3" />}
           </button>)}
         </div>
-        <div className="mt-10 flex justify-end"><button type="button" className={primaryButtonClass} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button></div>
+        <div className="mt-10 flex justify-end"><button type="button" className={`${primaryButtonClass} w-full sm:w-auto`} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button></div>
       </>}
 
       {step === 'target' && <>
         <h2 className="font-serif-hero text-4xl font-bold tracking-tight sm:text-5xl"><Trans id="onboarding.target.title" message="What are you learning?" /></h2>
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          {targetOptions.map(language => <button key={language} type="button" className={optionButtonClass(targetLanguage === language)} onClick={() => {
+          {targetOptions.map(language => <button key={language} type="button" aria-pressed={targetLanguage === language} className={optionButtonClass(targetLanguage === language)} onClick={() => {
             if (language !== targetLanguage) {
               setGoalKind(null);
               setGoalLevel('');
@@ -145,12 +149,13 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
             setTargetLanguage(language);
             if (language !== 'zh') setZhScript(null);
           }}>
-            <span>{TARGET_LANGUAGE_FLAG[language]} {_(TARGET_LANGUAGE_LABEL[language])}</span>
+            <span className="text-lg font-bold">{TARGET_LANGUAGE_FLAG[language]} {_(TARGET_LANGUAGE_LABEL[language])}</span>
+            {targetLanguage === language && <Check aria-hidden="true" size={18} className="absolute right-3 top-3" />}
           </button>)}
         </div>
-        <div className="mt-10 flex justify-between gap-3">
-          <button type="button" className={secondaryButtonClass} onClick={goBack}><Trans id="onboarding.back" message="Back" /></button>
-          <button type="button" className={primaryButtonClass} disabled={!targetLanguage} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button>
+        <div className={footerClass}>
+          <button type="button" className={`${secondaryButtonClass} w-full sm:w-auto`} onClick={goBack}><Trans id="onboarding.back" message="Back" /></button>
+          <button type="button" className={`${primaryButtonClass} w-full sm:w-auto`} disabled={!targetLanguage} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button>
         </div>
       </>}
 
@@ -158,8 +163,8 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
         <h2 className="font-serif-hero text-4xl font-bold tracking-tight sm:text-5xl"><Trans id="onboarding.goal.title" message="Have an exam or goal in mind?" /></h2>
         <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--sf-text-muted)]"><Trans id="onboarding.goal.subtitle" message="Optional. You can add or change this later in the course switcher." /></p>
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          <button type="button" className={optionButtonClass(goalKind === null)} onClick={() => setGoalKind(null)}><Trans id="onboarding.goal.none" message="No specific goal yet" /></button>
-          {goalOptions.map(option => <button key={option.kind} type="button" className={optionButtonClass(goalKind === option.kind)} onClick={() => setGoalKind(option.kind)}>{_(option.label)}</button>)}
+          <button type="button" aria-pressed={goalKind === null} className={optionButtonClass(goalKind === null)} onClick={() => setGoalKind(null)}><span className="text-base font-bold"><Trans id="onboarding.goal.none" message="No specific goal yet" /></span>{goalKind === null && <Check aria-hidden="true" size={18} className="absolute right-3 top-3" />}</button>
+          {goalOptions.map(option => <button key={option.kind} type="button" aria-pressed={goalKind === option.kind} className={optionButtonClass(goalKind === option.kind)} onClick={() => setGoalKind(option.kind)}><span className="text-base font-bold">{_(option.label)}</span><span className="mt-1 text-xs font-medium opacity-75">{_(option.levelHint)}</span>{goalKind === option.kind && <Check aria-hidden="true" size={18} className="absolute right-3 top-3" />}</button>)}
         </div>
         {selectedGoal && <div className="mt-4 grid max-w-2xl gap-3 sm:grid-cols-2">
           <label className="text-sm font-bold text-[var(--sf-text)]"><Trans id="course.goal.add.level-label" message="Level or target (optional)" />
@@ -175,22 +180,24 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
             <option value="hant"><Trans id="settings.course.script.traditional" message="Traditional" /></option>
           </select>
         </label>}
-        <div className="mt-10 flex justify-between gap-3">
-          <button type="button" className={secondaryButtonClass} onClick={goBack}><Trans id="onboarding.back" message="Back" /></button>
-          <button type="button" className={primaryButtonClass} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button>
+        <div className={footerClass}>
+          <button type="button" className={`${secondaryButtonClass} w-full sm:w-auto`} onClick={goBack}><Trans id="onboarding.back" message="Back" /></button>
+          <button type="button" className={`${primaryButtonClass} w-full sm:w-auto`} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button>
         </div>
       </>}
 
       {step === 'pace' && <>
         <h2 className="font-serif-hero text-4xl font-bold tracking-tight sm:text-5xl"><Trans id="onboarding.pace.title" message="How many cards a day?" /></h2>
         <div className="mt-8 grid gap-3 sm:grid-cols-3">
-          {DAILY_PACE_OPTIONS.map(option => <button key={option} type="button" className={optionButtonClass(pace === option)} onClick={() => setPace(option)}>
-            <Trans id="onboarding.pace.option" message="{count} cards / day" values={{ count: option }} />
+          {DAILY_PACE_OPTIONS.map(option => <button key={option} type="button" aria-pressed={pace === option} className={optionButtonClass(pace === option)} onClick={() => setPace(option)}>
+            <span className="font-serif-hero text-2xl font-bold">{option}</span>
+            <span className="mt-1 text-xs font-medium opacity-75"><Trans id="onboarding.pace.option" message="{count} cards / day" values={{ count: option }} /></span>
+            {pace === option && <Check aria-hidden="true" size={18} className="absolute right-3 top-3" />}
           </button>)}
         </div>
-        <div className="mt-10 flex justify-between gap-3">
-          <button type="button" className={secondaryButtonClass} onClick={goBack}><Trans id="onboarding.back" message="Back" /></button>
-          <button type="button" className={primaryButtonClass} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button>
+        <div className={footerClass}>
+          <button type="button" className={`${secondaryButtonClass} w-full sm:w-auto`} onClick={goBack}><Trans id="onboarding.back" message="Back" /></button>
+          <button type="button" className={`${primaryButtonClass} w-full sm:w-auto`} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button>
         </div>
       </>}
 
@@ -198,8 +205,8 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
         <h2 className="font-serif-hero text-4xl font-bold tracking-tight sm:text-5xl"><Trans id="onboarding.aha.title" message="Let's add your first cards" /></h2>
         {ahaOutcome === null && <>
           <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--sf-text-muted)]"><Trans id="onboarding.aha.subtitle" message="Five common words to get you started." /></p>
-          <div className="mt-8 flex flex-wrap gap-3"><button type="button" className={primaryButtonClass} onClick={() => void startAha()}><Trans id="onboarding.aha.create" message="Add 5 starter cards" /></button>
-          <button type="button" className={secondaryButtonClass} onClick={goNext}><Trans id="onboarding.aha.skip" message="Skip for now" /></button></div>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row"><button type="button" className={`${primaryButtonClass} w-full sm:w-auto`} onClick={() => void startAha()}><Trans id="onboarding.aha.create" message="Add 5 starter cards" /></button>
+          <button type="button" className={`${secondaryButtonClass} w-full sm:w-auto`} onClick={goNext}><Trans id="onboarding.aha.skip" message="Skip for now" /></button></div>
         </>}
         {ahaOutcome === 'pending' && <p className="mt-8 text-base text-[var(--sf-text-muted)]"><Trans id="onboarding.aha.pending" message="Adding your cards…" /></p>}
         {ahaOutcome === 'error' && <>
@@ -219,8 +226,8 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
         <h2 className="font-serif-hero text-4xl font-bold tracking-tight sm:text-5xl"><Trans id="onboarding.reminder.title" message="Daily reminders" /></h2>
         <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--sf-text-muted)]"><Trans id="onboarding.reminder.not-ready" message="Reminders aren't turned on yet. When they are, you'll be able to choose the days and time here and in Settings." /></p>
         {error && <p className="mt-6 text-sm font-semibold text-[var(--sf-danger)]">{error}</p>}
-        <div className="mt-10 flex justify-between gap-3"><button type="button" className={secondaryButtonClass} onClick={goBack}><Trans id="onboarding.back" message="Back" /></button>
-        <button type="button" className={primaryButtonClass} disabled={model.pending} onClick={() => void finish()}><Trans id="onboarding.finish" message="Start learning" /></button></div>
+        <div className={footerClass}><button type="button" className={`${secondaryButtonClass} w-full sm:w-auto`} onClick={goBack}><Trans id="onboarding.back" message="Back" /></button>
+        <button type="button" className={`${primaryButtonClass} w-full sm:w-auto`} disabled={model.pending} onClick={() => void finish()}><Trans id="onboarding.finish" message="Start learning" /></button></div>
       </>}
       </main>
     </div>

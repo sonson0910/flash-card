@@ -51,6 +51,8 @@ describe('OnboardingGate', () => {
     expect(html).toContain('Tiếng Việt');
     expect(html).toContain('English');
     expect(html).toContain('Continue');
+    expect(html).toContain('aria-pressed="true"');
+    expect(html).toContain('min-h-20');
   });
 
   it('keeps selected goal details and Chinese script in the course creation input', () => {
