@@ -295,3 +295,12 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
 - Chi phí Firebase: **0 document reads, 0 document writes, 0 subscriptions,
   0 queries mới**. Card có field sẽ tăng bytes và index storage; không tạo
   lookup nguồn qua Firestore hoặc gọi AI thêm. Chỉ code/test local, không deploy.
+
+## 2026-09-28 — Owner giữ paywall purchase-interest
+
+- Phase 12 giữ `UpgradeDialog` hiện tại là luồng ghi nhận quan tâm mua, không
+  biến thành trial, checkout, restore purchase hoặc hứa hẹn giá/quyền lợi chưa
+  có trong hợp đồng. Ghi rõ visual drift so với `DlgPaywall`, `AnimePaywall`
+  và `MobilePaywall`; không đánh dấu Canvas MATCH chỉ vì snapshot app pass.
+- Quyết định này không thêm Firestore read/write/subscription. Phase 15 vẫn
+  khóa theo quyết định kinh doanh và không được triển khai trong lượt này.
