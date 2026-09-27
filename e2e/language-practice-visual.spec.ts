@@ -83,8 +83,10 @@ for (const theme of themes) for (const viewport of viewports) for (const languag
     if (language === 'ko') await enterKoreanCorrection(surface);
     if (language === 'ja') {
       await expect(surface.locator('.language-practice-drill__ruby')).toHaveCount(0);
+      await expect(surface.locator('.japanese-pitch-contour')).toHaveCount(0);
       await surface.getByRole('button', { name: 'Hint' }).click();
       await expect(surface.locator('.language-practice-drill__ruby')).toBeVisible();
+      await expect(surface.locator('.japanese-pitch-contour')).toBeVisible();
     }
     await expectAccessibleAndContained(page, name);
     await expect(surface).toHaveScreenshot(`${name}.png`, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });

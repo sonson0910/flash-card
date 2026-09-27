@@ -29,6 +29,8 @@ import {
 import { LegacyLibraryMigrationFenceError } from '../src/legacyLibraryMigrationOwnerScope.js';
 import { AiQuotaError } from '../src/aiQuota.js';
 import { PILOT_CONFIG_DEFAULTS } from '../src/pilotConfig.js';
+import { resolveJapanesePitchAccent } from '../src/japanesePitch.js';
+import { resolveStaticJapanesePitchAccent } from '../../src/features/languagePacks/japanesePitch';
 
 const snapshot = (exists: boolean, data?: DocumentData): DocumentSnapshot => ({
   exists,
@@ -906,6 +908,36 @@ describe('card persistence', () => {
       .toMatchObject({ masteredAt: '2020-01-01T00:00:00.000Z' });
   });
 
+  it('derives Japanese pitch only from the pinned source and rejects forged metadata', () => {
+    const japanese = { ...card, word: '日本', normalizedWord: '日本', language: 'ja', phonetic: 'にっぽん' };
+    const created = canonicalCard(japanese);
+    expect(created.japanesePitchAccent).toMatchObject({
+      readingKana: 'にっぽん', moraCount: 4, downstep: 3,
+      source: { row: '503828|日本|ニッポン|3|*|*' },
+    });
+    expect(canonicalCard(japanese, { deriveJapanesePitch: false })).not.toHaveProperty('japanesePitchAccent');
+    expect(() => canonicalCard({
+      ...japanese,
+      japanesePitchAccent: { ...(created.japanesePitchAccent as object), downstep: 0 },
+    })).toThrow(/pitch metadata/i);
+    expect(canonicalCard({
+      ...japanese,
+      phonetic: 'にほん',
+      japanesePitchAccent: created.japanesePitchAccent,
+    }, { deriveJapanesePitch: false })).not.toHaveProperty('japanesePitchAccent');
+    expect(canonicalCard({ ...japanese, word: '学校', normalizedWord: '学校' })).not.toHaveProperty('japanesePitchAccent');
+  });
+
+  it('keeps server pitch provenance equal to the reading UI subset', () => {
+    for (const [word, phonetic] of [
+      ['解析', 'かいせき'], ['空港', 'くーこー'], ['形態', 'けーたい'],
+      ['国際', 'こくさい'], ['日本', 'にっぽん'], ['面白い', 'おもしろい'],
+    ]) {
+      expect(resolveJapanesePitchAccent(word, phonetic, 'ja'))
+        .toEqual(resolveStaticJapanesePitchAccent({ word, phonetic }));
+    }
+  });
+
   it('strips credentials, query and fragment from a captured source url and bounds its other fields', () => {
     const result = canonicalCard({
       ...card,
@@ -1121,6 +1153,46 @@ describe('renameCardHeadwordForOwner', () => {
     expect(result.card).toMatchObject({ word: 'HELLO', normalizedWord: 'hello', revision: 6 });
     expect(harness.writes).toHaveLength(1);
     expect(harness.writes[0]).toMatchObject({ method: 'set', path: 'users/owner/cards/word-hello' });
+  });
+
+  it('removes a pitch claim when a headword correction no longer matches its source', async () => {
+    const japanese = canonicalCard({
+      ...card, word: '日本', normalizedWord: '日本', language: 'ja', phonetic: 'にっぽん',
+    });
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, {
+        ...japanese, id: 'word-hello', schemaVersion: 2, revision: 5, libraryEpoch: 0,
+      })],
+    ]));
+
+    const result = await renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: '学校', baseRevision: 5, libraryEpoch: 0,
+    });
+
+    expect(result.card).not.toHaveProperty('japanesePitchAccent');
+    expect(harness.writes.find(write => write.path === 'users/owner/cards/word-hello')?.data)
+      .not.toHaveProperty('japanesePitchAccent');
+  });
+
+  it('adds verified pitch when a headword correction matches the stored kana', async () => {
+    const japanese = canonicalCard({
+      ...card, word: '学校', normalizedWord: '学校', language: 'ja', phonetic: 'にっぽん',
+    });
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, {
+        ...japanese, id: 'word-hello', schemaVersion: 2, revision: 5, libraryEpoch: 0,
+      })],
+    ]));
+
+    const result = await renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: '日本', baseRevision: 5, libraryEpoch: 0,
+    });
+
+    expect(result.card.japanesePitchAccent).toMatchObject({ readingKana: 'にっぽん', downstep: 3 });
+    expect(harness.writes.find(write => write.path === 'users/owner/cards/word-hello')?.data)
+      .toMatchObject({ japanesePitchAccent: result.card.japanesePitchAccent });
   });
 
   it('rejects the rename as a duplicate when the new word is already reserved by a different card', async () => {

@@ -4,6 +4,7 @@ import { CheckCircle2, ChevronRight, Gauge, Volume2, X, XCircle } from 'lucide-r
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { playWordAudio } from '../../lib/audio';
 import type { CardData } from '../../types/card';
+import { JapanesePitchContour } from '../../components/flashcard/ReadingToggle';
 import { loadLanguagePack } from './registry';
 import {
   createLanguagePracticeDrill,
@@ -177,10 +178,10 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
           <div><p className="language-practice-drill__instruction">{instruction}</p><p className="language-practice-drill__prompt" lang={card.translationLanguage || 'vi'}>{model.prompt}</p></div>
           <button type="button" className="language-practice-drill__speed" onClick={() => setSlowAudio(value => !value)} aria-pressed={slowAudio} title={i18n._(msg({ id: 'languagePractice.action.slow', message: 'Toggle slow pronunciation' }))}><Gauge size={14} aria-hidden="true" />{slowAudio ? '0.75×' : '1×'}</button>
         </div>
-        {model.kind === 'kana-reading' && reading?.readingText && revealReading ? <p className="language-practice-drill__ruby" lang="ja"><ruby>{card.word}<rt>{reading.readingText}</rt></ruby></p> : showHint && reading?.readingText && (
-          <p className="language-practice-drill__reading" lang={reading.readingLang}>
-            {reading.readingText}
-          </p>
+        {model.kind === 'kana-reading' && reading?.readingText && revealReading ? <div className="language-practice-drill__japanese-reading" lang="ja"><p className="language-practice-drill__ruby"><ruby>{card.word}<rt>{reading.readingText}</rt></ruby></p>{reading.japanesePitchAccent && <JapanesePitchContour accent={reading.japanesePitchAccent} />}</div> : showHint && reading?.readingText && (
+          <div className="language-practice-drill__reading" lang={reading.readingLang}>
+            <span>{reading.readingText}</span>{reading.japanesePitchAccent && <JapanesePitchContour accent={reading.japanesePitchAccent} />}
+          </div>
         )}
         <form className="language-practice-drill__form" onSubmit={submit}>
           {surfaceState === 'loading' ? <p role="status" className="language-practice-drill__status"><Trans id="languagePractice.loading" message="Loading this language exercise…" /></p> : surfaceState === 'error' ? <p role="alert" className="language-practice-drill__status"><Trans id="languagePractice.loadError" message="This language exercise could not load. Please go back and try again." /></p> : surfaceState === 'missing-tone-data' ? <p role="alert" className="language-practice-drill__status"><Trans id="languagePractice.zh.missingTones" message="This card needs verified pinyin tone data before it can be practised." /></p> : hasToneExercise ? (

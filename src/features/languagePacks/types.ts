@@ -1,4 +1,5 @@
 import type { SpeechMatchResult } from '../../lib/speechMatch';
+import type { JapanesePitchAccent } from './japanesePitch';
 import type { ScriptFamily } from './scriptDetection';
 
 /** Wave-1 target-language packs. Additional waves extend this union additively. */
@@ -27,10 +28,16 @@ export interface HeadwordReadingPlan {
   readonly kind: 'romanization' | 'furigana' | 'pinyin';
   /** Populated only for the pinyin pack when tone diacritics are present. */
   readonly toneSyllables?: readonly PinyinToneSyllable[];
+  /** Populated only for verified Japanese UniDic pitch metadata. */
+  readonly japanesePitchAccent?: JapanesePitchAccent;
 }
 
 export interface LanguagePackRendering {
-  buildReadingPlan(card: { readonly word: string; readonly phonetic?: string | null }): HeadwordReadingPlan;
+  buildReadingPlan(card: {
+    readonly word: string;
+    readonly phonetic?: string | null;
+    readonly japanesePitchAccent?: JapanesePitchAccent;
+  }): HeadwordReadingPlan;
 }
 
 export interface LanguagePackNormalization {

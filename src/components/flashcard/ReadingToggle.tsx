@@ -4,11 +4,43 @@ import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { loadLanguagePack, resolveLanguagePackId } from '../../features/languagePacks/registry';
 import type { HeadwordReadingPlan } from '../../features/languagePacks/types';
+import type { JapanesePitchAccent } from '../../features/languagePacks/japanesePitch';
 import type { CardData } from '../../types/card';
 
 interface ReadingToggleProps {
   card: CardData;
   onDarkSurface?: boolean;
+}
+
+export function JapanesePitchContour({ accent, className = '' }: {
+  readonly accent: JapanesePitchAccent;
+  readonly className?: string;
+}) {
+  const { _ } = useLingui();
+  const levels = Array.from({ length: accent.moraCount }, (_, index) => {
+    if (accent.downstep === 0) return index === 0 ? 0 : 1;
+    if (accent.downstep === 1) return index === 0 ? 1 : 0;
+    return index > 0 && index < accent.downstep ? 1 : 0;
+  });
+  const points = levels.map((level, index) => `${12 + index * 20},${level ? 8 : 24}`).join(' ');
+
+  return (
+    <svg className={`japanese-pitch-contour ${className}`} viewBox={`0 0 ${Math.max(24, accent.moraCount * 20 + 4)} 32`} role="img" aria-label={_(msg({ id: 'flashcard.reading.verified-pitch', message: 'Verified Japanese pitch contour' }))}>
+      <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+      {levels.map((level, index) => <circle key={index} cx={12 + index * 20} cy={level ? 8 : 24} r="2.75" fill="currentColor" />)}
+    </svg>
+  );
+}
+
+export function ReadingValue({ plan }: { readonly plan: HeadwordReadingPlan }) {
+  if (plan.japanesePitchAccent) return <><span>{plan.readingText}</span><JapanesePitchContour accent={plan.japanesePitchAccent} className="mb-1 h-7 w-auto" /></>;
+  if (plan.toneSyllables?.length) return plan.toneSyllables.map((syllable, index) => (
+    <span key={`${syllable.text}-${index}`} className="inline-flex items-baseline">
+      {syllable.text}
+      <sup className="ml-0.5 text-[10px] font-black opacity-70">{syllable.tone}</sup>
+    </span>
+  ));
+  return <span>{plan.readingText}</span>;
 }
 
 /**
@@ -36,7 +68,7 @@ export function ReadingToggle({ card, onDarkSurface = false }: ReadingToggleProp
     loadLanguagePack(packId)
       .then(pack => {
         if (cancelled) return;
-        setPlan(pack.rendering.buildReadingPlan({ word: card.word, phonetic: card.phonetic }));
+        setPlan(pack.rendering.buildReadingPlan(card));
       })
       .catch(() => {
         if (!cancelled) setPlan(null);
@@ -44,7 +76,7 @@ export function ReadingToggle({ card, onDarkSurface = false }: ReadingToggleProp
     return () => {
       cancelled = true;
     };
-  }, [packId, card.word, card.phonetic]);
+  }, [packId, card.word, card.phonetic, card.japanesePitchAccent]);
 
   if (packId === 'en' || !plan?.readingText) return null;
 
@@ -80,14 +112,7 @@ export function ReadingToggle({ card, onDarkSurface = false }: ReadingToggleProp
           lang={plan.readingLang}
           className={`mt-1.5 flex flex-wrap items-baseline gap-1.5 text-sm font-semibold ${onDarkSurface ? 'text-cyan-200' : 'text-cyan-700 dark:text-cyan-300'}`}
         >
-          {plan.toneSyllables && plan.toneSyllables.length > 0
-            ? plan.toneSyllables.map((syllable, index) => (
-              <span key={`${syllable.text}-${index}`} className="inline-flex items-baseline">
-                {syllable.text}
-                <sup className="ml-0.5 text-[10px] font-black opacity-70">{syllable.tone}</sup>
-              </span>
-            ))
-            : <span>{plan.readingText}</span>}
+          <ReadingValue plan={plan} />
         </p>
       )}
     </div>

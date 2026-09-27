@@ -199,13 +199,13 @@ const cardForValidation = (value: DocumentData, cardId: string, allowLegacyFsrs 
   }
   let card: CardRecord;
   try {
-    card = canonicalCard(source, { allowMasteredAt: true });
+    card = canonicalCard(source, { allowMasteredAt: true, deriveJapanesePitch: false });
   } catch (error) {
     // Existing malformed FSRS state is read through the scheduler's legacy
     // fallback. New client candidates still take the strict path above.
     if (!allowLegacyFsrs || !(error instanceof InputValidationError) || source.fsrs === undefined) throw error;
     const { fsrs: _legacyFsrs, ...withoutFsrs } = source;
-    card = canonicalCard(withoutFsrs, { allowMasteredAt: true });
+    card = canonicalCard(withoutFsrs, { allowMasteredAt: true, deriveJapanesePitch: false });
   }
   if (card.id !== cardId || card.normalizedWord !== source.normalizedWord) {
     throw new ReviewPersistenceConflictError('identity-conflict');

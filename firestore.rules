@@ -806,14 +806,14 @@ service cloud.firestore {
           'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
           'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
           'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
-          'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'masteredAt', 'source'
+          'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'masteredAt', 'japanesePitchAccent', 'source'
         ])
         && (!removedCanonicalKey || isCanonical)
         && !changed.hasAny(['origin'])
-        // Server-owned capture and mastery metadata cannot be
+        // Server-owned capture, mastery and pitch metadata cannot be
         // introduced, removed or changed by a client update. Their write
         // paths validate them before the Admin SDK persists a card.
-        && !changed.hasAny(['source', 'masteredAt'])
+        && !changed.hasAny(['source', 'masteredAt', 'japanesePitchAccent'])
         && !changed.hasAny(['language', 'translationLanguage'])
         // language/translationLanguage are immutable after creation (the
         // guard above), so an update never introduces a malformed value

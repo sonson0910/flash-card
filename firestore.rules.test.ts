@@ -233,6 +233,25 @@ describe('Firestore security rules', () => {
     }));
   });
 
+  it('keeps Japanese pitch provenance owned by trusted card writes', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const cardRef = doc(owner, 'users/owner/cards/card-1');
+    const pitch = {
+      readingKana: 'にっぽん', moraCount: 4, downstep: 3,
+      source: {
+        dataset: 'unidic-kana-accent', version: '2.1.2',
+        archiveSha256: '70793cacda81b403eda71736cc180f3144303623755a612b13e1dffeb6554591',
+        row: '503828|日本|ニッポン|3|*|*',
+      },
+    };
+    await seedCurrentCard(testEnvironment, 'owner', 'card-1', { ...validCard(), japanesePitchAccent: pitch });
+
+    await assertFails(updateDoc(cardRef, { japanesePitchAccent: { ...pitch, downstep: 0 }, revision: 2 }));
+    await assertFails(updateDoc(cardRef, { japanesePitchAccent: deleteField(), revision: 2 }));
+    await assertSucceeds(updateDoc(cardRef, { translation: 'Nhật Bản', revision: 2 }));
+    await assertSucceeds(updateDoc(cardRef, { phonetic: 'にほん', revision: 3 }));
+  });
+
   it('keeps epoch conflict enforcement working once the merged fence field clears', async () => {
     await seedCurrentCard(testEnvironment, 'owner', 'epoch-after-fence', validCard('epoch-after-fence'));
     await testEnvironment.withSecurityRulesDisabled(async context => {

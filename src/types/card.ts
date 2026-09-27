@@ -1,3 +1,5 @@
+import type { JapanesePitchAccent } from '../features/languagePacks/japanesePitch';
+
 export type LegacyDifficulty = 'easy' | 'good' | 'hard' | 'unrated';
 export type ReviewRatingValue = 'again' | 'hard' | 'good' | 'easy';
 
@@ -126,6 +128,8 @@ export interface CardData {
   correctStreak?: number;
   /** Server-authoritative time when this card most recently crossed the mastery threshold. */
   masteredAt?: string;
+  /** Verified UniDic pitch metadata for an exact Japanese word and kana reading. */
+  japanesePitchAccent?: JapanesePitchAccent;
   /** Immutable after creation; set only by the browser-extension capture path via `createCard`. */
   source?: CardSourceMetadata;
 }

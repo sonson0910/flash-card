@@ -6,6 +6,8 @@ import {
   type ReviewRequest,
 } from '../src/reviewPersistence.js';
 import { scheduleReviewTransition } from '../src/reviewScheduler.js';
+import { resolveJapanesePitchAccent } from '../src/japanesePitch.js';
+import { canonicalCard } from '../src/cardPersistence.js';
 
 const snapshot = (exists: boolean, data?: DocumentData): DocumentSnapshot => ({
   exists,
@@ -89,10 +91,10 @@ const reviewRequest = (overrides: Partial<ReviewRequest> = {}): ReviewRequest =>
   ...overrides,
 });
 
-const harness = (card = baseCard(), fenced = false) => {
+const harness = (card = baseCard(), fenced = false, cardPathId = 'word-focus') => {
   const values = new Map<string, DocumentSnapshot>([
     ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
-    ['users/owner/cards/word-focus', snapshot(true, card)],
+    [`users/owner/cards/${cardPathId}`, snapshot(true, card)],
     ...(fenced ? [['users/owner/profile/library_migration_fence', snapshot(true, { schemaVersion: 1, active: true })] as const] : []),
   ]);
   const writes: Array<{ path: string; data: DocumentData }> = [];
@@ -174,6 +176,32 @@ describe('review persistence', () => {
 
     expect(test.writes[0]?.data).toHaveProperty('masteredAt');
     expect(result.card).not.toHaveProperty('masteredAt');
+  });
+
+  it('accepts a review after the reading changes and hides stale pitch in the response', async () => {
+    const stalePitch = resolveJapanesePitchAccent('日本', 'にっぽん', 'ja');
+    const japaneseId = canonicalCard({
+      ...baseCard(), word: '日本', normalizedWord: '日本', language: 'ja', phonetic: 'にっぽん',
+    }).id as string;
+    const stored = {
+      ...baseCard(),
+      id: japaneseId, word: '日本', normalizedWord: '日本', language: 'ja', phonetic: 'にほん',
+      japanesePitchAccent: stalePitch,
+    };
+    const reviewedAt = '2026-09-24T00:00:00.000Z';
+    const request = reviewRequest({
+      cardId: stored.id,
+      reviewedAt,
+      fields: scheduleReviewTransition(stored, 'good', new Date(reviewedAt)),
+    });
+    const test = harness(stored, false, stored.id);
+
+    const result = await applyReviewForOwner(test.database, 'owner', request);
+
+    expect(result.applied).toBe(true);
+    expect(result.card).not.toHaveProperty('japanesePitchAccent');
+    expect(test.writes[0]?.data).not.toHaveProperty('japanesePitchAccent');
+    expect(stored.japanesePitchAccent).toEqual(stalePitch);
   });
 
   it('keeps old V2 requests without a timezone valid and replays their original no-award result', async () => {

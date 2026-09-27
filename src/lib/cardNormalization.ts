@@ -209,6 +209,9 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
   const sortTouchedAt = validIsoDate(raw.sortTouchedAt);
   const nextReviewDate = validIsoDate(raw.nextReviewDate);
   const masteredAt = validIsoDate(raw.masteredAt);
+  const japanesePitchAccent = raw.japanesePitchAccent && typeof raw.japanesePitchAccent === 'object' && !Array.isArray(raw.japanesePitchAccent)
+    ? raw.japanesePitchAccent
+    : undefined;
   const customDeck = typeof raw.customDeck === 'string' ? boundedText(raw.customDeck, 128) || null : null;
   const language = normalizeStoredLanguage(raw.language);
   const translationLanguage = normalizeStoredLanguage(raw.translationLanguage);
@@ -246,6 +249,7 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
     customDeck,
     ...(nextReviewDate ? { nextReviewDate } : {}),
     ...(masteredAt ? { masteredAt } : {}),
+    ...(japanesePitchAccent ? { japanesePitchAccent } : {}),
     reviews: Number.isFinite(raw.reviews) && Number(raw.reviews) >= 0 ? Math.floor(Number(raw.reviews)) : 0,
     interval: Number.isFinite(raw.interval) && Number(raw.interval) >= 0 ? Number(raw.interval) : 0,
     easeFactor: Number.isFinite(raw.easeFactor) && Number(raw.easeFactor) >= 0 && Number(raw.easeFactor) <= 5 ? Number(raw.easeFactor) : 2.5,

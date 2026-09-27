@@ -18,6 +18,7 @@ import {
 } from './libraryFacetPersistence.js';
 import { AiQuotaError, asAiQuotaCount, resolvePlan, type AiOperationRecord } from './aiQuota.js';
 import type { PilotConfig } from './pilotConfig.js';
+import { matchesJapanesePitchAccent, resolveJapanesePitchAccent } from './japanesePitch.js';
 import {
   commitVerifiedGamification,
   prepareVerifiedGamification,
@@ -104,7 +105,7 @@ const CARD_FIELDS = new Set([
   'bookmarked', 'customDeck', 'difficulty', 'nextReviewDate', 'reviews', 'interval',
   'easeFactor', 'correctStreak', 'fsrs', 'reviewHistory', 'partOfSpeech', 'cefrLevel',
   'exampleSentence', 'exampleTranslation', 'collocations', 'synonyms', 'antonyms',
-  'register', 'commonMistake', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'masteredAt', 'source',
+  'register', 'commonMistake', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'masteredAt', 'japanesePitchAccent', 'source',
 ]);
 
 const CARD_DIFFICULTIES = new Set(['easy', 'good', 'hard', 'unrated']);
@@ -338,8 +339,9 @@ const reservationId = (identity: string, targetLanguage?: string): string => cre
     : identity)
   .digest('hex');
 
-export const canonicalCard = (value: unknown, { allowMasteredAt = false }: {
+export const canonicalCard = (value: unknown, { allowMasteredAt = false, deriveJapanesePitch = true }: {
   allowMasteredAt?: boolean;
+  deriveJapanesePitch?: boolean;
 } = {}): CardRecord => {
   const source = asRecord(value, 'Card must be an object.');
   if (Object.keys(source).some(key => !CARD_FIELDS.has(key))) {
@@ -404,6 +406,16 @@ export const canonicalCard = (value: unknown, { allowMasteredAt = false }: {
   const now = new Date().toISOString();
   const createdAt = optionalDate(source.createdAt, 'createdAt') ?? now;
   const masteredAt = allowMasteredAt ? optionalDate(source.masteredAt, 'masteredAt') : undefined;
+  const phonetic = boundedText(source.phonetic, 'phonetic', 256);
+  const verifiedPitch = resolveJapanesePitchAccent(word, phonetic, effectiveLanguage ?? 'en');
+  const suppliedPitchMatches = source.japanesePitchAccent !== undefined
+    && matchesJapanesePitchAccent(source.japanesePitchAccent, verifiedPitch);
+  if (deriveJapanesePitch && source.japanesePitchAccent !== undefined && !suppliedPitchMatches) {
+    throw new InputValidationError('Card Japanese pitch metadata is invalid.');
+  }
+  const japanesePitchAccent = deriveJapanesePitch || suppliedPitchMatches
+    ? verifiedPitch
+    : undefined;
   const cardSource = parseCardSourceMetadata(source.source);
   const result: CardRecord = {
     id: hasCanonicalIdentity ? lexemeId as string : targetAwareCardId(identity, effectiveLanguage ?? 'en'),
@@ -416,7 +428,7 @@ export const canonicalCard = (value: unknown, { allowMasteredAt = false }: {
     translation: boundedText(source.translation, 'translation', 256),
     explanation: boundedText(source.explanation, 'explanation', 2_048),
     explanationTranslation: boundedText(source.explanationTranslation, 'explanationTranslation', 2_048),
-    phonetic: boundedText(source.phonetic, 'phonetic', 256),
+    phonetic,
     category: boundedText(source.category, 'category', 128) || 'Other',
     emoji: boundedText(source.emoji, 'emoji', 64) || '📝',
     audioUrl: trustedUrl(source.audioUrl, 'audioUrl', AUDIO_HOSTS),
@@ -424,6 +436,7 @@ export const canonicalCard = (value: unknown, { allowMasteredAt = false }: {
     imageSearchQuery: boundedText(source.imageSearchQuery, 'imageSearchQuery', 120),
     createdAt,
     ...(masteredAt ? { masteredAt } : {}),
+    ...(japanesePitchAccent ? { japanesePitchAccent } : {}),
     bookmarked: source.bookmarked === undefined ? false : source.bookmarked,
     customDeck,
     difficulty,
@@ -701,7 +714,7 @@ const canonicalExistingCard = (
   try {
     // Validate the stored shape and trust its existing metadata. The upgrade
     // only adds protocol identity fields; it must not invent card content.
-    canonicalCard({ ...source, id, normalizedWord: canonicalNormalizedWord }, { allowMasteredAt: true });
+    canonicalCard({ ...source, id, normalizedWord: canonicalNormalizedWord }, { allowMasteredAt: true, deriveJapanesePitch: false });
     const revision = Number.isSafeInteger(source.revision) && Number(source.revision) > 0
       ? nextProtocolCounter(Number(source.revision), 'revision')
       : 1;
@@ -1268,10 +1281,13 @@ export async function renameCardHeadwordForOwner(
       }
     }
 
+    const { japanesePitchAccent: _previousPitch, ...cardWithoutPitch } = card;
+    const pitch = resolveJapanesePitchAccent(newWord, typeof card.phonetic === 'string' ? card.phonetic : '', typeof card.language === 'string' ? card.language : 'en');
     const updated = {
-      ...card,
+      ...cardWithoutPitch,
       word: newWord,
       normalizedWord: newIdentity,
+      ...(pitch ? { japanesePitchAccent: pitch } : {}),
       revision: nextProtocolCounter(Number(card.revision), 'revision'),
     };
     transaction.set(canonical, updated, { merge: false });
