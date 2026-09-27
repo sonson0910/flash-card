@@ -42,7 +42,7 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 - [ ] 09.6 — Golden set 20 terms mỗi pack, human language review và đo cost trước enable; wave2 es/de và wave3 fr/pt giữ tasks/registry availability. (Explicitly gated — not implemented or run in this pass.)
 - [ ] Đối chiếu Canvas từng state của phase theo board/artboard inventory; reviewer kiểm tra cả hành vi và hình thức.
   > **Language drills 2026-09-27.** Đã mở ảnh actual và tạo 32 baseline Chromium cho en/ko/ja/zh ở Classic/Crystal × light/dark × desktop/mobile; visual rerun 33/33 gồm keyboard Hàn vật lý. Kana Nhật nay chỉ hiện sau Hint/Check, và spec kiểm không lộ đáp án trước Hint. Checkbox vẫn mở: Canvas có pitch accent Nhật nhưng card hiện chỉ lưu kana `phonetic`; contract `contract-japanese-pitch-accent.md` đang chờ owner chọn nguồn metadata được kiểm chứng hoặc chấp nhận kana-only cho wave 1. German article giữ wave 2 theo decision log.
-- [ ] Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log.
+- [x] Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log. (2026-09-27, revision `67a5bcc`) — `tsc` và lint pass; `verify:deploy` pass: web 2180/2180, Functions unit 401/401, Rules 84/84, Functions emulator integration 42/42; `i18n:extract` rồi `i18n:check` pass đủ 12 catalogs; build/bundle pass initial JS 70.996/71.000 B và CSS 29.460/29.500 B gzip. Chromium visual `language-practice-visual` 33/33 và `anime-reveal-visual` 30/30 pass sau khi mở ảnh actual so Canvas. Japanese pitch accent vẫn chờ quyết định trong `contract-japanese-pitch-accent.md`; không tick Canvas comparison.
 
 ## Verification
 
