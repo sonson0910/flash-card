@@ -289,7 +289,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
     <>
       <Dialog.Root open={open} onOpenChange={handleDialogOpenChange}>
         <Dialog.Portal>
-          <div data-edit-preview-backdrop aria-hidden="true" className="pointer-events-none fixed inset-0 z-[99] hidden items-center justify-center bg-[var(--sf-canvas)] pr-[440px] [html[data-theme-family=crystal]_&]:pr-[540px] md:flex">
+          <div data-edit-preview-backdrop aria-hidden="true" style={{ background: 'var(--sf-canvas)' }} className="pointer-events-none fixed inset-0 z-[99] hidden items-center justify-center pr-[440px] [html[data-theme-family=crystal]_&]:pr-[540px] md:flex">
             <div className="w-[min(400px,34vw)] overflow-hidden rounded-[var(--sf-card-radius)] border border-[color-mix(in_srgb,var(--sf-brand)_55%,var(--sf-border))] bg-[var(--sf-card-bg)] shadow-[0_30px_70px_-30px_var(--sf-shadow)] [html[data-theme-family=crystal]_&]:crystal-chamfer">
               {previewCard.imageUrl ? <img src={previewCard.imageUrl} alt="" className="h-48 w-full object-cover [html[data-theme-family=crystal]_&]:crystal-chamfer-sm" /> : <div className="flex h-48 items-center justify-center bg-[var(--sf-surface-raised)] text-6xl font-black text-[var(--sf-brand-text)]">{previewCard.word.slice(0, 1).toUpperCase()}</div>}
               <div className="p-6">
@@ -303,7 +303,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
               </div>
             </div>
           </div>
-          <Dialog.Overlay className="fixed inset-0 z-[100] bg-slate-950/75 backdrop-blur-sm" />
+          <Dialog.Overlay data-edit-overlay className="fixed inset-0 z-[98] bg-slate-950/75 backdrop-blur-sm" />
           <Dialog.Content
             data-card-edit-sheet
             onOpenAutoFocus={event => {
@@ -336,7 +336,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
             </header>
 
             <form id="edit-card-form" onSubmit={submit} aria-busy={saving} className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-7 md:px-[26px]">
-              <section data-edit-preview aria-label={_(msg({ id: 'library.edit-card.draft-preview', message: 'Draft preview' }))} className="rounded-[var(--sf-card-radius)] border border-[color-mix(in_srgb,var(--sf-brand)_35%,var(--sf-border))] bg-[var(--sf-card-bg)] p-3 shadow-[var(--sf-panel-shadow)] [html[data-theme-family=crystal]_&]:crystal-chamfer">
+              <section data-edit-preview aria-label={_(msg({ id: 'library.edit-card.draft-preview', message: 'Draft preview' }))} className="rounded-[var(--sf-card-radius)] border border-[color-mix(in_srgb,var(--sf-brand)_35%,var(--sf-border))] bg-[var(--sf-card-bg)] p-3 shadow-[var(--sf-panel-shadow)] md:hidden [html[data-theme-family=crystal]_&]:crystal-chamfer">
                 <div className="flex min-w-0 gap-3">
                   {previewCard.imageUrl ? (
                     <img src={previewCard.imageUrl} alt={`Illustration for ${previewCard.word}`} className="size-20 shrink-0 rounded-[calc(var(--sf-card-radius)*.65)] object-cover [html[data-theme-family=crystal]_&]:crystal-chamfer-sm" />

@@ -298,6 +298,13 @@ describe('EditCardDialog', () => {
     expect(rendered).toContain('library.edit-card.save-resume');
   });
 
+  it('keeps the compact draft preview for the mobile sheet while desktop uses the canvas preview backdrop', () => {
+    const view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+
+    expect(findByProp(view.tree, 'data-edit-preview')?.props.className).toContain('md:hidden');
+    expect(findByProp(view.tree, 'data-edit-preview-backdrop')).not.toBeNull();
+  });
+
   it('omits the captured-source note for a card with no source metadata', () => {
     const view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
     expect(findByProp(view.tree, 'data-edit-source-note')).toBeNull();

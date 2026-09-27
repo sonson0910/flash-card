@@ -168,6 +168,23 @@ for (const theme of themes) for (const viewport of viewports) {
       await expect(page.getByRole('heading', { name: title })).toBeVisible();
       await expectAccessibleAndContained(page, name);
       await expectReducedMotion(page, name);
+      if (dialog === 'edit') {
+        const backdropPreview = page.locator('[data-edit-preview-backdrop]');
+        const sheetPreview = page.locator('[data-edit-preview]');
+        if (viewport.name === 'desktop') {
+          await expect(backdropPreview).toBeVisible();
+          await expect(sheetPreview).toBeHidden();
+          const previewLayer = await backdropPreview.evaluate(element => Number(getComputedStyle(element).zIndex));
+          const overlayLayer = await page.locator('[data-edit-overlay]').evaluate(element => Number(getComputedStyle(element).zIndex));
+          expect(previewLayer).toBeGreaterThan(overlayLayer);
+        } else {
+          await expect(backdropPreview).toBeHidden();
+          await expect(sheetPreview).toBeVisible();
+        }
+        const screenshot = testInfo.outputPath(`${name}-page.png`);
+        await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide' });
+        await testInfo.attach(`${name}-page`, { path: screenshot, contentType: 'image/png' });
+      }
       await expectDialogScreen(page, testInfo, name);
     }
   });
