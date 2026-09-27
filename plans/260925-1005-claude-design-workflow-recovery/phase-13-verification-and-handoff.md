@@ -32,6 +32,11 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 | 13.5 | Ghi log sau từng phase, commit theo quyền đã có và handoff checklist còn lại cho Claude/owner. | Commit chỉ file scope, có revision và test evidence. Không gọi toàn bộ xong nếu còn gate hoặc workflow chưa implement. |
 | 13.6 | Lập release checklist và rollback artifact; phân biệt local/staging/production revision. | Không deploy ở task này; link website cũ không được mô tả là UI mới. |
 
+> **Staleness audit 2026-09-26** ([report](../reports/planner-260926-2229-old-plan-staleness-audit.md)).
+> - 13.1, 13.3, 13.5, 13.6 STILL VALID.
+> - 13.2 NEEDS REWRITE: thay "legacy/offline/account switch" bằng "legacy (đã backfill language) / mất mạng báo lỗi trung thực và retry cùng operationId / sign-out về landing / đổi account". Journey bắt đầu bằng sign-in; không còn nhánh guest.
+> - 13.4 NEEDS REWRITE (nhỏ): harness e2e hiện không có Functions emulator (`package.json:36`), nên các flow review/create/bulk không chạy được. Đây là điều kiện tiên quyết (phase 05 task 05.0). Thêm `npm run test:rules` và test Functions vào bộ gate vì Rules đã bị cắt gọn và có callable bulk mới.
+
 ## Checklist
 
 - [ ] 13.1 — Đối chiếu từng dòng board/artboard với route/action, state và test; tìm orphan button/view/menu.

@@ -5,7 +5,8 @@ import { retainCardsForSession } from '../lib/sessionCards';
 import type { CardData } from '../types/card';
 import type { UndoToastItem } from '../components/ui/UndoToast';
 import { useIntakeSharingSession } from '../features/intake/useIntakeSharingSession';
-import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../features/language/languageProfile';
+import type { LanguageProfile } from '../features/language/languageProfile';
+import type { SharedDeckCoursePort } from '../features/sharing/shareCourseMatching';
 import { useCardMediaHydration } from '../features/library/useCardMediaHydration';
 import { useCustomDeckWorkspace } from '../features/library/useCustomDeckWorkspace';
 import { useLibraryScreenContract } from '../features/library/useLibraryScreenContract';
@@ -30,6 +31,10 @@ import { useLibraryMutationFeedback } from './use-library-mutation-feedback';
 interface UseAppLearningCoordinationOptions {
   library: AppLibraryRuntime;
   viewMode: AppViewMode;
+  /** Active course's language pair; defaults to English-Vietnamese for legacy users with no active course. */
+  languageProfile: LanguageProfile;
+  /** Steers an incoming shared deck to the matching course before import; see CourseSessionBridge in AppRuntime.tsx. */
+  coursePort: SharedDeckCoursePort | null;
   setViewMode(view: AppViewMode): void;
   setPracticeMenuOpen(open: boolean): void;
   setClearConfirm(open: boolean): void;
@@ -42,6 +47,8 @@ interface UseAppLearningCoordinationOptions {
 export function useAppLearningCoordination({
   library,
   viewMode,
+  languageProfile,
+  coursePort,
   setViewMode,
   setPracticeMenuOpen,
   setClearConfirm,
@@ -74,7 +81,7 @@ export function useAppLearningCoordination({
     poolSource: appDependencies.practice.pool,
     gamificationStore: appDependencies.practice.gamification,
     learning: practiceLearning,
-    languageProfile: ENGLISH_TO_VIETNAMESE_PROFILE,
+    languageProfile,
     reportError,
   });
   ports.practicePublicationRef.current = practiceWorkspace.snapshotRef.current;
@@ -220,8 +227,8 @@ export function useAppLearningCoordination({
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
   const sharingDependencies = useMemo(
-    () => appDependencies.intake.forOwner(user?.uid ?? null),
-    [user?.uid],
+    () => appDependencies.intake.forOwner(user?.uid ?? null, languageProfile.source.code),
+    [user?.uid, languageProfile],
   );
   const intakeSharing = useIntakeSharingSession({
     ownerKey: user?.uid ?? null,
@@ -231,6 +238,7 @@ export function useAppLearningCoordination({
       knownLibraryTotal,
       cloudStats,
       cardsPerPage,
+      languageProfile,
       getCards: () => ports.cardsRef.current,
       publishCards: ports.setCards,
       patchCard: handleUpdateCard,
@@ -250,7 +258,8 @@ export function useAppLearningCoordination({
       addXp,
     },
     sharing: sharingDependencies,
-    language: ENGLISH_TO_VIETNAMESE_PROFILE,
+    coursePort,
+    language: languageProfile,
     resetSpreadsheetSource,
     feedback: { reportError, notify },
     externalBusy: externalLibraryBusy,

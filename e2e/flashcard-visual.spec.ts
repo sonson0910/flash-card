@@ -119,6 +119,11 @@ for (const theme of themes) {
         localStorage.setItem('lingoflash_theme', mode);
       }, theme);
       await signIn(page, '/?view=library&locale=en');
+      // The full <Flashcard> (role="group") only renders inside the "Open
+      // card" detail dialog now — LibraryCardGrid.tsx's grid rows are a
+      // compact summary with their own "Open card" button (see
+      // flashcard-locale.spec.ts for the same pattern).
+      await page.locator('.library-word-open').click();
 
       const root = page.locator('html');
       const shell = page.getByRole('group', { name: /luminous flashcard/i });
@@ -161,6 +166,9 @@ for (const theme of themes) {
         localStorage.setItem('sonflash_zen_glass_mode', 'true');
       }, theme);
       await signIn(page, '/?view=library&locale=en');
+      // See the first loop above: the full flashcard only renders inside
+      // the detail dialog.
+      await page.locator('.library-word-open').click();
 
       const root = page.locator('html');
       const shell = page.getByRole('group', { name: /luminous flashcard/i });
@@ -208,6 +216,9 @@ test('reduced motion changes the card face without spatial animation', async ({ 
     localStorage.setItem('lingoflash_theme', 'dark');
   });
   await signIn(page, '/?view=library&locale=en');
+  // See the first loop above: the full flashcard only renders inside the
+  // detail dialog.
+  await page.locator('.library-word-open').click();
 
   const shell = page.getByRole('group', { name: /luminous flashcard/i });
   await expect(shell).toHaveAttribute('data-flip-animation', 'reduced');

@@ -1,18 +1,17 @@
-import { auth, app } from '../../lib/firebase';
+import { auth, app, db, getSonFlashFunctions } from '../../lib/firebase';
 import { gamificationStorageKeys } from '../gamification/gamificationStorage';
 import {
   cloudBackoffCacheKey, cloudFacetsCacheKey, cloudPageCacheKey, cloudStatsCacheKey,
 } from '../library/libraryStorage';
 
-const region = 'asia-southeast1';
 export class LocalAccountCleanupError extends Error {}
 export const isAccountSignedIn = (): boolean => Boolean(auth?.currentUser);
 const callable = async <Request, Response>(
   name: string, request: Request, options?: { timeout?: number },
 ): Promise<Response> => {
   if (!app || !auth?.currentUser) throw new Error('Sign in is required.');
-  const { getFunctions, httpsCallable } = await import('firebase/functions');
-  return (await httpsCallable<Request, Response>(getFunctions(app, region), name, options)(request)).data;
+  const { httpsCallable } = await import('firebase/functions');
+  return (await httpsCallable<Request, Response>(await getSonFlashFunctions(app), name, options)(request)).data;
 };
 
 const callableErrorCode = (error: unknown): string => {
@@ -66,6 +65,21 @@ export async function downloadAccountData(): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
+// Only account deletion clears the persistent Firestore cache; a plain sign-out keeps it so a returning
+// learner does not re-download their whole library. `terminate` must run before `clearIndexedDbPersistence`
+// per the Firestore SDK contract, and any failure here must never block the deletion result, since the
+// account is already gone (or already on its way out) on the server by the time this runs.
+export async function clearFirestorePersistentCache(): Promise<void> {
+  if (!db) return;
+  try {
+    const { terminate, clearIndexedDbPersistence } = await import('firebase/firestore');
+    await terminate(db);
+    await clearIndexedDbPersistence(db);
+  } catch (error) {
+    console.warn('Could not clear the local Firestore cache after account deletion.', error);
+  }
+}
+
 export type DeleteAccountResult = 'completed' | 'started';
 
 export async function deleteAccount(confirmation: string): Promise<DeleteAccountResult> {
@@ -87,5 +101,6 @@ export async function deleteAccount(confirmation: string): Promise<DeleteAccount
   }
   try { await clearLocalAccountData(uid); }
   finally { await signOut(auth); }
+  await clearFirestorePersistentCache();
   return result;
 }

@@ -32,6 +32,10 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 | 11.5 | Tutor theo thẻ/ngữ cảnh và active pair: entry, bounded conversation, thinking/answer/error, suggest example/explain, usage limit. | Khác generate-dialogue hiện tại; contract + server limits trước UI live; không đưa raw unbounded prompt xuyên trust boundary. |
 | 11.6 | Review API/security/cost contract và kết nối UI; nếu cần worker tự-host, nối phase14 với task cụ thể. | Không đổi model fallback; không demo response giả trong app; khả năng chưa bật được ghi rõ trong evidence. |
 
+> **Staleness audit 2026-09-26** ([report](../reports/planner-260926-2229-old-plan-staleness-audit.md)). Phạm vi audit: 11A (11.1, 11.3).
+> - 11.1 NEEDS REWRITE (nhỏ): kênh extension badge đã có emitter due-count thật (`src/features/extensionBridge/useExtensionDueCountBridge.ts`, 07.6), nên contract nhắc học phải dùng lại kênh này thay vì thiết kế mới. "Mất mạng resume/retry" của AI nghĩa là retry qua mạng với cùng `operationId`, không có hàng đợi local. Pilot chỉ chạy trên Firebase, nên delivery là lựa chọn giữa FCM kèm scheduled Function và nhà cung cấp email.
+> - 11.3 STILL VALID, chưa xong: đã có toggle âm (`settings-screen.tsx:52,92`) và helper haptic (`src/lib/haptics.ts:17`), nhưng chưa có setting haptic riêng và transition Today→bridge→recap (phụ thuộc 05.2/05.3).
+
 ## Checklist
 
 - [ ] 11.1 — Chốt reminder và AI/tutor delivery contracts, schema, ownership, quota và kiểm thử trước11B.

@@ -1,7 +1,7 @@
 import type { ReviewRatingValue } from '../../types/card';
 import { evaluateExerciseAnswer, type Exercise, type ExerciseAnswer, type ExerciseEvaluation } from './exerciseEngine';
 
-export type LessonPhase = 'answering' | 'feedback' | 'persisting' | 'sync-pending' | 'save-error' | 'completed';
+export type LessonPhase = 'answering' | 'feedback' | 'persisting' | 'save-error' | 'completed';
 
 export interface PendingLessonReview {
   readonly itemId: string;
@@ -16,7 +16,6 @@ export interface LessonState {
   readonly feedback: ExerciseEvaluation | null;
   readonly pendingReview: PendingLessonReview | null;
   readonly completedOperationIds: readonly string[];
-  readonly syncPendingReviewCount: number;
   readonly error: string | null;
 }
 
@@ -24,7 +23,6 @@ export type LessonAction =
   | { readonly type: 'submit'; readonly answer: ExerciseAnswer }
   | { readonly type: 'rate'; readonly rating: ReviewRatingValue; readonly operationId: string }
   | { readonly type: 'persisted'; readonly operationId: string }
-  | { readonly type: 'provisionally-persisted'; readonly operationId: string }
   | { readonly type: 'persist-failed'; readonly operationId: string; readonly message: string }
   | { readonly type: 'retry-persist' };
 
@@ -36,7 +34,7 @@ export function createLessonState(exercises: readonly Exercise[]): LessonState {
   if (new Set(ids).size !== ids.length) throw new TypeError('A lesson cannot contain duplicate card exercises.');
   return {
     exercises: [...exercises], index: 0, phase: 'answering', feedback: null,
-    pendingReview: null, completedOperationIds: [], syncPendingReviewCount: 0, error: null,
+    pendingReview: null, completedOperationIds: [], error: null,
   };
 }
 
@@ -69,19 +67,6 @@ export function reduceLessonState(state: LessonState, action: LessonAction): Les
       feedback: null,
       pendingReview: null,
       completedOperationIds: [...state.completedOperationIds, action.operationId],
-      error: null,
-    };
-  }
-  if (action.type === 'provisionally-persisted') {
-    if (state.phase !== 'persisting' || state.pendingReview?.operationId !== action.operationId) return state;
-    const nextIndex = state.index + 1;
-    return {
-      ...state,
-      index: nextIndex >= state.exercises.length ? state.index : nextIndex,
-      phase: nextIndex >= state.exercises.length ? 'sync-pending' : 'answering',
-      feedback: nextIndex >= state.exercises.length ? state.feedback : null,
-      pendingReview: null,
-      syncPendingReviewCount: state.syncPendingReviewCount + 1,
       error: null,
     };
   }

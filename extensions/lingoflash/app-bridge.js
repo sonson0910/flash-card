@@ -24,6 +24,8 @@
   const IMPORT_PROTOCOL_VERSION = 3;
   const MAX_TEXT_LENGTH = 80;
   const MAX_CONTEXT_LENGTH = 500;
+  const MAX_PAGE_TITLE_LENGTH = 256;
+  const MAX_SOURCE_URL_LENGTH = 2048;
   const MAX_ENCODED_IMPORT_LENGTH = 2048;
   const IMPORT_NONCE_PATTERN = /^[A-Za-z0-9_-]{22,64}$/;
   const FALLBACK_GRACE_MS = 1_500;
@@ -135,6 +137,26 @@
 
   const normalizeText = value => typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
 
+  // Re-applies the same rule the background worker and the server enforce:
+  // http/https only, credentials/query/fragment stripped. This app-bridge
+  // copy only re-validates what the worker already sanitized before relaying
+  // it into sessionStorage for the app to read.
+  const sanitizeSourceUrl = value => {
+    if (typeof value !== 'string' || !value || value.length > MAX_SOURCE_URL_LENGTH) return '';
+    try {
+      const url = new URL(value);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
+      url.username = '';
+      url.password = '';
+      url.search = '';
+      url.hash = '';
+      const serialized = url.toString();
+      return serialized.length <= MAX_SOURCE_URL_LENGTH ? serialized : '';
+    } catch {
+      return '';
+    }
+  };
+
   const normalizeSilentIntent = value => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
     const text = normalizeText(value.text);
@@ -177,9 +199,13 @@
     const text = normalizeText(value?.text);
     const context = value?.context === undefined ? '' : normalizeText(value.context).slice(0, MAX_CONTEXT_LENGTH);
     const requestedDeck = value?.requestedDeck === undefined ? '' : normalizeText(value.requestedDeck).slice(0, 128);
+    const sourceUrl = value?.sourceUrl === undefined ? '' : sanitizeSourceUrl(value.sourceUrl);
+    const pageTitle = value?.pageTitle === undefined ? '' : normalizeText(value.pageTitle).slice(0, MAX_PAGE_TITLE_LENGTH);
     if (!intent
       || (value.context !== undefined && typeof value.context !== 'string')
       || (value.requestedDeck !== undefined && typeof value.requestedDeck !== 'string')
+      || (value.sourceUrl !== undefined && typeof value.sourceUrl !== 'string')
+      || (value.pageTitle !== undefined && typeof value.pageTitle !== 'string')
       || !text || text.length > MAX_TEXT_LENGTH || !Number.isSafeInteger(value.createdAt) || value.createdAt <= 0) return null;
     return {
       v: IMPORT_PROTOCOL_VERSION,
@@ -188,6 +214,8 @@
       text,
       ...(context ? { context } : {}),
       ...(requestedDeck ? { requestedDeck } : {}),
+      ...(sourceUrl ? { sourceUrl } : {}),
+      ...(pageTitle ? { pageTitle } : {}),
       createdAt: value.createdAt,
       mode: 'silent',
     };
@@ -334,7 +362,7 @@
     await sleep(FALLBACK_GRACE_MS);
     if (appBridgeResponded || !isSameRoute()) return;
 
-    if (intent.requestedDeck || intent.context) {
+    if (intent.requestedDeck || intent.context || intent.sourceUrl || intent.pageTitle) {
       rejectStructuredCompatibilityFallback(intent);
       return;
     }

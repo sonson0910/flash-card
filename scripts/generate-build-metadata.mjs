@@ -11,7 +11,7 @@ const revision = (
   || 'local'
 ).trim();
 const builtAt = process.env.BUILD_TIMESTAMP?.trim() || new Date().toISOString();
-const output = path.resolve('dist/health.json');
+const output = path.resolve(process.env.SONFLASH_BUILD_OUT_DIR || 'dist', 'health.json');
 const target = resolveReleaseTarget(process.env);
 const { projectId } = JSON.parse(fs.readFileSync(new URL(`../${RELEASE_TARGETS[target].configPath}`, import.meta.url), 'utf8'));
 

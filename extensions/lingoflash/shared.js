@@ -6,6 +6,8 @@
   const IMPORT_HASH_KEY = 'lf-import';
   const MAX_TEXT_LENGTH = 80;
   const MAX_CONTEXT_LENGTH = 500;
+  const MAX_SOURCE_URL_LENGTH = 2048;
+  const MAX_PAGE_TITLE_LENGTH = 256;
   const IMPORT_PROTOCOL_VERSION = 3;
   const IMPORT_PROTOCOL_V3 = 3;
   const MAX_ENCODED_IMPORT_LENGTH = 2048;
@@ -105,6 +107,30 @@
     .trim();
 
   const normalizeContext = value => normalizeSelectedText(value).slice(0, MAX_CONTEXT_LENGTH);
+  const boundedPageTitle = value => normalizeSelectedText(value).slice(0, MAX_PAGE_TITLE_LENGTH);
+
+  // Strip credentials, the query string, and the fragment before this URL
+  // ever leaves the page/worker context. Query and fragment routinely carry
+  // session tokens, auth codes, or tracking identifiers with no value for
+  // "which page did this word come from" but real privacy exposure; origin +
+  // pathname is enough to recognize or revisit the page. http/https only.
+  // The server (`parseCardSourceMetadata`) re-applies the exact same rule, so
+  // this is the write-side sanitization, not the only line of defense.
+  const sanitizeSourceUrl = value => {
+    if (typeof value !== 'string' || !value || value.length > MAX_SOURCE_URL_LENGTH) return '';
+    try {
+      const url = new URL(value);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
+      url.username = '';
+      url.password = '';
+      url.search = '';
+      url.hash = '';
+      const serialized = url.toString();
+      return serialized.length <= MAX_SOURCE_URL_LENGTH ? serialized : '';
+    } catch {
+      return '';
+    }
+  };
 
   const selectionValidation = value => {
     const text = normalizeSelectedText(value);
@@ -618,6 +644,8 @@
     MAX_ENCODED_IMPORT_LENGTH,
     MAX_TEXT_LENGTH,
     MAX_CONTEXT_LENGTH,
+    MAX_SOURCE_URL_LENGTH,
+    MAX_PAGE_TITLE_LENGTH,
     SETTINGS_STORAGE_KEY,
     DECK_METADATA_STORAGE_KEY,
     DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY,
@@ -642,6 +670,8 @@
     deckMetadataStorage,
     normalizeSelectedText,
     normalizeContext,
+    boundedPageTitle,
+    sanitizeSourceUrl,
     selectionValidation,
     normalizeSettings,
     normalizeSelectionIconSites,

@@ -88,3 +88,33 @@ msgstr ""
 #: src/features/billing/UpgradeDialog.tsx:46
 msgid "billing.upgrade.title"
 msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:27
+msgid "plan.usage.exhausted"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:28
+msgid "plan.usage.exhausted.pro-hint"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:21
+msgid "plan.usage.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:25
+msgid "plan.usage.period.free"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:24
+msgid "plan.usage.period.pro"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:33
+msgid "plan.usage.view-pro"
+msgstr ""

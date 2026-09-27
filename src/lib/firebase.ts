@@ -21,6 +21,9 @@ import {
   persistentMultipleTabManager,
   type Firestore,
 } from 'firebase/firestore';
+// Type-only: erased at compile time, so this never pulls the 'firebase/functions'
+// runtime module (and its weight) into any bundle, including the initial one.
+import type { Functions } from 'firebase/functions';
 import productionFirebaseConfig from '../../firebase-applet-config.json';
 import { resolveProtectedFunctionsCapability } from './protectedFunctionsCapability';
 
@@ -59,7 +62,9 @@ function isSafariBrowser(): boolean {
 if (isFirebaseConfigured) {
   try {
     appInstance = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    if (appCheckSiteKey) {
+    // The emulator suite runs with App Check enforcement off; initializing it
+    // there would send the local site key and a debug token to Google.
+    if (appCheckSiteKey && !isE2eEmulatorBuild) {
       try {
         const isLocalhost = typeof location !== 'undefined'
           && ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
@@ -113,12 +118,50 @@ function connectEmulatorsForTests(auth: Auth, db: Firestore) {
   };
 }
 
-export const protectedFunctionsCapability = resolveProtectedFunctionsCapability({
-  firebaseConfigured: isFirebaseConfigured,
-  firebaseInitialized: appInstance !== null,
-  appCheckSiteKeyConfigured: appCheckSiteKey.length > 0,
-  appCheckInitialized: appCheckInstance !== null,
-});
+const FUNCTIONS_EMULATOR_HOST = '127.0.0.1';
+const FUNCTIONS_EMULATOR_PORT = 5001;
+let functionsEmulatorConnected = false;
+
+/**
+ * Single creation point for every Cloud Functions callable client in the
+ * app, so `connectFunctionsEmulator` is wired in exactly one place instead
+ * of at each `getFunctions(app, 'asia-southeast1')` call site. The dynamic
+ * import matches the lazy-loading pattern already used by every callable
+ * call site: 'firebase/functions' is only fetched when a protected function
+ * actually runs, so this helper adds nothing to the initial bundle even
+ * though `firebase.ts` itself loads on every screen including the landing
+ * page.
+ */
+export async function getSonFlashFunctions(targetApp: FirebaseApp, region = 'asia-southeast1'): Promise<Functions> {
+  const { getFunctions, connectFunctionsEmulator } = await import('firebase/functions');
+  const functionsInstance = getFunctions(targetApp, region);
+  if (isE2eEmulatorBuild && !functionsEmulatorConnected) {
+    connectFunctionsEmulator(functionsInstance, FUNCTIONS_EMULATOR_HOST, FUNCTIONS_EMULATOR_PORT);
+    functionsEmulatorConnected = true;
+  }
+  return functionsInstance;
+}
+
+// The e2e build has no App Check site key: there is no App Check backend to
+// exchange a debug token with inside an offline emulator run, so App Check
+// enforcement is disabled server-side for the duration of that emulator
+// session instead (functions/.env.local, flipped only while
+// scripts/run-e2e-functions-emulator.mjs runs — verified via
+// firebase-functions' onCall implementation, which has no emulator-specific
+// App Check bypass: a missing token throws 'unauthenticated' whenever
+// `enforceAppCheck` resolves true, in the emulator exactly as in
+// production). Treat protected callables as available so e2e exercises the
+// real callable path end to end. `isE2eEmulatorBuild` is a compile-time
+// literal `false` in every non-e2e build, so this branch is dead code there
+// and production/staging behaviour is unchanged.
+export const protectedFunctionsCapability = isE2eEmulatorBuild
+  ? { available: true } as const
+  : resolveProtectedFunctionsCapability({
+    firebaseConfigured: isFirebaseConfigured,
+    firebaseInitialized: appInstance !== null,
+    appCheckSiteKeyConfigured: appCheckSiteKey.length > 0,
+    appCheckInitialized: appCheckInstance !== null,
+  });
 
 export {
   appInstance as app,

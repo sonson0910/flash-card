@@ -22,7 +22,7 @@ export interface PracticePoolSource {
   load: (
     ownerId: string,
     maximum: number,
-    options: { includeFuture: boolean },
+    options: { includeFuture: boolean; targetLanguage?: string },
   ) => Promise<CardData[]>;
   classifyFailure?: (error: unknown) => PracticePoolFailure;
 }
@@ -32,6 +32,8 @@ export interface PracticePoolLoaderOptions {
   cloudBackoffActive: boolean;
   cards: readonly CardData[];
   source: PracticePoolSource | null;
+  /** Active course's target language; scopes the practice pool so cards from another course never leak in. */
+  targetLanguage: string;
   reportError: (message: string) => void;
 }
 
@@ -45,13 +47,14 @@ export function createPracticePoolLoader({
   cloudBackoffActive,
   cards,
   source,
+  targetLanguage,
   reportError,
 }: PracticePoolLoaderOptions) {
   return async (maximum?: number, includeFuture = true): Promise<CardData[]> => {
     const limit = boundedPoolSize(maximum);
     if (ownerId && source && !cloudBackoffActive) {
       try {
-        const loaded = await source.load(ownerId, limit, { includeFuture });
+        const loaded = await source.load(ownerId, limit, { includeFuture, targetLanguage });
         return loaded.slice(0, limit);
       } catch (error) {
         const failure = source.classifyFailure?.(error) ?? 'unavailable';
@@ -119,13 +122,15 @@ export function usePracticeWorkspace({
     now,
     saveDelayMs: gamificationSaveDelayMs,
   });
+  const targetLanguage = languageProfile.source.code;
   const loadPracticePool = useCallback(createPracticePoolLoader({
     ownerId,
     cloudBackoffActive,
     cards,
     source: poolSource,
+    targetLanguage,
     reportError,
-  }), [cards, cloudBackoffActive, ownerId, poolSource, reportError]);
+  }), [cards, cloudBackoffActive, ownerId, poolSource, targetLanguage, reportError]);
   const session = usePracticeSession({
     ownerId,
     mode,

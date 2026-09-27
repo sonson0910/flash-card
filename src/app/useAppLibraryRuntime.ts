@@ -42,6 +42,8 @@ const EMPTY_CLOUD_STATS: LibrarySessionPortStats = {
 interface UseAppLibraryRuntimeOptions {
   viewMode: AppViewMode;
   isStatsOpen: boolean;
+  /** Active course's target language; scopes the library query so cards from another course never leak in. */
+  targetLanguage: string;
   reportError(message: string | null): void;
   clearError(message: string): void;
   notify(message: string | null): void;
@@ -50,6 +52,7 @@ interface UseAppLibraryRuntimeOptions {
 export function useAppLibraryRuntime({
   viewMode,
   isStatsOpen,
+  targetLanguage,
   reportError,
   clearError,
   notify,
@@ -98,6 +101,7 @@ export function useAppLibraryRuntime({
     bookmarkedOnly: catalog.starred,
     createdDate: dateLabelToQueryDate(catalog.date),
     wordPrefix: catalog.debouncedSearch,
+    targetLanguage,
   }), [
     catalog.category,
     catalog.date,
@@ -106,6 +110,7 @@ export function useAppLibraryRuntime({
     catalog.difficulty,
     catalog.partOfSpeech,
     catalog.starred,
+    targetLanguage,
   ]);
   const cloudQueryKey = useMemo(() => queryStateKey(cloudQueryState), [cloudQueryState]);
   const sessionPorts = useLibrarySessionPorts({

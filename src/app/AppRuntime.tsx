@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react';
 import type { ReviewRating } from '../lib/reviewScheduler';
 import { playFlipSound, playRewardSound } from '../lib/interactionSounds';
 import type { useAppNavigation } from '../features/navigation/useAppNavigation';
@@ -22,9 +22,47 @@ import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { APP_VIEW_HEADINGS } from '../features/navigation/app-view-headings';
 import { evidencedStudyStreak } from '../features/dailyLearning/dailyLearningPresentation';
+import { CourseProvider, useCourseSession, type CourseGateValue } from '../features/courses/CourseGate';
+import { languageProfileForCourse } from '../features/courses/courseLanguageProfile';
+import { createSharedDeckCoursePort, resolveShareCourseAction } from '../features/sharing/shareCourseMatching';
+import type { SharedDeckIncomingPreview } from '../features/sharing/sharedDeckSessionController';
+import { OnboardingGate } from '../features/onboarding/OnboardingGate';
 import '../styles/shell.css';
 
 const AppOverlays = lazy(() => import('../components/AppOverlays').then(module => ({ default: module.AppOverlays })));
+const WebWordsRouteHost = lazy(() => import('../features/webWords/WebWordsRouteHost').then(module => ({ default: module.WebWordsRouteHost })));
+
+/**
+ * Surfaces the live `useCourseSession()` value up to AppRuntime as plain
+ * data. It has to be a real descendant of `CourseProvider` to see its value;
+ * AppRuntime's own hooks (useAppLibraryRuntime, useAppLearningCoordination)
+ * run in AppRuntime's own function body, above where CourseProvider mounts,
+ * so they cannot call useCourseSession() themselves and instead consume this
+ * bridge's reported snapshot as a plain parameter.
+ */
+function CourseSessionBridge({ onSnapshot }: { readonly onSnapshot: (value: CourseGateValue) => void }) {
+  const courseSession = useCourseSession();
+  useEffect(() => {
+    onSnapshot(courseSession);
+  }, [courseSession, onSnapshot]);
+  return null;
+}
+
+// The browser extension (`extensions/lingoflash/background-core.js`) always
+// captures assuming this fixed English/Vietnamese pair; it has no per-course
+// language selector of its own. Reusing `resolveShareCourseAction` against
+// that known constant is how a mismatch with the active course is detected
+// without needing to extend the extension's wire protocol.
+const EXTENSION_CAPTURE_COURSE_PREVIEW: SharedDeckIncomingPreview = {
+  shareId: '',
+  category: '',
+  cardCount: 0,
+  sampleWords: [],
+  languagePairs: [{ targetLanguage: 'en', translationLanguage: 'vi' }],
+  createdAt: null,
+  expiresAt: null,
+  containsAiGeneratedCards: false,
+};
 
 export interface LandingUser {
   readonly displayName?: string | null;
@@ -85,9 +123,42 @@ export default function AppRuntime({
     viewFocusIntent,
     isDarkMode,
   } = navigation;
+  const preSignInLocationRef = useRef<string | null>(null);
+  // null until CourseSessionBridge reports the live CourseProvider value;
+  // languageProfileForCourse(null) already matches the no-active-course
+  // default, so the very first render before that report lands is correct.
+  const [courseSession, setCourseSession] = useState<CourseGateValue | null>(null);
+  const handleCourseSessionSnapshot = useCallback((value: CourseGateValue) => {
+    setCourseSession(value);
+  }, []);
+  const languageProfile = languageProfileForCourse(courseSession?.model.activeCourse ?? null);
+  const coursePort = useMemo(
+    () => courseSession ? createSharedDeckCoursePort(courseSession) : null,
+    [courseSession],
+  );
+  // Gate for the extension's silent (one-click, no-review) capture path
+  // only: manual captures already open the library view, where the real
+  // course switcher is visible before the user generates anything, so no
+  // extra gate is needed there. Cancelling here leaves nothing generated.
+  const ensureExtensionCaptureCourse = useCallback(async (): Promise<'proceed' | 'cancel'> => {
+    if (!courseSession || !coursePort) return 'proceed';
+    const decision = resolveShareCourseAction(
+      EXTENSION_CAPTURE_COURSE_PREVIEW,
+      courseSession.model.profile,
+    );
+    if (!decision || decision.action === 'none') return 'proceed';
+    const confirmed = globalThis.confirm?.(_(msg({
+      id: 'extension.import.course-mismatch-confirm',
+      message: "This word was captured assuming English, but your active course isn't English. Switch to (or create) your English course to save it?",
+    }))) ?? true;
+    if (!confirmed) return 'cancel';
+    await coursePort.ensureCourseForIncomingShare(EXTENSION_CAPTURE_COURSE_PREVIEW);
+    return 'proceed';
+  }, [courseSession, coursePort, _]);
   const library = useAppLibraryRuntime({
     viewMode,
     isStatsOpen,
+    targetLanguage: languageProfile.source.code,
     reportError: setError,
     clearError,
     notify: setNotice,
@@ -110,6 +181,8 @@ export default function AppRuntime({
   const learning = useAppLearningCoordination({
     library,
     viewMode,
+    languageProfile,
+    coursePort,
     setViewMode,
     setPracticeMenuOpen: setIsPracticeMenuOpen,
     setClearConfirm: setShowClearConfirm,
@@ -127,6 +200,7 @@ export default function AppRuntime({
     isBrowserOnline,
     isExporting,
     cloudStats,
+    knownLibraryTotal,
   } = library.model;
   const {
     libraryScreen,
@@ -185,6 +259,7 @@ export default function AppRuntime({
     openLibrary: () => setViewMode('library'),
     notify: message => setNotice(message),
     reportError: message => setError(message),
+    ensureCaptureCourse: ensureExtensionCaptureCourse,
   });
   useExtensionDueCountBridge({ ownerId: user?.uid ?? null, ready: libraryReady, dueCount: cloudStats.due });
   const handledSignInRequestRef = useRef(0);
@@ -205,10 +280,22 @@ export default function AppRuntime({
   }, [library.actions.signIn, onSignInRequestHandled, signInRequest]);
   useEffect(() => {
     // The workspace only renders for an authenticated owner. Once identity
-    // resolves to signed-out, bounce back to the landing page and its sign-in.
+    // resolves to signed-out, bounce back to the landing page and its
+    // sign-in, but remember the pre-bounce location so a deep link (or an
+    // extension import intent tied to that URL) survives the round trip.
     if (identity.status === 'loading' || user || viewMode === 'landing') return;
+    preSignInLocationRef.current = window.location.href;
     setViewMode('landing');
   }, [identity.status, setViewMode, user, viewMode]);
+  useEffect(() => {
+    if (!user || !preSignInLocationRef.current) return;
+    // Restore the captured URL verbatim, then let every URL-driven listener
+    // (view mode, lesson, catalog, web words) re-read it through popstate.
+    // setViewMode would normalize the URL and drop deep-link params.
+    window.history.pushState(window.history.state, '', preSignInLocationRef.current);
+    preSignInLocationRef.current = null;
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  }, [user]);
   const openClearConfirm = (focusReturnTarget: HTMLButtonElement) =>
     openClearOverlay(focusReturnTarget, canClearLibrary);
   const handleSignIn = async () => { await library.actions.signIn(); };
@@ -230,8 +317,11 @@ export default function AppRuntime({
   if (identity.status !== 'loading' && !user && viewMode !== 'landing') return null;
 
   return (
+    <CourseProvider ownerId={user?.uid ?? null}>
+    <CourseSessionBridge onSnapshot={handleCourseSessionSnapshot} />
     <div ref={appShellRef} data-view={viewMode} className={`app-canvas claude-app-shell min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
       <SkipToContentLink />
+      <OnboardingGate ownerId={user?.uid ?? null} suppress={viewMode === 'landing' || shellSyncStatus.isCheckingCloud} hasCards={knownLibraryTotal > 0} />
 
       <DesktopNavigation
         navigationRef={navigationRef}
@@ -305,6 +395,7 @@ export default function AppRuntime({
             <AppViewStage
               viewMode={viewMode}
               ownerId={user?.uid ?? null}
+              languageProfile={languageProfile}
               isOffline={!isBrowserOnline}
               isDarkMode={isDarkMode}
               headingRef={viewHeadingRef}
@@ -387,6 +478,12 @@ export default function AppRuntime({
         </Suspense>
       )}
 
+      {user && viewMode !== 'landing' && (
+        <Suspense fallback={null}>
+          <WebWordsRouteHost />
+        </Suspense>
+      )}
+
       {/* Floating Mobile Bottom Navigation */}
       <FloatingMobileNav
         activeView={viewMode}
@@ -400,5 +497,6 @@ export default function AppRuntime({
         viewStageRef={viewStageRef}
       />
     </div>
+    </CourseProvider>
   );
 }

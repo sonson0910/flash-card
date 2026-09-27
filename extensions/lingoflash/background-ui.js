@@ -153,6 +153,12 @@
         return typeof resolved === 'string' && resolved ? resolved : fallback;
       } catch { return fallback; }
     };
+    // Mirrors popup.js's QUOTA_MESSAGE_HINTS/isQuotaMessage. This function is
+    // serialized standalone into the page via executeScript, so it cannot
+    // import that module — the same substrings captureFailureMessage.ts
+    // guarantees for a quota-kind error are duplicated here instead.
+    const isQuotaMessageInPage = message => typeof message === 'string'
+      && ['hạn mức', 'số thẻ', 'lượt AI'].some(hint => message.includes(hint));
     const speechSupportedInPage = () => Boolean(
       globalThis.speechSynthesis && typeof globalThis.speechSynthesis.speak === 'function'
         && typeof globalThis.SpeechSynthesisUtterance === 'function',
@@ -238,7 +244,7 @@
     if (!root) return { ok: false, error: 'Inline result host has no shadow root.' };
     root.replaceChildren();
     const style = document.createElement('style');
-    style.textContent = '*{box-sizing:border-box}.c{border:1px solid rgba(103,232,249,0.22);border-radius:18px;padding:15px 16px;color:#f8fafc;background:rgba(7,17,31,0.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 24px 60px -12px rgba(2,6,23,0.75),0 0 24px rgba(34,211,238,0.08);font:500 13px/1.45 system-ui,-apple-system,BlinkMacSystemFont,sans-serif;animation:sf-fade .18s cubic-bezier(0.16,1,0.3,1) forwards;max-height:calc(100vh - 24px);overflow:auto;overscroll-behavior:contain}@keyframes sf-fade{from{opacity:0;transform:translateY(4px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}.h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.b{color:#67e8f9;font-size:10px;font-weight:800;letter-spacing:.12em}.source-line,.example-line{display:flex;align-items:center;gap:7px}.example-line{align-items:flex-start}.example-line .e{min-width:0}.s{color:#94a3b8;font-size:12px;margin-top:2px;overflow-wrap:anywhere}.speak{border:1px solid rgba(103,232,249,0.25);border-radius:8px;padding:3px 7px;color:#a5f3fc;background:rgba(8,47,73,0.35);cursor:pointer;font-size:11px;display:inline-flex;align-items:center;gap:4px;transition:all .15s ease}.speak:hover{border-color:#67e8f9;background:rgba(14,116,144,0.4);transform:translateY(-1px)}.speak[data-speech-state="playing"]{color:#facc15;border-color:#facc15}.speak[data-speech-state="ended"]{color:#86efac;border-color:#86efac}.speak[data-speech-state="error"]{color:#fca5a5;border-color:#fca5a5}.speak:disabled{cursor:not-allowed;opacity:.45;transform:none}.speak:focus-visible,.x:focus-visible{outline:2px solid #67e8f9;outline-offset:2px}.speech-help{color:#fbbf24;font-size:11px;margin-top:5px}.m{display:inline-block;color:#a5f3fc;background:rgba(22,78,99,0.45);border:1px solid rgba(103,232,249,0.18);border-radius:999px;padding:3px 9px;margin-top:6px;font-size:10px;font-weight:700}.x{border:0;background:rgba(255,255,255,0.05);color:#94a3b8;font:700 16px/1 sans-serif;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease}.x:hover{background:rgba(255,255,255,0.15);color:#f8fafc;transform:scale(1.08)}.t{font-size:20px;font-weight:800;margin-top:10px;color:#f8fafc;letter-spacing:-0.02em}.p{color:#67e8f9;margin-top:3px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}.e{color:#cbd5e1;margin-top:8px;font-size:12px;line-height:1.45}.e a{color:#67e8f9;text-decoration:underline}.ok{color:#86efac;margin-top:10px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px}.err{color:#fca5a5;margin-top:10px;background:rgba(239,68,68,0.1);padding:8px 10px;border-radius:8px;border:1px solid rgba(248,113,113,0.2)}.load{color:#cbd5e1;margin-top:11px;display:flex;align-items:center}.spin{display:inline-block;width:14px;height:14px;border:2px solid #164e63;border-top-color:#67e8f9;border-radius:50%;margin-right:8px;vertical-align:-2px;animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}@media (prefers-reduced-motion: reduce){.spin{animation:none}.c{animation:none}.x{transition:none}.speak{transition:none}}';
+    style.textContent = '*{box-sizing:border-box}.c{border:1px solid rgba(103,232,249,0.22);border-radius:18px;padding:15px 16px;color:#f8fafc;background:rgba(7,17,31,0.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 24px 60px -12px rgba(2,6,23,0.75),0 0 24px rgba(34,211,238,0.08);font:500 13px/1.45 system-ui,-apple-system,BlinkMacSystemFont,sans-serif;animation:sf-fade .18s cubic-bezier(0.16,1,0.3,1) forwards;max-height:calc(100vh - 24px);overflow:auto;overscroll-behavior:contain}@keyframes sf-fade{from{opacity:0;transform:translateY(4px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}.h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.b{color:#67e8f9;font-size:10px;font-weight:800;letter-spacing:.12em}.source-line,.example-line{display:flex;align-items:center;gap:7px}.example-line{align-items:flex-start}.example-line .e{min-width:0}.s{color:#94a3b8;font-size:12px;margin-top:2px;overflow-wrap:anywhere}.speak{border:1px solid rgba(103,232,249,0.25);border-radius:8px;padding:3px 7px;color:#a5f3fc;background:rgba(8,47,73,0.35);cursor:pointer;font-size:11px;display:inline-flex;align-items:center;gap:4px;transition:all .15s ease}.speak:hover{border-color:#67e8f9;background:rgba(14,116,144,0.4);transform:translateY(-1px)}.speak[data-speech-state="playing"]{color:#facc15;border-color:#facc15}.speak[data-speech-state="ended"]{color:#86efac;border-color:#86efac}.speak[data-speech-state="error"]{color:#fca5a5;border-color:#fca5a5}.speak:disabled{cursor:not-allowed;opacity:.45;transform:none}.speak:focus-visible,.x:focus-visible{outline:2px solid #67e8f9;outline-offset:2px}.speech-help{color:#fbbf24;font-size:11px;margin-top:5px}.m{display:inline-block;color:#a5f3fc;background:rgba(22,78,99,0.45);border:1px solid rgba(103,232,249,0.18);border-radius:999px;padding:3px 9px;margin-top:6px;font-size:10px;font-weight:700}.x{border:0;background:rgba(255,255,255,0.05);color:#94a3b8;font:700 16px/1 sans-serif;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease}.x:hover{background:rgba(255,255,255,0.15);color:#f8fafc;transform:scale(1.08)}.t{font-size:20px;font-weight:800;margin-top:10px;color:#f8fafc;letter-spacing:-0.02em}.p{color:#67e8f9;margin-top:3px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}.e{color:#cbd5e1;margin-top:8px;font-size:12px;line-height:1.45}.e a{color:#67e8f9;text-decoration:underline}.ok{color:#86efac;margin-top:10px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px}.ok[data-tone="existing"]{color:#fde68a;background:rgba(250,204,21,0.1);padding:6px 9px;border-radius:8px;border:1px solid rgba(250,204,21,0.25)}.err{color:#fca5a5;margin-top:10px;background:rgba(239,68,68,0.1);padding:8px 10px;border-radius:8px;border:1px solid rgba(248,113,113,0.2)}.err[data-tone="quota"]{color:#fde68a;background:rgba(250,204,21,0.1);border-color:rgba(250,204,21,0.25)}.quota-note{color:#94a3b8;margin-top:6px;font-size:11px}.load{color:#cbd5e1;margin-top:11px;display:flex;align-items:center}.spin{display:inline-block;width:14px;height:14px;border:2px solid #164e63;border-top-color:#67e8f9;border-radius:50%;margin-right:8px;vertical-align:-2px;animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}@media (prefers-reduced-motion: reduce){.spin{animation:none}.c{animation:none}.x{transition:none}.speak{transition:none}}';
     const card = document.createElement('section'); card.className = 'c'; card.setAttribute('role', 'status'); card.setAttribute('aria-live', 'polite');
     const head = document.createElement('div'); head.className = 'h';
     const info = document.createElement('div');
@@ -281,9 +287,13 @@
         card.append(exampleLine);
       }
       if (payload.exampleTranslation) { const e = document.createElement('div'); e.className = 'e'; e.textContent = bt('bubbleExampleTranslationPrefix', [payload.exampleTranslation], `Dịch ví dụ: ${payload.exampleTranslation}`); card.append(e); }
-      const ok = document.createElement('div'); ok.className = 'ok'; ok.textContent = payload.status === 'translated' ? bt('bubbleTranslatedOnly', undefined, 'Chỉ dịch • không lưu • không dùng quota AI') : payload.status === 'existing' ? bt('bubbleExisting', undefined, 'Đã có trong thư viện') : bt('bubbleCreated', undefined, 'Đã thêm vào thư viện'); card.append(ok);
+      const ok = document.createElement('div'); ok.className = 'ok';
+      if (payload.status === 'existing') ok.dataset.tone = 'existing';
+      ok.textContent = payload.status === 'translated' ? bt('bubbleTranslatedOnly', undefined, 'Chỉ dịch • không lưu • không dùng quota AI') : payload.status === 'existing' ? bt('bubbleExisting', undefined, 'Đã có trong thư viện') : bt('bubbleCreated', undefined, 'Đã thêm vào thư viện'); card.append(ok);
     } else {
+      const isQuota = payload.status === 'error' && isQuotaMessageInPage(payload.message);
       const e = document.createElement('div'); e.className = payload.status === 'auth-required' ? 'e' : 'err';
+      if (isQuota) e.dataset.tone = 'quota';
       if (payload.status === 'auth-required') {
         e.append(document.createTextNode(bt('bubbleAuthRequired', undefined, 'Cần đăng nhập SonFlash để hoàn tất. ')));
         try {
@@ -294,7 +304,21 @@
         } catch {}
       } else e.textContent = payload.message || bt('bubbleGenericError', undefined, 'Không thể xử lý. Hãy thử lại.');
       card.append(e);
-      if (payload.status === 'error' && typeof payload.retryId === 'string') {
+      if (isQuota) {
+        const note = document.createElement('div'); note.className = 'quota-note'; note.textContent = bt('bubbleQuotaNote', undefined, 'Dịch nhanh vẫn miễn phí, không dùng lượt AI.');
+        card.append(note);
+        const openApp = document.createElement('button');
+        openApp.type = 'button'; openApp.className = 'speak'; openApp.textContent = bt('bubbleQuotaAction', undefined, 'Mở SonFlash · Nâng cấp Pro');
+        openApp.style.marginTop = '8px';
+        openApp.onclick = () => {
+          const runtime = (globalThis.browser ?? globalThis.chrome)?.runtime;
+          if (!runtime?.sendMessage) return;
+          const message = { type: 'OPEN_APP' };
+          if (globalThis.browser?.runtime) void runtime.sendMessage(message);
+          else runtime.sendMessage(message, () => {});
+        };
+        card.append(openApp);
+      } else if (payload.status === 'error' && typeof payload.retryId === 'string') {
         const retry = document.createElement('button');
         retry.type = 'button'; retry.className = 'speak'; retry.textContent = bt('bubbleRetry', undefined, 'Thử lại từ này');
         retry.style.marginTop = '8px';

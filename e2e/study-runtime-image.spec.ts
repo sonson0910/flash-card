@@ -21,7 +21,10 @@ test('a runtime image error moves Image to Word study to a usable text cue', asy
   await seedCards([cardWithBrokenRuntimeImage]);
   await signIn(page, '/?view=library');
 
-  await page.getByRole('button', { name: /Start review|Review \d+ due/ }).click();
+  // LibraryCardGrid.tsx's collection actions render a single "Study now"
+  // button (library.grid.study-now); the old "Start review"/"Review N due"
+  // copy no longer exists.
+  await page.getByRole('button', { name: 'Study now' }).click();
   const recallMode = page.getByLabel('Recall mode');
   await recallMode.selectOption('image-to-word');
 

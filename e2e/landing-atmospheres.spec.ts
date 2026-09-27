@@ -2,6 +2,11 @@ import { expect, test } from '@playwright/test';
 
 test('every atmosphere activates without moving the landing page', async ({ page }) => {
   await page.goto('/?view=landing');
+  // The atmosphere picker sits below the fold; scroll it into view once up
+  // front so Playwright's own auto-scroll-before-click (needed to reach an
+  // off-screen control) isn't mistaken for page movement caused by
+  // activating an atmosphere.
+  await page.getByRole('button', { name: 'Golden Hour', exact: true }).scrollIntoViewIfNeeded();
 
   for (const [index, label] of ['Golden Hour', 'Still Water', 'Deep Woods', 'Quiet Dawn'].entries()) {
     const control = page.getByRole('button', { name: label, exact: true });

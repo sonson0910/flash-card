@@ -1,6 +1,6 @@
 ---
 title: "Ports và hợp đồng dữ liệu Firebase cho đa ngôn ngữ"
-status: todo
+status: in_progress
 ---
 
 # 08. Ports và hợp đồng dữ liệu Firebase cho đa ngôn ngữ
@@ -26,7 +26,7 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 | Task | Thực hiện | Điều kiện đạt |
 |---|---|---|
 | 08.1 | Bọc data access bằng ports hiện hữu/mở rộng; Firebase adapters giữ query/paging/conflict behavior. | Consumers không truyền raw db xuyên UI; contract tests chứng minh không đổi behavior EN/VI. |
-| 08.2 | Card language/translationLanguage độc lập lexeme identity theo R10; cập nhật validator, Rules allowlist, normalizer, storage/mirror/export/import. | Card legacy đọc như en/vi, card ko/vi plain round-trip; partial lexeme identity vẫn reject; backup restore giữ pair. |
+| 08.2 | Card language/translationLanguage độc lập lexeme identity theo R10; cập nhật validator, Rules allowlist, normalizer, storage/mirror/export/import. Shared-deck adoption chuyển pair cấp deck đã xác thực vào card qua intake; reload và re-share giữ pair. | Card legacy đọc như en/vi, card ko/vi plain round-trip; partial lexeme identity vẫn reject; backup restore và nhận rồi chia sẻ lại giữ pair. |
 | 08.3 | Bounded owner-only users/{uid}/profile/courses, một course mỗi target, Goals/preferences/active course theo DTO thống nhất. | Exact keys, valid languages, duplicate/archived policy test; signed-out local fallback rõ; không ghi cloud trong phase planning. |
 | 08.4 | Course filter phải áp dụng trước paging/count/practice loading, không lọc mỗi page cuối UI; owner+course generation guard và pending ops. | Rapid switching không lẫn card/count/result; offline queued op giữ course lúc tạo, không chuyển theo active course mới. |
 | 08.5 | Đồng bộ backend migration mappings cho language fields, course/goals/profile, source metadata phase07. | Sau này migrate không mất trường; migration chưa được chạy. |
@@ -44,6 +44,8 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 - [ ] Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log.
 
 ## Verification
+
+Quyết định dữ liệu ngày 25/09: owner chọn chỉ mục course riêng, không sửa thẻ legacy. Chuẩn bị và test local bootstrap theo batch có checkpoint, generation hoàn tất, mirror create/update/review/delete/restore/clear và replay; chỉ mở query khi generation hoàn tất. Không chạy bootstrap/cloud mutation trong công việc này. [Phân tích query](../reports/architect-260925-1520-course-query-contract.md) giải thích vì sao query trực tiếp không thể chọn chính xác thẻ thiếu trường language.
 
 Port contract tests; normalization/query/ownerRace tests; Functions package tests; npm run test:rules; legacy/new card+course emulator round trips; gates chung.
 

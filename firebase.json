@@ -16,7 +16,8 @@
     }
   ],
   "emulators": {
-    "auth": { "port": 9099 }
+    "auth": { "port": 9099 },
+    "functions": { "port": 5001 }
   },
   "hosting": {
     "public": "dist",

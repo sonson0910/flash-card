@@ -71,6 +71,8 @@ class FakeElement {
 
   append(...children) { this.children.push(...children); }
 
+  prepend(...children) { this.children.unshift(...children); }
+
   replaceChildren(...children) { this.children = children; this.textContent = children.map(child => child.textContent ?? '').join(''); }
 }
 
@@ -88,14 +90,17 @@ const createPopupContext = async ({
   deckLoadError = false,
   deckResponseError = false,
   dueCount = null,
+  retryQuickAddResponse = { ok: true, id: 'job_retry_1', text: 'resilient' },
 } = {}) => {
   const ids = [
     'selection', 'requested-deck', 'character-count', 'translate-button', 'add-button', 'speak-selection', 'speech-support-status', 'status',
     'save-shortcut-value', 'translate-shortcut-value', 'open-shortcuts', 'selection-form', 'open-app',
     'recent-lookups', 'recent-list', 'clear-history', 'selection-icon-toggle', 'selection-icon-status',
+    'web-words-loop', 'web-words-loop-text', 'web-words-loop-action',
     'result-card', 'result-badge', 'result-close', 'result-word', 'result-translation', 'result-details',
     'result-phonetic', 'result-explanation', 'result-example', 'result-example-translation', 'result-actions', 'result-speak', 'result-save', 'deck-status',
-    'due-count-suffix',
+    'due-count-suffix', 'open-app-label',
+    'state-card', 'state-icon', 'state-title', 'state-desc', 'state-note', 'state-actions',
   ];
   const elements = new Map(ids.map(id => [id, new FakeElement()]));
   const runtimeMessages = [];
@@ -135,6 +140,9 @@ const createPopupContext = async ({
       }
       if (message.type === 'GET_DUE_COUNT') {
         return Promise.resolve({ ok: true, count: dueCount });
+      }
+      if (message.type === 'RETRY_QUICK_ADD') {
+        return Promise.resolve(retryQuickAddResponse);
       }
       return Promise.resolve({ ok: true });
     },
@@ -484,15 +492,181 @@ test('clears recent lookup history from the popup', async () => {
   await new Promise(resolve => setImmediate(resolve));
   assert.ok(popup.runtimeMessages.some(message => message.type === 'CLEAR_RECENT_LOOKUPS'));
   assert.equal(popup.elements.get('recent-lookups').hidden, true);
+  assert.equal(popup.elements.get('web-words-loop').hidden, true);
+});
+
+test('shows the web-words loop reminder only for saved (kind: create) lookups, not a translate-only one', async () => {
+  const popup = await createPopupContext({
+    recentItems: [
+      { text: 'resilient', translation: 'bền bỉ', sourceLanguage: 'auto', targetLanguage: 'vi', kind: 'translate', status: 'translated', timestamp: Date.now() },
+      { text: 'ephemeral', translation: 'thoáng qua', sourceLanguage: 'auto', targetLanguage: 'vi', kind: 'create', status: 'created', timestamp: Date.now() },
+      { text: 'lucid', translation: 'sáng suốt', sourceLanguage: 'auto', targetLanguage: 'vi', kind: 'create', status: 'existing', timestamp: Date.now() },
+    ],
+  });
+
+  assert.equal(popup.elements.get('web-words-loop').hidden, false);
+  assert.match(popup.elements.get('web-words-loop-text').textContent, /2/);
+});
+
+test('hides the web-words loop reminder when there is nothing saved yet', async () => {
+  const popup = await createPopupContext({
+    recentItems: [{ text: 'resilient', translation: 'bền bỉ', sourceLanguage: 'auto', targetLanguage: 'vi', kind: 'translate', status: 'translated', timestamp: Date.now() }],
+  });
+
+  assert.equal(popup.elements.get('web-words-loop').hidden, true);
+});
+
+test('opens the app on the WebWords route from the loop reminder, reusing OPEN_APP with a target', async () => {
+  const popup = await createPopupContext({
+    recentItems: [{ text: 'ephemeral', translation: 'thoáng qua', sourceLanguage: 'auto', targetLanguage: 'vi', kind: 'create', status: 'created', timestamp: Date.now() }],
+  });
+
+  popup.elements.get('web-words-loop-action').dispatch('click');
+  await new Promise(resolve => setImmediate(resolve));
+
+  const openAppMessage = popup.runtimeMessages.find(message => message.type === 'OPEN_APP');
+  assert.equal(openAppMessage?.target, 'webWords');
+  assert.equal(popup.closeCalls, 1);
 });
 
 test('shows a real synced due count next to the library link, never a placeholder', async () => {
   const withCount = await createPopupContext({ dueCount: 12 });
   assert.ok(withCount.runtimeMessages.some(message => message.type === 'GET_DUE_COUNT'));
   assert.equal(withCount.elements.get('due-count-suffix').hidden, false);
-  assert.equal(withCount.elements.get('due-count-suffix').textContent, '· 12 thẻ đến hạn');
+  assert.equal(withCount.elements.get('due-count-suffix').textContent, '12 thẻ đến hạn');
 
   const withoutCount = await createPopupContext({ dueCount: null });
   assert.equal(withoutCount.elements.get('due-count-suffix').hidden, true);
   assert.equal(withoutCount.elements.get('due-count-suffix').textContent, '');
+});
+
+test('swaps the footer link label between signed-out and signed-in phrasing based on a resolved due count', async () => {
+  const withCount = await createPopupContext({ dueCount: 12 });
+  assert.equal(withCount.elements.get('open-app-label').textContent, 'Mở thư viện');
+
+  const withoutCount = await createPopupContext({ dueCount: null });
+  assert.equal(withoutCount.elements.get('open-app-label').textContent, 'Đăng nhập');
+});
+
+test('shows the loading state as a busy spinner while a quick-add runs, then a distinct saved badge', async () => {
+  const popup = await createPopupContext();
+
+  popup.elements.get('selection-form').dispatch('submit', { preventDefault() {} });
+  // setBusy(true) and the busy status tone are applied synchronously, before
+  // the first await inside runMode — this is the real "loading" state, not a
+  // simulated one.
+  assert.equal(popup.elements.get('status').dataset.tone, 'busy');
+  await new Promise(resolve => setImmediate(resolve));
+
+  popup.runtimeListeners[0]({
+    type: 'QUICK_ADD_STATUS',
+    payload: { id: 'job_123456789', status: 'created', inlineShown: true, text: 'resilient', translation: 'bền bỉ' },
+  });
+
+  assert.equal(popup.elements.get('status').dataset.tone, 'success');
+  assert.equal(popup.elements.get('result-card').hidden, false);
+  assert.equal(popup.elements.get('result-card').dataset.status, 'created');
+  assert.equal(popup.elements.get('result-badge').textContent, 'ĐÃ LƯU FLASHCARD');
+  assert.equal(popup.elements.get('state-card').hidden, true);
+});
+
+test('shows a distinct duplicate badge for a word that already existed, never the saved badge', async () => {
+  const popup = await createPopupContext();
+
+  popup.elements.get('selection-form').dispatch('submit', { preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
+  popup.runtimeListeners[0]({
+    type: 'QUICK_ADD_STATUS',
+    payload: { id: 'job_123456789', status: 'existing', inlineShown: true, text: 'resilient', translation: 'bền bỉ' },
+  });
+
+  assert.equal(popup.elements.get('result-card').dataset.status, 'existing');
+  assert.equal(popup.elements.get('result-badge').textContent, 'ĐÃ CÓ TRONG THƯ VIỆN');
+  assert.notEqual(popup.elements.get('result-badge').textContent, 'ĐÃ LƯU FLASHCARD');
+});
+
+test('shows a sign-in state card with a working sign-in action when auth is required', async () => {
+  const popup = await createPopupContext();
+
+  popup.elements.get('selection-form').dispatch('submit', { preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
+  popup.runtimeListeners[0]({
+    type: 'QUICK_ADD_STATUS',
+    payload: { id: 'job_123456789', status: 'auth-required', inlineShown: false, text: 'resilient' },
+  });
+
+  const card = popup.elements.get('state-card');
+  assert.equal(card.hidden, false);
+  assert.equal(card.dataset.state, 'sign-in');
+  assert.equal(popup.elements.get('state-title').textContent, 'Chưa đăng nhập SonFlash');
+  assert.equal(popup.elements.get('result-card').hidden, true);
+
+  const [action] = popup.elements.get('state-actions').children;
+  assert.equal(action.textContent, 'Đăng nhập SonFlash');
+  action.dispatch('click');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(popup.runtimeMessages.some(message => message.type === 'OPEN_APP'));
+  assert.equal(popup.closeCalls, 1);
+});
+
+test('classifies an AI-quota error message as the quota state, distinct from a generic error, with no retry action', async () => {
+  const popup = await createPopupContext();
+
+  popup.elements.get('selection-form').dispatch('submit', { preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
+  popup.runtimeListeners[0]({
+    type: 'QUICK_ADD_STATUS',
+    payload: {
+      id: 'job_123456789', status: 'error', inlineShown: false, text: 'resilient',
+      message: 'Dịch vụ AI đã hết hạn mức. Từ đã chọn vẫn được giữ lại; hãy thử lại sau.',
+    },
+  });
+
+  const card = popup.elements.get('state-card');
+  assert.equal(card.dataset.state, 'quota');
+  assert.equal(popup.elements.get('state-title').textContent, 'Hết lượt AI hôm nay');
+  assert.equal(popup.elements.get('state-note').hidden, false);
+  assert.match(popup.elements.get('state-note').textContent, /Dịch nhanh vẫn miễn phí/);
+  const [action] = popup.elements.get('state-actions').children;
+  assert.equal(action.textContent, 'Mở SonFlash · Nâng cấp Pro');
+});
+
+test('shows a generic error state card whose retry action resends RETRY_QUICK_ADD and applies the retried result', async () => {
+  const popup = await createPopupContext({
+    retryQuickAddResponse: { ok: true, id: 'job_retry_1', text: 'resilient' },
+  });
+
+  popup.elements.get('selection-form').dispatch('submit', { preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
+  popup.runtimeListeners[0]({
+    type: 'QUICK_ADD_STATUS',
+    payload: { id: 'job_123456789', status: 'error', inlineShown: false, text: 'resilient', message: 'Không thể kết nối tới AI.' },
+  });
+
+  const card = popup.elements.get('state-card');
+  assert.equal(card.dataset.state, 'error');
+  assert.equal(popup.elements.get('state-title').textContent, 'Không thể tạo hoặc lưu flashcard này');
+  const [retryButton] = popup.elements.get('state-actions').children;
+  assert.equal(retryButton.textContent, 'Thử lại');
+
+  retryButton.dispatch('click');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(popup.runtimeMessages.some(message => message.type === 'RETRY_QUICK_ADD' && message.id === 'job_123456789'));
+
+  popup.runtimeListeners[0]({
+    type: 'QUICK_ADD_STATUS',
+    payload: { id: 'job_retry_1', status: 'created', inlineShown: true, text: 'resilient', translation: 'bền bỉ' },
+  });
+  assert.equal(popup.elements.get('result-card').dataset.status, 'created');
+  assert.equal(popup.elements.get('state-card').hidden, true);
+});
+
+test('marks the floating icon toggle unavailable on a protected page instead of a generic error tone', async () => {
+  const popup = await createPopupContext({
+    activeSite: { ok: true, pattern: '', protected: true, enabled: false },
+  });
+
+  assert.equal(popup.elements.get('selection-icon-toggle').disabled, true);
+  assert.equal(popup.elements.get('selection-icon-toggle').textContent, 'Không khả dụng');
+  assert.equal(popup.elements.get('selection-icon-status').dataset.tone, 'unavailable');
 });

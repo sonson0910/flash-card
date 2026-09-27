@@ -8,6 +8,36 @@ import type { LibraryStatsViewModel } from '../../features/library/libraryViewMo
 interface AchievementsMatrixProps { stats: LibraryStatsViewModel; }
 interface Badge { id: string; title: string; description: string; tier: string; icon: typeof Trophy; unlocked: boolean; progress: number; current: number; target: number; unit: string; }
 
+/** Numeric identity of every milestone badge, stable across locales and callers. */
+export type AchievementBadgeId = 'streak_3' | 'mastery_10' | 'mastery_50' | 'xp_100' | 'xp_total_500' | 'night_owl';
+
+export interface AchievementBadgeStat {
+  readonly id: AchievementBadgeId;
+  readonly unlocked: boolean;
+  readonly progress: number;
+  readonly current: number;
+  readonly target: number;
+}
+
+/**
+ * Locale-independent badge math shared by the Progress achievements grid and
+ * the weekly recap milestones strip, so both read the exact same thresholds
+ * from the exact same `LibraryStatsViewModel` instead of drifting apart.
+ */
+export function computeAchievementBadgeStats(stats: LibraryStatsViewModel): AchievementBadgeStat[] {
+  const totalXp = stats.xpChartData.reduce((sum, item) => sum + item.XP, 0);
+  const maxSingleDayXp = Math.max(0, ...stats.xpChartData.map(item => item.XP));
+  const activeDays = stats.xpChartData.filter(item => item.XP > 0).length;
+  return [
+    { id: 'streak_3', unlocked: activeDays >= 3, progress: Math.min(100, Math.round(activeDays / 3 * 100)), current: activeDays, target: 3 },
+    { id: 'mastery_10', unlocked: stats.reviewed >= 10, progress: Math.min(100, Math.round(stats.reviewed / 10 * 100)), current: stats.reviewed, target: 10 },
+    { id: 'mastery_50', unlocked: stats.learned >= 50, progress: Math.min(100, Math.round(stats.learned / 50 * 100)), current: stats.learned, target: 50 },
+    { id: 'xp_100', unlocked: maxSingleDayXp >= 100, progress: Math.min(100, Math.round(maxSingleDayXp / 100 * 100)), current: maxSingleDayXp, target: 100 },
+    { id: 'xp_total_500', unlocked: totalXp >= 500, progress: Math.min(100, Math.round(totalXp / 500 * 100)), current: totalXp, target: 500 },
+    { id: 'night_owl', unlocked: activeDays >= 5, progress: Math.min(100, Math.round(activeDays / 5 * 100)), current: activeDays, target: 5 },
+  ];
+}
+
 const text = {
   bud: msg({ id: 'stats.tier-bud', message: 'Bud' }), bloom: msg({ id: 'stats.tier-bloom', message: 'Bloom' }), star: msg({ id: 'stats.tier-star', message: 'Star' }),
   days: msg({ id: 'stats.days', message: 'days' }), words: msg({ id: 'stats.words', message: 'words' }), unlocked: msg({ id: 'stats.unlocked', message: 'unlocked' }), progress: msg({ id: 'stats.progress', message: 'Progress' }),
@@ -24,19 +54,36 @@ export function findNewlyUnlockedBadgeIds(previous: ReadonlySet<string>, current
   return [...current].filter(id => !previous.has(id));
 }
 
+/** Localized copy for each badge, keyed by the same id `computeAchievementBadgeStats` returns. */
+export const achievementBadgeCopy: Record<AchievementBadgeId, {
+  title: ReturnType<typeof msg>; description: ReturnType<typeof msg>; tier: ReturnType<typeof msg>; icon: typeof Trophy; unit: ReturnType<typeof msg> | 'XP';
+}> = {
+  streak_3: { title: text.budRoutine, description: text.budRoutineDescription, tier: text.bud, icon: Flame, unit: text.days },
+  mastery_10: { title: text.bloomingRecall, description: text.bloomingRecallDescription, tier: text.bloom, icon: Sparkles, unit: text.words },
+  mastery_50: { title: text.starKeeper, description: text.starKeeperDescription, tier: text.star, icon: Trophy, unit: text.words },
+  xp_100: { title: text.brightStudyDay, description: text.brightStudyDayDescription, tier: text.bloom, icon: Target, unit: 'XP' },
+  xp_total_500: { title: text.growingCollection, description: text.growingCollectionDescription, tier: text.star, icon: Award, unit: 'XP' },
+  night_owl: { title: text.gentleNightStudy, description: text.gentleNightStudyDescription, tier: text.bud, icon: Moon, unit: text.days },
+};
+
 export function AchievementsMatrix({ stats }: AchievementsMatrixProps) {
   const { _ } = useLingui();
-  const totalXp = stats.xpChartData.reduce((sum, item) => sum + item.XP, 0);
-  const maxSingleDayXp = Math.max(0, ...stats.xpChartData.map(item => item.XP));
-  const activeDays = stats.xpChartData.filter(item => item.XP > 0).length;
-  const badges: Badge[] = [
-    { id: 'streak_3', title: _(text.budRoutine), description: _(text.budRoutineDescription), tier: _(text.bud), icon: Flame, unlocked: activeDays >= 3, progress: Math.min(100, Math.round(activeDays / 3 * 100)), current: activeDays, target: 3, unit: _(text.days) },
-    { id: 'mastery_10', title: _(text.bloomingRecall), description: _(text.bloomingRecallDescription), tier: _(text.bloom), icon: Sparkles, unlocked: stats.reviewed >= 10, progress: Math.min(100, Math.round(stats.reviewed / 10 * 100)), current: stats.reviewed, target: 10, unit: _(text.words) },
-    { id: 'mastery_50', title: _(text.starKeeper), description: _(text.starKeeperDescription), tier: _(text.star), icon: Trophy, unlocked: stats.learned >= 50, progress: Math.min(100, Math.round(stats.learned / 50 * 100)), current: stats.learned, target: 50, unit: _(text.words) },
-    { id: 'xp_100', title: _(text.brightStudyDay), description: _(text.brightStudyDayDescription), tier: _(text.bloom), icon: Target, unlocked: maxSingleDayXp >= 100, progress: Math.min(100, Math.round(maxSingleDayXp / 100 * 100)), current: maxSingleDayXp, target: 100, unit: 'XP' },
-    { id: 'xp_total_500', title: _(text.growingCollection), description: _(text.growingCollectionDescription), tier: _(text.star), icon: Award, unlocked: totalXp >= 500, progress: Math.min(100, Math.round(totalXp / 500 * 100)), current: totalXp, target: 500, unit: 'XP' },
-    { id: 'night_owl', title: _(text.gentleNightStudy), description: _(text.gentleNightStudyDescription), tier: _(text.bud), icon: Moon, unlocked: activeDays >= 5, progress: Math.min(100, Math.round(activeDays / 5 * 100)), current: activeDays, target: 5, unit: _(text.days) },
-  ];
+  const badgeStats = computeAchievementBadgeStats(stats);
+  const badges: Badge[] = badgeStats.map(stat => {
+    const copy = achievementBadgeCopy[stat.id];
+    return {
+      id: stat.id,
+      title: _(copy.title),
+      description: _(copy.description),
+      tier: _(copy.tier),
+      icon: copy.icon,
+      unlocked: stat.unlocked,
+      progress: stat.progress,
+      current: stat.current,
+      target: stat.target,
+      unit: copy.unit === 'XP' ? 'XP' : _(copy.unit),
+    };
+  });
   const unlockedIds = new Set(badges.filter(badge => badge.unlocked).map(badge => badge.id));
   const unlockedSignature = [...unlockedIds].join('|');
   const previousUnlockedRef = useRef<Set<string> | null>(null);

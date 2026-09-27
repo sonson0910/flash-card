@@ -59,8 +59,15 @@ const updateCategoryFacets = async (
 
 const practiceDatabase = cloudAvailable ? db : null;
 const practicePool = practiceDatabase ? {
-  load: async (ownerId: string, maximum: number, options: { includeFuture: boolean }) =>
-    fetchPracticeCards(practiceDatabase, ownerId, maximum, { includeFuture: options.includeFuture }),
+  load: async (
+    ownerId: string,
+    maximum: number,
+    options: { includeFuture: boolean; targetLanguage?: string },
+  ) =>
+    fetchPracticeCards(practiceDatabase, ownerId, maximum, {
+      includeFuture: options.includeFuture,
+      targetLanguage: options.targetLanguage,
+    }),
   classifyFailure: (error: unknown) => isQuotaError(error) ? 'quota' as const : 'unavailable' as const,
 } : null;
 
@@ -72,6 +79,7 @@ const loadAllCards = async (ownerId: string | null): Promise<CardData[] | null> 
 const loadCategoryCards = async (
   ownerId: string | null,
   category: string,
+  targetLanguage?: string,
 ): Promise<SharedDeckCardBatch> => {
   if (!cloudAvailable || !db || !ownerId) {
     return { cards: [], total: 0, hasNext: false };
@@ -84,6 +92,10 @@ const loadCategoryCards = async (
     bookmarkedOnly: false,
     createdDate: null,
     wordPrefix: '',
+    // Scopes outgoing shares to the active course: without this, sharing
+    // from the "All" category could leak cards from another course's
+    // target language into the recipient's import.
+    targetLanguage,
   };
   const page = await withTimeout(fetchCardPage({
     db,
@@ -154,12 +166,12 @@ export const appDependencies = {
     gamification: firebaseGamificationStore,
   },
   intake: {
-    forOwner: (ownerId: string | null): {
+    forOwner: (ownerId: string | null, targetLanguage?: string): {
       adapter: SharedDeckAdapter;
       loadCards(category: string): Promise<SharedDeckCardBatch>;
     } => ({
       adapter: sharedDeck,
-      loadCards: category => loadCategoryCards(ownerId, category),
+      loadCards: category => loadCategoryCards(ownerId, category, targetLanguage),
     }),
   },
 };

@@ -50,10 +50,25 @@ test('motion tokens expose one compact timing language', async ({ page, signIn }
   expect(normalizeDecimals(tokens['--ease-out-expo'])).toBe('cubic-bezier(0.16, 1, 0.3, 1)');
 });
 
+// `.ambient-orb`/`.ambient-orb-a/b/c` are orphaned CSS (index.css) with zero
+// JSX renders anywhere in src/ and no @keyframes animation of their own —
+// the live noise-texture layer is `.app-canvas::before` (index.css:109,
+// rendered via the `.app-canvas` root div in AppRuntime.tsx), which shares
+// every media query `.ambient-orb` used to share (max-width/hover/pointer,
+// data-save-data). `::before` is a pseudo-element, not a real DOM node, so
+// it can't go through `page.locator()` — read it with getComputedStyle.
+async function ambientLayerStyle(page: import('@playwright/test').Page, property: 'animationName' | 'display') {
+  return page.evaluate(prop => {
+    const canvas = document.querySelector('.app-canvas');
+    if (!canvas) return null;
+    return getComputedStyle(canvas, '::before')[prop as 'animationName' | 'display'];
+  }, property);
+}
+
 test('ambient glow stays static on mobile to avoid continuous blurred animation', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page, '/?view=today');
-  await expect(page.locator('.ambient-orb').first()).toHaveCSS('animation-name', 'none');
+  await expect.poll(() => ambientLayerStyle(page, 'display')).toBe('none');
 });
 
 test('data saver disables ambient motion at desktop sizes', async ({ page, signIn }) => {
@@ -71,7 +86,7 @@ test('data saver disables ambient motion at desktop sizes', async ({ page, signI
   await signIn(page, '/?view=today');
 
   await expect(page.locator('html')).toHaveAttribute('data-save-data', 'true');
-  await expect(page.locator('.ambient-orb').first()).toHaveCSS('display', 'none');
+  await expect.poll(() => ambientLayerStyle(page, 'display')).toBe('none');
 });
 
 test('dialog overlay and content use coordinated entrance animations', async ({ page, signIn }) => {
@@ -93,6 +108,11 @@ test('utility hover physics stay restrained while reward remains expressive', as
   await signIn(page, '/?view=library');
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(700);
+  // The full <Flashcard> (role="group") only renders inside the "Open card"
+  // detail dialog now — LibraryCardGrid.tsx's grid rows are a compact
+  // summary with their own "Open card" button (see flashcard-effects.spec.ts
+  // and flashcard-locale.spec.ts for the same pattern).
+  await page.locator('[data-library-card-row][data-library-card-id="motion-7"]').getByRole('button', { name: 'Open card' }).click();
   const star = page
     .getByRole('group', { name: /insight flashcard/i })
     .getByRole('button', { name: 'Star this word' });
@@ -113,12 +133,14 @@ test('utility hover physics stay restrained while reward remains expressive', as
   expect(await hoveredScale()).toBeLessThanOrEqual(1.07);
 });
 
-test('only the first six library cards are marked for the initial stagger', async ({ page, signIn }) => {
+test('library rows render fully visible without an entrance stagger', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await signIn(page, '/?view=library');
-  const introducedCards = page.locator('[data-library-intro-index]');
-
-  await expect(introducedCards).toHaveCount(6);
-  await expect(introducedCards.nth(0)).toHaveAttribute('data-library-intro-index', '0');
-  await expect(introducedCards.nth(5)).toHaveAttribute('data-library-intro-index', '5');
+  // The row-based library dropped the card entrance stagger, so every seeded
+  // row must be on screen at full opacity instead of waiting on an animation.
+  const rows = page.locator('[data-library-card-row]');
+  await expect(rows).toHaveCount(cards.length);
+  await expect(page.locator('[data-library-intro-index]')).toHaveCount(0);
+  const opacities = await rows.evaluateAll(elements => elements.map(element => getComputedStyle(element).opacity));
+  expect(opacities).toEqual(cards.map(() => '1'));
 });

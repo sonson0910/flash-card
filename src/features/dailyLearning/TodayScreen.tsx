@@ -1,3 +1,4 @@
+import { Suspense, lazy } from 'react';
 import {
   Brain,
   Check,
@@ -23,6 +24,10 @@ import './daily-learning-canvas.css';
 import './today-caught-up.css';
 import type { LessonMode, TodayScreenActions, TodayScreenModel } from './dailyLearningPresentation';
 
+const WebWordsTodayStrip = lazy(() =>
+  import('../webWords/WebWordsTodayStrip').then(module => ({ default: module.WebWordsTodayStrip })),
+);
+
 interface TodayScreenProps {
   readonly model: TodayScreenModel;
   readonly actions: TodayScreenActions;
@@ -47,7 +52,7 @@ const lessonModes: ReadonlyArray<{
 const featuredLessonModes = lessonModes.slice(0, 3);
 const additionalLessonModes = lessonModes.slice(3);
 
-const primaryButton = 'brand-action shimmer-sweep min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
+const primaryButton = 'brand-action shimmer-sweep min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100';
 const secondaryButton = 'min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 font-bold text-slate-800 dark:text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 const headingClass = 'text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl';
 
@@ -90,10 +95,11 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
         <button
           type="button"
           data-primary-learning-action="true"
-          onClick={plan.due > 0 ? actions.continueReview : () => actions.startLesson('recognition')}
+          disabled={model.isOffline}
+          onClick={actions.startSession}
           className={`${primaryButton} w-full justify-self-stretch text-center sm:w-auto lg:w-full`}
         >
-          {plan.due > 0 ? <Trans id="today.plan.continue-review" message="Continue review" /> : <Trans id="today.plan.start-recognition" message="Start recognition lesson" />}
+          <Trans id="today.plan.start-session" message="Start today's session" />
         </button>
       </div>
 
@@ -205,7 +211,7 @@ function CaughtUpPanel({ model, actions, showLumi }: TodayScreenProps & { readon
   );
 }
 
-function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
+function PracticeModes({ model, actions }: Pick<TodayScreenProps, 'model' | 'actions'>) {
   return (
     <section aria-labelledby="practice-mode-heading" className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -225,8 +231,9 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
               key={mode.id}
               type="button"
               data-practice-mode="true"
+              disabled={model.isOffline}
               onClick={() => actions.startLesson(mode.id)}
-              className="practice-bento-card min-h-24 rounded-xl group flex flex-col justify-between p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)]"
+              className="practice-bento-card min-h-24 rounded-xl group flex flex-col justify-between p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className={`flex size-9 items-center justify-center rounded-xl border bg-gradient-to-br ${mode.accentColor} shadow-xs transition-transform duration-200 group-hover:scale-110`}>
@@ -254,8 +261,9 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
               key={mode.id}
               type="button"
               data-practice-catalog-mode="true"
+              disabled={model.isOffline}
               onClick={() => actions.startLesson(mode.id)}
-              className="practice-bento-card min-h-20 rounded-xl p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)]"
+              className="practice-bento-card min-h-20 rounded-xl p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="flex items-center gap-2 font-black text-[var(--sf-text)]"><mode.Icon size={17} className="text-[var(--sf-brand-text)]" /><Trans id={mode.label.id} message={mode.label.message} /></span>
               <span className="mt-1 block text-xs leading-5 text-[var(--sf-text-muted)]"><Trans id={mode.description.id} message={mode.description.message} /></span>
@@ -337,7 +345,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
             <StreakChip streak={model.streak} />
           </div>
         </header>
-        {model.isOffline && <p className="mt-4 rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite"><Trans id="today.offline" message="Available offline · using saved learning data" /></p>}
+        {model.isOffline && <p className="mt-4 rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite"><Trans id="today.offline" message="You're offline. Reconnect to start today's session." /></p>}
         <div className="mt-8 flex justify-center">
           <CaughtUpPanel model={model} actions={actions} showLumi={showLumi} />
         </div>
@@ -367,11 +375,12 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
         <div className="mt-1 flex flex-wrap items-center gap-2"><p className="text-sm font-bold text-[var(--sf-brand-text)]">{model.courseLabel ?? <Trans id="today.course.fallback" message="Your current course" />}</p><StreakChip streak={model.streak} /></div>
         <p className="mt-2 max-w-2xl text-pretty text-[var(--sf-text-muted)]" role="status" aria-live="polite">{model.message}</p>
       </header>
-      {model.isOffline && <p className="rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite"><Trans id="today.offline" message="Available offline · using saved learning data" /></p>}
+      {model.isOffline && <p className="rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite"><Trans id="today.offline" message="You're offline. Reconnect to start today's session." /></p>}
       <PlanSummary model={model} actions={actions} />
+      <Suspense fallback={null}><WebWordsTodayStrip /></Suspense>
       {showLumi && <aside className="crystal-chamfer flex min-h-24 items-center gap-4 border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-4 shadow-[var(--sf-panel-shadow)]"><Lumi pose="hero" size={76} eager className="crystal-ornament shrink-0" /><p className="text-sm font-bold leading-6 text-[var(--sf-text)]"><Trans id="today.lumi.ready" message="Lumi is ready to study with you." /></p></aside>}
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]">
-        <PracticeModes actions={actions} />
+        <PracticeModes model={model} actions={actions} />
         {model.placementAvailable && (
           <aside aria-labelledby="placement-invite-heading" className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 sm:p-6">
             <p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="today.placement.kicker" message="Optional" /></p>

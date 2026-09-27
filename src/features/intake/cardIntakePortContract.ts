@@ -1,4 +1,5 @@
 import type { CardData } from '../../types/card';
+import type { LanguageProfile } from '../language/languageProfile';
 
 export interface CardIntakeCloudStats {
   total: number;
@@ -14,6 +15,8 @@ export interface CardIntakeCloudStats {
 
 export interface CardIntakePortOptions {
   ownerId: string | null;
+  /** Active course's language pair; falls back to English-Vietnamese when there is no active course yet (legacy user). */
+  languageProfile?: LanguageProfile;
   libraryEpoch: number | null;
   knownLibraryTotal: number;
   cloudStats: CardIntakeCloudStats;

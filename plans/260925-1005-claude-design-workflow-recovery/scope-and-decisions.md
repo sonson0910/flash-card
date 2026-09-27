@@ -2,7 +2,7 @@
 
 ## Thứ tự thẩm quyền
 
-1. Chỉ đạo user ngày 25/09 trong phiên hiện tại: phải giống Claude Design, không sót màn, có cả workflow mới; mọi màn gen để tích hợp trừ demo lựa chọn. Yêu cầu hiện tại là audit và plan, không triển khai thêm.
+1. Chỉ đạo user ngày 25/09 trong phiên hiện tại: phải giống Claude Design, không sót màn, có cả workflow mới; mọi màn gen để tích hợp trừ demo lựa chọn. Sau audit/plan, user cho phép đội agent triển khai và test local, gồm lane 08–10 trước G1; controller verify, ghi log và commit theo phase. Không deploy.
 2. Các quyết định cụ thể đã chốt trong [decisions.md](../260923-1831-global-multilingual-launch/decisions.md), gồm R1–R10, cùng quyết định trong hội thoại hiện tại. Dùng chúng để điều chỉnh dữ liệu/điều kiện mở tính năng, không để xóa các màn khỏi master plan.
 3. Canvas source + seed + các trạng thái được generator khai báo. Đây là chuẩn bố cục và tương tác; dữ liệu mẫu không phải quyền bịa số liệu người học.
 4. [Handoff UI](../reports/handoff-260924-1610-codex-ui-redesign.md), [handoff roadmap](../reports/handoff-260925-0920-codex-post-ui-roadmap.md), source frontend/backend phases. Phạm vi pilot hẹp trong handoff cũ không còn được dùng để giới hạn master plan này.
@@ -49,6 +49,7 @@ Hai tên board cho cùng chức năng được gộp vào một runtime route/co
 | Điểm | Bằng chứng / đề xuất trong plan | Chặn gì |
 |---|---|---|
 | G1 và frontend mở rộng | Owner chốt 25/09: cho phép code/test local 08–10 trước G1, giải quyết mâu thuẫn giữa roadmap và handoff. | G1 vẫn chặn phát hành tương ứng; không có quyền deploy trong công việc này. |
+| Course query cho thẻ legacy thiếu language | Owner chốt 25/09: tạo chỉ mục course riêng, giữ nguyên thẻ gốc. Code và test local gồm bootstrap theo batch, kiểm tra hoàn tất và đồng bộ mọi mutation. | Chưa chạy bootstrap trên cloud. Course query chỉ được dùng khi generation của chỉ mục đã hoàn tất; không lọc sau giới hạn page/practice. |
 | Quota, giá, VAT, feature entitlements | R5–R8 là giá trị đã chốt; decision 8 còn mở. | Live checkout, paywall, rewards, streak purchase, league. |
 | Reminder delivery | Canvas có browser push, email digest, extension badge; repo chưa có hợp đồng reminder. Phase 11 phải thiết kế/kiểm chứng kênh, timezone, opt-in và hủy. | Delivery thật khi app đóng; không được chỉ lưu toggle rồi gọi xong. |
 | Streaming/tutor | UI có design, backend hiện trả kết quả một lần và chưa có tutor chat contract hoàn chỉnh. | Streaming/chấm/tutor live; phase 11 có task contract trước code. |

@@ -8,7 +8,7 @@ import type {
   UpdateGoalInput,
 } from './courseModel';
 
-export type CourseProfileSource = 'cloud' | 'absent' | 'local';
+export type CourseProfileSource = 'cloud' | 'absent';
 
 export interface CourseProfileRead {
   readonly source: CourseProfileSource;
@@ -17,8 +17,9 @@ export interface CourseProfileRead {
 
 /**
  * The course boundary is intentionally independent of Firebase and React.
- * A signed-out caller passes null and uses the local adapter; the Firebase
- * adapter rejects null rather than quietly switching to local state.
+ * Sign-in is required to study, so every caller supplies a real owner id;
+ * the Firebase adapter rejects null rather than quietly switching to local
+ * state.
  */
 export interface CoursePort {
   readonly available: boolean;

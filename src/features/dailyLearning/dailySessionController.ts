@@ -9,7 +9,7 @@ import {
 } from './lessonReducer';
 
 export type DailySessionPersistenceResult =
-  | { readonly status: 'advanced' | 'completed' | 'provisionally-advanced' | 'sync-pending' | 'stale-session' | 'not-ready' }
+  | { readonly status: 'advanced' | 'completed' | 'stale-session' | 'not-ready' }
   | { readonly status: 'failed'; readonly error: string };
 
 export interface DailySessionController {
@@ -67,16 +67,6 @@ export function createDailySessionController({
     operation = (async () => {
       try {
         const outcome = await reviewCard(review.itemId, review.rating, review.operationId);
-        if (outcome?.status === 'durably-queued') {
-          if (generation !== sessionGeneration || !snapshot) return { status: 'stale-session' };
-          const next = reduceLessonState(snapshot, {
-            type: 'provisionally-persisted',
-            operationId: review.operationId,
-          });
-          if (next === snapshot) return { status: 'stale-session' };
-          publish(next);
-          return { status: next.phase === 'sync-pending' ? 'sync-pending' : 'provisionally-advanced' };
-        }
         if (outcome?.status !== 'published') {
           throw new Error(`The review was not saved (${outcome?.status ?? 'missing outcome'}).`);
         }

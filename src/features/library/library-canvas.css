@@ -740,23 +740,27 @@
 .library-card-detail-overlay,
 .library-delete-overlay {
   position: fixed;
+  z-index: 100;
   inset: 0;
   background: var(--sf-scrim);
 }
 
 .library-card-detail-dialog {
   position: fixed;
+  z-index: 101;
   inset: 50% auto auto 50%;
   width: min(calc(100vw - 1rem), 40rem);
   max-height: calc(100dvh - 1rem);
   overflow: auto;
   transform: translate(-50%, -50%);
   outline: 0;
+  /* Room for the close button, so it never sits on the card's corner actions. */
+  padding-top: 3.25rem;
 }
 
 .library-card-detail-close {
   position: fixed;
-  z-index: 2;
+  z-index: 50;
   top: .75rem;
   right: .75rem;
   width: 2.5rem;
@@ -772,6 +776,7 @@
 
 .library-delete-dialog {
   position: fixed;
+  z-index: 101;
   inset: 50% auto auto 50%;
   width: min(calc(100vw - 2rem), 25rem);
   transform: translate(-50%, -50%);
@@ -1070,7 +1075,11 @@
   .library-lumi-hint { display: none; }
   .library-canvas-search { grid-column: 1 / -1; grid-row: 2; }
   .library-canvas-rail { align-items: stretch; flex-direction: column; gap: .65rem; }
-  .library-canvas-filters { margin-left: 0; }
+  /* Wrap instead of horizontally scrolling: an overflow-x:auto strip leaves
+     the tail buttons (Starred, Grid/List view) positioned past the viewport
+     edge at rest, which reads as clipped/unreachable content even though a
+     manual scroll would reveal them. */
+  .library-canvas-filters { margin-left: 0; flex-wrap: wrap; overflow-x: visible; }
 }
 
 @media (max-width: 720px) {

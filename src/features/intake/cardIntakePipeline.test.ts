@@ -214,6 +214,50 @@ describe('Card Intake Pipeline contract', () => {
     expect(generated.card.origin).toBe('ai');
   });
 
+  it('persists captured browser-extension source metadata on the generated card without leaking it into the AI request', async () => {
+    generationRuntime.generateWordInfo.mockResolvedValueOnce({
+      translation: 'dẫn đầu', explanation: '', explanationTranslation: '', phonetic: '/liːd/',
+      emoji: '🎭', category: 'General', partOfSpeech: 'verb', cefrLevel: 'B1',
+      exampleSentence: '', exampleTranslation: '', collocations: [], synonyms: [], antonyms: [],
+      register: '', commonMistake: '', imageSearchQuery: 'lead actor',
+    });
+    const pipeline = createCardIntakePipeline({ getContext: createContext });
+
+    const generated = await pipeline.generateCard({
+      term: 'lead',
+      surface: 'extension',
+      language: ENGLISH_TO_VIETNAMESE_PROFILE,
+      context: 'The lead actor arrived.',
+      sourceUrl: 'https://example.com/article',
+      pageTitle: 'An Example Article',
+      capturedAt: '2026-09-27T00:00:00.000Z',
+    });
+
+    expect(generated.card.source).toEqual({
+      url: 'https://example.com/article',
+      title: 'An Example Article',
+      context: 'The lead actor arrived.',
+      capturedAt: '2026-09-27T00:00:00.000Z',
+    });
+    const [, aiOptions] = generationRuntime.generateWordInfo.mock.calls[0]!;
+    expect(aiOptions).not.toHaveProperty('sourceUrl');
+    expect(aiOptions).not.toHaveProperty('pageTitle');
+  });
+
+  it('omits source metadata entirely for a plain in-app generation request', async () => {
+    generationRuntime.generateWordInfo.mockResolvedValueOnce({
+      translation: 'dẫn đầu', explanation: '', explanationTranslation: '', phonetic: '/liːd/',
+      emoji: '🎭', category: 'General', partOfSpeech: 'verb', cefrLevel: 'B1',
+      exampleSentence: '', exampleTranslation: '', collocations: [], synonyms: [], antonyms: [],
+      register: '', commonMistake: '', imageSearchQuery: 'lead actor',
+    });
+    const pipeline = createCardIntakePipeline({ getContext: createContext });
+
+    const generated = await pipeline.generateCard({ term: 'lead', language: ENGLISH_TO_VIETNAMESE_PROFILE });
+
+    expect(generated.card.source).toBeUndefined();
+  });
+
   it('does not touch the new owner state when a stale cloud settlement fails after an owner switch', async () => {
     const queued = deferred<void>();
     const ownerA = createContext();

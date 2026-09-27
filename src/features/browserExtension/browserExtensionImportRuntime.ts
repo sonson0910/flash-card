@@ -24,6 +24,20 @@ export interface BrowserExtensionImportOptions {
   openLibrary(): void;
   notify(message: string): void;
   reportError(message: string): void;
+  /**
+   * Runs immediately before a silent (one-click, no-review) capture is
+   * generated. The extension always captures assuming its fixed English
+   * assumption, so when the active course targets a different language this
+   * is the only point where a human ever sees the mismatch — manual (non-
+   * silent) captures instead land in the library view, where the real course
+   * switcher is already visible before the user generates anything.
+   * Returning `'cancel'` drops the capture with no side effects: nothing is
+   * generated, the pending storage entry is cleared, and the extension
+   * receives a clean error result. Omitting this option (or resolving
+   * `'proceed'`) keeps generation byte-for-byte identical to before this
+   * option existed.
+   */
+  ensureCaptureCourse?(): Promise<'proceed' | 'cancel'>;
 }
 
 export interface BrowserExtensionImportRuntime {
@@ -144,7 +158,9 @@ export const startBrowserExtensionImportRuntime = (
       && pending.text === intent.text
       && pending.createdAt === intent.createdAt
       && (pending.context ?? '') === (intent.context ?? '')
-      && (pending.requestedDeck ?? '') === (intent.requestedDeck ?? '');
+      && (pending.requestedDeck ?? '') === (intent.requestedDeck ?? '')
+      && (pending.sourceUrl ?? '') === (intent.sourceUrl ?? '')
+      && (pending.pageTitle ?? '') === (intent.pageTitle ?? '');
   };
 
   const processPending = () => {
@@ -189,59 +205,92 @@ export const startBrowserExtensionImportRuntime = (
     if (options.isBusy || activeIntentKey === key) return;
 
     activeIntentKey = key;
-    clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
 
-    void options.generate({
-      operationId: intent.id,
-      surface: 'extension',
-      ...(intent.context ? { context: intent.context } : {}),
-      ...(requestedDeck ? {
-        requestedDeck,
-        requestedDeckAvailable: (deck: string) => options.customDecks.includes(deck),
-      } : {}),
-    }).then(result => {
+    const runGeneration = () => {
+      clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
+
+      void options.generate({
+        operationId: intent.id,
+        surface: 'extension',
+        ...(intent.context ? { context: intent.context } : {}),
+        ...(intent.sourceUrl ? { sourceUrl: intent.sourceUrl } : {}),
+        ...(intent.pageTitle ? { pageTitle: intent.pageTitle } : {}),
+        capturedAt: new Date(intent.createdAt).toISOString(),
+        ...(requestedDeck ? {
+          requestedDeck,
+          requestedDeckAvailable: (deck: string) => options.customDecks.includes(deck),
+        } : {}),
+      }).then(result => {
+        if (disposed) return;
+        if (result.status === 'busy') {
+          if (activeIntentKey === key) activeIntentKey = null;
+          retryTimer = globalThis.setTimeout(processPending, 250);
+          return;
+        }
+
+        finishIntent(intent);
+        if (result.status === 'created') {
+          publishSilentResult(intent, { status: 'created', card: result.card });
+          if (intent.mode !== 'silent') {
+            options.notify(`Added “${intent.text}” to your LingoFlash library.`);
+          }
+        } else if (result.status === 'existing') {
+          publishSilentResult(intent, { status: 'existing', card: result.card });
+          if (intent.mode !== 'silent') {
+            options.notify(`“${intent.text}” is already in your LingoFlash library.`);
+          }
+        } else if (result.status === 'invalid') {
+          publishSilentResult(intent, {
+            status: 'error',
+            message: 'Select an English word or short phrase of at most 80 characters.',
+          });
+          if (intent.mode !== 'silent') {
+            options.reportError('The selected text could not be added. Select an English word or short phrase.');
+          }
+        } else if (result.status === 'failed') {
+          publishSilentResult(intent, {
+            status: 'error',
+            message: captureFailureMessage(result.error),
+          });
+        }
+      }).catch(error => {
+        if (disposed) return;
+        finishIntent(intent);
+        publishSilentResult(intent, {
+          status: 'error',
+          message: captureFailureMessage(error),
+        });
+        if (intent.mode !== 'silent') {
+          options.reportError(captureFailureMessage(error));
+        }
+      });
+    };
+
+    const ensureCaptureCourse = options.ensureCaptureCourse;
+    if (!ensureCaptureCourse) {
+      runGeneration();
+      return;
+    }
+    void ensureCaptureCourse().then(decision => {
       if (disposed) return;
-      if (result.status === 'busy') {
-        if (activeIntentKey === key) activeIntentKey = null;
-        retryTimer = globalThis.setTimeout(processPending, 250);
+      if (decision === 'cancel') {
+        // No half-done side effects: nothing was generated, the pending
+        // storage entry is dropped so a reload can't resurrect it, and the
+        // extension gets a clean, terminal result instead of hanging.
+        clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
+        finishIntent(intent);
+        publishSilentResult(intent, {
+          status: 'error',
+          message: 'Import cancelled: switch to a matching course, then capture the word again.',
+        });
         return;
       }
-
-      finishIntent(intent);
-      if (result.status === 'created') {
-        publishSilentResult(intent, { status: 'created', card: result.card });
-        if (intent.mode !== 'silent') {
-          options.notify(`Added “${intent.text}” to your LingoFlash library.`);
-        }
-      } else if (result.status === 'existing') {
-        publishSilentResult(intent, { status: 'existing', card: result.card });
-        if (intent.mode !== 'silent') {
-          options.notify(`“${intent.text}” is already in your LingoFlash library.`);
-        }
-      } else if (result.status === 'invalid') {
-        publishSilentResult(intent, {
-          status: 'error',
-          message: 'Select an English word or short phrase of at most 80 characters.',
-        });
-        if (intent.mode !== 'silent') {
-          options.reportError('The selected text could not be added. Select an English word or short phrase.');
-        }
-      } else if (result.status === 'failed') {
-        publishSilentResult(intent, {
-          status: 'error',
-          message: captureFailureMessage(result.error),
-        });
-      }
-    }).catch(error => {
+      runGeneration();
+    }).catch(() => {
       if (disposed) return;
-      finishIntent(intent);
-      publishSilentResult(intent, {
-        status: 'error',
-        message: captureFailureMessage(error),
-      });
-      if (intent.mode !== 'silent') {
-        options.reportError(captureFailureMessage(error));
-      }
+      // Best-effort, mirroring createSharedDeckCoursePort: a course-matching
+      // hiccup must never block a capture that would otherwise succeed.
+      runGeneration();
     });
   };
 

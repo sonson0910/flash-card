@@ -119,13 +119,18 @@ for (const theme of themes) {
       await page.evaluate(uid => {
         const now = new Date();
         const day = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        localStorage.setItem(`lingoflash_gamification:${uid}:snapshot`, JSON.stringify({
+        // Key must match gamificationStorageKeys()'s `lingoflash_gamification:user:<uid>:snapshot`.
+        localStorage.setItem(`lingoflash_gamification:user:${uid}:snapshot`, JSON.stringify({
           version: 1,
           snapshot: { streak: 3, xp: 30, lastActive: now.toDateString(), history: { [day]: 30 } },
         }));
       }, testUser.uid);
       await page.reload();
-      await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+      // A reload cold-starts the dev bundle again; under heavy concurrent
+      // emulator/build load this can exceed the default 5s budget, so give it
+      // the same generous timeout used elsewhere in this suite for post-reload
+      // or lazy-chunk waits.
+      await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible({ timeout: 15_000 });
       await page.getByRole('button', { name: '3 study days' }).click();
       await expect(page.getByRole('dialog', { name: 'Your study rhythm' })).toBeVisible();
       await expectAccessibleAndContained(page, 'Study streak');

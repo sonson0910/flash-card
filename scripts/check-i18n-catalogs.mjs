@@ -49,4 +49,38 @@ for (const area of areas) {
     throw new Error(`${area}: Vietnamese catalog is missing an English message ID or translation.`);
   }
 }
+// Extraction only scans the folders listed in lingui.config.ts, so a message
+// in an unlisted folder is silently dropped and renders as its raw id.
+const englishMessages = new Map();
+for (const area of areas) {
+  for (const [id, message] of parseCatalog(await readFile(path.join(root, 'en', area), 'utf8'))) englishMessages.set(id, message);
+}
+const catalogIds = new Set(englishMessages.keys());
+const sourceFiles = (await readdir('src', { recursive: true }))
+  .filter(file => /\.tsx?$/.test(file) && !/\.test\.tsx?$/.test(file));
+const orphaned = [];
+// Extraction keeps an explicit id's existing English msgstr, so editing the
+// source default alone leaves the old English text on screen.
+const stale = [];
+for (const file of sourceFiles) {
+  const source = await readFile(path.join('src', file), 'utf8');
+  for (const match of source.matchAll(/(?:msg\(\{\s*id:\s*'([^']+)'|<Trans\s+id="([^"]+)")/g)) {
+    const id = match[1] ?? match[2];
+    if (!catalogIds.has(id)) orphaned.push(`${file}: ${id}`);
+  }
+  const defaults = [
+    ...[...source.matchAll(/msg\(\{\s*id:\s*'([^']+)',\s*message:\s*'((?:[^'\\]|\\.)*)'/g)]
+      .map(match => [match[1], match[2].replace(/\\'/g, "'")]),
+    ...[...source.matchAll(/<Trans\s+id="([^"]+)"\s+message="([^"]*)"/g)].map(match => [match[1], match[2]]),
+  ];
+  for (const [id, message] of defaults) {
+    if (englishMessages.has(id) && englishMessages.get(id) !== message) stale.push(`${file}: ${id}`);
+  }
+}
+if (orphaned.length > 0) {
+  throw new Error(`Message IDs used in source but missing from every catalog (add the folder to lingui.config.ts):\n${orphaned.join('\n')}`);
+}
+if (stale.length > 0) {
+  throw new Error(`English catalog text differs from the source default; update the en and vi msgstr:\n${stale.join('\n')}`);
+}
 console.log(`Checked ${areas.length} catalogs: extraction is stable and en/vi message coverage is complete.`);

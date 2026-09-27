@@ -3,15 +3,20 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react";
 import {
   ArrowRight,
+  Bell,
   BookOpen,
   Brain,
   Globe2,
   Headphones,
+  Languages as LanguagesIcon,
   Layers,
   Menu,
   Moon,
+  MousePointerClick,
+  Puzzle,
   Sparkles,
   Sun,
+  ToggleLeft,
   X,
 } from "lucide-react";
 import { useReducedMotion } from "../../lib/motionPreference";
@@ -137,6 +142,112 @@ const learningFlow = [
       <Trans
         id="landing.flow.library.description"
         message="Your cards and scheduled reviews stay together in one personal library."
+      />
+    ),
+  },
+];
+
+const extensionFeatures = [
+  {
+    id: "save",
+    icon: MousePointerClick,
+    title: <Trans id="landing.extension.feature.save.title" message="Right-click to save" />,
+    description: (
+      <Trans
+        id="landing.extension.feature.save.description"
+        message="Select text on any website, then save it straight into your library as a flashcard with context."
+      />
+    ),
+  },
+  {
+    id: "popup",
+    icon: Bell,
+    title: <Trans id="landing.extension.feature.popup.title" message="Check in from the toolbar" />,
+    description: (
+      <Trans
+        id="landing.extension.feature.popup.description"
+        message="Open the extension icon to see how many reviews are due, then jump back into today's session."
+      />
+    ),
+  },
+  {
+    id: "opt-in",
+    icon: ToggleLeft,
+    title: <Trans id="landing.extension.feature.optin.title" message="Your call, site by site" />,
+    description: (
+      <Trans
+        id="landing.extension.feature.optin.description"
+        message="Turn on the optional in-page save icon only for the websites you choose."
+      />
+    ),
+  },
+];
+
+// Mirrors the target-language packs in `src/features/languagePacks/types.ts`. Kept as static marketing
+// copy rather than importing that registry, since availability here is a product-status fact (wired into
+// onboarding and the course switcher) rather than the text-detection concern that module owns.
+const languageOffers = [
+  { id: "en", name: "English", available: true },
+  { id: "ko", name: "한국어 · Korean", available: false },
+  { id: "ja", name: "日本語 · Japanese", available: false },
+  { id: "zh", name: "中文 · Chinese", available: false },
+] as const;
+
+const pricingRows = [
+  {
+    id: "reviews",
+    label: <Trans id="landing.pricing.row.reviews" message="Reviews & spaced scheduling" />,
+    free: <Trans id="landing.pricing.value.unlimited" message="Unlimited" />,
+    pro: <Trans id="landing.pricing.value.unlimited" message="Unlimited" />,
+  },
+  {
+    id: "manual-cards",
+    label: <Trans id="landing.pricing.row.manual-cards" message="Manual flashcards" />,
+    free: <Trans id="landing.pricing.value.unlimited" message="Unlimited" />,
+    pro: <Trans id="landing.pricing.value.unlimited" message="Unlimited" />,
+  },
+  {
+    id: "ai-cards",
+    label: <Trans id="landing.pricing.row.ai-cards" message="AI-generated cards" />,
+    free: <Trans id="landing.pricing.value.ai-free" message="30 / month" />,
+    pro: <Trans id="landing.pricing.value.ai-pro" message="More each month" />,
+  },
+  {
+    id: "extension",
+    label: <Trans id="landing.pricing.row.extension" message="Chrome extension" />,
+    free: <Trans id="landing.pricing.value.included" message="Included" />,
+    pro: <Trans id="landing.pricing.value.included" message="Included" />,
+  },
+];
+
+const pricingFaq = [
+  {
+    id: "free",
+    question: <Trans id="landing.pricing.faq.free.question" message="Is the free plan really free?" />,
+    answer: (
+      <Trans
+        id="landing.pricing.faq.free.answer"
+        message="Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month."
+      />
+    ),
+  },
+  {
+    id: "exhausted",
+    question: <Trans id="landing.pricing.faq.exhausted.question" message="What happens if I use all 30 AI cards?" />,
+    answer: (
+      <Trans
+        id="landing.pricing.faq.exhausted.answer"
+        message="You can keep reviewing and add cards manually. AI generation resumes next month, or right away with Pro."
+      />
+    ),
+  },
+  {
+    id: "checkout",
+    question: <Trans id="landing.pricing.faq.checkout.question" message="Can I buy Pro right now?" />,
+    answer: (
+      <Trans
+        id="landing.pricing.faq.checkout.answer"
+        message="Not yet. Sign in and open Pro from your account menu to register interest — nothing is charged during the pilot."
       />
     ),
   },
@@ -539,6 +650,18 @@ export function LandingPage({
                   <Trans id="landing.nav.vocabulary" message="Vocabulary" />
                 </button>
                 <a
+                  href="#extension"
+                  className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                >
+                  <Trans id="landing.nav.extension" message="Extension" />
+                </a>
+                <a
+                  href="#languages"
+                  className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                >
+                  <Trans id="landing.nav.languages" message="Languages" />
+                </a>
+                <a
                   href="#pricing"
                   className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
                 >
@@ -636,6 +759,20 @@ export function LandingPage({
                     <Trans id="landing.nav.vocabulary" message="Vocabulary" />
                   </button>
                   <a
+                    href="#extension"
+                    onClick={closeMobileNav}
+                    className="rounded-xl px-4 py-3 font-bold hover:bg-[var(--sf-surface-muted)] focus-visible:outline-2"
+                  >
+                    <Trans id="landing.nav.extension" message="Extension" />
+                  </a>
+                  <a
+                    href="#languages"
+                    onClick={closeMobileNav}
+                    className="rounded-xl px-4 py-3 font-bold hover:bg-[var(--sf-surface-muted)] focus-visible:outline-2"
+                  >
+                    <Trans id="landing.nav.languages" message="Languages" />
+                  </a>
+                  <a
                     href="#pricing"
                     onClick={closeMobileNav}
                     className="rounded-xl px-4 py-3 font-bold hover:bg-[var(--sf-surface-muted)] focus-visible:outline-2"
@@ -683,9 +820,9 @@ export function LandingPage({
           aria-labelledby="pricing-heading"
           className="border-t border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-16 sm:px-8 lg:px-12"
         >
-          <div className="mx-auto max-w-3xl rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 shadow-[var(--sf-panel-shadow)] sm:p-9 [html[data-theme-family=crystal]_&]:crystal-chamfer">
+          <div className="mx-auto max-w-5xl">
             <p className="text-sm font-bold text-[var(--sf-brand-text)]">
-              <Trans id="landing.pricing.eyebrow" message="Pilot access" />
+              <Trans id="landing.pricing.eyebrow" message="Free to start, Pro when you want more" />
             </p>
             <h2
               id="pricing-heading"
@@ -693,18 +830,42 @@ export function LandingPage({
             >
               <Trans id="landing.pricing.title" message="Pricing & access" />
             </h2>
-            <p className="mt-4 leading-7 text-[var(--sf-text-muted)]">
-              <Trans
-                id="landing.pricing.status"
-                message="SonFlash is currently operating as a pilot. Access arrangements are handled by the operator while the pilot is evaluated."
-              />
-            </p>
-            <p className="mt-3 leading-7 text-[var(--sf-text-muted)]">
-              <Trans
-                id="landing.pricing.no-purchase"
-                message="No prices or trials are published here. Your existing learning access continues without an in-app purchase flow."
-              />
-            </p>
+            <div className="mt-8 grid gap-8 lg:grid-cols-2">
+              <div className="rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8 [html[data-theme-family=crystal]_&]:crystal-chamfer">
+                <div className="grid grid-cols-3 items-end gap-2 border-b border-[var(--sf-border)] pb-3">
+                  <span className="font-serif-hero text-lg"><Trans id="landing.pricing.free-vs-pro.title" message="Free vs Pro" /></span>
+                  <span className="text-center text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="landing.pricing.free-vs-pro.free" message="Free" /></span>
+                  <span className="text-center text-xs font-bold text-[var(--sf-brand-text)]"><Trans id="landing.pricing.free-vs-pro.pro" message="Pro" /></span>
+                </div>
+                {pricingRows.map(row => (
+                  <div key={row.id} className="grid grid-cols-3 items-center gap-2 border-b border-[var(--sf-border)] py-3 text-sm last:border-b-0">
+                    <span>{row.label}</span>
+                    <span className="text-center font-mono text-xs text-[var(--sf-text-muted)]">{row.free}</span>
+                    <span className="text-center font-mono text-xs font-semibold">{row.pro}</span>
+                  </div>
+                ))}
+                <p className="mt-5 font-serif-hero text-2xl">
+                  <Trans id="landing.pricing.price" message="Pro is 79,000 ₫ (about US$7.99)." />
+                </p>
+                <p className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]">
+                  <Trans
+                    id="landing.pricing.purchase-note"
+                    message="Registering your interest does not charge you. Purchases are not open yet — we will follow up by email when they are."
+                  />
+                </p>
+              </div>
+              <div>
+                <h3 className="text-xl font-black tracking-tight"><Trans id="landing.pricing.faq.title" message="Questions" /></h3>
+                <dl className="mt-4 space-y-4 border-l border-[var(--sf-border)] pl-5">
+                  {pricingFaq.map(item => (
+                    <div key={item.id}>
+                      <dt className="font-bold">{item.question}</dt>
+                      <dd className="mt-1 text-sm leading-6 text-[var(--sf-text-muted)]">{item.answer}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </div>
           </div>
         </section>
         <section
@@ -765,6 +926,111 @@ export function LandingPage({
                 );
               })}
             </ol>
+          </div>
+        </section>
+        <section
+          id="extension"
+          aria-labelledby="extension-heading"
+          className="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-12"
+        >
+          <div className="grid gap-12 lg:grid-cols-[minmax(15rem,.7fr)_minmax(0,1.3fr)] lg:gap-24">
+            <header>
+              <div
+                className="flex size-12 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--sf-brand)_12%,transparent)] text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                aria-hidden="true"
+              >
+                <Puzzle size={21} />
+              </div>
+              <p className="mt-6 text-sm font-bold text-[var(--sf-brand-text)]">
+                <Trans id="landing.extension.eyebrow" message="Save from anywhere" />
+              </p>
+              <h2
+                id="extension-heading"
+                className="mt-4 max-w-md text-balance text-4xl font-black tracking-tight sm:text-5xl"
+              >
+                <Trans id="landing.extension.title" message="Learn from the page you're already on." />
+              </h2>
+              <p className="mt-5 max-w-md leading-7 text-[var(--sf-text-muted)]">
+                <Trans
+                  id="landing.extension.description"
+                  message="The SonFlash Chrome extension turns any selected word or passage into a flashcard without leaving the page."
+                />
+              </p>
+            </header>
+            <ol className="border-t border-[var(--sf-border)]">
+              {extensionFeatures.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <li
+                    key={item.id}
+                    className="grid gap-4 border-b border-[var(--sf-border)] py-7 sm:grid-cols-[3rem_minmax(0,1fr)]"
+                  >
+                    <div
+                      className="flex size-11 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--sf-brand)_12%,transparent)] text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                      aria-hidden="true"
+                    >
+                      <Icon size={19} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-[var(--sf-brand-text)]">0{index + 1}</p>
+                      <h3 className="mt-2 text-2xl font-black tracking-tight">{item.title}</h3>
+                      <p className="mt-2 max-w-2xl leading-7 text-[var(--sf-text-muted)]">{item.description}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        </section>
+        <section
+          id="languages"
+          aria-labelledby="languages-heading"
+          className="border-t border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-16 sm:px-8 lg:px-12"
+        >
+          <div className="mx-auto max-w-3xl">
+            <div
+              className="flex size-12 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--sf-brand)_12%,transparent)] text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+              aria-hidden="true"
+            >
+              <LanguagesIcon size={21} />
+            </div>
+            <p className="mt-6 text-sm font-bold text-[var(--sf-brand-text)]">
+              <Trans id="landing.languages.eyebrow" message="Where SonFlash is headed" />
+            </p>
+            <h2
+              id="languages-heading"
+              className="mt-3 text-3xl font-black tracking-tight sm:text-4xl"
+            >
+              <Trans id="landing.languages.title" message="English today. More languages on the way." />
+            </h2>
+            <p className="mt-4 leading-7 text-[var(--sf-text-muted)]">
+              <Trans
+                id="landing.languages.description"
+                message="SonFlash currently teaches English vocabulary, with meanings shown in English or Vietnamese. These vocabulary packs are in development and are not yet available to switch to."
+              />
+            </p>
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+              {languageOffers.map(pack => (
+                <li
+                  key={pack.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-3 text-sm [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                >
+                  <span className="font-semibold">
+                    {pack.id === "en" && <Trans id="landing.languages.pack.english" message="English" />}
+                    {pack.id === "ko" && <Trans id="landing.languages.pack.korean" message="한국어 · Korean" />}
+                    {pack.id === "ja" && <Trans id="landing.languages.pack.japanese" message="日本語 · Japanese" />}
+                    {pack.id === "zh" && <Trans id="landing.languages.pack.chinese" message="中文 · Chinese" />}
+                  </span>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-bold ${pack.available ? "bg-[color-mix(in_srgb,var(--sf-brand)_12%,transparent)] text-[var(--sf-brand-text)]" : "bg-[var(--sf-surface-muted)] text-[var(--sf-text-muted)]"}`}
+                  >
+                    {pack.available
+                      ? <Trans id="landing.languages.status.available" message="Available now" />
+                      : <Trans id="landing.languages.status.in-progress" message="In progress" />}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
         <section

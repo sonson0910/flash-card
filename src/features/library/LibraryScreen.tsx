@@ -135,6 +135,46 @@ export function shouldShowFirstUseLibraryPanel(model: LibraryScreenModel): boole
     && !model.grid.isMigratingLegacy;
 }
 
+export function deriveActiveLearningFilter(
+  model: LibraryScreenModel,
+  localFilter: LibraryFilter | null,
+): LibraryFilter {
+  return model.grid.activeLearningFilter ?? localFilter ?? (
+    model.tools.activeDifficulty === 'due'
+      ? 'due'
+      : model.tools.activeDifficulty === 'unrated'
+        ? 'new'
+        : model.tools.activeDifficulty === 'easy'
+          ? 'mastered'
+          : model.tools.activeDifficulty === 'good' || model.tools.activeDifficulty === 'hard'
+            ? 'learning'
+            : 'all'
+  );
+}
+
+/**
+ * The "Learning" quick tab spans two difficulty values (good + hard) and also
+ * requires review history, which Firestore can't express as a single
+ * equality filter — so `changeFilter` resets the server-side difficulty
+ * filter to 'All' and this tier check narrows the full result set
+ * client-side instead. `deriveActiveLearningFilter` also derives 'learning'
+ * when an explicit "hard"/"good" memory-status filter is selected directly
+ * (e.g. via a deep-linked URL), purely to highlight the matching tab; in that
+ * case the server query is already exact, so re-applying the tier heuristic
+ * would incorrectly drop matching cards that have no review history yet.
+ * Only apply the local filter when the difficulty query is unfiltered, i.e.
+ * when 'learning' actually came from the tab itself.
+ */
+export function shouldApplyLocalLearningFilter(
+  model: LibraryScreenModel,
+  activeFilter: LibraryFilter,
+  hasLearningFilterBridge: boolean,
+): boolean {
+  return activeFilter === 'learning'
+    && !hasLearningFilterBridge
+    && model.tools.activeDifficulty === 'All';
+}
+
 function DeferredLibraryFallback({ label }: { label: ReactNode }) {
   return (
     <div className="skeleton-sheen min-h-40 rounded-[26px] border border-[var(--sf-border)]" role="status">
@@ -150,22 +190,13 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
   const [viewMode, setViewMode] = useState<LibraryViewMode>('grid');
   const headingRef = model.grid.libraryHeadingRef ?? internalHeadingRef;
   const fileInputRef = model.tools.fileInputRef ?? internalFileInputRef;
-  const activeFilter = model.grid.activeLearningFilter ?? localFilter ?? (
-    model.tools.activeDifficulty === 'due'
-      ? 'due'
-      : model.tools.activeDifficulty === 'unrated'
-        ? 'new'
-        : model.tools.activeDifficulty === 'easy'
-          ? 'mastered'
-          : model.tools.activeDifficulty === 'good' || model.tools.activeDifficulty === 'hard'
-            ? 'learning'
-            : 'all'
-  );
+  const activeFilter = deriveActiveLearningFilter(model, localFilter);
   const hasLearningFilterBridge = Boolean(actions.grid.changeLearningFilter);
-  const visibleCards = activeFilter === 'learning' && !hasLearningFilterBridge
+  const appliesLocalLearningFilter = shouldApplyLocalLearningFilter(model, activeFilter, hasLearningFilterBridge);
+  const visibleCards = appliesLocalLearningFilter
     ? model.grid.filteredCards.filter(card => getLibraryCardTier(card) === 'learning')
     : model.grid.filteredCards;
-  const visiblePageCards = activeFilter === 'learning' && !hasLearningFilterBridge
+  const visiblePageCards = appliesLocalLearningFilter
     ? model.grid.paginatedCards.filter(card => getLibraryCardTier(card) === 'learning')
     : model.grid.paginatedCards;
   const showFirstUsePanel = shouldShowFirstUseLibraryPanel(model);

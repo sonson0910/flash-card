@@ -2,7 +2,8 @@
 
 (() => {
   const {
-    APP_ORIGIN, DEFAULT_APP_URL, IMPORT_PROTOCOL_VERSION, MAX_CONTEXT_LENGTH, DECK_METADATA_STORAGE_KEY, DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY,
+    APP_ORIGIN, DEFAULT_APP_URL, IMPORT_PROTOCOL_VERSION, MAX_CONTEXT_LENGTH,
+    sanitizeSourceUrl, boundedPageTitle, DECK_METADATA_STORAGE_KEY, DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY,
     DUE_COUNT_STORAGE_KEY, DUE_COUNT_RETIRED_SCOPES_STORAGE_KEY, extensionApi, transientStorage, deckMetadataStorage, usesPromiseApi,
     apiCall, buildImportUrl, createImportNonce, createIntentId, isValidImportNonce, selectionValidation, normalizeSilentImportIntent,
     readSettings, writeUserSettings, updateSelectionIconSites, readRecentLookups, recordRecentLookup, clearRecentLookups, normalizeDeckScope, normalizeDeckMetadata, normalizeRetiredDeckScopes,
@@ -81,7 +82,8 @@
     try {
       await apiCall(transientStorage, 'set', { [retryKey(job.sourceTabId)]: {
         id: job.id, text: job.text, context: job.context || '', anchor: job.anchor,
-        requestedDeck: job.requestedDeck || '', expiresAt: Date.now() + 86_400_000,
+        requestedDeck: job.requestedDeck || '', sourceUrl: job.sourceUrl || '', pageTitle: job.pageTitle || '',
+        expiresAt: Date.now() + 86_400_000,
       } });
       return true;
     } catch { return false; }
@@ -282,11 +284,23 @@
       return {text:direct.ok?direct.text:'',anchor:null,context:''};
     }
   };
+  const tabPageInfo = async tab => {
+    // A tab passed in as a bare `{id}` (context-menu click) never carries
+    // `url`/`title`; only the `activeTab()` query result does. Fetch the
+    // full tab record in that case so captured-source metadata is available
+    // regardless of which path led here.
+    let full = tab;
+    if (typeof full?.url !== 'string' && typeof full?.id === 'number') {
+      try { full = await apiCall(extensionApi.tabs,'get',full.id); } catch { full = tab; }
+    }
+    return {sourceUrl:sanitizeSourceUrl(full?.url),pageTitle:boundedPageTitle(full?.title)};
+  };
   const selection = async ({tabId,suppliedText=''}={}) => {
     const tab=typeof tabId==='number'?{id:tabId}:await activeTab();
     if (typeof tab?.id!=='number') throw new Error('Không tìm thấy tab đang hoạt động.');
     const c=await capture(tab.id,suppliedText), v=selectionValidation(c.text); if (!v.ok) throw new Error(v.error);
-    return {sourceTabId:tab.id,text:v.text,anchor:c.anchor,context:c.context || ''};
+    const {sourceUrl,pageTitle}=await tabPageInfo(tab);
+    return {sourceTabId:tab.id,text:v.text,anchor:c.anchor,context:c.context || '',sourceUrl,pageTitle};
   };
 
   const appOriginIsValid = sender => {
@@ -514,11 +528,11 @@
   const quickAdd = async input => {
     const retry = input?.retryReceipt;
     const s = retry
-      ? { sourceTabId: input.tabId, text: retry.text, context: retry.context, anchor: retry.anchor }
+      ? { sourceTabId: input.tabId, text: retry.text, context: retry.context, anchor: retry.anchor, sourceUrl: retry.sourceUrl || '', pageTitle: retry.pageTitle || '' }
       : await selection(input);
     const id=retry?.id ?? createIntentId(), nonce=createImportNonce();
     const requestedDeck = retry?.requestedDeck || (typeof input?.requestedDeck === 'string' ? input.requestedDeck.trim().slice(0, 128) : '');
-    const job={v:IMPORT_PROTOCOL_VERSION,id,nonce,text:s.text,context:bounded(s.context,MAX_CONTEXT_LENGTH),sourceLanguage:'en',mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now(),...(requestedDeck ? { requestedDeck } : {})};
+    const job={v:IMPORT_PROTOCOL_VERSION,id,nonce,text:s.text,context:bounded(s.context,MAX_CONTEXT_LENGTH),sourceLanguage:'en',mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now(),sourceUrl:s.sourceUrl||'',pageTitle:s.pageTitle||'',...(requestedDeck ? { requestedDeck } : {})};
     if (quickAddSourceLocks.has(job.sourceTabId)) throw new Error('Đã có một tác vụ quick-add đang chạy trên tab này.');
     quickAddSourceLocks.add(job.sourceTabId);
     try {
@@ -650,7 +664,7 @@
       await saveJob(job);
       return {
         verified:true,
-        intent: { v: IMPORT_PROTOCOL_VERSION, id: job.id, nonce: job.nonce, text: job.text, context: bounded(job.context,MAX_CONTEXT_LENGTH), createdAt: job.createdAt, mode: 'silent', ...(typeof job.requestedDeck === 'string' && job.requestedDeck ? { requestedDeck: job.requestedDeck.slice(0, 128) } : {}) },
+        intent: { v: IMPORT_PROTOCOL_VERSION, id: job.id, nonce: job.nonce, text: job.text, context: bounded(job.context,MAX_CONTEXT_LENGTH), createdAt: job.createdAt, mode: 'silent', ...(typeof job.requestedDeck === 'string' && job.requestedDeck ? { requestedDeck: job.requestedDeck.slice(0, 128) } : {}), ...(typeof job.sourceUrl === 'string' && job.sourceUrl ? { sourceUrl: sanitizeSourceUrl(job.sourceUrl) } : {}), ...(typeof job.pageTitle === 'string' && job.pageTitle ? { pageTitle: boundedPageTitle(job.pageTitle) } : {}) },
       };
     })();
     verifyLocks.set(lockKey, verification);
@@ -659,7 +673,15 @@
 
   const shortcut = async name => { try { const c=await apiCall(extensionApi.commands,'getAll'); return (Array.isArray(c)?c.find(x=>x.name===name):null)?.shortcut||''; } catch { return ''; } };
   const shortcutSettingsAvailable = !(/Safari\//.test(globalThis.navigator?.userAgent || '') && !/(?:Chrome|Chromium|CriOS|Edg)\//.test(globalThis.navigator?.userAgent || ''));
-  const openApp = async () => { await apiCall(extensionApi.tabs,'create',{url:DEFAULT_APP_URL,active:true}); return {url:DEFAULT_APP_URL}; };
+  // `target: 'webWords'` is the only extra value the popup's loop banner sends; anything else (or
+  // omitted) keeps opening the plain app URL, matching every other OPEN_APP caller unchanged.
+  const openApp = async (target) => {
+    const url = target === 'webWords'
+      ? (() => { const u = new URL(DEFAULT_APP_URL); u.searchParams.set('webWords', '1'); return u.toString(); })()
+      : DEFAULT_APP_URL;
+    await apiCall(extensionApi.tabs,'create',{url,active:true});
+    return {url};
+  };
   const openShortcutSettings = async () => {
     if (!shortcutSettingsAvailable) throw new Error('Hãy cấu hình phím tắt trong phần cài đặt Extensions của Safari.');
     const url='chrome://extensions/shortcuts';
@@ -710,13 +732,19 @@
     if(type==='GET_SELECTION'){const t=await activeTab(),c=await capture(t?.id);return{ok:true,text:c.text};}
     if(type==='TRANSLATE_SELECTION'){const t=await activeTab();return{ok:true,...await translateOnly({tabId:t?.id,suppliedText:m.text??''})};}
     if(type==='RETRY_QUICK_ADD'){
-      if(typeof sender?.tab?.id!=='number') throw new Error('Không tìm thấy tab nguồn để thử lại.');
-      const receipt=await readRetry(sender.tab.id);
+      // The in-page bubble is a content script and always has sender.tab. The
+      // popup has no sender.tab (it is not injected into the page), so a
+      // retry requested from the popup's own error state falls back to the
+      // active tab — the same tab-resolution ADD_SELECTION/GET_SELECTION
+      // already use for popup-originated calls (07.1 popup error/quota state).
+      const tabId=typeof sender?.tab?.id==='number'?sender.tab.id:(await activeTab())?.id;
+      if(typeof tabId!=='number') throw new Error('Không tìm thấy tab nguồn để thử lại.');
+      const receipt=await readRetry(tabId);
       if(!receipt || receipt.id!==m.id) throw new Error('Lượt thử lại đã hết hạn. Hãy chọn lại từ.');
-      return {ok:true,...await quickAdd({tabId:sender.tab.id,retryReceipt:receipt})};
+      return {ok:true,...await quickAdd({tabId,retryReceipt:receipt})};
     }
     if(type==='ADD_SELECTION'){const t=await activeTab();return{ok:true,...await quickAdd({tabId:t?.id,suppliedText:m.text??'',requestedDeck:m.requestedDeck})};}
-    if(type==='OPEN_APP')return{ok:true,...await openApp()};
+    if(type==='OPEN_APP')return{ok:true,...await openApp(typeof m.target==='string'?m.target:undefined)};
     if(type==='OPEN_SHORTCUTS')return{ok:true,...await openShortcutSettings()};
     if(type==='GET_SHORTCUTS')return{ok:true,shortcutSettingsAvailable,saveShortcut:await shortcut(SAVE_COMMAND_ID),translateShortcut:await shortcut(TRANSLATE_COMMAND_ID)};
     if(type==='GET_RECENT_LOOKUPS')return{ok:true,items:await readRecentLookups()};

@@ -20,6 +20,7 @@ vi.mock('firebase/functions', () => ({
 vi.mock('../../lib/firebase', () => ({
   app: runtime.app,
   protectedFunctionsCapability: runtime.capability,
+  getSonFlashFunctions: (app: unknown, region: string = 'asia-southeast1') => runtime.getFunctions(app, region),
 }));
 
 import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';

@@ -244,4 +244,36 @@ describe('EditCardDialog', () => {
     autoFocus(event);
     expect(event.preventDefault).toHaveBeenCalledTimes(1);
   });
+
+  it('omits the captured-source note for a card with no source metadata', () => {
+    const view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+    expect(findByProp(view.tree, 'data-edit-source-note')).toBeNull();
+  });
+
+  it('renders a captured page title and URL as a safe, plain-text-titled http(s) link', () => {
+    const sourcedCard = { ...card, source: { url: 'https://example.com/article', title: 'An Example Article' } };
+    const view = render({ card: sourcedCard, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+    expect(findByProp(view.tree, 'data-edit-source-note')).not.toBeNull();
+    const link = findAllByType(view.tree, 'a')[0];
+    expect(link?.props?.href).toBe('https://example.com/article');
+    expect(link?.props?.target).toBe('_blank');
+    expect(link?.props?.rel).toBe('noopener noreferrer');
+    expect(link?.props?.children).toBe('An Example Article');
+  });
+
+  it('never renders a link for a non-http(s) source url, showing the title as plain text instead', () => {
+    const sourcedCard = { ...card, source: { url: 'javascript:alert(1)', title: 'Forged title' } };
+    const view = render({ card: sourcedCard, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+    expect(findAllByType(view.tree, 'a')).toHaveLength(0);
+    const sourceNote = findByProp(view.tree, 'data-edit-source-note');
+    expect(sourceNote).not.toBeNull();
+    expect(JSON.stringify(sourceNote)).toContain('Forged title');
+  });
+
+  it('falls back to the raw url as link text when no title was captured', () => {
+    const sourcedCard = { ...card, source: { url: 'https://example.com/article' } };
+    const view = render({ card: sourcedCard, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+    const link = findAllByType(view.tree, 'a')[0];
+    expect(link?.props?.children).toBe('https://example.com/article');
+  });
 });

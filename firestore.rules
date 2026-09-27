@@ -527,9 +527,16 @@ service cloud.firestore {
 
     function hasExistingCardForIdentityRepair(userId, data) {
       let card = /databases/$(database)/documents/users/$(userId)/cards/$(data.cardId);
+      // A pre-protocol card may already carry its normalizedWord (older
+      // clients wrote it before reservations existed); it can still claim
+      // the matching reservation. Schema-2 cards never repair client-side.
       return exists(card)
         && get(card).data.id == data.cardId
-        && !get(card).data.keys().hasAny(['normalizedWord'])
+        && (
+          !get(card).data.keys().hasAny(['normalizedWord'])
+          || (get(card).data.normalizedWord == data.normalizedWord
+            && get(card).data.get('schemaVersion', 0) != 2)
+        )
         && get(card).data.word is string
         && existsAfter(card)
         && getAfter(card).data.word == get(card).data.word
@@ -799,10 +806,17 @@ service cloud.firestore {
           'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
           'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
           'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
-          'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds'
+          'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'source'
         ])
         && (!removedCanonicalKey || isCanonical)
         && !changed.hasAny(['origin'])
+        // `source` (browser-extension capture metadata) is set only by the
+        // server-only createCard callable and is immutable afterward, same
+        // as `origin`. This does not need a shape re-validator on update: the
+        // guard below means a client update can never introduce, remove, or
+        // alter it, so whatever shape the server wrote at creation is the
+        // only shape that can ever exist here.
+        && !changed.hasAny(['source'])
         && !changed.hasAny(['language', 'translationLanguage'])
         // language/translationLanguage are immutable after creation (the
         // guard above), so an update never introduces a malformed value

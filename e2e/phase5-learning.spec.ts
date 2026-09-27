@@ -5,7 +5,15 @@ const cards = [
   'analyse', 'benefit', 'context', 'develop', 'evidence', 'focus',
   'generate', 'hypothesis', 'identify', 'justify', 'knowledge', 'language',
 ].map((word, index) => ({
-  id: `phase5-${index}`,
+  // reviewCardV2's `cardForValidation` (functions/src/reviewPersistence.ts)
+  // requires the stored document's own `id` to equal the canonical id
+  // `canonicalCard` derives from its word — for a plain lowercase English
+  // word that is `word-${word}` (`createWordCardId`'s legacy branch in
+  // src/lib/cardIdentity.ts) — and requires `schemaVersion: 2` plus a safe
+  // `revision`, or every rating submitted against this card fails with
+  // `identity-conflict` before the lesson can advance (see unified-session
+  // .spec.ts's `buildCard`, which documents the same requirement).
+  id: `word-${word}`,
   word,
   normalizedWord: word,
   translation: `nghĩa riêng ${index + 1}`,
@@ -20,6 +28,8 @@ const cards = [
   cefrLevel: index < 4 ? 'A2' : index < 8 ? 'B2' : 'C1',
   exampleSentence: `We ${word} this example carefully.`,
   exampleTranslation: `Ví dụ ${index + 1}`,
+  schemaVersion: 2,
+  revision: 1,
 }));
 
 const emptyTodayHoverContrastTest = 'empty Today primary action retains compliant contrast while hovered';
@@ -44,22 +54,26 @@ test('Today is the default four-part shell and completes the answer-feedback-rat
     await expect(page.getByRole('button', { name: label, exact: true }).first()).toBeVisible();
   }
   await page.getByRole('button', { name: 'More practice' }).click();
-  await expect(page.getByRole('dialog', { name: 'Choose a practice mode' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Context story/ })).toBeVisible();
-  await page.getByRole('button', { name: /Multiple-choice quiz/ }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary quiz' })).toBeVisible();
+  // The dialog and each practice view below are behind their own lazy chunk
+  // (AppOverlays, then QuizView/SpellingView/StoryView); the first mount of
+  // each can be slower than the default 5s under a cold dev server, so these
+  // specific checks get a longer budget rather than a shorter, flakier one.
+  await expect(page.getByRole('dialog', { name: 'Choose a practice mode' })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('button', { name: /^Story/ })).toBeVisible();
+  await page.getByRole('button', { name: /^Quiz/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary quiz' })).toBeVisible({ timeout: 15_000 });
   await page.getByRole('button', { name: 'Exit' }).click();
   await page.getByRole('button', { name: 'Today', exact: true }).first().click();
 
   await page.getByRole('button', { name: 'More practice' }).click();
-  await page.getByRole('button', { name: /Spelling practice/ }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Spelling practice' })).toBeVisible();
+  await page.getByRole('button', { name: /^Spelling/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Spelling practice' })).toBeVisible({ timeout: 15_000 });
   await page.getByRole('button', { name: 'Exit' }).click();
   await page.getByRole('button', { name: 'Today', exact: true }).first().click();
 
   await page.getByRole('button', { name: 'More practice' }).click();
-  await page.getByRole('button', { name: /Context story/ }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Context story' })).toBeVisible();
+  await page.getByRole('button', { name: /^Story/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Context story' })).toBeVisible({ timeout: 15_000 });
   await page.getByRole('button', { name: 'Close story' }).click();
   await page.getByRole('button', { name: 'Today', exact: true }).first().click();
 
@@ -77,7 +91,10 @@ test('Today is the default four-part shell and completes the answer-feedback-rat
   await page.getByRole('button', { name: 'Submit answer' }).click();
   await expect(page.getByText('Correct answer:')).toBeVisible();
   await page.getByRole('button', { name: /Good/ }).press('Enter');
-  await expect(page.getByText('Question 2 of 12', { exact: true })).toBeVisible();
+  // Advancing waits on the reviewCardV2 callable round-trip (no optimistic
+  // local advance), so give it the same generous budget as the lazy-chunk
+  // checks above rather than the tight 5s default.
+  await expect(page.getByText('Question 2 of 12', { exact: true })).toBeVisible({ timeout: 15_000 });
 
   await page.goBack();
   await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
@@ -100,7 +117,13 @@ test('placement is diagnostic and Progress is a real URL-backed lazy workspace',
   await page.getByRole('button', { name: 'Exit placement check' }).click();
   await page.getByRole('button', { name: 'Progress', exact: true }).first().click();
   await expect(page).toHaveURL(/view=progress/);
-  await expect(page.getByRole('heading', { level: 1, name: 'Learning progress' })).toBeFocused();
+  // AppRuntime.tsx excludes 'progress' (along with catalog/today/settings)
+  // from its generic sr-only view heading because ProgressScreen.tsx already
+  // renders its own more specific level-1 heading ("Progress", `progress.title`)
+  // — "Learning progress" (`shell.heading.progress`) is only ever the
+  // document title (useAppNavigation.ts's `viewHeading`), never an on-page
+  // heading.
+  await expect(page.getByRole('heading', { level: 1, name: 'Progress' })).toBeFocused();
   await expect(page.getByText('Complete a review to begin your progress history.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Daily XP rhythm' })).toHaveCount(0);
   const progressAxe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
@@ -118,7 +141,12 @@ test('Today and legacy Vocabulary routes satisfy serious WCAG checks', async ({ 
   await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
 });
 
-test(emptyTodayHoverContrastTest, async ({ page, signIn }) => {
+test(emptyTodayHoverContrastTest, async ({ page, signIn, seedCourseProfile }) => {
+  // This test signs in with an empty library on purpose (see the beforeEach guard
+  // above), so it needs the onboarding-suppression seed the other tests get for free
+  // from `seedCards`; without it, the OnboardingJourney overlay covers the empty
+  // Today screen this test is actually checking.
+  await seedCourseProfile();
   await signIn(page, '/?view=today');
   const openVocabulary = page.getByRole('button', { name: 'Add vocabulary' });
   await expect(openVocabulary).toBeVisible();

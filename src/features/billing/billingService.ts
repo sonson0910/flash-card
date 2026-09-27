@@ -1,4 +1,4 @@
-import { app, auth, protectedFunctionsCapability } from '../../lib/firebase';
+import { app, auth, getSonFlashFunctions, protectedFunctionsCapability } from '../../lib/firebase';
 import { runProtectedFunction } from '../../lib/protectedFunctionsCapability';
 
 export interface PilotOffer {
@@ -10,8 +10,8 @@ export interface PilotOffer {
 const callBilling = async <T,>(name: string, payload: object): Promise<T> =>
   runProtectedFunction(protectedFunctionsCapability, 'Pilot offer', async () => {
     if (!app || !auth?.currentUser) throw Object.assign(new Error('Sign in required.'), { code: 'unauthenticated' });
-    const { getFunctions, httpsCallable } = await import('firebase/functions');
-    const callable = httpsCallable<object, T>(getFunctions(app, 'asia-southeast1'), name);
+    const { httpsCallable } = await import('firebase/functions');
+    const callable = httpsCallable<object, T>(await getSonFlashFunctions(app), name);
     return (await callable(payload)).data;
   });
 

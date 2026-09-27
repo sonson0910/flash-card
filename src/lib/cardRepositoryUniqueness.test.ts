@@ -16,10 +16,11 @@ const firebaseRuntime = vi.hoisted(() => ({
     available: false,
     reason: 'app-check-unconfigured' as const,
   },
+  getSonFlashFunctions: (app: unknown, region: string = 'asia-southeast1') => functionsRuntime.getFunctions(app, region),
 }));
 
 const functionsRuntime = vi.hoisted(() => ({
-  getFunctions: vi.fn(() => ({ region: 'asia-southeast1' })),
+  getFunctions: vi.fn((_app: unknown, _region: string) => ({ region: 'asia-southeast1' })),
   httpsCallable: vi.fn(),
 }));
 

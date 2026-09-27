@@ -1,4 +1,4 @@
-import { auth, app } from './firebase';
+import { auth, app, getSonFlashFunctions } from './firebase';
 import { OperationTimeoutError } from './async';
 import { ProtectedFunctionError } from './protectedFunctionsCapability';
 
@@ -69,9 +69,9 @@ const client = createPilotAnalyticsClient({
   owner: () => auth?.currentUser?.uid ?? null,
   send: async events => {
     if (!app || !auth?.currentUser) return;
-    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const { httpsCallable } = await import('firebase/functions');
     const callable = httpsCallable<{ events: PilotClientEvent[] }, { accepted: number }>(
-      getFunctions(app, 'asia-southeast1'), 'recordClientEvents');
+      await getSonFlashFunctions(app), 'recordClientEvents');
     await callable({ events });
   },
   schedule: callback => setTimeout(callback, 1_000),

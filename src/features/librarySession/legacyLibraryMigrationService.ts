@@ -1,5 +1,5 @@
 import type { FirebaseApp } from 'firebase/app';
-import { protectedFunctionsCapability } from '../../lib/firebase';
+import { getSonFlashFunctions, protectedFunctionsCapability } from '../../lib/firebase';
 import { runProtectedFunction } from '../../lib/protectedFunctionsCapability';
 
 const REGION = 'asia-southeast1';
@@ -50,11 +50,11 @@ const invokeMigrationBatch = async (app: FirebaseApp): Promise<CallableMigration
     protectedFunctionsCapability,
     'Library upgrade',
     async () => {
-      const { getFunctions, httpsCallable } = await import('firebase/functions');
+      const { httpsCallable } = await import('firebase/functions');
       const callable = httpsCallable<
         { batchSize: number; dryRun: boolean },
         unknown
-      >(getFunctions(app, REGION), 'migrateLegacyLibrary');
+      >(await getSonFlashFunctions(app, REGION), 'migrateLegacyLibrary');
       const response = await callable({ batchSize: BATCH_SIZE, dryRun: false });
       return response.data;
     },

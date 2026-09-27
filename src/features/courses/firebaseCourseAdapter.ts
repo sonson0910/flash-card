@@ -1,6 +1,7 @@
 import type { FirebaseApp } from 'firebase/app';
 import { doc, getDoc, type Firestore } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions';
+import { getSonFlashFunctions } from '../../lib/firebase';
 import {
   assertCourseId,
   assertGoalId,
@@ -88,7 +89,7 @@ export function createFirebaseCourseAdapter({
 
   const call = suppliedCall ?? (async (name: string, payload: unknown): Promise<unknown> => {
     if (!app) throw new CourseError('cloud-unavailable', 'Cloud course functions are not configured.');
-    const callable = httpsCallable<unknown, unknown>(getFunctions(app, functionsRegion), name);
+    const callable = httpsCallable<unknown, unknown>(await getSonFlashFunctions(app, functionsRegion), name);
     const response = await callable(payload);
     return response.data;
   });

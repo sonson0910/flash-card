@@ -105,7 +105,6 @@ describe('StudyView final-card persistence', () => {
     return {
       tree,
       surface: findByProp(tree, 'data-study-session')?.props,
-      provisional: findByProp(tree, 'data-study-provisional')?.props,
       rate: find(tree, ReviewControls)?.props.onRate as (rating: 'again' | 'hard' | 'good' | 'easy') => Promise<void>,
       recap: find(tree, SessionRecapModal)?.props,
     };
@@ -130,7 +129,6 @@ describe('StudyView final-card persistence', () => {
   });
 
   it.each([
-    ['durably queued', Promise.resolve('sync-pending' as const)],
     ['conflicted', Promise.resolve('retryable-error' as const)],
     ['failed permanently', Promise.resolve('retryable-error' as const)],
   ])('does not count, celebrate, or recap when the final review is %s', async (_scenario, settlement) => {
@@ -187,30 +185,6 @@ describe('StudyView final-card persistence', () => {
     expect(dispatch(' ', { composing: true })).not.toHaveBeenCalled();
     expect(dispatch('3', { altKey: true, shiftKey: true })).not.toHaveBeenCalled();
     expect(onBookmark).not.toHaveBeenCalled();
-  });
-
-  it('advances a queued non-final review provisionally without final counts, then keeps a queued final card out of recap', async () => {
-    const nextCard = { ...card, id: 'next-card' };
-    const onIndex = vi.fn();
-    const queued = vi.fn(async () => 'sync-pending' as const);
-    const intermediate = render(queued, { cards: [card, nextCard], index: 0, onIndex });
-
-    await intermediate.rate('good');
-
-    expect(onIndex).toHaveBeenCalledWith(1);
-    expect(render(queued, { cards: [card, nextCard], index: 0, onIndex }).recap)
-      .toMatchObject({ open: false, goodCount: 0, againCount: 0, xpEarned: 0 });
-
-    hooks.cursor = 0;
-    hooks.refs = [];
-    hooks.states = [];
-    const finalCard = render(queued);
-    await finalCard.rate('good');
-    const finalRender = render(queued);
-
-    expect(finalRender.recap).toMatchObject({ open: false, goodCount: 0, againCount: 0, xpEarned: 0 });
-    expect(finalRender.provisional).toBeDefined();
-    expect(confetti).not.toHaveBeenCalled();
   });
 
   it('advances a committed non-final review only after recording final session effects', async () => {

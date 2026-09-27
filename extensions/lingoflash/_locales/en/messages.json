@@ -51,8 +51,11 @@
   "shortcutTranslateRow": { "message": "Translate only" },
   "shortcutUnassigned": { "message": "Not set" },
   "shortcutConfigure": { "message": "Configure shortcuts" },
-  "openAppLink": { "message": "Sign in / open library" },
-  "dueCountBadge": { "message": "· $COUNT$ cards due", "placeholders": { "count": { "content": "$1" } } },
+  "openAppLink": { "message": "Sign in" },
+  "openAppLinkLibrary": { "message": "Open library" },
+  "dueCountBadge": { "message": "$COUNT$ cards due", "placeholders": { "count": { "content": "$1" } } },
+  "webWordsLoopSummary": { "message": "$COUNT$ words saved from the web are waiting in today's session", "placeholders": { "count": { "content": "$1" } } },
+  "webWordsLoopAction": { "message": "Open in SonFlash" },
   "optionsLink": { "message": "Settings" },
   "privacyLink": { "message": "Privacy" },
   "speechUnsupported": { "message": "This browser does not support speech." },
@@ -157,6 +160,8 @@
   "bubbleRetry": { "message": "Retry this word" },
   "bubbleRetrying": { "message": "Retrying…" },
   "bubbleRetryFailed": { "message": "Could not retry. Open the extension and select the word again." },
+  "bubbleQuotaNote": { "message": "Quick translate is still free and does not use AI quota." },
+  "bubbleQuotaAction": { "message": "Open SonFlash · Upgrade to Pro" },
   "bubbleResult": { "message": "Done" },
   "bubbleSpeakDefaultLabel": { "message": "Listen" },
   "bubbleSpeakSelectionLabel": { "message": "Pronounce $WORD$", "placeholders": { "word": { "content": "$1" } } },
@@ -166,5 +171,18 @@
   "bubbleSpeechUnsupported": { "message": "This browser does not support speech." },
   "bubbleDefaultWordFallback": { "message": "the selected text" },
 
-  "selectionIconAriaLabel": { "message": "Translate and create a flashcard with SonFlash" }
+  "selectionIconAriaLabel": { "message": "Translate and create a flashcard with SonFlash" },
+
+  "resultBadgeCreated": { "message": "SAVED FLASHCARD" },
+  "resultBadgeExisting": { "message": "ALREADY IN LIBRARY" },
+  "stateSignInTitle": { "message": "Not signed in to SonFlash" },
+  "stateSignInDesc": { "message": "Sign in to create flashcards and sync decks. Quick translate still works." },
+  "stateSignInAction": { "message": "Sign in to SonFlash" },
+  "stateQuotaTitle": { "message": "Out of AI turns today" },
+  "stateQuotaDescFallback": { "message": "The AI service has hit its quota. The selected word is kept; try again later." },
+  "stateQuotaNote": { "message": "Quick translate is still free and doesn't use an AI turn." },
+  "stateQuotaAction": { "message": "Open SonFlash · Upgrade to Pro" },
+  "stateErrorTitle": { "message": "Couldn't create or save this flashcard" },
+  "stateErrorAction": { "message": "Retry" },
+  "errorRetryQuickAdd": { "message": "Couldn't retry. Select the word again in the extension." }
 }

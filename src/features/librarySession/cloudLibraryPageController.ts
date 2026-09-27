@@ -225,6 +225,65 @@ export function createCloudLibraryPageController({
     });
   };
 
+  // Deep-linking straight to a page beyond 1 (bookmark, shared URL, browser
+  // history restore) lands here with no cursor yet: the cursor chain is only
+  // built by visiting pages in ascending order, one fetch at a time. Without
+  // this, `activate` treated an unresolved cursor as "past the end", which
+  // made `useLibraryCloudProjection`'s exhausted-page guard silently bounce
+  // the URL back to page 1. Walk the chain forward with one-shot reads so a
+  // genuinely valid deep-linked page resolves instead of being misread as
+  // exhausted.
+  const fetchOnePage = (
+    request: CloudLibraryPageRequest,
+    cursor: string | null,
+  ): Promise<CloudPage> => new Promise((resolve, reject) => {
+    let settled = false;
+    const unsubscribe = adapter.subscribePage(
+      { ...request, pageSize: boundedPageSize, cursor },
+      page => {
+        if (settled) return;
+        settled = true;
+        unsubscribe();
+        resolve(page);
+      },
+      error => {
+        if (settled) return;
+        settled = true;
+        unsubscribe();
+        reject(error);
+      },
+    );
+  });
+
+  const resolveCursorChain = async (
+    request: CloudLibraryPageRequest,
+    pageCursors: Map<number, string | null>,
+    generation: number,
+  ): Promise<string | null | undefined> => {
+    let current = Math.max(...[...pageCursors.keys()].filter(pageNumber => pageNumber <= request.page));
+    while (current < request.page) {
+      if (generation !== pageGeneration) return undefined;
+      const cursor = pageCursors.get(current);
+      if (cursor === undefined) return undefined;
+      let page: CloudPage;
+      try {
+        page = await fetchOnePage(request, cursor);
+      } catch {
+        return undefined;
+      }
+      if (generation !== pageGeneration) return undefined;
+      if (!page.hasNext || !page.cursor) {
+        for (const pageNumber of [...pageCursors.keys()]) {
+          if (pageNumber > current) pageCursors.delete(pageNumber);
+        }
+        return undefined;
+      }
+      pageCursors.set(current + 1, page.cursor);
+      current += 1;
+    }
+    return pageCursors.get(request.page);
+  };
+
   const activate = (request: CloudLibraryPageRequest) => {
     unsubscribePage?.();
     unsubscribePage = null;
@@ -245,137 +304,160 @@ export function createCloudLibraryPageController({
       error: null,
     });
 
-    if (!adapter.available || safeCacheRead(() => cache.isBackoffActive(request.ownerId), false) || cursor === undefined) {
-      void applyFallback(request, generation, new Error(
-        cursor === undefined ? 'The previous page cursor is unavailable.' : 'Cloud reads are paused.',
-      ));
+    if (!adapter.available || safeCacheRead(() => cache.isBackoffActive(request.ownerId), false)) {
+      void applyFallback(request, generation, new Error('Cloud reads are paused.'));
       return () => undefined;
     }
 
-    let initialPage = true;
-    // 0 = idle, 1 = counting, 2 = recount requested while counting.
-    let countRefreshState = 0;
-    let activeTotal = continuesSameQuery ? snapshot.total : 0;
-    const defaultQuery = request.page === 1
-      && request.query.wordPrefix === ''
-      && !request.query.category
-      && !request.query.customDeck
-      && !request.query.difficulty
-      && !request.query.partOfSpeech
-      && !request.query.bookmarkedOnly
-      && !request.query.createdDate;
-    const activeSubscription = adapter.subscribePage(
-      { ...request, pageSize: boundedPageSize, cursor },
-      async page => {
-        if (generation !== pageGeneration) return;
-        const cachedCount = safeCacheRead(() => cache.readCount(request.ownerId, request.queryKey), null);
-        let total = cachedCount?.total ?? activeTotal;
-        let countedAt = cachedCount?.cachedAt ?? null;
-        const refreshInitialCount = initialPage && shouldRefreshCloudCount({
-          page: request.page,
-          cachedAt: cachedCount?.cachedAt ?? null,
-          now: now(),
-        });
-        const refreshRealtimeCount = !initialPage
-          && !page.fromCache
-          && !page.hasPendingWrites
-          && shouldRefreshCountForRealtimeChanges(false, page.changeTypes);
-        const requestsCountRefresh = refreshInitialCount || refreshRealtimeCount;
-        const shouldRefreshCount = requestsCountRefresh && countRefreshState === 0;
-        if (requestsCountRefresh) countRefreshState = countRefreshState === 0 ? 1 : 2;
-        if (generation !== pageGeneration) return;
-        const inferredMinimum = ((request.page - 1) * boundedPageSize)
-          + page.items.length
-          + (page.hasNext ? 1 : 0);
-        total = Math.max(total, activeTotal, inferredMinimum);
-        activeTotal = total;
-        if (page.hasNext && page.cursor) pageCursors.set(request.page + 1, page.cursor);
-        else {
-          for (const pageNumber of [...pageCursors.keys()]) {
-            if (pageNumber > request.page) pageCursors.delete(pageNumber);
-          }
-        }
-        initialPage = false;
-        publish({
-          items: page.items.slice(0, boundedPageSize),
-          total,
-          hasNext: page.hasNext,
-          isLoading: false,
-          cloudUnavailable: false,
-          error: null,
-        });
-        await safeCacheWriteAsync(() => cache.writePage({
-          ...request,
-          items: page.items.slice(0, boundedPageSize),
-          total,
-          hasNext: page.hasNext,
-          countedAt,
-        }));
-
-        if (shouldRefreshCount) {
-          do {
-            countRefreshState = 1;
-            const countedTotal = await adapter.countCards(request.ownerId, request.query).catch(() => null);
-            if (generation !== pageGeneration) break;
-            if (countedTotal === null) continue;
-            const refreshedAt = now();
-            const currentItems = snapshot.items.slice(0, boundedPageSize);
-            total = Math.max(
-              countedTotal,
-              ((request.page - 1) * boundedPageSize)
-                + currentItems.length
-                + (snapshot.hasNext ? 1 : 0),
-            );
-            activeTotal = total;
-            const cachedStats = defaultQuery
-              ? safeCacheRead(() => cache.readStats(request.ownerId), null)
-              : null;
-            const nextStats = defaultQuery
-              ? {
-                ...(cachedStats?.stats ?? snapshot.stats),
-                total,
-              }
-              : null;
-            const cachedStatsAt = cachedStats?.cachedAt;
-            publish(nextStats ? { total, stats: nextStats } : { total });
-            if (nextStats && typeof cachedStatsAt === 'number') {
-              // A count only makes `total` authoritative. Preserve the age of
-              // the full stats cache so requestStats still refreshes its facets.
-              safeCacheWrite(() => cache.writeStats(
-                request.ownerId,
-                nextStats,
-                cachedStatsAt,
-              ));
+    const subscribeToPage = (pageCursor: string | null): (() => void) => {
+      let initialPage = true;
+      // 0 = idle, 1 = counting, 2 = recount requested while counting.
+      let countRefreshState = 0;
+      let activeTotal = continuesSameQuery ? snapshot.total : 0;
+      const defaultQuery = request.page === 1
+        && request.query.wordPrefix === ''
+        && !request.query.category
+        && !request.query.customDeck
+        && !request.query.difficulty
+        && !request.query.partOfSpeech
+        && !request.query.bookmarkedOnly
+        && !request.query.createdDate;
+      const activeSubscription = adapter.subscribePage(
+        { ...request, pageSize: boundedPageSize, cursor: pageCursor },
+        async page => {
+          if (generation !== pageGeneration) return;
+          const cachedCount = safeCacheRead(() => cache.readCount(request.ownerId, request.queryKey), null);
+          let total = cachedCount?.total ?? activeTotal;
+          let countedAt = cachedCount?.cachedAt ?? null;
+          const refreshInitialCount = initialPage && shouldRefreshCloudCount({
+            page: request.page,
+            cachedAt: cachedCount?.cachedAt ?? null,
+            now: now(),
+          });
+          const refreshRealtimeCount = !initialPage
+            && !page.fromCache
+            && !page.hasPendingWrites
+            && shouldRefreshCountForRealtimeChanges(false, page.changeTypes);
+          const requestsCountRefresh = refreshInitialCount || refreshRealtimeCount;
+          const shouldRefreshCount = requestsCountRefresh && countRefreshState === 0;
+          if (requestsCountRefresh) countRefreshState = countRefreshState === 0 ? 1 : 2;
+          if (generation !== pageGeneration) return;
+          const inferredMinimum = ((request.page - 1) * boundedPageSize)
+            + page.items.length
+            + (page.hasNext ? 1 : 0);
+          total = Math.max(total, activeTotal, inferredMinimum);
+          activeTotal = total;
+          if (page.hasNext && page.cursor) pageCursors.set(request.page + 1, page.cursor);
+          else {
+            for (const pageNumber of [...pageCursors.keys()]) {
+              if (pageNumber > request.page) pageCursors.delete(pageNumber);
             }
-            await safeCacheWriteAsync(() => cache.writePage({
-              ...request,
-              items: currentItems,
-              total,
-              hasNext: snapshot.hasNext,
-              countedAt: refreshedAt,
-            }));
-          } while (countRefreshState === 2 && generation === pageGeneration);
-          countRefreshState = 0;
-        }
-      },
-      async error => {
-        if (generation !== pageGeneration) return;
-        if (snapshot.isLoading) await applyFallback(request, generation, error);
-        else {
-          if (isCloudQuotaError(error)) safeCacheWrite(() => cache.markBackoff(request.ownerId));
+          }
+          initialPage = false;
           publish({
+            items: page.items.slice(0, boundedPageSize),
+            total,
+            hasNext: page.hasNext,
             isLoading: false,
-            cloudUnavailable: true,
+            cloudUnavailable: false,
             error: null,
           });
+          await safeCacheWriteAsync(() => cache.writePage({
+            ...request,
+            items: page.items.slice(0, boundedPageSize),
+            total,
+            hasNext: page.hasNext,
+            countedAt,
+          }));
+
+          if (shouldRefreshCount) {
+            do {
+              countRefreshState = 1;
+              const countedTotal = await adapter.countCards(request.ownerId, request.query).catch(() => null);
+              if (generation !== pageGeneration) break;
+              if (countedTotal === null) continue;
+              const refreshedAt = now();
+              const currentItems = snapshot.items.slice(0, boundedPageSize);
+              total = Math.max(
+                countedTotal,
+                ((request.page - 1) * boundedPageSize)
+                  + currentItems.length
+                  + (snapshot.hasNext ? 1 : 0),
+              );
+              activeTotal = total;
+              const cachedStats = defaultQuery
+                ? safeCacheRead(() => cache.readStats(request.ownerId), null)
+                : null;
+              const nextStats = defaultQuery
+                ? {
+                  ...(cachedStats?.stats ?? snapshot.stats),
+                  total,
+                }
+                : null;
+              const cachedStatsAt = cachedStats?.cachedAt;
+              publish(nextStats ? { total, stats: nextStats } : { total });
+              if (nextStats && typeof cachedStatsAt === 'number') {
+                // A count only makes `total` authoritative. Preserve the age of
+                // the full stats cache so requestStats still refreshes its facets.
+                safeCacheWrite(() => cache.writeStats(
+                  request.ownerId,
+                  nextStats,
+                  cachedStatsAt,
+                ));
+              }
+              await safeCacheWriteAsync(() => cache.writePage({
+                ...request,
+                items: currentItems,
+                total,
+                hasNext: snapshot.hasNext,
+                countedAt: refreshedAt,
+              }));
+            } while (countRefreshState === 2 && generation === pageGeneration);
+            countRefreshState = 0;
+          }
+        },
+        async error => {
+          if (generation !== pageGeneration) return;
+          if (snapshot.isLoading) await applyFallback(request, generation, error);
+          else {
+            if (isCloudQuotaError(error)) safeCacheWrite(() => cache.markBackoff(request.ownerId));
+            publish({
+              isLoading: false,
+              cloudUnavailable: true,
+              error: null,
+            });
+          }
+        },
+      );
+      unsubscribePage = activeSubscription;
+      return () => {
+        if (generation === pageGeneration) pageGeneration += 1;
+        activeSubscription();
+        if (unsubscribePage === activeSubscription) unsubscribePage = null;
+      };
+    };
+
+    if (cursor !== undefined) return subscribeToPage(cursor);
+
+    let cancelled = false;
+    let liveCleanup: (() => void) | null = null;
+    void resolveCursorChain(request, pageCursors, generation)
+      .then(resolvedCursor => {
+        if (cancelled || generation !== pageGeneration) return;
+        if (resolvedCursor === undefined) {
+          void applyFallback(request, generation, new Error('The previous page cursor is unavailable.'));
+          return;
         }
-      },
-    );
-    unsubscribePage = activeSubscription;
+        liveCleanup = subscribeToPage(resolvedCursor);
+      })
+      .catch(error => {
+        if (cancelled || generation !== pageGeneration) return;
+        void applyFallback(request, generation, error);
+      });
     return () => {
+      cancelled = true;
       if (generation === pageGeneration) pageGeneration += 1;
-      activeSubscription();
-      if (unsubscribePage === activeSubscription) unsubscribePage = null;
+      liveCleanup?.();
     };
   };
 

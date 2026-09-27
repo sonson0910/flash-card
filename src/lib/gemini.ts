@@ -1,5 +1,5 @@
 import { withTimeout } from './async';
-import { app, auth, protectedFunctionsCapability } from './firebase';
+import { app, auth, getSonFlashFunctions, protectedFunctionsCapability } from './firebase';
 import { ProtectedFunctionError, runProtectedFunction } from './protectedFunctionsCapability';
 import { parseStoryInfo, parseWordInfo, type StoryInfo, type WordInfo } from './wordInfo';
 
@@ -15,7 +15,7 @@ const protectedOperationLabel = {
 const callProductionAI = async <T,>(action: 'word' | 'story' | 'translate', input: unknown, operationId?: string): Promise<T> => {
   const operation = protectedOperationLabel[action];
   return runProtectedFunction(protectedFunctionsCapability, operation, async () => {
-    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const { httpsCallable } = await import('firebase/functions');
     if (!app) {
       throw Object.assign(new Error('Firebase app is unavailable.'), {
         code: 'failed-precondition',
@@ -26,7 +26,7 @@ const callProductionAI = async <T,>(action: 'word' | 'story' | 'translate', inpu
         code: 'unauthenticated',
       });
     }
-    const functions = getFunctions(app, 'asia-southeast1');
+    const functions = await getSonFlashFunctions(app);
     const callable = httpsCallable<{ action: string; input: unknown; operationId?: string }, { result: T }>(functions, 'generateVocabulary');
     const response = await callable({ action, input, ...(operationId ? { operationId } : {}) });
     return response.data.result;

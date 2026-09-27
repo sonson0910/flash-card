@@ -1,17 +1,24 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures/firebase-emulator';
 
-test('the first-use create action focuses the visible word field', async ({ page, signIn, blockExternalNetwork }) => {
+test('the first-use create action focuses the visible word field', async ({ page, seedCourseProfile, signIn, blockExternalNetwork }) => {
+  // The empty library panel is under test, not the onboarding overlay that covers it without a course profile.
+  await seedCourseProfile();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await blockExternalNetwork(page);
   // A fresh emulator test user already starts with zero cards; no seeding needed.
   await signIn(page, '/?view=library&locale=en');
   await expect(page.locator('[data-empty-library-panel]')).toBeVisible();
+  // The overview's "Create card" action opens the Card Creator dialog
+  // (cardIntakeController.openCardCreator) rather than focusing the inline
+  // empty-library word input directly; the dialog's own word field takes
+  // focus via its onOpenAutoFocus handler (CreateCardDialog.tsx).
   await page.locator('[data-library-create-action]').click();
-  await expect(page.locator('#empty-library-word')).toBeFocused();
+  await expect(page.getByRole('textbox', { name: 'Word or phrase' })).toBeFocused();
 });
 
-test('mobile shell switches language and theme without reloading', async ({ page, signIn }) => {
+test('mobile shell switches language and theme without reloading', async ({ page, seedCourseProfile, signIn }) => {
+  await seedCourseProfile();
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page, '/?view=library');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');

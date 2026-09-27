@@ -259,10 +259,26 @@ export function createCardIntakePipeline({
     ]).then(([audioUrl, imageUrl]) => ({ audioUrl, imageUrl }));
     const initialMedia = await waitForInitialMedia(mediaPromise);
     assertCurrent(session);
+    const sourceUrl = typeof request.sourceUrl === 'string' ? request.sourceUrl.trim() : '';
+    const pageTitle = typeof request.pageTitle === 'string' ? request.pageTitle.trim() : '';
+    // Persist the capture context instead of only spending it on the Gemini
+    // prompt above: without this, "where did this word come from" is lost
+    // the moment generation finishes.
+    const capturedContext = typeof request.context === 'string' ? request.context.trim() : '';
+    const hasSource = Boolean(sourceUrl || pageTitle || capturedContext || request.capturedAt);
+    const source = hasSource ? {
+      ...(sourceUrl ? { url: sourceUrl } : {}),
+      ...(pageTitle ? { title: pageTitle } : {}),
+      ...(capturedContext ? { context: capturedContext } : {}),
+      capturedAt: request.capturedAt || new Date().toISOString(),
+    } : undefined;
     return {
       card: {
         id: createWordCardId(normalizedWord),
+        ...(source ? { source } : {}),
         origin: 'ai',
+        language: request.language.source.code,
+        translationLanguage: request.language.target.code,
         word: normalizedWord,
         normalizedWord,
         translation: wordInfo.translation,
@@ -431,7 +447,10 @@ export function createCardIntakePipeline({
     },
     generate: async word => {
       const session = sessionGuard.capture();
-      const generated = await generateCard({ term: word, language: ENGLISH_TO_VIETNAMESE_PROFILE });
+      const generated = await generateCard({
+        term: word,
+        language: getContext().languageProfile ?? ENGLISH_TO_VIETNAMESE_PROFILE,
+      });
       assertCurrent(session);
       const [persisted] = await persistCards([generated.card], 'generate');
       assertCurrent(session);

@@ -21,4 +21,20 @@ describe('SessionRecapModal', () => {
     expect(source).toContain('readLumiEnabled()');
     expect(source).toContain('<Lumi pose="proud"');
   });
+
+  it('celebrates reaching the recap once through the shared, already-gated sound/haptic helpers', () => {
+    // No jsdom/testing-library in this repo's toolchain (see AppShellMotion.test.ts for the
+    // same pattern); the sound-off/haptics-off/reduced-motion gating itself is covered where
+    // those helpers live: haptics.test.ts, interactionSounds.test.ts and motion.test.ts.
+    expect(source).toContain("import { triggerHaptic } from '../../lib/haptics'");
+    expect(source).toContain("import { playRewardSound } from '../../lib/interactionSounds'");
+    expect(source).toMatch(/useEffect\(\(\) => \{\s*if \(!open\) return;\s*playRewardSound\(\);\s*triggerHaptic\('success'\);/);
+    expect(source).not.toContain('navigator.vibrate');
+  });
+
+  it('gives the recap dialog a GSAP entrance that collapses under reduced motion', () => {
+    expect(source).toContain('<Dialog.Content asChild');
+    expect(source).toContain('<GsapEntrance');
+    expect(source).toContain('variant="result"');
+  });
 });

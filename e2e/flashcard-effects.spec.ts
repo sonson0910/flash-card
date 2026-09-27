@@ -1,7 +1,16 @@
 import { expect, test } from './fixtures/firebase-emulator';
 
 const card = {
-  id: 'flashcard-effects',
+  // The card's stored `id` must equal the canonical id `canonicalCard`
+  // derives from its word (functions/src/cardPersistence.ts) — for a plain
+  // lowercase English word that is `word-${word}` — or the doc is treated as
+  // a legacy card pending migration. bulkMutateCards (used by the star and
+  // deck-assign controls below) then silently no-ops with
+  // `{applied: false, reason: 'requires-migration'}` instead of throwing,
+  // which surfaces as the app's generic "The update could not be saved"
+  // notice (see phase5-learning.spec.ts's `cards` fixture for the same fix
+  // against reviewCardV2's harder identity-conflict failure).
+  id: 'word-luminous',
   word: 'luminous',
   normalizedWord: 'luminous',
   translation: 'phát sáng',
@@ -18,6 +27,8 @@ const card = {
   difficulty: 'unrated',
   origin: 'ai',
   customDeck: null,
+  schemaVersion: 2,
+  revision: 1,
 };
 
 test.beforeEach(async ({ page, seedCards }) => {
@@ -32,6 +43,11 @@ test.beforeEach(async ({ page, seedCards }) => {
 test('card effects retain their observable desktop states', async ({ page, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await signIn(page, '/?view=library');
+  // The full <Flashcard> (role="group") only renders inside the "Open card"
+  // detail dialog now — LibraryCardGrid.tsx's grid rows are a compact
+  // summary with their own "Open card" button (see flashcard-locale.spec.ts
+  // for the same pattern).
+  await page.locator('.library-word-open').click();
 
   const shell = page.getByRole('group', { name: /luminous flashcard/i });
   const face = shell.locator('.flashcard-face');
@@ -73,6 +89,8 @@ test('card effects retain their observable desktop states', async ({ page, signI
 test('reduced motion keeps card effects static while retaining accessible states', async ({ page, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await signIn(page, '/?view=library');
+  // See the test above: the full flashcard only renders inside the detail dialog.
+  await page.locator('.library-word-open').click();
 
   const shell = page.getByRole('group', { name: /luminous flashcard/i });
   const face = shell.locator('.flashcard-face');

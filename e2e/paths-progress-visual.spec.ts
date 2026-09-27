@@ -89,7 +89,7 @@ function CatalogReadyFixture() {
   if (!ready) return null;
   const tracks = catalogTracksFromSummary(summary);
   return <main className="min-h-screen p-4 sm:p-8"><CatalogScreen model={{
-    status: { kind: 'ready', isOnline: false, isAvailableOffline: true, message: 'Reviewed catalog reviewed-visual-1 is ready on this device.' },
+    status: { kind: 'ready', isOnline: false, message: 'Reviewed catalog reviewed-visual-1 is ready on this device.' },
     selectedLanguage: 'en', languages: [{ code: 'en', label: 'English', nativeLabel: 'English', isAvailable: true }, { code: 'ja', label: 'Japanese', nativeLabel: '日本語', isAvailable: false }],
     selectedTrack: 'ielts', tracks, selectedTier: 'foundation', tiers: catalogTiersFromSummary(summary, 'ielts'), filters: catalogFiltersFromSummary(summary, 'ielts'),
     cards: [{ id: 'catalog-analysis', lemma: 'analysis', language: 'en', phonetic: '/əˈnæləsɪs/', partOfSpeech: 'noun', cefr: 'B2', tier: 'Foundation', topics: ['Education'], skills: ['Reading'], meaning: 'a careful study of something', meaningLanguage: 'en', translation: 'sự phân tích', translationLanguage: 'vi', example: 'The report provides a detailed analysis of the results.', exampleTranslation: 'Báo cáo cung cấp phân tích chi tiết về kết quả.', collocations: ['detailed analysis', 'data analysis'], provenance: { sourceLabel: 'Reviewed editorial catalog', licenseLabel: 'CC BY 4.0', reviewerLabel: 'Human editorial review' }, libraryState: 'available' }],
@@ -149,7 +149,9 @@ test.beforeEach(async ({ page, testUser, seedCards, blockExternalNetwork }) => {
   // this executes.
   await blockExternalNetwork(page, [catalogFixturePort]);
   await page.addInitScript(({ uid, history }) => {
-    localStorage.setItem(`lingoflash_gamification:${uid}:snapshot`, JSON.stringify({
+    // Key must match gamificationStorageKeys()'s `lingoflash_gamification:user:<uid>:snapshot`
+    // (the `user:` scope segment is required) or the app never reads this seed at all.
+    localStorage.setItem(`lingoflash_gamification:user:${uid}:snapshot`, JSON.stringify({
       version: 1,
       snapshot: { streak: 2, xp: 547, lastActive: 'Wed Sep 23 2026', history },
     }));
@@ -225,6 +227,51 @@ for (const theme of themes) {
   }
 }
 
+test('weekly recap opens with real totals computed from the existing XP history, without any extra network reads', async ({ page, signIn }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await signIn(page, '/?view=progress&locale=en');
+  await expect(page.getByRole('heading', { level: 1, name: /progress/i })).toBeVisible();
+
+  await page.getByRole('button', { name: /view weekly recap/i }).click();
+  const dialog = page.getByRole('dialog', { name: /your weekly recap/i });
+  await expect(dialog).toBeVisible();
+
+  // The fixed clock is 2026-09-24T12:00:00Z, so the 7-day window is Sep 18–Sep 24.
+  // Of the seeded xpHistory, only 'Sep 18, 2026' (148) and 'Sep 23, 2026' (72) fall
+  // inside it; every other entry (Aug/Sep 2/7/12) must be excluded from the totals.
+  // These figures come from plain number formatting, not from Lingui message
+  // catalogs, so they are meaningful even before the new weeklyRecap.* ids below
+  // go through the controller's i18n:extract/compile/translate pass.
+  await expect(dialog.getByText('Sep 18')).toBeVisible();
+  await expect(dialog.getByText('Sep 24')).toBeVisible();
+  await expect(dialog.getByText('XP this week')).toBeVisible();
+  await expect(dialog.getByText('220', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('2 / 7')).toBeVisible();
+  await expect(dialog.getByText('148', { exact: true })).toBeVisible(); // Best day metric: Sep 18 alone.
+
+  const captionField = dialog.getByRole('textbox', { name: /caption/i });
+  await expect(captionField).not.toHaveValue('');
+
+  // Toggling a field off removes its metric card. Targeted by the stable
+  // data-selection-key attribute rather than the (not-yet-extracted) toggle
+  // label text, so this assertion does not depend on the translation pass.
+  await dialog.locator('input[data-selection-key="bestDay"]').uncheck();
+  await expect(dialog.getByText('148', { exact: true })).toHaveCount(0);
+  await dialog.locator('input[data-selection-key="bestDay"]').check();
+  await expect(dialog.getByText('148', { exact: true })).toBeVisible();
+
+  // Editing the caption is a real user action; the character budget updates live
+  // (also plain number formatting, independent of the translation pass).
+  await captionField.fill('A great study week!');
+  await expect(dialog.getByText('19 / 220')).toBeVisible();
+
+  // Closing and reopening resets the caption to the suggested draft, not the edited one.
+  await dialog.getByRole('button', { name: /close/i }).click();
+  await expect(dialog).toBeHidden();
+  await page.getByRole('button', { name: /view weekly recap/i }).click();
+  await expect(page.getByRole('dialog', { name: /your weekly recap/i }).getByRole('textbox', { name: /caption/i })).not.toHaveValue('A great study week!');
+});
+
 for (const theme of themes) {
   for (const viewport of viewports) {
     test(`${theme.family} ${theme.mode} reviewed catalog Paths are visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
@@ -249,6 +296,9 @@ for (const theme of themes) {
       const vocabularyCard = page.getByRole('article', { name: /analysis/i });
       await expect(vocabularyCard).toBeVisible();
       await vocabularyCard.scrollIntoViewIfNeeded();
+      // Regression guard: the reviewed catalog description dropped the "available offline" claim
+      // (only the Firestore-backed cache persists offline, and only until the account is deleted).
+      await expect(page.getByText(/available offline/i)).toHaveCount(0);
       await expectAccessibleAndContained(page, 'Reviewed catalog Paths');
       await expectReducedMotion(page, 'Reviewed catalog Paths');
       await attachScreen(page, testInfo, `paths-reviewed-${theme.family}-${theme.mode}-${viewport.name}`);

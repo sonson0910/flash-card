@@ -165,6 +165,31 @@ describe('compact card detail access', () => {
     expect(source).toContain('onAssignDeck={(id, deck) => void assignDeck(id, deck)}');
     expect(source).toContain('onUpdateCard={updateCard}');
     expect(source).toContain('onToggleBookmark={id => void toggleBookmark(id)}');
-    expect(source).toContain('onDelete={async id => { await afterDelete(id); setDetailCard(null); }}');
+    expect(source).toContain('onDelete={async id => { await afterDelete(id); setDetailCardId(null); }}');
+  });
+});
+
+describe('card detail dialog follows the live card, not just its id', () => {
+  it('keys the dialog open state off the resolved card so a card leaving `cards` (unbookmark under a filter, a page change, a live query update) closes the dialog instead of showing it empty', () => {
+    const source = readFileSync(fileURLToPath(new URL('./LibraryCardGrid.tsx', import.meta.url)), 'utf8');
+
+    // `open` must track the *resolved* card, not the id alone — otherwise the
+    // dialog stays open with nothing to show once the card disappears.
+    expect(source).toContain('<Dialog.Root open={Boolean(detailCard)}');
+    expect(source).not.toContain('<Dialog.Root open={Boolean(detailCardId)}');
+  });
+
+  it('clears the stale id once its card is gone, so the card popping back into `cards` later does not reopen the dialog on its own', () => {
+    const source = readFileSync(fileURLToPath(new URL('./LibraryCardGrid.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('if (!detailCardId || detailCard) return;');
+    expect(source).toContain('setDetailCardId(null);');
+  });
+
+  it('restores focus to the open trigger, falling back to the library heading when the trigger node is no longer in the document', () => {
+    const source = readFileSync(fileURLToPath(new URL('./LibraryCardGrid.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('if (trigger && trigger.isConnected) trigger.focus();');
+    expect(source).toContain('else libraryHeadingRef.current?.focus({ preventScroll: true });');
   });
 });

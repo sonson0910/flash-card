@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ReactNode, type RefObject } from 'react';
 import type { CardData, ReviewRatingValue } from '../types/card';
 import type { LibraryStatsViewModel } from '../features/library/libraryViewModel';
+import type { LanguageProfile } from '../features/language/languageProfile';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { createDailyLearningLocation, readDailyLearningUrlState, type DailyLessonMode } from '../features/dailyLearning/dailyLearningUrl';
 import type { IntakeSharingSessionActions } from '../features/intake/useIntakeSharingSession';
@@ -27,6 +28,8 @@ const SettingsScreen = lazy(() => Promise.all([
 interface AppViewStageProps {
   readonly viewMode: AppViewMode;
   readonly ownerId: string | null;
+  /** Active course's language pair; defaults to English-Vietnamese for legacy users with no active course. */
+  readonly languageProfile: LanguageProfile;
   readonly isOffline: boolean;
   readonly isDarkMode: boolean;
   readonly headingRef: RefObject<HTMLHeadingElement | null>;
@@ -51,7 +54,7 @@ interface AppViewStageProps {
 const fallback = (message: ReactNode) => <WorkspaceLoadingPanel>{message}</WorkspaceLoadingPanel>;
 
 export function AppViewStage({
-  viewMode, ownerId, isOffline, isDarkMode, headingRef, focusIntent, stats, streak, isStatsLoading, statsError, loadPracticePool, reviewCard,
+  viewMode, ownerId, languageProfile, isOffline, isDarkMode, headingRef, focusIntent, stats, streak, isStatsLoading, statsError, loadPracticePool, reviewCard,
   catalogCards, adoptCatalogCards, notifyCatalog,
   openVocabulary, openPaths, continueReview, openMorePractice, libraryContent, practiceContent,
 }: AppViewStageProps) {
@@ -64,7 +67,7 @@ export function AppViewStage({
       else window.history.replaceState({}, '', location);
     };
     return <Suspense fallback={fallback(<Trans id="shell.loading.today" message="Preparing today’s learning plan…" />)}><div className="async-content-enter" data-async-content="today"><DailyLearningWorkspace
-      ownerId={ownerId} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson} streak={streak} studyXpHistory={stats.xpChartData}
+      ownerId={ownerId} languageProfile={languageProfile} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson} streak={streak} studyXpHistory={stats.xpChartData}
       loadPracticePool={loadPracticePool} reviewCard={(cardId, rating, operationId, source) => reviewCard(cardId, rating, operationId, source)}
       openLesson={openLesson} openVocabulary={openVocabulary} openPaths={openPaths} continueReview={continueReview} openMorePractice={openMorePractice}
     /></div></Suspense>;

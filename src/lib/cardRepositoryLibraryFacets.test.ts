@@ -6,9 +6,10 @@ const firebaseRuntime = vi.hoisted(() => ({
   auth: { currentUser: { uid: 'owner-1' } as { uid: string } | null },
   isFirebaseConfigured: true,
   protectedFunctionsCapability: { available: true } as { available: boolean; reason?: string },
+  getSonFlashFunctions: (app: unknown, region: string = 'asia-southeast1') => functionsRuntime.getFunctions(app, region),
 }));
 const functionsRuntime = vi.hoisted(() => ({
-  getFunctions: vi.fn(() => ({ region: 'asia-southeast1' })),
+  getFunctions: vi.fn((_app: unknown, _region: string) => ({ region: 'asia-southeast1' })),
   httpsCallable: vi.fn(),
 }));
 

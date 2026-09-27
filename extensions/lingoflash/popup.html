@@ -96,6 +96,16 @@
       </div>
     </div>
 
+    <div id="state-card" class="state-card" role="alert" hidden>
+      <span class="state-icon" id="state-icon" aria-hidden="true"></span>
+      <div class="state-body">
+        <p class="state-title" id="state-title"></p>
+        <p class="state-desc" id="state-desc"></p>
+        <p class="state-note" id="state-note" hidden></p>
+        <div class="state-actions" id="state-actions"></div>
+      </div>
+    </div>
+
     <p id="status" class="status" role="status" aria-live="polite"></p>
 
     <section id="recent-lookups" class="recent-lookups" aria-labelledby="recent-lookups-heading" hidden>
@@ -106,6 +116,11 @@
       <div id="recent-list"></div>
     </section>
 
+    <section id="web-words-loop" class="web-words-loop" hidden>
+      <p id="web-words-loop-text"></p>
+      <button class="link-button" id="web-words-loop-action" type="button" data-i18n="webWordsLoopAction">Xem trong SonFlash</button>
+    </section>
+
     <section class="shortcuts" data-i18n-aria-label="shortcutsLabel" aria-label="Phím tắt">
       <div class="shortcut-row"><span data-i18n="shortcutSaveRow">Dịch + thêm</span><kbd id="save-shortcut-value">Ctrl/⌘ + Shift + L</kbd></div>
       <div class="shortcut-row"><span data-i18n="shortcutTranslateRow">Chỉ dịch</span><kbd id="translate-shortcut-value">Alt/⌥ + Shift + L</kbd></div>
@@ -113,10 +128,8 @@
     </section>
 
     <footer>
-      <button class="link-button" id="open-app" type="button"><span data-i18n="openAppLink">Đăng nhập / mở thư viện</span><span id="due-count-suffix" hidden></span></button>
-      <span aria-hidden="true">•</span>
+      <button class="link-button" id="open-app" type="button"><span id="open-app-label" data-i18n="openAppLink">Đăng nhập</span><span id="due-count-suffix" hidden></span></button>
       <a class="link-button" href="options.html" target="_blank" rel="noopener" data-i18n="optionsLink">Cài đặt</a>
-      <span aria-hidden="true">•</span>
       <a class="link-button" href="https://encoded-hangout-433912-h2.web.app/browser-extension-privacy.html" target="_blank" rel="noopener" data-i18n="privacyLink">Quyền riêng tư</a>
     </footer>
   </main>

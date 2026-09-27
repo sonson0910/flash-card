@@ -142,6 +142,40 @@ describe('normalizeCardData', () => {
     expect(normalizeCardData({ word: 'legacy', origin: 'other' as never }, 'legacy-card').origin).toBeUndefined();
   });
 
+  it('reads bounded captured-source metadata and strips credentials, query and fragment from its url', () => {
+    const card = normalizeCardData({
+      word: 'article',
+      source: {
+        url: 'https://user:pass@example.com/article?utm=1#section',
+        title: 'An Example Article',
+        context: 'The captured sentence.',
+        capturedAt: '2026-09-27T00:00:00.000Z',
+      },
+    }, 'sourced-card');
+
+    expect(card.source).toEqual({
+      url: 'https://example.com/article',
+      title: 'An Example Article',
+      context: 'The captured sentence.',
+      capturedAt: '2026-09-27T00:00:00.000Z',
+    });
+  });
+
+  it('drops a non-http(s) captured source url while keeping the title', () => {
+    const card = normalizeCardData({
+      word: 'article',
+      source: { url: 'javascript:alert(1)', title: 'Kept title' },
+    }, 'sourced-card');
+
+    expect(card.source).toEqual({ title: 'Kept title' });
+  });
+
+  it('leaves a legacy card without any captured source, and collapses an all-empty one to undefined', () => {
+    expect(normalizeCardData({ word: 'legacy' }, 'legacy-card').source).toBeUndefined();
+    expect(normalizeCardData({ word: 'legacy', source: { url: '', title: '' } }, 'legacy-card').source).toBeUndefined();
+    expect(normalizeCardData({ word: 'legacy', source: 'forged' as never }, 'legacy-card').source).toBeUndefined();
+  });
+
   it('drops malformed mutation protocol metadata', () => {
     const card = normalizeCardData({
       word: 'safe',

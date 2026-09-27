@@ -74,6 +74,11 @@ test.afterAll(async () => { await fixtureServer?.close(); });
 
 test('Library create input defers submit during IME composition', async ({ page }) => {
   await gotoFixture(page);
+  // LibraryScreen.tsx now tucks LibraryTools (and its #new-word input) inside
+  // a closed-by-default <details data-library-region="tools"> disclosure —
+  // the primary create-card path is the dialog opened from LibraryOverview's
+  // "Create card" button. Expand it before the input becomes visible.
+  await page.locator('[data-library-region="tools"] summary').click();
   const input = page.locator('#new-word');
   const count = page.locator('[data-library-generate-count]');
   await expect(input).toBeVisible({ timeout: 15_000 });
@@ -110,6 +115,10 @@ for (const theme of themes) for (const viewport of viewports) {
     await expectReducedMotion(page, name);
     await expectScreen(page, testInfo, name);
 
+    // LibraryScreen.tsx now tucks LibraryTools (and its "AI Dialogue"/"Scan
+    // Text" buttons) inside a closed-by-default <details data-library-region="tools">
+    // disclosure — see the IME test above for the same pattern.
+    await page.locator('[data-library-region="tools"] summary').click();
     await page.getByRole('button', { name: 'AI Dialogue' }).click();
     await expect(page.getByRole('heading', { name: 'Practice in context' })).toBeVisible();
     await expectAccessibleAndContained(page, `${name}-dialogue`);
@@ -127,8 +136,14 @@ for (const theme of themes) for (const viewport of viewports) {
 }
 
 const dialogViews = [
-  ['edit', 'Edit card'], ['deck-delete', /Delete “IELTS” deck/], ['share', 'Your deck is ready to share'],
-  ['share-in', 'Review shared deck'], ['clear', 'Clear the entire library?'], ['insights', 'Your learning rhythm'],
+  ['edit', 'Edit card'], ['deck-delete', /Delete “IELTS” deck/],
+  // AppOverlays.tsx's share dialog title is now dynamic: outgoing shows
+  // `Share "{category}"` (shell.share.outgoing-title), incoming shows the
+  // category name alone as the heading (with a "Shared with you" kicker
+  // above it) instead of a generic "Review shared deck"/"ready to share"
+  // phrase. The fixture (library-visual.tsx) always uses category "IELTS".
+  ['share', 'Share “IELTS”'], ['share-in', 'IELTS'],
+  ['clear', 'Clear the entire library?'], ['insights', 'Your learning rhythm'],
 ] as const;
 const inlineViews = [['deck-new', 'Create a deck'], ['import', 'Import cards']] as const;
 

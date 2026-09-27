@@ -112,6 +112,53 @@ describe('cloud library page controller', () => {
     expect(adapter.countCards).toHaveBeenCalledTimes(1);
   });
 
+  it('resolves a deep-linked page beyond 1 by walking the cursor chain forward with one-shot reads', async () => {
+    const { adapter, cache, subscriptions } = createFakes();
+    const controller = createCloudLibraryPageController({ adapter, cache });
+
+    // A bookmark, shared URL, or restored browser history can land directly
+    // on page 2+ with no cursor ever resolved for this scope in this session.
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 2 });
+
+    expect(subscriptions).toHaveLength(1);
+    expect(subscriptions[0].request).toMatchObject({ ownerId: 'owner-a', pageSize: 9, cursor: null });
+
+    await subscriptions[0].page({
+      items: [card('a'), card('b')], hasNext: true, cursor: 'opaque-1',
+      changeTypes: [], fromCache: false, hasPendingWrites: false,
+    });
+
+    await vi.waitFor(() => expect(subscriptions).toHaveLength(2));
+    expect(subscriptions[0].unsubscribe).toHaveBeenCalledOnce();
+    expect(subscriptions[1].request).toMatchObject({ ownerId: 'owner-a', pageSize: 9, cursor: 'opaque-1' });
+
+    await subscriptions[1].page({
+      items: [card('c')], hasNext: false, cursor: null,
+      changeTypes: [], fromCache: false, hasPendingWrites: false,
+    });
+
+    expect(controller.getSnapshot()).toMatchObject({
+      page: 2, items: [card('c')], hasNext: false, isLoading: false, cloudUnavailable: false,
+    });
+  });
+
+  it('falls back instead of resolving a deep-linked page past the end of a shorter result set', async () => {
+    const { adapter, cache, subscriptions } = createFakes();
+    const controller = createCloudLibraryPageController({ adapter, cache });
+
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 3 });
+    await subscriptions[0].page({
+      items: [card('a')], hasNext: false, cursor: null,
+      changeTypes: [], fromCache: false, hasPendingWrites: false,
+    });
+
+    await vi.waitFor(() => expect(controller.getSnapshot().isLoading).toBe(false));
+    expect(subscriptions).toHaveLength(1);
+    expect(controller.getSnapshot()).toMatchObject({
+      page: 3, items: [], hasNext: false, cloudUnavailable: true,
+    });
+  });
+
   it('publishes existing cards before a slow count refresh completes', async () => {
     const { adapter, cache, subscriptions } = createFakes();
     const count = deferred<number>();

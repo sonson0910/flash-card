@@ -44,12 +44,13 @@ describe('createPracticePoolLoader', () => {
       cloudBackoffActive: false,
       cards: [],
       source,
+      targetLanguage: 'en',
       reportError: vi.fn(),
     });
 
     const result = await load(500, true);
 
-    expect(source.load).toHaveBeenCalledWith('owner-1', 50, { includeFuture: true });
+    expect(source.load).toHaveBeenCalledWith('owner-1', 50, { includeFuture: true, targetLanguage: 'en' });
     expect(result).toHaveLength(50);
   });
 
@@ -66,6 +67,7 @@ describe('createPracticePoolLoader', () => {
       cloudBackoffActive: false,
       cards: [due, future],
       source,
+      targetLanguage: 'en',
       reportError,
     });
 
@@ -85,6 +87,7 @@ describe('createPracticePoolLoader', () => {
       cloudBackoffActive: false,
       cards: [local],
       source,
+      targetLanguage: 'en',
       reportError: vi.fn(),
     });
     const backedOffLoad = createPracticePoolLoader({
@@ -92,6 +95,7 @@ describe('createPracticePoolLoader', () => {
       cloudBackoffActive: true,
       cards: [local],
       source,
+      targetLanguage: 'en',
       reportError: vi.fn(),
     });
 
@@ -109,6 +113,7 @@ describe('createPracticePoolLoader', () => {
       cloudBackoffActive: false,
       cards: [newCard, legacy, future],
       source: null,
+      targetLanguage: 'en',
       reportError: vi.fn(),
     });
 

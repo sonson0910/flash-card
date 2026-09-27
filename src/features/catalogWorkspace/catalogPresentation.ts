@@ -7,7 +7,7 @@ export type CatalogAvailabilityStatus =
   | { kind: 'personal'; message: string }
   | { kind: 'unavailable'; isOnline: boolean; canDownload: boolean; message: string }
   | { kind: 'downloading'; progressPercent: number; message: string }
-  | { kind: 'ready'; isOnline: boolean; isAvailableOffline: boolean; message: string }
+  | { kind: 'ready'; isOnline: boolean; message: string }
   | { kind: 'error'; isOnline: boolean; message: string; detail?: string };
 
 export interface CatalogLanguageOption {

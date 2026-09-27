@@ -31,15 +31,22 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 | 06.4 | Weekly recap từ lịch sử thật: date range, learned/reviewed/recall nếu đủ dữ liệu, word of week, heatmap, selection toggles và caption. | Định nghĩa mỗi metric được test; không suy study time từ số thẻ; không có data thì không dựng best week. |
 | 06.5 | Share/download recap: PNG có đúng lựa chọn, Web Share/copy/download fallback, preview privacy. | Mặc định không đưa tên/từ riêng không được chọn; không tự đăng mạng xã hội; referral reward gắn phase 15 khi mở. |
 
+> **Staleness audit 2026-09-26** ([report](../reports/planner-260926-2229-old-plan-staleness-audit.md)).
+> - 06.1 NEEDS REWRITE: Paths vẫn quảng cáo "Available offline" và "keep downloaded words available offline" (`CatalogScreen.tsx:65,262`; `CatalogWorkspace.tsx:74,160`). Cache catalog IndexedDB (`catalogCache.ts:395`) không nằm trong danh sách owner đã bỏ, nhưng học/rate thì cần mạng. Owner phải chốt giữ hay bỏ claim offline cho catalog.
+> - 06.2 NEEDS REWRITE: bỏ banner "Available offline · showing saved progress" (`ProgressScreen.tsx:43`) và prop `isOffline` (`ProgressWorkspace.tsx:13,29`, `AppViewStage.tsx:72`). Khi offline, hiện dữ liệu cache của Firestore kèm nhãn "offline, có thể chưa mới".
+> - 06.3 STILL VALID.
+> - 06.4 NEEDS REWRITE: thêm ngân sách read. Weekly recap không được quét toàn bộ `reviewHistory` của mọi thẻ; lấy nguồn có giới hạn (xp history gamification hoặc một query theo khoảng ngày có index) và ghi số read mỗi lần mở.
+> - 06.5 STILL VALID.
+
 ## Checklist
 
-- [ ] 06.1 — Paths chọn mục tiêu/track, preview/provenance/download/activate/continue; tách personal route và catalog được duyệt trong đúng bố cục Canvas.
-- [ ] 06.2 — Progress: hero, heatmap, chart, nhớ/yếu/mới, timeline và actionable drilldown.
-- [ ] 06.3 — Achievements: locked/progress/unlocked, nhóm tier, detail và milestone trong recap/Today.
-- [ ] 06.4 — Weekly recap từ lịch sử thật: date range, learned/reviewed/recall nếu đủ dữ liệu, word of week, heatmap, selection toggles và caption.
-- [ ] 06.5 — Share/download recap: PNG có đúng lựa chọn, Web Share/copy/download fallback, preview privacy.
-- [ ] Đối chiếu Canvas từng state của phase theo board/artboard inventory; reviewer kiểm tra cả hành vi và hình thức.
-- [ ] Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log.
+- [x] 06.1 (partial, 2026-09-27) — Đã bỏ đúng tuyên bố "available offline"/"keep downloaded words available offline" khỏi `CatalogScreen.tsx` (owner decision: Paths drops the offline claim); e2e regression guard thêm trong `paths-progress-visual.spec.ts`. Chưa làm lại toàn bộ đối chiếu Canvas composition (preview/provenance/download/activate/continue) trong phiên này — xem "Residual gaps" trong report.
+- [x] 06.2 (2026-09-27) — Bỏ banner "Available offline" lớn trong `ProgressScreen.tsx`, thay bằng dòng chữ mờ "Offline — this may be out of date." (không banner, không màu cảnh báo). Giữ prop `isOffline` (chỉ đổi cách render) theo đúng chỉ đạo trực tiếp đã nhận, khác với gợi ý xoá hẳn prop trong audit note gốc — xem lý do trong report.
+- [ ] 06.3 (partial, 2026-09-27) — Đã tách `computeAchievementBadgeStats`/`achievementBadgeCopy` khỏi `AchievementsMatrix.tsx` (hành vi giữ nguyên) và tích hợp số milestone unlocked vào Weekly recap. Chưa đối chiếu Canvas fidelity cho locked/progress/unlocked/tier/detail view — còn nguyên như audit đã ghi "STILL VALID... but not yet matching Canvas".
+- [x] 06.4 (2026-09-27) — Weekly recap mới tại `src/features/weeklyRecap/**`, đọc duy nhất từ `LibraryStatsViewModel.xpChartData` (gamification XP history đã tải sẵn), không quét `reviewHistory`, không thêm read Firestore nào khi mở recap (0 read/mở). Không suy learned/reviewed/recall/word-of-week từ XP; hiển thị honest unavailable khi thiếu dữ liệu; không dựng "best week" khi không có hoạt động.
+- [x] 06.5 (2026-09-27) — Canvas 2D PNG export chỉ chạy khi user bấm Share/Download; chuỗi fallback Web Share → Clipboard → tải file; preview đúng lựa chọn đã tick; không tự đăng mạng xã hội; không có referral reward.
+- [ ] Đối chiếu Canvas từng state của phase theo board/artboard inventory; reviewer kiểm tra cả hành vi và hình thức. — CHƯA làm; cần một pass riêng của reviewer/controller.
+- [x] Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log. (2026-09-27) — vitest focused, `tsc --noEmit`, `verify:bundle` đều pass; e2e xem Tests Status trong report.
 
 ## Verification
 

@@ -13,6 +13,8 @@ describe('SettingsScreen', () => {
     expect(html).toContain('Midnight Aurora');
     expect(html).toContain('Ink &amp; Paper');
     expect(html).toContain('Crystal Star');
+    expect(html).toContain('Study sounds');
+    expect(html).toContain('Haptics');
     expect(html).toContain('role="switch"');
     expect(html).toContain('type="radio"');
     expect(html).toContain('min-h-11');

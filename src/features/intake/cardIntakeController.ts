@@ -41,6 +41,12 @@ export interface CardGenerationOptions {
   surface?: 'app' | 'extension';
   requestedDeck?: string;
   requestedDeckAvailable?: (deck: string) => boolean | Promise<boolean>;
+  /** Page URL the word was captured from. Browser-extension capture only. */
+  sourceUrl?: string;
+  /** Page <title> at capture time. Browser-extension capture only. */
+  pageTitle?: string;
+  /** ISO 8601 timestamp of the capture instant. Browser-extension capture only. */
+  capturedAt?: string;
 }
 
 export interface CardGenerationRequest extends CardGenerationOptions {
@@ -229,7 +235,15 @@ const sharedCardCandidate = (
   const origin = source.origin === 'ai' || source.origin === 'manual' ? source.origin : undefined;
   return {
     id: lexemeId || createWordCardId(word),
-    ...(lexemeId ? { lexemeId, language: languageCode, senseKey, normalizedLemma } : {}),
+    ...(lexemeId ? { lexemeId, senseKey, normalizedLemma } : {}),
+    // The active course, not the shared card's own claim, decides the
+    // language tag: course-mismatch routing (see shareCourseMatching.ts)
+    // has already steered the import into a matching course by this point,
+    // so the imported card is tagged with that course's language pair.
+    // languageCode is still honored when it is present and already matches
+    // (kept for lexemeId identity verification above).
+    language: languageCode || language.source.code,
+    translationLanguage: language.target.code,
     word,
     ...(origin ? { origin } : {}),
     normalizedWord: word,
@@ -333,6 +347,8 @@ const manualCardFromDraft = (
   const card: CardData = {
     id: createWordCardId(word),
     origin: 'manual',
+    language: language.source.code,
+    translationLanguage: language.target.code,
     word,
     normalizedWord: word,
     translation,

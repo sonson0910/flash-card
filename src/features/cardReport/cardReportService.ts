@@ -1,6 +1,6 @@
 import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
-import { app, protectedFunctionsCapability } from '../../lib/firebase';
+import { app, getSonFlashFunctions, protectedFunctionsCapability } from '../../lib/firebase';
 import { ProtectedFunctionError, runProtectedFunction } from '../../lib/protectedFunctionsCapability';
 
 const REGION = 'asia-southeast1';
@@ -35,9 +35,9 @@ export async function submitCardReport(input: CardReportInput): Promise<void> {
   if (note.length > 280) throw new Error(i18n._(msg({ id: 'cardReport.validation.note-length', message: 'The note can be at most 280 characters.' })));
 
   const response = await runProtectedFunction(protectedFunctionsCapability, 'Card report', async () => {
-    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const { httpsCallable } = await import('firebase/functions');
     const callable = httpsCallable<CardReportInput, { reportId: string; status: 'open' }>(
-      getFunctions(firebaseApp, REGION),
+      await getSonFlashFunctions(firebaseApp, REGION),
       'reportCard',
     );
     return callable({

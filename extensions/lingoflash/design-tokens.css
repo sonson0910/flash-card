@@ -232,6 +232,13 @@
   --sf-font-display: Kanit, 'Segoe UI', system-ui, sans-serif;
   --sf-font-body: Nunito, 'Segoe UI', system-ui, sans-serif;
   --sf-font-mono: 'Geist Mono', ui-monospace, monospace;
+  /*
+   * Crystal Star's chamfered-corner treatment (07.1), ported verbatim from
+   * public/theme-crystal.css --nk-chamfer/--nk-chamfer-sm. Identical in both
+   * modes there, so one definition here covers dark and light.
+   */
+  --sf-chamfer: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+  --sf-chamfer-sm: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }
 
 /*

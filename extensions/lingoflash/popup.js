@@ -37,7 +37,12 @@ const clearHistoryButton = document.getElementById('clear-history');
 const selectionIconToggle = document.getElementById('selection-icon-toggle');
 const selectionIconStatus = document.getElementById('selection-icon-status');
 const dueCountSuffix = document.getElementById('due-count-suffix');
+const openAppLabel = document.getElementById('open-app-label');
+const webWordsLoop = document.getElementById('web-words-loop');
+const webWordsLoopText = document.getElementById('web-words-loop-text');
+const webWordsLoopAction = document.getElementById('web-words-loop-action');
 const resultCard = document.getElementById('result-card');
+const resultBadge = document.getElementById('result-badge');
 const resultWord = document.getElementById('result-word');
 const resultTranslation = document.getElementById('result-translation');
 const resultDetails = document.getElementById('result-details');
@@ -48,7 +53,14 @@ const resultExampleTranslation = document.getElementById('result-example-transla
 const resultClose = document.getElementById('result-close');
 const resultSpeak = document.getElementById('result-speak');
 const resultSave = document.getElementById('result-save');
+const stateCard = document.getElementById('state-card');
+const stateIcon = document.getElementById('state-icon');
+const stateTitle = document.getElementById('state-title');
+const stateDesc = document.getElementById('state-desc');
+const stateNote = document.getElementById('state-note');
+const stateActions = document.getElementById('state-actions');
 let activeQuickAddId = null;
+let lastRetryId = null;
 let isBusy = false;
 let selectionIconSite = null;
 let selectionInputTouched = false;
@@ -65,13 +77,29 @@ const speechSupported = () => Boolean(
     && typeof globalThis.SpeechSynthesisUtterance === 'function',
 );
 
-const renderResultCard = ({ word = '', translation = '', phonetic = '', explanation = '', example = '', exampleTranslation = '', sourceLanguage = '', speechLocale = '', canSave = false } = {}) => {
+const RESULT_BADGE_KEYS = {
+  created: ['resultBadgeCreated', 'ĐÃ LƯU FLASHCARD'],
+  existing: ['resultBadgeExisting', 'ĐÃ CÓ TRONG THƯ VIỆN'],
+};
+
+const renderResultCard = ({ word = '', translation = '', phonetic = '', explanation = '', example = '', exampleTranslation = '', sourceLanguage = '', speechLocale = '', canSave = false, status = '' } = {}) => {
   if (!resultCard) return;
   if (!translation) {
     resultCard.hidden = true;
+    delete resultCard.dataset.status;
     return;
   }
   resultCard.hidden = false;
+  // 07.1: the same mini-flashcard shell renders three distinct real states —
+  // a fresh translation, a newly saved card, and a duplicate that already
+  // existed — each with its own badge tone so "saved" and "duplicate" are
+  // never visually confused (data-status drives the CSS in popup.css).
+  if (status) resultCard.dataset.status = status;
+  else delete resultCard.dataset.status;
+  if (resultBadge) {
+    const [key, fallback] = RESULT_BADGE_KEYS[status] || [];
+    resultBadge.textContent = key ? t(key, undefined, fallback) : t('resultBadge', undefined, 'KẾT QUẢ');
+  }
   if (resultWord) resultWord.textContent = word;
   if (resultTranslation) resultTranslation.textContent = translation;
   const hasDetails = Boolean(phonetic || explanation || example || exampleTranslation);
@@ -159,7 +187,7 @@ const renderSelectionIconSite = state => {
   selectionIconToggle.setAttribute('aria-pressed', selectionIconSite?.enabled === true ? 'true' : 'false');
   if (protectedUrl) {
     selectionIconToggle.textContent = t('floatingIconUnavailable', undefined, 'Không khả dụng');
-    setSelectionIconStatus(t('floatingIconStatusUnsupported', undefined, 'Trang này không hỗ trợ floating icon.'));
+    setSelectionIconStatus(t('floatingIconStatusUnsupported', undefined, 'Trang này không hỗ trợ floating icon.'), 'unavailable');
     return;
   }
   if (selectionIconSite?.enabled === true) {
@@ -263,6 +291,122 @@ const speakText = (value, button = speakSelectionButton, lang = 'en-US', label) 
   }
 };
 
+// The extension never receives a distinct "quota" wire status — status stays
+// one of the existing ['created','existing','auth-required','error'] values
+// (no new protocol identifier). The app's captureFailureMessage() guarantees
+// every AI-quota-classified error message contains one of these three
+// Vietnamese phrases, so this is a real, documented signal read from the
+// existing message field, not a guess at unstructured text.
+const QUOTA_MESSAGE_HINTS = ['hạn mức', 'số thẻ', 'lượt AI'];
+const isQuotaMessage = message => typeof message === 'string' && QUOTA_MESSAGE_HINTS.some(hint => message.includes(hint));
+
+const hideStateCard = () => {
+  if (!stateCard) return;
+  stateCard.hidden = true;
+  delete stateCard.dataset.state;
+  if (stateActions) stateActions.replaceChildren();
+  if (stateNote) { stateNote.hidden = true; stateNote.textContent = ''; }
+};
+
+const makeStateButton = (label, kind, handler) => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = kind === 'secondary' ? 'state-btn state-btn-secondary' : 'state-btn';
+  button.textContent = label;
+  button.addEventListener('click', handler);
+  return button;
+};
+
+// One state-card shell renders every non-result state (sign-in/quota/error);
+// it mirrors ExtPopupState's isError card (icon + title + description + CTA)
+// from the Canvas boards instead of inventing a new layout per state.
+const renderStateCard = ({ state, icon, title, desc, note = '', actions = [] }) => {
+  if (!stateCard) return;
+  if (resultCard) { resultCard.hidden = true; delete resultCard.dataset.status; }
+  stateCard.hidden = false;
+  stateCard.dataset.state = state;
+  if (stateIcon) { stateIcon.replaceChildren(); addSvgIcon(stateIcon, icon, 16); }
+  if (stateTitle) stateTitle.textContent = title;
+  if (stateDesc) stateDesc.textContent = desc;
+  if (stateNote) {
+    stateNote.hidden = !note;
+    stateNote.textContent = note;
+  }
+  if (stateActions) {
+    stateActions.replaceChildren();
+    actions.forEach(({ label, kind, handler }) => stateActions.append(makeStateButton(label, kind, handler)));
+  }
+};
+
+const openAppFromState = () => {
+  void sendMessage({ type: 'OPEN_APP' }).then(response => {
+    if (!response?.ok) throw new Error(response?.error || t('errorOpenApp', undefined, 'Không thể mở SonFlash.'));
+    globalThis.close();
+  }).catch(error => setStatus(error instanceof Error ? error.message : String(error), 'error'));
+};
+
+const showSignInState = () => {
+  renderStateCard({
+    state: 'sign-in',
+    icon: 'lock',
+    title: t('stateSignInTitle', undefined, 'Chưa đăng nhập SonFlash'),
+    desc: t('stateSignInDesc', undefined, 'Đăng nhập để tạo flashcard và đồng bộ deck. Dịch nhanh vẫn dùng được.'),
+    actions: [{ label: t('stateSignInAction', undefined, 'Đăng nhập SonFlash'), handler: openAppFromState }],
+  });
+};
+
+// Real signal, no fabricated numbers: the app only ever hands the extension a
+// message string (see captureFailureMessage), never the AiQuotaError's
+// structured used/limit/tier fields, so this card cannot show a meter or an
+// exact quota count without inventing one. "Dịch nhanh vẫn miễn phí" and the
+// upgrade CTA are the only claims that hold regardless of the exact numbers.
+const showQuotaState = message => {
+  renderStateCard({
+    state: 'quota',
+    icon: 'warning',
+    title: t('stateQuotaTitle', undefined, 'Hết lượt AI hôm nay'),
+    desc: message || t('stateQuotaDescFallback', undefined, 'Dịch vụ AI đã hết hạn mức. Từ đã chọn vẫn được giữ lại; hãy thử lại sau.'),
+    note: t('stateQuotaNote', undefined, 'Dịch nhanh vẫn miễn phí, không dùng lượt AI.'),
+    actions: [{ label: t('stateQuotaAction', undefined, 'Mở SonFlash · Nâng cấp Pro'), handler: openAppFromState }],
+  });
+};
+
+const retryQuickAdd = async id => {
+  if (!id || isBusy) return;
+  setBusy(true);
+  setStatus(t('statusCreatingSave', undefined, 'Đang tạo flashcard ở nền bằng đúng 1 lần AI…'), 'busy');
+  try {
+    const response = await sendMessage({ type: 'RETRY_QUICK_ADD', id });
+    if (!response?.ok) throw new Error(response?.error || t('errorRetryQuickAdd', undefined, 'Không thể thử lại. Hãy chọn lại từ trong extension.'));
+    activeQuickAddId = response.id;
+    hideStateCard();
+    setStatus(t('statusQuickAddStarted', undefined, 'Đã bắt đầu tạo + lưu. Bạn có thể tiếp tục đọc trang.'), 'success');
+    const pending = pendingQuickAddStatuses.get(activeQuickAddId);
+    if (pending) {
+      pendingQuickAddStatuses.delete(activeQuickAddId);
+      applyQuickAddStatus(pending);
+    }
+  } catch (error) {
+    setStatus(error instanceof Error ? error.message : String(error), 'error');
+    setBusy(false);
+  }
+};
+
+const showErrorState = (message, retryId) => {
+  lastRetryId = typeof retryId === 'string' && retryId ? retryId : null;
+  const actions = [];
+  if (lastRetryId) {
+    actions.push({ label: t('stateErrorAction', undefined, 'Thử lại'), handler: () => void retryQuickAdd(lastRetryId) });
+  }
+  renderStateCard({
+    state: 'error',
+    icon: 'warning',
+    title: t('stateErrorTitle', undefined, 'Không thể tạo hoặc lưu flashcard này'),
+    desc: message || t('statusGenericError', undefined, 'Không thể tạo hoặc lưu flashcard này.'),
+    actions,
+  });
+};
+
 const applyQuickAddStatus = payload => {
   if (!payload || typeof payload !== 'object' || typeof payload.id !== 'string') return;
   if (activeQuickAddId !== payload.id) {
@@ -271,26 +415,31 @@ const applyQuickAddStatus = payload => {
   }
   const text = typeof payload.text === 'string' ? payload.text : '';
   if (payload.status === 'loading-save') {
-    setStatus(t('statusCreatingBackground', undefined, 'Đang tạo flashcard ở nền…'));
+    setStatus(t('statusCreatingBackground', undefined, 'Đang tạo flashcard ở nền…'), 'busy');
     return;
   }
   const inlineSuffix = payload.inlineShown === false
     ? t('statusInlineNotShown', undefined, ' Không thể hiển thị trên trang này; kết quả vẫn được giữ an toàn.')
     : '';
   if (payload.status === 'created') {
+    hideStateCard();
     setStatus(t('statusCreatedSaved', [text, inlineSuffix], `Đã tạo và lưu “${text}”.${inlineSuffix}`), 'success');
     if (payload.translation) {
-      renderResultCard({ word: text, translation: payload.translation, phonetic: payload.phonetic, explanation: payload.explanation, example: payload.exampleSentence, exampleTranslation: payload.exampleTranslation, sourceLanguage: payload.sourceLanguage, speechLocale: payload.speechLocale, canSave: false });
+      renderResultCard({ word: text, translation: payload.translation, phonetic: payload.phonetic, explanation: payload.explanation, example: payload.exampleSentence, exampleTranslation: payload.exampleTranslation, sourceLanguage: payload.sourceLanguage, speechLocale: payload.speechLocale, canSave: false, status: 'created' });
     }
   } else if (payload.status === 'existing') {
+    hideStateCard();
     setStatus(t('statusAlreadyInLibrary', [text, inlineSuffix], `“${text}” đã có trong thư viện.${inlineSuffix}`), 'success');
     if (payload.translation) {
-      renderResultCard({ word: text, translation: payload.translation, phonetic: payload.phonetic, explanation: payload.explanation, example: payload.exampleSentence, exampleTranslation: payload.exampleTranslation, sourceLanguage: payload.sourceLanguage, speechLocale: payload.speechLocale, canSave: false });
+      renderResultCard({ word: text, translation: payload.translation, phonetic: payload.phonetic, explanation: payload.explanation, example: payload.exampleSentence, exampleTranslation: payload.exampleTranslation, sourceLanguage: payload.sourceLanguage, speechLocale: payload.speechLocale, canSave: false, status: 'existing' });
     }
   } else if (payload.status === 'auth-required') {
-    setStatus(t('statusAuthRequired', undefined, 'Cần đăng nhập SonFlash để hoàn tất việc lưu flashcard.'), 'error');
+    setStatus('');
+    showSignInState();
   } else if (payload.status === 'error') {
-    setStatus(payload.message || t('statusGenericError', undefined, 'Không thể tạo hoặc lưu flashcard này.'), 'error');
+    setStatus('');
+    if (isQuotaMessage(payload.message)) showQuotaState(payload.message);
+    else showErrorState(payload.message, payload.id);
   } else {
     return;
   }
@@ -355,15 +504,20 @@ const makeRecentButton = (label, ariaLabel, handler) => {
   return button;
 };
 
-const addSvgIcon = (button, kind) => {
+const SVG_ICON_PATHS = {
+  volume: ['M11 5 6 9H3v6h3l5 4V5Z', 'm15.5 8.5 3 3-3 3', 'M15.5 5.5a7 7 0 0 1 0 11'],
+  close: ['M6 6l12 12', 'M18 6 6 18'],
+  lock: ['M6 11h12v10H6z', 'M8.5 11V8a3.5 3.5 0 0 1 7 0v3'],
+  warning: ['M12 3 2 20h20z', 'M12 10v4', 'M12 17h.01'],
+};
+
+const addSvgIcon = (button, kind, size = 14) => {
   if (!button || typeof document.createElementNS !== 'function') return;
-  const paths = kind === 'volume'
-    ? ['M11 5 6 9H3v6h3l5 4V5Z', 'm15.5 8.5 3 3-3 3', 'M15.5 5.5a7 7 0 0 1 0 11']
-    : ['M6 6l12 12', 'M18 6 6 18'];
+  const paths = SVG_ICON_PATHS[kind] || SVG_ICON_PATHS.close;
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('width', '14');
-  svg.setAttribute('height', '14');
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size));
   svg.setAttribute('fill', 'none');
   svg.setAttribute('stroke', 'currentColor');
   svg.setAttribute('stroke-width', '2');
@@ -375,7 +529,9 @@ const addSvgIcon = (button, kind) => {
     path.setAttribute('d', d);
     svg.append(path);
   });
-  button.append(svg);
+  // Icons lead the label everywhere else in this UI, so the icon must be
+  // prepended rather than appended after any text a caller already set.
+  button.prepend(svg);
 };
 
 const renderRecentLookups = items => {
@@ -414,12 +570,34 @@ const renderRecentLookups = items => {
   });
 };
 
+// The "loop" half of the ExtLoop state: a saved word does not just sit in the
+// extension's own history, it feeds today's SonFlash session. This reuses the
+// exact same GET_RECENT_LOOKUPS data `renderRecentLookups` already has (no new
+// message type, no extra storage read) and only counts `kind: 'create'`
+// entries — `background-core.js` records that kind exclusively on a
+// successful save (status 'created' or 'existing'), so a failed or
+// translate-only lookup never inflates this reminder.
+const renderWebWordsLoop = items => {
+  if (!webWordsLoop || !webWordsLoopText) return;
+  const savedCount = (Array.isArray(items) ? items : []).filter(item => item.kind === 'create').length;
+  webWordsLoop.hidden = savedCount === 0;
+  if (savedCount === 0) return;
+  webWordsLoopText.textContent = t(
+    'webWordsLoopSummary',
+    [String(savedCount)],
+    `${savedCount} từ đã lưu từ trang web đang chờ trong buổi học hôm nay của bạn.`,
+  );
+};
+
 const loadRecentLookups = async () => {
   try {
     const response = await sendMessage({ type: 'GET_RECENT_LOOKUPS' });
-    renderRecentLookups(response?.ok ? response.items : []);
+    const items = response?.ok ? response.items : [];
+    renderRecentLookups(items);
+    renderWebWordsLoop(items);
   } catch {
     renderRecentLookups([]);
+    renderWebWordsLoop([]);
   }
 };
 
@@ -427,6 +605,7 @@ const loadDecks = async () => {
   if (!requestedDeckSelect) return;
   decksReady = false;
   requestedDeckSelect.disabled = true;
+  if (deckStatus) deckStatus.dataset.tone = 'busy';
   updateInputState();
   try {
     const response = await sendMessage({ type: 'GET_DECKS' });
@@ -477,10 +656,11 @@ const runMode = async type => {
     return;
   }
 
+  hideStateCard();
   setBusy(true);
   setStatus(type === 'TRANSLATE_SELECTION'
     ? t('statusTranslating', undefined, 'Đang dịch nhanh bằng Google Translate…')
-    : t('statusCreatingSave', undefined, 'Đang tạo flashcard ở nền bằng đúng 1 lần AI…'));
+    : t('statusCreatingSave', undefined, 'Đang tạo flashcard ở nền bằng đúng 1 lần AI…'), 'busy');
 
   try {
     const requestedDeck = type === 'ADD_SELECTION' && requestedDeckSelect?.value
@@ -526,6 +706,7 @@ selectionInput.addEventListener('input', () => {
   selectionInputTouched = true;
   setStatus();
   if (resultCard) resultCard.hidden = true;
+  hideStateCard();
   updateInputState();
 });
 
@@ -546,6 +727,7 @@ clearHistoryButton.addEventListener('click', () => {
   void sendMessage({ type: 'CLEAR_RECENT_LOOKUPS' }).then(response => {
     if (!response?.ok) throw new Error(response?.error || t('errorClearHistory', undefined, 'Không thể xóa lịch sử.'));
     renderRecentLookups([]);
+    renderWebWordsLoop([]);
     setStatus(t('statusHistoryCleared', undefined, 'Đã xóa lịch sử tra cứu.'), 'success');
   }).catch(error => setStatus(error instanceof Error ? error.message : String(error), 'error'));
 });
@@ -561,23 +743,44 @@ document.getElementById('open-app').addEventListener('click', () => {
   }).catch(error => setStatus(error instanceof Error ? error.message : String(error), 'error'));
 });
 
+webWordsLoopAction?.addEventListener('click', () => {
+  void sendMessage({ type: 'OPEN_APP', target: 'webWords' }).then(response => {
+    if (!response?.ok) throw new Error(response?.error || t('errorOpenApp', undefined, 'Không thể mở SonFlash.'));
+    globalThis.close();
+  }).catch(error => setStatus(error instanceof Error ? error.message : String(error), 'error'));
+});
+
 // 07.6: the due-count badge only ever shows a real, background-synced value
 // (kept in the extension's own storage, scoped like deck metadata) — it is
 // hidden, never a placeholder number, until the signed-in app has synced one.
+// A resolved due count implies the extension already has a signed-in,
+// synced session, so the footer link's label swaps from "Đăng nhập" to a
+// "Mở thư viện" affordance instead of asking an already-signed-in user to
+// sign in again.
+const setOpenAppLabel = signedIn => {
+  if (!openAppLabel) return;
+  openAppLabel.textContent = signedIn
+    ? t('openAppLinkLibrary', undefined, 'Mở thư viện')
+    : t('openAppLink', undefined, 'Đăng nhập');
+};
+
 const loadDueCount = async () => {
   if (!dueCountSuffix) return;
   try {
     const response = await sendMessage({ type: 'GET_DUE_COUNT' });
     if (response?.ok && Number.isSafeInteger(response.count) && response.count >= 0) {
-      dueCountSuffix.textContent = t('dueCountBadge', [response.count], `· ${response.count} thẻ đến hạn`);
+      dueCountSuffix.textContent = t('dueCountBadge', [response.count], `${response.count} thẻ đến hạn`);
       dueCountSuffix.hidden = false;
+      setOpenAppLabel(true);
     } else {
       dueCountSuffix.hidden = true;
       dueCountSuffix.textContent = '';
+      setOpenAppLabel(false);
     }
   } catch {
     dueCountSuffix.hidden = true;
     dueCountSuffix.textContent = '';
+    setOpenAppLabel(false);
   }
 };
 

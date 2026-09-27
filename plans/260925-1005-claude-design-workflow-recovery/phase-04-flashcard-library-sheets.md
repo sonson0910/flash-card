@@ -1,6 +1,6 @@
 ---
 title: "Flashcard, thư viện, tạo/sửa thẻ và toàn bộ dialog/sheet"
-status: todo
+status: in_progress
 ---
 
 # 04. Flashcard, thư viện, tạo/sửa thẻ và toàn bộ dialog/sheet
@@ -14,6 +14,8 @@ status: todo
 ## Nguồn và file sở hữu
 
 Nguồn: Seed Aurora/Atelier/FlashFront/FlashBack/CardStates/LibraryScreen; AnimeVocabulary/Review/Reveal/EditSheet/DlgLibrary/DlgManage; DlgCreate/Edit/Extract/Import/DeckNew/DeckDelete/Share/ShareIn/Clear/Insights; frontend 06,09.
+
+Crystal create/edit dùng trực tiếp `AnimeDlgStudy` với `kind=create|edit`; các nhánh `practice` và `tutor|stream` của cùng component thuộc phase 05 và 11. `AnimeDlgLibrary` với `kind=extract|insights` thuộc phase này, còn `share|sharein` đã có owner phase 02. Phân chia theo nhánh, không dựa tên file để bỏ màn.
 
 Đường dẫn dưới đây tương đối với `/mnt/Projects/startup/flash-card` cho đến khi phase migration đổi root theo source plan.
 
@@ -32,6 +34,11 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 | 04.5 | EditSheet desktop + MobileSheet: pause session/timer, draft preview, discard/dirty exit, save/error, resume đúng card/index. | FSRS/review history không reset; thay đổi từ sync không bị draft ghi đè ngoài field đã sửa; không mất answer/timer khi đóng sheet. |
 | 04.6 | Đưa create/delete deck, extractor chọn kết quả, import mapping/results, share in/out, clear, insights vào đúng dialog/sheet board. | Mỗi overlay có open/working/success/fail/cancel/focus-return; export JSON/XLSX/mini vẫn hoạt động; clear/delete có confirm thật. |
 | 04.7 | Tách field có hợp đồng chưa hỗ trợ (đổi headword/POS/image/upload) thành task data contract nối phase 08/14; không render nút inert. | Đầy đủ nhu cầu của board được giữ trong backlog; không chấp nhận editor ít field hơn Canvas là xong. |
+
+> **Staleness audit 2026-09-26** ([report](../reports/planner-260926-2229-old-plan-staleness-audit.md)). Việc còn lại của phase 04 là **nghiệm thu visual**; nó vẫn hợp lệ nhưng cần viết lại phần dữ liệu và trạng thái như sau:
+> - 04.5: "thay đổi từ sync" nay nghĩa là Firestore snapshot cập nhật trong lúc sheet đang mở. Không còn trạng thái pending/offline của card.
+> - 04.6: import chỉ nhận `.csv,.xlsx` (`EmptyLibraryPanel.tsx:230`). `.xls` là một fail state có thông báo "re-save as .xlsx" (`spreadsheetWorkbook.ts:699-700`) và phải có ảnh. Export dùng `xlsx.mini` (`useLibraryExport.ts:40`). Clear/delete deck/bulk đi qua callable `bulkMutateCards` (`bulkCardMutationRepository.ts:138`), nên e2e của overlay này cần Functions emulator (task 05.0).
+> - Ma trận state bỏ offline/pending-sync/guest. Signed-out không còn workspace (`AppRuntime.tsx:208-230`).
 
 ## Checklist
 

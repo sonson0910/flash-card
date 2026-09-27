@@ -5,7 +5,7 @@ import {
   type RulesTestContext,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, setDoc, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
 import { readFile } from 'node:fs/promises';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -722,6 +722,62 @@ describe('Firestore security rules', () => {
     await assertFails(newAllocation.commit());
   });
 
+  it('allows editing a legacy AI card while repairing its missing reservation', async () => {
+    const owner = testEnvironment.authenticatedContext('legacy-ai-owner').firestore();
+    const cardId = 'legacy-ai-card';
+    const cardRef = doc(owner, `users/legacy-ai-owner/cards/${cardId}`);
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), `users/legacy-ai-owner/cards/${cardId}`), {
+        id: cardId, word: 'lead', normalizedWord: 'lead', translation: 'chì',
+        explanation: 'A metal.', explanationTranslation: 'Một kim loại.', phonetic: '/liːd/',
+        emoji: '📚', category: 'Reading', audioUrl: null, imageUrl: null,
+        origin: 'ai', createdAt: '2026-09-24T00:00:00.000Z', bookmarked: false,
+        difficulty: 'unrated', customDeck: null, reviews: 0,
+      });
+    });
+
+    const edit = writeBatch(owner);
+    edit.set(doc(
+      owner,
+      `users/legacy-ai-owner/card_reservations/${createCardIdentityReservationId('lead')}`,
+    ), {
+      schemaVersion: 1,
+      cardId,
+      normalizedWord: 'lead',
+    });
+    edit.set(cardRef, {
+      translation: 'dẫn đầu',
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 0,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+    await assertSucceeds(edit.commit());
+
+    const mismatchedId = 'legacy-ai-mismatch';
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), `users/legacy-ai-owner/cards/${mismatchedId}`), {
+        id: mismatchedId, word: 'mead', normalizedWord: 'meat', translation: 'rượu mật ong',
+      });
+    });
+    const mismatchedClaim = writeBatch(owner);
+    mismatchedClaim.set(doc(
+      owner,
+      `users/legacy-ai-owner/card_reservations/${createCardIdentityReservationId('mead')}`,
+    ), {
+      schemaVersion: 1,
+      cardId: mismatchedId,
+      normalizedWord: 'mead',
+    });
+    mismatchedClaim.set(doc(owner, `users/legacy-ai-owner/cards/${mismatchedId}`), {
+      translation: 'đồ uống',
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 0,
+    }, { merge: true });
+    await assertFails(mismatchedClaim.commit());
+  });
+
   it('allows the sparse migration v2 merge to initialize legacy difficulty', async () => {
     const owner = testEnvironment.authenticatedContext('sparse-owner').firestore();
     const cardId = 'legacy-sparse-patch';
@@ -1182,6 +1238,32 @@ describe('Firestore security rules', () => {
     await assertSucceeds(updateDoc(card, { translation: 'nghĩa đã sửa', revision: 3 }));
     await assertFails(updateDoc(card, { origin: 'manual', revision: 4 }));
     await assertFails(updateDoc(card, { origin: deleteField(), revision: 4 }));
+  });
+
+  it('denies a client from forging, editing, or removing captured-source metadata', async () => {
+    const owner = testEnvironment.authenticatedContext('source-card-owner').firestore();
+    const withoutSource = doc(owner, 'users/source-card-owner/cards/card-without-source');
+    await seedReservedCard(testEnvironment, 'source-card-owner', 'card-without-source', validCard('card-without-source'));
+    await assertFails(updateDoc(withoutSource, {
+      source: { url: 'https://example.com/', title: 'Forged', context: 'forged', capturedAt: '2026-09-27T00:00:00.000Z' },
+      revision: 2,
+    }));
+    await assertSucceeds(updateDoc(withoutSource, { bookmarked: true, revision: 2 }));
+
+    const withSource = doc(owner, 'users/source-card-owner/cards/card-with-source');
+    await seedReservedCard(testEnvironment, 'source-card-owner', 'card-with-source', {
+      ...validCard('card-with-source'),
+      source: { url: 'https://example.com/article', title: 'Example article', capturedAt: '2026-09-27T00:00:00.000Z' },
+    });
+    // An unrelated patch must still succeed even though the existing `source`
+    // field stays present in the merged document (the field-guard allowlist
+    // must include it, or every update to a sourced card would fail).
+    await assertSucceeds(updateDoc(withSource, { bookmarked: true, revision: 2 }));
+    await assertFails(updateDoc(withSource, {
+      source: { url: 'https://example.com/different', title: 'Changed', capturedAt: '2026-09-27T00:00:00.000Z' },
+      revision: 2,
+    }));
+    await assertFails(updateDoc(withSource, { source: deleteField(), revision: 2 }));
   });
 
   it('requires current-epoch updates to advance the revision exactly once', async () => {

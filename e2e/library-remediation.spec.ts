@@ -39,7 +39,12 @@ test('mobile exposes one touch-sized library search', async ({ page }) => {
   const visibleSearches = page.locator('input[placeholder="Search words or meanings…"]:visible');
   await expect(visibleSearches).toHaveCount(1);
 
-  const searchBox = await visibleSearches.first().boundingBox();
+  // The <input> itself only renders at its intrinsic text-line height
+  // (library-canvas.css's .library-canvas-search input has no explicit
+  // height); the actual tap target is the wrapping <label
+  // class="library-canvas-search"> (height: 3rem), which the input's own
+  // implicit label association extends focus/click to.
+  const searchBox = await visibleSearches.first().locator('xpath=ancestor::label[1]').boundingBox();
   expect(searchBox).not.toBeNull();
   expect(searchBox!.height).toBeGreaterThanOrEqual(44);
 });
@@ -49,6 +54,11 @@ test('mobile navigation does not expose a dead practice action', async ({ page }
 });
 
 test('category filters expose their selected state programmatically', async ({ page }) => {
+  // Category filter buttons (LibraryTools.tsx) render inside the collapsed
+  // "More library tools" <details> (LibraryScreen.tsx); native closed <details>
+  // content has no accessible box, so open the disclosure first.
+  await page.locator('summary').filter({ hasText: 'More library tools' }).click();
+
   const travelFilter = page.getByRole('button', { name: /^Travel/ });
   await travelFilter.scrollIntoViewIfNeeded();
   await travelFilter.click();
@@ -64,9 +74,15 @@ test('desktop gives the card collection the richest region and keeps tools secon
   await expect(page.locator('[data-library-tool="create"]')).toHaveAttribute('data-tool-priority', 'primary');
   await expect(page.locator('[data-library-tool="filters"]')).toHaveAttribute('data-tool-priority', 'secondary');
 
+  // LibraryScreen.tsx stacks "collection" and "tools" as full-width blocks at
+  // every breakpoint (library-canvas.css has no rule keyed on
+  // data-library-region, so there is no narrower secondary column to compare
+  // widths against). The redesign expresses "collection is the richest,
+  // primary region" through vertical order (collection first) plus the
+  // data-tool-priority markers asserted above, not through column width.
   const collectionBox = await page.locator('[data-library-region="collection"]').boundingBox();
   const toolsBox = await page.locator('[data-library-region="tools"]').boundingBox();
   expect(collectionBox).not.toBeNull();
   expect(toolsBox).not.toBeNull();
-  expect(collectionBox!.width).toBeGreaterThan(toolsBox!.width);
+  expect(collectionBox!.y).toBeLessThan(toolsBox!.y);
 });

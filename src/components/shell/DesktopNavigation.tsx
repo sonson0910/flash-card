@@ -26,7 +26,6 @@ export interface DesktopNavigationProps {
   streak?: number;
   level?: number;
   xp?: number;
-  courseSwitcher?: ReactNode;
   onOpenLanding?: () => void;
   onOpenToday: () => void;
   onOpenLibrary: () => void;
@@ -46,7 +45,7 @@ function CrystalStar() {
   return <svg viewBox="0 0 100 100" width="36" height="36" aria-hidden="true" className="claude-brand-star"><path d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" fill="#ff5470" /><path d="M50 4 62 36 96 37 69 59 78 91 50 72Z" fill="#7a0820" /></svg>;
 }
 
-export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncStatus, isExporting, isLibraryMutationPending, isRetryingSync, canSyncNow, sessionLost, libraryCountLabel, streak, level, xp, courseSwitcher, onOpenLanding, onOpenToday, onOpenLibrary, onOpenCatalog, onOpenProgress, onOpenSettings, onSignIn, onSignOut, onRetrySync, onExportLibrary, onClearLibrary }: DesktopNavigationProps) {
+export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncStatus, isExporting, isLibraryMutationPending, isRetryingSync, canSyncNow, sessionLost, libraryCountLabel, streak, level, xp, onOpenLanding, onOpenToday, onOpenLibrary, onOpenCatalog, onOpenProgress, onOpenSettings, onSignIn, onSignOut, onRetrySync, onExportLibrary, onClearLibrary }: DesktopNavigationProps) {
   const { _ } = useLingui();
   const { family } = useTheme();
   const status = localizeShellSyncStatus(getShellSyncStatus(syncStatus), _);
@@ -80,7 +79,7 @@ export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncS
         <span className="claude-brand-name"><span>{family === 'crystal' ? 'SON' : 'Son'}</span><em>{family === 'crystal' ? 'FLASH' : 'Flash'}</em></span>
       </button>
       <div className="claude-nav-items hidden min-w-0 items-center lg:flex">{navigation.map(item => <button key={item.view} type="button" onClick={item.action} data-shell-active={viewMode === item.view ? 'true' : undefined} aria-current={viewMode === item.view ? 'page' : undefined} className="claude-nav-item"><span>{family === 'crystal' ? item.crystal : item.classic}</span></button>)}</div>
-      <CourseSwitcherSlot signedIn={syncIdentity.status === 'authenticated'}>{courseSwitcher}</CourseSwitcherSlot>
+      <CourseSwitcherSlot signedIn={syncIdentity.status === 'authenticated'} />
       <div data-gsap-header-actions className="claude-shell-actions ml-auto flex items-center">
         <ThemeMenu onOpenSettings={onOpenSettings} />
         {hasStreak && <span className="claude-streak" aria-label={_(msg({ id: 'shell.streak', message: '{count} day streak' }).id, { count: streak })}><Flame size={15} fill="currentColor" aria-hidden="true" />{streak}</span>}

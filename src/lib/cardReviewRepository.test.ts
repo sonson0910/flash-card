@@ -9,6 +9,7 @@ vi.mock('./firebase', () => ({
   app: { name: 'test-app' },
   isFirebaseConfigured: true,
   protectedFunctionsCapability: {},
+  getSonFlashFunctions: () => ({ kind: 'functions' }),
 }));
 
 vi.mock('./protectedFunctionsCapability', () => ({

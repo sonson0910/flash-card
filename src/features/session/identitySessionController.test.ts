@@ -436,7 +436,7 @@ describe('identity session controller', () => {
       owner: { id: 'quota-owner' },
       ownerEpoch: null,
       canPublishMutations: false,
-      error: "Firebase's daily read limit has been reached. Changes stay safe on this device until the quota resets.",
+      error: "Firebase's daily read limit has been reached. Please try again after it resets.",
     });
   });
 

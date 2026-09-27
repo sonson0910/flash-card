@@ -1,7 +1,7 @@
 import type { Firestore } from 'firebase/firestore';
 import type { CardData } from '../types/card';
 import { normalizeCardData } from './cardNormalization';
-import { app as firebaseApp, isFirebaseConfigured, protectedFunctionsCapability } from './firebase';
+import { app as firebaseApp, getSonFlashFunctions, isFirebaseConfigured, protectedFunctionsCapability } from './firebase';
 import { ProtectedFunctionError, runProtectedFunction } from './protectedFunctionsCapability';
 import { scheduleReview, type ReviewRating } from './reviewScheduler';
 
@@ -109,11 +109,11 @@ export async function applyReviewViaCallable(
     });
   }
   return runProtectedFunction(protectedFunctionsCapability, 'Card review', async () => {
-    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const { httpsCallable } = await import('firebase/functions');
     const app = firebaseApp;
     if (!app) throw new Error('Firebase is not initialized.');
     const callable = httpsCallable<ReviewCommand, unknown>(
-      getFunctions(app, 'asia-southeast1'),
+      await getSonFlashFunctions(app),
       'reviewCardV2',
     );
     try {

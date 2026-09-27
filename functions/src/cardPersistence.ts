@@ -9,12 +9,15 @@ import {
   canonicalLexemeId,
   InputValidationError,
   parseCardLanguagePair,
+  parseCardSourceMetadata,
 } from './inputValidation.js';
 import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
 import {
   applyLibraryFacetMutationInTransaction,
   libraryFacetRestoreOperationId,
 } from './libraryFacetPersistence.js';
+import { AiQuotaError, asAiQuotaCount, resolvePlan, type AiOperationRecord } from './aiQuota.js';
+import type { PilotConfig } from './pilotConfig.js';
 
 export const MAX_CARD_ALLOCATION = 5_000;
 const MAX_PROTOCOL_COUNTER = Number.MAX_SAFE_INTEGER;
@@ -76,7 +79,7 @@ const CARD_FIELDS = new Set([
   'bookmarked', 'customDeck', 'difficulty', 'nextReviewDate', 'reviews', 'interval',
   'easeFactor', 'correctStreak', 'fsrs', 'reviewHistory', 'partOfSpeech', 'cefrLevel',
   'exampleSentence', 'exampleTranslation', 'collocations', 'synonyms', 'antonyms',
-  'register', 'commonMistake', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds',
+  'register', 'commonMistake', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'source',
 ]);
 
 const CARD_DIFFICULTIES = new Set(['easy', 'good', 'hard', 'unrated']);
@@ -373,6 +376,7 @@ export const canonicalCard = (value: unknown): CardRecord => {
   }
   const now = new Date().toISOString();
   const createdAt = optionalDate(source.createdAt, 'createdAt') ?? now;
+  const cardSource = parseCardSourceMetadata(source.source);
   const result: CardRecord = {
     id: hasCanonicalIdentity ? lexemeId as string : targetAwareCardId(identity, effectiveLanguage ?? 'en'),
     ...(source.origin === undefined ? {} : { origin: source.origin }),
@@ -409,6 +413,7 @@ export const canonicalCard = (value: unknown): CardRecord => {
     commonMistake: boundedText(source.commonMistake, 'commonMistake', 2_048),
     reviewHistory: parseReviewHistory(source.reviewHistory),
     appliedReviewOperationIds: boundedReviewOperationIds(source.appliedReviewOperationIds),
+    ...(cardSource ? { source: cardSource } : {}),
     schemaVersion: 2,
     revision: 1,
   };
@@ -469,6 +474,29 @@ export const parseCreateCardRequest = (value: unknown): CardAllocationRequest =>
     ...(operationCreatedAt === undefined ? {} : { operationCreatedAt }),
     ...(source.restore === true ? { restore: true } : {}),
   };
+};
+
+export interface StarterCardsBatchRequest {
+  operationId: string;
+  cards: readonly unknown[];
+}
+
+export const parseCreateStarterCardsRequest = (value: unknown): StarterCardsBatchRequest => {
+  const source = asRecord(value, 'Starter card request must be an object.');
+  if (Object.keys(source).some(key => !new Set(['operationId', 'cards']).has(key))) {
+    throw new InputValidationError('Starter card request contains an unsupported field.');
+  }
+  const operationId = boundedText(source.operationId, 'operationId', 128);
+  if (!operationId || !/^[A-Za-z0-9_-]{1,128}$/.test(operationId)) {
+    throw new InputValidationError('Starter card operationId is invalid.');
+  }
+  if (!Array.isArray(source.cards) || source.cards.length === 0) {
+    throw new InputValidationError('Starter card batch must be a non-empty array.');
+  }
+  if (source.cards.length > MAX_STARTER_CARDS_PER_BATCH) {
+    throw new InputValidationError('Starter card batch is too large.');
+  }
+  return { operationId, cards: source.cards };
 };
 
 const ownerDocument = (database: Firestore, ownerId: string) =>
@@ -832,5 +860,141 @@ export async function createCardForOwner(
       card: serializeCardResponse(createdCard),
       ...(restore || restoresPriorCard ? { restored: true as const } : {}),
     };
+  });
+}
+
+export const MAX_STARTER_CARDS_PER_BATCH = 20;
+
+export type StarterCardBatchResult =
+  | { kind: 'completed'; cardIds: readonly string[] }
+  | { kind: 'created'; cardIds: readonly string[] };
+
+/**
+ * Reserves N units of the same monthly AI-card quota `reserveWordOperation`
+ * spends and creates every starter card in one Firestore transaction —
+ * unlike a real AI generation, a starter card's content is fully known
+ * upfront from the static catalog, so there is no external call to bridge
+ * between reserving and writing, and the two collapse into a single atomic
+ * step. Either the whole batch (quota debit + every card) commits, or none
+ * of it does: a client retry with the same `operationId` after a timeout or
+ * crash either replays the already-completed result or safely redoes the
+ * whole batch, and never spends quota twice for it. Pro users resolve
+ * through the same `resolvePlan` pro-period logic as any other AI spend.
+ */
+export async function createStarterCardsForOwner(
+  database: Firestore,
+  ownerId: string,
+  operationId: string,
+  cards: readonly unknown[],
+  now: Date,
+  config: PilotConfig,
+): Promise<StarterCardBatchResult> {
+  if (!ownerId || ownerId.includes('/')) throw new InputValidationError('Card owner is invalid.');
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(operationId)) {
+    throw new InputValidationError('Starter card operationId is invalid.');
+  }
+  if (cards.length === 0) throw new InputValidationError('Starter card batch must not be empty.');
+  if (cards.length > MAX_STARTER_CARDS_PER_BATCH) {
+    throw new InputValidationError('Starter card batch is too large.');
+  }
+
+  const normalizedCards = cards.map(card => canonicalCard(card));
+  for (const card of normalizedCards) {
+    // The catalog only ever produces plain word identity; a lexeme-identified
+    // card would mean this path is being reused for something it was not
+    // built for, so it is rejected rather than silently accepted.
+    if (card.lexemeId !== undefined) {
+      throw new InputValidationError('Starter cards must use plain word identity, not a lexeme.');
+    }
+  }
+
+  const owner = ownerDocument(database, ownerId);
+  const operationRef = owner.collection('ai_operations').doc(operationId);
+  const planRef = owner.collection('profile').doc('plan');
+  const libraryState = owner.collection('profile').doc('library_state');
+  const resourceUsage = owner.collection('profile').doc('resource_usage');
+  const requestHash = createHash('sha256')
+    .update(JSON.stringify(normalizedCards.map(card => card.id)))
+    .digest('hex');
+
+  // Mirrors createCardForOwner's own baseline read: only used as a fallback
+  // when resource_usage has never been initialized for this owner yet.
+  let existingCardCount: number;
+  try {
+    const countSnapshot = await owner.collection('cards').count().get();
+    const value = countSnapshot.data().count;
+    if (!Number.isSafeInteger(value) || Number(value) < 0) throw new Error('invalid count');
+    existingCardCount = Number(value);
+  } catch {
+    throw new CardAllocationConflictError('identity-conflict', 'The owner card usage baseline is unavailable.');
+  }
+
+  return database.runTransaction(async (transaction: Transaction) => {
+    await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
+    const [operationSnapshot, planSnapshot, stateSnapshot, usageSnapshot] = await Promise.all([
+      transaction.get(operationRef),
+      transaction.get(planRef),
+      transaction.get(libraryState),
+      transaction.get(resourceUsage),
+    ]);
+    const operation = operationSnapshot.data() as AiOperationRecord | undefined;
+    // Only a live (completed) operation owns its request shape; this path
+    // never leaves an operation in a 'reserved' state (see class comment),
+    // so any existing doc for this id is necessarily already completed.
+    if (operation?.requestHash && operation.requestHash !== requestHash && operation.status === 'completed') {
+      throw new AiQuotaError('operation-request-mismatch', { reason: 'operation-request-mismatch' });
+    }
+    if (operation?.status === 'completed') {
+      const cardIds = Array.isArray(operation.result)
+        ? operation.result.filter((id): id is string => typeof id === 'string')
+        : [];
+      return { kind: 'completed' as const, cardIds };
+    }
+
+    const plan = resolvePlan(planSnapshot.data(), now, config);
+    const periodKey = plan.periodKey;
+    const usageRef = owner.collection('ai_usage').doc(periodKey);
+    const quotaUsageSnapshot = await transaction.get(usageRef);
+    const used = asAiQuotaCount(quotaUsageSnapshot.data()?.used);
+    const requestedUnits = normalizedCards.length;
+    if (config.quotaEnforced && used + requestedUnits > plan.limit) {
+      throw new AiQuotaError('ai-card-quota', {
+        reason: 'ai-card-quota', used, limit: plan.limit, requested: requestedUnits,
+        periodEndsAt: plan.endsAt.toISOString(), tier: plan.tier,
+      });
+    }
+
+    const currentEpoch = readEpoch(stateSnapshot);
+    const currentCount = safeStoredCardCount(usageSnapshot) ?? existingCardCount;
+    if (currentCount + requestedUnits > MAX_CARD_ALLOCATION) {
+      throw new CardAllocationLimitError();
+    }
+
+    const cardIds: string[] = [];
+    for (const card of normalizedCards) {
+      const identity = card.normalizedWord as string;
+      const plainTargetLanguage = typeof card.language === 'string' ? card.language : undefined;
+      const id = card.id as string;
+      const reservationRef = owner.collection('card_reservations').doc(reservationId(identity, plainTargetLanguage));
+      const canonicalRef = owner.collection('cards').doc(id);
+      // .create() (not .set()) so a genuine identity collision — e.g. this
+      // exact batch already exists under a different operationId — aborts
+      // the whole transaction instead of silently overwriting a card.
+      transaction.create(reservationRef, createReservation(identity, id, plainTargetLanguage));
+      transaction.create(canonicalRef, { ...card, id, schemaVersion: 2, revision: 1, libraryEpoch: currentEpoch });
+      cardIds.push(id);
+    }
+    transaction.set(usageRef, {
+      periodKey, tier: plan.tier, used: used + requestedUnits, limit: plan.limit,
+      periodStartsAt: plan.startsAt, periodEndsAt: plan.endsAt, updatedAt: now,
+    }, { merge: true });
+    transaction.set(resourceUsage, {
+      schemaVersion: RESOURCE_USAGE_SCHEMA_VERSION,
+      cardCount: currentCount + requestedUnits,
+    }, { merge: true });
+    transaction.set(operationRef, {
+      status: 'completed', requestHash, periodKey, reservedAt: now, completedAt: now, result: cardIds,
+    }, { merge: true });
+    return { kind: 'created' as const, cardIds };
   });
 }

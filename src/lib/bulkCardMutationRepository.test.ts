@@ -6,10 +6,11 @@ const firebaseRuntime = vi.hoisted(() => ({
   protectedFunctionsCapability: { available: true } as
     | { available: true }
     | { available: false; reason: 'firebase-unconfigured' | 'firebase-initialization-failed' | 'app-check-unconfigured' | 'app-check-initialization-failed' },
+  getSonFlashFunctions: (app: unknown) => mocks.getFunctions(app),
 }));
 
 const mocks = vi.hoisted(() => ({
-  getFunctions: vi.fn(() => ({ kind: 'functions' })),
+  getFunctions: vi.fn((_app: unknown) => ({ kind: 'functions' })),
   httpsCallable: vi.fn(),
 }));
 

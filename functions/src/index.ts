@@ -39,7 +39,9 @@ import {
   CardAllocationLimitError,
   MAX_CARD_ALLOCATION,
   createCardForOwner,
+  createStarterCardsForOwner,
   parseCreateCardRequest,
+  parseCreateStarterCardsRequest,
 } from './cardPersistence.js';
 import {
   applyBulkCardMutationsForOwner,
@@ -803,6 +805,57 @@ export const createCard = onCall({
       errorName: error instanceof Error ? error.name : 'UnknownError',
     });
     throw new HttpsError('internal', 'Card allocation failed.');
+  }
+});
+
+export const createStarterCards = onCall({
+  region: REGION,
+  secrets: [analyticsPseudonymKey],
+  enforceAppCheck,
+  timeoutSeconds: 20,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = await requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseCreateStarterCardsRequest(request.data));
+  await consumeBudget(userId, 'card-create', MAX_CARD_CREATIONS_PER_HOUR,
+    'Card creation limit reached. Try again later.');
+  let quotaConfig;
+  try { quotaConfig = await loadPilotConfig(database); }
+  catch { throw new HttpsError('unavailable', 'AI quota is unavailable. Try again later.'); }
+  try {
+    const result = await createStarterCardsForOwner(
+      database, userId, input.operationId, input.cards, new Date(), quotaConfig,
+    );
+    if (result.kind === 'created') {
+      // The starter catalog only ever produces manual-origin cards today;
+      // this batch reserving AI quota is a billing decision, not a change
+      // to how these cards are tagged.
+      for (const cardId of result.cardIds) {
+        await emitPilotEvent(userId, 'capture_completed', key => ({
+          origin: 'manual', cardRef: analyticsCardRef(userId, cardId, key),
+        }));
+      }
+    }
+    return result;
+  } catch (error) {
+    if (error instanceof AiQuotaError) {
+      if (error.reason === 'ai-card-quota') await emitQuotaEvent(userId, 'card');
+      const code = error.reason === 'operation-request-mismatch' ? 'failed-precondition' : 'resource-exhausted';
+      throw new HttpsError(code, error.message, error.details);
+    }
+    if (error instanceof LegacyLibraryMigrationFenceError) {
+      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+    }
+    const allocationError = toCardAllocationHttpsError(error);
+    if (allocationError) throw allocationError;
+    if (error instanceof InputValidationError) {
+      throw new HttpsError('invalid-argument', error.message);
+    }
+    console.error('Starter card allocation failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'Starter card allocation failed.');
   }
 });
 

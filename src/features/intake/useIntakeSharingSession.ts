@@ -10,6 +10,7 @@ import type {
   SharedDeckBrowser,
   SharedDeckCardBatch,
 } from '../sharing/sharedDeckSessionController';
+import type { SharedDeckCoursePort } from '../sharing/shareCourseMatching';
 import { useSharedDeckSession } from '../sharing/useSharedDeckSession';
 import type { CardIntakeControllerPort, CardIntakeDraftPort } from './cardIntakeController';
 import { useCardIntake, type CardIntakeActions } from './useCardIntake';
@@ -49,6 +50,14 @@ export interface IntakeSharingSessionOptions {
     loadCards(category: string): Promise<SharedDeckCardBatch>;
     browser?: SharedDeckBrowser;
   };
+  /**
+   * Steers an incoming share to the matching course before its cards import.
+   * Built from the live `useCourseSession()` value by a caller that is a
+   * genuine descendant of `CourseProvider` — calling `useCourseSession()`
+   * from this hook directly would only ever see the context's idle default,
+   * since this hook is not itself rendered under that provider.
+   */
+  coursePort?: SharedDeckCoursePort | null;
   draft?: CardIntakeDraftPort;
   language?: LanguageProfile;
   resetSpreadsheetSource?: () => void;
@@ -153,6 +162,7 @@ export function useIntakeSharingSession({
   ownerKey,
   intake,
   sharing,
+  coursePort,
   draft = browserDraft,
   language,
   resetSpreadsheetSource,
@@ -192,6 +202,7 @@ dependencies: IntakeSharingSessionDependencies,
     adapter: sharing.adapter,
     intake: sharedIntake,
     browser: sharing.browser,
+    coursePort,
   });
   const [facadeFailure, setFacadeFailure] = useState<{
     ownerSessionGeneration: number;

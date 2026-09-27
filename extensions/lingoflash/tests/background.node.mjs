@@ -49,6 +49,7 @@ const createWorkerContext = async ({
   timerCapMs = null,
   permissionOrigins = [],
   activeTabUrl = '',
+  activeTabTitle = '',
   permissionsRequestResult = true,
   hasSessionStorage = true,
   registerContentScriptError = '',
@@ -135,7 +136,11 @@ const createWorkerContext = async ({
     },
     tabs: {
       query(_query, callback) {
-        callback([{ id: 7, ...(activeTabUrl ? { url: activeTabUrl } : {}) }]);
+        callback([{ id: 7, ...(activeTabUrl ? { url: activeTabUrl } : {}), ...(activeTabTitle ? { title: activeTabTitle } : {}) }]);
+      },
+      get(id, callback) {
+        calls.push({ type: 'tabs.get', id });
+        callback(id === 7 ? { id, ...(activeTabUrl ? { url: activeTabUrl } : {}), ...(activeTabTitle ? { title: activeTabTitle } : {}) } : { id });
       },
       create(details, callback) {
         calls.push({ type: 'tabs.create', details });
@@ -311,6 +316,29 @@ test('opens the browser shortcut configuration on request', async () => {
   assert.equal(response.ok, true);
   assert.ok(worker.calls.some(call => call.type === 'tabs.create'
     && call.details.url === 'chrome://extensions/shortcuts'));
+});
+
+test('opens the plain app URL when OPEN_APP has no target', async () => {
+  const worker = await createWorkerContext();
+
+  const response = await sendRuntimeMessage(worker, { type: 'OPEN_APP' });
+
+  assert.equal(response.ok, true);
+  assert.equal(response.url, worker.context.LingoFlashExtension.DEFAULT_APP_URL);
+  assert.ok(worker.calls.some(call => call.type === 'tabs.create'
+    && call.details.url === worker.context.LingoFlashExtension.DEFAULT_APP_URL));
+});
+
+test('opens the app on the WebWords route when OPEN_APP carries target: webWords, reusing the same message type', async () => {
+  const worker = await createWorkerContext();
+
+  const response = await sendRuntimeMessage(worker, { type: 'OPEN_APP', target: 'webWords' });
+
+  const expectedUrl = new URL(worker.context.LingoFlashExtension.DEFAULT_APP_URL);
+  expectedUrl.searchParams.set('webWords', '1');
+  assert.equal(response.ok, true);
+  assert.equal(response.url, expectedUrl.toString());
+  assert.ok(worker.calls.some(call => call.type === 'tabs.create' && call.details.url === expectedUrl.toString()));
 });
 
 test('does not expose a Chrome shortcut URL on Safari', async () => {
@@ -790,6 +818,64 @@ test('captures sentence context even when a context menu supplies the selected t
   assert.equal(job.context, 'The resilient team recovered quickly.');
 });
 
+test('captures the source tab URL and title, delivers them through the verified intent, and ignores a forged override', async () => {
+  const worker = await createWorkerContext({
+    activeTabUrl: 'https://example.com/article?utm=1#frag',
+    activeTabTitle: 'An Example Article',
+  });
+
+  const started = await startQuickAdd(worker);
+  const job = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(job.sourceUrl, 'https://example.com/article');
+  assert.equal(job.pageTitle, 'An Example Article');
+  assert.ok(worker.calls.some(call => call.type === 'tabs.get' && call.id === 7));
+
+  const intent = readStartedIntent(worker, started.id);
+  const verified = await verifyIntent(worker, {
+    ...intent,
+    sourceUrl: 'https://forged.example/',
+    pageTitle: 'Forged title',
+  }, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+    frameId: 0,
+  });
+  assert.equal(verified.verified, true);
+  assert.equal(verified.intent.sourceUrl, 'https://example.com/article');
+  assert.equal(verified.intent.pageTitle, 'An Example Article');
+});
+
+test('never captures a non-http(s) source URL and bounds an oversized page title', async () => {
+  const worker = await createWorkerContext({
+    activeTabUrl: 'chrome://extensions/',
+    activeTabTitle: `Extensions ${'x'.repeat(400)}`,
+  });
+
+  const started = await startQuickAdd(worker);
+  const job = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(job.sourceUrl, '');
+  assert.equal(job.pageTitle.length, 256);
+});
+
+test('omits source metadata entirely when the active tab exposes neither a URL nor a title', async () => {
+  const worker = await createWorkerContext();
+
+  const started = await startQuickAdd(worker);
+  const job = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(job.sourceUrl, '');
+  assert.equal(job.pageTitle, '');
+
+  const intent = readStartedIntent(worker, started.id);
+  const verified = await verifyIntent(worker, intent, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+    frameId: 0,
+  });
+  assert.equal(verified.verified, true);
+  assert.equal('sourceUrl' in verified.intent, false);
+  assert.equal('pageTitle' in verified.intent, false);
+});
+
 test('rejects an app result from the wrong worker tab and cleans up a valid result', async () => {
   const worker = await createWorkerContext();
   const started = await startQuickAdd(worker);
@@ -908,6 +994,43 @@ test('retries a failed capture with its original word, context, and operation ID
   }, appSender(worker));
   assert.equal(done.ok, true);
   assert.equal(worker.storageValues.has('lingoflash_quick_add_retry_7'), false);
+});
+
+test('retries a failed capture from the popup, which has no sender.tab, by falling back to the active tab', async () => {
+  const worker = await createWorkerContext({
+    executeScriptCaptureResult: { text: 'resilient', context: 'Original passage sentence.', anchor: { left: 42, top: 60 } },
+  });
+  const started = await startQuickAdd(worker);
+  const failed = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'error', message: 'Dịch vụ AI đang bận.' }),
+  }, appSender(worker));
+  assert.equal(failed.ok, true);
+  assert.equal(worker.storageValues.get('lingoflash_quick_add_retry_7')?.id, started.id);
+
+  // The popup is not a content script, so it has no sender.tab at all — unlike
+  // the in-page bubble's retry above, which always supplies { tab: { id: 7 } }.
+  // sendRuntimeMessage defaults its sender to {}, exercising the RETRY_QUICK_ADD
+  // fallback that resolves the source tab via activeTab() instead.
+  const retried = await sendRuntimeMessage(worker, { type: 'RETRY_QUICK_ADD', id: started.id });
+  assert.equal(retried.ok, true);
+  assert.equal(retried.id, started.id);
+  const retryJob = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(retryJob.text, 'resilient');
+  assert.equal(retryJob.context, 'Original passage sentence.');
+});
+
+test('rejects a popup retry when there is no active tab to resolve as the fallback source', async () => {
+  const worker = await createWorkerContext();
+  const originalQuery = worker.context.chrome.tabs.query;
+  worker.context.chrome.tabs.query = (_query, callback) => callback([]);
+
+  const rejected = await sendRuntimeMessage(worker, { type: 'RETRY_QUICK_ADD', id: 'job_missing' });
+  assert.equal(rejected.ok, false);
+  assert.match(rejected.error, /Không tìm thấy tab nguồn/);
+
+  worker.context.chrome.tabs.query = originalQuery;
 });
 
 test('does not report a false error when successful cleanup closes the worker tab first', async () => {

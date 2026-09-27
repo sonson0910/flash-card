@@ -62,7 +62,6 @@ function AvailabilityPanel({ status, actions }: { status: CatalogAvailabilitySta
     return (
       <div className="flex flex-col gap-3 rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100 sm:flex-row sm:items-center sm:justify-between" role="status" aria-live="polite" aria-atomic="true">
         <span className="flex items-start gap-2 font-semibold"><CheckCircle2 className="mt-0.5 size-5 shrink-0" aria-hidden="true" />{status.message}</span>
-        {status.isAvailableOffline && <span className="inline-flex min-h-11 items-center gap-2 self-start rounded-full border border-emerald-500 px-3 py-2 font-bold sm:self-auto"><Check aria-hidden="true" className="size-4" /><Trans id="catalog.status.available-offline" message="Available offline" /></span>}
       </div>
     );
   }
@@ -259,7 +258,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
     : i18n._(msg({ id: 'paths.catalog.kicker', message: 'Reviewed catalog' }));
   const description = isPersonal
     ? i18n._(msg({ id: 'paths.personal.description', message: 'Follow practical paths built from cards you already own. Reviewed shared catalogs can be added later without blocking your learning.' }))
-    : i18n._(msg({ id: 'paths.catalog.description', message: 'Choose a reviewed language catalog, follow a level-by-level path, and keep downloaded words available offline.' }));
+    : i18n._(msg({ id: 'paths.catalog.description', message: 'Choose a reviewed language catalog and follow a level-by-level path built from verified vocabulary.' }));
 
   return (
     <section className="catalog-canvas mx-auto w-full min-w-0 max-w-7xl space-y-6 sm:space-y-8" aria-labelledby="catalog-heading">

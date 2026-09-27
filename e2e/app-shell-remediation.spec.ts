@@ -6,7 +6,13 @@ const cards = [
   'serendipity', 'resilient', 'curious', 'flourish', 'meticulous', 'eloquent',
   'adaptable', 'insightful', 'persistent', 'vibrant', 'concise', 'diligent',
 ].map((word, index) => ({
-  id: `shell-${index}`,
+  // Matches targetAwareCardId/stableCardId's `word-<normalizedWord>` id
+  // scheme (functions/src/cardPersistence.ts) that a real createCard call
+  // would assign for a plain English word. Review submission re-derives this
+  // canonical id server-side and rejects a mismatch as identity-conflict, so
+  // an arbitrary seeded id (e.g. the previous `shell-${index}`) breaks any
+  // test that reviews a seeded card.
+  id: `word-${word}`,
   word,
   normalizedWord: word,
   translation: `translation ${index + 1}`,
@@ -25,6 +31,12 @@ const cards = [
   bookmarked: true,
   difficulty: 'hard',
   customDeck: 'IELTS',
+  // Current-protocol shape (matches what createCard actually writes) so
+  // in-place mutations like toggleBookmark take the normal patch path
+  // instead of the legacy identity-repair path, whose security rule
+  // requires a card with no `normalizedWord` at all.
+  schemaVersion: 2,
+  revision: 1,
 }));
 
 test.beforeEach(async ({ page, seedCards, blockExternalNetwork }, testInfo) => {
@@ -55,8 +67,11 @@ test('library exposes one canonical heading and a keyboard-operable skip link', 
   await expect(skipLink).toHaveAttribute('href', '#learning-workspace');
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary library' })).toBeAttached();
-  await expect(page.getByRole('heading', { level: 2, name: 'Make every word unforgettable.' })).toBeVisible();
-  await expect(main).toHaveAttribute('tabindex', '-1');
+  await expect(page.getByRole('heading', { level: 2, name: 'Vocabulary' })).toBeVisible();
+  // `main` is a scrollable region that stays a normal tab stop (tabindex=0)
+  // so keyboard users can scroll it directly, rather than a programmatic-only
+  // (-1) focus target; the skip link still moves focus there on activation.
+  await expect(main).toHaveAttribute('tabindex', '0');
 
   await page.keyboard.press('Enter');
   await expect(main).toBeFocused();
@@ -131,11 +146,17 @@ test('mobile library settings menu stays in bounds and restores trigger focus', 
   await expect(manage).toBeFocused();
 });
 
-test('starring a card preserves the current library page', async ({ page, signIn }) => {
+test('bookmarking a card preserves the current library page', async ({ page, signIn }) => {
   await signIn(page, '/?view=library&page=2');
   await expect(page.getByText('Page 2 / 2')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Remove star' }).first().click();
+  // The bookmark toggle keeps a static "Bookmark card" accessible name and
+  // reflects its state via the filled/outline star icon plus the card's
+  // "Starred" badge, rather than swapping to a "Remove star" label.
+  const starredBadges = page.getByRole('img', { name: 'Starred' });
+  const before = await starredBadges.count();
+  await page.getByRole('button', { name: 'Bookmark card' }).first().click();
+  await expect(starredBadges).toHaveCount(before - 1);
 
   await expect(page.getByText('Page 2 / 2')).toBeVisible();
   await expect.poll(() => new URL(page.url()).searchParams.get('page')).toBe('2');
@@ -173,14 +194,16 @@ test('the destructive library dialog restores focus to its stable opener', async
   await expect(manage).toBeFocused();
 });
 
-test('Today and Progress empty states expose concrete next actions without initial autofocus', async ({ page, signIn }) => {
+test('Today and Progress empty states expose concrete next actions without initial autofocus', async ({ page, seedCourseProfile, signIn }) => {
+  // An existing course profile keeps first-run onboarding out of the empty states under test.
+  await seedCourseProfile();
   await signIn(page, '/?view=today');
   await expect.poll(() => page.evaluate(() => document.activeElement === document.body)).toBe(true);
   await expect(page.getByRole('button', { name: 'Add vocabulary' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Explore learning paths' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Progress' }).last().click();
-  await expect(page.getByRole('heading', { name: 'Learning progress' })).toBeFocused();
+  await expect(page.getByRole('heading', { name: 'Progress' })).toBeFocused();
   await expect(page.getByRole('button', { name: 'Add vocabulary' })).toBeVisible();
 });
 
@@ -188,9 +211,20 @@ test('library query state deep-links and responds to browser history without dro
   await signIn(page, '/?view=library&utm_source=audit&category=Test%20deck&deck=IELTS&difficulty=hard&pos=noun&starred=1&date=Today&page=2');
 
   await expect(page.getByRole('heading', { name: 'Test deck' })).toBeVisible();
+
+  // The advanced filter controls live inside the collapsible "More library
+  // tools" <details>/<summary> disclosure, which starts closed; open it
+  // before asserting on the deep-linked filter values it renders.
+  await page.locator('summary').filter({ hasText: 'More library tools' }).click();
+
   await expect(page.getByRole('combobox', { name: 'Filter by part of speech' })).toHaveValue('noun');
   await expect(page.getByRole('combobox', { name: 'Filter by memory status' })).toHaveValue('hard');
-  await expect(page.getByRole('combobox', { name: 'Filter cards by date created' })).toHaveValue('Today');
+  // Signed-in sessions render a native date picker (the cloud date filter)
+  // instead of the label-based <select> used for anonymous/local sessions,
+  // seeded with today's date since the deep-linked label is "Today".
+  const now = new Date();
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  await expect(page.locator('input[type="date"][aria-label="Filter cloud cards by date created"]')).toHaveValue(todayIso);
   await expect(page.getByRole('switch', { name: 'Show starred cards only' })).toHaveAttribute('aria-checked', 'true');
   await expect(page.getByText('Page 2 / 2')).toBeVisible();
 
@@ -220,15 +254,43 @@ test('mobile library presents the card grid before tools and the filter shortcut
   const gridBox = await grid.boundingBox();
   expect(gridBox!.y).toBeLessThan(toolsBox!.y);
 
-  await page.getByRole('button', { name: 'Open library filters' }).click();
+  // The trigger is a native <summary> element; Chromium exposes it with
+  // accessible role "generic" rather than "button", so match on the element
+  // itself instead of an ARIA role.
+  await page.locator('summary').filter({ hasText: 'More library tools' }).click();
   await expect(tools).toBeInViewport();
 });
 
-test('study shortcuts require modifiers for single-character commands and views expose a focused heading', async ({ page, signIn }) => {
+test('study shortcuts require modifiers for single-character commands and views expose a focused heading', async ({ page, signIn, seedCards }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  // "Study now" only starts a session when at least one card is due or
+  // unrated ("new") per fetchPracticeCards' Firestore queries; every shared
+  // fixture card above is seeded with difficulty: 'hard' and no
+  // nextReviewDate, so none qualify. Seed one unrated card here.
+  await seedCards([{
+    id: 'word-tenacious',
+    word: 'tenacious',
+    normalizedWord: 'tenacious',
+    translation: 'translation tenacious',
+    explanation: 'Explanation for tenacious.',
+    phonetic: '',
+    emoji: '',
+    category: 'Test deck',
+    partOfSpeech: 'noun',
+    audioUrl: null,
+    imageUrl: null,
+    createdAt: new Date().toISOString(),
+    bookmarked: false,
+    difficulty: 'unrated',
+    customDeck: 'IELTS',
+    schemaVersion: 2,
+    revision: 1,
+  }]);
   await signIn(page, '/?view=library');
 
-  await page.getByRole('button', { name: /Start a review|Review \d+ due/ }).click();
+  // The library's study-launch action is currently labeled "Study now"
+  // (previously "Start a review"/"Review N due").
+  await page.getByRole('button', { name: 'Study now' }).click();
   const studyHeading = page.getByRole('heading', { level: 1, name: 'Study session' });
   await expect(studyHeading).toBeFocused();
 
@@ -237,7 +299,7 @@ test('study shortcuts require modifiers for single-character commands and views 
   await page.keyboard.press('1');
   await expect(page.getByText('How well did you remember this card?')).toBeVisible();
   await page.keyboard.press('Alt+1');
-  await expect(page.getByText('Review saved on this device and waiting to sync.')).toBeVisible();
+  await expect(page.getByText('Review saved. Move to the next card.')).toBeVisible();
 
   await page.getByRole('button', { name: 'Close study mode' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary library' })).toBeFocused();

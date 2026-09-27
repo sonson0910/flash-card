@@ -14,6 +14,286 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:37
+#: src/components/shell/CourseSwitcherControl.tsx:37
+msgid "course.action.archive"
+msgstr "Archive course"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:36
+#: src/components/shell/CourseSwitcherControl.tsx:36
+msgid "course.action.manage-goals"
+msgstr "Manage goals"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:38
+#: src/components/shell/CourseSwitcherControl.tsx:38
+msgid "course.action.reopen"
+msgstr "Reopen course"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:66
+msgid "course.create.cancel"
+msgstr "Cancel"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:59
+msgid "course.create.native-label"
+msgstr "Explain in"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:51
+msgid "course.create.no-target-left"
+msgstr "All supported languages already have a course. Archive one to add another."
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:65
+msgid "course.create.submit"
+msgstr "Create course"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:54
+msgid "course.create.target-label"
+msgstr "Learn"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:121
+msgid "course.error.generic"
+msgstr "That course action did not go through. Please try again."
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:62
+msgid "course.goal.add.date-label"
+msgstr "Exam or target date (optional)"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:53
+msgid "course.goal.add.kind-label"
+msgstr "Goal"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:58
+msgid "course.goal.add.level-label"
+msgstr "Level or target (optional)"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:67
+msgid "course.goal.add.submit"
+msgstr "Add goal"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:26
+msgid "course.goal.completed"
+msgstr "(completed)"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:16
+msgid "course.goal.kind.business.en"
+msgstr "Business English"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:30
+msgid "course.goal.kind.business.ja"
+msgstr "Business Japanese"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:23
+msgid "course.goal.kind.business.ko"
+msgstr "Business Korean"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:37
+msgid "course.goal.kind.business.zh"
+msgstr "Business Chinese"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:17
+#: src/features/courses/courseGoalCatalog.ts:24
+#: src/features/courses/courseGoalCatalog.ts:31
+#: src/features/courses/courseGoalCatalog.ts:38
+msgid "course.goal.kind.conversation"
+msgstr "Everyday conversation"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:22
+msgid "course.goal.kind.eps-topik"
+msgstr "EPS-TOPIK (work permit)"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:35
+msgid "course.goal.kind.hsk"
+msgstr "HSK"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:13
+msgid "course.goal.kind.ielts"
+msgstr "IELTS"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:28
+msgid "course.goal.kind.jlpt"
+msgstr "JLPT"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:15
+#: src/features/courses/courseGoalCatalog.ts:29
+#: src/features/courses/courseGoalCatalog.ts:36
+msgid "course.goal.kind.study-abroad"
+msgstr "Study abroad"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:14
+msgid "course.goal.kind.toeic"
+msgstr "TOEIC"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:21
+msgid "course.goal.kind.topik"
+msgstr "TOPIK"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:15
+#: src/features/courses/courseGoalCatalog.ts:16
+#: src/features/courses/courseGoalCatalog.ts:17
+#: src/features/courses/courseGoalCatalog.ts:22
+#: src/features/courses/courseGoalCatalog.ts:23
+#: src/features/courses/courseGoalCatalog.ts:24
+#: src/features/courses/courseGoalCatalog.ts:29
+#: src/features/courses/courseGoalCatalog.ts:30
+#: src/features/courses/courseGoalCatalog.ts:31
+#: src/features/courses/courseGoalCatalog.ts:36
+#: src/features/courses/courseGoalCatalog.ts:37
+#: src/features/courses/courseGoalCatalog.ts:38
+msgid "course.goal.level-hint.generic"
+msgstr "Target level (optional)"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:35
+msgid "course.goal.level-hint.hsk"
+msgstr "Target level, e.g. HSK 4"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:13
+msgid "course.goal.level-hint.ielts"
+msgstr "Target band, e.g. 6.5"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:28
+msgid "course.goal.level-hint.jlpt"
+msgstr "Target level, e.g. N3"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:14
+msgid "course.goal.level-hint.toeic"
+msgstr "Target score, e.g. 800"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:21
+msgid "course.goal.level-hint.topik"
+msgstr "Target level, e.g. TOPIK II"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:24
+msgid "course.goal.no-detail"
+msgstr "No level or date set"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:30
+msgid "course.goal.pause"
+msgstr "Pause goal"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:25
+msgid "course.goal.paused"
+msgstr "(paused)"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:34
+msgid "course.goal.remove"
+msgstr "Remove goal"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:30
+msgid "course.goal.resume"
+msgstr "Resume goal"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:76
+msgid "course.goals.back"
+msgstr "Back to courses"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:78
+msgid "course.goals.empty"
+msgstr "No goals yet. Studying without one is fine too."
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseLanguageLabels.ts:6
+#: src/features/courses/courseLanguageLabels.ts:14
+msgid "course.language.en"
+msgstr "English"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseLanguageLabels.ts:8
+msgid "course.language.ja"
+msgstr "Japanese"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseLanguageLabels.ts:7
+msgid "course.language.ko"
+msgstr "Korean"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseLanguageLabels.ts:13
+msgid "course.language.vi"
+msgstr "Vietnamese"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseLanguageLabels.ts:9
+msgid "course.language.zh"
+msgstr "Chinese"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:34
+msgid "course.status.active"
+msgstr "Active course"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:33
+msgid "course.status.archived"
+msgstr "Archived"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:137
+msgid "course.switcher.add"
+msgstr "Add a language"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:118
+msgid "course.switcher.close"
+msgstr "Close"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:114
+msgid "course.switcher.dialog-label"
+msgstr "Courses"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:111
+msgid "course.switcher.no-active"
+msgstr "Choose a course"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:117
+msgid "course.switcher.title"
+msgstr "Your courses"
+
+#. js-lingui-explicit-id
+#: src/app/AppRuntime.tsx:150
+msgid "extension.import.course-mismatch-confirm"
+msgstr "This word was captured assuming English, but your active course isn't English. Switch to (or create) your English course to save it?"
+
+#. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:417
 #: src/components/AppOverlays.tsx:434
 #: src/components/AppOverlays.tsx:560
@@ -21,12 +301,134 @@ msgid "flashcard.ai-disclosure"
 msgstr "AI-generated content may be incorrect. Please check the meaning."
 
 #. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:148
+msgid "onboarding.aha.create"
+msgstr "Add 5 starter cards"
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:153
+msgid "onboarding.aha.error"
+msgstr "Something went wrong adding cards. You can add them later from the library."
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:159
+msgid "onboarding.aha.none-added"
+msgstr "No cards were added."
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:151
+msgid "onboarding.aha.pending"
+msgstr "Adding your cards…"
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:160
+msgid "onboarding.aha.quota-note"
+msgstr "Your monthly Free card allowance is almost used up, so {count} card(s) were not added."
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:149
+msgid "onboarding.aha.skip"
+msgstr "Skip for now"
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:147
+msgid "onboarding.aha.subtitle"
+msgstr "Five common words to get you started."
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:158
+msgid "onboarding.aha.success"
+msgstr "Added {count} cards to your library."
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:145
+msgid "onboarding.aha.title"
+msgstr "Let's add your first cards"
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:113
+#: src/features/onboarding/OnboardingJourney.tsx:126
+#: src/features/onboarding/OnboardingJourney.tsx:139
+msgid "onboarding.back"
+msgstr "Back"
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:102
+#: src/features/onboarding/OnboardingJourney.tsx:114
+#: src/features/onboarding/OnboardingJourney.tsx:127
+#: src/features/onboarding/OnboardingJourney.tsx:140
+#: src/features/onboarding/OnboardingJourney.tsx:154
+#: src/features/onboarding/OnboardingJourney.tsx:161
+msgid "onboarding.continue"
+msgstr "Continue"
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:169
+msgid "onboarding.finish"
+msgstr "Start learning"
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:122
+msgid "onboarding.goal.none"
+msgstr "No specific goal yet"
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:120
+msgid "onboarding.goal.subtitle"
+msgstr "Optional. You can add or change this later in the course switcher."
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:119
+msgid "onboarding.goal.title"
+msgstr "Have an exam or goal in mind?"
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:95
+msgid "onboarding.language.subtitle"
+msgstr "This sets the app's interface and the language your explanations will be written in."
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:94
+msgid "onboarding.language.title"
+msgstr "Choose your language"
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:135
+msgid "onboarding.pace.option"
+msgstr "{count} cards / day"
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:132
+msgid "onboarding.pace.title"
+msgstr "How many cards a day?"
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:167
+msgid "onboarding.reminder.not-ready"
+msgstr "Reminders aren't turned on yet. When they are, you'll be able to choose the days and time here and in Settings."
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:166
+msgid "onboarding.reminder.title"
+msgstr "Daily reminders"
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:106
+msgid "onboarding.target.title"
+msgstr "What are you learning?"
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:92
+msgid "onboarding.title"
+msgstr "Set up your course"
+
+#. js-lingui-explicit-id
 #: src/components/shell/LibraryManagementMenu.tsx:295
 msgid "shell.account.sign-out"
 msgstr "Sign out of cloud sync"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:79
+#: src/components/shell/DesktopNavigation.tsx:78
 msgid "shell.brand.mark"
 msgstr "S"
 
@@ -91,7 +493,7 @@ msgstr "Account"
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:162
 #: src/components/shell/AppFeedback.tsx:177
-#: src/components/shell/DesktopNavigation.tsx:59
+#: src/components/shell/DesktopNavigation.tsx:58
 #: src/components/shell/LibraryManagementMenu.tsx:177
 #: src/components/shell/LibraryManagementMenu.tsx:192
 msgid "shell.feedback.connecting"
@@ -144,7 +546,7 @@ msgstr "Retry syncing your library"
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:157
-#: src/components/shell/DesktopNavigation.tsx:54
+#: src/components/shell/DesktopNavigation.tsx:53
 #: src/components/shell/LibraryManagementMenu.tsx:187
 msgid "shell.feedback.session-ended"
 msgstr "Session ended"
@@ -289,18 +691,18 @@ msgid "shell.language.open"
 msgstr "Choose language"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:297
+#: src/app/AppRuntime.tsx:387
 msgid "shell.learning-workspace"
 msgstr "Learning workspace"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:87
+#: src/components/shell/DesktopNavigation.tsx:86
 msgid "shell.level"
 msgstr "Level {level}, {xp} XP"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:87
-#: src/components/shell/DesktopNavigation.tsx:87
+#: src/components/shell/DesktopNavigation.tsx:86
+#: src/components/shell/DesktopNavigation.tsx:86
 msgid "shell.level.short"
 msgstr "Lv {level}"
 
@@ -351,7 +753,7 @@ msgid "shell.loading.library"
 msgstr "Loading library"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:58
+#: src/app/AppViewStage.tsx:61
 msgid "shell.loading.paths"
 msgstr "Preparing learning paths…"
 
@@ -361,17 +763,17 @@ msgid "shell.loading.practice"
 msgstr "Loading practice"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:72
+#: src/app/AppViewStage.tsx:75
 msgid "shell.loading.progress"
 msgstr "Preparing learning progress…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:73
+#: src/app/AppViewStage.tsx:76
 msgid "shell.loading.settings"
 msgstr "Preparing appearance settings…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:66
+#: src/app/AppViewStage.tsx:69
 msgid "shell.loading.today"
 msgstr "Preparing today’s learning plan…"
 
@@ -426,37 +828,37 @@ msgid "shell.menu.terms"
 msgstr "Terms"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:65
+#: src/components/shell/DesktopNavigation.tsx:64
 #: src/components/shell/FloatingMobileNav.tsx:18
 msgid "shell.nav.collection"
 msgstr "Collection"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:64
-#: src/components/shell/DesktopNavigation.tsx:64
+#: src/components/shell/DesktopNavigation.tsx:63
+#: src/components/shell/DesktopNavigation.tsx:63
 #: src/components/shell/FloatingMobileNav.tsx:17
 #: src/components/shell/FloatingMobileNav.tsx:23
 msgid "shell.nav.paths"
 msgstr "Paths"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:66
-#: src/components/shell/DesktopNavigation.tsx:66
+#: src/components/shell/DesktopNavigation.tsx:65
+#: src/components/shell/DesktopNavigation.tsx:65
 #: src/components/shell/FloatingMobileNav.tsx:19
 #: src/components/shell/FloatingMobileNav.tsx:25
 msgid "shell.nav.progress"
 msgstr "Progress"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:63
-#: src/components/shell/DesktopNavigation.tsx:63
+#: src/components/shell/DesktopNavigation.tsx:62
+#: src/components/shell/DesktopNavigation.tsx:62
 #: src/components/shell/FloatingMobileNav.tsx:16
 #: src/components/shell/FloatingMobileNav.tsx:22
 msgid "shell.nav.today"
 msgstr "Today"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:65
+#: src/components/shell/DesktopNavigation.tsx:64
 #: src/components/shell/FloatingMobileNav.tsx:24
 msgid "shell.nav.vocabulary"
 msgstr "Vocabulary"
@@ -467,13 +869,13 @@ msgid "shell.navigation.mobile"
 msgstr "Mobile navigation"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:76
+#: src/components/shell/DesktopNavigation.tsx:75
 msgid "shell.navigation.primary"
 msgstr "Primary navigation"
 
 #. js-lingui-explicit-id
 #: src/app/AppDeferredViews.tsx:22
-#: src/app/AppRuntime.tsx:345
+#: src/app/AppRuntime.tsx:436
 msgid "shell.opening-dialog"
 msgstr "Opening dialog"
 
@@ -797,12 +1199,12 @@ msgid "shell.skip-content"
 msgstr "Skip to content"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:86
+#: src/components/shell/DesktopNavigation.tsx:85
 msgid "shell.streak"
 msgstr "{count} day streak"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:56
+#: src/components/shell/DesktopNavigation.tsx:55
 #: src/components/shell/LibraryManagementMenu.tsx:189
 #: src/components/shell/localized-sync-status.ts:20
 #: src/components/shell/localized-sync-status.ts:21
@@ -815,7 +1217,7 @@ msgid "shell.sync.checking-detail"
 msgstr "Verifying your cloud session."
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:60
+#: src/components/shell/DesktopNavigation.tsx:59
 #: src/components/shell/LibraryManagementMenu.tsx:193
 msgid "shell.sync.device"
 msgstr "On this device"
@@ -840,7 +1242,7 @@ msgstr "Offline"
 #. js-lingui-explicit-id
 #: src/components/shell/localized-sync-status.ts:28
 msgid "shell.sync.offline-detail"
-msgstr "Your library is available offline."
+msgstr "You are offline. Reconnect to keep studying."
 
 #. js-lingui-explicit-id
 #: src/components/shell/localized-sync-status.ts:15
@@ -856,10 +1258,10 @@ msgstr "Cloud paused"
 #. js-lingui-explicit-id
 #: src/components/shell/localized-sync-status.ts:34
 msgid "shell.sync.paused-detail"
-msgstr "Live cloud updates are unavailable. Showing the last successful local copy."
+msgstr "Live cloud updates are unavailable. Retry when your connection improves."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:223
+#: src/app/AppRuntime.tsx:310
 msgid "shell.sync.retry-failed"
 msgstr "Sync could not finish. Your changes remain on this device. Try again."
 

@@ -6,6 +6,8 @@ export const DAILY_LESSON_MODES = [
   'cloze',
   'sentence-building',
   'placement',
+  /** The sequenced review → new → match → recap session; its stage lives in a sessionStorage pointer, not the URL. */
+  'session',
 ] as const;
 
 export type DailyLessonMode = typeof DAILY_LESSON_MODES[number];

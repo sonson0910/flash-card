@@ -56,6 +56,13 @@ process.env.FIREBASE_AUTH_EMULATOR_HOST = FIREBASE_AUTH_EMULATOR_HOST;
 
 const [, EMULATOR_FIRESTORE_PORT] = FIRESTORE_EMULATOR_HOST.split(':');
 const [, EMULATOR_AUTH_PORT] = FIREBASE_AUTH_EMULATOR_HOST.split(':');
+// Matches firebase.json's emulators.functions.port and the host/port
+// src/lib/firebase.ts's getSonFlashFunctions() calls connectFunctionsEmulator
+// with in the e2e build. Every protected callable (createCard, reviewCardV2,
+// bulkMutateCards, ...) now goes over this port instead of being aborted by
+// blockExternalNetwork, so specs exercise the real callable path.
+const FUNCTIONS_EMULATOR_HOST = process.env.FUNCTIONS_EMULATOR_HOST ?? '127.0.0.1:5001';
+const [, EMULATOR_FUNCTIONS_PORT] = FUNCTIONS_EMULATOR_HOST.split(':');
 const PREVIEW_PORT = '4173';
 
 /**
@@ -98,11 +105,38 @@ declare global {
   }
 }
 
+/**
+ * Matches `COURSE_TARGET_LANGUAGES`/`COURSE_NATIVE_LANGUAGES`
+ * (functions/src/course-profile-contract.ts) as plain literals instead of
+ * importing that module: the contract module also pulls in
+ * firebase-admin-adjacent server code that has no reason to load inside a
+ * Playwright fixture, and the enum values are stable wire constants, not an
+ * implementation detail likely to drift silently.
+ */
+export type SeedCourseTargetLanguage = 'en' | 'ko' | 'ja' | 'zh';
+export type SeedCourseNativeLanguage = 'vi' | 'en';
+
+export interface SeedCourseProfileOptions {
+  /**
+   * When given, the seeded profile's one course becomes active with this
+   * target language, so `useAppLibraryRuntime`'s course-scoped Today/Library/
+   * practice queries see it instead of the no-profile default of 'en' (see
+   * `languageProfileForCourse`/AppRuntime.tsx). Omit to keep the empty-courses
+   * shape that only suppresses the onboarding overlay (OnboardingGate.tsx)
+   * while leaving the default 'en' language scope untouched — the right
+   * choice for the majority of specs, which seed English-language cards.
+   */
+  readonly targetLanguage?: SeedCourseTargetLanguage;
+  /** Defaults to 'vi', SonFlash's primary native-language audience. */
+  readonly nativeLanguage?: SeedCourseNativeLanguage;
+}
+
 interface EmulatorFixtures {
   db: Firestore;
   adminAuth: Auth;
   testUser: EmulatorTestUser;
   seedCards: (cards: readonly GuestCard[]) => Promise<void>;
+  seedCourseProfile: (options?: SeedCourseProfileOptions) => Promise<void>;
   signIn: (page: Page, url: string) => Promise<void>;
   signInInPlace: (page: Page) => Promise<void>;
   blockExternalNetwork: (page: Page, extraPorts?: readonly number[]) => Promise<void>;
@@ -160,14 +194,58 @@ export const test = base.extend<EmulatorFixtures, EmulatorWorkerFixtures>({
       const collection = db.collection('users').doc(testUser.uid).collection('cards');
       for (const card of cards) {
         const { id, ...fields } = card;
+        // No `ownerId` field: CardData (and firestore.rules' canPatchOwnedCard
+        // allow-list) has no such field on a card document — the owner is the
+        // parent `users/{uid}` path segment. Writing it here used to be
+        // harmless because nothing re-saved a seeded card, but any client
+        // patch/bookmark/review on a card carrying it is rejected by
+        // firestore.rules' isValidCardUpdate() with permission-denied.
+        //
+        // `id` IS kept as a document field below (not just the doc path):
+        // a real `createCard` call persists `canonicalCard()`'s own `id`
+        // into the document body (functions/src/cardPersistence.ts), and
+        // `cardForValidation` (functions/src/reviewPersistence.ts) requires
+        // `storedDoc.id === cardId` before it will validate a review
+        // submission against that card — an id-less seed document always
+        // fails that check with `identity-conflict`.
         batch.set(collection.doc(id), {
           ...fields,
+          id,
           language: typeof fields.language === 'string' ? fields.language : 'en',
           libraryEpoch: typeof fields.libraryEpoch === 'number' ? fields.libraryEpoch : 0,
-          ownerId: testUser.uid,
         });
       }
       await batch.commit();
+    });
+  },
+
+  // Writes a minimal course-profile doc straight to Firestore under
+  // users/{uid}/profile/courses via the Admin SDK (clients can't write this
+  // path themselves; firestore.rules denies it). The onboarding lane's fix
+  // suppresses the full-screen OnboardingJourney overlay
+  // (src/features/onboarding/OnboardingJourney.tsx) once this doc exists,
+  // whenever the cloud check has settled, and whenever the user already has
+  // at least one card; only an EMPTY library with no course-profile doc still
+  // needs this seed. The doc's existence is what matters — content is
+  // otherwise unused, so this stays at the minimal empty-courses shape.
+  // Call this before `signIn` in any spec that signs in with an empty
+  // library and must not see onboarding.
+  seedCourseProfile: async ({ db, testUser }, use) => {
+    await use(async (options) => {
+      const targetLanguage = options?.targetLanguage;
+      const courseId = targetLanguage ? `e2e-course-${targetLanguage}` : null;
+      await db.collection('users').doc(testUser.uid).collection('profile').doc('courses').set({
+        courses: targetLanguage ? [{
+          id: courseId,
+          targetLanguage,
+          nativeLanguage: options?.nativeLanguage ?? 'vi',
+          status: 'active',
+          goals: [],
+          preferences: { pronunciationVariant: null, showRomanization: false, zhScript: null },
+          createdAt: '2026-09-24T00:00:00.000Z',
+        }] : [],
+        activeCourseId: courseId,
+      });
     });
   },
 
@@ -181,7 +259,10 @@ export const test = base.extend<EmulatorFixtures, EmulatorWorkerFixtures>({
   // that also stand up their own local Vite fixture server (e.g. 4174/4175).
   blockExternalNetwork: async ({}, use) => {
     await use(async (page, extraPorts = []) => {
-      const allowedPorts = new Set([PREVIEW_PORT, EMULATOR_FIRESTORE_PORT, EMULATOR_AUTH_PORT, ...extraPorts.map(String)]);
+      const allowedPorts = new Set([
+        PREVIEW_PORT, EMULATOR_FIRESTORE_PORT, EMULATOR_AUTH_PORT, EMULATOR_FUNCTIONS_PORT,
+        ...extraPorts.map(String),
+      ]);
       await page.route(
         url => url.hostname !== '127.0.0.1' || !allowedPorts.has(url.port),
         route => route.abort(),

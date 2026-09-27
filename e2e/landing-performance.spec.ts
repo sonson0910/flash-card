@@ -46,14 +46,17 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
   // reflects exactly one document load; Today now requires an authenticated
   // owner since guest/local-only mode was removed. window.__SONFLASH_TEST__
   // is only installed once AppRuntime's lazy chunk evaluates, which only
-  // happens once the view leaves 'landing' — so this priming click mounts
-  // that chunk first (a client-side state change, not a navigation).
+  // happens once the view leaves 'landing' — so this priming click (Start
+  // learning -> enterApp -> setViewMode('today')) mounts that chunk first.
   // AppRuntime's signed-out effect immediately bounces viewMode back to
-  // 'landing', but the chunk and its hook stay loaded for the rest of the
-  // test, so the real click below (already present) succeeds once signed in.
+  // 'landing', capturing the pre-bounce /?view=today URL in
+  // preSignInLocationRef; once signInInPlace resolves and `user` becomes
+  // truthy, AppRuntime's own restore effect pushes that captured URL back and
+  // dispatches a synthetic popstate, landing on Today automatically — no
+  // second "Start learning" click, since the button (and the landing page
+  // under it) is already gone by then.
   await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
   await signInInPlace(page);
-  await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
   await page.getByRole('button', { name: 'More practice' }).click();
   await expect(page.getByRole('dialog', { name: 'Choose a practice mode' })).toBeVisible();
@@ -126,10 +129,13 @@ test('failed runtime import restores landing and retries with a fresh runtime en
   await expect(page.getByRole('button', { name: 'Start learning', exact: true }).first()).toBeVisible();
   // Same priming click as the top test: this retry reload landed back on
   // the (view-less) landing URL, so AppRuntimeRetry's chunk and its hook
-  // have not loaded yet either.
+  // have not loaded yet either. As in the top test, AppRuntime's own
+  // sign-in return-flow effect (bounce to landing, then restore the
+  // captured URL via pushState + a synthetic popstate once `user` resolves)
+  // lands on Today by itself once signInInPlace resolves, so no second click
+  // is needed or possible (the button is already gone).
   await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
   await signInInPlace(page);
-  await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
   expect(documentRequests).toBe(2);
   const runtimeRequests = requests.filter(url => /\/assets\/AppRuntime(?:Initial|Retry)\.virtual-[^/]+\.js$/i.test(url));

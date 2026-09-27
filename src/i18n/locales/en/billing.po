@@ -88,3 +88,33 @@ msgstr "Register interest for launch"
 #: src/features/billing/UpgradeDialog.tsx:46
 msgid "billing.upgrade.title"
 msgstr "Add momentum to your learning"
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:27
+msgid "plan.usage.exhausted"
+msgstr "No AI card generations left. Resets {reset}. You can still review, add cards manually, and export your data."
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:28
+msgid "plan.usage.exhausted.pro-hint"
+msgstr "Pro adds more generations."
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:21
+msgid "plan.usage.label"
+msgstr "AI cards"
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:25
+msgid "plan.usage.period.free"
+msgstr "{used} / {limit} AI cards this month"
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:24
+msgid "plan.usage.period.pro"
+msgstr "{used} / {limit} AI cards on the Pro plan"
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:33
+msgid "plan.usage.view-pro"
+msgstr "See Pro plan"

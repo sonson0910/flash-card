@@ -73,7 +73,7 @@ const replaceHeadMetadata = (html, locale, metadata) => {
 const sitemap = () => `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${LOCALES.map(locale => `  <url>\n    <loc>${canonicalUrl(locale)}</loc>\n${LOCALES.map(alternate => `    <xhtml:link rel="alternate" hreflang="${alternate.lang}" href="${canonicalUrl(alternate)}" />`).join('\n')}\n    <xhtml:link rel="alternate" hreflang="x-default" href="${canonicalUrl(LOCALES[0])}" />\n  </url>`).join('\n')}\n</urlset>\n`;
 
 export const generateLocalePages = ({ root = path.resolve('.') } = {}) => {
-  const dist = path.join(root, 'dist');
+  const dist = path.join(root, process.env.SONFLASH_BUILD_OUT_DIR || 'dist');
   const basePath = path.join(dist, 'index.html');
   const baseHtml = fs.readFileSync(basePath, 'utf8');
   for (const locale of LOCALES) {

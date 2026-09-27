@@ -9,6 +9,9 @@ interface DayCell { dateStr: string; xp: number; level: 0 | 1 | 2 | 3 | 4; }
 const WEEKS_TO_SHOW = 20;
 const heatColor = (level: DayCell['level']) => `var(--sf-heat-${level})`;
 
+/** Shared intensity thresholds so every heatmap (this grid, the weekly recap card) paints the same day the same color. */
+export const heatmapLevelForXp = (xp: number): DayCell['level'] => (xp === 0 ? 0 : xp < 30 ? 1 : xp < 70 ? 2 : xp < 150 ? 3 : 4);
+
 const activityDateKey = (value: string): string => {
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
   const date = new Date(value);
@@ -74,7 +77,7 @@ export function ActivityHeatmap({ entries }: ActivityHeatmapProps) {
       const dateKey = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
       const xp = xpByDate.get(dateKey) || 0;
       if (xp > 0) activeDays++;
-      currentWeek.push({ dateStr: dateKey, xp, level: xp === 0 ? 0 : xp < 30 ? 1 : xp < 70 ? 2 : xp < 150 ? 3 : 4 });
+      currentWeek.push({ dateStr: dateKey, xp, level: heatmapLevelForXp(xp) });
       if (currentWeek.length === 7) {
         generatedWeeks.push(currentWeek);
         months.push(current.getMonth() !== previousMonth ? monthFormatter.format(current) : null);
@@ -93,7 +96,7 @@ export function ActivityHeatmap({ entries }: ActivityHeatmapProps) {
       </div>
       <div className="flex items-center gap-1.5 text-[11px] text-[var(--sf-text-muted)]" aria-label={_(msg({ id: 'stats.heatmap-legend', message: 'Less to more study activity' }))}>
         <span>{_(msg({ id: 'stats.less', message: 'Less' }))}</span>
-        {([0, 1, 2, 3, 4] as const).map(level => <span key={level} className="inline-block size-3 rounded-xs border border-[var(--sf-border)]" style={{ backgroundColor: heatColor(level) }} />)}
+        {([0, 1, 2, 3, 4] as const).map(level => <span key={level} className="inline-block size-3 rounded-[4px] border border-[var(--sf-border)]" style={{ backgroundColor: heatColor(level) }} />)}
         <span>{_(msg({ id: 'stats.more', message: 'More' }))}</span>
       </div>
     </div>

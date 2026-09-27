@@ -1,7 +1,12 @@
 import { expect, test } from './fixtures/firebase-emulator';
 
 const card = {
-  id: 'delete-undo-card',
+  // The Functions emulator's createCard callable now backs undo/restore, and
+  // it always assigns the deterministic word-identity id (createWordCardId)
+  // regardless of the id a caller supplies, so the seeded card must already
+  // use that same id or restore will legitimately reject it as an identity
+  // mismatch ('unsafe-existing').
+  id: 'word-resilient',
   word: 'resilient',
   normalizedWord: 'resilient',
   language: 'en',
@@ -26,6 +31,10 @@ const card = {
 };
 
 test('deleting and undoing a device card preserves learning data after reload', async ({ page, db, testUser, seedCards, signIn, blockExternalNetwork }) => {
+  // Undo calls the createCard Cloud Function; test:e2e:emulator now runs the
+  // Functions emulator alongside Firestore/Auth (see firebase.json and
+  // scripts/run-e2e-functions-emulator.mjs), so this exercises the real
+  // callable instead of skipping it.
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await seedCards([card]);
   await blockExternalNetwork(page);
@@ -56,7 +65,9 @@ test('deleting and undoing a device card preserves learning data after reload', 
   expect((await cardDoc.get()).data()).toMatchObject(expectedFields);
 });
 
-test('clearing the library dismisses an invalidated delete Undo', async ({ page, db, testUser, seedCards, signIn, blockExternalNetwork }) => {
+test('clearing the library dismisses an invalidated delete Undo', async ({ page, db, testUser, seedCards, seedCourseProfile, signIn, blockExternalNetwork }) => {
+  // A returning learner: clearing the library must not reopen first-run onboarding.
+  await seedCourseProfile();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await seedCards([card]);
   await blockExternalNetwork(page);

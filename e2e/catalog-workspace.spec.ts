@@ -1,7 +1,15 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures/firebase-emulator';
 
-test('personal catalog status follows a live interface-language change', async ({ page, signIn }) => {
+test('personal catalog status follows a live interface-language change', async ({ page, seedCourseProfile, signIn }) => {
+  // A fresh emulator user with zero cards and no course-profile doc would
+  // otherwise show OnboardingGate's full-screen journey overlay on top of
+  // this view (suppress = knownLibraryTotal > 0, which is false here); the
+  // overlay then intercepts the "Choose language" click below. Seeding an
+  // empty course profile (no active-language change needed, this spec never
+  // seeds cards) suppresses onboarding without altering the default 'en'
+  // library language scope.
+  await seedCourseProfile();
   await signIn(page, '/?view=catalog');
   await expect(page.getByText('Add your first vocabulary cards to start a personal path.')).toBeVisible();
 
@@ -13,7 +21,7 @@ test('personal catalog status follows a live interface-language change', async (
   await expect(page.getByText('Add your first vocabulary cards to start a personal path.')).toHaveCount(0);
 });
 
-test('Paths is lazy, URL-addressable, useful without a shared release and accessible', async ({ page, browserName }) => {
+test('Paths is lazy, URL-addressable, useful without a shared release and accessible', async ({ page, browserName, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const requestedScripts: string[] = [];
   const requestedCatalogAssets: string[] = [];
@@ -24,8 +32,16 @@ test('Paths is lazy, URL-addressable, useful without a shared release and access
     }
   });
 
-  await page.goto('/?view=library&utm_source=phase4#catalog-test');
-  await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
+  // Guest/anonymous browsing was removed from the app shell (unauthenticated
+  // visitors now bounce to the landing page), so this test signs in first;
+  // the lazy-load, URL-addressability, and accessibility guarantees it checks
+  // apply equally to an authenticated session with no installed catalog.
+  await signIn(page, '/?view=library&utm_source=phase4#catalog-test');
+  // A fresh emulator test user has zero cards, so LibraryCardGrid's "Your
+  // library" heading never mounts (LibraryScreen.tsx only renders it once
+  // !showFirstUsePanel); app-view-headings.ts's page-level h1 is present
+  // either way and is what this test actually needs as a readiness signal.
+  await expect(page.getByRole('heading', { name: 'Vocabulary library', level: 1 })).toBeVisible();
   expect(requestedScripts.some(url => /CatalogWorkspace/i.test(url))).toBe(false);
 
   await page.getByRole('button', { name: 'Paths' }).first().click();

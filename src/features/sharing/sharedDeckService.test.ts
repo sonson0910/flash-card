@@ -27,6 +27,7 @@ vi.mock('firebase/auth', () => ({
 
 vi.mock('../../lib/firebase', () => ({
   protectedFunctionsCapability: functions.capability,
+  getSonFlashFunctions: functions.getFunctions,
 }));
 
 import { createSharedDeckShare, revokeSharedDeckShare } from './sharedDeckService';

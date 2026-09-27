@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:91
+#: src/components/stats/ActivityHeatmap.tsx:94
 msgid "stats.active-days"
 msgstr "ngày hoạt động"
 
@@ -24,42 +24,42 @@ msgid "stats.activity-description"
 msgstr "XP từ các hoạt động học đã hoàn thành."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:17
+#: src/components/stats/AchievementsMatrix.tsx:47
 msgid "stats.bloom-day"
 msgstr "Ngày học rực rỡ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:17
+#: src/components/stats/AchievementsMatrix.tsx:47
 msgid "stats.bloom-day-description"
 msgstr "Nhận 100 XP trong một ngày luyện tập."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:15
+#: src/components/stats/AchievementsMatrix.tsx:45
 msgid "stats.blooming-recall"
 msgstr "Gợi nhớ đang nở rộ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:15
+#: src/components/stats/AchievementsMatrix.tsx:45
 msgid "stats.blooming-recall-description"
 msgstr "Giúp mười từ ổn định trong trí nhớ."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:19
+#: src/components/stats/AchievementsMatrix.tsx:49
 msgid "stats.bud-night-study"
 msgstr "Buổi học đêm nhẹ nhàng"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:19
+#: src/components/stats/AchievementsMatrix.tsx:49
 msgid "stats.bud-night-study-description"
 msgstr "Quay lại học trong năm ngày hoạt động."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:14
+#: src/components/stats/AchievementsMatrix.tsx:44
 msgid "stats.bud-routine"
 msgstr "Thói quen chớm nở"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:14
+#: src/components/stats/AchievementsMatrix.tsx:44
 msgid "stats.bud-routine-description"
 msgstr "Duy trì thói quen học trong ba ngày hoạt động."
 
@@ -114,12 +114,12 @@ msgid "stats.date"
 msgstr "Ngày"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:13
+#: src/components/stats/AchievementsMatrix.tsx:43
 msgid "stats.days"
 msgstr "ngày"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:94
+#: src/components/stats/ActivityHeatmap.tsx:97
 msgid "stats.heatmap-legend"
 msgstr "Mức độ học từ ít đến nhiều"
 
@@ -139,7 +139,7 @@ msgid "stats.learning-activity"
 msgstr "Hoạt động học"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:95
+#: src/components/stats/ActivityHeatmap.tsx:98
 msgid "stats.less"
 msgstr "Ít"
 
@@ -174,7 +174,7 @@ msgid "stats.memory-strength"
 msgstr "Độ vững của trí nhớ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:97
+#: src/components/stats/ActivityHeatmap.tsx:100
 msgid "stats.more"
 msgstr "Nhiều"
 
@@ -199,7 +199,7 @@ msgid "stats.partial-categories"
 msgstr "Chỉ có dữ liệu trang hiện tại; chưa quét toàn bộ thư viện."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:13
+#: src/components/stats/AchievementsMatrix.tsx:43
 msgid "stats.progress"
 msgstr "Tiến độ"
 
@@ -214,58 +214,58 @@ msgid "stats.show-top-categories"
 msgstr "Hiện 5 danh mục hàng đầu"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:18
+#: src/components/stats/AchievementsMatrix.tsx:48
 msgid "stats.star-collection"
 msgstr "Bộ sưu tập đang lớn dần"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:18
+#: src/components/stats/AchievementsMatrix.tsx:48
 msgid "stats.star-collection-description"
 msgstr "Tích lũy 500 XP từ các buổi học của bạn."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:16
+#: src/components/stats/AchievementsMatrix.tsx:46
 msgid "stats.star-keeper"
 msgstr "Người giữ sao"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:16
+#: src/components/stats/AchievementsMatrix.tsx:46
 msgid "stats.star-keeper-description"
 msgstr "Giúp năm mươi từ tỏa sáng khi đã thành thạo."
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:100
-#: src/components/stats/ActivityHeatmap.tsx:101
+#: src/components/stats/ActivityHeatmap.tsx:103
+#: src/components/stats/ActivityHeatmap.tsx:104
 msgid "stats.study-activity"
 msgstr "Hoạt động học"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:20
+#: src/components/stats/AchievementsMatrix.tsx:50
 msgid "stats.study-milestones"
 msgstr "Cột mốc học tập"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:12
+#: src/components/stats/AchievementsMatrix.tsx:42
 msgid "stats.tier-bloom"
 msgstr "Bloom"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:12
+#: src/components/stats/AchievementsMatrix.tsx:42
 msgid "stats.tier-bud"
 msgstr "Bud"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:12
+#: src/components/stats/AchievementsMatrix.tsx:42
 msgid "stats.tier-star"
 msgstr "Star"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:92
+#: src/components/stats/ActivityHeatmap.tsx:95
 msgid "stats.total-xp"
 msgstr "tổng XP"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:13
+#: src/components/stats/AchievementsMatrix.tsx:43
 msgid "stats.unlocked"
 msgstr "đã mở khóa"
 
@@ -275,16 +275,151 @@ msgid "stats.value"
 msgstr "Giá trị"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:20
+#: src/components/stats/AchievementsMatrix.tsx:50
 msgid "stats.word-garden"
 msgstr "Khu vườn từ vựng của bạn"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:20
+#: src/components/stats/AchievementsMatrix.tsx:50
 msgid "stats.word-garden-description"
 msgstr "Những buổi học ngắn sẽ nuôi dưỡng trí nhớ bền lâu."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:13
+#: src/components/stats/AchievementsMatrix.tsx:43
 msgid "stats.words"
 msgstr "từ"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:123
+msgid "weeklyRecap.action.download"
+msgstr "Tải ảnh PNG"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:122
+msgid "weeklyRecap.action.share"
+msgstr "Chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:104
+msgid "weeklyRecap.caption.label"
+msgstr "Chú thích"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapSelection.ts:37
+msgid "weeklyRecap.caption.suggested-active"
+msgstr "{xp, number} XP và {days} ngày học trong tuần này."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapSelection.ts:41
+msgid "weeklyRecap.caption.suggested-quiet"
+msgstr "Một tuần nhẹ nhàng — mai học tiếp nhé."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:97
+msgid "weeklyRecap.dialog.close"
+msgstr "Đóng"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:96
+msgid "weeklyRecap.dialog.title"
+msgstr "Tổng kết tuần của bạn"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:77
+msgid "weeklyRecap.empty"
+msgstr "Tuần này chưa có hoạt động học nào. Hãy quay lại sau một lượt ôn để xem tổng kết."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:119
+msgid "weeklyRecap.export-error"
+msgstr "Không tạo được ảnh. Vui lòng thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:56
+msgid "weeklyRecap.heatmap.label"
+msgstr "XP mỗi ngày trong 7 ngày qua"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:71
+msgid "weeklyRecap.kicker"
+msgstr "Tổng kết tuần"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:82
+msgid "weeklyRecap.metric.active-days"
+msgstr "Ngày học"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:83
+msgid "weeklyRecap.metric.best-day"
+msgstr "Ngày tốt nhất"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:81
+msgid "weeklyRecap.metric.total-xp"
+msgstr "XP tuần này"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:89
+msgid "weeklyRecap.milestones"
+msgstr "Đã mở khóa {unlocked} / {total} cột mốc (từ trước đến nay)"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:49
+msgid "weeklyRecap.outcome.copied"
+msgstr "Đã sao chép vào bộ nhớ tạm."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:50
+msgid "weeklyRecap.outcome.downloaded"
+msgstr "Đã tải xuống."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:51
+msgid "weeklyRecap.outcome.failed"
+msgstr "Đã hủy chia sẻ."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:48
+msgid "weeklyRecap.outcome.shared"
+msgstr "Đã chia sẻ."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:116
+msgid "weeklyRecap.privacy"
+msgstr "Ảnh chia sẻ chỉ chứa những mục bạn bật ở trên. Từ riêng tư không bao giờ được tự động đưa vào."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:96
+msgid "weeklyRecap.selection.legend"
+msgstr "Hiển thị trên thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:41
+msgid "weeklyRecap.toggle.active-days"
+msgstr "Ngày học"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:42
+msgid "weeklyRecap.toggle.best-day"
+msgstr "Ngày tốt nhất"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:43
+msgid "weeklyRecap.toggle.heatmap"
+msgstr "Bản đồ nhiệt theo ngày"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:44
+msgid "weeklyRecap.toggle.milestones"
+msgstr "Cột mốc đã mở khóa"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:40
+msgid "weeklyRecap.toggle.total-xp"
+msgstr "Tổng XP"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:92
+msgid "weeklyRecap.unavailable"
+msgstr "Từ của tuần và tỷ lệ nhớ lại cần một nguồn dữ liệu theo tuần đáng tin cậy mà hiện chưa có, nên được bỏ qua thay vì đoán."

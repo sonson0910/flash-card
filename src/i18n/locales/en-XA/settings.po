@@ -14,121 +14,201 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:85
+#: src/features/settings/settings-screen.tsx:92
 msgid "settings.appearance.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:85
+#: src/features/settings/settings-screen.tsx:92
 msgid "settings.appearance.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:91
+#: src/features/settings/CourseSettingsSection.tsx:106
+msgid "settings.course.account-plan-hint"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:89
+msgid "settings.course.archived"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:44
+msgid "settings.course.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:100
+msgid "settings.course.extension-badge"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:57
+msgid "settings.course.meaning-language"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:65
+msgid "settings.course.pace"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:67
+msgid "settings.course.pace.option"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:103
+msgid "settings.course.reminder-not-ready"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:73
+msgid "settings.course.romanization"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:79
+msgid "settings.course.script"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:81
+msgid "settings.course.script.simplified"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:82
+msgid "settings.course.script.traditional"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:43
+msgid "settings.course.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:50
+msgid "settings.course.ui-language"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:98
 msgid "settings.crystal-mode.day"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:91
+#: src/features/settings/settings-screen.tsx:98
 msgid "settings.crystal-mode.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:91
+#: src/features/settings/settings-screen.tsx:98
 msgid "settings.crystal-mode.night"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:81
+#: src/features/settings/settings-screen.tsx:88
 msgid "settings.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:92
+#: src/features/settings/settings-screen.tsx:99
 msgid "settings.follow-system.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:92
+#: src/features/settings/settings-screen.tsx:99
 msgid "settings.follow-system.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:79
-msgid "settings.kicker"
+#: src/features/settings/settings-screen.tsx:99
+msgid "settings.haptics.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:92
-msgid "settings.lumi.description"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:92
-msgid "settings.lumi.label"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:93
-msgid "settings.preview.note"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:92
-msgid "settings.reduced-motion.description"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:92
-msgid "settings.reduced-motion.label"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:92
-msgid "settings.sound.description"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:92
-msgid "settings.sound.label"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:89
-msgid "settings.theme.crystal"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:89
-msgid "settings.theme.crystal.description"
+#: src/features/settings/settings-screen.tsx:99
+msgid "settings.haptics.label"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/settings/settings-screen.tsx:86
+msgid "settings.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:99
+msgid "settings.lumi.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:99
+msgid "settings.lumi.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:100
+msgid "settings.preview.note"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:99
+msgid "settings.reduced-motion.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:99
+msgid "settings.reduced-motion.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:99
+msgid "settings.sound.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:99
+msgid "settings.sound.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:96
+msgid "settings.theme.crystal"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:96
+msgid "settings.theme.crystal.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:93
 msgid "settings.theme.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:87
+#: src/features/settings/settings-screen.tsx:94
 msgid "settings.theme.midnight"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:87
+#: src/features/settings/settings-screen.tsx:94
 msgid "settings.theme.midnight.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:88
+#: src/features/settings/settings-screen.tsx:95
 msgid "settings.theme.paper"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:88
+#: src/features/settings/settings-screen.tsx:95
 msgid "settings.theme.paper.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:80
+#: src/features/settings/settings-screen.tsx:87
 msgid "settings.title"
 msgstr ""

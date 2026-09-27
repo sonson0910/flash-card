@@ -6,10 +6,21 @@ const firestore = vi.hoisted(() => ({
   getDoc: vi.fn(),
 }));
 
-vi.mock('firebase/firestore', () => firestore);
-vi.mock('firebase/functions', () => ({
+const functions = vi.hoisted(() => ({
   getFunctions: vi.fn(),
   httpsCallable: vi.fn(),
+}));
+
+vi.mock('firebase/firestore', () => firestore);
+vi.mock('firebase/functions', () => functions);
+// createFirebaseCourseAdapter now resolves its Functions client through
+// getSonFlashFunctions (src/lib/firebase.ts) instead of calling
+// firebase/functions' getFunctions directly, so the real firebase.ts (which
+// runs Firebase app/App Check/Firestore initialization at import time) is
+// mocked out here too, matching the pattern every other callable-site test
+// already uses.
+vi.mock('../../lib/firebase', () => ({
+  getSonFlashFunctions: (app: unknown, region: string = 'asia-southeast1') => functions.getFunctions(app, region),
 }));
 
 import { createFirebaseCourseAdapter } from './firebaseCourseAdapter';

@@ -123,7 +123,13 @@
   .practice-board--story aside { position: static; }
   .practice-board--match button[lang] { min-height: 56px; }
   .practice-board--shadowing section > div.border-y { border-radius: 16px; }
-  .practice-recap-board { width: calc(100% - 1rem); max-height: calc(100dvh - 1rem); padding: 16px; }
+  /* The frame (fixed positioning + centering transform) and the board (GSAP-animated
+     visual box, sized to fill the frame via width/height 100%) are separate elements
+     so GSAP's entrance tween never overwrites the centering transform — see
+     SessionRecapModal.tsx. Keep the tighter mobile margin on the frame and the
+     max-height/padding on the board. */
+  .practice-recap-frame { width: calc(100% - 1rem); }
+  .practice-recap-board { max-height: calc(100dvh - 1rem); padding: 16px; }
   .practice-recap-board > div:nth-of-type(2) { gap: 6px; }
   .practice-recap-board > div:nth-of-type(2) > div { min-height: 76px; padding: 9px; }
 }

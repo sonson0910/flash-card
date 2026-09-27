@@ -1,4 +1,5 @@
 import type { ReactNode, RefObject } from 'react';
+import type { HapticStyle } from '../../lib/haptics';
 
 export type LessonMode =
   | 'recognition'
@@ -28,6 +29,18 @@ export const evidencedStudyStreak = (
   return xpHistory.some(entry => entry.date === day && entry.XP > 0) ? streak : 0;
 };
 
+/**
+ * What the "reveal" transition should do when a lesson question's feedback first appears.
+ * A pure decision so the reduced-motion/sound-off/haptics-off gating stays exclusively inside
+ * `triggerHaptic`/`playSuccessSound` (no duplicate device checks here); this only decides which
+ * of those already-gated helpers apply to a correct vs. an incorrect answer. Incorrect answers
+ * get a haptic nudge but no chime, matching the established pattern for wrong answers elsewhere
+ * in the app (`ShadowingView.tsx`, `StudyView.tsx`): a sound cue is a reward, not a penalty.
+ */
+export const reviewFeedbackCue = (outcome: 'correct' | 'incorrect'): { readonly playSound: boolean; readonly haptic: HapticStyle } => (
+  outcome === 'correct' ? { playSound: true, haptic: 'success' } : { playSound: false, haptic: 'warning' }
+);
+
 export interface TodayScreenModel {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
   readonly status: 'loading' | 'empty' | 'caught-up' | 'ready' | 'offline' | 'error';
@@ -53,7 +66,8 @@ export interface TodayScreenActions {
   readonly openVocabulary: () => void;
   readonly openPaths: () => void;
   readonly retry: () => void;
-  readonly continueReview: () => void;
+  /** Launches the sequenced review → new → match → recap session for today's plan. */
+  readonly startSession: () => void;
   readonly startLesson: (mode: LessonMode) => void;
   readonly startPlacement: () => void;
   readonly openMorePractice: (opener: HTMLButtonElement) => void;
@@ -101,7 +115,7 @@ export interface LessonFeedbackPresentation {
 
 export interface LessonScreenModel {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
-  readonly status: 'answering' | 'feedback' | 'rating-saving' | 'rating-sync-pending' | 'rating-error' | 'complete';
+  readonly status: 'answering' | 'feedback' | 'rating-saving' | 'rating-error' | 'complete';
   readonly mode: LessonMode;
   readonly modeLabel: string;
   readonly progress: { readonly current: number; readonly total: number };
@@ -113,7 +127,6 @@ export interface LessonScreenModel {
   readonly feedback?: LessonFeedbackPresentation;
   readonly errorMessage?: string;
   readonly audioErrorMessage?: string;
-  readonly syncPendingReviewCount?: number;
   readonly liveMessage: string;
 }
 
@@ -127,6 +140,34 @@ export interface LessonScreenActions {
   readonly retryRating: () => void;
   readonly exit: () => void;
   readonly finish: () => void;
+}
+
+export type SessionBridgeStageId = 'review' | 'new' | 'match' | 'recap';
+
+export interface SessionBridgeStat {
+  readonly label: string;
+  readonly value: string;
+}
+
+export interface SessionBridgeModel {
+  readonly headingRef?: RefObject<HTMLHeadingElement | null>;
+  readonly completedStage: SessionBridgeStageId;
+  readonly nextStage: SessionBridgeStageId;
+  readonly completedLabel: string;
+  readonly nextLabel: string;
+  readonly nextDescription: string;
+  readonly stats: readonly SessionBridgeStat[];
+  /** Set when the upcoming stage has no eligible content and will be skipped automatically. */
+  readonly skipReason?: string;
+  /** True when the upcoming stage has real content the learner may voluntarily bypass. */
+  readonly canSkipNextStage: boolean;
+  readonly liveMessage: string;
+}
+
+export interface SessionBridgeActions {
+  readonly continue: () => void;
+  readonly skip: () => void;
+  readonly exit: () => void;
 }
 
 export type PlacementScreenModel =

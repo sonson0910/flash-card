@@ -159,33 +159,42 @@ test('Crystal Lumi only enters the hero where it preserves the headline and card
 
   await page.setViewportSize({ width: 1440, height: 900 });
   const headline = page.getByRole('heading', { level: 1 });
-  const card = page.getByLabel('Sample English vocabulary card');
-  const cardMeaning = card.getByText('a happy discovery by chance');
-  const cardExample = card.getByText('Finding that little bookshop was pure serendipity.');
+  // CrystalLandingHero (LandingPage.tsx) groups three demo articles under one
+  // "Sample English vocabulary cards" (plural) stage — .crystal-demo-left
+  // ("Spelling") and .crystal-demo-main ("Instant") — not the single
+  // "Sample English vocabulary card" flip-card that ClassicLandingHero
+  // renders for non-crystal themes. .crystal-hero-lumi sits at `left: -14%`
+  // of the stage (landing-page.css), closest to .crystal-demo-left.
+  const cardStage = page.getByLabel('Sample English vocabulary cards');
+  // Each demo article also renders its meaning in lowercase (e.g. "spelling"),
+  // which getByText's default substring match would also catch — scope to the
+  // <strong> word element specifically, matching LandingPage.tsx's markup.
+  const cardLeftWord = cardStage.locator('.crystal-demo-left strong');
+  const cardMainWord = cardStage.locator('.crystal-demo-main strong');
   const lumi = page.locator('[data-lumi-pose="hero"]');
   await expect(headline).toBeVisible();
-  await expect(card).toBeVisible();
-  await expect(cardMeaning).toBeVisible();
-  await expect(cardExample).toBeVisible();
+  await expect(cardStage).toBeVisible();
+  await expect(cardLeftWord).toBeVisible();
+  await expect(cardMainWord).toBeVisible();
   await expect(lumi).toBeVisible();
-  const [headlineTextBox, cardMeaningBox, cardExampleBox, lumiBox] = await Promise.all([
+  const [headlineTextBox, cardLeftBox, cardMainBox, lumiBox] = await Promise.all([
     headline.evaluate(element => {
       const range = document.createRange();
       range.selectNodeContents(element);
       const rect = range.getBoundingClientRect();
       return { right: rect.right };
     }),
-    cardMeaning.boundingBox(),
-    cardExample.boundingBox(),
+    cardLeftWord.boundingBox(),
+    cardMainWord.boundingBox(),
     lumi.boundingBox(),
   ]);
   expect(lumiBox).not.toBeNull();
   const lumiRight = lumiBox!.x + lumiBox!.width;
   expect(lumiBox!.x, 'Lumi must not cover the hero headline at 1440px').toBeGreaterThanOrEqual(headlineTextBox.right);
-  expect(cardMeaningBox).not.toBeNull();
-  expect(cardExampleBox).not.toBeNull();
-  expect(lumiRight, 'Lumi must not cover the card meaning at 1440px').toBeLessThanOrEqual(cardMeaningBox!.x);
-  expect(lumiRight, 'Lumi must not cover the card example at 1440px').toBeLessThanOrEqual(cardExampleBox!.x);
+  expect(cardLeftBox).not.toBeNull();
+  expect(cardMainBox).not.toBeNull();
+  expect(lumiRight, 'Lumi must not cover the left demo card at 1440px').toBeLessThanOrEqual(cardLeftBox!.x);
+  expect(lumiRight, 'Lumi must not cover the main demo card at 1440px').toBeLessThanOrEqual(cardMainBox!.x);
   const screenshot = testInfo.outputPath('landing-crystal-dark-1440.png');
   await page.screenshot({ path: screenshot });
   await testInfo.attach('landing-crystal-dark-1440', { path: screenshot, contentType: 'image/png' });

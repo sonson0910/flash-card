@@ -119,11 +119,24 @@ export interface SharedDeckSessionActions {
   clearError(): void;
 }
 
+/** The optional dependency `shareCourseMatching.ts` implements. Kept as a structural type here to avoid a cyclic import. */
+export interface SharedDeckCoursePort {
+  ensureCourseForIncomingShare(preview: SharedDeckIncomingPreview): Promise<void>;
+}
+
 interface SharedDeckSessionOptions {
   adapter: SharedDeckAdapter;
   intake: SharedDeckIntakePort;
   browser: SharedDeckBrowser;
   storage?: SharedDeckOperationStorage | null;
+  /**
+   * Optional and additive: omitting it (every existing caller and test does)
+   * keeps `acceptShared()` byte-for-byte identical to before this field
+   * existed. When supplied, it only ever runs before the import call and
+   * never blocks it, so a course-matching failure cannot turn into a
+   * half-imported deck.
+   */
+  coursePort?: SharedDeckCoursePort | null;
 }
 
 export interface SharedDeckOperationStorage {
@@ -432,6 +445,7 @@ export function createSharedDeckSessionController({
   intake,
   browser,
   storage: suppliedStorage,
+  coursePort,
 }: SharedDeckSessionOptions) {
   const storage = suppliedStorage === undefined ? browserStorage() : suppliedStorage;
   let snapshot: SharedDeckSessionSnapshot = {
@@ -704,6 +718,10 @@ export function createSharedDeckSessionController({
       activeOperation = true;
       publish({ isLoading: true, error: null, notice: null });
       try {
+        if (coursePort && snapshot.incomingPreview) {
+          await coursePort.ensureCourseForIncomingShare(snapshot.incomingPreview);
+          if (!isCurrent(operationLifecycle, owner) || pendingSharedDeck !== pending) return { status: 'stale' };
+        }
         const adoption = await withTimeout(
           intake.adoptShared({ cards: pending.cards }),
           SHARED_DECK_OPERATION_TIMEOUT_MS,

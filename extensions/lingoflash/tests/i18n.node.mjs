@@ -42,7 +42,7 @@ test('resolves positional substitutions the same way Chrome does', () => {
   assert.equal(resolveMessage(vi, 'resultSpeakAriaLabel', ['bonjour']), 'Nghe phát âm bonjour');
   assert.equal(resolveMessage(en, 'resultSpeakAriaLabel', ['bonjour']), 'Pronounce bonjour');
   assert.equal(resolveMessage(vi, 'statusCreatedSaved', ['immediate', '']), 'Đã tạo và lưu “immediate”.');
-  assert.equal(resolveMessage(vi, 'dueCountBadge', [12]), '· 12 thẻ đến hạn');
+  assert.equal(resolveMessage(vi, 'dueCountBadge', [12]), '12 thẻ đến hạn');
   assert.equal(resolveMessage(vi, 'missingKey'), '');
 });
 

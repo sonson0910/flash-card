@@ -55,6 +55,7 @@ import type { RealtimeChangeType } from './realtimeSync';
 import {
   app as firebaseApp,
   auth,
+  getSonFlashFunctions,
   isFirebaseConfigured,
   protectedFunctionsCapability,
 } from './firebase';
@@ -652,9 +653,9 @@ async function callLibraryFacetMutation(
         retryable: false,
       });
     }
-    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const { httpsCallable } = await import('firebase/functions');
     const callable = httpsCallable<LibraryFacetMutationRequest, unknown>(
-      getFunctions(firebaseApp, 'asia-southeast1'),
+      await getSonFlashFunctions(firebaseApp),
       'updateLibraryFacets',
     );
     if (auth?.currentUser?.uid !== userId) {
@@ -1644,7 +1645,7 @@ export async function createCardIfAbsent(
   try {
     return await runProtectedFunction(protectedFunctionsCapability, 'Card creation', async () => {
       if (!firebaseApp) throw new Error('Firebase is not initialized.');
-      const { getFunctions, httpsCallable } = await import('firebase/functions');
+      const { httpsCallable } = await import('firebase/functions');
       const callable = httpsCallable<
         {
           card: CardData;
@@ -1655,7 +1656,7 @@ export async function createCardIfAbsent(
           restore?: true;
         },
         CreateCardIfAbsentResult
-      >(getFunctions(firebaseApp, 'asia-southeast1'), 'createCard');
+      >(await getSonFlashFunctions(firebaseApp), 'createCard');
       try {
         const normalizedCard = normalizeCardForMutation(card, card.id);
         const response = await callable({
@@ -1676,6 +1677,81 @@ export async function createCardIfAbsent(
   } catch (error) {
     if (error instanceof ProtectedCardMutationError) {
       throw new CardMutationPreconditionError(error.mutationReason);
+    }
+    throw error;
+  }
+}
+
+export interface CreateStarterCardBatchResult {
+  readonly created: readonly CardData[];
+  readonly quotaExceeded: boolean;
+}
+
+class StarterCardCallableResponseError extends Error {
+  readonly code = 'failed-precondition';
+
+  constructor() {
+    super('The protected card service returned a starter card batch that does not match the request.');
+    this.name = 'StarterCardCallableResponseError';
+  }
+}
+
+const parseCallableStarterCardsResponse = (value: unknown): { cardIds: readonly string[] } => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new StarterCardCallableResponseError();
+  const envelope = value as Record<string, unknown>;
+  if (
+    (envelope.kind !== 'created' && envelope.kind !== 'completed')
+    || !Array.isArray(envelope.cardIds)
+    || envelope.cardIds.some(id => typeof id !== 'string' || !id)
+  ) throw new StarterCardCallableResponseError();
+  return { cardIds: envelope.cardIds as string[] };
+};
+
+/**
+ * Creates the whole onboarding starter-card batch through one server call
+ * (`createStarterCards`), which reserves the same monthly AI-card quota
+ * `createCard` charges per word and writes every card atomically in a
+ * single transaction. The batch is all-or-nothing: the server never grants
+ * part of a batch, so a caller near its monthly limit gets a clean
+ * `quotaExceeded: true` instead of a partial pack. `operationId` must stay
+ * stable across a retry of the same logical onboarding attempt — reusing it
+ * is what makes the retry free of a double charge; a genuinely new attempt
+ * must mint a new one.
+ */
+export async function createStarterCardBatch(
+  db: Firestore,
+  userId: string,
+  operationId: string,
+  cards: readonly CardData[],
+): Promise<CreateStarterCardBatchResult> {
+  if (!isFirebaseConfigured) {
+    // Local/offline demo mode has no server-side AI quota to reserve against.
+    const created: CardData[] = [];
+    for (const card of cards) {
+      const result = await createCardIfAbsentLocally(db, userId, card);
+      created.push(result.card);
+    }
+    return { created, quotaExceeded: false };
+  }
+  try {
+    return await runProtectedFunction(protectedFunctionsCapability, 'Starter card creation', async () => {
+      if (!firebaseApp) throw new Error('Firebase is not initialized.');
+      const { httpsCallable } = await import('firebase/functions');
+      const callable = httpsCallable<{ operationId: string; cards: CardData[] }, unknown>(
+        await getSonFlashFunctions(firebaseApp), 'createStarterCards',
+      );
+      const normalizedCards = cards.map(card => normalizeCardForMutation(card, card.id));
+      const response = await callable({ operationId, cards: normalizedCards });
+      const parsed = parseCallableStarterCardsResponse(response.data);
+      const expectedIds = new Set(cards.map(card => card.id));
+      if (parsed.cardIds.length !== cards.length || !parsed.cardIds.every(id => expectedIds.has(id))) {
+        throw new StarterCardCallableResponseError();
+      }
+      return { created: cards, quotaExceeded: false };
+    });
+  } catch (error) {
+    if (error instanceof ProtectedFunctionError && error.reason === 'ai-card-quota') {
+      return { created: [], quotaExceeded: true };
     }
     throw error;
   }

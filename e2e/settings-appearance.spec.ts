@@ -1,8 +1,13 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures/firebase-emulator';
 
-test('appearance choices switch live and follow the system until a manual choice', async ({ page, signIn }) => {
+test('appearance choices switch live and follow the system until a manual choice', async ({ page, signIn, seedCourseProfile }) => {
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  // Signs in with an empty library; without a course-profile doc the
+  // OnboardingJourney overlay can mount asynchronously mid-test (its cloud
+  // check settles on its own timer) and intercept a later click — see
+  // seedCourseProfile's own doc comment in fixtures/firebase-emulator.ts.
+  await seedCourseProfile();
   await signIn(page, '/?view=settings&locale=en');
   await expect(page.getByRole('heading', { name: 'Make your study space yours' })).toBeVisible();
   await page.evaluate(() => Object.defineProperty(window, '__appearanceMarker', { value: 'mounted' }));
@@ -55,7 +60,14 @@ test('appearance previews carry the four Canvas token palettes', async ({ page, 
   });
 });
 
-test('Lumi, motion and sound settings persist after reload', async ({ page, signIn }) => {
+test('Lumi, motion and sound settings persist after reload', async ({ page, signIn, seedCourseProfile }) => {
+  // A fresh signed-in test user with no course profile can have the
+  // full-screen OnboardingJourney overlay reappear mid-test once its async
+  // course-profile check resolves (tracked as a product bug owned by the
+  // onboarding lane; see the identical workaround in
+  // phase6-touch-targets.spec.ts). Seed a legacy profile so this test's long
+  // sequence of settings interactions never races that overlay.
+  await seedCourseProfile();
   await signIn(page, '/?view=settings&locale=en');
   await page.getByRole('radio', { name: /Crystal Star/ }).locator('..').click();
   const lumi = page.getByRole('switch', { name: /^Lumi/ });
@@ -80,7 +92,8 @@ test('Lumi, motion and sound settings persist after reload', async ({ page, sign
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'reduced');
 });
 
-test('mobile shell opens settings and keeps the page inside 390px', async ({ page, signIn }) => {
+test('mobile shell opens settings and keeps the page inside 390px', async ({ page, seedCourseProfile, signIn }) => {
+  await seedCourseProfile();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.route('**/assets/settings-screen-*.js', async route => {
     await new Promise(resolve => setTimeout(resolve, 900));
@@ -96,7 +109,8 @@ test('mobile shell opens settings and keeps the page inside 390px', async ({ pag
 });
 
 for (const motion of ['reduced', 'interrupted'] as const) {
-  test(`mobile navigation preserves destination focus with ${motion} motion`, async ({ page, signIn }) => {
+  test(`mobile navigation preserves destination focus with ${motion} motion`, async ({ page, seedCourseProfile, signIn }) => {
+    await seedCourseProfile();
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ reducedMotion: motion === 'reduced' ? 'reduce' : 'no-preference' });
     await page.route('**/assets/settings-screen-*.js', async route => {
@@ -131,7 +145,8 @@ for (const theme of [
   { family: 'crystal', mode: 'light' },
 ] as const) {
   for (const { width, locale } of ['en', 'vi'].flatMap(locale => [1440, 390].map(width => ({ width, locale })))) {
-    test(`${theme.family} ${theme.mode} ${locale} settings fit at ${width}px`, async ({ page, signIn }) => {
+    test(`${theme.family} ${theme.mode} ${locale} settings fit at ${width}px`, async ({ page, seedCourseProfile, signIn }) => {
+      await seedCourseProfile();
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.addInitScript(({ family, mode }) => {

@@ -68,21 +68,23 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
   });
 }
 
-test('tap rates a card and reports its pending sync honestly', async ({ page, seedCards, signIn }) => {
+test('tap rates a card and commits the review honestly', async ({ page, seedCards, signIn }) => {
   await openReview(page, seedCards, signIn);
   await page.getByRole('button', { name: 'Reveal answer' }).tap();
-  await page.getByRole('region', { name: 'Rate memory strength' }).getByRole('button', { name: /Good/ }).tap();
-  await expect(page.locator('[data-study-provisional]')).toBeVisible();
+  const ratingRegion = page.getByRole('region', { name: 'Rate memory strength' });
+  await ratingRegion.getByRole('button', { name: /Good/ }).tap();
+  await expect(ratingRegion.getByText('Review saved. Move to the next card.')).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Session Complete!' })).toHaveCount(0);
 });
 
 test('vertical card scroll does not rate; horizontal swipe does', async ({ page, seedCards, signIn }) => {
   await openReview(page, seedCards, signIn);
   await page.getByRole('button', { name: 'Reveal answer' }).tap();
+  const ratingRegion = page.getByRole('region', { name: 'Rate memory strength' });
   await touchPath(page, '[data-study-card] [data-card-content="revealed"]', -130, -230);
-  await expect(page.locator('[data-study-provisional]')).toHaveCount(0);
+  await expect(ratingRegion.getByText('Review saved. Move to the next card.')).toHaveCount(0);
   await touchPath(page, '[data-study-card]', -150, 5);
-  await expect(page.locator('[data-study-provisional]')).toBeVisible();
+  await expect(ratingRegion.getByText('Review saved. Move to the next card.')).toBeVisible();
 });
 
 test('long Zen answer scrolls inside the card', async ({ page, seedCards, signIn }) => {

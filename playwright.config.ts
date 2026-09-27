@@ -19,6 +19,8 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
   webServer: {
+    // `vite preview` serves the configured build.outDir, so an emulator run
+    // that builds with SONFLASH_BUILD_OUT_DIR serves that same artifact.
     command: 'npm run preview -- --host 127.0.0.1 --port 4173 --strictPort',
     url: 'http://127.0.0.1:4173/health.json',
     // A passing health endpoint alone cannot prove which build owns port 4173.

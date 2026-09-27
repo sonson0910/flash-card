@@ -131,6 +131,27 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .save-button:disabled, .secondary-button:disabled, .site-row button:disabled { cursor: wait; opacity: .55; transform: none; box-shadow: none; }
 main > p:last-child { margin-top: 8px; }
 main > p:last-child a { color: var(--sf-accent-text, #67e8f9); }
+/*
+ * Crystal Star's chamfered-corner treatment (07.1), ported from popup.css /
+ * public/theme-crystal.css. Card shells use --sf-chamfer, everything else
+ * (chips, inputs, buttons, the legend pill) uses --sf-chamfer-sm.
+ */
+:root[data-theme-family="crystal"] fieldset {
+  border-radius: 0;
+  clip-path: var(--sf-chamfer);
+}
+:root[data-theme-family="crystal"] legend,
+:root[data-theme-family="crystal"] .scheme-option,
+:root[data-theme-family="crystal"] .site-add-row input[type="url"],
+:root[data-theme-family="crystal"] .secondary-button,
+:root[data-theme-family="crystal"] .site-row button,
+:root[data-theme-family="crystal"] input[type="number"],
+:root[data-theme-family="crystal"] select,
+:root[data-theme-family="crystal"] .save-button {
+  border-radius: 0;
+  clip-path: var(--sf-chamfer-sm);
+}
+
 @media (max-width: 720px) { .settings-grid { grid-template-columns: 1fr; } }
 @media (max-width: 500px) { .field-row { align-items: flex-start; flex-direction: column; gap: 9px; } input[type="number"], select { width: 100%; } }
 @media (max-width: 500px) { .site-add-row { align-items: stretch; flex-direction: column; } .secondary-button { width: 100%; } }

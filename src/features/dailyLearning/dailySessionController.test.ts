@@ -130,34 +130,6 @@ describe('daily session controller', () => {
     expect(controller.getSnapshot()).toBeNull();
   });
 
-  it('advances a queued non-final review provisionally without treating it as committed', async () => {
-    const controller = createDailySessionController({
-      reviewCard: vi.fn(async () => ({ status: 'durably-queued' as const, result: {} as never })),
-      createOperationId: () => 'queued-op',
-    });
-    controller.start([exercise('card-a'), exercise('card-b')]);
-    controller.submit('word-card-a');
-
-    await expect(controller.rate('good')).resolves.toEqual({ status: 'provisionally-advanced' });
-    expect(controller.getSnapshot()).toMatchObject({
-      phase: 'answering', index: 1, pendingReview: null, completedOperationIds: [], syncPendingReviewCount: 1,
-    });
-  });
-
-  it('keeps a queued final review visibly sync-pending instead of completing the lesson', async () => {
-    const controller = createDailySessionController({
-      reviewCard: vi.fn(async () => ({ status: 'durably-queued' as const, result: {} as never })),
-      createOperationId: () => 'queued-final-op',
-    });
-    controller.start([exercise('card-a')]);
-    controller.submit('word-card-a');
-
-    await expect(controller.rate('good')).resolves.toEqual({ status: 'sync-pending' });
-    expect(controller.getSnapshot()).toMatchObject({
-      phase: 'sync-pending', index: 0, pendingReview: null, completedOperationIds: [], syncPendingReviewCount: 1,
-    });
-  });
-
   it.each([
     ['conflicted', { status: 'review-conflict' as const, result: {} as never }],
     ['missing owner', { status: 'no-active-owner' as const }],

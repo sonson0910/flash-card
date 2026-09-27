@@ -506,26 +506,6 @@ describe('usePracticeSession owner isolation', () => {
     expect(session.study.reviewedCardId).toBe('card-1');
   });
 
-  it('keeps a final queued review pending without marking the card reviewed', async () => {
-    const { learning, render } = createSessionHarness([card(1)]);
-    learning.reviewCard.mockResolvedValueOnce({ status: 'durably-queued', result: {} as never } as never);
-    let session = render();
-    flushEffects();
-    await session.commands.startStudy();
-    session = renderAfterEffects(render);
-    session.commands.reveal();
-    session = render();
-
-    await expect(session.commands.submitStudyRating('good')).resolves.toBe('sync-pending');
-    session = render();
-
-    expect(session.study.reviewedCardId).toBeNull();
-    expect(session.study.reviewStatus).toBe('sync-pending');
-    expect(session.study.reviewError).toContain('waiting to sync');
-    await expect(session.commands.submitStudyRating('good')).resolves.toBe('ignored');
-    expect(learning.reviewCard).toHaveBeenCalledOnce();
-  });
-
   it('leaves a final conflict retryable without marking it committed', async () => {
     const { learning, render } = createSessionHarness([card(1)]);
     learning.reviewCard

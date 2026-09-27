@@ -23,6 +23,24 @@ export interface CardLanguagePair {
 export const LEGACY_CARD_LANGUAGE = 'en' as const;
 export const LEGACY_CARD_TRANSLATION_LANGUAGE = 'vi' as const;
 
+/**
+ * Bounded, server-validated metadata for a card captured from a web page via
+ * the browser extension. Every field is optional and independent; a legacy
+ * card, or one created any other way, simply omits `source` and never has one
+ * guessed or backfilled. See `contract-card-source-metadata.md` in the
+ * `claude-design-workflow-recovery` plan for bounds and write ownership.
+ */
+export interface CardSourceMetadata {
+  /** Origin + pathname of the captured page. http/https only; credentials, query, and fragment are stripped before persistence. */
+  url?: string;
+  /** Page <title> at capture time. */
+  title?: string;
+  /** Sentence-level context around the captured selection. */
+  context?: string;
+  /** When the capture happened, as an ISO 8601 timestamp. */
+  capturedAt?: string;
+}
+
 export interface CardData {
   /**
    * Optional during the v1/v2 compatibility window. New cards are written as
@@ -106,4 +124,6 @@ export interface CardData {
   register?: string;
   commonMistake?: string;
   correctStreak?: number;
+  /** Immutable after creation; set only by the browser-extension capture path via `createCard`. */
+  source?: CardSourceMetadata;
 }

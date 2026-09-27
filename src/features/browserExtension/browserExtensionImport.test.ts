@@ -120,6 +120,45 @@ describe('browser extension import protocol', () => {
     expect(parseBrowserExtensionImportValue({ ...valid, requestedDeck: ['Reading'] }, now)).toBeNull();
   });
 
+  it('preserves a bounded http(s) captured sourceUrl and pageTitle for a verified v3 import', () => {
+    const now = Date.UTC(2026, 7, 19, 8, 0, 0);
+    expect(parseBrowserExtensionImportValue({
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_source_123',
+      nonce,
+      text: 'lead',
+      sourceUrl: 'https://example.com/article',
+      pageTitle: 'An Example Article',
+      createdAt: now,
+      mode: 'silent',
+    }, now)).toEqual({
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_source_123',
+      nonce,
+      text: 'lead',
+      sourceUrl: 'https://example.com/article',
+      pageTitle: 'An Example Article',
+      createdAt: now,
+      mode: 'silent',
+    });
+  });
+
+  it('drops a non-http(s) sourceUrl and rejects a non-string sourceUrl or pageTitle at the bridge boundary', () => {
+    const now = Date.UTC(2026, 7, 19, 8, 0, 0);
+    const valid = {
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_source_123',
+      nonce,
+      text: 'lead',
+      createdAt: now,
+      mode: 'silent' as const,
+    };
+    const withNonHttpUrl = parseBrowserExtensionImportValue({ ...valid, sourceUrl: 'javascript:alert(1)' }, now);
+    expect(withNonHttpUrl).not.toHaveProperty('sourceUrl');
+    expect(parseBrowserExtensionImportValue({ ...valid, sourceUrl: 42 }, now)).toBeNull();
+    expect(parseBrowserExtensionImportValue({ ...valid, pageTitle: ['forged'] }, now)).toBeNull();
+  });
+
   it('rejects silent intents with a missing or malformed nonce', () => {
     const now = Date.UTC(2026, 7, 19, 8, 0, 0);
     const valid = { v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION, id: 'intent_silent_123', text: 'resilient', createdAt: now, mode: 'silent' as const };

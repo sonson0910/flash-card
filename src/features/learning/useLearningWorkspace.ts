@@ -234,7 +234,7 @@ export function useLearningWorkspace(
         }
       }
       const outcome = await commands.restoreCard(token, request);
-      if (outcome.status === 'published' || outcome.status === 'durably-queued' || outcome.status === 'undo-conflict') {
+      if (outcome.status === 'published' || outcome.status === 'undo-conflict') {
         deleteTokensRef.current.delete(token.card.id);
       }
       return outcome;

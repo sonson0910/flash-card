@@ -1,6 +1,6 @@
 ---
 title: "Khóa nguồn chuẩn, kiểm kê và xử lý nền đang dở"
-status: todo
+status: completed
 ---
 
 # 01. Khóa nguồn chuẩn, kiểm kê và xử lý nền đang dở

@@ -185,6 +185,93 @@ export const parseCardLanguagePair = (value: unknown): CardLanguageFields => {
   return result;
 };
 
+export type CardSourceMetadata = {
+  url?: string;
+  title?: string;
+  context?: string;
+  capturedAt?: string;
+};
+
+const CARD_SOURCE_FIELDS = ['url', 'title', 'context', 'capturedAt'] as const;
+const CARD_SOURCE_URL_MAX_LENGTH = 2_048;
+const CARD_SOURCE_TITLE_MAX_LENGTH = 256;
+const CARD_SOURCE_CONTEXT_MAX_LENGTH = 500;
+
+const boundedSourceText = (value: unknown, field: string, maximum: number): string => {
+  if (value === undefined || value === null || value === '') return '';
+  if (typeof value !== 'string' || value.length > maximum) {
+    throw new InputValidationError(`Card source ${field} is invalid.`);
+  }
+  return value.trim();
+};
+
+/**
+ * Strip credentials, the query string, and the fragment before persisting a
+ * captured page URL. Query and fragment routinely carry session tokens, auth
+ * codes, or tracking identifiers that add privacy risk without adding value
+ * for "which page did this word come from" — origin + pathname is enough to
+ * recognize or revisit the page. http/https only; anything else (javascript:,
+ * data:, chrome-extension:, file:, …) is rejected outright.
+ */
+const trustedCardSourceUrl = (value: unknown): string => {
+  const text = boundedSourceText(value, 'url', CARD_SOURCE_URL_MAX_LENGTH);
+  if (!text) return '';
+  let url: URL;
+  try {
+    url = new URL(text);
+  } catch {
+    throw new InputValidationError('Card source url is invalid.');
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new InputValidationError('Card source url is invalid.');
+  }
+  url.username = '';
+  url.password = '';
+  url.search = '';
+  url.hash = '';
+  const serialized = url.toString();
+  if (serialized.length > CARD_SOURCE_URL_MAX_LENGTH) {
+    throw new InputValidationError('Card source url is invalid.');
+  }
+  return serialized;
+};
+
+const parseCardSourceCapturedAt = (value: unknown): string => {
+  const text = boundedSourceText(value, 'capturedAt', 128);
+  if (!text) return '';
+  const parsed = Date.parse(text);
+  if (Number.isNaN(parsed)) throw new InputValidationError('Card source capturedAt is invalid.');
+  return new Date(parsed).toISOString();
+};
+
+/**
+ * Bounded metadata for a card captured from a web page via the browser
+ * extension. Every field is optional and independent; a card created inside
+ * the app (or any legacy card) simply omits `source`, and nothing here ever
+ * guesses or backfills one. `canonicalCard` only calls this at creation time
+ * — Firestore Rules separately deny any client update that touches `source`,
+ * so once set it is immutable for the life of the card.
+ */
+export const parseCardSourceMetadata = (value: unknown): CardSourceMetadata | undefined => {
+  if (value === undefined) return undefined;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new InputValidationError('Card source must be an object.');
+  }
+  const source = value as Record<string, unknown>;
+  assertAllowedFields(source, CARD_SOURCE_FIELDS, 'Card source contains an unsupported field.');
+  const url = trustedCardSourceUrl(source.url);
+  const title = boundedSourceText(source.title, 'title', CARD_SOURCE_TITLE_MAX_LENGTH);
+  const context = boundedSourceText(source.context, 'context', CARD_SOURCE_CONTEXT_MAX_LENGTH);
+  const capturedAt = parseCardSourceCapturedAt(source.capturedAt);
+  if (!url && !title && !context && !capturedAt) return undefined;
+  return {
+    ...(url ? { url } : {}),
+    ...(title ? { title } : {}),
+    ...(context ? { context } : {}),
+    ...(capturedAt ? { capturedAt } : {}),
+  };
+};
+
 export const canonicalLexemeId = (language: string, lemma: string, partOfSpeech: string, senseKey: string): string => {
   const component = (value: string, lowercase = false) => {
     const normalized = value.normalize('NFKC').trim().replace(/\s+/g, ' ');

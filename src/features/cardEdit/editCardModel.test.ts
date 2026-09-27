@@ -82,9 +82,8 @@ describe('isSuccessfulEditCardSave', () => {
   const outcome = (status: LearningStateOutcome['status']): LearningStateOutcome =>
     ({ status, result: {} } as LearningStateOutcome);
 
-  it('treats a published or durably-queued patch as a successful save', () => {
+  it('treats a published patch as a successful save', () => {
     expect(isSuccessfulEditCardSave(outcome('published'))).toBe(true);
-    expect(isSuccessfulEditCardSave(outcome('durably-queued'))).toBe(true);
   });
 
   it('treats a noop as successful because the live card already matches the request', () => {

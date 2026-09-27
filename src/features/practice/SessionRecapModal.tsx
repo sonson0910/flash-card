@@ -2,10 +2,13 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { CheckCircle2, RotateCcw, Sparkles, Trophy, X } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { Lumi } from '../../components/lumi/Lumi';
 import { CountUp } from '../../components/motion/CountUp';
+import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { formatNumber } from '../../lib/format';
+import { triggerHaptic } from '../../lib/haptics';
+import { playRewardSound } from '../../lib/interactionSounds';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import type { CardData } from '../../types/card';
 import './practice-board.css';
@@ -27,14 +30,30 @@ export function SessionRecapModal({ open, onClose, onRetryWeak, totalCards, good
   const isCrystal = globalThis.document?.documentElement.dataset.themeFamily === 'crystal';
   const showLumi = isCrystal && readLumiEnabled();
 
+  // The session-finale cue: fires once when the recap is actually reached (this component
+  // only mounts/opens at the end of a real session), not on every re-render while it stays open.
+  useEffect(() => {
+    if (!open) return;
+    playRewardSound();
+    triggerHaptic('success');
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fire once per recap arrival, not per prop change
+  }, [open]);
+
   return (
     <Dialog.Root open={open} onOpenChange={openState => !openState && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm" />
-        <Dialog.Content
-          data-session-recap
-          className="practice-recap-board fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-2xl outline-none sm:p-7 [html[data-theme-family=crystal]_&]:crystal-chamfer"
-          aria-describedby="session-recap-description"
+        <Dialog.Content asChild aria-describedby="session-recap-description">
+        {/* GSAP's entrance tween takes exclusive ownership of this element's `transform`
+            inline style while it animates (see GsapEntrance.tsx), which would clobber a
+            centering transform placed on the same node for the brief window before its
+            onComplete clears the animated props. Centering lives on this non-animated
+            wrapper instead, so GSAP only ever controls the inner box's own transform. */}
+        <div className="practice-recap-frame fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2">
+        <GsapEntrance
+          variant="result"
+          data-session-recap="true"
+          className="practice-recap-board block max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-2xl outline-none sm:p-7 [html[data-theme-family=crystal]_&]:crystal-chamfer"
         >
           <div aria-hidden="true" className="pointer-events-none absolute inset-x-10 top-0 h-24 bg-[radial-gradient(ellipse_at_top,var(--sf-surface-raised),transparent_70%)] opacity-70" />
           <div className="relative flex items-start justify-between gap-4">
@@ -68,6 +87,8 @@ export function SessionRecapModal({ open, onClose, onRetryWeak, totalCards, good
             {weakCards.length > 0 && onRetryWeak && <button type="button" onClick={onRetryWeak} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 text-sm font-bold text-rose-700 transition-all hover:bg-rose-500/20 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-rose-200 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><RotateCcw size={16} aria-hidden="true" /><Trans id="recap.retry-weak" message="Review {count, plural, one {# word} other {# words}}" values={{ count: weakCards.length }} /></button>}
             <button type="button" onClick={onClose} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 text-sm font-bold text-[var(--sf-on-brand)] shadow-md transition-all hover:bg-[var(--sf-brand-hover)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><Sparkles size={16} aria-hidden="true" /><Trans id="recap.continue" message="Continue learning" /></button>
           </div>
+        </GsapEntrance>
+        </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

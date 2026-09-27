@@ -325,7 +325,7 @@ function ShellShareFixture() {
     openVocabulary: recordTodayAction('vocabulary'),
     openPaths: recordTodayAction('paths'),
     retry: recordTodayAction('retry'),
-    continueReview: recordTodayAction('review'),
+    startSession: recordTodayAction('session'),
     startLesson: mode => setFixtureAction(`today:lesson:${mode}`),
     startPlacement: recordTodayAction('placement'),
     openMorePractice: recordTodayAction('more-practice'),

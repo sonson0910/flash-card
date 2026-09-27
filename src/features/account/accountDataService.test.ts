@@ -2,6 +2,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { gamificationStorageKeys } from '../gamification/gamificationStorage';
 import { deleteAccount, LocalAccountCleanupError, removeOwnerLocalKeys } from './accountDataService';
 
+const firestoreClient = vi.hoisted(() => ({
+  db: {} as Record<string, never>,
+  terminate: vi.fn(),
+  clearIndexedDbPersistence: vi.fn(),
+}));
+
+vi.mock('firebase/firestore', () => ({
+  terminate: firestoreClient.terminate,
+  clearIndexedDbPersistence: firestoreClient.clearIndexedDbPersistence,
+}));
+
 describe('account deletion local cleanup', () => {
   it('removes only the deleted owner cache and leaves another owner and anonymous XP alone', () => {
     const values = new Map<string, string>([
@@ -58,6 +69,8 @@ vi.mock('firebase/auth', () => ({
 vi.mock('../../lib/firebase', () => ({
   auth: authentication.auth,
   app: {},
+  db: firestoreClient.db,
+  getSonFlashFunctions: (app: unknown, region: string = 'asia-southeast1') => functions.getFunctions(app, region),
 }));
 
 const fakeStorage = () => {
@@ -81,6 +94,8 @@ describe('deleteAccount', () => {
     authentication.signOut.mockResolvedValue(undefined);
     functions.getFunctions.mockReturnValue({ region: 'asia-southeast1' });
     functions.httpsCallable.mockReturnValue(functions.callable);
+    firestoreClient.terminate.mockResolvedValue(undefined);
+    firestoreClient.clearIndexedDbPersistence.mockResolvedValue(undefined);
   });
 
   it('calls the deletion callable with a 300 s timeout and the NFC-normalized confirmation phrase', async () => {
@@ -95,14 +110,27 @@ describe('deleteAccount', () => {
     );
     expect(functions.callable).toHaveBeenCalledWith({ confirmation: 'XÓA TÀI KHOẢN'.normalize('NFC') });
     expect(authentication.signOut).toHaveBeenCalledOnce();
+    expect(firestoreClient.terminate).toHaveBeenCalledWith(firestoreClient.db);
+    expect(firestoreClient.clearIndexedDbPersistence).toHaveBeenCalledWith(firestoreClient.db);
   });
 
-  it('rethrows a validation error without clearing local data or signing out', async () => {
+  it('rethrows a validation error without clearing local data, signing out, or clearing the Firestore cache', async () => {
     functions.callable.mockRejectedValue(Object.assign(new Error('bad phrase'), { code: 'functions/invalid-argument' }));
 
     await expect(deleteAccount('wrong phrase')).rejects.toThrow('bad phrase');
 
     expect(authentication.signOut).not.toHaveBeenCalled();
+    expect(firestoreClient.terminate).not.toHaveBeenCalled();
+  });
+
+  it('clears the Firestore persistent cache without blocking the result when clearing fails', async () => {
+    functions.callable.mockResolvedValue({ data: { status: 'deleted' } });
+    firestoreClient.terminate.mockRejectedValue(new Error('already terminated'));
+
+    const result = await deleteAccount('XÓA TÀI KHOẢN');
+
+    expect(result).toBe('completed');
+    expect(firestoreClient.clearIndexedDbPersistence).not.toHaveBeenCalled();
   });
 
   it('treats a timeout or internal error as a started deletion and still clears local data', async () => {
@@ -112,9 +140,11 @@ describe('deleteAccount', () => {
 
     expect(result).toBe('started');
     expect(authentication.signOut).toHaveBeenCalledOnce();
+    expect(firestoreClient.terminate).toHaveBeenCalledWith(firestoreClient.db);
+    expect(firestoreClient.clearIndexedDbPersistence).toHaveBeenCalledWith(firestoreClient.db);
   });
 
-  it('signs out even when local cleanup fails after a started deletion', async () => {
+  it('signs out even when local cleanup fails after a started deletion, without clearing the Firestore cache', async () => {
     functions.callable.mockRejectedValue(Object.assign(new Error('internal'), { code: 'functions/internal' }));
     vi.stubGlobal('localStorage', {
       ...fakeStorage(),
@@ -124,5 +154,6 @@ describe('deleteAccount', () => {
     await expect(deleteAccount('XÓA TÀI KHOẢN')).rejects.toBeInstanceOf(LocalAccountCleanupError);
 
     expect(authentication.signOut).toHaveBeenCalledOnce();
+    expect(firestoreClient.terminate).not.toHaveBeenCalled();
   });
 });

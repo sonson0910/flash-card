@@ -12,7 +12,7 @@ import type { LearningStateOutcome } from '../learning/learningStateController';
 
 export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing';
 export type PracticeViewMode = 'library' | PracticeMode;
-export type StudyRatingSettlement = 'committed' | 'sync-pending' | 'retryable-error' | 'ignored';
+export type StudyRatingSettlement = 'committed' | 'retryable-error' | 'ignored';
 
 export interface PracticeLearningActions {
   reviewCard: (cardId: string, rating: ReviewRating) => Promise<LearningStateOutcome>;
@@ -40,7 +40,7 @@ export interface PracticeSessionController {
     revealed: boolean;
     reviewedCardId: string | null;
     isStarting: boolean;
-    reviewStatus: 'idle' | 'saving' | 'sync-pending' | 'saved' | 'error';
+    reviewStatus: 'idle' | 'saving' | 'saved' | 'error';
     reviewError: string | null;
     isPaused?: boolean;
   };
@@ -132,7 +132,6 @@ export function usePracticeSession({
   const [reviewedCardId, setReviewedCardId] = useState<string | null>(null);
   const [isStartingStudy, setIsStartingStudy] = useState(false);
   const [savingReviewCardId, setSavingReviewCardId] = useState<string | null>(null);
-  const [syncPendingReviewCardId, setSyncPendingReviewCardId] = useState<string | null>(null);
   const [reviewFailure, setReviewFailure] = useState<{ cardId: string; message: string } | null>(null);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const editorRef = useRef<{ ownerToken: number; cardId: string } | null>(null);
@@ -161,7 +160,6 @@ export function usePracticeSession({
     setReviewedCardId(null);
     setIsStartingStudy(false);
     setSavingReviewCardId(null);
-    setSyncPendingReviewCardId(null);
     setReviewFailure(null);
     setEditingCardId(null);
     quiz.reset();
@@ -188,7 +186,6 @@ export function usePracticeSession({
         setRevealed(false);
         setReviewedCardId(null);
         setSavingReviewCardId(null);
-        setSyncPendingReviewCardId(null);
         setReviewFailure(null);
         setStudyIndex(0);
         openPracticeView('study');
@@ -229,11 +226,6 @@ export function usePracticeSession({
       const outcome = await learning.reviewCard(activeCard.id, rating);
       if (outcome?.status === 'review-conflict') throw new Error('This card was reviewed on another device.');
       if (!lifecycle.isCurrent(operationSession)) return 'ignored' as const;
-      if (outcome?.status === 'durably-queued') {
-        setReviewFailure({ cardId: activeCard.id, message: 'Review saved on this device and waiting to sync.' });
-        setSyncPendingReviewCardId(activeCard.id);
-        return 'sync-pending' as const;
-      }
       if (outcome?.status !== 'published') throw new Error('Review persistence did not confirm this review.');
       if (lifecycle.settleReview(activeCard.id, 'saved')) {
         setReviewedCardId(activeCard.id);
@@ -297,8 +289,6 @@ export function usePracticeSession({
     ? 'idle' as const
     : savingReviewCardId === activeCardId
       ? 'saving' as const
-      : syncPendingReviewCardId === activeCardId
-        ? 'sync-pending' as const
       : lifecycle.isReviewed(activeCardId)
         ? 'saved' as const
         : reviewFailure?.cardId === activeCardId

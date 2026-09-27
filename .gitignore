@@ -6,6 +6,7 @@ firebase.staging.json
 .worktrees/
 coverage/
 playwright-report/
+.e2e-build/
 test-results/
 blob-report/
 artifacts/
@@ -14,3 +15,4 @@ functions/lib/
 *.log
 .env*
 !.env.example
+functions/.secret.local

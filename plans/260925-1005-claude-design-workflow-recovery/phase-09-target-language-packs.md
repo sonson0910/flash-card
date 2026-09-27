@@ -34,12 +34,12 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 
 ## Checklist
 
-- [ ] 09.1 — Lazy registry en/ko/ja/zh; rendering/normalization/tokenization/speech/goal catalog capabilities.
-- [ ] 09.2 — Headword đúng ngôn ngữ: English stress; Hangul/romanization; Kanji/furigana; Hanzi/pinyin/tones.
-- [ ] 09.3 — Unicode speech score/tokenization: Intl.Segmenter và fallback đã kiểm; ASR/TTS/voice theo pack, permission/no voice/no support.
-- [ ] 09.4 — IME composition, grapheme-aware spelling, sentence building/quiz/match/story theo target/native pair.
-- [ ] 09.5 — Server pair allowlist và prompt notes giữ model Flash-Lite; generation output/reading metadata round-trip.
-- [ ] 09.6 — Golden set 20 terms mỗi pack, human language review và đo cost trước enable; wave2 es/de và wave3 fr/pt giữ tasks/registry availability.
+- [x] 09.1 — Lazy registry en/ko/ja/zh; rendering/normalization/tokenization/speech/goal catalog capabilities.
+- [x] 09.2 — Headword đúng ngôn ngữ: English stress; Hangul/romanization; Kanji/furigana; Hanzi/pinyin/tones.
+- [x] 09.3 — Unicode speech score/tokenization: Intl.Segmenter và fallback đã kiểm; ASR/TTS/voice theo pack, permission/no voice/no support.
+- [x] 09.4 — IME composition, grapheme-aware spelling, sentence building/quiz/match/story theo target/native pair.
+- [x] 09.5 — Server pair allowlist và prompt notes giữ model Flash-Lite; generation output/reading metadata round-trip.
+- [ ] 09.6 — Golden set 20 terms mỗi pack, human language review và đo cost trước enable; wave2 es/de và wave3 fr/pt giữ tasks/registry availability. (Explicitly gated — not implemented or run in this pass.)
 - [ ] Đối chiếu Canvas từng state của phase theo board/artboard inventory; reviewer kiểm tra cả hành vi và hình thức.
 - [ ] Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log.
 

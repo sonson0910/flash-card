@@ -76,17 +76,16 @@ export interface LearningStateMutationResult {
   ownerKey: string;
   operationId: string;
   publication: LearningStatePublication;
-  /** A queued review is visible locally but is not a final learning result. */
-  reviewFinality?: 'committed' | 'durably-queued' | 'conflict';
+  reviewFinality?: 'committed' | 'conflict';
   deleteReceipt?: {
-    finality: 'committed' | 'durably-queued';
+    finality: 'committed';
     ownerId: string | null;
     operationId: string;
     libraryEpoch: number;
     deletedAt: string;
   };
   undoToken?: LearningDeleteUndoToken;
-  restoreFinality?: 'restored' | 'durably-queued' | 'conflict';
+  restoreFinality?: 'restored' | 'conflict';
   restoreConflictReason?: LearningRestoreConflictReason;
 }
 
@@ -110,7 +109,6 @@ export interface LearningStateSnapshotsPort {
 
 export type LearningStateOutcome =
   | { status: 'published'; result: LearningStateMutationResult }
-  | { status: 'durably-queued'; result: LearningStateMutationResult }
   | { status: 'review-conflict'; result: LearningStateMutationResult }
   | { status: 'undo-conflict'; result: LearningStateMutationResult }
   | { status: 'noop' }
@@ -294,7 +292,7 @@ export function createLearningStateController({
             },
           };
         }
-        if (result.restoreFinality !== 'restored' && result.restoreFinality !== 'durably-queued') {
+        if (result.restoreFinality !== 'restored') {
           throw new Error('Restore persistence did not return a durable restore outcome.');
         }
         latestDeleteLifecycle.delete(lifecycleKey(ownerKey, token.card.id));
@@ -302,13 +300,6 @@ export function createLearningStateController({
 
       snapshots.library.apply(result.publication);
       snapshots.practice.apply(result.publication);
-      if (
-        result.reviewFinality === 'durably-queued'
-        || result.restoreFinality === 'durably-queued'
-        || result.deleteReceipt?.finality === 'durably-queued'
-      ) {
-        return { status: 'durably-queued', result };
-      }
       return { status: 'published', result };
     };
 

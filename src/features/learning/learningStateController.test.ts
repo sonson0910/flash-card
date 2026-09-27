@@ -80,7 +80,7 @@ const createUndoFake = (restoreConflict = false) => {
         return {
           ...resultFor(mutation),
           deleteReceipt: {
-            finality: 'durably-queued', ownerId,
+            finality: 'committed', ownerId,
             operationId: 'device-delete-1',
             libraryEpoch: mutation.libraryEpoch, deletedAt: '2026-08-09T00:00:01.000Z',
           },
@@ -89,7 +89,7 @@ const createUndoFake = (restoreConflict = false) => {
       if (mutation.operation === 'restore') {
         return restoreConflict
           ? { ...resultFor(mutation), restoreFinality: 'conflict', restoreConflictReason: 'deleted-again' }
-          : { ...resultFor(mutation), restoreFinality: 'durably-queued' };
+          : { ...resultFor(mutation), restoreFinality: 'restored' };
       }
       return resultFor(mutation);
     },
@@ -198,7 +198,7 @@ describe('learning state controller', () => {
     expect(events).toEqual([]);
   });
 
-  it('undoes a durably queued delete once with the original card and stable operation request', async () => {
+  it('undoes a delete once with the original card and stable operation request', async () => {
     const { controller, persisted, publications } = createUndoFake();
     const deleted = await controller.delete(card.id, 'delete-offline');
     const token = ('result' in deleted ? deleted.result.undoToken : undefined)!;
@@ -212,10 +212,10 @@ describe('learning state controller', () => {
       controller.restore(token, request),
     ]);
 
-    expect(deleted.status).toBe('durably-queued');
+    expect(deleted.status).toBe('published');
     expect(token.card).toEqual(card);
     expect(first).toEqual(duplicate);
-    expect(first).toMatchObject({ status: 'durably-queued', result: { restoreFinality: 'durably-queued' } });
+    expect(first).toMatchObject({ status: 'published', result: { restoreFinality: 'restored' } });
     expect(persisted.filter(mutation => mutation.operation === 'restore')).toHaveLength(1);
     expect(publications.filter(publication => publication.kind === 'restore')).toEqual([
       { kind: 'restore', card }, { kind: 'restore', card },

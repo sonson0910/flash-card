@@ -4,7 +4,10 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
-import { cardIsDue, LibraryScreen, shouldShowFirstUseLibraryPanel, type LibraryScreenActions, type LibraryScreenModel } from './LibraryScreen';
+import {
+  cardIsDue, deriveActiveLearningFilter, LibraryScreen, shouldApplyLocalLearningFilter,
+  shouldShowFirstUseLibraryPanel, type LibraryScreenActions, type LibraryScreenModel,
+} from './LibraryScreen';
 import { setFormatLocale } from '../../lib/format';
 import { i18n } from '@lingui/core';
 
@@ -130,6 +133,50 @@ describe('LibraryScreen', () => {
     expect(html).not.toContain('data-empty-library-panel="true"');
     expect(html).toContain('library-canvas-rail');
     expect(html).toContain('library-canvas-tools');
+  });
+
+  it('keeps an explicit memory-status filter exact instead of re-applying the review-history tier heuristic', () => {
+    // A card can carry a "hard" memory-status label without ever having been
+    // reviewed (e.g. freshly generated/imported with a preset difficulty), so
+    // getLibraryCardTier(card) would classify it as 'new', not 'learning'.
+    // Selecting "hard" via the advanced memory-status filter already asks
+    // Firestore for exactly this card; the Library "Learning" quick tab must
+    // not silently re-exclude it.
+    const hardFilterModel: LibraryScreenModel = {
+      ...model,
+      tools: { ...model.tools, activeDifficulty: 'hard' },
+    };
+    const activeFilter = deriveActiveLearningFilter(hardFilterModel, null);
+
+    expect(activeFilter).toBe('learning');
+    expect(shouldApplyLocalLearningFilter(hardFilterModel, activeFilter, false)).toBe(false);
+  });
+
+  it('still applies the review-history tier filter when the Learning tab itself drives an unfiltered query', () => {
+    // The Learning tab's own click handler resets the difficulty filter to
+    // 'All' and relies on this client-side tier check, since Firestore can't
+    // express "good or hard difficulty AND has review history" as one
+    // equality filter. That path must keep filtering out unreviewed cards.
+    const learningTabModel: LibraryScreenModel = {
+      ...model,
+      grid: { ...model.grid, activeLearningFilter: 'learning' },
+      tools: { ...model.tools, activeDifficulty: 'All' },
+    };
+    const activeFilter = deriveActiveLearningFilter(learningTabModel, null);
+
+    expect(activeFilter).toBe('learning');
+    expect(shouldApplyLocalLearningFilter(learningTabModel, activeFilter, false)).toBe(true);
+  });
+
+  it('never applies the local tier filter when a cloud-backed learning-filter bridge is provided', () => {
+    const bridgedModel: LibraryScreenModel = {
+      ...model,
+      grid: { ...model.grid, activeLearningFilter: 'learning' },
+      tools: { ...model.tools, activeDifficulty: 'All' },
+    };
+    const activeFilter = deriveActiveLearningFilter(bridgedModel, null);
+
+    expect(shouldApplyLocalLearningFilter(bridgedModel, activeFilter, true)).toBe(false);
   });
 
   it('uses scheduled review dates, including FSRS due dates, for the Due filter', () => {

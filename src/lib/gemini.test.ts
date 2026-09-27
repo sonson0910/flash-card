@@ -16,6 +16,7 @@ vi.mock('./firebase', () => ({
   app: runtime.app,
   auth: runtime.auth,
   protectedFunctionsCapability: runtime.capability,
+  getSonFlashFunctions: (app: unknown, region: string = 'asia-southeast1') => runtime.getFunctions(app, region),
 }));
 
 vi.mock('firebase/functions', () => ({

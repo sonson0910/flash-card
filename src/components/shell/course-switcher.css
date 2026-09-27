@@ -1,0 +1,28 @@
+/*
+ * `position`/`inset-x`/`bottom` for the mobile sheet stay Tailwind utilities
+ * on the element (`fixed inset-x-0 bottom-0`) because those exact classes
+ * already exist elsewhere in the bundle. Only the genuinely new pieces — the
+ * mobile max-height/corner radius and the whole desktop popover override —
+ * live here, as one grouped rule with a single media query, which costs
+ * fewer bytes in this app's single combined stylesheet than the equivalent
+ * set of one-off Tailwind utilities (several `lg:` variants used nowhere
+ * else) would.
+ */
+.claude-course-switcher-panel {
+  max-height: 80vh;
+  border-radius: 1.5rem 1.5rem 0 0;
+}
+
+@media (min-width: 1024px) {
+  .claude-course-switcher-panel {
+    position: absolute;
+    inset-inline: auto;
+    bottom: auto;
+    right: 0;
+    top: 100%;
+    margin-top: 0.5rem;
+    max-height: 70vh;
+    width: 20rem;
+    border-radius: 1rem;
+  }
+}

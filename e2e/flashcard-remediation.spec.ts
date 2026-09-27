@@ -39,19 +39,28 @@ const richCard = {
   explanationTranslation: richVietnameseExplanation,
 };
 
-test.beforeEach(async ({ page, seedCards }) => {
+test.beforeEach(async ({ page, seedCards, seedCourseProfile }) => {
   await page.addInitScript(() => {
     localStorage.setItem('lingoflash_theme', 'light');
     localStorage.removeItem('sonflash_zen_glass_mode');
   });
   await seedCards([card, richCard]);
+  // A fresh emulator test user has no course profile yet, which currently
+  // shows the full-screen OnboardingJourney overlay even for signed-in users
+  // who already have cards (tracked separately as a product bug in the
+  // onboarding lane). Seed a legacy profile so these flashcard-interaction
+  // tests exercise the ordinary library shell instead of that overlay.
+  await seedCourseProfile();
 });
 
 test('study reveal keeps progress visible and scrolls rating controls into view', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page, '/?view=library');
 
-  await page.getByRole('button', { name: /Start a review|Review \d+ due/ }).first().click();
+  // LibraryCardGrid.tsx's collection actions render a single "Study now"
+  // button (library.grid.study-now); the old "Start a review"/"Review N due"
+  // copy no longer exists.
+  await page.getByRole('button', { name: 'Study now' }).click();
   await expect(page.locator('[data-study-progress]')).toBeVisible();
   await page.getByRole('button', { name: 'Reveal answer' }).click();
 
@@ -66,6 +75,9 @@ test('study reveal keeps progress visible and scrolls rating controls into view'
 test('long vocabulary content wraps without horizontal loss on both faces', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await signIn(page, '/?view=library');
+  // The flashcard only renders inside the "Open card" detail dialog
+  // (LibraryCardGrid.tsx's Dialog.Root), not inline in the grid.
+  await page.locator(`[data-library-card-id="${card.id}"] .library-word-open`).click();
 
   const front = page.locator('.flashcard-face').first();
   const wordHeading = front.getByRole('heading', { name: longWord });
@@ -99,6 +111,7 @@ test('long vocabulary content wraps without horizontal loss on both faces', asyn
 
 test('settled card faces do not keep a 3D transform on their text', async ({ page, signIn }) => {
   await signIn(page, '/?view=library');
+  await page.locator(`[data-library-card-id="${card.id}"] .library-word-open`).click();
 
   const cardShell = page.locator('.flashcard-shell').first();
   const hasPersistent3dTransform = () => cardShell.evaluate(element =>
@@ -116,17 +129,19 @@ test('settled card faces do not keep a 3D transform on their text', async ({ pag
 test('card change uses a spatial flip while returning to a crisp settled layer', async ({ page, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await signIn(page, '/?view=library');
+  await page.locator(`[data-library-card-id="${card.id}"] .library-word-open`).click();
 
-  const card = page.locator('.flashcard-shell').first();
-  await expect(card).toHaveAttribute('data-flip-animation', 'spatial');
+  const shell = page.locator('.flashcard-shell').first();
+  await expect(shell).toHaveAttribute('data-flip-animation', 'spatial');
   await page.getByRole('button', { name: new RegExp(`Reveal the Vietnamese meaning of ${longWord}`) }).click();
-  await expect(card).toHaveAttribute('data-card-side', 'back');
+  await expect(shell).toHaveAttribute('data-card-side', 'back');
   await expect(page.locator('.flashcard-back').first()).toHaveCSS('transform', 'none', { timeout: 2_000 });
   await expect(page.getByRole('button', { name: new RegExp(`Return to the English side of ${longWord}`) })).toBeFocused();
 });
 
 test('Vietnamese explanation renders generated Markdown as editorial content', async ({ page, signIn }) => {
   await signIn(page, '/?view=library');
+  await page.locator(`[data-library-card-id="${richCard.id}"] .library-word-open`).click();
 
   const richFlashcard = page.getByRole('group', { name: /resemblance flashcard/i });
   await richFlashcard.getByRole('button', { name: /Reveal the Vietnamese meaning of resemblance/ }).click();
@@ -149,6 +164,7 @@ test('Vietnamese explanation renders generated Markdown as editorial content', a
 test('reduced-motion users receive an immediate 2D face change', async ({ page, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await signIn(page, '/?view=library');
+  await page.locator(`[data-library-card-id="${card.id}"] .library-word-open`).click();
 
   await page.getByRole('button', { name: new RegExp(`Reveal the Vietnamese meaning of ${longWord}`) }).click();
   const back = page.locator('.flashcard-back').first();
@@ -167,10 +183,11 @@ test('reduced-motion users receive an immediate 2D face change', async ({ page, 
 test('AI disclosure stays visible and guest report actions stay hidden in standard and Zen cards', async ({ page, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await signIn(page, '/?view=library');
-  const card = page.getByRole('group', { name: /counterintelligence flashcard/i });
-  await card.getByRole('button', { name: /Reveal the Vietnamese meaning/ }).click();
-  await expect(card.locator('[data-ai-disclosure]')).toBeVisible();
-  await expect(card.getByRole('button', { name: 'Báo thẻ sai' })).toHaveCount(0);
+  await page.locator(`[data-library-card-id="${card.id}"] .library-word-open`).click();
+  const flashcardGroup = page.getByRole('group', { name: /counterintelligence flashcard/i });
+  await flashcardGroup.getByRole('button', { name: /Reveal the Vietnamese meaning/ }).click();
+  await expect(flashcardGroup.locator('[data-ai-disclosure]')).toBeVisible();
+  await expect(flashcardGroup.getByRole('button', { name: 'Báo thẻ sai' })).toHaveCount(0);
 
   await page.evaluate(() => {
     localStorage.setItem('sonflash_zen_glass_mode', 'true');
@@ -186,16 +203,23 @@ test('closing card dialogs restores focus to a surviving control', async ({ page
 
   await signIn(page, '/?view=library');
 
-  const deleteButton = page.getByRole('button', { name: 'Delete card' }).first();
+  // Both delete buttons here are the grid row's own controls
+  // (LibraryCardGrid.tsx), not the Flashcard component's internal delete
+  // button (never mounted for this card, since its detail dialog is never
+  // opened) — the grid-level confirm dialog's Cancel button reads "Cancel"
+  // (common.cancel), not "Keep card".
+  const cardRow = page.locator(`[data-library-card-id="${card.id}"]`);
+  const deleteButton = cardRow.getByRole('button', { name: 'Delete card' });
   await deleteButton.click();
-  await page.getByRole('button', { name: 'Keep card' }).click();
+  await page.getByRole('button', { name: 'Cancel' }).click();
   await expect(deleteButton).toBeFocused();
 
   await deleteButton.click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete card' }).click();
-  await expect(page.getByRole('group', { name: new RegExp(`${longWord} flashcard`, 'i') })).toHaveCount(0);
+  await expect(cardRow).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Your library' })).toBeFocused();
 
+  await page.locator(`[data-library-card-id="${richCard.id}"] .library-word-open`).click();
   await page.getByRole('button', { name: /Reveal the Vietnamese meaning of resemblance/ }).click();
   await page.locator('details[data-card-disclosure="learning-tools"] > summary').click();
   const detailsButton = page.getByRole('button', { name: /Learning details/ });

@@ -48,6 +48,19 @@ const fieldLabel = (key: EditableCardField) => {
 const isNativeField = (key: EditableCardField) =>
   key === 'translation' || key === 'explanationTranslation' || key === 'exampleTranslation' || key === 'mnemonic';
 
+// Mirrors the server's and the client normalizer's http/https-only rule: even
+// though `source.url` was already sanitized before persistence, this display
+// boundary re-checks it independently rather than trusting the stored shape.
+const isDisplayableSourceUrl = (value: string | undefined): value is string => {
+  if (!value) return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 const fieldRows = (key: EditableCardField) => {
   if (key === 'translation') return 2;
   if (key === 'phonetic') return 1;
@@ -175,7 +188,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
               event.preventDefault();
               firstFieldRef.current?.focus();
             }}
-            className="fixed inset-x-0 bottom-0 z-[101] flex max-h-[min(92dvh,780px)] w-full translate-x-0 translate-y-0 flex-col overflow-hidden rounded-t-[28px] border border-b-0 border-[var(--sf-border)] bg-[var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-2xl outline-none md:inset-y-0 md:left-auto md:right-0 md:top-0 md:max-h-none md:w-[440px] md:rounded-none md:border-b md:border-r-0 md:border-t-0 md:border-l [html[data-theme-family=crystal]_&]:crystal-chamfer [html[data-theme-family=crystal]_&]:md:w-[540px]"
+            className="fixed inset-x-0 bottom-0 z-[101] flex max-h-[min(92dvh,780px)] w-full translate-x-0 translate-y-0 flex-col overflow-hidden rounded-t-[28px] border border-b-0 border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-2xl outline-none md:inset-y-0 md:left-auto md:right-0 md:top-0 md:max-h-none md:w-[440px] md:rounded-none md:border-b md:border-r-0 md:border-t-0 md:border-l [html[data-theme-family=crystal]_&]:crystal-chamfer [html[data-theme-family=crystal]_&]:md:w-[540px]"
           >
             <div aria-hidden="true" className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[var(--sf-border)] md:hidden" />
             <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--sf-border)] px-5 pb-4 pt-4 sm:px-7 sm:pt-5 md:px-[26px]">
@@ -267,6 +280,23 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
                 <p data-edit-contract-note className="rounded-[var(--sf-card-radius)] border border-dashed border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 text-xs leading-5 text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
                   <Trans id="library.edit-card.contract-note" message="Headword, part of speech, image, deck, bookmark, tags and difficulty stay unchanged in this sheet until their data contracts are available." />
                 </p>
+                {openedCard.source && (openedCard.source.url || openedCard.source.title) && (
+                  <p data-edit-source-note className="rounded-[var(--sf-card-radius)] border border-dashed border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 text-xs leading-5 text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+                    <span className="font-black uppercase tracking-[.12em]"><Trans id="library.edit-card.source-label" message="Captured from" /></span>{' '}
+                    {isDisplayableSourceUrl(openedCard.source.url) ? (
+                      <a
+                        href={openedCard.source.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-[var(--sf-brand-text)] underline-offset-4 hover:underline"
+                      >
+                        {openedCard.source.title || openedCard.source.url}
+                      </a>
+                    ) : (
+                      <span>{openedCard.source.title}</span>
+                    )}
+                  </p>
+                )}
                 <p className="flex gap-2 rounded-[var(--sf-card-radius)] border border-[color-mix(in_srgb,var(--sf-success)_45%,var(--sf-border))] bg-[color-mix(in_srgb,var(--sf-success)_10%,var(--sf-surface))] px-4 py-3 text-sm leading-6 text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
                   <Check size={16} className="mt-1 shrink-0 text-[var(--sf-success)]" aria-hidden="true" />
                   <span><Trans id="library.edit-card.history-note" message="Your review history is kept. Changes appear on this card right away." /></span>
@@ -274,7 +304,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
                 {errorMessage && <p role="alert" className="rounded-[var(--sf-card-radius)] border border-[var(--sf-danger)] bg-[color-mix(in_srgb,var(--sf-danger)_10%,var(--sf-surface))] px-4 py-3 text-sm font-semibold text-[var(--sf-danger)]">{errorMessage}</p>}
               </section>
 
-              <footer className="sticky bottom-[-1rem] z-10 mt-5 flex flex-col-reverse gap-2 border-t border-[var(--sf-border)] bg-[var(--sf-dialog-bg)] py-4 sm:flex-row sm:items-center sm:justify-end md:bottom-[-1rem]">
+              <footer className="sticky bottom-[-1rem] z-10 mt-5 flex flex-col-reverse gap-2 border-t border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] py-4 sm:flex-row sm:items-center sm:justify-end md:bottom-[-1rem]">
                 <span className="mr-auto hidden text-xs text-[var(--sf-text-muted)] sm:block"><kbd className="rounded border border-[var(--sf-border)] px-1.5 py-0.5 font-mono text-[10px]"><Trans id="library.edit-card.esc-key" message="Esc" /></kbd> <Trans id="library.edit-card.back-to-card" message="back to card" /></span>
                 <button type="button" onClick={() => closeSheet()} disabled={saving} className="flex min-h-11 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 text-sm font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
                   <span>{dirty ? 'Discard' : <Trans id="library.edit-card.cancel" message="Cancel" />}</span>
@@ -293,7 +323,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
       <AlertDialog.Root open={discardConfirmOpen} onOpenChange={setDiscardConfirmOpen}>
         <AlertDialog.Portal>
           <AlertDialog.Overlay className="fixed inset-0 z-[110] bg-slate-950/55 backdrop-blur-sm" />
-          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[111] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-dialog-bg)] p-6 text-[var(--sf-text)] shadow-2xl outline-none [html[data-theme-family=crystal]_&]:crystal-chamfer">
+          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[111] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] p-6 text-[var(--sf-text)] shadow-2xl outline-none [html[data-theme-family=crystal]_&]:crystal-chamfer">
             <AlertDialog.Title className="font-serif text-2xl font-bold [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:italic"><Trans id="library.edit-card.discard-title" message="Discard unsaved changes?" /></AlertDialog.Title>
             <AlertDialog.Description className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]"><Trans id="library.edit-card.discard-description" message="Your draft will be removed and the card will stay unchanged." /></AlertDialog.Description>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

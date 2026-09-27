@@ -49,8 +49,8 @@ Có thể giao landing/pilot dialogs riêng khi không chạm shared styles/cata
 
 ## Commit, log và rollback
 
-Sau mỗi đơn vị nghiệm thu (phase độc lập hoặc subphase07A/07B,11A/11B,12A/12B đã định nghĩa): một conventional commit theo quyền user đã cho, chỉ stage file thuộc phase; ghi decision log gồm revision, board/state coverage, tests, ngoại lệ và task còn lại. Không reset/clean/đè dirty work. Công việc hiện tại chỉ lập plan nên chưa commit code.
+Sau mỗi đơn vị nghiệm thu (phase độc lập hoặc subphase07A/07B,11A/11B,12A/12B đã định nghĩa): một conventional commit theo quyền user đã cho, chỉ stage file thuộc phase; ghi decision log gồm revision, board/state coverage, tests, ngoại lệ và task còn lại. Không reset/clean/đè dirty work. User đã cho phép triển khai local và commit theo phase; phase 01 được ghi tại `47a1bdc`.
 
 UI rollback theo commit tập trung; giữ domain/data fixes độc lập. Các hợp đồng Firebase mới additive, giữ card/share cũ đọc được. Trước migration/data change thật phải backup và có restore evidence. Flag rollback không được ẩn hoặc xóa course/card đã tạo.
 
-Không deploy trong kế hoạch đang được chuẩn bị. Staging/production là bước phát hành riêng với quyền cụ thể; G1 không tự đạt vì local UI/tests đạt.
+Không deploy trong công việc hiện tại. Staging/production là bước phát hành riêng với quyền cụ thể; G1 không tự đạt vì local UI/tests đạt.

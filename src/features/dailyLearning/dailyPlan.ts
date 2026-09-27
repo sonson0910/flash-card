@@ -31,7 +31,8 @@ const boundedInteger = (value: number, minimum: number, maximum: number, label: 
   return value;
 };
 
-const logicalIdentity = (card: CardData): string => cardLogicalKey(card) || card.id;
+/** The deduplication key `buildDailyPlan` groups cards by; reused wherever a retry or resume needs the same identity. */
+export const logicalIdentity = (card: CardData): string => cardLogicalKey(card) || card.id;
 
 const reviewCount = (card: CardData): number => Math.max(
   Number.isFinite(card.reviews) ? Math.max(0, card.reviews ?? 0) : 0,

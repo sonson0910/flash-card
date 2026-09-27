@@ -22,7 +22,7 @@ import type {
   TodayScreenActions,
   TodayScreenModel,
 } from './dailyLearningPresentation';
-import { evidencedStudyStreak } from './dailyLearningPresentation';
+import { evidencedStudyStreak, reviewFeedbackCue } from './dailyLearningPresentation';
 
 i18n.load('en', {});
 i18n.activate('en');
@@ -33,7 +33,7 @@ const todayActions: TodayScreenActions = {
   openVocabulary: vi.fn(),
   openPaths: vi.fn(),
   retry: vi.fn(),
-  continueReview: vi.fn(),
+  startSession: vi.fn(),
   startLesson: vi.fn(),
   startPlacement: vi.fn(),
   openMorePractice: vi.fn(),
@@ -127,7 +127,7 @@ describe('TodayScreen', () => {
       expect(html).toContain(label);
     }
     for (const label of ['Spelling', 'Cloze', 'Sentence building']) expect(html).toContain(label);
-    expect(html).toContain('Continue review');
+    expect(html).toContain("Start today&#x27;s session");
     expect(html).toContain('Take placement check');
     expect(html).toContain('data-primary-learning-action="true"');
     expect(html).toContain('More practice');
@@ -137,7 +137,7 @@ describe('TodayScreen', () => {
     expect(html).toContain('min-h-24 rounded-xl');
   });
 
-  it('starts an honest recognition lesson when the plan has no due reviews', () => {
+  it('always launches the sequenced session from the primary action, whether or not reviews are due', () => {
     const html = renderToStaticMarkup(
       <TodayScreen
         model={{ ...readyToday, plan: { total: 6, due: 0, weak: 2, fresh: 4, isShort: true } }}
@@ -146,14 +146,15 @@ describe('TodayScreen', () => {
     );
 
     expect(html).toContain('data-primary-learning-action="true"');
-    expect(html).toContain('Start recognition lesson');
+    expect(html).toContain("Start today&#x27;s session");
     expect(html).not.toContain('Continue review');
+    expect(html).not.toContain('Start recognition lesson');
   });
 
   it.each([
     [{ status: 'empty', isOffline: false, message: 'Add vocabulary to make a plan.', plan: null, placementAvailable: false } satisfies TodayScreenModel, 'Add vocabulary'],
     [{ status: 'error', isOffline: false, message: 'The plan could not be prepared.', plan: null, placementAvailable: false } satisfies TodayScreenModel, 'Try again'],
-    [{ ...readyToday, status: 'offline', isOffline: true, message: 'Using your saved practice pool.' } satisfies TodayScreenModel, 'Available offline'],
+    [{ ...readyToday, status: 'offline', isOffline: true, message: 'Using your saved practice pool.' } satisfies TodayScreenModel, "You&#x27;re offline. Reconnect to start today&#x27;s session."],
     [{ ...readyToday, plan: { total: 7, due: 3, weak: 2, fresh: 2, isShort: true }, message: 'A shorter plan is ready.' } satisfies TodayScreenModel, 'Short plan'],
   ])('renders the %s outcome honestly', (model, expected) => {
     const html = renderToStaticMarkup(<TodayScreen model={model} actions={todayActions} />);
@@ -348,6 +349,36 @@ describe('LessonScreen', () => {
     expect(sentenceHtml).toContain('Your sentence');
     expect(sentenceHtml).toContain('1. word');
   });
+
+  it('gives every question and its reveal a GSAP entrance, collapsed for reduced motion', () => {
+    const questionHtml = renderToStaticMarkup(<LessonScreen model={choiceLesson} actions={lessonActions} />);
+    expect(questionHtml).toContain('data-gsap-entrance="step"');
+    expect(questionHtml).not.toContain('data-gsap-entrance="feedback"');
+
+    const feedbackHtml = renderToStaticMarkup(<LessonScreen model={{
+      ...choiceLesson,
+      status: 'feedback',
+      feedback: { outcome: 'correct', message: 'Correct.', expectedAnswer: 'sự phân tích', answerLanguage: 'vi' },
+      canSubmit: false,
+    }} actions={lessonActions} />);
+    expect(feedbackHtml).toContain('data-gsap-entrance="step"');
+    expect(feedbackHtml).toContain('data-gsap-entrance="feedback"');
+  });
+
+  it('routes the reveal cue and the rating tap through the shared, already-gated haptics/sound helpers', () => {
+    // No jsdom/testing-library in this repo's toolchain (see AppShellMotion.test.ts for the
+    // same pattern), so this proves the wiring exists without bypassing the gated helpers —
+    // the actual sound-off/haptics-off/reduced-motion gating is covered where those helpers
+    // live: haptics.test.ts, interactionSounds.test.ts and motion.test.ts.
+    const source = readFileSync(fileURLToPath(new URL('./LessonScreen.tsx', import.meta.url)), 'utf8');
+    expect(source).toContain("import { triggerHaptic } from '../../lib/haptics'");
+    expect(source).toContain("import { playSuccessSound } from '../../lib/interactionSounds'");
+    expect(source).toContain('const cue = reviewFeedbackCue(model.feedback.outcome)');
+    expect(source).toContain('if (cue.playSound) playSuccessSound()');
+    expect(source).toContain('triggerHaptic(cue.haptic)');
+    expect(source).toContain("triggerHaptic('light'); actions.rate(rating.id)");
+    expect(source).not.toContain('navigator.vibrate');
+  });
 });
 
 describe('PlacementScreen', () => {
@@ -433,7 +464,7 @@ describe('ProgressScreen', () => {
     expect(html).toContain('<span class="sr-only">42</span>');
     expect(html).toContain('Review 5 due words');
     expect(html).toContain('data-primary-learning-action="true"');
-    expect(html).toContain('Available offline');
+    expect(html).toContain('Offline — this may be out of date.');
     expect(html).toContain('Existing insights');
   });
 
@@ -461,6 +492,11 @@ describe('daily learning presentation boundaries', () => {
     expect(evidencedStudyStreak(4, [{ date: yesterday, XP: 20 }], now)).toBe(0);
     expect(evidencedStudyStreak(4, [{ date: today, XP: 0 }], now)).toBe(0);
     expect(evidencedStudyStreak(4, [{ date: today, XP: 20 }], now)).toBe(4);
+  });
+
+  it('rewards a correct reveal with sound and a success haptic, and a wrong one with a haptic nudge only', () => {
+    expect(reviewFeedbackCue('correct')).toEqual({ playSound: true, haptic: 'success' });
+    expect(reviewFeedbackCue('incorrect')).toEqual({ playSound: false, haptic: 'warning' });
   });
 
   it.each([

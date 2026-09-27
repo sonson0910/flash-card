@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { classifyProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import { captureFailureMessage } from '../../lib/captureFailureMessage';
 import {
@@ -94,6 +94,10 @@ const encodePayload = (value: unknown): string => {
 };
 
 describe('browser extension import runtime', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('does not process verified storage from a subframe', async () => {
     const now = Date.now();
     const storage = new MemoryStorage();
@@ -242,6 +246,76 @@ describe('browser extension import runtime', () => {
     });
   });
 
+  it('passes verified captured source url and page title to card generation', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_source_123',
+      nonce,
+      text: 'lead',
+      sourceUrl: 'https://example.com/article',
+      pageTitle: 'An Example Article',
+      createdAt: now,
+      mode: 'silent',
+    }));
+    let generationOptions: unknown;
+
+    const runtime = startBrowserExtensionImportRuntime(optionsFor(async options => {
+      generationOptions = options;
+      return { status: 'failed', error: new Error('expected test failure') };
+    }), browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(generationOptions).toMatchObject({
+      surface: 'extension',
+      sourceUrl: 'https://example.com/article',
+      pageTitle: 'An Example Article',
+    });
+  });
+
+  it('does not claim a ready message whose sourceUrl does not match what was actually written to storage', async () => {
+    const now = Date.now();
+    const { browser, storage, dispatchMessage } = createBrowser('https://app.example.test/?view=library');
+    let generated = 0;
+    const runtime = startBrowserExtensionImportRuntime(optionsFor(async () => {
+      generated += 1;
+      return { status: 'failed', error: new Error('should not run') };
+    }), browser);
+
+    // The storage write happens only after the runtime has already started
+    // (and found nothing pending), so the later ready message is the first
+    // and only claim attempt for this id — exercising `isBackedByVerifiedStorage`
+    // for real rather than the bootstrap `capturePending()` path.
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_source_tamper_123',
+      nonce,
+      text: 'lead',
+      sourceUrl: 'https://example.com/article',
+      createdAt: now,
+      mode: 'silent',
+    }));
+    dispatchMessage({
+      source: 'lingoflash-extension-bridge',
+      type: 'LINGOFLASH_EXTENSION_IMPORT_READY',
+      payload: {
+        v: 3,
+        id: 'intent_source_tamper_123',
+        nonce,
+        text: 'lead',
+        sourceUrl: 'https://forged.example/',
+        createdAt: now,
+        mode: 'silent',
+      },
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(generated).toBe(0);
+  });
+
   it('ignores a ready message whose nonce is not backed by verified storage', async () => {
     const now = Date.now();
     const { browser, storage, dispatchMessage } = createBrowser('https://app.example.test/?view=library');
@@ -348,6 +422,99 @@ describe('browser extension import runtime', () => {
     expect(draft).toBe('forged');
     expect(opened).toBe(1);
     expect(generated).toBe(0);
+  });
+
+  it('drops a silent capture with no side effects when ensureCaptureCourse resolves cancel', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_course_mismatch_cancel_123',
+      nonce,
+      text: 'resilient',
+      createdAt: now,
+      mode: 'silent',
+    }));
+    const posted: unknown[] = [];
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    let generated = 0;
+    const options = {
+      ...optionsFor(async () => {
+        generated += 1;
+        return { status: 'failed' as const, error: new Error('should not run') };
+      }),
+      ensureCaptureCourse: async () => 'cancel' as const,
+    };
+
+    const runtime = startBrowserExtensionImportRuntime(options, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(generated).toBe(0);
+    expect(storage.getItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY)).toBeNull();
+    expect(posted).toContainEqual(expect.objectContaining({
+      payload: expect.objectContaining({ id: 'intent_course_mismatch_cancel_123', status: 'error' }),
+    }));
+
+    const secondRuntime = startBrowserExtensionImportRuntime(options, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    secondRuntime.dispose();
+    expect(generated).toBe(0);
+  });
+
+  it('generates once ensureCaptureCourse resolves proceed', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_course_mismatch_proceed_123',
+      nonce,
+      text: 'resilient',
+      createdAt: now,
+      mode: 'silent',
+    }));
+    let generated = 0;
+    let gateCalls = 0;
+    const runtime = startBrowserExtensionImportRuntime({
+      ...optionsFor(async () => {
+        generated += 1;
+        return { status: 'failed' as const, error: new Error('expected test failure') };
+      }),
+      ensureCaptureCourse: async () => {
+        gateCalls += 1;
+        return 'proceed' as const;
+      },
+    }, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(gateCalls).toBe(1);
+    expect(generated).toBe(1);
+  });
+
+  it('generates anyway if ensureCaptureCourse rejects, matching the best-effort course-matching contract', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_course_mismatch_error_123',
+      nonce,
+      text: 'resilient',
+      createdAt: now,
+      mode: 'silent',
+    }));
+    let generated = 0;
+    const runtime = startBrowserExtensionImportRuntime({
+      ...optionsFor(async () => {
+        generated += 1;
+        return { status: 'failed' as const, error: new Error('expected test failure') };
+      }),
+      ensureCaptureCourse: async () => { throw new Error('course lookup failed'); },
+    }, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(generated).toBe(1);
   });
 
   it('does not generate the same verified operation again after an app reload', async () => {

@@ -239,6 +239,8 @@ test('verifies a nonce-bound v3 handoff and stores the resolved structured inten
         text: 'resilient',
         context: 'The resilient team recovered quickly.',
         requestedDeck: 'Reading',
+        sourceUrl: 'https://example.com/article',
+        pageTitle: 'An Example Article',
         createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
         mode: 'silent',
       },
@@ -252,6 +254,32 @@ test('verifies a nonce-bound v3 handoff and stores the resolved structured inten
   assert.match(stored, /resilient/);
   assert.match(stored, /The resilient team recovered quickly/);
   assert.match(stored, /Reading/);
+  assert.match(stored, /https:\/\/example\.com\/article/);
+  assert.match(stored, /An Example Article/);
+});
+
+test('drops a non-http(s) sourceUrl and an oversized pageTitle from a verified v3 handoff', async () => {
+  const bridge = await createBridgeContext({
+    response: {
+      ok: true,
+      verified: true,
+      intent: {
+        v: 3,
+        id: 'job_123456789',
+        nonce: 'nonce_1234567890123456789012',
+        text: 'resilient',
+        sourceUrl: 'javascript:alert(1)',
+        pageTitle: `Title ${'x'.repeat(400)}`,
+        createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
+        mode: 'silent',
+      },
+    },
+  });
+  const stored = bridge.storageValues.get('lingoflash_browser_extension_import');
+  assert.doesNotMatch(stored, /javascript:/);
+  const parsed = JSON.parse(stored);
+  assert.equal('sourceUrl' in parsed, false);
+  assert.equal(parsed.pageTitle.length, 256);
 });
 
 test('relays deck metadata only from same-origin app messages', async () => {
@@ -464,6 +492,33 @@ test('does not use the compatibility fallback when a verified v3 intent carries 
   assert.ok(result);
   assert.equal(result.args[0].payload.status, 'error');
   assert.match(result.args[0].payload.message, /context|runtime|current/i);
+  assert.equal(bridge.wasFallbackSubmitted(), false);
+  assert.equal(bridge.storageValues.has('lingoflash_browser_extension_import'), false);
+});
+
+test('does not use the compatibility fallback when a verified v3 intent carries captured source metadata', async () => {
+  const bridge = await createBridgeContext({
+    fallbackMode: 'stable',
+    response: {
+      ok: true,
+      verified: true,
+      intent: {
+        v: 3,
+        id: 'job_123456789',
+        nonce: 'nonce_1234567890123456789012',
+        text: 'resilient',
+        sourceUrl: 'https://example.com/article',
+        createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
+        mode: 'silent',
+      },
+    },
+  });
+  await new Promise(resolve => setTimeout(resolve, 30));
+
+  const result = bridge.calls.find(call => call.type === 'runtime.sendMessage'
+    && call.args[0]?.type === 'APP_IMPORT_RESULT');
+  assert.ok(result);
+  assert.equal(result.args[0].payload.status, 'error');
   assert.equal(bridge.wasFallbackSubmitted(), false);
   assert.equal(bridge.storageValues.has('lingoflash_browser_extension_import'), false);
 });

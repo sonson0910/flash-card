@@ -12,7 +12,9 @@ test('release static endpoints return machine-readable content', async ({ reques
 });
 
 test('release health identifies the exact built artifact', async ({ request }) => {
-  const expected = JSON.parse(readFileSync(new URL('../dist/health.json', import.meta.url), 'utf8')) as {
+  // Same directory the preview server serves (see vite.config.ts build.outDir).
+  const buildDir = process.env.SONFLASH_BUILD_OUT_DIR || 'dist';
+  const expected = JSON.parse(readFileSync(new URL(`../${buildDir}/health.json`, import.meta.url), 'utf8')) as {
     artifactId: string;
   };
   const health = await request.get('/health.json');

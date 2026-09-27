@@ -51,8 +51,11 @@
   "shortcutTranslateRow": { "message": "Chỉ dịch" },
   "shortcutUnassigned": { "message": "Chưa gán" },
   "shortcutConfigure": { "message": "Cấu hình phím tắt" },
-  "openAppLink": { "message": "Đăng nhập / mở thư viện" },
-  "dueCountBadge": { "message": "· $COUNT$ thẻ đến hạn", "placeholders": { "count": { "content": "$1" } } },
+  "openAppLink": { "message": "Đăng nhập" },
+  "openAppLinkLibrary": { "message": "Mở thư viện" },
+  "dueCountBadge": { "message": "$COUNT$ thẻ đến hạn", "placeholders": { "count": { "content": "$1" } } },
+  "webWordsLoopSummary": { "message": "$COUNT$ từ đã lưu từ trang web đang chờ trong buổi học hôm nay", "placeholders": { "count": { "content": "$1" } } },
+  "webWordsLoopAction": { "message": "Xem trong SonFlash" },
   "optionsLink": { "message": "Cài đặt" },
   "privacyLink": { "message": "Quyền riêng tư" },
   "speechUnsupported": { "message": "Trình duyệt này không hỗ trợ phát âm." },
@@ -157,6 +160,8 @@
   "bubbleRetry": { "message": "Thử lại từ này" },
   "bubbleRetrying": { "message": "Đang thử lại…" },
   "bubbleRetryFailed": { "message": "Không thể thử lại. Hãy mở extension và chọn từ lần nữa." },
+  "bubbleQuotaNote": { "message": "Dịch nhanh vẫn miễn phí, không dùng lượt AI." },
+  "bubbleQuotaAction": { "message": "Mở SonFlash · Nâng cấp Pro" },
   "bubbleResult": { "message": "Đã xử lý" },
   "bubbleSpeakDefaultLabel": { "message": "Nghe phát âm" },
   "bubbleSpeakSelectionLabel": { "message": "Nghe phát âm $WORD$", "placeholders": { "word": { "content": "$1" } } },
@@ -166,5 +171,18 @@
   "bubbleSpeechUnsupported": { "message": "Trình duyệt này không hỗ trợ phát âm." },
   "bubbleDefaultWordFallback": { "message": "từ đã chọn" },
 
-  "selectionIconAriaLabel": { "message": "Dịch và tạo flashcard bằng SonFlash" }
+  "selectionIconAriaLabel": { "message": "Dịch và tạo flashcard bằng SonFlash" },
+
+  "resultBadgeCreated": { "message": "ĐÃ LƯU FLASHCARD" },
+  "resultBadgeExisting": { "message": "ĐÃ CÓ TRONG THƯ VIỆN" },
+  "stateSignInTitle": { "message": "Chưa đăng nhập SonFlash" },
+  "stateSignInDesc": { "message": "Đăng nhập để tạo flashcard và đồng bộ deck. Dịch nhanh vẫn dùng được." },
+  "stateSignInAction": { "message": "Đăng nhập SonFlash" },
+  "stateQuotaTitle": { "message": "Hết lượt AI hôm nay" },
+  "stateQuotaDescFallback": { "message": "Dịch vụ AI đã hết hạn mức. Từ đã chọn vẫn được giữ lại; hãy thử lại sau." },
+  "stateQuotaNote": { "message": "Dịch nhanh vẫn miễn phí, không dùng lượt AI." },
+  "stateQuotaAction": { "message": "Mở SonFlash · Nâng cấp Pro" },
+  "stateErrorTitle": { "message": "Không thể tạo hoặc lưu flashcard này" },
+  "stateErrorAction": { "message": "Thử lại" },
+  "errorRetryQuickAdd": { "message": "Không thể thử lại. Hãy chọn lại từ trong extension." }
 }

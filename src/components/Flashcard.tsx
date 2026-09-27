@@ -438,8 +438,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
         }}
       >
         <AlertDialog.Portal>
-          <AlertDialog.Overlay className="fixed inset-0 z-50 bg-slate-950/72" />
-          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl outline-none" onClick={event => event.stopPropagation()} onCloseAutoFocus={event => {
+          <AlertDialog.Overlay className="fixed inset-0 z-[110] bg-slate-950/72" />
+          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[111] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl outline-none" onClick={event => event.stopPropagation()} onCloseAutoFocus={event => {
             event.preventDefault();
             if (!deleteConfirmedRef.current) deleteButtonRef.current?.focus();
             deleteConfirmedRef.current = false;
@@ -458,9 +458,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       </AlertDialog.Root>
       <Dialog.Root open={showLearningDetails} onOpenChange={setShowLearningDetails}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs" />
+          <Dialog.Overlay className="fixed inset-0 z-[110] bg-slate-950/75 backdrop-blur-xs" />
           <Dialog.Content
-            className="flashcard-panel flashcard-details-dialog fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] p-6 text-slate-900 outline-none sm:p-7 dark:text-white"
+            className="flashcard-panel flashcard-details-dialog fixed left-1/2 top-1/2 z-[111] max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] p-6 text-slate-900 outline-none sm:p-7 dark:text-white"
             aria-describedby={`learning-details-description-${data.id}`}
             onCloseAutoFocus={event => {
               event.preventDefault();

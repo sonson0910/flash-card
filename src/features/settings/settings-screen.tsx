@@ -1,12 +1,18 @@
 import { Trans } from '@lingui/react';
-import { Check, Monitor, Moon, Palette, Sparkles, Sun, Volume2 } from 'lucide-react';
-import { useEffect, useLayoutEffect, useState, type RefObject } from 'react';
+import { Check, Monitor, Moon, Palette, Sparkles, Sun, Vibrate, Volume2 } from 'lucide-react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useState, type RefObject } from 'react';
 import { Lumi } from '../../components/lumi/Lumi';
+import { useHapticsSettings } from '../../lib/haptics';
 import { useSoundSettings } from '../../lib/interactionSounds';
 import { useUserReducedMotion } from '../../lib/motionPreference';
 import { useTheme } from '../theme/ThemeProvider';
 import { applyLumiEnabled, readLumiEnabled } from './lumi-preference';
 import './settings-screen.css';
+
+// Course/goal/pace preferences pull in course context, icons and forms that
+// most settings visits never touch; keeping this section out of the initial
+// bundle matters while the initial-JS budget has almost no headroom left.
+const CourseSettingsSection = lazy(() => import('./CourseSettingsSection').then(module => ({ default: module.CourseSettingsSection })));
 
 export interface SettingsScreenProps {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
@@ -50,6 +56,7 @@ export default function SettingsScreen({ headingRef, focusIntent = 0 }: Settings
   const { family, mode, followSystem, setFamily, setMode, setFollowSystem } = useTheme();
   const [reducedMotion, setReducedMotion] = useUserReducedMotion();
   const { isSoundEnabled, setSoundEnabled } = useSoundSettings();
+  const { isHapticsEnabled, setHapticsEnabled } = useHapticsSettings();
   const [lumiEnabled, setLumiEnabled] = useState(readLumiEnabled);
 
   useLayoutEffect(() => {
@@ -89,8 +96,10 @@ export default function SettingsScreen({ headingRef, focusIntent = 0 }: Settings
         <ThemeOption kind="crystal" family={family} mode={mode} checked={family === 'crystal'} onChange={() => choose('crystal')}><span className="block font-black"><Trans id="settings.theme.crystal" message="Crystal Star" /></span><span className="mt-1 block text-xs leading-5 text-[var(--sf-text-muted)]"><Trans id="settings.theme.crystal.description" message="A sparkling study space with Lumi." /></span></ThemeOption>
       </div></fieldset>
       {family === 'crystal' && <fieldset className="mt-5"><legend className="text-sm font-bold text-[var(--sf-text)]"><Trans id="settings.crystal-mode.label" message="Crystal Star mode" /></legend><div className="mt-3 grid gap-3 sm:grid-cols-2"><label className="flex min-h-11 items-center gap-3 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-3"><input type="radio" name="settings-crystal-mode" checked={mode === 'dark'} onChange={() => setMode('dark')} /><Moon size={18} aria-hidden="true" /><span className="font-bold"><Trans id="settings.crystal-mode.night" message="Starry Night" /></span></label><label className="flex min-h-11 items-center gap-3 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-3"><input type="radio" name="settings-crystal-mode" checked={mode === 'light'} onChange={() => setMode('light')} /><Sun size={18} aria-hidden="true" /><span className="font-bold"><Trans id="settings.crystal-mode.day" message="Prism Day" /></span></label></div></fieldset>}
-      <div className="mt-5 grid gap-3 lg:grid-cols-2"><SwitchRow checked={followSystem} label={<><Monitor size={16} className="mr-2 inline" aria-hidden="true" /><Trans id="settings.follow-system.label" message="Follow system" /></>} description={<Trans id="settings.follow-system.description" message="Match your device’s light or dark setting." />} onChange={setFollowSystem} /><SwitchRow checked={reducedMotion} label={<Trans id="settings.reduced-motion.label" message="Reduced motion" />} description={<Trans id="settings.reduced-motion.description" message="Limit movement and animated effects." />} onChange={setReducedMotion} /><SwitchRow checked={lumiEnabled} disabled={family !== 'crystal'} label={<Trans id="settings.lumi.label" message="Lumi" />} description={<Trans id="settings.lumi.description" message="Show your Crystal Star study companion." />} onChange={setLumi} /><SwitchRow checked={isSoundEnabled} label={<><Volume2 size={16} className="mr-2 inline" aria-hidden="true" /><Trans id="settings.sound.label" message="Study sounds" /></>} description={<Trans id="settings.sound.description" message="Play feedback sounds while you study." />} onChange={setSoundEnabled} /></div>
+      <div className="mt-5 grid gap-3 lg:grid-cols-2"><SwitchRow checked={followSystem} label={<><Monitor size={16} className="mr-2 inline" aria-hidden="true" /><Trans id="settings.follow-system.label" message="Follow system" /></>} description={<Trans id="settings.follow-system.description" message="Match your device’s light or dark setting." />} onChange={setFollowSystem} /><SwitchRow checked={reducedMotion} label={<Trans id="settings.reduced-motion.label" message="Reduced motion" />} description={<Trans id="settings.reduced-motion.description" message="Limit movement and animated effects." />} onChange={setReducedMotion} /><SwitchRow checked={lumiEnabled} disabled={family !== 'crystal'} label={<Trans id="settings.lumi.label" message="Lumi" />} description={<Trans id="settings.lumi.description" message="Show your Crystal Star study companion." />} onChange={setLumi} /><SwitchRow checked={isSoundEnabled} label={<><Volume2 size={16} className="mr-2 inline" aria-hidden="true" /><Trans id="settings.sound.label" message="Study sounds" /></>} description={<Trans id="settings.sound.description" message="Play feedback sounds while you study." />} onChange={setSoundEnabled} /><SwitchRow checked={isHapticsEnabled} label={<><Vibrate size={16} className="mr-2 inline" aria-hidden="true" /><Trans id="settings.haptics.label" message="Haptics" /></>} description={<Trans id="settings.haptics.description" message="Feel a light vibration while you study." />} onChange={setHapticsEnabled} /></div>
       <div className="mt-5 flex min-h-16 items-center gap-3 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 text-sm text-[var(--sf-text-muted)]"><span data-settings-lumi><Lumi pose="happy" size={42} /></span><Trans id="settings.preview.note" message="Your choices are shown in the live previews above." /></div>
     </section>
+
+    <Suspense fallback={null}><CourseSettingsSection /></Suspense>
   </div>;
 }

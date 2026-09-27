@@ -23,7 +23,7 @@ i18n.activate('en');
 const renderToStaticMarkup = (node: ReactNode) => renderReactToStaticMarkup(<I18nProvider i18n={i18n}>{node}</I18nProvider>);
 
 const readyModel: CatalogScreenModel = {
-  status: { kind: 'ready', isOnline: false, isAvailableOffline: true, message: 'English catalog is ready offline.' },
+  status: { kind: 'ready', isOnline: false, message: 'English catalog is ready offline.' },
   selectedLanguage: 'en',
   languages: [
     { code: 'en', label: 'English', nativeLabel: 'English', isAvailable: true },
@@ -124,7 +124,6 @@ describe('CatalogScreen', () => {
     expect(html).toContain('CC BY 4.0');
     expect(html).toContain('Reviewed by Linh Nguyen');
     expect(html).toContain('Add to library');
-    expect(html).toContain('Available offline');
     expect(html).toContain('Load more words');
     expect(html).toContain('aria-labelledby="catalog-heading"');
   });

@@ -91,6 +91,9 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      // The emulator e2e run builds into its own directory so a concurrent
+      // production build cannot overwrite the artifact under test.
+      outDir: process.env.SONFLASH_BUILD_OUT_DIR || 'dist',
       target: 'es2020',
       minify: 'terser',
       sourcemap: false,

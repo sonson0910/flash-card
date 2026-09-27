@@ -12,6 +12,7 @@ import {
   CardAllocationLimitError,
   canonicalCard,
   createCardForOwner,
+  createStarterCardsForOwner,
   parseCreateCardRequest,
 } from '../src/cardPersistence.js';
 import { createHash } from 'node:crypto';
@@ -20,6 +21,8 @@ import {
   toCardAllocationHttpsError,
 } from '../src/index.js';
 import { LegacyLibraryMigrationFenceError } from '../src/legacyLibraryMigrationOwnerScope.js';
+import { AiQuotaError } from '../src/aiQuota.js';
+import { PILOT_CONFIG_DEFAULTS } from '../src/pilotConfig.js';
 
 const snapshot = (exists: boolean, data?: DocumentData): DocumentSnapshot => ({
   exists,
@@ -792,6 +795,55 @@ describe('card persistence', () => {
     expect(() => canonicalCard({ ...card, origin: 'imported' })).toThrow(/origin/i);
   });
 
+  it('strips credentials, query and fragment from a captured source url and bounds its other fields', () => {
+    const result = canonicalCard({
+      ...card,
+      source: {
+        url: 'https://user:pass@example.com/article?utm=1&ref=share#section-2',
+        title: '  An Example Article  ',
+        context: 'The captured sentence around the word.',
+        capturedAt: '2026-09-27T00:00:00.000Z',
+      },
+    });
+    expect(result.source).toEqual({
+      url: 'https://example.com/article',
+      title: 'An Example Article',
+      context: 'The captured sentence around the word.',
+      capturedAt: '2026-09-27T00:00:00.000Z',
+    });
+  });
+
+  it('rejects a non-http(s) captured source url and an unsupported source field', () => {
+    expect(() => canonicalCard({ ...card, source: { url: 'javascript:alert(1)' } })).toThrow(/url/i);
+    expect(() => canonicalCard({ ...card, source: { url: 'ftp://example.com/file' } })).toThrow(/url/i);
+    expect(() => canonicalCard({ ...card, source: { forged: 'value' } })).toThrow(/unsupported/i);
+  });
+
+  it('rejects an oversized captured source title, context, or url', () => {
+    expect(() => canonicalCard({ ...card, source: { title: 'x'.repeat(257) } })).toThrow(/title/i);
+    expect(() => canonicalCard({ ...card, source: { context: 'x'.repeat(501) } })).toThrow(/context/i);
+    expect(() => canonicalCard({
+      ...card,
+      source: { url: `https://example.com/${'x'.repeat(2_048)}` },
+    })).toThrow(/url/i);
+  });
+
+  it('rejects a captured source object that is not a plain object', () => {
+    expect(() => canonicalCard({ ...card, source: 'https://example.com/' })).toThrow(/object/i);
+    expect(() => canonicalCard({ ...card, source: ['https://example.com/'] })).toThrow(/object/i);
+  });
+
+  it('rejects an invalid captured-at value and normalizes a valid one to ISO', () => {
+    expect(() => canonicalCard({ ...card, source: { capturedAt: 'not-a-date' } })).toThrow(/capturedAt/i);
+    const result = canonicalCard({ ...card, source: { capturedAt: '2026-09-27' } });
+    expect(result.source).toEqual({ capturedAt: '2026-09-27T00:00:00.000Z' });
+  });
+
+  it('collapses an all-empty captured source to undefined and leaves a legacy card without one', () => {
+    expect(canonicalCard({ ...card, source: { url: '', title: '' } }).source).toBeUndefined();
+    expect(canonicalCard(card).source).toBeUndefined();
+  });
+
   it('accepts only a complete canonical tuple whose lexeme id matches', () => {
     const valid = canonicalCard({
       ...card, word: 'lead', normalizedWord: 'lead', partOfSpeech: 'noun',
@@ -803,5 +855,90 @@ describe('card persistence', () => {
       ...card, word: 'lead', normalizedWord: 'lead', partOfSpeech: 'noun',
       lexemeId: 'lexeme-forged', language: 'en', senseKey: 'metal',
     })).toThrow(/lexeme identity/i);
+  });
+});
+
+describe('starter card allocation', () => {
+  const now = new Date('2026-09-27T04:00:00.000Z');
+  const config = PILOT_CONFIG_DEFAULTS;
+  const starterBatch = [
+    { word: 'hello', translation: 'xin chào', language: 'en', translationLanguage: 'vi', origin: 'manual' as const },
+    { word: 'thank you', translation: 'cảm ơn', language: 'en', translationLanguage: 'vi', origin: 'manual' as const },
+    { word: 'water', translation: 'nước', language: 'en', translationLanguage: 'vi', origin: 'manual' as const },
+    { word: 'friend', translation: 'bạn', language: 'en', translationLanguage: 'vi', origin: 'manual' as const },
+    { word: 'love', translation: 'yêu', language: 'en', translationLanguage: 'vi', origin: 'manual' as const },
+  ];
+  const requestHashFor = (batch: readonly unknown[]) => createHash('sha256')
+    .update(JSON.stringify(batch.map(item => canonicalCard(item).id)))
+    .digest('hex');
+
+  it('reserves one quota unit per card and creates every card in a single transaction', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+    ]));
+
+    const result = await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
+
+    expect(result.kind).toBe('created');
+    expect(result.cardIds).toHaveLength(5);
+    const usageWrite = harness.writes.find(write => write.path.startsWith('users/owner/ai_usage/'));
+    expect(usageWrite?.data).toMatchObject({ used: 5, tier: 'free' });
+    const usageResourceWrite = harness.writes.find(write => write.path === 'users/owner/profile/resource_usage');
+    expect(usageResourceWrite?.data).toMatchObject({ cardCount: 5 });
+    const operationWrite = harness.writes.find(write => write.path === 'users/owner/ai_operations/onboarding-op-1');
+    expect(operationWrite?.data).toMatchObject({ status: 'completed', result: result.cardIds });
+    const cardWrites = harness.writes.filter(write => write.path.startsWith('users/owner/cards/'));
+    expect(cardWrites).toHaveLength(5);
+    const reservationWrites = harness.writes.filter(write => write.path.startsWith('users/owner/card_reservations/'));
+    expect(reservationWrites).toHaveLength(5);
+  });
+
+  it('replays an already-completed operation without spending quota or writing cards again', async () => {
+    const cardIds = starterBatch.map(item => canonicalCard(item).id);
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/ai_operations/onboarding-op-1', snapshot(true, {
+        status: 'completed', requestHash: requestHashFor(starterBatch), result: cardIds,
+      })],
+    ]));
+
+    const result = await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
+
+    expect(result).toEqual({ kind: 'completed', cardIds });
+    expect(harness.writes).toHaveLength(0);
+  });
+
+  it('rejects a retried operationId whose card batch no longer matches what it originally completed', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/ai_operations/onboarding-op-1', snapshot(true, {
+        status: 'completed', requestHash: 'stale-hash-from-a-different-batch', result: ['word-hello'],
+      })],
+    ]));
+
+    await expect(createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config))
+      .rejects.toBeInstanceOf(AiQuotaError);
+  });
+
+  it('refuses the batch once it would push monthly usage past the free-tier limit', async () => {
+    const periodKey = `free-${now.toISOString().slice(0, 7)}`;
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      [`users/owner/ai_usage/${periodKey}`, snapshot(true, { used: 27, limit: 30, tier: 'free' })],
+    ]));
+
+    await expect(createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config))
+      .rejects.toMatchObject({ reason: 'ai-card-quota' });
+    expect(harness.writes).toHaveLength(0);
+  });
+
+  it('refuses the batch once it would push the owner past the total card allocation limit', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+    ]), 4_998);
+
+    await expect(createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config))
+      .rejects.toBeInstanceOf(CardAllocationLimitError);
+    expect(harness.writes).toHaveLength(0);
   });
 });

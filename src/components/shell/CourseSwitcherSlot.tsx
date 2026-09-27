@@ -1,12 +1,22 @@
-import type { ReactNode } from 'react';
+import { lazy, Suspense } from 'react';
+import { useCourseSession } from '../../features/courses/CourseGate';
+
+const CourseSwitcherControl = lazy(() => import('./CourseSwitcherControl').then(module => ({ default: module.CourseSwitcherControl })));
 
 export interface CourseSwitcherSlotProps {
   readonly signedIn: boolean;
-  readonly children?: ReactNode;
 }
 
-/** Holds real course-switcher UI once its data and action contract lands. */
-export function CourseSwitcherSlot({ signedIn, children }: CourseSwitcherSlotProps) {
-  if (!signedIn || !children) return null;
-  return <div className="claude-course-switcher-slot hidden min-w-0 items-center xl:flex">{children}</div>;
+/**
+ * The real course switcher: a desktop popover / mobile bottom sheet driven
+ * by `CourseGate`. Its own module stays a thin lazy-mount wrapper so the
+ * icons, forms and goal panel inside `CourseSwitcherControl` never enter the
+ * initial bundle; they load once, the first time a signed-in owner renders it.
+ */
+export function CourseSwitcherSlot({ signedIn }: CourseSwitcherSlotProps) {
+  const { model } = useCourseSession();
+  if (!signedIn || model.status !== 'ready') return null;
+  return <div className="claude-course-switcher-slot flex min-w-0 items-center">
+    <Suspense fallback={null}><CourseSwitcherControl /></Suspense>
+  </div>;
 }

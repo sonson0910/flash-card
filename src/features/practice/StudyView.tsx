@@ -26,7 +26,7 @@ interface StudyViewProps {
   recallMode: RecallMode;
   revealed: boolean;
   reviewedCardId: string | null;
-  reviewStatus?: 'idle' | 'saving' | 'sync-pending' | 'saved' | 'error';
+  reviewStatus?: 'idle' | 'saving' | 'saved' | 'error';
   reviewError?: string | null;
   paused?: boolean;
   customDecks: string[];
@@ -148,7 +148,6 @@ export function StudyView({
   const [sessionAgainCount, setSessionAgainCount] = useState(0);
   const [weakCards, setWeakCards] = useState<CardData[]>([]);
   const [showRecap, setShowRecap] = useState(false);
-  const [provisionalReviewPending, setProvisionalReviewPending] = useState(false);
   const [lumiReaction, setLumiReaction] = useState<LumiPose | null>(null);
   const ratingInFlightRef = useRef(false);
 
@@ -218,11 +217,6 @@ export function StudyView({
     ratingInFlightRef.current = true;
     try {
       const settlement = await onRate(rating);
-      if (settlement === 'sync-pending') {
-        setProvisionalReviewPending(true);
-        if (index < cards.length - 1) onIndex(index + 1);
-        return;
-      }
       if (settlement !== 'committed') return;
 
       if (
@@ -363,16 +357,11 @@ export function StudyView({
         <ReviewControls
           revealed={revealed}
           reviewed={reviewedCardId === card.id}
-          saving={reviewStatus === 'saving' || reviewStatus === 'sync-pending'}
+          saving={reviewStatus === 'saving'}
           error={reviewError}
           lastRating={card.reviewHistory?.at(-1)?.rating}
           onRate={handleRating}
         />
-        {(reviewStatus === 'sync-pending' || provisionalReviewPending) && (
-          <p data-study-provisional className="mt-2 text-center text-sm font-semibold text-[var(--sf-text-muted)]" role="status">
-            <Trans id="study.sync-pending" message="Review saved on this device and waiting to sync." />
-          </p>
-        )}
       </div>
 
       <div className="flex items-center gap-4 sm:gap-6">

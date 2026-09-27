@@ -51,9 +51,20 @@ html[data-theme-family="crystal"] .landing-card > div:last-child { clip-path: po
 .crystal-demo-left { top: 29%; left: 18%; transform: rotate(-14deg); opacity: .9; }
 .crystal-demo-right { top: 25%; right: 2%; transform: rotate(14deg); opacity: .9; }
 .crystal-demo-main { z-index: 2; top: 14%; left: 57%; transform: translateX(-50%); box-shadow: inset 0 0 0 3px #ffe28c, 0 30px 45px -18px #000; }
-.crystal-hero-lumi { position: absolute; z-index: 3; bottom: 50px; left: -14%; width: 225px; height: 575px; max-width: none; object-fit: contain; filter: drop-shadow(0 12px 18px rgb(0 0 0 / .6)); }
+/* At 1440px (the smallest width this shows at — see the display:none rule
+   below) .crystal-card-stage is 720px, headline text ends at ~643px in the
+   viewport, and .crystal-demo-left's rotated bounding box starts at ~815.5px
+   — a ~172px gap. The original 225px width didn't fit either side at
+   `left: -14%`; shrunk to fit both with a margin. */
+.crystal-hero-lumi { position: absolute; z-index: 3; bottom: 50px; left: -8%; width: 140px; height: 355px; max-width: none; object-fit: contain; filter: drop-shadow(0 12px 18px rgb(0 0 0 / .6)); }
 .crystal-ribbon { position: absolute; right: -5%; bottom: 14px; left: -5%; display: flex; justify-content: center; gap: clamp(20px, 5vw, 76px); height: 58px; padding: 0 36px; overflow: hidden; transform: skewY(-1.5deg); background: var(--sf-brand); box-shadow: 0 0 32px color-mix(in srgb, var(--sf-brand) 65%, transparent); color: var(--sf-on-brand); font-family: var(--sf-font-display, Geist, sans-serif); font-size: .9rem; font-style: italic; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; align-items: center; white-space: nowrap; }
 html[data-theme-family="crystal"] .landing-atmospheres { display: none; }
 html[data-theme-family="crystal"] .landing-header { transform: translateY(-20px); }
+/* Below 1440px the hero grid has too little width for Lumi to sit beside the
+   headline/demo card without overlapping either — hide it rather than
+   shrinking it further (the two blocks below only resize it for viewports
+   that predate this rule; `display: none` here always wins for that one
+   property regardless of source order, since none of them set `display`). */
+@media (max-width: 1399px) { .crystal-hero-lumi { display: none; } }
 @media (max-width: 900px) { .crystal-landing-hero { width: 100%; height: auto; min-height: 720px; margin: 0; grid-template-columns: 1fr; row-gap: 28px; padding: 42px 0 76px; } .crystal-card-stage { min-height: 330px; margin-top: 0; overflow: hidden; } .crystal-demo-card { width: 160px; height: 215px; padding: 12px; } .crystal-demo-card strong { font-size: 1.45rem; } .crystal-demo-left { left: 18%; } .crystal-demo-right { right: 4%; } .crystal-demo-main { left: 57%; } .crystal-hero-lumi { left: 4%; width: 135px; height: 340px; } }
 @media (max-width: 639px) { .crystal-landing-hero { min-height: 720px; padding-bottom: 72px; } .crystal-copy { min-width: 0; padding-left: 0; } .crystal-copy h1 { max-width: 100%; font-size: clamp(3rem, 16vw, 4rem); overflow-wrap: anywhere; } .crystal-tagline { font-size: 1.35rem; } .crystal-description { max-width: 21rem; font-size: .93rem; } .crystal-actions { display: grid; grid-template-columns: 1fr; max-width: 18rem; margin-top: 20px; } .crystal-primary, .crystal-secondary { width: 100%; min-height: 48px; padding-inline: 14px; font-size: .78rem; white-space: nowrap; justify-content: center; } .crystal-card-stage { min-width: 0; min-height: 290px; overflow: hidden; } .crystal-demo-card { width: 142px; height: 205px; } .crystal-demo-left { left: 2%; } .crystal-demo-main { left: 57%; } .crystal-demo-right { display: none; } .crystal-hero-lumi { bottom: 8px; left: 3%; width: 116px; height: 305px; } .crystal-ribbon { justify-content: flex-start; gap: 30px; font-size: .72rem; } }

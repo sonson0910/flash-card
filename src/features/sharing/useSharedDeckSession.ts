@@ -3,6 +3,7 @@ import {
   createSharedDeckSessionController,
   type SharedDeckAdapter,
   type SharedDeckBrowser,
+  type SharedDeckCoursePort,
   type SharedDeckIntakePort,
   type SharedDeckSessionActions,
   type SharedDeckSessionSnapshot,
@@ -22,6 +23,8 @@ export interface UseSharedDeckSessionOptions {
   adapter: SharedDeckAdapter;
   intake: SharedDeckIntakePort;
   browser?: SharedDeckBrowser;
+  /** Optional; omit to keep today's behavior. See `shareCourseMatching.ts`. */
+  coursePort?: SharedDeckCoursePort | null;
 }
 
 export interface UseSharedDeckSessionResult {
@@ -34,10 +37,11 @@ export function useSharedDeckSession({
   adapter,
   intake,
   browser = windowBrowser,
+  coursePort = null,
 }: UseSharedDeckSessionOptions): UseSharedDeckSessionResult {
   const controller = useMemo(
-    () => createSharedDeckSessionController({ adapter, intake, browser }),
-    [adapter, browser, intake],
+    () => createSharedDeckSessionController({ adapter, intake, browser, coursePort }),
+    [adapter, browser, intake, coursePort],
   );
   const model = useSyncExternalStore(
     controller.subscribe,

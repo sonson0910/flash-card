@@ -157,7 +157,6 @@ export default function CatalogWorkspace({
   const readyStatus = useCallback((releaseId: string): WorkspaceStatus => ({
     kind: 'ready',
     isOnline,
-    isAvailableOffline: true,
     message: i18n._(copy.ready.id, { releaseId }),
     messageKey: 'ready', messageValues: { releaseId },
   }), [isOnline]);

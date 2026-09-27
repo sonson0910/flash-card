@@ -40,3 +40,9 @@ test('options exposes a Classic/Crystal Star theme family choice that persists t
   assert.match(source, /checkedThemeFamily/);
   assert.match(source, /themeFamily:\s*checkedThemeFamily/);
 });
+
+test('ports Crystal Star chamfered corners onto the card shell, inputs and buttons, but not the base rules', () => {
+  assert.match(css, /:root\[data-theme-family="crystal"\] fieldset\s*\{[^}]*clip-path:\s*var\(--sf-chamfer\)/);
+  assert.match(css, /:root\[data-theme-family="crystal"\][^{]*\.save-button[^{]*\{[^}]*clip-path:\s*var\(--sf-chamfer-sm\)/);
+  assert.doesNotMatch(css, /^fieldset\s*\{[^}]*clip-path/m);
+});

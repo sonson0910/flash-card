@@ -101,6 +101,46 @@ const normalizeWordFamily = (value: unknown): CardData['wordFamily'] => {
   ) as CardData['wordFamily'];
 };
 
+/**
+ * Defense in depth on the read side: the server already strips credentials,
+ * query, and fragment and rejects non-http(s) schemes before persistence
+ * (`parseCardSourceMetadata` in `functions/src/inputValidation.ts`), but a
+ * read path never trusts stored data blindly either.
+ */
+const trustedSourceUrl = (value: unknown): string => {
+  const text = boundedText(value, 2048);
+  if (!text) return '';
+  let url: URL;
+  try {
+    url = new URL(text);
+  } catch {
+    return '';
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
+  url.username = '';
+  url.password = '';
+  url.search = '';
+  url.hash = '';
+  const serialized = url.toString();
+  return serialized.length <= 2048 ? serialized : '';
+};
+
+const normalizeCardSource = (value: unknown): CardData['source'] => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const source = value as Record<string, unknown>;
+  const url = trustedSourceUrl(source.url);
+  const title = boundedText(source.title, 256);
+  const context = boundedText(source.context, 500);
+  const capturedAt = validIsoDate(source.capturedAt);
+  if (!url && !title && !context && !capturedAt) return undefined;
+  return {
+    ...(url ? { url } : {}),
+    ...(title ? { title } : {}),
+    ...(context ? { context } : {}),
+    ...(capturedAt ? { capturedAt } : {}),
+  };
+};
+
 const validDifficulties = new Set(['easy', 'good', 'hard', 'unrated']);
 const validRatings = new Set(['again', 'hard', 'good', 'easy']);
 
@@ -222,5 +262,6 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
     reviewHistory: normalizeReviewHistory(raw.reviewHistory),
     appliedReviewOperationIds: normalizeReviewOperationIds(raw.appliedReviewOperationIds),
     fsrs: normalizeFsrs(raw.fsrs),
+    source: normalizeCardSource(raw.source),
   };
 }

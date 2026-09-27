@@ -88,3 +88,33 @@ msgstr "Đăng ký mua khi mở bán"
 #: src/features/billing/UpgradeDialog.tsx:46
 msgid "billing.upgrade.title"
 msgstr "Thêm nhịp cho việc học"
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:27
+msgid "plan.usage.exhausted"
+msgstr "Bạn đã dùng hết lượt tạo thẻ bằng AI. Hạn mức làm mới {reset}. Bạn vẫn có thể ôn tập, tự thêm thẻ và xuất dữ liệu."
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:28
+msgid "plan.usage.exhausted.pro-hint"
+msgstr "Gói Pro có thêm lượt tạo thẻ."
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:21
+msgid "plan.usage.label"
+msgstr "Thẻ AI"
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:25
+msgid "plan.usage.period.free"
+msgstr "{used} / {limit} thẻ AI trong tháng này"
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:24
+msgid "plan.usage.period.pro"
+msgstr "{used} / {limit} thẻ AI của gói Pro"
+
+#. js-lingui-explicit-id
+#: src/features/plan/PlanUsageMeter.tsx:33
+msgid "plan.usage.view-pro"
+msgstr "Xem gói Pro"

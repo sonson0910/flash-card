@@ -23,7 +23,7 @@ export function useLibraryMutationFeedback({
   const deleteCard = useCallback(async (id: string) => {
     try {
       const outcome = await commands.deleteCard(id);
-      if (outcome.status !== 'published' && outcome.status !== 'durably-queued') return;
+      if (outcome.status !== 'published') return;
       const token = outcome.result.undoToken;
       if (!token) return;
       offerUndo(token.ownerId, {
@@ -32,7 +32,7 @@ export function useLibraryMutationFeedback({
         subject: token.card.word,
         onUndo: () => {
           void commands.restoreCard(token).then(restored => {
-            if (activeOwnerIdRef.current === token.ownerId && restored.status !== 'published' && restored.status !== 'durably-queued') {
+            if (activeOwnerIdRef.current === token.ownerId && restored.status !== 'published') {
               reportError(_(msg({ id: 'shell.undo.restore-failed', message: 'This card could not be restored. Please check your library and try again.' })));
             }
           }).catch(() => {
