@@ -2,7 +2,7 @@ import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { Check, Loader2, X } from 'lucide-react';
+import { Check, ImageOff, Loader2, X } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
@@ -363,6 +363,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
                       <div className="mt-1.5 flex min-w-0 gap-1.5">
                         <input
                           data-edit-word-input
+                          aria-label={_(msg({ id: 'library.edit-card.word', message: 'Word' }))}
                           value={wordDraft}
                           lang={targetLanguage}
                           dir="auto"
@@ -400,6 +401,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
                     {canEditPartOfSpeech(openedCard) ? (
                       <input
                         data-edit-partofspeech-input
+                        aria-label={_(msg({ id: 'library.edit-card.part-of-speech', message: 'Part of speech' }))}
                         value={draft.partOfSpeech}
                         maxLength={MAX_PART_OF_SPEECH_LENGTH}
                         onChange={event => {
@@ -418,7 +420,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="block min-w-0">
+                  <label className="block min-w-0 sm:col-span-2">
                     <span className="block text-xs font-black uppercase tracking-[.12em] text-[var(--sf-text-muted)]"><Trans id="library.edit-card.category" message="Category" /></span>
                     <input
                       data-edit-category-input
@@ -431,13 +433,13 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
                       className="mt-1.5 min-h-11 w-full rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 text-sm text-[var(--sf-text)] outline-none focus-visible:border-[var(--sf-brand)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--sf-brand)_24%,transparent)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
                     />
                   </label>
-                  <div className="min-w-0">
+                  <div className="min-w-0 sm:col-span-2">
                     <span className="block text-xs font-black uppercase tracking-[.12em] text-[var(--sf-text-muted)]"><Trans id="library.edit-card.image" message="Image" /></span>
                     <div className="mt-1.5 flex min-w-0 items-center gap-2">
                       {draft.imageUrl ? (
                         <img src={getDisplayImageUrl(draft.imageUrl)} alt="" className="size-11 shrink-0 rounded-[calc(var(--sf-card-radius)*.65)] object-cover [html[data-theme-family=crystal]_&]:crystal-chamfer-sm" />
                       ) : (
-                        <div aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-[calc(var(--sf-card-radius)*.65)] border border-dashed border-[var(--sf-border)] text-[10px] font-black uppercase text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><Trans id="library.edit-card.no-image" message="No image" /></div>
+                        <div aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-[calc(var(--sf-card-radius)*.65)] border border-dashed border-[var(--sf-border)] text-[10px] font-black uppercase text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><ImageOff size={16} /></div>
                       )}
                       <button
                         type="button"
