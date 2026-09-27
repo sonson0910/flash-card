@@ -49,6 +49,11 @@ msgid "settings.course.meaning-language"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:57
+msgid "settings.course.meaning-language.scope"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/features/settings/CourseSettingsSection.tsx:65
 msgid "settings.course.pace"
 msgstr ""

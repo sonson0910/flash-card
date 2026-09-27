@@ -54,7 +54,7 @@ export function CourseSettingsSection() {
       </label>
 
       {activeCourse && <label className={rowClass}>
-        <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.meaning-language" message="Meaning language" /></span>
+        <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.meaning-language" message="Meaning language" /><span className="block text-xs font-normal text-[var(--sf-text-muted)]"><Trans id="settings.course.meaning-language.scope" message="Applies to new cards. Existing card meanings do not change." /></span></span>
         <select className={selectClass} value={activeCourse.nativeLanguage} onChange={event => void actions.updateCourse(activeCourse.id, { nativeLanguage: event.target.value as CourseNativeLanguage })}>
           {COURSE_NATIVE_LANGUAGES.map(language => <option key={language} value={language}>{_(NATIVE_LANGUAGE_LABEL[language])}</option>)}
         </select>

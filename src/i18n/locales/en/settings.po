@@ -49,6 +49,11 @@ msgid "settings.course.meaning-language"
 msgstr "Meaning language"
 
 #. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:57
+msgid "settings.course.meaning-language.scope"
+msgstr "Applies to new cards. Existing card meanings do not change."
+
+#. js-lingui-explicit-id
 #: src/features/settings/CourseSettingsSection.tsx:65
 msgid "settings.course.pace"
 msgstr "Daily pace"

@@ -49,6 +49,11 @@ msgid "settings.course.meaning-language"
 msgstr "Ngôn ngữ giải nghĩa"
 
 #. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:57
+msgid "settings.course.meaning-language.scope"
+msgstr "Chỉ áp dụng cho thẻ mới. Nghĩa của thẻ hiện có không thay đổi."
+
+#. js-lingui-explicit-id
 #: src/features/settings/CourseSettingsSection.tsx:65
 msgid "settings.course.pace"
 msgstr "Nhịp học mỗi ngày"
