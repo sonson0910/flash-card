@@ -237,3 +237,14 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
 - Phát hiện khi nối nút: `buildDailyPlan` (`dailyPlan.ts`) đã nhận mọi thẻ mới (tối đa 15) và `fetchPracticeCards` tải mọi thẻ `unrated`. Trạng thái caught-up chỉ xảy ra khi plan rỗng mà pool có thẻ, tức là pool không còn thẻ mới. Nhánh "bật khi còn thẻ mới" không bao giờ tới được.
 - Controller đổi: nút chính caught-up thành "Add vocabulary" (luôn bật, mở màn thêm từ), giữ "Browse paths" làm nút phụ, bỏ cờ `availableNewCount` và chuỗi `today.caught-up.learn-new`/`lesson-unavailable`. Không thêm lượt đọc Firestore.
 - Owner đồng ý ngày 2026-09-27: dùng "Add vocabulary", không đổi `buildDailyPlan`.
+
+## 2026-09-27 — Owner duyệt card edit đã triển khai
+
+- Owner duyệt implementation `EditCardDialog` đã có trong commit `58fb195`
+  sau khi đọc [contract-card-edit-mutations.md](contract-card-edit-mutations.md).
+  Headword rename giới hạn 30 lần/giờ; canonical part-of-speech switch,
+  scheduling reset và arbitrary image upload không thuộc phạm vi đã duyệt.
+- Cost thực tế của callable cao hơn ước tính cũ: headword rename đọc 5 document,
+  ghi 2 (legacy đổi normalized identity: đọc 7, ghi tối đa 4); category đổi
+  dùng 1 card write rồi facets callable đọc 7, ghi thêm 4 document ở lần đầu.
+  Đây là cost của code đã tồn tại, không thêm read/write trong lần xác minh này.

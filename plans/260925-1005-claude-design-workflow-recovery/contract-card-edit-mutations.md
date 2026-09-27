@@ -5,10 +5,12 @@ status: implemented
 
 # Contract: card edit sheet mutations
 
-Written before code, per the 08.7 split from 04.7. `EditCardDialog.tsx` now
-renders a live control for every field this contract scopes in (headword,
-legacy part-of-speech, category, image remove/replace); the sections below
-are kept as the historical spec.
+Written before code, per the 08.7 split from 04.7. The owner approved the
+existing implementation on 2026-09-27 after reviewing this contract.
+`EditCardDialog.tsx` exposes headword, legacy part-of-speech, category, and
+image remove/replace. Canonical part-of-speech switching and scheduling reset
+remain outside this contract. The implementation notes and cost table below
+supersede any older proposal wording elsewhere in this document.
 
 ## Implementation notes (2026-09-27)
 
@@ -71,6 +73,28 @@ are kept as the historical spec.
   allowlist as card creation) and patches `imageUrl`/`imageSearchQuery`
   together in the same `updateCard` call.
 
+## Implemented Firestore cost per action
+
+These counts describe the explicit SDK operations in the current code, before
+transaction retries and Rules document-access charges. Opening the sheet adds
+no read. The existing card update path and image lookup are not new storage
+paths introduced by this contract.
+
+| Action | Explicit reads | Explicit writes |
+|---|---:|---:|
+| Save ordinary fields, legacy part of speech, or image | 0 new server reads; existing direct card update | 1 card `updateDoc` |
+| Rename headword, canonical card or unchanged legacy identity | 5: account tombstone, rename rate-limit document, migration fence, library state, card | 2: rate-limit document, card |
+| Rename legacy headword with changed normalized identity | 7: the five above plus old and new reservation documents | 2–4: rate-limit document, card, and conditional new-reservation create/old-reservation delete |
+| Change category | 7 server reads after the card update: account tombstone, receipt preflight, facet rate-limit document, transaction receipt, migration fence, facets document, receipt-list document | 5: card `updateDoc`, rate-limit document, facets document, receipt-list document, receipt create |
+
+The category mirror callable is fire-and-forget after a successful card save;
+its receipt prevents duplicate facet deltas for a retried operation. A replay
+with an existing receipt returns after its preflight read and skips the budget
+and transaction. A rejected rate limit or conflict can consume fewer
+operations. Firestore may retry transactions, repeating their reads. Image
+search uses the existing provider flow; its provider and callable costs are
+separate from the card write.
+
 ## What already works (baseline, unaffected)
 
 `src/features/cardEdit/editCardModel.ts` (`EDIT_CARD_FIELDS`) already edits
@@ -100,15 +124,13 @@ control for these fields yet, and (b) `firestore.rules` actively rejecting
 some of them today (see per-field tables below) — verified by reading the
 current rule bodies, not assumed.
 
-## Write count and conflict behavior (applies to every field below)
+## Original write proposal and conflict behavior
 
-- **One card-document write per save, plus one bounded facets-mirror write
-  only when `category` actually changes value.** A save always produces
-  exactly one `updateDoc` on the single `users/{uid}/cards/{cardId}` document,
-  whatever subset of fields changed — `buildPatch` already coalesces the
-  whole dirty-field set from one form into one `MutationPlan`/one publication
-  (`learningStateController.ts:347-358`). That covers headword,
-  part-of-speech, `customDeck`, difficulty/scheduling, and image.
+- **The original single-write estimate is superseded by the implemented cost
+  table above.** The ordinary editable fields still coalesce into one
+  `updateDoc` on `users/{uid}/cards/{cardId}` via `buildPatch`
+  (`learningStateController.ts:347-358`). Headword uses a separate callable;
+  difficulty/scheduling reset is out of scope.
   - **Exception: `category`.** There is a real second document,
     `users/{uid}/profile/library_facets` (`src/lib/cardRepository.ts:458-459`,
     `loadLibraryFacets`), a per-owner category→count mirror used to render
@@ -127,7 +149,8 @@ current rule bodies, not assumed.
     already wired at `src/app/appDependencies.ts:49-58`, or the
     `LearningPersistenceOptions.updateCategoryFacets` hook already threaded
     into `useLearningStatePersistence`) with `{ [old]: -1, [new]: +1 }` in the
-    **same call** (one delta object, one facets-doc write), using a
+    **same call** (one delta object; see the actual receipt and budget writes
+    above), using a
     deterministic operationId derived from the card-patch operationId (same
     pattern as `deriveLibraryFacetOperationId(mutation.operationId, 'delete')`
     at line 293, e.g. `deriveLibraryFacetOperationId(operationId, 'category-edit')`)
@@ -137,7 +160,7 @@ current rule bodies, not assumed.
     it is skipped entirely (no second write) when `category` is unchanged or
     when the new value equals the old value. No fan-out exists for any other
     field in this contract — headword, part-of-speech, `customDeck`,
-    difficulty/scheduling, and image all stay single-write
+    image stays single-write
     (see "Headword" below for the one further exception: a *rename*
     additionally needs a reservation-document swap, which is a second
     document in the same transaction, not a second card write).
@@ -254,7 +277,7 @@ review of what "reset" should mean for `reviewHistory` (truncate vs keep).
 
 | Action | Today | Contract |
 |---|---|---|
-| Remove (set `null`) | Already allowed: `firestore.rules:716-723` accepts `imageUrl == null` unconditionally. | **No gap.** Add a "remove image" control that patches `{ imageUrl: null, imageSearchQuery: undefined }` through the existing `updateCard` path. |
+| Remove (set `null`) | Already allowed: `firestore.rules:716-723` accepts `imageUrl == null` unconditionally. | **Implemented:** the control patches `{ imageUrl: null, imageSearchQuery: '' }` through the existing `updateCard` path. |
 | Replace with a new image | `isTrustedImageUrl` (`firestore.rules:29-33`) only accepts `https://images.pexels.com/...`, `https://images.unsplash.com/...`, or `https://upload.wikimedia.org/...` — a fixed allowlist of the same stock-photo providers card creation already searches. No arbitrary upload is possible through a direct client write. | **Editable now, scoped to "search again, pick a different stock photo."** Reuse the existing image-search flow already used at card creation (same provider allowlist, same trusted-domain check) to let the user pick a replacement from the same three domains, then patch `imageUrl`/`imageSearchQuery` through `updateCard`. A genuine user-uploaded custom image is a different feature (Storage bucket + upload endpoint + a new Rules domain/path), explicitly out of this contract. |
 
 ## Rules allowlist impact summary
@@ -272,9 +295,8 @@ review of what "reset" should mean for `reviewHistory` (truncate vs keep).
 
 ## What this contract does not do
 
-- It does not implement any of the above. `EditCardDialog.tsx` keeps
-  `data-edit-contract-note` until each row above is built by whichever lane
-  owns `src/features/cardEdit/**`, `functions/**`, and `firestore.rules`.
+- It does not add a canonical-card part-of-speech switch, a scheduling reset,
+  or an arbitrary image upload. Those need separate contracts.
 - It does not re-litigate 08.2's R10 decision (`language`/`translationLanguage`
   independent of lexeme identity, already implemented — see
   `src/features/multilingual/lexemeIdentity.ts:3-8`); this contract only adds
