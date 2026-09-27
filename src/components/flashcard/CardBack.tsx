@@ -82,7 +82,7 @@ export function CardBack({
 
           <CardEffectsLayer spotlightRef={spotlightRef} isHovered={isHovered} spotlightBackground={spotlightBackground} holo tier={tier} />
           <div className="pointer-events-none absolute -bottom-20 -right-20 size-72 rounded-full border border-slate-200/40 bg-slate-100/20 dark:border-white/10 dark:bg-white/5" aria-hidden="true" />
-          <div className={`absolute top-5 flex flex-wrap items-center gap-2 ${canDelete ? 'left-16' : 'left-5'}`}>
+          <div className={`absolute top-5 z-20 flex flex-wrap items-center gap-2 ${canDelete ? 'left-16' : 'left-5'}`}>
             <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300">
               <Languages size={13} aria-hidden="true" /> <Trans id="flashcard.language.vietnamese" message="Vietnamese" />
             </div>
@@ -96,7 +96,7 @@ export function CardBack({
               )}
           </div>
           <div data-card-content="revealed" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4 pt-16 text-center scrollbar-thin sm:px-7">
-            <section data-card-section="meaning" aria-labelledby={`flashcard-meaning-${data.id}`} className="flashcard-meaning-card relative w-full overflow-hidden rounded-[28px] px-4 pb-4 pt-4 sm:px-5">
+            <section data-card-section="meaning" aria-labelledby={`flashcard-meaning-${data.id}`} className="relative mx-auto w-full max-w-xl px-1 pb-3 pt-2 text-center sm:px-3">
               <p id={`flashcard-meaning-${data.id}`} className="relative text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300"><Trans id="flashcard.meaning.vietnamese" message="Vietnamese meaning" /></p>
               <h2 data-translation-reveal lang={data.translationLanguage || 'vi'} className="flashcard-translation-gradient flashcard-translation-reveal relative mt-1 break-words text-balance text-3xl font-black tracking-[-0.04em] drop-shadow-xs first-letter:uppercase [overflow-wrap:anywhere] sm:text-4xl">
                 {data.translation}
@@ -106,15 +106,9 @@ export function CardBack({
                   <Trans id="flashcard.ai-disclosure" message="AI-generated content may be incorrect. Please check the meaning." />
                 </p>
               )}
-              {isAccountSignedIn() && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowReportDialog(true)} className="relative mt-1 min-h-11 px-3 text-xs font-bold text-rose-800 underline underline-offset-4 dark:text-rose-200">
-                <Trans id="flashcard.report" message="Report incorrect card" />
-              </button>}
-              {onUpdateCard && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowEditDialog(true)} className="relative mt-1 min-h-11 px-3 text-xs font-bold text-cyan-800 underline underline-offset-4 dark:text-cyan-200"><Trans id="flashcard.edit" message="Edit card" /></button>}
-              <div className="relative mt-3 flex items-center justify-between gap-3 rounded-[20px] border border-slate-200 bg-slate-50/90 dark:border-white/12 dark:bg-slate-950/20 px-3.5 py-2 text-left shadow-xs">
-                <div className="min-w-0">
-                  <p className="text-[9px] font-black uppercase tracking-[0.17em] text-slate-500 dark:text-slate-400"><Trans id="flashcard.original-word" message="Original word" /></p>
-                  <p lang={data.language || 'en'} className="break-words text-base font-black text-slate-900 dark:text-white [overflow-wrap:anywhere] sm:text-lg">{data.word}</p>
-                </div>
+              <div className="relative mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
+                <p className="sr-only"><Trans id="flashcard.original-word" message="Original word" /></p>
+                <p lang={data.language || 'en'} className="break-words text-base font-black text-slate-900 dark:text-white [overflow-wrap:anywhere] sm:text-lg">{data.word}</p>
                 <div className="flex shrink-0 items-center gap-2">
                   <div className="flex items-center rounded-full p-1 border border-slate-200/90 bg-slate-100/90 dark:border-white/15 dark:bg-white/[0.08] backdrop-blur-md shadow-xs transition-all">
                     <button
@@ -174,12 +168,16 @@ export function CardBack({
                     </button>
                   </div>
                 </div>
-               </div>
+              </div>
+              <div className="relative flex flex-wrap items-center justify-center gap-1 text-center">
+                {isAccountSignedIn() && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowReportDialog(true)} className="min-h-11 px-3 text-xs font-bold text-rose-800 underline underline-offset-4 dark:text-rose-200"><Trans id="flashcard.report" message="Report incorrect card" /></button>}
+                {onUpdateCard && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowEditDialog(true)} className="min-h-11 px-3 text-xs font-bold text-cyan-800 underline underline-offset-4 dark:text-cyan-200"><Trans id="flashcard.edit" message="Edit card" /></button>}
+              </div>
                {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-600 dark:text-rose-100" role="alert">{pronunciationError}</p>}
             </section>
 
-            <section data-card-section="explanation" aria-labelledby={`flashcard-explanation-${data.id}`} className="mt-3 flex w-full flex-col items-start rounded-[24px] border border-slate-200 bg-white/95 p-4 text-left shadow-sm dark:border-white/12 dark:bg-slate-950/40">
-              <div className="mb-3 flex items-center gap-2 border-b border-slate-200/80 pb-3 dark:border-white/10">
+            <section data-card-section="explanation" aria-labelledby={`flashcard-explanation-${data.id}`} className="mx-auto mt-4 flex w-full max-w-xl flex-col items-start text-left">
+              <div className="mb-3 flex items-center gap-2">
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/10 dark:bg-white/10 dark:text-cyan-300" aria-hidden="true"><Languages size={15} /></span>
                 <div>
                   <p id={`flashcard-explanation-${data.id}`} className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200"><Trans id="flashcard.explanation.vietnamese" message="Explanation in Vietnamese" /></p>

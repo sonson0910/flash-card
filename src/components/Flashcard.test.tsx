@@ -80,10 +80,11 @@ describe('Flashcard mobile controls', () => {
     expect(canvasStyles).toContain('html[data-motion="reduced"] .flashcard-hover-wings');
   });
 
-  it('keeps pronunciation controls left-aligned on mobile and right-aligned from sm upward', () => {
+  it('groups pronunciation controls with the front action dock', () => {
     const source = cardSurfaceSource;
 
-    expect(source).toContain('w-full shrink-0 items-center justify-start gap-2 sm:w-auto sm:justify-end sm:pt-4');
+    expect(source).toContain('mt-4 flex flex-wrap items-center gap-1 border-t');
+    expect(source).toContain('flex items-center rounded-full border border-slate-200/90 bg-slate-100/90 p-1');
   });
 
   it('keeps explanation and memory hook visible while only secondary tools are disclosed', () => {
@@ -271,7 +272,7 @@ describe('Flashcard mobile controls', () => {
     expect(source).not.toMatch(/touch-manipulation flex (?:h-8|size-8|min-h-9)/);
     expect(source).toContain('flex min-h-11 min-w-11 items-center justify-center gap-[3px]');
     expect(source).toContain('relative group inline-flex min-h-11 items-center justify-center');
-    expect(source.match(/flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-1\.5/g)).toHaveLength(2);
+    expect(source).toContain('touch-manipulation flex min-h-11 min-w-11 shrink-0 items-center justify-center');
     expect(source).toContain('liquid-control flex size-11 shrink-0 items-center justify-center rounded-full');
   });
 

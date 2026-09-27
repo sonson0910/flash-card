@@ -152,6 +152,12 @@ for (const theme of themes) {
       });
       await expectNoBlockingViolations(page);
 
+      const moreTools = shell.locator('summary[aria-label="More card tools"]');
+      await moreTools.click();
+      await expect(shell).toHaveAttribute('data-card-side', 'front');
+      await expect(shell.getByRole('button', { name: 'Read aloud' })).toBeVisible();
+      await moreTools.click();
+
       await shell.getByRole('button', { name: /Reveal the Vietnamese meaning of luminous/ }).click();
       await expect(shell).toHaveAttribute('data-card-side', 'back');
       await expect(shell.locator('.flashcard-back')).toBeVisible();

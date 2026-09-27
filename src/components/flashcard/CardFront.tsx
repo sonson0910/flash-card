@@ -76,7 +76,7 @@ export function CardFront({
     >
 
           <CardEffectsLayer spotlightRef={spotlightRef} isHovered={isHovered} spotlightBackground={spotlightBackground} holo tier={tier} />
-          <div className="group/image relative h-[44%] w-full overflow-hidden bg-transparent">
+          <div className="group/image relative h-[38%] w-full overflow-hidden bg-transparent">
             <div data-card-effect="blind-image" className={`h-full w-full transition-[filter] duration-500 ease-out ${isBlindMode ? 'scale-110 blur-2xl saturate-50' : ''}`} aria-hidden={isBlindMode}>
               {supportedImageUrl ? <CardImage src={supportedImageUrl} alt={i18n._(msg({ id: 'flashcard.image.illustration', message: 'Illustration for {word}' }).id, { word: data.word })} priority={imagePriority} /> : (
                 <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-[var(--sf-text-muted)]" role="img" aria-label={i18n._(msg({ id: 'flashcard.image.none', message: 'No image for {word}' }).id, { word: data.word })}>
@@ -89,9 +89,9 @@ export function CardFront({
             {isBlindMode && <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/22 px-6 text-center text-white backdrop-blur-md"><EyeOff size={24} /><span className="mt-2 text-sm font-bold"><Trans id="flashcard.visual-hint.hidden" message="Visual hint hidden" /></span></div>}
           </div>
 
-          <div className="relative z-20 flex min-h-0 flex-1 flex-col overflow-hidden -mt-6 rounded-b-[31px] bg-white dark:bg-[#081318]">
+          <div className="relative z-20 flex min-h-0 flex-1 flex-col overflow-hidden -mt-5 rounded-b-[31px] bg-white dark:bg-[#081318]">
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 pb-4 pt-4 scrollbar-thin sm:px-6">
-              <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
+              <div className="flex items-start">
                 <div className="min-w-0 text-left">
                   <div data-card-metadata className="mb-2.5 flex flex-wrap items-center gap-1.5 text-[10px]">
                     <span lang={data.language || 'en'}
@@ -124,64 +124,6 @@ export function CardFront({
                   </div>
                   <CardHeadword card={data} />
                 </div>
-                <div className="relative z-30 flex w-full shrink-0 items-center justify-start gap-2 sm:w-auto sm:justify-end sm:pt-4" data-card-control>
-                  {/* Dynamic Audio Capsule */}
-                  <div className="flex items-center rounded-full p-1 border border-slate-200/90 bg-slate-100/90 dark:border-white/15 dark:bg-white/[0.08] backdrop-blur-md shadow-xs transition-all">
-                    <button
-                      type="button"
-                      data-card-control
-                      onPointerDown={event => event.stopPropagation()}
-                      onClick={toggleAudioSpeed}
-                      className={`touch-manipulation flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-full px-2.5 text-xs font-black transition-all cursor-pointer ${
-                        audioSpeed === 0.75 ? 'bg-cyan-400 text-[#071014] font-extrabold shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
-                      }`}
-                      title={_(msg({ id: 'flashcard.audio.toggle-speed-detail', message: 'Toggle pronunciation speed (1.0x / 0.75x slow)' }))}
-                      aria-label={_(msg({ id: 'flashcard.audio.toggle-speed', message: 'Toggle speed' }))}
-                    >
-                      {`${audioSpeed}×`}
-                    </button>
-                    <span className="mx-1 h-3.5 w-px bg-slate-300 dark:bg-white/10" aria-hidden="true" />
-                    <button
-                      type="button"
-                      data-card-control
-                      onPointerDown={event => event.stopPropagation()}
-                      onClick={playAudio}
-                      data-card-effect="audio"
-                      className={`touch-manipulation flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-black transition-all cursor-pointer ${
-                        isPlayingAudio ? 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.3)]' : 'text-[var(--sf-brand-text)] hover:bg-cyan-500/10'
-                      }`}
-                      aria-label={_(msg({ id: 'flashcard.audio.play-pronunciation', message: 'Play pronunciation' }))}
-                      title={_(msg({ id: 'flashcard.audio.play-pronunciation', message: 'Play pronunciation' }))}
-                    >
-                      {isPlayingAudio ? (
-                        <span className="flex items-center gap-0.5 h-3" aria-hidden="true">
-                          <span className="w-0.5 h-full rounded-full bg-cyan-600 dark:bg-cyan-400 wave-bar-1" />
-                          <span className="w-0.5 h-full rounded-full bg-cyan-600 dark:bg-cyan-400 wave-bar-2" />
-                          <span className="w-0.5 h-full rounded-full bg-cyan-600 dark:bg-cyan-400 wave-bar-3" />
-                          <span className="w-0.5 h-full rounded-full bg-cyan-600 dark:bg-cyan-400 wave-bar-4" />
-                        </span>
-                      ) : (
-                        <Volume2 size={15} />
-                      )}
-                      <span><Trans id="flashcard.listen" message="Listen" /></span>
-                    </button>
-                    <span className="mx-1 h-3.5 w-px bg-slate-300 dark:bg-white/10" aria-hidden="true" />
-                    <button
-                      type="button"
-                      data-card-control
-                      onPointerDown={event => event.stopPropagation()}
-                      onClick={event => startPronunciationCheck(event, 'word')}
-                      disabled={isRecording}
-                      className={`touch-manipulation flex size-12 items-center justify-center rounded-full transition-all cursor-pointer ${
-                        isRecording && recordingTarget === 'word' ? 'bg-rose-500 text-white animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.6)]' : 'text-[var(--sf-text)] hover:text-rose-500 hover:bg-rose-500/10'
-                      }`}
-                      aria-label={_(msg({ id: 'flashcard.audio.check-pronunciation', message: 'Check pronunciation' }))}
-                      title={_(msg({ id: 'flashcard.audio.check-pronunciation', message: 'Check pronunciation' }))}
-                    >
-                      <Mic size={15} />
-                    </button>
-                  </div>
-                </div>
               </div>
 
               {isRecording && <div className="mt-3 flex items-center gap-2 text-xs font-bold text-rose-500 dark:text-rose-400"><span className="size-2 rounded-full bg-rose-500 animate-pulse" /><Trans id="flashcard.audio.listening" message="Listening" /></div>}
@@ -203,7 +145,49 @@ export function CardFront({
                 />
               )}
 
-              <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-200/80 pt-3 dark:border-white/10">
+              <div className="mt-4 flex flex-wrap items-center gap-1 border-t border-slate-200/80 pt-3 dark:border-white/10">
+                <div className="flex items-center rounded-full border border-slate-200/90 bg-slate-100/90 p-1 shadow-xs backdrop-blur-md transition-all dark:border-white/15 dark:bg-white/[0.08]">
+                  <button
+                    type="button"
+                    data-card-control
+                    onPointerDown={event => event.stopPropagation()}
+                    onClick={toggleAudioSpeed}
+                    className={`touch-manipulation flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full px-2.5 text-xs font-black transition-all cursor-pointer ${
+                      audioSpeed === 0.75 ? 'bg-cyan-400 text-[#071014] font-extrabold shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
+                    }`}
+                    title={_(msg({ id: 'flashcard.audio.toggle-speed-detail', message: 'Toggle pronunciation speed (1.0x / 0.75x slow)' }))}
+                    aria-label={_(msg({ id: 'flashcard.audio.toggle-speed', message: 'Toggle speed' }))}
+                  >
+                    {`${audioSpeed}×`}
+                  </button>
+                  <span className="mx-1 h-3.5 w-px bg-slate-300 dark:bg-white/10" aria-hidden="true" />
+                  <button
+                    type="button"
+                    data-card-control
+                    onPointerDown={event => event.stopPropagation()}
+                    onClick={playAudio}
+                    data-card-effect="audio"
+                    className={`touch-manipulation flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-black transition-all cursor-pointer ${
+                      isPlayingAudio ? 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.3)]' : 'text-[var(--sf-brand-text)] hover:bg-cyan-500/10'
+                    }`}
+                    aria-label={_(msg({ id: 'flashcard.audio.play-pronunciation', message: 'Play pronunciation' }))}
+                    title={_(msg({ id: 'flashcard.audio.play-pronunciation', message: 'Play pronunciation' }))}
+                  >
+                    {isPlayingAudio ? <span className="flex h-3 items-center gap-0.5" aria-hidden="true"><span className="wave-bar-1 h-full w-0.5 rounded-full bg-cyan-600 dark:bg-cyan-400" /><span className="wave-bar-2 h-full w-0.5 rounded-full bg-cyan-600 dark:bg-cyan-400" /><span className="wave-bar-3 h-full w-0.5 rounded-full bg-cyan-600 dark:bg-cyan-400" /><span className="wave-bar-4 h-full w-0.5 rounded-full bg-cyan-600 dark:bg-cyan-400" /></span> : <Volume2 size={15} />}
+                    <span><Trans id="flashcard.listen" message="Listen" /></span>
+                  </button>
+                  <span className="mx-1 h-3.5 w-px bg-slate-300 dark:bg-white/10" aria-hidden="true" />
+                  <button
+                    type="button"
+                    data-card-control
+                    onPointerDown={event => event.stopPropagation()}
+                    onClick={event => startPronunciationCheck(event, 'word')}
+                    disabled={isRecording}
+                    className={`touch-manipulation flex size-11 items-center justify-center rounded-full transition-all cursor-pointer ${isRecording && recordingTarget === 'word' ? 'bg-rose-500 text-white animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.6)]' : 'text-[var(--sf-text)] hover:bg-rose-500/10 hover:text-rose-500'}`}
+                    aria-label={_(msg({ id: 'flashcard.audio.check-pronunciation', message: 'Check pronunciation' }))}
+                    title={_(msg({ id: 'flashcard.audio.check-pronunciation', message: 'Check pronunciation' }))}
+                  ><Mic size={15} /></button>
+                </div>
                 <button
                   type="button"
                   data-card-control
@@ -219,34 +203,12 @@ export function CardFront({
                   <Sparkles size={12} className={showQuickQuiz ? 'text-cyan-500' : 'text-cyan-600 dark:text-cyan-400'} />
                   <span><Trans id="flashcard.quiz" message="Quiz" /></span>
                 </button>
-                <button
-                  type="button"
-                  data-card-control
-                  onPointerDown={event => event.stopPropagation()}
-                  onClick={playExplanationAudio}
-                  className="touch-manipulation flex min-h-11 items-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-100/80 px-3 py-1 text-xs font-bold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-slate-200/80 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] transition-all cursor-pointer shadow-xs"
-                  title={_(msg({ id: 'flashcard.definition.listen', message: 'Listen to the definition' }))}
-                >
-                  <Volume2 size={13} />
-                  <span><Trans id="flashcard.listen" message="Listen" /></span>
-                </button>
-                <button
-                  type="button"
-                  data-card-control
-                  onPointerDown={event => event.stopPropagation()}
-                  onClick={event => startPronunciationCheck(event, 'explanation')}
-                  disabled={isRecording}
-                  className={`touch-manipulation flex min-h-11 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all cursor-pointer shadow-xs ${
-                    isRecording && recordingTarget === 'explanation'
-                      ? 'bg-rose-500 text-white animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.5)]'
-                      : 'border border-slate-200/80 bg-slate-100/80 text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-slate-200/80 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]'
-                  }`}
-                  title={_(msg({ id: 'flashcard.definition.practice', message: 'Practise reading the definition' }))}
-                >
-                  <Mic size={13} />
-                  <span><Trans id="flashcard.read-aloud" message="Read aloud" /></span>
-                </button>
-                {onAssignDeck && <Dialog.Root open={showDeckSelector} onOpenChange={setShowDeckSelector}>
+                <details className="group/tools relative">
+                  <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-full border border-slate-200/80 bg-slate-100/80 px-3 text-xs font-black text-[var(--sf-text-muted)] shadow-xs dark:border-white/10 dark:bg-white/[0.04] [&::-webkit-details-marker]:hidden" aria-label={_(msg({ id: 'flashcard.more-tools', message: 'More card tools' }))}>•••</summary>
+                  <div className="absolute bottom-12 right-0 z-40 flex w-max max-w-[calc(100vw-3rem)] flex-wrap justify-end gap-2 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-lg dark:border-white/10 dark:bg-[#081318]">
+                    <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={playExplanationAudio} className="touch-manipulation flex min-h-11 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-[var(--sf-text-muted)] hover:bg-slate-100 dark:hover:bg-white/[0.08]" title={_(msg({ id: 'flashcard.definition.listen', message: 'Listen to the definition' }))}><Volume2 size={13} /><span><Trans id="flashcard.listen" message="Listen" /></span></button>
+                    <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={event => startPronunciationCheck(event, 'explanation')} disabled={isRecording} className={`touch-manipulation flex min-h-11 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${isRecording && recordingTarget === 'explanation' ? 'bg-rose-500 text-white animate-pulse' : 'text-[var(--sf-text-muted)] hover:bg-slate-100 dark:hover:bg-white/[0.08]'}`} title={_(msg({ id: 'flashcard.definition.practice', message: 'Practise reading the definition' }))}><Mic size={13} /><span><Trans id="flashcard.read-aloud" message="Read aloud" /></span></button>
+                    {onAssignDeck && <Dialog.Root open={showDeckSelector} onOpenChange={setShowDeckSelector}>
                   <Dialog.Trigger asChild><button ref={deckButtonRef} onPointerDown={event => event.stopPropagation()} className="touch-manipulation flex min-h-11 min-w-0 items-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-100/80 px-3 py-1 text-xs font-bold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-slate-200/80 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] transition-all cursor-pointer shadow-xs"><FolderOpen size={13} /><span className="max-w-32 truncate">{data.customDeck || <Trans id="flashcard.deck.choose" message="Choose deck" />}</span></button></Dialog.Trigger>
                   <Dialog.Portal>
                     <Dialog.Overlay className="fixed inset-0 z-[110] bg-slate-950/72 backdrop-blur-sm" />
@@ -258,7 +220,9 @@ export function CardFront({
                       </div>
                     </Dialog.Content>
                   </Dialog.Portal>
-                </Dialog.Root>}
+                    </Dialog.Root>}
+                  </div>
+                </details>
               </div>
             </div>
 
