@@ -33,6 +33,13 @@ export interface EditCardDialogProps {
   open: boolean;
   onOpenChange(open: boolean): void;
   onSave(cardId: string, fields: Partial<CardData>): void | Promise<LearningStateOutcome>;
+  context?: EditCardDialogContext;
+}
+
+export interface EditCardDialogContext {
+  kind: 'review';
+  current: number;
+  total: number;
 }
 
 type EditCardError = 'invalid-content' | 'save-failed';
@@ -89,7 +96,7 @@ const fieldClasses = (key: EditableCardField) => [
   key === 'mnemonic' ? 'border-[color-mix(in_srgb,var(--sf-reward)_45%,var(--sf-border))] bg-[color-mix(in_srgb,var(--sf-reward)_9%,var(--sf-surface-control))]' : '',
 ].filter(Boolean).join(' ');
 
-export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDialogProps) {
+export function EditCardDialog({ card, open, onOpenChange, onSave, context }: EditCardDialogProps) {
   const { _ } = useLingui();
   // The snapshot is intentionally stable while the sheet is open. A remote
   // update to a field the learner never touched therefore stays out of the
@@ -309,13 +316,13 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
             <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--sf-border)] px-5 pb-4 pt-4 sm:px-7 sm:pt-5 md:px-[26px]">
               <div className="min-w-0">
                 <p className="font-display text-[11px] font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]">
-                  <Trans id="library.edit-card.kicker" message="Card editor" />
+                  {context ? <Trans id="library.edit-card.review-kicker" message="Card {current} of {total}" values={context} /> : <Trans id="library.edit-card.kicker" message="Card editor" />}
                 </p>
                 <Dialog.Title className="mt-1 font-serif text-3xl font-bold tracking-tight text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:font-black [html[data-theme-family=crystal]_&]:italic">
                   <Trans id="library.edit-card.title" message="Edit card" />
                 </Dialog.Title>
                 <Dialog.Description className="mt-2 max-w-[34rem] text-sm leading-6 text-[var(--sf-text-muted)]">
-                  <Trans id="library.edit-card.description" message="Changes update this card while its review history stays intact." />
+                  {context ? <Trans id="library.edit-card.review-description" message="This review stays paused while you edit. Your review history stays intact." /> : <Trans id="library.edit-card.description" message="Changes update this card while its review history stays intact." />}
                 </Dialog.Description>
               </div>
               <button
@@ -526,7 +533,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
                 </button>
                 <button type="submit" disabled={saving} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-5 text-sm font-bold text-[var(--sf-on-brand)] shadow-md transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
                   {saving && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
-                  <span>{saving ? <Trans id="library.edit-card.saving" message="Saving changes…" /> : error === 'save-failed' ? 'Retry save' : <Trans id="library.edit-card.save" message="Save changes" />}</span>
+                  <span>{saving ? <Trans id="library.edit-card.saving" message="Saving changes…" /> : error === 'save-failed' ? 'Retry save' : context ? <Trans id="library.edit-card.save-resume" message="Save & resume" /> : <Trans id="library.edit-card.save" message="Save changes" />}</span>
                   {!saving && <kbd className="hidden rounded bg-black/15 px-1.5 py-0.5 font-mono text-[10px] sm:inline">⌘↵</kbd>}
                 </button>
               </footer>

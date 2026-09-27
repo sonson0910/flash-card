@@ -26,6 +26,7 @@ import type { SpeechMatchFeedbackValue } from './flashcard/SpeechMatchFeedback';
 import { useZenGlassMode } from '../lib/useZenGlassMode';
 import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
 import type { LearningStateOutcome } from '../features/learning/learningStateController';
+import type { EditCardDialogContext } from '../features/cardEdit/EditCardDialog';
 import type { CardData } from '../types/card';
 
 const ReportCardDialog = lazy(() => import('../features/cardReport/ReportCardDialog').then(module => ({ default: module.ReportCardDialog })));
@@ -43,11 +44,12 @@ export interface FlashcardProps {
   onAssignDeck?: (cardId: string, deckName: string | null) => void;
   onUpdateCard?: (cardId: string, updatedFields: Partial<CardData>) => void | Promise<LearningStateOutcome>;
   onEditOpenChange?: (open: boolean) => void;
+  editorContext?: EditCardDialogContext;
   initialSide?: 'front' | 'back';
   imagePriority?: boolean;
 }
 
-export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggleBookmark, customDecks = [], onAssignDeck, onUpdateCard, onEditOpenChange, initialSide = 'front', imagePriority = false }: FlashcardProps) {
+export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggleBookmark, customDecks = [], onAssignDeck, onUpdateCard, onEditOpenChange, editorContext, initialSide = 'front', imagePriority = false }: FlashcardProps) {
   const { _, i18n } = useLingui();
   const translationFailureMessage = _(msg({ id: 'flashcard.translation.failed', message: 'The explanation could not be translated. Check your connection and try again.' }));
   const supportedImageUrl = isSupportedImageUrl(data.imageUrl) ? data.imageUrl : null;
@@ -665,7 +667,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       )}
       {showEditDialog && onUpdateCard && (
         <Suspense fallback={null}>
-          <EditCardDialog card={data} open={showEditDialog} onOpenChange={setEditDialogOpen} onSave={onUpdateCard} />
+          <EditCardDialog card={data} open={showEditDialog} onOpenChange={setEditDialogOpen} onSave={onUpdateCard} context={editorContext} />
         </Suspense>
       )}
       {onDelete && (

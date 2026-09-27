@@ -336,6 +336,7 @@ export function StudyView({
               onAssignDeck={onAssignDeck}
               onUpdateCard={onUpdateCard}
               onEditOpenChange={open => onEditorOpenChange?.(card.id, open)}
+              editorContext={{ kind: 'review', current: index + 1, total: cards.length }}
             />
           ) : (
             <ActiveRecallPrompt

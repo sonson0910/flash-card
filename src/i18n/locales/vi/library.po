@@ -1183,6 +1183,21 @@ msgid "library.edit-card.remove-image"
 msgstr "Xoá ảnh"
 
 #. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx
+msgid "library.edit-card.review-description"
+msgstr "Phiên ôn tập này vẫn tạm dừng khi bạn chỉnh sửa. Lịch sử ôn tập vẫn được giữ nguyên."
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx
+msgid "library.edit-card.review-kicker"
+msgstr "Thẻ {current} trên {total}"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx
+msgid "library.edit-card.save-resume"
+msgstr "Lưu và tiếp tục"
+
+#. js-lingui-explicit-id
 #: src/features/cardEdit/EditCardDialog.tsx:529
 msgid "library.edit-card.save"
 msgstr "Lưu thay đổi"

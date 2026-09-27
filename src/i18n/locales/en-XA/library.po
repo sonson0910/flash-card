@@ -1183,6 +1183,21 @@ msgid "library.edit-card.remove-image"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx
+msgid "library.edit-card.review-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx
+msgid "library.edit-card.review-kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx
+msgid "library.edit-card.save-resume"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/features/cardEdit/EditCardDialog.tsx:529
 msgid "library.edit-card.save"
 msgstr ""

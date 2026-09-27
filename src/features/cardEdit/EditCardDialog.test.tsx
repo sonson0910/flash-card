@@ -289,6 +289,15 @@ describe('EditCardDialog', () => {
     expect(event.preventDefault).toHaveBeenCalledTimes(1);
   });
 
+  it('uses the paused-review framing only when the study caller supplies its context', () => {
+    const view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn(), context: { kind: 'review', current: 8, total: 20 } });
+
+    const rendered = JSON.stringify(view.tree);
+    expect(rendered).toContain('library.edit-card.review-kicker');
+    expect(rendered).toContain('library.edit-card.review-description');
+    expect(rendered).toContain('library.edit-card.save-resume');
+  });
+
   it('omits the captured-source note for a card with no source metadata', () => {
     const view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
     expect(findByProp(view.tree, 'data-edit-source-note')).toBeNull();

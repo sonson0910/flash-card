@@ -1183,6 +1183,21 @@ msgid "library.edit-card.remove-image"
 msgstr "Remove image"
 
 #. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx
+msgid "library.edit-card.review-description"
+msgstr "This review stays paused while you edit. Your review history stays intact."
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx
+msgid "library.edit-card.review-kicker"
+msgstr "Card {current} of {total}"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx
+msgid "library.edit-card.save-resume"
+msgstr "Save & resume"
+
+#. js-lingui-explicit-id
 #: src/features/cardEdit/EditCardDialog.tsx:529
 msgid "library.edit-card.save"
 msgstr "Save changes"
