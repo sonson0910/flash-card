@@ -237,7 +237,7 @@ async function expectNoNotificationOverlap(page: Page, label: string) {
       const bounds = element.getBoundingClientRect();
       return { id: element.getAttribute('data-notification-toast') ? 'feedback' : 'undo', top: bounds.top, right: bounds.right, bottom: bounds.bottom, left: bounds.left };
     }));
-  expect(boxes.filter(box => box.id === 'feedback'), `${label} should render all four feedback variants`).toHaveLength(4);
+  expect(boxes.filter(box => box.id === 'feedback'), `${label} should render all three feedback variants`).toHaveLength(3);
   expect(boxes.filter(box => box.id === 'undo'), `${label} should render its undo action`).toHaveLength(1);
   const collisions = boxes.flatMap((first, index) => boxes.slice(index + 1).filter(second => (
     Math.min(first.right, second.right) - Math.max(first.left, second.left) > 1
@@ -272,14 +272,14 @@ for (const theme of themes) {
       const mobileNavigation = page.locator('nav[data-shell-layer="mobile"]');
       if (viewport.width < 1024) await expect(mobileNavigation).toBeVisible();
       else await expect(mobileNavigation).toBeHidden();
-      await expect(page.locator('[data-notification-toast]')).toHaveCount(4);
+      await expect(page.locator('[data-notification-toast]')).toHaveCount(3);
       await expectUnstackedFeedbackBottom(page, viewport.width, `${matrixName}-feedback`);
       await expectAccessibleAndContained(page, `${matrixName}-feedback`);
       await expectReducedMotion(page, `${matrixName}-feedback`);
       await capture(page, testInfo, `feedback-${matrixName}`);
 
       await openFixture(page, { ...routeBase, view: 'combined' });
-      await expect(page.locator('[data-notification-toast]')).toHaveCount(4);
+      await expect(page.locator('[data-notification-toast]')).toHaveCount(3);
       await expect(page.locator('[data-undo-toast]')).toBeVisible();
       await expectNoNotificationOverlap(page, `${matrixName}-combined-feedback-undo`);
       await expectAccessibleAndContained(page, `${matrixName}-combined-feedback-undo`);
@@ -303,7 +303,7 @@ for (const theme of themes) {
 
       await openFixture(page, { ...routeBase, view: 'today-caught-up' });
       await expect(page.locator('[data-today-caught-up="true"]')).toBeVisible();
-      await expect(page.locator('[data-today-caught-up="true"] .today-caught-up-primary')).toBeDisabled();
+      await expect(page.locator('[data-today-caught-up="true"] .today-caught-up-primary')).toBeEnabled();
       await expectAccessibleAndContained(page, `${matrixName}-today-caught-up`);
       await expectReducedMotion(page, `${matrixName}-today-caught-up`);
       await capture(page, testInfo, `today-caught-up-${matrixName}`);
@@ -450,12 +450,11 @@ for (const theme of themes) {
 test('account feedback dismissal, retry and menu identity actions use real shell components', async ({ page }) => {
   await preparePage(page, themes[0], viewportLocales[0]);
   await openFixture(page, { view: 'feedback', locale: 'en' });
-  await expect(page.locator('[data-notification-toast]')).toHaveCount(4);
+  await expect(page.locator('[data-notification-toast]')).toHaveCount(3);
 
   await page.getByRole('button', { name: 'Dismiss sign-in message' }).click();
   await page.getByRole('button', { name: 'Dismiss system message' }).click();
   await page.getByRole('button', { name: 'Dismiss success message' }).click();
-  await page.getByRole('button', { name: 'Dismiss sync status' }).click();
   await expect(page.locator('[data-notification-toast]')).toHaveCount(0);
 
   await openFixture(page, { view: 'account', locale: 'en' });
@@ -520,7 +519,7 @@ test('expired account session retries through the shell and restores cached iden
   await expect(recoveredMenu.getByRole('menuitem', { name: 'Sign out of cloud sync' })).toBeVisible();
 });
 
-test('caught-up Today state keeps the learning reason, Browse paths action, and Canvas width', async ({ page }) => {
+test('caught-up Today state keeps the learning reason, Add vocabulary and Browse paths actions, and Canvas width', async ({ page }) => {
   await preparePage(page, themes[0], viewportLocales[0]);
   await openFixture(page, { view: 'today-caught-up', locale: 'en' });
   const panel = page.locator('.today-caught-up-panel[data-today-caught-up="true"]');
@@ -529,10 +528,12 @@ test('caught-up Today state keeps the learning reason, Browse paths action, and 
   await expect(reason).toBeVisible();
   const desktopWidth = await panel.evaluate(element => element.getBoundingClientRect().width);
   expect(Math.abs(desktopWidth - 424), 'caught-up Today panel matches the 424px Canvas width on desktop').toBeLessThanOrEqual(1);
-  await expect(page.getByRole('button', { name: 'Learn 5 new' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Add vocabulary' })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Browse paths' })).toBeEnabled();
   await expect(page.getByText('Next review')).toHaveCount(0);
   await expect(page.getByText('8 cards')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Add vocabulary' }).click();
+  await expect(page.locator('[data-fixture-status]')).toHaveText('today:vocabulary');
   await page.getByRole('button', { name: 'Browse paths' }).click();
   await expect(page.locator('[data-fixture-status]')).toHaveText('today:paths');
 
@@ -546,7 +547,7 @@ test('caught-up Today state keeps the learning reason, Browse paths action, and 
   }));
   expect(mobileGeometry.width, 'caught-up Today panel stays at or below its 424px cap on mobile').toBeLessThanOrEqual(424);
   expect(Math.abs(mobileGeometry.width - mobileGeometry.availableWidth), 'caught-up Today panel uses the available mobile width').toBeLessThanOrEqual(1);
-  await expect(page.getByRole('button', { name: 'Learn 5 new' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Add vocabulary' })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Browse paths' })).toBeEnabled();
 });
 
@@ -555,10 +556,10 @@ test('Crystal caught-up Today panel keeps its Canvas frame size and visible reas
   await openFixture(page, { view: 'today-caught-up', locale: 'en' });
   const panel = page.locator('.today-caught-up-panel[data-today-caught-up="true"]');
   const reason = page.locator('#today-caught-up-learn-reason');
-  const learn = page.getByRole('button', { name: 'Learn 5 new' });
+  const learn = page.getByRole('button', { name: 'Add vocabulary' });
   await expect(panel).toBeVisible();
   await expect(reason).toBeVisible();
-  await expect(learn).toBeDisabled();
+  await expect(learn).toBeEnabled();
   await expect(learn).toHaveAttribute('aria-describedby', 'today-caught-up-learn-reason');
 
   const desktopGeometry = await panel.evaluate(element => ({
@@ -585,7 +586,7 @@ test('Crystal caught-up Today panel keeps its Canvas frame size and visible reas
     expect(Math.abs(mobileGeometry.width - mobileGeometry.availableWidth), `Crystal caught-up panel uses available width at ${width}px`).toBeLessThanOrEqual(1);
     expect(mobileGeometry.height, `Crystal caught-up panel keeps its minimum height at ${width}px`).toBeGreaterThanOrEqual(300);
     expect(mobileGeometry.innerHeight, `Crystal caught-up inner keeps its minimum height at ${width}px`).toBeGreaterThanOrEqual(297);
-    await expect(learn).toBeDisabled();
+    await expect(learn).toBeEnabled();
     await expect(learn).toHaveAttribute('aria-describedby', 'today-caught-up-learn-reason');
   }
 });

@@ -81,7 +81,7 @@ const caughtUpToday: TodayScreenModel = {
   courseLabel: 'English ← Vietnamese',
   plan: { total: 0, due: 0, weak: 0, fresh: 0, isShort: true },
   placementAvailable: false,
-  caughtUp: { availableNewCount: 0 },
+  caughtUp: {},
 };
 
 const shareStorageKey = (shareId: string) => `shell-share-workflow:${shareId}`;

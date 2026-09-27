@@ -84,15 +84,15 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 
 ### Checklist (gốc)
 
-- [ ] 05.1 — Today có một start/continue chính và timeline thực: review đến hạn → new words → Word Match → recap. Lập session state gồm stage, card IDs, progress và kết quả đã commit.
-- [ ] 05.2 — Implement Bridge đúng composition, carry session context, continue/skip; resume sau navigate/reload; exit lưu/abandon theo trạng thái rõ.
-- [ ] 05.3 — Lesson sáu exercise modes và Placement intro/question/result/insufficient theo board; duy trì answer → feedback → rating → save/retry.
-- [ ] 05.4 — Rebuild Quiz và Spelling bằng cấu trúc Canvas: segmented progress, card, reading/direction, choices/input, feedback, Lumi, continue/retry.
-- [ ] 05.5 — Rebuild Story, Match, Shadowing và mode picker: reader/word actions/audio; grid/timer/pairs; listen/record/feedback; chọn mode thực.
-- [ ] 05.6 — Recap nối kết quả mọi chặng, từ cần ôn, thành tích, next action/match, tomorrow/reminder và weekly recap.
-- [ ] 05.7 — Hợp nhất exit/back/deep link, mobile gestures và pause khi edit/overlay; bảo toàn analytics exactly-once.
-- [ ] Đối chiếu Canvas từng state của phase theo board/artboard inventory; reviewer kiểm tra cả hành vi và hình thức.
-- [ ] Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log.
+- (gốc, đã thay bằng 05.0–05.9) 05.1 — Today có một start/continue chính và timeline thực: review đến hạn → new words → Word Match → recap. Lập session state gồm stage, card IDs, progress và kết quả đã commit.
+- (gốc, đã thay bằng 05.0–05.9) 05.2 — Implement Bridge đúng composition, carry session context, continue/skip; resume sau navigate/reload; exit lưu/abandon theo trạng thái rõ.
+- (gốc, đã thay bằng 05.0–05.9) 05.3 — Lesson sáu exercise modes và Placement intro/question/result/insufficient theo board; duy trì answer → feedback → rating → save/retry.
+- (gốc, đã thay bằng 05.0–05.9) 05.4 — Rebuild Quiz và Spelling bằng cấu trúc Canvas: segmented progress, card, reading/direction, choices/input, feedback, Lumi, continue/retry.
+- (gốc, đã thay bằng 05.0–05.9) 05.5 — Rebuild Story, Match, Shadowing và mode picker: reader/word actions/audio; grid/timer/pairs; listen/record/feedback; chọn mode thực.
+- (gốc, đã thay bằng 05.0–05.9) 05.6 — Recap nối kết quả mọi chặng, từ cần ôn, thành tích, next action/match, tomorrow/reminder và weekly recap.
+- (gốc, đã thay bằng 05.0–05.9) 05.7 — Hợp nhất exit/back/deep link, mobile gestures và pause khi edit/overlay; bảo toàn analytics exactly-once.
+- (gốc, đã thay bằng 05.0–05.9) Đối chiếu Canvas từng state của phase theo board/artboard inventory; reviewer kiểm tra cả hành vi và hình thức.
+- (gốc, đã thay bằng 05.0–05.9) Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log.
 
 
 </details>

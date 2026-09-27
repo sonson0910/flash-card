@@ -52,9 +52,12 @@ export interface TodayScreenModel {
   readonly streak?: number;
   readonly plan: DailyPlanPresentation | null;
   readonly placementAvailable: boolean;
-  /** Counts use the loaded daily plan; next-review facts require a complete pool. */
+  /**
+   * Present when the loaded pool has cards but none are due, weak or new; the
+   * plan takes every new card, so the only way forward is adding vocabulary.
+   * Next-review facts require a complete pool.
+   */
   readonly caughtUp?: {
-    readonly availableNewCount: number;
     readonly nextReview?: {
       readonly label: string;
       readonly cardCount: number;

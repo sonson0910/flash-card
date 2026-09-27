@@ -231,3 +231,9 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
 ## 2026-09-27 — Chi phí mở Learning insights từ Library
 
 - Menu Library nay mở được `LibraryInsightsDialog`. Khi mở, `useCloudLibraryPage` gọi lại `requestStats` vốn dùng cho Progress/Catalog. Nếu cache stats theo owner và course đã quá 24 giờ hoặc chưa có, `fetchLibraryStats` chạy 8 aggregate count queries; nếu cache còn hạn, 0 Firestore reads. Đóng dialog không subscribe thêm; thao tác này không ghi Firestore. Người dùng chỉ trả chi phí khi chủ động mở insights trong Library.
+
+## 2026-09-27 — Sửa quyết định nút "Learn 5 new" ở caught-up
+
+- Phát hiện khi nối nút: `buildDailyPlan` (`dailyPlan.ts`) đã nhận mọi thẻ mới (tối đa 15) và `fetchPracticeCards` tải mọi thẻ `unrated`. Trạng thái caught-up chỉ xảy ra khi plan rỗng mà pool có thẻ, tức là pool không còn thẻ mới. Nhánh "bật khi còn thẻ mới" không bao giờ tới được.
+- Controller đổi: nút chính caught-up thành "Add vocabulary" (luôn bật, mở màn thêm từ), giữ "Browse paths" làm nút phụ, bỏ cờ `availableNewCount` và chuỗi `today.caught-up.learn-new`/`lesson-unavailable`. Không thêm lượt đọc Firestore.
+- Owner đồng ý ngày 2026-09-27: dùng "Add vocabulary", không đổi `buildDailyPlan`.

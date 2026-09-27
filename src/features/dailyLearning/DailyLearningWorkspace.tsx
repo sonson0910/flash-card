@@ -686,7 +686,7 @@ export default function DailyLearningWorkspace({
     plan: plan ? { total: plan.counts.total, due: plan.counts.due, weak: plan.counts.weak, fresh: plan.counts.new, isShort: plan.isShort } : null,
     placementAvailable: availablePlacement.status === 'ready',
     ...(plan?.items.length === 0 && activePool.cards.length > 0
-      ? { caughtUp: { availableNewCount: plan.counts.new } }
+      ? { caughtUp: {} }
       : {}),
   };
   return <>

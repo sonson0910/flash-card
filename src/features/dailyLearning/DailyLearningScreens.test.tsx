@@ -54,7 +54,7 @@ const caughtUpToday: TodayScreenModel = {
   courseLabel: 'English ← Vietnamese',
   plan: { total: 0, due: 0, weak: 0, fresh: 0, isShort: true },
   placementAvailable: false,
-  caughtUp: { availableNewCount: 0 },
+  caughtUp: {},
 };
 
 const lessonActions: LessonScreenActions = {
@@ -192,8 +192,8 @@ describe('TodayScreen', () => {
       expect(html).toContain('class="today-caught-up-panel');
       expect(html).toContain('All caught');
       expect(html).toContain('No due or new cards are available in this daily plan.');
-      expect(html).toContain('Learn 5 new');
-      expect(html).toContain('disabled=""');
+      expect(html).toContain('Add vocabulary');
+      expect(html).not.toContain('disabled=""');
       expect(html).toContain('aria-describedby="today-caught-up-learn-reason"');
       expect(html).toContain('id="today-caught-up-learn-reason"');
       expect(html).toContain('Browse paths');
@@ -217,7 +217,7 @@ describe('TodayScreen', () => {
 
   it('renders next-review metadata only when an explicit complete-pool fixture supplies it', () => {
     const html = renderToStaticMarkup(<TodayScreen
-      model={{ ...caughtUpToday, caughtUp: { availableNewCount: 0, nextReview: { label: 'tomorrow, 08:00', cardCount: 8 } } }}
+      model={{ ...caughtUpToday, caughtUp: { nextReview: { label: 'tomorrow, 08:00', cardCount: 8 } } }}
       actions={todayActions}
     />);
 

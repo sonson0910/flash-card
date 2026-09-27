@@ -124,19 +124,13 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
 function CaughtUpPanel({ model, actions, showLumi }: TodayScreenProps & { readonly showLumi: boolean }) {
   const { family, mode } = useTheme();
   const isCrystal = family === 'crystal';
-  const summary = model.caughtUp ?? { availableNewCount: 0 };
-  const availableNewCount = Number.isSafeInteger(summary.availableNewCount) && summary.availableNewCount > 0
-    ? summary.availableNewCount
-    : 0;
+  const summary = model.caughtUp ?? {};
   const nextReview = summary.nextReview
     && Number.isSafeInteger(summary.nextReview.cardCount)
     && summary.nextReview.cardCount > 0
     && summary.nextReview.label.trim().length > 0
     ? summary.nextReview
     : undefined;
-  const noNewCardsReason = availableNewCount === 0
-    ? msg({ id: 'today.caught-up.no-new-cards', message: 'No new cards are available in this daily plan.' })
-    : msg({ id: 'today.caught-up.lesson-unavailable', message: 'The new-card lesson is not available from this view yet.' });
   return (
     <article
       aria-labelledby="today-caught-up-title"
@@ -186,17 +180,17 @@ function CaughtUpPanel({ model, actions, showLumi }: TodayScreenProps & { readon
             </p>
           )}
           <p id="today-caught-up-learn-reason">
-            {nextReview ? <Trans id={noNewCardsReason.id} message={noNewCardsReason.message} /> : model.message}
+            {nextReview ? <Trans id="today.caught-up.no-new-cards" message="No new cards are available in this daily plan." /> : model.message}
           </p>
         </div>
         <div className="today-caught-up-actions">
           <button
             type="button"
-            disabled
+            onClick={actions.openVocabulary}
             aria-describedby="today-caught-up-learn-reason"
             className={`today-caught-up-button today-caught-up-primary${isCrystal ? '' : ` ${primaryButton}`}`}
           >
-            <Trans id="today.caught-up.learn-new" message="Learn 5 new" />
+            <Trans id="today.empty.add-vocabulary" message="Add vocabulary" />
           </button>
           <button
             type="button"
