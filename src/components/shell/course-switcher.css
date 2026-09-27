@@ -1,17 +1,8 @@
-/*
- * `position`/`inset-x`/`bottom` for the mobile sheet stay Tailwind utilities
- * on the element (`fixed inset-x-0 bottom-0`) because those exact classes
- * already exist elsewhere in the bundle. Only the genuinely new pieces — the
- * mobile max-height/corner radius and the whole desktop popover override —
- * live here, as one grouped rule with a single media query, which costs
- * fewer bytes in this app's single combined stylesheet than the equivalent
- * set of one-off Tailwind utilities (several `lg:` variants used nowhere
- * else) would.
- */
 .claude-course-switcher-panel {
   max-height: 80vh;
   border-radius: 1.5rem 1.5rem 0 0;
 }
+.claude-course-goal-summary { display: none; }
 
 @media (min-width: 1024px) {
   .claude-course-switcher-panel {
@@ -22,7 +13,15 @@
     top: 100%;
     margin-top: 0.5rem;
     max-height: 70vh;
-    width: 20rem;
+    width: 30rem;
+    padding: 1rem;
     border-radius: 1rem;
   }
+
+  .claude-course-row { border: 1px solid transparent; }
+  .claude-course-row:has([aria-current=true]) { border-color: var(--sf-brand); }
+  .claude-course-row button:first-child { min-height: 4.5rem; padding: .75rem; }
+  .claude-course-goal-summary { display: block; }
+  .claude-course-language-mark { display: grid; width: 2.875rem; height: 2.875rem; flex: none; place-items: center; border-radius: .75rem; background: var(--sf-surface-control); font-size: 1.375rem; }
+  .claude-course-row:has([aria-current=true]) .claude-course-language-mark { background: var(--sf-brand); }
 }

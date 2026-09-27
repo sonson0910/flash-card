@@ -11,6 +11,7 @@ import {
   type CourseTargetLanguage,
 } from '../../features/courses/courseModel';
 import { NATIVE_LANGUAGE_LABEL, TARGET_LANGUAGE_FLAG, TARGET_LANGUAGE_LABEL } from '../../features/courses/courseLanguageLabels';
+import { goalKindLabel } from '../../features/courses/courseGoalCatalog';
 import { CourseGoalsPanel } from '../../features/courses/CourseGoalsPanel';
 import './course-switcher.css';
 
@@ -24,12 +25,15 @@ function CourseRow({ course, isActive, onSwitch, onArchive, onReopen, onManageGo
   const { _ } = useLingui();
   const targetLabel = _(TARGET_LANGUAGE_LABEL[course.targetLanguage]);
   const nativeLabel = _(NATIVE_LANGUAGE_LABEL[course.nativeLanguage]);
+  const goal = course.goals.find(item => item.status === 'active') ?? course.goals[0];
+  const goalLabel = goal ? goalKindLabel(course.targetLanguage, goal.kind) : null;
   return <li className={`claude-course-row rounded-xl ${isActive ? 'bg-[var(--sf-surface-raised)]' : ''}`}>
     <div className="flex items-center gap-1">
       <button type="button" disabled={pending || course.status !== 'active'} onClick={onSwitch} aria-current={isActive ? 'true' : undefined}
         className={`${rowClass} ${course.status !== 'active' ? 'opacity-60' : ''}`}>
-        <span className="flex min-w-0 items-center gap-2"><span aria-hidden="true">{TARGET_LANGUAGE_FLAG[course.targetLanguage]}</span>
-          <span className="truncate">{targetLabel} <span aria-hidden="true">←</span> {nativeLabel}</span></span>
+        <span className="claude-course-language-mark" aria-hidden="true">{TARGET_LANGUAGE_FLAG[course.targetLanguage]}</span>
+        <span className="min-w-0 flex-1"><span className="block truncate font-bold">{targetLabel} <span aria-hidden="true">←</span> {nativeLabel}</span>
+          {goal && <span className="claude-course-goal-summary mt-0.5 truncate text-xs font-medium text-[var(--sf-text-muted)]">{goalLabel ? _(goalLabel) : goal.kind}{goal.level ? ` · ${goal.level}` : ''}</span>}</span>
         {course.status === 'archived' && <span className="claude-course-archived-badge shrink-0 rounded-full border border-[var(--sf-border)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--sf-text-muted)]"><Trans id="course.status.archived" message="Archived" /></span>}
         {isActive && <span className="sr-only"><Trans id="course.status.active" message="Active course" /></span>}
       </button>
