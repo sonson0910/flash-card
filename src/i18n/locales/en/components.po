@@ -250,7 +250,7 @@ msgid "flashcard.audio.check-pronunciation"
 msgstr "Check pronunciation"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:271
+#: src/components/Flashcard.tsx:272
 msgid "flashcard.audio.failed"
 msgstr "Audio could not be played. Check this site’s audio permission and try again."
 
@@ -296,7 +296,7 @@ msgid "flashcard.audio.toggle-speed-detail"
 msgstr "Toggle pronunciation speed (1.0x / 0.75x slow)"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:256
+#: src/components/Flashcard.tsx:257
 msgid "flashcard.audio.unsupported"
 msgstr "Audio playback is not supported by this browser."
 
@@ -306,27 +306,27 @@ msgid "flashcard.back-to-english"
 msgstr "Back to English"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:434
+#: src/components/Flashcard.tsx:437
 msgid "flashcard.card.meaning-revealed"
 msgstr "Vietnamese meaning revealed"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:424
+#: src/components/Flashcard.tsx:427
 msgid "flashcard.card.showing-meaning"
 msgstr "Showing the Vietnamese meaning."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:424
+#: src/components/Flashcard.tsx:427
 msgid "flashcard.card.showing-word"
 msgstr "Showing the English word."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:424
+#: src/components/Flashcard.tsx:427
 msgid "flashcard.card.status"
 msgstr "{word} flashcard. {side}"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:434
+#: src/components/Flashcard.tsx:437
 msgid "flashcard.card.word-revealed"
 msgstr "English word revealed"
 
@@ -336,7 +336,7 @@ msgid "flashcard.category"
 msgstr "Category: {category}"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:492
+#: src/components/Flashcard.tsx:495
 #: src/components/flashcard/CardFront.tsx:291
 msgid "flashcard.cefr-level"
 msgstr "CEFR {level}"
@@ -378,59 +378,59 @@ msgid "flashcard.definition.practice"
 msgstr "Practise reading the definition"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:452
+#: src/components/Flashcard.tsx:455
 msgid "flashcard.delete.cancel"
 msgstr "Keep card"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:456
-#: src/components/Flashcard.tsx:679
-#: src/components/Flashcard.tsx:680
+#: src/components/Flashcard.tsx:459
+#: src/components/Flashcard.tsx:682
+#: src/components/Flashcard.tsx:683
 msgid "flashcard.delete.confirm"
 msgstr "Delete card"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:450
+#: src/components/Flashcard.tsx:453
 msgid "flashcard.delete.description"
 msgstr "The card will be removed from your library and the change will sync to the shared store."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:449
+#: src/components/Flashcard.tsx:452
 msgid "flashcard.delete.title"
 msgstr "Delete “{word}”?"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:613
+#: src/components/Flashcard.tsx:616
 msgid "flashcard.details.antonyms"
 msgstr "Antonyms"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:521
+#: src/components/Flashcard.tsx:524
 msgid "flashcard.details.close"
 msgstr "Close learning details"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:562
+#: src/components/Flashcard.tsx:565
 msgid "flashcard.details.collocations"
 msgstr "Common Collocations"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:640
+#: src/components/Flashcard.tsx:643
 msgid "flashcard.details.common-mistake"
 msgstr "Common Mistake"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:538
+#: src/components/Flashcard.tsx:541
 msgid "flashcard.details.example"
 msgstr "Example in Context"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:590
+#: src/components/Flashcard.tsx:593
 msgid "flashcard.details.synonyms"
 msgstr "Synonyms"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:479
+#: src/components/Flashcard.tsx:482
 msgid "flashcard.details.vocabulary"
 msgstr "Vocabulary"
 
@@ -440,8 +440,8 @@ msgid "flashcard.dismiss-translation-error"
 msgstr "Dismiss translation error"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:689
-#: src/components/Flashcard.tsx:689
+#: src/components/Flashcard.tsx:692
+#: src/components/Flashcard.tsx:692
 #: src/components/flashcard/CardBack.tsx:174
 #: src/components/flashcard/CardBack.tsx:369
 msgid "flashcard.edit"
@@ -468,22 +468,27 @@ msgid "flashcard.explore-more-description"
 msgstr "Context, nuance and AI tutoring"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:740
+#: src/components/flashcard/HangulBreakdown.tsx:11
+msgid "flashcard.hangul-breakdown"
+msgstr "Hangul breakdown"
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:743
 msgid "flashcard.hints.hide"
 msgstr "Hide hints"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:741
+#: src/components/Flashcard.tsx:744
 msgid "flashcard.hints.hide-content"
 msgstr "Hide image and definition"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:741
+#: src/components/Flashcard.tsx:744
 msgid "flashcard.hints.reveal"
 msgstr "Reveal image and definition"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:740
+#: src/components/Flashcard.tsx:743
 msgid "flashcard.hints.show"
 msgstr "Show hints"
 
@@ -588,7 +593,7 @@ msgid "flashcard.original-word"
 msgstr "Original word"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardHeadword.tsx:40
+#: src/components/flashcard/CardHeadword.tsx:42
 msgid "flashcard.part-of-speech-prefix"
 msgstr "Part of speech:"
 
@@ -780,34 +785,34 @@ msgid "flashcard.reveal-meaning-label"
 msgstr "Reveal the Vietnamese meaning of {word}"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:345
+#: src/components/Flashcard.tsx:346
 msgid "flashcard.speech.failed"
 msgstr "Speech could not be recognised. Check microphone permission and try again."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:344
+#: src/components/Flashcard.tsx:345
 msgid "flashcard.speech.permission-blocked"
 msgstr "Microphone access is blocked. Allow microphone access for this site, then try again."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:365
+#: src/components/Flashcard.tsx:366
 msgid "flashcard.speech.start-failed"
 msgstr "The microphone could not start. Check permission and try again."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:314
+#: src/components/Flashcard.tsx:315
 msgid "flashcard.speech.unsupported"
 msgstr "This browser does not support speech recognition. Try Google Chrome."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:722
-#: src/components/Flashcard.tsx:723
+#: src/components/Flashcard.tsx:725
+#: src/components/Flashcard.tsx:726
 msgid "flashcard.star.add"
 msgstr "Star this word"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:722
-#: src/components/Flashcard.tsx:723
+#: src/components/Flashcard.tsx:725
+#: src/components/Flashcard.tsx:726
 msgid "flashcard.star.remove"
 msgstr "Remove star"
 
@@ -882,7 +887,7 @@ msgid "flashcard.translating"
 msgstr "Translating…"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:54
+#: src/components/Flashcard.tsx:55
 msgid "flashcard.translation.failed"
 msgstr "The explanation could not be translated. Check your connection and try again."
 

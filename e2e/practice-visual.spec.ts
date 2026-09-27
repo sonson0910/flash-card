@@ -125,3 +125,35 @@ for (const theme of themes) for (const viewport of viewports) {
     await expectScreen(page, testInfo, name);
   });
 }
+
+for (const theme of themes) for (const viewport of viewports) {
+  test(`${theme.family} ${theme.mode} Korean review shows syllable breakdown at ${viewport.name}`, async ({ page }, testInfo) => {
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
+    await page.route(new RegExp(`^https?://(?!127\\.0\\.0\\.1:${fixturePort})`), route => route.abort());
+    await page.addInitScript(({ family, mode }) => {
+      localStorage.setItem('sonflash_theme_family', family);
+      localStorage.setItem('lingoflash_theme', mode);
+      localStorage.setItem('sonflash_theme_follow_system', 'false');
+      localStorage.setItem('sonflash_reduced_motion', 'true');
+    }, theme);
+    await page.goto(`${fixtureOrigin}${fixturePath}?view=ko-review&locale=en`);
+    const card = page.locator('.flashcard-shell');
+    const breakdown = page.locator('[data-hangul-breakdown]');
+    await expect(card).toHaveAttribute('data-card-side', 'front');
+    await expect(breakdown).toBeVisible();
+    await expect(breakdown.locator('.hangul-breakdown__row').first()).toContainText('결=ㄱgㅕyeoㄹl');
+    await expect(breakdown.locator('.hangul-breakdown__row').nth(1)).toContainText('심=ㅅsㅣiㅁm');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    const violations = (await new AxeBuilder({ page }).include('[data-practice-visual-view="ko-review"]')
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze()).violations
+      .filter(violation => violation.impact === 'serious' || violation.impact === 'critical');
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+    const screenshot = testInfo.outputPath(`korean-review-${theme.family}-${theme.mode}-${viewport.name}.png`);
+    await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide' });
+    await testInfo.attach('Korean review breakdown', { path: screenshot, contentType: 'image/png' });
+    await card.locator('[data-reveal-meaning]').click();
+    await expect(card).toHaveAttribute('data-card-side', 'back');
+    await expect(breakdown).toBeVisible();
+  });
+}

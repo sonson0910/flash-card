@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { romanizeHangul } from './hangulRomanization';
+import { decomposeHangulSyllables, romanizeHangul } from './hangulRomanization';
 
 describe('romanizeHangul', () => {
   it('romanizes a two-syllable word with a final consonant', () => {
@@ -20,5 +20,14 @@ describe('romanizeHangul', () => {
     expect(romanizeHangul('한글 101!')).toBe('hangeul 101!');
     expect(romanizeHangul('hello')).toBeNull();
     expect(romanizeHangul('')).toBeNull();
+  });
+
+  it('decomposes syllables to compatibility jamo with the same RR parts', () => {
+    expect(decomposeHangulSyllables('결심하다')).toEqual([
+      { block: '결', parts: [{ jamo: 'ㄱ', romanization: 'g' }, { jamo: 'ㅕ', romanization: 'yeo' }, { jamo: 'ㄹ', romanization: 'l' }] },
+      { block: '심', parts: [{ jamo: 'ㅅ', romanization: 's' }, { jamo: 'ㅣ', romanization: 'i' }, { jamo: 'ㅁ', romanization: 'm' }] },
+      { block: '하', parts: [{ jamo: 'ㅎ', romanization: 'h' }, { jamo: 'ㅏ', romanization: 'a' }] },
+      { block: '다', parts: [{ jamo: 'ㄷ', romanization: 'd' }, { jamo: 'ㅏ', romanization: 'a' }] },
+    ]);
   });
 });

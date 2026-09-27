@@ -33,6 +33,7 @@ const ReportCardDialog = lazy(() => import('../features/cardReport/ReportCardDia
 const EditCardDialog = lazy(() => Promise.all([
   import('../features/cardEdit/EditCardDialog'), loadCatalog(getActiveUiLocale(), 'library'),
 ]).then(([module]) => ({ default: module.EditCardDialog })));
+const HangulBreakdown = lazy(() => import('./flashcard/HangulBreakdown').then(module => ({ default: module.HangulBreakdown })));
 
 gsap.registerPlugin(useGSAP);
 
@@ -410,9 +411,11 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const cardTier = data.difficulty === 'easy' ? 'mastered'
     : (data.nextReviewDate || (data.reviews ?? 0) > 0 || (data.difficulty && data.difficulty !== 'unrated'))
       ? 'learning' : 'new';
+  const hasHangulReviewPanel = editorContext?.kind === 'review' && /^ko(?:-|$)/i.test(data.language ?? '');
 
   return (
-    <div 
+    <div className="relative mx-auto w-full max-w-[960px]">
+    <div
       ref={shellRef}
       className={`flashcard-shell group relative mx-auto w-full touch-pan-y overflow-visible rounded-[32px] bg-transparent transition-[max-width,height] duration-300 ${
         isZenMode ? 'h-[460px] sm:h-[480px] max-w-[700px] [@media(max-height:500px)]:h-[320px]' : 'h-[clamp(560px,72dvh,610px)] max-w-[580px] [@media(max-height:500px)]:h-[320px]'
@@ -833,6 +836,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       {data.audioUrl && (
         <audio ref={audioRef} src={data.audioUrl} preload={imagePriority ? 'metadata' : 'none'} />
       )}
+    </div>
+    {hasHangulReviewPanel && <Suspense fallback={null}><div className="hangul-breakdown-slot"><HangulBreakdown word={data.word} /></div></Suspense>}
     </div>
   );
 });

@@ -316,6 +316,33 @@ describe('Flashcard mobile controls', () => {
 });
 
 describe('Flashcard language presentation', () => {
+  it.each(['en', 'ja', 'zh'])('does not add the Korean Hangul breakdown to %s cards', language => {
+    const markup = renderCard(<Flashcard data={{
+      id: `no-hangul-panel-${language}`,
+      word: 'word',
+      translation: 'meaning',
+      explanation: '',
+      phonetic: '',
+      emoji: '',
+      category: 'General',
+      audioUrl: null,
+      imageUrl: null,
+      language,
+    }} initialSide="back" />);
+
+    expect(markup).not.toContain('data-hangul-breakdown');
+  });
+
+  it('keeps the Hangul breakdown available beside an unflipped Korean review card, including ko-KR', () => {
+    const source = cardSurfaceSource;
+
+    expect(source).toContain("/^ko(?:-|$)/i.test(data.language ?? '')");
+    expect(source).toContain("editorContext?.kind === 'review'");
+    expect(source).toContain('hangul-breakdown-slot');
+    const styles = readFileSync(fileURLToPath(new URL('./flashcard/hangul-breakdown.css', import.meta.url)), 'utf8');
+    expect(styles).toContain('left: calc(50% + 310px)');
+  });
+
   it.each(['en', 'vi', 'en-XA', 'ja'])('renders the stored word and language spans with %s UI locale', locale => {
     i18n.load(locale, {});
     i18n.activate(locale);

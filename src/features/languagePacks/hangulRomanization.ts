@@ -18,9 +18,19 @@ const LEAD_JAMO = [
   'ss', '', 'j', 'jj', 'ch', 'k', 't', 'p', 'h',
 ] as const;
 
+const LEAD_COMPATIBILITY_JAMO = [
+  'ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ',
+  'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ',
+] as const;
+
 const VOWEL_JAMO = [
   'a', 'ae', 'ya', 'yae', 'eo', 'e', 'yeo', 'ye', 'o', 'wa',
   'wae', 'oe', 'yo', 'u', 'wo', 'we', 'wi', 'yu', 'eu', 'ui', 'i',
+] as const;
+
+const VOWEL_COMPATIBILITY_JAMO = [
+  'ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ',
+  'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ',
 ] as const;
 
 /** Final-consonant romanization follows pronunciation, not the literal jamo shape. */
@@ -28,6 +38,12 @@ const TAIL_JAMO = [
   '', 'k', 'k', 'k', 'n', 'n', 'n', 't', 'l', 'k',
   'm', 'l', 'l', 'l', 'p', 'l', 'm', 'p', 'p', 't',
   't', 'ng', 't', 't', 'k', 't', 'p', 't',
+] as const;
+
+const TAIL_COMPATIBILITY_JAMO = [
+  '', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ',
+  'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ',
+  'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ',
 ] as const;
 
 const HANGUL_SYLLABLE_START = 0xac00;
@@ -45,6 +61,35 @@ function romanizeSyllable(codePoint: number): string {
   const vowelIndex = Math.floor((index % (VOWEL_COUNT * TAIL_COUNT)) / TAIL_COUNT);
   const tailIndex = index % TAIL_COUNT;
   return `${LEAD_JAMO[leadIndex]}${VOWEL_JAMO[vowelIndex]}${TAIL_JAMO[tailIndex]}`;
+}
+
+export interface HangulSyllablePart {
+  readonly jamo: string;
+  readonly romanization: string;
+}
+
+export interface HangulSyllableBreakdown {
+  readonly block: string;
+  readonly parts: readonly HangulSyllablePart[];
+}
+
+/** Decomposes precomposed syllable blocks into compatibility jamo and the RR used by `romanizeHangul`. */
+export function decomposeHangulSyllables(value: string): readonly HangulSyllableBreakdown[] {
+  const syllables: Array<HangulSyllableBreakdown | null> = Array.from(value, character => {
+    const codePoint = character.codePointAt(0) ?? 0;
+    if (!isHangulSyllable(codePoint)) return null;
+    const index = codePoint - HANGUL_SYLLABLE_START;
+    const leadIndex = Math.floor(index / (VOWEL_COUNT * TAIL_COUNT));
+    const vowelIndex = Math.floor((index % (VOWEL_COUNT * TAIL_COUNT)) / TAIL_COUNT);
+    const tailIndex = index % TAIL_COUNT;
+    const parts: HangulSyllablePart[] = [
+      { jamo: LEAD_COMPATIBILITY_JAMO[leadIndex], romanization: LEAD_JAMO[leadIndex] },
+      { jamo: VOWEL_COMPATIBILITY_JAMO[vowelIndex], romanization: VOWEL_JAMO[vowelIndex] },
+    ];
+    if (tailIndex) parts.push({ jamo: TAIL_COMPATIBILITY_JAMO[tailIndex], romanization: TAIL_JAMO[tailIndex] });
+    return { block: character, parts };
+  });
+  return syllables.filter((syllable): syllable is HangulSyllableBreakdown => syllable !== null);
 }
 
 /**

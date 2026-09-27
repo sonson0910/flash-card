@@ -12,6 +12,7 @@ const SpellingView = lazy(() => import('../../src/features/practice/SpellingView
 const StoryView = lazy(() => import('../../src/features/practice/StoryView').then(module => ({ default: module.StoryView })));
 const WordMatchView = lazy(() => import('../../src/features/practice/WordMatchView').then(module => ({ default: module.WordMatchView })));
 const ShadowingView = lazy(() => import('../../src/features/practice/ShadowingView').then(module => ({ default: module.ShadowingView })));
+const ReviewFlashcard = lazy(() => import('../../src/components/Flashcard').then(module => ({ default: module.Flashcard })));
 
 const cards: CardData[] = [
   ['adapt', 'thích nghi'], ['benefit', 'lợi ích'], ['context', 'bối cảnh'],
@@ -39,6 +40,12 @@ const quiz = [{
   options: [cards[0].translation, cards[1].translation, cards[2].translation, cards[3].translation],
 }];
 
+const koreanReviewCard: CardData = {
+  id: 'practice-visual-korean-review', language: 'ko', translationLanguage: 'vi',
+  word: '결심하다', translation: 'quyết tâm', explanation: 'To make a firm decision.',
+  phonetic: '', emoji: '💪', category: 'TOPIK I', audioUrl: null, imageUrl: null,
+};
+
 const noop = () => undefined;
 const asyncNoop = async () => undefined;
 const emptyStats = { total: 0, learned: 0, learning: 0, dueToday: 0, categoryChart: [], categoryChartIsPartial: false, difficultyChart: [], xpChartData: [] };
@@ -50,7 +57,7 @@ function PracticeFixture() {
   const view = new URLSearchParams(location.search).get('view') || 'quiz';
   const isCheckedSpelling = view === 'spelling-checked';
 
-  useEffect(() => { void Promise.all([loadCatalog(locale, 'practice'), loadCatalog(locale, 'shell')]).then(() => setReady(true)); }, [locale]);
+  useEffect(() => { void Promise.all([loadCatalog(locale, 'practice'), loadCatalog(locale, 'shell'), loadCatalog(locale, 'components')]).then(() => setReady(true)); }, [locale]);
   if (!ready) return null;
 
   return <main data-practice-visual-view={view} className="min-h-screen px-4 py-5 sm:px-8 sm:py-8"><Suspense fallback={null}>
@@ -59,6 +66,7 @@ function PracticeFixture() {
     {view === 'story' && <StoryView story={{ story: 'Careful learners adapt their study plan when new evidence gives useful context.', translation: 'Người học cẩn thận điều chỉnh kế hoạch học khi bằng chứng mới mang lại bối cảnh hữu ích.', language: 'en', translationLanguage: 'vi' }} loading={false} onGenerate={noop} onClose={noop} />}
     {view === 'match' && <WordMatchView cards={cards} onClose={noop} onAddXp={noop} />}
     {view === 'shadowing' && <ShadowingView cards={cards} onClose={noop} />}
+    {view === 'ko-review' && <div className="mx-auto max-w-3xl"><ReviewFlashcard data={koreanReviewCard} editorContext={{ kind: 'review', current: 1, total: 4 }} /></div>}
     {view === 'dialog' && <AppOverlays
       shareDialogOpen={false} shareLink={null} shareWarning={null} incomingSharePreview={null}
       dismissShareDialog={noop} showShareDialog={noop} acceptSharedDeck={asyncNoop} cancelSharedDeck={noop}

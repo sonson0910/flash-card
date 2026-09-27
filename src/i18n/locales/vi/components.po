@@ -250,7 +250,7 @@ msgid "flashcard.audio.check-pronunciation"
 msgstr "Kiểm tra phát âm"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:271
+#: src/components/Flashcard.tsx:272
 msgid "flashcard.audio.failed"
 msgstr "Không phát được âm thanh. Hãy kiểm tra quyền âm thanh của trang rồi thử lại."
 
@@ -296,7 +296,7 @@ msgid "flashcard.audio.toggle-speed-detail"
 msgstr "Đổi tốc độ phát âm (1,0x / chậm 0,75x)"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:256
+#: src/components/Flashcard.tsx:257
 msgid "flashcard.audio.unsupported"
 msgstr "Trình duyệt này không hỗ trợ phát âm thanh."
 
@@ -306,27 +306,27 @@ msgid "flashcard.back-to-english"
 msgstr "Quay lại tiếng Anh"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:434
+#: src/components/Flashcard.tsx:437
 msgid "flashcard.card.meaning-revealed"
 msgstr "Đã hiện nghĩa tiếng Việt"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:424
+#: src/components/Flashcard.tsx:427
 msgid "flashcard.card.showing-meaning"
 msgstr "Đang hiển thị nghĩa tiếng Việt."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:424
+#: src/components/Flashcard.tsx:427
 msgid "flashcard.card.showing-word"
 msgstr "Đang hiển thị từ tiếng Anh."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:424
+#: src/components/Flashcard.tsx:427
 msgid "flashcard.card.status"
 msgstr "Thẻ {word}. {side}"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:434
+#: src/components/Flashcard.tsx:437
 msgid "flashcard.card.word-revealed"
 msgstr "Đã hiện từ tiếng Anh"
 
@@ -336,7 +336,7 @@ msgid "flashcard.category"
 msgstr "Danh mục: {category}"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:492
+#: src/components/Flashcard.tsx:495
 #: src/components/flashcard/CardFront.tsx:291
 msgid "flashcard.cefr-level"
 msgstr "CEFR {level}"
@@ -378,59 +378,59 @@ msgid "flashcard.definition.practice"
 msgstr "Luyện đọc định nghĩa"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:452
+#: src/components/Flashcard.tsx:455
 msgid "flashcard.delete.cancel"
 msgstr "Giữ thẻ"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:456
-#: src/components/Flashcard.tsx:679
-#: src/components/Flashcard.tsx:680
+#: src/components/Flashcard.tsx:459
+#: src/components/Flashcard.tsx:682
+#: src/components/Flashcard.tsx:683
 msgid "flashcard.delete.confirm"
 msgstr "Xóa thẻ"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:450
+#: src/components/Flashcard.tsx:453
 msgid "flashcard.delete.description"
 msgstr "Thẻ sẽ bị xóa khỏi thư viện và thay đổi sẽ đồng bộ với kho dùng chung."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:449
+#: src/components/Flashcard.tsx:452
 msgid "flashcard.delete.title"
 msgstr "Xóa “{word}”?"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:613
+#: src/components/Flashcard.tsx:616
 msgid "flashcard.details.antonyms"
 msgstr "Từ trái nghĩa"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:521
+#: src/components/Flashcard.tsx:524
 msgid "flashcard.details.close"
 msgstr "Đóng chi tiết học tập"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:562
+#: src/components/Flashcard.tsx:565
 msgid "flashcard.details.collocations"
 msgstr "Cụm từ thường gặp"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:640
+#: src/components/Flashcard.tsx:643
 msgid "flashcard.details.common-mistake"
 msgstr "Lỗi thường gặp"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:538
+#: src/components/Flashcard.tsx:541
 msgid "flashcard.details.example"
 msgstr "Ví dụ trong ngữ cảnh"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:590
+#: src/components/Flashcard.tsx:593
 msgid "flashcard.details.synonyms"
 msgstr "Từ đồng nghĩa"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:479
+#: src/components/Flashcard.tsx:482
 msgid "flashcard.details.vocabulary"
 msgstr "Từ vựng"
 
@@ -440,8 +440,8 @@ msgid "flashcard.dismiss-translation-error"
 msgstr "Đóng lỗi dịch"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:689
-#: src/components/Flashcard.tsx:689
+#: src/components/Flashcard.tsx:692
+#: src/components/Flashcard.tsx:692
 #: src/components/flashcard/CardBack.tsx:174
 #: src/components/flashcard/CardBack.tsx:369
 msgid "flashcard.edit"
@@ -468,22 +468,27 @@ msgid "flashcard.explore-more-description"
 msgstr "Ngữ cảnh, sắc thái và gia sư AI"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:740
+#: src/components/flashcard/HangulBreakdown.tsx:11
+msgid "flashcard.hangul-breakdown"
+msgstr "Phân tích âm tiết Hangul"
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:743
 msgid "flashcard.hints.hide"
 msgstr "Ẩn gợi ý"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:741
+#: src/components/Flashcard.tsx:744
 msgid "flashcard.hints.hide-content"
 msgstr "Ẩn ảnh và định nghĩa"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:741
+#: src/components/Flashcard.tsx:744
 msgid "flashcard.hints.reveal"
 msgstr "Hiện ảnh và định nghĩa"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:740
+#: src/components/Flashcard.tsx:743
 msgid "flashcard.hints.show"
 msgstr "Hiện gợi ý"
 
@@ -588,7 +593,7 @@ msgid "flashcard.original-word"
 msgstr "Từ gốc"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardHeadword.tsx:40
+#: src/components/flashcard/CardHeadword.tsx:42
 msgid "flashcard.part-of-speech-prefix"
 msgstr "Từ loại:"
 
@@ -780,34 +785,34 @@ msgid "flashcard.reveal-meaning-label"
 msgstr "Xem nghĩa tiếng Việt của {word}"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:345
+#: src/components/Flashcard.tsx:346
 msgid "flashcard.speech.failed"
 msgstr "Không nhận diện được giọng nói. Hãy kiểm tra quyền dùng micro rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:344
+#: src/components/Flashcard.tsx:345
 msgid "flashcard.speech.permission-blocked"
 msgstr "Quyền truy cập micro đang bị chặn. Hãy cho phép trang dùng micro rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:365
+#: src/components/Flashcard.tsx:366
 msgid "flashcard.speech.start-failed"
 msgstr "Không khởi động được micro. Hãy kiểm tra quyền truy cập rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:314
+#: src/components/Flashcard.tsx:315
 msgid "flashcard.speech.unsupported"
 msgstr "Trình duyệt này không hỗ trợ nhận diện giọng nói. Hãy thử Google Chrome."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:722
-#: src/components/Flashcard.tsx:723
+#: src/components/Flashcard.tsx:725
+#: src/components/Flashcard.tsx:726
 msgid "flashcard.star.add"
 msgstr "Đánh dấu sao cho từ này"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:722
-#: src/components/Flashcard.tsx:723
+#: src/components/Flashcard.tsx:725
+#: src/components/Flashcard.tsx:726
 msgid "flashcard.star.remove"
 msgstr "Bỏ đánh dấu sao"
 
@@ -882,7 +887,7 @@ msgid "flashcard.translating"
 msgstr "Đang dịch…"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:54
+#: src/components/Flashcard.tsx:55
 msgid "flashcard.translation.failed"
 msgstr "Không dịch được phần giải thích. Hãy kiểm tra kết nối rồi thử lại."
 
