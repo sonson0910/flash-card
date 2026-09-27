@@ -93,15 +93,15 @@ export function CardFront({
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 pb-4 pt-4 scrollbar-thin sm:px-6">
               <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
                 <div className="min-w-0 text-left">
-                  <div data-card-metadata className="mb-2.5 flex flex-wrap items-center gap-2 text-[10px]">
-                    <CardTierBadge tier={tier} />
-                    {/* Category Chip (e.g. Education) */}
+                  <div data-card-metadata className="mb-2.5 flex flex-wrap items-center gap-1.5 text-[10px]">
                     <span lang={data.language || 'en'}
                       aria-label={i18n._(msg({ id: 'flashcard.category', message: 'Category: {category}' }).id, { category: data.category })}
-                      className="inline-flex items-center rounded-lg border border-slate-200/80 bg-slate-100/90 px-2.5 py-0.5 font-black uppercase tracking-wider text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+                      className="font-bold text-slate-600 dark:text-slate-300"
                     >
                       {data.category}
                     </span>
+                    <span className="text-slate-400" aria-hidden="true">•</span>
+                    <CardTierBadge tier={tier} />
 
                     {/* Status Badge (e.g. New card / Due for review) */}
                     {!data.nextReviewDate ? (
@@ -203,7 +203,7 @@ export function CardFront({
                 />
               )}
 
-              <div className="mt-4 flex flex-wrap items-center gap-2">
+              <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-200/80 pt-3 dark:border-white/10">
                 <button
                   type="button"
                   data-card-control
@@ -313,7 +313,7 @@ function ZenCardFront({
               data-card-face="front"
               data-card-mode="zen"
               style={{ transformOrigin: 'center center', borderRadius: '32px' }}
-              className="flashcard-panel flashcard-face zen-glass-slab relative flex h-full w-full flex-col justify-between overflow-hidden rounded-[32px] p-7 pt-20 sm:p-9 sm:pt-20 text-center text-white select-none"
+              className="flashcard-panel flashcard-face zen-glass-slab relative flex h-full w-full flex-col justify-between overflow-hidden rounded-[32px] p-7 pt-16 sm:p-9 sm:pt-16 text-center text-white select-none"
             >
               <CardEffectsLayer spotlightRef={spotlightRef} isHovered={isHovered} spotlightBackground={spotlightBackground} holo tier={tier} />
               {/* Top Rim Specular Star Sparkle from Mockup */}
@@ -387,7 +387,7 @@ function ZenCardFront({
 }
 
 export function CardTierBadge({ tier }: { tier: CardTier }) {
-  return <span data-card-tier-label className="inline-flex items-center rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--sf-brand-text)]">
+  return <span data-card-tier-label className="inline-flex items-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--sf-brand-text)]">
     {tier === 'new' ? <Trans id="flashcard.tier.new" message="Bud" />
         : tier === 'learning' ? <Trans id="flashcard.tier.learning" message="Bloom" />
           : <Trans id="flashcard.tier.mastered" message="Star" />}
