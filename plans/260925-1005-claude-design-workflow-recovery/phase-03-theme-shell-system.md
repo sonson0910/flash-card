@@ -39,6 +39,7 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 - [x] 03.2 — Làm mobile nav/menu, safe-area và scrolling theo AnimeMobile/Mobile*; icon/label/focus và account panel đầy đủ.
 - [x] 03.3 — Làm loading/skeleton, empty, offline/sync pending, expired session, error boundary, toast/undo/retry theo board.
 - [x] 03.4 — Hoàn thiện Appearance: mọi theme đổi trực tiếp, system follow, light/dark within family, Lumi và reduced motion, sound.
+  > Kiểm tra 2026-09-27: đã gỡ `LumiBubble` và test chỉ phục vụ component này vì không còn caller trong `src/` hoặc `e2e/`; `Lumi.tsx` cùng test của nó vẫn hoạt động. `npm run lint` pass; `npx vitest run src/components` pass 28 file / 134 test.
 - [x] 03.5 — Loại style/layout cũ trong phạm vi đã thay sau khi so hình đạt; kiểm tra legal/18+ và analytics ở shell.
 - [x] Đối chiếu Canvas từng state của phase theo board/artboard inventory; reviewer kiểm tra cả hành vi và hình thức.
 - [x] Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log.
