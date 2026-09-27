@@ -849,17 +849,17 @@ msgstr "Trọng âm chính: {syllable}"
 #. js-lingui-explicit-id
 #: src/components/flashcard/CardFront.tsx:392
 msgid "flashcard.tier.learning"
-msgstr "Đang học"
+msgstr "Nở"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/CardFront.tsx:393
 msgid "flashcard.tier.mastered"
-msgstr "Đã thành thạo"
+msgstr "Sao"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/CardFront.tsx:391
 msgid "flashcard.tier.new"
-msgstr "Mới"
+msgstr "Nụ"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/CardBack.tsx:203

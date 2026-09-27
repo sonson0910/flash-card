@@ -40,8 +40,8 @@ const viewports = [
 ] as const;
 
 const cardTiers = [
-  { name: 'learning', difficulty: 'good', label: 'Learning' },
-  { name: 'mastered', difficulty: 'easy', label: 'Mastered' },
+  { name: 'learning', difficulty: 'good', label: 'Bloom' },
+  { name: 'mastered', difficulty: 'easy', label: 'Star' },
 ] as const;
 
 async function expectNoBlockingViolations(page: Page) {
@@ -144,6 +144,7 @@ for (const theme of themes) {
       else await expect(root).not.toHaveClass(/\bdark\b/);
 
       await expect(shell).toHaveAttribute('data-card-side', 'front');
+      await expect(shell.locator('[data-card-tier-label]')).toHaveText('Bud');
       await expect(shell.locator('.flashcard-face')).toBeVisible();
       await expectCardPhotoReady(shell);
       await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-front.png`, {

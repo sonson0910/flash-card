@@ -388,8 +388,8 @@ function ZenCardFront({
 
 export function CardTierBadge({ tier }: { tier: CardTier }) {
   return <span data-card-tier-label className="inline-flex items-center rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--sf-brand-text)]">
-    {tier === 'new' ? <Trans id="flashcard.tier.new" message="New" />
-        : tier === 'learning' ? <Trans id="flashcard.tier.learning" message="Learning" />
-          : <Trans id="flashcard.tier.mastered" message="Mastered" />}
+    {tier === 'new' ? <Trans id="flashcard.tier.new" message="Bud" />
+        : tier === 'learning' ? <Trans id="flashcard.tier.learning" message="Bloom" />
+          : <Trans id="flashcard.tier.mastered" message="Star" />}
   </span>;
 }

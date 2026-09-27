@@ -308,17 +308,17 @@ msgid "daily.placement.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:84
+#: src/features/webWords/WebWordsPage.tsx:93
 msgid "flashcard.tier.learning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:85
+#: src/features/webWords/WebWordsPage.tsx:94
 msgid "flashcard.tier.mastered"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:83
+#: src/features/webWords/WebWordsPage.tsx:92
 msgid "flashcard.tier.new"
 msgstr ""
 
@@ -621,7 +621,7 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/TodayScreen.tsx:358
-#: src/features/webWords/WebWordsPage.tsx:156
+#: src/features/webWords/WebWordsPage.tsx:165
 msgid "today.error.retry"
 msgstr ""
 
@@ -1092,62 +1092,62 @@ msgid "today.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:194
+#: src/features/webWords/WebWordsPage.tsx:203
 msgid "webWords.actions.add-to-today"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:180
+#: src/features/webWords/WebWordsPage.tsx:189
 msgid "webWords.actions.load-more"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:64
+#: src/features/webWords/WebWordsPage.tsx:68
 msgid "webWords.card.select-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:201
+#: src/features/webWords/WebWordsPage.tsx:210
 msgid "webWords.feedback.added"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:203
+#: src/features/webWords/WebWordsPage.tsx:212
 msgid "webWords.feedback.added-after-new-stage"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:202
+#: src/features/webWords/WebWordsPage.tsx:211
 msgid "webWords.feedback.added-session-not-started"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:126
+#: src/features/webWords/WebWordsPage.tsx:135
 msgid "webWords.filter.day.all"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:120
+#: src/features/webWords/WebWordsPage.tsx:129
 msgid "webWords.filter.day.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:115
+#: src/features/webWords/WebWordsPage.tsx:124
 msgid "webWords.filter.site.all"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:109
+#: src/features/webWords/WebWordsPage.tsx:118
 msgid "webWords.filter.site.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:137
+#: src/features/webWords/WebWordsPage.tsx:146
 msgid "webWords.filter.status.all"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:131
+#: src/features/webWords/WebWordsPage.tsx:140
 msgid "webWords.filter.status.label"
 msgstr ""
 
@@ -1157,47 +1157,47 @@ msgid "webWords.group.untitled"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:100
+#: src/features/webWords/WebWordsPage.tsx:109
 msgid "webWords.page.close-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:96
+#: src/features/webWords/WebWordsPage.tsx:105
 msgid "webWords.page.subtitle"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:95
+#: src/features/webWords/WebWordsPage.tsx:104
 msgid "webWords.page.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:191
+#: src/features/webWords/WebWordsPage.tsx:200
 msgid "webWords.selection.count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:162
+#: src/features/webWords/WebWordsPage.tsx:171
 msgid "webWords.status.empty.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:161
+#: src/features/webWords/WebWordsPage.tsx:170
 msgid "webWords.status.empty.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:155
+#: src/features/webWords/WebWordsPage.tsx:164
 msgid "webWords.status.error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:147
+#: src/features/webWords/WebWordsPage.tsx:156
 msgid "webWords.status.loading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:151
+#: src/features/webWords/WebWordsPage.tsx:160
 msgid "webWords.status.signed-out"
 msgstr ""
 

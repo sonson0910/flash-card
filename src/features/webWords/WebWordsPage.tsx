@@ -89,9 +89,9 @@ export function WebWordsPage({ onClose }: WebWordsPageProps) {
   const { _ } = useLingui();
 
   const tierOptions = [
-    { value: 'new' as const, label: _(msg({ id: 'flashcard.tier.new', message: 'New' })) },
-    { value: 'learning' as const, label: _(msg({ id: 'flashcard.tier.learning', message: 'Learning' })) },
-    { value: 'mastered' as const, label: _(msg({ id: 'flashcard.tier.mastered', message: 'Mastered' })) },
+    { value: 'new' as const, label: _(msg({ id: 'flashcard.tier.new', message: 'Bud' })) },
+    { value: 'learning' as const, label: _(msg({ id: 'flashcard.tier.learning', message: 'Bloom' })) },
+    { value: 'mastered' as const, label: _(msg({ id: 'flashcard.tier.mastered', message: 'Star' })) },
   ];
 
   return (
