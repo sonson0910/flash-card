@@ -94,6 +94,7 @@ export function ReadingToggle({ card, onDarkSurface = false }: ReadingToggleProp
     <div className="mt-1.5">
       <button
         type="button"
+        data-reading-toggle
         data-card-control
         aria-pressed={expanded}
         onPointerDown={event => event.stopPropagation()}
@@ -102,7 +103,7 @@ export function ReadingToggle({ card, onDarkSurface = false }: ReadingToggleProp
           setExpanded(current => !current);
         }}
         aria-label={ariaLabel}
-        className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.1em] transition-colors ${onDarkSurface ? 'border-white/20 bg-white/10 text-slate-100 hover:bg-white/15' : 'border-slate-200/80 bg-slate-100/70 text-slate-600 hover:bg-slate-200/70 dark:border-white/10 dark:bg-white/5 dark:text-slate-300'}`}
+        className={`touch-manipulation inline-flex min-h-11 min-w-11 items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.1em] transition-colors ${onDarkSurface ? 'border-white/20 bg-white/10 text-slate-100 hover:bg-white/15' : 'border-slate-200/80 bg-slate-100/70 text-slate-600 hover:bg-slate-200/70 dark:border-white/10 dark:bg-white/5 dark:text-slate-300'}`}
       >
         <span>{toggleLabel}</span>
         <ChevronDown size={12} aria-hidden="true" className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
