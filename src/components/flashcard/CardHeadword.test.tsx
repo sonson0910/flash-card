@@ -41,13 +41,13 @@ describe('CardHeadword', () => {
     expect(markup).not.toContain('flashcard.reading');
   });
 
-  it('renders a Korean card without a broken or empty toggle before the language pack has loaded', () => {
+  it('does not duplicate a CJK reading in the raw phonetic line before the language pack has loaded', () => {
     const markup = renderToStaticMarkup(
-      <CardHeadword card={card({ word: '안녕', language: 'ko', phonetic: '' })} />,
+      <CardHeadword card={card({ word: '안녕', language: 'ko', phonetic: 'annyeong' })} />,
     );
-    // The reading toggle only appears once its async language pack resolves;
-    // a synchronous first render must show nothing rather than empty markup.
+    // The reading annotation arrives from the lazy language pack. The card
+    // must not show its source phonetic value separately in the meantime.
     expect(markup).toContain('안녕');
-    expect(markup).not.toContain('Romanization');
+    expect(markup).not.toContain('annyeong');
   });
 });

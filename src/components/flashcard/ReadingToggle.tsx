@@ -58,11 +58,11 @@ export function ReadingToggle({ card, onDarkSurface = false }: ReadingToggleProp
   const { _, i18n } = useLingui();
   const packId = resolveLanguagePackId(card.language);
   const [plan, setPlan] = useState<HeadwordReadingPlan | null>(null);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   useEffect(() => {
     setPlan(null);
-    setExpanded(false);
+    setExpanded(true);
     if (packId === 'en') return undefined;
     let cancelled = false;
     loadLanguagePack(packId)

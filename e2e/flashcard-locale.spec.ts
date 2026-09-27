@@ -80,3 +80,50 @@ test('changing the UI locale updates a mounted card while content languages stay
   await expect(shell.locator('[data-card-headword] h2')).toHaveAttribute('lang', 'ja');
   await expect(shell.locator('[data-card-headword] h2')).toHaveText('りんご');
 });
+
+for (const readingCard of [
+  { language: 'ko', word: '결심', translation: 'quyết tâm', explanation: 'A firm decision.', category: 'TOPIK I', phonetic: '', reading: 'gyeolsim', label: 'Romanization' },
+  { language: 'ja', word: '日本', translation: 'Nhật Bản', explanation: 'The country of Japan.', category: 'JLPT N5', phonetic: 'にっぽん', reading: 'にっぽん', label: 'Reading' },
+  { language: 'zh', word: '汉语', translation: 'tiếng Hán', explanation: 'The Chinese language.', category: 'HSK 1', phonetic: 'hàn yǔ', reading: 'hàn', label: 'Pinyin' },
+] as const) for (const theme of [
+  { family: 'classic', mode: 'light', viewport: { width: 1440, height: 900 } },
+  { family: 'crystal', mode: 'dark', viewport: { width: 390, height: 844 } },
+] as const) {
+  test(`${readingCard.language} reading is visible and toggleable in ${theme.family} ${theme.mode}`, async ({ page, seedCards, seedCourseProfile, signIn, blockExternalNetwork }, testInfo) => {
+    await page.setViewportSize(theme.viewport);
+    await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
+    await page.addInitScript(({ family, mode }) => {
+      localStorage.setItem('sonflash_theme_family', family);
+      localStorage.setItem('lingoflash_theme', mode);
+      localStorage.setItem('sonflash_theme_follow_system', 'false');
+      localStorage.setItem('sonflash_reduced_motion', 'true');
+    }, theme);
+    await blockExternalNetwork(page);
+    await seedCourseProfile({ targetLanguage: readingCard.language });
+    await seedCards([{
+      ...card,
+      id: `flashcard-reading-${readingCard.language}`,
+      word: readingCard.word,
+      normalizedWord: readingCard.word,
+      translation: readingCard.translation,
+      explanation: readingCard.explanation,
+      category: readingCard.category,
+      language: readingCard.language,
+      phonetic: readingCard.phonetic,
+    }]);
+    await signIn(page, '/?view=library&locale=en');
+    await page.locator('.library-word-open').click();
+    const shell = page.locator('.flashcard-shell');
+    const toggle = shell.getByRole('button', { name: new RegExp(`Toggle ${readingCard.label}`) });
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(shell.getByText(readingCard.reading, { exact: false })).toBeVisible();
+    const screenshot = testInfo.outputPath(`flashcard-reading-${readingCard.language}-${theme.family}-${theme.mode}.png`);
+    await shell.screenshot({ path: screenshot, animations: 'disabled', caret: 'hide' });
+    await testInfo.attach('CJK card reading', { path: screenshot, contentType: 'image/png' });
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await expect(shell.getByText(readingCard.reading, { exact: false })).toHaveCount(0);
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  });
+}
