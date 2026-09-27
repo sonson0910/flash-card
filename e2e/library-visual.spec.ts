@@ -140,7 +140,7 @@ for (const theme of themes) for (const viewport of viewports) {
 }
 
 const dialogViews = [
-  ['edit', 'Edit card'], ['deck-delete', /Delete “IELTS” deck/],
+  ['edit', 'Edit card'], ['edit-review', 'Edit card'], ['deck-delete', /Delete “IELTS” deck/],
   // AppOverlays.tsx's share dialog title is now dynamic: outgoing shows
   // `Share "{category}"` (shell.share.outgoing-title), incoming shows the
   // category name alone as the heading (with a "Shared with you" kicker
@@ -177,9 +177,14 @@ for (const theme of themes) for (const viewport of viewports) {
       if (dialog === 'deck-create-error') await expect(page.getByRole('alert')).toBeVisible();
       if (dialog === 'import-progress') await expect(page.getByRole('progressbar')).toHaveAttribute('value', '12');
       if (dialog === 'import-error') await expect(page.getByRole('alert')).toBeVisible();
+      if (dialog === 'edit-review') {
+        await expect(page.getByText('Card 2 of 6')).toBeVisible();
+        await expect(page.getByText('This review stays paused while you edit.')).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Save & resume' })).toBeVisible();
+      }
       await expectAccessibleAndContained(page, name);
       await expectReducedMotion(page, name);
-      if (dialog === 'edit') {
+      if (dialog === 'edit' || dialog === 'edit-review') {
         const backdropPreview = page.locator('[data-edit-preview-backdrop]');
         const sheetPreview = page.locator('[data-edit-preview]');
         if (viewport.name === 'desktop') {
