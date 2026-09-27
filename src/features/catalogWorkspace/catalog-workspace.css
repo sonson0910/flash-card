@@ -5,26 +5,17 @@
 .catalog-heading h1 { font-size: clamp(2.8rem, 4vw, 3.25rem) !important; line-height: .95 !important; letter-spacing: -.045em !important; }
 .catalog-heading .premium-kicker { color: var(--sf-brand-text); }
 .catalog-current-path { min-height: 25rem; background: radial-gradient(ellipse 60% 85% at 96% 4%, color-mix(in srgb, var(--sf-brand) 26%, transparent), transparent 68%), radial-gradient(ellipse 65% 80% at 3% 100%, color-mix(in srgb, var(--sf-second) 24%, transparent), transparent 72%), var(--sf-surface) !important; box-shadow: 0 32px 70px -48px var(--sf-shadow) !important; }
-/* liquid-glass::after sets inset: 1px and z-index 3; reset both so the ring stays bottom-right, behind the copy. */
-.catalog-current-path::after { position: absolute; inset: auto -3.5rem -5.5rem auto; z-index: -1; width: 17rem; height: 17rem; border: 1px solid color-mix(in srgb, var(--sf-brand) 35%, transparent); border-radius: 50%; box-shadow: 0 0 0 2.25rem color-mix(in srgb, var(--sf-brand) 7%, transparent), 0 0 0 4.5rem color-mix(in srgb, var(--sf-brand) 4%, transparent); content: ''; pointer-events: none; }
+/* The generic glass edge competes with the path title at narrow widths. The path gradient supplies the ornament. */
+.catalog-current-path::after { display: none; }
 .catalog-current-path > div { min-height: 20rem; }
 .catalog-current-path h2 { color: var(--sf-text); }
 .catalog-current-path .premium-kicker::before { display: inline-block; width: .5rem; height: .5rem; margin-right: .5rem; border-radius: 50%; background: var(--sf-brand); box-shadow: 0 0 12px var(--sf-brand); content: ''; vertical-align: middle; }
 .catalog-roadmap-panel { position: relative; z-index: 1; background: color-mix(in srgb, var(--sf-surface) 86%, transparent) !important; backdrop-filter: blur(12px); }
-/* Stages sit side by side only when the panel fits the longest label; narrower panels stack them so labels never collide. */
-.catalog-roadmap-panel { container-type: inline-size; }
 .catalog-roadmap-panel ol { display: grid; gap: .6rem; }
 .catalog-roadmap-panel ol > li { min-width: 0; margin: 0; overflow-wrap: anywhere; }
-.catalog-roadmap-panel ol li > span:first-child { width: 2.5rem; height: .4rem; border-radius: 99px; font-size: 0; }
-@container (min-width: 17.5rem) {
-  .catalog-roadmap-panel ol { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
-  .catalog-roadmap-panel ol > li { flex-direction: column; align-items: flex-start; gap: .45rem; }
-  .catalog-roadmap-panel ol li > span:first-child { width: 100%; }
-}
+.catalog-roadmap-panel ol li > span:first-child { width: 1.75rem; height: 1.75rem; }
 .catalog-shelf { background: transparent !important; border: 0 !important; padding-inline: 0 !important; }
-.catalog-shelf > div:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
-.catalog-shelf > div:first-child::after { color: var(--sf-brand-text); font-size: .78rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; content: 'Your shelf'; }
-.catalog-shelf > div:first-child .premium-kicker { display: none; }
+.catalog-shelf > div:first-child { display: block; }
 .catalog-shelf h2 { font-size: clamp(1.55rem, 2.4vw, 2rem) !important; }
 .catalog-shelf > div:last-child { gap: 1rem !important; }
 .catalog-track-card { min-height: 16.5rem !important; padding: 1.25rem 1.15rem 1rem 1.55rem !important; border-radius: var(--sf-card-radius, 1rem) !important; background: radial-gradient(ellipse 80% 70% at 100% 0%, color-mix(in srgb, var(--sf-brand) 18%, transparent), transparent 68%), var(--sf-surface) !important; }
@@ -61,7 +52,6 @@
 :root[data-theme-family='crystal'] .catalog-roadmap-panel, :root[data-theme-family='crystal'] .catalog-track-card, :root[data-theme-family='crystal'] .catalog-tier-step, :root[data-theme-family='crystal'] .catalog-explorer > div, :root[data-theme-family='crystal'] .catalog-explorer article { border: 0 !important; clip-path: var(--nk-chamfer-sm); box-shadow: inset 0 0 0 1px var(--sf-border), 0 15px 35px -30px rgb(0 0 0 / .8) !important; }
 :root[data-theme-family='crystal'] .catalog-track-card::after { color: rgb(255 84 112 / .14); }
 :root[data-theme-family='crystal'] .catalog-track-card > span:first-child { background: linear-gradient(180deg, #ff5470, #b30f33) !important; }
-:root[data-theme-family='crystal'] .catalog-shelf > div:first-child::after { color: var(--sf-text3, var(--sf-text-muted)); font-family: Kanit, sans-serif; font-style: italic; }
 :root[data-theme-family='crystal'] .catalog-personal-paths { position: relative; border: 0 !important; clip-path: var(--nk-chamfer); background: radial-gradient(ellipse 58% 100% at 100% 0%, rgb(255 143 182 / .36), transparent 70%), radial-gradient(ellipse 70% 85% at 8% 100%, rgb(94 242 255 / .26), transparent 72%), linear-gradient(160deg, #f2faff, #cfe9ff) !important; box-shadow: inset 0 0 0 2px #ff2a4d, 0 0 30px rgb(255 42 77 / .25) !important; }
 :root[data-theme-family='crystal'].dark .catalog-personal-paths { background: radial-gradient(ellipse 58% 100% at 100% 0%, rgb(179 15 51 / .42), transparent 70%), radial-gradient(ellipse 70% 85% at 8% 100%, rgb(16 60 120 / .52), transparent 72%), linear-gradient(160deg, #121828, #070910) !important; }
 :root[data-theme-family='crystal'] .catalog-personal-paths > div:last-child { border-color: rgb(94 242 255 / .24) !important; background: rgb(255 255 255 / .12); }
@@ -69,12 +59,12 @@
 :root[data-theme-family='crystal'] .catalog-personal-paths > div:first-child .premium-kicker { color: #ff2a4d; }
 
 @media (min-width: 1024px) {
-  .catalog-canvas > .catalog-current-path { width: 48%; min-height: 27rem; float: left; margin-right: 1.625rem; }
+  .catalog-canvas > .catalog-current-path { width: 56%; min-height: 27rem; float: left; margin-right: 1.625rem; }
   .catalog-current-path > div { display: flex !important; min-height: 22.75rem; flex-direction: column; align-items: stretch; }
   .catalog-current-path .catalog-roadmap-panel { margin-top: auto; }
   .catalog-canvas > .catalog-shelf { min-height: 27rem; padding-top: .5rem !important; }
-  .catalog-shelf > div:last-child { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
-  .catalog-shelf .catalog-track-card { min-height: 17rem !important; }
+  .catalog-shelf > div:last-child { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .catalog-shelf .catalog-track-card { min-height: 12rem !important; }
   .catalog-roadmap { clear: both; }
 }
 @media (max-width: 639px) {
