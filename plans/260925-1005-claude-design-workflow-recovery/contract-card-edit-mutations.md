@@ -31,6 +31,9 @@ are kept as the historical spec.
   different write transport (Admin-SDK transaction vs. the client `updateDoc`
   patch) and Rules cannot express identity changes at all for an identified
   card.
+  Rate limit: 30 renames per user per hour (`MAX_CARD_HEADWORD_RENAMES_PER_HOUR`,
+  lowered from 60 on 2026-09-27 to halve the worst-case transaction cost; a
+  typo fix never needs more).
 - **Part of speech**: implemented only the UI-gating half this contract itself
   scoped as the correct interim UI (`canEditPartOfSpeech` in
   `editCardModel.ts`, hiding the control for a `lexemeId` card). The "new
