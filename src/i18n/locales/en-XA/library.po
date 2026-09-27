@@ -44,7 +44,7 @@ msgid "flashcard.edit"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:44
+#: src/features/cardEdit/EditCardDialog.tsx:57
 msgid "flashcard.memory-hook"
 msgstr ""
 
@@ -1070,149 +1070,209 @@ msgid "library.dialogue.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:308
+#: src/features/cardEdit/EditCardDialog.tsx:541
 msgid "library.edit-card.back-to-card"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:310
+#: src/features/cardEdit/EditCardDialog.tsx:543
 msgid "library.edit-card.cancel"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:243
+#: src/features/cardEdit/EditCardDialog.tsx:378
 msgid "library.edit-card.card-fields"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:208
+#: src/features/cardEdit/EditCardDialog.tsx:442
+msgid "library.edit-card.category"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:343
 msgid "library.edit-card.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:281
+#: src/features/cardEdit/EditCardDialog.tsx:514
 msgid "library.edit-card.contract-note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:203
+#: src/features/cardEdit/EditCardDialog.tsx:338
 msgid "library.edit-card.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:334
+#: src/features/cardEdit/EditCardDialog.tsx:567
 msgid "library.edit-card.discard-confirm"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:328
+#: src/features/cardEdit/EditCardDialog.tsx:561
 msgid "library.edit-card.discard-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:327
+#: src/features/cardEdit/EditCardDialog.tsx:560
 msgid "library.edit-card.discard-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:217
+#: src/features/cardEdit/EditCardDialog.tsx:352
 msgid "library.edit-card.draft-preview"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:174
+#: src/features/cardEdit/EditCardDialog.tsx:309
 msgid "library.edit-card.editing-badge"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:308
+#: src/features/cardEdit/EditCardDialog.tsx:541
 msgid "library.edit-card.esc-key"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:38
+#: src/features/cardEdit/EditCardDialog.tsx:51
 msgid "library.edit-card.example"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:40
+#: src/features/cardEdit/EditCardDialog.tsx:53
 msgid "library.edit-card.example-translation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:34
+#: src/features/cardEdit/EditCardDialog.tsx:47
 msgid "library.edit-card.explanation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:36
+#: src/features/cardEdit/EditCardDialog.tsx:49
 msgid "library.edit-card.explanation-translation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:302
+#: src/features/cardEdit/EditCardDialog.tsx:470
+msgid "library.edit-card.find-another-photo"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:535
 msgid "library.edit-card.history-note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:113
+#: src/features/cardEdit/EditCardDialog.tsx:455
+msgid "library.edit-card.image"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:162
+msgid "library.edit-card.image-search-failed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:146
 msgid "library.edit-card.invalid-content"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:331
+#: src/features/cardEdit/EditCardDialog.tsx:564
 msgid "library.edit-card.keep-editing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:197
+#: src/features/cardEdit/EditCardDialog.tsx:332
 msgid "library.edit-card.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:250
+#: src/features/cardEdit/EditCardDialog.tsx:460
+msgid "library.edit-card.no-image"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:419
 msgid "library.edit-card.part-of-speech"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:314
+#: src/features/cardEdit/EditCardDialog.tsx:434
+msgid "library.edit-card.part-of-speech-locked"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:477
+msgid "library.edit-card.remove-image"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:547
 msgid "library.edit-card.save"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:112
+#: src/features/cardEdit/EditCardDialog.tsx:145
 msgid "library.edit-card.save-failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:314
+#: src/features/cardEdit/EditCardDialog.tsx:405
+msgid "library.edit-card.save-word"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:547
 msgid "library.edit-card.saving"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:285
+#: src/features/cardEdit/EditCardDialog.tsx:518
 msgid "library.edit-card.source-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:200
+#: src/features/cardEdit/EditCardDialog.tsx:335
 msgid "library.edit-card.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:32
+#: src/features/cardEdit/EditCardDialog.tsx:45
 msgid "library.edit-card.translation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:179
-#: src/features/cardEdit/EditCardDialog.tsx:227
+#: src/features/cardEdit/EditCardDialog.tsx:314
+#: src/features/cardEdit/EditCardDialog.tsx:362
 msgid "library.edit-card.unsaved-badge"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:246
+#: src/features/cardEdit/EditCardDialog.tsx:381
 msgid "library.edit-card.word"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:151
+msgid "library.edit-card.word-conflict"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:150
+msgid "library.edit-card.word-duplicate"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:152
+msgid "library.edit-card.word-save-failed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:149
+msgid "library.edit-card.word-too-long"
 msgstr ""
 
 #. js-lingui-explicit-id

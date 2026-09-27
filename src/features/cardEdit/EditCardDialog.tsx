@@ -7,15 +7,13 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
 import {
-  applyCategoryDeltas,
+  cardEditCloudAvailable,
   CardHeadwordRenameError,
-  deriveLibraryFacetOperationId,
-  renameCardHeadword,
-} from '../../lib/cardRepository';
-import { auth, db, isFirebaseConfigured } from '../../lib/firebase';
+  mirrorCardCategoryEdit,
+  renameOwnCardHeadword,
+} from './cardEditService';
 import { fetchImageUrl, getDisplayImageUrl } from '../../lib/images';
 import {
-  buildCategoryFacetDelta,
   canEditPartOfSpeech,
   createEditCardDraft,
   editCardPatch,
@@ -136,7 +134,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
   // safe for an identified card; without a configured Firebase project there
   // is no callable to reach, so the control degrades to its old read-only
   // presentation instead of offering an action that would always fail.
-  const canRenameWord = isFirebaseConfigured;
+  const canRenameWord = cardEditCloudAvailable;
 
   const targetLanguage = openedCard.language || 'en';
   const nativeLanguage = openedCard.translationLanguage || 'vi';
@@ -194,15 +192,10 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
       setWordError('invalid');
       return;
     }
-    const uid = auth?.currentUser?.uid;
-    if (!uid) {
-      setWordError('failed');
-      return;
-    }
     setRenamingWord(true);
     setWordError(null);
     try {
-      const renamed = await renameCardHeadword(uid, openedCard.id, nextWord, openedCard.revision ?? 0, openedCard.libraryEpoch ?? 0);
+      const renamed = await renameOwnCardHeadword(openedCard, nextWord);
       setOpenedCard(renamed);
       setWordDraft(renamed.word);
     } catch (renameError) {
@@ -271,22 +264,9 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
         setError('save-failed');
         return;
       }
-      // The category->count mirror is kept in sync from a fire-and-forget call,
-      // matching the delete path (`useLearningStatePersistence.ts`): the mirror
-      // is a display aid, so it must never gate the save the learner is waiting on.
+      // The facets mirror must never gate the save the learner is waiting on.
       if (Object.prototype.hasOwnProperty.call(patch, 'category')) {
-        const delta = buildCategoryFacetDelta(openedCard.category, patch.category as string);
-        const uid = auth?.currentUser?.uid;
-        if (delta && uid && db && isFirebaseConfigured) {
-          void applyCategoryDeltas(
-            db,
-            uid,
-            delta,
-            deriveLibraryFacetOperationId(`card-edit:${openedCard.id}:${openedCard.revision ?? 0}`, 'category-edit'),
-          ).catch(facetError => {
-            console.error('Category facets mirror could not be updated after a card edit.', facetError);
-          });
-        }
+        mirrorCardCategoryEdit(openedCard, patch.category as string);
       }
       // A successful save is already committed, so it must bypass the dirty
       // exit guard and return focus through Radix to the launch control.
@@ -462,7 +442,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
                       <button
                         type="button"
                         data-edit-image-find
-                        disabled={imageSearching || !isFirebaseConfigured}
+                        disabled={imageSearching || !cardEditCloudAvailable}
                         onClick={findAnotherPhoto}
                         className="flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
                       >

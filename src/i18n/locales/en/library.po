@@ -44,7 +44,7 @@ msgid "flashcard.edit"
 msgstr "Edit card"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:44
+#: src/features/cardEdit/EditCardDialog.tsx:57
 msgid "flashcard.memory-hook"
 msgstr "Memory hook"
 
@@ -1070,150 +1070,210 @@ msgid "library.dialogue.title"
 msgstr "Practice in context"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:308
+#: src/features/cardEdit/EditCardDialog.tsx:541
 msgid "library.edit-card.back-to-card"
 msgstr "back to card"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:310
+#: src/features/cardEdit/EditCardDialog.tsx:543
 msgid "library.edit-card.cancel"
 msgstr "Cancel"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:243
+#: src/features/cardEdit/EditCardDialog.tsx:378
 msgid "library.edit-card.card-fields"
 msgstr "Card fields"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:208
+#: src/features/cardEdit/EditCardDialog.tsx:442
+msgid "library.edit-card.category"
+msgstr "Category"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:343
 msgid "library.edit-card.close"
 msgstr "Close editor"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:281
+#: src/features/cardEdit/EditCardDialog.tsx:514
 msgid "library.edit-card.contract-note"
-msgstr "Headword, part of speech, image, deck, bookmark, tags and difficulty stay unchanged in this sheet until their data contracts are available."
+msgstr "A published sense's part of speech, deck, bookmark, tags and difficulty stay unchanged in this sheet until their data contracts are available."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:203
+#: src/features/cardEdit/EditCardDialog.tsx:338
 msgid "library.edit-card.description"
 msgstr "Changes update this card while its review history stays intact."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:334
+#: src/features/cardEdit/EditCardDialog.tsx:567
 msgid "library.edit-card.discard-confirm"
 msgstr "Discard changes"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:328
+#: src/features/cardEdit/EditCardDialog.tsx:561
 msgid "library.edit-card.discard-description"
 msgstr "Your draft will be removed and the card will stay unchanged."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:327
+#: src/features/cardEdit/EditCardDialog.tsx:560
 msgid "library.edit-card.discard-title"
 msgstr "Discard unsaved changes?"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:217
+#: src/features/cardEdit/EditCardDialog.tsx:352
 msgid "library.edit-card.draft-preview"
 msgstr "Draft preview"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:174
+#: src/features/cardEdit/EditCardDialog.tsx:309
 msgid "library.edit-card.editing-badge"
 msgstr "· editing"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:308
+#: src/features/cardEdit/EditCardDialog.tsx:541
 msgid "library.edit-card.esc-key"
 msgstr "Esc"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:38
+#: src/features/cardEdit/EditCardDialog.tsx:51
 msgid "library.edit-card.example"
 msgstr "Example"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:40
+#: src/features/cardEdit/EditCardDialog.tsx:53
 msgid "library.edit-card.example-translation"
 msgstr "Example translation"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:34
+#: src/features/cardEdit/EditCardDialog.tsx:47
 msgid "library.edit-card.explanation"
 msgstr "Definition"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:36
+#: src/features/cardEdit/EditCardDialog.tsx:49
 msgid "library.edit-card.explanation-translation"
 msgstr "Definition translation"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:302
+#: src/features/cardEdit/EditCardDialog.tsx:470
+msgid "library.edit-card.find-another-photo"
+msgstr "Find another photo"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:535
 msgid "library.edit-card.history-note"
 msgstr "Your review history is kept. Changes appear on this card right away."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:113
+#: src/features/cardEdit/EditCardDialog.tsx:455
+msgid "library.edit-card.image"
+msgstr "Image"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:162
+msgid "library.edit-card.image-search-failed"
+msgstr "No new photo was found. Try again in a moment."
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:146
 msgid "library.edit-card.invalid-content"
 msgstr "Check the card content and try again."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:331
+#: src/features/cardEdit/EditCardDialog.tsx:564
 msgid "library.edit-card.keep-editing"
 msgstr "Keep editing"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:197
+#: src/features/cardEdit/EditCardDialog.tsx:332
 msgid "library.edit-card.kicker"
 msgstr "Card editor"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:250
+#: src/features/cardEdit/EditCardDialog.tsx:460
+msgid "library.edit-card.no-image"
+msgstr "No image"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:419
 msgid "library.edit-card.part-of-speech"
 msgstr "Part of speech"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:314
+#: src/features/cardEdit/EditCardDialog.tsx:434
+msgid "library.edit-card.part-of-speech-locked"
+msgstr "Locked to this card's published sense."
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:477
+msgid "library.edit-card.remove-image"
+msgstr "Remove image"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:547
 msgid "library.edit-card.save"
 msgstr "Save changes"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:112
+#: src/features/cardEdit/EditCardDialog.tsx:145
 msgid "library.edit-card.save-failed"
 msgstr "Your changes could not be saved. This card may have changed elsewhere. Try again."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:314
+#: src/features/cardEdit/EditCardDialog.tsx:405
+msgid "library.edit-card.save-word"
+msgstr "Save word"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:547
 msgid "library.edit-card.saving"
 msgstr "Saving changes…"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:285
+#: src/features/cardEdit/EditCardDialog.tsx:518
 msgid "library.edit-card.source-label"
 msgstr "Captured from"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:200
+#: src/features/cardEdit/EditCardDialog.tsx:335
 msgid "library.edit-card.title"
 msgstr "Edit card"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:32
+#: src/features/cardEdit/EditCardDialog.tsx:45
 msgid "library.edit-card.translation"
 msgstr "Translation"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:179
-#: src/features/cardEdit/EditCardDialog.tsx:227
+#: src/features/cardEdit/EditCardDialog.tsx:314
+#: src/features/cardEdit/EditCardDialog.tsx:362
 msgid "library.edit-card.unsaved-badge"
 msgstr "Unsaved"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:246
+#: src/features/cardEdit/EditCardDialog.tsx:381
 msgid "library.edit-card.word"
 msgstr "Word"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:151
+msgid "library.edit-card.word-conflict"
+msgstr "This card changed elsewhere. Reload and try again."
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:150
+msgid "library.edit-card.word-duplicate"
+msgstr "Another card already uses this word."
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:152
+msgid "library.edit-card.word-save-failed"
+msgstr "The word could not be saved. Try again."
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:149
+msgid "library.edit-card.word-too-long"
+msgstr "Word is too long."
 
 #. js-lingui-explicit-id
 #: src/features/library/EmptyLibraryPanel.tsx:79
