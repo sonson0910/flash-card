@@ -58,10 +58,10 @@ async function expectScreen(page: Page, testInfo: TestInfo, name: string) {
 
 async function expectDialogScreen(page: Page, testInfo: TestInfo, name: string) {
   const dialog = page.locator('[role="dialog"], [role="alertdialog"]').last();
-  await expect(dialog).toHaveScreenshot(`${name}.png`, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
   const screenshot = testInfo.outputPath(`${name}.png`);
   await dialog.screenshot({ path: screenshot });
   await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
+  await expect(dialog).toHaveScreenshot(`${name}.png`, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
 }
 
 test.beforeAll(async ({}, testInfo) => {
@@ -148,6 +148,8 @@ const dialogViews = [
   // phrase. The fixture (library-visual.tsx) always uses category "IELTS".
   ['share', 'Share “IELTS”'], ['share-in', 'IELTS'],
   ['clear', 'Clear the entire library?'], ['insights', 'Learning insights'],
+  ['deck-create-ready', 'New deck'], ['deck-create-progress', 'New deck'], ['deck-create-error', 'New deck'],
+  ['import-ready', 'Import from spreadsheet'], ['import-progress', 'Import from spreadsheet'], ['import-error', 'Import from spreadsheet'],
 ] as const;
 const inlineViews = [['import', 'Import cards']] as const;
 
@@ -168,6 +170,13 @@ for (const theme of themes) for (const viewport of viewports) {
       await gotoFixture(page, `locale=en&dialog=${dialog}`);
       await expect(page.getByRole(dialog === 'clear' || dialog === 'deck-delete' ? 'alertdialog' : 'dialog')).toBeVisible({ timeout: 15_000 });
       await expect(page.getByRole('heading', { name: title })).toBeVisible();
+      if (dialog === 'deck-create-progress') {
+        await expect(page.getByRole('status').filter({ hasText: 'Creating…' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Create deck' })).toHaveAttribute('aria-busy', 'true');
+      }
+      if (dialog === 'deck-create-error') await expect(page.getByRole('alert')).toBeVisible();
+      if (dialog === 'import-progress') await expect(page.getByRole('progressbar')).toHaveAttribute('value', '12');
+      if (dialog === 'import-error') await expect(page.getByRole('alert')).toBeVisible();
       await expectAccessibleAndContained(page, name);
       await expectReducedMotion(page, name);
       if (dialog === 'edit') {

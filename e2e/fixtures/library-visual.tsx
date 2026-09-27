@@ -5,6 +5,8 @@ import { ThemeProvider } from '../../src/features/theme/ThemeProvider';
 import { AppOverlays } from '../../src/components/AppOverlays';
 import { EditCardDialog } from '../../src/features/cardEdit/EditCardDialog';
 import { DeckDeletionDialog, SpreadsheetImportStatus } from '../../src/features/library/LibraryTools';
+import { DeckCreationDialog } from '../../src/features/library/LibraryDialogOverlays';
+import { SpreadsheetImportDialog } from '../../src/features/importExport/SpreadsheetImportDialog';
 import { LibraryScreen, type LibraryScreenActions, type LibraryScreenModel } from '../../src/features/library/LibraryScreen';
 import { I18nProvider, useUiLocale } from '../../src/i18n/I18nProvider';
 import { loadCatalog } from '../../src/i18n/loadCatalog';
@@ -122,6 +124,28 @@ function LibraryFixture() {
       <h2 className="mb-4 font-display text-2xl font-bold">Import cards</h2>
       <SpreadsheetImportStatus progress={null} result={{ status: 'partial', summary: { total: 12, created: 8, reused: 2, failed: 1, skipped: 1 }, message: 'Import partly finished. You can retry the remaining cards later.' }} />
     </section>}
+    {dialog?.startsWith('deck-create-') && <DeckCreationDialog
+      open
+      onOpenChange={noOp}
+      value="Travel"
+      onChange={noOp}
+      onSubmit={noOp}
+      status={dialog === 'deck-create-progress' ? 'working' : dialog === 'deck-create-error' ? 'failure' : 'idle'}
+    />}
+    {dialog?.startsWith('import-') && <SpreadsheetImportDialog
+      open
+      onOpenChange={noOp}
+      fileName="vocabulary.xlsx"
+      isImporting={dialog === 'import-progress'}
+      progress={dialog === 'import-progress' ? { current: 12, total: 24, word: 'serendipity' } : null}
+      result={dialog === 'import-error' ? {
+        status: 'failed',
+        reason: 'parse',
+        summary: { total: 0, created: 0, reused: 0, failed: 0, skipped: 0 },
+        message: 'Could not understand this spreadsheet. Check its columns and file format, then try again.',
+      } : null}
+      onDownloadErrorReport={noOp}
+    />}
     {dialog === 'edit' && <EditCardDialog card={cards[0]!} open onOpenChange={noOp} onSave={async () => published} />}
     {dialog === 'deck-delete' && <DeckDeletionDialog deckName="IELTS" assignedCardCount={2} open onOpenChange={noOp} onConfirm={noOp} isDeleting={false} error={false} />}
     <AppOverlays {...overlayProps} />
