@@ -44,7 +44,7 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 - [ ] 13.3 — So Canvas trực tiếp bốn theme × desktop/mobile và trạng thái critical; gate a11y, motion, vi/en/pseudo và languages được mở.
 - [ ] 13.4 — Chạy toàn bộ gates và cross-browser critical flows; review cross-module/contract/performance.
 - [ ] 13.5 — Ghi log sau từng phase, commit theo quyền đã có và handoff checklist còn lại cho Claude/owner.
-- [ ] 13.6 — Lập release checklist và rollback artifact; phân biệt local/staging/production revision.
+- [x] 13.6 — Lập release checklist và rollback artifact; phân biệt local/staging/production revision. Xem [release-checklist.md](release-checklist.md) (snapshot 2026-09-27, không deploy).
 - [ ] Đối chiếu Canvas từng state của phase theo board/artboard inventory; reviewer kiểm tra cả hành vi và hình thức.
 - [ ] Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log.
 

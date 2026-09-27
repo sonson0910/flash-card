@@ -39,6 +39,12 @@ import {
   LegacyLibraryMigrationFenceError,
   type LegacyLibraryMigrationFence,
 } from './legacyLibraryMigrationOwnerScope.js';
+import {
+  isCanonicalLanguageCode,
+  isSupportedCardTranslationLanguage,
+  parseCardSourceMetadata,
+  type CardSourceMetadata,
+} from './inputValidation.js';
 
 const MIGRATION_VERSION = 2;
 const BACKUP_COLLECTION = 'admin_library_migration_backups';
@@ -678,6 +684,43 @@ const withoutUndefined = (value: CleanupCard): CleanupCard => Object.fromEntries
   Object.entries(value).filter(([, field]) => field !== undefined),
 ) as CleanupCard;
 
+/**
+ * `planLegacyIdentityGroup` merges the learning-content fields (translation,
+ * category, phonetic, ...) from the group's strongest source card but has no
+ * opinion on language identity or capture provenance, so those three
+ * independent, additive fields were silently dropped from every migrated
+ * card. Replicate the "read straight off the strongest card" rule the rest
+ * of the merge already uses, with the same defaults the rest of the
+ * pipeline applies at the same boundary: `language` always ends up explicit
+ * (matching `scripts/backfill-card-language.mjs` and `canonicalCard`'s
+ * non-canonical-identity default of 'en') so course-scoped queries never
+ * depend on a missing field meaning "en", while `translationLanguage` and
+ * `source` are left absent rather than invented when the strongest card
+ * never had a valid one — exactly like `canonicalCard` leaves them unset for
+ * a create request that omits them. A malformed persisted `source` (e.g.
+ * written before a validation tightening) is dropped rather than blocking
+ * the whole migration transaction.
+ */
+export const legacyMigrationLanguageAndSourceFields = (
+  strongest: CleanupCard,
+): { language: string; translationLanguage?: string; source?: CardSourceMetadata } => {
+  const language = isCanonicalLanguageCode(strongest.language) ? (strongest.language as string) : 'en';
+  const translationLanguage = isSupportedCardTranslationLanguage(strongest.translationLanguage)
+    ? strongest.translationLanguage
+    : undefined;
+  let source: CardSourceMetadata | undefined;
+  try {
+    source = parseCardSourceMetadata(strongest.source);
+  } catch {
+    source = undefined;
+  }
+  return {
+    language,
+    ...(translationLanguage === undefined ? {} : { translationLanguage }),
+    ...(source ? { source } : {}),
+  };
+};
+
 const matchingReservation = (cardId: string, normalizedWord: string) => ({
   schemaVersion: 1,
   cardId,
@@ -1302,8 +1345,10 @@ const applyMigrationGroup = async (
     || new Set(livePlan.loserIds).size !== livePlan.loserIds.length
     || livePlan.loserIds.some(id => !group.sources.some(source => source.id === id))
   ) throw new LegacyLibraryMigrationConflictError('source');
+  const strongestLiveCard = liveCards.find(card => card.id === livePlan.strongestSourceId) ?? liveCards[0];
   const updatedCard = withoutUndefined({
     ...livePlan.merged,
+    ...legacyMigrationLanguageAndSourceFields(strongestLiveCard),
     updatedAt: stableIso(current),
   });
   const canonicalBytes = canonicalLegacyLibraryUtf8Bytes(updatedCard).byteLength;
