@@ -9,7 +9,7 @@ const themes = [
   { family: 'classic', scheme: 'light' }, { family: 'classic', scheme: 'dark' },
   { family: 'crystal', scheme: 'light' }, { family: 'crystal', scheme: 'dark' },
 ] as const;
-const popupStates = ['idle', 'loading', 'created', 'existing', 'auth-required', 'error'] as const;
+const popupStates = ['idle', 'loading', 'created', 'existing', 'auth-required', 'quota', 'error'] as const;
 const mimeTypes: Record<string, string> = { '.css': 'text/css', '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.woff2': 'font/woff2' };
 
 let server: Server;
@@ -84,6 +84,7 @@ async function emitPopupState(page: Page, state: typeof popupStates[number]) {
       created: { status: 'created', text: 'resilient', translation: 'kiên cường', phonetic: '/rɪˈzɪl.jənt/', explanation: 'Có khả năng phục hồi.', exampleSentence: 'A resilient community rebuilt.', exampleTranslation: 'Một cộng đồng kiên cường đã xây dựng lại.', sourceLanguage: 'en', inlineShown: false },
       existing: { status: 'existing', text: 'resilient', translation: 'kiên cường', sourceLanguage: 'en', inlineShown: false },
       'auth-required': { status: 'auth-required' },
+      quota: { status: 'error', message: 'Bạn đã hết hạn mức AI hôm nay.' },
       error: { status: 'error', message: 'Không thể tạo flashcard. Hãy thử lại.', retryId: 'visual-capture' },
     };
     for (const listener of (window as any).__extensionListeners) listener({ type: 'QUICK_ADD_STATUS', payload: { id: 'visual-capture', ...payloads[state] } });
@@ -108,7 +109,8 @@ for (const theme of themes) {
       await emitPopupState(page, state);
       if (state === 'loading') await expect(page.locator('#status')).toContainText('Đang tạo flashcard');
       if (state === 'created' || state === 'existing') await expect(page.locator('#result-card')).toBeVisible();
-      if (state === 'auth-required' || state === 'error') await expect(page.locator('#state-card')).toBeVisible();
+      if (state === 'auth-required' || state === 'quota' || state === 'error') await expect(page.locator('#state-card')).toBeVisible();
+      if (state === 'quota') await expect(page.locator('#state-card')).toHaveAttribute('data-state', 'quota');
       await attach(page, testInfo, `extension-popup-${theme.family}-${theme.scheme}-${state}`);
     }
   });
