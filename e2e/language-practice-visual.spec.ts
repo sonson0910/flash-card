@@ -96,6 +96,40 @@ for (const theme of themes) for (const viewport of viewports) for (const languag
   });
 }
 
+for (const theme of themes) for (const viewport of viewports) {
+  test(`${theme.family} ${theme.mode} Japanese sentence completion at ${viewport.name}`, async ({ page }, testInfo) => {
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
+    await page.route(new RegExp(`^https?://(?!127\\.0\\.0\\.1:${fixturePort})`), route => route.abort());
+    await page.addInitScript(({ family, mode }) => {
+      localStorage.setItem('sonflash_theme_family', family);
+      localStorage.setItem('lingoflash_theme', mode);
+      localStorage.setItem('sonflash_theme_follow_system', 'false');
+      localStorage.setItem('sonflash_reduced_motion', 'true');
+    }, theme);
+    await page.goto(`${fixtureOrigin}${fixturePath}?kind=ja-sentence&locale=en`);
+    const surface = page.locator('.language-practice-drill');
+    const answer = surface.locator('.language-practice-drill__answer');
+    await expect(answer).toBeVisible();
+    await answer.fill('まいあさ');
+    await surface.getByRole('button', { name: 'Check' }).click();
+    await expect(surface.getByRole('heading', { name: 'Complete the sentence' })).toBeVisible();
+    await expect(answer).toBeFocused();
+    await expect(surface.getByText('Sáng nào tôi cũng uống cà phê.')).toBeVisible();
+    await expect(surface.locator('.language-practice-drill__sentence')).toContainText('私は');
+    await expect(surface.locator('.language-practice-drill__segments button')).toHaveCount(4);
+    await expectAccessibleAndContained(page, 'Japanese sentence completion');
+    const name = `language-practice-ja-sentence-${theme.family}-${theme.mode}-${viewport.name}`;
+    await expect(surface).toHaveScreenshot(`${name}.png`, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
+    const screenshot = testInfo.outputPath(`${name}.png`);
+    await surface.screenshot({ path: screenshot, animations: 'disabled', caret: 'hide' });
+    await testInfo.attach('Japanese sentence completion', { path: screenshot, contentType: 'image/png' });
+    await surface.locator('.language-practice-drill__segments').getByRole('button', { name: /毎朝/ }).click();
+    await surface.getByRole('button', { name: 'Check' }).click();
+    await expect(surface.getByRole('status')).toContainText('Correct');
+  });
+}
+
 test('Korean drill accepts a correct two-set physical keyboard answer', async ({ page }) => {
   await page.goto(`${fixtureOrigin}${fixturePath}?kind=ko&locale=en`);
   const surface = page.locator('.language-practice-drill');

@@ -5,7 +5,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { CardData } from '../../types/card';
 import { LanguagePracticeDrill } from './LanguagePracticeDrill';
-import { composeHangulBlocks, createLanguagePracticeDrill, evaluateToneLanguagePracticeDrill, evaluateTypedLanguagePracticeDrill, findHangulFinalCorrection, languagePracticeDrillSurfaceState, shouldRevealLanguagePracticeReading } from './languagePracticeDrill';
+import { composeHangulBlocks, createLanguagePracticeDrill, evaluateJapaneseSentenceCloze, evaluateToneLanguagePracticeDrill, evaluateTypedLanguagePracticeDrill, findHangulFinalCorrection, languagePracticeDrillSurfaceState, shouldRevealLanguagePracticeReading, shouldStartJapaneseSentenceCloze } from './languagePracticeDrill';
 import { jaLanguagePack } from './packs/ja';
 
 const card = (language: string, word: string): CardData => ({
@@ -40,6 +40,33 @@ describe('language practice drill model', () => {
     expect(shouldRevealLanguagePracticeReading(false, false)).toBe(false);
     expect(shouldRevealLanguagePracticeReading(true, false)).toBe(true);
     expect(shouldRevealLanguagePracticeReading(false, true)).toBe(true);
+  });
+
+  it('unlocks a Japanese sentence cloze only after a correct kana answer', () => {
+    const current = { ...card('ja', '日本'), phonetic: 'にっぽん', exampleSentence: '日本で日本語を勉強します。' };
+    const sameLanguage = card('ja', '毎朝');
+    const otherLanguage = card('zh', '每天');
+    const model = createLanguagePracticeDrill(current, [current, sameLanguage, otherLanguage]);
+
+    expect(model.sentenceCloze).toEqual({ before: '', after: 'で日本語を勉強します。', answer: '日本', choices: [{ word: '日本', reading: 'にっぽん', meaning: 'meaning' }, { word: '毎朝', meaning: 'meaning' }] });
+    expect(shouldStartJapaneseSentenceCloze(model, evaluateTypedLanguagePracticeDrill(model, 'にほん', 'にっぽん'))).toBe(false);
+    expect(shouldStartJapaneseSentenceCloze(model, evaluateTypedLanguagePracticeDrill(model, 'にっぽん', 'にっぽん'))).toBe(true);
+    expect(evaluateJapaneseSentenceCloze(model, '日本').correct).toBe(true);
+    expect(evaluateJapaneseSentenceCloze(model, '毎朝').correct).toBe(false);
+  });
+
+  it('uses typed Japanese sentence completion when the scope has one card', () => {
+    const current = { ...card('ja', '学校'), phonetic: 'がっこう', exampleSentence: '学校へ行きます。' };
+    const model = createLanguagePracticeDrill(current, [current]);
+
+    expect(model.sentenceCloze?.choices).toEqual([{ word: '学校', reading: 'がっこう', meaning: 'meaning' }]);
+    expect(createLanguagePracticeDrill({ ...current, exampleSentence: '今日は休みです。' }, [current]).sentenceCloze).toBeUndefined();
+  });
+
+  it('requires a whole Japanese word segment and chooses the first repeated segment', () => {
+    const current = { ...card('ja', '毎朝'), phonetic: 'まいあさ', exampleSentence: '毎朝、毎朝コーヒーを飲みます。' };
+    expect(createLanguagePracticeDrill(current, [current]).sentenceCloze).toMatchObject({ before: '', after: '、毎朝コーヒーを飲みます。' });
+    expect(createLanguagePracticeDrill({ ...current, word: '日本', exampleSentence: '日本語を勉強します。' }, [current]).sentenceCloze).toBeUndefined();
   });
 
   it('composes two-set Hangul jamo into displayed syllable blocks before grading', () => {

@@ -1,5 +1,6 @@
 import { buildExercise, evaluateExerciseAnswer } from '../dailyLearning/exerciseEngine';
 import { resolveLanguagePackId } from './registry';
+import { segmentWords } from './unicodeSegmentation';
 import type { CardData } from '../../types/card';
 import type { HeadwordReadingPlan, LanguagePackId, PinyinToneSyllable } from './types';
 
@@ -10,6 +11,20 @@ export interface LanguagePracticeDrillModel {
   readonly packId: LanguagePackId;
   readonly kind: LanguagePracticeDrillKind;
   readonly prompt: string;
+  readonly sentenceCloze?: JapaneseSentenceCloze;
+}
+
+export interface JapaneseSentenceCloze {
+  readonly before: string;
+  readonly after: string;
+  readonly answer: string;
+  readonly choices: readonly JapaneseSentenceClozeChoice[];
+}
+
+export interface JapaneseSentenceClozeChoice {
+  readonly word: string;
+  readonly reading?: string;
+  readonly meaning?: string;
 }
 
 export interface LanguagePracticeDrillResult {
@@ -90,7 +105,35 @@ export function createLanguagePracticeDrill(card: CardData, cards: readonly Card
     packId,
     kind: packId === 'ko' ? 'hangul-blocks' : packId === 'ja' ? 'kana-reading' : packId === 'zh' ? 'tone-melody' : 'spelling',
     prompt: exercise.prompt,
+    ...(packId === 'ja' ? { sentenceCloze: createJapaneseSentenceCloze(card, cards) } : {}),
   };
+}
+
+export function createJapaneseSentenceCloze(card: CardData, cards: readonly CardData[]): JapaneseSentenceCloze | undefined {
+  const sentence = card.exampleSentence;
+  if (resolveLanguagePackId(card.language) !== 'ja' || !sentence) return undefined;
+  let offset = 0;
+  let bounds: { before: string; after: string } | undefined;
+  for (const segment of segmentWords(sentence)) {
+    const index = sentence.indexOf(segment, offset);
+    if (index < 0) return undefined;
+    if (segment === card.word) {
+      bounds = { before: sentence.slice(0, index), after: sentence.slice(index + segment.length) };
+      break;
+    }
+    offset = index + segment.length;
+  }
+  if (!bounds) return undefined;
+  const choices = new Map<string, JapaneseSentenceClozeChoice>();
+  for (const candidate of [card, ...cards]) {
+    if (resolveLanguagePackId(candidate.language) !== 'ja' || !candidate.word || choices.has(candidate.word)) continue;
+    choices.set(candidate.word, {
+      word: candidate.word,
+      ...(candidate.phonetic ? { reading: candidate.phonetic } : {}),
+      ...(candidate.translation ? { meaning: candidate.translation } : {}),
+    });
+  }
+  return { ...bounds, answer: card.word, choices: [...choices.values()] };
 }
 
 export function evaluateTypedLanguagePracticeDrill(
@@ -100,6 +143,15 @@ export function evaluateTypedLanguagePracticeDrill(
 ): LanguagePracticeDrillResult {
   const exercise = buildExercise({ ...model.card, word: expectedAnswer }, [model.card], 'spelling');
   return { cardId: model.card.id, answer, correct: evaluateExerciseAnswer(exercise, answer).correct };
+}
+
+export function shouldStartJapaneseSentenceCloze(model: LanguagePracticeDrillModel, result: LanguagePracticeDrillResult): boolean {
+  return model.kind === 'kana-reading' && Boolean(model.sentenceCloze) && result.correct;
+}
+
+export function evaluateJapaneseSentenceCloze(model: LanguagePracticeDrillModel, answer: string): LanguagePracticeDrillResult {
+  const expected = model.sentenceCloze?.answer;
+  return { cardId: model.card.id, answer, correct: expected !== undefined && answer.normalize('NFKC').trim() === expected.normalize('NFKC') };
 }
 
 export function evaluateToneLanguagePracticeDrill(

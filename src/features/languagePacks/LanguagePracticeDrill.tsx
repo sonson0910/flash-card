@@ -9,11 +9,13 @@ import { loadLanguagePack } from './registry';
 import {
   createLanguagePracticeDrill,
   composeHangulBlocks,
+  evaluateJapaneseSentenceCloze,
   findHangulFinalCorrection,
   evaluateToneLanguagePracticeDrill,
   evaluateTypedLanguagePracticeDrill,
   languagePracticeDrillSurfaceState,
   shouldRevealLanguagePracticeReading,
+  shouldStartJapaneseSentenceCloze,
   type LanguagePracticeDrillResult,
 } from './languagePracticeDrill';
 import type { HeadwordReadingPlan, LanguagePack } from './types';
@@ -59,9 +61,12 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
   const [result, setResult] = useState<LanguagePracticeDrillResult | null>(null);
   const [showHint, setShowHint] = useState(false);
   const [slowAudio, setSlowAudio] = useState(false);
-  const [selectedSegment, setSelectedSegment] = useState<number | null>(null);
+  const [sentenceStage, setSentenceStage] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const composing = useRef(false);
+  const answerInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { if (sentenceStage) answerInput.current?.focus(); }, [sentenceStage]);
 
   useEffect(() => {
     let active = true;
@@ -72,7 +77,7 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
     setSelectedTones([]);
     setResult(null);
     setShowHint(false);
-    setSelectedSegment(null);
+    setSentenceStage(false);
     setLoadError(false);
     void loadLanguagePack(model.packId)
       .then(nextPack => {
@@ -85,6 +90,7 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
   }, [card, model.packId]);
 
   const hasToneExercise = model.kind === 'tone-melody';
+  const cloze = sentenceStage ? model.sentenceCloze : undefined;
   const surfaceState = languagePracticeDrillSurfaceState(model.kind, reading, pack !== null, loadError);
   const ready = surfaceState === 'ready';
   const checked = result !== null;
@@ -92,11 +98,21 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (composing.current || checked || !ready) return;
+    if (cloze) {
+      setResult(evaluateJapaneseSentenceCloze(model, input));
+      return;
+    }
     const typedAnswer = model.kind === 'hangul-blocks' ? composeHangulBlocks(hangulJamo) : input;
     const expectedAnswer = model.kind === 'kana-reading' && reading?.readingText ? reading.readingText : undefined;
     const next = hasToneExercise
       ? evaluateToneLanguagePracticeDrill(card.id, reading?.toneSyllables ?? [], selectedTones)
       : evaluateTypedLanguagePracticeDrill(model, typedAnswer, expectedAnswer);
+    if (shouldStartJapaneseSentenceCloze(model, next)) {
+      setSentenceStage(true);
+      setInput('');
+      setShowHint(true);
+      return;
+    }
     setResult(next);
   };
   const selectTone = (index: number, tone: number) => {
@@ -112,16 +128,14 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
     ? findHangulFinalCorrection(hangulAnswer, card.word) : null;
   const targetGraphemes = pack?.tokenization.segmentGraphemes(card.word) ?? [];
   const answerGraphemes = pack?.tokenization.segmentGraphemes(hangulAnswer) ?? [];
-  const sentenceSegments = model.kind === 'kana-reading' && card.exampleSentence && pack
-    ? pack.tokenization.segmentWords(card.exampleSentence).filter(Boolean)
-    : [];
   const progress = typeof currentIndex === 'number' && typeof total === 'number' && total > 0
     ? { current: Math.min(currentIndex + 1, total), total } : null;
   const packLabel = model.packId === 'ko' ? <Trans id="languagePractice.ko.pack" message="Korean pack · 한국어" />
     : model.packId === 'ja' ? <Trans id="languagePractice.ja.pack" message="Japanese pack · 日本語" />
       : model.packId === 'zh' ? <Trans id="languagePractice.zh.pack" message="Chinese pack · 中文" />
         : <Trans id="languagePractice.en.pack" message="English pack" />;
-  const title = model.kind === 'hangul-blocks' ? <Trans id="languagePractice.ko.title" message="Build the syllable blocks" />
+  const title = cloze ? <Trans id="languagePractice.ja.sentence.title" message="Complete the sentence" />
+    : model.kind === 'hangul-blocks' ? <Trans id="languagePractice.ko.title" message="Build the syllable blocks" />
     : model.kind === 'kana-reading' ? <Trans id="languagePractice.ja.title" message="Type the reading" />
       : model.kind === 'tone-melody' ? <Trans id="languagePractice.zh.title" message="Hear the tones" />
         : <Trans id="languagePractice.en.title" message="Spell the word" />;
@@ -151,14 +165,17 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
     setHangulJamo(value => value + jamo);
   };
 
-  const instruction = model.kind === 'hangul-blocks'
+  const instruction = cloze ? <Trans id="languagePractice.ja.sentence.instruction" message="Choose the missing word." />
+    : model.kind === 'hangul-blocks'
     ? <Trans id="languagePractice.ko.instruction" message="Build the Hangul word from its meaning." />
     : model.kind === 'kana-reading'
       ? <Trans id="languagePractice.ja.instruction" message="Read the word, then type it in Japanese." />
       : model.kind === 'tone-melody'
         ? <Trans id="languagePractice.zh.instruction" message="Choose the tone for every pinyin syllable." />
         : <Trans id="languagePractice.en.instruction" message="Type the vocabulary word for this meaning." />;
-  const placeholder = model.packId === 'ja'
+  const placeholder = cloze
+    ? i18n._(msg({ id: 'languagePractice.ja.sentence.placeholder', message: 'Type the missing word' }))
+    : model.packId === 'ja'
     ? i18n._(msg({ id: 'languagePractice.ja.placeholder', message: 'Kana answer' }))
     : model.packId === 'ko'
       ? i18n._(msg({ id: 'languagePractice.ko.placeholder', message: 'Hangul answer' }))
@@ -178,10 +195,10 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
       <div className="language-practice-drill__panel">
         <div className="language-practice-drill__prompt-row">
           <button type="button" className="language-practice-drill__listen" onClick={playAudio} disabled={!pack} aria-label={i18n._(msg({ id: 'languagePractice.action.listen', message: 'Play pronunciation' }))}><Volume2 size={20} aria-hidden="true" /></button>
-          <div><p className="language-practice-drill__instruction">{instruction}</p><p className="language-practice-drill__prompt" lang={card.translationLanguage || 'vi'}>{model.prompt}</p></div>
+          <div><p className="language-practice-drill__instruction">{instruction}</p><p className="language-practice-drill__prompt" lang={card.translationLanguage || 'vi'}>{cloze ? card.exampleTranslation || model.prompt : model.prompt}</p></div>
           <button type="button" className="language-practice-drill__speed" onClick={() => setSlowAudio(value => !value)} aria-pressed={slowAudio} title={i18n._(msg({ id: 'languagePractice.action.slow', message: 'Toggle slow pronunciation' }))}><Gauge size={14} aria-hidden="true" />{slowAudio ? '0.75×' : '1×'}</button>
         </div>
-        {model.kind === 'kana-reading' && reading?.readingText && revealReading ? <div className="language-practice-drill__japanese-reading" lang="ja"><p className="language-practice-drill__ruby"><ruby>{card.word}<rt>{reading.readingText}</rt></ruby></p>{reading.japanesePitchAccent && <JapanesePitchContour accent={reading.japanesePitchAccent} />}</div> : showHint && reading?.readingText && (
+        {!cloze && model.kind === 'kana-reading' && reading?.readingText && revealReading ? <div className="language-practice-drill__japanese-reading" lang="ja"><p className="language-practice-drill__ruby"><ruby>{card.word}<rt>{reading.readingText}</rt></ruby></p>{reading.japanesePitchAccent && <JapanesePitchContour accent={reading.japanesePitchAccent} />}</div> : !cloze && showHint && reading?.readingText && (
           <div className="language-practice-drill__reading" lang={reading.readingLang}>
             <span>{reading.readingText}</span>{reading.japanesePitchAccent && <JapanesePitchContour accent={reading.japanesePitchAccent} />}
           </div>
@@ -217,13 +234,16 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
           ) : (
             <label className="language-practice-drill__answer-label">
               <span className="language-practice-drill__sr-only"><Trans id="languagePractice.answer.label" message="Your answer" /></span>
-              <input value={input} onChange={event => setInput(event.target.value)} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }} autoComplete="off" lang={card.language || 'en'} className="language-practice-drill__answer" placeholder={placeholder} disabled={checked} />
+              <input ref={answerInput} value={input} onChange={event => setInput(event.target.value)} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }} autoComplete="off" lang={card.language || 'en'} className="language-practice-drill__answer" placeholder={placeholder} disabled={checked} />
             </label>
           )}
-          {sentenceSegments.length > 1 && <div className="language-practice-drill__segments" lang="ja" aria-label={i18n._(msg({ id: 'languagePractice.ja.segments', message: 'Sentence segments' }))}>{sentenceSegments.map((segment, index) => <button key={`${segment}-${index}`} type="button" aria-pressed={selectedSegment === index} onClick={() => setSelectedSegment(current => current === index ? null : index)}>{segment}</button>)}</div>}
+          {cloze && <div className="language-practice-drill__sentence" lang="ja" aria-label={i18n._(msg({ id: 'languagePractice.ja.sentence.choices', message: 'Sentence completion choices' }))}>
+            <p>{cloze.before}<b>{input || '＿＿'}</b>{cloze.after}</p>
+            {cloze.choices.length > 1 && <div className="language-practice-drill__segments">{cloze.choices.map(choice => <button key={choice.word} type="button" aria-pressed={input === choice.word} onClick={() => setInput(choice.word)} disabled={checked}><span>{choice.word}</span>{choice.reading && <small lang="ja">{choice.reading}</small>}{choice.meaning && <small lang={card.translationLanguage || 'vi'}>{choice.meaning}</small>}</button>)}</div>}
+          </div>}
           {checked && <p role="status" aria-live="polite" aria-atomic="true" className={`language-practice-drill__feedback ${result.correct ? 'language-practice-drill__feedback--correct' : 'language-practice-drill__feedback--incorrect'}`}>{result.correct ? <CheckCircle2 aria-hidden="true" /> : <XCircle aria-hidden="true" />}{result.correct ? <Trans id="languagePractice.feedback.correct" message="Correct." /> : <Trans id="languagePractice.feedback.incorrect" message="Try this card again in the next round." />}</p>}
           <div className="language-practice-drill__actions">
-            {!checked && reading?.readingText && <button type="button" onClick={() => setShowHint(true)} disabled={showHint} className="language-practice-drill__hint"><Trans id="languagePractice.action.hint" message="Hint" /></button>}
+            {!cloze && !checked && reading?.readingText && <button type="button" onClick={() => setShowHint(true)} disabled={showHint} className="language-practice-drill__hint"><Trans id="languagePractice.action.hint" message="Hint" /></button>}
             {!checked ? <button type="submit" disabled={!ready || (hasToneExercise && selectedTones.length !== reading?.toneSyllables?.length)} className="language-practice-drill__primary-action"><Trans id="languagePractice.action.check" message="Check" /></button> : <button type="button" onClick={() => onNext(result)} className="language-practice-drill__primary-action"><Trans id="languagePractice.action.next" message="Next" /><ChevronRight size={18} aria-hidden="true" /></button>}
           </div>
         </form>
