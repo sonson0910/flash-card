@@ -199,13 +199,13 @@ const cardForValidation = (value: DocumentData, cardId: string, allowLegacyFsrs 
   }
   let card: CardRecord;
   try {
-    card = canonicalCard(source);
+    card = canonicalCard(source, { allowMasteredAt: true });
   } catch (error) {
     // Existing malformed FSRS state is read through the scheduler's legacy
     // fallback. New client candidates still take the strict path above.
     if (!allowLegacyFsrs || !(error instanceof InputValidationError) || source.fsrs === undefined) throw error;
     const { fsrs: _legacyFsrs, ...withoutFsrs } = source;
-    card = canonicalCard(withoutFsrs);
+    card = canonicalCard(withoutFsrs, { allowMasteredAt: true });
   }
   if (card.id !== cardId || card.normalizedWord !== source.normalizedWord) {
     throw new ReviewPersistenceConflictError('identity-conflict');
@@ -274,8 +274,7 @@ const receiptResult = (value: unknown): ReviewPersistenceResult | null => {
 };
 
 const isMastered = (card: CardRecord): boolean => card.difficulty === 'easy'
-  || Number(card.interval) >= 21
-  || (Boolean(card.fsrs) && typeof card.fsrs === 'object' && Number((card.fsrs as Record<string, unknown>).scheduledDays) >= 21);
+  || Number(card.interval ?? (card.fsrs as Record<string, unknown> | undefined)?.scheduledDays ?? 0) >= 21;
 
 const receiptExpiresAt = (value: unknown): number => {
   if (value instanceof Date) return value.getTime();
@@ -428,8 +427,10 @@ export async function applyReviewForOwner(
     const nextOperationIds = [...operationIds, request.opId].slice(-MAX_REVIEW_OPERATION_IDS);
     const nextRevision = revision + 1;
     const updatedAt = (receivedAt ?? new Date()).toISOString();
+    const masteredAt = isMastered(candidate) ? stored.masteredAt ?? updatedAt : undefined;
     const persisted = {
       ...canonicalFields,
+      ...(masteredAt ? { masteredAt } : { masteredAt: FieldValue.delete() }),
       appliedReviewOperationIds: nextOperationIds,
       revision: nextRevision,
       libraryEpoch: serverEpoch,
@@ -438,9 +439,11 @@ export async function applyReviewForOwner(
     };
     transaction.set(cardRef, persisted, { merge: true });
     if (preparedGamification) commitVerifiedGamification(transaction, preparedGamification);
+    const { masteredAt: _candidateMasteredAt, ...responseCandidate } = candidate;
     const responseCard = serializeCardResponse({
-      ...candidate,
+      ...responseCandidate,
       ...canonicalFields,
+      ...(masteredAt ? { masteredAt } : {}),
       appliedReviewOperationIds: nextOperationIds,
       revision: nextRevision,
       libraryEpoch: serverEpoch,

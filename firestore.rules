@@ -806,17 +806,14 @@ service cloud.firestore {
           'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
           'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
           'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
-          'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'source'
+          'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'masteredAt', 'source'
         ])
         && (!removedCanonicalKey || isCanonical)
         && !changed.hasAny(['origin'])
-        // `source` (browser-extension capture metadata) is set only by the
-        // server-only createCard callable and is immutable afterward, same
-        // as `origin`. This does not need a shape re-validator on update: the
-        // guard below means a client update can never introduce, remove, or
-        // alter it, so whatever shape the server wrote at creation is the
-        // only shape that can ever exist here.
-        && !changed.hasAny(['source'])
+        // Server-owned capture and mastery metadata cannot be
+        // introduced, removed or changed by a client update. Their write
+        // paths validate them before the Admin SDK persists a card.
+        && !changed.hasAny(['source', 'masteredAt'])
         && !changed.hasAny(['language', 'translationLanguage'])
         // language/translationLanguage are immutable after creation (the
         // guard above), so an update never introduces a malformed value

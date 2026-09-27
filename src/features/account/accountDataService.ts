@@ -1,7 +1,7 @@
 import { auth, app, db, getSonFlashFunctions } from '../../lib/firebase';
 import { gamificationStorageKeys } from '../gamification/gamificationStorage';
 import {
-  cloudBackoffCacheKey, cloudFacetsCacheKey, cloudPageCacheKey, cloudStatsCacheKey,
+  cloudBackoffCacheKey, cloudFacetsCacheKey, cloudPageCacheKey, cloudStatsCacheKey, progressEvidenceCachePrefix,
 } from '../library/libraryStorage';
 
 export class LocalAccountCleanupError extends Error {}
@@ -36,7 +36,8 @@ export function removeOwnerLocalKeys(storage: Pick<Storage, 'getItem' | 'removeI
   for (const key of keys) storage.removeItem(key);
   for (let index = storage.length - 1; index >= 0; index--) {
     const key = storage.key(index);
-    if (key?.startsWith(`lingoflash_no_image_v1_${encodeURIComponent(uid)}_`)
+    if (key?.startsWith(progressEvidenceCachePrefix(uid))
+      || key?.startsWith(`lingoflash_no_image_v1_${encodeURIComponent(uid)}_`)
       || key?.startsWith(`${cloudStatsCacheKey(uid)}_`)) storage.removeItem(key);
   }
   session.removeItem('lingoflash_word_draft');

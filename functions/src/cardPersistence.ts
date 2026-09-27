@@ -104,7 +104,7 @@ const CARD_FIELDS = new Set([
   'bookmarked', 'customDeck', 'difficulty', 'nextReviewDate', 'reviews', 'interval',
   'easeFactor', 'correctStreak', 'fsrs', 'reviewHistory', 'partOfSpeech', 'cefrLevel',
   'exampleSentence', 'exampleTranslation', 'collocations', 'synonyms', 'antonyms',
-  'register', 'commonMistake', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'source',
+  'register', 'commonMistake', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'masteredAt', 'source',
 ]);
 
 const CARD_DIFFICULTIES = new Set(['easy', 'good', 'hard', 'unrated']);
@@ -338,7 +338,9 @@ const reservationId = (identity: string, targetLanguage?: string): string => cre
     : identity)
   .digest('hex');
 
-export const canonicalCard = (value: unknown): CardRecord => {
+export const canonicalCard = (value: unknown, { allowMasteredAt = false }: {
+  allowMasteredAt?: boolean;
+} = {}): CardRecord => {
   const source = asRecord(value, 'Card must be an object.');
   if (Object.keys(source).some(key => !CARD_FIELDS.has(key))) {
     throw new InputValidationError('Card contains an unsupported field.');
@@ -401,6 +403,7 @@ export const canonicalCard = (value: unknown): CardRecord => {
   }
   const now = new Date().toISOString();
   const createdAt = optionalDate(source.createdAt, 'createdAt') ?? now;
+  const masteredAt = allowMasteredAt ? optionalDate(source.masteredAt, 'masteredAt') : undefined;
   const cardSource = parseCardSourceMetadata(source.source);
   const result: CardRecord = {
     id: hasCanonicalIdentity ? lexemeId as string : targetAwareCardId(identity, effectiveLanguage ?? 'en'),
@@ -420,6 +423,7 @@ export const canonicalCard = (value: unknown): CardRecord => {
     imageUrl: trustedUrl(source.imageUrl, 'imageUrl', IMAGE_HOSTS),
     imageSearchQuery: boundedText(source.imageSearchQuery, 'imageSearchQuery', 120),
     createdAt,
+    ...(masteredAt ? { masteredAt } : {}),
     bookmarked: source.bookmarked === undefined ? false : source.bookmarked,
     customDeck,
     difficulty,
@@ -697,7 +701,7 @@ const canonicalExistingCard = (
   try {
     // Validate the stored shape and trust its existing metadata. The upgrade
     // only adds protocol identity fields; it must not invent card content.
-    canonicalCard({ ...source, id, normalizedWord: canonicalNormalizedWord });
+    canonicalCard({ ...source, id, normalizedWord: canonicalNormalizedWord }, { allowMasteredAt: true });
     const revision = Number.isSafeInteger(source.revision) && Number(source.revision) > 0
       ? nextProtocolCounter(Number(source.revision), 'revision')
       : 1;

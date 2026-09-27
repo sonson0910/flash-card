@@ -156,6 +156,26 @@ describe('review persistence', () => {
     });
   });
 
+  it('removes mastery from both persistence and the response after a lapse', async () => {
+    const stored = {
+      ...baseCard(),
+      difficulty: 'easy',
+      interval: 21,
+      masteredAt: '2026-09-01T00:00:00.000Z',
+    };
+    const reviewedAt = '2026-09-24T00:00:00.000Z';
+    const request = reviewRequest({
+      rating: 'again',
+      reviewedAt,
+      fields: scheduleReviewTransition(stored, 'again', new Date(reviewedAt)),
+    });
+    const test = harness(stored);
+    const result = await applyReviewForOwner(test.database, 'owner', request);
+
+    expect(test.writes[0]?.data).toHaveProperty('masteredAt');
+    expect(result.card).not.toHaveProperty('masteredAt');
+  });
+
   it('keeps old V2 requests without a timezone valid and replays their original no-award result', async () => {
     const test = harness();
     const request = reviewRequest();

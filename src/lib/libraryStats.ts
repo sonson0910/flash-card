@@ -8,4 +8,6 @@ export interface LibraryStats {
   bookmarked: number;
   due: number;
   legacyUnindexed: number;
+  dueForecast?: Array<{ date: string; count: number }>;
+  recentlyMastered?: Array<{ id: string; word: string; translation: string; masteredAt: string }>;
 }

@@ -53,6 +53,10 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 
 ## Verification
 
+> **Progress evidence contract implemented (2026-09-27).** The approved data layer uses 13 aggregate `nextReviewDate` queries for days 1–13 and reuses the existing due-today aggregate. Forecast is cached in browser storage by owner, target language, and local date (same-day cache hit: 0 forecast reads). The recent-mastery query orders server-owned `masteredAt` by descending timestamp and limits to four cards (0–4 document reads per hydration). `masteredAt` is set only when the server confirms the card first reaches the existing mastery threshold (using transaction receipt time, never a client-selected review timestamp) and removed on a later lapse; its client update is rejected by Rules. The new `language + masteredAt` index supports the bounded query.
+
+> **Progress visual evidence (2026-09-28).** Opened all eight actual forecast/recent-mastery section captures (Classic/Crystal × light/dark × desktop/390px) and compared their layout with `ProgressScreen-{light,dark}.png` and `AnimeProgress-{light,dark}.png`. Added eight scoped Chromium baselines and assertions; reran the visual cases without snapshot update: 8/8 pass. Focused frontend tests: 47/47; Functions persistence tests: 91/91; full Chromium Paths/Progress plus language-practice specs: 50/50. `tsc`, lint, i18n check, build, bundle and `verify:deploy` pass. Initial gzip: JS 70,982/71,000 B, CSS 29,499/29,500 B. The Canvas checklist remains open for the separately proposed Paths unit and review-activity contract. No production I/O beyond the approved forecast and recent-mastery costs above.
+
 Stats/ActivityHeatmap/catalog tests; e2e/paths-progress-visual.spec.ts và catalog-workspace.spec.ts; new weekly-recap unit+export journey; gates chung.
 
 Hợp đồng chung: [acceptance-contract.md](acceptance-contract.md). Tên test mới là đề xuất; trước chạy phải kiểm inventory file thực, không báo file vắng là PASS. Với flow có mutation, test dùng emulator/fixtures, không dữ liệu người học hay Gemini thật.

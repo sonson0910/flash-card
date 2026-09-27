@@ -32,6 +32,7 @@ export interface LibrarySessionCatalogInput {
   pageSize: number;
   refreshKey: number;
   statsOpen: boolean;
+  progressEvidenceOpen: boolean;
 }
 
 export interface LibrarySessionLibraryInput {
@@ -104,6 +105,7 @@ export function useLibrarySession(
     pageSize: catalog.pageSize,
     refreshKey: catalog.refreshKey,
     statsOpen: catalog.statsOpen,
+    progressEvidenceOpen: catalog.progressEvidenceOpen,
     getPromotedCards: ports.getPromotedCards,
   });
 

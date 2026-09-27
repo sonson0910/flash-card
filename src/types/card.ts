@@ -124,6 +124,8 @@ export interface CardData {
   register?: string;
   commonMistake?: string;
   correctStreak?: number;
+  /** Server-authoritative time when this card most recently crossed the mastery threshold. */
+  masteredAt?: string;
   /** Immutable after creation; set only by the browser-extension capture path via `createCard`. */
   source?: CardSourceMetadata;
 }

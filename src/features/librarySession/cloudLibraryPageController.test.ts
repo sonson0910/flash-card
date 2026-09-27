@@ -62,6 +62,7 @@ const createFakes = () => {
     }),
     countCards: vi.fn(async () => 0),
     loadStats: vi.fn(async () => EMPTY_LIBRARY_STATS),
+    loadProgressEvidence: vi.fn(async () => ({})),
     subscribeFacets: vi.fn((ownerId, publish) => {
       const unsubscribe = vi.fn();
       facetSubscriptions.push({ ownerId, publish, unsubscribe });
@@ -83,6 +84,57 @@ const createFakes = () => {
 };
 
 describe('cloud library page controller', () => {
+  it('loads Progress evidence only when Progress explicitly requests it', async () => {
+    const { adapter, cache } = createFakes();
+    const controller = createCloudLibraryPageController({ adapter, cache });
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+
+    await controller.requestStats();
+    expect(adapter.loadProgressEvidence).not.toHaveBeenCalled();
+
+    await controller.requestProgressEvidence();
+    expect(adapter.loadProgressEvidence).toHaveBeenCalledOnce();
+    expect(controller.getSnapshot().stats).toEqual(expect.objectContaining({}));
+  });
+  it('ignores an old-language Progress response after the active course changes', async () => {
+    const { adapter, cache } = createFakes();
+    const en = deferred<Pick<typeof EMPTY_LIBRARY_STATS, 'dueForecast' | 'recentlyMastered'>>();
+    const ko = deferred<Pick<typeof EMPTY_LIBRARY_STATS, 'dueForecast' | 'recentlyMastered'>>();
+    vi.mocked(adapter.loadProgressEvidence).mockImplementation((_ownerId, language) => language === 'en' ? en.promise : ko.promise);
+    const controller = createCloudLibraryPageController({ adapter, cache });
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+
+    const enTask = controller.requestProgressEvidence('en');
+    const koTask = controller.requestProgressEvidence('ko');
+    en.resolve({ dueForecast: [{ date: '2026-09-28', count: 9 }] });
+    ko.resolve({ dueForecast: [{ date: '2026-09-28', count: 2 }] });
+    await Promise.all([enTask, koTask]);
+
+    expect(controller.getSnapshot().stats.dueForecast).toEqual([{ date: '2026-09-28', count: 2 }]);
+  });
+
+  it('keeps current Progress evidence when a base stats request resolves later', async () => {
+    const { adapter, cache } = createFakes();
+    const stats = deferred<typeof EMPTY_LIBRARY_STATS>();
+    const evidence = deferred<Pick<typeof EMPTY_LIBRARY_STATS, 'dueForecast' | 'recentlyMastered'>>();
+    vi.mocked(adapter.loadStats).mockReturnValue(stats.promise);
+    vi.mocked(adapter.loadProgressEvidence).mockReturnValue(evidence.promise);
+    const controller = createCloudLibraryPageController({ adapter, cache });
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+
+    const statsTask = controller.requestStats('en');
+    const evidenceTask = controller.requestProgressEvidence('en');
+    evidence.resolve({ dueForecast: [{ date: '2026-09-28', count: 3 }] });
+    await evidenceTask;
+    stats.resolve({ ...EMPTY_LIBRARY_STATS, total: 5 });
+    await statsTask;
+
+    expect(controller.getSnapshot().stats).toMatchObject({
+      total: 5,
+      dueForecast: [{ date: '2026-09-28', count: 3 }],
+    });
+  });
+
   it('keeps controller and cursor contracts free of Firebase vendor types', () => {
     const controllerSource = readFileSync(fileURLToPath(new URL('./cloudLibraryPageController.ts', import.meta.url)), 'utf8');
     const adapterSource = readFileSync(fileURLToPath(new URL('./cloudLibraryPageFirebaseAdapter.ts', import.meta.url)), 'utf8');

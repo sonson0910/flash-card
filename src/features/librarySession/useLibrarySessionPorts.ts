@@ -13,6 +13,8 @@ export interface LibrarySessionPortStats {
   bookmarked: number;
   due: number;
   legacyUnindexed: number;
+  dueForecast?: Array<{ date: string; count: number }>;
+  recentlyMastered?: Array<{ id: string; word: string; translation: string; masteredAt: string }>;
 }
 
 export interface LibrarySessionPortPublications {

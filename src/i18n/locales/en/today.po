@@ -328,7 +328,7 @@ msgid "progress.add-vocabulary"
 msgstr "Add vocabulary"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:28
+#: src/features/dailyLearning/ProgressWorkspace.tsx:34
 msgid "progress.charts.loading"
 msgstr "Loading progress charts…"
 
@@ -368,6 +368,21 @@ msgid "progress.evidence"
 msgstr "Supporting evidence"
 
 #. js-lingui-explicit-id
+#: src/features/dailyLearning/ProgressWorkspace.tsx:44
+msgid "progress.evidence.forecast-and-mastery"
+msgstr "Forecast and recently mastered cards"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/ProgressWorkspace.tsx:45
+msgid "progress.forecast.title"
+msgstr "Due over the next 13 days"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/ProgressWorkspace.tsx:45
+msgid "progress.forecast.unavailable"
+msgstr "Forecast is unavailable while saved progress is loading."
+
+#. js-lingui-explicit-id
 #: src/features/dailyLearning/ProgressScreen.tsx:44
 msgid "progress.history-kicker"
 msgstr "Learning history"
@@ -388,17 +403,27 @@ msgid "progress.loading.title"
 msgstr "Your saved progress"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:34
+#: src/features/dailyLearning/ProgressWorkspace.tsx:46
+msgid "progress.mastered.empty"
+msgstr "No cards have reached mastery yet."
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/ProgressWorkspace.tsx:46
+msgid "progress.mastered.title"
+msgstr "Recently mastered"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/ProgressWorkspace.tsx:40
 msgid "progress.message.error"
 msgstr "Showing saved progress. {error}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:34
+#: src/features/dailyLearning/ProgressWorkspace.tsx:40
 msgid "progress.message.loading"
 msgstr "Refreshing progress; saved metrics remain visible."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:34
+#: src/features/dailyLearning/ProgressWorkspace.tsx:40
 msgid "progress.message.ready"
 msgstr "Progress is calculated from your learning history."
 
@@ -438,7 +463,7 @@ msgid "progress.title"
 msgstr "Progress"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:42
+#: src/features/dailyLearning/ProgressWorkspace.tsx:52
 msgid "progress.weeklyRecap.open"
 msgstr "View weekly recap"
 

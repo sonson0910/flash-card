@@ -30,6 +30,8 @@ export const cloudStatsCacheKey = (userId: string, targetLanguage?: string | nul
   targetLanguage ? `lingoflash_cloud_stats_${userId}_${targetLanguage}` : `lingoflash_cloud_stats_${userId}`;
 export const cloudFacetsCacheKey = (userId: string) => `lingoflash_cloud_facets_${userId}`;
 export const cloudBackoffCacheKey = (userId: string) => `lingoflash_cloud_backoff_until_${userId}`;
+export const progressEvidenceCachePrefix = (userId: string) =>
+  `sonflash_progress_forecast_${encodeURIComponent(userId)}:`;
 export const IMAGE_NEGATIVE_CACHE_TTL_MS = 6 * 60 * 60 * 1_000;
 export const imageNegativeCacheKey = (ownerId: string | null, cardId: string) =>
   `lingoflash_no_image_v1_${encodeURIComponent(ownerId ?? 'guest')}_${encodeURIComponent(cardId)}`;

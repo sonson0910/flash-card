@@ -14,6 +14,8 @@ export interface CloudLibraryStats {
   bookmarked: number;
   due: number;
   legacyUnindexed: number;
+  dueForecast?: Array<{ date: string; count: number }>;
+  recentlyMastered?: Array<{ id: string; word: string; translation: string; masteredAt: string }>;
 }
 
 export const EMPTY_LIBRARY_STATS: CloudLibraryStats = {
@@ -57,7 +59,8 @@ export interface CloudLibraryPageAdapter {
     onError: (error: unknown) => void | Promise<void>,
   ): () => void;
   countCards(ownerId: string, query: CardQueryState): Promise<number>;
-  loadStats(ownerId: string): Promise<CloudLibraryStats>;
+  loadStats(ownerId: string, targetLanguage: string | null): Promise<CloudLibraryStats>;
+  loadProgressEvidence(ownerId: string, targetLanguage: string | null): Promise<Pick<CloudLibraryStats, 'dueForecast' | 'recentlyMastered'>>;
   subscribeFacets(
     ownerId: string,
     onFacets: (facets: { categories: Record<string, number>; complete: boolean }) => void,
@@ -149,6 +152,9 @@ export function createCloudLibraryPageController({
   };
   let pageGeneration = 0;
   let ownerGeneration = 0;
+  let progressEvidenceGeneration = 0;
+  let statsGeneration = 0;
+  let progressEvidenceLanguage: string | null | undefined;
   let activeOwnerId: string | null = null;
   let unsubscribePage: (() => void) | null = null;
   let unsubscribeFacets: (() => void) | null = null;
@@ -164,6 +170,9 @@ export function createCloudLibraryPageController({
     if (activeOwnerId === ownerId) return;
     activeOwnerId = ownerId;
     ownerGeneration += 1;
+    statsGeneration += 1;
+    progressEvidenceGeneration += 1;
+    progressEvidenceLanguage = undefined;
     const generation = ownerGeneration;
     unsubscribeFacets?.();
     unsubscribeFacets = null;
@@ -461,10 +470,16 @@ export function createCloudLibraryPageController({
     };
   };
 
-  const requestStats = async () => {
+  const requestStats = async (targetLanguage: string | null = null) => {
     const ownerId = activeOwnerId;
     if (!ownerId || !adapter.available) return;
     const generation = ownerGeneration;
+    const requestGeneration = ++statsGeneration;
+    if (progressEvidenceLanguage !== targetLanguage) {
+      progressEvidenceLanguage = targetLanguage;
+      progressEvidenceGeneration += 1;
+      publish({ stats: { ...snapshot.stats, dueForecast: undefined, recentlyMastered: undefined } });
+    }
     const cached = safeCacheRead(() => cache.readStats(ownerId), null);
     if (cached && !shouldRefreshCloudStats(cached.cachedAt, now())) {
       publish({ stats: cached.stats });
@@ -473,12 +488,21 @@ export function createCloudLibraryPageController({
     if (safeCacheRead(() => cache.isBackoffActive(ownerId), false)) return;
     publish({ isStatsLoading: true });
     try {
-      const stats = await adapter.loadStats(ownerId);
-      if (generation !== ownerGeneration || activeOwnerId !== ownerId) return;
-      publish({ stats, isStatsLoading: false });
+      const stats = await adapter.loadStats(ownerId, targetLanguage);
+      if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration) return;
+      publish({
+        stats: {
+          ...stats,
+          ...(progressEvidenceLanguage === targetLanguage ? {
+            dueForecast: snapshot.stats.dueForecast,
+            recentlyMastered: snapshot.stats.recentlyMastered,
+          } : {}),
+        },
+        isStatsLoading: false,
+      });
       safeCacheWrite(() => cache.writeStats(ownerId, stats, now()));
     } catch (error) {
-      if (generation !== ownerGeneration || activeOwnerId !== ownerId) return;
+      if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration) return;
       publish({
         isStatsLoading: false,
         error: isCloudQuotaError(error)
@@ -488,9 +512,30 @@ export function createCloudLibraryPageController({
     }
   };
 
+  const requestProgressEvidence = async (targetLanguage: string | null = null) => {
+    const ownerId = activeOwnerId;
+    if (!ownerId || !adapter.available) return;
+    const generation = ownerGeneration;
+    if (progressEvidenceLanguage !== targetLanguage) {
+      progressEvidenceLanguage = targetLanguage;
+      publish({ stats: { ...snapshot.stats, dueForecast: undefined, recentlyMastered: undefined } });
+    }
+    const evidenceGeneration = ++progressEvidenceGeneration;
+    try {
+      const evidence = await adapter.loadProgressEvidence(ownerId, targetLanguage);
+      if (generation !== ownerGeneration || activeOwnerId !== ownerId || evidenceGeneration !== progressEvidenceGeneration) return;
+      publish({ stats: { ...snapshot.stats, ...evidence } });
+    } catch {
+      // Progress keeps the cached base stats when its optional evidence cannot load.
+    }
+  };
+
   const stop = () => {
     pageGeneration += 1;
     ownerGeneration += 1;
+    statsGeneration += 1;
+    progressEvidenceGeneration += 1;
+    progressEvidenceLanguage = undefined;
     unsubscribePage?.();
     unsubscribeFacets?.();
     unsubscribePage = null;
@@ -506,6 +551,7 @@ export function createCloudLibraryPageController({
     },
     activate,
     requestStats,
+    requestProgressEvidence,
     stop,
   };
 }

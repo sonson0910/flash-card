@@ -20,6 +20,7 @@ export function useCloudLibraryPage({
   pageSize,
   refreshKey,
   statsOpen,
+  progressEvidenceOpen,
   getPromotedCards,
 }: {
   ownerId: string | null;
@@ -29,6 +30,7 @@ export function useCloudLibraryPage({
   pageSize: number;
   refreshKey: number;
   statsOpen: boolean;
+  progressEvidenceOpen: boolean;
   getPromotedCards: () => readonly CardData[];
 }) {
   const promotedRef = useRef(getPromotedCards);
@@ -46,11 +48,9 @@ export function useCloudLibraryPage({
     }), []);
 
   const controller = useMemo(() => {
-    // Read through the ref (kept current every render, above) rather than a
-    // memo dependency, so the adapter and cache stay bound to whichever
-    // course is active without recreating the controller/listener on switch.
+    // The cache reads the current course without recreating its controller.
     const getTargetLanguage = () => queryRef.current.targetLanguage ?? null;
-    const adapter = createCloudLibraryPageFirebaseAdapter({ database: db, configured: isFirebaseConfigured, transformPage, getTargetLanguage });
+    const adapter = createCloudLibraryPageFirebaseAdapter({ database: db, configured: isFirebaseConfigured, transformPage });
     const cache: CloudLibraryCachePort = {
       readPage: async request => {
         const cachedValue = readLocalJson<unknown>(cloudPageCacheKey(request.ownerId), null);
@@ -111,8 +111,12 @@ export function useCloudLibraryPage({
     // Depending on targetLanguage (not the whole query) means an unrelated
     // catalog filter change never re-triggers a stats read; only opening the
     // panel or switching the active course does.
-    if (statsOpen && ownerId) void controller.requestStats();
+    if (statsOpen && ownerId) void controller.requestStats(query.targetLanguage ?? null);
   }, [controller, ownerId, statsOpen, query.targetLanguage]);
+
+  useEffect(() => {
+    if (progressEvidenceOpen && ownerId) void controller.requestProgressEvidence(query.targetLanguage ?? null);
+  }, [controller, ownerId, progressEvidenceOpen, query.targetLanguage]);
 
   useEffect(() => () => controller.stop(), [controller]);
   return snapshot;

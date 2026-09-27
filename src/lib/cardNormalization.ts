@@ -208,6 +208,7 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
   const lastOpenedAt = validIsoDate(raw.lastOpenedAt);
   const sortTouchedAt = validIsoDate(raw.sortTouchedAt);
   const nextReviewDate = validIsoDate(raw.nextReviewDate);
+  const masteredAt = validIsoDate(raw.masteredAt);
   const customDeck = typeof raw.customDeck === 'string' ? boundedText(raw.customDeck, 128) || null : null;
   const language = normalizeStoredLanguage(raw.language);
   const translationLanguage = normalizeStoredLanguage(raw.translationLanguage);
@@ -244,6 +245,7 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
     difficulty: typeof raw.difficulty === 'string' && validDifficulties.has(raw.difficulty) ? raw.difficulty : 'unrated',
     customDeck,
     ...(nextReviewDate ? { nextReviewDate } : {}),
+    ...(masteredAt ? { masteredAt } : {}),
     reviews: Number.isFinite(raw.reviews) && Number(raw.reviews) >= 0 ? Math.floor(Number(raw.reviews)) : 0,
     interval: Number.isFinite(raw.interval) && Number(raw.interval) >= 0 ? Number(raw.interval) : 0,
     easeFactor: Number.isFinite(raw.easeFactor) && Number(raw.easeFactor) >= 0 && Number(raw.easeFactor) <= 5 ? Number(raw.easeFactor) : 2.5,

@@ -26,7 +26,7 @@ import {
 } from 'firebase/firestore';
 import type { CardData, CardLanguageCode } from '../types/card';
 import type { AuthoritativeGamification } from './cardReviewRepository';
-import { readLocalJson, writeLocalValue } from '../features/library/libraryStorage';
+import { progressEvidenceCachePrefix, readLocalJson, writeLocalValue } from '../features/library/libraryStorage';
 import type { LibraryStats } from './libraryStats';
 export type { LibraryStats } from './libraryStats';
 import { mapWithConcurrencyUntilFailure } from './asyncPool';
@@ -408,6 +408,91 @@ export async function countCardsDueTomorrow(
     where('nextReviewDate', '<', end.toISOString()),
   ));
   return snapshot.data().count;
+}
+
+type ProgressEvidence = Pick<LibraryStats, 'dueForecast' | 'recentlyMastered'>;
+
+const progressEvidenceCacheKey = (userId: string, targetLanguage: string | null) =>
+  `${progressEvidenceCachePrefix(userId)}${targetLanguage ?? 'all'}`;
+
+const localDateKey = (now: Date) => [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+
+const pendingProgressForecasts = new Map<string, Promise<NonNullable<ProgressEvidence['dueForecast']>>>();
+const resolvedProgressForecasts = new Map<string, { date: string; forecast: NonNullable<ProgressEvidence['dueForecast']> }>();
+
+const dayBounds = (now: Date, offset: number) => {
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() + offset);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start: start.toISOString(), end: end.toISOString(), date: localDateKey(start) };
+};
+
+const cachedProgressForecast = (value: unknown, now: Date): NonNullable<ProgressEvidence['dueForecast']> | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const cache = value as { date?: unknown; dueForecast?: unknown };
+  if (cache.date !== localDateKey(now) || !Array.isArray(cache.dueForecast) || cache.dueForecast.length !== 13) return null;
+  for (let index = 0; index < 13; index++) {
+    const day = cache.dueForecast[index];
+    if (!day || typeof day !== 'object' || Array.isArray(day)
+      || day.date !== dayBounds(now, index + 1).date
+      || !Number.isSafeInteger(day.count) || day.count < 0) return null;
+  }
+  return cache.dueForecast as NonNullable<ProgressEvidence['dueForecast']>;
+};
+
+export async function fetchProgressEvidence(
+  db: Firestore,
+  userId: string,
+  targetLanguage?: CardLanguageCode | null,
+  now = new Date(),
+): Promise<ProgressEvidence> {
+  const language = targetLanguage ?? null;
+  const localDate = localDateKey(now);
+  const cacheKey = progressEvidenceCacheKey(userId, language);
+  const cached = readLocalJson<unknown>(cacheKey, null);
+  const languageConstraints: QueryConstraint[] = language ? [where('language', '==', language)] : [];
+  const recentSnapshot = await getDocs(query(
+    cardsCollection(db, userId), ...languageConstraints, orderBy('masteredAt', 'desc'), limit(4),
+  ));
+  const recentlyMastered = recentSnapshot.docs.flatMap(snapshot => {
+    const card = normalizeCardData(snapshot.data() as Partial<CardData>, snapshot.id);
+    return card.masteredAt ? [{ id: card.id, word: card.word, translation: card.translation, masteredAt: card.masteredAt }] : [];
+  });
+  const savedForecast = cachedProgressForecast(cached, now)
+    ?? (resolvedProgressForecasts.get(cacheKey)?.date === localDate
+      ? resolvedProgressForecasts.get(cacheKey)!.forecast : null);
+  if (savedForecast) return { dueForecast: savedForecast, recentlyMastered };
+  let pendingForecast = pendingProgressForecasts.get(`${cacheKey}_${localDate}`);
+  if (!pendingForecast) {
+    // Reserve today's query budget before starting the count queries. If local
+    // storage is unavailable, keep forecast unavailable instead of repeating
+    // thirteen queries on every Progress hydration.
+    if (cached && typeof cached === 'object' && !Array.isArray(cached)
+      && (cached as { date?: unknown; status?: unknown }).date === localDate
+      && (cached as { status?: unknown }).status === 'pending') return { recentlyMastered };
+    if (!writeLocalValue(cacheKey, JSON.stringify({ date: localDate, status: 'pending' }))) {
+      return { recentlyMastered };
+    }
+    pendingForecast = Promise.all(Array.from({ length: 13 }, async (_, index) => {
+      const bounds = dayBounds(now, index + 1);
+      const snapshot = await getCount(query(
+        cardsCollection(db, userId), ...languageConstraints,
+        where('nextReviewDate', '>=', bounds.start), where('nextReviewDate', '<', bounds.end),
+      ));
+      return { date: bounds.date, count: snapshot.data().count };
+    }));
+    pendingProgressForecasts.set(`${cacheKey}_${localDate}`, pendingForecast);
+    void pendingForecast.then(
+      () => pendingProgressForecasts.delete(`${cacheKey}_${localDate}`),
+      () => pendingProgressForecasts.delete(`${cacheKey}_${localDate}`),
+    );
+  }
+  const dueForecast = await pendingForecast;
+  resolvedProgressForecasts.set(cacheKey, { date: localDate, forecast: dueForecast });
+  writeLocalValue(cacheKey, JSON.stringify({ date: localDate, dueForecast }));
+  return { dueForecast, recentlyMastered };
 }
 
 export async function migrateLegacyCardQueryFields(

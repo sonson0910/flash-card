@@ -147,6 +147,7 @@ export function useAppLibraryRuntime({
       // authenticated visitor sees an all-zero summary even with data in the
       // library.
       statsOpen: isStatsOpen || viewMode === 'progress' || viewMode === 'catalog',
+      progressEvidenceOpen: viewMode === 'progress' && Math.max(cloudTotal, cloudStats.total, cards.length) > 0,
     },
     library: {
       knownTotal: Math.max(cloudTotal, cloudStats.total, cards.length),

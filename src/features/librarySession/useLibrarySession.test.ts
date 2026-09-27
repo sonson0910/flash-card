@@ -42,6 +42,7 @@ const inputs: LibrarySessionInputs = {
     pageSize: 9,
     refreshKey: 4,
     statsOpen: true,
+    progressEvidenceOpen: false,
   },
   library: {
     knownTotal: 12,
@@ -146,6 +147,7 @@ describe('useLibrarySession facade', () => {
       pageSize: 9,
       refreshKey: 4,
       statsOpen: true,
+      progressEvidenceOpen: false,
       getPromotedCards: inputs.ports.getPromotedCards,
     });
     expect(session.model.cloud.items).toEqual([card]);

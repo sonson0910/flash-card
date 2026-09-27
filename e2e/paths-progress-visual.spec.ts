@@ -17,6 +17,8 @@ const cards = Array.from({ length: 12 }, (_, index) => ({
   imageUrl: null,
   createdAt: `2026-08-${String(index + 1).padStart(2, '0')}T12:00:00.000Z`,
   difficulty: index < 4 ? 'easy' : index < 8 ? 'good' : 'hard',
+  ...(index < 2 ? { masteredAt: `2026-09-${String(22 + index)}T12:00:00.000Z` } : {}),
+  ...(index === 0 ? { nextReviewDate: '2026-09-25T12:00:00.000Z' } : {}),
   reviews: index + 1,
   reviewHistory: [{ rating: index < 4 ? 'easy' : 'good', reviewedAt: `2026-09-${String(index + 1).padStart(2, '0')}T12:00:00.000Z`, scheduledDays: 2, elapsedDays: 1 }],
   cefrLevel: index < 4 ? 'A2' : index < 8 ? 'B2' : 'C1',
@@ -25,14 +27,14 @@ const cards = Array.from({ length: 12 }, (_, index) => ({
 }));
 
 const xpHistory = {
-  'Aug 14, 2026': 12,
-  'Aug 20, 2026': 38,
-  'Aug 27, 2026': 84,
-  'Sep 2, 2026': 26,
-  'Sep 7, 2026': 112,
-  'Sep 12, 2026': 55,
-  'Sep 18, 2026': 148,
-  'Sep 23, 2026': 72,
+  '2026-08-14': 12,
+  '2026-08-20': 38,
+  '2026-08-27': 84,
+  '2026-09-02': 26,
+  '2026-09-07': 112,
+  '2026-09-12': 55,
+  '2026-09-18': 148,
+  '2026-09-23': 72,
 };
 
 const themes = [
@@ -142,20 +144,16 @@ async function attachScreen(page: Page, testInfo: TestInfo, name: string) {
   await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
 }
 
-test.beforeEach(async ({ page, testUser, seedCards, blockExternalNetwork }) => {
+test.beforeEach(async ({ page, db, testUser, seedCards, blockExternalNetwork }) => {
   await page.clock.install({ time: fixedTime });
   // beforeAll (below) runs before any beforeEach/test in this worker, so
   // catalogFixturePort is already set to this worker's value by the time
   // this executes.
   await blockExternalNetwork(page, [catalogFixturePort]);
-  await page.addInitScript(({ uid, history }) => {
-    // Key must match gamificationStorageKeys()'s `lingoflash_gamification:user:<uid>:snapshot`
-    // (the `user:` scope segment is required) or the app never reads this seed at all.
-    localStorage.setItem(`lingoflash_gamification:user:${uid}:snapshot`, JSON.stringify({
-      version: 1,
-      snapshot: { streak: 2, xp: 547, lastActive: 'Wed Sep 23 2026', history },
-    }));
-  }, { uid: testUser.uid, history: xpHistory });
+  await Promise.all([
+    db.doc(`users/${testUser.uid}/profile/stats`).set({ verifiedXp: 547, verifiedStreak: 2 }),
+    db.doc(`users/${testUser.uid}/profile/xp_history`).set({ verifiedByDayV1: xpHistory }),
+  ]);
   await seedCards(cards);
 });
 
@@ -221,14 +219,26 @@ for (const theme of themes) {
       await expect(page.getByRole('heading', { level: 1, name: /progress/i })).toBeVisible();
       await expect(page.getByRole('region', { name: /study activity/i })).toBeVisible();
       await expect(page.locator('[data-native-chart="xp"]')).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Due over the next 13 days' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Recently mastered' })).toBeVisible();
       await expectAccessibleAndContained(page, 'Progress');
       await expectReducedMotion(page, 'Progress');
       await attachScreen(page, testInfo, `progress-${theme.family}-${theme.mode}-${viewport.name}`);
+      const evidence = page.getByRole('region', { name: 'Forecast and recently mastered cards' });
+      const evidenceName = `progress-evidence-${theme.family}-${theme.mode}-${viewport.name}`;
+      const evidenceScreenshot = testInfo.outputPath(`${evidenceName}.png`);
+      await evidence.screenshot({ path: evidenceScreenshot, animations: 'disabled' });
+      await testInfo.attach(evidenceName, { path: evidenceScreenshot, contentType: 'image/png' });
+      await expect(evidence).toHaveScreenshot(`${evidenceName}.png`, {
+        animations: 'disabled',
+        caret: 'hide',
+        maxDiffPixelRatio: 0.01,
+      });
     });
   }
 }
 
-test('weekly recap opens with real totals computed from the existing XP history, without any extra network reads', async ({ page, signIn }) => {
+test('weekly recap opens with real totals computed from verified XP history', async ({ page, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await signIn(page, '/?view=progress&locale=en');
   await expect(page.getByRole('heading', { level: 1, name: /progress/i })).toBeVisible();
@@ -238,7 +248,7 @@ test('weekly recap opens with real totals computed from the existing XP history,
   await expect(dialog).toBeVisible();
 
   // The fixed clock is 2026-09-24T12:00:00Z, so the 7-day window is Sep 18–Sep 24.
-  // Of the seeded xpHistory, only 'Sep 18, 2026' (148) and 'Sep 23, 2026' (72) fall
+  // Of the seeded xpHistory, only Sep 18 (148) and Sep 23 (72) fall
   // inside it; every other entry (Aug/Sep 2/7/12) must be excluded from the totals.
   // These figures come from plain number formatting, not from Lingui message
   // catalogs, so they are meaningful even before the new weeklyRecap.* ids below

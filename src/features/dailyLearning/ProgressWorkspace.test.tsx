@@ -4,7 +4,7 @@ import { I18nProvider } from '@lingui/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { LibraryStatsViewModel } from '../library/libraryViewModel';
-import ProgressWorkspace, { hasProgressActivity } from './ProgressWorkspace';
+import ProgressWorkspace, { formatLocalMasteredDate, hasProgressActivity } from './ProgressWorkspace';
 
 i18n.load('en', {});
 i18n.activate('en');
@@ -25,6 +25,14 @@ const stats = (overrides: Partial<LibraryStatsViewModel> = {}): LibraryStatsView
 });
 
 describe('ProgressWorkspace learning activity gate', () => {
+  it('formats recently mastered timestamps in the viewer local date', () => {
+    const input = '2026-09-27T18:30:00.000Z';
+    const date = new Date(input);
+    const expected = [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+    expect(formatLocalMasteredDate(input)).toBe(expected);
+    expect(formatLocalMasteredDate('invalid')).toBe('invalid');
+  });
+
   it('keeps Progress empty and does not request charts for a merely added card', () => {
     const value = stats();
     const html = renderProgress(<ProgressWorkspace
@@ -35,6 +43,21 @@ describe('ProgressWorkspace learning activity gate', () => {
     expect(hasProgressActivity(value)).toBe(false);
     expect(html).toContain('Complete a review to begin your progress history.');
     expect(html).toContain('Start your first review');
+    expect(html).not.toContain('Loading progress charts');
+  });
+
+  it('shows the due forecast for an added card before its first review', () => {
+    const html = renderProgress(<ProgressWorkspace
+      darkMode={false} isOffline={false} stats={stats({
+        dueForecast: [{ date: '2026-09-28', count: 1 }],
+        recentlyMastered: [],
+      })} isStatsLoading={false} statsError={null}
+      continueReview={vi.fn()} openVocabulary={vi.fn()}
+    />);
+
+    expect(html).toContain('Complete a review to begin your progress history.');
+    expect(html).toContain('Due over the next 13 days');
+    expect(html).toContain('2026-09-28');
     expect(html).not.toContain('Loading progress charts');
   });
 

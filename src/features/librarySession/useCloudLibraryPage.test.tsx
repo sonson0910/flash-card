@@ -129,6 +129,7 @@ it('overlays a promoted duplicate onto a paused-cloud fallback without requiring
       pageSize: 9,
       refreshKey: 0,
       statsOpen: false,
+      progressEvidenceOpen: false,
       getPromotedCards: () => [promoted],
     });
     return null;
@@ -162,6 +163,7 @@ it('does not restart the cloud page when only the query object identity changes'
       pageSize: 9,
       refreshKey: 0,
       statsOpen: false,
+      progressEvidenceOpen: false,
       getPromotedCards: () => [],
     });
     return null;
@@ -201,6 +203,7 @@ it('scopes the stats cache to the active course and refetches only when its lang
       pageSize: 9,
       refreshKey: 0,
       statsOpen: true,
+      progressEvidenceOpen: false,
       getPromotedCards: () => [],
     });
     return null;

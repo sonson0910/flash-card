@@ -328,7 +328,7 @@ msgid "progress.add-vocabulary"
 msgstr "Thêm từ vựng"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:28
+#: src/features/dailyLearning/ProgressWorkspace.tsx:34
 msgid "progress.charts.loading"
 msgstr "Đang tải biểu đồ tiến độ…"
 
@@ -368,6 +368,21 @@ msgid "progress.evidence"
 msgstr "Dữ liệu hỗ trợ"
 
 #. js-lingui-explicit-id
+#: src/features/dailyLearning/ProgressWorkspace.tsx:44
+msgid "progress.evidence.forecast-and-mastery"
+msgstr "Dự báo và thẻ mới thành thạo"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/ProgressWorkspace.tsx:45
+msgid "progress.forecast.title"
+msgstr "Đến hạn trong 13 ngày tới"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/ProgressWorkspace.tsx:45
+msgid "progress.forecast.unavailable"
+msgstr "Dự báo chưa sẵn sàng khi tiến độ đã lưu đang tải."
+
+#. js-lingui-explicit-id
 #: src/features/dailyLearning/ProgressScreen.tsx:44
 msgid "progress.history-kicker"
 msgstr "Lịch sử học tập"
@@ -388,17 +403,27 @@ msgid "progress.loading.title"
 msgstr "Tiến độ đã lưu của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:34
+#: src/features/dailyLearning/ProgressWorkspace.tsx:46
+msgid "progress.mastered.empty"
+msgstr "Chưa có thẻ nào đạt thành thạo."
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/ProgressWorkspace.tsx:46
+msgid "progress.mastered.title"
+msgstr "Mới thành thạo"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/ProgressWorkspace.tsx:40
 msgid "progress.message.error"
 msgstr "Đang hiển thị tiến độ đã lưu. {error}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:34
+#: src/features/dailyLearning/ProgressWorkspace.tsx:40
 msgid "progress.message.loading"
 msgstr "Đang làm mới tiến độ; các chỉ số đã lưu vẫn hiển thị."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:34
+#: src/features/dailyLearning/ProgressWorkspace.tsx:40
 msgid "progress.message.ready"
 msgstr "Tiến độ được tính từ lịch sử học tập của bạn."
 
@@ -438,7 +463,7 @@ msgid "progress.title"
 msgstr "Tiến độ"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:42
+#: src/features/dailyLearning/ProgressWorkspace.tsx:52
 msgid "progress.weeklyRecap.open"
 msgstr "Xem tổng kết tuần"
 

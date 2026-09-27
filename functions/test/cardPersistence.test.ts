@@ -900,6 +900,12 @@ describe('card persistence', () => {
     expect(() => canonicalCard({ ...card, origin: 'imported' })).toThrow(/origin/i);
   });
 
+  it('strips a client supplied mastery timestamp from a create candidate', () => {
+    expect(canonicalCard({ ...card, masteredAt: '2020-01-01T00:00:00.000Z' })).not.toHaveProperty('masteredAt');
+    expect(canonicalCard({ ...card, masteredAt: '2020-01-01T00:00:00.000Z' }, { allowMasteredAt: true }))
+      .toMatchObject({ masteredAt: '2020-01-01T00:00:00.000Z' });
+  });
+
   it('strips credentials, query and fragment from a captured source url and bounds its other fields', () => {
     const result = canonicalCard({
       ...card,

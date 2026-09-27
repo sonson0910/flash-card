@@ -214,6 +214,25 @@ describe('Firestore security rules', () => {
     }));
   });
 
+  it('keeps the mastery timestamp owned by the review callable', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const cardRef = doc(owner, 'users/owner/cards/card-1');
+    await seedCurrentCard(testEnvironment, 'owner', 'card-1', {
+      ...validCard(),
+      masteredAt: '2026-09-27T12:00:00.000Z',
+    });
+
+    await assertFails(updateDoc(cardRef, { masteredAt: '2026-09-28T12:00:00.000Z', revision: 2 }));
+    await assertFails(updateDoc(cardRef, { masteredAt: deleteField(), revision: 2 }));
+    await assertSucceeds(updateDoc(cardRef, { translation: 'đã học', revision: 2 }));
+
+    await seedCurrentCard(testEnvironment, 'owner', 'card-2', validCard('card-2'));
+    await assertFails(updateDoc(doc(owner, 'users/owner/cards/card-2'), {
+      masteredAt: '2026-09-28T12:00:00.000Z',
+      revision: 2,
+    }));
+  });
+
   it('keeps epoch conflict enforcement working once the merged fence field clears', async () => {
     await seedCurrentCard(testEnvironment, 'owner', 'epoch-after-fence', validCard('epoch-after-fence'));
     await testEnvironment.withSecurityRulesDisabled(async context => {
