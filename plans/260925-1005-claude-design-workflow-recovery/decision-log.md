@@ -267,3 +267,19 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
 - Shadowing vẫn dùng để luyện nói nhưng không cấp `+10 verified XP`: transcript
   do browser tự báo không chứng minh audio của người học. Không thêm audio
   upload hoặc server transcription trong scope này.
+
+## 2026-09-28 — Owner duyệt nguồn dữ liệu Progress
+
+- Forecast mở lần đầu mỗi account, target language và ngày địa phương chạy 13
+  aggregate count queries cho ngày 1–13; dùng due-today count query đang có.
+  Cùng ngày dùng cache, không chạy lại 13 queries. Đây là chi phí mới chỉ khi
+  người học mở Progress; không thêm document write hoặc subscription.
+- Recently mastered dùng `masteredAt` optional, server-owned trong card và
+  query tối đa bốn card mới nhất: 0–4 document reads mỗi lần hydrate Progress.
+  Review ghi/xóa field trong card write hiện có, không thêm document write.
+  Ngưỡng Mastered khớp Library: `difficulty=easy` hoặc `interval≥21` ngày;
+  chỉ dùng FSRS `scheduledDays` khi `interval` vắng. Khi rớt dưới ngưỡng,
+  server xóa `masteredAt`. Owner đã duyệt schema, Rules và index tương ứng.
+- Unit progress/Continue và review-activity projection trong
+  [contract-paths-progress-canvas.md](contract-paths-progress-canvas.md) là đề xuất
+  riêng đang chờ quyết định; các read/write nêu ở đó chưa được duyệt cho code.
