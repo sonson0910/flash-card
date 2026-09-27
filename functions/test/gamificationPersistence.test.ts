@@ -71,7 +71,7 @@ const bootstrapRequest = (streamCount: number): GamificationSaveRequest => {
 
 const harness = (documents: Record<string, DocumentData> = {}) => {
   const values = new Map(Object.entries(documents));
-  const writes: Array<{ path: string; data: DocumentData }> = [];
+  const writes: Array<{ path: string; data: DocumentData; options?: { merge?: boolean } }> = [];
   const transaction = {
     get: vi.fn(async (reference: DocumentReference & { queryPath?: string; queryLimit?: number }) => {
       if (reference.queryPath) {
@@ -83,8 +83,8 @@ const harness = (documents: Record<string, DocumentData> = {}) => {
       const value = values.get(reference.path);
       return snapshot(value !== undefined, value);
     }),
-    set: vi.fn((reference: DocumentReference, data: DocumentData) => {
-      writes.push({ path: reference.path, data });
+    set: vi.fn((reference: DocumentReference, data: DocumentData, options?: { merge?: boolean }) => {
+      writes.push({ path: reference.path, data, options });
       return transaction;
     }),
   } as unknown as Transaction;
@@ -151,6 +151,13 @@ describe('gamification persistence', () => {
     expect(() => parseGamificationSaveRequest({
       ...request(),
       snapshot: { ...request().snapshot, history: JSON.parse('{"__proto__":1}') },
+    })).toThrow();
+    expect(() => parseGamificationSaveRequest({
+      ...request(),
+      snapshot: {
+        ...request().snapshot,
+        history: { ...request().snapshot.history, verifiedByDayV1: 1 },
+      },
     })).toThrow();
     expect(() => parseGamificationSaveRequest({
       ...request(),
@@ -258,6 +265,21 @@ describe('gamification persistence', () => {
         stats: { ...validStats, appliedXpSequenceByClient: {} },
         history: { 'Aug 9, 2026': 100 },
       },
+      {
+        stats: {
+          ...validStats,
+          verifiedSchemaVersion: 1,
+          verifiedXp: 100,
+          verifiedStreak: 2,
+          lastVerifiedStudyDay: '2026-08-09',
+          rewardTimeZone: 'not/a-time-zone',
+        },
+        history: { 'Aug 9, 2026': 100 },
+      },
+      {
+        stats: validStats,
+        history: { 'Aug 9, 2026': 100, verifiedByDayV1: { '2026-08-09': Number.POSITIVE_INFINITY } },
+      },
     ];
 
     for (const stored of cases) {
@@ -269,6 +291,79 @@ describe('gamification persistence', () => {
         .rejects.toBeInstanceOf(GamificationMigrationRequiredError);
       expect(test.writes).toEqual([]);
     }
+  });
+
+  it('preserves server-verified stats and history during a legacy save', async () => {
+    const test = harness({
+      'users/owner/profile/stats': {
+        streak: 2,
+        xp: 110,
+        lastActive: 'Sun Aug 09 2026',
+        appliedXpOperationIds: [],
+        xpStreamSchemaVersion: 2,
+        verifiedSchemaVersion: 1,
+        verifiedXp: 99,
+        verifiedStreak: 4,
+        lastVerifiedStudyDay: null,
+        rewardTimeZone: 'Asia/Ho_Chi_Minh',
+      },
+      'users/owner/profile/xp_history': {
+        'Aug 9, 2026': 110,
+        verifiedByDayV1: { '2026-08-09': 99 },
+      },
+    });
+
+    await expect(applyGamificationForOwner(test.database, 'owner', request())).resolves.toMatchObject({
+      snapshot: {
+        streak: 2,
+        xp: 120,
+        history: { 'Aug 9, 2026': 120 },
+      },
+    });
+
+    expect(test.writes.slice(0, 2)).toEqual([
+      {
+        path: 'users/owner/profile/stats',
+        data: {
+          streak: 2,
+          lastActive: 'Sun Aug 09 2026',
+          xp: 120,
+          appliedXpOperationIds: ['xp2:client-a:1'],
+          xpStreamSchemaVersion: 2,
+        },
+        options: { merge: true },
+      },
+      {
+        path: 'users/owner/profile/xp_history',
+        data: { 'Aug 9, 2026': 120 },
+        options: { merge: true },
+      },
+    ]);
+  });
+
+  it('keeps the old stored shape and legacy response unchanged', async () => {
+    const test = harness({
+      'users/owner/profile/stats': {
+        streak: 2,
+        xp: 110,
+        lastActive: 'Sun Aug 09 2026',
+        appliedXpOperationIds: [],
+        xpStreamSchemaVersion: 2,
+      },
+      'users/owner/profile/xp_history': { 'Aug 9, 2026': 110 },
+    });
+
+    await expect(applyGamificationForOwner(test.database, 'owner', request())).resolves.toEqual({
+      snapshot: {
+        streak: 2,
+        xp: 120,
+        lastActive: 'Sun Aug 09 2026',
+        history: { 'Aug 9, 2026': 120 },
+        appliedOperationIds: ['xp2:client-a:1'],
+        appliedOperationSequenceByClient: { 'client-a': 1 },
+      },
+      appliedOperationIds: ['xp2:client-a:1'],
+    });
   });
 
   it('persists the bounded bootstrap stream budget with one write per stream', async () => {

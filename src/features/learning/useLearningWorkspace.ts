@@ -16,6 +16,7 @@ import type {
   BulkCardFieldPatchRequest,
   LearningPersistenceHook,
   LearningPersistenceStats,
+  ReviewOutcome,
 } from './learningPersistencePort';
 
 export type LearningWorkspaceStats = LearningPersistenceStats;
@@ -52,7 +53,7 @@ export interface LearningWorkspaceInfrastructurePorts {
   cloudAvailabilityChanged(unavailable: boolean): void;
   mutationPendingChanged(pending: boolean): void;
   reportError(message: string): void;
-  addXp(amount: number, operationId?: string): void;
+  onReviewOutcome?(outcome: ReviewOutcome, operationId: string, card: CardData): void;
 }
 
 export interface LearningWorkspaceOptions {
@@ -147,7 +148,7 @@ export function useLearningWorkspace(
     setCloudUnavailable: unavailable => latestRef.current.ports.cloudAvailabilityChanged(unavailable),
     setMutationPending: pending => latestRef.current.ports.mutationPendingChanged(pending),
     reportError: message => latestRef.current.ports.reportError(message),
-    addXp: (amount, operationId) => latestRef.current.ports.addXp(amount, operationId),
+    onReviewOutcome: (outcome, operationId, card) => latestRef.current.ports.onReviewOutcome?.(outcome, operationId, card),
   });
 
   const publishLibrary = (publication: LearningStatePublication) => {

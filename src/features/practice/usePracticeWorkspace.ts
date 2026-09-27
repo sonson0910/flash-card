@@ -1,9 +1,8 @@
 import { useCallback, useRef } from 'react';
 import type { LanguageProfile } from '../language/languageProfile';
-import type { GamificationStorage } from '../gamification/gamificationStorage';
-import type { GamificationStore } from '../gamification/gamificationStore';
-import { useGamificationState, type GamificationState } from '../gamification/useGamification';
+import { useVerifiedGamificationState } from '../gamification/verifiedGamificationClient';
 import { isCardReadyForPractice } from '../../lib/srs';
+import { normalizeCardLanguage } from '../../lib/cardIdentity';
 import type { CardData } from '../../types/card';
 import {
   usePracticeSession,
@@ -64,7 +63,9 @@ export function createPracticePoolLoader({
       }
     }
 
-    const candidates = includeFuture ? cards : cards.filter(isCardReadyForPractice);
+    const normalizedTargetLanguage = normalizeCardLanguage(targetLanguage);
+    const languageCards = cards.filter(card => (normalizeCardLanguage(card.language) || 'en') === normalizedTargetLanguage);
+    const candidates = includeFuture ? languageCards : languageCards.filter(isCardReadyForPractice);
     return candidates.slice(0, limit);
   };
 }
@@ -77,10 +78,8 @@ export interface PracticeWorkspaceOptions {
   cloudBackoffActive: boolean;
   cards: readonly CardData[];
   poolSource: PracticePoolSource | null;
-  gamificationStore: GamificationStore | null;
-  gamificationStorage?: GamificationStorage;
-  now?: () => Date;
-  gamificationSaveDelayMs?: number;
+  gamificationDatabase: Parameters<typeof useVerifiedGamificationState>[0]['database'];
+  onCeremony?: Parameters<typeof usePracticeSession>[0]['onAuthoritativeOutcome'];
   learning: PracticeLearningActions;
   languageProfile: LanguageProfile;
   reportError: (message: string) => void;
@@ -89,7 +88,7 @@ export interface PracticeWorkspaceOptions {
 export interface PracticeWorkspace {
   model: {
     session: Pick<PracticeSessionController, 'mode' | 'study' | 'quiz' | 'learning'>;
-    gamification: GamificationState;
+    gamification: ReturnType<typeof useVerifiedGamificationState>;
   };
   actions: PracticeSessionController['commands'];
   ports: {
@@ -106,23 +105,20 @@ export function usePracticeWorkspace({
   cloudBackoffActive,
   cards,
   poolSource,
-  gamificationStore,
-  gamificationStorage,
-  now,
-  gamificationSaveDelayMs,
+  gamificationDatabase,
+  onCeremony,
   learning,
   languageProfile,
   reportError,
 }: PracticeWorkspaceOptions): PracticeWorkspace {
-  const gamification = useGamificationState({
-    ownerId,
-    cloudBackoffActive,
-    store: gamificationStore,
-    storage: gamificationStorage,
-    now,
-    saveDelayMs: gamificationSaveDelayMs,
-  });
+  const gamification = useVerifiedGamificationState({ ownerId, database: gamificationDatabase });
+  const ownerGenerationRef = useRef({ ownerId, generation: 0 });
+  if (ownerGenerationRef.current.ownerId !== ownerId) {
+    ownerGenerationRef.current = { ownerId, generation: ownerGenerationRef.current.generation + 1 };
+  }
   const targetLanguage = languageProfile.source.code;
+  const normalizedTargetLanguage = normalizeCardLanguage(targetLanguage);
+  const languageDrillCards = cards.filter(card => (normalizeCardLanguage(card.language) || 'en') === normalizedTargetLanguage);
   const loadPracticePool = useCallback(createPracticePoolLoader({
     ownerId,
     cloudBackoffActive,
@@ -137,9 +133,15 @@ export function usePracticeWorkspace({
     openView,
     onSessionStarted,
     loadPracticePool,
+    languageDrillCards,
+    languageDrillScopeKey: `${ownerId ?? ''}:${normalizedTargetLanguage}`,
     learning,
     languageProfile,
-    addXp: gamification.addXp,
+    onAuthoritativeOutcome: (outcome, operationId, sessionToken) => {
+      if (sessionToken !== ownerGenerationRef.current.generation) return;
+      gamification.acceptAuthoritativeOutcome(outcome);
+      onCeremony?.(outcome, operationId, sessionToken);
+    },
     reportError,
   });
   const snapshotRef = useRef<PracticeSnapshotPort>(session.snapshot);

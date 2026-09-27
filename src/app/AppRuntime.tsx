@@ -28,10 +28,67 @@ import type { CourseNativeLanguage, CourseTargetLanguage } from '../features/cou
 import { createSharedDeckCoursePort, resolveShareCourseAction } from '../features/sharing/shareCourseMatching';
 import type { SharedDeckIncomingPreview } from '../features/sharing/sharedDeckSessionController';
 import { OnboardingGate } from '../features/onboarding/OnboardingGate';
+import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
+import type { AnimeRevealEventKind, AnimeRevealSourcePayload } from '../features/rewards/AnimeReveal';
+import type { LearningCeremony } from './useAppLearningCoordination';
 import '../styles/shell.css';
 
 const AppOverlays = lazy(() => import('../components/AppOverlays').then(module => ({ default: module.AppOverlays })));
 const WebWordsRouteHost = lazy(() => import('../features/webWords/WebWordsRouteHost').then(module => ({ default: module.WebWordsRouteHost })));
+const AnimeReveal = lazy(() => Promise.all([
+  import('../features/rewards/AnimeReveal'), loadCatalog(getActiveUiLocale(), 'rewards'),
+]).then(([module]) => ({ default: module.AnimeReveal })));
+
+export interface QueuedCeremony {
+  readonly ownerId: string;
+  readonly operationId: string;
+  readonly event: AnimeRevealEventKind;
+  readonly payload: AnimeRevealSourcePayload;
+  readonly focusReturnTarget: HTMLElement | null;
+}
+
+export interface CeremonyQueueState {
+  readonly keys: ReadonlySet<string>;
+  readonly queue: readonly QueuedCeremony[];
+}
+
+export const createCeremonyQueueState = (): CeremonyQueueState => ({ keys: new Set(), queue: [] });
+
+export const queueCeremonies = (
+  current: CeremonyQueueState,
+  ceremonies: readonly QueuedCeremony[],
+): CeremonyQueueState => {
+  const keys = new Set(current.keys);
+  const queued = ceremonies.filter(ceremony => {
+    const key = `${ceremony.ownerId}:${ceremony.operationId}:${ceremony.event}`;
+    if (keys.has(key)) return false;
+    keys.add(key);
+    return true;
+  });
+  return queued.length ? { keys, queue: [...current.queue, ...queued] } : current;
+};
+
+export const dismissQueuedCeremony = (current: CeremonyQueueState): {
+  readonly state: CeremonyQueueState;
+  readonly focusReturnTarget: HTMLElement | null;
+} => {
+  const [active, ...remaining] = current.queue;
+  return {
+    state: { ...current, queue: remaining },
+    focusReturnTarget: active && remaining.length === 0 ? active.focusReturnTarget : null,
+  };
+};
+
+export const orderCeremonyEvents = (events: readonly AnimeRevealEventKind[]): readonly AnimeRevealEventKind[] =>
+  (['tierup', 'streak', 'levelup'] as const).filter(event => events.includes(event));
+
+export const equipCeremonyFrame = async (
+  equipFrame: (frameId: string) => Promise<void>,
+  dismissCeremony: () => void,
+): Promise<void> => {
+  await equipFrame('crimson-wing');
+  dismissCeremony();
+};
 
 /**
  * Surfaces the live `useCourseSession()` value up to AppRuntime as plain
@@ -169,6 +226,50 @@ export default function AppRuntime({
   const currentOwnerId = library.model.user?.uid ?? null;
   const currentOwnerRef = useRef(currentOwnerId);
   currentOwnerRef.current = currentOwnerId;
+  const [ceremonyState, setCeremonyState] = useState<CeremonyQueueState>(createCeremonyQueueState);
+  const enqueueCeremony = useCallback((ceremony: LearningCeremony) => {
+    if (ceremony.ownerId !== currentOwnerRef.current) return;
+    const focusReturnTarget = globalThis.document?.activeElement instanceof HTMLElement
+      ? globalThis.document.activeElement
+      : null;
+    const payloadFor = (event: AnimeRevealEventKind): AnimeRevealSourcePayload => {
+      if (event === 'tierup') return {
+        headword: ceremony.card?.word,
+        translation: ceremony.card?.translation,
+        imageUrl: ceremony.card?.imageUrl ?? undefined,
+      };
+      if (event === 'streak') return {
+        currentValue: ceremony.gamification ? String(ceremony.gamification.streak) : undefined,
+        rewardLabels: [
+          _(msg({ id: 'rewards.reveal.streak.badge', message: 'Web Wanderer' })),
+          _(msg({ id: 'rewards.reveal.streak.freeze', message: 'Streak freeze · limit 1' })),
+        ],
+      };
+      return {
+        currentValue: ceremony.gamification ? String(ceremony.gamification.level) : undefined,
+        rewardLabels: [
+          _(msg({ id: 'rewards.reveal.level.frame', message: 'Crimson Wing frame' })),
+          _(msg({ id: 'rewards.reveal.level.title', message: 'Word Collector title' })),
+          _(msg({ id: 'rewards.reveal.level.hint', message: 'Hint tokens · limit 3' })),
+        ],
+      };
+    };
+    const queued = orderCeremonyEvents(ceremony.events).map(event => ({
+      ownerId: ceremony.ownerId, operationId: ceremony.operationId, event, payload: payloadFor(event), focusReturnTarget,
+    }));
+    if (queued.length) setCeremonyState(current => queueCeremonies(current, queued));
+  }, [_]);
+  const dismissCeremony = useCallback(() => {
+    setCeremonyState(current => {
+      const dismissal = dismissQueuedCeremony(current);
+      if (dismissal.focusReturnTarget) {
+        globalThis.requestAnimationFrame?.(() => {
+          if (dismissal.focusReturnTarget?.isConnected) dismissal.focusReturnTarget.focus();
+        });
+      }
+      return dismissal.state;
+    });
+  }, []);
   const offerUndo = useCallback((ownerId: string | null, toast: UndoToastItem | null) => {
     if (ownerId !== currentOwnerRef.current) return;
     undoOwnerRef.current = toast ? ownerId : undefined;
@@ -180,6 +281,9 @@ export default function AppRuntime({
       setUndoToast(null);
     }
   }, [currentOwnerId, setUndoToast]);
+  useEffect(() => {
+    setCeremonyState(createCeremonyQueueState());
+  }, [currentOwnerId]);
   const learning = useAppLearningCoordination({
     library,
     viewMode,
@@ -193,6 +297,7 @@ export default function AppRuntime({
     reportError: setError,
     notify: setNotice,
     offerUndo,
+    onCeremony: enqueueCeremony,
   });
   const {
     cards,
@@ -207,11 +312,13 @@ export default function AppRuntime({
   const {
     libraryScreen,
     practiceSession,
-    practiceAddXp,
     customDecks,
     intakeSharing,
     isLibraryBusy,
     canClearLibrary,
+    equipFrame,
+    equippedFrameId,
+    ownedTitleIds,
   } = learning.model;
   const practiceActions = learning.actions.practice;
   const intakeActions = learning.actions.intakeSharing;
@@ -319,6 +426,8 @@ export default function AppRuntime({
 
   if (!visible) return null;
   if (identity.status !== 'loading' && !user && viewMode !== 'landing') return null;
+  const shellViewMode = viewMode === 'language-drill' ? 'spelling' : viewMode;
+  const activeCeremony = ceremonyState.queue[0];
 
   return (
     <CourseProvider ownerId={user?.uid ?? null}>
@@ -329,7 +438,7 @@ export default function AppRuntime({
 
       <DesktopNavigation
         navigationRef={navigationRef}
-        viewMode={viewMode}
+        viewMode={shellViewMode}
         syncIdentity={identity.status === 'loading'
           ? { status: 'loading' }
           : user
@@ -352,6 +461,8 @@ export default function AppRuntime({
         streak={evidencedStudyStreak(libraryScreen.model.overview.streak, libraryScreen.overlays.stats.xpChartData)}
         level={libraryScreen.model.overview.level}
         xp={libraryScreen.model.overview.xp}
+        equippedFrameId={equippedFrameId}
+        ownedTitleIds={ownedTitleIds}
         onOpenLanding={() => setViewMode('landing')}
         onOpenToday={() => setViewMode('today')}
         onOpenLibrary={() => setViewMode('library')}
@@ -419,14 +530,14 @@ export default function AppRuntime({
               continueReview={practiceActions.startStudy}
               openMorePractice={openPractice}
               libraryContent={<AppDeferredLibraryView model={libraryScreen.model} actions={libraryScreen.actions} />}
-              practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} addXp={practiceAddXp} />}
+              practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} />}
             />
           </div>
         </div>
       </main>
 
       <AppFooter
-        viewMode={viewMode}
+        viewMode={shellViewMode}
         libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
         syncStatus={shellSyncStatus}
       />
@@ -436,6 +547,19 @@ export default function AppRuntime({
         actions={intakeActions.cardCreator}
         deckOptions={customDecks}
       />
+
+      {activeCeremony?.ownerId === currentOwnerId && (
+        <Suspense fallback={<span className="sr-only" role="status"><Trans id="shell.opening-dialog" message="Opening dialog" /></span>}>
+          <AnimeReveal
+            open
+            event={activeCeremony.event}
+            payload={activeCeremony.payload}
+            onContinue={dismissCeremony}
+            onLater={dismissCeremony}
+            onEquip={() => equipCeremonyFrame(equipFrame, dismissCeremony)}
+          />
+        </Suspense>
+      )}
 
       {(hasMountedOverlays || isShareModalOpen || Boolean(intakeSharing.share.activeShareId)) && (
         <Suspense fallback={<span className="sr-only" role="status"><Trans id="shell.opening-dialog" message="Opening dialog" /></span>}>
@@ -462,6 +586,7 @@ export default function AppRuntime({
             setIsPracticeMenuOpen={setIsPracticeMenuOpen}
             startQuiz={practiceActions.startQuiz}
             startSpelling={practiceActions.startSpelling}
+            startLanguageDrill={practiceActions.startLanguageDrill}
             startMatch={practiceActions.startMatch}
             startShadowing={practiceActions.startShadowing}
             practiceCards={libraryScreen.model.grid.filteredCards}

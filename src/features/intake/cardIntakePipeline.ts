@@ -5,12 +5,12 @@ import { cardLogicalKey, createWordCardId, normalizeCardWord } from '../../lib/c
 import { isRetryableCloudError } from '../../lib/cloudError';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import {
-  createCardIfAbsent,
+  createCardV2IfAbsent,
   createLibraryFacetOperationId,
   deriveLibraryFacetOperationId,
   findCardByNormalizedWord,
   findCardsByNormalizedWords,
-  type CreateCardIfAbsentResult,
+  type CreateCardV2IfAbsentResult,
 } from '../../lib/cardRepository';
 import { db, isFirebaseConfigured } from '../../lib/firebase';
 import { fetchImageUrl } from '../../lib/images';
@@ -21,6 +21,7 @@ import { indexCardsByNormalizedWord } from '../importExport/spreadsheetImportSer
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
 import { promoteExistingCard } from '../library/libraryPresentation';
 import { waitForInitialMedia } from '../library/libraryStorage';
+import { normalizeCardOperationId } from '../../lib/cardMutationProtocol';
 import {
   RequestedDeckUnavailableError,
   settleMediaBestEffort,
@@ -93,7 +94,7 @@ const isCardProtocolVersionNewer = (candidate: CardData, reference: CardData): b
 
 type OptimisticDuplicateCompensationPort = Pick<
   CardIntakePortOptions,
-  'addXp' | 'resetCloudPage' | 'updateCategoryFacets' | 'updateCloudStats'
+  'resetCloudPage' | 'updateCategoryFacets' | 'updateCloudStats'
 >;
 
 export function compensateOptimisticDuplicateCard(
@@ -101,7 +102,6 @@ export function compensateOptimisticDuplicateCard(
   port: OptimisticDuplicateCompensationPort,
   operationId?: string,
 ): void {
-  port.addXp(-10);
   port.updateCloudStats(stats => ({
     ...stats,
     total: Math.max(0, stats.total - 1),
@@ -117,6 +117,14 @@ export function compensateOptimisticDuplicateCard(
   });
   port.resetCloudPage();
 }
+
+const rewardTimeZone = (): string => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
+  }
+};
 
 export interface CardIntakePipeline extends CardIntakeControllerPort {
   replaceOwner(ownerId: string | null): void;
@@ -135,10 +143,12 @@ export function createCardIntakePipeline({
     if (!sessionGuard.isCurrent(token)) throw new StaleIntakeSessionError();
   };
   const mediaSessions = new WeakMap<CardData, IntakeSessionToken>();
-  const persistedCardOperations = new Map<
-    string,
-    Promise<Array<{ card: CardData; created: boolean }>>
-  >();
+  const persistedCardOperations = new Map<string, {
+    operationId: string;
+    promise: Promise<Array<{ card: CardData; created: boolean }>>;
+    retryable: boolean;
+  }>();
+  const createOperationId = () => normalizeCardOperationId(`create-${globalThis.crypto.randomUUID()}`);
 
   const findExisting: CardIntakeControllerPort['findExisting'] = async words => {
     const current = getContext();
@@ -311,7 +321,12 @@ export function createCardIntakePipeline({
     };
   };
 
-  const persistCardsInternal: CardIntakeControllerPort['persistCards'] = async (cards, source) => {
+  const persistCardsInternal = async (
+    cards: readonly CardData[],
+    source: 'generate' | 'shared',
+    operationIds = cards.map(createOperationId),
+    onSettlementFailure?: (operationId: string) => void,
+  ): Promise<Array<{ card: CardData; created: boolean }>> => {
     const current = getContext();
     const session = sessionGuard.capture();
     const candidates = [...cards];
@@ -325,19 +340,27 @@ export function createCardIntakePipeline({
     const facetOperationId = createLibraryFacetOperationId();
     const results: Array<{ card: CardData; created: boolean }> = [];
     const cloudSettlements: Array<{
-      settle: () => Promise<CreateCardIfAbsentResult>;
+      settle: () => Promise<CreateCardV2IfAbsentResult>;
       candidate: CardData;
+      operationId: string;
     }> = [];
 
-    for (const candidate of candidates) {
+    for (const [index, candidate] of candidates.entries()) {
       mediaSessions.set(candidate, session);
+      const operationId = operationIds[index]!;
       cloudSettlements.push({
         settle: () => withTimeout(
-          createCardIfAbsent(database, ownerId, candidate, { libraryEpoch: activeLibraryEpoch }),
+          createCardV2IfAbsent(database, ownerId, candidate, {
+            libraryEpoch: activeLibraryEpoch,
+            opId: operationId,
+            operationCreatedAt: candidate.createdAt,
+            timeZone: rewardTimeZone(),
+          }),
           8_000,
           'Saving the card took too long. Try again.',
         ),
         candidate,
+        operationId,
       });
       results.push({ card: candidate, created: true });
       if (source === 'generate') mediaSessions.set(candidate, session);
@@ -353,7 +376,6 @@ export function createCardIntakePipeline({
         active.cardsPerPage,
       );
       active.publishCards(next);
-      active.addXp(created.length * 10);
       active.updateCloudStats(stats => ({
         ...stats,
         total: stats.total + created.length,
@@ -370,12 +392,15 @@ export function createCardIntakePipeline({
       active.resetCloudPage();
     }
 
-    void mapWithConcurrency(cloudSettlements, 6, async ({ settle, candidate }) => {
+    void mapWithConcurrency(cloudSettlements, 6, async ({ settle, candidate, operationId }) => {
       try {
         const result = await settle();
         if (!sessionGuard.isCurrent(session)) return;
         const latest = getContext();
         if (latest.ownerId !== ownerId) return;
+        if (result.created && result.gamification) {
+          latest.acceptGamificationOutcome?.(result.gamification, operationId);
+        }
         if (result.created) return;
         // Someone else already created this word; reconcile the optimistic
         // duplicate with the authoritative card the cloud returned.
@@ -388,6 +413,7 @@ export function createCardIntakePipeline({
         }
       } catch (cause) {
         console.warn('The card could not be saved to the cloud.', cause);
+        onSettlementFailure?.(operationId);
         if (sessionGuard.isCurrent(session)) {
           const latest = getContext();
           latest.publishCards(latest.getCards().filter(existing => existing.id !== candidate.id));
@@ -404,11 +430,20 @@ export function createCardIntakePipeline({
     const candidate = cards[0];
     const key = `${source}:${candidate.id}:${JSON.stringify(candidate)}`;
     const existing = persistedCardOperations.get(key);
-    if (existing) return existing;
-    const operation = persistCardsInternal(cards, source);
-    persistedCardOperations.set(key, operation);
+    if (existing && !existing.retryable) return existing.promise;
+    const entry = existing ?? {
+      operationId: createOperationId(),
+      promise: Promise.resolve([]),
+      retryable: false,
+    };
+    entry.retryable = false;
+    const promise = persistCardsInternal(cards, source, [entry.operationId], operationId => {
+      if (entry.operationId === operationId) entry.retryable = true;
+    });
+    entry.promise = promise;
+    persistedCardOperations.set(key, entry);
     try {
-      return await operation;
+      return await promise;
     } catch (cause) {
       persistedCardOperations.delete(key);
       throw cause;

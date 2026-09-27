@@ -60,6 +60,7 @@ vi.mock('firebase/functions', () => ({
 import {
   CardMutationPreconditionError,
   createCardIfAbsent,
+  createCardV2IfAbsent,
   applyCardPatchIfCurrent,
   clearCustomDeckAssignments,
   deleteCardWithTombstone,
@@ -698,6 +699,32 @@ describe('createCardIfAbsent', () => {
       opId: 'create-quite-1',
       operationCreatedAt: '2026-08-23T00:00:00.000Z',
       restore: true,
+    });
+  });
+
+  it('uses createCardV2 for fresh cards and parses its authoritative outcome', async () => {
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
+    const callable = vi.fn().mockResolvedValue({
+      data: {
+        created: true,
+        card: callableCard,
+        gamification: { xp: 10, level: 1, streak: 0, studyDay: '2026-09-27', events: [] },
+      },
+    });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+
+    await expect(createCardV2IfAbsent({} as never, 'user-1', candidate, {
+      libraryEpoch: 4, opId: 'create-quite-v2', timeZone: 'Asia/Ho_Chi_Minh',
+    })).resolves.toMatchObject({
+      created: true, card: { id: 'word-quite' }, gamification: { xp: 10, level: 1 },
+    });
+    expect(functionsRuntime.httpsCallable).toHaveBeenCalledWith(
+      { region: 'asia-southeast1' }, 'createCardV2',
+    );
+    expect(callable).toHaveBeenCalledWith({
+      card: expect.objectContaining(candidate), libraryEpoch: 4,
+      opId: 'create-quite-v2', timeZone: 'Asia/Ho_Chi_Minh',
     });
   });
 

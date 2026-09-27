@@ -1,4 +1,4 @@
-import { Fragment, lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { AppRuntimeBoundary } from './app/AppRuntimeBoundary';
 import { useAppNavigation } from './features/navigation/useAppNavigation';
 import { getActiveUiLocale, loadCatalog } from './i18n/loadCatalog';
@@ -9,15 +9,10 @@ import './styles/app-bootstrap.css';
 const LandingPage = lazy(() => Promise.all([
   import('./features/landing/LandingPage'), loadCatalog(getActiveUiLocale(), 'landing'),
 ]).then(([component]) => component));
-const runtimeRetry = new URLSearchParams(globalThis.location?.search ?? '').has('runtime-retry');
-const AppRuntime = runtimeRetry
-  ? lazy(() => Promise.all([
-    import('./app/AppRuntimeRetry.virtual'), loadCatalog(getActiveUiLocale(), 'components'),
-    loadCatalog(getActiveUiLocale(), 'shell'),
-    loadCatalog(getActiveUiLocale(), 'practice'),
-  ]).then(([component]) => component))
-  : lazy(() => Promise.all([
-    import('./app/AppRuntimeInitial.virtual'), loadCatalog(getActiveUiLocale(), 'components'),
+const runtimeRetry = new URLSearchParams(globalThis.location?.search).has('runtime-retry');
+const AppRuntime = lazy(() => Promise.all([
+    runtimeRetry ? import('./app/AppRuntimeRetry.virtual') : import('./app/AppRuntimeInitial.virtual'),
+    loadCatalog(getActiveUiLocale(), 'components'),
     loadCatalog(getActiveUiLocale(), 'shell'),
     loadCatalog(getActiveUiLocale(), 'practice'),
   ]).then(([component]) => component));
@@ -41,27 +36,26 @@ export default function App() {
     if (navigation.viewMode !== 'landing') setRuntimeActivated(true);
   }, [navigation.viewMode]);
 
-  const activateRuntime = useCallback(() => setRuntimeActivated(true), []);
   const enterApp = useCallback(() => {
-    activateRuntime();
+    setRuntimeActivated(true);
     navigation.setViewMode('today');
-  }, [activateRuntime, navigation]);
+  }, [navigation]);
   const openLibrary = useCallback(() => {
-    activateRuntime();
+    setRuntimeActivated(true);
     navigation.setViewMode('library');
-  }, [activateRuntime, navigation]);
+  }, [navigation]);
   const openCatalog = useCallback(() => {
-    activateRuntime();
+    setRuntimeActivated(true);
     navigation.setViewMode('catalog');
-  }, [activateRuntime, navigation]);
+  }, [navigation]);
   const openProgress = useCallback(() => {
-    activateRuntime();
+    setRuntimeActivated(true);
     navigation.setViewMode('progress');
-  }, [activateRuntime, navigation]);
+  }, [navigation]);
   const requestLandingSignIn = useCallback(() => {
-    activateRuntime();
+    setRuntimeActivated(true);
     setSignInRequest(request => request + 1);
-  }, [activateRuntime]);
+  }, []);
   const handleSignInRequestHandled = useCallback((request: number) => {
     setAcknowledgedSignInRequest(previous => Math.max(previous, request));
   }, []);
@@ -77,8 +71,7 @@ export default function App() {
 
   return (
     <>
-      <Fragment key="landing">
-        {navigation.viewMode === 'landing' && !runtimeFailed && (
+      {navigation.viewMode === 'landing' && !runtimeFailed && (
           <Suspense fallback={<div className="app-loading crystal-starfield font-bold text-[var(--sf-brand-text)]"><Trans id="shell.loading.app" message="Loading SonFlash…" /></div>}>
             <LandingPage
               onEnterApp={enterApp}
@@ -89,10 +82,8 @@ export default function App() {
               user={landingUser}
             />
           </Suspense>
-        )}
-      </Fragment>
-      <Fragment key="runtime">
-        {runtimeActivated && (
+      )}
+      {runtimeActivated && (
           <AppRuntimeBoundary onError={handleRuntimeError} onRetry={retryRuntime}>
             <Suspense fallback={navigation.viewMode === 'landing' ? null : <div className="app-loading"><WorkspaceLoadingPanel /></div>}>
               <AppRuntime
@@ -105,8 +96,7 @@ export default function App() {
               />
             </Suspense>
           </AppRuntimeBoundary>
-        )}
-      </Fragment>
+      )}
     </>
   );
 }

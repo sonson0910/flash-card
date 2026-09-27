@@ -12,6 +12,13 @@ import { createWordMatchRound } from './practiceModel';
 interface WordMatchViewProps {
   cards: CardData[];
   onClose: () => void;
+  onComplete?: (pairs: Array<{ cardId: string; word: string; translation: string }>) =>
+    | { awardedXp: number }
+    | null
+    | void
+    | Promise<{ awardedXp: number } | null | void>;
+  onNewRound?: () => boolean | void | Promise<boolean | void>;
+  /** Compatibility input; XP is only awarded by the completed server session. */
   onAddXp?: (amount: number) => void;
 }
 
@@ -25,15 +32,6 @@ interface MatchTile {
 const GAME_DURATION_SECONDS = 60;
 const PAIRS_PER_ROUND = 6;
 
-export function awardMatchVictory(
-  onAddXp: WordMatchViewProps['onAddXp'],
-  awarded: { current: boolean },
-) {
-  if (awarded.current) return;
-  awarded.current = true;
-  onAddXp?.(20);
-}
-
 function shuffleArray<T>(items: T[]): T[] {
   const arr = [...items];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -43,7 +41,7 @@ function shuffleArray<T>(items: T[]): T[] {
   return arr;
 }
 
-export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
+export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMatchViewProps) {
   const { _, i18n } = useLingui();
   const [roundKey, setRoundKey] = useState(0);
   const [selectedTile, setSelectedTile] = useState<MatchTile | null>(null);
@@ -53,9 +51,15 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
   const [isGameOver, setIsGameOver] = useState(false);
   const [isVictory, setIsVictory] = useState(false);
   const [matchesCount, setMatchesCount] = useState(0);
+  const [completionStatus, setCompletionStatus] = useState<'idle' | 'verifying' | 'confirmed' | 'failed' | 'unavailable' | 'new-round-failed'>('idle');
+  const [awardedXp, setAwardedXp] = useState(0);
+  const [isStartingNewRound, setIsStartingNewRound] = useState(false);
   const lockSelectionRef = useRef(false);
   const matchedCardIdsRef = useRef(new Set<string>());
-  const victoryAwardedRef = useRef(false);
+  const completionReportedRef = useRef(false);
+  const completionPairsRef = useRef<Array<{ cardId: string; word: string; translation: string }>>([]);
+  const roundGenerationRef = useRef(0);
+  const isMountedRef = useRef(true);
 
   // Generate paired target words and native meanings.
   const tiles: MatchTile[] = useMemo(() => {
@@ -101,6 +105,32 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
     }, 1000);
     return () => clearInterval(timer);
   }, [isGameOver, isVictory]);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
+  const submitCompletion = useCallback(async (pairs: Array<{ cardId: string; word: string; translation: string }>) => {
+    const roundGeneration = roundGenerationRef.current;
+    if (!onComplete) {
+      setCompletionStatus('unavailable');
+      return;
+    }
+    setCompletionStatus('verifying');
+    try {
+      const completion = await onComplete(pairs);
+      if (!isMountedRef.current || roundGeneration !== roundGenerationRef.current) return;
+      if (completion) {
+        setAwardedXp(completion.awardedXp);
+        setCompletionStatus('confirmed');
+      } else {
+        setCompletionStatus('failed');
+      }
+    } catch {
+      if (!isMountedRef.current || roundGeneration !== roundGenerationRef.current) return;
+      setCompletionStatus('failed');
+    }
+  }, [onComplete]);
 
   const handleTileClick = useCallback(
     (tile: MatchTile) => {
@@ -150,7 +180,15 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
           setIsVictory(true);
           playRewardSound();
           triggerConfetti(0.5, 0.5);
-          awardMatchVictory(onAddXp, victoryAwardedRef);
+          if (!completionReportedRef.current) {
+            completionReportedRef.current = true;
+            const pairs = [...matchedCardIdsRef.current].flatMap(cardId => {
+              const card = cards.find(candidate => candidate.id === cardId);
+              return card ? [{ cardId, word: card.word, translation: card.translation }] : [];
+            });
+            completionPairsRef.current = pairs;
+            void submitCompletion(pairs);
+          }
         }
       } else {
         // MISMATCH!
@@ -165,10 +203,23 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
         }, 500);
       }
     },
-    [selectedTile, matchedIds, isGameOver, isVictory, tiles.length, onAddXp]
+    [selectedTile, matchedIds, isGameOver, isVictory, tiles.length, cards, submitCompletion]
   );
 
-  const restartGame = () => {
+  const restartGame = async () => {
+    if (completionReportedRef.current) {
+      if (isStartingNewRound) return;
+      setIsStartingNewRound(true);
+      roundGenerationRef.current += 1;
+      const started = await onNewRound?.();
+      if (!isMountedRef.current) return;
+      setIsStartingNewRound(false);
+      if (started === false || !onNewRound) {
+        setCompletionStatus('new-round-failed');
+        return;
+      }
+      completionReportedRef.current = false;
+    }
     setRoundKey(prev => prev + 1);
     setSelectedTile(null);
     setMatchedIds(new Set());
@@ -177,9 +228,12 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
     setIsGameOver(false);
     setIsVictory(false);
     setMatchesCount(0);
+    setCompletionStatus('idle');
+    setAwardedXp(0);
+    setIsStartingNewRound(false);
     lockSelectionRef.current = false;
     matchedCardIdsRef.current.clear();
-    victoryAwardedRef.current = false;
+    completionPairsRef.current = [];
   };
 
   const renderTile = (tile: MatchTile) => {
@@ -260,19 +314,66 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
             <Trans id="practice.match.complete-copy" message="You matched all {pairCount} pairs in {seconds} seconds." values={{ pairCount, seconds: GAME_DURATION_SECONDS - timeLeft }} />
           </p>
 
-          <div className="mt-6 inline-flex items-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-5 py-2.5 text-sm font-black text-amber-600 dark:text-amber-300">
-            <Zap size={18} className="text-amber-500" />
-            <span><Trans id="practice.match.xp" message="+20 XP" /></span>
-          </div>
+          {completionStatus === 'verifying' && (
+            <p className="mt-6 text-sm font-bold text-[var(--sf-text-muted)]" role="status">
+              <Trans id="practice.match.verifying-reward" message="Verifying your result…" />
+            </p>
+          )}
+          {completionStatus === 'confirmed' && (
+            <div className="mt-6 inline-flex items-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-5 py-2.5 text-sm font-black text-amber-600 dark:text-amber-300">
+              <Zap size={18} className="text-amber-500" />
+              <span>{awardedXp > 0
+                ? <Trans id="practice.match.verified-xp" message="Verified +{awardedXp} XP" values={{ awardedXp }} />
+                : <Trans id="practice.match.verified-no-xp" message="Result verified" />}
+              </span>
+            </div>
+          )}
+          {completionStatus === 'failed' && (
+            <div className="mt-6">
+              <p className="text-sm font-bold text-rose-600 dark:text-rose-300" role="alert">
+                <Trans id="practice.match.verification-failed" message="We could not verify your result. Your completed pairs are still here." />
+              </p>
+              <button
+                type="button"
+                onClick={() => void submitCompletion(completionPairsRef.current)}
+                className="mt-3 min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+              >
+                <Trans id="practice.match.retry-verification" message="Retry verification" />
+              </button>
+            </div>
+          )}
+          {completionStatus === 'unavailable' && (
+            <p className="mt-6 text-sm font-bold text-[var(--sf-text-muted)]" role="status">
+              <Trans id="practice.match.no-reward" message="This round did not award XP." />
+            </p>
+          )}
+          {completionStatus === 'new-round-failed' && (
+            <div className="mt-6">
+              <p className="text-sm font-bold text-rose-600 dark:text-rose-300" role="alert">
+                <Trans id="practice.match.new-round-failed" message="We could not start a new verified round. Check your connection and try again." />
+              </p>
+              <button
+                type="button"
+                onClick={() => void restartGame()}
+                className="mt-3 min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+              >
+                <Trans id="practice.match.retry-new-round" message="Retry new round" />
+              </button>
+            </div>
+          )}
 
           <div className="mt-8 flex justify-center gap-3">
             <button
               type="button"
-              onClick={restartGame}
-              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-6 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+              onClick={() => void restartGame()}
+              disabled={isStartingNewRound}
+              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-6 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] disabled:cursor-wait disabled:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
             >
               <RotateCcw size={16} />
-              <span><Trans id="practice.match.new-round" message="New round" /></span>
+              <span>{isStartingNewRound
+                ? <Trans id="practice.match.starting-new-round" message="Starting new round…" />
+                : <Trans id="practice.match.new-round" message="New round" />}
+              </span>
             </button>
             <button
               type="button"
@@ -298,7 +399,7 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
           <div className="mt-8 flex justify-center gap-3">
             <button
               type="button"
-              onClick={restartGame}
+              onClick={() => void restartGame()}
               className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-6 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
             >
               <RotateCcw size={16} />

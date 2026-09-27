@@ -1,0 +1,94 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-27 18:09+0700\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: vi\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:58
+msgid "rewards.reveal.close"
+msgstr "Đóng phần thưởng"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:62
+msgid "rewards.reveal.equip-error"
+msgstr "Không thể dùng phần thưởng này. Vui lòng thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:63
+msgid "rewards.reveal.later"
+msgstr "Để sau"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:26
+msgid "rewards.reveal.levelup.description"
+msgstr "Bạn đã mở khóa khung ảnh Crimson Wing và danh hiệu Word Collector. Bạn có thể giữ tối đa ba lượt gợi ý."
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:26
+msgid "rewards.reveal.levelup.equip"
+msgstr "Dùng khung ảnh"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:26
+msgid "rewards.reveal.levelup.kicker"
+msgstr "Lên cấp"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:26
+msgid "rewards.reveal.levelup.title"
+msgstr "Đã lên cấp"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:61
+msgid "rewards.reveal.rewards-label"
+msgstr "Phần thưởng đã mở khóa"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:25
+msgid "rewards.reveal.streak.continue"
+msgstr "Tiếp tục cố gắng"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:25
+msgid "rewards.reveal.streak.description"
+msgstr "Chuỗi ngày ôn tập đã xác minh giúp bạn mở khóa huy hiệu Web Wanderer. Bạn có thể giữ một lượt bảo vệ chuỗi."
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:25
+msgid "rewards.reveal.streak.kicker"
+msgstr "Cột mốc chuỗi ngày"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:25
+msgid "rewards.reveal.streak.title"
+msgstr "Đạt mốc chuỗi ngày"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:24
+msgid "rewards.reveal.tierup.continue"
+msgstr "Tiếp tục học"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:24
+msgid "rewards.reveal.tierup.description"
+msgstr "Bạn đã thành thạo thẻ này. Hãy ôn lại khi thẻ đến hạn."
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:24
+msgid "rewards.reveal.tierup.kicker"
+msgstr "Lên bậc"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:24
+msgid "rewards.reveal.tierup.title"
+msgstr "Đã thành thạo"

@@ -1,5 +1,6 @@
 import { lazy, Suspense, type ReactNode } from 'react';
 import { Trans } from '@lingui/react';
+import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import type { PracticeWorkspace } from './usePracticeWorkspace';
 import './practice-board.css';
 
@@ -9,6 +10,12 @@ const StoryView = lazy(() => import('./StoryView').then(module => ({ default: mo
 const StudyView = lazy(() => import('./StudyView').then(module => ({ default: module.StudyView })));
 const WordMatchView = lazy(() => import('./WordMatchView').then(module => ({ default: module.WordMatchView })));
 const ShadowingView = lazy(() => import('./ShadowingView').then(module => ({ default: module.ShadowingView })));
+const LanguagePracticeDrill = lazy(() => Promise.all([
+  import('../languagePacks/LanguagePracticeDrill'), loadCatalog(getActiveUiLocale(), 'practice'),
+]).then(([module]) => ({ default: module.LanguagePracticeDrill })));
+const LanguagePracticeDrillResults = lazy(() => Promise.all([
+  import('../languagePacks/LanguagePracticeDrill'), loadCatalog(getActiveUiLocale(), 'practice'),
+]).then(([module]) => ({ default: module.LanguagePracticeDrillResults })));
 
 function PracticeFallback({ label, wide = false }: { label: ReactNode; wide?: boolean }) {
   return (
@@ -22,12 +29,10 @@ export function PracticeScreen({
   session,
   actions,
   customDecks,
-  addXp,
 }: {
   session: PracticeWorkspace['model']['session'];
   actions: PracticeWorkspace['actions'];
   customDecks: string[];
-  addXp: (amount: number) => void;
 }) {
   const { mode, study, quiz, learning } = session;
   const commands = actions;
@@ -96,13 +101,38 @@ export function PracticeScreen({
       </Suspense>
     );
   }
+  if (mode === 'language-drill') {
+    const card = quiz.languageDrillCards[quiz.currentLanguageDrillIndex];
+    return (
+      <Suspense fallback={<PracticeFallback label={<Trans id="practice.loading.language-drill" message="Loading language drill" />} />}>
+        {quiz.showLanguageDrillResults ? (
+          <LanguagePracticeDrillResults
+            correct={quiz.languageDrillCorrect}
+            total={quiz.languageDrillCards.length}
+            onRestart={commands.startLanguageDrill}
+            onClose={commands.close}
+          />
+        ) : card ? (
+          <LanguagePracticeDrill
+            card={card}
+            cards={quiz.languageDrillCards}
+            currentIndex={quiz.currentLanguageDrillIndex}
+            total={quiz.languageDrillCards.length}
+            onClose={commands.close}
+            onNext={result => commands.completeLanguageDrill(result.correct)}
+          />
+        ) : null}
+      </Suspense>
+    );
+  }
   if (mode === 'match') {
     return (
       <Suspense fallback={<PracticeFallback label={<Trans id="practice.loading.match" message="Loading word match" />} />}>
         <WordMatchView
           cards={quiz.spellingCards.length > 0 ? quiz.spellingCards : study.cards}
           onClose={commands.close}
-          onAddXp={addXp}
+          onComplete={quiz.completeMatch}
+          onNewRound={quiz.restartMatch}
         />
       </Suspense>
     );
@@ -113,7 +143,6 @@ export function PracticeScreen({
         <ShadowingView
           cards={quiz.spellingCards.length > 0 ? quiz.spellingCards : study.cards}
           onClose={commands.close}
-          onAddXp={addXp}
         />
       </Suspense>
     );

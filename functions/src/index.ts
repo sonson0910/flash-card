@@ -40,12 +40,21 @@ import {
   CardHeadwordRenameConflictError,
   MAX_CARD_ALLOCATION,
   createCardForOwner,
+  createCardV2ForOwner,
   createStarterCardsForOwner,
   parseCreateCardRequest,
+  parseCreateCardV2Request,
   parseCreateStarterCardsRequest,
   parseRenameCardHeadwordRequest,
   renameCardHeadwordForOwner,
 } from './cardPersistence.js';
+import {
+  completePracticeSessionV1 as completePracticeSessionV1ForOwner,
+  parseCompletePracticeSessionV1Request,
+  parseStartPracticeSessionV1Request,
+  startPracticeSessionV1 as startPracticeSessionV1ForOwner,
+} from './practiceSessionPersistence.js';
+import { equipOwnedFrame as equipOwnedFrameForOwner } from './verifiedGamification.js';
 import {
   applyBulkCardMutationsForOwner,
   BulkMutationEpochError,
@@ -147,6 +156,9 @@ const MAX_SHARED_DECK_REVOCATIONS_PER_HOUR = 120;
 const MAX_GAMIFICATION_SAVES_PER_HOUR = 120;
 const MAX_CARD_CREATIONS_PER_HOUR = 120;
 const MAX_CARD_REVIEWS_PER_HOUR = 600;
+const MAX_PRACTICE_SESSION_STARTS_PER_HOUR = 120;
+const MAX_PRACTICE_SESSION_COMPLETIONS_PER_HOUR = 600;
+const MAX_REWARD_FRAME_EQUIPS_PER_HOUR = 30;
 const MAX_BULK_CARD_MUTATIONS_PER_HOUR = 120;
 const MAX_CARD_HEADWORD_RENAMES_PER_HOUR = 30;
 const MAX_LIBRARY_FACET_UPDATES_PER_HOUR = 120;
@@ -818,6 +830,118 @@ export const createCard = onCall({
       errorName: error instanceof Error ? error.name : 'UnknownError',
     });
     throw new HttpsError('internal', 'Card allocation failed.');
+  }
+});
+
+export const createCardV2 = onCall({
+  region: REGION,
+  secrets: [analyticsPseudonymKey],
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = await requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseCreateCardV2Request(request.data));
+  await consumeBudget(userId, 'card-create', MAX_CARD_CREATIONS_PER_HOUR,
+    'Card creation limit reached. Try again later.');
+  try {
+    return await createCardV2ForOwner(database, userId, input.card, {
+      maximumCards: MAX_CARD_ALLOCATION,
+      libraryEpoch: input.libraryEpoch,
+      baseRevision: input.baseRevision,
+      opId: input.opId,
+      operationCreatedAt: input.operationCreatedAt,
+      timeZone: input.timeZone,
+      receivedAt: new Date(),
+    });
+  } catch (error) {
+    if (error instanceof LegacyLibraryMigrationFenceError) {
+      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+    }
+    const allocationError = toCardAllocationHttpsError(error);
+    if (allocationError) throw allocationError;
+    if (error instanceof InputValidationError) throw new HttpsError('invalid-argument', error.message);
+    console.error('Verified card creation failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'Verified card creation failed.');
+  }
+});
+
+export const startPracticeSessionV1 = onCall({
+  region: REGION,
+  secrets: [analyticsPseudonymKey],
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = await requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseStartPracticeSessionV1Request(request.data));
+  await consumeBudget(userId, 'practice-session-start', MAX_PRACTICE_SESSION_STARTS_PER_HOUR,
+    'Practice session limit reached. Try again later.');
+  try {
+    return await startPracticeSessionV1ForOwner(database, userId, input, new Date());
+  } catch (error) {
+    if (error instanceof InputValidationError) throw new HttpsError('invalid-argument', error.message);
+    console.error('Practice session start failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'Practice session could not be started.');
+  }
+});
+
+export const completePracticeSessionV1 = onCall({
+  region: REGION,
+  secrets: [analyticsPseudonymKey],
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = await requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseCompletePracticeSessionV1Request(request.data));
+  await consumeBudget(userId, 'practice-session-complete', MAX_PRACTICE_SESSION_COMPLETIONS_PER_HOUR,
+    'Practice completion limit reached. Try again later.');
+  try {
+    return await completePracticeSessionV1ForOwner(database, userId, input, new Date());
+  } catch (error) {
+    if (error instanceof InputValidationError) throw new HttpsError('invalid-argument', error.message);
+    console.error('Practice session completion failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'Practice session could not be completed.');
+  }
+});
+
+export const equipOwnedFrame = onCall({
+  region: REGION,
+  secrets: [analyticsPseudonymKey],
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = await requireUser(request.auth);
+  const frameId = parseOrInvalidArgument(() => {
+    const data = request.data;
+    if (!data || typeof data !== 'object' || Array.isArray(data)
+      || Object.keys(data).length !== 1 || typeof (data as { frameId?: unknown }).frameId !== 'string') {
+      throw new InputValidationError('Reward frame request is invalid.');
+    }
+    return (data as { frameId: string }).frameId;
+  });
+  await consumeBudget(userId, 'reward-frame-equip', MAX_REWARD_FRAME_EQUIPS_PER_HOUR,
+    'Reward frame update limit reached. Try again later.');
+  try {
+    return await equipOwnedFrameForOwner(database, userId, frameId);
+  } catch (error) {
+    if (error instanceof InputValidationError) throw new HttpsError('invalid-argument', error.message);
+    console.error('Reward frame update failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'Reward frame could not be updated.');
   }
 });
 

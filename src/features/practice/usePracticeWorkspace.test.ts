@@ -12,8 +12,8 @@ vi.mock('react', () => ({
   useRef: <T,>(initial: T) => ({ current: initial }),
 }));
 
-vi.mock('../gamification/useGamification', () => ({
-  useGamificationState: doubles.gamification,
+vi.mock('../gamification/verifiedGamificationClient', () => ({
+  useVerifiedGamificationState: doubles.gamification,
 }));
 
 vi.mock('./usePracticeSession', () => ({
@@ -130,7 +130,7 @@ describe('usePracticeWorkspace', () => {
     const commands = { startStudy: vi.fn() };
     const snapshot = { getCards: vi.fn(() => []) };
     const session = { mode: 'library', commands, snapshot };
-    const gamification = { streak: 2, xp: 320, xpHistory: {}, level: 2, addXp: vi.fn() };
+    const gamification = { streak: 2, xp: 320, xpHistory: {}, level: 2, acceptAuthoritativeOutcome: vi.fn(), equipFrame: vi.fn() };
     doubles.session.mockReturnValue(session);
     doubles.gamification.mockReturnValue(gamification);
     const learning = {
@@ -139,7 +139,6 @@ describe('usePracticeWorkspace', () => {
       assignDeck: vi.fn(),
       updateCard: vi.fn(),
     };
-    const storage = { getItem: vi.fn(() => null), setItem: vi.fn() };
     const languageProfile = {
       id: 'en-vi',
       source: { code: 'en', displayName: 'English' },
@@ -155,8 +154,7 @@ describe('usePracticeWorkspace', () => {
       cloudBackoffActive: false,
       cards: [card('local')],
       poolSource: null,
-      gamificationStore: null,
-      gamificationStorage: storage,
+      gamificationDatabase: null,
       learning,
       languageProfile,
       reportError: vi.fn(),
@@ -181,15 +179,19 @@ describe('usePracticeWorkspace', () => {
     expect(doubles.session).toHaveBeenCalledWith(expect.objectContaining({
       ownerId: 'owner-1',
       learning,
-      addXp: gamification.addXp,
+      onAuthoritativeOutcome: expect.any(Function),
       languageProfile,
     }));
     expect(doubles.gamification).toHaveBeenCalledWith(expect.objectContaining({
       ownerId: 'owner-1',
-      cloudBackoffActive: false,
-      store: null,
-      storage,
+      database: null,
     }));
+
+    const onAuthoritativeOutcome = doubles.session.mock.calls[0][0].onAuthoritativeOutcome;
+    onAuthoritativeOutcome({ xp: 20, level: 1, streak: 0, events: [] }, 'op-a', 1);
+    expect(gamification.acceptAuthoritativeOutcome).not.toHaveBeenCalled();
+    onAuthoritativeOutcome({ xp: 20, level: 1, streak: 0, events: [] }, 'op-a', 0);
+    expect(gamification.acceptAuthoritativeOutcome).toHaveBeenCalledWith({ xp: 20, level: 1, streak: 0, events: [] });
   });
 
   it('keeps the composition boundary free of provider and persistence vocabulary', () => {

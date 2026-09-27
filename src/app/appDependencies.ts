@@ -20,7 +20,6 @@ import type {
   SharedDeckAdapter,
   SharedDeckCardBatch,
 } from '../features/sharing/sharedDeckSessionController';
-import { firebaseGamificationStore } from '../features/gamification/firebaseGamificationStore';
 import { isQuotaError } from '../features/library/libraryStorage';
 import { defaultLearningPersistenceHook } from '../features/learning/learningWorkspacePersistenceAdapter';
 import { useCardIntakePort } from '../features/intake/useCardIntakePort';
@@ -163,7 +162,6 @@ export const appDependencies = {
   },
   practice: {
     pool: practicePool,
-    gamification: firebaseGamificationStore,
   },
   intake: {
     forOwner: (ownerId: string | null, targetLanguage?: string): {

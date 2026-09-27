@@ -18,6 +18,11 @@ import {
 } from './libraryFacetPersistence.js';
 import { AiQuotaError, asAiQuotaCount, resolvePlan, type AiOperationRecord } from './aiQuota.js';
 import type { PilotConfig } from './pilotConfig.js';
+import {
+  commitVerifiedGamification,
+  prepareVerifiedGamification,
+  type VerifiedGamificationOutcome,
+} from './verifiedGamification.js';
 
 export const MAX_CARD_ALLOCATION = 5_000;
 const MAX_PROTOCOL_COUNTER = Number.MAX_SAFE_INTEGER;
@@ -63,6 +68,11 @@ export type CardAllocationRequest = {
   restore?: true;
 };
 
+export type CreateCardV2Request = CardAllocationRequest & {
+  opId: string;
+  timeZone: string;
+};
+
 type CardAllocationOptions = {
   maximumCards?: number;
   libraryEpoch?: number;
@@ -70,6 +80,21 @@ type CardAllocationOptions = {
   opId?: string;
   operationCreatedAt?: string;
   restore?: true;
+  verifiedCreate?: {
+    fingerprint: string;
+    receivedAt: Date;
+    timeZone: string;
+  };
+};
+
+type CreateCardV2Options = CardAllocationOptions & {
+  opId: string;
+  timeZone: string;
+  receivedAt?: Date;
+};
+
+export type CardAllocationV2Result = CardAllocationResult & {
+  gamification: VerifiedGamificationOutcome | null;
 };
 
 const CARD_FIELDS = new Set([
@@ -476,6 +501,35 @@ export const parseCreateCardRequest = (value: unknown): CardAllocationRequest =>
   };
 };
 
+export const parseCreateCardV2Request = (value: unknown): CreateCardV2Request => {
+  const source = asRecord(value, 'Card allocation request must be an object.');
+  if (Object.keys(source).some(key => !new Set([
+    'card', 'libraryEpoch', 'baseRevision', 'opId', 'operationCreatedAt', 'timeZone',
+  ]).has(key))) {
+    throw new InputValidationError('Card allocation request contains an unsupported field.');
+  }
+  const { timeZone: rawTimeZone, ...legacyRequest } = source;
+  const request = parseCreateCardRequest(legacyRequest);
+  if (!request.opId || !/^[A-Za-z0-9_-]{1,128}$/.test(request.opId)) {
+    throw new InputValidationError('Card create operation metadata is required.');
+  }
+  const timeZone = boundedText(rawTimeZone, 'timeZone', 128);
+  if (!timeZone) throw new InputValidationError('Reward time zone is invalid.');
+  return { ...request, opId: request.opId, timeZone };
+};
+
+const stableJson = (value: unknown): string => {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.entries(value).sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => `${JSON.stringify(key)}:${stableJson(item)}`).join(',')}}`;
+  }
+  return JSON.stringify(value);
+};
+
+const createFingerprint = (value: unknown): string =>
+  createHash('sha256').update(stableJson(value)).digest('hex');
+
 export interface StarterCardsBatchRequest {
   operationId: string;
   cards: readonly unknown[];
@@ -682,6 +736,7 @@ export async function createCardForOwner(
     operationCreatedAt,
     opId,
     restore,
+    verifiedCreate,
   }: CardAllocationOptions = {},
 ): Promise<CardAllocationResult> {
   if (!ownerId || ownerId.includes('/')) throw new InputValidationError('Card owner is invalid.');
@@ -716,6 +771,9 @@ export async function createCardForOwner(
   const owner = ownerDocument(database, ownerId);
   const libraryState = owner.collection('profile').doc('library_state');
   const resourceUsage = owner.collection('profile').doc('resource_usage');
+  const verifiedReceipt = verifiedCreate && opId
+    ? owner.collection('card_create_receipts').doc(opId)
+    : undefined;
   const reservation = owner.collection('card_reservations')
     .doc(reservationId(identity, plainTargetLanguage));
   let existingCardCount: number;
@@ -732,6 +790,20 @@ export async function createCardForOwner(
   }
 
   return database.runTransaction(async (transaction: Transaction) => {
+    if (verifiedCreate && !verifiedReceipt) throw new InputValidationError('Card create operation metadata is required.');
+    const receiptSnapshot = verifiedReceipt ? await transaction.get(verifiedReceipt) : undefined;
+    if (receiptSnapshot?.exists) {
+      const receipt = receiptSnapshot.data();
+      if (!receipt || receipt.fingerprint !== verifiedCreate?.fingerprint) {
+        throw new InputValidationError('Card create operation conflicts with its original request.');
+      }
+      const result = receipt.result;
+      if (!result || typeof result !== 'object' || Array.isArray(result)
+        || typeof result.created !== 'boolean' || !result.card || typeof result.card !== 'object') {
+        throw new CardAllocationConflictError('identity-conflict', 'The card create receipt is invalid.');
+      }
+      return result as CardAllocationResult;
+    }
     await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
     const stateSnapshot = await transaction.get(libraryState);
     const reservationSnapshot = await transaction.get(reservation);
@@ -779,16 +851,30 @@ export async function createCardForOwner(
         || (existingEpoch !== undefined && Number(existingEpoch) < currentEpoch)),
     );
     const hadIdentity = Boolean(existingReservation || existingCard);
+    const complete = async (result: CardAllocationResult): Promise<CardAllocationResult> => {
+      const gamification = verifiedCreate && result.created && !result.restored
+        ? await prepareVerifiedGamification(database, transaction, ownerId, {
+          kind: 'create', receivedAt: verifiedCreate.receivedAt, timeZone: verifiedCreate.timeZone,
+        })
+        : undefined;
+      const completed = verifiedCreate ? { ...result, gamification: gamification?.outcome ?? null } : result;
+      if (verifiedReceipt && verifiedCreate) {
+        transaction.create(verifiedReceipt, { fingerprint: verifiedCreate.fingerprint, result: completed });
+      }
+      if (gamification) commitVerifiedGamification(transaction, gamification);
+      return completed;
+    };
     if (existingCard && !isOldGeneration) {
       const isStrictCurrent = isStrictCurrentCard(existingCard, id, identity, currentEpoch, plainTargetLanguage);
       const normalizedExisting = isStrictCurrent
         ? existingCard
         : canonicalExistingCard(existingCard, id, identity, currentEpoch);
+      const result = await complete({ created: false, card: serializeCardResponse(normalizedExisting) });
       if (!isStrictCurrent) {
         transaction.set(canonical, normalizedExisting, { merge: false });
       }
       if (!existingReservation) transaction.create(reservation, expectedReservation);
-      return { created: false, card: serializeCardResponse(normalizedExisting) };
+      return result;
     }
 
     const tombstoneRevision = currentTombstoneRevision(tombstoneSnapshot, currentEpoch);
@@ -836,6 +922,11 @@ export async function createCardForOwner(
     if (!hadIdentity) {
       const currentCount = safeStoredCardCount(usageSnapshot) ?? existingCardCount;
       if (currentCount >= maximumCards) throw new CardAllocationLimitError();
+      const result = await complete({
+        created: true,
+        card: serializeCardResponse(createdCard),
+        ...(restore || restoresPriorCard ? { restored: true as const } : {}),
+      });
       await applyRestoreFacetDelta();
       transaction.create(reservation, expectedReservation);
       if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
@@ -844,23 +935,49 @@ export async function createCardForOwner(
         schemaVersion: RESOURCE_USAGE_SCHEMA_VERSION,
         cardCount: currentCount + 1,
       }, { merge: true });
-      return {
-        created: true,
-        card: serializeCardResponse(createdCard),
-        ...(restore || restoresPriorCard ? { restored: true as const } : {}),
-      };
+      return result;
     }
 
+    const result = await complete({
+      created: true,
+      card: serializeCardResponse(createdCard),
+      ...(restore || restoresPriorCard ? { restored: true as const } : {}),
+    });
     await applyRestoreFacetDelta();
     if (existingCard && !existingReservation) transaction.create(reservation, expectedReservation);
     if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
     else transaction.create(canonical, createdCard);
-    return {
-      created: true,
-      card: serializeCardResponse(createdCard),
-      ...(restore || restoresPriorCard ? { restored: true as const } : {}),
-    };
+    return result;
   });
+}
+
+export async function createCardV2ForOwner(
+  database: Firestore,
+  ownerId: string,
+  card: unknown,
+  options: CreateCardV2Options,
+): Promise<CardAllocationV2Result> {
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(options.opId) || options.restore) {
+    throw new InputValidationError('Card create operation metadata is required.');
+  }
+  const source = asRecord(card, 'Card must be an object.');
+  const normalized = canonicalCard(source);
+  if (source.createdAt === undefined) delete normalized.createdAt;
+  const fingerprint = createFingerprint({
+    card: normalized,
+    libraryEpoch: options.libraryEpoch,
+    baseRevision: options.baseRevision,
+    operationCreatedAt: options.operationCreatedAt,
+    timeZone: options.timeZone,
+  });
+  return createCardForOwner(database, ownerId, card, {
+    ...options,
+    verifiedCreate: {
+      fingerprint,
+      receivedAt: options.receivedAt ?? new Date(),
+      timeZone: options.timeZone,
+    },
+  }) as Promise<CardAllocationV2Result>;
 }
 
 export const MAX_STARTER_CARDS_PER_BATCH = 20;

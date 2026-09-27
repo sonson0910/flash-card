@@ -58,7 +58,7 @@ function PracticeFixture() {
     {(view === 'spelling' || isCheckedSpelling) && <><SpellingView cards={cards} currentIndex={0} input={isCheckedSpelling ? cards[0].word : ''} checked={isCheckedSpelling} correct={isCheckedSpelling} score={isCheckedSpelling ? 1 : 0} showResults={false} onInput={noop} onCheck={event => { event.preventDefault(); setSpellingChecks(count => count + 1); }} onNext={noop} onRestart={noop} onClose={noop} /><span data-spelling-check-count hidden>{spellingChecks}</span></>}
     {view === 'story' && <StoryView story={{ story: 'Careful learners adapt their study plan when new evidence gives useful context.', translation: 'Người học cẩn thận điều chỉnh kế hoạch học khi bằng chứng mới mang lại bối cảnh hữu ích.', language: 'en', translationLanguage: 'vi' }} loading={false} onGenerate={noop} onClose={noop} />}
     {view === 'match' && <WordMatchView cards={cards} onClose={noop} onAddXp={noop} />}
-    {view === 'shadowing' && <ShadowingView cards={cards} onClose={noop} onAddXp={noop} />}
+    {view === 'shadowing' && <ShadowingView cards={cards} onClose={noop} />}
     {view === 'dialog' && <AppOverlays
       shareDialogOpen={false} shareLink={null} shareWarning={null} incomingSharePreview={null}
       dismissShareDialog={noop} showShareDialog={noop} acceptSharedDeck={asyncNoop} cancelSharedDeck={noop}

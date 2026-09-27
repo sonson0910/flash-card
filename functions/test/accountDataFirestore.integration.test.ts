@@ -43,6 +43,7 @@ describeWithEmulator('account export and deletion', () => {
       ['cards', 'card-1'], ['card_reservations', 'reserve-1'], ['card_tombstones', 'card-1'],
       ['profile', 'stats'], ['profile', 'xp_history'], ['profile', 'plan'],
       ['xp_streams', 'stream-1'], ['review_receipts', 'card-1:op'],
+      ['card_create_receipts', 'create-1'], ['practice_sessions', 'practice-1'],
       ['ai_usage', 'free-2026-09'], ['ai_operations', 'op-1'], ['ai_daily', '2026-09-24'],
       ['entitlements', 'pro-1'], ['analytics_rate', 'current'], ['library_facet_receipts', 'op-1'],
     ] as const) await owner.collection(collection).doc(id).set({ ownerId: uid, value: 'private value' });
@@ -58,6 +59,8 @@ describeWithEmulator('account export and deletion', () => {
     const exportResult = await exportAccountData(database, uid, key);
     expect(JSON.stringify(exportResult)).toContain('private value');
     expect(JSON.stringify(exportResult)).not.toContain(other);
+    expect((exportResult as { reviewReceipts: Array<{ id: string; ownerId: string; value: string }> }).reviewReceipts)
+      .toEqual([{ id: 'card-1:op', ownerId: uid, value: 'private value' }]);
     expect((exportResult as { analyticsEventCount: number }).analyticsEventCount).toBe(1);
 
     const expiry = new Date(now.getTime() - 60_000);

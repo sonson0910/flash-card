@@ -4,6 +4,11 @@ import { normalizeCardData } from './cardNormalization';
 import { app as firebaseApp, getSonFlashFunctions, isFirebaseConfigured, protectedFunctionsCapability } from './firebase';
 import { ProtectedFunctionError, runProtectedFunction } from './protectedFunctionsCapability';
 import { scheduleReview, type ReviewRating } from './reviewScheduler';
+import type {
+  CeremonyEvent,
+  ReviewGamificationOutcome,
+  VerifiedGamificationOutcome,
+} from '../features/gamification/verifiedGamificationClient';
 
 export type ReviewCommand = {
   cardId: string;
@@ -14,10 +19,15 @@ export type ReviewCommand = {
   reviewedAt: string;
   fields: Partial<CardData>;
   fieldMask: readonly (keyof CardData)[];
+  timeZone?: string;
 };
 
+export type ReviewCeremonyEvent = CeremonyEvent;
+export type AuthoritativeGamification = VerifiedGamificationOutcome;
+export type ReviewOutcome = Partial<ReviewGamificationOutcome>;
+
 export type ReviewApplyResult =
-  | { applied: true; duplicate: boolean; card: CardData }
+  | ({ applied: true; duplicate: boolean; card: CardData } & ReviewOutcome)
   | {
       applied: false;
       reason: 'stale-library-epoch' | 'future-library-epoch' | 'missing' | 'identity-conflict'
@@ -71,6 +81,41 @@ const normalizeConflictReason = (value: unknown): ReviewConflictReason | null =>
   ].includes(value) ? value as ReviewConflictReason : null;
 };
 
+const isSafeNonNegativeInteger = (value: unknown): value is number =>
+  Number.isSafeInteger(value) && Number(value) >= 0;
+
+const parseCeremonyEvents = (value: unknown): readonly ReviewCeremonyEvent[] => {
+  if (!Array.isArray(value) || value.some(event => event !== 'tierup' && event !== 'streak' && event !== 'levelup')) {
+    throw new Error('Invalid review response.');
+  }
+  return value as ReviewCeremonyEvent[];
+};
+
+const parseGamification = (value: unknown): AuthoritativeGamification => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid review response.');
+  const source = value as Record<string, unknown>;
+  if (!isSafeNonNegativeInteger(source.xp)
+    || !isSafeNonNegativeInteger(source.streak)
+    || !Number.isSafeInteger(source.level) || Number(source.level) < 1
+    || typeof source.studyDay !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(source.studyDay)) {
+    throw new Error('Invalid review response.');
+  }
+  const events = parseCeremonyEvents(source.events);
+  if (events.some(event => event === 'tierup')) throw new Error('Invalid review response.');
+  return {
+    xp: Number(source.xp), streak: Number(source.streak), level: Number(source.level), studyDay: source.studyDay, events,
+  };
+};
+
+const timeZoneHint = (): string | undefined => {
+  try {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return typeof timeZone === 'string' && timeZone ? timeZone : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 const readCallableConflict = (error: unknown): ReviewApplyResult | null => {
   if (!error || typeof error !== 'object') return null;
   const source = error as Record<string, unknown>;
@@ -117,8 +162,10 @@ export async function applyReviewViaCallable(
       'reviewCardV2',
     );
     try {
+      const timeZone = command.timeZone ?? timeZoneHint();
       const response = await callable({
         ...command,
+        ...(timeZone ? { timeZone } : {}),
         fields: command.fields,
         fieldMask: [...command.fieldMask],
       });
@@ -126,7 +173,11 @@ export async function applyReviewViaCallable(
       if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid review response.');
       const envelope = value as Record<string, unknown>;
       if (envelope.applied !== true || typeof envelope.duplicate !== 'boolean') throw new Error('Invalid review response.');
-      return { applied: true, duplicate: envelope.duplicate, card: parseCard(envelope.card) };
+      const outcome: ReviewOutcome = {
+        ...(envelope.gamification === undefined ? {} : { gamification: parseGamification(envelope.gamification) }),
+        ...(envelope.ceremonyEvents === undefined ? {} : { ceremonyEvents: parseCeremonyEvents(envelope.ceremonyEvents) }),
+      };
+      return { applied: true, duplicate: envelope.duplicate, card: parseCard(envelope.card), ...outcome };
     } catch (error) {
       const conflict = readCallableConflict(error);
       if (conflict) return conflict;

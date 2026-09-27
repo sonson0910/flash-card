@@ -353,12 +353,12 @@ msgid "progress.empty.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressScreen.tsx:43
+#: src/features/dailyLearning/ProgressScreen.tsx:44
 msgid "progress.error.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressScreen.tsx:43
+#: src/features/dailyLearning/ProgressScreen.tsx:44
 msgid "progress.error.title"
 msgstr ""
 
@@ -368,7 +368,7 @@ msgid "progress.evidence"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressScreen.tsx:43
+#: src/features/dailyLearning/ProgressScreen.tsx:44
 msgid "progress.history-kicker"
 msgstr ""
 
@@ -418,7 +418,7 @@ msgid "progress.metric.reviewed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressScreen.tsx:43
+#: src/features/dailyLearning/ProgressScreen.tsx:44
 msgid "progress.offline"
 msgstr ""
 

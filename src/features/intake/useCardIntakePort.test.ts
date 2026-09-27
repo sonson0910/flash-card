@@ -76,18 +76,15 @@ describe('duplicate rollback', () => {
       due: 0,
       legacyUnindexed: 0,
     };
-    const addXp = vi.fn();
     const resetCloudPage = vi.fn();
     const updateCategoryFacets = vi.fn(async () => undefined);
 
     compensateOptimisticDuplicateCard(intakeCard('candidate-id'), {
-      addXp,
       resetCloudPage,
       updateCategoryFacets,
       updateCloudStats: update => { stats = update(stats); },
     });
 
-    expect(addXp).toHaveBeenCalledWith(-10);
     expect(stats).toMatchObject({ total: 4, unrated: 2, reviewed: 2, bookmarked: 1 });
     expect(updateCategoryFacets).toHaveBeenCalledWith({ Test: -1 });
     expect(resetCloudPage).toHaveBeenCalledOnce();

@@ -4,8 +4,10 @@ import type {
   LearningRestoreConflictReason,
 } from './learningStateController';
 import type { LearningStatePersistencePort } from './useLearningState';
+import type { ReviewOutcome } from '../../lib/cardReviewRepository';
 
 export type { BulkCardFieldPatchOutcome, BulkCardFieldPatchRequest } from './learningStateController';
+export type { ReviewOutcome } from '../../lib/cardReviewRepository';
 
 export interface LearningPersistenceStats {
   total: number;
@@ -35,7 +37,7 @@ export interface LearningPersistenceOptions {
   setCloudUnavailable(unavailable: boolean): void;
   setMutationPending(pending: boolean): void;
   reportError(message: string): void;
-  addXp(amount: number, operationId?: string): void;
+  onReviewOutcome?(outcome: ReviewOutcome, operationId: string, card: CardData): void;
 }
 
 export type LearningPersistenceHook = (

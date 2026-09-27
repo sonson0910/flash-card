@@ -353,12 +353,12 @@ msgid "progress.empty.title"
 msgstr "Your learning story starts here"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressScreen.tsx:43
+#: src/features/dailyLearning/ProgressScreen.tsx:44
 msgid "progress.error.kicker"
 msgstr "Progress unavailable"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressScreen.tsx:43
+#: src/features/dailyLearning/ProgressScreen.tsx:44
 msgid "progress.error.title"
 msgstr "Progress needs attention"
 
@@ -368,7 +368,7 @@ msgid "progress.evidence"
 msgstr "Supporting evidence"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressScreen.tsx:43
+#: src/features/dailyLearning/ProgressScreen.tsx:44
 msgid "progress.history-kicker"
 msgstr "Learning history"
 
@@ -418,7 +418,7 @@ msgid "progress.metric.reviewed"
 msgstr "Reviewed"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressScreen.tsx:43
+#: src/features/dailyLearning/ProgressScreen.tsx:44
 msgid "progress.offline"
 msgstr "Offline — this may be out of date."
 

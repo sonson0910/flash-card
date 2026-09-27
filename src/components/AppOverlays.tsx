@@ -54,6 +54,7 @@ interface AppOverlaysProps {
   setIsPracticeMenuOpen: (value: boolean) => void;
   startQuiz: () => Promise<void>;
   startSpelling: () => Promise<void>;
+  startLanguageDrill?: () => Promise<void>;
   startMatch?: () => Promise<void>;
   startShadowing?: () => Promise<void>;
   practiceCards: readonly CardData[];
@@ -134,7 +135,7 @@ export function AppOverlays({
   dismissShareDialog, showShareDialog, acceptSharedDeck, cancelSharedDeck,
   canRevokeShare, revokeShare, isSharing,
   isPracticeMenuOpen, setIsPracticeMenuOpen, startQuiz,
-  startSpelling, startMatch, startShadowing, practiceCards, visibleLibraryCount, generateStory, isStatsOpen, setIsStatsOpen,
+  startSpelling, startLanguageDrill, startMatch, startShadowing, practiceCards, visibleLibraryCount, generateStory, isStatsOpen, setIsStatsOpen,
   statsData, isDarkMode, showClearConfirm, setShowClearConfirm, clearAll, isLoading,
   shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef, onExportLibrary, onOpenProgress,
 }: AppOverlaysProps) {
@@ -147,6 +148,7 @@ export function AppOverlays({
   const practiceActions: Partial<Record<PracticeModeId, () => Promise<void>>> = {
     quiz: startQuiz,
     spelling: startSpelling,
+    'language-drill': startLanguageDrill,
     match: startMatch,
     shadowing: startShadowing,
     story: generateStory,

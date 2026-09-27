@@ -2,7 +2,7 @@ import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import { awardMatchVictory, WordMatchView } from './WordMatchView';
+import { WordMatchView } from './WordMatchView';
 import type { CardData } from '../../types/card';
 
 const sampleCards: CardData[] = [
@@ -16,7 +16,7 @@ const sampleCards: CardData[] = [
 
 describe('WordMatchView', () => {
   const render = (cards: CardData[]) => renderToStaticMarkup(
-    <I18nProvider i18n={i18n}><WordMatchView cards={cards} onClose={vi.fn()} onAddXp={vi.fn()} /></I18nProvider>,
+    <I18nProvider i18n={i18n}><WordMatchView cards={cards} onClose={vi.fn()} /></I18nProvider>,
   );
 
   i18n.load('en', {});
@@ -45,14 +45,8 @@ describe('WordMatchView', () => {
     expect(html).toContain(`0 / ${count}`);
   });
 
-  it('awards the completion XP once when victory settlement repeats', () => {
-    const onAddXp = vi.fn();
-    const awarded = { current: false };
-
-    awardMatchVictory(onAddXp, awarded);
-    awardMatchVictory(onAddXp, awarded);
-
-    expect(onAddXp).toHaveBeenCalledOnce();
-    expect(onAddXp).toHaveBeenCalledWith(20);
+  it('does not expose a client XP callback', () => {
+    expect(WordMatchView.toString()).not.toContain('onAddXp');
+    expect(WordMatchView.toString()).not.toContain('+20 XP');
   });
 });

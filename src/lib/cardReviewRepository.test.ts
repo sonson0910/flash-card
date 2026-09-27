@@ -71,6 +71,25 @@ describe('review conflict recovery', () => {
     await expect(applyReviewViaCallable({} as never, 'owner-a', command)).resolves.toMatchObject({ applied: true });
 
     expect(mocks.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'reviewCardV2');
+    expect(mocks.callable).toHaveBeenCalledWith(expect.objectContaining({ timeZone: expect.any(String) }));
+  });
+
+  it('keeps an authoritative gamification outcome and ceremony events from the V2 receipt', async () => {
+    mocks.httpsCallable.mockReturnValue(mocks.callable);
+    mocks.callable.mockResolvedValue({ data: {
+      applied: true,
+      duplicate: true,
+      card: { ...card, schemaVersion: 2 },
+      gamification: { xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: ['streak'] },
+      ceremonyEvents: ['tierup', 'streak'],
+    } });
+
+    await expect(applyReviewViaCallable({} as never, 'owner-a', command)).resolves.toMatchObject({
+      applied: true,
+      duplicate: true,
+      gamification: { xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: ['streak'] },
+      ceremonyEvents: ['tierup', 'streak'],
+    });
   });
 
   it('recomputes from the authoritative card and retries exactly once with the same operation', async () => {

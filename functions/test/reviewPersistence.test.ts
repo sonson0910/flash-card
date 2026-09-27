@@ -131,6 +131,8 @@ describe('review persistence', () => {
 
   it('parses only the complete bounded review protocol', () => {
     expect(parseReviewRequest(reviewRequest())).toMatchObject({ opId: 'device-a:review-1' });
+    expect(parseReviewRequest({ ...reviewRequest(), timeZone: 'Etc/UTC' })).toMatchObject({ timeZone: 'UTC' });
+    expect(() => parseReviewRequest({ ...reviewRequest(), timeZone: 'Not/AZone' })).toThrow('Review time zone is invalid.');
     expect(() => parseReviewRequest({ ...reviewRequest(), fieldMask: ['reviewHistory'] })).toThrow();
     expect(() => parseReviewRequest({ ...reviewRequest(), opId: '../unsafe' })).toThrow();
   });
@@ -152,6 +154,55 @@ describe('review persistence', () => {
         expiresAt: expect.any(Date),
       }),
     });
+  });
+
+  it('keeps old V2 requests without a timezone valid and replays their original no-award result', async () => {
+    const test = harness();
+    const request = reviewRequest();
+    const first = await applyReviewForOwner(test.database, 'owner', request);
+    expect(first).not.toHaveProperty('gamification');
+    const receipt = test.writes.find(write => write.path.includes('review_receipts'));
+    if (!receipt) throw new Error('receipt was not written');
+    expect(receipt.data.result).not.toHaveProperty('gamification');
+    test.values.set(receipt.path, snapshot(true, receipt.data));
+
+    await expect(applyReviewForOwner(test.database, 'owner', request)).resolves.toEqual({
+      ...first,
+      duplicate: true,
+    });
+  });
+
+  it('awards a strict review from its stored timezone and records threshold ceremonies in the receipt', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-27T12:00:00.000Z'));
+    try {
+      const test = harness();
+      test.values.set('users/owner/profile/stats', snapshot(true, {
+        rewardTimeZone: 'UTC', verifiedXp: 14_399, verifiedStreak: 29, lastVerifiedStudyDay: '2026-09-26',
+      }));
+      const stored = baseCard();
+      const request = reviewRequest({
+        rating: 'easy',
+        fields: scheduleReviewTransition(stored, 'easy', new Date('2026-08-24T00:00:00.000Z')),
+      });
+      const result = await applyReviewForOwner(test.database, 'owner', request);
+      expect(result.gamification).toMatchObject({ xp: 14_401, level: 13, streak: 30, events: ['streak', 'levelup'] });
+      expect(result.ceremonyEvents).toEqual(['tierup', 'streak', 'levelup']);
+      expect(test.writes).toEqual(expect.arrayContaining([
+        expect.objectContaining({ path: 'users/owner/profile/stats' }),
+        expect.objectContaining({ path: 'users/owner/profile/xp_history' }),
+        expect.objectContaining({ path: 'users/owner/profile/rewards' }),
+      ]));
+      const receipt = test.writes.find(write => write.path.includes('review_receipts'));
+      if (!receipt) throw new Error('receipt was not written');
+      test.values.set(receipt.path, snapshot(true, receipt.data));
+      await expect(applyReviewForOwner(test.database, 'owner', request)).resolves.toEqual({
+        ...result,
+        duplicate: true,
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('does not treat a legacy bounded operation ID as a receipt without its fingerprint', async () => {

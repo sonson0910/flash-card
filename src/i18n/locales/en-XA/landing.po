@@ -151,12 +151,12 @@ msgid "landing.demo.tier.new"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:958
+#: src/features/landing/LandingPage.tsx:905
 msgid "landing.extension.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:949
+#: src/features/landing/LandingPage.tsx:896
 msgid "landing.extension.eyebrow"
 msgstr ""
 
@@ -191,22 +191,22 @@ msgid "landing.extension.feature.save.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:955
+#: src/features/landing/LandingPage.tsx:902
 msgid "landing.extension.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:898
+#: src/features/landing/LandingPage.tsx:845
 msgid "landing.features.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:883
+#: src/features/landing/LandingPage.tsx:830
 msgid "landing.features.eyebrow"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:892
+#: src/features/landing/LandingPage.tsx:839
 msgid "landing.features.title"
 msgstr ""
 
@@ -323,47 +323,47 @@ msgid "landing.language.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1011
+#: src/features/landing/LandingPage.tsx:958
 msgid "landing.languages.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1002
+#: src/features/landing/LandingPage.tsx:949
 msgid "landing.languages.eyebrow"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1026
+#: src/features/landing/LandingPage.tsx:973
 msgid "landing.languages.pack.chinese"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1023
+#: src/features/landing/LandingPage.tsx:970
 msgid "landing.languages.pack.english"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1025
+#: src/features/landing/LandingPage.tsx:972
 msgid "landing.languages.pack.japanese"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1024
+#: src/features/landing/LandingPage.tsx:971
 msgid "landing.languages.pack.korean"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1032
+#: src/features/landing/LandingPage.tsx:979
 msgid "landing.languages.status.available"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1033
+#: src/features/landing/LandingPage.tsx:980
 msgid "landing.languages.status.in-progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1008
+#: src/features/landing/LandingPage.tsx:955
 msgid "landing.languages.title"
 msgstr ""
 
@@ -378,47 +378,47 @@ msgid "landing.meta.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1076
+#: src/features/landing/LandingPage.tsx:1023
 msgid "landing.methods.context.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1070
+#: src/features/landing/LandingPage.tsx:1017
 msgid "landing.methods.context.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1062
+#: src/features/landing/LandingPage.tsx:1009
 msgid "landing.methods.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1116
+#: src/features/landing/LandingPage.tsx:1063
 msgid "landing.methods.open-library"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1100
+#: src/features/landing/LandingPage.tsx:1047
 msgid "landing.methods.preview.caption"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1106
+#: src/features/landing/LandingPage.tsx:1053
 msgid "landing.methods.preview.quote"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1090
+#: src/features/landing/LandingPage.tsx:1037
 msgid "landing.methods.recall.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1084
+#: src/features/landing/LandingPage.tsx:1031
 msgid "landing.methods.recall.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1056
+#: src/features/landing/LandingPage.tsx:1003
 msgid "landing.methods.title"
 msgstr ""
 
@@ -479,7 +479,7 @@ msgid "landing.nav.vocabulary"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:829
+#: src/features/landing/LandingPage.tsx:1079
 msgid "landing.pricing.eyebrow"
 msgstr ""
 
@@ -514,32 +514,32 @@ msgid "landing.pricing.faq.free.question"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:862
+#: src/features/landing/LandingPage.tsx:1112
 msgid "landing.pricing.faq.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:841
+#: src/features/landing/LandingPage.tsx:1091
 msgid "landing.pricing.free-vs-pro.free"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:842
+#: src/features/landing/LandingPage.tsx:1092
 msgid "landing.pricing.free-vs-pro.pro"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:840
+#: src/features/landing/LandingPage.tsx:1090
 msgid "landing.pricing.free-vs-pro.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:852
+#: src/features/landing/LandingPage.tsx:1102
 msgid "landing.pricing.price"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:855
+#: src/features/landing/LandingPage.tsx:1105
 msgid "landing.pricing.purchase-note"
 msgstr ""
 
@@ -564,7 +564,7 @@ msgid "landing.pricing.row.reviews"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:835
+#: src/features/landing/LandingPage.tsx:1085
 msgid "landing.pricing.title"
 msgstr ""
 

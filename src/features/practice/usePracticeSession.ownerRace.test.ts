@@ -32,6 +32,26 @@ const gemini = vi.hoisted(() => ({
   generateStoryContext: vi.fn(),
 }));
 
+const practiceSessions = vi.hoisted(() => ({
+  start: vi.fn(async (request: { opId: string; game: 'quiz' | 'spelling' | 'match'; cardIds: string[] }) => ({
+    sessionId: request.opId,
+    game: request.game,
+    challenge: request.game === 'quiz'
+      ? { kind: 'quiz' as const, questions: request.cardIds.map(cardId => ({ cardId, prompt: cardId.replace('card-', 'word-'), options: [cardId.replace('card-', 'translation-')] })) }
+      : request.game === 'spelling'
+        ? { kind: 'spelling' as const, prompts: request.cardIds.map(cardId => ({ cardId, prompt: cardId.replace('card-', 'translation-'), word: cardId.replace('card-', 'word-') })) }
+        : { kind: 'match' as const, cards: request.cardIds.map(cardId => ({ cardId, word: cardId.replace('card-', 'word-'), translation: cardId.replace('card-', 'translation-') })) },
+    expiresAt: '2026-09-27T00:00:00.000Z',
+  })),
+  complete: vi.fn(async (request: { sessionId: string }) => ({
+    sessionId: request.sessionId,
+    correct: 4,
+    total: 4,
+    awardedXp: 20,
+    outcome: { xp: 20, level: 1, streak: 0, studyDay: '2026-09-27', events: ['levelup'] as const },
+  })),
+}));
+
 const dependenciesChanged = (
   previous: readonly unknown[] | undefined,
   next: readonly unknown[] | undefined,
@@ -79,6 +99,11 @@ vi.mock('../../lib/audio', () => ({
 
 vi.mock('../../lib/gemini', () => ({
   generateStoryContext: gemini.generateStoryContext,
+}));
+
+vi.mock('./practiceSessionService', () => ({
+  firebasePracticeSessionService: practiceSessions,
+  practiceTimeZone: () => 'Asia/Ho_Chi_Minh',
 }));
 
 import { usePracticeSession } from './usePracticeSession';
@@ -131,6 +156,8 @@ const createSessionHarness = (pool: CardData[]) => {
     mode: 'library',
     openView,
     loadPracticePool: vi.fn(async () => pool),
+    languageDrillCards: pool,
+    languageDrillScopeKey: 'owner-a:en',
     learning,
     languageProfile: {
       id: 'en-vi',
@@ -141,7 +168,7 @@ const createSessionHarness = (pool: CardData[]) => {
         ? value.trim().toLocaleLowerCase()
         : '',
     },
-    addXp: vi.fn(),
+    onAuthoritativeOutcome: vi.fn(),
     reportError: vi.fn(),
   };
 
@@ -189,6 +216,10 @@ const expectEmptyPracticeState = (session: ReturnType<typeof usePracticeSession>
     spellingCorrect: false,
     spellingScore: 0,
     showSpellingResults: false,
+    languageDrillCards: [],
+    currentLanguageDrillIndex: 0,
+    languageDrillCorrect: 0,
+    showLanguageDrillResults: false,
     story: null,
     isGeneratingStory: false,
   });
@@ -372,41 +403,41 @@ describe('usePracticeSession owner isolation', () => {
     }
   });
 
-  it('does not award owner-b quiz XP from an owner-a question before reset effects flush', async () => {
+  it('does not emit an owner-a quiz outcome to owner-b before reset effects flush', async () => {
     const pool = [card(1), card(2), card(3), card(4)];
-    const ownerAXp = vi.fn();
-    const ownerBXp = vi.fn();
+    const ownerAOutcome = vi.fn();
+    const ownerBOutcome = vi.fn();
     const { render } = createSessionHarness(pool);
-    let session = render({ ownerId: 'owner-a', addXp: ownerAXp });
+    let session = render({ ownerId: 'owner-a', onAuthoritativeOutcome: ownerAOutcome });
     flushEffects();
     await session.commands.startQuiz();
     session = render();
     const ownerAAnswer = session.quiz.quizQuestions[0].correctAnswer;
 
-    const sessionB = render({ ownerId: 'owner-b', addXp: ownerBXp });
+    const sessionB = render({ ownerId: 'owner-b', onAuthoritativeOutcome: ownerBOutcome });
     sessionB.quiz.selectQuizAnswer(ownerAAnswer);
 
-    expect(ownerAXp).not.toHaveBeenCalled();
-    expect(ownerBXp).not.toHaveBeenCalled();
+    expect(ownerAOutcome).not.toHaveBeenCalled();
+    expect(ownerBOutcome).not.toHaveBeenCalled();
   });
 
-  it('does not award owner-b spelling XP from an owner-a card before reset effects flush', async () => {
+  it('does not emit an owner-a spelling outcome to owner-b before reset effects flush', async () => {
     const pool = [card(1), card(2), card(3), card(4)];
-    const ownerAXp = vi.fn();
-    const ownerBXp = vi.fn();
+    const ownerAOutcome = vi.fn();
+    const ownerBOutcome = vi.fn();
     const { render } = createSessionHarness(pool);
-    let session = render({ ownerId: 'owner-a', addXp: ownerAXp });
+    let session = render({ ownerId: 'owner-a', onAuthoritativeOutcome: ownerAOutcome });
     flushEffects();
     await session.commands.startSpelling();
     session = render();
     session.quiz.setSpellingInput(session.quiz.spellingCards[0].word);
     render();
 
-    const sessionB = render({ ownerId: 'owner-b', addXp: ownerBXp });
+    const sessionB = render({ ownerId: 'owner-b', onAuthoritativeOutcome: ownerBOutcome });
     sessionB.quiz.checkSpelling({ preventDefault: vi.fn() } as never);
 
-    expect(ownerAXp).not.toHaveBeenCalled();
-    expect(ownerBXp).not.toHaveBeenCalled();
+    expect(ownerAOutcome).not.toHaveBeenCalled();
+    expect(ownerBOutcome).not.toHaveBeenCalled();
   });
 
   it('does not let deferred owner-a quiz work publish, clear, or mutate the returned owner-a session', async () => {
@@ -415,9 +446,9 @@ describe('usePracticeSession owner isolation', () => {
     const loadPracticePool = vi.fn()
       .mockImplementationOnce(() => stalePool.promise)
       .mockResolvedValue(returnedPool);
-    const addXp = vi.fn();
+    const onAuthoritativeOutcome = vi.fn();
     const { openView, render } = createSessionHarness([]);
-    const sessionA = render({ ownerId: 'owner-a', loadPracticePool, addXp });
+    const sessionA = render({ ownerId: 'owner-a', loadPracticePool, onAuthoritativeOutcome });
     flushEffects();
     const staleStart = sessionA.commands.startQuiz();
 
@@ -442,10 +473,20 @@ describe('usePracticeSession owner isolation', () => {
     expect(returnedSession.quiz.currentQuizIndex).toBe(0);
     expect(returnedSession.quiz.showQuizResults).toBe(false);
     expect(openView).toHaveBeenCalledTimes(1);
-    expect(addXp).not.toHaveBeenCalled();
+    expect(onAuthoritativeOutcome).not.toHaveBeenCalled();
 
-    returnedSession.quiz.selectQuizAnswer(returnedQuestion.correctAnswer);
-    expect(addXp).toHaveBeenCalledWith(5);
+    while (!returnedSession.quiz.showQuizResults) {
+      returnedSession.quiz.selectQuizAnswer(returnedSession.quiz.quizQuestions[returnedSession.quiz.currentQuizIndex].correctAnswer);
+      returnedSession = render();
+      returnedSession.quiz.nextQuizQuestion();
+      returnedSession = render();
+    }
+    await Promise.resolve();
+    expect(onAuthoritativeOutcome).toHaveBeenCalledOnce();
+    expect(onAuthoritativeOutcome).toHaveBeenCalledWith(
+      { xp: 20, level: 1, streak: 0, studyDay: '2026-09-27', events: ['levelup'] },
+      expect.stringMatching(/^practice-quiz-/), 2,
+    );
   });
 
   it('does not let a deferred owner-a review settle into a new owner-a session', async () => {

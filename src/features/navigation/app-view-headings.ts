@@ -10,6 +10,7 @@ export const APP_VIEW_HEADINGS = {
   study: msg({ id: 'shell.heading.study', message: 'Study session' }),
   quiz: msg({ id: 'shell.heading.quiz', message: 'Vocabulary quiz' }),
   spelling: msg({ id: 'shell.heading.spelling', message: 'Spelling practice' }),
+  'language-drill': msg({ id: 'shell.heading.language-drill', message: 'Language drill' }),
   story: msg({ id: 'shell.heading.story', message: 'Context story' }),
   match: msg({ id: 'shell.heading.match', message: 'Word match' }),
   shadowing: msg({ id: 'shell.heading.shadowing', message: 'Shadowing practice' }),

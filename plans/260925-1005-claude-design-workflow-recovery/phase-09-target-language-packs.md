@@ -41,6 +41,7 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 - [x] 09.5 — Server pair allowlist và prompt notes giữ model Flash-Lite; generation output/reading metadata round-trip.
 - [ ] 09.6 — Golden set 20 terms mỗi pack, human language review và đo cost trước enable; wave2 es/de và wave3 fr/pt giữ tasks/registry availability. (Explicitly gated — not implemented or run in this pass.)
 - [ ] Đối chiếu Canvas từng state của phase theo board/artboard inventory; reviewer kiểm tra cả hành vi và hình thức.
+  > **Language drills 2026-09-27.** Đã mở ảnh actual và tạo 32 baseline Chromium cho en/ko/ja/zh ở Classic/Crystal × light/dark × desktop/mobile; visual rerun 33/33 gồm keyboard Hàn vật lý. Kana Nhật nay chỉ hiện sau Hint/Check, và spec kiểm không lộ đáp án trước Hint. Checkbox vẫn mở: Canvas có pitch accent Nhật nhưng card hiện chỉ lưu kana `phonetic`; contract `contract-japanese-pitch-accent.md` đang chờ owner chọn nguồn metadata được kiểm chứng hoặc chấp nhận kana-only cho wave 1. German article giữ wave 2 theo decision log.
 - [ ] Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log.
 
 ## Verification

@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import { describe, expect, it, vi } from 'vitest';
-import { getIdentityInitials, getIdentityLabel, LibraryManagementMenu, shouldShowSyncNow } from './LibraryManagementMenu';
+import { getIdentityInitials, getIdentityLabel, hasOwnedWordCollectorTitle, LibraryManagementMenu, shouldShowSyncNow } from './LibraryManagementMenu';
 
 describe('LibraryManagementMenu', () => {
   it('groups maintenance actions behind a compact accessible trigger', () => {
@@ -47,5 +47,21 @@ describe('LibraryManagementMenu', () => {
     expect(shouldShowSyncNow(authenticated, false, true, false)).toBe(false);
     expect(shouldShowSyncNow(authenticated, true, true, true)).toBe(false);
     expect(shouldShowSyncNow(signedOut, false, true, true)).toBe(false);
+  });
+
+  it('marks the account avatar with the hydrated equipped frame', () => {
+    const html = renderToStaticMarkup(<I18nProvider i18n={i18n}><LibraryManagementMenu
+      syncIdentity={{ status: 'authenticated', displayName: 'Learner', email: null, photoUrl: null }}
+      syncStatus={{ kind: 'synced', headerLabel: 'Synced', footerLabel: 'Online', detail: '', healthy: true, busy: false, canRetry: false }}
+      libraryCountLabel="8 WORDS"
+      equippedFrameId="crimson-wing"
+    /></I18nProvider>);
+    expect(html).toContain('data-equipped-frame="crimson-wing"');
+  });
+
+  it('renders the approved title only when it is owned', () => {
+    expect(hasOwnedWordCollectorTitle(['word-collector'])).toBe(true);
+    expect(hasOwnedWordCollectorTitle([])).toBe(false);
+    expect(hasOwnedWordCollectorTitle(['other-title'])).toBe(false);
   });
 });

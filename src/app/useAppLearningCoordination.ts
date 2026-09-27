@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, type RefObject } from 'react';
 import { buildVocabularyImageQuery, fetchImageUrl, isRetryableImageSearchError, isSupportedImageUrl } from '../lib/images';
 import { cardWordKey } from '../lib/cardIdentity';
+import { db } from '../lib/firebase';
 import { retainCardsForSession } from '../lib/sessionCards';
 import type { CardData } from '../types/card';
 import type { UndoToastItem } from '../components/ui/UndoToast';
@@ -25,9 +26,14 @@ import {
 import { useLearningWorkspace, type LearningWorkspaceActions } from '../features/learning/useLearningWorkspace';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { usePracticeWorkspace } from '../features/practice/usePracticeWorkspace';
+import type { CeremonyEvent, VerifiedGamificationOutcome } from '../features/gamification/verifiedGamificationClient';
 import { appDependencies } from './appDependencies';
 import type { AppLibraryRuntime } from './useAppLibraryRuntime';
 import { useLibraryMutationFeedback } from './use-library-mutation-feedback';
+export interface LearningCeremony {
+  ownerId: string; operationId: string; events: readonly CeremonyEvent[];
+  card?: Pick<CardData, 'word' | 'translation' | 'imageUrl'>; gamification?: VerifiedGamificationOutcome;
+}
 interface UseAppLearningCoordinationOptions {
   library: AppLibraryRuntime;
   viewMode: AppViewMode;
@@ -43,6 +49,7 @@ interface UseAppLearningCoordinationOptions {
   reportError(message: string | null): void;
   notify(message: string | null): void;
   offerUndo(ownerId: string | null, toast: UndoToastItem | null): void;
+  onCeremony?(ceremony: LearningCeremony): void;
 }
 export function useAppLearningCoordination({
   library,
@@ -57,9 +64,13 @@ export function useAppLearningCoordination({
   reportError,
   notify,
   offerUndo,
+  onCeremony,
 }: UseAppLearningCoordinationOptions) {
   const { model, actions, ports } = library;
   const { cards, user, cloudStats, knownLibraryTotal, libraryEpochState, ownerLibrary, librarySession, externalLibraryBusy, cardsPerPage, catalog } = model;
+  const offerCeremony = (operationId: string, events: readonly CeremonyEvent[] | undefined, card?: LearningCeremony['card'], gamification?: VerifiedGamificationOutcome) => {
+    if (user?.uid && events?.length) onCeremony?.({ ownerId: user.uid, operationId, events, card, gamification });
+  };
   const catalogActions = actions.catalog;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const learningActionsRef = useRef<LearningWorkspaceActions | null>(null);
@@ -70,7 +81,7 @@ export function useAppLearningCoordination({
     updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields) ?? Promise.resolve({ status: 'no-active-owner' as const }),
   }), []);
   const practiceWorkspace = usePracticeWorkspace({
-    mode: viewMode === 'study' || viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story' || viewMode === 'match' || viewMode === 'shadowing'
+    mode: viewMode === 'study' || viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'language-drill' || viewMode === 'story' || viewMode === 'match' || viewMode === 'shadowing'
       ? viewMode
       : 'library',
     openView: nextView => setViewMode(nextView),
@@ -79,13 +90,14 @@ export function useAppLearningCoordination({
     cloudBackoffActive: Boolean(user && isCloudBackoffActive(user.uid)),
     cards,
     poolSource: appDependencies.practice.pool,
-    gamificationStore: appDependencies.practice.gamification,
+    gamificationDatabase: db,
+    onCeremony: (outcome, operationId) => offerCeremony(operationId, outcome.events, undefined, outcome),
     learning: practiceLearning,
     languageProfile,
     reportError,
   });
   ports.practicePublicationRef.current = practiceWorkspace.snapshotRef.current;
-  const { streak, xp, xpHistory, level, addXp } = practiceWorkspace.model.gamification;
+  const { streak, xp, xpHistory, level, rewards, acceptAuthoritativeOutcome, equipFrame } = practiceWorkspace.model.gamification;
   const mediaHydration = useCardMediaHydration({
     ownerKey: user?.uid ?? null,
     cards,
@@ -177,7 +189,10 @@ export function useAppLearningCoordination({
       cloudAvailabilityChanged: ports.sessionPorts.markCloudUnavailable,
       mutationPendingChanged: ports.setLibraryMutationPending,
       reportError,
-      addXp,
+      onReviewOutcome: (outcome, operationId, card) => {
+        if (outcome.gamification) acceptAuthoritativeOutcome(outcome.gamification);
+        offerCeremony(operationId, outcome.ceremonyEvents, card, outcome.gamification);
+      },
     },
   }, appDependencies.sessions.learningWorkspace).actions;
   learningActionsRef.current = learningCommands;
@@ -223,9 +238,7 @@ export function useAppLearningCoordination({
       expectedLifecycle,
     });
   }, [learningCommands]);
-  const resetSpreadsheetSource = useCallback(() => {
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  }, []);
+  const resetSpreadsheetSource = useCallback(() => { if (fileInputRef.current) fileInputRef.current.value = ''; }, []);
   const sharingDependencies = useMemo(
     () => appDependencies.intake.forOwner(user?.uid ?? null, languageProfile.source.code),
     [user?.uid, languageProfile],
@@ -255,7 +268,10 @@ export function useAppLearningCoordination({
       setCloudUnavailable: ports.setCloudReadUnavailable,
       notify,
       focusLibrary: ports.browser.actions.requestLibraryFocus,
-      addXp,
+      acceptGamificationOutcome: (outcome, operationId) => {
+        acceptAuthoritativeOutcome(outcome);
+        offerCeremony(operationId, outcome.events, undefined, outcome);
+      },
     },
     sharing: sharingDependencies,
     coursePort,
@@ -316,7 +332,7 @@ export function useAppLearningCoordination({
     model: {
       libraryScreen,
       practiceSession: practiceWorkspace.model.session,
-      practiceAddXp: addXp,
+      equipFrame, equippedFrameId: rewards.equippedFrameId, ownedTitleIds: rewards.ownedTitleIds,
       customDecks: deckWorkspace.model.decks,
       intakeSharing: intakeSharing.model,
       isLibraryBusy,

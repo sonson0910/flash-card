@@ -1,5 +1,6 @@
 import type { CardData } from '../../types/card';
 import type { LanguageProfile } from '../language/languageProfile';
+import type { AuthoritativeGamification } from '../../lib/cardReviewRepository';
 
 export interface CardIntakeCloudStats {
   total: number;
@@ -34,5 +35,5 @@ export interface CardIntakePortOptions {
   setCloudUnavailable(unavailable: boolean): void;
   notify(message: string): void;
   focusLibrary(): void;
-  addXp(amount: number): void;
+  acceptGamificationOutcome?(outcome: AuthoritativeGamification, operationId: string): void;
 }

@@ -41,6 +41,9 @@ interface LibraryManagementMenuProps {
   readonly syncIdentity: SyncIdentityViewModel;
   readonly syncStatus: ShellSyncStatus;
   readonly libraryCountLabel: string;
+  /** Server-hydrated frame; this shell only renders the already-owned selection. */
+  readonly equippedFrameId?: string | null;
+  readonly ownedTitleIds?: readonly string[];
 }
 
 const menuItemClass = 'account-menu-item flex min-h-11 w-full items-center gap-3 px-3 py-2.5 text-left text-xs font-bold text-[var(--sf-text)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
@@ -70,6 +73,9 @@ function getIdentityInitials(identity: SyncIdentityViewModel): string | null {
   if (name) return name.split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase();
   return identity.email?.trim().slice(0, 1).toUpperCase() || null;
 }
+
+export const hasOwnedWordCollectorTitle = (ownedTitleIds: readonly string[] | undefined): boolean =>
+  ownedTitleIds?.includes('word-collector') ?? false;
 
 function AccountAvatar({ identity, compact = false }: { identity: SyncIdentityViewModel; compact?: boolean }) {
   if (identity.status === 'authenticated' && identity.photoUrl) {
@@ -111,6 +117,8 @@ export function LibraryManagementMenu({
   syncIdentity,
   syncStatus,
   libraryCountLabel,
+  equippedFrameId = null,
+  ownedTitleIds,
 }: LibraryManagementMenuProps) {
   const { _ } = useLingui();
   const [isZenMode, setZenMode] = useZenGlassMode();
@@ -205,6 +213,7 @@ export function LibraryManagementMenu({
   const showSyncNow = shouldShowSyncNow(syncIdentity, sessionLost, canSyncNow, Boolean(onRetrySync));
   const canSignIn = Boolean(onSignIn && (sessionLost || (syncIdentity.status === 'signed-out' && syncIdentity.isConfigured)));
   const canSignOut = Boolean(onSignOut && syncIdentity.status === 'authenticated' && !sessionLost);
+  const hasWordCollectorTitle = syncIdentity.status === 'authenticated' && hasOwnedWordCollectorTitle(ownedTitleIds);
 
   return (
     <div ref={rootRef} className="account-menu-root relative z-20 w-fit">
@@ -218,6 +227,7 @@ export function LibraryManagementMenu({
         title={_(msg({ id: 'shell.library-menu.trigger', message: 'Manage library' }))}
         onClick={() => setIsOpen(open => !open)}
         onKeyDown={handleTriggerKeyDown}
+        data-equipped-frame={equippedFrameId ?? undefined}
         className="account-menu-trigger claude-account-trigger flex size-11 shrink-0 items-center justify-center border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
       >
         <AccountAvatar identity={syncIdentity} compact />
@@ -226,12 +236,13 @@ export function LibraryManagementMenu({
         <div className="account-menu-panel absolute right-0 top-full z-50 mt-2 text-[var(--sf-text)]">
           <div className="account-menu-surface">
             <div className="account-menu-identity">
-              <span className="account-menu-avatar"><AccountAvatar identity={syncIdentity} /></span>
+              <span className="account-menu-avatar" data-equipped-frame={equippedFrameId ?? undefined}><AccountAvatar identity={syncIdentity} /></span>
               <div className="account-menu-identity-copy">
                 <div className="account-menu-name">{identityLabel}</div>
                 {syncIdentity.status === 'authenticated' && syncIdentity.email && syncIdentity.email !== identityLabel && (
                   <div className="account-menu-email" title={syncIdentity.email}>{syncIdentity.email}</div>
                 )}
+                {hasWordCollectorTitle && <div className="account-menu-title"><Sparkles size={12} aria-hidden="true" /><Trans id="rewards.title.word-collector" message="Word Collector" /></div>}
               </div>
             </div>
 

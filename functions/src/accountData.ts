@@ -11,7 +11,8 @@ export const ACCOUNT_RATE_SCOPES = [
   'gamification-save', 'library-facets-update', 'ai-card', 'ai-story', 'ai-translate',
   'gemini-owner', 'image', 'image-provider-owner', 'card-create', 'card-report',
   'purchase-intent', 'card-review', 'shared-deck-create', 'shared-deck-create-service-owner',
-  'shared-deck-revoke', 'legacy-library-migration', 'account-export',
+  'shared-deck-revoke', 'legacy-library-migration', 'account-export', 'practice-session-start',
+  'practice-session-complete', 'reward-frame-equip',
 ] as const;
 
 const jsonValue = (value: unknown): unknown => {
@@ -30,15 +31,18 @@ const rows = async (query: Query) => (await query.get()).docs.map(doc => ({ id: 
 export async function exportAccountData(database: Firestore, uid: string, key: string) {
   const owner = database.collection('users').doc(uid);
   const pid = analyticsPseudonym(uid, key);
-  const [profile, entitlements, aiUsage, aiDaily, xpStreams, reports, events] = await Promise.all([
+  const [profile, entitlements, aiUsage, aiDaily, xpStreams, reviewReceipts, cardCreateReceipts, practiceSessions, reports, events] = await Promise.all([
     rows(owner.collection('profile')), rows(owner.collection('entitlements')),
     rows(owner.collection('ai_usage')), rows(owner.collection('ai_daily')),
     rows(owner.collection('xp_streams')),
+    rows(owner.collection('review_receipts')),
+    rows(owner.collection('card_create_receipts')), rows(owner.collection('practice_sessions')),
     rows(database.collection('card_reports').where('uid', '==', uid)),
     database.collection('analytics_events').where('pid', '==', pid).count().get(),
   ]);
   return jsonValue({ exportedAt: new Date(), profile, entitlements, aiUsage, aiDaily,
-    xpStreams, cardReports: reports, analyticsEventCount: events.data().count });
+    xpStreams, reviewReceipts, cardCreateReceipts, practiceSessions, cardReports: reports,
+    analyticsEventCount: events.data().count });
 }
 
 export const tombstoneRef = (database: Firestore, uid: string, key: string) =>

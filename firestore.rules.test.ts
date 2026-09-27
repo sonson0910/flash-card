@@ -1529,6 +1529,42 @@ describe('Firestore security rules', () => {
     await assertFails(deleteDoc(stream));
   });
 
+  it('keeps reward inventory owner-readable but server-write-only', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'users/owner/profile/rewards'), {
+        schemaVersion: 1,
+        unlockedBadgeIds: ['web-wanderer'],
+        ownedFrameIds: ['crimson-wing'],
+        ownedTitleIds: ['word-collector'],
+        equippedFrameId: 'crimson-wing',
+        hintTokens: 1,
+        streakFreezes: 1,
+        receipts: { 'streak-30-v1': true, 'level-13-v1': true },
+      });
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const intruder = testEnvironment.authenticatedContext('intruder').firestore();
+    const rewards = doc(owner, 'users/owner/profile/rewards');
+
+    await assertSucceeds(getDoc(rewards));
+    await assertFails(getDoc(doc(intruder, 'users/owner/profile/rewards')));
+    await assertFails(setDoc(rewards, { schemaVersion: 1 }));
+    await assertFails(updateDoc(rewards, { hintTokens: 2 }));
+    await assertFails(deleteDoc(rewards));
+  });
+
+  it('keeps verified reward receipts and practice sessions callable-only', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    for (const path of [
+      'users/owner/card_create_receipts/create-op-1',
+      'users/owner/practice_sessions/session-1',
+    ]) {
+      const serverOnly = doc(owner, path);
+      await assertFails(getDoc(serverOnly));
+      await assertFails(setDoc(serverOnly, { forged: true }));
+    }
+  });
+
   it('lets only the owner get plan and usage while keeping AI counters server-only', async () => {
     await testEnvironment.withSecurityRulesDisabled(async context => {
       const admin = context.firestore();

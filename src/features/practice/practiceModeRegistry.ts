@@ -26,6 +26,12 @@ export type PracticeMode = {
 
 export const wordMatchEligibleCardCount = (cards: readonly CardData[]) => createWordMatchRound(cards, Number.MAX_SAFE_INTEGER).length;
 export const isWordMatchAvailable = (cards: readonly CardData[]) => wordMatchEligibleCardCount(cards) >= 4;
+const WAVE_ONE_LANGUAGE_IDS = new Set(['en', 'ko', 'ja', 'zh']);
+const isWaveOneCard = (card: CardData) => {
+  const language = card.language?.toLowerCase().split('-')[0] || 'en';
+  return WAVE_ONE_LANGUAGE_IDS.has(language);
+};
+export const languageDrillEligibleCardCount = (cards: readonly CardData[]) => cards.filter(isWaveOneCard).length;
 
 const modes: PracticeMode[] = [
   {
@@ -43,6 +49,18 @@ const modes: PracticeMode[] = [
     duration: msg({ id: 'practice.mode.spelling.duration', message: '~4 min' }),
     icon: Languages,
     isAvailable: () => true,
+  },
+  {
+    id: 'language-drill',
+    label: msg({ id: 'practice.mode.language-drill.label', message: 'Language drill' }),
+    description: msg({ id: 'practice.mode.language-drill.description', message: 'Practice script, reading, and tones for your target language.' }),
+    duration: msg({ id: 'practice.mode.language-drill.duration', message: '~3 min' }),
+    icon: Languages,
+    isAvailable: cards => languageDrillEligibleCardCount(cards) > 0,
+    unavailableLabel: (cards) => ({
+      message: msg({ id: 'practice.mode.language-drill.unavailable', message: 'Needs 1 card · you have {count}' }),
+      values: { count: languageDrillEligibleCardCount(cards) },
+    }),
   },
   {
     id: 'match',

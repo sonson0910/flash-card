@@ -5,6 +5,12 @@ import { InputValidationError } from './inputValidation.js';
 import { canonicalCard, serializeCardResponse, type CardRecord } from './cardPersistence.js';
 import { scheduleReviewTransition } from './reviewScheduler.js';
 import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
+import {
+  commitVerifiedGamification,
+  prepareVerifiedGamification,
+  type PreparedVerifiedGamification,
+  type VerifiedGamificationOutcome,
+} from './verifiedGamification.js';
 
 export const MAX_REVIEW_HISTORY = 100;
 export const MAX_REVIEW_OPERATION_IDS = 100;
@@ -29,12 +35,17 @@ export type ReviewRequest = {
   reviewedAt: string;
   fields: Record<ReviewField, unknown>;
   fieldMask: ReviewField[];
+  timeZone?: string;
 };
+
+export type ReviewCeremonyEvent = 'tierup' | 'streak' | 'levelup';
 
 export type ReviewPersistenceResult = {
   applied: true;
   duplicate: boolean;
   card: CardRecord;
+  gamification?: VerifiedGamificationOutcome;
+  ceremonyEvents?: ReviewCeremonyEvent[];
 };
 
 export type ReviewPersistenceOptions = {
@@ -90,9 +101,19 @@ const parseDate = (value: unknown, field: string): string => {
   return new Date(time).toISOString();
 };
 
+const parseTimeZone = (value: unknown): string | undefined => {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string' || !value) throw new InputValidationError('Review time zone is invalid.');
+  try {
+    return new Intl.DateTimeFormat('en-US', { timeZone: value }).resolvedOptions().timeZone;
+  } catch {
+    throw new InputValidationError('Review time zone is invalid.');
+  }
+};
+
 export const parseReviewRequest = (value: unknown): ReviewRequest => {
   const source = asRecord(value, 'Review request must be an object.');
-  const allowed = new Set(['opId', 'cardId', 'baseRevision', 'libraryEpoch', 'rating', 'reviewedAt', 'fields', 'fieldMask']);
+  const allowed = new Set(['opId', 'cardId', 'baseRevision', 'libraryEpoch', 'rating', 'reviewedAt', 'fields', 'fieldMask', 'timeZone']);
   if (Object.keys(source).some(key => !allowed.has(key))) throw new InputValidationError('Review request contains an unsupported field.');
   const cardId = source.cardId;
   if (typeof cardId !== 'string' || cardId.length < 1 || cardId.length > 128 || !/^[a-zA-Z0-9_-]+$/.test(cardId)) {
@@ -127,6 +148,7 @@ export const parseReviewRequest = (value: unknown): ReviewRequest => {
     reviewedAt,
     fields: fields as ReviewRequest['fields'],
     fieldMask: parsedMask,
+    ...(source.timeZone === undefined ? {} : { timeZone: parseTimeZone(source.timeZone) }),
   };
 };
 
@@ -231,6 +253,7 @@ const reviewFingerprint = (request: ReviewRequest): string => createHash('sha256
   libraryEpoch: request.libraryEpoch,
   rating: request.rating,
   reviewedAt: request.reviewedAt,
+  ...(request.timeZone === undefined ? {} : { timeZone: request.timeZone }),
   fields: request.fields,
   fieldMask: request.fieldMask,
 })).digest('hex');
@@ -241,8 +264,18 @@ const receiptResult = (value: unknown): ReviewPersistenceResult | null => {
   if (receipt.fingerprint === undefined || !receipt.result || typeof receipt.result !== 'object') return null;
   const result = receipt.result as Record<string, unknown>;
   if (result.applied !== true || typeof result.duplicate !== 'boolean' || !result.card || typeof result.card !== 'object') return null;
-  return { applied: true, duplicate: true, card: result.card as CardRecord };
+  return {
+    applied: true,
+    duplicate: true,
+    card: result.card as CardRecord,
+    ...(result.gamification === undefined ? {} : { gamification: result.gamification as VerifiedGamificationOutcome }),
+    ...(result.ceremonyEvents === undefined ? {} : { ceremonyEvents: result.ceremonyEvents as ReviewCeremonyEvent[] }),
+  };
 };
+
+const isMastered = (card: CardRecord): boolean => card.difficulty === 'easy'
+  || Number(card.interval) >= 21
+  || (Boolean(card.fsrs) && typeof card.fsrs === 'object' && Number((card.fsrs as Record<string, unknown>).scheduledDays) >= 21);
 
 const receiptExpiresAt = (value: unknown): number => {
   if (value instanceof Date) return value.getTime();
@@ -287,6 +320,7 @@ export async function applyReviewForOwner(
   const receiptRef = ownerReceipt(database, ownerId, request.cardId, request.opId);
   const fingerprint = reviewFingerprint(request);
   const strict = options.strict !== false;
+  const receivedAt = strict ? new Date() : undefined;
   return database.runTransaction(async (transaction: Transaction) => {
     if (strict) {
       // Receipt lookup precedes every mutable-state check so an uncertain retry
@@ -296,7 +330,7 @@ export async function applyReviewForOwner(
         const receipt = receiptSnapshot.data() as Record<string, unknown> | undefined;
         // Firestore TTL deletion is asynchronous, so an expired receipt must not
         // bypass the timestamp guard while its document still exists.
-        if (receipt && receiptExpiresAt(receipt.expiresAt) > Date.now()) {
+        if (receipt && receiptExpiresAt(receipt.expiresAt) > receivedAt!.getTime()) {
           if (receipt.fingerprint !== fingerprint) throw new ReviewPersistenceConflictError('receipt-fingerprint-conflict');
           const previous = receiptResult(receipt);
           if (!previous) throw new ReviewPersistenceConflictError('identity-conflict');
@@ -335,7 +369,7 @@ export async function applyReviewForOwner(
 
     if (strict) {
       const reviewedAt = new Date(request.reviewedAt);
-      if (reviewedAt.getTime() > Date.now() + 5 * 60 * 1000) {
+      if (reviewedAt.getTime() > receivedAt!.getTime() + 5 * 60 * 1000) {
         throw new ReviewPersistenceConflictError('future-review-clock-skew');
       }
       if (Number.isFinite(authoritativeLastReview) && reviewedAt.getTime() <= authoritativeLastReview) {
@@ -374,10 +408,26 @@ export async function applyReviewForOwner(
     if (!REVIEW_FIELDS.every(field => sameValue(candidate[field], expected[field]))) {
       throw new InputValidationError('Review fields do not match the scheduler transition.');
     }
+    let preparedGamification: PreparedVerifiedGamification | undefined;
+    let gamification: VerifiedGamificationOutcome | undefined;
+    if (strict) {
+      try {
+        preparedGamification = await prepareVerifiedGamification(database, transaction, ownerId, {
+          kind: 'review', receivedAt: receivedAt!, timeZone: request.timeZone,
+        });
+        gamification = preparedGamification.outcome;
+      } catch (error) {
+        // Cached V2 clients did not send a time-zone hint. Their review stays
+        // valid, but it must not silently pin a server ledger to UTC.
+        if (request.timeZone !== undefined
+          || !(error instanceof InputValidationError)
+          || error.message !== 'Reward time zone is invalid.') throw error;
+      }
+    }
     const canonicalFields = reviewPatch(candidate as unknown as Record<ReviewField, unknown>);
     const nextOperationIds = [...operationIds, request.opId].slice(-MAX_REVIEW_OPERATION_IDS);
     const nextRevision = revision + 1;
-    const updatedAt = new Date().toISOString();
+    const updatedAt = (receivedAt ?? new Date()).toISOString();
     const persisted = {
       ...canonicalFields,
       appliedReviewOperationIds: nextOperationIds,
@@ -387,6 +437,7 @@ export async function applyReviewForOwner(
       updatedAt: FieldValue.serverTimestamp(),
     };
     transaction.set(cardRef, persisted, { merge: true });
+    if (preparedGamification) commitVerifiedGamification(transaction, preparedGamification);
     const responseCard = serializeCardResponse({
       ...candidate,
       ...canonicalFields,
@@ -396,21 +447,28 @@ export async function applyReviewForOwner(
       schemaVersion: 2,
       updatedAt,
     });
+    const ceremonyEvents: ReviewCeremonyEvent[] = [
+      ...(isMastered(candidate) && !isMastered(stored) ? ['tierup'] as const : []),
+      ...(gamification?.events ?? []),
+    ];
+    const result = {
+      applied: true as const,
+      duplicate: false,
+      card: responseCard,
+      ...(gamification === undefined ? {} : { gamification }),
+      ...(ceremonyEvents.length === 0 ? {} : { ceremonyEvents }),
+    };
     if (strict) {
       transaction.create(receiptRef, {
         ownerId,
         cardId: request.cardId,
         opId: request.opId,
         fingerprint,
-        result: { applied: true, duplicate: false, card: responseCard },
+        result,
         createdAt: FieldValue.serverTimestamp(),
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(receivedAt!.getTime() + 30 * 24 * 60 * 60 * 1000),
       });
     }
-    return {
-      applied: true,
-      duplicate: false,
-      card: responseCard,
-    };
+    return result;
   });
 }

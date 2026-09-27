@@ -81,7 +81,7 @@ vi.mock('../../lib/gemini', () => ({
   generateStoryContext: gemini.generateStoryContext,
 }));
 
-import { usePracticeGames } from './usePracticeGames';
+import { shuffleQuizOptions, usePracticeGames } from './usePracticeGames';
 
 const card = (index: number, difficulty: CardData['difficulty'] = 'good'): CardData => ({
   id: `card-${index}`,
@@ -106,9 +106,27 @@ const renderPracticeGames = (pool: CardData[]) => {
   const dependencies = {
     lifecycle: createPracticeSessionLifecycle('owner-a'),
     loadPracticePool: vi.fn(async () => pool),
-    addXp: vi.fn(),
+    languageDrillCards: pool,
+    languageDrillScopeKey: 'owner-a:en',
+    practiceSessionService: {
+      start: vi.fn(async (request: { opId: string; game: 'quiz' | 'spelling' | 'match'; cardIds: string[] }) => ({
+        sessionId: request.opId,
+        game: request.game,
+        challenge: request.game === 'quiz'
+          ? { kind: 'quiz' as const, questions: request.cardIds.map(cardId => ({ cardId, prompt: `word-${cardId.slice(5)}`, options: [`translation-${cardId.slice(5)}`] })) }
+          : request.game === 'spelling'
+            ? { kind: 'spelling' as const, prompts: request.cardIds.map(cardId => ({ cardId, prompt: `translation-${cardId.slice(5)}`, word: `word-${cardId.slice(5)}` })) }
+            : { kind: 'match' as const, cards: request.cardIds.map(cardId => ({ cardId, word: `word-${cardId.slice(5)}`, translation: `translation-${cardId.slice(5)}` })) },
+        expiresAt: '2026-09-27T00:00:00.000Z',
+      })),
+      complete: vi.fn(async (request: { sessionId: string; completionId: string; answers: unknown }) => ({
+        sessionId: request.sessionId, correct: 0, total: 0, awardedXp: 0,
+        outcome: { xp: 0, level: 1, streak: 0, studyDay: '2026-09-27', events: [] },
+      })),
+    },
     openView: vi.fn(),
     reportError: vi.fn(),
+    onAuthoritativeOutcome: vi.fn(),
   };
   const render = () => {
     hookRuntime.cursor = 0;
@@ -142,6 +160,13 @@ describe('usePracticeGames', () => {
     });
   });
 
+  it('shuffles server quiz options without changing the authoritative first answer', () => {
+    const serverOptions = ['correct', 'decoy-a', 'decoy-b'];
+
+    expect(shuffleQuizOptions(serverOptions, () => 0)).toEqual(['decoy-a', 'decoy-b', 'correct']);
+    expect(serverOptions[0]).toBe('correct');
+  });
+
   afterEach(() => {
     hookRuntime.effects.forEach(effect => effect.cleanup?.());
     vi.useRealTimers();
@@ -158,6 +183,20 @@ describe('usePracticeGames', () => {
     expect(dependencies.openView).not.toHaveBeenCalled();
     expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards to start a quiz.');
     expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards for spelling practice.');
+  });
+
+  it('starts a language drill from its supplied course cards without loading a practice pool', async () => {
+    const drillCards = [{ ...card(1), language: 'ko' }, { ...card(2), language: 'ko' }];
+    const { dependencies, render } = renderPracticeGames(drillCards);
+    const games = render();
+
+    await games.startLanguageDrill();
+    render().completeLanguageDrill(true);
+
+    expect(dependencies.loadPracticePool).not.toHaveBeenCalled();
+    expect(dependencies.openView).toHaveBeenCalledWith('language-drill');
+    expect(render().languageDrillCorrect).toBe(1);
+    expect(render().currentLanguageDrillIndex).toBe(1);
   });
 
   it('reports a preparation error in the active Vietnamese UI locale', async () => {
@@ -203,7 +242,84 @@ describe('usePracticeGames', () => {
     expect(dependencies.openView).toHaveBeenCalledTimes(1);
   });
 
-  it('awards quiz XP only once when the same answer is submitted twice before rendering', async () => {
+  it('renders quiz prompts and options from the server session snapshot', async () => {
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    dependencies.practiceSessionService.start.mockResolvedValueOnce({
+      sessionId: 'session-a', game: 'quiz', expiresAt: '2026-09-27T00:00:00.000Z',
+      challenge: { kind: 'quiz', questions: [
+        { cardId: 'card-1', prompt: 'server word', options: ['server meaning', 'other meaning'] },
+        { cardId: 'card-2', prompt: 'server word 2', options: ['server meaning 2'] },
+        { cardId: 'card-3', prompt: 'server word 3', options: ['server meaning 3'] },
+        { cardId: 'card-4', prompt: 'server word 4', options: ['server meaning 4'] },
+      ] },
+    });
+
+    await render().startQuiz();
+
+    expect(render().quizQuestions[0]).toMatchObject({
+      card: { id: 'card-1', word: 'server word', translation: 'server meaning' },
+      options: expect.arrayContaining(['server meaning', 'other meaning']), correctAnswer: 'server meaning',
+    });
+  });
+
+  it('renders spelling and match values from the server session snapshot', async () => {
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    dependencies.practiceSessionService.start.mockResolvedValueOnce({
+      sessionId: 'spelling-a', game: 'spelling', expiresAt: '2026-09-27T00:00:00.000Z',
+      challenge: { kind: 'spelling', prompts: [
+        { cardId: 'card-1', prompt: 'server spelling prompt', word: 'server spelling word' }, { cardId: 'card-2', prompt: 'two', word: 'two' },
+        { cardId: 'card-3', prompt: 'three', word: 'three' }, { cardId: 'card-4', prompt: 'four', word: 'four' },
+      ] },
+    });
+    await render().startSpelling();
+    expect(render().spellingCards[0]).toMatchObject({ id: 'card-1', word: 'server spelling word', translation: 'server spelling prompt' });
+
+    dependencies.practiceSessionService.start.mockResolvedValueOnce({
+      sessionId: 'match-a', game: 'match', expiresAt: '2026-09-27T00:00:00.000Z',
+      challenge: { kind: 'match', cards: [
+        { cardId: 'card-1', word: 'server match word', translation: 'server match meaning' },
+        { cardId: 'card-2', word: 'two', translation: 'hai' }, { cardId: 'card-3', word: 'three', translation: 'ba' },
+        { cardId: 'card-4', word: 'four', translation: 'bốn' },
+      ] },
+    });
+    await render().startMatch();
+    expect(render().spellingCards).toContainEqual(expect.objectContaining({
+      id: 'card-1', word: 'server match word', translation: 'server match meaning',
+    }));
+  });
+
+  it('retries a failed Word Match completion with the same session and completion IDs', async () => {
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    dependencies.practiceSessionService.complete
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce({
+        sessionId: 'match-a', correct: 4, total: 4, awardedXp: 20,
+        outcome: { xp: 20, level: 1, streak: 0, studyDay: '2026-09-27', events: [] },
+      });
+    await render().startMatch();
+    const pairs = render().spellingCards.map(({ id: cardId, word, translation }) => ({ cardId, word, translation }));
+
+    expect(await render().completeMatch(pairs)).toBeNull();
+    expect(await render().completeMatch(pairs)).toEqual({ awardedXp: 20 });
+
+    const [first, second] = dependencies.practiceSessionService.complete.mock.calls.map(([request]) => request);
+    expect(second).toMatchObject({ sessionId: first.sessionId, completionId: first.completionId, answers: first.answers });
+    expect(dependencies.onAuthoritativeOutcome).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts a new Word Match session before a new round after completion', async () => {
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    await render().startMatch();
+    const firstSessionId = dependencies.practiceSessionService.start.mock.calls[0][0].opId;
+
+    expect(await render().restartMatch()).toBe(true);
+
+    const secondSessionId = dependencies.practiceSessionService.start.mock.calls[1][0].opId;
+    expect(secondSessionId).not.toBe(firstSessionId);
+    expect(dependencies.loadPracticePool).toHaveBeenCalledTimes(1);
+  });
+
+  it('records a quiz answer once when the same answer is submitted twice before rendering', async () => {
     const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
     await render().startQuiz();
     const games = render();
@@ -212,11 +328,11 @@ describe('usePracticeGames', () => {
     games.selectQuizAnswer(correctAnswer);
     games.selectQuizAnswer(correctAnswer);
 
-    expect(dependencies.addXp).toHaveBeenCalledTimes(1);
+    expect(dependencies.practiceSessionService.complete).not.toHaveBeenCalled();
     expect(render().quizScore).toBe(1);
   });
 
-  it('awards spelling XP only once when the same answer is submitted twice before rendering', async () => {
+  it('records a spelling answer once when the same answer is submitted twice before rendering', async () => {
     const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
     await render().startSpelling();
     let games = render();
@@ -227,8 +343,47 @@ describe('usePracticeGames', () => {
     games.checkSpelling(event);
     games.checkSpelling(event);
 
-    expect(dependencies.addXp).toHaveBeenCalledTimes(1);
+    expect(dependencies.practiceSessionService.complete).not.toHaveBeenCalled();
     expect(render().spellingScore).toBe(1);
+  });
+
+  it('forwards the stable completion ID with the server outcome', async () => {
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    await render().startQuiz();
+    let games = render();
+    while (!games.showQuizResults) {
+      games.selectQuizAnswer(games.quizQuestions[games.currentQuizIndex].correctAnswer);
+      games = render();
+      games.nextQuizQuestion();
+      games = render();
+    }
+    await Promise.resolve();
+
+    const completionId = dependencies.practiceSessionService.complete.mock.calls[0][0].completionId;
+    expect(dependencies.onAuthoritativeOutcome).toHaveBeenCalledWith(
+      { xp: 0, level: 1, streak: 0, studyDay: '2026-09-27', events: [] }, completionId, 0,
+    );
+  });
+
+  it('drops a late Word Match completion result after the lifecycle owner changes', async () => {
+    const pending = deferred<{
+      sessionId: string; correct: number; total: number; awardedXp: number;
+      outcome: { xp: number; level: number; streak: number; studyDay: string; events: never[] };
+    }>();
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    dependencies.practiceSessionService.complete.mockReturnValueOnce(pending.promise);
+    await render().startMatch();
+    const pairs = render().spellingCards.map(({ id: cardId, word, translation }) => ({ cardId, word, translation }));
+    const completion = render().completeMatch(pairs);
+
+    dependencies.lifecycle.replaceOwner('owner-b');
+    pending.resolve({
+      sessionId: 'practice-quiz-a', correct: 4, total: 4, awardedXp: 20,
+      outcome: { xp: 20, level: 1, streak: 0, studyDay: '2026-09-27', events: [] },
+    });
+    await expect(completion).resolves.toBeNull();
+
+    expect(dependencies.onAuthoritativeOutcome).not.toHaveBeenCalled();
   });
 
   it('plays delayed quiz audio while the quiz remains active', async () => {

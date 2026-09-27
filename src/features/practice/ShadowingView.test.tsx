@@ -24,7 +24,7 @@ describe('ShadowingView', () => {
 
   it('renders target word and sentence for pronunciation practice', () => {
     const html = renderToStaticMarkup(
-      <I18nProvider i18n={i18n}><ShadowingView cards={sampleCards} onClose={vi.fn()} onAddXp={vi.fn()} /></I18nProvider>
+      <I18nProvider i18n={i18n}><ShadowingView cards={sampleCards} onClose={vi.fn()} /></I18nProvider>
     );
 
     expect(html).toContain('Shadowing');

@@ -26,6 +26,8 @@ export interface DesktopNavigationProps {
   streak?: number;
   level?: number;
   xp?: number;
+  equippedFrameId?: string | null;
+  ownedTitleIds?: readonly string[];
   onOpenLanding?: () => void;
   onOpenToday: () => void;
   onOpenLibrary: () => void;
@@ -46,7 +48,7 @@ function CrystalStar() {
   return <svg viewBox="0 0 100 100" width="36" height="36" aria-hidden="true" className="claude-brand-star"><path d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" fill="#ff5470" /><path d="M50 4 62 36 96 37 69 59 78 91 50 72Z" fill="#7a0820" /></svg>;
 }
 
-export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncStatus, isExporting, isLibraryMutationPending, isRetryingSync, canSyncNow, sessionLost, libraryCountLabel, streak, level, xp, onOpenLanding, onOpenToday, onOpenLibrary, onOpenCatalog, onOpenProgress, onOpenSettings, onSignIn, onSignOut, onRetrySync, onExportLibrary, onClearLibrary, onOpenInsights }: DesktopNavigationProps) {
+export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncStatus, isExporting, isLibraryMutationPending, isRetryingSync, canSyncNow, sessionLost, libraryCountLabel, streak, level, xp, equippedFrameId, ownedTitleIds, onOpenLanding, onOpenToday, onOpenLibrary, onOpenCatalog, onOpenProgress, onOpenSettings, onSignIn, onSignOut, onRetrySync, onExportLibrary, onClearLibrary, onOpenInsights }: DesktopNavigationProps) {
   const { _ } = useLingui();
   const { family } = useTheme();
   const status = localizeShellSyncStatus(getShellSyncStatus(syncStatus), _);
@@ -87,6 +89,8 @@ export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncS
         {hasLevel && <span className="claude-level" aria-label={hasXp ? _(msg({ id: 'shell.level', message: 'Level {level}, {xp} XP' }).id, { level, xp }) : _(msg({ id: 'shell.level.short', message: 'Lv {level}' }).id, { level })}><Trans id="shell.level.short" message="Lv {level}" values={{ level }} />{hasXp && <span className="claude-level-track" aria-hidden="true"><span style={{ width: `${levelProgress}%` }} /></span>}</span>}
         <LanguageMenu />
         <LibraryManagementMenu
+          equippedFrameId={equippedFrameId}
+          ownedTitleIds={ownedTitleIds}
           isExporting={isExporting}
           isLibraryMutationPending={isLibraryMutationPending}
           onOpenSettings={onOpenSettings}

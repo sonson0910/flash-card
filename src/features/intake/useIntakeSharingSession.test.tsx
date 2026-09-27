@@ -54,7 +54,6 @@ const intakeOptions = (): CardIntakePortOptions => ({
   setCloudUnavailable: vi.fn(),
   notify: vi.fn(),
   focusLibrary: vi.fn(),
-  addXp: vi.fn(),
 });
 
 const deferred = <T,>() => {

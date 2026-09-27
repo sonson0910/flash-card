@@ -202,10 +202,10 @@ describe('share overlays', () => {
     expect(renderMatch(eligibleCards)).not.toContain('Needs 4 cards');
   });
 
-  it('keeps the five established modes in a stable, availability-aware registry', () => {
+  it('keeps the available modes in a stable, availability-aware registry', () => {
     const modes = getPracticeModes();
 
-    expect(modes.map(mode => mode.id)).toEqual(['quiz', 'spelling', 'match', 'shadowing', 'story']);
+    expect(modes.map(mode => mode.id)).toEqual(['quiz', 'spelling', 'language-drill', 'match', 'shadowing', 'story']);
     expect(modes.find(mode => mode.id === 'match')?.isAvailable([
       { id: 'one', word: 'one', translation: 'một' } as CardData,
       { id: 'two', word: 'two', translation: 'hai' } as CardData,

@@ -13,8 +13,10 @@ import {
   CardHeadwordRenameConflictError,
   canonicalCard,
   createCardForOwner,
+  createCardV2ForOwner,
   createStarterCardsForOwner,
   parseCreateCardRequest,
+  parseCreateCardV2Request,
   parseRenameCardHeadwordRequest,
   renameCardHeadwordForOwner,
 } from '../src/cardPersistence.js';
@@ -345,6 +347,92 @@ describe('card persistence', () => {
       libraryEpoch: 2,
     })).resolves.toMatchObject({ created: false, card: { id: 'word-hello' } });
     expect(harness.writes).toEqual([]);
+  });
+
+  it('creates a V2 receipt and verified create XP in the same transaction', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+    ]));
+
+    await expect(createCardV2ForOwner(harness.database, 'owner', card, {
+      maximumCards: 5, libraryEpoch: 2, opId: 'create-hello', timeZone: 'UTC',
+      receivedAt: new Date('2026-09-27T12:00:00.000Z'),
+    })).resolves.toMatchObject({
+      created: true,
+      gamification: { xp: 10, level: 1, events: [] },
+    });
+
+    expect(harness.events.slice(0, 2)).toEqual([
+      'get:users/owner/card_create_receipts/create-hello',
+      'get:users/owner/profile/library_migration_fence',
+    ]);
+    expect(harness.writes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ method: 'create', path: 'users/owner/card_create_receipts/create-hello' }),
+      expect.objectContaining({ method: 'set', path: 'users/owner/profile/stats' }),
+      expect.objectContaining({ method: 'set', path: 'users/owner/profile/xp_history' }),
+    ]));
+  });
+
+  it('replays a V2 receipt without re-reading mutable card or gamification state', async () => {
+    const first = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+    ]));
+    await createCardV2ForOwner(first.database, 'owner', card, {
+      maximumCards: 5, libraryEpoch: 2, opId: 'create-hello', timeZone: 'UTC',
+      receivedAt: new Date('2026-09-27T12:00:00.000Z'),
+    });
+    const receipt = first.writes.find(write => write.path === 'users/owner/card_create_receipts/create-hello')?.data;
+    const replay = transactionHarness(new Map([
+      ['users/owner/card_create_receipts/create-hello', snapshot(true, receipt)],
+    ]));
+
+    await expect(createCardV2ForOwner(replay.database, 'owner', card, {
+      maximumCards: 5, libraryEpoch: 2, opId: 'create-hello', timeZone: 'UTC',
+      receivedAt: new Date('2026-09-27T12:00:00.000Z'),
+    })).resolves.toMatchObject({ created: true, gamification: { xp: 10 } });
+    expect(replay.events).toEqual(['get:users/owner/card_create_receipts/create-hello']);
+    expect(replay.writes).toEqual([]);
+  });
+
+  it('rejects a V2 receipt when the operation ID is reused for different input', async () => {
+    const first = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+    ]));
+    await createCardV2ForOwner(first.database, 'owner', card, {
+      maximumCards: 5, libraryEpoch: 2, opId: 'create-hello', timeZone: 'UTC',
+      receivedAt: new Date('2026-09-27T12:00:00.000Z'),
+    });
+    const receipt = first.writes.find(write => write.path === 'users/owner/card_create_receipts/create-hello')?.data;
+    const replay = transactionHarness(new Map([
+      ['users/owner/card_create_receipts/create-hello', snapshot(true, receipt)],
+    ]));
+
+    await expect(createCardV2ForOwner(replay.database, 'owner', card, {
+      maximumCards: 5, libraryEpoch: 2, opId: 'create-hello', timeZone: 'Asia/Ho_Chi_Minh',
+    })).rejects.toThrow(/conflicts/i);
+    expect(replay.events).toEqual(['get:users/owner/card_create_receipts/create-hello']);
+  });
+
+  it('does not award verified XP when V2 resolves an existing card', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 1 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/cards/word-hello', snapshot(true, {
+        ...card, id: 'word-hello', word: 'hello', schemaVersion: 2, revision: 1, libraryEpoch: 2,
+      })],
+    ]));
+
+    await expect(createCardV2ForOwner(harness.database, 'owner', card, {
+      maximumCards: 5, libraryEpoch: 2, opId: 'duplicate-hello', timeZone: 'UTC',
+    })).resolves.toMatchObject({ created: false, gamification: null });
+    expect(harness.writes.map(write => write.path)).not.toContain('users/owner/profile/stats');
+    expect(harness.writes.map(write => write.path)).not.toContain('users/owner/profile/xp_history');
   });
 
   it('returns an existing canonical card on retry without treating its lexeme identity as a word', async () => {
@@ -756,6 +844,13 @@ describe('card persistence', () => {
     expect(() => parseCreateCardRequest({ card, restore: true, operationCreatedAt })).toThrow(/metadata/i);
     expect(() => parseCreateCardRequest({ card, restore: true, opId: 'invalid:restore', operationCreatedAt })).toThrow(/metadata/i);
     expect(() => parseCreateCardRequest({ card, restore: true, opId: 'restore-hello' })).toThrow(/metadata/i);
+  });
+
+  it('requires a stable V2 operation ID and reward time zone', () => {
+    expect(parseCreateCardV2Request({ card, opId: 'create-hello', timeZone: 'UTC' }))
+      .toMatchObject({ opId: 'create-hello', timeZone: 'UTC' });
+    expect(() => parseCreateCardV2Request({ card, timeZone: 'UTC' })).toThrow(/metadata/i);
+    expect(() => parseCreateCardV2Request({ card, opId: 'create:hello', timeZone: 'UTC' })).toThrow(/metadata/i);
   });
 
   it('rejects canonical output that expands beyond the existing identity and URL limits', () => {

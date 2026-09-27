@@ -118,7 +118,7 @@ function createHarness({
 } = {}) {
   const updateCloudStats = vi.fn<(update: (current: LearningPersistenceStats) => LearningPersistenceStats) => void>();
   const updateCategoryFacets = vi.fn(async () => undefined);
-  const addXp = vi.fn();
+  const onReviewOutcome = vi.fn();
   const reportError = vi.fn();
   const acceptVerifiedEpoch = vi.fn();
   const options: LearningPersistenceOptions = {
@@ -137,7 +137,7 @@ function createHarness({
     setCloudUnavailable: vi.fn(),
     setMutationPending: vi.fn(),
     reportError,
-    addXp,
+    onReviewOutcome,
   };
   const captured: { persistence?: LearningStatePersistencePort } = {};
 
@@ -154,7 +154,7 @@ function createHarness({
     options,
     updateCloudStats,
     updateCategoryFacets,
-    addXp,
+    onReviewOutcome,
     reportError,
     acceptVerifiedEpoch,
   };
@@ -181,7 +181,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(harness.acceptVerifiedEpoch).toHaveBeenCalledWith('user-a', 3);
     expect(harness.reportError).toHaveBeenCalled();
     expect(harness.updateCloudStats).not.toHaveBeenCalled();
-    expect(harness.addXp).not.toHaveBeenCalled();
+    expect(harness.onReviewOutcome).not.toHaveBeenCalled();
   });
 
   it('publishes a delete when the cloud card is missing, without refreshing the epoch', async () => {
@@ -205,7 +205,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(harness.reportError).toHaveBeenCalled();
   });
 
-  it('routes an immediate review through the protected callable and awards XP once', async () => {
+  it('routes an immediate review through the protected callable without local XP', async () => {
     const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
     const fields = scheduleReview(card, 'good', reviewedAt);
     const authoritative = { ...card, ...fields, revision: 4, libraryEpoch: 2 };
@@ -230,8 +230,35 @@ describe('useLearningStatePersistence patch reconciliation', () => {
       'user-a',
       expect.objectContaining({ opId: mutation.operationId, rating: 'good', reviewedAt: reviewedAt.toISOString() }),
     );
-    expect(harness.addXp).toHaveBeenCalledWith(2, `review:${mutation.operationId}`);
+    expect(harness.onReviewOutcome).not.toHaveBeenCalled();
     expect(result.reviewFinality).toBe('committed');
+  });
+
+  it('forwards the authoritative review outcome with its operation ID, including a replay', async () => {
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(card, 'easy', reviewedAt);
+    const authoritative = { ...card, ...fields, revision: 4, libraryEpoch: 2 };
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (
+      command: ReviewCommand,
+      apply: (value: ReviewCommand) => Promise<ReviewApplyResult>,
+    ) => apply(command));
+    mocks.applyReviewViaCallable.mockResolvedValue({
+      applied: true, duplicate: true, card: authoritative,
+      gamification: { xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: [] },
+      ceremonyEvents: ['tierup'],
+    });
+    const harness = createHarness();
+    const mutation: LearningStateMutation = {
+      ...reviewMutation, operation: 'review', fields,
+      fieldMask: Object.keys(fields) as CardMutableField[], publication: { kind: 'patch', cardId: card.id, fields },
+    };
+
+    await harness.persistence.persist(mutation);
+
+    expect(harness.onReviewOutcome).toHaveBeenCalledWith({
+      gamification: { xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: [] },
+      ceremonyEvents: ['tierup'],
+    }, mutation.operationId, authoritative);
   });
 
   it('fails closed when an immediate review has no valid final history entry', async () => {
@@ -261,7 +288,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
 
     await expect(harness.persistence.persist(mutation)).rejects.toBe(permanent);
     expect(harness.updateCloudStats).not.toHaveBeenCalled();
-    expect(harness.addXp).not.toHaveBeenCalled();
+    expect(harness.onReviewOutcome).not.toHaveBeenCalled();
   });
 
   it('marks the cloud unavailable and rethrows on a retryable network failure', async () => {

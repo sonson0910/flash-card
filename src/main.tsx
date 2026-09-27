@@ -6,7 +6,7 @@ import { ThemeProvider } from './features/theme/ThemeProvider';
 import './index.css';
 
 const rootElement = document.getElementById('root');
-if (!rootElement) throw new Error('Application root element is missing.');
+if (!rootElement) throw new Error('Missing #root');
 
 createRoot(rootElement).render(
   <AppErrorBoundary>

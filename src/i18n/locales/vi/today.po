@@ -353,12 +353,12 @@ msgid "progress.empty.title"
 msgstr "Câu chuyện học tập của bạn bắt đầu từ đây"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressScreen.tsx:43
+#: src/features/dailyLearning/ProgressScreen.tsx:44
 msgid "progress.error.kicker"
 msgstr "Không thể xem tiến độ"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressScreen.tsx:43
+#: src/features/dailyLearning/ProgressScreen.tsx:44
 msgid "progress.error.title"
 msgstr "Tiến độ cần được xử lý"
 
@@ -368,7 +368,7 @@ msgid "progress.evidence"
 msgstr "Dữ liệu hỗ trợ"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressScreen.tsx:43
+#: src/features/dailyLearning/ProgressScreen.tsx:44
 msgid "progress.history-kicker"
 msgstr "Lịch sử học tập"
 
@@ -418,7 +418,7 @@ msgid "progress.metric.reviewed"
 msgstr "Đã ôn"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressScreen.tsx:43
+#: src/features/dailyLearning/ProgressScreen.tsx:44
 msgid "progress.offline"
 msgstr "Đang ngoại tuyến — dữ liệu có thể chưa mới nhất."
 

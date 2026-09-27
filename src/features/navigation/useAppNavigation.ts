@@ -8,7 +8,7 @@ import { APP_VIEW_HEADINGS } from './app-view-headings';
 export { applyLegacyThemePreference as applyThemePreference, resolveInitialDarkMode } from '../theme/themePreference';
 export { APP_VIEW_HEADINGS } from './app-view-headings';
 
-export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'settings' | 'study' | 'quiz' | 'story' | 'spelling' | 'match' | 'shadowing';
+export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'settings' | 'study' | 'quiz' | 'story' | 'spelling' | 'language-drill' | 'match' | 'shadowing';
 const ROUTED_VIEW = /^(landing|today|catalog|library|progress|settings)$/;
 const isLocaleLandingPath = (pathname: string): boolean => pathname === '/'
   || ENABLED_UI_LOCALES.filter(locale => locale !== 'en').some(locale => pathname.toLowerCase() === `/${locale.toLowerCase()}/` || pathname.toLowerCase() === `/${locale.toLowerCase()}`);

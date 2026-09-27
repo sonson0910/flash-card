@@ -151,12 +151,12 @@ msgid "landing.demo.tier.new"
 msgstr "Mới"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:958
+#: src/features/landing/LandingPage.tsx:905
 msgid "landing.extension.description"
 msgstr "Tiện ích Chrome của SonFlash biến bất kỳ từ hay đoạn văn nào bạn bôi đen thành thẻ ghi nhớ mà không cần rời trang."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:949
+#: src/features/landing/LandingPage.tsx:896
 msgid "landing.extension.eyebrow"
 msgstr "Lưu từ ở bất cứ đâu"
 
@@ -191,22 +191,22 @@ msgid "landing.extension.feature.save.title"
 msgstr "Nhấp chuột phải để lưu"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:955
+#: src/features/landing/LandingPage.tsx:902
 msgid "landing.extension.title"
 msgstr "Học ngay trên trang bạn đang đọc."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:898
+#: src/features/landing/LandingPage.tsx:845
 msgid "landing.features.description"
 msgstr "SonFlash giữ ngữ cảnh, khả năng nhớ và lần ôn hữu ích tiếp theo ở gần nhau."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:883
+#: src/features/landing/LandingPage.tsx:830
 msgid "landing.features.eyebrow"
 msgstr "Một nhịp học nhẹ nhàng"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:892
+#: src/features/landing/LandingPage.tsx:839
 msgid "landing.features.title"
 msgstr "Giữ lại những từ bạn gặp."
 
@@ -323,47 +323,47 @@ msgid "landing.language.label"
 msgstr "Ngôn ngữ giao diện"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1011
+#: src/features/landing/LandingPage.tsx:958
 msgid "landing.languages.description"
 msgstr "Hiện SonFlash dạy từ vựng tiếng Anh, với nghĩa hiển thị bằng tiếng Anh hoặc tiếng Việt. Các gói từ vựng dưới đây đang được phát triển và chưa thể chuyển sang."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1002
+#: src/features/landing/LandingPage.tsx:949
 msgid "landing.languages.eyebrow"
 msgstr "Hướng đi của SonFlash"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1026
+#: src/features/landing/LandingPage.tsx:973
 msgid "landing.languages.pack.chinese"
 msgstr "中文 · Tiếng Trung"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1023
+#: src/features/landing/LandingPage.tsx:970
 msgid "landing.languages.pack.english"
 msgstr "Tiếng Anh"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1025
+#: src/features/landing/LandingPage.tsx:972
 msgid "landing.languages.pack.japanese"
 msgstr "日本語 · Tiếng Nhật"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1024
+#: src/features/landing/LandingPage.tsx:971
 msgid "landing.languages.pack.korean"
 msgstr "한국어 · Tiếng Hàn"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1032
+#: src/features/landing/LandingPage.tsx:979
 msgid "landing.languages.status.available"
 msgstr "Đã có"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1033
+#: src/features/landing/LandingPage.tsx:980
 msgid "landing.languages.status.in-progress"
 msgstr "Đang phát triển"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1008
+#: src/features/landing/LandingPage.tsx:955
 msgid "landing.languages.title"
 msgstr "Hôm nay là tiếng Anh. Sắp có thêm ngôn ngữ khác."
 
@@ -378,47 +378,47 @@ msgid "landing.meta.title"
 msgstr "SonFlash — Nhớ từ. Dùng khi cần."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1076
+#: src/features/landing/LandingPage.tsx:1023
 msgid "landing.methods.context.description"
 msgstr "Một thẻ rõ ràng giúp mỗi từ có đủ chỗ để trở nên dễ hiểu."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1070
+#: src/features/landing/LandingPage.tsx:1017
 msgid "landing.methods.context.title"
 msgstr "Hiểu nghĩa trong ngữ cảnh"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1062
+#: src/features/landing/LandingPage.tsx:1009
 msgid "landing.methods.description"
 msgstr "Phản hồi của bạn giúp lên kế hoạch cho lần ôn tiếp theo hữu ích với lịch FSRS."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1116
+#: src/features/landing/LandingPage.tsx:1063
 msgid "landing.methods.open-library"
 msgstr "Mở thư viện"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1100
+#: src/features/landing/LandingPage.tsx:1047
 msgid "landing.methods.preview.caption"
 msgstr "Dành cho những từ bạn thực sự gặp."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1106
+#: src/features/landing/LandingPage.tsx:1053
 msgid "landing.methods.preview.quote"
 msgstr "Vốn từ chỉ hữu ích khi bạn có thể dùng đến."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1090
+#: src/features/landing/LandingPage.tsx:1037
 msgid "landing.methods.recall.description"
 msgstr "Bốn mức đánh giá quen thuộc giúp bạn chọn nhanh."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1084
+#: src/features/landing/LandingPage.tsx:1031
 msgid "landing.methods.recall.title"
 msgstr "Tự đánh giá mức độ nhớ"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1056
+#: src/features/landing/LandingPage.tsx:1003
 msgid "landing.methods.title"
 msgstr "Ôn những từ đã sẵn sàng."
 
@@ -479,7 +479,7 @@ msgid "landing.nav.vocabulary"
 msgstr "Từ vựng"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:829
+#: src/features/landing/LandingPage.tsx:1079
 msgid "landing.pricing.eyebrow"
 msgstr "Bắt đầu miễn phí, nâng cấp Pro khi bạn cần thêm"
 
@@ -514,32 +514,32 @@ msgid "landing.pricing.faq.free.question"
 msgstr "Gói Free có thật sự miễn phí không?"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:862
+#: src/features/landing/LandingPage.tsx:1112
 msgid "landing.pricing.faq.title"
 msgstr "Câu hỏi thường gặp"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:841
+#: src/features/landing/LandingPage.tsx:1091
 msgid "landing.pricing.free-vs-pro.free"
 msgstr "Free"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:842
+#: src/features/landing/LandingPage.tsx:1092
 msgid "landing.pricing.free-vs-pro.pro"
 msgstr "Pro"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:840
+#: src/features/landing/LandingPage.tsx:1090
 msgid "landing.pricing.free-vs-pro.title"
 msgstr "Free và Pro"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:852
+#: src/features/landing/LandingPage.tsx:1102
 msgid "landing.pricing.price"
 msgstr "Gói Pro giá 79.000 ₫ (khoảng 7,99 USD)."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:855
+#: src/features/landing/LandingPage.tsx:1105
 msgid "landing.pricing.purchase-note"
 msgstr "Đăng ký quan tâm không mất phí. Hiện chưa mở bán — chúng tôi sẽ báo qua email khi mở."
 
@@ -564,7 +564,7 @@ msgid "landing.pricing.row.reviews"
 msgstr "Ôn tập & lịch lặp lại ngắt quãng"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:835
+#: src/features/landing/LandingPage.tsx:1085
 msgid "landing.pricing.title"
 msgstr "Giá và quyền truy cập"
 

@@ -946,6 +946,23 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Reward inventory is server-authoritative. Owners may only hydrate their
+    // own inventory; callable/Admin code performs every mutation.
+    match /users/{userId}/profile/rewards {
+      allow read: if isOwner(userId);
+      allow create, update, delete: if false;
+    }
+
+    // Verified-create replay receipts and verified-practice session state are
+    // callable/Admin-only so clients cannot forge outcomes or inspect them.
+    match /users/{userId}/card_create_receipts/{opId} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId}/practice_sessions/{sessionId} {
+      allow read, write: if false;
+    }
+
     match /users/{userId}/profile/plan {
       allow get: if isOwner(userId);
       allow list, write: if false;
@@ -1024,6 +1041,7 @@ service cloud.firestore {
       // profileDocId != 'library_state'
       // profileDocId != 'courses'
       // profileDocId != 'stats'
+      // profileDocId != 'rewards'
       // profileDocId != 'plan'
       // profileDocId != 'xp_history'
       // profileDocId != 'resource_usage'

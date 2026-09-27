@@ -25,6 +25,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore';
 import type { CardData, CardLanguageCode } from '../types/card';
+import type { AuthoritativeGamification } from './cardReviewRepository';
 import { readLocalJson, writeLocalValue } from '../features/library/libraryStorage';
 import type { LibraryStats } from './libraryStats';
 export type { LibraryStats } from './libraryStats';
@@ -1026,6 +1027,10 @@ export interface CreateCardIfAbsentResult {
   restored?: true;
 }
 
+export interface CreateCardV2IfAbsentResult extends CreateCardIfAbsentResult {
+  gamification: AuthoritativeGamification | null;
+}
+
 export type CardMutationPreconditionReason =
   | 'stale-library-epoch'
   | 'future-library-epoch'
@@ -1038,6 +1043,11 @@ export interface CreateCardIfAbsentOptions {
   opId?: string;
   operationCreatedAt?: string;
   restore?: true;
+}
+
+export interface CreateCardV2IfAbsentOptions extends Omit<CreateCardIfAbsentOptions, 'restore' | 'opId'> {
+  opId: string;
+  timeZone: string;
 }
 
 export class CardMutationPreconditionError extends Error {
@@ -1663,6 +1673,33 @@ const parseCallableCardResponse = (value: unknown): CreateCardIfAbsentResult => 
   return { created: envelope.created, card, ...(envelope.restored === true ? { restored: true } : {}) };
 };
 
+const parseAuthoritativeGamification = (value: unknown): AuthoritativeGamification => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new CardCallableResponseError();
+  const outcome = value as Record<string, unknown>;
+  if (
+    !Number.isSafeInteger(outcome.xp) || Number(outcome.xp) < 0
+    || !Number.isSafeInteger(outcome.level) || Number(outcome.level) < 1
+    || !Number.isSafeInteger(outcome.streak) || Number(outcome.streak) < 0
+    || typeof outcome.studyDay !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(outcome.studyDay)
+    || !Array.isArray(outcome.events)
+    || outcome.events.some(event => event !== 'streak' && event !== 'levelup')
+  ) throw new CardCallableResponseError();
+  return {
+    xp: Number(outcome.xp), level: Number(outcome.level), streak: Number(outcome.streak),
+    studyDay: outcome.studyDay, events: outcome.events as AuthoritativeGamification['events'],
+  };
+};
+
+const parseCreateCardV2CallableResponse = (value: unknown): CreateCardV2IfAbsentResult => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new CardCallableResponseError();
+  const envelope = value as Record<string, unknown>;
+  if (Object.keys(envelope).length !== 3 || !Object.prototype.hasOwnProperty.call(envelope, 'gamification')) {
+    throw new CardCallableResponseError();
+  }
+  const result = parseCallableCardResponse({ created: envelope.created, card: envelope.card });
+  return { ...result, gamification: envelope.gamification === null ? null : parseAuthoritativeGamification(envelope.gamification) };
+};
+
 export async function createCardIfAbsent(
   db: Firestore,
   userId: string,
@@ -1708,6 +1745,44 @@ export async function createCardIfAbsent(
     if (error instanceof ProtectedCardMutationError) {
       throw new CardMutationPreconditionError(error.mutationReason);
     }
+    throw error;
+  }
+}
+
+/** Persists a fresh card through the verified create producer. Restores stay on V1. */
+export async function createCardV2IfAbsent(
+  db: Firestore,
+  userId: string,
+  card: CardData,
+  options: CreateCardV2IfAbsentOptions,
+): Promise<CreateCardV2IfAbsentResult> {
+  if (!isFirebaseConfigured) return { ...await createCardIfAbsentLocally(db, userId, card, options), gamification: null };
+  try {
+    return await runProtectedFunction(protectedFunctionsCapability, 'Card creation', async () => {
+      if (!firebaseApp) throw new Error('Firebase is not initialized.');
+      const { httpsCallable } = await import('firebase/functions');
+      const callable = httpsCallable<{
+        card: CardData; libraryEpoch?: number; baseRevision?: number; opId: string;
+        operationCreatedAt?: string; timeZone: string;
+      }, unknown>(await getSonFlashFunctions(firebaseApp), 'createCardV2');
+      try {
+        const response = await callable({
+          card: normalizeCardForMutation(card, card.id),
+          ...(options.libraryEpoch === undefined ? {} : { libraryEpoch: options.libraryEpoch }),
+          ...(options.baseRevision === undefined ? {} : { baseRevision: options.baseRevision }),
+          opId: options.opId,
+          ...(options.operationCreatedAt === undefined ? {} : { operationCreatedAt: options.operationCreatedAt }),
+          timeZone: options.timeZone,
+        });
+        return parseCreateCardV2CallableResponse(response.data);
+      } catch (error) {
+        const reason = readCallableMutationReason(error);
+        if (reason) throw new ProtectedCardMutationError(reason);
+        throw error;
+      }
+    });
+  } catch (error) {
+    if (error instanceof ProtectedCardMutationError) throw new CardMutationPreconditionError(error.mutationReason);
     throw error;
   }
 }

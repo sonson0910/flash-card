@@ -10,15 +10,20 @@ const generationRuntime = vi.hoisted(() => ({
 }));
 
 const repositoryRuntime = vi.hoisted(() => ({
-  createCardIfAbsent: vi.fn(async (_db: unknown, _ownerId: string, card: { id: string }) => ({ card, created: true })),
+  createCardV2IfAbsent: vi.fn(async (...args: unknown[]) => ({
+    card: args[2] as { id: string }, created: true,
+    gamification: null as null | { xp: number; level: number; streak: number; studyDay: string; events: readonly ('streak' | 'levelup')[] },
+  })),
 }));
+
+const createOperationIdAt = (call: readonly unknown[]) => (call[3] as { opId: string }).opId;
 
 vi.mock('../../lib/firebase', () => ({ db: {}, isFirebaseConfigured: true }));
 vi.mock('../../lib/audio', () => ({ fetchAudioUrl: vi.fn(async () => null) }));
 vi.mock('../../lib/images', () => ({ fetchImageUrl: vi.fn(async () => null) }));
 vi.mock('../../lib/gemini', () => ({ generateWordInfo: generationRuntime.generateWordInfo }));
 vi.mock('../../lib/cardRepository', () => ({
-  createCardIfAbsent: repositoryRuntime.createCardIfAbsent,
+  createCardV2IfAbsent: repositoryRuntime.createCardV2IfAbsent,
   createLibraryFacetOperationId: () => 'facet-op',
   deriveLibraryFacetOperationId: (id: string, suffix: string) => `${id}:${suffix}`,
   findCardByNormalizedWord: vi.fn(async () => null),
@@ -27,7 +32,7 @@ vi.mock('../../lib/cardRepository', () => ({
 
 afterEach(() => {
   vi.unstubAllEnvs();
-  repositoryRuntime.createCardIfAbsent.mockClear();
+  repositoryRuntime.createCardV2IfAbsent.mockClear();
 });
 
 const card = (id: string) => ({
@@ -78,7 +83,7 @@ const createContext = (): CardIntakePortOptions => ({
   setCloudUnavailable: vi.fn(),
   notify: vi.fn(),
   focusLibrary: vi.fn(),
-  addXp: vi.fn(),
+  acceptGamificationOutcome: vi.fn(),
 });
 
 describe('Card Intake Pipeline contract', () => {
@@ -135,24 +140,72 @@ describe('Card Intake Pipeline contract', () => {
     ]);
 
     expect(context.publishCards).toHaveBeenCalledWith([candidate]);
-    expect(context.addXp).toHaveBeenCalledWith(10);
-    await vi.waitFor(() => expect(repositoryRuntime.createCardIfAbsent).toHaveBeenCalledWith({}, 'owner-a', candidate, { libraryEpoch: 3 }));
+    await vi.waitFor(() => expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalledWith({}, 'owner-a', candidate, {
+      libraryEpoch: 3,
+      opId: expect.stringMatching(/^create-/),
+      timeZone: expect.any(String),
+    }));
   });
 
-  it('reuses one local persistence operation when a save is retried unchanged', async () => {
+  it('reuses the original create operation after a lost-response retry', async () => {
     const context = createContext();
     const candidate = card('retry-card');
+    const outcome = { xp: 10, level: 1, streak: 0, studyDay: '2026-09-27', events: [] as const };
+    repositoryRuntime.createCardV2IfAbsent
+      .mockRejectedValueOnce(new Error('response lost after the server committed'))
+      .mockResolvedValueOnce({ card: candidate, created: true, gamification: outcome });
     const pipeline = createCardIntakePipeline({ getContext: () => context });
 
     await expect(pipeline.persistCards([candidate], 'generate')).resolves.toEqual([
       { card: candidate, created: true },
     ]);
+    await vi.waitFor(() => expect(context.notify).toHaveBeenCalledWith(
+      'The card could not be saved. Check your connection and try again.',
+    ));
     await expect(pipeline.persistCards([candidate], 'generate')).resolves.toEqual([
       { card: candidate, created: true },
     ]);
+    await vi.waitFor(() => expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalledTimes(2));
 
-    expect(context.publishCards).toHaveBeenCalledOnce();
-    expect(context.addXp).toHaveBeenCalledOnce();
+    expect(createOperationIdAt(repositoryRuntime.createCardV2IfAbsent.mock.calls[1]!))
+      .toBe(createOperationIdAt(repositoryRuntime.createCardV2IfAbsent.mock.calls[0]!));
+    await vi.waitFor(() => expect(context.acceptGamificationOutcome).toHaveBeenCalledWith(
+      outcome,
+      createOperationIdAt(repositoryRuntime.createCardV2IfAbsent.mock.calls[0]!),
+    ));
+  });
+
+  it('uses a new create operation after delete and recreate', async () => {
+    const context = createContext();
+    const first = { ...card('recreated-card'), createdAt: '2026-09-27T00:00:00.000Z' };
+    const recreated = { ...card('recreated-card'), createdAt: '2026-09-27T00:01:00.000Z' };
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await pipeline.persistCards([first], 'generate');
+    await vi.waitFor(() => expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalledTimes(1));
+    await pipeline.persistCards([recreated], 'generate');
+    await vi.waitFor(() => expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalledTimes(2));
+
+    const firstOperation = createOperationIdAt(repositoryRuntime.createCardV2IfAbsent.mock.calls[0]!);
+    const recreatedOperation = createOperationIdAt(repositoryRuntime.createCardV2IfAbsent.mock.calls[1]!);
+    expect(recreatedOperation).not.toBe(firstOperation);
+  });
+
+  it('accepts the server outcome once for a created-card replay', async () => {
+    const context = createContext();
+    const candidate = card('rewarded-card');
+    const outcome = { xp: 10, level: 1, streak: 0, studyDay: '2026-09-27', events: [] as const };
+    repositoryRuntime.createCardV2IfAbsent.mockResolvedValueOnce({ card: candidate, created: true, gamification: outcome });
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await pipeline.persistCards([candidate], 'shared');
+    await vi.waitFor(() => expect(context.acceptGamificationOutcome).toHaveBeenCalledWith(
+      outcome,
+      createOperationIdAt(repositoryRuntime.createCardV2IfAbsent.mock.calls[0]!),
+    ));
+    await pipeline.persistCards([candidate], 'shared');
+
+    expect(context.acceptGamificationOutcome).toHaveBeenCalledOnce();
   });
 
   it('reveals an existing card on a refreshed first page without requiring reload', async () => {
@@ -264,7 +317,7 @@ describe('Card Intake Pipeline contract', () => {
     const ownerB = { ...createContext(), ownerId: 'owner-b', libraryEpoch: 4 };
     const candidate = card('late-a-card');
     let context: CardIntakePortOptions = ownerA;
-    repositoryRuntime.createCardIfAbsent.mockImplementationOnce(async () => {
+    repositoryRuntime.createCardV2IfAbsent.mockImplementationOnce(async () => {
       await queued.promise;
       throw new Error('cloud write failed');
     });
@@ -280,7 +333,7 @@ describe('Card Intake Pipeline contract', () => {
     queued.resolve();
 
     await expect(persistence).resolves.toEqual([{ card: candidate, created: true }]);
-    await vi.waitFor(() => expect(repositoryRuntime.createCardIfAbsent).toHaveBeenCalled());
+    await vi.waitFor(() => expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalled());
     expect(ownerB.publishCards).not.toHaveBeenCalled();
     expect(ownerA.setCloudUnavailable).not.toHaveBeenCalled();
   });

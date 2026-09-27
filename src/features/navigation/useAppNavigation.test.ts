@@ -72,11 +72,12 @@ describe('useAppNavigation', () => {
       study: 'Study session',
       quiz: 'Vocabulary quiz',
       spelling: 'Spelling practice',
+      'language-drill': 'Language drill',
       story: 'Context story',
       match: 'Word match',
       shadowing: 'Shadowing practice',
     });
-    expect(new Set(Object.values(APP_VIEW_HEADINGS).map(heading => heading.id)).size).toBe(12);
+    expect(new Set(Object.values(APP_VIEW_HEADINGS).map(heading => heading.id)).size).toBe(13);
 
     const navigation = render();
     expect(navigation.viewMode).toBe('landing');

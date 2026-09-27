@@ -16,12 +16,66 @@ import {
   type QuizQuestion,
 } from './practiceModel';
 import type { PracticeActivity, PracticeSessionLifecycle } from './practiceSessionLifecycle';
+import {
+  firebasePracticeSessionService,
+  practiceTimeZone,
+  type PracticeSessionCard,
+  type PracticeSessionChallenge,
+  type PracticeGamificationOutcome,
+  type PracticeSessionService,
+} from './practiceSessionService';
 
-type PracticeView = 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing';
+type PracticeView = 'quiz' | 'spelling' | 'language-drill' | 'story' | 'match' | 'shadowing';
 
 const PRACTICE_POOL_TIMEOUT_MS = 15_000;
 const practicePoolTimeoutMessage = 'Preparing this activity took too long. Check your connection and try again.';
+const isLanguageDrillCard = (card: CardData) => ['en', 'ko', 'ja', 'zh'].includes(card.language?.toLowerCase().split('-')[0] || 'en');
 const translate = (descriptor: MessageDescriptor) => i18n.locale ? i18n._(descriptor) : descriptor.message ?? descriptor.id;
+const practiceOperationId = (game: 'quiz' | 'spelling' | 'match') => {
+  const random = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `practice-${game}-${random}`;
+};
+
+export const shuffleQuizOptions = (options: readonly string[], random: () => number = Math.random): string[] => {
+  const shuffled = [...options];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(random() * (index + 1));
+    [shuffled[index], shuffled[target]] = [shuffled[target], shuffled[index]];
+  }
+  return shuffled;
+};
+
+const snapshotCard = (cards: readonly CardData[], snapshot: PracticeSessionCard): CardData => {
+  const card = cards.find(candidate => candidate.id === snapshot.cardId);
+  if (!card) throw new Error('The practice session returned a card outside this game.');
+  return { ...card, word: snapshot.word, translation: snapshot.translation };
+};
+
+const quizQuestionsFromChallenge = (cards: readonly CardData[], challenge: PracticeSessionChallenge): QuizQuestion[] => {
+  if (challenge.kind !== 'quiz') throw new Error('The practice session returned the wrong challenge.');
+  return challenge.questions.map(question => {
+    const card = cards.find(candidate => candidate.id === question.cardId);
+    if (!card) throw new Error('The practice session returned a card outside this game.');
+    return {
+      card: { ...card, word: question.prompt, translation: question.options[0] },
+      type: 'target-to-native', options: shuffleQuizOptions(question.options), correctAnswer: question.options[0],
+    };
+  });
+};
+
+const spellingCardsFromChallenge = (cards: readonly CardData[], challenge: PracticeSessionChallenge): CardData[] => {
+  if (challenge.kind !== 'spelling') throw new Error('The practice session returned the wrong challenge.');
+  return challenge.prompts.map(prompt => {
+    const card = cards.find(candidate => candidate.id === prompt.cardId);
+    if (!card) throw new Error('The practice session returned a card outside this game.');
+    return { ...card, word: prompt.word, translation: prompt.prompt };
+  });
+};
+
+const matchCardsFromChallenge = (cards: readonly CardData[], challenge: PracticeSessionChallenge): CardData[] => {
+  if (challenge.kind !== 'match') throw new Error('The practice session returned the wrong challenge.');
+  return challenge.cards.map(card => snapshotCard(cards, card));
+};
 
 function storyFailureMessage(error: unknown): string {
   if (error instanceof OperationTimeoutError) {
@@ -46,16 +100,23 @@ function storyFailureMessage(error: unknown): string {
 export function usePracticeGames({
   lifecycle,
   loadPracticePool,
-  addXp,
+  languageDrillCards: availableLanguageDrillCards,
+  languageDrillScopeKey,
   openView,
   reportError,
+  practiceSessionService = firebasePracticeSessionService,
+  onAuthoritativeOutcome,
   normalizeAnswer = value => typeof value === 'string' ? value.trim().toLocaleLowerCase() : '',
 }: {
   lifecycle: PracticeSessionLifecycle;
   loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
-  addXp: (amount: number) => void;
+  languageDrillCards: readonly CardData[];
+  languageDrillScopeKey: string;
+  addXp?: (amount: number) => void;
   openView: (view: PracticeView) => void;
   reportError: (message: string) => void;
+  practiceSessionService?: PracticeSessionService;
+  onAuthoritativeOutcome?: (outcome: PracticeGamificationOutcome, operationId: string, sessionToken: number) => void;
   normalizeAnswer?: (value: unknown) => string;
 }) {
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
@@ -71,6 +132,10 @@ export function usePracticeGames({
   const [spellingCorrect, setSpellingCorrect] = useState(false);
   const [spellingScore, setSpellingScore] = useState(0);
   const [showSpellingResults, setShowSpellingResults] = useState(false);
+  const [languageDrillCards, setLanguageDrillCards] = useState<CardData[]>([]);
+  const [currentLanguageDrillIndex, setCurrentLanguageDrillIndex] = useState(0);
+  const [languageDrillCorrect, setLanguageDrillCorrect] = useState(0);
+  const [showLanguageDrillResults, setShowLanguageDrillResults] = useState(false);
   const [story, setStory] = useState<{ story: string; translation: string; language: string; translationLanguage: string } | null>(null);
   const [storyError, setStoryError] = useState<string | null>(null);
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
@@ -78,9 +143,13 @@ export function usePracticeGames({
   const [isStartingSpelling, setIsStartingSpelling] = useState(false);
   const quizAnswerLockedRef = useRef(false);
   const spellingAnswerLockedRef = useRef(false);
+  const languageDrillAnswerLockedRef = useRef(false);
   const quizAudioTimersRef = useRef<Set<number>>(new Set());
   const spellingAudioTimersRef = useRef<Set<number>>(new Set());
   const audioPlaybackRef = useRef<WordAudioPlayback | null>(null);
+  const quizSessionRef = useRef<{ sessionId: string; completionId: string; sessionToken: number; responses: Record<string, string>; completing: boolean } | null>(null);
+  const spellingSessionRef = useRef<{ sessionId: string; completionId: string; sessionToken: number; responses: Record<string, string>; completing: boolean } | null>(null);
+  const matchSessionRef = useRef<{ sessionId: string; completionId: string; sessionToken: number; completing: boolean } | null>(null);
 
   const cancelDelayedAudio = (timers: Set<number>) => {
     timers.forEach(timerId => globalThis.clearTimeout(timerId));
@@ -115,6 +184,13 @@ export function usePracticeGames({
   };
 
   useEffect(() => () => cancelPracticeAudio(), []);
+  useEffect(() => {
+    languageDrillAnswerLockedRef.current = false;
+    setLanguageDrillCards([]);
+    setCurrentLanguageDrillIndex(0);
+    setLanguageDrillCorrect(0);
+    setShowLanguageDrillResults(false);
+  }, [languageDrillScopeKey]);
 
   const loadPoolForPreparation = (includeFuture = true) => withTimeout(
     loadPracticePool(50, includeFuture),
@@ -127,6 +203,27 @@ export function usePracticeGames({
     reportError(error instanceof OperationTimeoutError
       ? translate(msg({ id: 'practice.error.timeout', message: 'Preparing this activity took too long. Check your connection and try again.' }))
       : translate(msg({ id: 'practice.error.prepare', message: 'Could not prepare this activity. Check your connection and try again.' })));
+  };
+
+  const completeSession = async (
+    session: { sessionId: string; completionId: string; sessionToken: number; completing: boolean },
+    answers: { responses: Record<string, string> } | { pairs: Array<{ cardId: string; word: string; translation: string }> },
+  ) => {
+    if (session.completing) return null;
+    session.completing = true;
+    try {
+      const result = await practiceSessionService.complete({
+        sessionId: session.sessionId, completionId: session.completionId, answers, timeZone: practiceTimeZone(),
+      });
+      if (!lifecycle.isCurrent(session.sessionToken)) return null;
+      onAuthoritativeOutcome?.(result.outcome, session.completionId, session.sessionToken);
+      return result;
+    } catch (error) {
+      session.completing = false;
+      console.warn('Could not complete practice session.', error);
+      reportError(translate(msg({ id: 'practice.error.complete', message: 'Could not save this practice result. Check your connection and try again.' })));
+      return null;
+    }
   };
 
   const startQuiz = async () => {
@@ -142,8 +239,29 @@ export function usePracticeGames({
       const cards = result.value;
       if (cards.length < 4) {
         reportError(translate(msg({ id: 'practice.error.quiz-card-count', message: 'You need at least 4 cards to start a quiz.' })));
-      } else if (lifecycle.activate('quiz', result.sessionToken)) {
-        setQuizQuestions(createQuizQuestions(cards, 10, Math.random, normalizeAnswer));
+      } else {
+        const questions = createQuizQuestions(cards, 10, Math.random, normalizeAnswer);
+        let session;
+        try {
+          session = await practiceSessionService.start({
+            opId: practiceOperationId('quiz'), game: 'quiz', cardIds: questions.map(question => question.card.id),
+          });
+        } catch (error) {
+          reportPreparationFailure('the quiz', error);
+          if (lifecycle.isCurrent(result.sessionToken)) setIsStartingQuiz(false);
+          return;
+        }
+        let serverQuestions: QuizQuestion[];
+        try {
+          serverQuestions = quizQuestionsFromChallenge(cards, session.challenge);
+        } catch (error) {
+          reportPreparationFailure('the quiz', error);
+          if (lifecycle.isCurrent(result.sessionToken)) setIsStartingQuiz(false);
+          return;
+        }
+        if (lifecycle.activate('quiz', result.sessionToken)) {
+        quizSessionRef.current = { sessionId: session.sessionId, completionId: practiceOperationId('quiz'), sessionToken: result.sessionToken, responses: {}, completing: false };
+        setQuizQuestions(serverQuestions);
         setCurrentQuizIndex(0);
         setSelectedAnswer(null);
         setAnsweredCorrectly(null);
@@ -151,6 +269,7 @@ export function usePracticeGames({
         setShowQuizResults(false);
         quizAnswerLockedRef.current = false;
         openView('quiz');
+        }
       }
       if (lifecycle.isCurrent(result.sessionToken)) setIsStartingQuiz(false);
     } else if (result.status === 'failed') {
@@ -170,11 +289,11 @@ export function usePracticeGames({
     setAnsweredCorrectly(correct);
     if (correct) {
       setQuizScore(previous => previous + 1);
-      addXp(5);
       playCorrectSound();
     } else {
       playIncorrectSound();
     }
+    if (quizSessionRef.current) quizSessionRef.current.responses[question.card.id] = option;
     scheduleDelayedAudio(
       quizAudioTimersRef.current,
       'quiz',
@@ -196,6 +315,8 @@ export function usePracticeGames({
     setShowQuizResults(true);
     triggerConfetti(0.5, 0.4);
     playRewardSound();
+    const session = quizSessionRef.current;
+    if (session) void completeSession(session, { responses: session.responses });
   };
 
   const startSpelling = async () => {
@@ -211,8 +332,29 @@ export function usePracticeGames({
       const cards = result.value;
       if (cards.length < 4) {
         reportError(translate(msg({ id: 'practice.error.spelling-card-count', message: 'You need at least 4 cards for spelling practice.' })));
-      } else if (lifecycle.activate('spelling', result.sessionToken)) {
-        setSpellingCards(createSpellingQueue(cards));
+      } else {
+        const queue = createSpellingQueue(cards);
+        let session;
+        try {
+          session = await practiceSessionService.start({
+            opId: practiceOperationId('spelling'), game: 'spelling', cardIds: queue.map(card => card.id),
+          });
+        } catch (error) {
+          reportPreparationFailure('spelling practice', error);
+          if (lifecycle.isCurrent(result.sessionToken)) setIsStartingSpelling(false);
+          return;
+        }
+        let serverCards: CardData[];
+        try {
+          serverCards = spellingCardsFromChallenge(cards, session.challenge);
+        } catch (error) {
+          reportPreparationFailure('spelling practice', error);
+          if (lifecycle.isCurrent(result.sessionToken)) setIsStartingSpelling(false);
+          return;
+        }
+        if (lifecycle.activate('spelling', result.sessionToken)) {
+        spellingSessionRef.current = { sessionId: session.sessionId, completionId: practiceOperationId('spelling'), sessionToken: result.sessionToken, responses: {}, completing: false };
+        setSpellingCards(serverCards);
         setCurrentSpellingIndex(0);
         setSpellingInput('');
         setSpellingChecked(false);
@@ -221,6 +363,7 @@ export function usePracticeGames({
         setShowSpellingResults(false);
         spellingAnswerLockedRef.current = false;
         openView('spelling');
+        }
       }
       if (lifecycle.isCurrent(result.sessionToken)) setIsStartingSpelling(false);
     } else if (result.status === 'failed') {
@@ -241,11 +384,11 @@ export function usePracticeGames({
     setSpellingChecked(true);
     if (correct) {
       setSpellingScore(previous => previous + 1);
-      addXp(5);
       playCorrectSound();
     } else {
       playIncorrectSound();
     }
+    if (spellingSessionRef.current) spellingSessionRef.current.responses[card.id] = spellingInput;
     scheduleDelayedAudio(
       spellingAudioTimersRef.current,
       'spelling',
@@ -267,6 +410,35 @@ export function usePracticeGames({
     setShowSpellingResults(true);
     triggerConfetti(0.5, 0.4);
     playRewardSound();
+    const session = spellingSessionRef.current;
+    if (session) void completeSession(session, { responses: session.responses });
+  };
+
+  const startLanguageDrill = async () => {
+    const cards = availableLanguageDrillCards.filter(isLanguageDrillCard);
+    if (cards.length === 0) {
+      reportError(translate(msg({ id: 'practice.error.language-drill-card-count', message: 'You need at least 1 card for a language drill.' })));
+      return;
+    }
+    if (!lifecycle.activate('spelling', lifecycle.currentToken())) return;
+    languageDrillAnswerLockedRef.current = false;
+    setLanguageDrillCards(createSpellingQueue(cards, 8));
+    setCurrentLanguageDrillIndex(0);
+    setLanguageDrillCorrect(0);
+    setShowLanguageDrillResults(false);
+    openView('language-drill');
+  };
+
+  const completeLanguageDrill = (correct: boolean) => {
+    if (!lifecycle.isActive('spelling') || showLanguageDrillResults || languageDrillAnswerLockedRef.current) return;
+    languageDrillAnswerLockedRef.current = true;
+    if (correct) setLanguageDrillCorrect(current => current + 1);
+    if (currentLanguageDrillIndex < languageDrillCards.length - 1) {
+      setCurrentLanguageDrillIndex(current => current + 1);
+      languageDrillAnswerLockedRef.current = false;
+      return;
+    }
+    setShowLanguageDrillResults(true);
   };
 
   const generateStory = async () => {
@@ -334,31 +506,75 @@ export function usePracticeGames({
     setSpellingScore(0);
     setShowSpellingResults(false);
   };
+  const clearLanguageDrill = () => {
+    lifecycle.clear('spelling');
+    languageDrillAnswerLockedRef.current = false;
+    setLanguageDrillCards([]);
+    setCurrentLanguageDrillIndex(0);
+    setLanguageDrillCorrect(0);
+    setShowLanguageDrillResults(false);
+  };
   const clearStory = () => {
     lifecycle.clear('story');
     setStory(null);
     setStoryError(null);
     setIsGeneratingStory(false);
   };
-  const startMatch = async () => {
+  const openMatchSession = async (cards: CardData[], sessionToken: number) => {
+    if (cards.length < 4) {
+      reportError(translate(msg({ id: 'practice.error.match-card-count', message: 'You need at least 4 cards to play Word Match.' })));
+      return false;
+    }
+    let session;
+    try {
+      session = await practiceSessionService.start({
+        opId: practiceOperationId('match'), game: 'match', cardIds: cards.map(card => card.id),
+      });
+    } catch (error) {
+      reportPreparationFailure('word match', error);
+      return false;
+    }
+    let serverCards: CardData[];
+    try {
+      serverCards = matchCardsFromChallenge(cards, session.challenge);
+    } catch (error) {
+      reportPreparationFailure('word match', error);
+      return false;
+    }
+    if (!lifecycle.activate('match', sessionToken)) return false;
+    matchSessionRef.current = { sessionId: session.sessionId, completionId: practiceOperationId('match'), sessionToken, completing: false };
+    setSpellingCards(serverCards);
+    openView('match');
+    return true;
+  };
+
+  const prepareMatch = async (loadCards: () => Promise<CardData[]>) => {
     const result = await lifecycle.prepare(
       'match',
-      () => loadPoolForPreparation(),
+      loadCards,
       () => {
         cancelPracticeAudio();
       },
     );
     if (result.status === 'ready') {
-      const cards = createWordMatchRound(result.value);
-      if (cards.length < 4) {
-        reportError(translate(msg({ id: 'practice.error.match-card-count', message: 'You need at least 4 cards to play Word Match.' })));
-      } else if (lifecycle.activate('match', result.sessionToken)) {
-        setSpellingCards(cards);
-        openView('match');
-      }
+      return openMatchSession(createWordMatchRound(result.value), result.sessionToken);
     } else if (result.status === 'failed') {
       reportPreparationFailure('word match', result.error);
     }
+    return false;
+  };
+
+  const startMatch = async () => { await prepareMatch(() => loadPoolForPreparation()); };
+
+  const completeMatch = async (pairs: Array<{ cardId: string; word: string; translation: string }>) => {
+    const session = matchSessionRef.current;
+    const result = session ? await completeSession(session, { pairs }) : null;
+    return result ? { awardedXp: result.awardedXp } : null;
+  };
+
+  const restartMatch = async () => {
+    matchSessionRef.current = null;
+    return prepareMatch(async () => spellingCards);
   };
 
   const startShadowing = async () => {
@@ -387,6 +603,7 @@ export function usePracticeGames({
     lifecycle.reset();
     clearQuiz();
     clearSpelling();
+    clearLanguageDrill();
     clearStory();
     setIsStartingQuiz(false);
     setIsStartingSpelling(false);
@@ -396,8 +613,9 @@ export function usePracticeGames({
     quizQuestions, currentQuizIndex, selectedAnswer, answeredCorrectly, quizScore, showQuizResults,
     spellingCards, currentSpellingIndex, spellingInput, setSpellingInput, spellingChecked, spellingCorrect,
     spellingScore, showSpellingResults, story, storyError, isGeneratingStory,
+    languageDrillCards, currentLanguageDrillIndex, languageDrillCorrect, showLanguageDrillResults,
     isStartingQuiz, isStartingSpelling,
-    startQuiz, selectQuizAnswer, nextQuizQuestion, startSpelling, checkSpelling, nextSpelling, generateStory, startMatch, startShadowing,
-    clearQuiz, clearSpelling, clearStory, reset,
+    startQuiz, selectQuizAnswer, nextQuizQuestion, startSpelling, checkSpelling, nextSpelling, startLanguageDrill, completeLanguageDrill, generateStory, startMatch, restartMatch, completeMatch, startShadowing,
+    clearQuiz, clearSpelling, clearLanguageDrill, clearStory, reset,
   };
 }

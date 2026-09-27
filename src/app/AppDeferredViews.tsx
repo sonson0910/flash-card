@@ -43,14 +43,13 @@ interface AppDeferredPracticeViewProps {
   session: PracticeWorkspace['model']['session'];
   actions: PracticeWorkspace['actions'];
   customDecks: string[];
-  addXp: (amount: number) => void;
 }
 
-export function AppDeferredPracticeView({ session, actions, customDecks, addXp }: AppDeferredPracticeViewProps) {
+export function AppDeferredPracticeView({ session, actions, customDecks }: AppDeferredPracticeViewProps) {
   return (
     <Suspense fallback={<AppViewFallback label={<Trans id="shell.loading.practice" message="Loading practice" />} />}>
       <div className="async-content-enter" data-async-content="practice">
-        <PracticeScreen session={session} actions={actions} customDecks={customDecks} addXp={addXp} />
+        <PracticeScreen session={session} actions={actions} customDecks={customDecks} />
       </div>
     </Suspense>
   );

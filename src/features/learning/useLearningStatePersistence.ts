@@ -172,7 +172,14 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
             const advanced = reviewResult
               ? { ...source, ...authoritativeFields, ...metadata, schemaVersion: 2 as const, id: source.id }
               : applySuccessfulPatchMetadata(source, mutation.fields, metadata, mutation.fieldMask);
-            if (mutation.operation === 'review') current.addXp(2, `review:${mutation.operationId}`);
+            if (mutation.operation === 'review' && reviewResult
+              && (reviewResult.gamification || reviewResult.ceremonyEvents)
+              && latestRef.current.ownerId === ownerId) {
+              current.onReviewOutcome?.({
+                ...(reviewResult.gamification ? { gamification: reviewResult.gamification } : {}),
+                ...(reviewResult.ceremonyEvents ? { ceremonyEvents: reviewResult.ceremonyEvents } : {}),
+              }, mutation.operationId, reviewResult.card);
+            }
             publication = {
               kind: 'patch',
               cardId: mutation.cardId,

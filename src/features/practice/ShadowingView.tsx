@@ -13,10 +13,9 @@ import type { CardData } from '../../types/card';
 interface ShadowingViewProps {
   cards: CardData[];
   onClose: () => void;
-  onAddXp?: (amount: number) => void;
 }
 
-export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
+export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
   const { _ } = useLingui();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isListening, setIsListening] = useState(false);
@@ -89,7 +88,6 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
             playRewardSound();
             triggerConfetti(0.5, 0.5);
             triggerHaptic('success');
-            onAddXp?.(10);
           } else {
             triggerHaptic('warning');
           }
@@ -116,7 +114,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
       setSpeechError(_(msg({ id: 'practice.shadowing.microphone-error', message: 'Unable to open the microphone. Please grant microphone access in your browser.' })));
       setIsListening(false);
     }
-  }, [_, card, targetSentence, onAddXp, stopListening]);
+  }, [_, card, targetSentence, stopListening]);
 
   useEffect(() => {
     return () => {

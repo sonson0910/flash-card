@@ -1,0 +1,94 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-27 18:09+0700\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en-XA\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:58
+msgid "rewards.reveal.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:62
+msgid "rewards.reveal.equip-error"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:63
+msgid "rewards.reveal.later"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:26
+msgid "rewards.reveal.levelup.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:26
+msgid "rewards.reveal.levelup.equip"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:26
+msgid "rewards.reveal.levelup.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:26
+msgid "rewards.reveal.levelup.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:61
+msgid "rewards.reveal.rewards-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:25
+msgid "rewards.reveal.streak.continue"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:25
+msgid "rewards.reveal.streak.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:25
+msgid "rewards.reveal.streak.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:25
+msgid "rewards.reveal.streak.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:24
+msgid "rewards.reveal.tierup.continue"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:24
+msgid "rewards.reveal.tierup.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:24
+msgid "rewards.reveal.tierup.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:24
+msgid "rewards.reveal.tierup.title"
+msgstr ""

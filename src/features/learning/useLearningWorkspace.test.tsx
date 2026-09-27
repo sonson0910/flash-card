@@ -135,7 +135,6 @@ const options = () => {
       cloudAvailabilityChanged: vi.fn(),
       mutationPendingChanged: vi.fn(),
       reportError: vi.fn(),
-      addXp: vi.fn(),
     },
     createOperationId: intent => `op-${intent}`,
   };

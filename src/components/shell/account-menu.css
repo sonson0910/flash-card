@@ -3,6 +3,7 @@
 }
 
 .claude-app-shell .account-menu-trigger {
+  position: relative;
   width: 44px !important;
   height: 44px !important;
   min-height: 44px !important;
@@ -20,6 +21,26 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.account-menu-trigger[data-equipped-frame="crimson-wing"],
+.account-menu-avatar[data-equipped-frame="crimson-wing"] {
+  border-color: #ff5470;
+  box-shadow: 0 0 0 2px #5ef2ff, 0 0 13px rgb(255 42 77 / .82), 0 0 21px rgb(94 242 255 / .56);
+}
+
+.account-menu-trigger[data-equipped-frame="crimson-wing"]::before,
+.account-menu-avatar[data-equipped-frame="crimson-wing"]::before {
+  position: absolute;
+  z-index: 1;
+  width: 150%;
+  height: 55%;
+  border-top: 2px solid #ff5470;
+  border-bottom: 2px solid #5ef2ff;
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+  transform: rotate(-22deg);
 }
 
 .account-menu-panel {
@@ -62,6 +83,7 @@
 }
 
 .account-menu-avatar {
+  position: relative;
   display: flex;
   width: 42px;
   height: 42px;
@@ -101,6 +123,21 @@
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.account-menu-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  color: var(--sf-reward);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .03em;
+}
+
+.account-menu-title svg {
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--sf-reward) 80%, transparent));
 }
 
 .account-menu-status {

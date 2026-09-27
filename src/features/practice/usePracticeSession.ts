@@ -10,7 +10,7 @@ import { createPracticeSessionLifecycle } from './practiceSessionLifecycle';
 import { usePracticeGames } from './usePracticeGames';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 
-export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing';
+export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'language-drill' | 'story' | 'match' | 'shadowing';
 export type PracticeViewMode = 'library' | PracticeMode;
 export type StudyRatingSettlement = 'committed' | 'retryable-error' | 'ignored';
 
@@ -49,6 +49,8 @@ export interface PracticeSessionController {
     startStudy: () => Promise<void>;
     startQuiz: () => Promise<void>;
     startSpelling: () => Promise<void>;
+    startLanguageDrill: () => Promise<void>;
+    completeLanguageDrill: (correct: boolean) => void;
     startMatch: () => Promise<void>;
     startShadowing: () => Promise<void>;
     generateStory: () => Promise<void>;
@@ -70,7 +72,17 @@ const STUDY_PREPARATION_TIMEOUT_MS = 15_000;
 const scopePracticeGames = (
   games: PracticeGamesController,
   isStateCurrent: boolean,
-): PracticeGamesController => isStateCurrent ? games : {
+  isLanguageDrillCurrent: boolean,
+): PracticeGamesController => {
+  if (isStateCurrent && isLanguageDrillCurrent) return games;
+  if (isStateCurrent) return {
+    ...games,
+    languageDrillCards: [],
+    currentLanguageDrillIndex: 0,
+    languageDrillCorrect: 0,
+    showLanguageDrillResults: false,
+  };
+  return {
   ...games,
   quizQuestions: [],
   currentQuizIndex: 0,
@@ -85,11 +97,16 @@ const scopePracticeGames = (
   spellingCorrect: false,
   spellingScore: 0,
   showSpellingResults: false,
+  languageDrillCards: [],
+  currentLanguageDrillIndex: 0,
+  languageDrillCorrect: 0,
+  showLanguageDrillResults: false,
   story: null,
   storyError: null,
   isGeneratingStory: false,
   isStartingQuiz: false,
   isStartingSpelling: false,
+  };
 };
 
 interface UsePracticeSessionOptions {
@@ -98,9 +115,11 @@ interface UsePracticeSessionOptions {
   openView: (view: PracticeViewMode) => void;
   onSessionStarted?: () => void;
   loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
+  languageDrillCards: readonly CardData[];
+  languageDrillScopeKey: string;
   learning: PracticeLearningActions;
   languageProfile: LanguageProfile;
-  addXp: (amount: number) => void;
+  onAuthoritativeOutcome?: Parameters<typeof usePracticeGames>[0]['onAuthoritativeOutcome'];
   reportError: (message: string) => void;
 }
 
@@ -110,9 +129,11 @@ export function usePracticeSession({
   openView,
   onSessionStarted,
   loadPracticePool,
+  languageDrillCards,
+  languageDrillScopeKey,
   learning,
   languageProfile,
-  addXp,
+  onAuthoritativeOutcome,
   reportError,
 }: UsePracticeSessionOptions): PracticeSessionController {
   const lifecycleRef = useRef<ReturnType<typeof createPracticeSessionLifecycle> | null>(null);
@@ -122,6 +143,8 @@ export function usePracticeSession({
   const ownerSessionToken = lifecycle.currentToken();
   const practiceStateSessionRef = useRef(ownerSessionToken);
   const isPracticeStateCurrent = practiceStateSessionRef.current === ownerSessionToken;
+  const languageDrillScopeRef = useRef(languageDrillScopeKey);
+  const isLanguageDrillCurrent = languageDrillScopeRef.current === languageDrillScopeKey;
   const [studyCards, setStudyCards] = useState<CardData[]>([]);
   const studyCardsRef = useRef(studyCards);
   const scopedStudyCards = isPracticeStateCurrent ? studyCards : [];
@@ -146,7 +169,9 @@ export function usePracticeSession({
   const quiz = usePracticeGames({
     lifecycle,
     loadPracticePool,
-    addXp,
+    languageDrillCards,
+    languageDrillScopeKey,
+    onAuthoritativeOutcome,
     openView: openPracticeView,
     reportError,
     normalizeAnswer: languageProfile.normalize,
@@ -165,6 +190,11 @@ export function usePracticeSession({
     quiz.reset();
     practiceStateSessionRef.current = ownerSessionToken;
   }, [ownerSessionToken]);
+  useEffect(() => {
+    if (languageDrillScopeRef.current === languageDrillScopeKey) return;
+    quiz.clearLanguageDrill();
+    languageDrillScopeRef.current = languageDrillScopeKey;
+  }, [languageDrillScopeKey, quiz]);
 
   const startStudy = useCallback(async () => {
     if (editorRef.current) return;
@@ -251,6 +281,7 @@ export function usePracticeSession({
     if (editorRef.current) return;
     if (mode === 'quiz') quiz.clearQuiz();
     if (mode === 'spelling') quiz.clearSpelling();
+    if (mode === 'language-drill') quiz.clearLanguageDrill();
     if (mode === 'story') quiz.clearStory();
     if (mode === 'study') lifecycle.clear(mode);
     openView('library');
@@ -284,7 +315,7 @@ export function usePracticeSession({
     clear: clearSnapshot,
   }), [clearSnapshot, removeSnapshotCard, restoreSnapshotCard, updateSnapshotCard, updateSnapshotCards]);
 
-  const scopedQuiz = scopePracticeGames(quiz, isPracticeStateCurrent);
+  const scopedQuiz = scopePracticeGames(quiz, isPracticeStateCurrent, isLanguageDrillCurrent);
   const activeReviewStatus = !activeCardId
     ? 'idle' as const
     : savingReviewCardId === activeCardId
@@ -328,6 +359,8 @@ export function usePracticeSession({
       startStudy,
       startQuiz: quiz.startQuiz,
       startSpelling: quiz.startSpelling,
+      startLanguageDrill: quiz.startLanguageDrill,
+      completeLanguageDrill: quiz.completeLanguageDrill,
       startMatch: quiz.startMatch,
       startShadowing: quiz.startShadowing,
       generateStory: quiz.generateStory,

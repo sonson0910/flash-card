@@ -8,39 +8,39 @@ import type { PracticeWorkspace } from '../features/practice/usePracticeWorkspac
 import { AppDeferredPracticeView, AppViewFallback } from './AppDeferredViews';
 
 const practiceViews = vi.hoisted(() => ({
-  match: null as null | { cards: CardData[]; click: () => void },
-  shadowing: null as null | { cards: CardData[]; click: () => void },
+  match: null as null | { cards: CardData[]; complete: () => void },
+  shadowing: null as null | { cards: CardData[] },
 }));
 
 vi.mock('../features/practice/WordMatchView', () => ({
-  WordMatchView: ({ cards, onAddXp }: { cards: CardData[]; onAddXp?: (amount: number) => void }) => {
-    practiceViews.match = { cards, click: () => onAddXp?.(20) };
+  WordMatchView: ({ cards, onComplete }: { cards: CardData[]; onComplete?: (pairs: Array<{ cardId: string; word: string; translation: string }>) => void }) => {
+    practiceViews.match = { cards, complete: () => onComplete?.(cards.map(card => ({ cardId: card.id, word: card.word, translation: card.translation }))) };
     return <button type="button">Match view</button>;
   },
 }));
 
 vi.mock('../features/practice/ShadowingView', () => ({
-  ShadowingView: ({ cards, onAddXp }: { cards: CardData[]; onAddXp?: (amount: number) => void }) => {
-    practiceViews.shadowing = { cards, click: () => onAddXp?.(10) };
+  ShadowingView: ({ cards }: { cards: CardData[] }) => {
+    practiceViews.shadowing = { cards };
     return <button type="button">Shadowing view</button>;
   },
 }));
 
 const card = (id: string): CardData => ({ id, word: `word-${id}`, translation: `translation-${id}` } as CardData);
 
-const renderDeferredPractice = async (mode: 'match' | 'shadowing', cards: CardData[], addXp: (amount: number) => void) => {
+const renderDeferredPractice = async (mode: 'match' | 'shadowing', cards: CardData[], completeMatch: (pairs: Array<{ cardId: string; word: string; translation: string }>) => void) => {
   i18n.load('en', {});
   i18n.activate('en');
   const session = {
     mode,
     study: { cards: [] },
-    quiz: { spellingCards: cards },
+    quiz: { spellingCards: cards, completeMatch },
     learning: {},
   } as unknown as PracticeWorkspace['model']['session'];
   const actions = { close: vi.fn() } as unknown as PracticeWorkspace['actions'];
   const output = await new Promise<string>((resolve, reject) => {
     const { pipe } = renderToPipeableStream(
-      <I18nProvider i18n={i18n}><AppDeferredPracticeView session={session} actions={actions} customDecks={[]} addXp={addXp} /></I18nProvider>,
+      <I18nProvider i18n={i18n}><AppDeferredPracticeView session={session} actions={actions} customDecks={[]} /></I18nProvider>,
       {
         onAllReady() {
           const stream = new PassThrough();
@@ -63,22 +63,20 @@ describe('AppDeferredViews', () => {
     practiceViews.shadowing = null;
   });
 
-  it('reaches Match and Shadowing through the deferred production composition with the XP port', async () => {
-    const addXp = vi.fn();
+  it('reaches Match and Shadowing through the deferred production composition', async () => {
+    const completeMatch = vi.fn();
     const cards = [card('one'), card('two'), card('three'), card('four')];
 
-    const matchHtml = await renderDeferredPractice('match', cards, addXp);
+    const matchHtml = await renderDeferredPractice('match', cards, completeMatch);
     expect(matchHtml).toContain('Match view');
     expect(practiceViews.match?.cards).toEqual(cards);
-    practiceViews.match?.click();
+    practiceViews.match?.complete();
 
-    const shadowingHtml = await renderDeferredPractice('shadowing', cards, addXp);
+    const shadowingHtml = await renderDeferredPractice('shadowing', cards, completeMatch);
     expect(shadowingHtml).toContain('Shadowing view');
     expect(practiceViews.shadowing?.cards).toEqual(cards);
-    practiceViews.shadowing?.click();
 
-    expect(addXp).toHaveBeenNthCalledWith(1, 20);
-    expect(addXp).toHaveBeenNthCalledWith(2, 10);
+    expect(completeMatch).toHaveBeenCalledWith(cards.map(item => ({ cardId: item.id, word: item.word, translation: item.translation })));
   });
 
   it('provides one accessible fallback presentation for deferred core views', () => {

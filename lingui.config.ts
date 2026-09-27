@@ -12,7 +12,8 @@ const areas = {
     'src/features/cardReport',
   ],
   today: ['src/features/dailyLearning', 'src/features/webWords'],
-  practice: ['src/features/practice'],
+  practice: ['src/features/practice', 'src/features/languagePacks/LanguagePracticeDrill.tsx'],
+  rewards: ['src/features/rewards/AnimeReveal.tsx'],
   library: [
     'src/features/library', 'src/features/cardEdit/EditCardDialog.tsx',
     'src/features/intake', 'src/features/importExport/SpreadsheetImportDialog.tsx',
