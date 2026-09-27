@@ -55,6 +55,16 @@ export function languagePracticeDrillSurfaceState(
 const LEADS = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
 const VOWELS = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
 const FINALS = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+const stableHash = (value: string): number => {
+  let hash = 0;
+  for (const character of value) hash = ((hash * 31) + (character.codePointAt(0) ?? 0)) >>> 0;
+  return hash;
+};
+const rotateChoices = <T>(choices: readonly T[], offset: number): readonly T[] => {
+  if (choices.length < 2) return [...choices];
+  const pivot = offset % choices.length;
+  return [...choices.slice(pivot), ...choices.slice(0, pivot)];
+};
 
 /** Compose compatibility jamo entered through the drill keyboard into Hangul blocks. */
 export function composeHangulBlocks(value: string): string {
@@ -133,7 +143,8 @@ export function createJapaneseSentenceCloze(card: CardData, cards: readonly Card
       ...(candidate.translation ? { meaning: candidate.translation } : {}),
     });
   }
-  return { ...bounds, answer: card.word, choices: [...choices.values()] };
+  const values = [...choices.values()];
+  return { ...bounds, answer: card.word, choices: rotateChoices(values, stableHash(card.id)) };
 }
 
 export function evaluateTypedLanguagePracticeDrill(

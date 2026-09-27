@@ -55,6 +55,27 @@ describe('language practice drill model', () => {
     expect(evaluateJapaneseSentenceCloze(model, '毎朝').correct).toBe(false);
   });
 
+  it('places Japanese cloze answers in stable positions across cards', () => {
+    const words = ['日本', '毎朝', '学校', '先生'];
+    const cards = [...words.map(word => ({ ...card('ja', word), id: `choice-${word}` })), card('zh', '每天')];
+    const models = words.map((word, index) => createLanguagePracticeDrill({
+      ...card('ja', word),
+      id: `ja-card-${index}`,
+      phonetic: 'かな',
+      exampleSentence: `${word}です。`,
+    }, cards));
+
+    expect(models.map(model => model.sentenceCloze?.choices.map(choice => choice.word))).toEqual([
+      ['毎朝', '学校', '先生', '日本'],
+      ['学校', '先生', '毎朝', '日本'],
+      ['先生', '学校', '日本', '毎朝'],
+      ['先生', '日本', '毎朝', '学校'],
+    ]);
+    expect(models.map(model => model.sentenceCloze?.choices.findIndex(choice => choice.word === model.card.word))).toEqual([3, 2, 1, 0]);
+    expect(models.map(model => new Set(model.sentenceCloze?.choices.map(choice => choice.word)).size)).toEqual([4, 4, 4, 4]);
+    expect(models[0].sentenceCloze?.choices.map(choice => choice.word)).toEqual(createLanguagePracticeDrill(models[0].card, cards).sentenceCloze?.choices.map(choice => choice.word));
+  });
+
   it('uses typed Japanese sentence completion when the scope has one card', () => {
     const current = { ...card('ja', '学校'), phonetic: 'がっこう', exampleSentence: '学校へ行きます。' };
     const model = createLanguagePracticeDrill(current, [current]);
