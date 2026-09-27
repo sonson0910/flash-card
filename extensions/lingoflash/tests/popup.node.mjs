@@ -309,6 +309,19 @@ test('popup keeps its designed width and reflows fallback layouts', () => {
   assert.match(popupCssSource, /\.result-example-translation\s*\{[^}]*color:\s*#94a3b8/);
 });
 
+test('uses the Canvas-sized popup shell and keeps support controls behind disclosure', () => {
+  assert.match(popupHtmlSource, /<details class="popup-utilities">/);
+  assert.match(popupHtmlSource, /class="brand-name">\s*<span>Son<\/span><em>Flash<\/em>/);
+  assert.match(popupHtmlSource, /id="selection"[^>]*rows="2"/);
+  assert.match(popupCssSource, /\.shell\s*\{[^}]*height:\s*640px/);
+  assert.match(popupCssSource, /\[data-theme-family="crystal"\] body::before/);
+  assert.match(popupCssSource, /\[data-theme-family="crystal"\] textarea::placeholder/);
+  assert.match(popupCssSource, /\[data-theme-family="crystal"\]\[data-scheme="light"\] body/);
+  assert.match(popupCssSource, /\[data-theme-family="crystal"\]\[data-scheme="light"\] textarea::placeholder/);
+  assert.match(popupCssSource, /\.selection-field \.speak-button:disabled\s*\{\s*display:\s*none/);
+  assert.match(popupCssSource, /\.result-card:not\(\[hidden\]\) ~ \.recent-lookups/);
+});
+
 test('keeps popup open and shows translation when inline rendering is unavailable', async () => {
   const popup = await createPopupContext();
 

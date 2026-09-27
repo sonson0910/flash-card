@@ -38,6 +38,14 @@ test('options exposes pending feedback and explicit empty permission state witho
   assert.doesNotMatch(css, /min-width:\s*360px/);
 });
 
+test('options uses the Canvas-sized branded shell and save footer without fabricated account data', () => {
+  assert.match(html, /class="options-nav"/);
+  assert.match(html, /class="brand-name">Son<span>Flash<\/span>/);
+  assert.match(html, /class="settings-footer"/);
+  assert.match(css, /\.settings-shell \{ width: min\(960px, 100%\); min-height: 900px;/);
+  assert.doesNotMatch(html, /Đã đăng nhập|Đồng bộ lại|Deck mặc định/);
+});
+
 test('options exposes a Classic/Crystal Star theme family choice that persists through the shared settings flow', () => {
   assert.match(html, /name="theme-family"[^>]*value="classic"/);
   assert.match(html, /name="theme-family"[^>]*value="crystal"/);

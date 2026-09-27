@@ -10,11 +10,17 @@
 </head>
 <body>
   <main class="settings-shell">
-    <header>
-      <p class="eyebrow" data-i18n="optionsEyebrow">SONFLASH • EXTENSION SETTINGS</p>
-      <h1 data-i18n="optionsHeading">Cài đặt</h1>
-      <p class="intro" data-i18n="optionsIntro">Tùy chỉnh trải nghiệm trên trình duyệt. Khi chọn tạo flashcard, extension có thể gửi thêm một câu ngữ cảnh gần vùng chọn (tối đa 500 ký tự) tới SonFlash/Gemini. Các lựa chọn này chỉ lưu trong bộ nhớ cài đặt của extension.</p>
+    <header class="options-nav">
+      <span class="brand-mark" aria-hidden="true">S</span>
+      <span class="brand-name">Son<span>Flash</span></span>
+      <span class="brand-context" data-i18n="optionsEyebrow">Tiện ích Chrome</span>
     </header>
+
+    <section class="options-hero" aria-labelledby="options-heading">
+      <p class="eyebrow">SETTINGS // MY SETUP</p>
+      <h1 id="options-heading" data-i18n="optionsHeading">Cài đặt</h1>
+      <p class="intro" data-i18n="optionsIntro">Tùy chỉnh trải nghiệm trên trình duyệt. Khi chọn tạo flashcard, extension có thể gửi thêm một câu ngữ cảnh gần vùng chọn (tối đa 500 ký tự) tới SonFlash/Gemini. Các lựa chọn này chỉ lưu trong bộ nhớ cài đặt của extension.</p>
+    </section>
 
     <form id="settings-form">
       <div class="settings-grid">
@@ -79,10 +85,12 @@
         </div>
       </div>
 
-      <p id="settings-status" class="status" role="status" aria-live="polite"></p>
-      <button id="save-settings" class="save-button" type="submit" data-i18n="optionsSaveButton">Lưu cài đặt</button>
+      <footer class="settings-footer">
+        <p id="settings-status" class="status" role="status" aria-live="polite"></p>
+        <a href="https://encoded-hangout-433912-h2.web.app/browser-extension-privacy.html" target="_blank" rel="noopener" data-i18n="optionsPrivacyLink">Đọc chính sách quyền riêng tư</a>
+        <button id="save-settings" class="save-button" type="submit" data-i18n="optionsSaveButton">Lưu cài đặt</button>
+      </footer>
     </form>
-    <p><a href="https://encoded-hangout-433912-h2.web.app/browser-extension-privacy.html" target="_blank" rel="noopener" data-i18n="optionsPrivacyLink">Đọc chính sách quyền riêng tư</a></p>
   </main>
   <script src="shared.js"></script>
   <script src="options.js"></script>

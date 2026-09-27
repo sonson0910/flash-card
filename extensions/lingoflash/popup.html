@@ -12,34 +12,35 @@
   <main class="shell">
     <header class="brand">
       <span class="brand-mark" aria-hidden="true">S</span>
-      <div>
-        <p class="eyebrow"><span data-i18n="popupEyebrow">SONFLASH</span> <span aria-label="Extension version">v1.6.3</span></p>
-        <h1 data-i18n="popupTagline">Dịch ngay tại trang</h1>
-      </div>
+      <div class="brand-name"><span>Son</span><em>Flash</em></div>
+      <span class="brand-version" aria-label="Extension version">v1.6.3</span>
+      <a class="brand-settings" href="options.html" target="_blank" rel="noopener" data-i18n-aria-label="optionsLink" aria-label="Cài đặt">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg>
+      </a>
     </header>
-
-    <div class="intro-badge">
-      <span class="intro-icon" aria-hidden="true">💡</span>
-      <p class="intro" data-i18n="popupIntro"><strong>Dịch nhanh</strong> gửi đoạn chọn tới Google Translate. <strong>Dịch + tạo flashcard</strong> gửi từ và câu ngữ cảnh qua SonFlash/Gemini, chỉ hỗ trợ tiếng Anh.</p>
-    </div>
 
     <form id="selection-form">
       <div class="label-row">
         <label for="selection" data-i18n="selectionLabel">Từ hoặc cụm từ</label>
         <span id="character-count">0/80</span>
       </div>
-      <textarea id="selection" maxlength="80" rows="2" spellcheck="false"
-        data-i18n-placeholder="selectionPlaceholder" placeholder="Bôi đen một từ trên trang hoặc nhập tại đây…"></textarea>
-
-      <div class="selection-tools">
+      <div class="selection-field">
+        <textarea id="selection" maxlength="80" rows="2" spellcheck="false"
+          data-i18n-placeholder="selectionPlaceholder" placeholder="Bôi đen một từ trên trang hoặc nhập tại đây…"></textarea>
         <button class="speak-button" id="speak-selection" type="button" data-i18n-aria-label="speakSelectionAriaLabel" aria-label="Nghe phát âm đoạn đã chọn" aria-describedby="speech-support-status">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"></path><path d="m15.5 8.5 3 3-3 3"></path><path d="M15.5 5.5a7 7 0 0 1 0 11"></path></svg>
           <span data-i18n="speakButtonLabel">Nghe phát âm</span>
         </button>
-        <p id="speech-support-status" class="speech-support-status" role="status" aria-live="polite" hidden></p>
       </div>
+      <p id="speech-support-status" class="speech-support-status" role="status" aria-live="polite" hidden></p>
 
-      <div class="config-grid">
+      <details class="popup-utilities">
+        <summary data-i18n="optionsLink">Cài đặt</summary>
+        <div class="intro-badge">
+          <span class="intro-icon" aria-hidden="true">💡</span>
+          <p class="intro" data-i18n="popupIntro"><strong>Dịch nhanh</strong> gửi đoạn chọn tới Google Translate. <strong>Dịch + tạo flashcard</strong> gửi từ và câu ngữ cảnh qua SonFlash/Gemini, chỉ hỗ trợ tiếng Anh.</p>
+        </div>
+        <div class="config-grid">
         <div class="config-field">
           <label class="deck-label" for="requested-deck" data-i18n="deckLabel">Lưu vào deck</label>
           <select id="requested-deck" class="deck-select" disabled>
@@ -56,7 +57,9 @@
             <button id="selection-icon-toggle" class="link-button" type="button" data-i18n="floatingIconOff">Bật</button>
           </div>
         </section>
-      </div>
+        </div>
+        <a class="link-button" href="https://encoded-hangout-433912-h2.web.app/browser-extension-privacy.html" target="_blank" rel="noopener" data-i18n="optionsPrivacyLink">Đọc chính sách quyền riêng tư</a>
+      </details>
 
       <div class="actions">
         <button class="secondary" id="translate-button" type="button">
@@ -129,8 +132,6 @@
 
     <footer>
       <button class="link-button" id="open-app" type="button"><span id="open-app-label" data-i18n="openAppLink">Đăng nhập</span><span id="due-count-suffix" hidden></span></button>
-      <a class="link-button" href="options.html" target="_blank" rel="noopener" data-i18n="optionsLink">Cài đặt</a>
-      <a class="link-button" href="https://encoded-hangout-433912-h2.web.app/browser-extension-privacy.html" target="_blank" rel="noopener" data-i18n="privacyLink">Quyền riêng tư</a>
     </footer>
   </main>
   <script src="shared.js"></script>
