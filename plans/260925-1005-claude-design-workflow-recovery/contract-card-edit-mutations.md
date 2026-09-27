@@ -1,18 +1,72 @@
 ---
 title: "Contract — card edit sheet mutations: headword, part of speech, tags/deck, difficulty/scheduling, image (08.7)"
-status: proposed
+status: implemented
 ---
 
 # Contract: card edit sheet mutations
 
-Written before code, per the 08.7 split from 04.7. This only specifies the
-contract; it does not implement it. Implementing it touches `firestore.rules`,
-possibly `functions/src/inputValidation.ts` (a new trusted callable for the
-identity-changing case), and `src/features/cardEdit/**` — all outside the file
-ownership of the phase-08 data-port pass this contract was written under.
-`EditCardDialog.tsx` keeps its `data-edit-contract-note` placeholder and does
-not render a live control for any field below until this contract is accepted
-and its Rules/Functions half is implemented by the owning lane.
+Written before code, per the 08.7 split from 04.7. `EditCardDialog.tsx` now
+renders a live control for every field this contract scopes in (headword,
+legacy part-of-speech, category, image remove/replace); the sections below
+are kept as the historical spec.
+
+## Implementation notes (2026-09-27)
+
+- **Rules**: no `firestore.rules` text changes were needed, matching this
+  contract's own "Rules allowlist impact summary" below. `firestore.rules.test.ts`
+  gained regression tests locking in the already-correct allowlist
+  (`describe('card edit-sheet mutation allowlist', ...)`): legacy-card
+  part-of-speech edit allowed, canonical-card part-of-speech edit rejected,
+  category/customDeck edits allowed, image remove/replace-with-trusted-domain
+  allowed, replace-with-untrusted-domain rejected, and a direct client
+  `word`/`normalizedWord` update rejected (confirming the new callable below
+  is actually required). These need the Firestore emulator
+  (`npm run test:rules`) and were not run by the implementing agent.
+- **Headword**: implemented as a new trusted Admin-SDK callable
+  `renameCardHeadword` (`functions/src/cardPersistence.ts`,
+  `renameCardHeadwordForOwner` + `parseRenameCardHeadwordRequest`; exported in
+  `functions/src/index.ts`), mirroring `createCard`'s Rules-bypass pattern
+  exactly as specified. It commits as its own action in the sheet (separate
+  input + save button), independent from the rest of the draft, since it is a
+  different write transport (Admin-SDK transaction vs. the client `updateDoc`
+  patch) and Rules cannot express identity changes at all for an identified
+  card.
+- **Part of speech**: implemented only the UI-gating half this contract itself
+  scoped as the correct interim UI (`canEditPartOfSpeech` in
+  `editCardModel.ts`, hiding the control for a `lexemeId` card). The "new
+  callable to switch to a different published sense" for a canonical card
+  stays explicitly out of scope, per this contract's own text, and was not
+  built.
+- **Category**: patched through the existing `updateCard` path as specified,
+  plus a facets-delta call. The dialog has no reference to the
+  `learningStateController` instance that owns the higher-level
+  `updateCategoryFacets` hook method the "Write count" section below points
+  at, and threading a new prop through `EditCardDialogProps` →
+  `LibraryCardGrid.tsx` → `LibraryScreen.tsx` would cross this phase's file
+  ownership. `EditCardDialog.tsx` instead calls the same underlying primitives
+  that hook calls internally — `applyCategoryDeltas` +
+  `deriveLibraryFacetOperationId` from `src/lib/cardRepository.ts` — directly,
+  fire-and-forget, after a successful save, with the same idempotent
+  `operationId` shape the delete path already uses. Functionally equivalent:
+  exactly one facets-delta call per category-changing save, never gating the
+  save itself.
+- **`customDeck`**: no new UI control was added. This contract's own
+  field-by-field section below only asks for a `category` control in this
+  sheet — `customDeck` is already wired elsewhere
+  (`LibraryScreenActions.grid.assignDeck`) and stays that way; the Rules
+  regression test above only re-confirms the allowlist row still holds.
+- **Image**: "remove" patches `{ imageUrl: null, imageSearchQuery: '' }`, not
+  `{ imageUrl: null, imageSearchQuery: undefined }` as the field-by-field table
+  below literally says — **correction**: the Firestore JS client SDK rejects
+  an explicit `undefined` field value before the write ever reaches Rules
+  (`updateDoc() called with invalid data. Unsupported field value: undefined`),
+  so that literal phrasing was never actually implementable. An empty string
+  is this codebase's existing convention for "no value" on every other
+  optional bounded string field (`phonetic`, `explanation`, etc.) and is what
+  `firestore.rules`' existing bounds already accept. "Replace" reuses the
+  existing `fetchImageUrl` search (same three-provider trusted-domain
+  allowlist as card creation) and patches `imageUrl`/`imageSearchQuery`
+  together in the same `updateCard` call.
 
 ## What already works (baseline, unaffected)
 

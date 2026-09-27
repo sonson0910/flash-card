@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
 import {
+  buildCategoryFacetDelta,
+  canEditPartOfSpeech,
   createEditCardDraft,
   editCardPatch,
   isEditCardDraftDirty,
@@ -75,6 +77,119 @@ describe('card text editing', () => {
     expect(preview.revision).toBe(4);
     expect(preview.fsrs).toEqual(openedCard.fsrs);
     expect(preview.reviewHistory).toEqual(openedCard.reviewHistory);
+  });
+});
+
+describe('canEditPartOfSpeech', () => {
+  it('allows a legacy card with no lexeme identity to change its part of speech', () => {
+    expect(canEditPartOfSpeech(card)).toBe(true);
+  });
+
+  it('locks a canonical (lexemeId) card, whose part of speech names a published sense', () => {
+    expect(canEditPartOfSpeech({ ...card, lexemeId: 'lex-1' })).toBe(false);
+  });
+});
+
+describe('editCardPatch for part of speech, category, and image', () => {
+  it('patches a legacy card part of speech only when it changed', () => {
+    const openedCard = { ...card, partOfSpeech: 'noun' };
+    const draft = createEditCardDraft(openedCard);
+    draft.partOfSpeech = 'verb';
+    expect(editCardPatch(openedCard, draft)).toEqual({ partOfSpeech: 'verb' });
+  });
+
+  it('never patches part of speech for a canonical card even if the draft was mutated', () => {
+    const openedCard = { ...card, lexemeId: 'lex-1', partOfSpeech: 'noun' };
+    const draft = createEditCardDraft(openedCard);
+    draft.partOfSpeech = 'verb';
+    expect(editCardPatch(openedCard, draft)).toEqual({});
+  });
+
+  it('enforces the part of speech bound', () => {
+    const draft = createEditCardDraft(card);
+    draft.partOfSpeech = 'x'.repeat(65);
+    expect(() => editCardPatch(card, draft)).toThrow('64');
+  });
+
+  it('patches category and rejects clearing it to empty', () => {
+    const openedCard = { ...card, category: 'Nature' };
+    const draft = createEditCardDraft(openedCard);
+    draft.category = 'Business';
+    expect(editCardPatch(openedCard, draft)).toEqual({ category: 'Business' });
+
+    draft.category = '   ';
+    expect(() => editCardPatch(openedCard, draft)).toThrow('Danh mục');
+  });
+
+  it('enforces the category bound', () => {
+    const draft = createEditCardDraft(card);
+    draft.category = 'x'.repeat(129);
+    expect(() => editCardPatch(card, draft)).toThrow('128');
+  });
+
+  it('patches a replaced image together with its search context', () => {
+    const openedCard = { ...card, imageUrl: 'https://images.pexels.com/old.jpg', imageSearchQuery: 'old query' };
+    const draft = createEditCardDraft(openedCard);
+    draft.imageUrl = 'https://images.unsplash.com/new.jpg';
+    draft.imageSearchQuery = 'new query';
+    expect(editCardPatch(openedCard, draft)).toEqual({
+      imageUrl: 'https://images.unsplash.com/new.jpg',
+      imageSearchQuery: 'new query',
+    });
+  });
+
+  it('patches a removed image to null and clears its search context', () => {
+    const openedCard = { ...card, imageUrl: 'https://images.pexels.com/old.jpg', imageSearchQuery: 'old query' };
+    const draft = createEditCardDraft(openedCard);
+    draft.imageUrl = '';
+    expect(editCardPatch(openedCard, draft)).toEqual({ imageUrl: null, imageSearchQuery: '' });
+  });
+
+  it('leaves the patch untouched when the image is never touched', () => {
+    const openedCard = { ...card, imageUrl: 'https://images.pexels.com/old.jpg', imageSearchQuery: 'old query' };
+    const draft = createEditCardDraft(openedCard);
+    expect(editCardPatch(openedCard, draft)).toEqual({});
+  });
+});
+
+describe('isEditCardDraftDirty and previewEditCard for the extended fields', () => {
+  it('marks a canonical card dirty from category and image but never from part of speech', () => {
+    const openedCard = { ...card, lexemeId: 'lex-1', partOfSpeech: 'noun', category: 'Nature' };
+    const draft = createEditCardDraft(openedCard);
+    draft.partOfSpeech = 'verb';
+    expect(isEditCardDraftDirty(openedCard, draft)).toBe(false);
+
+    draft.category = 'Business';
+    expect(isEditCardDraftDirty(openedCard, draft)).toBe(true);
+  });
+
+  it('previews an in-progress category and image edit without leaking into part of speech on a canonical card', () => {
+    const openedCard = { ...card, lexemeId: 'lex-1', partOfSpeech: 'noun', category: 'Nature', imageUrl: null };
+    const draft = createEditCardDraft(openedCard);
+    draft.partOfSpeech = 'verb';
+    draft.category = 'Business';
+    draft.imageUrl = 'https://images.pexels.com/new.jpg';
+
+    const preview = previewEditCard(openedCard, draft);
+    expect(preview.partOfSpeech).toBe('noun');
+    expect(preview.category).toBe('Business');
+    expect(preview.imageUrl).toBe('https://images.pexels.com/new.jpg');
+  });
+});
+
+describe('buildCategoryFacetDelta', () => {
+  it('returns a -1/+1 delta pair when the category actually changed', () => {
+    expect(buildCategoryFacetDelta('Nature', 'Business')).toEqual({ Nature: -1, Business: 1 });
+  });
+
+  it('returns null when the category is unchanged', () => {
+    expect(buildCategoryFacetDelta('Nature', 'Nature')).toBeNull();
+  });
+
+  it('defaults a missing category to "Other" on both sides', () => {
+    expect(buildCategoryFacetDelta(undefined, 'Nature')).toEqual({ Other: -1, Nature: 1 });
+    expect(buildCategoryFacetDelta('Nature', undefined)).toEqual({ Nature: -1, Other: 1 });
+    expect(buildCategoryFacetDelta(undefined, undefined)).toBeNull();
   });
 });
 

@@ -37,11 +37,14 @@ import {
 import {
   CardAllocationConflictError,
   CardAllocationLimitError,
+  CardHeadwordRenameConflictError,
   MAX_CARD_ALLOCATION,
   createCardForOwner,
   createStarterCardsForOwner,
   parseCreateCardRequest,
   parseCreateStarterCardsRequest,
+  parseRenameCardHeadwordRequest,
+  renameCardHeadwordForOwner,
 } from './cardPersistence.js';
 import {
   applyBulkCardMutationsForOwner,
@@ -145,6 +148,7 @@ const MAX_GAMIFICATION_SAVES_PER_HOUR = 120;
 const MAX_CARD_CREATIONS_PER_HOUR = 120;
 const MAX_CARD_REVIEWS_PER_HOUR = 600;
 const MAX_BULK_CARD_MUTATIONS_PER_HOUR = 120;
+const MAX_CARD_HEADWORD_RENAMES_PER_HOUR = 60;
 const MAX_LIBRARY_FACET_UPDATES_PER_HOUR = 120;
 const MAX_COURSE_PROFILE_MUTATIONS_PER_HOUR = 120;
 const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
@@ -222,6 +226,15 @@ export const toCardAllocationHttpsError = (error: unknown): HttpsError | null =>
     });
   }
   return null;
+};
+
+export const toCardHeadwordRenameHttpsError = (error: unknown): HttpsError | null => {
+  if (!(error instanceof CardHeadwordRenameConflictError)) return null;
+  if (error.reason === 'missing') return new HttpsError('not-found', error.message, { reason: error.reason });
+  if (error.reason === 'duplicate-word') {
+    return new HttpsError('already-exists', error.message, { reason: error.reason });
+  }
+  return new HttpsError('failed-precondition', error.message, { reason: error.reason });
 };
 
 export const toSharedDeckHttpsError = (error: unknown): HttpsError | null => {
@@ -856,6 +869,36 @@ export const createStarterCards = onCall({
       errorName: error instanceof Error ? error.name : 'UnknownError',
     });
     throw new HttpsError('internal', 'Starter card allocation failed.');
+  }
+});
+
+export const renameCardHeadword = onCall({
+  region: REGION,
+  secrets: [analyticsPseudonymKey],
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = await requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseRenameCardHeadwordRequest(request.data));
+  await consumeBudget(userId, 'card-headword-rename', MAX_CARD_HEADWORD_RENAMES_PER_HOUR,
+    'Card rename limit reached. Try again later.');
+  try {
+    return await renameCardHeadwordForOwner(database, userId, input);
+  } catch (error) {
+    if (error instanceof LegacyLibraryMigrationFenceError) {
+      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+    }
+    const renameError = toCardHeadwordRenameHttpsError(error);
+    if (renameError) throw renameError;
+    if (error instanceof InputValidationError) {
+      throw new HttpsError('invalid-argument', error.message);
+    }
+    console.error('Card headword rename failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'Card headword rename failed.');
   }
 });
 

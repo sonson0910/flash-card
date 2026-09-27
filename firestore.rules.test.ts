@@ -2150,4 +2150,114 @@ describe('Firestore security rules', () => {
       revision: 2,
     }));
   });
+
+  describe('card edit-sheet mutation allowlist', () => {
+    it('allows a legacy card (no lexemeId) to change part of speech in one write', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-legacy-pos';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, { ...validCard(cardId), partOfSpeech: 'noun' });
+      await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+        partOfSpeech: 'verb',
+        revision: 2,
+      }));
+    });
+
+    it('rejects a canonical (lexemeId) card changing part of speech, since it names a published sense', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const canonicalId = 'edit-sheet-canonical-pos';
+      const canonical = {
+        ...validCard(canonicalId),
+        lexemeId: 'lexeme-edit-sheet',
+        language: 'en',
+        senseKey: 'default',
+        normalizedLemma: 'hello',
+        translation: 'xin chào',
+        explanation: '', explanationTranslation: '', phonetic: '', category: 'Other',
+        emoji: '📝', audioUrl: null, imageUrl: null, imageSearchQuery: '',
+        createdAt: '1970-01-01T00:00:00.000Z', bookmarked: false, customDeck: null,
+        difficulty: 'unrated', reviews: 0, interval: 0, easeFactor: 2.5, correctStreak: 0,
+        partOfSpeech: 'noun', cefrLevel: '', exampleSentence: '', exampleTranslation: '',
+        collocations: [], synonyms: [], antonyms: [], register: '', commonMistake: '', reviewHistory: [],
+      };
+      await seedCurrentCard(testEnvironment, 'owner', canonicalId, canonical);
+      await testEnvironment.withSecurityRulesDisabled(async context => {
+        await setDoc(doc(context.firestore(), 'lexemes/lexeme-edit-sheet'), {
+          schemaVersion: 3, id: 'lexeme-edit-sheet', language: 'en', normalizedLemma: 'hello',
+          partOfSpeech: 'noun', senseKey: 'default', provenance: { editorialStatus: 'published' },
+        });
+      });
+      await assertFails(updateDoc(doc(owner, `users/owner/cards/${canonicalId}`), {
+        partOfSpeech: 'verb',
+        revision: 2,
+      }));
+    });
+
+    it('allows changing category in one write', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-category';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, { ...validCard(cardId), category: 'Nature' });
+      await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+        category: 'Business',
+        revision: 2,
+      }));
+    });
+
+    it('allows changing customDeck in one write', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-custom-deck';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, { ...validCard(cardId), customDeck: null });
+      await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+        customDeck: 'Travel words',
+        revision: 2,
+      }));
+    });
+
+    it('allows removing the image by setting imageUrl to null', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-image-remove';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, {
+        ...validCard(cardId),
+        imageUrl: 'https://images.pexels.com/photos/1/old.jpg',
+        imageSearchQuery: 'old query',
+      });
+      await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+        imageUrl: null,
+        imageSearchQuery: '',
+        revision: 2,
+      }));
+    });
+
+    it('allows replacing the image with a trusted-domain url', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-image-replace-trusted';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, { ...validCard(cardId), imageUrl: null });
+      await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+        imageUrl: 'https://images.unsplash.com/photo-1',
+        imageSearchQuery: 'new query',
+        revision: 2,
+      }));
+    });
+
+    it('rejects replacing the image with an untrusted-domain url', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-image-replace-untrusted';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, { ...validCard(cardId), imageUrl: null });
+      await assertFails(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+        imageUrl: 'https://attacker.example/photo.jpg',
+        imageSearchQuery: 'new query',
+        revision: 2,
+      }));
+    });
+
+    it('rejects a direct client update to word/normalizedWord, confirming the headword rename callable is required', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-word-lock';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, validCard(cardId));
+      await assertFails(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+        word: 'goodbye',
+        normalizedWord: 'goodbye',
+        revision: 2,
+      }));
+    });
+  });
 });

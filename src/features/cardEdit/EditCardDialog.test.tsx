@@ -44,6 +44,46 @@ vi.mock('@lingui/react', () => ({
   }),
 }));
 
+const { MockCardHeadwordRenameError, cardRepositoryMocks } = vi.hoisted(() => {
+  class HoistedMockCardHeadwordRenameError extends Error {
+    constructor(public readonly reason: string) {
+      super(`Card headword rename rejected: ${reason}.`);
+      this.name = 'CardHeadwordRenameError';
+    }
+  }
+  return {
+    MockCardHeadwordRenameError: HoistedMockCardHeadwordRenameError,
+    cardRepositoryMocks: {
+      renameCardHeadword: vi.fn(),
+      applyCategoryDeltas: vi.fn().mockResolvedValue({ categories: {}, complete: true }),
+    },
+  };
+});
+
+vi.mock('../../lib/cardRepository', () => ({
+  renameCardHeadword: cardRepositoryMocks.renameCardHeadword,
+  applyCategoryDeltas: cardRepositoryMocks.applyCategoryDeltas,
+  deriveLibraryFacetOperationId: (operationId: string, suffix: string) => `${operationId}:${suffix}`,
+  CardHeadwordRenameError: MockCardHeadwordRenameError,
+}));
+
+const firebaseMocks = vi.hoisted(() => ({
+  auth: { currentUser: { uid: 'user-1' } as { uid: string } | null },
+}));
+
+vi.mock('../../lib/firebase', () => ({
+  auth: firebaseMocks.auth,
+  db: {},
+  isFirebaseConfigured: true,
+}));
+
+const imagesMocks = vi.hoisted(() => ({ fetchImageUrl: vi.fn() }));
+
+vi.mock('../../lib/images', () => ({
+  fetchImageUrl: imagesMocks.fetchImageUrl,
+  getDisplayImageUrl: (url: string) => url,
+}));
+
 import { EDIT_CARD_FIELDS } from './editCardModel';
 import { EditCardDialog } from './EditCardDialog';
 
@@ -111,6 +151,10 @@ describe('EditCardDialog', () => {
     hooks.cursor = 0;
     hooks.states = [];
     hooks.locale = 'en';
+    firebaseMocks.auth.currentUser = { uid: 'user-1' };
+    cardRepositoryMocks.renameCardHeadword.mockReset();
+    cardRepositoryMocks.applyCategoryDeltas.mockReset().mockResolvedValue({ categories: {}, complete: true });
+    imagesMocks.fetchImageUrl.mockReset();
   });
 
   it('keeps the dialog open and reports the localized failure message when the save does not durably succeed', async () => {
@@ -275,5 +319,148 @@ describe('EditCardDialog', () => {
     const view = render({ card: sourcedCard, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
     const link = findAllByType(view.tree, 'a')[0];
     expect(link?.props?.children).toBe('https://example.com/article');
+  });
+
+  describe('headword rename', () => {
+    it('renames the headword through the callable and adopts the servers canonical response', async () => {
+      const renamed = { ...card, word: 'guide', normalizedWord: 'guide', revision: 2 };
+      cardRepositoryMocks.renameCardHeadword.mockResolvedValueOnce(renamed);
+      let view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      (findByProp(view.tree, 'data-edit-word-input')!.props.onChange as (event: { target: { value: string } }) => void)(
+        { target: { value: 'guide' } },
+      );
+      view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+
+      await (findByProp(view.tree, 'data-edit-word-save')!.props.onClick as () => Promise<void>)();
+
+      expect(cardRepositoryMocks.renameCardHeadword).toHaveBeenCalledWith('user-1', 'card-1', 'guide', 0, 0);
+      view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      expect(findByProp(view.tree, 'data-edit-word-input')!.props.value).toBe('guide');
+      expect(findByProp(view.tree, 'role')).toBeNull();
+    });
+
+    it('surfaces a duplicate-word message when another card already uses the requested word', async () => {
+      cardRepositoryMocks.renameCardHeadword.mockRejectedValueOnce(new MockCardHeadwordRenameError('duplicate-word'));
+      let view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      (findByProp(view.tree, 'data-edit-word-input')!.props.onChange as (event: { target: { value: string } }) => void)(
+        { target: { value: 'guide' } },
+      );
+      view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+
+      await (findByProp(view.tree, 'data-edit-word-save')!.props.onClick as () => Promise<void>)();
+
+      view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      const alert = findByProp(view.tree, 'role');
+      expect(alert?.props.children).toMatch(/already uses this word/);
+    });
+
+    it('surfaces a conflict message for any other rename precondition failure', async () => {
+      cardRepositoryMocks.renameCardHeadword.mockRejectedValueOnce(new MockCardHeadwordRenameError('revision-conflict'));
+      let view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      (findByProp(view.tree, 'data-edit-word-input')!.props.onChange as (event: { target: { value: string } }) => void)(
+        { target: { value: 'guide' } },
+      );
+      view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+
+      await (findByProp(view.tree, 'data-edit-word-save')!.props.onClick as () => Promise<void>)();
+
+      view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      const alert = findByProp(view.tree, 'role');
+      expect(alert?.props.children).toMatch(/changed elsewhere/);
+    });
+
+    it('surfaces a generic failure message when the callable throws an unrecognized error', async () => {
+      cardRepositoryMocks.renameCardHeadword.mockRejectedValueOnce(new Error('network down'));
+      let view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      (findByProp(view.tree, 'data-edit-word-input')!.props.onChange as (event: { target: { value: string } }) => void)(
+        { target: { value: 'guide' } },
+      );
+      view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+
+      await (findByProp(view.tree, 'data-edit-word-save')!.props.onClick as () => Promise<void>)();
+
+      view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      const alert = findByProp(view.tree, 'role');
+      expect(alert?.props.children).toMatch(/could not be saved/);
+    });
+
+    it('never calls the callable when the draft word matches the live word', async () => {
+      let view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      await (findByProp(view.tree, 'data-edit-word-save')!.props.onClick as () => Promise<void>)();
+      expect(cardRepositoryMocks.renameCardHeadword).not.toHaveBeenCalled();
+      view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      expect(findByProp(view.tree, 'data-edit-word-save')!.props.disabled).toBe(true);
+    });
+  });
+
+  describe('category facets mirror', () => {
+    it('fires a facets delta call after a save that changes the category', async () => {
+      const onSave = vi.fn(async (): Promise<LearningStateOutcome> =>
+        ({ status: 'published', result: { ownerKey: 'o', operationId: 'op', publication: { kind: 'patch', cardId: card.id, fields: {} } } }));
+      let view = render({ card: { ...card, category: 'Nature' }, open: true, onOpenChange: vi.fn(), onSave });
+      (findByProp(view.tree, 'data-edit-category-input')!.props.onChange as (event: { target: { value: string } }) => void)(
+        { target: { value: 'Business' } },
+      );
+      view = render({ card: { ...card, category: 'Nature' }, open: true, onOpenChange: vi.fn(), onSave });
+
+      await view.submit({ preventDefault: vi.fn() });
+
+      expect(onSave).toHaveBeenCalledWith('card-1', { category: 'Business' });
+      expect(cardRepositoryMocks.applyCategoryDeltas).toHaveBeenCalledWith(
+        {},
+        'user-1',
+        { Nature: -1, Business: 1 },
+        'card-edit:card-1:0:category-edit',
+      );
+    });
+
+    it('never fires a facets delta call when the category is untouched', async () => {
+      const onSave = vi.fn(async (): Promise<LearningStateOutcome> =>
+        ({ status: 'published', result: { ownerKey: 'o', operationId: 'op', publication: { kind: 'patch', cardId: card.id, fields: {} } } }));
+      let view = render({ card, open: true, onOpenChange: vi.fn(), onSave });
+      (view.textareas[translationFieldIndex]!.props!.onChange as (event: { target: { value: string } }) => void)(
+        { target: { value: 'dẫn đầu' } },
+      );
+      view = render({ card, open: true, onOpenChange: vi.fn(), onSave });
+
+      await view.submit({ preventDefault: vi.fn() });
+
+      expect(cardRepositoryMocks.applyCategoryDeltas).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('image search and removal', () => {
+    it('replaces the image after a successful search', async () => {
+      imagesMocks.fetchImageUrl.mockResolvedValueOnce('https://images.pexels.com/found.jpg');
+      let view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+
+      await (findByProp(view.tree, 'data-edit-image-find')!.props.onClick as () => Promise<void>)();
+
+      view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      expect(findAllByType(view.tree, 'img').some(image => image.props?.src === 'https://images.pexels.com/found.jpg')).toBe(true);
+      expect(findByProp(view.tree, 'data-edit-image-remove')).not.toBeNull();
+    });
+
+    it('surfaces a search-failed message when no photo is found', async () => {
+      imagesMocks.fetchImageUrl.mockResolvedValueOnce(null);
+      let view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+
+      await (findByProp(view.tree, 'data-edit-image-find')!.props.onClick as () => Promise<void>)();
+
+      view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      const alert = findByProp(view.tree, 'role');
+      expect(alert?.props.children).toMatch(/No new photo/);
+    });
+
+    it('removes the image through the remove control', () => {
+      const withImage = { ...card, imageUrl: 'https://images.pexels.com/old.jpg' };
+      let view = render({ card: withImage, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      expect(findByProp(view.tree, 'data-edit-image-remove')).not.toBeNull();
+
+      (findByProp(view.tree, 'data-edit-image-remove')!.props.onClick as () => void)();
+
+      view = render({ card: withImage, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      expect(findByProp(view.tree, 'data-edit-image-remove')).toBeNull();
+    });
   });
 });

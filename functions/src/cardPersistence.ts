@@ -998,3 +998,162 @@ export async function createStarterCardsForOwner(
     return { kind: 'created' as const, cardIds };
   });
 }
+
+export type RenameCardHeadwordRequest = {
+  cardId: string;
+  word: string;
+  baseRevision: number;
+  libraryEpoch: number;
+};
+
+export const parseRenameCardHeadwordRequest = (value: unknown): RenameCardHeadwordRequest => {
+  const source = asRecord(value, 'Card headword rename request must be an object.');
+  if (Object.keys(source).some(key => !new Set(['cardId', 'word', 'baseRevision', 'libraryEpoch']).has(key))) {
+    throw new InputValidationError('Card headword rename request contains an unsupported field.');
+  }
+  const cardId = requiredText(source.cardId, 'cardId', 128);
+  if (!/^[a-zA-Z0-9_-]+$/.test(cardId)) {
+    throw new InputValidationError('Card headword rename cardId is invalid.');
+  }
+  return {
+    cardId,
+    word: requiredText(source.word, 'word', 256),
+    baseRevision: nonNegativeInteger(source.baseRevision, 'baseRevision', 0),
+    libraryEpoch: nonNegativeInteger(source.libraryEpoch, 'libraryEpoch', 0),
+  };
+};
+
+export type CardHeadwordRenameConflictReason =
+  | 'missing'
+  | 'stale-library-epoch'
+  | 'future-library-epoch'
+  | 'revision-conflict'
+  | 'requires-migration'
+  | 'duplicate-word';
+
+export class CardHeadwordRenameConflictError extends Error {
+  constructor(
+    public readonly reason: CardHeadwordRenameConflictReason,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'CardHeadwordRenameConflictError';
+  }
+}
+
+export type RenameCardHeadwordResult = {
+  card: DocumentData;
+};
+
+/**
+ * Corrects a card's headword while keeping lexeme identity. The Rules
+ * client-update path locks `word`/`normalizedWord` on every card that already
+ * has an identity (`hasValidCardIdentityUpdate`), so a plain client `update`
+ * can never reach this field — only this trusted callable, via the Admin SDK,
+ * can change it.
+ *
+ * A legacy (non-lexeme) card's identity reservation is keyed on its
+ * normalizedWord, so renaming it swaps that reservation inside the same
+ * transaction as the card write (release the old one, claim the new one,
+ * reject if the new word is already claimed by a different card). A
+ * canonical (lexemeId) card's reservation is keyed on its lexemeId, which
+ * this callable never touches — its `word`/`normalizedWord` are display-only
+ * relative to its lexeme tuple (`normalizedLemma`, `partOfSpeech`,
+ * `senseKey`, `language`), so no reservation change is needed and the tuple
+ * that names its lexeme stays byte-identical, which is what "keep lexeme
+ * identity" means operationally.
+ */
+export async function renameCardHeadwordForOwner(
+  database: Firestore,
+  ownerId: string,
+  request: RenameCardHeadwordRequest,
+): Promise<RenameCardHeadwordResult> {
+  if (!ownerId || ownerId.includes('/')) throw new InputValidationError('Card owner is invalid.');
+  const newWord = boundedText(request.word, 'word', 256);
+  const newIdentity = normalizedWord(newWord);
+  if (!newIdentity) throw new InputValidationError('Card word is required.');
+  if (exceedsCanonicalLimit(newIdentity, 256)) {
+    throw new InputValidationError('Card normalizedWord is invalid.');
+  }
+
+  const owner = ownerDocument(database, ownerId);
+  const libraryState = owner.collection('profile').doc('library_state');
+  const canonical = owner.collection('cards').doc(request.cardId);
+
+  return database.runTransaction(async (transaction: Transaction) => {
+    await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
+    const [stateSnapshot, cardSnapshot] = await Promise.all([
+      transaction.get(libraryState),
+      transaction.get(canonical),
+    ]);
+    const currentEpoch = readEpoch(stateSnapshot);
+    if (request.libraryEpoch !== currentEpoch) {
+      throw new CardHeadwordRenameConflictError(
+        request.libraryEpoch < currentEpoch ? 'stale-library-epoch' : 'future-library-epoch',
+        request.libraryEpoch < currentEpoch
+          ? 'The card library generation is stale.'
+          : 'The card library generation is from the future.',
+      );
+    }
+    if (!cardSnapshot.exists) {
+      throw new CardHeadwordRenameConflictError('missing', 'The card could not be found.');
+    }
+    const card = cardSnapshot.data() as CardRecord;
+    if (
+      card.schemaVersion !== 2
+      || !Number.isSafeInteger(card.revision)
+      || Number(card.revision) < 1
+      || card.id !== request.cardId
+    ) {
+      throw new CardHeadwordRenameConflictError(
+        'requires-migration',
+        'The card requires migration before its headword can be corrected.',
+      );
+    }
+    if (Number(card.revision) !== request.baseRevision) {
+      throw new CardHeadwordRenameConflictError(
+        'revision-conflict',
+        'The card changed elsewhere. Reload and try again.',
+      );
+    }
+
+    const oldWord = typeof card.word === 'string' ? card.word : '';
+    const oldIdentity = typeof card.normalizedWord === 'string' && card.normalizedWord
+      ? card.normalizedWord
+      : normalizedWord(oldWord);
+    const isCanonical = typeof card.lexemeId === 'string' && card.lexemeId.length > 0;
+
+    if (!isCanonical && oldIdentity !== newIdentity) {
+      const language = typeof card.language === 'string' ? card.language : undefined;
+      const plainTargetLanguage = isTargetScoped(language) ? language : undefined;
+      const oldReservation = owner.collection('card_reservations')
+        .doc(reservationId(oldIdentity, plainTargetLanguage));
+      const newReservation = owner.collection('card_reservations')
+        .doc(reservationId(newIdentity, plainTargetLanguage));
+      const [oldReservationSnapshot, newReservationSnapshot] = await Promise.all([
+        transaction.get(oldReservation),
+        transaction.get(newReservation),
+      ]);
+      if (newReservationSnapshot.exists) {
+        const existing = newReservationSnapshot.data() as CardRecord;
+        if (existing.cardId !== request.cardId) {
+          throw new CardHeadwordRenameConflictError('duplicate-word', 'Another card already uses this word.');
+        }
+      } else {
+        transaction.create(newReservation, createReservation(newIdentity, request.cardId, plainTargetLanguage));
+      }
+      if (oldReservationSnapshot.exists && (oldReservationSnapshot.data() as CardRecord).cardId === request.cardId) {
+        transaction.delete(oldReservation);
+      }
+    }
+
+    const updated = {
+      ...card,
+      word: newWord,
+      normalizedWord: newIdentity,
+      revision: nextProtocolCounter(Number(card.revision), 'revision'),
+    };
+    transaction.set(canonical, updated, { merge: false });
+    return { card: serializeCardResponse(updated) };
+  });
+}

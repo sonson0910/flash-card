@@ -1766,6 +1766,122 @@ export async function createStarterCardBatch(
   }
 }
 
+export type CardHeadwordRenameReason =
+  | 'missing'
+  | 'stale-library-epoch'
+  | 'future-library-epoch'
+  | 'revision-conflict'
+  | 'requires-migration'
+  | 'duplicate-word';
+
+export class CardHeadwordRenameError extends Error {
+  constructor(public readonly reason: CardHeadwordRenameReason) {
+    super(`Card headword rename rejected: ${reason}.`);
+    this.name = 'CardHeadwordRenameError';
+  }
+}
+
+const CARD_HEADWORD_RENAME_REASONS = new Set<CardHeadwordRenameReason>([
+  'missing', 'stale-library-epoch', 'future-library-epoch', 'revision-conflict', 'requires-migration', 'duplicate-word',
+]);
+
+const readHeadwordRenameReason = (error: unknown): CardHeadwordRenameReason | null => {
+  if (!error || typeof error !== 'object') return null;
+  const source = error as Record<string, unknown>;
+  const code = typeof source.code === 'string'
+    ? source.code.trim().toLowerCase().replace(/^firebase\//, '').replace(/^functions\//, '')
+    : '';
+  if (
+    !['failed-precondition', 'not-found', 'already-exists'].includes(code)
+    || !source.details
+    || typeof source.details !== 'object'
+  ) return null;
+  const reason = (source.details as Record<string, unknown>).reason;
+  return typeof reason === 'string' && CARD_HEADWORD_RENAME_REASONS.has(reason as CardHeadwordRenameReason)
+    ? reason as CardHeadwordRenameReason
+    : null;
+};
+
+class HeadwordRenameCallableResponseError extends Error {
+  readonly code = 'failed-precondition';
+
+  constructor() {
+    super('The protected card service returned a renamed card that requires migration.');
+    this.name = 'HeadwordRenameCallableResponseError';
+  }
+}
+
+const parseHeadwordRenameResponse = (value: unknown, cardId: string): CardData => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new HeadwordRenameCallableResponseError();
+  const envelope = value as Record<string, unknown>;
+  if (
+    Object.keys(envelope).length !== 1
+    || !envelope.card
+    || typeof envelope.card !== 'object'
+    || Array.isArray(envelope.card)
+  ) throw new HeadwordRenameCallableResponseError();
+
+  const rawCard = envelope.card as Record<string, unknown>;
+  if (
+    hasFirestoreTimestamp(rawCard)
+    || rawCard.schemaVersion !== 2
+    || !Number.isSafeInteger(rawCard.revision)
+    || Number(rawCard.revision) < 1
+    || rawCard.id !== cardId
+    || typeof rawCard.word !== 'string'
+    || typeof rawCard.normalizedWord !== 'string'
+    || normalizeCardWord(rawCard.word) !== normalizeCardWord(rawCard.normalizedWord)
+  ) throw new HeadwordRenameCallableResponseError();
+
+  const card = normalizeCardData(rawCard as Partial<CardData>, cardId);
+  if (card.id !== cardId) throw new HeadwordRenameCallableResponseError();
+  return card;
+};
+
+/**
+ * Corrects a card's headword while keeping lexeme identity. Rules lock
+ * `word`/`normalizedWord` on any card that already has an identity, so this
+ * never goes through the plain patch pipeline — always the trusted
+ * `renameCardHeadword` callable, one Firestore transaction on the server. The
+ * callable swaps a legacy card's identity reservation itself; a canonical
+ * (lexemeId) card's word is display-only and needs no reservation change.
+ * Rejects with `CardHeadwordRenameError` on a precondition failure (stale
+ * revision/epoch, duplicate word, or a card that still needs migration) so
+ * the caller can show "this card changed elsewhere" instead of retrying blindly.
+ */
+export async function renameCardHeadword(
+  userId: string,
+  cardId: string,
+  word: string,
+  baseRevision: number,
+  libraryEpoch: number,
+): Promise<CardData> {
+  return runProtectedFunction(protectedFunctionsCapability, 'Card headword rename', async () => {
+    if (!firebaseApp) throw new Error('Firebase is not initialized.');
+    if (auth?.currentUser?.uid !== userId) {
+      throw new ProtectedFunctionError({
+        message: 'Card headword rename stopped because the active account changed. Retry after sign-in settles.',
+        kind: 'authentication',
+        code: 'owner-mismatch',
+        retryable: false,
+      });
+    }
+    const { httpsCallable } = await import('firebase/functions');
+    const callable = httpsCallable<
+      { cardId: string; word: string; baseRevision: number; libraryEpoch: number },
+      unknown
+    >(await getSonFlashFunctions(firebaseApp), 'renameCardHeadword');
+    try {
+      const response = await callable({ cardId, word, baseRevision, libraryEpoch });
+      return parseHeadwordRenameResponse(response.data, cardId);
+    } catch (error) {
+      const reason = readHeadwordRenameReason(error);
+      if (reason) throw new CardHeadwordRenameError(reason);
+      throw error;
+    }
+  });
+}
+
 const CUSTOM_DECK_PATCH_MAX_ATTEMPTS = 3;
 const CUSTOM_DECK_STALLED_BATCH_LIMIT = 3;
 

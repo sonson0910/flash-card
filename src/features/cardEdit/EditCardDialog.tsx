@@ -7,11 +7,24 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
 import {
+  applyCategoryDeltas,
+  CardHeadwordRenameError,
+  deriveLibraryFacetOperationId,
+  renameCardHeadword,
+} from '../../lib/cardRepository';
+import { auth, db, isFirebaseConfigured } from '../../lib/firebase';
+import { fetchImageUrl, getDisplayImageUrl } from '../../lib/images';
+import {
+  buildCategoryFacetDelta,
+  canEditPartOfSpeech,
   createEditCardDraft,
   editCardPatch,
   EDIT_CARD_FIELDS,
   isEditCardDraftDirty,
   isSuccessfulEditCardSave,
+  MAX_CATEGORY_LENGTH,
+  MAX_HEADWORD_LENGTH,
+  MAX_PART_OF_SPEECH_LENGTH,
   previewEditCard,
   type EditableCardField,
   type EditCardDraft,
@@ -88,6 +101,15 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<EditCardError | null>(null);
   const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
+  // The headword commits through its own action (see `saveWord`), independently
+  // from the draft above, because Rules lock `word`/`normalizedWord` on any card
+  // that already has an identity: a rename always goes through the dedicated
+  // `renameCardHeadword` callable, never through the plain-patch pipeline.
+  const [wordDraft, setWordDraft] = useState(card.word);
+  const [renamingWord, setRenamingWord] = useState(false);
+  const [wordError, setWordError] = useState<'invalid' | 'conflict' | 'duplicate' | 'failed' | null>(null);
+  const [imageSearching, setImageSearching] = useState(false);
+  const [imageSearchFailed, setImageSearchFailed] = useState(false);
   const firstFieldRef = useRef<HTMLTextAreaElement | null>(null);
   const wasOpenRef = useRef(open);
   const cardIdRef = useRef(card.id);
@@ -100,10 +122,21 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
       setDraft(createEditCardDraft(card));
       setError(null);
       setDiscardConfirmOpen(false);
+      setWordDraft(card.word);
+      setRenamingWord(false);
+      setWordError(null);
+      setImageSearching(false);
+      setImageSearchFailed(false);
     }
     wasOpenRef.current = open;
     cardIdRef.current = card.id;
   }, [card, open]);
+
+  // The headword rename callable is the only way this dialog can be Rules-
+  // safe for an identified card; without a configured Firebase project there
+  // is no callable to reach, so the control degrades to its old read-only
+  // presentation instead of offering an action that would always fail.
+  const canRenameWord = isFirebaseConfigured;
 
   const targetLanguage = openedCard.language || 'en';
   const nativeLanguage = openedCard.translationLanguage || 'vi';
@@ -112,6 +145,21 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
   const saveFailedMessage = _(msg({ id: 'library.edit-card.save-failed', message: 'Your changes could not be saved. This card may have changed elsewhere. Try again.' }));
   const invalidContentMessage = _(msg({ id: 'library.edit-card.invalid-content', message: 'Check the card content and try again.' }));
   const errorMessage = error === 'save-failed' ? saveFailedMessage : error === 'invalid-content' ? invalidContentMessage : null;
+
+  const wordTooLongMessage = _(msg({ id: 'library.edit-card.word-too-long', message: 'Word is too long.' }));
+  const wordDuplicateMessage = _(msg({ id: 'library.edit-card.word-duplicate', message: 'Another card already uses this word.' }));
+  const wordConflictMessage = _(msg({ id: 'library.edit-card.word-conflict', message: 'This card changed elsewhere. Reload and try again.' }));
+  const wordSaveFailedMessage = _(msg({ id: 'library.edit-card.word-save-failed', message: 'The word could not be saved. Try again.' }));
+  const wordErrorMessage = wordError === 'invalid'
+    ? wordTooLongMessage
+    : wordError === 'duplicate'
+      ? wordDuplicateMessage
+      : wordError === 'conflict'
+        ? wordConflictMessage
+        : wordError === 'failed'
+          ? wordSaveFailedMessage
+          : null;
+  const imageSearchFailedMessage = _(msg({ id: 'library.edit-card.image-search-failed', message: 'No new photo was found. Try again in a moment.' }));
 
   const closeSheet = (force = false) => {
     if (saving && !force) return;
@@ -129,6 +177,76 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
       return;
     }
     closeSheet();
+  };
+
+  // Commits a headword correction on its own, one Firestore transaction on
+  // the server via the trusted callable — kept independent from the main
+  // form's patch so the two write paths (Admin-SDK callable vs. client
+  // Firestore update) never have to reconcile a single combined save.
+  const saveWord = async () => {
+    if (renamingWord) return;
+    const nextWord = wordDraft.trim();
+    if (nextWord === openedCard.word) {
+      setWordError(null);
+      return;
+    }
+    if (!nextWord || nextWord.length > MAX_HEADWORD_LENGTH) {
+      setWordError('invalid');
+      return;
+    }
+    const uid = auth?.currentUser?.uid;
+    if (!uid) {
+      setWordError('failed');
+      return;
+    }
+    setRenamingWord(true);
+    setWordError(null);
+    try {
+      const renamed = await renameCardHeadword(uid, openedCard.id, nextWord, openedCard.revision ?? 0, openedCard.libraryEpoch ?? 0);
+      setOpenedCard(renamed);
+      setWordDraft(renamed.word);
+    } catch (renameError) {
+      if (renameError instanceof CardHeadwordRenameError) {
+        setWordError(renameError.reason === 'duplicate-word' ? 'duplicate' : 'conflict');
+      } else {
+        setWordError('failed');
+      }
+    } finally {
+      setRenamingWord(false);
+    }
+  };
+
+  // Reuses the same protected search the AI creation flow uses, in the
+  // learner's current draft context rather than the live card, so a photo
+  // found right after editing the meaning matches what is about to be saved.
+  const findAnotherPhoto = async () => {
+    if (imageSearching) return;
+    setImageSearching(true);
+    setImageSearchFailed(false);
+    try {
+      const searchQuery = draft.translation.trim() || openedCard.translation;
+      const found = await fetchImageUrl({
+        word: openedCard.word,
+        searchQuery,
+        category: draft.category,
+        partOfSpeech: draft.partOfSpeech,
+        explanation: draft.explanation,
+      });
+      if (found) {
+        setDraft(previous => ({ ...previous, imageUrl: found, imageSearchQuery: searchQuery }));
+      } else {
+        setImageSearchFailed(true);
+      }
+    } catch {
+      setImageSearchFailed(true);
+    } finally {
+      setImageSearching(false);
+    }
+  };
+
+  const removeImage = () => {
+    setDraft(previous => ({ ...previous, imageUrl: '', imageSearchQuery: '' }));
+    setImageSearchFailed(false);
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -152,6 +270,23 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
       if (!isSuccessfulEditCardSave(outcome)) {
         setError('save-failed');
         return;
+      }
+      // The category->count mirror is kept in sync from a fire-and-forget call,
+      // matching the delete path (`useLearningStatePersistence.ts`): the mirror
+      // is a display aid, so it must never gate the save the learner is waiting on.
+      if (Object.prototype.hasOwnProperty.call(patch, 'category')) {
+        const delta = buildCategoryFacetDelta(openedCard.category, patch.category as string);
+        const uid = auth?.currentUser?.uid;
+        if (delta && uid && db && isFirebaseConfigured) {
+          void applyCategoryDeltas(
+            db,
+            uid,
+            delta,
+            deriveLibraryFacetOperationId(`card-edit:${openedCard.id}:${openedCard.revision ?? 0}`, 'category-edit'),
+          ).catch(facetError => {
+            console.error('Category facets mirror could not be updated after a card edit.', facetError);
+          });
+        }
       }
       // A successful save is already committed, so it must bypass the dirty
       // exit guard and return focus through Radix to the launch control.
@@ -244,11 +379,109 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="min-w-0">
                     <span className="block text-xs font-black uppercase tracking-[.12em] text-[var(--sf-text-muted)]"><Trans id="library.edit-card.word" message="Word" /></span>
-                    <span lang={targetLanguage} className="mt-1.5 flex min-h-11 items-center rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 font-serif text-lg font-bold text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">{openedCard.word}</span>
+                    {canRenameWord ? (
+                      <div className="mt-1.5 flex min-w-0 gap-1.5">
+                        <input
+                          data-edit-word-input
+                          value={wordDraft}
+                          lang={targetLanguage}
+                          dir="auto"
+                          maxLength={MAX_HEADWORD_LENGTH}
+                          disabled={renamingWord}
+                          onChange={event => {
+                            setWordDraft(event.target.value);
+                            setWordError(null);
+                          }}
+                          onKeyDown={event => {
+                            if (event.key !== 'Enter') return;
+                            event.preventDefault();
+                            void saveWord();
+                          }}
+                          className="min-h-11 min-w-0 flex-1 rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 font-serif text-lg font-bold text-[var(--sf-text)] outline-none focus-visible:border-[var(--sf-brand)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--sf-brand)_24%,transparent)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                        />
+                        <button
+                          type="button"
+                          data-edit-word-save
+                          aria-label={_(msg({ id: 'library.edit-card.save-word', message: 'Save word' }))}
+                          disabled={renamingWord || !wordDraft.trim() || wordDraft.trim() === openedCard.word}
+                          onClick={saveWord}
+                          className="flex size-11 shrink-0 items-center justify-center rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                        >
+                          {renamingWord ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Check size={16} aria-hidden="true" />}
+                        </button>
+                      </div>
+                    ) : (
+                      <span lang={targetLanguage} className="mt-1.5 flex min-h-11 items-center rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 font-serif text-lg font-bold text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">{openedCard.word}</span>
+                    )}
+                    {wordErrorMessage && <p role="alert" className="mt-1.5 text-xs font-semibold text-[var(--sf-danger)]">{wordErrorMessage}</p>}
                   </div>
                   <div className="min-w-0">
                     <span className="block text-xs font-black uppercase tracking-[.12em] text-[var(--sf-text-muted)]"><Trans id="library.edit-card.part-of-speech" message="Part of speech" /></span>
-                    <span aria-disabled="true" className="mt-1.5 flex min-h-11 items-center rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 text-sm text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">{openedCard.partOfSpeech || '—'}</span>
+                    {canEditPartOfSpeech(openedCard) ? (
+                      <input
+                        data-edit-partofspeech-input
+                        value={draft.partOfSpeech}
+                        maxLength={MAX_PART_OF_SPEECH_LENGTH}
+                        onChange={event => {
+                          setDraft(previous => ({ ...previous, partOfSpeech: event.target.value }));
+                          setError(null);
+                        }}
+                        className="mt-1.5 min-h-11 w-full rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 text-sm text-[var(--sf-text)] outline-none focus-visible:border-[var(--sf-brand)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--sf-brand)_24%,transparent)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                      />
+                    ) : (
+                      <>
+                        <span aria-disabled="true" className="mt-1.5 flex min-h-11 items-center rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 text-sm text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">{openedCard.partOfSpeech || '—'}</span>
+                        <p className="mt-1 text-[11px] text-[var(--sf-text-muted)]"><Trans id="library.edit-card.part-of-speech-locked" message="Locked to this card's published sense." /></p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block min-w-0">
+                    <span className="block text-xs font-black uppercase tracking-[.12em] text-[var(--sf-text-muted)]"><Trans id="library.edit-card.category" message="Category" /></span>
+                    <input
+                      data-edit-category-input
+                      value={draft.category}
+                      maxLength={MAX_CATEGORY_LENGTH}
+                      onChange={event => {
+                        setDraft(previous => ({ ...previous, category: event.target.value }));
+                        setError(null);
+                      }}
+                      className="mt-1.5 min-h-11 w-full rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 text-sm text-[var(--sf-text)] outline-none focus-visible:border-[var(--sf-brand)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--sf-brand)_24%,transparent)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                    />
+                  </label>
+                  <div className="min-w-0">
+                    <span className="block text-xs font-black uppercase tracking-[.12em] text-[var(--sf-text-muted)]"><Trans id="library.edit-card.image" message="Image" /></span>
+                    <div className="mt-1.5 flex min-w-0 items-center gap-2">
+                      {draft.imageUrl ? (
+                        <img src={getDisplayImageUrl(draft.imageUrl)} alt="" className="size-11 shrink-0 rounded-[calc(var(--sf-card-radius)*.65)] object-cover [html[data-theme-family=crystal]_&]:crystal-chamfer-sm" />
+                      ) : (
+                        <div aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-[calc(var(--sf-card-radius)*.65)] border border-dashed border-[var(--sf-border)] text-[10px] font-black uppercase text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><Trans id="library.edit-card.no-image" message="No image" /></div>
+                      )}
+                      <button
+                        type="button"
+                        data-edit-image-find
+                        disabled={imageSearching || !isFirebaseConfigured}
+                        onClick={findAnotherPhoto}
+                        className="flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                      >
+                        {imageSearching && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
+                        <Trans id="library.edit-card.find-another-photo" message="Find another photo" />
+                      </button>
+                      {draft.imageUrl && (
+                        <button
+                          type="button"
+                          data-edit-image-remove
+                          onClick={removeImage}
+                          aria-label={_(msg({ id: 'library.edit-card.remove-image', message: 'Remove image' }))}
+                          className="flex size-9 shrink-0 items-center justify-center rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-danger)] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                        >
+                          <X size={14} aria-hidden="true" />
+                        </button>
+                      )}
+                    </div>
+                    {imageSearchFailed && <p role="alert" className="mt-1.5 text-xs font-semibold text-[var(--sf-danger)]">{imageSearchFailedMessage}</p>}
                   </div>
                 </div>
 
@@ -278,7 +511,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDia
                 </div>
 
                 <p data-edit-contract-note className="rounded-[var(--sf-card-radius)] border border-dashed border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 text-xs leading-5 text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
-                  <Trans id="library.edit-card.contract-note" message="Headword, part of speech, image, deck, bookmark, tags and difficulty stay unchanged in this sheet until their data contracts are available." />
+                  <Trans id="library.edit-card.contract-note" message="A published sense's part of speech, deck, bookmark, tags and difficulty stay unchanged in this sheet until their data contracts are available." />
                 </p>
                 {openedCard.source && (openedCard.source.url || openedCard.source.title) && (
                   <p data-edit-source-note className="rounded-[var(--sf-card-radius)] border border-dashed border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 text-xs leading-5 text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">

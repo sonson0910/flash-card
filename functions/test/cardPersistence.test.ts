@@ -10,15 +10,19 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   CardAllocationConflictError,
   CardAllocationLimitError,
+  CardHeadwordRenameConflictError,
   canonicalCard,
   createCardForOwner,
   createStarterCardsForOwner,
   parseCreateCardRequest,
+  parseRenameCardHeadwordRequest,
+  renameCardHeadwordForOwner,
 } from '../src/cardPersistence.js';
 import { createHash } from 'node:crypto';
 import { libraryFacetRestoreOperationId } from '../src/libraryFacetPersistence.js';
 import {
   toCardAllocationHttpsError,
+  toCardHeadwordRenameHttpsError,
 } from '../src/index.js';
 import { LegacyLibraryMigrationFenceError } from '../src/legacyLibraryMigrationOwnerScope.js';
 import { AiQuotaError } from '../src/aiQuota.js';
@@ -90,6 +94,12 @@ const transactionHarness = (
       writing = true;
       events.push(`set:${document.path}`);
       writes.push({ method: 'set', path: document.path, data });
+      return transaction;
+    }),
+    delete: vi.fn((document: DocumentReference) => {
+      writing = true;
+      events.push(`delete:${document.path}`);
+      writes.push({ method: 'delete', path: document.path });
       return transaction;
     }),
   } as unknown as Transaction;
@@ -940,5 +950,174 @@ describe('starter card allocation', () => {
     await expect(createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config))
       .rejects.toBeInstanceOf(CardAllocationLimitError);
     expect(harness.writes).toHaveLength(0);
+  });
+});
+
+describe('renameCardHeadwordForOwner', () => {
+  const oldIdentityHash = createHash('sha256').update('hello').digest('hex');
+  const newIdentityHash = createHash('sha256').update('goodbye').digest('hex');
+
+  const persistedLegacyCard = {
+    id: 'word-hello',
+    word: 'hello',
+    normalizedWord: 'hello',
+    translation: 'xin chào',
+    schemaVersion: 2,
+    revision: 5,
+    libraryEpoch: 0,
+  };
+
+  it('parses a valid rename request and rejects unsupported fields, an invalid cardId, and an oversized word', () => {
+    expect(parseRenameCardHeadwordRequest({
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
+    })).toEqual({ cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0 });
+    expect(() => parseRenameCardHeadwordRequest({
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0, extra: true,
+    })).toThrow(/unsupported field/i);
+    expect(() => parseRenameCardHeadwordRequest({
+      cardId: 'not a valid id!', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
+    })).toThrow(/cardId/i);
+    expect(() => parseRenameCardHeadwordRequest({
+      cardId: 'word-hello', word: 'x'.repeat(257), baseRevision: 5, libraryEpoch: 0,
+    })).toThrow(/word/i);
+  });
+
+  it('renames a legacy card, swapping its identity reservation inside the same transaction', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, persistedLegacyCard)],
+      [`users/owner/card_reservations/${oldIdentityHash}`, snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+    ]));
+
+    const result = await renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
+    });
+
+    expect(result.card).toMatchObject({ id: 'word-hello', word: 'Goodbye', normalizedWord: 'goodbye', revision: 6 });
+    expect(harness.writes).toEqual(expect.arrayContaining([
+      {
+        method: 'create',
+        path: `users/owner/card_reservations/${newIdentityHash}`,
+        data: { schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'goodbye' },
+      },
+      { method: 'delete', path: `users/owner/card_reservations/${oldIdentityHash}` },
+    ]));
+    expect(harness.writes.some(write => write.method === 'set' && write.path === 'users/owner/cards/word-hello')).toBe(true);
+  });
+
+  it('skips the reservation swap entirely when the correction only changes case, not identity', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, persistedLegacyCard)],
+    ]));
+
+    const result = await renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: 'HELLO', baseRevision: 5, libraryEpoch: 0,
+    });
+
+    expect(result.card).toMatchObject({ word: 'HELLO', normalizedWord: 'hello', revision: 6 });
+    expect(harness.writes).toHaveLength(1);
+    expect(harness.writes[0]).toMatchObject({ method: 'set', path: 'users/owner/cards/word-hello' });
+  });
+
+  it('rejects the rename as a duplicate when the new word is already reserved by a different card', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, persistedLegacyCard)],
+      [`users/owner/card_reservations/${newIdentityHash}`, snapshot(true, {
+        schemaVersion: 1, cardId: 'word-goodbye-someone-else', normalizedWord: 'goodbye',
+      })],
+    ]));
+
+    await expect(renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
+    })).rejects.toMatchObject({ reason: 'duplicate-word' });
+    expect(harness.writes).toHaveLength(0);
+  });
+
+  it('rejects a stale or future library epoch without writing anything', async () => {
+    const staleHarness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 3 })],
+      ['users/owner/cards/word-hello', snapshot(true, persistedLegacyCard)],
+    ]));
+    await expect(renameCardHeadwordForOwner(staleHarness.database, 'owner', {
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
+    })).rejects.toMatchObject({ reason: 'stale-library-epoch' });
+    expect(staleHarness.writes).toHaveLength(0);
+
+    const futureHarness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, persistedLegacyCard)],
+    ]));
+    await expect(renameCardHeadwordForOwner(futureHarness.database, 'owner', {
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 3,
+    })).rejects.toMatchObject({ reason: 'future-library-epoch' });
+    expect(futureHarness.writes).toHaveLength(0);
+  });
+
+  it('rejects a stale baseRevision as a revision conflict', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, persistedLegacyCard)],
+    ]));
+    await expect(renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 4, libraryEpoch: 0,
+    })).rejects.toMatchObject({ reason: 'revision-conflict' });
+    expect(harness.writes).toHaveLength(0);
+  });
+
+  it('rejects renaming a card that does not exist', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+    ]));
+    await expect(renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
+    })).rejects.toMatchObject({ reason: 'missing' });
+  });
+
+  it('rejects renaming a card that still needs v1/v2 migration before it has a usable revision', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, { ...persistedLegacyCard, schemaVersion: undefined, revision: undefined })],
+    ]));
+    await expect(renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
+    })).rejects.toMatchObject({ reason: 'requires-migration' });
+    expect(harness.writes).toHaveLength(0);
+  });
+
+  it('never reads or writes a reservation for a canonical (lexemeId) card, whose word is display-only', async () => {
+    const canonicalCardDoc = {
+      id: 'canonical-1', word: 'lead', normalizedWord: 'lead', lexemeId: 'lexeme-lead-noun',
+      schemaVersion: 2, revision: 2,
+    };
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/canonical-1', snapshot(true, canonicalCardDoc)],
+    ]));
+
+    const result = await renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'canonical-1', word: 'Leads', baseRevision: 2, libraryEpoch: 0,
+    });
+
+    expect(result.card).toMatchObject({ word: 'Leads', normalizedWord: 'leads', lexemeId: 'lexeme-lead-noun', revision: 3 });
+    expect(harness.writes).toHaveLength(1);
+    expect(harness.writes[0]).toMatchObject({ method: 'set', path: 'users/owner/cards/canonical-1' });
+  });
+});
+
+describe('toCardHeadwordRenameHttpsError', () => {
+  it('maps each conflict reason to the matching HttpsError code', () => {
+    expect(toCardHeadwordRenameHttpsError(new CardHeadwordRenameConflictError('missing', 'x'))).toMatchObject({ code: 'not-found' });
+    expect(toCardHeadwordRenameHttpsError(new CardHeadwordRenameConflictError('duplicate-word', 'x'))).toMatchObject({ code: 'already-exists' });
+    for (const reason of ['stale-library-epoch', 'future-library-epoch', 'revision-conflict', 'requires-migration'] as const) {
+      expect(toCardHeadwordRenameHttpsError(new CardHeadwordRenameConflictError(reason, 'x'))).toMatchObject({ code: 'failed-precondition' });
+    }
+  });
+
+  it('returns null for any error that is not a headword rename conflict', () => {
+    expect(toCardHeadwordRenameHttpsError(new Error('unrelated'))).toBeNull();
   });
 });
