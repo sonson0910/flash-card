@@ -244,8 +244,8 @@ msgstr "Ví dụ công việc, sắc thái và từ đồng nghĩa"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/CardBack.tsx:170
+#: src/components/flashcard/CardFront.tsx:178
 #: src/components/flashcard/CardFront.tsx:179
-#: src/components/flashcard/CardFront.tsx:180
 msgid "flashcard.audio.check-pronunciation"
 msgstr "Kiểm tra phát âm"
 
@@ -255,13 +255,13 @@ msgid "flashcard.audio.failed"
 msgstr "Không phát được âm thanh. Hãy kiểm tra quyền âm thanh của trang rồi thử lại."
 
 #. js-lingui-explicit-id
+#: src/components/flashcard/CardFront.tsx:341
 #: src/components/flashcard/CardFront.tsx:342
-#: src/components/flashcard/CardFront.tsx:343
 msgid "flashcard.audio.listen-pronunciation"
 msgstr "Nghe phát âm"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:188
+#: src/components/flashcard/CardFront.tsx:187
 msgid "flashcard.audio.listening"
 msgstr "Đang nghe"
 
@@ -269,8 +269,8 @@ msgstr "Đang nghe"
 #: src/components/flashcard/CardBack.tsx:145
 #: src/components/flashcard/CardBack.tsx:146
 #: src/components/flashcard/CardBack.tsx:351
+#: src/components/flashcard/CardFront.tsx:153
 #: src/components/flashcard/CardFront.tsx:154
-#: src/components/flashcard/CardFront.tsx:155
 msgid "flashcard.audio.play-pronunciation"
 msgstr "Phát âm"
 
@@ -281,7 +281,7 @@ msgstr "Luyện phát âm"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/CardBack.tsx:130
-#: src/components/flashcard/CardFront.tsx:140
+#: src/components/flashcard/CardFront.tsx:139
 msgid "flashcard.audio.toggle-speed"
 msgstr "Đổi tốc độ"
 
@@ -291,7 +291,7 @@ msgid "flashcard.audio.toggle-speed-back"
 msgstr "Đổi tốc độ (1,0x / chậm 0,75x)"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:139
+#: src/components/flashcard/CardFront.tsx:138
 msgid "flashcard.audio.toggle-speed-detail"
 msgstr "Đổi tốc độ phát âm (1,0x / chậm 0,75x)"
 
@@ -331,49 +331,49 @@ msgid "flashcard.card.word-revealed"
 msgstr "Đã hiện từ tiếng Anh"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:101
+#: src/components/flashcard/CardFront.tsx:100
 msgid "flashcard.category"
 msgstr "Danh mục: {category}"
 
 #. js-lingui-explicit-id
 #: src/components/Flashcard.tsx:490
-#: src/components/flashcard/CardFront.tsx:328
+#: src/components/flashcard/CardFront.tsx:327
 msgid "flashcard.cefr-level"
 msgstr "CEFR {level}"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:251
-#: src/components/flashcard/CardFront.tsx:255
+#: src/components/flashcard/CardFront.tsx:250
+#: src/components/flashcard/CardFront.tsx:254
 msgid "flashcard.deck.choose"
 msgstr "Chọn bộ thẻ"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:255
+#: src/components/flashcard/CardFront.tsx:254
 msgid "flashcard.deck.close"
 msgstr "Đóng bộ chọn bộ thẻ"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:255
+#: src/components/flashcard/CardFront.tsx:254
 msgid "flashcard.deck.description"
 msgstr "Sắp xếp “{word}” mà không rời khỏi thẻ."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:257
+#: src/components/flashcard/CardFront.tsx:256
 msgid "flashcard.deck.unassigned"
 msgstr "Chưa phân bộ"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:194
+#: src/components/flashcard/CardFront.tsx:193
 msgid "flashcard.definition.hidden"
 msgstr "Đã ẩn định nghĩa"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:229
+#: src/components/flashcard/CardFront.tsx:228
 msgid "flashcard.definition.listen"
 msgstr "Nghe định nghĩa"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:245
+#: src/components/flashcard/CardFront.tsx:244
 msgid "flashcard.definition.practice"
 msgstr "Luyện đọc định nghĩa"
 
@@ -489,7 +489,7 @@ msgstr "Hiện gợi ý"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/ActiveRecallPrompt.tsx:82
-#: src/components/flashcard/CardFront.tsx:82
+#: src/components/flashcard/CardFront.tsx:81
 msgid "flashcard.image.illustration"
 msgstr "Minh họa cho {word}"
 
@@ -499,7 +499,7 @@ msgid "flashcard.image.loading"
 msgstr "Đang tải ảnh"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:83
+#: src/components/flashcard/CardFront.tsx:82
 msgid "flashcard.image.none"
 msgstr "Không có ảnh cho {word}"
 
@@ -509,7 +509,7 @@ msgid "flashcard.image.none-description"
 msgstr "Không có ảnh cho {description}"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:85
+#: src/components/flashcard/CardFront.tsx:84
 #: src/components/flashcard/CardImage.tsx:58
 msgid "flashcard.image.unavailable"
 msgstr "Không có hình minh họa"
@@ -536,8 +536,8 @@ msgid "flashcard.lexicon-context-description"
 msgstr "Ví dụ, cụm từ và sắc thái"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:167
-#: src/components/flashcard/CardFront.tsx:232
+#: src/components/flashcard/CardFront.tsx:166
+#: src/components/flashcard/CardFront.tsx:231
 msgid "flashcard.listen"
 msgstr "Nghe"
 
@@ -588,7 +588,7 @@ msgid "flashcard.part-of-speech-prefix"
 msgstr "Từ loại:"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:221
+#: src/components/flashcard/CardFront.tsx:220
 msgid "flashcard.quiz"
 msgstr "Kiểm tra"
 
@@ -618,12 +618,12 @@ msgid "flashcard.quiz.select-option"
 msgstr "Chọn 1 đáp án"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:218
+#: src/components/flashcard/CardFront.tsx:217
 msgid "flashcard.quiz.title"
 msgstr "Tự kiểm tra nhanh trước khi xem định nghĩa"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:248
+#: src/components/flashcard/CardFront.tsx:247
 msgid "flashcard.read-aloud"
 msgstr "Đọc to"
 
@@ -759,13 +759,13 @@ msgid "flashcard.return-to-english-label"
 msgstr "Trở về mặt tiếng Anh của {word}"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:290
-#: src/components/flashcard/CardFront.tsx:378
+#: src/components/flashcard/CardFront.tsx:289
+#: src/components/flashcard/CardFront.tsx:377
 msgid "flashcard.reveal-meaning"
 msgstr "Xem nghĩa"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:277
+#: src/components/flashcard/CardFront.tsx:276
 msgid "flashcard.reveal-meaning-label"
 msgstr "Xem nghĩa tiếng Việt của {word}"
 
@@ -802,27 +802,17 @@ msgid "flashcard.star.remove"
 msgstr "Bỏ đánh dấu sao"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:116
+#: src/components/flashcard/CardFront.tsx:115
 msgid "flashcard.status.due"
 msgstr "Đến hạn ôn tập"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:122
-msgid "flashcard.status.learning"
-msgstr "Đang học"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:122
-msgid "flashcard.status.mastered"
-msgstr "Đã thành thạo"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:122
+#: src/components/flashcard/CardFront.tsx:121
 msgid "flashcard.status.needs-practice"
 msgstr "Cần luyện thêm"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:111
+#: src/components/flashcard/CardFront.tsx:110
 msgid "flashcard.status.new"
 msgstr "Thẻ mới"
 
@@ -857,35 +847,17 @@ msgid "flashcard.syllables.primary-stress"
 msgstr "Trọng âm chính: {syllable}"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:396
-msgctxt "crystal.tier"
-msgid "flashcard.tier.crystal.learning"
-msgstr "Nở hoa"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:397
-msgctxt "crystal.tier"
-msgid "flashcard.tier.crystal.mastered"
-msgstr "Ngôi sao"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:395
-msgctxt "crystal.tier"
-msgid "flashcard.tier.crystal.new"
-msgstr "Mầm"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:399
+#: src/components/flashcard/CardFront.tsx:392
 msgid "flashcard.tier.learning"
 msgstr "Đang học"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:400
+#: src/components/flashcard/CardFront.tsx:393
 msgid "flashcard.tier.mastered"
 msgstr "Đã thành thạo"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:398
+#: src/components/flashcard/CardFront.tsx:391
 msgid "flashcard.tier.new"
 msgstr "Mới"
 
@@ -910,7 +882,7 @@ msgid "flashcard.try-again"
 msgstr "Thử lại"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:90
+#: src/components/flashcard/CardFront.tsx:89
 msgid "flashcard.visual-hint.hidden"
 msgstr "Đã ẩn gợi ý hình ảnh"
 

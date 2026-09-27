@@ -244,8 +244,8 @@ msgstr "Business examples, nuance & synonyms"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/CardBack.tsx:170
+#: src/components/flashcard/CardFront.tsx:178
 #: src/components/flashcard/CardFront.tsx:179
-#: src/components/flashcard/CardFront.tsx:180
 msgid "flashcard.audio.check-pronunciation"
 msgstr "Check pronunciation"
 
@@ -255,13 +255,13 @@ msgid "flashcard.audio.failed"
 msgstr "Audio could not be played. Check this site’s audio permission and try again."
 
 #. js-lingui-explicit-id
+#: src/components/flashcard/CardFront.tsx:341
 #: src/components/flashcard/CardFront.tsx:342
-#: src/components/flashcard/CardFront.tsx:343
 msgid "flashcard.audio.listen-pronunciation"
 msgstr "Listen to pronunciation"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:188
+#: src/components/flashcard/CardFront.tsx:187
 msgid "flashcard.audio.listening"
 msgstr "Listening"
 
@@ -269,8 +269,8 @@ msgstr "Listening"
 #: src/components/flashcard/CardBack.tsx:145
 #: src/components/flashcard/CardBack.tsx:146
 #: src/components/flashcard/CardBack.tsx:351
+#: src/components/flashcard/CardFront.tsx:153
 #: src/components/flashcard/CardFront.tsx:154
-#: src/components/flashcard/CardFront.tsx:155
 msgid "flashcard.audio.play-pronunciation"
 msgstr "Play pronunciation"
 
@@ -281,7 +281,7 @@ msgstr "Practise pronunciation"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/CardBack.tsx:130
-#: src/components/flashcard/CardFront.tsx:140
+#: src/components/flashcard/CardFront.tsx:139
 msgid "flashcard.audio.toggle-speed"
 msgstr "Toggle speed"
 
@@ -291,7 +291,7 @@ msgid "flashcard.audio.toggle-speed-back"
 msgstr "Toggle speed (1.0x / 0.75x slow)"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:139
+#: src/components/flashcard/CardFront.tsx:138
 msgid "flashcard.audio.toggle-speed-detail"
 msgstr "Toggle pronunciation speed (1.0x / 0.75x slow)"
 
@@ -331,49 +331,49 @@ msgid "flashcard.card.word-revealed"
 msgstr "English word revealed"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:101
+#: src/components/flashcard/CardFront.tsx:100
 msgid "flashcard.category"
 msgstr "Category: {category}"
 
 #. js-lingui-explicit-id
 #: src/components/Flashcard.tsx:490
-#: src/components/flashcard/CardFront.tsx:328
+#: src/components/flashcard/CardFront.tsx:327
 msgid "flashcard.cefr-level"
 msgstr "CEFR {level}"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:251
-#: src/components/flashcard/CardFront.tsx:255
+#: src/components/flashcard/CardFront.tsx:250
+#: src/components/flashcard/CardFront.tsx:254
 msgid "flashcard.deck.choose"
 msgstr "Choose deck"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:255
+#: src/components/flashcard/CardFront.tsx:254
 msgid "flashcard.deck.close"
 msgstr "Close deck selector"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:255
+#: src/components/flashcard/CardFront.tsx:254
 msgid "flashcard.deck.description"
 msgstr "Organise “{word}” without leaving the card."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:257
+#: src/components/flashcard/CardFront.tsx:256
 msgid "flashcard.deck.unassigned"
 msgstr "Unassigned"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:194
+#: src/components/flashcard/CardFront.tsx:193
 msgid "flashcard.definition.hidden"
 msgstr "Definition hidden"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:229
+#: src/components/flashcard/CardFront.tsx:228
 msgid "flashcard.definition.listen"
 msgstr "Listen to the definition"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:245
+#: src/components/flashcard/CardFront.tsx:244
 msgid "flashcard.definition.practice"
 msgstr "Practise reading the definition"
 
@@ -489,7 +489,7 @@ msgstr "Show hints"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/ActiveRecallPrompt.tsx:82
-#: src/components/flashcard/CardFront.tsx:82
+#: src/components/flashcard/CardFront.tsx:81
 msgid "flashcard.image.illustration"
 msgstr "Illustration for {word}"
 
@@ -499,7 +499,7 @@ msgid "flashcard.image.loading"
 msgstr "Loading image"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:83
+#: src/components/flashcard/CardFront.tsx:82
 msgid "flashcard.image.none"
 msgstr "No image for {word}"
 
@@ -509,7 +509,7 @@ msgid "flashcard.image.none-description"
 msgstr "No image for {description}"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:85
+#: src/components/flashcard/CardFront.tsx:84
 #: src/components/flashcard/CardImage.tsx:58
 msgid "flashcard.image.unavailable"
 msgstr "Image cue unavailable"
@@ -536,8 +536,8 @@ msgid "flashcard.lexicon-context-description"
 msgstr "Examples, collocations & nuances"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:167
-#: src/components/flashcard/CardFront.tsx:232
+#: src/components/flashcard/CardFront.tsx:166
+#: src/components/flashcard/CardFront.tsx:231
 msgid "flashcard.listen"
 msgstr "Listen"
 
@@ -588,7 +588,7 @@ msgid "flashcard.part-of-speech-prefix"
 msgstr "Part of speech:"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:221
+#: src/components/flashcard/CardFront.tsx:220
 msgid "flashcard.quiz"
 msgstr "Quiz"
 
@@ -618,12 +618,12 @@ msgid "flashcard.quiz.select-option"
 msgstr "Select 1 option"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:218
+#: src/components/flashcard/CardFront.tsx:217
 msgid "flashcard.quiz.title"
 msgstr "Quick self-test quiz before revealing definition"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:248
+#: src/components/flashcard/CardFront.tsx:247
 msgid "flashcard.read-aloud"
 msgstr "Read aloud"
 
@@ -759,13 +759,13 @@ msgid "flashcard.return-to-english-label"
 msgstr "Return to the English side of {word}"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:290
-#: src/components/flashcard/CardFront.tsx:378
+#: src/components/flashcard/CardFront.tsx:289
+#: src/components/flashcard/CardFront.tsx:377
 msgid "flashcard.reveal-meaning"
 msgstr "Reveal meaning"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:277
+#: src/components/flashcard/CardFront.tsx:276
 msgid "flashcard.reveal-meaning-label"
 msgstr "Reveal the Vietnamese meaning of {word}"
 
@@ -802,27 +802,17 @@ msgid "flashcard.star.remove"
 msgstr "Remove star"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:116
+#: src/components/flashcard/CardFront.tsx:115
 msgid "flashcard.status.due"
 msgstr "Due for review"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:122
-msgid "flashcard.status.learning"
-msgstr "Learning"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:122
-msgid "flashcard.status.mastered"
-msgstr "Mastered"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:122
+#: src/components/flashcard/CardFront.tsx:121
 msgid "flashcard.status.needs-practice"
 msgstr "Needs practice"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:111
+#: src/components/flashcard/CardFront.tsx:110
 msgid "flashcard.status.new"
 msgstr "New card"
 
@@ -857,35 +847,17 @@ msgid "flashcard.syllables.primary-stress"
 msgstr "Primary stress: {syllable}"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:396
-msgctxt "crystal.tier"
-msgid "flashcard.tier.crystal.learning"
-msgstr "Bloom"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:397
-msgctxt "crystal.tier"
-msgid "flashcard.tier.crystal.mastered"
-msgstr "Star"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:395
-msgctxt "crystal.tier"
-msgid "flashcard.tier.crystal.new"
-msgstr "Bud"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:399
+#: src/components/flashcard/CardFront.tsx:392
 msgid "flashcard.tier.learning"
 msgstr "Learning"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:400
+#: src/components/flashcard/CardFront.tsx:393
 msgid "flashcard.tier.mastered"
 msgstr "Mastered"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:398
+#: src/components/flashcard/CardFront.tsx:391
 msgid "flashcard.tier.new"
 msgstr "New"
 
@@ -910,7 +882,7 @@ msgid "flashcard.try-again"
 msgstr "Try again"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardFront.tsx:90
+#: src/components/flashcard/CardFront.tsx:89
 msgid "flashcard.visual-hint.hidden"
 msgstr "Visual hint hidden"
 

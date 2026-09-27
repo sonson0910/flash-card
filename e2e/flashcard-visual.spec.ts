@@ -39,6 +39,11 @@ const viewports = [
   { name: 'mobile', width: 390, height: 844 },
 ] as const;
 
+const cardTiers = [
+  { name: 'learning', difficulty: 'good', label: 'Learning' },
+  { name: 'mastered', difficulty: 'easy', label: 'Mastered' },
+] as const;
+
 async function expectNoBlockingViolations(page: Page) {
   const results = await new AxeBuilder({ page })
     .include('.flashcard-shell')
@@ -105,13 +110,20 @@ async function expectNoMetadataControlOverlap(shell: Locator, metadata: Locator[
 }
 
 test.beforeEach(async ({ page, seedCards }) => {
-  await page.route(card.imageUrl, route => route.fulfill({ body: cardPhoto, contentType: 'image/jpeg' }));
+  await page.route(url => url.origin === 'https://images.pexels.com' && url.pathname === '/photos/123/luminous.jpg',
+    route => route.fulfill({ body: cardPhoto, contentType: 'image/jpeg' }));
   await seedCards([card]);
 });
 
+async function expectCardPhotoReady(shell: Locator) {
+  const image = shell.locator('.flashcard-face img');
+  await expect(image).toBeVisible();
+  await expect.poll(() => image.evaluate(element => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+}
+
 for (const theme of themes) {
   for (const viewport of viewports) {
-    test(`${theme.family} ${theme.mode} card front and back pass visual acceptance at ${viewport.name}`, async ({ page, signIn }, testInfo) => {
+    test(`${theme.family} ${theme.mode} card front and back pass visual acceptance at ${viewport.name}`, async ({ page, signIn }) => {
       await page.setViewportSize(viewport);
       await page.emulateMedia({ reducedMotion: 'no-preference' });
       await page.addInitScript(({ family, mode }) => {
@@ -133,31 +145,54 @@ for (const theme of themes) {
 
       await expect(shell).toHaveAttribute('data-card-side', 'front');
       await expect(shell.locator('.flashcard-face')).toBeVisible();
-      const frontScreenshot = testInfo.outputPath(`${theme.family}-${theme.mode}-${viewport.name}-front.png`);
-      await shell.screenshot({ path: frontScreenshot });
-      await testInfo.attach(`${theme.family}-${theme.mode}-${viewport.name}-front`, {
-        path: frontScreenshot,
-        contentType: 'image/png',
+      await expectCardPhotoReady(shell);
+      await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-front.png`, {
+        animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
       });
       await expectNoBlockingViolations(page);
 
       await shell.getByRole('button', { name: /Reveal the Vietnamese meaning of luminous/ }).click();
       await expect(shell).toHaveAttribute('data-card-side', 'back');
       await expect(shell.locator('.flashcard-back')).toBeVisible();
-      const backScreenshot = testInfo.outputPath(`${theme.family}-${theme.mode}-${viewport.name}-back.png`);
-      await shell.screenshot({ path: backScreenshot });
-      await testInfo.attach(`${theme.family}-${theme.mode}-${viewport.name}-back`, {
-        path: backScreenshot,
-        contentType: 'image/png',
+      await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-back.png`, {
+        animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
       });
       await expectNoBlockingViolations(page);
     });
   }
 }
 
+for (const tier of cardTiers) {
+  for (const theme of themes) {
+    for (const viewport of viewports) {
+      test(`${theme.family} ${theme.mode} ${tier.name} card front matches Canvas at ${viewport.name}`, async ({ page, seedCards, signIn }) => {
+        await seedCards([{ ...card, difficulty: tier.difficulty, nextReviewDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() }]);
+        await page.setViewportSize(viewport);
+        await page.emulateMedia({ reducedMotion: 'no-preference' });
+        await page.addInitScript(({ family, mode }) => {
+          localStorage.setItem('sonflash_theme_family', family);
+          localStorage.setItem('lingoflash_theme', mode);
+        }, theme);
+        await signIn(page, '/?view=library&locale=en');
+        await page.locator('.library-word-open').click();
+
+        const shell = page.getByRole('group', { name: /luminous flashcard/i });
+        await expect(shell).toHaveAttribute('data-card-side', 'front');
+        await expect(shell).toHaveAttribute('data-card-tier', tier.name);
+        await expect(shell.locator('[data-card-tier-label]')).toHaveText(tier.label);
+        await expect(shell.getByText('New card', { exact: true })).toHaveCount(0);
+        await expectCardPhotoReady(shell);
+        await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-${tier.name}-front.png`, {
+          animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
+        });
+      });
+    }
+  }
+}
+
 for (const theme of themes) {
   for (const viewport of viewports) {
-    test(`${theme.family} ${theme.mode} Zen card keeps both faces opaque and readable at ${viewport.name}`, async ({ page, signIn }, testInfo) => {
+    test(`${theme.family} ${theme.mode} Zen card keeps both faces opaque and readable at ${viewport.name}`, async ({ page, signIn }) => {
       await page.setViewportSize(viewport);
       await page.emulateMedia({ reducedMotion: 'no-preference' });
       await page.addInitScript(({ family, mode }) => {
@@ -180,11 +215,8 @@ for (const theme of themes) {
       await expect(front).toBeVisible();
       await expectReadableZenGlass(front);
       await expectNoMetadataControlOverlap(shell, [front.locator('[data-card-tier-label]')]);
-      const frontScreenshot = testInfo.outputPath(`${theme.family}-${theme.mode}-${viewport.name}-zen-front.png`);
-      await shell.screenshot({ path: frontScreenshot });
-      await testInfo.attach(`${theme.family}-${theme.mode}-${viewport.name}-zen-front`, {
-        path: frontScreenshot,
-        contentType: 'image/png',
+      await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-zen-front.png`, {
+        animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
       });
       await expectNoBlockingViolations(page);
 
@@ -197,11 +229,8 @@ for (const theme of themes) {
         back.getByText('Vietnamese', { exact: true }),
         back.locator('[data-card-tier-label]'),
       ]);
-      const backScreenshot = testInfo.outputPath(`${theme.family}-${theme.mode}-${viewport.name}-zen-back.png`);
-      await shell.screenshot({ path: backScreenshot });
-      await testInfo.attach(`${theme.family}-${theme.mode}-${viewport.name}-zen-back`, {
-        path: backScreenshot,
-        contentType: 'image/png',
+      await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-zen-back.png`, {
+        animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
       });
       await expectNoBlockingViolations(page);
     });

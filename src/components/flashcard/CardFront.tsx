@@ -4,7 +4,6 @@ import { Trans, useLingui } from '@lingui/react';
 import { CheckCircle2, EyeOff, FolderOpen, FolderX, ImageOff, Languages, Mic, Sparkles, Volume2, X } from 'lucide-react';
 import type { Dispatch, MouseEvent, PointerEvent, RefObject, SetStateAction } from 'react';
 import { isCardDue } from '../../lib/srs';
-import { useTheme } from '../../features/theme/ThemeProvider';
 import type { CardData } from '../../types/card';
 import { ActiveRecallQuiz } from './ActiveRecallQuiz';
 import { CardEffectsLayer } from './CardEffectsLayer';
@@ -117,9 +116,9 @@ export function CardFront({
                       </span>
                     ) : null}
 
-                    {data.difficulty && data.difficulty !== 'unrated' && (
+                    {data.difficulty === 'hard' && (
                       <span className="inline-flex items-center rounded-lg border border-slate-200/60 bg-slate-50 px-2 py-0.5 font-bold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400">
-                        {data.difficulty === 'easy' ? <Trans id="flashcard.status.mastered" message="Mastered" /> : data.difficulty === 'good' ? <Trans id="flashcard.status.learning" message="Learning" /> : <Trans id="flashcard.status.needs-practice" message="Needs practice" />}
+                        <Trans id="flashcard.status.needs-practice" message="Needs practice" />
                       </span>
                     )}
                   </div>
@@ -388,14 +387,8 @@ function ZenCardFront({
 }
 
 export function CardTierBadge({ tier }: { tier: CardTier }) {
-  const { family } = useTheme();
-  const { _ } = useLingui();
   return <span data-card-tier-label className="inline-flex items-center rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--sf-brand-text)]">
-    {family === 'crystal'
-      ? tier === 'new' ? _(msg({ id: 'flashcard.tier.crystal.new', context: 'crystal.tier', message: 'Bud' }))
-        : tier === 'learning' ? _(msg({ id: 'flashcard.tier.crystal.learning', context: 'crystal.tier', message: 'Bloom' }))
-          : _(msg({ id: 'flashcard.tier.crystal.mastered', context: 'crystal.tier', message: 'Star' }))
-      : tier === 'new' ? <Trans id="flashcard.tier.new" message="New" />
+    {tier === 'new' ? <Trans id="flashcard.tier.new" message="New" />
         : tier === 'learning' ? <Trans id="flashcard.tier.learning" message="Learning" />
           : <Trans id="flashcard.tier.mastered" message="Mastered" />}
   </span>;

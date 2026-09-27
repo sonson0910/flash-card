@@ -111,6 +111,8 @@ for (const theme of themes) for (const viewport of viewports) {
     if (theme.mode === 'dark') await expect(page.locator('html')).toHaveClass(/\bdark\b/);
     else await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
     if (theme.family === 'crystal') await expect(page.locator('#sonflash-crystal-theme')).toHaveAttribute('href', '/theme-crystal.css');
+    if (theme.family === 'crystal') await expect(page.locator('.library-word-grade').first()).toBeVisible();
+    else await expect(page.locator('.library-word-grade').first()).toBeHidden();
     await expectAccessibleAndContained(page, name);
     await expectReducedMotion(page, name);
     await expectScreen(page, testInfo, name);
