@@ -10,8 +10,15 @@ const LandingPage = lazy(() => Promise.all([
   import('./features/landing/LandingPage'), loadCatalog(getActiveUiLocale(), 'landing'),
 ]).then(([component]) => component));
 const runtimeRetry = new URLSearchParams(globalThis.location?.search).has('runtime-retry');
-const AppRuntime = lazy(() => Promise.all([
-    runtimeRetry ? import('./app/AppRuntimeRetry.virtual') : import('./app/AppRuntimeInitial.virtual'),
+const AppRuntime = runtimeRetry
+  ? lazy(() => Promise.all([
+    import('./app/AppRuntimeRetry.virtual'),
+    loadCatalog(getActiveUiLocale(), 'components'),
+    loadCatalog(getActiveUiLocale(), 'shell'),
+    loadCatalog(getActiveUiLocale(), 'practice'),
+  ]).then(([component]) => component))
+  : lazy(() => Promise.all([
+    import('./app/AppRuntimeInitial.virtual'),
     loadCatalog(getActiveUiLocale(), 'components'),
     loadCatalog(getActiveUiLocale(), 'shell'),
     loadCatalog(getActiveUiLocale(), 'practice'),
