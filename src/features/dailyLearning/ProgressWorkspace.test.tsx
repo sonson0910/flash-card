@@ -46,11 +46,15 @@ describe('ProgressWorkspace learning activity gate', () => {
     expect(html).not.toContain('Loading progress charts');
   });
 
-  it('shows the due forecast for an added card before its first review', () => {
+  it('shows scaled forecast bars and mastery cards for an added card before its first review', () => {
+    const dueForecast = Array.from({ length: 13 }, (_, index) => ({
+      date: new Date(Date.UTC(2026, 8, 28 + index)).toISOString().slice(0, 10),
+      count: index === 0 ? 0 : index === 1 ? 1 : index === 2 ? 4 : 0,
+    }));
     const html = renderProgress(<ProgressWorkspace
       darkMode={false} isOffline={false} stats={stats({
-        dueForecast: [{ date: '2026-09-28', count: 1 }],
-        recentlyMastered: [],
+        dueForecast,
+        recentlyMastered: [{ id: 'mastered-1', word: 'benefit', translation: 'lợi ích', masteredAt: '2026-09-27T18:30:00.000Z' }],
       })} isStatsLoading={false} statsError={null}
       continueReview={vi.fn()} openVocabulary={vi.fn()}
     />);
@@ -58,6 +62,12 @@ describe('ProgressWorkspace learning activity gate', () => {
     expect(html).toContain('Complete a review to begin your progress history.');
     expect(html).toContain('Due over the next 13 days');
     expect(html).toContain('2026-09-28');
+    expect(html.match(/class="grid min-w-0 gap-1"/g)).toHaveLength(13);
+    expect(html).toContain('height:0%');
+    expect(html).toContain('height:25%');
+    expect(html).toContain('height:100%');
+    expect(html).toContain('benefit');
+    expect(html).toContain('lợi ích');
     expect(html).not.toContain('Loading progress charts');
   });
 
