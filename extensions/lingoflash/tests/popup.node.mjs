@@ -571,6 +571,26 @@ test('shows a real synced due count next to the library link, never a placeholde
   assert.equal(withoutCount.elements.get('due-count-suffix').textContent, '');
 });
 
+test('clicking the due-count badge opens the app on the session it is counting, not the plain library (07.6)', async () => {
+  const withCount = await createPopupContext({ dueCount: 12 });
+  withCount.elements.get('open-app').dispatch('click');
+  await new Promise(resolve => setImmediate(resolve));
+
+  const openAppMessage = withCount.runtimeMessages.find(message => message.type === 'OPEN_APP');
+  assert.equal(openAppMessage?.target, 'today');
+  assert.equal(withCount.closeCalls, 1);
+});
+
+test('opening the app without a synced due count keeps the existing library/sign-in destination unchanged (07.6)', async () => {
+  const withoutCount = await createPopupContext({ dueCount: null });
+  withoutCount.elements.get('open-app').dispatch('click');
+  await new Promise(resolve => setImmediate(resolve));
+
+  const openAppMessage = withoutCount.runtimeMessages.find(message => message.type === 'OPEN_APP');
+  assert.equal(openAppMessage?.target, undefined);
+  assert.equal(withoutCount.closeCalls, 1);
+});
+
 test('swaps the footer link label between signed-out and signed-in phrasing based on a resolved due count', async () => {
   const withCount = await createPopupContext({ dueCount: 12 });
   assert.equal(withCount.elements.get('open-app-label').textContent, 'Mở thư viện');

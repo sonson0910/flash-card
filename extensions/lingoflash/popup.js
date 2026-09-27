@@ -749,7 +749,13 @@ selectionIconToggle?.addEventListener('click', () => {
 });
 
 document.getElementById('open-app').addEventListener('click', () => {
-  void sendMessage({ type: 'OPEN_APP' }).then(response => {
+  // 07.6: a real, background-synced due count is currently displayed only
+  // when dueCountSuffix is not hidden (see loadDueCount below) — in that
+  // case the click should land the user on the session (Today) it is
+  // counting, not the plain library. Sign-in and "no synced count yet"
+  // clicks keep opening the plain app URL unchanged.
+  const target = dueCountSuffix && !dueCountSuffix.hidden ? 'today' : undefined;
+  void sendMessage({ type: 'OPEN_APP', target }).then(response => {
     if (!response?.ok) throw new Error(response?.error || t('errorOpenApp', undefined, 'Không thể mở SonFlash.'));
     globalThis.close();
   }).catch(error => setStatus(error instanceof Error ? error.message : String(error), 'error'));

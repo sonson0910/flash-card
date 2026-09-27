@@ -9,7 +9,7 @@ const escapeAttribute = value => value.replaceAll('&', '&amp;').replaceAll('"', 
 const escapeText = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 const findMeta = (html, key, value) => tags(html, 'meta').find(tag => attribute(tag, key)?.toLowerCase() === value);
 
-export const checkLocalePages = ({ root = path.resolve('.') } = {}) => {
+export const checkLocalePages = ({ root = path.resolve('.'), target = process.env.SONFLASH_TARGET?.trim() || 'production' } = {}) => {
   const dist = path.join(root, 'dist');
   const failures = [];
   for (const locale of LOCALES) {
@@ -19,6 +19,12 @@ export const checkLocalePages = ({ root = path.resolve('.') } = {}) => {
     const metadata = readLocaleMetadata(root, locale);
     const lang = /<html\b[^>]*\blang=["']([^"']+)["']/i.exec(html)?.[1];
     if (lang !== locale.lang) failures.push(`${locale.code}: expected html lang=${locale.lang}, got ${lang || 'missing'}`);
+
+    // A production page must stay indexable; a non-production one (e.g. staging) must always
+    // declare noindex so it never competes with the production canonical for the same content.
+    const robotsMeta = attribute(findMeta(html, 'name', 'robots') || '', 'content')?.toLowerCase();
+    if (target === 'production' && robotsMeta) failures.push(`${locale.code}: production build must not ship a noindex meta tag`);
+    if (target !== 'production' && robotsMeta !== 'noindex, nofollow') failures.push(`${locale.code}: ${target} build is missing a noindex meta tag`);
 
     const links = tags(html, 'link');
     const canonical = links.find(tag => attribute(tag, 'rel')?.toLowerCase() === 'canonical');
@@ -52,8 +58,15 @@ export const checkLocalePages = ({ root = path.resolve('.') } = {}) => {
       if (!block.includes(`hreflang="x-default" href="${canonicalUrl(LOCALES[0])}"`)) failures.push(`sitemap.xml: missing x-default for ${locale.lang}`);
     }
   }
+  const robotsFile = path.join(dist, 'robots.txt');
+  if (!fs.existsSync(robotsFile)) failures.push('robots.txt: missing');
+  else {
+    const robots = fs.readFileSync(robotsFile, 'utf8');
+    if (target === 'production' && !/^Disallow:\s*$/im.test(robots) && !robots.includes('Allow: /')) failures.push('robots.txt: production build must allow crawling');
+    if (target !== 'production' && !/^Disallow:\s*\/\s*$/im.test(robots)) failures.push(`robots.txt: ${target} build must disallow all crawling`);
+  }
   if (failures.length) throw new Error(`Locale page validation failed:\n${failures.map(failure => `- ${failure}`).join('\n')}`);
-  console.log(`Validated ${LOCALES.length} localized landing pages.`);
+  console.log(`Validated ${LOCALES.length} localized landing pages for target "${target}".`);
 };
 
 if (import.meta.url === `file://${process.argv[1]}`) checkLocalePages();

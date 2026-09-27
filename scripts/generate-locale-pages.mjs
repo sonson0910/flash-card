@@ -48,10 +48,15 @@ const alternateLinks = () => [
   `<link rel="alternate" hreflang="x-default" href="${canonicalUrl(LOCALES[0])}" />`,
 ].join('\n    ');
 
-const replaceHeadMetadata = (html, locale, metadata) => {
+const replaceHeadMetadata = (html, locale, metadata, target) => {
   const canonical = canonicalUrl(locale);
   const tags = [
     `<meta name="description" content="${escapeAttribute(metadata.description)}" />`,
+    // A staging deploy (`SONFLASH_TARGET=staging`, a separate Firebase project) must never
+    // compete with the production canonical for the same content — `robots.txt` alone only
+    // blocks crawling, not indexing of an already-linked URL, so staging also gets an explicit
+    // noindex directive here.
+    ...(target !== 'production' ? ['<meta name="robots" content="noindex, nofollow" />'] : []),
     `<link rel="canonical" href="${canonical}" />`,
     alternateLinks(),
     '<meta property="og:type" content="website" />',
@@ -63,6 +68,7 @@ const replaceHeadMetadata = (html, locale, metadata) => {
   const withoutExistingSeo = html
     .replace(/\s*<title>[\s\S]*?<\/title>/i, '')
     .replace(/\s*<meta\s+name=["']description["'][^>]*>/i, '')
+    .replace(/\s*<meta\s+name=["']robots["'][^>]*>/i, '')
     .replace(/\s*<(?:meta|link)\b[^>]*(?:rel=["']canonical["']|rel=["']alternate["']|property=["']og:[^"']+["'])[^>]*>/gi, '');
   if (!/<html\b[^>]*\blang=["'][^"']*["']/i.test(withoutExistingSeo)) throw new Error('Built index.html is missing an html lang attribute.');
   const localized = withoutExistingSeo.replace(/<html\b([^>]*)\blang=["'][^"']*["']([^>]*)>/i, `<html$1lang="${locale.lang}"$2>`);
@@ -72,17 +78,27 @@ const replaceHeadMetadata = (html, locale, metadata) => {
 
 const sitemap = () => `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${LOCALES.map(locale => `  <url>\n    <loc>${canonicalUrl(locale)}</loc>\n${LOCALES.map(alternate => `    <xhtml:link rel="alternate" hreflang="${alternate.lang}" href="${canonicalUrl(alternate)}" />`).join('\n')}\n    <xhtml:link rel="alternate" hreflang="x-default" href="${canonicalUrl(LOCALES[0])}" />\n  </url>`).join('\n')}\n</urlset>\n`;
 
-export const generateLocalePages = ({ root = path.resolve('.') } = {}) => {
+// A non-production target (currently only `staging`, a separate Firebase project used for
+// pre-release verification) ships the same markup as production and must never be crawled or
+// indexed under its own domain — that would create duplicate-content and could leak an
+// unreleased build ahead of launch. `Disallow: /` (crawling) and each page's `noindex` meta
+// (indexing of URLs discovered another way, e.g. a shared staging link) cover both vectors.
+const robotsTxt = target => target === 'production'
+  ? `User-agent: *\nAllow: /\nSitemap: ${PRODUCTION_ORIGIN}/sitemap.xml\n`
+  : 'User-agent: *\nDisallow: /\n';
+
+export const generateLocalePages = ({ root = path.resolve('.'), target = process.env.SONFLASH_TARGET?.trim() || 'production' } = {}) => {
   const dist = path.join(root, process.env.SONFLASH_BUILD_OUT_DIR || 'dist');
   const basePath = path.join(dist, 'index.html');
   const baseHtml = fs.readFileSync(basePath, 'utf8');
   for (const locale of LOCALES) {
     const output = locale.path ? path.join(dist, locale.path, 'index.html') : basePath;
     fs.mkdirSync(path.dirname(output), { recursive: true });
-    fs.writeFileSync(output, replaceHeadMetadata(baseHtml, locale, readLocaleMetadata(root, locale)), 'utf8');
+    fs.writeFileSync(output, replaceHeadMetadata(baseHtml, locale, readLocaleMetadata(root, locale), target), 'utf8');
   }
   fs.writeFileSync(path.join(dist, 'sitemap.xml'), sitemap(), 'utf8');
-  console.log(`Generated ${LOCALES.length} localized landing pages and sitemap.xml.`);
+  fs.writeFileSync(path.join(dist, 'robots.txt'), robotsTxt(target), 'utf8');
+  console.log(`Generated ${LOCALES.length} localized landing pages, sitemap.xml, and robots.txt for target "${target}".`);
 };
 
 if (import.meta.url === `file://${process.argv[1]}`) generateLocalePages();

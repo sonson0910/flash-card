@@ -65,4 +65,36 @@ describe('localized landing pages', () => {
     fs.writeFileSync(sitemap, fs.readFileSync(sitemap, 'utf8').replace('hreflang="vi" href="https://sonflash.app/vi/"', 'hreflang="vi" href="https://example.com/vi/"'));
     assert.throws(() => checkLocalePages({ root }), /sitemap\.xml: missing alternate vi for en/);
   });
+
+  it('marks a staging build noindex on every locale page and disallows all crawling', () => {
+    const root = createFixture();
+    generateLocalePages({ root, target: 'staging' });
+    const english = fs.readFileSync(path.join(root, 'dist/index.html'), 'utf8');
+    const vietnamese = fs.readFileSync(path.join(root, 'dist/vi/index.html'), 'utf8');
+    assert.match(english, /<meta name="robots" content="noindex, nofollow" \/>/);
+    assert.match(vietnamese, /<meta name="robots" content="noindex, nofollow" \/>/);
+    assert.match(fs.readFileSync(path.join(root, 'dist/robots.txt'), 'utf8'), /^Disallow: \/$/m);
+    checkLocalePages({ root, target: 'staging' });
+  });
+
+  it('rejects a production build that ships a noindex meta tag', () => {
+    const root = createFixture();
+    generateLocalePages({ root });
+    const english = path.join(root, 'dist/index.html');
+    fs.writeFileSync(english, fs.readFileSync(english, 'utf8').replace('</head>', '<meta name="robots" content="noindex, nofollow" /></head>'));
+    assert.throws(() => checkLocalePages({ root }), /production build must not ship a noindex meta tag/);
+  });
+
+  it('rejects a staging build missing the noindex meta tag or the crawl block', () => {
+    const root = createFixture();
+    generateLocalePages({ root, target: 'staging' });
+    const english = path.join(root, 'dist/index.html');
+    fs.writeFileSync(english, fs.readFileSync(english, 'utf8').replace('<meta name="robots" content="noindex, nofollow" />', ''));
+    assert.throws(() => checkLocalePages({ root, target: 'staging' }), /missing a noindex meta tag/);
+
+    const restaged = createFixture();
+    generateLocalePages({ root: restaged, target: 'staging' });
+    fs.writeFileSync(path.join(restaged, 'dist/robots.txt'), 'User-agent: *\nAllow: /\n');
+    assert.throws(() => checkLocalePages({ root: restaged, target: 'staging' }), /must disallow all crawling/);
+  });
 });

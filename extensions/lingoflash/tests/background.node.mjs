@@ -341,6 +341,18 @@ test('opens the app on the WebWords route when OPEN_APP carries target: webWords
   assert.ok(worker.calls.some(call => call.type === 'tabs.create' && call.details.url === expectedUrl.toString()));
 });
 
+test('opens the app on the Today session route when OPEN_APP carries target: today (07.6 due-count badge)', async () => {
+  const worker = await createWorkerContext();
+
+  const response = await sendRuntimeMessage(worker, { type: 'OPEN_APP', target: 'today' });
+
+  const expectedUrl = new URL(worker.context.LingoFlashExtension.DEFAULT_APP_URL);
+  expectedUrl.searchParams.set('view', 'today');
+  assert.equal(response.ok, true);
+  assert.equal(response.url, expectedUrl.toString());
+  assert.ok(worker.calls.some(call => call.type === 'tabs.create' && call.details.url === expectedUrl.toString()));
+});
+
 test('does not expose a Chrome shortcut URL on Safari', async () => {
   const worker = await createWorkerContext({
     userAgent: 'Mozilla/5.0 Version/17.5 Safari/605.1.15',

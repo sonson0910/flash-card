@@ -744,12 +744,16 @@
 
   const shortcut = async name => { try { const c=await apiCall(extensionApi.commands,'getAll'); return (Array.isArray(c)?c.find(x=>x.name===name):null)?.shortcut||''; } catch { return ''; } };
   const shortcutSettingsAvailable = !(/Safari\//.test(globalThis.navigator?.userAgent || '') && !/(?:Chrome|Chromium|CriOS|Edg)\//.test(globalThis.navigator?.userAgent || ''));
-  // `target: 'webWords'` is the only extra value the popup's loop banner sends; anything else (or
-  // omitted) keeps opening the plain app URL, matching every other OPEN_APP caller unchanged.
+  // `target: 'webWords'` is what the popup's loop banner sends, and `target:
+  // 'today'` (07.6) is what the due-count badge sends so it lands the user
+  // directly on the study session instead of the plain library view every
+  // other OPEN_APP caller (sign-in link, generic "open app") still opens.
   const openApp = async (target) => {
     const url = target === 'webWords'
       ? (() => { const u = new URL(DEFAULT_APP_URL); u.searchParams.set('webWords', '1'); return u.toString(); })()
-      : DEFAULT_APP_URL;
+      : target === 'today'
+        ? (() => { const u = new URL(DEFAULT_APP_URL); u.searchParams.set('view', 'today'); return u.toString(); })()
+        : DEFAULT_APP_URL;
     await apiCall(extensionApi.tabs,'create',{url,active:true});
     return {url};
   };
