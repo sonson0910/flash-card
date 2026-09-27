@@ -9,7 +9,7 @@ status: pending-owner-decision
 
 Paths currently has three published tracks and tier totals, but no declared unit title/order, active-unit source, unit progress, or unit action. Catalog membership has `lessonGroup` and `rank`; a production writer for `users/{uid}/learning_states` was not found, although Paths currently reads up to 10,000 such documents. The Canvas example's six shelves and twelve units cannot be presented as real catalog data.
 
-Progress currently uses XP history for its activity heatmap. XP is not a count of reviews. The current stats model also has no 14-day due forecast, recent-mastery timestamp, or range-sensitive review series. No client scan of all card histories or invented Canvas values is allowed.
+Progress currently uses XP history for its activity heatmap. XP is not a count of reviews. The approved implementation has added a due forecast and recent-mastery timestamp; the remaining gap is a range-sensitive review series. No client scan of all card histories or invented Canvas values is allowed.
 
 ## Proposed bounded sources
 
@@ -28,9 +28,174 @@ History and mastery begin on the date the new projection becomes authoritative. 
 
 1. Approve a versioned catalog unit contract and a maintained active-unit/progress source. Define whether Continue starts existing review, adds unit words, or performs another action. The current `learning_states` reader is not sufficient without a proven writer.
 2. Define `dailyPacePreference` as new words per day for ETA, or omit ETA until a separate pace model exists.
-3. Choose the canonical mastery threshold and whether a lapse clears `masteredAt`.
-4. Approve or reject 13 cached aggregate count queries for the due forecast. This is new Firestore I/O and must not be implemented without approval.
-5. Approve the `masteredAt` card field, Rules/index changes, and 0–4 reads per Progress hydration, or keep Recently mastered unavailable.
+3. **Approved 2026-09-28:** match Library's Mastered definition: `difficulty=easy` or `interval` ≥21 days (`fsrs.scheduledDays` is a fallback only when `interval` is absent). Clear `masteredAt` when a later review falls below that threshold.
+4. **Approved 2026-09-27:** 13 cached aggregate count queries for the due forecast on the first Progress open per owner/target language/local date. A same-day cache hit uses no forecast queries.
+5. **Approved 2026-09-27:** add server-owned `masteredAt` on the existing card write, Rules/index changes, and a bounded 0–4 document read query per Progress hydration.
 6. Approve forward-only activity/mastery coverage and target-language scope. Account-wide XP remains separately labelled.
 
+The forecast cache uses one browser-storage key per owner/language with the
+local date inside its value. It stores counts only, validates all 13 dates and
+counts before reuse, and is removed on account deletion. If browser storage
+cannot reserve the daily query budget, forecast remains unavailable and no
+forecast queries run; the bounded recent-mastery read still runs. A failed
+count leaves the daily reservation in place to avoid repeated billed queries.
+
 The current phase-06 Canvas comparison checkbox remains open. UI can display honest unavailable states without additional I/O, but those states do not make the ready-state Canvas MATCH.
+
+## Phase 06 proposal for owner review (not approved)
+
+This proposal fills the remaining real-data gaps for Paths unit shelves, Continue,
+unit ETA, Progress review activity, and range controls. It does not authorize an
+implementation, a migration, or a backfill.
+
+### 1. Catalog V2 unit descriptors
+
+Publish unit descriptors inside the already downloaded, versioned catalog artifact.
+A descriptor is only `unitId` (the membership `lessonGroup`), `trackId`, `tier`,
+one-based `ordinal`, and localized titles. It does not duplicate `lexemeIds`, a
+preview list, or a unit count. The app derives the count and first eight preview
+lexemes from published memberships matching the descriptor's `trackId` and
+`lessonGroup`, ordered by membership `rank`.
+
+The Catalog V2 schema does not hard-code a number of tracks or units. The current
+pilot expectation is three tracks (`ielts`, `toeic`, and `general`) with 15 units
+per track, but another release may differ only after editorial validation and owner
+approval. The artifact build must reject a release with missing, duplicate,
+out-of-order, cross-track, or unmatched descriptors/memberships. A unit with no
+matching membership is invalid. This uses the catalog cache: **0 Firestore reads
+and 0 writes**.
+
+`unitId` and a lexeme's membership must remain stable across a compatible catalog
+release. A release that moves a lexeme to another unit is a breaking catalog change
+and must include a separately reviewed compatibility rule before publication;
+silently remapping learner progress is disallowed.
+
+### 2. Server-only catalog progress projection
+
+For each canonical card with a real `lexemeId`, maintain one server-only document
+at `users/{uid}/catalog_progress/{lexemeId}`. The document is an additive
+projection, not a source for scheduling or mastery. Its V1 shape is:
+
+```text
+schemaVersion, ownerId, lexemeId, targetLanguage, status, cardRevision,
+libraryEpoch, updatedAt
+```
+
+The trusted server derives `status` from the canonical card and stores no track,
+unit, catalog, descriptor, or membership fields: a lexeme can occur in more than
+one track and catalog releases can change. It does not require a server catalog
+membership lookup. Only trusted create/review/delete code may write it; Firestore
+Rules deny every client mutation. A manual card without a real `lexemeId` has no
+projection.
+
+| Canonical mutation | Projection mutation | Incremental document I/O |
+|---|---|---|
+| Create a canonical card with a real `lexemeId` | create/upsert from card status, revision, and epoch | +1 progress write |
+| Strict review of that card | update projection status, revision, and epoch from the canonical server decision | +1 progress write |
+| Delete that card | delete its lexeme projection | +1 progress write |
+| Any other card mutation | none | 0 |
+
+The create/review/delete projection mutation belongs in the same trusted
+transaction as the canonical mutation. Its retry/replay result must be idempotent:
+a failed canonical mutation leaves no projection. Single-card deletion currently
+routes through a client Firestore path, so it must move to the trusted callable
+before this contract can be implemented. Bulk deletion uses the same callable with
+an explicit weight cap of 3. Existing canonical cards have no projection until a
+forward create or review mutation; this proposal includes no backfill.
+
+On Paths open, query this subcollection once for the active target language and
+join it with cached descriptors and memberships. If the query returns `P` projection
+documents, the exact incremental cost is **1 query and P document reads**; there is
+no listener, page fan-out, or per-unit query. The client derives per-unit counts
+from that one result: not started = no projection; active = at least one projected
+lexeme but the unit is not complete; complete = every descriptor lexeme has a
+projection whose server-derived status is mastered. A catalog release with no valid
+descriptor/membership join is shown as unavailable.
+
+### 3. Continue and ETA
+
+Proposed Continue behavior: select the first active unit, otherwise the first not
+started unit, and open its descriptor preview. If it has unintroduced lexemes, the
+preview presents an explicit confirmed add-to-library action for that unit's
+membership-ordered lexemes. After successful canonical creates, it starts a
+unit-scoped study session using only that unit's projected cards. If every lexeme is
+already introduced, Continue starts the same unit-scoped study directly. It never
+creates cards in the background and it never labels a unit complete merely because
+its cards were added.
+
+ETA is only the descriptor's remaining, unintroduced lexeme count divided by the
+existing device-local `dailyPacePreference` (5/10/15/20 new words per day), rounded
+up and labelled as an estimate. It is unavailable when local storage is unavailable
+or no positive pace is selected. It is a device preference, so ETA adds **0
+Firestore reads and 0 writes** and is not synchronized between devices.
+
+### 4. Review activity V1 in existing stats
+
+Add `reviewActivityV1` to the existing server-owned
+`users/{uid}/profile/stats` document. It contains `coverageStartedOnByLanguage` and
+a target-language-scoped map of local review day (`YYYY-MM-DD`) to
+`{ reviewed, again, hard, good, easy }`. On each strict review, the server uses its
+receipt time and the already validated reward time zone, increments that day's
+counters, and trims each language to its latest 182 calendar days in the same
+transaction. It never derives reviews from XP or scans card history. Its
+forward-only coverage begins when this field becomes authoritative; the UI marks
+earlier selected ranges as partial.
+
+The strict-review transaction already reads and writes this stats document for
+verified gamification. Folding this bounded map into that existing document adds
+**0 incremental document reads, 0 incremental document writes, and 0 hydration
+documents** for review activity. It does add bounded document/index bytes, which
+must remain under Firestore's document limit and be covered by tests at the 182-day
+boundary. The existing strict gamification parser rejects unrecognized stats fields,
+so that parser/schema must explicitly accept and validate `reviewActivityV1` before
+the field is written. A review without a resolved server time zone does not
+fabricate a day: the established stats time zone must be used, otherwise review
+activity is unavailable for that mutation until the owner approves a compatible
+bootstrap rule.
+
+Progress range controls read the already hydrated stats field; they issue no query.
+The activity chart's reviewed count is `reviewed`; recall buckets are the four
+stored rating counters and must retain their explicit labels. Existing account-wide
+XP remains a separate metric and cannot be presented as course or review activity.
+The contract supports only the 30-day and 26-week ranges. All time is unsupported
+until the owner funds and approves a separate lifetime-activity contract.
+
+### Owner decisions requested
+
+Approve or amend all of the following as one Phase 06 contract:
+
+1. The Catalog V2 descriptor shape, validation, and compatible-release rule above.
+   Confirm the current pilot's three tracks × 15 units independently; do not bake
+   that count into the schema.
+2. `users/{uid}/catalog_progress/{lexemeId}` is server-only, canonical card
+   create/review/delete each add exactly one projection write, and Paths accepts
+   one query and `P` projection-document reads per open.
+3. Continue opens an explicit unit preview, adds only through confirmed canonical
+   card creation, then starts unit-scoped study; it has no silent bulk add.
+4. ETA uses only local `dailyPacePreference` as new words/day and is explicitly
+   device-local.
+5. `reviewActivityV1` stores 182 days per target language inside `profile/stats`,
+   with coverage-start dates, the stated receipt-time/time-zone rule, parser change,
+   30-day/26-week ranges, and no incremental documents.
+6. The Canvas/content decision: whether Paths should show six shelves or the three
+   real tracks, and whether the authoritative current unit count is 12 or 15. No UI
+   or schema count follows from either conflicting visual example until this is
+   decided.
+
+### Rollout and rollback
+
+Roll out additively: publish and validate Catalog V2 first; deploy the trusted
+projection and review-activity writers with Rules that deny clients; route
+single-card and capped-weight bulk deletes through the trusted callable; then enable
+the new Paths and Progress readers only for V2 releases. There is no backfill of
+`catalog_progress` or review activity, so legacy units/activity remain unavailable
+or partial until new canonical mutations occur. Test create/review/delete,
+transaction retry, duplicate receipt, failed mutation, 182-day trimming, parser
+compatibility, one-query hydration, and release incompatibility in emulators before
+any rollout.
+
+Rollback disables the V2 readers/Continue surface and stops writing the additive
+fields in a later trusted release. It does not delete cards, existing stats,
+projection documents, or catalog artifacts; these remain inert for a future,
+reviewed recovery. No production deployment or data operation follows from this
+proposal.
