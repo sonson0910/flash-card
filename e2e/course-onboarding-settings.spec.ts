@@ -1,0 +1,60 @@
+import { expect, test } from './fixtures/firebase-emulator';
+
+test('course switcher exposes goals, switches active courses, and keeps course settings visible', async ({ page, db, testUser, signIn, blockExternalNetwork }) => {
+  await db.collection('users').doc(testUser.uid).collection('profile').doc('courses').set({
+    activeCourseId: 'course-en',
+    courses: [
+      {
+        id: 'course-en', targetLanguage: 'en', nativeLanguage: 'vi', status: 'active',
+        goals: [{ id: 'goal-ielts', kind: 'ielts', level: '7.0', targetDate: '2026-12-01', status: 'active', createdAt: '2026-01-01T00:00:00.000Z' }],
+        preferences: { pronunciationVariant: null, showRomanization: false, zhScript: null },
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        id: 'course-ko', targetLanguage: 'ko', nativeLanguage: 'vi', status: 'active', goals: [],
+        preferences: { pronunciationVariant: null, showRomanization: false, zhScript: null },
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+    ],
+  });
+  await blockExternalNetwork(page);
+  await signIn(page, '/?view=library&locale=en');
+
+  const trigger = page.locator('.claude-course-switcher-trigger');
+  await expect(trigger).toHaveText(/English/);
+  await trigger.click();
+  const dialog = page.getByRole('dialog', { name: 'Courses' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('listitem').filter({ hasText: 'English ← Vietnamese' })
+    .getByRole('button', { name: 'Manage goals' }).click();
+  const goalRow = dialog.locator('.claude-course-goals-panel li');
+  await expect(goalRow.getByText('IELTS', { exact: true })).toBeVisible();
+  await expect(goalRow.getByText('7.0', { exact: true })).toBeVisible();
+  await expect(goalRow.getByText('2026-12-01', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Back to courses' }).click();
+  await dialog.getByRole('button', { name: /Korean.*Vietnamese/ }).click();
+  await expect(trigger).toHaveText(/Korean/);
+
+  await page.goto('/?view=settings&locale=en');
+  await expect(page.getByRole('heading', { name: 'Make your study space yours' })).toBeVisible();
+  const settings = page.getByRole('heading', { name: 'Course and learning' }).locator('xpath=ancestor::section');
+  await expect(settings.getByText('Meaning language')).toBeVisible();
+  await expect(settings.getByText('Daily pace')).toBeVisible();
+  await expect(settings.getByText('Show romanization')).toBeVisible();
+  await expect(settings.getByRole('switch')).toHaveCount(1);
+});
+
+test('a new signed-in learner advances from language selection to a target choice', async ({ page, signIn, blockExternalNetwork }) => {
+  await blockExternalNetwork(page);
+  await signIn(page, '/?view=today&locale=en');
+
+  const dialog = page.getByRole('dialog', { name: 'Set up your course' });
+  await expect(dialog.getByRole('heading', { name: 'Choose your language' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'English' }).click();
+  await dialog.getByRole('button', { name: 'Continue' }).click();
+  await expect(dialog.getByRole('heading', { name: 'What are you learning?' })).toBeVisible();
+  const continueButton = dialog.getByRole('button', { name: 'Continue' });
+  await expect(continueButton).toBeDisabled();
+  await dialog.getByRole('button', { name: /Korean/ }).click();
+  await expect(continueButton).toBeEnabled();
+});

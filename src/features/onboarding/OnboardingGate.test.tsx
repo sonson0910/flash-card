@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { CourseContext, type CourseGateValue } from '../courses/CourseGate';
 import { OnboardingGate } from './OnboardingGate';
+import { OnboardingJourney } from './OnboardingJourney';
 
 i18n.load('en', {});
 i18n.activate('en');
@@ -37,5 +38,18 @@ describe('OnboardingGate', () => {
 
   it('takes the onboarding branch without throwing for a genuinely new, unsuppressed owner', () => {
     expect(() => renderGate({ ownerId: 'owner-1', suppress: false }, 'absent')).not.toThrow();
+  });
+
+  it('renders the first journey step with a modal contract and language choices', () => {
+    const html = renderToStaticMarkup(<I18nProvider i18n={i18n}>
+      <CourseContext.Provider value={snapshot('absent')}><OnboardingJourney ownerId="owner-1" /></CourseContext.Provider>
+    </I18nProvider>);
+
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain('aria-modal="true"');
+    expect(html).toContain('Choose your language');
+    expect(html).toContain('Tiếng Việt');
+    expect(html).toContain('English');
+    expect(html).toContain('Continue');
   });
 });

@@ -68,11 +68,11 @@ export function CourseSettingsSection() {
         </select>
       </div>}
 
-      {activeCourse && <div className={rowClass}>
+      {activeCourse && <label className={rowClass}>
         <Volume2 size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
         <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.romanization" message="Show romanization" /></span>
         <input type="checkbox" role="switch" checked={activeCourse.preferences.showRomanization} onChange={event => updatePreferences({ showRomanization: event.target.checked })} className="h-6 w-11 shrink-0 accent-[var(--sf-brand)]" />
-      </div>}
+      </label>}
 
       {activeCourse?.targetLanguage === 'zh' && <div className={rowClass}>
         <Keyboard size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
