@@ -248,3 +248,22 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
   ghi 2 (legacy đổi normalized identity: đọc 7, ghi tối đa 4); category đổi
   dùng 1 card write rồi facets callable đọc 7, ghi thêm 4 document ở lần đầu.
   Đây là cost của code đã tồn tại, không thêm read/write trong lần xác minh này.
+
+## 2026-09-27 — Owner duyệt AnimeReveal server authority
+
+- Giữ ba ceremony theo [contract-anime-reveal-rewards.md](contract-anime-reveal-rewards.md):
+  tier-up chỉ hiển thị; streak 30 cấp badge và một freeze; level 12 → 13 cấp
+  frame, title và một hint. Owner duyệt thêm một Firestore read mỗi lần
+  hydration để đọc inventory.
+- Owner duyệt full server authority thay cho client-supplied XP/streak.
+  Verified review thêm 1 read/2 writes, verified create thêm 2 reads/3 writes,
+  practice start đọc N cards và ghi session, practice complete thêm 2 reads/3
+  writes; mốc reward thêm 1 read/1 write. Đây là I/O producer trước khi trừ
+  save gamification cũ; không được cấp thưởng từ state client.
+- Streak dùng timezone IANA riêng theo account, cố định khi ghi verified
+  progress đầu tiên. XP/streak legacy bắt đầu verified từ 0; level hiển thị
+  trở lại 1, XP cũ chỉ còn là dữ liệu lịch sử có nhãn. Không backfill.
+- Phê duyệt này chỉ cho code/test local. Không deploy hoặc mutate production.
+- Shadowing vẫn dùng để luyện nói nhưng không cấp `+10 verified XP`: transcript
+  do browser tự báo không chứng minh audio của người học. Không thêm audio
+  upload hoặc server transcription trong scope này.
