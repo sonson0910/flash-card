@@ -225,4 +225,5 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
 
 - Recap hiện số thẻ đến hạn ngày mai; chấp nhận thêm 1 lượt đọc Firestore (một count query khi recap mở, không subscribe).
 - SessionBridge làm lại dạng full-bleed như Canvas, được phép chạm `App.tsx`/`AppViewStage`.
-- Đổi giới hạn đổi từ của thẻ (hiện 60 lần/giờ); con số mới chưa chốt, phải hỏi owner trước khi sửa.
+- Đổi giới hạn đổi từ của thẻ từ 60 xuống 30 lần/giờ (owner giao controller tự chọn). Lý do: đổi từ là sửa lỗi gõ, hiếm khi vượt vài lần một giờ; mỗi lần là một transaction đọc/ghi thẻ cộng một lượt budget, nên hạ trần giảm một nửa chi phí xấu nhất khi bị lạm dụng mà người dùng thật không chạm tới.
+- Code mồ côi: gỡ `DeckCreationForm` (đã được `DeckCreationDialog` thay trong `LibraryTools.tsx`) cùng fixture/test inline `deck-new`; gỡ `LumiBubble` (không nơi nào dùng, `Lumi.tsx` đã phủ); nối nút "Learn 5 new" ở trạng thái caught-up: bật khi còn thẻ mới trong pool, mở lesson tối đa 5 thẻ mới từ dữ liệu đã tải (không thêm read), giữ disabled kèm lý do khi hết thẻ mới.
