@@ -232,6 +232,8 @@ for (const theme of themes) {
       // Recap: the session-finale modal, reached through the real flow
       // rather than the isolated fixture `daily-recap-visual.spec.ts` uses.
       await expect(page.locator('[data-session-recap]')).toBeVisible({ timeout: 15_000 });
+      await expect(page.getByText('Tomorrow', { exact: true })).toBeVisible();
+      await expect(page.getByText(/\d+ cards? due/)).toBeVisible();
       await expectAccessibleAndContained(page, 'Recap');
       await attachScreen(page, testInfo, `${label}-recap`);
     });

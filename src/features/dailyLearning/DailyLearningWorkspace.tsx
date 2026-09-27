@@ -6,6 +6,7 @@ import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { LanguageProfile } from '../language/languageProfile';
 import { triggerHaptic } from '../../lib/haptics';
 import { REVIEW_XP } from '../../lib/review-xp';
+import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import { buildDailyPlan, logicalIdentity, type DailyPlan, type DailyPlanItem } from './dailyPlan';
 import { createDailyPracticePoolRuntime } from './dailyPracticePoolRuntime';
 import { createDailySessionController } from './dailySessionController';
@@ -52,7 +53,9 @@ const LessonScreen = lazy(() => import('./LessonScreen').then(module => ({ defau
 const PlacementScreen = lazy(() => import('./PlacementScreen').then(module => ({ default: module.PlacementScreen })));
 const SessionBridge = lazy(() => import('./SessionBridge').then(module => ({ default: module.SessionBridge })));
 const WordMatchView = lazy(() => import('../practice/WordMatchView').then(module => ({ default: module.WordMatchView })));
-const SessionRecapModal = lazy(() => import('../practice/SessionRecapModal').then(module => ({ default: module.SessionRecapModal })));
+const SessionRecapModal = lazy(() => Promise.all([
+  import('../practice/SessionRecapModal'), loadCatalog(getActiveUiLocale(), 'practice'),
+]).then(([module]) => ({ default: module.SessionRecapModal })));
 const interactionFallback = <div role="status" className="rounded-2xl border border-[var(--sf-border)] p-5"><Trans id="today.activity.preparing" message="Preparing activity…" /></div>;
 
 /** Sequenced session phases: a review/new lesson reuses the single-lesson controller and screen; bridge/match/recap are their own screens. */
@@ -695,6 +698,7 @@ export default function DailyLearningWorkspace({
           againCount={multiStage.stats.againCount}
           xpEarned={sessionXpEarned}
           weakCards={weakCards}
+          targetLanguage={targetLanguage}
         />
       </Suspense>
     )}

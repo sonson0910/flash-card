@@ -382,6 +382,7 @@ export function StudyView({
         againCount={sessionAgainCount}
         xpEarned={(sessionGoodCount + sessionAgainCount) * REVIEW_XP}
         weakCards={weakCards}
+        targetLanguage={cards[0]?.language ?? 'en'}
       />
 
       <div className="mx-auto mt-8 hidden w-full max-w-sm rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-center shadow-xs md:block">

@@ -604,63 +604,83 @@ msgid "practice.story.vocabulary-subtitle"
 msgstr "A story built from your own vocabulary"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:70
+#: src/features/practice/SessionRecapModal.tsx:72
 msgid "recap.close"
 msgstr "Close recap"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:88
+#: src/features/practice/SessionRecapModal.tsx:92
 msgid "recap.continue"
 msgstr "Continue learning"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:67
+#: src/features/practice/SessionRecapModal.tsx:69
 msgid "recap.description"
 msgstr "Here is what you strengthened today."
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:80
+#: src/features/practice/SessionRecapModal.tsx:82
 msgid "recap.mastered"
 msgstr "Remembered"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:81
+#: src/features/practice/SessionRecapModal.tsx:83
 msgid "recap.needs-review"
 msgstr "To revisit"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:75
+#: src/features/practice/SessionRecapModal.tsx:77
 msgid "recap.retained"
 msgstr "Retained"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:87
+#: src/features/practice/SessionRecapModal.tsx:91
 msgid "recap.retry-weak"
 msgstr "Review {count, plural, one {# word} other {# words}}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:74
+#: src/features/practice/SessionRecapModal.tsx:76
 msgid "recap.reviewed"
 msgstr "Reviewed"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:66
+#: src/features/practice/SessionRecapModal.tsx:68
 msgid "recap.title"
 msgstr "Session complete"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:80
-#: src/features/practice/SessionRecapModal.tsx:81
+#: src/features/practice/SessionRecapModal.tsx:117
+msgid "recap.tomorrow"
+msgstr "Tomorrow"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:121
+msgid "recap.tomorrow-count"
+msgstr "{count, plural, one {# card due} other {# cards due}}"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:120
+msgid "recap.tomorrow-error"
+msgstr "Count unavailable"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:119
+msgid "recap.tomorrow-loading"
+msgstr "Checking cards due…"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:82
+#: src/features/practice/SessionRecapModal.tsx:83
 msgid "recap.word-count"
 msgstr "{count, plural, one {# word} other {# words}}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:84
+#: src/features/practice/SessionRecapModal.tsx:86
 msgid "recap.words-to-reinforce"
 msgstr "Words to reinforce ({count})"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:76
+#: src/features/practice/SessionRecapModal.tsx:78
 msgid "recap.xp-earned"
 msgstr "XP earned"
 
@@ -726,27 +746,27 @@ msgid "study.recall-mode.target-to-native"
 msgstr "{targetLanguage} → {nativeLanguage}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:390
+#: src/features/practice/StudyView.tsx:391
 msgid "study.shortcut.flip-card"
 msgstr "Flip card"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:391
+#: src/features/practice/StudyView.tsx:392
 msgid "study.shortcut.previous-next"
 msgstr "Previous / next"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:392
+#: src/features/practice/StudyView.tsx:393
 msgid "study.shortcut.rate-memory"
 msgstr "Rate memory"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:393
+#: src/features/practice/StudyView.tsx:394
 msgid "study.shortcut.star-play-speak"
 msgstr "Star / play / speak"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:388
+#: src/features/practice/StudyView.tsx:389
 msgid "study.shortcuts"
 msgstr "Study shortcuts"
 

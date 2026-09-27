@@ -2,7 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { CheckCircle2, RotateCcw, Sparkles, Trophy, X } from 'lucide-react';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Lumi } from '../../components/lumi/Lumi';
 import { CountUp } from '../../components/motion/CountUp';
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
@@ -11,6 +11,7 @@ import { triggerHaptic } from '../../lib/haptics';
 import { playRewardSound } from '../../lib/interactionSounds';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import type { CardData } from '../../types/card';
+import { loadTomorrowDueCount } from './session-recap-service';
 import './practice-board.css';
 
 interface SessionRecapModalProps {
@@ -22,9 +23,10 @@ interface SessionRecapModalProps {
   againCount: number;
   xpEarned: number;
   weakCards: CardData[];
+  targetLanguage?: string;
 }
 
-export function SessionRecapModal({ open, onClose, onRetryWeak, totalCards, goodCount, againCount, xpEarned, weakCards }: SessionRecapModalProps) {
+export function SessionRecapModal({ open, onClose, onRetryWeak, totalCards, goodCount, againCount, xpEarned, weakCards, targetLanguage }: SessionRecapModalProps) {
   const { _ } = useLingui();
   const accuracy = totalCards > 0 ? Math.round((goodCount / totalCards) * 100) : 100;
   const isCrystal = globalThis.document?.documentElement.dataset.themeFamily === 'crystal';
@@ -83,6 +85,8 @@ export function SessionRecapModal({ open, onClose, onRetryWeak, totalCards, good
 
           {weakCards.length > 0 && <div className="relative mt-4"><p className="mb-2 text-[11px] font-black uppercase tracking-wider text-[var(--sf-text-muted)]"><Trans id="recap.words-to-reinforce" message="Words to reinforce ({count})" values={{ count: formatNumber(weakCards.length) }} /></p><div className="flex max-h-24 flex-wrap gap-1.5 overflow-y-auto pr-1 scrollbar-none">{weakCards.map(card => <span key={card.id} lang={card.language ?? 'en'} className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-200 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">{card.word}</span>)}</div></div>}
 
+          <TomorrowDue key={targetLanguage ?? 'all'} targetLanguage={targetLanguage} />
+
           <div className="relative mt-6 flex flex-col gap-2.5 sm:flex-row">
             {weakCards.length > 0 && onRetryWeak && <button type="button" onClick={onRetryWeak} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 text-sm font-bold text-rose-700 transition-all hover:bg-rose-500/20 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-rose-200 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><RotateCcw size={16} aria-hidden="true" /><Trans id="recap.retry-weak" message="Review {count, plural, one {# word} other {# words}}" values={{ count: weakCards.length }} /></button>}
             <button type="button" onClick={onClose} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 text-sm font-bold text-[var(--sf-on-brand)] shadow-md transition-all hover:bg-[var(--sf-brand-hover)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><Sparkles size={16} aria-hidden="true" /><Trans id="recap.continue" message="Continue learning" /></button>
@@ -93,6 +97,30 @@ export function SessionRecapModal({ open, onClose, onRetryWeak, totalCards, good
       </Dialog.Portal>
     </Dialog.Root>
   );
+}
+
+function TomorrowDue({ targetLanguage }: { targetLanguage?: string }) {
+  const request = useRef<Promise<number> | null>(null);
+  const [result, setResult] = useState<{ status: 'loading' | 'ready' | 'error'; count?: number }>({ status: 'loading' });
+
+  useEffect(() => {
+    request.current ??= loadTomorrowDueCount(targetLanguage);
+    let active = true;
+    void request.current.then(
+      count => { if (active) setResult({ status: 'ready', count }); },
+      () => { if (active) setResult({ status: 'error' }); },
+    );
+    return () => { active = false; };
+  }, [targetLanguage]);
+
+  return <div className="relative mt-4 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3.5 text-sm text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm" aria-live="polite">
+    <span className="font-semibold"><Trans id="recap.tomorrow" message="Tomorrow" /></span>
+    <span className="ml-2 text-[var(--sf-text-muted)]">
+      {result.status === 'loading' && <Trans id="recap.tomorrow-loading" message="Checking cards due…" />}
+      {result.status === 'error' && <Trans id="recap.tomorrow-error" message="Count unavailable" />}
+      {result.status === 'ready' && <Trans id="recap.tomorrow-count" message="{count, plural, one {# card due} other {# cards due}}" values={{ count: result.count ?? 0 }} />}
+    </span>
+  </div>;
 }
 
 function Stat({ label, value, tone }: { label: ReactNode; value: ReactNode; tone?: 'success' | 'warm' }) {

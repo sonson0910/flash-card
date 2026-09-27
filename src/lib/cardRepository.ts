@@ -388,6 +388,27 @@ export async function countCards(
   return snapshot.data().count;
 }
 
+/** Count cards scheduled for the next local calendar day without loading card documents. */
+export async function countCardsDueTomorrow(
+  db: Firestore,
+  userId: string,
+  targetLanguage?: string,
+  now = new Date(),
+): Promise<number> {
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() + 1);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  const snapshot = await getCount(query(
+    cardsCollection(db, userId),
+    ...(targetLanguage ? [where('language', '==', targetLanguage)] : []),
+    where('nextReviewDate', '>=', start.toISOString()),
+    where('nextReviewDate', '<', end.toISOString()),
+  ));
+  return snapshot.data().count;
+}
+
 export async function migrateLegacyCardQueryFields(
   db: Firestore,
   userId: string,
