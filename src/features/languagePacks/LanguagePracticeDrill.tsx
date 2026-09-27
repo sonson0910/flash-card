@@ -91,6 +91,23 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
 
   const hasToneExercise = model.kind === 'tone-melody';
   const cloze = sentenceStage ? model.sentenceCloze : undefined;
+  const sentence = cloze && pack ? (() => {
+    const segment = (value: string) => {
+      const tokens: { text: string; word: boolean }[] = [];
+      let offset = 0;
+      for (const word of pack.tokenization.segmentWords(value)) {
+        const index = value.indexOf(word, offset);
+        if (index < 0) return [{ text: value, word: false }];
+        if (index > offset) tokens.push({ text: value.slice(offset, index), word: false });
+        tokens.push({ text: word, word: true });
+        offset = index + word.length;
+      }
+      if (offset < value.length) tokens.push({ text: value.slice(offset), word: false });
+      return tokens;
+    };
+    const before = segment(cloze.before);
+    return { tokens: [...before, { text: input || '＿＿', word: true }, ...segment(cloze.after)], blankIndex: before.length };
+  })() : { tokens: [], blankIndex: -1 };
   const surfaceState = languagePracticeDrillSurfaceState(model.kind, reading, pack !== null, loadError);
   const ready = surfaceState === 'ready';
   const checked = result !== null;
@@ -238,8 +255,9 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
             </label>
           )}
           {cloze && <div className="language-practice-drill__sentence" lang="ja" aria-label={i18n._(msg({ id: 'languagePractice.ja.sentence.choices', message: 'Sentence completion choices' }))}>
-            <p>{cloze.before}<b>{input || '＿＿'}</b>{cloze.after}</p>
+            <p className="language-practice-drill__sentence-tokens">{sentence.tokens.map((token, index) => <span key={`${token.text}-${index}`} className={token.word ? index === sentence.blankIndex ? 'language-practice-drill__sentence-blank' : 'language-practice-drill__sentence-token' : undefined}>{token.text}</span>)}</p>
             {cloze.choices.length > 1 && <div className="language-practice-drill__segments">{cloze.choices.map(choice => <button key={choice.word} type="button" aria-pressed={input === choice.word} onClick={() => setInput(choice.word)} disabled={checked}><span>{choice.word}</span>{choice.reading && <small lang="ja">{choice.reading}</small>}{choice.meaning && <small lang={card.translationLanguage || 'vi'}>{choice.meaning}</small>}</button>)}</div>}
+            {card.explanation && <aside className="language-practice-drill__sentence-explanation"><p>{card.explanation}</p></aside>}
           </div>}
           {checked && <p role="status" aria-live="polite" aria-atomic="true" className={`language-practice-drill__feedback ${result.correct ? 'language-practice-drill__feedback--correct' : 'language-practice-drill__feedback--incorrect'}`}>{result.correct ? <CheckCircle2 aria-hidden="true" /> : <XCircle aria-hidden="true" />}{result.correct ? <Trans id="languagePractice.feedback.correct" message="Correct." /> : <Trans id="languagePractice.feedback.incorrect" message="Try this card again in the next round." />}</p>}
           <div className="language-practice-drill__actions">
