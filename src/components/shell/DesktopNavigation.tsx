@@ -74,7 +74,7 @@ export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncS
   const nextLevelXp = hasLevel ? 100 * level ** 2 : 0;
   const levelProgress = hasLevel && hasXp ? Math.max(0, Math.min(100, ((xp - levelStartXp) / (nextLevelXp - levelStartXp)) * 100)) : 0;
 
-  return <header className={`claude-topbar relative z-30 shrink-0 ${isPracticeView(viewMode) ? 'hidden' : ''}`}>
+  return <header data-mobile-course={syncIdentity.status === 'authenticated' ? 'true' : undefined} className={`claude-topbar relative z-30 shrink-0 ${isPracticeView(viewMode) ? 'hidden' : ''}`}>
     <nav ref={navigationRef} aria-label={_(msg({ id: 'shell.navigation.primary', message: 'Primary navigation' }))} data-shell-layer="primary" className="app-navigation claude-topbar-nav flex h-full items-center">
     <div className="claude-topbar-inner mx-auto flex w-full max-w-[1440px] items-center">
       <button type="button" onClick={onOpenLanding ?? onOpenToday} data-gsap-brand aria-label="SonFlash" className="claude-brand shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2">

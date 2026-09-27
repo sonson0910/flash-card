@@ -73,21 +73,19 @@ for (const theme of themes) for (const viewport of viewports) {
     await seedCourses(db, testUser.uid);
     await page.reload();
 
-    if (viewport.name === 'desktop') {
-      const switcher = page.locator('.claude-course-switcher-trigger');
-      await expect(switcher).toContainText('Korean');
-      await switcher.click();
-      const courses = page.getByRole('dialog', { name: 'Courses' });
-      await expect(courses).toBeVisible();
-      await expect(courses.getByRole('button', { name: /Korean.*Vietnamese/ })).toHaveAttribute('aria-current', 'true');
-      await expectScreen(page, testInfo, `course-switcher-${theme.family}-${theme.mode}-${viewport.name}`);
+    const switcher = page.locator('.claude-course-switcher-trigger:visible');
+    await expect(switcher).toContainText('Korean');
+    await switcher.click();
+    const courses = page.getByRole('dialog', { name: 'Courses' });
+    await expect(courses).toBeVisible();
+    await expect(courses.getByRole('button', { name: /Korean.*Vietnamese/ })).toHaveAttribute('aria-current', 'true');
+    await expectScreen(page, testInfo, `course-switcher-${theme.family}-${theme.mode}-${viewport.name}`);
 
-      await courses.getByRole('listitem').filter({ hasText: 'Korean ← Vietnamese' }).getByRole('button', { name: 'Manage goals' }).click();
-      const goals = courses.locator('.claude-course-goals-panel');
-      await expect(goals.getByText('TOPIK', { exact: true })).toBeVisible();
-      await expect(goals.getByText('TOPIK II', { exact: true })).toBeVisible();
-      await expectScreen(page, testInfo, `course-goals-${theme.family}-${theme.mode}-${viewport.name}`);
-    }
+    await courses.getByRole('listitem').filter({ hasText: 'Korean ← Vietnamese' }).getByRole('button', { name: 'Manage goals' }).click();
+    const goals = courses.locator('.claude-course-goals-panel');
+    await expect(goals.getByText('TOPIK', { exact: true })).toBeVisible();
+    await expect(goals.getByText('TOPIK II', { exact: true })).toBeVisible();
+    await expectScreen(page, testInfo, `course-goals-${theme.family}-${theme.mode}-${viewport.name}`);
 
     await page.goto('/?view=settings&locale=en');
     const settings = page.getByRole('heading', { name: 'Course and learning' }).locator('xpath=ancestor::section');

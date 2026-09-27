@@ -41,6 +41,7 @@ describe('app shell navigation', () => {
     expect(html).toContain('Paths');
     expect(html).not.toContain('Goals');
     expect(html).not.toContain('shell.nav.goals');
+    expect(html).not.toContain('data-mobile-course');
   });
 
   it('renders desktop navigation from a vendor-neutral view model', () => {
@@ -64,6 +65,7 @@ describe('app shell navigation', () => {
     );
 
     expect(html).toContain('<nav');
+    expect(html).toContain('data-mobile-course="true"');
     expect(html).toContain('claude-brand-star');
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('aria-label="Manage library"');
