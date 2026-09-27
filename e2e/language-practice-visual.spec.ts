@@ -35,14 +35,14 @@ async function expectAccessibleAndContained(page: Page, label: string) {
   expect(clipped, `${label} has horizontally clipped controls`).toEqual([]);
 }
 
-async function enterKoreanCorrection(surface: Locator) {
+async function enterKoreanWrongFinal(surface: Locator) {
   // 결심 with the final consonant deliberately entered as ㅂ produces 결십.
   for (const jamo of ['ㄱ', 'ㅕ', 'ㄹ', 'ㅅ', 'ㅣ', 'ㅂ']) {
     await surface.getByRole('button', { name: new RegExp(`^${jamo}`) }).click();
   }
-  await surface.getByRole('button', { name: 'Check' }).click();
-  await expect(surface.locator('.language-practice-drill__hangul-diagnostic')).toContainText('결십');
-  await expect(surface.getByRole('status')).toContainText('Try this card again');
+  await expect(surface.locator('.language-practice-drill__hangul-diagnostic').first()).toContainText('결십');
+  await expect(surface.getByRole('status')).toContainText('Delete it and choose ㅁ');
+  await expect(surface.locator('[data-hangul-mismatch="true"]')).toHaveCount(1);
 }
 
 test.beforeAll(async ({}, testInfo) => {
@@ -80,7 +80,7 @@ for (const theme of themes) for (const viewport of viewports) for (const languag
     else await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
     if (theme.family === 'crystal') await expect(page.locator('#sonflash-crystal-theme')).toHaveAttribute('href', '/theme-crystal.css');
     if (theme.family === 'crystal') await expect(surface).toHaveCSS('border-radius', '0px');
-    if (language === 'ko') await enterKoreanCorrection(surface);
+    if (language === 'ko') await enterKoreanWrongFinal(surface);
     if (language === 'ja') {
       await expect(surface.locator('.language-practice-drill__ruby')).toHaveCount(0);
       await expect(surface.locator('.japanese-pitch-contour')).toHaveCount(0);
@@ -102,7 +102,21 @@ test('Korean drill accepts a correct two-set physical keyboard answer', async ({
   await expect(surface.locator(readySelectors.ko)).toBeVisible({ timeout: 15_000 });
   await surface.focus();
   for (const key of ['r', 'u', 'f', 't', 'l', 'a']) await page.keyboard.press(key);
+  await expect(surface.locator('.language-practice-drill__hangul-diagnostic').first()).toContainText('결심');
+  await surface.getByRole('button', { name: 'Check' }).click();
+  await expect(surface.getByRole('status')).toContainText('Correct');
+});
+
+test('Korean drill lets the learner repair a wrong final consonant before checking', async ({ page }) => {
+  await page.goto(`${fixtureOrigin}${fixturePath}?kind=ko&locale=en`);
+  const surface = page.locator('.language-practice-drill');
+  await expect(surface.locator(readySelectors.ko)).toBeVisible({ timeout: 15_000 });
+  await enterKoreanWrongFinal(surface);
+  await surface.getByRole('button', { name: 'Delete' }).click();
+  await surface.getByRole('button', { name: /^ㅁ/ }).click();
   await expect(surface.locator('.language-practice-drill__hangul-diagnostic')).toContainText('결심');
+  await expect(surface.getByRole('status')).toHaveCount(0);
+  await expect(surface.locator('[data-hangul-mismatch="true"]')).toHaveCount(0);
   await surface.getByRole('button', { name: 'Check' }).click();
   await expect(surface.getByRole('status')).toContainText('Correct');
 });

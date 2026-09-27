@@ -9,6 +9,7 @@ import { loadLanguagePack } from './registry';
 import {
   createLanguagePracticeDrill,
   composeHangulBlocks,
+  findHangulFinalCorrection,
   evaluateToneLanguagePracticeDrill,
   evaluateTypedLanguagePracticeDrill,
   languagePracticeDrillSurfaceState,
@@ -107,6 +108,8 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
     });
   };
   const hangulAnswer = composeHangulBlocks(hangulJamo);
+  const hangulCorrection = model.kind === 'hangul-blocks' && !checked
+    ? findHangulFinalCorrection(hangulAnswer, card.word) : null;
   const targetGraphemes = pack?.tokenization.segmentGraphemes(card.word) ?? [];
   const answerGraphemes = pack?.tokenization.segmentGraphemes(hangulAnswer) ?? [];
   const sentenceSegments = model.kind === 'kana-reading' && card.exampleSentence && pack
@@ -202,11 +205,12 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
             <fieldset disabled={checked} className="language-practice-drill__hangul">
               <legend className="language-practice-drill__sr-only"><Trans id="languagePractice.ko.keyboard" message="Hangul block keyboard" /></legend>
               <div className="language-practice-drill__hangul-blocks" lang="ko" aria-label={hangulAnswer || i18n._(msg({ id: 'languagePractice.ko.emptyBlocks', message: 'Empty Hangul blocks' }))}>
-                {Array.from({ length: Math.max(targetGraphemes.length, 1) }, (_, index) => <span key={index} className={answerGraphemes[index] ? 'language-practice-drill__hangul-filled' : undefined}>{answerGraphemes[index] ?? '□'}</span>)}
+                {Array.from({ length: Math.max(targetGraphemes.length, 1) }, (_, index) => <span key={index} className={answerGraphemes[index] ? 'language-practice-drill__hangul-filled' : undefined} data-hangul-mismatch={hangulCorrection && answerGraphemes[index] !== targetGraphemes[index] ? 'true' : undefined} style={hangulCorrection && answerGraphemes[index] !== targetGraphemes[index] ? { color: 'var(--sf-danger)', borderColor: 'var(--sf-danger)' } : undefined}>{answerGraphemes[index] ?? '□'}</span>)}
               </div>
               {hangulAnswer && <p className="language-practice-drill__hangul-diagnostic"><span>{hangulJamo.split('').join(' + ')}</span> → <b>{hangulAnswer}</b></p>}
+              {hangulCorrection && <p role="status" className="language-practice-drill__hangul-diagnostic"><Trans id="languagePractice.ko.final-correction" message="Final consonant: {typed} makes a different word. Delete it and choose {expected}." values={hangulCorrection} /></p>}
               <div className="language-practice-drill__hangul-keys">
-                {HANGUL_KEYS.map(key => <button key={key} type="button" onClick={() => setHangulJamo(value => value + key)} className="language-practice-drill__hangul-key">{key}<small>{HANGUL_KEY_LABEL[key]}</small></button>)}
+                {HANGUL_KEYS.map(key => <button key={key} type="button" onClick={() => setHangulJamo(value => value + key)} className="language-practice-drill__hangul-key" style={key === hangulCorrection?.expected ? { color: 'var(--sf-success)', borderColor: 'var(--sf-success)' } : key === hangulCorrection?.typed ? { color: 'var(--sf-danger)', borderColor: 'var(--sf-danger)' } : undefined}>{key}<small>{HANGUL_KEY_LABEL[key]}</small></button>)}
                 <button type="button" onClick={() => setHangulJamo(value => Array.from(value).slice(0, -1).join(''))} className="language-practice-drill__hangul-key"><Trans id="languagePractice.ko.backspace" message="Delete" /></button>
               </div>
             </fieldset>

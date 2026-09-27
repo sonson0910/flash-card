@@ -24,192 +24,197 @@ msgid "flashcard.audio.play-pronunciation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:223
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:227
 msgid "languagePractice.action.check"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:170
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:173
 msgid "languagePractice.action.exit"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:222
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:226
 msgid "languagePractice.action.hint"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:177
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:180
 msgid "languagePractice.action.listen"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:223
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:227
 msgid "languagePractice.action.next"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:179
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:182
 msgid "languagePractice.action.slow"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:215
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:219
 msgid "languagePractice.answer.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:157
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:160
 msgid "languagePractice.en.instruction"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:120
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:123
 msgid "languagePractice.en.pack"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:164
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:167
 msgid "languagePractice.en.placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:124
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:127
 msgid "languagePractice.en.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:220
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:224
 msgid "languagePractice.feedback.correct"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:220
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:224
 msgid "languagePractice.feedback.incorrect"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:154
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:157
 msgid "languagePractice.ja.instruction"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:118
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:121
 msgid "languagePractice.ja.pack"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:159
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:162
 msgid "languagePractice.ja.placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:219
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:223
 msgid "languagePractice.ja.segments"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:122
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:125
 msgid "languagePractice.ja.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:210
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:214
 msgid "languagePractice.ko.backspace"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:204
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:207
 msgid "languagePractice.ko.emptyBlocks"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:152
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:211
+msgid "languagePractice.ko.final-correction"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:155
 msgid "languagePractice.ko.instruction"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:203
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:206
 msgid "languagePractice.ko.keyboard"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:117
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:120
 msgid "languagePractice.ko.pack"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:161
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:164
 msgid "languagePractice.ko.placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:121
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:124
 msgid "languagePractice.ko.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:187
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:190
 msgid "languagePractice.loadError"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:187
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:190
 msgid "languagePractice.loading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:173
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:176
 msgid "languagePractice.progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:250
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:254
 msgid "languagePractice.results.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:247
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:251
 msgid "languagePractice.results.score"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:246
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:250
 msgid "languagePractice.results.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:249
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:253
 msgid "languagePractice.results.try-again"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:156
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:159
 msgid "languagePractice.zh.instruction"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:187
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:190
 msgid "languagePractice.zh.missingTones"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:119
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:122
 msgid "languagePractice.zh.pack"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:163
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:166
 msgid "languagePractice.zh.placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:123
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:126
 msgid "languagePractice.zh.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:189
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:192
 msgid "languagePractice.zh.tones"
 msgstr ""
 

@@ -5,7 +5,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { CardData } from '../../types/card';
 import { LanguagePracticeDrill } from './LanguagePracticeDrill';
-import { composeHangulBlocks, createLanguagePracticeDrill, evaluateToneLanguagePracticeDrill, evaluateTypedLanguagePracticeDrill, languagePracticeDrillSurfaceState, shouldRevealLanguagePracticeReading } from './languagePracticeDrill';
+import { composeHangulBlocks, createLanguagePracticeDrill, evaluateToneLanguagePracticeDrill, evaluateTypedLanguagePracticeDrill, findHangulFinalCorrection, languagePracticeDrillSurfaceState, shouldRevealLanguagePracticeReading } from './languagePracticeDrill';
 import { jaLanguagePack } from './packs/ja';
 
 const card = (language: string, word: string): CardData => ({
@@ -48,6 +48,14 @@ describe('language practice drill model', () => {
     expect(composeHangulBlocks('ㄱㅏㄴ')).toBe('간');
     const model = createLanguagePracticeDrill(card('ko', '한글'), []);
     expect(evaluateTypedLanguagePracticeDrill(model, composeHangulBlocks('ㅎㅏㄴㄱㅡㄹ')).correct).toBe(true);
+  });
+
+  it('identifies only a single final-consonant correction', () => {
+    expect(findHangulFinalCorrection('결십', '결심')).toEqual({ typed: 'ㅂ', expected: 'ㅁ' });
+    expect(findHangulFinalCorrection('결심', '결심')).toBeNull();
+    expect(findHangulFinalCorrection('결싯', '결심')).toEqual({ typed: 'ㅅ', expected: 'ㅁ' });
+    expect(findHangulFinalCorrection('걀십', '결심')).toBeNull();
+    expect(findHangulFinalCorrection('결시', '결심')).toBeNull();
   });
 
   it('requires every stored pinyin tone to be selected correctly', () => {

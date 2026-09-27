@@ -24,192 +24,197 @@ msgid "flashcard.audio.play-pronunciation"
 msgstr "Phát âm"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:223
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:227
 msgid "languagePractice.action.check"
 msgstr "Kiểm tra"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:170
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:173
 msgid "languagePractice.action.exit"
 msgstr "Thoát"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:222
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:226
 msgid "languagePractice.action.hint"
 msgstr "Gợi ý"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:177
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:180
 msgid "languagePractice.action.listen"
 msgstr "Phát âm"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:223
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:227
 msgid "languagePractice.action.next"
 msgstr "Tiếp"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:179
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:182
 msgid "languagePractice.action.slow"
 msgstr "Bật hoặc tắt phát âm chậm"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:215
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:219
 msgid "languagePractice.answer.label"
 msgstr "Câu trả lời của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:157
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:160
 msgid "languagePractice.en.instruction"
 msgstr "Nhập từ vựng ứng với nghĩa này."
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:120
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:123
 msgid "languagePractice.en.pack"
 msgstr "Gói tiếng Anh"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:164
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:167
 msgid "languagePractice.en.placeholder"
 msgstr "Từ vựng"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:124
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:127
 msgid "languagePractice.en.title"
 msgstr "Viết từ vựng"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:220
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:224
 msgid "languagePractice.feedback.correct"
 msgstr "Chính xác."
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:220
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:224
 msgid "languagePractice.feedback.incorrect"
 msgstr "Hãy thử lại thẻ này ở lượt sau."
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:154
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:157
 msgid "languagePractice.ja.instruction"
 msgstr "Đọc từ, rồi nhập đáp án bằng tiếng Nhật."
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:118
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:121
 msgid "languagePractice.ja.pack"
 msgstr "Gói tiếng Nhật · 日本語"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:159
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:162
 msgid "languagePractice.ja.placeholder"
 msgstr "Đáp án kana"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:219
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:223
 msgid "languagePractice.ja.segments"
 msgstr "Các cụm trong câu"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:122
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:125
 msgid "languagePractice.ja.title"
 msgstr "Gõ cách đọc"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:210
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:214
 msgid "languagePractice.ko.backspace"
 msgstr "Xóa"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:204
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:207
 msgid "languagePractice.ko.emptyBlocks"
 msgstr "Các ô Hangul trống"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:152
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:211
+msgid "languagePractice.ko.final-correction"
+msgstr "Phụ âm cuối {typed} tạo thành từ khác. Hãy xóa và chọn {expected}."
+
+#. js-lingui-explicit-id
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:155
 msgid "languagePractice.ko.instruction"
 msgstr "Ghép từ Hangul theo nghĩa cho sẵn."
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:203
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:206
 msgid "languagePractice.ko.keyboard"
 msgstr "Bàn phím ghép âm Hangul"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:117
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:120
 msgid "languagePractice.ko.pack"
 msgstr "Gói tiếng Hàn · 한국어"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:161
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:164
 msgid "languagePractice.ko.placeholder"
 msgstr "Đáp án Hangul"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:121
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:124
 msgid "languagePractice.ko.title"
 msgstr "Ghép các khối âm tiết"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:187
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:190
 msgid "languagePractice.loadError"
 msgstr "Không tải được bài luyện này. Hãy quay lại và thử lần nữa."
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:187
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:190
 msgid "languagePractice.loading"
 msgstr "Đang tải bài luyện ngôn ngữ…"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:173
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:176
 msgid "languagePractice.progress"
 msgstr "Câu {current} trên {total}"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:250
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:254
 msgid "languagePractice.results.close"
 msgstr "Về thư viện"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:247
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:251
 msgid "languagePractice.results.score"
 msgstr "Đúng {correct}/{total} câu"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:246
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:250
 msgid "languagePractice.results.title"
 msgstr "Hoàn thành bài luyện"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:249
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:253
 msgid "languagePractice.results.try-again"
 msgstr "Thử lại"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:156
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:159
 msgid "languagePractice.zh.instruction"
 msgstr "Chọn thanh điệu cho từng âm tiết pinyin."
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:187
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:190
 msgid "languagePractice.zh.missingTones"
 msgstr "Thẻ này cần dữ liệu thanh điệu pinyin đã được xác minh trước khi luyện."
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:119
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:122
 msgid "languagePractice.zh.pack"
 msgstr "Gói tiếng Trung · 中文"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:163
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:166
 msgid "languagePractice.zh.placeholder"
 msgstr "Đáp án Hán tự"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:123
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:126
 msgid "languagePractice.zh.title"
 msgstr "Nghe thanh điệu"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:189
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:192
 msgid "languagePractice.zh.tones"
 msgstr "Thanh điệu pinyin"
 

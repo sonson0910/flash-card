@@ -63,6 +63,25 @@ export function composeHangulBlocks(value: string): string {
   return result;
 }
 
+/** Explain a single wrong final consonant without guessing about other spelling errors. */
+export function findHangulFinalCorrection(answer: string, expected: string): { typed: string; expected: string } | null {
+  const actualBlocks = Array.from(answer);
+  const expectedBlocks = Array.from(expected);
+  if (actualBlocks.length !== expectedBlocks.length) return null;
+  let correction: { typed: string; expected: string } | null = null;
+  for (let index = 0; index < actualBlocks.length; index++) {
+    if (actualBlocks[index] === expectedBlocks[index]) continue;
+    const actual = actualBlocks[index].codePointAt(0)! - 0xac00;
+    const target = expectedBlocks[index].codePointAt(0)! - 0xac00;
+    if (actual < 0 || actual >= 11172 || target < 0 || target >= 11172 || Math.floor(actual / 28) !== Math.floor(target / 28) || correction) return null;
+    const typed = FINALS[actual % 28];
+    const wanted = FINALS[target % 28];
+    if (!typed || !wanted) return null;
+    correction = { typed, expected: wanted };
+  }
+  return correction;
+}
+
 export function createLanguagePracticeDrill(card: CardData, cards: readonly CardData[]): LanguagePracticeDrillModel {
   const exercise = buildExercise(card, cards, 'spelling');
   const packId = resolveLanguagePackId(card.language);
