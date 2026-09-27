@@ -45,42 +45,46 @@ export function CourseSettingsSection() {
       </div>
     </div>
 
-    <div className="mt-5 grid gap-3">
-      <label className={rowClass}>
-        <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.ui-language" message="App language" /></span>
-        <select className={selectClass} value={uiLocale} onChange={event => void setUiLocale(event.target.value as UiLocale)}>
-          {ENABLED_UI_LOCALES.map(locale => <option key={locale} value={locale}>{UI_LOCALES[locale].autonym}</option>)}
-        </select>
-      </label>
+    <div className="mt-5 grid gap-5">
+      <div data-settings-course-language className="grid gap-3">
+        <label className={rowClass}>
+          <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.ui-language" message="App language" /></span>
+          <select className={selectClass} value={uiLocale} onChange={event => void setUiLocale(event.target.value as UiLocale)}>
+            {ENABLED_UI_LOCALES.map(locale => <option key={locale} value={locale}>{UI_LOCALES[locale].autonym}</option>)}
+          </select>
+        </label>
 
-      {activeCourse && <label className={rowClass}>
-        <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.meaning-language" message="Meaning language" /><span className="block text-xs font-normal text-[var(--sf-text-muted)]"><Trans id="settings.course.meaning-language.scope" message="Applies to new cards. Existing card meanings do not change." /></span></span>
-        <select className={selectClass} value={activeCourse.nativeLanguage} onChange={event => void actions.updateCourse(activeCourse.id, { nativeLanguage: event.target.value as CourseNativeLanguage })}>
-          {COURSE_NATIVE_LANGUAGES.map(language => <option key={language} value={language}>{_(NATIVE_LANGUAGE_LABEL[language])}</option>)}
-        </select>
-      </label>}
+        {activeCourse && <label className={rowClass}>
+          <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.meaning-language" message="Meaning language" /><span className="block text-xs font-normal text-[var(--sf-text-muted)]"><Trans id="settings.course.meaning-language.scope" message="Applies to new cards. Existing card meanings do not change." /></span></span>
+          <select className={selectClass} value={activeCourse.nativeLanguage} onChange={event => void actions.updateCourse(activeCourse.id, { nativeLanguage: event.target.value as CourseNativeLanguage })}>
+            {COURSE_NATIVE_LANGUAGES.map(language => <option key={language} value={language}>{_(NATIVE_LANGUAGE_LABEL[language])}</option>)}
+          </select>
+        </label>}
+      </div>
 
-      {activeCourse && <div className={rowClass}>
-        <Gauge size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
-        <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.pace" message="Daily pace" /></span>
-        <select className={selectClass} value={pace} onChange={event => changePace(Number(event.target.value) as DailyPace)}>
-          {DAILY_PACE_OPTIONS.map(option => <option key={option} value={option}>{_(msg({ id: 'settings.course.pace.option', message: '{count} cards / day' }).id, { count: option })}</option>)}
-        </select>
-      </div>}
+      {activeCourse && <div data-settings-course-preferences className="grid gap-3 border-t border-[var(--sf-border)] pt-5">
+        <div className={rowClass}>
+          <Gauge size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
+          <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.pace" message="Daily pace" /></span>
+          <select className={selectClass} value={pace} onChange={event => changePace(Number(event.target.value) as DailyPace)}>
+            {DAILY_PACE_OPTIONS.map(option => <option key={option} value={option}>{_(msg({ id: 'settings.course.pace.option', message: '{count} cards / day' }).id, { count: option })}</option>)}
+          </select>
+        </div>
 
-      {activeCourse && <label className={rowClass}>
-        <Volume2 size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
-        <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.romanization" message="Show romanization" /></span>
-        <input type="checkbox" role="switch" checked={activeCourse.preferences.showRomanization} onChange={event => updatePreferences({ showRomanization: event.target.checked })} className="h-6 w-11 shrink-0 accent-[var(--sf-brand)]" />
-      </label>}
+        <label className={rowClass}>
+          <Volume2 size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
+          <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.romanization" message="Show romanization" /></span>
+          <input type="checkbox" role="switch" checked={activeCourse.preferences.showRomanization} onChange={event => updatePreferences({ showRomanization: event.target.checked })} className="h-6 w-11 shrink-0 accent-[var(--sf-brand)]" />
+        </label>
 
-      {activeCourse?.targetLanguage === 'zh' && <div className={rowClass}>
-        <Keyboard size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
-        <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.script" message="Chinese script" /></span>
-        <select className={selectClass} value={activeCourse.preferences.zhScript ?? 'hans'} onChange={event => updatePreferences({ zhScript: event.target.value as 'hans' | 'hant' })}>
-          <option value="hans"><Trans id="settings.course.script.simplified" message="Simplified" /></option>
-          <option value="hant"><Trans id="settings.course.script.traditional" message="Traditional" /></option>
-        </select>
+        {activeCourse.targetLanguage === 'zh' && <div className={rowClass}>
+          <Keyboard size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
+          <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.script" message="Chinese script" /></span>
+          <select className={selectClass} value={activeCourse.preferences.zhScript ?? 'hans'} onChange={event => updatePreferences({ zhScript: event.target.value as 'hans' | 'hant' })}>
+            <option value="hans"><Trans id="settings.course.script.simplified" message="Simplified" /></option>
+            <option value="hant"><Trans id="settings.course.script.traditional" message="Traditional" /></option>
+          </select>
+        </div>}
       </div>}
 
       {archivedCourses.length > 0 && <div className={rowClass}>

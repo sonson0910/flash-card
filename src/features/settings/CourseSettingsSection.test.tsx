@@ -31,8 +31,10 @@ describe('CourseSettingsSection', () => {
 
     expect(html).toContain('App language');
     expect(html).toContain('Meaning language');
+    expect(html).toMatch(/data-settings-course-language[^>]*>.*App language.*Meaning language/);
     expect(html).toContain('Applies to new cards. Existing card meanings do not change.');
     expect(html).toContain('Daily pace');
+    expect(html).toMatch(/data-settings-course-preferences[^>]*>.*Daily pace.*Show romanization/);
     expect(html).toContain('Show romanization');
     expect(html).toContain('role="switch"');
     expect(html).toMatch(/<label[^>]*>.*Show romanization.*role="switch"/);

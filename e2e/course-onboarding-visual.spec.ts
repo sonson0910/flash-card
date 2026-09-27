@@ -93,6 +93,10 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(settings.getByText('Meaning language')).toBeVisible();
     await expect(settings.getByText('Daily pace')).toBeVisible();
     await expect(settings.getByRole('switch')).toBeChecked();
+    const appearance = page.getByRole('heading', { name: 'Appearance' }).locator('xpath=ancestor::section');
+    const coursePosition = await settings.boundingBox();
+    const appearancePosition = await appearance.boundingBox();
+    expect(coursePosition && appearancePosition && coursePosition.y < appearancePosition.y).toBeTruthy();
     await expectScreen(page, testInfo, `course-settings-${theme.family}-${theme.mode}-${viewport.name}`);
   });
 }

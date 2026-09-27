@@ -14,22 +14,22 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:92
+#: src/features/settings/settings-screen.tsx:94
 msgid "settings.appearance.description"
 msgstr "Changes apply right away and stay after you return."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:92
+#: src/features/settings/settings-screen.tsx:94
 msgid "settings.appearance.title"
 msgstr "Appearance"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:106
+#: src/features/settings/CourseSettingsSection.tsx:110
 msgid "settings.course.account-plan-hint"
 msgstr "Account and plan settings are available from your profile menu."
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:89
+#: src/features/settings/CourseSettingsSection.tsx:93
 msgid "settings.course.archived"
 msgstr "Archived courses"
 
@@ -39,52 +39,52 @@ msgid "settings.course.description"
 msgstr "Language, goals and how words are read to you."
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:100
+#: src/features/settings/CourseSettingsSection.tsx:104
 msgid "settings.course.extension-badge"
 msgstr "If you have the browser extension installed, its badge shows how many cards are due — this is read-only information, there is nothing to turn on or off here."
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:57
+#: src/features/settings/CourseSettingsSection.tsx:58
 msgid "settings.course.meaning-language"
 msgstr "Meaning language"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:57
+#: src/features/settings/CourseSettingsSection.tsx:58
 msgid "settings.course.meaning-language.scope"
 msgstr "Applies to new cards. Existing card meanings do not change."
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:65
+#: src/features/settings/CourseSettingsSection.tsx:68
 msgid "settings.course.pace"
 msgstr "Daily pace"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:67
+#: src/features/settings/CourseSettingsSection.tsx:70
 msgid "settings.course.pace.option"
 msgstr "{count} cards / day"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:103
+#: src/features/settings/CourseSettingsSection.tsx:107
 msgid "settings.course.reminder-not-ready"
 msgstr "Daily reminders aren't turned on yet. When they are, you'll be able to choose the days and quiet hours here."
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:73
+#: src/features/settings/CourseSettingsSection.tsx:76
 msgid "settings.course.romanization"
 msgstr "Show romanization"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:79
+#: src/features/settings/CourseSettingsSection.tsx:82
 msgid "settings.course.script"
 msgstr "Chinese script"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:81
+#: src/features/settings/CourseSettingsSection.tsx:84
 msgid "settings.course.script.simplified"
 msgstr "Simplified"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:82
+#: src/features/settings/CourseSettingsSection.tsx:85
 msgid "settings.course.script.traditional"
 msgstr "Traditional"
 
@@ -94,22 +94,22 @@ msgid "settings.course.title"
 msgstr "Course and learning"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:50
+#: src/features/settings/CourseSettingsSection.tsx:51
 msgid "settings.course.ui-language"
 msgstr "App language"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:98
+#: src/features/settings/settings-screen.tsx:100
 msgid "settings.crystal-mode.day"
 msgstr "Prism Day"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:98
+#: src/features/settings/settings-screen.tsx:100
 msgid "settings.crystal-mode.label"
 msgstr "Crystal Star mode"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:98
+#: src/features/settings/settings-screen.tsx:100
 msgid "settings.crystal-mode.night"
 msgstr "Starry Night"
 
@@ -119,22 +119,22 @@ msgid "settings.description"
 msgstr "Choose a look and tune the details that help you focus."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.follow-system.description"
 msgstr "Match your device’s light or dark setting."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.follow-system.label"
 msgstr "Follow system"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.haptics.description"
 msgstr "Feel a light vibration while you study."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.haptics.label"
 msgstr "Haptics"
 
@@ -144,72 +144,72 @@ msgid "settings.kicker"
 msgstr "Settings"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.lumi.description"
 msgstr "Show your Crystal Star study companion."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.lumi.label"
 msgstr "Lumi"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:100
+#: src/features/settings/settings-screen.tsx:102
 msgid "settings.preview.note"
 msgstr "Your choices are shown in the live previews above."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.reduced-motion.description"
 msgstr "Limit movement and animated effects."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.reduced-motion.label"
 msgstr "Reduced motion"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.sound.description"
 msgstr "Play feedback sounds while you study."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.sound.label"
 msgstr "Study sounds"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:96
+#: src/features/settings/settings-screen.tsx:98
 msgid "settings.theme.crystal"
 msgstr "Crystal Star"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:96
+#: src/features/settings/settings-screen.tsx:98
 msgid "settings.theme.crystal.description"
 msgstr "A sparkling study space with Lumi."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:93
+#: src/features/settings/settings-screen.tsx:95
 msgid "settings.theme.label"
 msgstr "Theme"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:94
+#: src/features/settings/settings-screen.tsx:96
 msgid "settings.theme.midnight"
 msgstr "Midnight Aurora"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:94
+#: src/features/settings/settings-screen.tsx:96
 msgid "settings.theme.midnight.description"
 msgstr "A deep, calm night palette."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:95
+#: src/features/settings/settings-screen.tsx:97
 msgid "settings.theme.paper"
 msgstr "Ink & Paper"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:95
+#: src/features/settings/settings-screen.tsx:97
 msgid "settings.theme.paper.description"
 msgstr "A warm, bright reading surface."
 

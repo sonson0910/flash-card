@@ -14,22 +14,22 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:92
+#: src/features/settings/settings-screen.tsx:94
 msgid "settings.appearance.description"
 msgstr "Thay đổi có hiệu lực ngay và được lưu cho lần sau."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:92
+#: src/features/settings/settings-screen.tsx:94
 msgid "settings.appearance.title"
 msgstr "Giao diện"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:106
+#: src/features/settings/CourseSettingsSection.tsx:110
 msgid "settings.course.account-plan-hint"
 msgstr "Cài đặt tài khoản và gói dịch vụ nằm trong menu hồ sơ của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:89
+#: src/features/settings/CourseSettingsSection.tsx:93
 msgid "settings.course.archived"
 msgstr "Khóa học đã lưu trữ"
 
@@ -39,52 +39,52 @@ msgid "settings.course.description"
 msgstr "Ngôn ngữ, mục tiêu và cách đọc từ cho bạn nghe."
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:100
+#: src/features/settings/CourseSettingsSection.tsx:104
 msgid "settings.course.extension-badge"
 msgstr "Nếu bạn đã cài tiện ích trình duyệt, huy hiệu của nó hiển thị số thẻ đến hạn — đây chỉ là thông tin để xem, không có gì cần bật hay tắt ở đây."
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:57
+#: src/features/settings/CourseSettingsSection.tsx:58
 msgid "settings.course.meaning-language"
 msgstr "Ngôn ngữ giải nghĩa"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:57
+#: src/features/settings/CourseSettingsSection.tsx:58
 msgid "settings.course.meaning-language.scope"
 msgstr "Chỉ áp dụng cho thẻ mới. Nghĩa của thẻ hiện có không thay đổi."
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:65
+#: src/features/settings/CourseSettingsSection.tsx:68
 msgid "settings.course.pace"
 msgstr "Nhịp học mỗi ngày"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:67
+#: src/features/settings/CourseSettingsSection.tsx:70
 msgid "settings.course.pace.option"
 msgstr "{count} thẻ / ngày"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:103
+#: src/features/settings/CourseSettingsSection.tsx:107
 msgid "settings.course.reminder-not-ready"
 msgstr "Nhắc nhở hằng ngày chưa được bật. Khi có, bạn sẽ chọn được ngày nhắc và khung giờ yên tĩnh tại đây."
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:73
+#: src/features/settings/CourseSettingsSection.tsx:76
 msgid "settings.course.romanization"
 msgstr "Hiện phiên âm Latin"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:79
+#: src/features/settings/CourseSettingsSection.tsx:82
 msgid "settings.course.script"
 msgstr "Chữ Hán"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:81
+#: src/features/settings/CourseSettingsSection.tsx:84
 msgid "settings.course.script.simplified"
 msgstr "Giản thể"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:82
+#: src/features/settings/CourseSettingsSection.tsx:85
 msgid "settings.course.script.traditional"
 msgstr "Phồn thể"
 
@@ -94,22 +94,22 @@ msgid "settings.course.title"
 msgstr "Khóa học và việc học"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:50
+#: src/features/settings/CourseSettingsSection.tsx:51
 msgid "settings.course.ui-language"
 msgstr "Ngôn ngữ ứng dụng"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:98
+#: src/features/settings/settings-screen.tsx:100
 msgid "settings.crystal-mode.day"
 msgstr "Prism Day"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:98
+#: src/features/settings/settings-screen.tsx:100
 msgid "settings.crystal-mode.label"
 msgstr "Chế độ Crystal Star"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:98
+#: src/features/settings/settings-screen.tsx:100
 msgid "settings.crystal-mode.night"
 msgstr "Starry Night"
 
@@ -119,22 +119,22 @@ msgid "settings.description"
 msgstr "Chọn phong cách và điều chỉnh chi tiết giúp bạn tập trung."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.follow-system.description"
 msgstr "Theo chế độ sáng hoặc tối của thiết bị."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.follow-system.label"
 msgstr "Theo hệ thống"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.haptics.description"
 msgstr "Cảm nhận rung nhẹ khi bạn học."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.haptics.label"
 msgstr "Rung phản hồi"
 
@@ -144,72 +144,72 @@ msgid "settings.kicker"
 msgstr "Cài đặt"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.lumi.description"
 msgstr "Hiển thị bạn đồng hành Lumi trong Crystal Star."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.lumi.label"
 msgstr "Lumi"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:100
+#: src/features/settings/settings-screen.tsx:102
 msgid "settings.preview.note"
 msgstr "Các lựa chọn của bạn được hiển thị trong bản xem trước ở trên."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.reduced-motion.description"
 msgstr "Giảm chuyển động và hiệu ứng động."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.reduced-motion.label"
 msgstr "Giảm chuyển động"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.sound.description"
 msgstr "Phát âm thanh phản hồi khi bạn học."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:99
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.sound.label"
 msgstr "Âm thanh học tập"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:96
+#: src/features/settings/settings-screen.tsx:98
 msgid "settings.theme.crystal"
 msgstr "Crystal Star"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:96
+#: src/features/settings/settings-screen.tsx:98
 msgid "settings.theme.crystal.description"
 msgstr "Không gian học lấp lánh cùng Lumi."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:93
+#: src/features/settings/settings-screen.tsx:95
 msgid "settings.theme.label"
 msgstr "Chủ đề"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:94
+#: src/features/settings/settings-screen.tsx:96
 msgid "settings.theme.midnight"
 msgstr "Midnight Aurora"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:94
+#: src/features/settings/settings-screen.tsx:96
 msgid "settings.theme.midnight.description"
 msgstr "Bảng màu đêm sâu lắng, êm dịu."
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:95
+#: src/features/settings/settings-screen.tsx:97
 msgid "settings.theme.paper"
 msgstr "Ink & Paper"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:95
+#: src/features/settings/settings-screen.tsx:97
 msgid "settings.theme.paper.description"
 msgstr "Trang đọc sáng và ấm áp."
 

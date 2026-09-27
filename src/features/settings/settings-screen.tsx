@@ -88,6 +88,8 @@ export default function SettingsScreen({ headingRef, focusIntent = 0 }: Settings
       <p className="mt-3 max-w-xl text-pretty text-[var(--sf-text-muted)]"><Trans id="settings.description" message="Choose a look and tune the details that help you focus." /></p>
     </header>
 
+    <Suspense fallback={null}><CourseSettingsSection /></Suspense>
+
     <section aria-labelledby="settings-appearance" className="settings-panel rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-4 shadow-[0_22px_56px_-38px_var(--sf-shadow)] sm:p-6">
       <div className="flex items-start gap-3"><span className="grid size-10 place-items-center rounded-xl bg-[var(--sf-surface-control)] text-[var(--sf-brand-text)]"><Palette size={20} aria-hidden="true" /></span><div><h2 id="settings-appearance" className="text-xl font-black text-[var(--sf-text)]"><Trans id="settings.appearance.title" message="Appearance" /></h2><p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans id="settings.appearance.description" message="Changes apply right away and stay after you return." /></p></div></div>
       <fieldset className="settings-theme-picker mt-6"><legend className="text-sm font-bold text-[var(--sf-text)]"><Trans id="settings.theme.label" message="Theme" /></legend><div className="mt-3 grid gap-3 md:grid-cols-3">
@@ -100,6 +102,5 @@ export default function SettingsScreen({ headingRef, focusIntent = 0 }: Settings
       <div className="mt-5 flex min-h-16 items-center gap-3 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 text-sm text-[var(--sf-text-muted)]"><span data-settings-lumi><Lumi pose="happy" size={42} /></span><Trans id="settings.preview.note" message="Your choices are shown in the live previews above." /></div>
     </section>
 
-    <Suspense fallback={null}><CourseSettingsSection /></Suspense>
   </div>;
 }
