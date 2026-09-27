@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page, type TestInfo } from './fixtures/firebase-emulator';
+import { expect, test } from './fixtures/firebase-emulator';
+import type { Page, TestInfo } from '@playwright/test';
 
 const fixedTime = new Date('2026-09-27T12:00:00.000Z');
 const themes = [
