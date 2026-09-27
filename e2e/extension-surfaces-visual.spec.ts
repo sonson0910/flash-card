@@ -46,7 +46,10 @@ async function mockChrome(page: Page, theme: typeof themes[number]) {
       if (message.type === 'GET_DECKS') return { ok: true, decks: [] };
       if (message.type === 'GET_ACTIVE_SITE') return { ok: true, pattern: 'https://example.test/*', enabled: false };
       if (message.type === 'GET_SHORTCUTS') return { ok: true, saveShortcut: 'Ctrl+Shift+L', translateShortcut: 'Alt+Shift+L' };
-      if (message.type === 'GET_RECENT_LOOKUPS') return { ok: true, items: [] };
+      if (message.type === 'GET_RECENT_LOOKUPS') return {
+        ok: true,
+        items: [{ text: 'resilient', translation: 'kiên cường', sourceLanguage: 'en', targetLanguage: 'vi', kind: 'create', status: 'created', timestamp: 0 }],
+      };
       if (message.type === 'GET_DUE_COUNT') return { ok: false };
       if (message.type === 'ADD_SELECTION') return { ok: true, id: 'visual-capture' };
       return { ok: true };
@@ -91,6 +94,7 @@ async function attach(page: Page, testInfo: TestInfo, name: string) {
   const path = testInfo.outputPath(`${name}.png`);
   await page.screenshot({ path, animations: 'disabled', caret: 'hide' });
   await testInfo.attach(name, { path, contentType: 'image/png' });
+  await expect(page).toHaveScreenshot(`${name}.png`, { animations: 'disabled', caret: 'hide' });
 }
 
 for (const theme of themes) {

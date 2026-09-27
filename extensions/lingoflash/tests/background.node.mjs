@@ -308,6 +308,19 @@ const startQuickAdd = worker => sendRuntimeMessage(worker, {
   text: 'resilient',
 });
 
+test('installs both Canvas context-menu actions with the localized SonFlash labels', async () => {
+  const worker = await createWorkerContext();
+
+  worker.events.installed.listeners.forEach(listener => listener());
+  await flushMicrotasks();
+
+  const menus = worker.calls.filter(call => call.type === 'contextMenus.create').map(call => call.details);
+  assert.deepEqual(menus.map(menu => menu.id), ['lingoflash-translate-only', 'lingoflash-translate-save']);
+  assert.equal(menus[0].title, 'SonFlash: Dịch nhanh “%s” — không lưu');
+  assert.equal(menus[1].title, 'SonFlash: Dịch + thêm “%s” vào thư viện');
+  assert.deepEqual(menus.map(menu => [...menu.contexts]), [['selection'], ['selection']]);
+});
+
 test('opens the browser shortcut configuration on request', async () => {
   const worker = await createWorkerContext();
 

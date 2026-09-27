@@ -42,6 +42,7 @@ async function attachScreen(page: Page, testInfo: TestInfo, name: string) {
   const screenshot = testInfo.outputPath(`${name}.png`);
   await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide' });
   await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
+  await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true, animations: 'disabled', caret: 'hide' });
 }
 
 for (const theme of themes) for (const viewport of viewports) {
