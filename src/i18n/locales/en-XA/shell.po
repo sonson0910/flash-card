@@ -289,7 +289,7 @@ msgid "course.switcher.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:150
+#: src/app/AppRuntime.tsx:151
 msgid "extension.import.course-mismatch-confirm"
 msgstr ""
 
@@ -691,7 +691,7 @@ msgid "shell.language.open"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:387
+#: src/app/AppRuntime.tsx:390
 msgid "shell.learning-workspace"
 msgstr ""
 
@@ -875,7 +875,7 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/app/AppDeferredViews.tsx:22
-#: src/app/AppRuntime.tsx:436
+#: src/app/AppRuntime.tsx:439
 msgid "shell.opening-dialog"
 msgstr ""
 
@@ -1261,7 +1261,7 @@ msgid "shell.sync.paused-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:310
+#: src/app/AppRuntime.tsx:313
 msgid "shell.sync.retry-failed"
 msgstr ""
 

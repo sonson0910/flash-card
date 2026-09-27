@@ -1,3 +1,5 @@
+import { COURSE_TARGET_LANGUAGES, type CourseTargetLanguage } from '../../../functions/src/course-profile-contract';
+
 export const BROWSER_EXTENSION_IMPORT_HASH_KEY = 'lf-import';
 export const BROWSER_EXTENSION_IMPORT_STORAGE_KEY = 'lingoflash_browser_extension_import';
 export const BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY = 'lingoflash_browser_extension_draft_import';
@@ -31,6 +33,14 @@ export interface BrowserExtensionImportIntent {
   sourceUrl?: string;
   /** Page <title> at capture time. */
   pageTitle?: string;
+  /**
+   * The active course's target language at capture time, when the extension
+   * had one synced (background-core.js `activeCaptureSourceLanguage`).
+   * Absent on an older extension build or when no course locale was ever
+   * synced (signed out, or the app hasn't loaded yet) — callers must treat a
+   * missing value as the extension's original fixed English assumption.
+   */
+  sourceLanguage?: CourseTargetLanguage;
 }
 
 export interface BrowserExtensionImportStorage {
@@ -150,6 +160,14 @@ const parseIntentValue = (value: unknown, now: number): BrowserExtensionImportIn
   const sourceUrl = sanitizeCapturedSourceUrl(candidate.sourceUrl);
   const pageTitle = normalizeBrowserExtensionImportText(candidate.pageTitle)
     .slice(0, BROWSER_EXTENSION_IMPORT_MAX_PAGE_TITLE_LENGTH);
+  // An unrecognized value is dropped rather than rejecting the whole intent:
+  // this is a soft hint the extension attaches when it knows the active
+  // course's target language (07.5), and a future target language this app
+  // build does not know about yet must not break capture.
+  const sourceLanguage = typeof candidate.sourceLanguage === 'string'
+    && (COURSE_TARGET_LANGUAGES as readonly string[]).includes(candidate.sourceLanguage)
+    ? candidate.sourceLanguage
+    : undefined;
   const isCurrentVersion = candidate.v === BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION;
   const isLegacyDraft = candidate.v === BROWSER_EXTENSION_IMPORT_LEGACY_DRAFT_PROTOCOL_VERSION
     && candidate.mode === undefined;
@@ -173,6 +191,7 @@ const parseIntentValue = (value: unknown, now: number): BrowserExtensionImportIn
     ...(isCurrentVersion && requestedDeck ? { requestedDeck } : {}),
     ...(isCurrentVersion && sourceUrl ? { sourceUrl } : {}),
     ...(isCurrentVersion && pageTitle ? { pageTitle } : {}),
+    ...(isCurrentVersion && sourceLanguage ? { sourceLanguage } : {}),
   };
 };
 

@@ -11,9 +11,22 @@ const {
   localizeDocument,
   applyColorScheme,
   applyThemeFamily,
+  applyCourseUiLocale,
 } = globalThis.LingoFlashExtension;
 
 localizeDocument(document);
+// Follows the active course's native language when the app has told the
+// extension about a signed-in owner's active course (07.5); otherwise this
+// resolves to false and every t()/localizeDocument() call keeps using
+// today's Chrome-i18n-resolved locale exactly as before. load() below (and
+// the site-permission handlers it wires up) render their own text with
+// direct t() calls rather than data-i18n attributes, so it must not start
+// until this settles — otherwise it would race ahead and render in the
+// browser's own UI locale before the course's native-language catalog is
+// ready.
+const courseUiLocaleReady = applyCourseUiLocale()
+  .then(changed => { if (changed) localizeDocument(document); })
+  .catch(() => undefined);
 
 const form = document.getElementById('settings-form');
 const autoSpeak = document.getElementById('auto-speak');
@@ -197,4 +210,4 @@ form.addEventListener('submit', event => {
 
 addSelectionIconSiteButton?.addEventListener('click', () => { void addSelectionIconSite(); });
 
-void load();
+void courseUiLocaleReady.then(() => load());

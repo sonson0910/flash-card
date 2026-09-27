@@ -90,3 +90,69 @@ describe('useBrowserExtensionImport deck metadata sync', () => {
     }
   });
 });
+
+describe('useBrowserExtensionImport course locale sync', () => {
+  it('sends no course locale message when the active course is unknown, keeping today\'s behavior', async () => {
+    const posted: unknown[] = [];
+    vi.stubGlobal('location', { origin: 'https://app.example.test' });
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    const root = createRoot(installMinimalReactDom());
+
+    function Harness(props: { options: BrowserExtensionImportOptions }) {
+      useBrowserExtensionImport(props.options);
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        root.render(<Harness options={optionsFor()} />);
+      });
+      expect(posted.some(message => (
+        typeof message === 'object' && message !== null
+        && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_COURSE_LOCALE'
+      ))).toBe(false);
+    } finally {
+      act(() => root.unmount());
+    }
+  });
+
+  it('syncs the active course native/target language under the same opaque scope as deck metadata, and clears it on owner change', async () => {
+    const posted: unknown[] = [];
+    vi.stubGlobal('location', { origin: 'https://app.example.test' });
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    const root = createRoot(installMinimalReactDom());
+
+    function Harness(props: { options: BrowserExtensionImportOptions }) {
+      useBrowserExtensionImport(props.options);
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        root.render(<Harness options={optionsFor({ courseNativeLanguage: 'en', courseTargetLanguage: 'ko' })} />);
+      });
+      const deckMetadata = posted.find((message): message is { type: string; payload: { scope: string } } => (
+        Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_DECK_METADATA')
+      ));
+      const courseLocale = posted.find((message): message is { type: string; payload: { scope: string; nativeLanguage: string; targetLanguage: string } } => (
+        Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_COURSE_LOCALE')
+      ));
+      expect(courseLocale).toBeDefined();
+      expect(courseLocale?.payload).toEqual({
+        scope: deckMetadata?.payload.scope,
+        nativeLanguage: 'en',
+        targetLanguage: 'ko',
+      });
+
+      await act(async () => {
+        root.render(<Harness options={optionsFor({ ownerId: null, libraryReady: false, customDecks: [] })} />);
+      });
+      expect(posted).toContainEqual(expect.objectContaining({
+        type: 'LINGOFLASH_EXTENSION_COURSE_LOCALE_CLEAR',
+        payload: { scope: deckMetadata?.payload.scope },
+      }));
+    } finally {
+      act(() => root.unmount());
+    }
+  });
+});

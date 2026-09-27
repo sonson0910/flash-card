@@ -10,6 +10,9 @@ import {
   XCircle,
 } from "lucide-react";
 import { GsapEntrance } from "../../components/motion/GsapEntrance";
+import { Lumi } from "../../components/lumi/Lumi";
+import { readLumiEnabled } from "../settings/lumi-preference";
+import { useTheme } from "../theme/ThemeProvider";
 import { playWordAudio, type WordAudioPlayback } from "../../lib/audio";
 import { speechLocaleFor } from "../../lib/speechLocale";
 import type { CardData } from "../../types/card";
@@ -48,6 +51,7 @@ export function SpellingView({
     descriptor: ReturnType<typeof msg>,
     values?: Record<string, unknown>,
   ) => i18n._(descriptor.id, values);
+  const showLumi = useTheme().family === "crystal" && readLumiEnabled();
   const card = cards[currentIndex];
   const questionHeadingRef = useRef<HTMLHeadingElement>(null);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
@@ -119,10 +123,11 @@ export function SpellingView({
         >
           <div
             data-color-role="reward"
-            className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-amber-100 text-[var(--sf-reward)] dark:bg-amber-950/30"
+            className="relative mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-amber-100 text-[var(--sf-reward)] dark:bg-amber-950/30"
             aria-hidden="true"
           >
             <Trophy size={40} />
+            {showLumi && <Lumi pose="proud" size={58} className="crystal-ornament pointer-events-none absolute -bottom-2 -right-3 max-w-none drop-shadow-md" />}
           </div>
           <h2
             id="spelling-results-heading"

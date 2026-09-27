@@ -492,6 +492,57 @@ describe('browser extension import runtime', () => {
     expect(generated).toBe(1);
   });
 
+  it('passes the extension\'s captured target language to ensureCaptureCourse, defaulting to en when the extension reported none', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_no_source_language_123',
+      nonce,
+      text: 'resilient',
+      createdAt: now,
+      mode: 'silent',
+    }));
+    const seenTargetLanguages: string[] = [];
+    const runtime = startBrowserExtensionImportRuntime({
+      ...optionsFor(async () => ({ status: 'failed' as const, error: new Error('expected test failure') })),
+      ensureCaptureCourse: async targetLanguage => {
+        seenTargetLanguages.push(targetLanguage);
+        return 'proceed' as const;
+      },
+    }, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(seenTargetLanguages).toEqual(['en']);
+  });
+
+  it('passes the extension\'s synced course target language to ensureCaptureCourse when the extension reported one', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_korean_source_language_123',
+      nonce,
+      text: '회복력',
+      createdAt: now,
+      mode: 'silent',
+      sourceLanguage: 'ko',
+    }));
+    const seenTargetLanguages: string[] = [];
+    const runtime = startBrowserExtensionImportRuntime({
+      ...optionsFor(async () => ({ status: 'failed' as const, error: new Error('expected test failure') })),
+      ensureCaptureCourse: async targetLanguage => {
+        seenTargetLanguages.push(targetLanguage);
+        return 'proceed' as const;
+      },
+    }, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(seenTargetLanguages).toEqual(['ko']);
+  });
+
   it('generates anyway if ensureCaptureCourse rejects, matching the best-effort course-matching contract', async () => {
     const now = Date.now();
     const { browser, storage } = createBrowser('https://app.example.test/?view=library');

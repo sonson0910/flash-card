@@ -23,6 +23,12 @@ test('options page exposes the bounded settings controls and shared persistence'
   assert.match(source, /selectionIconSitePatternFromUrl/);
 });
 
+test('options follows the active course native language and only loads its settings after that resolves (07.5)', () => {
+  assert.match(source, /applyCourseUiLocale/);
+  assert.match(source, /const courseUiLocaleReady = applyCourseUiLocale\(\)/);
+  assert.match(source, /courseUiLocaleReady\.then\(\(\) => load\(\)\)/);
+});
+
 test('options exposes pending feedback and explicit empty permission state without forcing a minimum width', () => {
   assert.match(html, /id="save-settings"/);
   assert.match(html, /id="selection-icon-empty"/);

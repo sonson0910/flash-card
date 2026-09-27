@@ -163,7 +163,7 @@ test.beforeAll(async ({}, testInfo) => {
   catalogFixturePort = CATALOG_FIXTURE_PORT_BASE + testInfo.parallelIndex;
   catalogFixtureOrigin = `http://127.0.0.1:${catalogFixturePort}`;
   catalogFixtureServer = await createServer({
-    configFile: 'vite.config.ts',
+    configFile: 'vite.config.ts', cacheDir: `node_modules/.vite-e2e/paths-progress-visual-${testInfo.parallelIndex}`,
     appType: 'spa',
     plugins: [{
       name: 'catalog-ready-visual-fixture',

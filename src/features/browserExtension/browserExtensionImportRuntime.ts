@@ -25,11 +25,26 @@ export interface BrowserExtensionImportOptions {
   notify(message: string): void;
   reportError(message: string): void;
   /**
+   * The signed-in owner's active course native/target language, when known.
+   * `useBrowserExtensionImport` syncs this pair to the extension the same
+   * way it already syncs deck metadata (07.5, `LINGOFLASH_EXTENSION_COURSE_
+   * LOCALE`), which the extension uses to follow the course's native
+   * language in its own popup/options UI and to tag a fresh capture with the
+   * course's target language. Omitting either field (or passing `null`)
+   * sends no course-locale sync at all, so the extension keeps its today's
+   * Chrome-i18n UI locale and fixed English capture assumption unchanged.
+   */
+  courseNativeLanguage?: string | null;
+  courseTargetLanguage?: string | null;
+  /**
    * Runs immediately before a silent (one-click, no-review) capture is
-   * generated. The extension always captures assuming its fixed English
-   * assumption, so when the active course targets a different language this
-   * is the only point where a human ever sees the mismatch — manual (non-
-   * silent) captures instead land in the library view, where the real course
+   * generated. Receives the target language the extension captured this
+   * word under — the active course's target language when the extension had
+   * one synced (07.5), else `'en'`, the extension's original fixed
+   * assumption for a build (or a not-yet-synced session) that never reports
+   * one. When the active course targets a different language, this is the
+   * only point where a human ever sees the mismatch — manual (non-silent)
+   * captures instead land in the library view, where the real course
    * switcher is already visible before the user generates anything.
    * Returning `'cancel'` drops the capture with no side effects: nothing is
    * generated, the pending storage entry is cleared, and the extension
@@ -37,7 +52,7 @@ export interface BrowserExtensionImportOptions {
    * `'proceed'`) keeps generation byte-for-byte identical to before this
    * option existed.
    */
-  ensureCaptureCourse?(): Promise<'proceed' | 'cancel'>;
+  ensureCaptureCourse?(targetLanguage: NonNullable<BrowserExtensionImportIntent['sourceLanguage']>): Promise<'proceed' | 'cancel'>;
 }
 
 export interface BrowserExtensionImportRuntime {
@@ -271,7 +286,7 @@ export const startBrowserExtensionImportRuntime = (
       runGeneration();
       return;
     }
-    void ensureCaptureCourse().then(decision => {
+    void ensureCaptureCourse(intent.sourceLanguage ?? 'en').then(decision => {
       if (disposed) return;
       if (decision === 'cancel') {
         // No half-done side effects: nothing was generated, the pending

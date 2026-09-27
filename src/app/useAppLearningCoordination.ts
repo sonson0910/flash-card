@@ -15,7 +15,7 @@ import { existingCardRevealState } from '../features/library/libraryPresentation
 import {
   cloudFacetsCacheKey,
   cloudPageCacheKey,
-  cloudStatsCacheKey,
+  removeCloudStatsCaches,
   clearImageNegativeCache,
   hasImageNegativeCache,
   isCloudBackoffActive,
@@ -200,7 +200,7 @@ export function useAppLearningCoordination({
       chooseAllDecks: () => catalogActions.chooseDeck('All'),
       recoverCloud: (ownerId, message) => {
         removeLocalValue(cloudPageCacheKey(ownerId));
-        removeLocalValue(cloudStatsCacheKey(ownerId));
+        removeCloudStatsCaches(ownerId);
         removeLocalValue(cloudFacetsCacheKey(ownerId));
         if (ports.activeOwnerIdRef.current !== ownerId) return;
         ports.setCloudReadUnavailable(true);

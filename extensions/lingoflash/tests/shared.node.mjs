@@ -31,6 +31,10 @@ const {
   normalizeDueCountMetadata,
   MAX_DUE_COUNT,
   applyThemeFamily,
+  normalizeCourseTargetLanguage,
+  normalizeCourseNativeLanguage,
+  normalizeCourseLocaleMetadata,
+  normalizeRetiredCourseLocaleScopes,
 } = globalThis.LingoFlashExtension;
 
 test('normalizes browser selection', () => {
@@ -361,6 +365,34 @@ test('bounds and validates due-count metadata like deck metadata', () => {
   assert.equal(normalizeDueCountMetadata({ scope: '', count: 7 }), null);
   assert.equal(normalizeDueCountMetadata({ scope: 'a'.repeat(12), count: -1 }), null);
   assert.equal(normalizeDueCountMetadata(null), null);
+});
+
+test('normalizes course target/native languages to the known contract lists, dropping anything else (07.5)', () => {
+  assert.equal(normalizeCourseTargetLanguage('ko'), 'ko');
+  assert.equal(normalizeCourseTargetLanguage('fr'), '');
+  assert.equal(normalizeCourseTargetLanguage(undefined), '');
+  assert.equal(normalizeCourseNativeLanguage('en'), 'en');
+  assert.equal(normalizeCourseNativeLanguage('vi'), 'vi');
+  assert.equal(normalizeCourseNativeLanguage('fr'), '');
+});
+
+test('bounds and validates course-locale metadata like deck metadata and due count (07.5)', () => {
+  assert.deepEqual(
+    normalizeCourseLocaleMetadata({ scope: 'a'.repeat(12), nativeLanguage: 'en', targetLanguage: 'ko' }),
+    { scope: 'a'.repeat(12), nativeLanguage: 'en', targetLanguage: 'ko' },
+  );
+  assert.equal(normalizeCourseLocaleMetadata({ scope: '', nativeLanguage: 'en', targetLanguage: 'ko' }), null);
+  assert.equal(normalizeCourseLocaleMetadata({ scope: 'a'.repeat(12), nativeLanguage: 'fr', targetLanguage: 'ko' }), null);
+  assert.equal(normalizeCourseLocaleMetadata({ scope: 'a'.repeat(12), nativeLanguage: 'en', targetLanguage: 'fr' }), null);
+  assert.equal(normalizeCourseLocaleMetadata(null), null);
+});
+
+test('retires course-locale scopes with the same bounded dedup rules as deck metadata (07.5)', () => {
+  assert.deepEqual(
+    normalizeRetiredCourseLocaleScopes(['a'.repeat(12), 'a'.repeat(12), 'b'.repeat(12)]),
+    ['a'.repeat(12), 'b'.repeat(12)],
+  );
+  assert.deepEqual(normalizeRetiredCourseLocaleScopes(null), []);
 });
 
 test('locks the extension to the production LingoFlash origin', () => {

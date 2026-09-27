@@ -59,7 +59,7 @@ test.beforeAll(async ({}, testInfo) => {
   fixturePort = FIXTURE_PORT_BASE + testInfo.parallelIndex;
   fixtureOrigin = `http://127.0.0.1:${fixturePort}`;
   fixtureServer = await createServer({
-    configFile: 'vite.config.ts',
+    configFile: 'vite.config.ts', cacheDir: `node_modules/.vite-e2e/daily-recap-visual-${testInfo.parallelIndex}`,
     appType: 'mpa',
     server: { host: '127.0.0.1', port: fixturePort, strictPort: true },
     optimizeDeps: { entries: ['e2e/fixtures/daily-recap.html'] },

@@ -289,9 +289,9 @@ msgid "course.switcher.title"
 msgstr "Khóa học của bạn"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:150
+#: src/app/AppRuntime.tsx:151
 msgid "extension.import.course-mismatch-confirm"
-msgstr "Từ này được thu thập với giả định là tiếng Anh, nhưng khóa học hiện tại của bạn không phải tiếng Anh. Chuyển sang (hoặc tạo) khóa học tiếng Anh để lưu từ này?"
+msgstr "Từ này được lưu cho một ngôn ngữ khác với khoá học hiện tại của bạn. Chuyển sang (hoặc tạo) khoá học phù hợp để lưu từ này?"
 
 #. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:417
@@ -691,7 +691,7 @@ msgid "shell.language.open"
 msgstr "Chọn ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:387
+#: src/app/AppRuntime.tsx:390
 msgid "shell.learning-workspace"
 msgstr "Không gian học tập"
 
@@ -875,7 +875,7 @@ msgstr "Điều hướng chính"
 
 #. js-lingui-explicit-id
 #: src/app/AppDeferredViews.tsx:22
-#: src/app/AppRuntime.tsx:436
+#: src/app/AppRuntime.tsx:439
 msgid "shell.opening-dialog"
 msgstr "Đang mở hộp thoại"
 
@@ -1261,7 +1261,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Không thể cập nhật trực tiếp từ đám mây. Hãy thử lại khi kết nối ổn định hơn."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:310
+#: src/app/AppRuntime.tsx:313
 msgid "shell.sync.retry-failed"
 msgstr "Không thể hoàn tất đồng bộ. Các thay đổi vẫn được giữ trên thiết bị này. Hãy thử lại."
 

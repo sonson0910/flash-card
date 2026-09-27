@@ -23,7 +23,8 @@ import { Trans, useLingui } from '@lingui/react';
 import { APP_VIEW_HEADINGS } from '../features/navigation/app-view-headings';
 import { evidencedStudyStreak } from '../features/dailyLearning/dailyLearningPresentation';
 import { CourseProvider, useCourseSession, type CourseGateValue } from '../features/courses/CourseGate';
-import { languageProfileForCourse } from '../features/courses/courseLanguageProfile';
+import { activeCourseNativeLanguage, activeCourseTargetLanguage, languageProfileForCourse } from '../features/courses/courseLanguageProfile';
+import type { CourseNativeLanguage, CourseTargetLanguage } from '../features/courses/courseModel';
 import { createSharedDeckCoursePort, resolveShareCourseAction } from '../features/sharing/shareCourseMatching';
 import type { SharedDeckIncomingPreview } from '../features/sharing/sharedDeckSessionController';
 import { OnboardingGate } from '../features/onboarding/OnboardingGate';
@@ -48,21 +49,23 @@ function CourseSessionBridge({ onSnapshot }: { readonly onSnapshot: (value: Cour
   return null;
 }
 
-// The browser extension (`extensions/lingoflash/background-core.js`) always
-// captures assuming this fixed English/Vietnamese pair; it has no per-course
-// language selector of its own. Reusing `resolveShareCourseAction` against
-// that known constant is how a mismatch with the active course is detected
-// without needing to extend the extension's wire protocol.
-const EXTENSION_CAPTURE_COURSE_PREVIEW: SharedDeckIncomingPreview = {
+// A capture carries the target language the extension had synced from the
+// active course when it was saved ('en' for older extensions). Reusing
+// `resolveShareCourseAction` against that pair detects a course switch made
+// between capture and import.
+const extensionCapturePreview = (
+  targetLanguage: CourseTargetLanguage,
+  translationLanguage: CourseNativeLanguage,
+): SharedDeckIncomingPreview => ({
   shareId: '',
   category: '',
   cardCount: 0,
   sampleWords: [],
-  languagePairs: [{ targetLanguage: 'en', translationLanguage: 'vi' }],
+  languagePairs: [{ targetLanguage, translationLanguage }],
   createdAt: null,
   expiresAt: null,
   containsAiGeneratedCards: false,
-};
+});
 
 export interface LandingUser {
   readonly displayName?: string | null;
@@ -140,19 +143,17 @@ export default function AppRuntime({
   // only: manual captures already open the library view, where the real
   // course switcher is visible before the user generates anything, so no
   // extra gate is needed there. Cancelling here leaves nothing generated.
-  const ensureExtensionCaptureCourse = useCallback(async (): Promise<'proceed' | 'cancel'> => {
+  const ensureExtensionCaptureCourse = useCallback(async (targetLanguage: CourseTargetLanguage): Promise<'proceed' | 'cancel'> => {
     if (!courseSession || !coursePort) return 'proceed';
-    const decision = resolveShareCourseAction(
-      EXTENSION_CAPTURE_COURSE_PREVIEW,
-      courseSession.model.profile,
-    );
+    const preview = extensionCapturePreview(targetLanguage, activeCourseNativeLanguage(courseSession.model.activeCourse));
+    const decision = resolveShareCourseAction(preview, courseSession.model.profile);
     if (!decision || decision.action === 'none') return 'proceed';
     const confirmed = globalThis.confirm?.(_(msg({
       id: 'extension.import.course-mismatch-confirm',
-      message: "This word was captured assuming English, but your active course isn't English. Switch to (or create) your English course to save it?",
+      message: "This word was saved for a different language than your active course. Switch to (or create) the matching course to save it?",
     }))) ?? true;
     if (!confirmed) return 'cancel';
-    await coursePort.ensureCourseForIncomingShare(EXTENSION_CAPTURE_COURSE_PREVIEW);
+    await coursePort.ensureCourseForIncomingShare(preview);
     return 'proceed';
   }, [courseSession, coursePort, _]);
   const library = useAppLibraryRuntime({
@@ -260,6 +261,8 @@ export default function AppRuntime({
     notify: message => setNotice(message),
     reportError: message => setError(message),
     ensureCaptureCourse: ensureExtensionCaptureCourse,
+    courseNativeLanguage: courseSession?.model.activeCourse ? activeCourseNativeLanguage(courseSession.model.activeCourse) : null,
+    courseTargetLanguage: courseSession?.model.activeCourse ? activeCourseTargetLanguage(courseSession.model.activeCourse) : null,
   });
   useExtensionDueCountBridge({ ownerId: user?.uid ?? null, ready: libraryReady, dueCount: cloudStats.due });
   const handledSignInRequestRef = useRef(0);

@@ -23,7 +23,11 @@ export interface CachedCloudStats {
 export const MAX_AI_CARDS_PER_IMPORT = 30;
 
 export const cloudPageCacheKey = (userId: string) => `lingoflash_cloud_page_${userId}`;
-export const cloudStatsCacheKey = (userId: string) => `lingoflash_cloud_stats_${userId}`;
+// Namespaced by course target language so switching the active course never
+// serves another course's cached stats; omitting the language keeps the
+// pre-course-scoping key so existing sign-out/clear cleanup paths still hit it.
+export const cloudStatsCacheKey = (userId: string, targetLanguage?: string | null) =>
+  targetLanguage ? `lingoflash_cloud_stats_${userId}_${targetLanguage}` : `lingoflash_cloud_stats_${userId}`;
 export const cloudFacetsCacheKey = (userId: string) => `lingoflash_cloud_facets_${userId}`;
 export const cloudBackoffCacheKey = (userId: string) => `lingoflash_cloud_backoff_until_${userId}`;
 export const IMAGE_NEGATIVE_CACHE_TTL_MS = 6 * 60 * 60 * 1_000;
@@ -45,6 +49,20 @@ export const removeLocalValue = (key: string): boolean => {
     return true;
   } catch {
     return false;
+  }
+};
+
+// Stats are cached per course, so dropping an owner's stats must sweep every
+// course-scoped key as well as the unscoped one.
+export const removeCloudStatsCaches = (userId: string): void => {
+  const baseKey = cloudStatsCacheKey(userId);
+  try {
+    for (let index = localStorage.length - 1; index >= 0; index--) {
+      const key = localStorage.key(index);
+      if (key === baseKey || key?.startsWith(`${baseKey}_`)) localStorage.removeItem(key);
+    }
+  } catch {
+    // Storage can be unavailable (private mode); there is nothing to clear then.
   }
 };
 
@@ -125,8 +143,11 @@ const isLibraryStats = (value: unknown): value is LibraryStats => {
     .every(key => typeof source[key] === 'number' && Number.isFinite(source[key]));
 };
 
-export const readCachedCloudStats = (userId: string): { stats: LibraryStats; cachedAt: number | null } | null => {
-  const cached = readLocalJson<unknown>(cloudStatsCacheKey(userId), null);
+export const readCachedCloudStats = (
+  userId: string,
+  targetLanguage?: string | null,
+): { stats: LibraryStats; cachedAt: number | null } | null => {
+  const cached = readLocalJson<unknown>(cloudStatsCacheKey(userId, targetLanguage), null);
   if (isLibraryStats(cached)) return { stats: cached, cachedAt: null };
   if (!cached || typeof cached !== 'object' || Array.isArray(cached)) return null;
   const candidate = cached as Partial<CachedCloudStats>;

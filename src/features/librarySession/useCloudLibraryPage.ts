@@ -46,7 +46,11 @@ export function useCloudLibraryPage({
     }), []);
 
   const controller = useMemo(() => {
-    const adapter = createCloudLibraryPageFirebaseAdapter({ database: db, configured: isFirebaseConfigured, transformPage });
+    // Read through the ref (kept current every render, above) rather than a
+    // memo dependency, so the adapter and cache stay bound to whichever
+    // course is active without recreating the controller/listener on switch.
+    const getTargetLanguage = () => queryRef.current.targetLanguage ?? null;
+    const adapter = createCloudLibraryPageFirebaseAdapter({ database: db, configured: isFirebaseConfigured, transformPage, getTargetLanguage });
     const cache: CloudLibraryCachePort = {
       readPage: async request => {
         const cachedValue = readLocalJson<unknown>(cloudPageCacheKey(request.ownerId), null);
@@ -75,8 +79,10 @@ export function useCloudLibraryPage({
         } satisfies CachedCloudPage));
       },
       readCount: readCachedCloudTotal,
-      readStats: readCachedCloudStats,
-      writeStats: (id, stats, updatedAt) => { writeLocalValue(cloudStatsCacheKey(id), JSON.stringify({ stats, updatedAt: new Date(updatedAt).toISOString() } satisfies CachedCloudStats)); },
+      // Course-scoped: a stats cache written for course A must never answer
+      // a read for course B, so both sides key off the active target language.
+      readStats: id => readCachedCloudStats(id, getTargetLanguage()),
+      writeStats: (id, stats, updatedAt) => { writeLocalValue(cloudStatsCacheKey(id, getTargetLanguage()), JSON.stringify({ stats, updatedAt: new Date(updatedAt).toISOString() } satisfies CachedCloudStats)); },
       readFacets: id => {
         const value = readLocalJson<unknown>(cloudFacetsCacheKey(id), null);
         if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -102,8 +108,11 @@ export function useCloudLibraryPage({
   }, [controller, ownerId, page, queryKey, refreshKey]);
 
   useEffect(() => {
+    // Depending on targetLanguage (not the whole query) means an unrelated
+    // catalog filter change never re-triggers a stats read; only opening the
+    // panel or switching the active course does.
     if (statsOpen && ownerId) void controller.requestStats();
-  }, [controller, ownerId, statsOpen]);
+  }, [controller, ownerId, statsOpen, query.targetLanguage]);
 
   useEffect(() => () => controller.stop(), [controller]);
   return snapshot;

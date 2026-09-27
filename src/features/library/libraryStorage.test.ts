@@ -5,6 +5,7 @@ import {
   isCloudBackoffActive,
   markImageNegativeCache,
   readLocalJson,
+  removeCloudStatsCaches,
   removeLocalValue,
   waitForInitialMedia,
   writeLocalValue,
@@ -103,5 +104,24 @@ describe('library browser storage safeguards', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('clears every course-scoped stats cache for one owner only', () => {
+    const values = new Map([
+      ['lingoflash_cloud_stats_owner-a', 'all'],
+      ['lingoflash_cloud_stats_owner-a_en', 'en'],
+      ['lingoflash_cloud_stats_owner-a_ko', 'ko'],
+      ['lingoflash_cloud_stats_owner-ab_en', 'keep'],
+      ['lingoflash_cloud_page_owner-a', 'keep'],
+    ]);
+    vi.stubGlobal('localStorage', {
+      get length() { return values.size; },
+      key: (index: number) => [...values.keys()][index] ?? null,
+      removeItem: (key: string) => { values.delete(key); },
+    });
+
+    removeCloudStatsCaches('owner-a');
+
+    expect([...values.keys()]).toEqual(['lingoflash_cloud_stats_owner-ab_en', 'lingoflash_cloud_page_owner-a']);
   });
 });

@@ -8,6 +8,7 @@
     apiCall, buildImportUrl, createImportNonce, createIntentId, isValidImportNonce, selectionValidation, normalizeSilentImportIntent,
     readSettings, writeUserSettings, updateSelectionIconSites, readRecentLookups, recordRecentLookup, clearRecentLookups, normalizeDeckScope, normalizeDeckMetadata, normalizeRetiredDeckScopes,
     normalizeDueCountMetadata, normalizeRetiredDueCountScopes,
+    COURSE_LOCALE_STORAGE_KEY, COURSE_LOCALE_RETIRED_SCOPES_STORAGE_KEY, normalizeCourseTargetLanguage, normalizeCourseLocaleMetadata, normalizeRetiredCourseLocaleScopes,
     normalizeSelectionIconSites, selectionIconSitePatternFromUrl, isProtectedSelectionIconUrl, t,
   } = globalThis.LingoFlashExtension;
   const { captureSelectionFromPage, renderInlineBubble } = globalThis.LingoFlashExtensionUi;
@@ -62,6 +63,13 @@
   // sync, so a reconnect or account switch can never surface a stale count
   // synced under a previous account.
   let confirmedDueCountScope = '';
+  let courseLocaleTail = Promise.resolve();
+  // 07.5: mirrors confirmedDeckScope/confirmedDueCountScope exactly. The
+  // active course's native/target language is only ever served to the popup
+  // or a fresh capture once its scope has been confirmed by the current
+  // app-bridge sync, so a reconnect or account switch can never resurface a
+  // previous account's course language pair.
+  let confirmedCourseLocaleScope = '';
   let selectionIconRegistrationTail = Promise.resolve();
   const bounded = (v,n) => typeof v === 'string' ? v.trim().slice(0,n) : '';
   const key = id => `${JOB_KEY_PREFIX}${id}`;
@@ -145,6 +153,34 @@
     dueCountTail = new Promise(resolve => { release = resolve; });
     await previous.catch(() => undefined);
     try { return await work(); } finally { release(); }
+  };
+  const readCourseLocaleMetadata = async () => {
+    const stored = (await apiCall(deckMetadataStorage, 'get', COURSE_LOCALE_STORAGE_KEY))?.[COURSE_LOCALE_STORAGE_KEY];
+    return normalizeCourseLocaleMetadata(stored);
+  };
+  const readRetiredCourseLocaleScopes = async () => {
+    try {
+      const stored = (await apiCall(deckMetadataStorage, 'get', COURSE_LOCALE_RETIRED_SCOPES_STORAGE_KEY))?.[COURSE_LOCALE_RETIRED_SCOPES_STORAGE_KEY];
+      return normalizeRetiredCourseLocaleScopes(stored);
+    } catch { return []; }
+  };
+  const retireCourseLocaleScope = async scope => {
+    const retired = normalizeRetiredCourseLocaleScopes([...(await readRetiredCourseLocaleScopes()), scope]);
+    await apiCall(deckMetadataStorage, 'set', { [COURSE_LOCALE_RETIRED_SCOPES_STORAGE_KEY]: retired });
+  };
+  const withCourseLocaleLock = async work => {
+    const previous = courseLocaleTail;
+    let release;
+    courseLocaleTail = new Promise(resolve => { release = resolve; });
+    await previous.catch(() => undefined);
+    try { return await work(); } finally { release(); }
+  };
+  // The target language a fresh capture is assumed to be studying: the
+  // confirmed active course's target language when the app has synced one,
+  // else the 'en' fallback every capture used before this existed.
+  const activeCaptureSourceLanguage = async () => {
+    const metadata = await readCourseLocaleMetadata();
+    return metadata && metadata.scope === confirmedCourseLocaleScope ? metadata.targetLanguage : 'en';
   };
   const clearAlarm = async id => { try { await apiCall(extensionApi.alarms,'clear',alarmName(id)); } catch {} };
   const closeTab = async id => { if (typeof id==='number') try { await apiCall(extensionApi.tabs,'remove',id); } catch {} };
@@ -367,6 +403,38 @@
     });
   };
 
+  // 07.5: course locale follows the exact deck-metadata/due-count contract
+  // (session-only storage, per-scope retirement, origin-checked writes) so
+  // the popup/options UI locale and a fresh capture's assumed target
+  // language are always real, current-account course state and never a
+  // leaked or fabricated pair.
+  const syncCourseLocale = async (payload, sender) => {
+    if (!appOriginIsValid(sender)) throw new Error('Nguồn course locale không hợp lệ.');
+    const metadata = normalizeCourseLocaleMetadata(payload);
+    if (!metadata) throw new Error('Course locale không hợp lệ.');
+    return withCourseLocaleLock(async () => {
+      const retiredScopes = await readRetiredCourseLocaleScopes();
+      if (retiredScopes.includes(metadata.scope)) throw new Error('Scope course locale đã hết hiệu lực.');
+      const current = await readCourseLocaleMetadata();
+      if (current?.scope && current.scope !== metadata.scope) await retireCourseLocaleScope(current.scope);
+      await apiCall(deckMetadataStorage, 'set', { [COURSE_LOCALE_STORAGE_KEY]: metadata });
+      confirmedCourseLocaleScope = metadata.scope;
+      return { nativeLanguage: metadata.nativeLanguage, targetLanguage: metadata.targetLanguage };
+    });
+  };
+  const clearCourseLocale = async (payload, sender) => {
+    if (!appOriginIsValid(sender)) throw new Error('Nguồn course locale không hợp lệ.');
+    const scope = normalizeDeckScope(payload?.scope);
+    if (!scope) throw new Error('Scope course locale không hợp lệ.');
+    return withCourseLocaleLock(async () => {
+      const current = await readCourseLocaleMetadata();
+      if (current?.scope === scope) await apiCall(deckMetadataStorage, 'remove', COURSE_LOCALE_STORAGE_KEY);
+      await retireCourseLocaleScope(scope);
+      if (confirmedCourseLocaleScope === scope) confirmedCourseLocaleScope = '';
+      return { cleared: current?.scope === scope };
+    });
+  };
+
   const hasSelectionIconPermission = async sitePattern => {
     if (!extensionApi.permissions?.contains || !sitePattern) return false;
     try { return await apiCall(extensionApi.permissions, 'contains', { origins: [sitePattern] }); }
@@ -532,7 +600,10 @@
       : await selection(input);
     const id=retry?.id ?? createIntentId(), nonce=createImportNonce();
     const requestedDeck = retry?.requestedDeck || (typeof input?.requestedDeck === 'string' ? input.requestedDeck.trim().slice(0, 128) : '');
-    const job={v:IMPORT_PROTOCOL_VERSION,id,nonce,text:s.text,context:bounded(s.context,MAX_CONTEXT_LENGTH),sourceLanguage:'en',mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now(),sourceUrl:s.sourceUrl||'',pageTitle:s.pageTitle||'',...(requestedDeck ? { requestedDeck } : {})};
+    // The active course's target language when the app has synced one (07.5),
+    // else the fixed 'en' assumption every capture used before this existed.
+    const sourceLanguage = await activeCaptureSourceLanguage();
+    const job={v:IMPORT_PROTOCOL_VERSION,id,nonce,text:s.text,context:bounded(s.context,MAX_CONTEXT_LENGTH),sourceLanguage,mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now(),sourceUrl:s.sourceUrl||'',pageTitle:s.pageTitle||'',...(requestedDeck ? { requestedDeck } : {})};
     if (quickAddSourceLocks.has(job.sourceTabId)) throw new Error('Đã có một tác vụ quick-add đang chạy trên tab này.');
     quickAddSourceLocks.add(job.sourceTabId);
     try {
@@ -664,7 +735,7 @@
       await saveJob(job);
       return {
         verified:true,
-        intent: { v: IMPORT_PROTOCOL_VERSION, id: job.id, nonce: job.nonce, text: job.text, context: bounded(job.context,MAX_CONTEXT_LENGTH), createdAt: job.createdAt, mode: 'silent', ...(typeof job.requestedDeck === 'string' && job.requestedDeck ? { requestedDeck: job.requestedDeck.slice(0, 128) } : {}), ...(typeof job.sourceUrl === 'string' && job.sourceUrl ? { sourceUrl: sanitizeSourceUrl(job.sourceUrl) } : {}), ...(typeof job.pageTitle === 'string' && job.pageTitle ? { pageTitle: boundedPageTitle(job.pageTitle) } : {}) },
+        intent: { v: IMPORT_PROTOCOL_VERSION, id: job.id, nonce: job.nonce, text: job.text, context: bounded(job.context,MAX_CONTEXT_LENGTH), createdAt: job.createdAt, mode: 'silent', sourceLanguage: normalizeCourseTargetLanguage(job.sourceLanguage) || 'en', ...(typeof job.requestedDeck === 'string' && job.requestedDeck ? { requestedDeck: job.requestedDeck.slice(0, 128) } : {}), ...(typeof job.sourceUrl === 'string' && job.sourceUrl ? { sourceUrl: sanitizeSourceUrl(job.sourceUrl) } : {}), ...(typeof job.pageTitle === 'string' && job.pageTitle ? { pageTitle: boundedPageTitle(job.pageTitle) } : {}) },
       };
     })();
     verifyLocks.set(lockKey, verification);
@@ -777,6 +848,13 @@
       const metadata=await readDueCountMetadata();
       const count=metadata && metadata.scope===confirmedDueCountScope ? metadata.count : null;
       return{ok:true,count};
+    }
+    if(type==='SYNC_COURSE_LOCALE')return{ok:true,...await syncCourseLocale(m.payload,sender)};
+    if(type==='CLEAR_COURSE_LOCALE')return{ok:true,...await clearCourseLocale(m.payload,sender)};
+    if(type==='GET_COURSE_LOCALE'){
+      const metadata=await readCourseLocaleMetadata();
+      const confirmed=metadata && metadata.scope===confirmedCourseLocaleScope ? metadata : null;
+      return{ok:true,nativeLanguage:confirmed?.nativeLanguage ?? null,targetLanguage:confirmed?.targetLanguage ?? null};
     }
     if(type==='GET_DECKS'){
       const metadata=await readDeckMetadata();

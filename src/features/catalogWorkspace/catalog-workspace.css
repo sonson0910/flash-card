@@ -5,14 +5,22 @@
 .catalog-heading h1 { font-size: clamp(2.8rem, 4vw, 3.25rem) !important; line-height: .95 !important; letter-spacing: -.045em !important; }
 .catalog-heading .premium-kicker { color: var(--sf-brand-text); }
 .catalog-current-path { min-height: 25rem; background: radial-gradient(ellipse 60% 85% at 96% 4%, color-mix(in srgb, var(--sf-brand) 26%, transparent), transparent 68%), radial-gradient(ellipse 65% 80% at 3% 100%, color-mix(in srgb, var(--sf-second) 24%, transparent), transparent 72%), var(--sf-surface) !important; box-shadow: 0 32px 70px -48px var(--sf-shadow) !important; }
-.catalog-current-path::after { position: absolute; right: -3.5rem; bottom: -5.5rem; width: 17rem; height: 17rem; border: 1px solid color-mix(in srgb, var(--sf-brand) 35%, transparent); border-radius: 50%; box-shadow: 0 0 0 2.25rem color-mix(in srgb, var(--sf-brand) 7%, transparent), 0 0 0 4.5rem color-mix(in srgb, var(--sf-brand) 4%, transparent); content: ''; pointer-events: none; }
+/* liquid-glass::after sets inset: 1px and z-index 3; reset both so the ring stays bottom-right, behind the copy. */
+.catalog-current-path::after { position: absolute; inset: auto -3.5rem -5.5rem auto; z-index: -1; width: 17rem; height: 17rem; border: 1px solid color-mix(in srgb, var(--sf-brand) 35%, transparent); border-radius: 50%; box-shadow: 0 0 0 2.25rem color-mix(in srgb, var(--sf-brand) 7%, transparent), 0 0 0 4.5rem color-mix(in srgb, var(--sf-brand) 4%, transparent); content: ''; pointer-events: none; }
 .catalog-current-path > div { min-height: 20rem; }
 .catalog-current-path h2 { color: var(--sf-text); }
 .catalog-current-path .premium-kicker::before { display: inline-block; width: .5rem; height: .5rem; margin-right: .5rem; border-radius: 50%; background: var(--sf-brand); box-shadow: 0 0 12px var(--sf-brand); content: ''; vertical-align: middle; }
 .catalog-roadmap-panel { position: relative; z-index: 1; background: color-mix(in srgb, var(--sf-surface) 86%, transparent) !important; backdrop-filter: blur(12px); }
-.catalog-roadmap-panel ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
-.catalog-roadmap-panel ol li { min-width: 0; flex-direction: column; align-items: flex-start; gap: .45rem; }
-.catalog-roadmap-panel ol li > span:first-child { width: 100%; height: .4rem; border-radius: 99px; font-size: 0; }
+/* Stages sit side by side only when the panel fits the longest label; narrower panels stack them so labels never collide. */
+.catalog-roadmap-panel { container-type: inline-size; }
+.catalog-roadmap-panel ol { display: grid; gap: .6rem; }
+.catalog-roadmap-panel ol > li { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.catalog-roadmap-panel ol li > span:first-child { width: 2.5rem; height: .4rem; border-radius: 99px; font-size: 0; }
+@container (min-width: 17.5rem) {
+  .catalog-roadmap-panel ol { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+  .catalog-roadmap-panel ol > li { flex-direction: column; align-items: flex-start; gap: .45rem; }
+  .catalog-roadmap-panel ol li > span:first-child { width: 100%; }
+}
 .catalog-shelf { background: transparent !important; border: 0 !important; padding-inline: 0 !important; }
 .catalog-shelf > div:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
 .catalog-shelf > div:first-child::after { color: var(--sf-brand-text); font-size: .78rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; content: 'Your shelf'; }
@@ -47,6 +55,8 @@
 :root[data-theme-family='crystal'] .catalog-canvas :is(h1, h2, h3) { font-family: Kanit, Nunito, sans-serif; font-style: italic; font-weight: 900; letter-spacing: .015em; }
 :root[data-theme-family='crystal'] .catalog-heading h1 { background: linear-gradient(180deg, #fff, #ffe3ea 46%, #ff8fa3 52%, #fff); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 16px rgb(255 42 77 / .55)); }
 :root[data-theme-family='crystal'] .catalog-current-path { border: 0 !important; clip-path: var(--nk-chamfer); background: radial-gradient(ellipse 60% 60% at 90% 8%, rgb(179 15 51 / .48), transparent 70%), radial-gradient(ellipse 70% 65% at 6% 95%, rgb(16 60 120 / .52), transparent 70%), linear-gradient(160deg, #121828, #070910) !important; box-shadow: inset 0 0 0 2px var(--sf-brand), 0 0 28px rgb(255 42 77 / .36) !important; }
+/* The crystal hero keeps its night gradient in light mode, so it takes the crystal dark ink and surfaces to stay legible. */
+:root[data-theme-family='crystal']:not(.dark) .catalog-current-path { --sf-surface: #0e111c; --sf-surface-raised: rgb(255 255 255 / .06); --sf-text: #f3f5fa; --sf-text-muted: #aab3c5; --sf-brand-text: #ff6b85; --sf-border: rgb(255 255 255 / .1); --sf-edge-highlight: rgb(255 255 255 / .22); }
 :root[data-theme-family='crystal'] .catalog-current-path::after { border-color: rgb(94 242 255 / .42); box-shadow: 0 0 0 2.25rem rgb(255 42 77 / .09), 0 0 0 4.5rem rgb(94 242 255 / .05); }
 :root[data-theme-family='crystal'] .catalog-roadmap-panel, :root[data-theme-family='crystal'] .catalog-track-card, :root[data-theme-family='crystal'] .catalog-tier-step, :root[data-theme-family='crystal'] .catalog-explorer > div, :root[data-theme-family='crystal'] .catalog-explorer article { border: 0 !important; clip-path: var(--nk-chamfer-sm); box-shadow: inset 0 0 0 1px var(--sf-border), 0 15px 35px -30px rgb(0 0 0 / .8) !important; }
 :root[data-theme-family='crystal'] .catalog-track-card::after { color: rgb(255 84 112 / .14); }
@@ -60,6 +70,7 @@
 
 @media (min-width: 1024px) {
   .catalog-canvas > .catalog-current-path { width: min(100%, 50rem); float: left; margin-right: 1.625rem; }
+  .catalog-current-path > div { grid-template-columns: minmax(0, 1fr) minmax(21rem, .7fr) !important; }
   .catalog-canvas > .catalog-shelf { min-height: 25rem; padding-top: .5rem !important; }
   .catalog-shelf > div:last-child { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   .catalog-shelf .catalog-track-card { min-height: 11.25rem !important; }
@@ -71,7 +82,6 @@
   .catalog-current-path { min-height: auto; padding: 1.35rem !important; }
   .catalog-current-path > div { min-height: auto; gap: 1.25rem !important; }
   .catalog-current-path h2 { font-size: 2.45rem !important; }
-  .catalog-roadmap-panel ol { gap: .5rem; }
   .catalog-shelf > div:last-child, .catalog-roadmap > ol { grid-template-columns: 1fr !important; }
   .catalog-track-card { min-height: 12.5rem !important; }
   .catalog-tier-step { min-height: 8.5rem !important; }

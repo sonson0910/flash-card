@@ -21,6 +21,8 @@ describe('account deletion local cleanup', () => {
       [gamificationStorageKeys(null).snapshot, 'anonymous'],
       ['lingoflash_cloud_page_owner-a', 'private'],
       ['lingoflash_cloud_page_owner-b', 'keep'],
+      ['lingoflash_cloud_stats_owner-a_ko', 'private'],
+      ['lingoflash_cloud_stats_owner-ab_ko', 'keep'],
       ['lingoflash_no_image_v1_owner-a_card', 'private'],
       ['lingoflash_no_image_v1_owner-b_card', 'keep'],
       ['lingoflash_shared_deck_operation_v1', 'private'],
@@ -35,6 +37,8 @@ describe('account deletion local cleanup', () => {
     removeOwnerLocalKeys(storage, { removeItem: key => { session.delete(key); } }, 'owner-a');
     for (const key of Object.values(gamificationStorageKeys('owner-a'))) expect(values.has(key)).toBe(false);
     expect(values.has('lingoflash_no_image_v1_owner-a_card')).toBe(false);
+    expect(values.has('lingoflash_cloud_stats_owner-a_ko')).toBe(false);
+    expect(values.get('lingoflash_cloud_stats_owner-ab_ko')).toBe('keep');
     expect(values.has('lingoflash_shared_deck_operation_v1')).toBe(false);
     expect(values.get('lingoflash_cloud_page_owner-b')).toBe('keep');
     expect(values.get(gamificationStorageKeys(null).snapshot)).toBe('anonymous');

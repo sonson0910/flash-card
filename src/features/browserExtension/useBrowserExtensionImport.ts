@@ -14,6 +14,13 @@ import type { BrowserExtensionImportOptions } from './browserExtensionImportRunt
 
 const DECK_METADATA_MESSAGE = 'LINGOFLASH_EXTENSION_DECK_METADATA';
 const DECK_METADATA_CLEAR_MESSAGE = 'LINGOFLASH_EXTENSION_DECK_METADATA_CLEAR';
+// Follows the exact same app -> bridge -> background relay as deck metadata
+// (07.5, extensions/lingoflash/app-bridge.js + background-core.js). Reuses
+// the same per-owner scope deck metadata already mints below: it is just a
+// correlation id for "this owner's current app-bridge sync", not a security
+// boundary by itself — the background's own origin check is.
+const COURSE_LOCALE_MESSAGE = 'LINGOFLASH_EXTENSION_COURSE_LOCALE';
+const COURSE_LOCALE_CLEAR_MESSAGE = 'LINGOFLASH_EXTENSION_COURSE_LOCALE_CLEAR';
 const MAX_DECKS = 100;
 const MAX_DECK_NAME_LENGTH = 128;
 
@@ -55,7 +62,10 @@ const normalizeDecksForExtension = (value: readonly string[]): string[] => {
   return [...seen];
 };
 
-const postDeckMetadata = (type: string, payload: unknown): void => {
+// A generic app -> extension-bridge postMessage, shared by deck metadata and
+// course locale sync (07.5): both follow the exact same envelope shape and
+// same-origin relay through extensions/lingoflash/app-bridge.js.
+const postExtensionBridgeMessage = (type: string, payload: unknown): void => {
   try {
     globalThis.postMessage?.({ source: 'lingoflash-web-app', type, payload }, globalThis.location?.origin || '*');
   } catch { /* The optional bridge may race navigation. */ }
@@ -71,7 +81,8 @@ export function useBrowserExtensionImport(options: BrowserExtensionImportOptions
     if (!isBrowserExtensionImportTopFrame()) return;
     const previous = deckScopeRef.current;
     if (previous && previous.ownerId !== options.ownerId) {
-      postDeckMetadata(DECK_METADATA_CLEAR_MESSAGE, { scope: previous.scope });
+      postExtensionBridgeMessage(DECK_METADATA_CLEAR_MESSAGE, { scope: previous.scope });
+      postExtensionBridgeMessage(COURSE_LOCALE_CLEAR_MESSAGE, { scope: previous.scope });
       deckScopeRef.current = null;
     }
     if (!options.ownerId) return;
@@ -79,11 +90,24 @@ export function useBrowserExtensionImport(options: BrowserExtensionImportOptions
       deckScopeRef.current = { ownerId: options.ownerId, scope: createOpaqueDeckScope() };
     }
     if (!options.libraryReady) return;
-    postDeckMetadata(DECK_METADATA_MESSAGE, {
+    postExtensionBridgeMessage(DECK_METADATA_MESSAGE, {
       scope: deckScopeRef.current.scope,
       decks: normalizeDecksForExtension(options.customDecks),
     });
-  }, [options.customDecks, options.libraryReady, options.ownerId]);
+    if (options.courseNativeLanguage && options.courseTargetLanguage) {
+      postExtensionBridgeMessage(COURSE_LOCALE_MESSAGE, {
+        scope: deckScopeRef.current.scope,
+        nativeLanguage: options.courseNativeLanguage,
+        targetLanguage: options.courseTargetLanguage,
+      });
+    }
+  }, [
+    options.courseNativeLanguage,
+    options.courseTargetLanguage,
+    options.customDecks,
+    options.libraryReady,
+    options.ownerId,
+  ]);
 
   useEffect(() => {
     runtimeRef.current?.update(options);

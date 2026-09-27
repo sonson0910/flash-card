@@ -26,7 +26,7 @@ import {
   cloudBackoffCacheKey,
   cloudFacetsCacheKey,
   cloudPageCacheKey,
-  cloudStatsCacheKey,
+  removeCloudStatsCaches,
   isQuotaError,
   isRetryableSyncError,
   removeLocalValue,
@@ -70,7 +70,7 @@ function cacheCloudBackoff(ownerId: string): void {
 
 function clearCloudCaches(ownerId: string): void {
   removeLocalValue(cloudPageCacheKey(ownerId));
-  removeLocalValue(cloudStatsCacheKey(ownerId));
+  removeCloudStatsCaches(ownerId);
   removeLocalValue(cloudFacetsCacheKey(ownerId));
 }
 

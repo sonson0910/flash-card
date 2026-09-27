@@ -4,22 +4,34 @@ import { afterEach, expect, it, vi } from 'vitest';
 import type { CardQueryState } from '../../lib/cardQuery';
 import type { CardData } from '../../types/card';
 
+// available/loadStats are mutable per test so one suite can cover both the
+// paused-cloud fallback path (available: false, the pre-existing default)
+// and the course-scoped stats wiring (available: true, set within a test).
+const adapterState = vi.hoisted(() => ({
+  available: false,
+  loadStats: vi.fn(async () => ({
+    total: 0, reviewed: 0, easy: 0, good: 0, hard: 0,
+    unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0,
+  })),
+  getTargetLanguage: undefined as (() => string | null) | undefined,
+}));
+
 vi.mock('../../lib/firebase', () => ({ db: null, isFirebaseConfigured: false }));
 vi.mock('./cloudLibraryPageFirebaseAdapter', () => ({
-  createCloudLibraryPageFirebaseAdapter: () => ({
-    available: false,
-    subscribePage: vi.fn(() => vi.fn()),
-    countCards: vi.fn(async () => 0),
-    loadStats: vi.fn(async () => ({
-      total: 0, reviewed: 0, easy: 0, good: 0, hard: 0,
-      unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0,
-    })),
-    subscribeFacets: vi.fn(() => vi.fn()),
-  }),
+  createCloudLibraryPageFirebaseAdapter: (options: { getTargetLanguage?: () => string | null }) => {
+    adapterState.getTargetLanguage = options.getTargetLanguage;
+    return {
+      available: adapterState.available,
+      subscribePage: vi.fn(() => vi.fn()),
+      countCards: vi.fn(async () => 0),
+      loadStats: adapterState.loadStats,
+      subscribeFacets: vi.fn(() => vi.fn()),
+    };
+  },
 }));
 
 import { useCloudLibraryPage } from './useCloudLibraryPage';
-import { cloudPageCacheKey } from '../library/libraryStorage';
+import { cloudPageCacheKey, cloudStatsCacheKey } from '../library/libraryStorage';
 
 const query: CardQueryState = {
   category: null,
@@ -91,6 +103,12 @@ const writeCachedPage = (ownerId: string, queryKey: string, page: number, items:
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  adapterState.available = false;
+  adapterState.loadStats.mockReset();
+  adapterState.loadStats.mockImplementation(async () => ({
+    total: 0, reviewed: 0, easy: 0, good: 0, hard: 0,
+    unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0,
+  }));
 });
 
 it('overlays a promoted duplicate onto a paused-cloud fallback without requiring reload', async () => {
@@ -160,6 +178,59 @@ it('does not restart the cloud page when only the query object identity changes'
   await act(async () => { await Promise.resolve(); });
 
   expect(captured.current?.items.map(candidate => candidate.id)).toEqual(['stable']);
+
+  await act(async () => root.unmount());
+});
+
+it('scopes the stats cache to the active course and refetches only when its language changes', async () => {
+  installLocalStorage();
+  adapterState.available = true;
+  adapterState.loadStats.mockImplementation(async () => ({
+    total: 7, reviewed: 0, easy: 0, good: 0, hard: 0, unrated: 7, bookmarked: 0, due: 0, legacyUnindexed: 0,
+  }));
+  const captured: { current: ReturnType<typeof useCloudLibraryPage> | null } = { current: null };
+  const container = installMinimalReactDom();
+  const root = createRoot(container);
+
+  function Harness({ targetLanguage }: { targetLanguage: string }) {
+    captured.current = useCloudLibraryPage({
+      ownerId: 'user-a',
+      query: { ...query, targetLanguage },
+      queryKey: `all-${targetLanguage}`,
+      page: 1,
+      pageSize: 9,
+      refreshKey: 0,
+      statsOpen: true,
+      getPromotedCards: () => [],
+    });
+    return null;
+  }
+
+  await act(async () => { root.render(<Harness targetLanguage="en" />); });
+  await act(async () => { await Promise.resolve(); });
+
+  expect(adapterState.loadStats).toHaveBeenCalledTimes(1);
+  expect(captured.current?.stats.total).toBe(7);
+  expect(localStorageValues.has(cloudStatsCacheKey('user-a', 'en'))).toBe(true);
+
+  adapterState.loadStats.mockImplementation(async () => ({
+    total: 2, reviewed: 0, easy: 0, good: 0, hard: 0, unrated: 2, bookmarked: 0, due: 0, legacyUnindexed: 0,
+  }));
+
+  // Switching the active course must refetch instead of reusing course A's cached stats.
+  await act(async () => { root.render(<Harness targetLanguage="ko" />); });
+  await act(async () => { await Promise.resolve(); });
+
+  expect(adapterState.loadStats).toHaveBeenCalledTimes(2);
+  expect(captured.current?.stats.total).toBe(2);
+  expect(localStorageValues.has(cloudStatsCacheKey('user-a', 'ko'))).toBe(true);
+
+  // Switching back within the cache TTL must reuse course A's own cache, not re-fetch.
+  await act(async () => { root.render(<Harness targetLanguage="en" />); });
+  await act(async () => { await Promise.resolve(); });
+
+  expect(adapterState.loadStats).toHaveBeenCalledTimes(2);
+  expect(captured.current?.stats.total).toBe(7);
 
   await act(async () => root.unmount());
 });

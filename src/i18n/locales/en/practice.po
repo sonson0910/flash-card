@@ -24,33 +24,33 @@ msgid "flashcard.audio.play-pronunciation"
 msgstr "Play pronunciation"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:187
-#: src/features/practice/SpellingView.tsx:176
+#: src/features/practice/QuizView.tsx:192
+#: src/features/practice/SpellingView.tsx:181
 msgid "practice.actions.back-to-library"
 msgstr "Back to library"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:203
-#: src/features/practice/SpellingView.tsx:192
+#: src/features/practice/QuizView.tsx:208
+#: src/features/practice/SpellingView.tsx:197
 msgid "practice.actions.exit"
 msgstr "Exit"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:388
-#: src/features/practice/SpellingView.tsx:343
+#: src/features/practice/QuizView.tsx:393
+#: src/features/practice/SpellingView.tsx:348
 msgid "practice.actions.next"
 msgstr "Next"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:180
-#: src/features/practice/SpellingView.tsx:169
+#: src/features/practice/QuizView.tsx:185
+#: src/features/practice/SpellingView.tsx:174
 #: src/features/practice/StoryView.tsx:143
 msgid "practice.actions.try-again"
 msgstr "Try again"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:383
-#: src/features/practice/SpellingView.tsx:338
+#: src/features/practice/QuizView.tsx:388
+#: src/features/practice/SpellingView.tsx:343
 msgid "practice.actions.view-results"
 msgstr "View results"
 
@@ -146,24 +146,24 @@ msgid "practice.error.timeout"
 msgstr "Preparing this activity took too long. Check your connection and try again."
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:278
-#: src/features/practice/SpellingView.tsx:255
+#: src/features/practice/QuizView.tsx:283
+#: src/features/practice/SpellingView.tsx:260
 msgid "practice.feedback.correct"
 msgstr "Correct answer."
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:362
+#: src/features/practice/QuizView.tsx:367
 msgid "practice.feedback.correct-answer"
 msgstr "The correct answer is"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:354
+#: src/features/practice/QuizView.tsx:359
 msgid "practice.feedback.correct-short"
 msgstr "Correct"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:284
-#: src/features/practice/SpellingView.tsx:261
+#: src/features/practice/QuizView.tsx:289
+#: src/features/practice/SpellingView.tsx:266
 msgid "practice.feedback.incorrect-prefix"
 msgstr "Incorrect. The correct answer is"
 
@@ -221,7 +221,7 @@ msgstr "Pairs complete"
 #. js-lingui-explicit-id
 #: src/features/practice/WordMatchView.tsx:249
 msgid "practice.match.instruction"
-msgstr "Choose a {targetLanguageName} word, then its {nativeLanguageName} meaning."
+msgstr "Choose a word in {targetLanguageName}, then its meaning in {nativeLanguageName}."
 
 #. js-lingui-explicit-id
 #: src/features/practice/WordMatchView.tsx:275
@@ -350,76 +350,76 @@ msgid "practice.mode.story.unavailable"
 msgstr "Needs 5 cards · you have {count}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:252
-#: src/features/practice/SpellingView.tsx:217
+#: src/features/practice/QuizView.tsx:257
+#: src/features/practice/SpellingView.tsx:222
 msgid "practice.question-progress"
 msgstr "Question {current} / {total}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:296
+#: src/features/practice/QuizView.tsx:301
 msgid "practice.quiz.choose-answer"
 msgstr "Choose one answer"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:126
+#: src/features/practice/QuizView.tsx:131
 msgid "practice.quiz.complete"
 msgstr "Quiz complete"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:231
+#: src/features/practice/QuizView.tsx:236
 msgid "practice.quiz.illustration-alt"
 msgstr "Illustration for {word}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:91
+#: src/features/practice/QuizView.tsx:95
 msgid "practice.quiz.native-to-target-question"
 msgstr "Which {targetLanguageName} word matches {translation}?"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:399
+#: src/features/practice/QuizView.tsx:404
 msgid "practice.quiz.progress"
 msgstr "Quiz progress"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:129
+#: src/features/practice/QuizView.tsx:134
 msgid "practice.quiz.results-subtitle"
 msgstr "Your vocabulary review results"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:82
+#: src/features/practice/QuizView.tsx:86
 msgid "practice.quiz.target-to-native-question"
 msgstr "What does {word} mean in {nativeLanguageName}?"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:148
-#: src/features/practice/SpellingView.tsx:155
+#: src/features/practice/QuizView.tsx:153
+#: src/features/practice/SpellingView.tsx:160
 msgid "practice.results.accuracy"
 msgstr "Accuracy"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:137
-#: src/features/practice/SpellingView.tsx:144
+#: src/features/practice/QuizView.tsx:142
+#: src/features/practice/SpellingView.tsx:149
 msgid "practice.results.correct-answers"
 msgstr "Correct answers"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:162
+#: src/features/practice/QuizView.tsx:167
 msgid "practice.results.good"
 msgstr "Great work. This vocabulary is becoming secure."
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:167
+#: src/features/practice/QuizView.tsx:172
 msgid "practice.results.keep-practising"
 msgstr "Keep practising until the difficult words feel automatic."
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:157
+#: src/features/practice/QuizView.tsx:162
 msgid "practice.results.perfect"
 msgstr "Perfect. You answered every question correctly."
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:206
-#: src/features/practice/SpellingView.tsx:195
+#: src/features/practice/QuizView.tsx:211
+#: src/features/practice/SpellingView.tsx:200
 msgid "practice.score"
 msgstr "Score: {score} / {total}"
 
@@ -509,42 +509,42 @@ msgid "practice.shadowing.you-said"
 msgstr "You said:"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:317
+#: src/features/practice/SpellingView.tsx:322
 msgid "practice.spelling.answer-is"
 msgstr "The answer is"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:293
+#: src/features/practice/SpellingView.tsx:298
 msgid "practice.spelling.answer-label"
 msgstr "Type the {targetLanguage} word"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:286
+#: src/features/practice/SpellingView.tsx:291
 msgid "practice.spelling.answer-placeholder"
 msgstr "Type the {targetLanguage} word…"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:133
+#: src/features/practice/SpellingView.tsx:138
 msgid "practice.spelling.complete"
 msgstr "Complete"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:312
+#: src/features/practice/SpellingView.tsx:317
 msgid "practice.spelling.correct"
 msgstr "Correct"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:228
+#: src/features/practice/SpellingView.tsx:233
 msgid "practice.spelling.play-pronunciation"
 msgstr "Play pronunciation for {word}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:354
+#: src/features/practice/SpellingView.tsx:359
 msgid "practice.spelling.progress"
 msgstr "Spelling progress"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:136
+#: src/features/practice/SpellingView.tsx:141
 msgid "practice.spelling.results-subtitle"
 msgstr "Your spelling practice results"
 

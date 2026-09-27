@@ -754,6 +754,134 @@ test('never leaks a previous account due count after reconnect/account switch (0
   assert.match(replay.error, /hết hiệu lực/);
 });
 
+test('syncs a real course locale from the app origin and scopes it like deck metadata/due count (07.5)', async () => {
+  const worker = await createWorkerContext();
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+
+  const before = await sendRuntimeMessage(worker, { type: 'GET_COURSE_LOCALE' });
+  assert.equal(before.ok, true);
+  assert.equal(before.nativeLanguage, null);
+  assert.equal(before.targetLanguage, null);
+
+  const synced = await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_a_123456', nativeLanguage: 'en', targetLanguage: 'ko' },
+  }, sender);
+  assert.equal(synced.ok, true);
+  assert.equal(synced.nativeLanguage, 'en');
+  assert.equal(synced.targetLanguage, 'ko');
+
+  const after = await sendRuntimeMessage(worker, { type: 'GET_COURSE_LOCALE' });
+  assert.equal(after.ok, true);
+  assert.equal(after.nativeLanguage, 'en');
+  assert.equal(after.targetLanguage, 'ko');
+
+  const wrongOrigin = await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'attacker_scope_123456', nativeLanguage: 'vi', targetLanguage: 'en' },
+  }, { ...sender, url: 'https://example.com/?view=library' });
+  assert.equal(wrongOrigin.ok, false);
+  assert.match(wrongOrigin.error, /Nguồn course locale/);
+  const stillAfter = await sendRuntimeMessage(worker, { type: 'GET_COURSE_LOCALE' });
+  assert.equal(stillAfter.nativeLanguage, 'en');
+  assert.equal(stillAfter.targetLanguage, 'ko');
+
+  const invalidPair = await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_c_123456', nativeLanguage: 'fr', targetLanguage: 'ko' },
+  }, sender);
+  assert.equal(invalidPair.ok, false);
+  assert.match(invalidPair.error, /Course locale/);
+});
+
+test('never leaks a previous account course locale after reconnect/account switch (07.5)', async () => {
+  const worker = await createWorkerContext();
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_a_123456', nativeLanguage: 'vi', targetLanguage: 'en' },
+  }, sender);
+
+  // The clear delivery never reached the first worker. A restarted worker has
+  // the session metadata but no active-scope proof, so the popup/capture get
+  // no prior-owner course locale until the app re-syncs.
+  const restarted = await createWorkerContext({ storageEntries: [...worker.storageValues.entries()] });
+  const stale = await sendRuntimeMessage(restarted, { type: 'GET_COURSE_LOCALE' });
+  assert.equal(stale.ok, true);
+  assert.equal(stale.nativeLanguage, null);
+  assert.equal(stale.targetLanguage, null);
+
+  const reproof = await sendRuntimeMessage(restarted, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_b_123456', nativeLanguage: 'en', targetLanguage: 'ja' },
+  }, { url: restarted.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+  assert.equal(reproof.ok, true);
+  const afterReproof = await sendRuntimeMessage(restarted, { type: 'GET_COURSE_LOCALE' });
+  assert.equal(afterReproof.nativeLanguage, 'en');
+  assert.equal(afterReproof.targetLanguage, 'ja');
+
+  const cleared = await sendRuntimeMessage(restarted, {
+    type: 'CLEAR_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_b_123456' },
+  }, { url: restarted.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+  assert.equal(cleared.ok, true);
+  assert.equal(cleared.cleared, true);
+  const afterClear = await sendRuntimeMessage(restarted, { type: 'GET_COURSE_LOCALE' });
+  assert.equal(afterClear.nativeLanguage, null);
+  assert.equal(afterClear.targetLanguage, null);
+
+  // A retired scope can never resurface a course locale even if replayed.
+  const replay = await sendRuntimeMessage(restarted, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_b_123456', nativeLanguage: 'en', targetLanguage: 'ja' },
+  }, { url: restarted.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+  assert.equal(replay.ok, false);
+  assert.match(replay.error, /hết hiệu lực/);
+});
+
+test('a fresh capture assumes the synced course target language instead of the fixed English default (07.5)', async () => {
+  const worker = await createWorkerContext();
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_a_123456', nativeLanguage: 'en', targetLanguage: 'ko' },
+  }, sender);
+
+  const started = await startQuickAdd(worker);
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`).sourceLanguage, 'ko');
+
+  const intent = readStartedIntent(worker, started.id);
+  const verified = await verifyIntent(worker, intent, { url: sender.url, tab: { id: 99 }, frameId: 0 });
+  assert.equal(verified.verified, true);
+  assert.equal(verified.intent.sourceLanguage, 'ko');
+
+  const valid = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'created', translation: '회복력' }),
+  }, appSender(worker));
+  assert.equal(valid.ignored, false);
+  const statusCall = worker.calls.find(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'created');
+  assert.equal(statusCall?.message.payload?.sourceLanguage, 'ko');
+  assert.equal(statusCall?.message.payload?.speechLocale, 'ko-KR');
+});
+
+test('a fresh capture keeps the fixed English default when no course locale has ever been synced (07.5)', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`).sourceLanguage, 'en');
+
+  const intent = readStartedIntent(worker, started.id);
+  const verified = await verifyIntent(worker, intent, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+    frameId: 0,
+  });
+  assert.equal(verified.verified, true);
+  assert.equal(verified.intent.sourceLanguage, 'en');
+});
+
 test('owns settings mutations in the background and preserves concurrent site opt-ins', async () => {
   const worker = await createWorkerContext({
     storageEntries: [[

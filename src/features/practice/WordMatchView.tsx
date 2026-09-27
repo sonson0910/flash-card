@@ -246,7 +246,7 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
             </div>
             <div className="grid gap-2.5 sm:gap-3">{tiles.filter(tile => tile.type === 'translation').map(renderTile)}</div>
           </div>
-          <p className="mt-5 text-center text-xs text-[var(--sf-text-muted)]"><Trans id="practice.match.instruction" message="Choose a {targetLanguageName} word, then its {nativeLanguageName} meaning." values={{ targetLanguageName, nativeLanguageName }} /></p>
+          <p className="mt-5 text-center text-xs text-[var(--sf-text-muted)]"><Trans id="practice.match.instruction" message="Choose a word in {targetLanguageName}, then its meaning in {nativeLanguageName}." values={{ targetLanguageName, nativeLanguageName }} /></p>
         </>
       ) : isVictory ? (
         <div className="mx-auto w-full max-w-xl rounded-[28px] border border-emerald-400/40 bg-[var(--sf-surface-glass)] p-6 text-center shadow-[var(--sf-panel-shadow)] sm:p-8 crystal-chamfer">

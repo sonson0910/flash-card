@@ -18,6 +18,13 @@
   // to complete real delivery end to end.
   const DUE_COUNT_TYPE = 'LINGOFLASH_EXTENSION_DUE_COUNT';
   const DUE_COUNT_CLEAR_TYPE = 'LINGOFLASH_EXTENSION_DUE_COUNT_CLEAR';
+  // Course locale follows the exact same app -> bridge -> background relay as
+  // deck metadata and due count (07.5). The extension uses it to follow the
+  // active course's native language in its own UI and to tag a fresh capture
+  // with the course's target language instead of a fixed English assumption.
+  const COURSE_LOCALE_TYPE = 'LINGOFLASH_EXTENSION_COURSE_LOCALE';
+  const COURSE_LOCALE_CLEAR_TYPE = 'LINGOFLASH_EXTENSION_COURSE_LOCALE_CLEAR';
+  const CAPTURE_SOURCE_LANGUAGES = ['en', 'ko', 'ja', 'zh'];
   const IMPORT_HASH_KEY = 'lf-import';
   const IMPORT_STORAGE_KEY = 'lingoflash_browser_extension_import';
   const UNVERIFIED_STORAGE_KEY = 'lingoflash_browser_extension_draft_import';
@@ -121,6 +128,16 @@
     });
   };
 
+  const relayCourseLocaleClear = (payload, attemptsRemaining = DECK_METADATA_CLEAR_RETRIES) => {
+    void sendRuntimeMessage({ type: 'CLEAR_COURSE_LOCALE', payload }).then(response => {
+      if (response?.ok !== true) throw new Error('Course locale clear was not acknowledged.');
+    }).catch(() => {
+      if (attemptsRemaining > 0) {
+        globalThis.setTimeout(() => relayCourseLocaleClear(payload, attemptsRemaining - 1), DECK_METADATA_CLEAR_RETRY_MS);
+      }
+    });
+  };
+
   const decodeBase64UrlUtf8 = encoded => {
     try {
       if (typeof encoded !== 'string' || encoded.length > MAX_ENCODED_IMPORT_LENGTH) return '';
@@ -201,6 +218,13 @@
     const requestedDeck = value?.requestedDeck === undefined ? '' : normalizeText(value.requestedDeck).slice(0, 128);
     const sourceUrl = value?.sourceUrl === undefined ? '' : sanitizeSourceUrl(value.sourceUrl);
     const pageTitle = value?.pageTitle === undefined ? '' : normalizeText(value.pageTitle).slice(0, MAX_PAGE_TITLE_LENGTH);
+    // Unlike the other optional fields above, an unrecognized sourceLanguage
+    // is dropped rather than rejecting the whole intent: it is a soft hint
+    // (07.5), and a future target language this extension build does not
+    // know about yet must not break capture, it just skips the hint.
+    const sourceLanguage = typeof value?.sourceLanguage === 'string' && CAPTURE_SOURCE_LANGUAGES.includes(value.sourceLanguage)
+      ? value.sourceLanguage
+      : '';
     if (!intent
       || (value.context !== undefined && typeof value.context !== 'string')
       || (value.requestedDeck !== undefined && typeof value.requestedDeck !== 'string')
@@ -216,6 +240,7 @@
       ...(requestedDeck ? { requestedDeck } : {}),
       ...(sourceUrl ? { sourceUrl } : {}),
       ...(pageTitle ? { pageTitle } : {}),
+      ...(sourceLanguage ? { sourceLanguage } : {}),
       createdAt: value.createdAt,
       mode: 'silent',
     };
@@ -436,6 +461,14 @@
     }
     if (message.type === DUE_COUNT_CLEAR_TYPE) {
       relayDueCountClear(message.payload);
+      return;
+    }
+    if (message.type === COURSE_LOCALE_TYPE) {
+      void sendRuntimeMessage({ type: 'SYNC_COURSE_LOCALE', payload: message.payload }).catch(() => undefined);
+      return;
+    }
+    if (message.type === COURSE_LOCALE_CLEAR_TYPE) {
+      relayCourseLocaleClear(message.payload);
       return;
     }
     if (message.type !== APP_RESULT_TYPE) return;

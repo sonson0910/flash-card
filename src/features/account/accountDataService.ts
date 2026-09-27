@@ -36,7 +36,8 @@ export function removeOwnerLocalKeys(storage: Pick<Storage, 'getItem' | 'removeI
   for (const key of keys) storage.removeItem(key);
   for (let index = storage.length - 1; index >= 0; index--) {
     const key = storage.key(index);
-    if (key?.startsWith(`lingoflash_no_image_v1_${encodeURIComponent(uid)}_`)) storage.removeItem(key);
+    if (key?.startsWith(`lingoflash_no_image_v1_${encodeURIComponent(uid)}_`)
+      || key?.startsWith(`${cloudStatsCacheKey(uid)}_`)) storage.removeItem(key);
   }
   session.removeItem('lingoflash_word_draft');
   session.removeItem('lingoflash_word_operation');

@@ -282,6 +282,51 @@ test('drops a non-http(s) sourceUrl and an oversized pageTitle from a verified v
   assert.equal(parsed.pageTitle.length, 256);
 });
 
+test('carries a known synced course target language through a verified v3 handoff (07.5)', async () => {
+  const bridge = await createBridgeContext({
+    response: {
+      ok: true,
+      verified: true,
+      intent: {
+        v: 3,
+        id: 'job_123456789',
+        nonce: 'nonce_1234567890123456789012',
+        text: 'resilient',
+        sourceLanguage: 'ko',
+        createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
+        mode: 'silent',
+      },
+    },
+  });
+  const stored = bridge.storageValues.get('lingoflash_browser_extension_import');
+  const parsed = JSON.parse(stored);
+  assert.equal(parsed.sourceLanguage, 'ko');
+});
+
+test('drops an unrecognized source language from a verified v3 handoff without invalidating the intent (07.5)', async () => {
+  const bridge = await createBridgeContext({
+    response: {
+      ok: true,
+      verified: true,
+      intent: {
+        v: 3,
+        id: 'job_123456789',
+        nonce: 'nonce_1234567890123456789012',
+        text: 'resilient',
+        sourceLanguage: 'fr',
+        createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
+        mode: 'silent',
+      },
+    },
+  });
+  const stored = bridge.storageValues.get('lingoflash_browser_extension_import');
+  const parsed = JSON.parse(stored);
+  assert.equal('sourceLanguage' in parsed, false);
+  assert.equal(parsed.text, 'resilient');
+  const ready = bridge.calls.find(call => call.type === 'window.postMessage');
+  assert.equal(ready.message.type, 'LINGOFLASH_EXTENSION_IMPORT_READY');
+});
+
 test('relays deck metadata only from same-origin app messages', async () => {
   const bridge = await createBridgeContext({ response: { ok: true, verified: false } });
   bridge.dispatchMessage({
@@ -386,6 +431,51 @@ test('retries an unacknowledged due-count clear after a transient runtime failur
   await new Promise(resolve => setTimeout(resolve, 300));
   assert.ok(bridge.calls.filter(call => call.type === 'runtime.sendMessage'
     && call.args[0]?.type === 'CLEAR_DUE_COUNT').length >= 2);
+});
+
+test('relays a real course locale only from same-origin app messages (07.5)', async () => {
+  const bridge = await createBridgeContext({ response: { ok: true, verified: false } });
+  bridge.dispatchMessage({
+    source: bridge.bridgeGlobal,
+    origin: 'https://encoded-hangout-433912-h2.web.app',
+    data: {
+      source: 'lingoflash-web-app',
+      type: 'LINGOFLASH_EXTENSION_COURSE_LOCALE',
+      payload: { scope: 'opaque_scope_123456', nativeLanguage: 'en', targetLanguage: 'ko' },
+    },
+  });
+  bridge.dispatchMessage({
+    source: bridge.bridgeGlobal,
+    origin: 'https://encoded-hangout-433912-h2.web.app',
+    data: {
+      source: 'evil',
+      type: 'LINGOFLASH_EXTENSION_COURSE_LOCALE',
+      payload: { scope: 'evil_scope_123456', nativeLanguage: 'vi', targetLanguage: 'en' },
+    },
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  const relayed = bridge.calls.filter(call => call.type === 'runtime.sendMessage')
+    .map(call => call.args[0])
+    .find(message => message.type === 'SYNC_COURSE_LOCALE');
+  assert.deepEqual(relayed.payload, { scope: 'opaque_scope_123456', nativeLanguage: 'en', targetLanguage: 'ko' });
+  assert.equal(bridge.calls.filter(call => call.type === 'runtime.sendMessage'
+    && call.args[0].type === 'SYNC_COURSE_LOCALE').length, 1);
+});
+
+test('retries an unacknowledged course-locale clear after a transient runtime failure (07.5)', async () => {
+  const bridge = await createBridgeContext({ response: { ok: false } });
+  bridge.dispatchMessage({
+    source: bridge.bridgeGlobal,
+    origin: 'https://encoded-hangout-433912-h2.web.app',
+    data: {
+      source: 'lingoflash-web-app',
+      type: 'LINGOFLASH_EXTENSION_COURSE_LOCALE_CLEAR',
+      payload: { scope: 'opaque_scope_123456' },
+    },
+  });
+  await new Promise(resolve => setTimeout(resolve, 300));
+  assert.ok(bridge.calls.filter(call => call.type === 'runtime.sendMessage'
+    && call.args[0]?.type === 'CLEAR_COURSE_LOCALE').length >= 2);
 });
 
 test('removes a forged hash and forwards it only as a draft-only intent', async () => {

@@ -69,6 +69,17 @@ test('library supports 320px reflow, 200% text and visible keyboard focus', asyn
   await manage.focus();
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('menu', { name: 'Library management' })).toBeVisible();
+  // "Sync now" stays disabled, and so is skipped by arrow keys, until the
+  // initial cloud check settles; reopen once it is idle so the order below
+  // is the steady-state one.
+  const syncNow = page.getByRole('menuitem', { name: 'Sync now', exact: true });
+  if (await syncNow.count()) {
+    await expect(syncNow).toBeEnabled();
+    await page.keyboard.press('Escape');
+    await expect(manage).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByRole('menu', { name: 'Library management' })).toBeVisible();
+  }
   // The menu renders, in this fixed DOM order: an authenticated+online "Sync
   // now" action (LibraryManagementMenu.tsx's shouldShowSyncNow — true for
   // this fixture's always-authenticated, always-online test user), then

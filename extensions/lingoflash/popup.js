@@ -10,10 +10,22 @@ const {
   localizeDocument,
   applyColorScheme,
   applyThemeFamily,
+  applyCourseUiLocale,
   readSettings,
 } = globalThis.LingoFlashExtension;
 
 localizeDocument(document);
+// Follows the active course's native language when the app has told the
+// extension about a signed-in owner's active course (07.5); otherwise this
+// resolves to false and every t()/localizeDocument() call keeps using
+// today's Chrome-i18n-resolved locale exactly as before. The boot-time loads
+// below (loadDueCount, loadShortcuts, ...) render their own text with direct
+// t() calls rather than data-i18n attributes, so they must not start until
+// this settles — otherwise they would race ahead and render in the browser's
+// own UI locale before the course's native-language catalog is ready.
+const courseUiLocaleReady = applyCourseUiLocale()
+  .then(changed => { if (changed) localizeDocument(document); })
+  .catch(() => undefined);
 void readSettings().then(settings => {
   applyColorScheme(settings.colorScheme);
   applyThemeFamily(settings.themeFamily);
@@ -784,4 +796,6 @@ const loadDueCount = async () => {
   }
 };
 
-void Promise.all([loadSelection(), loadShortcuts(), loadRecentLookups(), loadDecks(), loadSelectionIconSite(), loadDueCount()]);
+void courseUiLocaleReady.then(() => Promise.all([
+  loadSelection(), loadShortcuts(), loadRecentLookups(), loadDecks(), loadSelectionIconSite(), loadDueCount(),
+]));

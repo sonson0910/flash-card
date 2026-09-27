@@ -40,6 +40,7 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 - [ ] 08.4 — Course filter phải áp dụng trước paging/count/practice loading, không lọc mỗi page cuối UI; owner+course generation guard và pending ops.
 - [ ] 08.5 — Đồng bộ backend migration mappings cho language fields, course/goals/profile, source metadata phase07.
 - [ ] 08.6 — Chốt cách tính course progress/XP từ review evidence, tránh tách/relabel tổng account thành số course giả.
+- [ ] 08.7 — Hợp đồng mutation cho edit sheet: đổi headword (giữ lexeme identity), sửa part-of-speech, tags, difficulty/scheduling, thay/xoá ảnh của thẻ đã có. Đến khi có hợp đồng, EditCardDialog giữ ghi chú `data-edit-contract-note`, không render control trơ. (Tách từ 04.7, 2026-09-27.)
 - [ ] Đối chiếu Canvas từng state của phase theo board/artboard inventory; reviewer kiểm tra cả hành vi và hình thức.
 - [ ] Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log.
 

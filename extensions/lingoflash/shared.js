@@ -23,6 +23,17 @@
   const DUE_COUNT_STORAGE_KEY = 'lingoflash_extension_due_count';
   const DUE_COUNT_RETIRED_SCOPES_STORAGE_KEY = 'lingoflash_extension_due_count_retired_scopes';
   const MAX_DUE_COUNT = 9_999;
+  // Course locale follows the exact same session-only, scope-retirement
+  // pattern as deck metadata and due count: it is real course state synced
+  // from the signed-in app, never fabricated, and must not leak a previous
+  // account's language pair after reconnect/account switch (07.5). The two
+  // lists below duplicate `COURSE_TARGET_LANGUAGES`/`COURSE_NATIVE_LANGUAGES`
+  // from functions/src/course-profile-contract.ts; this file has no module
+  // system to import from it, so keep both lists in sync with that contract.
+  const COURSE_LOCALE_STORAGE_KEY = 'lingoflash_extension_course_locale';
+  const COURSE_LOCALE_RETIRED_SCOPES_STORAGE_KEY = 'lingoflash_extension_course_locale_retired_scopes';
+  const COURSE_TARGET_LANGUAGES = ['en', 'ko', 'ja', 'zh'];
+  const COURSE_NATIVE_LANGUAGES = ['vi', 'en'];
   const MAX_DECKS = 100;
   const MAX_DECK_NAME_LENGTH = 128;
   const MAX_DECK_SCOPE_LENGTH = 128;
@@ -514,6 +525,22 @@
   // previous scope can never resurface after reconnect/account switch.
   const normalizeRetiredDueCountScopes = normalizeRetiredDeckScopes;
 
+  const normalizeCourseTargetLanguage = value => COURSE_TARGET_LANGUAGES.includes(value) ? value : '';
+  const normalizeCourseNativeLanguage = value => COURSE_NATIVE_LANGUAGES.includes(value) ? value : '';
+
+  const normalizeCourseLocaleMetadata = value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const scope = normalizeDeckScope(value.scope);
+    const nativeLanguage = normalizeCourseNativeLanguage(value.nativeLanguage);
+    const targetLanguage = normalizeCourseTargetLanguage(value.targetLanguage);
+    if (!scope || !nativeLanguage || !targetLanguage) return null;
+    return { scope, nativeLanguage, targetLanguage };
+  };
+
+  // Reuses the deck-metadata retirement pattern so a course locale synced
+  // under a previous scope can never resurface after reconnect/account switch.
+  const normalizeRetiredCourseLocaleScopes = normalizeRetiredDeckScopes;
+
   // Applies data-i18n* attributes to a static document. Every localizable
   // element ships its default_locale (vi) copy directly in the markup so the
   // page is correct even before this runs; this only upgrades it when the
@@ -571,10 +598,80 @@
   };
 
   const i18nApi = () => (globalThis.browser ?? globalThis.chrome)?.i18n ?? null;
+
+  // Set only by `applyCourseUiLocale` below, once a fetched `_locales/{locale}
+  // /messages.json` catalog is ready. `t()` prefers this catalog over the
+  // browser's own UI locale so the popup/options UI can follow the active
+  // course's native language (07.5) without needing a page reload.
+  let localeOverrideCatalog = null;
+
+  // Chrome's own `chrome.i18n.getMessage` resolves `$NAME$` placeholders
+  // against a message's declared `placeholders` map itself; this reimplements
+  // that same substitution so a manually fetched catalog behaves identically.
+  const applyMessageCatalogSubstitutions = (template, placeholders, substitutions) => {
+    if (!placeholders || typeof placeholders !== 'object') return template;
+    const args = substitutions === undefined || substitutions === null
+      ? []
+      : Array.isArray(substitutions) ? substitutions : [substitutions];
+    let result = template;
+    for (const [name, definition] of Object.entries(placeholders)) {
+      const content = String(definition?.content ?? '');
+      const positional = content.match(/^\$(\d)$/);
+      const resolved = positional ? String(args[Number(positional[1]) - 1] ?? '') : content;
+      result = result.replaceAll(new RegExp(`\\$${name}\\$`, 'gi'), resolved);
+    }
+    return result;
+  };
+
+  // Fetches this extension's own bundled `_locales/{locale}/messages.json`.
+  // Always a request for a file the extension ships itself, never a network
+  // call to a third party. Returns null on any failure so the caller safely
+  // keeps today's Chrome-i18n-resolved locale.
+  const loadLocaleMessageCatalog = async locale => {
+    try {
+      const url = extensionApi?.runtime?.getURL?.(`_locales/${locale}/messages.json`);
+      if (!url || typeof fetch !== 'function') return null;
+      const response = await fetch(url);
+      if (!response?.ok) return null;
+      const data = await response.json();
+      return data && typeof data === 'object' && !Array.isArray(data) ? data : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Overrides t()'s message source with the active course's native language,
+  // when the app has told the extension about a signed-in owner's active
+  // course (07.5, GET_COURSE_LOCALE). Returns false — no catalog fetched, no
+  // override applied, today's Chrome-i18n behavior kept exactly as-is —
+  // whenever there is no confirmed course locale, or it already matches the
+  // browser's own resolved UI language.
+  const applyCourseUiLocale = async () => {
+    try {
+      const response = await apiCall(extensionApi.runtime, 'sendMessage', { type: 'GET_COURSE_LOCALE' });
+      const nativeLanguage = response?.ok ? normalizeCourseNativeLanguage(response.nativeLanguage) : '';
+      if (!nativeLanguage) return false;
+      const uiLanguage = String(i18nApi()?.getUILanguage?.() || '').toLowerCase().split('-')[0];
+      if (uiLanguage === nativeLanguage) return false;
+      const catalog = await loadLocaleMessageCatalog(nativeLanguage);
+      if (!catalog) return false;
+      localeOverrideCatalog = catalog;
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   // Chrome/Firefox resolve getMessage() against the browser's own UI locale
   // automatically; outside a real extension runtime (unit tests, Node) this
   // safely degrades to the caller-supplied fallback so behavior never regresses.
   const t = (name, substitutions, fallback = '') => {
+    if (localeOverrideCatalog) {
+      const entry = localeOverrideCatalog[name];
+      if (entry && typeof entry.message === 'string' && entry.message) {
+        return applyMessageCatalogSubstitutions(entry.message, entry.placeholders, substitutions);
+      }
+    }
     try {
       const resolved = i18nApi()?.getMessage(name, substitutions);
       return typeof resolved === 'string' && resolved ? resolved : fallback;
@@ -652,6 +749,10 @@
     DUE_COUNT_STORAGE_KEY,
     DUE_COUNT_RETIRED_SCOPES_STORAGE_KEY,
     MAX_DUE_COUNT,
+    COURSE_LOCALE_STORAGE_KEY,
+    COURSE_LOCALE_RETIRED_SCOPES_STORAGE_KEY,
+    COURSE_TARGET_LANGUAGES,
+    COURSE_NATIVE_LANGUAGES,
     MAX_DECKS,
     MAX_DECK_NAME_LENGTH,
     MAX_DECK_SCOPE_LENGTH,
@@ -689,10 +790,15 @@
     normalizeDueCount,
     normalizeDueCountMetadata,
     normalizeRetiredDueCountScopes,
+    normalizeCourseTargetLanguage,
+    normalizeCourseNativeLanguage,
+    normalizeCourseLocaleMetadata,
+    normalizeRetiredCourseLocaleScopes,
     t,
     localizeDocument,
     applyColorScheme,
     applyThemeFamily,
+    applyCourseUiLocale,
     readRecentLookups,
     recordRecentLookup,
     clearRecentLookups,

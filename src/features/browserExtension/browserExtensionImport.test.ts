@@ -159,6 +159,42 @@ describe('browser extension import protocol', () => {
     expect(parseBrowserExtensionImportValue({ ...valid, pageTitle: ['forged'] }, now)).toBeNull();
   });
 
+  it('preserves a known captured sourceLanguage for a verified v3 import', () => {
+    const now = Date.UTC(2026, 7, 19, 8, 0, 0);
+    expect(parseBrowserExtensionImportValue({
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_source_language_123',
+      nonce,
+      text: '회복력',
+      sourceLanguage: 'ko',
+      createdAt: now,
+      mode: 'silent',
+    }, now)).toEqual({
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_source_language_123',
+      nonce,
+      text: '회복력',
+      sourceLanguage: 'ko',
+      createdAt: now,
+      mode: 'silent',
+    });
+  });
+
+  it('drops an unrecognized or wrongly typed sourceLanguage instead of rejecting the whole intent', () => {
+    const now = Date.UTC(2026, 7, 19, 8, 0, 0);
+    const valid = {
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_source_language_123',
+      nonce,
+      text: 'resilient',
+      createdAt: now,
+      mode: 'silent' as const,
+    };
+    expect(parseBrowserExtensionImportValue({ ...valid, sourceLanguage: 'fr' }, now)).not.toHaveProperty('sourceLanguage');
+    expect(parseBrowserExtensionImportValue({ ...valid, sourceLanguage: 42 }, now)).not.toHaveProperty('sourceLanguage');
+    expect(parseBrowserExtensionImportValue({ ...valid, sourceLanguage: 'en' }, now)).toHaveProperty('sourceLanguage', 'en');
+  });
+
   it('rejects silent intents with a missing or malformed nonce', () => {
     const now = Date.UTC(2026, 7, 19, 8, 0, 0);
     const valid = { v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION, id: 'intent_silent_123', text: 'resilient', createdAt: now, mode: 'silent' as const };

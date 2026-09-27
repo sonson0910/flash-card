@@ -73,7 +73,7 @@ test.beforeAll(async ({}, testInfo) => {
   const port = 4174 + ['chromium', 'firefox', 'webkit'].indexOf(testInfo.project.name);
   fixtureOrigin = `http://127.0.0.1:${port}`;
   fixtureServer = await createServer({
-    configFile: 'vite.config.ts',
+    configFile: 'vite.config.ts', cacheDir: `node_modules/.vite-e2e/phase6-touch-targets-${testInfo.parallelIndex}`,
     appType: 'mpa',
     server: { host: '127.0.0.1', port, strictPort: true },
     optimizeDeps: { entries: ['e2e/fixtures/phase6-touch-targets.html'] },

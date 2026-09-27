@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
-import { createI18nMock } from './i18n-test-helper.mjs';
+import { createI18nMock, loadMessages } from './i18n-test-helper.mjs';
 
 const sharedSource = await readFile(new URL('../shared.js', import.meta.url), 'utf8');
 const popupSource = await readFile(new URL('../popup.js', import.meta.url), 'utf8');
@@ -91,6 +91,9 @@ const createPopupContext = async ({
   deckResponseError = false,
   dueCount = null,
   retryQuickAddResponse = { ok: true, id: 'job_retry_1', text: 'resilient' },
+  // Defaults to today's behavior: no confirmed course locale synced yet, so
+  // applyCourseUiLocale() finds nothing to override (07.5).
+  courseLocaleResponse = { ok: true, nativeLanguage: null, targetLanguage: null },
 } = {}) => {
   const ids = [
     'selection', 'requested-deck', 'character-count', 'translate-button', 'add-button', 'speak-selection', 'speech-support-status', 'status',
@@ -144,11 +147,33 @@ const createPopupContext = async ({
       if (message.type === 'RETRY_QUICK_ADD') {
         return Promise.resolve(retryQuickAddResponse);
       }
+      if (message.type === 'GET_COURSE_LOCALE') {
+        return Promise.resolve(courseLocaleResponse);
+      }
       return Promise.resolve({ ok: true });
     },
     onMessage: {
       addListener(listener) { runtimeListeners.push(listener); },
     },
+    // Real getURL of the extension's own bundled _locales catalog (07.5):
+    // resolved synchronously, exactly like the real chrome.runtime.getURL.
+    getURL(path) { return `chrome-extension://lingoflash-test/${path}`; },
+  };
+  const fetchCalls = [];
+  // Backs loadLocaleMessageCatalog()'s fetch of this extension's own bundled
+  // `_locales/{locale}/messages.json` (07.5) with the real shipped catalog
+  // content, read synchronously so no real async I/O races the microtask
+  // ordering the rest of this harness already relies on.
+  const fetchLocaleCatalog = async url => {
+    fetchCalls.push(url);
+    const match = String(url).match(/_locales\/([a-z]+)\/messages\.json$/);
+    if (!match) return { ok: false };
+    try {
+      const data = loadMessages(match[1]);
+      return { ok: true, json: async () => data };
+    } catch {
+      return { ok: false };
+    }
   };
   const context = {
     Array,
@@ -180,6 +205,7 @@ const createPopupContext = async ({
     },
     setTimeout,
     close: () => { closeCalls += 1; },
+    fetch: fetchLocaleCatalog,
     browser: {
       runtime,
       i18n: createI18nMock('vi'),
@@ -199,6 +225,10 @@ const createPopupContext = async ({
   vm.runInContext(sharedSource, context, { filename: 'shared.js' });
   vm.runInContext(popupSource, context, { filename: 'popup.js' });
   await new Promise(resolve => setImmediate(resolve));
+  // A second tick covers applyCourseUiLocale()'s extra sendMessage -> fetch ->
+  // json() microtask chain (07.5), which is one hop deeper than the plain
+  // sendMessage-only boot calls the first tick already covers.
+  await new Promise(resolve => setImmediate(resolve));
   return {
     elements,
     runtimeMessages,
@@ -207,6 +237,7 @@ const createPopupContext = async ({
     resolveTranslate: value => resolveTranslate(value),
     resolveSelection: value => resolveSelection(value),
     speechSynthesis,
+    fetchCalls,
     get closeCalls() { return closeCalls; },
   };
 };
@@ -546,6 +577,35 @@ test('swaps the footer link label between signed-out and signed-in phrasing base
 
   const withoutCount = await createPopupContext({ dueCount: null });
   assert.equal(withoutCount.elements.get('open-app-label').textContent, 'Đăng nhập');
+});
+
+test('follows the active course native language for popup text once GET_COURSE_LOCALE resolves a different locale (07.5)', async () => {
+  const popup = await createPopupContext({
+    dueCount: 12,
+    courseLocaleResponse: { ok: true, nativeLanguage: 'en', targetLanguage: 'ko' },
+  });
+  assert.ok(popup.runtimeMessages.some(message => message.type === 'GET_COURSE_LOCALE'));
+  assert.ok(popup.fetchCalls.some(url => String(url).includes('_locales/en/messages.json')));
+
+  const expectedEnglishText = loadMessages('en').dueCountBadge.message.replace('$COUNT$', '12');
+  assert.equal(popup.elements.get('due-count-suffix').textContent, expectedEnglishText);
+  assert.notEqual(popup.elements.get('due-count-suffix').textContent, '12 thẻ đến hạn');
+});
+
+test('never fetches a locale catalog when the synced course native language already matches the UI language (07.5)', async () => {
+  const popup = await createPopupContext({
+    dueCount: 12,
+    courseLocaleResponse: { ok: true, nativeLanguage: 'vi', targetLanguage: 'ko' },
+  });
+  assert.ok(popup.runtimeMessages.some(message => message.type === 'GET_COURSE_LOCALE'));
+  assert.equal(popup.fetchCalls.length, 0);
+  assert.equal(popup.elements.get('due-count-suffix').textContent, '12 thẻ đến hạn');
+});
+
+test('keeps today\'s due-count text when no course locale has ever been synced (07.5)', async () => {
+  const popup = await createPopupContext({ dueCount: 12 });
+  assert.equal(popup.fetchCalls.length, 0);
+  assert.equal(popup.elements.get('due-count-suffix').textContent, '12 thẻ đến hạn');
 });
 
 test('shows the loading state as a busy spinner while a quick-add runs, then a distinct saved badge', async () => {

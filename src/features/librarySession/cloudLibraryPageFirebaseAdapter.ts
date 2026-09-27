@@ -12,10 +12,13 @@ export function createCloudLibraryPageFirebaseAdapter({
   database,
   configured = Boolean(database),
   transformPage,
+  getTargetLanguage,
 }: {
   database: Firestore | null;
   configured?: boolean;
   transformPage?: (request: { ownerId: string; query: CardQueryState; queryKey: string; page: number; pageSize: number }, items: CardData[]) => Promise<CardData[]>;
+  /** Active course's target language at call time; scopes `loadStats` the same way `query.targetLanguage` scopes every paginated read. */
+  getTargetLanguage?: () => string | null;
 }): CloudLibraryPageAdapter {
   const cursors = new Map<string, QueryDocumentSnapshot>();
   let cursorSequence = 0;
@@ -49,7 +52,7 @@ export function createCloudLibraryPageFirebaseAdapter({
       })).catch(onError);
     }, onError),
     countCards: (ownerId, query) => countCards(requireDatabase(), ownerId, query),
-    loadStats: ownerId => fetchLibraryStats(requireDatabase(), ownerId),
+    loadStats: ownerId => fetchLibraryStats(requireDatabase(), ownerId, getTargetLanguage?.()),
     subscribeFacets: (ownerId, onFacets, onError) => onSnapshot(
       doc(requireDatabase(), 'users', ownerId, 'profile', 'library_facets'),
       snapshot => {

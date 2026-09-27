@@ -24,7 +24,7 @@ import {
   type QueryDocumentSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore';
-import type { CardData } from '../types/card';
+import type { CardData, CardLanguageCode } from '../types/card';
 import { readLocalJson, writeLocalValue } from '../features/library/libraryStorage';
 import type { LibraryStats } from './libraryStats';
 export type { LibraryStats } from './libraryStats';
@@ -686,16 +686,25 @@ export async function clearLibraryFacets(
   });
 }
 
-export async function fetchLibraryStats(db: Firestore, userId: string): Promise<LibraryStats> {
+export async function fetchLibraryStats(
+  db: Firestore,
+  userId: string,
+  targetLanguage?: CardLanguageCode | null,
+): Promise<LibraryStats> {
+  // Course-scoped, matching the `where('language', '==', ...)` convention
+  // filterConstraints already applies to every other card query; an absent
+  // targetLanguage (no active course resolved yet) keeps the unscoped count.
+  const courseFilters: Pick<CardQueryState, 'targetLanguage'> = targetLanguage ? { targetLanguage } : {};
+  const languageConstraints: QueryConstraint[] = targetLanguage ? [where('language', '==', targetLanguage)] : [];
   const [total, reviewedSnapshot, easy, good, hard, explicitlyUnrated, bookmarked, due] = await Promise.all([
-    countCards(db, userId, EMPTY_FILTERS),
-    getCount(query(cardsCollection(db, userId), where('reviews', '>', 0))),
-    countCards(db, userId, { ...EMPTY_FILTERS, difficulty: 'easy' }),
-    countCards(db, userId, { ...EMPTY_FILTERS, difficulty: 'good' }),
-    countCards(db, userId, { ...EMPTY_FILTERS, difficulty: 'hard' }),
-    countCards(db, userId, { ...EMPTY_FILTERS, difficulty: 'unrated' }),
-    countCards(db, userId, { ...EMPTY_FILTERS, bookmarkedOnly: true }),
-    countCards(db, userId, { ...EMPTY_FILTERS, difficulty: 'due' }),
+    countCards(db, userId, { ...EMPTY_FILTERS, ...courseFilters }),
+    getCount(query(cardsCollection(db, userId), ...languageConstraints, where('reviews', '>', 0))),
+    countCards(db, userId, { ...EMPTY_FILTERS, ...courseFilters, difficulty: 'easy' }),
+    countCards(db, userId, { ...EMPTY_FILTERS, ...courseFilters, difficulty: 'good' }),
+    countCards(db, userId, { ...EMPTY_FILTERS, ...courseFilters, difficulty: 'hard' }),
+    countCards(db, userId, { ...EMPTY_FILTERS, ...courseFilters, difficulty: 'unrated' }),
+    countCards(db, userId, { ...EMPTY_FILTERS, ...courseFilters, bookmarkedOnly: true }),
+    countCards(db, userId, { ...EMPTY_FILTERS, ...courseFilters, difficulty: 'due' }),
   ]);
   const legacyUnindexed = Math.max(0, total - easy - good - hard - explicitlyUnrated);
   const unrated = explicitlyUnrated + legacyUnindexed;
