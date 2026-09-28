@@ -38,16 +38,12 @@ export function WebWordsTodayStripView({ previewCount }: { readonly previewCount
 }
 
 /**
- * Self-contained: `TodayScreenModel`/`TodayScreenActions` (dailyLearning,
- * owned elsewhere) carry no ownerId or loaded-card list to reuse, so this
- * mounts its own tiny query instead of threading new props through Today's
- * presentation layer. It is lazy-loaded and only queries after Today's own
- * content has already painted, and asks for a bounded 5-card page with
- * `detectHasNext: false` (no lookahead document), so it never competes with
- * Today's own reads and never pages beyond that first read.
+ * The workspace supplies the active owner and target language. It is lazy-loaded
+ * and asks for a bounded 5-card page with `detectHasNext: false` (no lookahead
+ * document), so it never pages beyond that first read.
  */
-export function WebWordsTodayStrip() {
-  const previewCount = useWebWordsPreviewCount();
+export function WebWordsTodayStrip({ ownerId, targetLanguage }: { readonly ownerId: string | null; readonly targetLanguage: string | null }) {
+  const previewCount = useWebWordsPreviewCount(ownerId, targetLanguage);
 
   return <WebWordsTodayStripView previewCount={previewCount} />;
 }

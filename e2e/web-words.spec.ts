@@ -32,6 +32,41 @@ const readSessionPointer = (page: import('@playwright/test').Page, uid: string) 
   }, `sonflash:daily-session:${uid}`);
 
 test.describe('WebWords page', () => {
+  test('Today preview follows the active course when the learner switches language', async ({
+    page, db, testUser, seedCards, signIn, blockExternalNetwork,
+  }, testInfo) => {
+    await db.collection('users').doc(testUser.uid).collection('profile').doc('courses').set({
+      activeCourseId: 'course-en',
+      courses: ['en', 'ko'].map(targetLanguage => ({
+        id: `course-${targetLanguage}`, targetLanguage, nativeLanguage: 'vi', status: 'active', goals: [],
+        preferences: { pronunciationVariant: null, showRomanization: false, zhScript: null },
+        createdAt: '2026-09-24T00:00:00.000Z',
+      })),
+    });
+    await seedCards([
+      webCard({ id: 'web-en-one', word: 'luminous', translation: 'phát sáng', source: { url: 'https://example.com/en-one', title: 'English one', capturedAt: '2026-09-26T09:00:00.000Z' } }),
+      webCard({ id: 'web-en-two', word: 'serene', translation: 'thanh bình', source: { url: 'https://example.com/en-two', title: 'English two', capturedAt: '2026-09-25T09:00:00.000Z' } }),
+      webCard({ id: 'web-ko-one', word: '결심', translation: 'quyết tâm', language: 'ko', source: { url: 'https://example.com/ko-one', title: 'Korean one', capturedAt: '2026-09-24T09:00:00.000Z' } }),
+    ]);
+    await blockExternalNetwork(page);
+    await signIn(page, '/?view=today&locale=en');
+    const englishStrip = page.getByText('2 words saved from the web').locator('xpath=ancestor::aside');
+    await expect(englishStrip).toBeVisible();
+    const englishImage = testInfo.outputPath('today-web-words-english.png');
+    await englishStrip.screenshot({ path: englishImage, animations: 'disabled' });
+    await testInfo.attach('English WebWords preview', { path: englishImage, contentType: 'image/png' });
+
+    await page.locator('.claude-course-switcher-trigger').click();
+    await page.getByRole('dialog', { name: 'Courses' }).getByRole('button', { name: /Korean.*Vietnamese/ }).click();
+    await expect(page.locator('.claude-course-switcher-trigger')).toHaveText(/Korean/);
+    const koreanStrip = page.getByText('1 word saved from the web').locator('xpath=ancestor::aside');
+    await expect(koreanStrip).toBeVisible();
+    await expect(page.getByText('2 words saved from the web')).toHaveCount(0);
+    const koreanImage = testInfo.outputPath('today-web-words-korean.png');
+    await koreanStrip.screenshot({ path: koreanImage, animations: 'disabled' });
+    await testInfo.attach('Korean WebWords preview', { path: koreanImage, contentType: 'image/png' });
+  });
+
   test('groups a saved web word by its article and adds it to a not-yet-started session\'s new stage', async ({
     page, seedCards, signIn, blockExternalNetwork,
   }) => {

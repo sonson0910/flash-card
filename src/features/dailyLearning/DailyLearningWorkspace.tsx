@@ -690,7 +690,7 @@ export default function DailyLearningWorkspace({
       : {}),
   };
   return <>
-    <TodayScreen model={todayModel} actions={{
+    <TodayScreen model={todayModel} ownerId={ownerId} targetLanguage={targetLanguage} actions={{
       openVocabulary, openPaths, retry: () => void load(), startSession: beginMultiStageSession, startLesson,
       startPlacement: () => navigateLesson('placement'), openMorePractice,
     }} />

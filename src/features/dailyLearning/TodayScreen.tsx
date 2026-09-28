@@ -31,6 +31,8 @@ const WebWordsTodayStrip = lazy(() =>
 interface TodayScreenProps {
   readonly model: TodayScreenModel;
   readonly actions: TodayScreenActions;
+  readonly ownerId?: string | null;
+  readonly targetLanguage?: string | null;
 }
 
 const lessonModes: ReadonlyArray<{
@@ -297,7 +299,7 @@ function StreakChip({ streak }: Pick<TodayScreenProps['model'], 'streak'>) {
   );
 }
 
-export function TodayScreen({ model, actions }: TodayScreenProps) {
+export function TodayScreen({ model, actions, ownerId, targetLanguage }: TodayScreenProps) {
   const { family } = useTheme();
   const showLumi = family === 'crystal' && readLumiEnabled();
   if (model.status === 'loading') {
@@ -371,7 +373,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
       </header>
       {model.isOffline && <p className="rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite"><Trans id="today.offline" message="You're offline. Reconnect to start today's session." /></p>}
       <PlanSummary model={model} actions={actions} />
-      <Suspense fallback={null}><WebWordsTodayStrip /></Suspense>
+      <Suspense fallback={null}><WebWordsTodayStrip ownerId={ownerId ?? null} targetLanguage={targetLanguage ?? null} /></Suspense>
       {showLumi && <aside className="crystal-chamfer flex min-h-24 items-center gap-4 border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-4 shadow-[var(--sf-panel-shadow)]"><Lumi pose="hero" size={76} eager className="crystal-ornament shrink-0" /><p className="text-sm font-bold leading-6 text-[var(--sf-text)]"><Trans id="today.lumi.ready" message="Lumi is ready to study with you." /></p></aside>}
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]">
         <PracticeModes model={model} actions={actions} />

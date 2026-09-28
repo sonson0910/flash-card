@@ -401,3 +401,11 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
   card/tombstone và, nếu thẻ có real `lexemeId`, 1 projection delete write.
 - Giữ account-deletion guard và persistent rate limit hiện có. Không thêm read
   hoặc write nào khác cho route single delete.
+
+## 2026-09-28 — Owner duyệt Today WebWords preview theo active course
+
+- Today strip đếm WebWords theo owner và target language đang active, bỏ kết quả
+  của scope cũ khi đổi account/course. Owner duyệt query hiện có tối đa
+  **5 card document reads mỗi lần mount hoặc đổi owner/course** khi Today đang
+  mở. Không polling, subscription, write hay query loại mới. Trước sửa, strip
+  chỉ query một lần lúc mount và luôn lọc English, nên có thể hiện sai count.
