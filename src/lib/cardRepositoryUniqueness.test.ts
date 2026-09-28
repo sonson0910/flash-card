@@ -781,7 +781,9 @@ describe('createCardIfAbsent', () => {
       data: {
         created: true,
         card: callableCard,
-        gamification: { xp: 10, level: 1, streak: 0, studyDay: '2026-09-27', events: [] },
+        gamification: {
+          xp: 10, level: 1, streak: 0, studyDay: '2026-09-27', events: [], rewardTimeZone: 'Asia/Saigon',
+        },
       },
     });
     functionsRuntime.httpsCallable.mockReturnValue(callable);
@@ -789,7 +791,7 @@ describe('createCardIfAbsent', () => {
     await expect(createCardV2IfAbsent({} as never, 'user-1', candidate, {
       libraryEpoch: 4, opId: 'create-quite-v2', timeZone: 'Asia/Ho_Chi_Minh',
     })).resolves.toMatchObject({
-      created: true, card: { id: 'word-quite' }, gamification: { xp: 10, level: 1 },
+      created: true, card: { id: 'word-quite' }, gamification: { xp: 10, level: 1, rewardTimeZone: 'Asia/Saigon' },
     });
     expect(functionsRuntime.httpsCallable).toHaveBeenCalledWith(
       { region: 'asia-southeast1' }, 'createCardV2',

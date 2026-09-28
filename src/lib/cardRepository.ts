@@ -1772,9 +1772,18 @@ const parseAuthoritativeGamification = (value: unknown): AuthoritativeGamificati
     || !Array.isArray(outcome.events)
     || outcome.events.some(event => event !== 'streak' && event !== 'levelup')
   ) throw new CardCallableResponseError();
+  let rewardTimeZone: string;
+  try {
+    rewardTimeZone = typeof outcome.rewardTimeZone === 'string' && outcome.rewardTimeZone
+      ? new Intl.DateTimeFormat('en-US', { timeZone: outcome.rewardTimeZone }).resolvedOptions().timeZone
+      : '';
+  } catch {
+    throw new CardCallableResponseError();
+  }
+  if (!rewardTimeZone) throw new CardCallableResponseError();
   return {
     xp: Number(outcome.xp), level: Number(outcome.level), streak: Number(outcome.streak),
-    studyDay: outcome.studyDay, events: outcome.events as AuthoritativeGamification['events'],
+    studyDay: outcome.studyDay, events: outcome.events as AuthoritativeGamification['events'], rewardTimeZone,
   };
 };
 
