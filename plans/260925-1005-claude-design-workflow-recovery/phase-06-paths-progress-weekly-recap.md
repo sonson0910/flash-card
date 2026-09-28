@@ -71,6 +71,8 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 
 > **Single delete callable 2026-09-28.** Client single delete chuyển qua `bulkMutateCards`, giữ exact server tombstone `opId`/`libraryEpoch` để Undo và nhận stale/future epoch thành conflict result như trước. Focused client 122/122, typecheck và diff check pass. Owner đã duyệt 5 document reads + 1 rate-limit write/call trước card/tombstone writes; catalog card có thêm 1 projection delete write. Clear Library vẫn cần route riêng; checkbox Canvas còn mở.
 
+> **Server review activity 2026-09-28.** Strict review ghi `reviewActivityV1` theo target language của canonical card, rating, receipt time và account timezone trong stats transaction hiện có; retry/reject không đếm lại. Mỗi language giữ cửa sổ 182 ngày lịch và coverage forward-only. Legacy stats parser kiểm shape/counter/day, kể cả cấm coverage `null`; Rules chặn toàn bộ client writes vào stats, Admin writer chịu trách nhiệm validate nested maps. Functions focused 55/55, Rules source 18/18, Rules emulator 93/93, typecheck và diff check pass. Không thêm document read/write hoặc query; stats document/index bytes tăng. Progress range UI chưa nối nên checklist Canvas còn mở.
+
 Stats/ActivityHeatmap/catalog tests; e2e/paths-progress-visual.spec.ts và catalog-workspace.spec.ts; new weekly-recap unit+export journey; gates chung.
 
 Hợp đồng chung: [acceptance-contract.md](acceptance-contract.md). Tên test mới là đề xuất; trước chạy phải kiểm inventory file thực, không báo file vắng là PASS. Với flow có mutation, test dùng emulator/fixtures, không dữ liệu người học hay Gemini thật.

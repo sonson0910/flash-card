@@ -33,6 +33,8 @@ const action = (overrides = {}) => ({
   kind: 'review' as const,
   receivedAt: new Date('2026-03-08T10:30:00.000Z'),
   timeZone: 'America/New_York',
+  targetLanguage: 'en',
+  rating: 'good' as const,
   ...overrides,
 });
 
@@ -54,6 +56,55 @@ describe('verified gamification', () => {
     const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({ kind: 'create', timeZone: 'Pacific/Auckland' }));
     expect(prepared.outcome).toMatchObject({ xp: 14, streak: 5, studyDay: '2026-03-08' });
     expect(prepared.statsPatch).not.toHaveProperty('rewardTimeZone');
+  });
+
+  it('records the server-receipt local day, preserves languages, and trims review activity to 182 days', async () => {
+    const days = Object.fromEntries(Array.from({ length: 182 }, (_, index) => {
+      const day = new Date(Date.UTC(2025, 8, 7 + index)).toISOString().slice(0, 10);
+      return [day, { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 }];
+    }));
+    const test = harness({ 'users/owner/profile/stats': {
+      verifiedXp: 4, verifiedStreak: 5, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'America/New_York',
+      reviewActivityV1: {
+        coverageStartedOnByLanguage: { en: '2025-09-07', ko: '2026-03-07' },
+        daysByLanguage: {
+          en: days,
+          ko: { '2026-03-07': { reviewed: 1, again: 0, hard: 0, good: 0, easy: 1 } },
+        },
+      },
+    } });
+    const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({
+      receivedAt: new Date('2026-03-08T05:30:00.000Z'), targetLanguage: 'en', rating: 'hard',
+    }));
+    const activity = prepared.statsPatch.reviewActivityV1 as {
+      coverageStartedOnByLanguage: Record<string, string>;
+      daysByLanguage: Record<string, Record<string, { reviewed: number; hard: number }>>;
+    };
+    expect(Object.keys(activity.daysByLanguage.en)).toHaveLength(182);
+    expect(activity.daysByLanguage.en['2025-09-07']).toBeUndefined();
+    expect(activity.daysByLanguage.en['2025-09-08']).toMatchObject({ reviewed: 1 });
+    expect(activity.daysByLanguage.en['2026-03-08']).toMatchObject({ reviewed: 1, hard: 1 });
+    expect(activity.coverageStartedOnByLanguage).toEqual({ en: '2025-09-07', ko: '2026-03-07' });
+    expect(activity.daysByLanguage.ko).toMatchObject({ '2026-03-07': { reviewed: 1 } });
+  });
+
+  it('drops sparse activity outside the calendar window while retaining both boundaries', async () => {
+    const test = harness({ 'users/owner/profile/stats': {
+      verifiedXp: 4, verifiedStreak: 5, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC',
+      reviewActivityV1: {
+        coverageStartedOnByLanguage: { en: '2025-01-01' },
+        daysByLanguage: { en: {
+          '2025-01-01': { reviewed: 1, again: 1, hard: 0, good: 0, easy: 0 },
+          '2025-09-08': { reviewed: 1, again: 0, hard: 1, good: 0, easy: 0 },
+          '2026-03-07': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 },
+        } },
+      },
+    } });
+    const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({
+      receivedAt: new Date('2026-03-08T12:00:00.000Z'), targetLanguage: 'en', rating: 'easy', timeZone: 'UTC',
+    }));
+    const days = (prepared.statsPatch.reviewActivityV1 as { daysByLanguage: Record<string, Record<string, unknown>> }).daysByLanguage.en;
+    expect(Object.keys(days)).toEqual(['2025-09-08', '2026-03-07', '2026-03-08']);
   });
 
   it('grants both threshold rewards in one rewards read and caps inventory', async () => {

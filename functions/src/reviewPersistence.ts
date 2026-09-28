@@ -414,6 +414,7 @@ export async function applyReviewForOwner(
       try {
         preparedGamification = await prepareVerifiedGamification(database, transaction, ownerId, {
           kind: 'review', receivedAt: receivedAt!, timeZone: request.timeZone,
+          targetLanguage: typeof candidate.language === 'string' ? candidate.language : undefined, rating: request.rating,
         });
         gamification = preparedGamification.outcome;
       } catch (error) {

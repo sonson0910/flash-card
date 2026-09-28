@@ -247,7 +247,7 @@ service cloud.firestore {
         ])
         && data.keys().hasOnly([
           'streak', 'xp', 'lastActive', 'appliedXpOperationIds',
-          'xpStreamSchemaVersion'
+          'xpStreamSchemaVersion', 'reviewActivityV1'
         ])
         && data.streak is int
         && data.streak >= 0
@@ -954,6 +954,7 @@ service cloud.firestore {
     }
 
     match /users/{userId}/profile/stats {
+      // Admin writers validate nested review activity; clients cannot mutate stats.
       allow read: if isOwner(userId);
       allow create, update, delete: if false;
     }

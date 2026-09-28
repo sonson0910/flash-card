@@ -273,6 +273,13 @@ describe('review persistence', () => {
         expect.objectContaining({ path: 'users/owner/profile/xp_history' }),
         expect.objectContaining({ path: 'users/owner/profile/rewards' }),
       ]));
+      const statsWrite = test.writes.find(write => write.path === 'users/owner/profile/stats');
+      expect(statsWrite?.data).toMatchObject({
+        reviewActivityV1: {
+          coverageStartedOnByLanguage: { en: '2026-09-27' },
+          daysByLanguage: { en: { '2026-09-27': { reviewed: 1, easy: 1 } } },
+        },
+      });
       const receipt = test.writes.find(write => write.path.includes('review_receipts'));
       if (!receipt) throw new Error('receipt was not written');
       test.values.set(receipt.path, snapshot(true, receipt.data));
@@ -280,6 +287,7 @@ describe('review persistence', () => {
         ...result,
         duplicate: true,
       });
+      expect(test.writes.filter(write => write.path === 'users/owner/profile/stats')).toHaveLength(1);
     } finally {
       vi.useRealTimers();
     }

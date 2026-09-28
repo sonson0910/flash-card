@@ -293,6 +293,50 @@ describe('gamification persistence', () => {
     }
   });
 
+  it('accepts bounded server review activity and rejects malformed activity before a legacy save', async () => {
+    const verified = {
+      verifiedSchemaVersion: 1,
+      verifiedXp: 10,
+      verifiedStreak: 2,
+      lastVerifiedStudyDay: '2026-08-09',
+      rewardTimeZone: 'UTC',
+    };
+    const activity = {
+      coverageStartedOnByLanguage: { en: '2026-08-09' },
+      daysByLanguage: { en: { '2026-08-09': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 } } },
+    };
+    const test = harness({
+      'users/owner/profile/stats': {
+        streak: 2, xp: 100, lastActive: 'Sun Aug 09 2026', appliedXpOperationIds: [], xpStreamSchemaVersion: 2,
+        ...verified, reviewActivityV1: activity,
+      },
+      'users/owner/profile/xp_history': {},
+    });
+    await expect(applyGamificationForOwner(test.database, 'owner', request())).resolves.toMatchObject({ appliedOperationIds: ['xp2:client-a:1'] });
+
+    const malformed = harness({
+      'users/owner/profile/stats': {
+        streak: 2, xp: 100, lastActive: 'Sun Aug 09 2026', appliedXpOperationIds: [], xpStreamSchemaVersion: 2,
+        ...verified, reviewActivityV1: { ...activity, daysByLanguage: { en: { '2026-08-09': { reviewed: 1, again: 1, hard: 0, good: 1, easy: 0 } } } },
+      },
+      'users/owner/profile/xp_history': {},
+    });
+    await expect(applyGamificationForOwner(malformed.database, 'owner', request()))
+      .rejects.toBeInstanceOf(GamificationMigrationRequiredError);
+    expect(malformed.writes).toEqual([]);
+
+    const nullCoverage = harness({
+      'users/owner/profile/stats': {
+        streak: 2, xp: 100, lastActive: 'Sun Aug 09 2026', appliedXpOperationIds: [], xpStreamSchemaVersion: 2,
+        ...verified, reviewActivityV1: { ...activity, coverageStartedOnByLanguage: { en: null } },
+      },
+      'users/owner/profile/xp_history': {},
+    });
+    await expect(applyGamificationForOwner(nullCoverage.database, 'owner', request()))
+      .rejects.toBeInstanceOf(GamificationMigrationRequiredError);
+    expect(nullCoverage.writes).toEqual([]);
+  });
+
   it('preserves server-verified stats and history during a legacy save', async () => {
     const test = harness({
       'users/owner/profile/stats': {

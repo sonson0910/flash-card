@@ -187,7 +187,10 @@ describe('Firestore rules source invariants', () => {
       'appliedXpOperationIds',
       'xpStreamSchemaVersion',
     ]));
-    expect(new Set(allowedStatsFields)).toEqual(new Set(requiredStatsFields));
+    expect(new Set(allowedStatsFields)).toEqual(new Set([
+      ...requiredStatsFields,
+      'reviewActivityV1',
+    ]));
     expect(statsSchema).toMatch(/data\.streak is int/);
     expect(statsSchema).toMatch(/data\.streak >= 0/);
     expect(statsSchema).toMatch(/data\.streak <= 9007199254740991/);

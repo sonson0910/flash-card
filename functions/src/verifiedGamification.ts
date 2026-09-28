@@ -6,6 +6,9 @@ const VERIFIED_SCHEMA_VERSION = 1;
 const STREAK_REWARD_RECEIPT = 'streak-30-v1';
 const LEVEL_REWARD_RECEIPT = 'level-13-v1';
 const CRIMSON_WING_FRAME = 'crimson-wing';
+const MAX_REVIEW_ACTIVITY_DAYS = 182;
+const MAX_REVIEW_ACTIVITY_LANGUAGES = 16;
+const MAX_REVIEW_ACTIVITY_COUNTER = Number.MAX_SAFE_INTEGER;
 
 type ActionKind = 'review' | 'create' | 'quiz' | 'spelling' | 'match';
 type RewardEvent = 'streak' | 'levelup';
@@ -14,6 +17,8 @@ export type VerifiedGamificationAction = {
   kind: ActionKind;
   receivedAt: Date;
   timeZone?: string;
+  targetLanguage?: string;
+  rating?: 'again' | 'hard' | 'good' | 'easy';
   resultXp?: number;
 };
 
@@ -72,6 +77,87 @@ const canonicalTimeZone = (value: unknown): string | null => {
   }
 };
 
+type ReviewActivityCounters = Record<'reviewed' | 'again' | 'hard' | 'good' | 'easy', number>;
+type ReviewActivity = {
+  coverageStartedOnByLanguage: Record<string, string>;
+  daysByLanguage: Record<string, Record<string, ReviewActivityCounters>>;
+};
+
+const isLanguage = (value: unknown): value is string => typeof value === 'string'
+  && value.length <= 16
+  && /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(value);
+
+const isLocalDay = (value: unknown): value is string => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+
+const activityWindowStart = (day: string): string => {
+  const [year, month, date] = day.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, date - (MAX_REVIEW_ACTIVITY_DAYS - 1))).toISOString().slice(0, 10);
+};
+
+const reviewActivity = (value: unknown): ReviewActivity | undefined => {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) throw new InputValidationError('Stored review activity is invalid.');
+  const { coverageStartedOnByLanguage, daysByLanguage: storedDaysByLanguage } = value;
+  if (Object.keys(value).length !== 2 || !isRecord(coverageStartedOnByLanguage) || !isRecord(storedDaysByLanguage)) {
+    throw new InputValidationError('Stored review activity is invalid.');
+  }
+  const languages = Object.keys(storedDaysByLanguage);
+  if (languages.length > MAX_REVIEW_ACTIVITY_LANGUAGES
+    || languages.length !== Object.keys(coverageStartedOnByLanguage).length
+    || languages.some(language => !isLanguage(language) || !isLocalDay(coverageStartedOnByLanguage[language]))) {
+    throw new InputValidationError('Stored review activity is invalid.');
+  }
+  const daysByLanguage: ReviewActivity['daysByLanguage'] = {};
+  for (const language of languages) {
+    const days = storedDaysByLanguage[language];
+    if (!isRecord(days) || Object.keys(days).length > MAX_REVIEW_ACTIVITY_DAYS) {
+      throw new InputValidationError('Stored review activity is invalid.');
+    }
+    const parsedDays: Record<string, ReviewActivityCounters> = {};
+    for (const [day, counters] of Object.entries(days)) {
+      if (!isLocalDay(day) || !isRecord(counters) || Object.keys(counters).length !== 5) {
+        throw new InputValidationError('Stored review activity is invalid.');
+      }
+      const parsed = Object.fromEntries(['reviewed', 'again', 'hard', 'good', 'easy'].map(key => [key, counters[key]])) as ReviewActivityCounters;
+      if (Object.values(parsed).some(count => !Number.isSafeInteger(count) || count < 0 || count > MAX_REVIEW_ACTIVITY_COUNTER)
+        || parsed.reviewed !== parsed.again + parsed.hard + parsed.good + parsed.easy) {
+        throw new InputValidationError('Stored review activity is invalid.');
+      }
+      parsedDays[day] = parsed;
+    }
+    daysByLanguage[language] = parsedDays;
+  }
+  return { coverageStartedOnByLanguage: coverageStartedOnByLanguage as Record<string, string>, daysByLanguage };
+};
+
+const nextReviewActivity = (stored: unknown, language: unknown, day: string, rating: string): ReviewActivity => {
+  if (!isLanguage(language) || !['again', 'hard', 'good', 'easy'].includes(rating)) {
+    throw new InputValidationError('Review activity target language is invalid.');
+  }
+  const activity = reviewActivity(stored);
+  const coverageStartedOnByLanguage = { ...(activity?.coverageStartedOnByLanguage ?? {}) };
+  const allDays: ReviewActivity['daysByLanguage'] = { ...(activity?.daysByLanguage ?? {}) };
+  if (!allDays[language] && Object.keys(allDays).length >= MAX_REVIEW_ACTIVITY_LANGUAGES) {
+    throw new InputValidationError('Review activity language limit reached.');
+  }
+  const counters = allDays[language]?.[day] ?? { reviewed: 0, again: 0, hard: 0, good: 0, easy: 0 };
+  if (counters.reviewed >= MAX_REVIEW_ACTIVITY_COUNTER || counters[rating as keyof ReviewActivityCounters] >= MAX_REVIEW_ACTIVITY_COUNTER) {
+    throw new InputValidationError('Review activity counter exceeds its limit.');
+  }
+  allDays[language] = { ...(allDays[language] ?? {}), [day]: { ...counters, reviewed: counters.reviewed + 1, [rating]: counters[rating as keyof ReviewActivityCounters] + 1 } };
+  const windowStart = activityWindowStart(day);
+  for (const [activityLanguage, days] of Object.entries(allDays)) {
+    allDays[activityLanguage] = Object.fromEntries(Object.entries(days)
+      .filter(([localDay]) => localDay >= windowStart && localDay <= day));
+  }
+  coverageStartedOnByLanguage[language] ??= day;
+  return { coverageStartedOnByLanguage, daysByLanguage: allDays };
+};
+
 const previousDay = (day: string): string => {
   const [year, month, date] = day.split('-').map(Number);
   return new Date(Date.UTC(year, month - 1, date - 1)).toISOString().slice(0, 10);
@@ -111,6 +197,9 @@ export async function prepareVerifiedGamification(
   }
   const timeZone = storedTimeZone ?? actionTimeZone as string;
   const studyDay = dayInTimeZone(action.receivedAt, timeZone);
+  const activity = action.kind === 'review'
+    ? nextReviewActivity(stats.reviewActivityV1, action.targetLanguage, studyDay, action.rating ?? '')
+    : undefined;
   const xp = counter(stats.verifiedXp);
   const nextXp = xp + xpFor(action);
   if (!Number.isSafeInteger(nextXp)) throw new InputValidationError('Verified XP exceeds its limit.');
@@ -163,6 +252,7 @@ export async function prepareVerifiedGamification(
         ? { lastVerifiedStudyDay: studyDay }
         : stats.lastVerifiedStudyDay === undefined ? { lastVerifiedStudyDay: null } : {}),
       ...(stats.rewardTimeZone === undefined ? { rewardTimeZone: timeZone } : {}),
+      ...(activity ? { reviewActivityV1: activity } : {}),
     },
     historyPatch: { verifiedByDayV1: { [studyDay]: FieldValue.increment(xpFor(action)) } },
     rewardsPatch: hasRewardsPatch ? {

@@ -17,6 +17,9 @@ export const MAX_XP_STREAM_WATERMARKS = 128;
 export const XP_STREAM_SCHEMA_VERSION = 2;
 const VERIFIED_GAMIFICATION_SCHEMA_VERSION = 1;
 const VERIFIED_HISTORY_FIELD = 'verifiedByDayV1';
+const REVIEW_ACTIVITY_FIELD = 'reviewActivityV1';
+const MAX_REVIEW_ACTIVITY_DAYS = 182;
+const MAX_REVIEW_ACTIVITY_LANGUAGES = 16;
 
 const MAX_OPERATION_ID_LENGTH = 128;
 const MAX_CLIENT_ID_LENGTH = 64;
@@ -122,6 +125,41 @@ const validVerifiedStudyDay = (value: unknown): boolean => {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(`${value}T00:00:00.000Z`);
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+
+const validReviewActivityCoverageDay = (value: unknown): boolean => value !== null && validVerifiedStudyDay(value);
+
+const validReviewActivityLanguage = (value: unknown): value is string => typeof value === 'string'
+  && value.length <= 16
+  && /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(value);
+
+const validReviewActivityCounters = (value: unknown): boolean => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const counters = value as Record<string, unknown>;
+  const keys = ['reviewed', 'again', 'hard', 'good', 'easy'];
+  return Object.keys(counters).length === keys.length
+    && keys.every(key => Number.isSafeInteger(counters[key]) && Number(counters[key]) >= 0 && Number(counters[key]) <= MAX_XP_VALUE)
+    && Number(counters.reviewed) === Number(counters.again) + Number(counters.hard) + Number(counters.good) + Number(counters.easy);
+};
+
+const validReviewActivity = (value: unknown): boolean => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const source = value as Record<string, unknown>;
+  if (Object.keys(source).length !== 2
+    || !source.coverageStartedOnByLanguage || typeof source.coverageStartedOnByLanguage !== 'object' || Array.isArray(source.coverageStartedOnByLanguage)
+    || !source.daysByLanguage || typeof source.daysByLanguage !== 'object' || Array.isArray(source.daysByLanguage)) return false;
+  const coverage = source.coverageStartedOnByLanguage as Record<string, unknown>;
+  const byLanguage = source.daysByLanguage as Record<string, unknown>;
+  const languages = Object.keys(byLanguage);
+  if (languages.length > MAX_REVIEW_ACTIVITY_LANGUAGES || languages.length !== Object.keys(coverage).length) return false;
+  return languages.every(language => {
+    const days = byLanguage[language];
+    if (!validReviewActivityLanguage(language) || !validReviewActivityCoverageDay(coverage[language])
+      || !days || typeof days !== 'object' || Array.isArray(days)) return false;
+    const entries = Object.entries(days as Record<string, unknown>);
+    return entries.length <= MAX_REVIEW_ACTIVITY_DAYS
+      && entries.every(([day, counters]) => validVerifiedStudyDay(day) && validReviewActivityCounters(counters));
+  });
 };
 
 const validOperationId = (value: unknown): value is string =>
@@ -354,6 +392,7 @@ const parseStoredStats = (value: DocumentData | undefined): StoredGamificationSt
     'rewardTimeZone',
   ];
   const hasVerifiedSchema = verifiedKeys.some(key => Object.prototype.hasOwnProperty.call(source, key));
+  const hasReviewActivity = Object.prototype.hasOwnProperty.call(source, REVIEW_ACTIVITY_FIELD);
   if (hasLegacySequenceMap && hasSchemaVersion) {
     throw new GamificationMigrationRequiredError();
   }
@@ -365,6 +404,7 @@ const parseStoredStats = (value: DocumentData | undefined): StoredGamificationSt
       ? ['appliedXpSequenceByClient']
       : hasSchemaVersion ? ['xpStreamSchemaVersion'] : []),
     ...(hasVerifiedSchema ? verifiedKeys : []),
+    ...(hasReviewActivity ? [REVIEW_ACTIVITY_FIELD] : []),
   ];
   if (Object.keys(source).length !== expectedKeys.length
     || Object.keys(source).some(key => !expectedKeys.includes(key))) {
@@ -394,6 +434,9 @@ const parseStoredStats = (value: DocumentData | undefined): StoredGamificationSt
     } catch {
       throw new GamificationMigrationRequiredError();
     }
+  }
+  if (hasReviewActivity && (!hasVerifiedSchema || !validReviewActivity(source[REVIEW_ACTIVITY_FIELD]))) {
+    throw new GamificationMigrationRequiredError();
   }
   const lastActive = source.lastActive === null ? null : validLastActive(source.lastActive);
   if (source.lastActive !== null && lastActive === null) {
