@@ -1,7 +1,7 @@
 import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { CourseContext, type CourseGateValue } from '../courses/CourseGate';
 import { OnboardingGate } from './OnboardingGate';
 import { onboardingCourseInput, OnboardingJourney } from './OnboardingJourney';
@@ -53,6 +53,24 @@ describe('OnboardingGate', () => {
     expect(html).toContain('Continue');
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain('min-h-20');
+  });
+
+  it('resumes at the saved reminder step and keeps the unavailable-reminder fallback explicit', () => {
+    vi.stubGlobal('localStorage', { getItem: vi.fn(() => 'reminder') });
+    try {
+      const html = renderToStaticMarkup(<I18nProvider i18n={i18n}>
+        <CourseContext.Provider value={snapshot('absent')}><OnboardingJourney ownerId="owner-resume" /></CourseContext.Provider>
+      </I18nProvider>);
+
+      expect(html).toContain('aria-valuenow="6"');
+      expect(html).toContain('Daily reminders');
+      expect(html).toContain('Reminders aren');
+      expect(html).toContain('Start learning');
+      expect(html).toContain('Back');
+      expect(html).not.toContain('Choose your language');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('keeps selected goal details and Chinese script in the course creation input', () => {

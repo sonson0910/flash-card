@@ -21,6 +21,14 @@ const english: Course = {
   createdAt: '2026-01-01T00:00:00.000Z',
 };
 
+const archivedJapanese: Course = {
+  ...english,
+  id: 'course-ja',
+  targetLanguage: 'ja',
+  status: 'archived',
+  goals: [],
+};
+
 const session = (course: Course = english): CourseGateValue => ({
   model: {
     status: 'ready', source: 'cloud', pending: false, errorCode: null,
@@ -44,6 +52,25 @@ describe('course render surfaces', () => {
     expect(html).toContain('aria-haspopup="dialog"');
     expect(html).toContain('aria-expanded="false"');
     expect(html).not.toContain('Your courses');
+  });
+
+  it('renders the no-active-course trigger without exposing unavailable course actions', () => {
+    const activeSession = session();
+    const value: CourseGateValue = {
+      ...activeSession,
+      model: {
+        ...activeSession.model,
+        profile: { activeCourseId: null, courses: [english, archivedJapanese] },
+        activeCourse: null,
+      },
+    };
+    const html = render(<CourseSwitcherControl />, value);
+
+    expect(html).toContain('Choose a course');
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).not.toContain('Your courses');
+    expect(html).not.toContain('Archive course');
+    expect(html).not.toContain('Reopen course');
   });
 
   it('renders each goal state with only the actions that remain valid', () => {

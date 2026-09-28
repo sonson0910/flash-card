@@ -44,4 +44,25 @@ describe('CourseSettingsSection', () => {
     expect(html).toContain('Archived courses');
     expect(html).toContain('Japanese');
   });
+
+  it('keeps app settings, archived-course recovery, and the honest reminder fallback when no course is active', () => {
+    const noActiveCourse: CourseGateValue = {
+      ...value,
+      model: {
+        ...value.model,
+        profile: { activeCourseId: null, courses: [archivedCourse] },
+        activeCourse: null,
+      },
+    };
+    const html = renderToStaticMarkup(<I18nProvider i18n={i18n}><CourseContext.Provider value={noActiveCourse}><CourseSettingsSection /></CourseContext.Provider></I18nProvider>);
+
+    expect(html).toContain('App language');
+    expect(html).toContain('Archived courses');
+    expect(html).toContain('Japanese');
+    expect(html).toContain('Daily reminders aren');
+    expect(html).not.toContain('Meaning language');
+    expect(html).not.toContain('Daily pace');
+    expect(html).not.toContain('Show romanization');
+    expect(html).not.toContain('Chinese script');
+  });
 });
