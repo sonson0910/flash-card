@@ -79,6 +79,12 @@ export function resolveStudyRecallMode(
   return requestedMode;
 }
 
+function formatStudyElapsedTime(elapsedSeconds: number): string {
+  const minutes = Math.floor(elapsedSeconds / 60);
+  const seconds = elapsedSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
 export function StudyView({
   cards,
   index,
@@ -101,11 +107,29 @@ export function StudyView({
 }: StudyViewProps) {
   const { _, i18n } = useLingui();
   const previousIndexRef = useRef(index);
+  const elapsedTimeRef = useRef(0);
+  const elapsedStartedAtRef = useRef<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const elapsedTime = formatStudyElapsedTime(elapsedSeconds);
   const direction: 1 | -1 = index < previousIndexRef.current ? -1 : 1;
 
   useEffect(() => {
     previousIndexRef.current = index;
   }, [index]);
+
+  useEffect(() => {
+    if (paused) return;
+    elapsedStartedAtRef.current = performance.now();
+    const timer = window.setInterval(() => {
+      setElapsedSeconds(Math.floor((elapsedTimeRef.current + performance.now() - elapsedStartedAtRef.current!) / 1_000));
+    }, 1_000);
+    return () => {
+      window.clearInterval(timer);
+      if (elapsedStartedAtRef.current === null) return;
+      elapsedTimeRef.current += performance.now() - elapsedStartedAtRef.current;
+      elapsedStartedAtRef.current = null;
+    };
+  }, [paused]);
 
   const card = cards[index];
   const languageNames = new Intl.DisplayNames([i18n?.locale || 'en'], { type: 'language' });
@@ -287,6 +311,9 @@ export function StudyView({
         <button type="button" onClick={onClose} disabled={paused} className="crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none" aria-label={_(msg({ id: 'study.close', message: 'Close study mode' }))}>
           <X size={24} aria-hidden="true" />
         </button>
+        <span data-study-timer aria-label={_(msg({ id: 'study.elapsed-time', message: 'Elapsed study time: {time}' }).id, { time: elapsedTime })} className="min-w-12 font-mono text-sm font-bold tabular-nums text-[var(--sf-text-muted)]">
+          {elapsedTime}
+        </span>
         <div data-study-progress role="progressbar" aria-label={_(msg({ id: 'study.progress', message: 'Study progress' }))} aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={index + 1} className="crystal-chamfer min-w-0 flex-1 max-w-xl border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] px-4 py-2.5 text-center shadow-[var(--sf-panel-shadow)]">
           <div className="flex items-center justify-between gap-3 text-xs font-bold text-[var(--sf-text-muted)]">
             <span><Trans id="study.progress" message="Study progress" /></span>

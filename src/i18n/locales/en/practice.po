@@ -14,12 +14,12 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:278
+#: src/features/practice/StudyView.tsx:302
 msgid "flashcard.audio.check-pronunciation"
 msgstr "Check pronunciation"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:275
+#: src/features/practice/StudyView.tsx:299
 msgid "flashcard.audio.play-pronunciation"
 msgstr "Play pronunciation"
 
@@ -975,97 +975,102 @@ msgid "recap.xp-earned"
 msgstr "XP earned"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:293
+#: src/features/practice/StudyView.tsx:320
 msgid "study.card-count"
 msgstr "Card {current} / {total}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:287
+#: src/features/practice/StudyView.tsx:311
 msgid "study.close"
 msgstr "Close study mode"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:373
+#: src/features/practice/StudyView.tsx:314
+msgid "study.elapsed-time"
+msgstr "Elapsed study time: {time}"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:400
 msgid "study.next-card"
 msgstr "Next card"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:369
+#: src/features/practice/StudyView.tsx:396
 msgid "study.previous-card"
 msgstr "Previous card"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:290
-#: src/features/practice/StudyView.tsx:292
+#: src/features/practice/StudyView.tsx:317
+#: src/features/practice/StudyView.tsx:319
 msgid "study.progress"
 msgstr "Study progress"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:303
+#: src/features/practice/StudyView.tsx:330
 msgid "study.recall-mode"
 msgstr "Recall mode"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:306
+#: src/features/practice/StudyView.tsx:333
 msgid "study.recall-mode.adaptive"
 msgstr "Adaptive difficulty"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:310
+#: src/features/practice/StudyView.tsx:337
 msgid "study.recall-mode.cloze"
 msgstr "Fill the sentence"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:308
+#: src/features/practice/StudyView.tsx:335
 msgid "study.recall-mode.image-to-word"
 msgstr "Image → Word"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:309
+#: src/features/practice/StudyView.tsx:336
 msgid "study.recall-mode.listen-to-word"
 msgstr "Listen → Word"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:307
+#: src/features/practice/StudyView.tsx:334
 msgid "study.recall-mode.native-to-target"
 msgstr "{nativeLanguage} → {targetLanguage}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:305
+#: src/features/practice/StudyView.tsx:332
 msgid "study.recall-mode.target-to-native"
 msgstr "{targetLanguage} → {nativeLanguage}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:392
+#: src/features/practice/StudyView.tsx:419
 msgid "study.shortcut.flip-card"
 msgstr "Flip card"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:393
+#: src/features/practice/StudyView.tsx:420
 msgid "study.shortcut.previous-next"
 msgstr "Previous / next"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:394
+#: src/features/practice/StudyView.tsx:421
 msgid "study.shortcut.rate-memory"
 msgstr "Rate memory"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:395
+#: src/features/practice/StudyView.tsx:422
 msgid "study.shortcut.star-play-speak"
 msgstr "Star / play / speak"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:390
+#: src/features/practice/StudyView.tsx:417
 msgid "study.shortcuts"
 msgstr "Study shortcuts"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:324
+#: src/features/practice/StudyView.tsx:351
 msgid "study.swipe.again"
 msgstr "AGAIN 👎"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:319
+#: src/features/practice/StudyView.tsx:346
 msgid "study.swipe.good"
 msgstr "GOOD 👍"

@@ -77,6 +77,28 @@ test('study reveal keeps progress visible and scrolls rating controls into view'
   }).toBe(true);
 });
 
+test('study timer pauses for the card editor and resumes from the elapsed time', async ({ page, signIn }) => {
+  await signIn(page, '/?view=library');
+  await page.clock.install();
+  await page.getByRole('button', { name: 'Study now' }).click();
+
+  const timer = page.locator('[data-study-timer]');
+  await expect(timer).toHaveText('00:00');
+  await page.clock.runFor(2_000);
+  await expect(timer).toHaveText('00:02');
+
+  await page.getByRole('button', { name: 'Reveal answer' }).click();
+  await page.getByRole('button', { name: 'Edit card' }).first().click();
+  await expect(page.getByRole('dialog', { name: 'Edit card' })).toBeVisible();
+  await page.clock.runFor(5_000);
+  await expect(timer).toHaveText('00:02');
+
+  await page.getByRole('button', { name: 'Close editor' }).click();
+  await expect(page.getByRole('dialog', { name: 'Edit card' })).toBeHidden();
+  await page.clock.runFor(1_000);
+  await expect(timer).toHaveText('00:03');
+});
+
 async function captureStudyState(testInfo: TestInfo, page: Page, name: string) {
   const screenshot = testInfo.outputPath(`${name}.png`);
   await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide' });
