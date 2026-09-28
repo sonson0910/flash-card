@@ -115,6 +115,11 @@ Không wiring vào pipeline deploy staging (`staging:deploy:hosting` trong `pack
 ## Cập nhật B2 — verify lại (2026-09-28)
 
 - Đã xem PNG actual cho `classic dark vi` ở 390×844 rồi mới thay baseline còn cũ; trang có menu SVG nhìn thấy, không overflow control, và thứ tự hero → ba lợi ích → product sections → pricing đúng hướng `LandingScreen`/`LandingSales`. Sau đó `e2e/landing-visual.spec.ts` Chromium pass **20/20** không đổi baseline thêm.
+
+## Classic hero Canvas follow-up (2026-09-28)
+
+- Header Classic nay giữ ba điểm đến `How it works`, `Chrome extension`, `Paths`; hero dùng headline `Words that stay`/`Học từ nhớ lâu`, card `immediate` và CTA dẫn đúng section tiện ích Chrome. Đã mở tám ảnh actual Classic EN/VI × light/dark × desktop/390px và so `LandingScreen-light/dark.png` cùng `LandingSales-light/dark.png` trước khi cập nhật đúng tám baseline Chromium. Icon menu 390px nhìn thấy; test a11y/overflow trên tám state pass 8/8.
+- Ảnh demo lớn khiến ảnh trở thành LCP, nên giảm chiều cao từ 240px xuống 180px; kiểm tra lại xác nhận H1 là LCP và đường vào Library sau khi header đổi vẫn hoạt động (hai ca E2E pass 2/2). Tám visual Classic pass 8/8 không cập nhật baseline thêm; `LandingAssets.test.ts` 10/10 và typecheck pass. Dòng Canvas vẫn mở: card thiếu các badge nổi của artboard; Sales không dùng số người học, đánh giá, testimonial, trial hoặc checkout vì chưa có nguồn/contract, và `LangLanding` chờ nội dung wave tiếp theo. Firestore I/O không đổi.
 - `e2e/landing-locales.spec.ts` pass **4/4**. Hai case đầu của `landing-performance` pass; case runtime retry còn đỏ lặp lại sau khi Docker journal về 0: quan sát `AppRuntimeInitial.virtual` hai lần rồi `AppRuntimeRetry.virtual`, trong khi assertion hiện yêu cầu đúng hai request. Đây là runtime/test shared ở `src/App.tsx` / `e2e/landing-performance.spec.ts`, không sửa trong lane Landing và không che assertion.
 - `LandingPage.tsx` chỉ đổi markup/asset layout của landing và các kích thước nội tại ảnh; không thêm Firestore read, write hay subscription. `train-window.webp` tiếp tục lazy, ưu tiên thấp vì là texture opacity 4% và H1 vẫn là LCP.
 

@@ -34,38 +34,53 @@ msgid "landing.atmosphere.still-water"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:611
+#: src/features/landing/LandingPage.tsx:601
 msgid "landing.brand.crystal-wordmark"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:609
-#: src/features/landing/LandingPage.tsx:1131
+#: src/features/landing/LandingPage.tsx:599
+#: src/features/landing/LandingPage.tsx:1137
 msgid "landing.brand.plain"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1116
+#: src/features/landing/LandingPage.tsx:362
+msgid "landing.classic-hero.extension"
+msgstr "[Ëxplørë Chrømë ëxtënsïøn]"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:357
+msgid "landing.classic-hero.start"
+msgstr "[Stârt lëârnïng frëë]"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:339
+msgid "landing.classic-hero.title"
+msgstr "[Wørds<0/>thât <1>stây.</1>]"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:1122
 msgid "landing.closing.consent"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1091
+#: src/features/landing/LandingPage.tsx:1097
 msgid "landing.closing.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1076
+#: src/features/landing/LandingPage.tsx:1082
 msgid "landing.closing.eyebrow"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1085
+#: src/features/landing/LandingPage.tsx:1091
 msgid "landing.closing.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:467
+#: src/features/landing/LandingPage.tsx:457
 msgid "landing.demo.caption"
 msgstr ""
 
@@ -75,12 +90,12 @@ msgid "landing.demo.cards.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:461
+#: src/features/landing/LandingPage.tsx:451
 msgid "landing.demo.example"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:326
+#: src/features/landing/LandingPage.tsx:324
 msgid "landing.demo.flip.hide"
 msgstr ""
 
@@ -100,12 +115,12 @@ msgid "landing.demo.grade.star"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:379
+#: src/features/landing/LandingPage.tsx:369
 msgid "landing.demo.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:455
+#: src/features/landing/LandingPage.tsx:445
 msgid "landing.demo.meaning"
 msgstr ""
 
@@ -125,13 +140,13 @@ msgid "landing.demo.meaning.spelling"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:427
+#: src/features/landing/LandingPage.tsx:417
 msgid "landing.demo.part-of-speech"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:327
-#: src/features/landing/LandingPage.tsx:439
+#: src/features/landing/LandingPage.tsx:325
+#: src/features/landing/LandingPage.tsx:429
 msgid "landing.demo.reveal-prompt"
 msgstr ""
 
@@ -151,12 +166,12 @@ msgid "landing.demo.tier.new"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:851
+#: src/features/landing/LandingPage.tsx:857
 msgid "landing.extension.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:842
+#: src/features/landing/LandingPage.tsx:848
 msgid "landing.extension.eyebrow"
 msgstr ""
 
@@ -191,12 +206,12 @@ msgid "landing.extension.feature.save.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:848
+#: src/features/landing/LandingPage.tsx:854
 msgid "landing.extension.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:814
+#: src/features/landing/LandingPage.tsx:820
 msgid "landing.features.title"
 msgstr ""
 
@@ -231,32 +246,32 @@ msgid "landing.flow.read.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1150
+#: src/features/landing/LandingPage.tsx:1156
 msgid "landing.footer.copyright"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1133
+#: src/features/landing/LandingPage.tsx:1139
 msgid "landing.footer.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1147
+#: src/features/landing/LandingPage.tsx:1153
 msgid "landing.footer.extension"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1141
+#: src/features/landing/LandingPage.tsx:1147
 msgid "landing.footer.privacy"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1144
+#: src/features/landing/LandingPage.tsx:1150
 msgid "landing.footer.terms"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:786
+#: src/features/landing/LandingPage.tsx:792
 msgid "landing.hero.atmosphere"
 msgstr ""
 
@@ -267,33 +282,30 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:288
-#: src/features/landing/LandingPage.tsx:348
+#: src/features/landing/LandingPage.tsx:346
 msgid "landing.hero.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:332
+#: src/features/landing/LandingPage.tsx:330
 msgid "landing.hero.eyebrow"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:291
-#: src/features/landing/LandingPage.tsx:368
-#: src/features/landing/LandingPage.tsx:1111
+#: src/features/landing/LandingPage.tsx:1117
 msgid "landing.hero.sign-in"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:290
-#: src/features/landing/LandingPage.tsx:359
-#: src/features/landing/LandingPage.tsx:678
-#: src/features/landing/LandingPage.tsx:1102
+#: src/features/landing/LandingPage.tsx:684
+#: src/features/landing/LandingPage.tsx:1108
 msgid "landing.hero.start"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:287
-#: src/features/landing/LandingPage.tsx:341
 msgid "landing.hero.title"
 msgstr ""
 
@@ -303,47 +315,47 @@ msgid "landing.language.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:904
+#: src/features/landing/LandingPage.tsx:910
 msgid "landing.languages.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:895
+#: src/features/landing/LandingPage.tsx:901
 msgid "landing.languages.eyebrow"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:919
+#: src/features/landing/LandingPage.tsx:925
 msgid "landing.languages.pack.chinese"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:916
+#: src/features/landing/LandingPage.tsx:922
 msgid "landing.languages.pack.english"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:918
+#: src/features/landing/LandingPage.tsx:924
 msgid "landing.languages.pack.japanese"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:917
+#: src/features/landing/LandingPage.tsx:923
 msgid "landing.languages.pack.korean"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:925
+#: src/features/landing/LandingPage.tsx:931
 msgid "landing.languages.status.available"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:926
+#: src/features/landing/LandingPage.tsx:932
 msgid "landing.languages.status.in-progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:901
+#: src/features/landing/LandingPage.tsx:907
 msgid "landing.languages.title"
 msgstr ""
 
@@ -358,108 +370,118 @@ msgid "landing.meta.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:969
+#: src/features/landing/LandingPage.tsx:975
 msgid "landing.methods.context.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:963
+#: src/features/landing/LandingPage.tsx:969
 msgid "landing.methods.context.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:955
+#: src/features/landing/LandingPage.tsx:961
 msgid "landing.methods.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1009
+#: src/features/landing/LandingPage.tsx:1015
 msgid "landing.methods.open-library"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:993
+#: src/features/landing/LandingPage.tsx:999
 msgid "landing.methods.preview.caption"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:999
+#: src/features/landing/LandingPage.tsx:1005
 msgid "landing.methods.preview.quote"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:983
+#: src/features/landing/LandingPage.tsx:989
 msgid "landing.methods.recall.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:977
+#: src/features/landing/LandingPage.tsx:983
 msgid "landing.methods.recall.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:949
+#: src/features/landing/LandingPage.tsx:955
 msgid "landing.methods.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:694
+#: src/features/landing/LandingPage.tsx:700
 msgid "landing.mobile-menu.open"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:714
+#: src/features/landing/LandingPage.tsx:720
 msgid "landing.mobile-nav.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:633
-#: src/features/landing/LandingPage.tsx:739
+#: src/features/landing/LandingPage.tsx:623
+msgid "landing.nav.chrome-extension"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:638
+#: src/features/landing/LandingPage.tsx:745
 msgid "landing.nav.curriculum"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:646
-#: src/features/landing/LandingPage.tsx:756
+#: src/features/landing/LandingPage.tsx:651
+#: src/features/landing/LandingPage.tsx:762
 msgid "landing.nav.extension"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:626
-#: src/features/landing/LandingPage.tsx:726
+#: src/features/landing/LandingPage.tsx:616
+#: src/features/landing/LandingPage.tsx:732
 msgid "landing.nav.how-it-works"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:615
+#: src/features/landing/LandingPage.tsx:605
 msgid "landing.nav.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:652
-#: src/features/landing/LandingPage.tsx:763
+#: src/features/landing/LandingPage.tsx:657
+#: src/features/landing/LandingPage.tsx:769
 msgid "landing.nav.languages"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:658
-#: src/features/landing/LandingPage.tsx:770
+#: src/features/landing/LandingPage.tsx:630
+msgid "landing.nav.paths"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:663
+#: src/features/landing/LandingPage.tsx:776
 msgid "landing.nav.pricing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:670
+#: src/features/landing/LandingPage.tsx:676
 msgid "landing.nav.sign-in"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:640
-#: src/features/landing/LandingPage.tsx:749
+#: src/features/landing/LandingPage.tsx:645
+#: src/features/landing/LandingPage.tsx:755
 msgid "landing.nav.vocabulary"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1025
+#: src/features/landing/LandingPage.tsx:1031
 msgid "landing.pricing.eyebrow"
 msgstr ""
 
@@ -494,32 +516,32 @@ msgid "landing.pricing.faq.free.question"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1058
+#: src/features/landing/LandingPage.tsx:1064
 msgid "landing.pricing.faq.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1037
+#: src/features/landing/LandingPage.tsx:1043
 msgid "landing.pricing.free-vs-pro.free"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1038
+#: src/features/landing/LandingPage.tsx:1044
 msgid "landing.pricing.free-vs-pro.pro"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1036
+#: src/features/landing/LandingPage.tsx:1042
 msgid "landing.pricing.free-vs-pro.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1048
+#: src/features/landing/LandingPage.tsx:1054
 msgid "landing.pricing.price"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1051
+#: src/features/landing/LandingPage.tsx:1057
 msgid "landing.pricing.purchase-note"
 msgstr ""
 
@@ -544,7 +566,7 @@ msgid "landing.pricing.row.reviews"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1031
+#: src/features/landing/LandingPage.tsx:1037
 msgid "landing.pricing.title"
 msgstr ""
 
@@ -593,6 +615,6 @@ msgid "landing.ribbon.spaced-review"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:662
+#: src/features/landing/LandingPage.tsx:668
 msgid "shell.theme.quick-toggle"
 msgstr ""

@@ -61,8 +61,8 @@ export const landingMeta = {
   }),
 };
 
-const sampleHeadword = 'serendipity';
-const samplePronunciation = '/ˌser.ənˈdɪp.ə.ti/';
+const sampleHeadword = 'immediate';
+const samplePronunciation = '/ɪˈmiːdiət/';
 
 const videos = [
   {
@@ -304,11 +304,9 @@ function CrystalLandingHero({ onEnterApp, onSignIn, user, showLumi }: Pick<Landi
 
 function ClassicLandingHero({
   onEnterApp,
-  onSignIn,
-  user,
   showLumi,
   actionClass,
-}: Pick<LandingPageProps, 'onEnterApp' | 'onSignIn' | 'user'> & {
+}: Pick<LandingPageProps, 'onEnterApp'> & {
   readonly showLumi: boolean;
   readonly actionClass: string;
 }) {
@@ -331,7 +329,7 @@ function ClassicLandingHero({
         <p className="mb-5 inline-flex rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-1 text-sm font-bold text-[var(--sf-brand-text)]">
           <Trans
             id="landing.hero.eyebrow"
-            message="English vocabulary, remembered"
+            message="English for Vietnamese speakers"
           />
         </p>
         <h1
@@ -339,9 +337,9 @@ function ClassicLandingHero({
           className="font-serif-hero text-balance text-[clamp(3.5rem,8vw,7.6rem)] leading-[.88] tracking-[-.055em]"
         >
           <Trans
-            id="landing.hero.title"
-            message="Remember words.<0/>Use them when it matters."
-            components={{ 0: <br /> }}
+            id="landing.classic-hero.title"
+            message="Words<0/>that <1>stay.</1>"
+            components={{ 0: <br />, 1: <em /> }}
           />
         </h1>
         <p className="mt-7 max-w-xl text-pretty text-base leading-7 text-[var(--sf-text-muted)] sm:text-lg">
@@ -356,21 +354,13 @@ function ClassicLandingHero({
             onClick={onEnterApp}
             className="brand-action inline-flex min-h-12 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-6 font-black text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer"
           >
-            <Trans id="landing.hero.start" message="Start learning" />
+            <Trans id="landing.classic-hero.start" message="Start learning free" />
             <ArrowRight size={18} aria-hidden="true" />
           </button>
-          {onSignIn && !user && (
-            <button
-              type="button"
-              onClick={() => void onSignIn()}
-              className={actionClass}
-            >
-              <Trans
-                id="landing.hero.sign-in"
-                message="Sign in to sync"
-              />
-            </button>
-          )}
+          <a href="#extension" className={`${actionClass} inline-flex items-center`}>
+            <Puzzle size={18} aria-hidden="true" />
+            <span className="ml-2"><Trans id="landing.classic-hero.extension" message="Explore Chrome extension" /></span>
+          </a>
         </div>
       </div>
       <aside
@@ -424,7 +414,7 @@ function ClassicLandingHero({
                   className="mb-5 h-28 w-full rounded-2xl object-cover"
                 />
                 <p className="text-xs font-black uppercase tracking-[.16em] text-[var(--sf-text-muted)]">
-                  <Trans id="landing.demo.part-of-speech" message="Noun" />
+                  <Trans id="landing.demo.part-of-speech" message="Adjective" />
                 </p>
                 <p
                   lang="en"
@@ -454,13 +444,13 @@ function ClassicLandingHero({
                 <p className="font-bold">
                   <Trans
                     id="landing.demo.meaning"
-                    message="a happy discovery by chance"
+                    message="happening or done without delay"
                   />
                 </p>
                 <p className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]">
                   <Trans
                     id="landing.demo.example"
-                    message="Finding that little bookshop was pure serendipity."
+                    message="The new policy takes immediate effect."
                   />
                 </p>
                 <p className="mt-6 text-sm font-semibold text-[var(--sf-brand-text)]">
@@ -625,41 +615,57 @@ export function LandingPage({
                 >
                   <Trans id="landing.nav.how-it-works" message="How it works" />
                 </a>
-                <button
-                  type="button"
-                  onClick={onOpenCatalog ?? onEnterApp}
-                  className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
-                >
-                  <Trans id="landing.nav.curriculum" message="Curriculum" />
-                </button>
-                <button
-                  type="button"
-                  onClick={onOpenLibrary ?? onEnterApp}
-                  className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
-                >
-                  <Trans id="landing.nav.vocabulary" message="Vocabulary" />
-                </button>
-                <a
-                  href="#extension"
-                  className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
-                >
-                  <Trans id="landing.nav.extension" message="Extension" />
-                </a>
-                <a
-                  href="#languages"
-                  className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
-                >
-                  <Trans id="landing.nav.languages" message="Languages" />
-                </a>
-                <a
-                  href="#pricing"
-                  className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
-                >
-                  <Trans id="landing.nav.pricing" message="Pricing & access" />
-                </a>
+                {family === "classic" ? <>
+                  <a
+                    href="#extension"
+                    className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                  >
+                    <Trans id="landing.nav.chrome-extension" message="Chrome extension" />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={onOpenCatalog ?? onEnterApp}
+                    className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                  >
+                    <Trans id="landing.nav.paths" message="Paths" />
+                  </button>
+                </> : <>
+                  <button
+                    type="button"
+                    onClick={onOpenCatalog ?? onEnterApp}
+                    className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                  >
+                    <Trans id="landing.nav.curriculum" message="Curriculum" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onOpenLibrary ?? onEnterApp}
+                    className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                  >
+                    <Trans id="landing.nav.vocabulary" message="Vocabulary" />
+                  </button>
+                  <a
+                    href="#extension"
+                    className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                  >
+                    <Trans id="landing.nav.extension" message="Extension" />
+                  </a>
+                  <a
+                    href="#languages"
+                    className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                  >
+                    <Trans id="landing.nav.languages" message="Languages" />
+                  </a>
+                  <a
+                    href="#pricing"
+                    className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                  >
+                    <Trans id="landing.nav.pricing" message="Pricing & access" />
+                  </a>
+                </>}
               </nav>
               <div className="hidden items-center gap-2 md:flex">
-                {family === 'crystal' && <button type="button" className="landing-theme-toggle" onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')} aria-label={_(msg({ id: 'shell.theme.quick-toggle', message: 'Switch light and dark mode' }))}>{mode === 'dark' ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}</button>}
+                <button type="button" className="landing-theme-toggle" onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')} aria-label={_(msg({ id: 'shell.theme.quick-toggle', message: 'Switch light and dark mode' }))}>{mode === 'dark' ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}</button>
                 <LocaleLinks compact />
                 {onSignIn && !user && (
                   <button
@@ -780,7 +786,7 @@ export function LandingPage({
             </header>
             {family === "crystal"
               ? <CrystalLandingHero onEnterApp={onEnterApp} onSignIn={onSignIn} user={user} showLumi={showLumi} />
-              : <ClassicLandingHero onEnterApp={onEnterApp} onSignIn={onSignIn} user={user} showLumi={showLumi} actionClass={actionClass} />}
+              : <ClassicLandingHero onEnterApp={onEnterApp} showLumi={showLumi} actionClass={actionClass} />}
             <fieldset className="landing-atmospheres mb-3 border-l border-[var(--sf-border)] pl-4">
               <legend className="mb-2 text-xs font-bold text-[var(--sf-text-muted)]">
                 <Trans
