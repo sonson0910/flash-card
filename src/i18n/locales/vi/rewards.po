@@ -14,17 +14,17 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:58
+#: src/features/rewards/AnimeReveal.tsx:65
 msgid "rewards.reveal.close"
 msgstr "Đóng phần thưởng"
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:62
+#: src/features/rewards/AnimeReveal.tsx:69
 msgid "rewards.reveal.equip-error"
 msgstr "Không thể dùng phần thưởng này. Vui lòng thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:63
+#: src/features/rewards/AnimeReveal.tsx:70
 msgid "rewards.reveal.later"
 msgstr "Để sau"
 
@@ -49,14 +49,14 @@ msgid "rewards.reveal.levelup.title"
 msgstr "Đã lên cấp"
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:61
+#: src/features/rewards/AnimeReveal.tsx:68
 msgid "rewards.reveal.rewards-label"
 msgstr "Phần thưởng đã mở khóa"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:25
 msgid "rewards.reveal.streak.continue"
-msgstr "Tiếp tục cố gắng"
+msgstr "Tiếp tục học"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:25
@@ -72,6 +72,21 @@ msgstr "Cột mốc chuỗi ngày"
 #: src/features/rewards/AnimeReveal.tsx:25
 msgid "rewards.reveal.streak.title"
 msgstr "Đạt mốc chuỗi ngày"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:33
+msgid "rewards.reveal.tier.learning"
+msgstr "Đang học"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:35
+msgid "rewards.reveal.tier.mastered"
+msgstr "Đã thành thạo"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:31
+msgid "rewards.reveal.tier.new"
+msgstr "Mới"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:24

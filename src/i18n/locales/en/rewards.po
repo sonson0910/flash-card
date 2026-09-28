@@ -14,17 +14,17 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:58
+#: src/features/rewards/AnimeReveal.tsx:65
 msgid "rewards.reveal.close"
 msgstr "Close reward"
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:62
+#: src/features/rewards/AnimeReveal.tsx:69
 msgid "rewards.reveal.equip-error"
 msgstr "Could not use this reward. Try again."
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:63
+#: src/features/rewards/AnimeReveal.tsx:70
 msgid "rewards.reveal.later"
 msgstr "Later"
 
@@ -49,14 +49,14 @@ msgid "rewards.reveal.levelup.title"
 msgstr "Level up"
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:61
+#: src/features/rewards/AnimeReveal.tsx:68
 msgid "rewards.reveal.rewards-label"
 msgstr "Unlocked rewards"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:25
 msgid "rewards.reveal.streak.continue"
-msgstr "Keep going"
+msgstr "Continue learning"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:25
@@ -72,6 +72,21 @@ msgstr "Streak milestone"
 #: src/features/rewards/AnimeReveal.tsx:25
 msgid "rewards.reveal.streak.title"
 msgstr "Streak reached"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:33
+msgid "rewards.reveal.tier.learning"
+msgstr "Learning"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:35
+msgid "rewards.reveal.tier.mastered"
+msgstr "Mastered"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:31
+msgid "rewards.reveal.tier.new"
+msgstr "New"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:24

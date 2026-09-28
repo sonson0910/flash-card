@@ -234,7 +234,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(result.reviewFinality).toBe('committed');
   });
 
-  it('forwards the authoritative review outcome with its operation ID, including a replay', async () => {
+  it('forwards the pre-review card with the authoritative outcome for a tier transition', async () => {
     const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
     const fields = scheduleReview(card, 'easy', reviewedAt);
     const authoritative = { ...card, ...fields, revision: 4, libraryEpoch: 2 };
@@ -258,7 +258,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(harness.onReviewOutcome).toHaveBeenCalledWith({
       gamification: { xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: [] },
       ceremonyEvents: ['tierup'],
-    }, mutation.operationId, authoritative);
+    }, mutation.operationId, card);
   });
 
   it('fails closed when an immediate review has no valid final history entry', async () => {

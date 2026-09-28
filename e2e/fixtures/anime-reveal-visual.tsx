@@ -14,12 +14,13 @@ const canvasImage = new URL('../../docs/design/sonflash-redesign/canvas/assets/b
 const canvasPayloads: Record<AnimeRevealEventKind, AnimeRevealSourcePayload> = {
   tierup: {
     headword: 'Instant', translation: 'Khoảnh khắc', imageUrl: canvasImage,
+    previousValue: 'new', currentValue: 'mastered',
   },
   streak: {
     currentValue: '30',
   },
   levelup: {
-    currentValue: '13',
+    previousValue: '12', currentValue: '13',
   },
 };
 

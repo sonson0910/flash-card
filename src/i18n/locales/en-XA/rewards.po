@@ -14,81 +14,96 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:58
+#: src/features/rewards/AnimeReveal.tsx:65
 msgid "rewards.reveal.close"
-msgstr ""
+msgstr "[Cløsë rëwård]"
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:62
+#: src/features/rewards/AnimeReveal.tsx:69
 msgid "rewards.reveal.equip-error"
-msgstr ""
+msgstr "[Cøüld nøt üsë thïs rëwård. Trÿ âgâïn.]"
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:63
+#: src/features/rewards/AnimeReveal.tsx:70
 msgid "rewards.reveal.later"
-msgstr ""
+msgstr "[Lâtër]"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:26
 msgid "rewards.reveal.levelup.description"
-msgstr ""
+msgstr "[Yøü ünløckëd thë Crïmsøn Wïng frâmë ând Wørd Cøllëctør tïtlë. Yøü cân høld üp tø thrëë hïnt tøkëns.]"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:26
 msgid "rewards.reveal.levelup.equip"
-msgstr ""
+msgstr "[Ûsë frâmë]"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:26
 msgid "rewards.reveal.levelup.kicker"
-msgstr ""
+msgstr "[Lëvël üp]"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:26
 msgid "rewards.reveal.levelup.title"
-msgstr ""
+msgstr "[Lëvël üp]"
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:61
+#: src/features/rewards/AnimeReveal.tsx:68
 msgid "rewards.reveal.rewards-label"
-msgstr ""
+msgstr "[Ûnløckëd rëwårds]"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:25
 msgid "rewards.reveal.streak.continue"
-msgstr ""
+msgstr "[Cøntïnüë lëârnïng]"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:25
 msgid "rewards.reveal.streak.description"
-msgstr ""
+msgstr "[Yøür vërïfïëd rëvïëw strëåk ünløckëd Wëb Wåndërër. Yøü cân høld ønë strëåk frëëzë.]"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:25
 msgid "rewards.reveal.streak.kicker"
-msgstr ""
+msgstr "[Strëåk mïlëstønë]"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:25
 msgid "rewards.reveal.streak.title"
-msgstr ""
+msgstr "[Strëåk rëâchëd]"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:33
+msgid "rewards.reveal.tier.learning"
+msgstr "[Lëârnïng]"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:35
+msgid "rewards.reveal.tier.mastered"
+msgstr "[Mâstërëd]"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:31
+msgid "rewards.reveal.tier.new"
+msgstr "[Nëw]"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:24
 msgid "rewards.reveal.tierup.continue"
-msgstr ""
+msgstr "[Cøntïnüë lëârnïng]"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:24
 msgid "rewards.reveal.tierup.description"
-msgstr ""
+msgstr "[Thïs cård ïs nØw måstërëd. Rëvïëw ït âgâïn whën ït ïs düë.]"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:24
 msgid "rewards.reveal.tierup.kicker"
-msgstr ""
+msgstr "[Tïër üp]"
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:24
 msgid "rewards.reveal.tierup.title"
-msgstr ""
+msgstr "[Mâstërëd]"

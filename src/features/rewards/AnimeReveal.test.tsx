@@ -27,7 +27,8 @@ describe('AnimeReveal', () => {
   it('renders the level-up equip and later actions, while other events continue', () => {
     expect(render('levelup')).toContain('Use frame');
     expect(render('levelup')).toContain('Later');
-    expect(render('streak')).toContain('Keep going');
+    expect(render('levelup')).toContain('12 <i>→</i> 13');
+    expect(render('streak')).toContain('Continue learning');
     expect(render('streak')).toContain('anime-reveal__streak-art');
     expect(render('streak')).not.toContain('Later');
   });

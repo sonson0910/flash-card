@@ -178,7 +178,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               current.onReviewOutcome?.({
                 ...(reviewResult.gamification ? { gamification: reviewResult.gamification } : {}),
                 ...(reviewResult.ceremonyEvents ? { ceremonyEvents: reviewResult.ceremonyEvents } : {}),
-              }, mutation.operationId, reviewResult.card);
+              }, mutation.operationId, source);
             }
             publication = {
               kind: 'patch',

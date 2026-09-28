@@ -22,22 +22,29 @@ export interface AnimeRevealProps {
 }
 const copy = {
   tierup: { kicker: <Trans id="rewards.reveal.tierup.kicker" message="Tier up" />, title: <Trans id="rewards.reveal.tierup.title" message="Mastered" />, description: <Trans id="rewards.reveal.tierup.description" message="This card is now mastered. Review it again when it is due." />, action: <Trans id="rewards.reveal.tierup.continue" message="Continue learning" /> },
-  streak: { kicker: <Trans id="rewards.reveal.streak.kicker" message="Streak milestone" />, title: <Trans id="rewards.reveal.streak.title" message="Streak reached" />, description: <Trans id="rewards.reveal.streak.description" message="Your verified review streak unlocked Web Wanderer. You can hold one streak freeze." />, action: <Trans id="rewards.reveal.streak.continue" message="Keep going" /> },
+  streak: { kicker: <Trans id="rewards.reveal.streak.kicker" message="Streak milestone" />, title: <Trans id="rewards.reveal.streak.title" message="Streak reached" />, description: <Trans id="rewards.reveal.streak.description" message="Your verified review streak unlocked Web Wanderer. You can hold one streak freeze." />, action: <Trans id="rewards.reveal.streak.continue" message="Continue learning" /> },
   levelup: { kicker: <Trans id="rewards.reveal.levelup.kicker" message="Level up" />, title: <Trans id="rewards.reveal.levelup.title" message="Level up" />, description: <Trans id="rewards.reveal.levelup.description" message="You unlocked the Crimson Wing frame and Word Collector title. You can hold up to three hint tokens." />, action: <Trans id="rewards.reveal.levelup.equip" message="Use frame" /> },
 } as const;
 
 function TierArtifact({ payload }: { payload?: AnimeRevealSourcePayload }) {
+  const tierLabel = (value?: string) => value === 'new'
+    ? <Trans id="rewards.reveal.tier.new" message="New" />
+    : value === 'learning'
+      ? <Trans id="rewards.reveal.tier.learning" message="Learning" />
+      : value === 'mastered'
+        ? <Trans id="rewards.reveal.tier.mastered" message="Mastered" />
+        : value;
   return <div className="anime-reveal__tier-art" aria-hidden="true"><div className="anime-reveal__tier-card">
     {payload?.imageUrl ? <img src={payload.imageUrl} alt="" /> : <div className="anime-reveal__tier-image" />}
     <div>{payload?.lexicalLabel ? <small>{payload.lexicalLabel}</small> : null}{payload?.headword ? <strong>{payload.headword}</strong> : null}{payload?.translation ? <span>{payload.translation}</span> : null}
-      {payload?.previousValue && payload.currentValue ? <b>{payload.previousValue} <i>→</i> {payload.currentValue}</b> : null}</div>
+      {payload?.previousValue && payload.currentValue ? <b>{tierLabel(payload.previousValue)} <i>→</i> {tierLabel(payload.currentValue)}</b> : null}</div>
   </div><span className="anime-reveal__flare" /></div>;
 }
 function StreakArtifact({ value }: { value?: string }) {
   return <div className="anime-reveal__streak-art" aria-hidden="true"><svg viewBox="0 0 24 28"><path d="M12 1c1.3 4.2-1.8 6.6-1.8 9.8 0 1.7 1.2 3 2.8 3 1.8 0 2.9-1.4 2.6-3.6 2.8 2 4.2 5.1 4.2 8.1C19.8 23.4 16.3 27 12 27s-7.8-2.9-7.8-7.3C4.2 14.1 9.4 11.4 12 1z" /></svg>{value ? <strong>{value}</strong> : null}<span>★</span></div>;
 }
-function LevelArtifact({ value }: { value?: string }) {
-  return <div className="anime-reveal__level-art" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" /></svg><div><small>LV</small>{value ? <strong>{value}</strong> : null}</div></div>;
+function LevelArtifact({ previousValue, currentValue }: Pick<AnimeRevealSourcePayload, 'previousValue' | 'currentValue'>) {
+  return <div className="anime-reveal__level-art" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" /></svg><div><small>LV</small>{previousValue && currentValue ? <strong className="anime-reveal__level-transition">{previousValue} <i>→</i> {currentValue}</strong> : currentValue ? <strong>{currentValue}</strong> : null}</div></div>;
 }
 
 export function AnimeReveal({ open, event, payload, onContinue, onEquip, onLater, lumiEnabled = true, reducedMotion }: AnimeRevealProps) {
@@ -49,7 +56,7 @@ export function AnimeReveal({ open, event, payload, onContinue, onEquip, onLater
   useEffect(() => { if (open) { setIsEquipping(false); setEquipFailed(false); } }, [open]);
   const later = () => { if (!isEquipping) onLater(); };
   const equip = async () => { if (isEquipping) return; setIsEquipping(true); setEquipFailed(false); try { await onEquip(); } catch { setEquipFailed(true); } finally { setIsEquipping(false); } };
-  const artifact = event === 'tierup' ? <TierArtifact payload={payload} /> : event === 'streak' ? <StreakArtifact value={payload?.currentValue} /> : <LevelArtifact value={payload?.currentValue} />;
+  const artifact = event === 'tierup' ? <TierArtifact payload={payload} /> : event === 'streak' ? <StreakArtifact value={payload?.currentValue} /> : <LevelArtifact previousValue={payload?.previousValue} currentValue={payload?.currentValue} />;
   return <Dialog.Root open={open} onOpenChange={nextOpen => { if (!nextOpen) later(); }}><Dialog.Portal>
     <Dialog.Overlay className="anime-reveal__overlay" />
     <Dialog.Content className="anime-reveal" data-event={event} data-motion={motionReduced ? 'reduced' : 'full'} onEscapeKeyDown={event => { if (isEquipping) event.preventDefault(); }} onPointerDownOutside={event => { if (isEquipping) event.preventDefault(); }}>

@@ -30,7 +30,7 @@ import { useCatalogUnitContinuation } from './useCatalogUnitContinuation';
 import { useAppCardMediaHydration } from './useAppCardMediaHydration';
 export interface LearningCeremony {
   ownerId: string; operationId: string; events: readonly CeremonyEvent[];
-  card?: Pick<CardData, 'word' | 'translation' | 'imageUrl'>; gamification?: VerifiedGamificationOutcome;
+  card?: CardData; gamification?: VerifiedGamificationOutcome;
 }
 interface UseAppLearningCoordinationOptions {
   library: AppLibraryRuntime;

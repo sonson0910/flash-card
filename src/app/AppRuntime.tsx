@@ -32,6 +32,7 @@ import { OnboardingGate } from '../features/onboarding/OnboardingGate';
 import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
 import type { AnimeRevealEventKind, AnimeRevealSourcePayload } from '../features/rewards/AnimeReveal';
 import type { LearningCeremony } from './useAppLearningCoordination';
+import { getLibraryCardTier } from '../features/library/libraryViewModel';
 import '../styles/shell.css';
 
 const AppOverlays = lazy(() => import('../components/AppOverlays').then(module => ({ default: module.AppOverlays })));
@@ -234,11 +235,16 @@ export default function AppRuntime({
       ? globalThis.document.activeElement
       : null;
     const payloadFor = (event: AnimeRevealEventKind): AnimeRevealSourcePayload => {
-      if (event === 'tierup') return {
-        headword: ceremony.card?.word,
-        translation: ceremony.card?.translation,
-        imageUrl: ceremony.card?.imageUrl ?? undefined,
-      };
+      if (event === 'tierup') {
+        const previousTier = ceremony.card ? getLibraryCardTier(ceremony.card) : undefined;
+        return {
+          headword: ceremony.card?.word,
+          translation: ceremony.card?.translation,
+          imageUrl: ceremony.card?.imageUrl ?? undefined,
+          previousValue: previousTier,
+          currentValue: 'mastered',
+        };
+      }
       if (event === 'streak') return {
         currentValue: ceremony.gamification ? String(ceremony.gamification.streak) : undefined,
         rewardLabels: [
@@ -247,6 +253,7 @@ export default function AppRuntime({
         ],
       };
       return {
+        previousValue: ceremony.gamification?.level === 13 ? '12' : undefined,
         currentValue: ceremony.gamification ? String(ceremony.gamification.level) : undefined,
         rewardLabels: [
           _(msg({ id: 'rewards.reveal.level.frame', message: 'Crimson Wing frame' })),
@@ -263,9 +270,11 @@ export default function AppRuntime({
   const dismissCeremony = useCallback(() => {
     setCeremonyState(current => {
       const dismissal = dismissQueuedCeremony(current);
-      if (dismissal.focusReturnTarget) {
+      if (current.queue.length === 1) {
         globalThis.requestAnimationFrame?.(() => {
-          if (dismissal.focusReturnTarget?.isConnected) dismissal.focusReturnTarget.focus();
+          const recapButton = globalThis.document?.querySelector<HTMLButtonElement>('[data-session-recap] button');
+          if (recapButton?.isConnected) recapButton.focus();
+          else if (dismissal.focusReturnTarget?.isConnected) dismissal.focusReturnTarget.focus();
         });
       }
       return dismissal.state;

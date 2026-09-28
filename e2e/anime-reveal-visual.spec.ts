@@ -67,6 +67,8 @@ for (const theme of themes) for (const viewport of viewports) for (const event o
     await expect(page.locator('.anime-reveal')).toHaveAttribute('data-event', event);
     await expect(page.locator('.anime-reveal')).toHaveAttribute('data-motion', 'reduced');
     await expect(page.locator('.anime-reveal')).not.toContainText(/\+25 XP|\+100 XP|daily plan now adds|you now hold 2/i);
+    if (event === 'tierup') await expect(page.locator('.anime-reveal__tier-card')).toContainText('New → Mastered');
+    if (event === 'levelup') await expect(page.locator('.anime-reveal__level-art')).toContainText('12 → 13');
     await expect(page.locator('html')).toHaveAttribute('data-theme-family', theme.family);
     if (theme.mode === 'dark') await expect(page.locator('html')).toHaveClass(/\bdark\b/);
     else await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
