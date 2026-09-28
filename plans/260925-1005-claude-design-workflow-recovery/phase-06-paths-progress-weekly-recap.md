@@ -83,6 +83,8 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 
 > **Functions test runner 2026-09-28.** Một lượt `verify:deploy` fail 3 callable tests do Vitest chạy nhiều worker khiến import vượt deadline; ba file fail pass 15/15 và toàn suite Functions pass 430/430 khi chạy 1 worker, không sửa timeout/assertion. `functions/vitest.config.ts` nay cố định 1 fork worker để chính gate mặc định dùng cùng cấu hình; focused callable 15/15 pass. Không đổi production behavior hoặc Firestore I/O.
 
+> **Group gate 2026-09-28.** `verify:deploy` nguyên lệnh exit 0 sau runner fix: frontend 2296/2296, Functions 430/430 (44 emulator-only tests được chạy riêng), Rules 93/93, Functions Emulator integration 44/44, audit ngưỡng high exit 0. `i18n:extract`/`i18n:check`, `tsc`, build và bundle pass; initial JS 70.935/71.000 B, CSS 29.466/29.500 B gzip. `paths-progress-visual.spec.ts` Chromium rerun 17/17 pass không update baseline. Audit còn advisory moderate từ dependency hiện có; không push/deploy hay chạm Firebase thật.
+
 Stats/ActivityHeatmap/catalog tests; e2e/paths-progress-visual.spec.ts và catalog-workspace.spec.ts; new weekly-recap unit+export journey; gates chung.
 
 Hợp đồng chung: [acceptance-contract.md](acceptance-contract.md). Tên test mới là đề xuất; trước chạy phải kiểm inventory file thực, không báo file vắng là PASS. Với flow có mutation, test dùng emulator/fixtures, không dữ liệu người học hay Gemini thật.
