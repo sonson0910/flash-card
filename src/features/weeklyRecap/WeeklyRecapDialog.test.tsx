@@ -40,6 +40,9 @@ describe('WeeklyRecapDialog', () => {
     expect(html).toContain('Sep 21');
     expect(html).toContain('Sep 27');
     expect(html).toContain('100'); // 40 + 60 XP inside the window.
+    expect(html).toContain('weekly-recap-screen');
+    expect(html).toContain('weekly-recap-card');
+    expect(html).toContain('weekly-recap-controls');
   });
 
   it('surfaces how many of the real (all-time) milestone badges are unlocked', () => {

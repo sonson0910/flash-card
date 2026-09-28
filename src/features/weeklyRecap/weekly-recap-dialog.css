@@ -1,0 +1,40 @@
+.weekly-recap-dialog-overlay { position: fixed; inset: 0; z-index: 100; background: var(--sf-scrim); backdrop-filter: blur(5px); }
+.weekly-recap-dialog { position: fixed; inset: 50% auto auto 50%; z-index: 101; width: min(calc(100vw - 2rem), 68rem); max-height: calc(100dvh - 2rem); overflow: auto; transform: translate(-50%, -50%); border: 1px solid var(--sf-border); border-radius: 28px; background: var(--sf-dialog-bg, var(--sf-surface)); color: var(--sf-text); box-shadow: 0 30px 60px -28px var(--sf-shadow); outline: none; }
+.weekly-recap-dialog__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.5rem 1.5rem 0; }
+.weekly-recap-dialog__title { margin: 0; font-family: var(--font-display, inherit); font-size: clamp(1.8rem, 4vw, 2.7rem); font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.weekly-recap-dialog__close { display: inline-flex; min-width: 2.75rem; min-height: 2.75rem; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 50%; color: var(--sf-text-muted); }
+.weekly-recap-dialog__body { padding: 1.25rem 1.5rem 1.5rem; }
+
+.weekly-recap-screen { display: grid; grid-template-columns: minmax(16rem, .86fr) minmax(0, 1.14fr); align-items: start; gap: clamp(1.25rem, 3vw, 3rem); }
+.weekly-recap-card { min-width: 0; border: 1px solid color-mix(in srgb, var(--sf-brand) 34%, var(--sf-border)); border-radius: 24px; background: linear-gradient(145deg, color-mix(in srgb, var(--sf-brand) 17%, var(--sf-surface)), var(--sf-surface)); padding: clamp(1.1rem, 3vw, 1.8rem); box-shadow: 0 22px 40px -32px var(--sf-shadow); }
+.weekly-recap-card__header { padding-bottom: 1.2rem; border-bottom: 1px solid var(--sf-border); }
+.weekly-recap-card__header .premium-kicker { margin: 0; color: var(--sf-brand-text); font-size: .68rem; }
+.weekly-recap-card__range { margin: .4rem 0 0; font-family: var(--font-display, inherit); font-size: 1.25rem; font-weight: 800; }
+.weekly-recap-card__metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .55rem; margin: 1.2rem 0 0; }
+.weekly-recap-card__metrics > div { min-width: 0; border: 1px solid var(--sf-border); border-radius: 13px; background: var(--sf-surface-raised); padding: .7rem; }
+.weekly-recap-card__metrics dt { color: var(--sf-text-muted); font-size: .64rem; font-weight: 800; letter-spacing: .08em; line-height: 1.25; text-transform: uppercase; }
+.weekly-recap-card__metrics dd { margin: .45rem 0 0; overflow: hidden; font-family: var(--font-display, inherit); font-size: clamp(1.2rem, 3vw, 1.8rem); font-weight: 800; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+.weekly-recap-card__heatmap { margin-top: 1.2rem; }
+.weekly-recap-card__heatmap > div { justify-content: space-between; gap: .4rem; }
+.weekly-recap-card__heatmap span { width: min(2rem, 10vw); height: min(2rem, 10vw); }
+.weekly-recap-card__milestones { display: flex; align-items: flex-start; gap: .5rem; margin: 1.2rem 0 0; padding-top: 1rem; border-top: 1px solid var(--sf-border); color: var(--sf-text); font-size: .8rem; font-weight: 700; line-height: 1.4; }
+.weekly-recap-card__milestones svg { flex: none; color: var(--sf-brand-text); }
+.weekly-recap-card__empty { margin-top: 1.2rem; border: 1px dashed var(--sf-border); border-radius: 14px; padding: 1rem; color: var(--sf-text-muted); font-size: .86rem; line-height: 1.5; }
+
+.weekly-recap-controls { display: flex; min-width: 0; flex-direction: column; gap: 1rem; }
+.weekly-recap-controls__unavailable { border-left: 3px solid var(--sf-brand); padding: .2rem 0 .2rem .8rem; color: var(--sf-text-muted); font-size: .82rem; line-height: 1.5; }
+.weekly-recap-controls__selection { min-width: 0; margin: 0; border: 0; padding: 0; }
+.weekly-recap-controls__selection legend { margin-bottom: .55rem; color: var(--sf-text-muted); font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.weekly-recap-controls__selection > div { display: flex; flex-wrap: wrap; gap: .45rem; }
+.weekly-recap-controls__selection label { display: inline-flex; min-height: 2.3rem; align-items: center; gap: .42rem; border: 1px solid var(--sf-border); border-radius: 999px; background: var(--sf-surface-raised); padding: 0 .7rem; color: var(--sf-text); font-size: .77rem; font-weight: 700; }
+.weekly-recap-controls__selection input { width: .9rem; height: .9rem; margin: 0; accent-color: var(--sf-brand); }
+.weekly-recap-controls__caption { display: block; color: var(--sf-text); font-size: .82rem; font-weight: 800; }
+.weekly-recap-controls__caption textarea { box-sizing: border-box; width: 100%; margin-top: .55rem; border: 1px solid var(--sf-border); border-radius: 14px; padding: .75rem; color: var(--sf-text); font: inherit; font-weight: 500; resize: vertical; }
+.weekly-recap-controls__caption > span { display: block; margin-top: .25rem; color: var(--sf-text-muted); font-size: .72rem; font-variant-numeric: tabular-nums; text-align: right; }
+.weekly-recap-controls__privacy { margin: 0; color: var(--sf-text-muted); font-size: .74rem; line-height: 1.45; }
+.weekly-recap-controls__outcome,.weekly-recap-controls__error { margin: 0; font-size: .82rem; font-weight: 700; }
+.weekly-recap-controls__outcome { color: var(--sf-brand-text); }.weekly-recap-controls__error { color: var(--sf-danger); }
+.weekly-recap-controls__actions { display: flex; flex-wrap: wrap; gap: .65rem; }
+.weekly-recap-controls__actions button { display: inline-flex; min-height: 2.75rem; align-items: center; justify-content: center; gap: .45rem; border: 1px solid var(--sf-border); border-radius: 999px; background: var(--sf-surface-raised); padding: .55rem 1rem; color: var(--sf-text); font-size: .84rem; font-weight: 800; }.weekly-recap-controls__actions .brand-action { border-color: var(--sf-brand); background: var(--sf-brand); color: var(--sf-on-brand); }.weekly-recap-controls__actions button:disabled { cursor: not-allowed; opacity: .6; }
+
+@media (max-width: 640px) { .weekly-recap-dialog { width: min(calc(100vw - 1rem), 68rem); max-height: calc(100dvh - 1rem); border-radius: 22px; } .weekly-recap-dialog__header { padding: 1.15rem 1rem 0; } .weekly-recap-dialog__body { padding: 1rem; } .weekly-recap-screen { grid-template-columns: 1fr; gap: 1.25rem; } .weekly-recap-card { border-radius: 18px; } .weekly-recap-card__metrics { gap: .4rem; } .weekly-recap-card__metrics > div { padding: .6rem; } .weekly-recap-card__metrics dt { font-size: .58rem; } .weekly-recap-card__metrics dd { font-size: 1.15rem; } .weekly-recap-controls__actions > button { flex: 1; } }

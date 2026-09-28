@@ -16,6 +16,7 @@ import {
 import { resolveWeeklyRecapExportTheme } from './weeklyRecapTheme';
 import { downloadWeeklyRecapPng, shareWeeklyRecapPng, type WeeklyRecapShareOutcome } from './weeklyRecapShare';
 import { WeeklyRecapScreen } from './WeeklyRecapScreen';
+import './weekly-recap-dialog.css';
 
 export interface WeeklyRecapDialogProps {
   readonly open: boolean;
@@ -90,13 +91,13 @@ export default function WeeklyRecapDialog({ open, onOpenChange, stats, now = () 
 
   return <Dialog.Root open={open} onOpenChange={onOpenChange}>
     <Dialog.Portal>
-      <Dialog.Overlay className="fixed inset-0 z-[100] bg-[var(--sf-scrim)] backdrop-blur-sm" />
-      <Dialog.Content className="crystal-chamfer fixed left-1/2 top-1/2 z-[101] max-h-[90dvh] w-[min(92vw,32rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl outline-none sm:p-7">
-        <div className="flex items-start justify-between gap-4">
-          <Dialog.Title className="text-2xl font-black tracking-tight"><Trans id="weeklyRecap.dialog.title" message="Your weekly recap" /></Dialog.Title>
-          <Dialog.Close aria-label={_(msg({ id: 'weeklyRecap.dialog.close', message: 'Close' }))} className="liquid-control flex size-10 shrink-0 items-center justify-center rounded-full text-[var(--sf-text-muted)]"><X size={18} /></Dialog.Close>
+      <Dialog.Overlay className="weekly-recap-dialog-overlay" />
+      <Dialog.Content className="weekly-recap-dialog crystal-chamfer">
+        <div className="weekly-recap-dialog__header">
+          <Dialog.Title className="weekly-recap-dialog__title"><Trans id="weeklyRecap.dialog.title" message="Your weekly recap" /></Dialog.Title>
+          <Dialog.Close aria-label={_(msg({ id: 'weeklyRecap.dialog.close', message: 'Close' }))} className="weekly-recap-dialog__close liquid-control"><X size={18} /></Dialog.Close>
         </div>
-        <div className="mt-4">
+        <div className="weekly-recap-dialog__body">
           <WeeklyRecapScreen
             data={data}
             dateRangeLabel={dateRangeLabel}

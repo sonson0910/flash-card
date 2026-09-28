@@ -306,6 +306,32 @@ test('weekly recap opens with real totals computed from verified XP history', as
   await expect(page.getByRole('dialog', { name: /your weekly recap/i }).getByRole('textbox', { name: /caption/i })).not.toHaveValue('A great study week!');
 });
 
+for (const theme of themes) for (const viewport of viewports) {
+  test(`${theme.family} ${theme.mode} weekly recap is visible at ${viewport.name}`, async ({ page, signIn }, testInfo) => {
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.addInitScript(({ family, mode }) => {
+      localStorage.setItem('sonflash_theme_family', family);
+      localStorage.setItem('lingoflash_theme', mode);
+      localStorage.setItem('sonflash_theme_follow_system', 'false');
+    }, theme);
+    await signIn(page, '/?view=progress&locale=en');
+    await page.getByRole('button', { name: /view weekly recap/i }).click();
+    const dialog = page.getByRole('dialog', { name: /your weekly recap/i });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText('220', { exact: true })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Share' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Download PNG' })).toBeVisible();
+    expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await expect(dialog).toHaveScreenshot(`weekly-recap-${theme.family}-${theme.mode}-${viewport.name}.png`, {
+      animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
+    });
+    const screenshot = testInfo.outputPath(`weekly-recap-${theme.family}-${theme.mode}-${viewport.name}.png`);
+    await dialog.screenshot({ path: screenshot, animations: 'disabled', caret: 'hide' });
+    await testInfo.attach('Weekly recap', { path: screenshot, contentType: 'image/png' });
+  });
+}
+
 for (const theme of themes) {
   for (const viewport of viewports) {
     test(`${theme.family} ${theme.mode} reviewed catalog Paths are visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
