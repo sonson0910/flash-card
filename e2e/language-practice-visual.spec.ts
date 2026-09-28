@@ -41,6 +41,8 @@ async function enterKoreanWrongFinal(surface: Locator) {
     await surface.getByRole('button', { name: new RegExp(`^${jamo}`) }).click();
   }
   await expect(surface.locator('.language-practice-drill__hangul-diagnostic').first()).toContainText('결십');
+  await expect(surface.locator('.language-practice-drill__hangul-blocks').getByText('ㄱ + ㅕ + ㄹ')).toBeVisible();
+  await expect(surface.getByText('Physical keyboard: type the 2-set keys shown on each button.')).toBeVisible();
   await expect(surface.getByRole('status')).toContainText('Delete it and choose ㅁ');
   await expect(surface.locator('[data-hangul-mismatch="true"]')).toHaveCount(1);
 }
@@ -50,7 +52,7 @@ test.beforeAll(async ({}, testInfo) => {
   fixtureOrigin = `http://127.0.0.1:${fixturePort}`;
   fixtureServer = await createServer({
     configFile: 'vite.config.ts', cacheDir: `node_modules/.vite-e2e/language-practice-${testInfo.parallelIndex}`,
-    appType: 'mpa', server: { host: '127.0.0.1', port: fixturePort, strictPort: true },
+    appType: 'mpa', server: { host: '127.0.0.1', port: fixturePort, strictPort: true, hmr: false },
     optimizeDeps: { entries: ['e2e/fixtures/language-practice-visual.html'] },
   });
   await fixtureServer.listen();
@@ -82,19 +84,42 @@ for (const theme of themes) for (const viewport of viewports) for (const languag
     if (theme.family === 'crystal') await expect(surface).toHaveCSS('border-radius', '0px');
     if (language === 'ko') await enterKoreanWrongFinal(surface);
     if (language === 'ja') {
-      await expect(surface.locator('.language-practice-drill__ruby')).toHaveCount(0);
+      await expect(surface.getByText('日本', { exact: true })).toBeVisible();
+      await expect(surface.locator('.language-practice-drill__ruby rt')).toHaveCount(0);
+      await expect(surface.getByText('にっぽん', { exact: true })).toHaveCount(0);
       await expect(surface.locator('.japanese-pitch-contour')).toHaveCount(0);
+      const promptScreenshot = testInfo.outputPath(`${name}-prompt.png`);
+      await surface.screenshot({ path: promptScreenshot, animations: 'disabled', caret: 'hide' });
+      await testInfo.attach(`${name}-prompt`, { path: promptScreenshot, contentType: 'image/png' });
       await surface.getByRole('button', { name: 'Hint' }).click();
       await expect(surface.locator('.language-practice-drill__ruby')).toBeVisible();
+      await expect(surface.locator('.language-practice-drill__ruby rt')).toHaveText('にっぽん');
       await expect(surface.locator('.japanese-pitch-contour')).toBeVisible();
+      const hintScreenshot = testInfo.outputPath(`${name}-hint.png`);
+      await surface.screenshot({ path: hintScreenshot, animations: 'disabled', caret: 'hide' });
+      await testInfo.attach(`${name}-hint`, { path: hintScreenshot, contentType: 'image/png' });
     }
-    await expectAccessibleAndContained(page, name);
     await expect(surface).toHaveScreenshot(`${name}.png`, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
+    await expectAccessibleAndContained(page, name);
     const screenshot = testInfo.outputPath(`${name}.png`);
     await surface.screenshot({ path: screenshot });
     await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
   });
 }
+
+test('Chinese tone answer stays incomplete until every syllable has a tone', async ({ page }) => {
+  await page.goto(`${fixtureOrigin}${fixturePath}?kind=zh&locale=en`);
+  const surface = page.locator('.language-practice-drill');
+  const cards = surface.locator('.language-practice-drill__tone-card');
+  await expect(cards).toHaveCount(2);
+  await expect(cards.locator('.language-practice-drill__hanzi')).toHaveText(['汉', '语']);
+  const check = surface.getByRole('button', { name: 'Check' });
+  await expect(check).toBeDisabled();
+  await cards.last().getByRole('button', { name: '2', exact: true }).click();
+  await expect(check).toBeDisabled();
+  await cards.first().getByRole('button', { name: '4', exact: true }).click();
+  await expect(check).toBeEnabled();
+});
 
 for (const theme of themes) for (const viewport of viewports) {
   test(`${theme.family} ${theme.mode} Japanese sentence completion at ${viewport.name}`, async ({ page }, testInfo) => {

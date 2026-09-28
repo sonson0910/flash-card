@@ -6,6 +6,7 @@ import { playWordAudio } from '../../lib/audio';
 import type { CardData } from '../../types/card';
 import { JapanesePitchContour } from '../../components/flashcard/ReadingToggle';
 import { loadLanguagePack } from './registry';
+import { decomposeHangulSyllables } from './hangulRomanization';
 import {
   createLanguagePracticeDrill,
   composeHangulBlocks,
@@ -90,6 +91,11 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
   }, [card, model.packId]);
 
   const hasToneExercise = model.kind === 'tone-melody';
+  const tonesComplete = Boolean(reading?.toneSyllables?.length)
+    && reading?.toneSyllables?.every((_, index) => selectedTones[index] !== undefined) === true;
+  const hanziSyllables = hasToneExercise ? Array.from(card.word.trim()) : [];
+  const showHanziSyllables = hanziSyllables.length === reading?.toneSyllables?.length
+    && hanziSyllables.every(character => /\p{Script=Han}/u.test(character));
   const cloze = sentenceStage ? model.sentenceCloze : undefined;
   const sentence = cloze && pack ? (() => {
     const segment = (value: string) => {
@@ -215,7 +221,7 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
           <div><p className="language-practice-drill__instruction">{instruction}</p><p className="language-practice-drill__prompt" lang={card.translationLanguage || 'vi'}>{cloze ? card.exampleTranslation || model.prompt : model.prompt}</p></div>
           <button type="button" className="language-practice-drill__speed" onClick={() => setSlowAudio(value => !value)} aria-pressed={slowAudio} title={i18n._(msg({ id: 'languagePractice.action.slow', message: 'Toggle slow pronunciation' }))}><Gauge size={14} aria-hidden="true" />{slowAudio ? '0.75×' : '1×'}</button>
         </div>
-        {!cloze && model.kind === 'kana-reading' && reading?.readingText && revealReading ? <div className="language-practice-drill__japanese-reading" lang="ja"><p className="language-practice-drill__ruby"><ruby>{card.word}<rt>{reading.readingText}</rt></ruby></p>{reading.japanesePitchAccent && <JapanesePitchContour accent={reading.japanesePitchAccent} />}</div> : !cloze && showHint && reading?.readingText && (
+        {!cloze && model.kind === 'kana-reading' ? revealReading && reading?.readingText ? <div className="language-practice-drill__japanese-reading" lang="ja"><p className="language-practice-drill__ruby"><ruby>{card.word}<rt>{reading.readingText}</rt></ruby></p>{reading.japanesePitchAccent && <JapanesePitchContour accent={reading.japanesePitchAccent} />}</div> : <p className="language-practice-drill__ruby" lang="ja">{card.word}</p> : !cloze && showHint && reading?.readingText && (
           <div className="language-practice-drill__reading" lang={reading.readingLang}>
             <span>{reading.readingText}</span>{reading.japanesePitchAccent && <JapanesePitchContour accent={reading.japanesePitchAccent} />}
           </div>
@@ -228,6 +234,7 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
                 {reading?.toneSyllables?.map((syllable, index) => (
                   <div key={`${syllable.text}-${index}`} className="language-practice-drill__tone-card">
                     <p lang="zh-Latn" className="language-practice-drill__syllable">{syllable.text.replace(/[\u0300-\u036fāēīōūǖáéíóúǘǎěǐǒǔǚàèìòùǜ]/gu, character => character.normalize('NFD').replace(/[\u0300-\u036f]/gu, ''))}</p>
+                    {showHanziSyllables && <p lang={card.language || 'zh'} className="language-practice-drill__hanzi">{hanziSyllables[index]}</p>}
                     <div className="language-practice-drill__tone-options">
                       {TONES.map(tone => <button key={tone} type="button" onClick={() => selectTone(index, tone)} aria-pressed={selectedTones[index] === tone} className={`language-practice-drill__tone-option language-practice-drill__tone-option--${tone}`}><span aria-hidden="true">{TONE_MARKS[tone - 1]}</span><small>{tone}</small></button>)}
                     </div>
@@ -239,7 +246,14 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
             <fieldset disabled={checked} className="language-practice-drill__hangul">
               <legend className="language-practice-drill__sr-only"><Trans id="languagePractice.ko.keyboard" message="Hangul block keyboard" /></legend>
               <div className="language-practice-drill__hangul-blocks" lang="ko" aria-label={hangulAnswer || i18n._(msg({ id: 'languagePractice.ko.emptyBlocks', message: 'Empty Hangul blocks' }))}>
-                {Array.from({ length: Math.max(targetGraphemes.length, 1) }, (_, index) => <span key={index} className={answerGraphemes[index] ? 'language-practice-drill__hangul-filled' : undefined} data-hangul-mismatch={hangulCorrection && answerGraphemes[index] !== targetGraphemes[index] ? 'true' : undefined} style={hangulCorrection && answerGraphemes[index] !== targetGraphemes[index] ? { color: 'var(--sf-danger)', borderColor: 'var(--sf-danger)' } : undefined}>{answerGraphemes[index] ?? '□'}</span>)}
+                {Array.from({ length: Math.max(targetGraphemes.length, 1) }, (_, index) => {
+                  const answer = answerGraphemes[index];
+                  const parts = answer ? decomposeHangulSyllables(answer)[0]?.parts : undefined;
+                  return <div key={index}>
+                    <span className={answer ? 'language-practice-drill__hangul-filled' : undefined} data-hangul-mismatch={hangulCorrection && answer !== targetGraphemes[index] ? 'true' : undefined} style={hangulCorrection && answer !== targetGraphemes[index] ? { color: 'var(--sf-danger)', borderColor: 'var(--sf-danger)' } : undefined}>{answer ?? '□'}</span>
+                    {parts && <small>{parts.map(part => part.jamo).join(' + ')}</small>}
+                  </div>;
+                })}
               </div>
               {hangulAnswer && <p className="language-practice-drill__hangul-diagnostic"><span>{hangulJamo.split('').join(' + ')}</span> → <b>{hangulAnswer}</b></p>}
               {hangulCorrection && <p role="status" className="language-practice-drill__hangul-diagnostic"><Trans id="languagePractice.ko.final-correction" message="Final consonant: {typed} makes a different word. Delete it and choose {expected}." values={hangulCorrection} /></p>}
@@ -247,6 +261,7 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
                 {HANGUL_KEYS.map(key => <button key={key} type="button" onClick={() => setHangulJamo(value => value + key)} className="language-practice-drill__hangul-key" style={key === hangulCorrection?.expected ? { color: 'var(--sf-success)', borderColor: 'var(--sf-success)' } : key === hangulCorrection?.typed ? { color: 'var(--sf-danger)', borderColor: 'var(--sf-danger)' } : undefined}>{key}<small>{HANGUL_KEY_LABEL[key]}</small></button>)}
                 <button type="button" onClick={() => setHangulJamo(value => Array.from(value).slice(0, -1).join(''))} className="language-practice-drill__hangul-key"><Trans id="languagePractice.ko.backspace" message="Delete" /></button>
               </div>
+              <p className="language-practice-drill__physical-help"><Trans id="languagePractice.ko.physicalKeyboard" message="Physical keyboard: type the 2-set keys shown on each button." /></p>
             </fieldset>
           ) : (
             <label className="language-practice-drill__answer-label">
@@ -262,7 +277,7 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
           {checked && <p role="status" aria-live="polite" aria-atomic="true" className={`language-practice-drill__feedback ${result.correct ? 'language-practice-drill__feedback--correct' : 'language-practice-drill__feedback--incorrect'}`}>{result.correct ? <CheckCircle2 aria-hidden="true" /> : <XCircle aria-hidden="true" />}{result.correct ? <Trans id="languagePractice.feedback.correct" message="Correct." /> : <Trans id="languagePractice.feedback.incorrect" message="Try this card again in the next round." />}</p>}
           <div className="language-practice-drill__actions">
             {!cloze && !checked && reading?.readingText && <button type="button" onClick={() => setShowHint(true)} disabled={showHint} className="language-practice-drill__hint"><Trans id="languagePractice.action.hint" message="Hint" /></button>}
-            {!checked ? <button type="submit" disabled={!ready || (hasToneExercise && selectedTones.length !== reading?.toneSyllables?.length)} className="language-practice-drill__primary-action"><Trans id="languagePractice.action.check" message="Check" /></button> : <button type="button" onClick={() => onNext(result)} className="language-practice-drill__primary-action"><Trans id="languagePractice.action.next" message="Next" /><ChevronRight size={18} aria-hidden="true" /></button>}
+            {!checked ? <button type="submit" disabled={!ready || (hasToneExercise && !tonesComplete)} className="language-practice-drill__primary-action"><Trans id="languagePractice.action.check" message="Check" /></button> : <button type="button" onClick={() => onNext(result)} className="language-practice-drill__primary-action"><Trans id="languagePractice.action.next" message="Next" /><ChevronRight size={18} aria-hidden="true" /></button>}
           </div>
         </form>
       </div>
