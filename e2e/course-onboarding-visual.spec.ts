@@ -81,6 +81,13 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(courses).toBeVisible();
     await expect(courses.getByRole('button', { name: /Korean.*Vietnamese/ })).toHaveAttribute('aria-current', 'true');
     await expectScreen(page, testInfo, `course-switcher-${theme.family}-${theme.mode}-${viewport.name}`);
+    await courses.getByRole('button', { name: 'Add a language' }).click();
+    const targetCards = courses.locator('.course-target-card');
+    await expect(targetCards).toHaveCount(2);
+    await expect(targetCards.filter({ hasText: 'Japanese' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(targetCards.filter({ hasText: 'Chinese' })).toHaveAttribute('aria-pressed', 'false');
+    const createScreenshot = await expectScreen(page, testInfo, `course-switcher-create-${theme.family}-${theme.mode}-${viewport.name}`);
+    await courses.getByRole('button', { name: 'Cancel' }).click();
 
     await courses.getByRole('listitem').filter({ hasText: 'Korean ← Vietnamese' }).getByRole('button', { name: 'Manage goals' }).click();
     const goals = courses.locator('.claude-course-goals-panel');
@@ -99,6 +106,7 @@ for (const theme of themes) for (const viewport of viewports) {
     const appearancePosition = await appearance.boundingBox();
     expect(coursePosition && appearancePosition && coursePosition.y < appearancePosition.y).toBeTruthy();
     await expectScreen(page, testInfo, `course-settings-${theme.family}-${theme.mode}-${viewport.name}`);
+    expect(createScreenshot.image).toMatchSnapshot(`${createScreenshot.name}.png`);
   });
 }
 

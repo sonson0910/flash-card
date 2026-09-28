@@ -32,38 +32,38 @@ msgid "course.action.reopen"
 msgstr "Reopen course"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:70
+#: src/components/shell/CourseSwitcherControl.tsx:77
 msgid "course.create.cancel"
 msgstr "Cancel"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:63
+#: src/components/shell/CourseSwitcherControl.tsx:70
 msgid "course.create.native-label"
 msgstr "Explain in"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:55
+#: src/components/shell/CourseSwitcherControl.tsx:58
 msgid "course.create.no-target-left"
 msgstr "All supported languages already have a course. Archive one to add another."
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:69
+#: src/components/shell/CourseSwitcherControl.tsx:76
 msgid "course.create.submit"
 msgstr "Create course"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:58
+#: src/components/shell/CourseSwitcherControl.tsx:62
 msgid "course.create.target-label"
 msgstr "Learn"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:125
+#: src/components/shell/CourseSwitcherControl.tsx:141
 msgid "course.error.generic"
 msgstr "That course action did not go through. Please try again."
 
 #. js-lingui-explicit-id
 #: src/features/courses/CourseGoalsPanel.tsx:62
-#: src/features/onboarding/OnboardingJourney.tsx:168
+#: src/features/onboarding/OnboardingJourney.tsx:175
 msgid "course.goal.add.date-label"
 msgstr "Exam or target date (optional)"
 
@@ -74,7 +74,7 @@ msgstr "Goal"
 
 #. js-lingui-explicit-id
 #: src/features/courses/CourseGoalsPanel.tsx:58
-#: src/features/onboarding/OnboardingJourney.tsx:165
+#: src/features/onboarding/OnboardingJourney.tsx:172
 msgid "course.goal.add.level-label"
 msgstr "Level or target (optional)"
 
@@ -266,32 +266,37 @@ msgid "course.status.archived"
 msgstr "Archived"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:141
+#: src/components/shell/CourseSwitcherControl.tsx:157
 msgid "course.switcher.add"
 msgstr "Add a language"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:122
+#: src/components/shell/CourseSwitcherControl.tsx:138
 msgid "course.switcher.close"
 msgstr "Close"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:118
+#: src/components/shell/CourseSwitcherControl.tsx:134
 msgid "course.switcher.dialog-label"
 msgstr "Courses"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:115
+#: src/components/shell/CourseSwitcherControl.tsx:131
 msgid "course.switcher.no-active"
 msgstr "Choose a course"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:121
+#: src/components/shell/CourseSwitcherControl.tsx:126
+msgid "course.switcher.switched"
+msgstr "Switched to {language}"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:137
 msgid "course.switcher.title"
 msgstr "Your courses"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:209
+#: src/app/AppRuntime.tsx:211
 msgid "extension.import.course-mismatch-confirm"
 msgstr "This word was saved for a different language than your active course. Switch to (or create) the matching course to save it?"
 
@@ -303,151 +308,151 @@ msgid "flashcard.ai-disclosure"
 msgstr "AI-generated content may be incorrect. Please check the meaning."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:201
+#: src/features/onboarding/OnboardingJourney.tsx:214
 msgid "onboarding.aha.create"
 msgstr "Add 5 starter cards"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:206
+#: src/features/onboarding/OnboardingJourney.tsx:219
 msgid "onboarding.aha.error"
 msgstr "Something went wrong adding cards. You can add them later from the library."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:212
+#: src/features/onboarding/OnboardingJourney.tsx:225
 msgid "onboarding.aha.none-added"
 msgstr "No cards were added."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:204
+#: src/features/onboarding/OnboardingJourney.tsx:217
 msgid "onboarding.aha.pending"
 msgstr "Adding your cards…"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:213
+#: src/features/onboarding/OnboardingJourney.tsx:233
 msgid "onboarding.aha.quota-note"
 msgstr "Your monthly Free card allowance is almost used up, so {count} card(s) were not added."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:121
-#: src/features/onboarding/OnboardingJourney.tsx:202
+#: src/features/onboarding/OnboardingJourney.tsx:125
+#: src/features/onboarding/OnboardingJourney.tsx:215
 msgid "onboarding.aha.skip"
 msgstr "Skip for now"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:200
+#: src/features/onboarding/OnboardingJourney.tsx:213
 msgid "onboarding.aha.subtitle"
 msgstr "Five common words to get you started."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:211
+#: src/features/onboarding/OnboardingJourney.tsx:224
 msgid "onboarding.aha.success"
 msgstr "Added {count} cards to your library."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:198
+#: src/features/onboarding/OnboardingJourney.tsx:211
 msgid "onboarding.aha.title"
 msgstr "Let's add your first cards"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:152
-#: src/features/onboarding/OnboardingJourney.tsx:179
-#: src/features/onboarding/OnboardingJourney.tsx:192
-#: src/features/onboarding/OnboardingJourney.tsx:222
+#: src/features/onboarding/OnboardingJourney.tsx:159
+#: src/features/onboarding/OnboardingJourney.tsx:186
+#: src/features/onboarding/OnboardingJourney.tsx:204
+#: src/features/onboarding/OnboardingJourney.tsx:242
 msgid "onboarding.back"
 msgstr "Back"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:133
-#: src/features/onboarding/OnboardingJourney.tsx:153
-#: src/features/onboarding/OnboardingJourney.tsx:180
-#: src/features/onboarding/OnboardingJourney.tsx:193
-#: src/features/onboarding/OnboardingJourney.tsx:207
-#: src/features/onboarding/OnboardingJourney.tsx:214
+#: src/features/onboarding/OnboardingJourney.tsx:139
+#: src/features/onboarding/OnboardingJourney.tsx:160
+#: src/features/onboarding/OnboardingJourney.tsx:187
+#: src/features/onboarding/OnboardingJourney.tsx:205
+#: src/features/onboarding/OnboardingJourney.tsx:220
+#: src/features/onboarding/OnboardingJourney.tsx:234
 msgid "onboarding.continue"
 msgstr "Continue"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:223
+#: src/features/onboarding/OnboardingJourney.tsx:243
 msgid "onboarding.finish"
 msgstr "Start learning"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:161
+#: src/features/onboarding/OnboardingJourney.tsx:168
 msgid "onboarding.goal.none"
 msgstr "No specific goal yet"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:159
+#: src/features/onboarding/OnboardingJourney.tsx:166
 msgid "onboarding.goal.subtitle"
 msgstr "Optional. You can add or change this later in the course switcher."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:158
+#: src/features/onboarding/OnboardingJourney.tsx:165
 msgid "onboarding.goal.title"
 msgstr "Have an exam or goal in mind?"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:126
+#: src/features/onboarding/OnboardingJourney.tsx:130
 msgid "onboarding.language.subtitle"
 msgstr "This sets the app's interface and the language your explanations will be written in."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:125
+#: src/features/onboarding/OnboardingJourney.tsx:129
 msgid "onboarding.language.title"
 msgstr "Choose your language"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:188
+#: src/features/onboarding/OnboardingJourney.tsx:198
 msgid "onboarding.pace.option"
 msgstr "{count} cards / day"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:185
+#: src/features/onboarding/OnboardingJourney.tsx:194
 msgid "onboarding.pace.title"
 msgstr "How many cards a day?"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:220
+#: src/features/onboarding/OnboardingJourney.tsx:240
 msgid "onboarding.reminder.not-ready"
 msgstr "Reminders aren't turned on yet. When they are, you'll be able to choose the days and time here and in Settings."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:219
+#: src/features/onboarding/OnboardingJourney.tsx:239
 msgid "onboarding.reminder.title"
 msgstr "Daily reminders"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:137
+#: src/features/onboarding/OnboardingJourney.tsx:143
 msgid "onboarding.target.title"
 msgstr "What are you learning?"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:115
+#: src/features/onboarding/OnboardingJourney.tsx:119
 msgid "onboarding.title"
 msgstr "Set up your course"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:251
+#: src/app/AppRuntime.tsx:259
 msgid "rewards.reveal.level.frame"
 msgstr "Crimson Wing frame"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:253
+#: src/app/AppRuntime.tsx:261
 msgid "rewards.reveal.level.hint"
 msgstr "Hint tokens · limit 3"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:252
+#: src/app/AppRuntime.tsx:260
 msgid "rewards.reveal.level.title"
 msgstr "Word Collector title"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:244
+#: src/app/AppRuntime.tsx:251
 msgid "rewards.reveal.streak.badge"
 msgstr "Web Wanderer"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:245
+#: src/app/AppRuntime.tsx:252
 msgid "rewards.reveal.streak.freeze"
 msgstr "Streak freeze · limit 1"
 
@@ -457,17 +462,17 @@ msgid "rewards.title.word-collector"
 msgstr "Word Collector"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:172
+#: src/features/onboarding/OnboardingJourney.tsx:179
 msgid "settings.course.script"
 msgstr "Chinese script"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:174
+#: src/features/onboarding/OnboardingJourney.tsx:181
 msgid "settings.course.script.simplified"
 msgstr "Simplified"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:175
+#: src/features/onboarding/OnboardingJourney.tsx:182
 msgid "settings.course.script.traditional"
 msgstr "Traditional"
 
@@ -680,7 +685,7 @@ msgid "shell.language.open"
 msgstr "Choose language"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:503
+#: src/app/AppRuntime.tsx:513
 msgid "shell.learning-workspace"
 msgstr "Learning workspace"
 
@@ -696,17 +701,17 @@ msgid "shell.level.short"
 msgstr "Lv {level}"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:113
+#: src/features/library/libraryViewModel.ts:118
 msgid "shell.library-count.cached-cloud"
 msgstr "{cached, number} cached / {cloud, number} cloud"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:116
+#: src/features/library/libraryViewModel.ts:121
 msgid "shell.library-count.cards"
 msgstr "{count, plural, one {# card} other {# cards}}"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:114
+#: src/features/library/libraryViewModel.ts:119
 msgid "shell.library-count.cloud-paused"
 msgstr "Cloud paused"
 
@@ -737,7 +742,7 @@ msgid "shell.loading.library"
 msgstr "Loading library"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:61
+#: src/app/AppViewStage.tsx:65
 msgid "shell.loading.paths"
 msgstr "Preparing learning paths…"
 
@@ -747,17 +752,17 @@ msgid "shell.loading.practice"
 msgstr "Loading practice"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:75
+#: src/app/AppViewStage.tsx:79
 msgid "shell.loading.progress"
 msgstr "Preparing learning progress…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:76
+#: src/app/AppViewStage.tsx:80
 msgid "shell.loading.settings"
 msgstr "Preparing appearance settings…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:69
+#: src/app/AppViewStage.tsx:73
 msgid "shell.loading.today"
 msgstr "Preparing today’s learning plan…"
 
@@ -864,8 +869,8 @@ msgstr "Primary navigation"
 
 #. js-lingui-explicit-id
 #: src/app/AppDeferredViews.tsx:22
-#: src/app/AppRuntime.tsx:552
 #: src/app/AppRuntime.tsx:565
+#: src/app/AppRuntime.tsx:578
 msgid "shell.opening-dialog"
 msgstr "Opening dialog"
 
@@ -1251,7 +1256,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Live cloud updates are unavailable. Retry when your connection improves."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:421
+#: src/app/AppRuntime.tsx:431
 msgid "shell.sync.retry-failed"
 msgstr "Sync could not finish. Your changes remain on this device. Try again."
 

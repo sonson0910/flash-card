@@ -32,38 +32,38 @@ msgid "course.action.reopen"
 msgstr "Mở lại khóa học"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:70
+#: src/components/shell/CourseSwitcherControl.tsx:77
 msgid "course.create.cancel"
 msgstr "Hủy"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:63
+#: src/components/shell/CourseSwitcherControl.tsx:70
 msgid "course.create.native-label"
 msgstr "Giải nghĩa bằng"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:55
+#: src/components/shell/CourseSwitcherControl.tsx:58
 msgid "course.create.no-target-left"
 msgstr "Mọi ngôn ngữ được hỗ trợ đều đã có khóa học. Hãy lưu trữ một khóa để thêm khóa khác."
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:69
+#: src/components/shell/CourseSwitcherControl.tsx:76
 msgid "course.create.submit"
 msgstr "Tạo khóa học"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:58
+#: src/components/shell/CourseSwitcherControl.tsx:62
 msgid "course.create.target-label"
 msgstr "Học"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:125
+#: src/components/shell/CourseSwitcherControl.tsx:141
 msgid "course.error.generic"
 msgstr "Thao tác với khóa học chưa thành công. Vui lòng thử lại."
 
 #. js-lingui-explicit-id
 #: src/features/courses/CourseGoalsPanel.tsx:62
-#: src/features/onboarding/OnboardingJourney.tsx:168
+#: src/features/onboarding/OnboardingJourney.tsx:175
 msgid "course.goal.add.date-label"
 msgstr "Ngày thi hoặc ngày mục tiêu (không bắt buộc)"
 
@@ -74,7 +74,7 @@ msgstr "Mục tiêu"
 
 #. js-lingui-explicit-id
 #: src/features/courses/CourseGoalsPanel.tsx:58
-#: src/features/onboarding/OnboardingJourney.tsx:165
+#: src/features/onboarding/OnboardingJourney.tsx:172
 msgid "course.goal.add.level-label"
 msgstr "Trình độ hoặc mức mục tiêu (không bắt buộc)"
 
@@ -266,32 +266,37 @@ msgid "course.status.archived"
 msgstr "Đã lưu trữ"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:141
+#: src/components/shell/CourseSwitcherControl.tsx:157
 msgid "course.switcher.add"
 msgstr "Thêm ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:122
+#: src/components/shell/CourseSwitcherControl.tsx:138
 msgid "course.switcher.close"
 msgstr "Đóng"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:118
+#: src/components/shell/CourseSwitcherControl.tsx:134
 msgid "course.switcher.dialog-label"
 msgstr "Khóa học"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:115
+#: src/components/shell/CourseSwitcherControl.tsx:131
 msgid "course.switcher.no-active"
 msgstr "Chọn khóa học"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:121
+#: src/components/shell/CourseSwitcherControl.tsx:126
+msgid "course.switcher.switched"
+msgstr "Đã chuyển sang {language}"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:137
 msgid "course.switcher.title"
 msgstr "Khóa học của bạn"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:209
+#: src/app/AppRuntime.tsx:211
 msgid "extension.import.course-mismatch-confirm"
 msgstr "Từ này được lưu cho một ngôn ngữ khác với khoá học hiện tại của bạn. Chuyển sang (hoặc tạo) khoá học phù hợp để lưu từ này?"
 
@@ -303,151 +308,151 @@ msgid "flashcard.ai-disclosure"
 msgstr "Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:201
+#: src/features/onboarding/OnboardingJourney.tsx:214
 msgid "onboarding.aha.create"
 msgstr "Thêm 5 thẻ khởi đầu"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:206
+#: src/features/onboarding/OnboardingJourney.tsx:219
 msgid "onboarding.aha.error"
 msgstr "Đã có lỗi khi thêm thẻ. Bạn có thể thêm sau trong thư viện."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:212
+#: src/features/onboarding/OnboardingJourney.tsx:225
 msgid "onboarding.aha.none-added"
 msgstr "Chưa thêm thẻ nào."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:204
+#: src/features/onboarding/OnboardingJourney.tsx:217
 msgid "onboarding.aha.pending"
 msgstr "Đang thêm thẻ của bạn…"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:213
+#: src/features/onboarding/OnboardingJourney.tsx:233
 msgid "onboarding.aha.quota-note"
 msgstr "Hạn mức thẻ miễn phí tháng này của bạn sắp hết, nên {count} thẻ chưa được thêm."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:121
-#: src/features/onboarding/OnboardingJourney.tsx:202
+#: src/features/onboarding/OnboardingJourney.tsx:125
+#: src/features/onboarding/OnboardingJourney.tsx:215
 msgid "onboarding.aha.skip"
 msgstr "Để sau"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:200
+#: src/features/onboarding/OnboardingJourney.tsx:213
 msgid "onboarding.aha.subtitle"
 msgstr "Năm từ thông dụng để bạn bắt đầu."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:211
+#: src/features/onboarding/OnboardingJourney.tsx:224
 msgid "onboarding.aha.success"
 msgstr "Đã thêm {count} thẻ vào thư viện của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:198
+#: src/features/onboarding/OnboardingJourney.tsx:211
 msgid "onboarding.aha.title"
 msgstr "Cùng thêm những thẻ đầu tiên"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:152
-#: src/features/onboarding/OnboardingJourney.tsx:179
-#: src/features/onboarding/OnboardingJourney.tsx:192
-#: src/features/onboarding/OnboardingJourney.tsx:222
+#: src/features/onboarding/OnboardingJourney.tsx:159
+#: src/features/onboarding/OnboardingJourney.tsx:186
+#: src/features/onboarding/OnboardingJourney.tsx:204
+#: src/features/onboarding/OnboardingJourney.tsx:242
 msgid "onboarding.back"
 msgstr "Quay lại"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:133
-#: src/features/onboarding/OnboardingJourney.tsx:153
-#: src/features/onboarding/OnboardingJourney.tsx:180
-#: src/features/onboarding/OnboardingJourney.tsx:193
-#: src/features/onboarding/OnboardingJourney.tsx:207
-#: src/features/onboarding/OnboardingJourney.tsx:214
+#: src/features/onboarding/OnboardingJourney.tsx:139
+#: src/features/onboarding/OnboardingJourney.tsx:160
+#: src/features/onboarding/OnboardingJourney.tsx:187
+#: src/features/onboarding/OnboardingJourney.tsx:205
+#: src/features/onboarding/OnboardingJourney.tsx:220
+#: src/features/onboarding/OnboardingJourney.tsx:234
 msgid "onboarding.continue"
 msgstr "Tiếp tục"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:223
+#: src/features/onboarding/OnboardingJourney.tsx:243
 msgid "onboarding.finish"
 msgstr "Bắt đầu học"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:161
+#: src/features/onboarding/OnboardingJourney.tsx:168
 msgid "onboarding.goal.none"
 msgstr "Chưa có mục tiêu cụ thể"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:159
+#: src/features/onboarding/OnboardingJourney.tsx:166
 msgid "onboarding.goal.subtitle"
 msgstr "Không bắt buộc. Bạn có thể thêm hoặc đổi sau trong phần chọn khóa học."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:158
+#: src/features/onboarding/OnboardingJourney.tsx:165
 msgid "onboarding.goal.title"
 msgstr "Bạn có kỳ thi hay mục tiêu nào không?"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:126
+#: src/features/onboarding/OnboardingJourney.tsx:130
 msgid "onboarding.language.subtitle"
 msgstr "Lựa chọn này đặt ngôn ngữ giao diện và ngôn ngữ dùng để giải nghĩa cho bạn."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:125
+#: src/features/onboarding/OnboardingJourney.tsx:129
 msgid "onboarding.language.title"
 msgstr "Chọn ngôn ngữ của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:188
+#: src/features/onboarding/OnboardingJourney.tsx:198
 msgid "onboarding.pace.option"
 msgstr "{count} thẻ / ngày"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:185
+#: src/features/onboarding/OnboardingJourney.tsx:194
 msgid "onboarding.pace.title"
 msgstr "Mỗi ngày bao nhiêu thẻ?"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:220
+#: src/features/onboarding/OnboardingJourney.tsx:240
 msgid "onboarding.reminder.not-ready"
 msgstr "Nhắc nhở chưa được bật. Khi có, bạn sẽ chọn được ngày và giờ nhắc tại đây và trong Cài đặt."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:219
+#: src/features/onboarding/OnboardingJourney.tsx:239
 msgid "onboarding.reminder.title"
 msgstr "Nhắc nhở hằng ngày"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:137
+#: src/features/onboarding/OnboardingJourney.tsx:143
 msgid "onboarding.target.title"
 msgstr "Bạn đang học ngôn ngữ nào?"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:115
+#: src/features/onboarding/OnboardingJourney.tsx:119
 msgid "onboarding.title"
 msgstr "Thiết lập khóa học"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:251
+#: src/app/AppRuntime.tsx:259
 msgid "rewards.reveal.level.frame"
 msgstr "Khung ảnh Crimson Wing"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:253
+#: src/app/AppRuntime.tsx:261
 msgid "rewards.reveal.level.hint"
 msgstr "Lượt gợi ý · tối đa 3"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:252
+#: src/app/AppRuntime.tsx:260
 msgid "rewards.reveal.level.title"
 msgstr "Danh hiệu Word Collector"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:244
+#: src/app/AppRuntime.tsx:251
 msgid "rewards.reveal.streak.badge"
 msgstr "Huy hiệu Web Wanderer"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:245
+#: src/app/AppRuntime.tsx:252
 msgid "rewards.reveal.streak.freeze"
 msgstr "Bảo vệ chuỗi · tối đa 1 lượt"
 
@@ -457,17 +462,17 @@ msgid "rewards.title.word-collector"
 msgstr "Người sưu tầm từ vựng"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:172
+#: src/features/onboarding/OnboardingJourney.tsx:179
 msgid "settings.course.script"
 msgstr "Chữ Hán"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:174
+#: src/features/onboarding/OnboardingJourney.tsx:181
 msgid "settings.course.script.simplified"
 msgstr "Giản thể"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:175
+#: src/features/onboarding/OnboardingJourney.tsx:182
 msgid "settings.course.script.traditional"
 msgstr "Phồn thể"
 
@@ -680,7 +685,7 @@ msgid "shell.language.open"
 msgstr "Chọn ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:503
+#: src/app/AppRuntime.tsx:513
 msgid "shell.learning-workspace"
 msgstr "Không gian học tập"
 
@@ -696,17 +701,17 @@ msgid "shell.level.short"
 msgstr "Lv {level}"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:113
+#: src/features/library/libraryViewModel.ts:118
 msgid "shell.library-count.cached-cloud"
 msgstr "{cached, number} đã lưu tạm / {cloud, number} trên đám mây"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:116
+#: src/features/library/libraryViewModel.ts:121
 msgid "shell.library-count.cards"
 msgstr "{count, plural, other {# thẻ}}"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:114
+#: src/features/library/libraryViewModel.ts:119
 msgid "shell.library-count.cloud-paused"
 msgstr "Đồng bộ đám mây đã tạm dừng"
 
@@ -737,7 +742,7 @@ msgid "shell.loading.library"
 msgstr "Đang tải thư viện"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:61
+#: src/app/AppViewStage.tsx:65
 msgid "shell.loading.paths"
 msgstr "Đang chuẩn bị các lộ trình học…"
 
@@ -747,17 +752,17 @@ msgid "shell.loading.practice"
 msgstr "Đang tải bài luyện tập"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:75
+#: src/app/AppViewStage.tsx:79
 msgid "shell.loading.progress"
 msgstr "Đang chuẩn bị tiến độ học…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:76
+#: src/app/AppViewStage.tsx:80
 msgid "shell.loading.settings"
 msgstr "Đang mở cài đặt giao diện…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:69
+#: src/app/AppViewStage.tsx:73
 msgid "shell.loading.today"
 msgstr "Đang chuẩn bị kế hoạch học hôm nay…"
 
@@ -864,8 +869,8 @@ msgstr "Điều hướng chính"
 
 #. js-lingui-explicit-id
 #: src/app/AppDeferredViews.tsx:22
-#: src/app/AppRuntime.tsx:552
 #: src/app/AppRuntime.tsx:565
+#: src/app/AppRuntime.tsx:578
 msgid "shell.opening-dialog"
 msgstr "Đang mở hộp thoại"
 
@@ -1251,7 +1256,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Không thể cập nhật trực tiếp từ đám mây. Hãy thử lại khi kết nối ổn định hơn."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:421
+#: src/app/AppRuntime.tsx:431
 msgid "shell.sync.retry-failed"
 msgstr "Không thể hoàn tất đồng bộ. Các thay đổi vẫn được giữ trên thiết bị này. Hãy thử lại."
 

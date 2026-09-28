@@ -51,15 +51,22 @@ function CreateCourseForm({ availableTargets, pending, onCreate, onCancel }: {
   const { _ } = useLingui();
   const [target, setTarget] = useState<CourseTargetLanguage | null>(availableTargets[0] ?? null);
   const [native, setNative] = useState<CourseNativeLanguage>('vi');
+  useEffect(() => {
+    if (!target || !availableTargets.includes(target)) setTarget(availableTargets[0] ?? null);
+  }, [availableTargets, target]);
   if (availableTargets.length === 0) {
     return <p className="px-3 py-2 text-sm text-[var(--sf-text-muted)]"><Trans id="course.create.no-target-left" message="All supported languages already have a course. Archive one to add another." /></p>;
   }
-  return <form className="claude-course-create-form space-y-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-3" onSubmit={event => { event.preventDefault(); if (target) onCreate(target, native); }}>
-    <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="course.create.target-label" message="Learn" />
-      <select className="mt-1 block w-full min-h-11 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-2 text-sm text-[var(--sf-text)]" value={target ?? ''} onChange={event => setTarget(event.target.value as CourseTargetLanguage)}>
-        {availableTargets.map(code => <option key={code} value={code}>{_(TARGET_LANGUAGE_LABEL[code])}</option>)}
-      </select>
-    </label>
+  return <form className="claude-course-create-form space-y-3 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-3" onSubmit={event => { event.preventDefault(); if (target) onCreate(target, native); }}>
+    <fieldset>
+      <legend className="text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="course.create.target-label" message="Learn" /></legend>
+      <div className="course-target-grid mt-1.5">
+        {availableTargets.map(code => <button key={code} type="button" disabled={pending} aria-pressed={target === code} onClick={() => setTarget(code)}
+          className="course-target-card min-h-11 rounded-xl border px-3 py-2 text-left text-sm font-bold text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60">
+          <span aria-hidden="true">{TARGET_LANGUAGE_FLAG[code]}</span><span>{_(TARGET_LANGUAGE_LABEL[code])}</span>
+        </button>)}
+      </div>
+    </fieldset>
     <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="course.create.native-label" message="Explain in" />
       <select className="mt-1 block w-full min-h-11 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-2 text-sm text-[var(--sf-text)]" value={native} onChange={event => setNative(event.target.value as CourseNativeLanguage)}>
         {COURSE_NATIVE_LANGUAGES.map(code => <option key={code} value={code}>{_(NATIVE_LANGUAGE_LABEL[code])}</option>)}
@@ -86,6 +93,7 @@ export function CourseSwitcherControl() {
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [managingCourseId, setManagingCourseId] = useState<string | null>(null);
+  const [switchedTo, setSwitchedTo] = useState<CourseTargetLanguage | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -106,8 +114,16 @@ export function CourseSwitcherControl() {
   const managedCourse = managingCourseId ? profile.courses.find(course => course.id === managingCourseId) ?? null : null;
 
   const closeAndFocus = () => { setOpen(false); setCreating(false); setManagingCourseId(null); triggerRef.current?.focus(); };
+  const switchCourse = async (course: Course) => {
+    setSwitchedTo(null);
+    const result = await actions.switchCourse(course.id);
+    if (!result.ok) return;
+    setSwitchedTo(course.targetLanguage);
+    closeAndFocus();
+  };
 
   return <div ref={rootRef} className="claude-course-switcher relative flex min-w-0 items-center">
+    {switchedTo && <p role="status" className="sr-only"><Trans id="course.switcher.switched" message="Switched to {language}" values={{ language: _(TARGET_LANGUAGE_LABEL[switchedTo]) }} /></p>}
     <button ref={triggerRef} type="button" aria-haspopup="dialog" aria-expanded={open}
       onClick={() => setOpen(current => !current)}
       className="claude-course-switcher-trigger flex min-h-11 min-w-0 items-center gap-1.5 truncate rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 text-sm font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none">
@@ -128,7 +144,7 @@ export function CourseSwitcherControl() {
         : <>
           <ul className="claude-course-list space-y-1">
             {profile.courses.map(course => <CourseRow key={course.id} course={course} isActive={course.id === profile.activeCourseId} pending={model.pending}
-              onSwitch={() => void actions.switchCourse(course.id)}
+              onSwitch={() => void switchCourse(course)}
               onArchive={() => void actions.archiveCourse(course.id)}
               onReopen={() => void actions.reopenCourse(course.id)}
               onManageGoals={() => setManagingCourseId(course.id)} />)}

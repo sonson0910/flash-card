@@ -3,6 +3,14 @@
   border-radius: 1.5rem 1.5rem 0 0;
 }
 .claude-course-goal-summary { display: none; }
+.course-target-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.course-target-card { display: flex; align-items: center; gap: .5rem; border-color: var(--sf-border); background: var(--sf-surface-control); transition: background-color .15s, border-color .15s; }
+.course-target-card:hover { border-color: var(--sf-brand); }
+.course-target-card[aria-pressed=true] { border-color: var(--sf-brand); background: color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface-control)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .course-target-card { transition: none; }
+}
 
 @media (min-width: 1024px) {
   .claude-course-switcher-panel {

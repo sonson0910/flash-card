@@ -34,6 +34,20 @@ test('course switcher exposes goals, switches active courses, and keeps course s
   await dialog.getByRole('button', { name: 'Back to courses' }).click();
   await dialog.getByRole('button', { name: /Korean.*Vietnamese/ }).click();
   await expect(trigger).toHaveText(/Korean/);
+  await expect(trigger).toBeFocused();
+  await expect(page.locator('.claude-course-switcher').getByRole('status')).toHaveText('Switched to Korean');
+  await trigger.click();
+  await dialog.getByRole('button', { name: 'Add a language' }).click();
+  const targets = dialog.locator('.course-target-card');
+  const japanese = targets.filter({ hasText: 'Japanese' });
+  const chinese = targets.filter({ hasText: 'Chinese' });
+  await expect(targets).toHaveCount(2);
+  await expect(japanese).toHaveAttribute('aria-pressed', 'true');
+  await expect(chinese).toHaveAttribute('aria-pressed', 'false');
+  await chinese.click();
+  await expect(chinese).toHaveAttribute('aria-pressed', 'true');
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await dialog.getByRole('button', { name: 'Close' }).click();
 
   await page.goto('/?view=settings&locale=en');
   await expect(page.getByRole('heading', { name: 'Make your study space yours' })).toBeVisible();
