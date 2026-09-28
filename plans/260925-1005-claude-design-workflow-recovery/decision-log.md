@@ -366,3 +366,12 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
   query tối đa 31 card document reads mỗi trang như hiện có; “Add all” chỉ áp
   dụng tập đang tải và đang lọc với count rõ ràng. Không thêm Firestore write,
   subscription hoặc query ngoài đường phân trang hiện có. Không deploy.
+
+## 2026-09-28 — Owner duyệt cost Continue và nguồn catalog Paths
+
+- Unit study chỉ hydrate card sau khi người học xác nhận Continue: tối đa
+  **20 card document reads** và **20 lexemes mỗi unit**. Unit vượt cap báo
+  không khả dụng, không cắt ngầm danh sách.
+- Owner sẽ cung cấp nội dung publishable 3 track × 15 unit, 45 title localized
+  cùng quyền sử dụng. Trước khi có nội dung được review, Catalog V2 chỉ được
+  triển khai và kiểm bằng fixture; không kích hoạt AI pilot làm release thật.

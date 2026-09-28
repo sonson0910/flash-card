@@ -124,6 +124,15 @@ already introduced, Continue starts the same unit-scoped study directly. It neve
 creates cards in the background and it never labels a unit complete merely because
 its cards were added.
 
+Owner approved a wave cap of **20 lexemes per unit** and at most **20 card
+document reads** when the learner confirms Continue and the unit study session
+needs to hydrate existing cards. The confirmation is the read trigger; opening
+Paths or preview does not perform these card reads. The client must reject a
+unit over this cap instead of silently truncating it. The owner will provide
+the reviewed 3-track × 15-unit catalog content, localized titles, and rights
+evidence separately; the current AI-assisted pilot is not a publishable release
+and must remain inactive.
+
 ETA is only the descriptor's remaining, unintroduced lexeme count divided by the
 existing device-local `dailyPacePreference` (5/10/15/20 new words per day), rounded
 up and labelled as an estimate. It is unavailable when local storage is unavailable
