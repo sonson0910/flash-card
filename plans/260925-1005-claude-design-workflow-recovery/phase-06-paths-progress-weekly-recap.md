@@ -65,6 +65,8 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 
 > **Catalog V2 cache 2026-09-28.** Installer nhận V1/V2, validate descriptor/membership trước khi activation và lưu unit descriptors trong release record IndexedDB hiện có. `lessonGroup` được giữ trên mỗi membership; summary duyệt toàn bộ membership để tính introduced/mastered theo unit, lấy tám preview theo rank và từ chối unit quá 20 lexemes. Rollback/purge dùng transaction cache cũ. Focused cache/delivery/workspace 53/53 và typecheck pass. Không thêm Firestore I/O hoặc database version; checkbox Canvas còn mở vì Paths UI/Continue chưa nối và release publishable chưa có.
 
+> **Paths projection reader 2026-09-28.** Service đọc một query owner-scoped theo target language (tối đa 10.001 docs để fail nếu vượt 10.000), chỉ nhận projection đúng schema/owner/epoch và trả status map cho summary duyệt full memberships. Pure unit model chỉ complete khi mọi lexeme đã mastered; V1 trả unavailable. Focused unit 3/3 và typecheck pass. Service chưa được nối vào UI nên production I/O hiện chưa đổi; sau khi nối, mỗi lần mở Paths V2 là 1 query + `P` projection document reads, 0 writes. Checkbox Canvas vẫn mở.
+
 Stats/ActivityHeatmap/catalog tests; e2e/paths-progress-visual.spec.ts và catalog-workspace.spec.ts; new weekly-recap unit+export journey; gates chung.
 
 Hợp đồng chung: [acceptance-contract.md](acceptance-contract.md). Tên test mới là đề xuất; trước chạy phải kiểm inventory file thực, không báo file vắng là PASS. Với flow có mutation, test dùng emulator/fixtures, không dữ liệu người học hay Gemini thật.
