@@ -38,6 +38,7 @@ test('course switcher exposes goals, switches active courses, and keeps course s
   await page.goto('/?view=settings&locale=en');
   await expect(page.getByRole('heading', { name: 'Make your study space yours' })).toBeVisible();
   const settings = page.getByRole('heading', { name: 'Course and learning' }).locator('xpath=ancestor::section');
+  await expect(settings.locator('[data-settings-active-course]')).toContainText('Korean ← Vietnamese');
   await expect(settings.getByText('Meaning language')).toBeVisible();
   await expect(settings.getByText('Daily pace')).toBeVisible();
   await expect(settings.getByText('Show romanization')).toBeVisible();

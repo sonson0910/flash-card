@@ -14,6 +14,11 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:55
+msgid "course.status.active"
+msgstr "[Âctïvë cøursë]"
+
+#. js-lingui-explicit-id
 #: src/features/settings/settings-screen.tsx:94
 msgid "settings.appearance.description"
 msgstr ""
@@ -24,77 +29,77 @@ msgid "settings.appearance.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:110
+#: src/features/settings/CourseSettingsSection.tsx:121
 msgid "settings.course.account-plan-hint"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:93
+#: src/features/settings/CourseSettingsSection.tsx:104
 msgid "settings.course.archived"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:44
+#: src/features/settings/CourseSettingsSection.tsx:47
 msgid "settings.course.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:104
+#: src/features/settings/CourseSettingsSection.tsx:115
 msgid "settings.course.extension-badge"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:58
+#: src/features/settings/CourseSettingsSection.tsx:69
 msgid "settings.course.meaning-language"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:58
+#: src/features/settings/CourseSettingsSection.tsx:69
 msgid "settings.course.meaning-language.scope"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:68
+#: src/features/settings/CourseSettingsSection.tsx:79
 msgid "settings.course.pace"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:70
+#: src/features/settings/CourseSettingsSection.tsx:81
 msgid "settings.course.pace.option"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:107
+#: src/features/settings/CourseSettingsSection.tsx:118
 msgid "settings.course.reminder-not-ready"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:76
+#: src/features/settings/CourseSettingsSection.tsx:87
 msgid "settings.course.romanization"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:82
+#: src/features/settings/CourseSettingsSection.tsx:93
 msgid "settings.course.script"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:84
+#: src/features/settings/CourseSettingsSection.tsx:95
 msgid "settings.course.script.simplified"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:85
+#: src/features/settings/CourseSettingsSection.tsx:96
 msgid "settings.course.script.traditional"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:43
+#: src/features/settings/CourseSettingsSection.tsx:46
 msgid "settings.course.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:51
+#: src/features/settings/CourseSettingsSection.tsx:62
 msgid "settings.course.ui-language"
 msgstr ""
 

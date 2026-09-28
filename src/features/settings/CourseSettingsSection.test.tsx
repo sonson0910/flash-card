@@ -9,7 +9,8 @@ i18n.load('en', {});
 i18n.activate('en');
 
 const activeCourse = {
-  id: 'course-zh', targetLanguage: 'zh' as const, nativeLanguage: 'vi' as const, status: 'active' as const, goals: [],
+  id: 'course-zh', targetLanguage: 'zh' as const, nativeLanguage: 'vi' as const, status: 'active' as const,
+  goals: [{ id: 'goal-hsk', kind: 'hsk', level: 'HSK 4', targetDate: '2026-12-01', status: 'active' as const, createdAt: '2026-01-01T00:00:00.000Z' }],
   preferences: { pronunciationVariant: null, showRomanization: true, zhScript: 'hant' as const },
   createdAt: '2026-01-01T00:00:00.000Z',
 };
@@ -26,10 +27,11 @@ const value: CourseGateValue = {
 };
 
 describe('CourseSettingsSection', () => {
-  it('renders active-course reading controls and a reopen action for archived courses', () => {
+  it('renders active-course target and goal context with reading controls and a reopen action for archived courses', () => {
     const html = renderToStaticMarkup(<I18nProvider i18n={i18n}><CourseContext.Provider value={value}><CourseSettingsSection /></CourseContext.Provider></I18nProvider>);
 
     expect(html).toContain('App language');
+    expect(html).toMatch(/data-settings-active-course[^>]*>.*Active course.*Chinese.*Vietnamese.*HSK.*HSK 4.*2026-12-01/);
     expect(html).toContain('Meaning language');
     expect(html).toMatch(/data-settings-course-language[^>]*>.*App language.*Meaning language/);
     expect(html).toContain('Applies to new cards. Existing card meanings do not change.');
@@ -57,6 +59,7 @@ describe('CourseSettingsSection', () => {
     const html = renderToStaticMarkup(<I18nProvider i18n={i18n}><CourseContext.Provider value={noActiveCourse}><CourseSettingsSection /></CourseContext.Provider></I18nProvider>);
 
     expect(html).toContain('App language');
+    expect(html).not.toContain('data-settings-active-course');
     expect(html).toContain('Archived courses');
     expect(html).toContain('Japanese');
     expect(html).toContain('Daily reminders aren');

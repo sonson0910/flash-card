@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useSetUiLocale, useUiLocale } from '../../i18n/I18nProvider';
 import { ENABLED_UI_LOCALES, UI_LOCALES, type UiLocale } from '../../i18n/locales';
 import { useCourseSession } from '../courses/CourseGate';
+import { goalKindLabel } from '../courses/courseGoalCatalog';
 import { NATIVE_LANGUAGE_LABEL, TARGET_LANGUAGE_FLAG, TARGET_LANGUAGE_LABEL } from '../courses/courseLanguageLabels';
 import { COURSE_NATIVE_LANGUAGES, type CourseNativeLanguage } from '../courses/courseModel';
 import { DAILY_PACE_OPTIONS, readDailyPace, writeDailyPace, type DailyPace } from './dailyPacePreference';
@@ -28,6 +29,8 @@ export function CourseSettingsSection() {
 
   if (model.status !== 'ready' || !model.profile) return null;
   const activeCourse = model.activeCourse;
+  const activeGoal = activeCourse?.goals.find(goal => goal.status === 'active');
+  const activeGoalLabel = activeGoal && activeCourse ? goalKindLabel(activeCourse.targetLanguage, activeGoal.kind) : null;
   const archivedCourses = model.profile.courses.filter(course => course.status === 'archived');
 
   const updatePreferences = (patch: Partial<{ showRomanization: boolean; pronunciationVariant: string | null; zhScript: 'hans' | 'hant' | null }>) => {
@@ -46,6 +49,14 @@ export function CourseSettingsSection() {
     </div>
 
     <div className="mt-5 grid gap-5">
+      {activeCourse && <div data-settings-active-course className="flex items-center gap-3 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3">
+        <span aria-hidden="true" className="text-2xl">{TARGET_LANGUAGE_FLAG[activeCourse.targetLanguage]}</span>
+        <span className="min-w-0">
+          <span className="block font-bold text-[var(--sf-text)]"><Trans id="course.status.active" message="Active course" /> · {_(TARGET_LANGUAGE_LABEL[activeCourse.targetLanguage])} <span aria-hidden="true">←</span> {_(NATIVE_LANGUAGE_LABEL[activeCourse.nativeLanguage])}</span>
+          {activeGoal && <span className="mt-0.5 block text-sm text-[var(--sf-text-muted)]">{activeGoalLabel ? _(activeGoalLabel) : activeGoal.kind}{activeGoal.level ? ` · ${activeGoal.level}` : ''}{activeGoal.targetDate ? ` · ${activeGoal.targetDate}` : ''}</span>}
+        </span>
+      </div>}
+
       <div data-settings-course-language className="grid gap-3">
         <label className={rowClass}>
           <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.ui-language" message="App language" /></span>
