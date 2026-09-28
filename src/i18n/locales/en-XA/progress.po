@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:124
+#: src/components/stats/ActivityHeatmap.tsx:126
 msgid "stats.active-days"
 msgstr ""
 
@@ -24,8 +24,8 @@ msgid "stats.activity-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:144
-#: src/components/stats/ActivityHeatmap.tsx:144
+#: src/components/stats/ActivityHeatmap.tsx:146
+#: src/components/stats/ActivityHeatmap.tsx:146
 msgid "stats.activity-unavailable"
 msgstr ""
 
@@ -135,7 +135,7 @@ msgid "stats.days"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:127
+#: src/components/stats/ActivityHeatmap.tsx:129
 msgid "stats.heatmap-legend"
 msgstr ""
 
@@ -160,7 +160,7 @@ msgid "stats.legend.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:128
+#: src/components/stats/ActivityHeatmap.tsx:130
 msgid "stats.less"
 msgstr ""
 
@@ -195,7 +195,7 @@ msgid "stats.memory-strength"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:130
+#: src/components/stats/ActivityHeatmap.tsx:132
 msgid "stats.more"
 msgstr ""
 
@@ -215,8 +215,8 @@ msgid "stats.not-reviewed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:144
-#: src/components/stats/ActivityHeatmap.tsx:144
+#: src/components/stats/ActivityHeatmap.tsx:146
+#: src/components/stats/ActivityHeatmap.tsx:146
 msgid "stats.outside-selected-range"
 msgstr ""
 
@@ -271,8 +271,8 @@ msgid "stats.review-range-30-days"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:144
-#: src/components/stats/ActivityHeatmap.tsx:144
+#: src/components/stats/ActivityHeatmap.tsx:146
+#: src/components/stats/ActivityHeatmap.tsx:146
 msgid "stats.reviews"
 msgstr ""
 
@@ -307,8 +307,8 @@ msgid "stats.star-keeper-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:133
-#: src/components/stats/ActivityHeatmap.tsx:134
+#: src/components/stats/ActivityHeatmap.tsx:135
+#: src/components/stats/ActivityHeatmap.tsx:136
 msgid "stats.study-activity"
 msgstr ""
 
@@ -333,12 +333,12 @@ msgid "stats.tier-star"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:125
+#: src/components/stats/ActivityHeatmap.tsx:127
 msgid "stats.total-reviews"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:125
+#: src/components/stats/ActivityHeatmap.tsx:127
 msgid "stats.total-xp"
 msgstr ""
 
