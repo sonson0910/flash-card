@@ -168,7 +168,7 @@ msgstr "Vui lòng chọn lý do báo cáo."
 #: src/components/AppOverlays.tsx:406
 #: src/components/AppOverlays.tsx:532
 #: src/components/flashcard/CardBack.tsx:106
-#: src/components/flashcard/CardBack.tsx:363
+#: src/components/flashcard/CardBack.tsx:318
 msgid "flashcard.ai-disclosure"
 msgstr "Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa."
 
@@ -233,17 +233,12 @@ msgid "flashcard.ai.work-examples"
 msgstr "💼 3 ví dụ công việc"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:255
+#: src/components/flashcard/CardBack.tsx:181
 msgid "flashcard.ask-ai-tutor"
 msgstr "Hỏi gia sư AI"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:255
-msgid "flashcard.ask-ai-tutor-description"
-msgstr "Ví dụ công việc, sắc thái và từ đồng nghĩa"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:164
+#: src/components/flashcard/CardBack.tsx:211
 #: src/components/flashcard/CardFront.tsx:187
 #: src/components/flashcard/CardFront.tsx:188
 msgid "flashcard.audio.check-pronunciation"
@@ -266,29 +261,18 @@ msgid "flashcard.audio.listening"
 msgstr "Đang nghe"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:139
-#: src/components/flashcard/CardBack.tsx:140
-#: src/components/flashcard/CardBack.tsx:349
+#: src/components/flashcard/CardBack.tsx:119
+#: src/components/flashcard/CardBack.tsx:304
 #: src/components/flashcard/CardFront.tsx:173
 #: src/components/flashcard/CardFront.tsx:174
 msgid "flashcard.audio.play-pronunciation"
 msgstr "Phát âm"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:165
-msgid "flashcard.audio.practice-pronunciation"
-msgstr "Luyện phát âm"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:124
+#: src/components/flashcard/CardBack.tsx:210
 #: src/components/flashcard/CardFront.tsx:159
 msgid "flashcard.audio.toggle-speed"
 msgstr "Đổi tốc độ"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:123
-msgid "flashcard.audio.toggle-speed-back"
-msgstr "Đổi tốc độ (1,0x / chậm 0,75x)"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/CardFront.tsx:158
@@ -301,7 +285,7 @@ msgid "flashcard.audio.unsupported"
 msgstr "Trình duyệt này không hỗ trợ phát âm thanh."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:281
+#: src/components/flashcard/CardBack.tsx:236
 msgid "flashcard.back-to-english"
 msgstr "Quay lại tiếng Anh"
 
@@ -435,37 +419,27 @@ msgid "flashcard.details.vocabulary"
 msgstr "Từ vựng"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:209
+#: src/components/flashcard/CardBack.tsx:160
 msgid "flashcard.dismiss-translation-error"
 msgstr "Đóng lỗi dịch"
 
 #. js-lingui-explicit-id
 #: src/components/Flashcard.tsx:692
 #: src/components/Flashcard.tsx:692
-#: src/components/flashcard/CardBack.tsx:174
-#: src/components/flashcard/CardBack.tsx:369
+#: src/components/flashcard/CardBack.tsx:126
+#: src/components/flashcard/CardBack.tsx:324
 msgid "flashcard.edit"
 msgstr "Sửa thẻ"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:184
-msgid "flashcard.explanation.subtitle"
-msgstr "Bản dịch tự nhiên và ghi chú cách dùng"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:183
+#: src/components/flashcard/CardBack.tsx:137
 msgid "flashcard.explanation.vietnamese"
 msgstr "Giải thích bằng tiếng Việt"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:226
+#: src/components/flashcard/CardBack.tsx:189
 msgid "flashcard.explore-more"
 msgstr "Khám phá thêm"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:227
-msgid "flashcard.explore-more-description"
-msgstr "Ngữ cảnh, sắc thái và gia sư AI"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/HangulBreakdown.tsx:11
@@ -521,22 +495,22 @@ msgstr "Không có hình minh họa"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/CardBack.tsx:87
-#: src/components/flashcard/CardBack.tsx:323
+#: src/components/flashcard/CardBack.tsx:278
 msgid "flashcard.language.vietnamese"
 msgstr "Tiếng Việt"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:237
+#: src/components/flashcard/CardBack.tsx:199
 msgid "flashcard.learning-details-label"
 msgstr "Chi tiết học tập: ví dụ, cụm từ và sắc thái"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:243
+#: src/components/flashcard/CardBack.tsx:205
 msgid "flashcard.lexicon-context"
 msgstr "Ngữ cảnh từ vựng"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:243
+#: src/components/flashcard/CardBack.tsx:205
 msgid "flashcard.lexicon-context-description"
 msgstr "Ví dụ, cụm từ và sắc thái"
 
@@ -552,7 +526,8 @@ msgid "flashcard.meaning.vietnamese"
 msgstr "Nghĩa tiếng Việt"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:218
+#: src/components/flashcard/CardBack.tsx:170
+#: src/components/flashcard/CardMnemonicSection.tsx:66
 msgid "flashcard.memory-hook"
 msgstr "Liên tưởng ghi nhớ"
 
@@ -562,23 +537,17 @@ msgid "flashcard.mnemonic.error"
 msgstr "Không thể tạo liên tưởng lúc này. Vui lòng thử lại."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardMnemonicSection.tsx:76
-#: src/components/flashcard/CardMnemonicSection.tsx:77
+#: src/components/flashcard/CardMnemonicSection.tsx:60
 msgid "flashcard.mnemonic.generate"
 msgstr "Tạo liên tưởng mới"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardMnemonicSection.tsx:104
-msgid "flashcard.mnemonic.generate-ai"
-msgstr "Tạo liên tưởng bằng AI"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardMnemonicSection.tsx:102
+#: src/components/flashcard/CardMnemonicSection.tsx:66
 msgid "flashcard.mnemonic.generating"
 msgstr "Đang tạo gợi ý ghi nhớ…"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardMnemonicSection.tsx:64
+#: src/components/flashcard/CardMnemonicSection.tsx:59
 msgid "flashcard.mnemonic.title"
 msgstr "Mẹo ghi nhớ AI · Liên tưởng"
 
@@ -586,11 +555,6 @@ msgstr "Mẹo ghi nhớ AI · Liên tưởng"
 #: src/components/flashcard/CardFront.tsx:207
 msgid "flashcard.more-tools"
 msgstr "Thêm công cụ cho thẻ"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:110
-msgid "flashcard.original-word"
-msgstr "Từ gốc"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/CardHeadword.tsx:42
@@ -758,18 +722,18 @@ msgid "flashcard.recall.visual-recall"
 msgstr "Gợi nhớ qua hình ảnh"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:173
-#: src/components/flashcard/CardBack.tsx:367
+#: src/components/flashcard/CardBack.tsx:125
+#: src/components/flashcard/CardBack.tsx:322
 msgid "flashcard.report"
 msgstr "Báo thẻ sai"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:394
+#: src/components/flashcard/CardBack.tsx:349
 msgid "flashcard.return-to-english"
 msgstr "Trở về tiếng Anh"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:273
+#: src/components/flashcard/CardBack.tsx:228
 msgid "flashcard.return-to-english-label"
 msgstr "Trở về mặt tiếng Anh của {word}"
 
@@ -877,12 +841,12 @@ msgid "flashcard.tier.new"
 msgstr "Nụ"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:201
+#: src/components/flashcard/CardBack.tsx:152
 msgid "flashcard.translate-explanation"
 msgstr "Dịch phần giải thích"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:199
+#: src/components/flashcard/CardBack.tsx:150
 msgid "flashcard.translating"
 msgstr "Đang dịch…"
 
@@ -892,7 +856,7 @@ msgid "flashcard.translation.failed"
 msgstr "Không dịch được phần giải thích. Hãy kiểm tra kết nối rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:207
+#: src/components/flashcard/CardBack.tsx:158
 msgid "flashcard.try-again"
 msgstr "Thử lại"
 

@@ -87,7 +87,7 @@ describe('Flashcard mobile controls', () => {
     expect(source).toContain('flex items-center rounded-full border border-slate-200/90 bg-slate-100/90 p-1');
   });
 
-  it('keeps explanation and memory hook visible while only secondary tools are disclosed', () => {
+  it('keeps back-side meaning, bilingual context and compact learning CTAs visible', () => {
     const html = renderCard(
       <Flashcard
         data={{
@@ -97,6 +97,9 @@ describe('Flashcard mobile controls', () => {
           explanation: 'A clear explanation.',
           explanationTranslation: 'Một lời giải thích rõ ràng.',
           phonetic: '/ˈfəʊkəs/',
+          partOfSpeech: 'noun',
+          exampleSentence: 'Keep your focus on the task.',
+          exampleTranslation: 'Hãy giữ sự tập trung vào nhiệm vụ.',
           emoji: '🎯',
           category: 'Study',
           audioUrl: null,
@@ -108,18 +111,24 @@ describe('Flashcard mobile controls', () => {
     );
 
     const meaning = html.indexOf('data-card-section="meaning"');
+    const example = html.indexOf('data-card-section="example"');
     const explanation = html.indexOf('data-card-section="explanation"');
     const memoryHook = html.indexOf('data-card-section="memory-hook"');
     const learningTools = html.indexOf('data-card-disclosure="learning-tools"');
 
     expect(meaning).toBeGreaterThanOrEqual(0);
-    expect(explanation).toBeGreaterThan(meaning);
+    expect(example).toBeGreaterThan(meaning);
+    expect(explanation).toBeGreaterThan(example);
     expect(memoryHook).toBeGreaterThan(explanation);
     expect(learningTools).toBeGreaterThan(memoryHook);
     expect(html).not.toContain('data-card-disclosure="explanation"');
     expect(html).not.toContain('data-card-disclosure="memory-hook"');
-    expect(html).toContain('mnemonic-card mt-3.5 w-full p-4 text-left');
-    expect(html).toContain('AI Mnemonic · Memory Hook');
+    expect(html).toContain('Keep your focus on the task.');
+    expect(html).toContain('Hãy giữ sự tập trung vào nhiệm vụ.');
+    expect(html).toContain('noun');
+    expect(html).toContain('/ˈfəʊkəs/');
+    expect(html).toContain('Memory hook');
+    expect(html).toContain('Ask AI Tutor');
     expect(html).not.toContain('<details open=""');
     expect(html).toContain('data-translation-reveal="true"');
   });
@@ -279,8 +288,8 @@ describe('Flashcard mobile controls', () => {
   it('keeps mnemonic regeneration controls at least 44px on each touch dimension', () => {
     const source = readFileSync(fileURLToPath(new URL('./flashcard/CardMnemonicSection.tsx', import.meta.url)), 'utf8');
 
-    expect(source).toContain('flex size-11 cursor-pointer items-center justify-center');
-    expect(source).toContain('mnemonic-generate-button flex min-h-11 w-full');
+    expect(source).toContain('flex min-h-11 min-w-11 items-center justify-center');
+    expect(source).toContain('flex min-h-11 w-full cursor-pointer items-center justify-center');
   });
 
   const cardFixture = {

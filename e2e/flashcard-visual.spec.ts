@@ -164,6 +164,12 @@ for (const theme of themes) {
       await shell.getByRole('button', { name: /Reveal the Vietnamese meaning of luminous/ }).click();
       await expect(shell).toHaveAttribute('data-card-side', 'back');
       await expect(shell.locator('.flashcard-back')).toBeVisible();
+      await expect(shell.getByText('adjective', { exact: true })).toBeVisible();
+      await expect(shell.getByText('/ˈluːmɪnəs/', { exact: true })).toBeVisible();
+      await expect(shell.getByText('The luminous dial remained visible at night.', { exact: true })).toBeVisible();
+      await expect(shell.getByText('Mặt số phát sáng vẫn nhìn thấy được vào ban đêm.', { exact: true })).toBeVisible();
+      await expect(shell.getByRole('button', { name: 'Memory hook' })).toBeVisible();
+      await expect(shell.getByRole('button', { name: 'Ask AI Tutor' })).toBeVisible();
       await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-back.png`, {
         animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
       });

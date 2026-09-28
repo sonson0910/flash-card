@@ -168,7 +168,7 @@ msgstr "Please choose a reason for the report."
 #: src/components/AppOverlays.tsx:406
 #: src/components/AppOverlays.tsx:532
 #: src/components/flashcard/CardBack.tsx:106
-#: src/components/flashcard/CardBack.tsx:363
+#: src/components/flashcard/CardBack.tsx:318
 msgid "flashcard.ai-disclosure"
 msgstr "AI-generated content may be incorrect. Please check the meaning."
 
@@ -233,17 +233,12 @@ msgid "flashcard.ai.work-examples"
 msgstr "💼 3 Work examples"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:255
+#: src/components/flashcard/CardBack.tsx:181
 msgid "flashcard.ask-ai-tutor"
 msgstr "Ask AI Tutor"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:255
-msgid "flashcard.ask-ai-tutor-description"
-msgstr "Business examples, nuance & synonyms"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:164
+#: src/components/flashcard/CardBack.tsx:211
 #: src/components/flashcard/CardFront.tsx:187
 #: src/components/flashcard/CardFront.tsx:188
 msgid "flashcard.audio.check-pronunciation"
@@ -266,29 +261,18 @@ msgid "flashcard.audio.listening"
 msgstr "Listening"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:139
-#: src/components/flashcard/CardBack.tsx:140
-#: src/components/flashcard/CardBack.tsx:349
+#: src/components/flashcard/CardBack.tsx:119
+#: src/components/flashcard/CardBack.tsx:304
 #: src/components/flashcard/CardFront.tsx:173
 #: src/components/flashcard/CardFront.tsx:174
 msgid "flashcard.audio.play-pronunciation"
 msgstr "Play pronunciation"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:165
-msgid "flashcard.audio.practice-pronunciation"
-msgstr "Practise pronunciation"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:124
+#: src/components/flashcard/CardBack.tsx:210
 #: src/components/flashcard/CardFront.tsx:159
 msgid "flashcard.audio.toggle-speed"
 msgstr "Toggle speed"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:123
-msgid "flashcard.audio.toggle-speed-back"
-msgstr "Toggle speed (1.0x / 0.75x slow)"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/CardFront.tsx:158
@@ -301,7 +285,7 @@ msgid "flashcard.audio.unsupported"
 msgstr "Audio playback is not supported by this browser."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:281
+#: src/components/flashcard/CardBack.tsx:236
 msgid "flashcard.back-to-english"
 msgstr "Back to English"
 
@@ -435,37 +419,27 @@ msgid "flashcard.details.vocabulary"
 msgstr "Vocabulary"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:209
+#: src/components/flashcard/CardBack.tsx:160
 msgid "flashcard.dismiss-translation-error"
 msgstr "Dismiss translation error"
 
 #. js-lingui-explicit-id
 #: src/components/Flashcard.tsx:692
 #: src/components/Flashcard.tsx:692
-#: src/components/flashcard/CardBack.tsx:174
-#: src/components/flashcard/CardBack.tsx:369
+#: src/components/flashcard/CardBack.tsx:126
+#: src/components/flashcard/CardBack.tsx:324
 msgid "flashcard.edit"
 msgstr "Edit card"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:184
-msgid "flashcard.explanation.subtitle"
-msgstr "Natural translations and usage notes"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:183
+#: src/components/flashcard/CardBack.tsx:137
 msgid "flashcard.explanation.vietnamese"
 msgstr "Explanation in Vietnamese"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:226
+#: src/components/flashcard/CardBack.tsx:189
 msgid "flashcard.explore-more"
 msgstr "Explore more"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:227
-msgid "flashcard.explore-more-description"
-msgstr "Context, nuance and AI tutoring"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/HangulBreakdown.tsx:11
@@ -521,22 +495,22 @@ msgstr "Image cue unavailable"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/CardBack.tsx:87
-#: src/components/flashcard/CardBack.tsx:323
+#: src/components/flashcard/CardBack.tsx:278
 msgid "flashcard.language.vietnamese"
 msgstr "Vietnamese"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:237
+#: src/components/flashcard/CardBack.tsx:199
 msgid "flashcard.learning-details-label"
 msgstr "Learning details: examples, collocations and nuances"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:243
+#: src/components/flashcard/CardBack.tsx:205
 msgid "flashcard.lexicon-context"
 msgstr "Lexicon context"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:243
+#: src/components/flashcard/CardBack.tsx:205
 msgid "flashcard.lexicon-context-description"
 msgstr "Examples, collocations & nuances"
 
@@ -552,7 +526,8 @@ msgid "flashcard.meaning.vietnamese"
 msgstr "Vietnamese meaning"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:218
+#: src/components/flashcard/CardBack.tsx:170
+#: src/components/flashcard/CardMnemonicSection.tsx:66
 msgid "flashcard.memory-hook"
 msgstr "Memory hook"
 
@@ -562,23 +537,17 @@ msgid "flashcard.mnemonic.error"
 msgstr "Unable to generate mnemonic right now. Please try again."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardMnemonicSection.tsx:76
-#: src/components/flashcard/CardMnemonicSection.tsx:77
+#: src/components/flashcard/CardMnemonicSection.tsx:60
 msgid "flashcard.mnemonic.generate"
 msgstr "Generate a new mnemonic"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardMnemonicSection.tsx:104
-msgid "flashcard.mnemonic.generate-ai"
-msgstr "Generate AI Mnemonic"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardMnemonicSection.tsx:102
+#: src/components/flashcard/CardMnemonicSection.tsx:66
 msgid "flashcard.mnemonic.generating"
 msgstr "Generating memory hint…"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardMnemonicSection.tsx:64
+#: src/components/flashcard/CardMnemonicSection.tsx:59
 msgid "flashcard.mnemonic.title"
 msgstr "AI Mnemonic · Memory Hook"
 
@@ -586,11 +555,6 @@ msgstr "AI Mnemonic · Memory Hook"
 #: src/components/flashcard/CardFront.tsx:207
 msgid "flashcard.more-tools"
 msgstr "More card tools"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:110
-msgid "flashcard.original-word"
-msgstr "Original word"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/CardHeadword.tsx:42
@@ -758,18 +722,18 @@ msgid "flashcard.recall.visual-recall"
 msgstr "Visual recall"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:173
-#: src/components/flashcard/CardBack.tsx:367
+#: src/components/flashcard/CardBack.tsx:125
+#: src/components/flashcard/CardBack.tsx:322
 msgid "flashcard.report"
 msgstr "Report incorrect card"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:394
+#: src/components/flashcard/CardBack.tsx:349
 msgid "flashcard.return-to-english"
 msgstr "Return to English"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:273
+#: src/components/flashcard/CardBack.tsx:228
 msgid "flashcard.return-to-english-label"
 msgstr "Return to the English side of {word}"
 
@@ -877,12 +841,12 @@ msgid "flashcard.tier.new"
 msgstr "Bud"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:201
+#: src/components/flashcard/CardBack.tsx:152
 msgid "flashcard.translate-explanation"
 msgstr "Translate explanation"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:199
+#: src/components/flashcard/CardBack.tsx:150
 msgid "flashcard.translating"
 msgstr "Translating…"
 
@@ -892,7 +856,7 @@ msgid "flashcard.translation.failed"
 msgstr "The explanation could not be translated. Check your connection and try again."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardBack.tsx:207
+#: src/components/flashcard/CardBack.tsx:158
 msgid "flashcard.try-again"
 msgstr "Try again"
 

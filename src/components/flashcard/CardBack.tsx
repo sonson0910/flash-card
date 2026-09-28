@@ -98,7 +98,7 @@ export function CardBack({
           <div data-card-content="revealed" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4 pt-16 text-center scrollbar-thin sm:px-7">
             <section data-card-section="meaning" aria-labelledby={`flashcard-meaning-${data.id}`} className="relative mx-auto w-full max-w-xl px-1 pb-3 pt-2 text-center sm:px-3">
               <p id={`flashcard-meaning-${data.id}`} className="relative text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300"><Trans id="flashcard.meaning.vietnamese" message="Vietnamese meaning" /></p>
-              <h2 data-translation-reveal lang={data.translationLanguage || 'vi'} className="flashcard-translation-gradient flashcard-translation-reveal relative mt-1 break-words text-balance text-3xl font-black tracking-[-0.04em] drop-shadow-xs first-letter:uppercase [overflow-wrap:anywhere] sm:text-4xl">
+              <h2 data-translation-reveal lang={data.translationLanguage || 'vi'} className="flashcard-translation-gradient flashcard-translation-reveal zen-editorial-serif relative mt-2 break-words text-balance text-4xl font-normal tracking-tight drop-shadow-xs first-letter:uppercase [overflow-wrap:anywhere] sm:text-5xl">
                 {data.translation}
               </h2>
               {data.origin === 'ai' && (
@@ -106,68 +106,20 @@ export function CardBack({
                   <Trans id="flashcard.ai-disclosure" message="AI-generated content may be incorrect. Please check the meaning." />
                 </p>
               )}
-              <div className="relative mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
-                <p className="sr-only"><Trans id="flashcard.original-word" message="Original word" /></p>
-                <p lang={data.language || 'en'} className="break-words text-base font-black text-slate-900 dark:text-white [overflow-wrap:anywhere] sm:text-lg">{data.word}</p>
-                <div className="flex shrink-0 items-center gap-2">
-                  <div className="flex items-center rounded-full p-1 border border-slate-200/90 bg-slate-100/90 dark:border-white/15 dark:bg-white/[0.08] backdrop-blur-md shadow-xs transition-all">
-                    <button
-                      type="button"
-                      data-card-control
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={toggleAudioSpeed}
-                      style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-                      className={`touch-manipulation flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-full px-2.5 text-xs font-black transition-all cursor-pointer ${
-                        audioSpeed === 0.75 ? 'bg-cyan-400 text-[#071014] font-extrabold shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
-                      }`}
-                      title={_(msg({ id: 'flashcard.audio.toggle-speed-back', message: 'Toggle speed (1.0x / 0.75x slow)' }))}
-                      aria-label={_(msg({ id: 'flashcard.audio.toggle-speed', message: 'Toggle speed' }))}
-                    >
-                      {`${audioSpeed}×`}
-                    </button>
-                    <span className="mx-1 h-3.5 w-px bg-slate-300 dark:bg-white/10" aria-hidden="true" />
-                    <button
-                      type="button"
-                      data-card-control
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={playAudio}
-                      data-card-effect="audio"
-                      style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-                      className={`touch-manipulation flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 text-xs font-black transition-all cursor-pointer ${
-                        isPlayingAudio ? 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.3)]' : 'text-[var(--sf-brand-text)] hover:bg-cyan-500/10'
-                      }`}
-                      aria-label={_(msg({ id: 'flashcard.audio.play-pronunciation', message: 'Play pronunciation' }))}
-                      title={_(msg({ id: 'flashcard.audio.play-pronunciation', message: 'Play pronunciation' }))}
-                    >
-                      {isPlayingAudio ? (
-                        <span className="flex items-center gap-0.5 h-3" aria-hidden="true">
-                          <span className="w-0.5 h-full rounded-full bg-cyan-600 dark:bg-cyan-400 wave-bar-1" />
-                          <span className="w-0.5 h-full rounded-full bg-cyan-600 dark:bg-cyan-400 wave-bar-2" />
-                          <span className="w-0.5 h-full rounded-full bg-cyan-600 dark:bg-cyan-400 wave-bar-3" />
-                          <span className="w-0.5 h-full rounded-full bg-cyan-600 dark:bg-cyan-400 wave-bar-4" />
-                        </span>
-                      ) : (
-                        <Volume2 size={13} />
-                      )}
-                    </button>
-                    <span className="mx-1 h-3.5 w-px bg-slate-300 dark:bg-white/10" aria-hidden="true" />
-                    <button
-                      type="button"
-                      data-card-control
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={startPronunciationCheck}
-                      disabled={isRecording}
-                      style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-                      className={`touch-manipulation flex size-12 items-center justify-center rounded-full transition-all cursor-pointer ${
-                        isRecording ? 'bg-rose-500 text-white animate-pulse' : 'text-[var(--sf-text)] hover:text-rose-500 hover:bg-rose-500/10'
-                      }`}
-                      aria-label={_(msg({ id: 'flashcard.audio.check-pronunciation', message: 'Check pronunciation' }))}
-                      title={_(msg({ id: 'flashcard.audio.practice-pronunciation', message: 'Practise pronunciation' }))}
-                    >
-                      <Mic size={13} />
-                    </button>
-                  </div>
-                </div>
+              <div className="relative mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center">
+                {data.partOfSpeech && <span lang={data.language || 'en'} className="text-sm font-bold text-slate-700 dark:text-slate-200">{data.partOfSpeech}</span>}
+                {data.phonetic && <span lang={data.language || 'en'} className="font-mono text-sm text-slate-500 dark:text-slate-300">{data.phonetic}</span>}
+                <button
+                  type="button"
+                  data-card-control
+                  data-card-effect="audio"
+                  onPointerDown={event => event.stopPropagation()}
+                  onClick={playAudio}
+                  className={`touch-manipulation flex min-h-11 min-w-11 items-center justify-center rounded-full border border-slate-200/90 bg-slate-100/90 text-cyan-700 transition-colors dark:border-white/15 dark:bg-white/[0.08] dark:text-cyan-300 ${isPlayingAudio ? 'shadow-[0_0_12px_rgba(34,211,238,0.3)]' : 'hover:bg-cyan-500/10'}`}
+                  aria-label={_(msg({ id: 'flashcard.audio.play-pronunciation', message: 'Play pronunciation' }))}
+                >
+                  {isPlayingAudio ? <span className="flex h-3 items-center gap-0.5" aria-hidden="true"><span className="wave-bar-1 w-0.5 rounded-full bg-current" /><span className="wave-bar-2 w-0.5 rounded-full bg-current" /><span className="wave-bar-3 w-0.5 rounded-full bg-current" /><span className="wave-bar-4 w-0.5 rounded-full bg-current" /></span> : <Volume2 size={14} aria-hidden="true" />}
+                </button>
               </div>
               <div className="relative flex flex-wrap items-center justify-center gap-1 text-center">
                 {isAccountSignedIn() && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowReportDialog(true)} className="min-h-11 px-3 text-xs font-bold text-rose-800 underline underline-offset-4 dark:text-rose-200"><Trans id="flashcard.report" message="Report incorrect card" /></button>}
@@ -176,14 +128,13 @@ export function CardBack({
                {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-600 dark:text-rose-100" role="alert">{pronunciationError}</p>}
             </section>
 
-            <section data-card-section="explanation" aria-labelledby={`flashcard-explanation-${data.id}`} className="mx-auto mt-4 flex w-full max-w-xl flex-col items-start text-left">
-              <div className="mb-3 flex items-center gap-2">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/10 dark:bg-white/10 dark:text-cyan-300" aria-hidden="true"><Languages size={15} /></span>
-                <div>
-                  <p id={`flashcard-explanation-${data.id}`} className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200"><Trans id="flashcard.explanation.vietnamese" message="Explanation in Vietnamese" /></p>
-                  <p className="mt-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-300"><Trans id="flashcard.explanation.subtitle" message="Natural translations and usage notes" /></p>
-                </div>
-              </div>
+            {(data.exampleSentence || data.exampleTranslation) && <section data-card-section="example" className="mx-auto mt-3 w-full max-w-xl rounded-2xl border border-slate-200/80 bg-slate-100/70 p-4 text-left dark:border-white/10 dark:bg-white/[0.05]">
+              {data.exampleSentence && <p lang={data.language || 'en'} className="zen-editorial-serif text-base font-normal text-slate-800 dark:text-white"><span aria-hidden="true">“</span><span>{data.exampleSentence}</span><span aria-hidden="true">”</span></p>}
+              {data.exampleTranslation && <p lang={data.translationLanguage || 'vi'} className="mt-1 text-sm text-slate-600 dark:text-slate-300">{data.exampleTranslation}</p>}
+            </section>}
+
+            <section data-card-section="explanation" aria-labelledby={`flashcard-explanation-${data.id}`} className="mx-auto mt-3 flex w-full max-w-xl flex-col items-start text-left">
+              <p id={`flashcard-explanation-${data.id}`} className="sr-only"><Trans id="flashcard.explanation.vietnamese" message="Explanation in Vietnamese" /></p>
               {data.explanationTranslation ? (
                 <RichVietnameseExplanation value={data.explanationTranslation} lang={data.translationLanguage || 'vi'} />
               ) : (
@@ -215,16 +166,27 @@ export function CardBack({
               )}
             </section>
 
-            <section data-card-section="memory-hook" aria-label={_(msg({ id: 'flashcard.memory-hook', message: 'Memory hook' }))}>
-              <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
-            </section>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <section data-card-section="memory-hook" aria-label={_(msg({ id: 'flashcard.memory-hook', message: 'Memory hook' }))} className="min-w-0 flex-1">
+                <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
+              </section>
+              <button
+                type="button"
+                data-card-control
+                onPointerDown={event => event.stopPropagation()}
+                onClick={() => setShowAiModal(true)}
+                className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-slate-200/90 px-4 text-xs font-bold text-slate-800 transition-colors hover:bg-cyan-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] dark:border-white/15 dark:text-slate-100 dark:hover:bg-cyan-400/10"
+              >
+                <Sparkles size={14} className="shrink-0 text-cyan-700 dark:text-cyan-300" aria-hidden="true" />
+                <span><Trans id="flashcard.ask-ai-tutor" message="Ask AI Tutor" /></span>
+              </button>
+            </div>
 
             <details data-card-disclosure="learning-tools" className="flashcard-disclosure group/disclosure mt-2 text-left">
-              <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] [&::-webkit-details-marker]:hidden">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 px-4 py-2 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] [&::-webkit-details-marker]:hidden">
                 <BookOpen size={16} className="shrink-0 text-slate-600 dark:text-slate-300" aria-hidden="true" />
                 <span className="min-w-0 flex-1">
                   <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-slate-700 dark:text-slate-200"><Trans id="flashcard.explore-more" message="Explore more" /></span>
-                  <span className="mt-0.5 block truncate text-[11px] font-medium text-slate-500 dark:text-slate-300"><Trans id="flashcard.explore-more-description" message="Context, nuance and AI tutoring" /></span>
                 </span>
                 <ChevronRight size={15} className="shrink-0 text-slate-400 transition-transform duration-200 group-open/disclosure:rotate-90" aria-hidden="true" />
               </summary>
@@ -244,17 +206,10 @@ export function CardBack({
                     <ChevronRight size={15} className="text-slate-400" />
                   </button>
                 )}
-                <button
-                  type="button"
-                  data-card-control
-                  onPointerDown={e => e.stopPropagation()}
-                  onClick={() => setShowAiModal(true)}
-                  className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-slate-800 outline-none transition-colors duration-200 hover:bg-cyan-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] dark:text-slate-100 dark:hover:bg-cyan-400/10"
-                >
-                  <Sparkles size={15} className="shrink-0 text-cyan-700 dark:text-cyan-300" />
-                  <span className="min-w-0 flex-1"><span className="block text-xs font-bold"><Trans id="flashcard.ask-ai-tutor" message="Ask AI Tutor" /></span><span className="block truncate text-[11px] text-slate-500 dark:text-slate-300"><Trans id="flashcard.ask-ai-tutor-description" message="Business examples, nuance & synonyms" /></span></span>
-                  <ChevronRight size={15} className="text-slate-400" />
-                </button>
+                <div className="flex items-center justify-center gap-2 border-t border-slate-200/80 px-3 py-2 dark:border-white/10">
+                  <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={toggleAudioSpeed} className={`min-h-11 rounded-full px-3 text-xs font-bold ${audioSpeed === 0.75 ? 'bg-cyan-400 text-[#071014]' : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/[0.07]'}`} aria-label={_(msg({ id: 'flashcard.audio.toggle-speed', message: 'Toggle speed' }))}>{`${audioSpeed}×`}</button>
+                  <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={startPronunciationCheck} disabled={isRecording} className={`flex min-h-11 min-w-11 items-center justify-center rounded-full ${isRecording ? 'bg-rose-500 text-white animate-pulse' : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/[0.07]'}`} aria-label={_(msg({ id: 'flashcard.audio.check-pronunciation', message: 'Check pronunciation' }))}><Mic size={14} /></button>
+                </div>
               </div>
             </details>
           </div>
