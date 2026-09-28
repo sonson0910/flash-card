@@ -101,6 +101,24 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(settings.getByText('Meaning language')).toBeVisible();
     await expect(settings.getByText('Daily pace')).toBeVisible();
     await expect(settings.getByRole('switch')).toBeChecked();
+    const activeCourse = settings.locator('[data-settings-active-course]');
+    const courseLanguage = settings.locator('[data-settings-course-language]');
+    const coursePreferences = settings.locator('[data-settings-course-preferences]');
+    const [activeCourseBox, courseLanguageBox, coursePreferencesBox] = await Promise.all([
+      activeCourse.boundingBox(),
+      courseLanguage.boundingBox(),
+      coursePreferences.boundingBox(),
+    ]);
+    expect(activeCourseBox && courseLanguageBox && coursePreferencesBox).toBeTruthy();
+    if (activeCourseBox && courseLanguageBox && coursePreferencesBox) {
+      if (viewport.name === 'desktop') {
+        expect(courseLanguageBox.x + courseLanguageBox.width, 'language controls stay left of the active course on desktop').toBeLessThanOrEqual(activeCourseBox.x);
+        expect(activeCourseBox.y, 'active course stays above course preferences on desktop').toBeLessThan(coursePreferencesBox.y);
+      } else {
+        expect(activeCourseBox.y, 'active course stays before language controls on mobile').toBeLessThan(courseLanguageBox.y);
+        expect(courseLanguageBox.y, 'language controls stay before preferences on mobile').toBeLessThan(coursePreferencesBox.y);
+      }
+    }
     const appearance = page.getByRole('heading', { name: 'Appearance' }).locator('xpath=ancestor::section');
     const coursePosition = await settings.boundingBox();
     const appearancePosition = await appearance.boundingBox();

@@ -48,7 +48,7 @@ export function CourseSettingsSection() {
       </div>
     </div>
 
-    <div className="mt-5 grid gap-5">
+    <div className="settings-course-grid mt-5 grid gap-5">
       {activeCourse && <div data-settings-active-course className="flex items-center gap-3 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3">
         <span aria-hidden="true" className="text-2xl">{TARGET_LANGUAGE_FLAG[activeCourse.targetLanguage]}</span>
         <span className="min-w-0">
@@ -98,7 +98,7 @@ export function CourseSettingsSection() {
         </div>}
       </div>}
 
-      {archivedCourses.length > 0 && <div className={rowClass}>
+      {archivedCourses.length > 0 && <div data-settings-grid-wide className={rowClass}>
         <Archive size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
         <span className="min-w-0 flex-1">
           <span className="block font-bold text-[var(--sf-text)]"><Trans id="settings.course.archived" message="Archived courses" /></span>
@@ -111,13 +111,13 @@ export function CourseSettingsSection() {
         </span>
       </div>}
 
-      <div className={infoRowClass}>
+      <div data-settings-grid-wide className={infoRowClass}>
         <Trans id="settings.course.extension-badge" message="If you have the browser extension installed, its badge shows how many cards are due — this is read-only information, there is nothing to turn on or off here." />
       </div>
-      <div className={infoRowClass}>
+      <div data-settings-grid-wide className={infoRowClass}>
         <Trans id="settings.course.reminder-not-ready" message="Daily reminders aren't turned on yet. When they are, you'll be able to choose the days and quiet hours here." />
       </div>
-      <div className="text-sm text-[var(--sf-text-muted)]">
+      <div data-settings-grid-wide className="text-sm text-[var(--sf-text-muted)]">
         <Trans id="settings.course.account-plan-hint" message="Account and plan settings are available from your profile menu." />
       </div>
     </div>

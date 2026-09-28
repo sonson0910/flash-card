@@ -3,6 +3,13 @@
 .settings-panel { position: relative; overflow: hidden; }
 .settings-panel::before { position: absolute; inset: 0; pointer-events: none; content: ""; opacity: .5; background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--sf-brand) 12%, transparent), transparent 32%); }
 .settings-panel > * { position: relative; }
+@media (min-width: 768px) {
+  .settings-course-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .settings-course-grid [data-settings-active-course] { grid-column: 2; grid-row: 1; }
+  .settings-course-grid [data-settings-course-language] { grid-column: 1; grid-row: 1 / span 2; }
+  .settings-course-grid [data-settings-course-preferences] { grid-column: 2; grid-row: 2; padding-top: 0; border-top: 0; }
+  .settings-course-grid [data-settings-grid-wide] { grid-column: 1 / -1; }
+}
 .settings-theme-picker > div > label { border-radius: 16px; }
 .settings-preview { --preview-canvas: #06161f; --preview-surface: #0d212b; --preview-text: #e5ecf1; --preview-muted: #99a7b0; --preview-brand: #28d3f4; --preview-accent: #28d3f4; --preview-glow: rgb(40 211 244 / .45); --preview-on-brand: #04141c; --preview-line: rgb(255 255 255 / .12); --preview-radius: 12px; position: relative; isolation: isolate; min-height: 104px; overflow: hidden; padding: 9px; border: 1px solid var(--preview-line); border-radius: var(--preview-radius); background: var(--preview-canvas); color: var(--preview-text); }
 .settings-preview[data-theme-preview="classic-light"] { --preview-canvas: #f7f2e8; --preview-surface: #fffcf5; --preview-text: #1d1a16; --preview-muted: #6b6255; --preview-brand: #1d1a16; --preview-accent: #b4461a; --preview-glow: rgb(180 70 26 / .24); --preview-on-brand: #fbf6ec; --preview-line: rgb(29 26 22 / .14); --preview-radius: 16px; background: radial-gradient(ellipse 80% 100% at 50% 0%, #f7f2e8, #e6dfd0); font-family: Fraunces, Georgia, serif; }
