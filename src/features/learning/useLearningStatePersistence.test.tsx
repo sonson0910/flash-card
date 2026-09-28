@@ -471,7 +471,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     await expect(harness.persistence.persist(clearMutation)).resolves.toMatchObject({
       ownerKey: 'user-a', operationId: 'clear-operation',
     });
-    expect(mocks.deleteAllCards).toHaveBeenCalledWith({ kind: 'database' }, 'user-a');
+    expect(mocks.deleteAllCards).toHaveBeenCalledWith({ kind: 'database' }, 'user-a', 4);
     expect(mocks.clearLibraryFacets).toHaveBeenCalledWith(
       { kind: 'database' },
       'user-a',

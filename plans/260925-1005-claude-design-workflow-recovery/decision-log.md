@@ -376,6 +376,22 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
   cùng quyền sử dụng. Trước khi có nội dung được review, Catalog V2 chỉ được
   triển khai và kiểm bằng fixture; không kích hoạt AI pilot làm release thật.
 
+## 2026-09-28 — Owner duyệt dọn projection khi Clear Library
+
+- Clear Library phải xóa `catalog_progress` qua trusted callable cùng transaction
+  với card, theo các page tối đa 249 thẻ. Owner duyệt thêm 1 canonical card
+  read, 1 projection read chống race tạo lại cùng lexeme và 1 projection delete
+  write có điều kiện cho mỗi catalog card bị xóa, ngoài read liệt kê và card
+  delete hiện có. Mỗi page thêm 3 reads cố định (`account_tombstone`, rate
+  limit, `library_state`) và 1 rate-limit write; page `N` catalog cards dùng
+  tối đa `2N + 3` reads và `2N + 1` writes trong trusted route. Chỉ tăng
+  `libraryEpoch` vẫn để lại projection cũ và phát sinh `P` reads khi mở Paths.
+- Client chia page theo ngưỡng JSON 8 MiB trước khi gọi; nếu Firestore vẫn báo
+  transaction quá lớn, chỉ lỗi kích thước này mới được chia tiếp và thử lại.
+  Mỗi lần gọi bổ sung có lại account-guard/rate-limit reads, một rate-limit
+  write và các transaction reads đã thực hiện; transaction thất bại không ghi
+  xóa card/projection. Chi phí này chỉ phát sinh ở page phải retry.
+
 ## 2026-09-28 — Owner duyệt chi phí single delete qua trusted callable
 
 - Sau khi dùng `libraryMigrationFenceActive` từ `library_state` đã đọc, phần

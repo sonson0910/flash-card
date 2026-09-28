@@ -38,6 +38,15 @@ const projectionSource = (card: DocumentData | CardRecord): {
 const projectionRef = (database: Firestore, ownerId: string, lexemeId: string) =>
   database.collection('users').doc(ownerId).collection('catalog_progress').doc(lexemeId);
 
+export const catalogProgressReferenceForCard = (
+  database: Firestore,
+  ownerId: string,
+  card: DocumentData | CardRecord,
+) => {
+  const source = projectionSource(card);
+  return source ? projectionRef(database, ownerId, source.lexemeId) : null;
+};
+
 export const upsertCatalogProgressForCard = (
   database: Firestore,
   transaction: Transaction,
@@ -60,6 +69,6 @@ export const deleteCatalogProgressForCard = (
   ownerId: string,
   card: DocumentData | CardRecord,
 ): void => {
-  const source = projectionSource(card);
-  if (source) transaction.delete(projectionRef(database, ownerId, source.lexemeId));
+  const reference = catalogProgressReferenceForCard(database, ownerId, card);
+  if (reference) transaction.delete(reference);
 };

@@ -41,15 +41,15 @@ describe('bulk library mutation recovery', () => {
       onEpochAdvanced: epoch => {
         order.push(`publish-${epoch}`);
       },
-      deleteCards: async () => {
-        order.push('delete-cards');
+      deleteCards: async epoch => {
+        order.push(`delete-cards-${epoch}`);
       },
     })).resolves.toBe(4);
 
     expect(order).toEqual([
       'increment',
       'publish-4',
-      'delete-cards',
+      'delete-cards-4',
     ]);
   });
 });

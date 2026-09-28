@@ -17,11 +17,11 @@ import {
   startAfter,
   startAt,
   where,
-  writeBatch,
   type DocumentSnapshot,
   type Firestore,
   type QueryConstraint,
   type QueryDocumentSnapshot,
+  type QuerySnapshot,
   type Unsubscribe,
 } from 'firebase/firestore';
 import type { CardData, CardLanguageCode } from '../types/card';
@@ -2322,12 +2322,77 @@ export async function streamAllCardsInBatches(
   return loaded;
 }
 
-export async function deleteAllCards(db: Firestore, userId: string): Promise<void> {
-  while (true) {
-    const snapshot = await getDocs(query(cardsCollection(db, userId), limit(400)));
-    if (snapshot.empty) return;
-    const batch = writeBatch(db);
-    snapshot.docs.forEach(card => batch.delete(card.ref));
-    await batch.commit();
+export async function deleteAllCards(db: Firestore, userId: string, libraryEpoch: number): Promise<void> {
+  const app = firebaseApp;
+  if (!isFirebaseConfigured || !app) {
+    throw new ProtectedFunctionError({
+      message: 'Clear library is unavailable because protected cloud features are not configured for this build.',
+      kind: 'configuration', code: 'firebase-unconfigured', retryable: false,
+    });
   }
+  await runProtectedFunction(protectedFunctionsCapability, 'Clear library', async () => {
+    const assertActiveOwner = () => {
+      if (auth?.currentUser?.uid !== userId) {
+        throw new ProtectedFunctionError({
+          message: 'Clear library stopped because the active account changed. Retry after sign-in settles.',
+          kind: 'authentication', code: 'owner-mismatch', retryable: false,
+        });
+      }
+    };
+    assertActiveOwner();
+    const { httpsCallable } = await import('firebase/functions');
+    const callable = httpsCallable<
+      { expectedOwnerId: string; libraryEpoch: number; cardIds: string[] },
+      { deletedCardIds: unknown; deletedProjectionLexemeIds: unknown }
+    >(await getSonFlashFunctions(app), 'clearLibraryCardsPage');
+    const clearPage = async (cardIds: string[]): Promise<void> => {
+      try {
+        const response = await callable({ expectedOwnerId: userId, libraryEpoch, cardIds });
+        if (!Array.isArray(response.data?.deletedCardIds) || !Array.isArray(response.data?.deletedProjectionLexemeIds)) {
+          throw new Error('The protected clear library service returned an invalid result.');
+        }
+      } catch (error) {
+        const reason = error && typeof error === 'object' && 'details' in error
+          && (error as { details?: { reason?: unknown } }).details?.reason;
+        if (cardIds.length < 2 || reason !== 'transaction-too-large') throw error;
+        const midpoint = Math.ceil(cardIds.length / 2);
+        await clearPage(cardIds.slice(0, midpoint));
+        await clearPage(cardIds.slice(midpoint));
+      }
+    };
+    const plannedPages = (cards: readonly QueryDocumentSnapshot[]): string[][] => {
+      const maximumBytes = 8 * 1024 * 1024;
+      const pages: string[][] = [];
+      let page: string[] = [];
+      let bytes = 0;
+      for (const card of cards) {
+        const cardBytes = new TextEncoder().encode(JSON.stringify(card.data())).byteLength;
+        if (page.length > 0 && bytes + cardBytes > maximumBytes) {
+          pages.push(page);
+          page = [];
+          bytes = 0;
+        }
+        page.push(card.id);
+        bytes += cardBytes;
+      }
+      if (page.length > 0) pages.push(page);
+      return pages;
+    };
+    let cursor: QueryDocumentSnapshot | null = null;
+    do {
+      assertActiveOwner();
+      const page: QuerySnapshot = await getDocsFromServer(query(
+        cardsCollection(db, userId),
+        orderBy(documentId(), 'asc'),
+        ...(cursor ? [startAfter(cursor)] : []),
+        limit(249),
+      ));
+      if (page.empty) return;
+      for (const cardIds of plannedPages(page.docs)) {
+        assertActiveOwner();
+        await clearPage(cardIds);
+      }
+      cursor = page.docs.length === 249 ? page.docs[page.docs.length - 1] : null;
+    } while (cursor);
+  });
 }

@@ -33,6 +33,7 @@ History and mastery begin on the date the new projection becomes authoritative. 
 5. **Approved 2026-09-27:** add server-owned `masteredAt` on the existing card write, Rules/index changes, and a bounded 0–4 document read query per Progress hydration.
 6. **Approved 2026-09-28:** forward-only activity/mastery coverage and target-language scope. Account-wide XP remains separately labelled.
 7. **Approved 2026-09-28:** the wave uses the real catalog's three tracks with 15 units each; six shelves and 12 units in the Canvas are illustrative, not the content authority.
+8. **Approved 2026-09-28:** Clear Library must delete catalog progress through the trusted callable. For each catalog card deleted, the owner accepts one additional canonical card read, one projection read to guard a concurrent recreation, and one conditional projection delete write beyond the existing card listing read and card delete. Each page of at most 249 cards adds three fixed reads (account deletion guard, rate limit, and `library_state`) and one rate-limit write. Advancing `libraryEpoch` alone is insufficient because stale projection documents would still incur reads on each Paths open.
 
 The forecast cache uses one browser-storage key per owner/language with the
 local date inside its value. It stores counts only, validates all 13 dates and
@@ -112,6 +113,22 @@ from that one result: not started = no projection; active = at least one project
 lexeme but the unit is not complete; complete = every descriptor lexeme has a
 projection whose server-derived status is mastered. A catalog release with no valid
 descriptor/membership join is shown as unavailable.
+
+Clear Library routes canonical card deletion through the trusted callable in pages
+of at most 249 cards. A page transaction reads each requested card and each
+catalog projection; it deletes an old-generation card and its projection together
+only when the projection epoch is also old. A concurrent current-generation
+projection remains intact. The epoch fence remains in force; an interrupted clear
+must not report success. For a full catalog-card page of `N` cards, the trusted
+route uses up to `2N + 3` document reads and `2N + 1` writes, including the
+account guard and rate-limit record. The client listing still reads `N` cards.
+The client plans smaller pages when the loaded card JSON approaches 8 MiB. If
+Firestore rejects a transaction specifically for size, it splits that page and
+retries; each additional callable attempt incurs its own account-guard and
+rate-limit reads and rate-limit write, plus transaction reads reached by that
+attempt. An aborted transaction does not delete cards or projections. A failure
+for any other reason stops the clear with the advanced epoch recorded and the
+operation incomplete until a successful retry.
 
 ### 3. Continue and ETA
 

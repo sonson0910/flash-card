@@ -61,6 +61,13 @@ import {
   parseBulkCardMutationRequest,
 } from './bulkCardMutationPersistence.js';
 import {
+  clearLibraryCardsPageForOwner,
+  ClearLibraryEpochError,
+  ClearLibraryStoredCardError,
+  ClearLibraryStoredProjectionError,
+  parseClearLibraryPageRequest,
+} from './clearLibraryPersistence.js';
+import {
   parseCardReportRequest,
   reportCardForOwner,
   ReportedCardNotFoundError,
@@ -160,6 +167,7 @@ const MAX_PRACTICE_SESSION_STARTS_PER_HOUR = 120;
 const MAX_PRACTICE_SESSION_COMPLETIONS_PER_HOUR = 600;
 const MAX_REWARD_FRAME_EQUIPS_PER_HOUR = 30;
 const MAX_BULK_CARD_MUTATIONS_PER_HOUR = 120;
+const MAX_CLEAR_LIBRARY_PAGES_PER_HOUR = 120;
 const MAX_CARD_HEADWORD_RENAMES_PER_HOUR = 30;
 const MAX_LIBRARY_FACET_UPDATES_PER_HOUR = 120;
 const MAX_COURSE_PROFILE_MUTATIONS_PER_HOUR = 120;
@@ -236,6 +244,20 @@ export const toCardAllocationHttpsError = (error: unknown): HttpsError | null =>
     return new HttpsError('failed-precondition', 'Card allocation precondition failed.', {
       reason: error.reason,
     });
+  }
+  return null;
+};
+
+export const toClearLibraryHttpsError = (error: unknown): HttpsError | null => {
+  if (error instanceof ClearLibraryStoredCardError || error instanceof ClearLibraryStoredProjectionError) {
+    return new HttpsError('failed-precondition', error.message, { reason: error.reason });
+  }
+  const source = error && typeof error === 'object' ? error as { code?: unknown; details?: unknown; message?: unknown } : null;
+  const code = String(source?.code ?? '').toLowerCase();
+  const detail = `${String(source?.details ?? '')} ${String(source?.message ?? '')}`.toLowerCase();
+  if ((code === '3' || code === '8' || code.includes('invalid-argument') || code.includes('resource-exhausted'))
+    && /transaction.*(too large|size)|10\s*mi?b/.test(detail)) {
+    return new HttpsError('resource-exhausted', 'Clear library page is too large.', { reason: 'transaction-too-large' });
   }
   return null;
 };
@@ -1261,6 +1283,38 @@ export const bulkMutateCards = onCall({
       errorName: error instanceof Error ? error.name : 'UnknownError',
     });
     throw new HttpsError('internal', 'Bulk card mutation failed.');
+  }
+});
+
+export const clearLibraryCardsPage = onCall({
+  region: REGION,
+  secrets: [analyticsPseudonymKey],
+  enforceAppCheck,
+  timeoutSeconds: 30,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = await requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseClearLibraryPageRequest(request.data));
+  if (input.expectedOwnerId !== userId) {
+    throw new HttpsError('permission-denied', 'Clear library request owner does not match the authenticated owner.');
+  }
+  await consumeBudget(userId, 'clear-library-page', MAX_CLEAR_LIBRARY_PAGES_PER_HOUR,
+    'Clear library limit reached. Try again later.');
+  try {
+    return await clearLibraryCardsPageForOwner(database, userId, input);
+  } catch (error) {
+    if (error instanceof LegacyLibraryMigrationFenceError) {
+      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+    }
+    if (error instanceof ClearLibraryEpochError) {
+      throw new HttpsError('failed-precondition', 'The clear library precondition failed.', { reason: error.reason });
+    }
+    const mapped = toClearLibraryHttpsError(error);
+    if (mapped) throw mapped;
+    if (error instanceof InputValidationError) throw new HttpsError('invalid-argument', error.message);
+    console.error('Clear library page failed.', { errorName: error instanceof Error ? error.name : 'UnknownError' });
+    throw new HttpsError('internal', 'Clear library page failed.');
   }
 });
 

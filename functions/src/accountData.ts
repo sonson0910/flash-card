@@ -13,6 +13,7 @@ export const ACCOUNT_RATE_SCOPES = [
   'purchase-intent', 'card-review', 'shared-deck-create', 'shared-deck-create-service-owner',
   'shared-deck-revoke', 'legacy-library-migration', 'account-export', 'practice-session-start',
   'practice-session-complete', 'reward-frame-equip',
+  'clear-library-page',
 ] as const;
 
 const jsonValue = (value: unknown): unknown => {

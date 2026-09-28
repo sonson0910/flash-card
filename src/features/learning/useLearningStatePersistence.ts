@@ -410,7 +410,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           await runEpochProtectedLibraryClear({
             incrementEpoch: () => incrementLibraryEpoch(database, ownerId),
             onEpochAdvanced: epoch => current.acceptVerifiedEpoch(ownerId, epoch),
-            deleteCards: () => deleteAllCards(database, ownerId),
+            deleteCards: epoch => deleteAllCards(database, ownerId, epoch),
           });
           cardDeletionCompleted = true;
           await clearLibraryFacets(database, ownerId, mutation.operationId);

@@ -6,6 +6,7 @@ import {
   applyBulkCardMutationsForOwner,
   BulkMutationEpochError,
 } from '../src/bulkCardMutationPersistence.js';
+import { clearLibraryCardsPageForOwner } from '../src/clearLibraryPersistence.js';
 import { createCardForOwner } from '../src/cardPersistence.js';
 import { applyReviewForOwner, type ReviewRequest } from '../src/reviewPersistence.js';
 import { scheduleReviewTransition } from '../src/reviewScheduler.js';
@@ -245,5 +246,30 @@ describeWithEmulator('Firestore bulk card mutation persistence', () => {
     const untouched = await owner.collection('cards').doc('card-d').get();
     expect(untouched.data()).toMatchObject({ revision: 1, libraryEpoch: 2 });
     expect(untouched.data()).not.toHaveProperty('customDeck');
+  });
+
+  it('clears old cards and projections while preserving a recreated projection', async () => {
+    const ownerId = `clear-projection-${randomUUID()}`;
+    const owner = database.collection('users').doc(ownerId);
+    await owner.collection('profile').doc('library_state').set({ libraryEpoch: 3 });
+    await seedCard(owner, 'old-a', { libraryEpoch: 2, language: 'en', lexemeId: 'lexeme-a' });
+    await seedCard(owner, 'old-b', { libraryEpoch: 2, language: 'en', lexemeId: 'lexeme-b' });
+    await owner.collection('catalog_progress').doc('lexeme-a').set({ libraryEpoch: 2 });
+    await owner.collection('catalog_progress').doc('lexeme-b').set({ libraryEpoch: 3 });
+
+    const result = await clearLibraryCardsPageForOwner(database, ownerId, {
+      expectedOwnerId: ownerId, libraryEpoch: 3, cardIds: ['old-a', 'old-b'],
+    });
+    expect(result).toEqual({ deletedCardIds: ['old-a', 'old-b'], deletedProjectionLexemeIds: ['lexeme-a'] });
+    const [oldA, oldB, removedProjection, recreatedProjection] = await Promise.all([
+      owner.collection('cards').doc('old-a').get(),
+      owner.collection('cards').doc('old-b').get(),
+      owner.collection('catalog_progress').doc('lexeme-a').get(),
+      owner.collection('catalog_progress').doc('lexeme-b').get(),
+    ]);
+    expect(oldA.exists).toBe(false);
+    expect(oldB.exists).toBe(false);
+    expect(removedProjection.exists).toBe(false);
+    expect(recreatedProjection.data()).toMatchObject({ libraryEpoch: 3 });
   });
 });
