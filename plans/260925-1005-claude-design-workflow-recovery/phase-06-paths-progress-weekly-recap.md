@@ -63,6 +63,8 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 
 > **Catalog V2 artifact 2026-09-28.** Source manifest nhận unit descriptor file đã review; builder kiểm title/ordinal, membership rank, cap 20 lexemes/unit và chặn compatible release chuyển lexeme sang unit khác. Operator build cần khai báo release gốc hoặc predecessor; verify dùng cùng graph validation với cache installer. V1 vẫn được đọc. Focused pipeline/operator 67/67, typecheck và diff check pass. Đây mới là đường local/fixture; owner sẽ cung cấp 3 track × 15 unit, 45 title localized và rights evidence trước khi publish release. Không thêm Firestore I/O; checkbox Canvas vẫn mở.
 
+> **Catalog V2 cache 2026-09-28.** Installer nhận V1/V2, validate descriptor/membership trước khi activation và lưu unit descriptors trong release record IndexedDB hiện có. `lessonGroup` được giữ trên mỗi membership; summary duyệt toàn bộ membership để tính introduced/mastered theo unit, lấy tám preview theo rank và từ chối unit quá 20 lexemes. Rollback/purge dùng transaction cache cũ. Focused cache/delivery/workspace 53/53 và typecheck pass. Không thêm Firestore I/O hoặc database version; checkbox Canvas còn mở vì Paths UI/Continue chưa nối và release publishable chưa có.
+
 Stats/ActivityHeatmap/catalog tests; e2e/paths-progress-visual.spec.ts và catalog-workspace.spec.ts; new weekly-recap unit+export journey; gates chung.
 
 Hợp đồng chung: [acceptance-contract.md](acceptance-contract.md). Tên test mới là đề xuất; trước chạy phải kiểm inventory file thực, không báo file vắng là PASS. Với flow có mutation, test dùng emulator/fixtures, không dữ liệu người học hay Gemini thật.

@@ -2,11 +2,12 @@ import { mapWithConcurrencyUntilFailure } from '../../lib/asyncPool';
 import {
   type CatalogChunkDescriptorV1,
   type CatalogChunkV1,
-  type CatalogReleaseManifestV1,
+  type CatalogReleaseManifest,
 } from '../catalogPipeline/catalogContracts';
 import {
   parseCatalogChunkV1,
   parseCatalogReleaseManifestV1,
+  parseCatalogReleaseManifestV2,
 } from '../catalogPipeline/catalogValidation';
 import {
   canonicalizeLexemeIdentity,
@@ -24,6 +25,7 @@ import {
 } from './catalogCache';
 
 const FETCH_CONCURRENCY = 3;
+const MAXIMUM_V2_UNIT_MEMBERSHIPS = 20;
 
 export interface CatalogChunkFetchPort {
   /**
@@ -84,7 +86,7 @@ const decodeChunk = (bytes: Uint8Array, descriptor: CatalogChunkDescriptorV1): u
 };
 
 const fetchAndVerifyChunk = async (
-  manifest: CatalogReleaseManifestV1,
+  manifest: CatalogReleaseManifest,
   descriptor: CatalogChunkDescriptorV1,
   source: CatalogChunkFetchPort,
   signal: AbortSignal,
@@ -142,7 +144,7 @@ const sameStringSet = (left: readonly string[], right: readonly string[]): boole
 );
 
 const validateReleaseGraph = (
-  manifest: CatalogReleaseManifestV1,
+  manifest: CatalogReleaseManifest,
   chunks: readonly VerifiedChunk[],
 ): ReadonlyMap<string, LexemeV3> => {
   if (chunks.length === 0 || manifest.counts.memberships === 0) {
@@ -198,6 +200,27 @@ const validateReleaseGraph = (
       throw new Error(`Catalog chunk ${chunk.descriptor.id} trackIds do not match its memberships.`);
     }
   }
+  if (manifest.manifestVersion === 2) {
+    const descriptors = new Map(manifest.unitDescriptors.map(value => [
+      `${value.trackId}\u0000${value.unitId}`, value,
+    ]));
+    const membershipsByUnit = new Map<string, number>();
+    for (const membership of memberships) {
+      const key = `${membership.trackId}\u0000${membership.lessonGroup}`;
+      const descriptor = descriptors.get(key);
+      if (!descriptor || descriptor.tier !== membership.tier) {
+        throw new Error(`Membership ${membership.id} does not match a Catalog V2 unit descriptor.`);
+      }
+      const membershipCount = (membershipsByUnit.get(key) ?? 0) + 1;
+      if (membershipCount > MAXIMUM_V2_UNIT_MEMBERSHIPS) {
+        throw new Error(`Catalog V2 unit ${membership.lessonGroup} exceeds ${MAXIMUM_V2_UNIT_MEMBERSHIPS} memberships.`);
+      }
+      membershipsByUnit.set(key, membershipCount);
+    }
+    if (membershipsByUnit.size !== descriptors.size) {
+      throw new Error('Catalog V2 unit descriptors must each contain at least one membership.');
+    }
+  }
   return lexemesById;
 };
 
@@ -215,6 +238,7 @@ const cacheEntry = (
   partOfSpeech: lexeme.partOfSpeech,
   skills: [...membership.skills],
   rank: membership.rank,
+  lessonGroup: membership.lessonGroup,
   normalizedLemma: lexeme.normalizedLemma,
   lemma: lexeme.lemma,
 });
@@ -224,7 +248,7 @@ export async function installCatalogRelease(
   source: CatalogChunkFetchPort,
   cache: CatalogCacheInstallationPort = browserCachePort,
 ): Promise<CatalogReleaseInstallResult> {
-  const manifest = parseCatalogReleaseManifestV1(manifestInput);
+  const manifest = parseCatalogReleaseManifest(manifestInput);
   const chunks = await mapWithConcurrencyUntilFailure(
     manifest.chunks,
     FETCH_CONCURRENCY,
@@ -240,6 +264,7 @@ export async function installCatalogRelease(
     lexemeCount: manifest.counts.lexemes,
     membershipCount: manifest.counts.memberships,
     encodedBytes: manifest.counts.encodedBytes,
+    ...(manifest.manifestVersion === 2 ? { unitDescriptors: manifest.unitDescriptors } : {}),
   };
   const handle = await cache.begin(descriptor);
   for (const chunk of chunks) {
@@ -262,3 +287,10 @@ export async function installCatalogRelease(
     installedMemberships: manifest.counts.memberships,
   };
 }
+
+const parseCatalogReleaseManifest = (value: unknown): CatalogReleaseManifest => (
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+    && (value as { manifestVersion?: unknown }).manifestVersion === 2
+    ? parseCatalogReleaseManifestV2(value)
+    : parseCatalogReleaseManifestV1(value)
+);

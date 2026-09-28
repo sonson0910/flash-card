@@ -17,8 +17,11 @@ import {
   type CatalogLearningStatus as CatalogCacheLearningStatus,
   type CatalogWorkspaceSummary,
 } from '../catalogCache/catalogSummary';
-import type { CatalogReleaseManifestV1 } from '../catalogPipeline/catalogContracts';
-import { parseCatalogReleaseManifestV1 } from '../catalogPipeline/catalogValidation';
+import type { CatalogReleaseManifest } from '../catalogPipeline/catalogContracts';
+import {
+  parseCatalogReleaseManifestV1,
+  parseCatalogReleaseManifestV2,
+} from '../catalogPipeline/catalogValidation';
 import type { LearningStateV3 } from '../multilingual/schemaV3';
 import {
   CATALOG_PROGRESS_MEMBERSHIP_LIMIT,
@@ -266,7 +269,7 @@ const decodeJson = (bytes: Uint8Array, label: string): unknown => {
 
 export async function fetchCatalogReleaseManifest(
   options: CatalogManifestFetchOptions,
-): Promise<CatalogReleaseManifestV1> {
+): Promise<CatalogReleaseManifest> {
   const origin = originUrl(options.origin);
   const url = requestUrl(options.manifestUrl, origin, 'Catalog manifest URL');
   const maximumBytes = boundedInteger(
@@ -283,8 +286,15 @@ export async function fetchCatalogReleaseManifest(
   );
   const fetcher = options.fetcher ?? globalThis.fetch.bind(globalThis);
   const bytes = await fetchBytes(url, fetcher, maximumBytes, timeoutMilliseconds, true);
-  return parseCatalogReleaseManifestV1(decodeJson(bytes, 'Catalog manifest'));
+  return parseCatalogReleaseManifest(decodeJson(bytes, 'Catalog manifest'));
 }
+
+const parseCatalogReleaseManifest = (value: unknown): CatalogReleaseManifest => (
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+    && (value as { manifestVersion?: unknown }).manifestVersion === 2
+    ? parseCatalogReleaseManifestV2(value)
+    : parseCatalogReleaseManifestV1(value)
+);
 
 const createChunkSource = (
   baseUrl: string,
@@ -325,7 +335,7 @@ const defaultRuntimePort = (
   inspect: getActiveCatalogRelease,
   summarize: summarizeActiveCatalog,
   install: (manifestInput, baseUrl, reportProgress) => {
-    const manifest = parseCatalogReleaseManifestV1(manifestInput);
+    const manifest = parseCatalogReleaseManifest(manifestInput);
     return installCatalogRelease(
       manifest,
       createChunkSource(

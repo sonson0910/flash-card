@@ -14,7 +14,7 @@ import {
 } from '../catalogCache/catalogCache';
 import type { CatalogCachePageResult, CatalogCacheQuery } from '../catalogCache/catalogIndex';
 import type { CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
-import type { CatalogReleaseManifestV1 } from '../catalogPipeline/catalogContracts';
+import type { CatalogReleaseManifestV1, CatalogReleaseManifestV2 } from '../catalogPipeline/catalogContracts';
 import {
   createCatalogWorkspaceRequestGuard,
   createCatalogWorkspaceService,
@@ -71,6 +71,23 @@ describe('catalog manifest fetch', () => {
         cache: 'no-store', credentials: 'same-origin', redirect: 'error', signal: expect.any(AbortSignal),
       }),
     );
+  });
+
+  it('dispatches a V2 manifest parser when unit descriptors are present', async () => {
+    const v2: CatalogReleaseManifestV2 = {
+      ...manifest,
+      manifestVersion: 2,
+      unitDescriptors: [{
+        unitId: 'unit-1', trackId: 'ielts', tier: 'foundation', ordinal: 1,
+        titles: [{ language: 'en', text: 'Start' }, { language: 'vi', text: 'Bắt đầu' }],
+      }],
+    };
+
+    await expect(fetchCatalogReleaseManifest({
+      manifestUrl: '/catalog/english-core/release-1/release-manifest.json',
+      origin: 'https://learn.example.test/app',
+      fetcher: vi.fn(async () => jsonResponse(v2)),
+    })).resolves.toEqual(v2);
   });
 
   it.each([
