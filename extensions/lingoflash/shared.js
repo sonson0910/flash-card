@@ -604,6 +604,7 @@
   // browser's own UI locale so the popup/options UI can follow the active
   // course's native language (07.5) without needing a page reload.
   let localeOverrideCatalog = null;
+  let activeCourseTargetLanguage = '';
 
   // Chrome's own `chrome.i18n.getMessage` resolves `$NAME$` placeholders
   // against a message's declared `placeholders` map itself; this reimplements
@@ -650,6 +651,7 @@
     try {
       const response = await apiCall(extensionApi.runtime, 'sendMessage', { type: 'GET_COURSE_LOCALE' });
       const nativeLanguage = response?.ok ? normalizeCourseNativeLanguage(response.nativeLanguage) : '';
+      activeCourseTargetLanguage = response?.ok ? normalizeCourseTargetLanguage(response.targetLanguage) : '';
       if (!nativeLanguage) return false;
       const uiLanguage = String(i18nApi()?.getUILanguage?.() || '').toLowerCase().split('-')[0];
       if (uiLanguage === nativeLanguage) return false;
@@ -658,9 +660,12 @@
       localeOverrideCatalog = catalog;
       return true;
     } catch {
+      activeCourseTargetLanguage = '';
       return false;
     }
   };
+
+  const getActiveCourseTargetLanguage = () => activeCourseTargetLanguage;
 
   // Chrome/Firefox resolve getMessage() against the browser's own UI locale
   // automatically; outside a real extension runtime (unit tests, Node) this
@@ -799,6 +804,7 @@
     applyColorScheme,
     applyThemeFamily,
     applyCourseUiLocale,
+    getActiveCourseTargetLanguage,
     readRecentLookups,
     recordRecentLookup,
     clearRecentLookups,

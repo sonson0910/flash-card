@@ -69,6 +69,8 @@ class FakeElement {
 
   setAttribute(name, value) { this.attributes[name] = String(value); }
 
+  removeAttribute(name) { delete this.attributes[name]; }
+
   append(...children) { this.children.push(...children); }
 
   prepend(...children) { this.children.unshift(...children); }
@@ -102,7 +104,7 @@ const createPopupContext = async ({
     'web-words-loop', 'web-words-loop-text', 'web-words-loop-action',
     'result-card', 'result-badge', 'result-close', 'result-word', 'result-translation', 'result-details',
     'result-phonetic', 'result-explanation', 'result-example', 'result-example-translation', 'result-actions', 'result-speak', 'result-save', 'deck-status',
-    'due-count-suffix', 'open-app-label',
+    'due-count-suffix', 'open-app-label', 'target-language-label',
     'state-card', 'state-icon', 'state-title', 'state-desc', 'state-note', 'state-actions',
   ];
   const elements = new Map(ids.map(id => [id, new FakeElement()]));
@@ -623,6 +625,25 @@ test('follows the active course native language for popup text once GET_COURSE_L
   const expectedEnglishText = loadMessages('en').dueCountBadge.message.replace('$COUNT$', '12');
   assert.equal(popup.elements.get('due-count-suffix').textContent, expectedEnglishText);
   assert.notEqual(popup.elements.get('due-count-suffix').textContent, '12 thẻ đến hạn');
+  assert.equal(popup.elements.get('target-language-label').textContent, 'Korean');
+  assert.equal(popup.elements.get('target-language-label').attributes['aria-label'], 'Target language: Korean');
+});
+
+test('shows the scoped target-language label only when a valid course locale is available', async () => {
+  const synced = await createPopupContext({
+    courseLocaleResponse: { ok: true, nativeLanguage: 'vi', targetLanguage: 'ja' },
+  });
+  assert.equal(synced.elements.get('target-language-label').hidden, false);
+  assert.equal(synced.elements.get('target-language-label').textContent, 'Tiếng Nhật');
+
+  const unavailable = await createPopupContext();
+  assert.equal(unavailable.elements.get('target-language-label').hidden, true);
+  assert.equal(unavailable.elements.get('target-language-label').textContent, '');
+
+  const unknown = await createPopupContext({
+    courseLocaleResponse: { ok: true, nativeLanguage: 'vi', targetLanguage: 'fr' },
+  });
+  assert.equal(unknown.elements.get('target-language-label').hidden, true);
 });
 
 test('never fetches a locale catalog when the synced course native language already matches the UI language (07.5)', async () => {

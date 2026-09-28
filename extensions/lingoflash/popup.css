@@ -28,6 +28,17 @@ body {
 button, textarea, select { font: inherit; }
 .shell { padding: 18px; }
 .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.target-language-label {
+  margin-left: auto;
+  padding: 4px 8px;
+  border: 1px solid var(--sf-accent-line, rgba(34, 211, 238, .25));
+  border-radius: 999px;
+  background: var(--sf-accent-soft, rgba(14, 116, 144, .16));
+  color: var(--sf-accent-text, #67e8f9);
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+}
 .brand-mark {
   width: 42px;
   height: 42px;

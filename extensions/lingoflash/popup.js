@@ -11,6 +11,7 @@ const {
   applyColorScheme,
   applyThemeFamily,
   applyCourseUiLocale,
+  getActiveCourseTargetLanguage,
   readSettings,
 } = globalThis.LingoFlashExtension;
 
@@ -53,6 +54,7 @@ const openAppLabel = document.getElementById('open-app-label');
 const webWordsLoop = document.getElementById('web-words-loop');
 const webWordsLoopText = document.getElementById('web-words-loop-text');
 const webWordsLoopAction = document.getElementById('web-words-loop-action');
+const targetLanguageLabel = document.getElementById('target-language-label');
 const resultCard = document.getElementById('result-card');
 const resultBadge = document.getElementById('result-badge');
 const resultWord = document.getElementById('result-word');
@@ -92,6 +94,28 @@ const speechSupported = () => Boolean(
 const RESULT_BADGE_KEYS = {
   created: ['resultBadgeCreated', 'ĐÃ LƯU FLASHCARD'],
   existing: ['resultBadgeExisting', 'ĐÃ CÓ TRONG THƯ VIỆN'],
+};
+
+const TARGET_LANGUAGE_LABELS = {
+  en: ['targetLanguageEnglish', 'Tiếng Anh'],
+  ko: ['targetLanguageKorean', 'Tiếng Hàn'],
+  ja: ['targetLanguageJapanese', 'Tiếng Nhật'],
+  zh: ['targetLanguageChinese', 'Tiếng Trung'],
+};
+
+const renderTargetLanguageLabel = targetLanguage => {
+  if (!targetLanguageLabel) return;
+  const [key, fallback] = TARGET_LANGUAGE_LABELS[targetLanguage] || [];
+  if (!key) {
+    targetLanguageLabel.hidden = true;
+    targetLanguageLabel.textContent = '';
+    targetLanguageLabel.removeAttribute('aria-label');
+    return;
+  }
+  const language = t(key, undefined, fallback);
+  targetLanguageLabel.textContent = language;
+  targetLanguageLabel.setAttribute('aria-label', t('targetLanguageBadgeAria', [language], `Ngôn ngữ đích: ${language}`));
+  targetLanguageLabel.hidden = false;
 };
 
 const renderResultCard = ({ word = '', translation = '', phonetic = '', explanation = '', example = '', exampleTranslation = '', sourceLanguage = '', speechLocale = '', canSave = false, status = '' } = {}) => {
@@ -802,6 +826,9 @@ const loadDueCount = async () => {
   }
 };
 
-void courseUiLocaleReady.then(() => Promise.all([
-  loadSelection(), loadShortcuts(), loadRecentLookups(), loadDecks(), loadSelectionIconSite(), loadDueCount(),
-]));
+void courseUiLocaleReady.then(() => {
+  renderTargetLanguageLabel(getActiveCourseTargetLanguage());
+  return Promise.all([
+    loadSelection(), loadShortcuts(), loadRecentLookups(), loadDecks(), loadSelectionIconSite(), loadDueCount(),
+  ]);
+});

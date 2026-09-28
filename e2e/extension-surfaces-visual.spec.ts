@@ -50,6 +50,7 @@ async function mockChrome(page: Page, theme: typeof themes[number]) {
         ok: true,
         items: [{ text: 'resilient', translation: 'kiên cường', sourceLanguage: 'en', targetLanguage: 'vi', kind: 'create', status: 'created', timestamp: 0 }],
       };
+      if (message.type === 'GET_COURSE_LOCALE') return { ok: true, nativeLanguage: 'vi', targetLanguage: 'ko' };
       if (message.type === 'GET_DUE_COUNT') return { ok: false };
       if (message.type === 'ADD_SELECTION') return { ok: true, id: 'visual-capture' };
       return { ok: true };
@@ -106,6 +107,7 @@ for (const theme of themes) {
     for (const state of popupStates) {
       await page.goto(`${origin}/popup.html`);
       await expect(page.locator('html')).toHaveAttribute('data-theme-family', theme.family);
+      await expect(page.locator('#target-language-label')).toHaveText('Tiếng Hàn');
       await emitPopupState(page, state);
       if (state === 'loading') await expect(page.locator('#status')).toContainText('Đang tạo flashcard');
       if (state === 'created' || state === 'existing') await expect(page.locator('#result-card')).toBeVisible();
