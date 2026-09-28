@@ -352,8 +352,12 @@ service cloud.firestore {
       let joinedDecks = data.keys().hasAny(['decks']) && data.decks is list
         ? data.decks.join('\u001f')
         : '';
+      let presetKeys = data.keys().hasAny(['coverPresets']) && data.coverPresets is map
+        ? data.coverPresets.keys()
+        : [];
+      let joinedPresetKeys = presetKeys.join('\u001f');
       return data.keys().hasAll(['decks'])
-        && data.keys().hasOnly(['decks'])
+        && data.keys().hasOnly(['decks', 'coverPresets'])
         && data.decks is list
         && deckCount <= 100
         && (deckCount == 0 || (
@@ -361,6 +365,14 @@ service cloud.firestore {
           && joinedDecks.matches(
             '^[^\\x{1f}]{1,128}(\\x{1f}[^\\x{1f}]{1,128})*$'
           )
+        ))
+        && (!data.keys().hasAny(['coverPresets']) || (
+          data.coverPresets is map
+          && presetKeys.size() <= 1000
+          && (presetKeys.size() == 0 || joinedPresetKeys.matches(
+            '^d_[A-Za-z0-9_-]{2,512}(\\x{1f}d_[A-Za-z0-9_-]{2,512})*$'
+          ))
+          && data.coverPresets.values().toSet().hasOnly(['aurora', 'violet', 'amber', 'slate', 'moss'])
         ));
     }
 

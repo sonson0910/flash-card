@@ -1,5 +1,5 @@
 import { isCloudQuotaError } from '../../lib/cloudError';
-import { normalizeCustomDeckCollection } from '../library/customDecks';
+import { normalizeCustomDeckProfile, type CoverPreset } from '../library/customDecks';
 
 export interface LegacyMigrationProgress {
   scanned: number;
@@ -16,7 +16,7 @@ export interface OwnerLibrarySessionAdapter {
   readonly available: boolean;
   subscribeDeckProfile(
     ownerId: string,
-    onDecks: (decks: unknown[] | null) => void,
+    onDecks: (profile: unknown | null) => void,
     onError: (error: unknown) => void,
   ): () => void;
   getLegacyMigrationProgress(ownerId: string): Promise<LegacyMigrationProgress>;
@@ -29,6 +29,7 @@ export interface OwnerLibrarySessionAdapter {
 export interface OwnerLibrarySessionSnapshot {
   ownerId: string | null;
   decks: string[];
+  coverPresets: Record<string, CoverPreset>;
   legacyPending: number;
   legacyIssue: LegacyMigrationIssue | null;
   isMigratingLegacy: boolean;
@@ -50,6 +51,7 @@ export type LegacyMigrationActionResult =
 const EMPTY_SNAPSHOT: OwnerLibrarySessionSnapshot = {
   ownerId: null,
   decks: [],
+  coverPresets: {},
   legacyPending: 0,
   legacyIssue: null,
   isMigratingLegacy: false,
@@ -144,6 +146,7 @@ export function createOwnerLibrarySessionController({
     publish({
       ownerId,
       decks: [],
+      coverPresets: {},
       legacyPending: 0,
       legacyIssue: null,
       isMigratingLegacy: false,
@@ -156,10 +159,10 @@ export function createOwnerLibrarySessionController({
       return stop;
     }
 
-    unsubscribeDecks = adapter.subscribeDeckProfile(ownerId, decks => {
+    unsubscribeDecks = adapter.subscribeDeckProfile(ownerId, profile => {
       if (!active(ownerId, activationGeneration)) return;
-      if (decks === null) return;
-      publish({ decks: normalizeCustomDeckCollection(decks) });
+      if (profile === null) return;
+      publish(normalizeCustomDeckProfile(profile));
     }, error => {
       if (active(ownerId, activationGeneration)) {
         publish({

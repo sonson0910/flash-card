@@ -86,6 +86,7 @@ const createDependencies = (authenticated = true) => {
       model: {
         ownerId: authenticated ? 'owner-1' : null,
         decks: ['IELTS'],
+        coverPresets: {},
         legacyPending: 3,
         legacyIssue: null,
         isMigratingLegacy: false,

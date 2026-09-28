@@ -790,6 +790,66 @@ msgid "library.deck.cards-kept"
 msgstr "{count, plural, one {# thẻ được giữ lại} other {# thẻ được giữ lại}}"
 
 #. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:154
+msgid "library.deck.cover-label"
+msgstr "Bìa bộ thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:155
+msgid "library.deck.cover-options"
+msgstr "Chọn bìa bộ thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:24
+msgid "library.deck.cover.amber"
+msgstr "Hổ phách"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:22
+msgid "library.deck.cover.aurora"
+msgstr "Cực quang"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:32
+msgid "library.deck.cover.classic-light.amber"
+msgstr "Vàng"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:30
+msgid "library.deck.cover.classic-light.aurora"
+msgstr "Đất nung"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:34
+msgid "library.deck.cover.classic-light.moss"
+msgstr "Vải lanh"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:33
+msgid "library.deck.cover.classic-light.slate"
+msgstr "Màu mực"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:31
+msgid "library.deck.cover.classic-light.violet"
+msgstr "Rêu"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:26
+msgid "library.deck.cover.moss"
+msgstr "Rêu"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:25
+msgid "library.deck.cover.slate"
+msgstr "Xám đá"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:23
+msgid "library.deck.cover.violet"
+msgstr "Tím"
+
+#. js-lingui-explicit-id
 #: src/features/library/LibraryDialogOverlays.tsx:172
 msgid "library.deck.create-again"
 msgstr "Thử lại"

@@ -1,6 +1,6 @@
 ---
 title: "Contract — custom deck cover presets"
-status: proposed; owner approval required before implementation
+status: approved by owner 2026-09-28; implemented and verified locally
 ---
 
 # Custom deck cover presets
@@ -65,4 +65,4 @@ No Functions callable, Storage object, index or extra card write. The Rules/sche
 
 ## Approval gate
 
-Owner approval is required before changing the profile schema or Firestore Rules. This contract chooses creation-only fixed presets and **one incremental document read per new-client deck creation** (plus possible transaction retries); it does not authorize uploaded cover images.
+Owner approved this contract on 2026-09-28, including the profile schema, Firestore Rules and **one incremental document read per new-client deck creation** (plus possible transaction retries). The approval covers creation-only fixed presets, not uploaded cover images.

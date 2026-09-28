@@ -790,6 +790,66 @@ msgid "library.deck.cards-kept"
 msgstr "{count, plural, one {# card kept} other {# cards kept}}"
 
 #. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:154
+msgid "library.deck.cover-label"
+msgstr "Cover"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:155
+msgid "library.deck.cover-options"
+msgstr "Deck cover"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:24
+msgid "library.deck.cover.amber"
+msgstr "Amber"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:22
+msgid "library.deck.cover.aurora"
+msgstr "Aurora"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:32
+msgid "library.deck.cover.classic-light.amber"
+msgstr "Gold"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:30
+msgid "library.deck.cover.classic-light.aurora"
+msgstr "Terracotta"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:34
+msgid "library.deck.cover.classic-light.moss"
+msgstr "Linen"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:33
+msgid "library.deck.cover.classic-light.slate"
+msgstr "Ink"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:31
+msgid "library.deck.cover.classic-light.violet"
+msgstr "Moss"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:26
+msgid "library.deck.cover.moss"
+msgstr "Moss"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:25
+msgid "library.deck.cover.slate"
+msgstr "Slate"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:23
+msgid "library.deck.cover.violet"
+msgstr "Violet"
+
+#. js-lingui-explicit-id
 #: src/features/library/LibraryDialogOverlays.tsx:172
 msgid "library.deck.create-again"
 msgstr "Try again"

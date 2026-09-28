@@ -5,7 +5,7 @@ import {
   type RulesTestContext,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch, type Firestore } from 'firebase/firestore';
 import { readFile } from 'node:fs/promises';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -14,6 +14,8 @@ import {
   normalizeCardWord,
 } from './src/lib/cardIdentity';
 import { normalizeCardData } from './src/lib/cardNormalization';
+import { createOwnerDeckMutationFirebaseAdapter } from './src/features/librarySession/ownerLibrarySessionFirebaseAdapter';
+import { customDeckCoverKey } from './src/features/library/customDecks';
 
 const PROJECT_ID = 'demo-lingoflash';
 
@@ -1437,6 +1439,116 @@ describe('Firestore security rules', () => {
     await assertFails(setDoc(decks, { decks: validDecks.concat('index-100') }));
     await assertFails(setDoc(decks, { decks: validDecks.slice(0, 5).concat('') }));
     await assertFails(setDoc(decks, { decks: ['valid', `embedded\u001fdelimiter`] }));
+  });
+
+  it('keeps old deck-only clients compatible while validating cover preset maps', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const decks = doc(owner, 'users/owner/profile/custom_decks');
+    await assertSucceeds(setDoc(decks, {
+      decks: ['IELTS'],
+      coverPresets: { d_SUVMVFM: 'violet' },
+    }));
+    await assertSucceeds(setDoc(decks, { decks: ['IELTS', 'Travel'] }, { merge: true }));
+    await assertFails(setDoc(decks, {
+      decks: ['IELTS'],
+      coverPresets: { malformed: 'violet' },
+    }));
+    await assertFails(setDoc(decks, {
+      decks: ['IELTS'],
+      coverPresets: { d_SUVMVFM: 'unknown' },
+    }));
+  });
+
+  it('allows a valid 1,000-entry legacy preset map and its pruned replacement', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const decks = doc(owner, 'users/owner/profile/custom_decks');
+    const stalePresets = Object.fromEntries(Array.from({ length: 1_000 }, (_, index) => [
+      `d_${index.toString(36).padStart(2, 'a')}`,
+      'aurora',
+    ]));
+
+    await assertSucceeds(setDoc(decks, { decks: ['IELTS'], coverPresets: stalePresets }));
+    await assertSucceeds(setDoc(decks, {
+      decks: ['IELTS', 'Travel'],
+      coverPresets: { d_SUVMVFM: 'aurora', d_VHJhdmVs: 'moss' },
+    }));
+  });
+
+  it('keeps concurrent deck creates and their covers through the profile transaction', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const mutations = createOwnerDeckMutationFirebaseAdapter(owner as unknown as Firestore);
+    const profile = doc(owner, 'users/owner/profile/custom_decks');
+
+    await Promise.all([
+      mutations.add('owner', 'Travel', 'violet'),
+      mutations.add('owner', 'Work', 'moss'),
+    ]);
+
+    expect((await getDoc(profile)).data()).toEqual({
+      decks: expect.arrayContaining(['Travel', 'Work']),
+      coverPresets: expect.objectContaining({
+        [customDeckCoverKey('Travel')]: 'violet',
+        [customDeckCoverKey('Work')]: 'moss',
+      }),
+    });
+  });
+
+  it('prunes old-client orphan presets on recreate and deletes only the requested cover', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const mutations = createOwnerDeckMutationFirebaseAdapter(owner as unknown as Firestore);
+    const profile = doc(owner, 'users/owner/profile/custom_decks');
+    const stalePresets = Object.fromEntries(Array.from({ length: 998 }, (_, index) => [
+      `d_${index.toString(36).padStart(2, 'a')}`,
+      'aurora',
+    ]));
+    await assertSucceeds(setDoc(profile, { decks: ['Travel', 'Work'], coverPresets: {
+      ...stalePresets,
+      [customDeckCoverKey('Travel')]: 'violet',
+      [customDeckCoverKey('Work')]: 'moss',
+    } }));
+    await assertSucceeds(setDoc(profile, { decks: ['Work'] }, { merge: true }));
+
+    await mutations.add('owner', 'Travel', 'amber');
+    expect((await getDoc(profile)).data()).toEqual({
+      decks: expect.arrayContaining(['Travel', 'Work']),
+      coverPresets: {
+        [customDeckCoverKey('Travel')]: 'amber',
+        [customDeckCoverKey('Work')]: 'moss',
+      },
+    });
+
+    await mutations.removeProfile('owner', 'Travel');
+    expect((await getDoc(profile)).data()).toEqual({
+      decks: ['Work'],
+      coverPresets: { [customDeckCoverKey('Work')]: 'moss' },
+    });
+  });
+
+  it('preserves a recreated cover when a concurrent create prunes its orphan', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const mutations = createOwnerDeckMutationFirebaseAdapter(owner as unknown as Firestore);
+    const profile = doc(owner, 'users/owner/profile/custom_decks');
+    await assertSucceeds(setDoc(profile, {
+      decks: ['Work'],
+      coverPresets: {
+        [customDeckCoverKey('Travel')]: 'violet',
+        [customDeckCoverKey('Work')]: 'slate',
+      },
+    }));
+
+    await Promise.all([
+      mutations.add('owner', 'Travel', 'amber'),
+      mutations.add('owner', 'Food', 'moss'),
+    ]);
+
+    expect((await getDoc(profile)).data()).toEqual({
+      decks: expect.arrayContaining(['Work', 'Travel', 'Food']),
+      coverPresets: {
+        [customDeckCoverKey('Work')]: 'slate',
+        [customDeckCoverKey('Travel')]: 'amber',
+        [customDeckCoverKey('Food')]: 'moss',
+      },
+    });
   });
 
   it('accepts the maximum safe library counters but rejects overflow values', async () => {

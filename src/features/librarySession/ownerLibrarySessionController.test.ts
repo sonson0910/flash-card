@@ -16,11 +16,11 @@ const deferred = <T,>() => {
 };
 
 const fakeAdapter = (): OwnerLibrarySessionAdapter & {
-  emitDecks(ownerId: string, decks: unknown[] | null): void;
+  emitDecks(ownerId: string, profile: unknown | null): void;
   emitDeckError(ownerId: string, error: unknown): void;
   unsubscriptions: string[];
 } => {
-  const deckListeners = new Map<string, (decks: unknown[] | null) => void>();
+  const deckListeners = new Map<string, (profile: unknown | null) => void>();
   const deckErrorListeners = new Map<string, (error: unknown) => void>();
   const unsubscriptions: string[] = [];
   return {
@@ -32,7 +32,7 @@ const fakeAdapter = (): OwnerLibrarySessionAdapter & {
     },
     getLegacyMigrationProgress: async () => ({ scanned: 0, complete: true }),
     migrateLegacyCards: async () => ({ migrated: 0, scanned: 0, complete: true }),
-    emitDecks: (ownerId, decks) => deckListeners.get(ownerId)?.(decks),
+    emitDecks: (ownerId, profile) => deckListeners.get(ownerId)?.(profile),
     emitDeckError: (ownerId, error) => deckErrorListeners.get(ownerId)?.(error),
     unsubscriptions,
   };
@@ -45,9 +45,23 @@ describe('owner library session controller', () => {
 
     controller.activate({ ownerId: 'owner-a', libraryEpoch: 7, cloudTotal: 0 });
     await vi.waitFor(() => expect(controller.getSnapshot().status).toBe('ready'));
-    adapter.emitDecks('owner-a', [' IELTS ', 'IELTS']);
+    adapter.emitDecks('owner-a', { decks: [' IELTS ', 'IELTS'] });
 
     expect(controller.getSnapshot()).toMatchObject({ ownerId: 'owner-a', decks: ['IELTS'] });
+  });
+
+  it('keeps only valid presets for active deck names', async () => {
+    const adapter = fakeAdapter();
+    const controller = createOwnerLibrarySessionController({ adapter });
+
+    controller.activate({ ownerId: 'owner-a', libraryEpoch: 7, cloudTotal: 0 });
+    await vi.waitFor(() => expect(controller.getSnapshot().status).toBe('ready'));
+    adapter.emitDecks('owner-a', {
+      decks: ['IELTS'],
+      coverPresets: { d_SUVMVFM: 'violet', orphan: 'moss' },
+    });
+
+    expect(controller.getSnapshot().coverPresets).toEqual({ d_SUVMVFM: 'violet' });
   });
 
   it('keeps legacy indexing actionable when createdAt exists but query fields are still missing', async () => {
@@ -214,8 +228,8 @@ describe('owner library session controller', () => {
 
     controller.activate({ ownerId: 'owner-a', libraryEpoch: 1, cloudTotal: 4 });
     controller.activate({ ownerId: 'owner-b', libraryEpoch: 2, cloudTotal: 1 });
-    adapter.emitDecks('owner-a', ['late A deck']);
-    adapter.emitDecks('owner-b', [' B deck ', 'B deck']);
+    adapter.emitDecks('owner-a', { decks: ['late A deck'] });
+    adapter.emitDecks('owner-b', { decks: [' B deck ', 'B deck'] });
     aProgress.resolve({ scanned: 0, complete: false });
 
     await vi.waitFor(() => expect(controller.getSnapshot().status).toBe('ready'));
@@ -233,7 +247,7 @@ describe('owner library session controller', () => {
 
     const stop = controller.activate({ ownerId: 'owner-a', libraryEpoch: 1, cloudTotal: 2 });
     stop();
-    adapter.emitDecks('owner-a', ['late']);
+    adapter.emitDecks('owner-a', { decks: ['late'] });
     progress.resolve({ scanned: 0, complete: false });
     await Promise.resolve();
 

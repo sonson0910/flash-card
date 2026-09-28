@@ -3,6 +3,7 @@ import { Bookmark, LayoutGrid, List } from 'lucide-react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import type { CardData } from '../../types/card';
+import type { CoverPreset } from './customDecks';
 import type {
   SpreadsheetImportProgress,
   SpreadsheetImportResult,
@@ -46,6 +47,7 @@ export interface LibraryScreenModel {
     importProgress: SpreadsheetImportProgress | null;
     groupedCards: Record<string, CardData[]>;
     customDecks: string[];
+    customDeckCoverPresets?: Record<string, CoverPreset>;
     totalPages: number;
     hasNextCloudPage: boolean;
     libraryCount: number;
@@ -69,6 +71,7 @@ export interface LibraryScreenModel {
     activeDate: string;
     availableDates: string[];
     customDecks: string[];
+    customDeckCoverPresets?: Record<string, CoverPreset>;
     newDeckInput: string;
     activeCustomDeck: string;
     cards: CardData[];
@@ -108,7 +111,7 @@ export interface LibraryScreenActions {
     changePartOfSpeech: (value: string) => void;
     changeDate: (value: string) => void;
     changeNewDeckInput: (value: string) => void;
-    createCustomDeck: (name: string) => Promise<void>;
+    createCustomDeck: (name: string, preset?: import('./customDecks').CoverPreset) => Promise<void>;
     changeCustomDeck: (value: string) => void;
     deleteCustomDeck: (name: string) => Promise<void>;
     changeCategory: (value: string) => void;
@@ -321,6 +324,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               setActiveDate={actions.tools.changeDate}
               availableDates={model.tools.availableDates}
               customDecks={model.tools.customDecks}
+              customDeckCoverPresets={model.tools.customDeckCoverPresets}
               newDeckInput={model.tools.newDeckInput}
               setNewDeckInput={actions.tools.changeNewDeckInput}
               createCustomDeck={actions.tools.createCustomDeck}

@@ -101,7 +101,7 @@ const createInput = () => {
             error: null,
           },
           owner: {
-            ownerId: 'owner-1', decks: ['IELTS'], legacyPending: 2,
+            ownerId: 'owner-1', decks: ['IELTS'], coverPresets: {}, legacyPending: 2,
             legacyIssue: null, isMigratingLegacy: false, status: 'ready', error: null,
           },
           cloud: {

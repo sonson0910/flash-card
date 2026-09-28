@@ -43,6 +43,7 @@ const session = (ownerId: string | null, options: {
   owner: {
     ownerId,
     decks: [],
+    coverPresets: {},
     legacyPending: 0,
     legacyIssue: null,
     isMigratingLegacy: false,

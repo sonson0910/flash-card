@@ -49,6 +49,10 @@ describe('library dialog overlays', () => {
     expect(idle).toContain('New deck');
     expect(idle).toContain('value="Travel"');
     expect(idle).toContain('Create deck');
+    expect(idle).toContain('type="radio"');
+    expect(idle).toContain('name="deck-cover"');
+    expect(idle).toContain('checked="" value="aurora"');
+    expect(idle).toContain('value="moss"');
 
     const working = renderMarkup(
       <DeckCreationDialog

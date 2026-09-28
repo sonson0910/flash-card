@@ -203,6 +203,7 @@ export function useAppLearningCoordination({
       remoteAvailable: Boolean(appDependencies.configuration.cloudAvailable && user && librarySession.identity.canPublishMutations),
     },
     remoteDecks: user && ownerLibrary.ownerId === user.uid ? ownerLibrary.decks : null,
+    remoteCoverPresets: user && ownerLibrary.ownerId === user.uid ? ownerLibrary.coverPresets : null,
     cards,
     activeDeck: catalog.deck,
     knownLibraryTotal,
@@ -233,10 +234,7 @@ export function useAppLearningCoordination({
     explicitSource?: CardData,
     expectedLifecycle?: string,
   ) => {
-    await learningCommands.updateCard(cardId, updatedFields, {
-      source: explicitSource,
-      expectedLifecycle,
-    });
+    await learningCommands.updateCard(cardId, updatedFields, { source: explicitSource, expectedLifecycle });
   }, [learningCommands]);
   const resetSpreadsheetSource = useCallback(() => { if (fileInputRef.current) fileInputRef.current.value = ''; }, []);
   const sharingDependencies = useMemo(
@@ -307,6 +305,7 @@ export function useAppLearningCoordination({
       knownTotal: knownLibraryTotal,
       usesCloudPagination: appDependencies.configuration.cloudAvailable,
       customDecks: deckWorkspace.model.decks,
+      customDeckCoverPresets: deckWorkspace.model.coverPresets,
       pageSize: cardsPerPage,
     },
     gamification: { streak, level, xp, xpHistory },

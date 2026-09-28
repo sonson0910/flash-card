@@ -15,6 +15,7 @@ import type {
   LibrarySessionModel,
 } from '../librarySession/useLibrarySession';
 import { existingCardRevealState } from './libraryPresentation';
+import type { CoverPreset } from './customDecks';
 import {
   buildLibraryViewModel,
   type LibraryStatsViewModel,
@@ -41,6 +42,7 @@ export interface LibraryScreenLibraryInput {
   knownTotal: number;
   usesCloudPagination: boolean;
   customDecks: string[];
+  customDeckCoverPresets?: Record<string, CoverPreset>;
   pageSize: number;
 }
 
@@ -64,7 +66,7 @@ export interface LibraryScreenCommandInput {
   openCardCreator(): void;
   openPaths(): void;
   changeNewDeckInput(value: string): void;
-  createCustomDeck(name: string): Promise<void>;
+  createCustomDeck(name: string, preset?: CoverPreset): Promise<void>;
   deleteCustomDeck(name: string): Promise<void>;
 }
 
@@ -163,6 +165,7 @@ export function buildLibraryScreenContract({
       importProgress: intake.model.importProgress,
       groupedCards: view.groupedCards,
       customDecks: library.customDecks,
+      customDeckCoverPresets: library.customDeckCoverPresets,
       totalPages: view.counts.totalPages,
       hasNextCloudPage: cloud.hasNext,
       libraryCount,
@@ -188,6 +191,7 @@ export function buildLibraryScreenContract({
       activeDate: query.date,
       availableDates: view.availableDates,
       customDecks: library.customDecks,
+      customDeckCoverPresets: library.customDeckCoverPresets,
       newDeckInput: ui.newDeckInput,
       activeCustomDeck: query.deck,
       cards: library.cards,

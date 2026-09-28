@@ -6,6 +6,8 @@ import { AlertTriangle, Check, Download, Loader2, Plus, RotateCcw, X } from 'luc
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { formatNumber } from '../../lib/format';
+import { useTheme } from '../theme/ThemeProvider';
+import { coverPresets, deckMonogram, defaultCoverPreset, type CoverPreset } from './customDecks';
 import './library-dialog-overlays.css';
 
 export type LibraryDialogPhase = 'idle' | 'working' | 'success' | 'failure';
@@ -15,6 +17,22 @@ const deckSuggestions = [
   msg({ id: 'library.deck.suggestion.travel', message: 'Travel' }),
   msg({ id: 'library.deck.suggestion.toeic-600', message: 'TOEIC 600' }),
 ];
+
+const coverPresetLabels = {
+  aurora: msg({ id: 'library.deck.cover.aurora', message: 'Aurora' }),
+  violet: msg({ id: 'library.deck.cover.violet', message: 'Violet' }),
+  amber: msg({ id: 'library.deck.cover.amber', message: 'Amber' }),
+  slate: msg({ id: 'library.deck.cover.slate', message: 'Slate' }),
+  moss: msg({ id: 'library.deck.cover.moss', message: 'Moss' }),
+} satisfies Record<CoverPreset, ReturnType<typeof msg>>;
+
+const classicLightCoverLabels = {
+  aurora: msg({ id: 'library.deck.cover.classic-light.aurora', message: 'Terracotta' }),
+  violet: msg({ id: 'library.deck.cover.classic-light.violet', message: 'Moss' }),
+  amber: msg({ id: 'library.deck.cover.classic-light.amber', message: 'Gold' }),
+  slate: msg({ id: 'library.deck.cover.classic-light.slate', message: 'Ink' }),
+  moss: msg({ id: 'library.deck.cover.classic-light.moss', message: 'Linen' }),
+} satisfies Record<CoverPreset, ReturnType<typeof msg>>;
 
 export function restoreLibraryDialogFocus(
   event: { preventDefault: () => void },
@@ -35,6 +53,8 @@ export interface DeckCreationDialogProps {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
+  preset?: CoverPreset;
+  onPresetChange?: (preset: CoverPreset) => void;
   status?: LibraryDialogPhase;
   errorMessage?: string | null;
   restoreFocusRef?: RefObject<HTMLElement | null>;
@@ -46,12 +66,16 @@ export function DeckCreationDialog({
   value,
   onChange,
   onSubmit,
+  preset = defaultCoverPreset,
+  onPresetChange,
   status = 'idle',
   errorMessage,
   restoreFocusRef,
 }: DeckCreationDialogProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { i18n } = useLingui();
+  const { family, mode } = useTheme();
+  const labels = family === 'classic' && mode === 'light' ? classicLightCoverLabels : coverPresetLabels;
   const isWorking = status === 'working';
   const isSuccess = status === 'success';
 
@@ -125,6 +149,33 @@ export function DeckCreationDialog({
                 </span>
               ) : null}
             </label>
+
+            <fieldset className="library-deck-cover-picker" disabled={isWorking || isSuccess}>
+              <legend><Trans id="library.deck.cover-label" message="Cover" /></legend>
+              <div aria-label={i18n._(msg({ id: 'library.deck.cover-options', message: 'Deck cover' }))}>
+                {coverPresets.map(choice => (
+                  <span key={choice}>
+                    <input
+                    id={`library-deck-cover-${choice}`}
+                    name="deck-cover"
+                    className="sr-only"
+                    type="radio"
+                    value={choice}
+                    checked={preset === choice}
+                    onChange={() => onPresetChange?.(choice)}
+                  />
+                  <label
+                    htmlFor={`library-deck-cover-${choice}`}
+                    className={`library-deck-cover library-deck-cover--${choice}`}
+                    aria-label={i18n._(labels[choice])}
+                  >
+                    <span aria-hidden="true">{deckMonogram(value) || 'A'}</span>
+                    <span className="sr-only">{i18n._(labels[choice])}</span>
+                  </label>
+                  </span>
+                ))}
+              </div>
+            </fieldset>
 
             <div className="library-dialog-suggestions" aria-label={i18n._(msg({ id: 'library.deck.suggestions', message: 'Deck name suggestions' }))}>
               <span><Trans id="library.deck.try" message="Try" /></span>

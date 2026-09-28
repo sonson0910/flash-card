@@ -209,6 +209,14 @@ for (const theme of themes) for (const viewport of viewports) for (const [group,
         await testInfo.attach(`${name}-page`, { path: screenshot, contentType: 'image/png' });
       }
       await expectDialogScreen(page, testInfo, name);
+      if (dialog === 'deck-create-ready') {
+        const classicLight = theme.family === 'classic' && theme.mode === 'light';
+        const violet = page.getByRole('radio', { name: classicLight ? 'Moss' : 'Violet' });
+        await expect(violet).toBeChecked();
+        await violet.focus();
+        await page.keyboard.press('ArrowRight');
+        await expect(page.getByRole('radio', { name: classicLight ? 'Gold' : 'Amber' })).toBeChecked();
+      }
       if (dialog === 'import-progress') {
         await expect(page.getByText('Results so far')).toBeVisible();
         await expect(page.getByText('Row 7')).toBeVisible();

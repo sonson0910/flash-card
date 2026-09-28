@@ -52,6 +52,7 @@ function LibraryFixture() {
   const [generationCount, setGenerationCount] = useState(0);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
+  const [deckCoverPreset, setDeckCoverPreset] = useState<'aurora' | 'violet' | 'amber' | 'slate' | 'moss'>('violet');
   const dialog = new URLSearchParams(location.search).get('dialog');
 
   useEffect(() => { void Promise.all([loadCatalog(locale, 'library'), loadCatalog(locale, 'shell'), loadCatalog(locale, 'progress')]).then(() => setReady(true)); }, [locale]);
@@ -130,6 +131,8 @@ function LibraryFixture() {
       value="Travel"
       onChange={noOp}
       onSubmit={noOp}
+      preset={deckCoverPreset}
+      onPresetChange={setDeckCoverPreset}
       status={dialog === 'deck-create-progress' ? 'working' : dialog === 'deck-create-error' ? 'failure' : 'idle'}
     />}
     {dialog?.startsWith('import-') && <SpreadsheetImportDialog

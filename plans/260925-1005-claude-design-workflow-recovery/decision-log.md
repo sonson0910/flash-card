@@ -328,3 +328,14 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
 - Giới hạn 5.000 lỗi hiển thị/báo cáo và đếm phần bị lược. Không thêm Firestore
   document read/write, query, subscription hoặc callable call; chỉ quan sát
   settlement của request lưu hiện có. Không deploy trong lượt này.
+
+## 2026-09-28 — Owner duyệt deck cover presets
+
+- Duyệt [contract-deck-cover-presets.md](contract-deck-cover-presets.md): năm preset
+  cố định, lựa chọn khi tạo deck và lưu `coverPresets` optional trên profile
+  `custom_decks`. Deck cũ dùng preset mặc định; client cũ vẫn có thể ghi `decks`.
+  Cùng preset ID được thể hiện bằng swatch theo theme; không có upload ảnh.
+- Tạo deck mới bằng một profile transaction thay cho merged write: thêm bình
+  thường **1 document read** cho mỗi lần tạo, contention có thể retry read;
+  **0 writes, queries, subscriptions mới**. Xóa deck giữ một profile write hiện
+  có và xóa đúng key preset. Chỉ code/test local, không deploy.

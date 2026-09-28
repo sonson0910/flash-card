@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
 import {
   readCachedDecksForIdentity,
+  readCachedDeckProfileForIdentity,
   useCustomDeckWorkspace,
   type CustomDeckCachePort,
   type CustomDeckWorkspaceActions,
@@ -95,6 +96,26 @@ describe('useCustomDeckWorkspace', () => {
       .toEqual(['Owner B remote deck']);
   });
 
+  it('does not leak cached cover presets across owners', () => {
+    const decks = ['Aurora', 'Violet', 'Amber', 'Slate', 'Moss'];
+    const cache: CustomDeckCachePort = {
+      read: () => ({
+        ownerId: 'owner-a', decks,
+        coverPresets: Object.fromEntries(decks.map((deck, index) => [
+          `d_${btoa(deck)}`, ['aurora', 'violet', 'amber', 'slate', 'moss'][index],
+        ])) as Record<string, import('./customDecks').CoverPreset>,
+      }),
+      write: vi.fn(),
+    };
+    expect(readCachedDeckProfileForIdentity(cache, true, 'owner-b', null, null)).toEqual({
+      decks: [], coverPresets: {},
+    });
+    expect(readCachedDeckProfileForIdentity(cache, false, null, null, null)).toEqual({
+      decks: [], coverPresets: {},
+    });
+    expect(readCachedDeckProfileForIdentity(cache, true, 'owner-a', null, null).decks).toEqual(decks);
+  });
+
   it('publishes a compact vendor-free model and action contract', () => {
     const source = readFileSync(
       fileURLToPath(new URL('./useCustomDeckWorkspace.ts', import.meta.url)),
@@ -114,13 +135,29 @@ describe('useCustomDeckWorkspace', () => {
 
     const createPromise = actions.createDeck('  TOEIC  ');
 
-    expect(mutations.add).toHaveBeenCalledWith('owner-1', 'TOEIC');
+    expect(mutations.add).toHaveBeenCalledWith('owner-1', 'TOEIC', 'aurora');
     expect(cache.write).not.toHaveBeenCalled();
 
     remoteCreate.resolve(undefined);
     await createPromise;
 
-    expect(cache.write).toHaveBeenCalledWith('owner-1', ['IELTS', 'TOEIC']);
+    expect(cache.write).toHaveBeenCalledWith('owner-1', ['IELTS', 'TOEIC'], {
+      d_VE9FSUM: 'aurora',
+    });
+  });
+
+  it('merges overlapping successful creates into the owner-scoped cache', async () => {
+    const { actions, cache } = setup();
+
+    await Promise.all([
+      actions.createDeck('TOEIC', 'amber'),
+      actions.createDeck('Travel', 'moss'),
+    ]);
+
+    expect(cache.write).toHaveBeenLastCalledWith('owner-1', ['IELTS', 'TOEIC', 'Travel'], {
+      d_VE9FSUM: 'amber',
+      d_VHJhdmVs: 'moss',
+    });
   });
 
   it('rejects a failed remote creation without publishing a local success', async () => {

@@ -41,6 +41,7 @@ import { dateLabelToQueryDate, displayCardDate } from './libraryPresentation';
 import type { AiGenerationAccess } from './aiGenerationAccess';
 import { AiDialogueModal } from './AiDialogueModal';
 import { DeckCreationDialog, type LibraryDialogPhase } from './LibraryDialogOverlays';
+import { customDeckCoverKey, deckMonogram, defaultCoverPreset, normalizeCoverPreset, type CoverPreset } from './customDecks';
 import { WordExtractorModal } from './WordExtractorModal';
 const PlanUsageMeter = lazy(() => Promise.all([
   import('../plan/PlanUsageMeter'), loadCatalog(getActiveUiLocale(), 'billing'),
@@ -75,9 +76,10 @@ interface LibraryToolsProps {
   setActiveDate: (value: string) => void;
   availableDates: string[];
   customDecks: string[];
+  customDeckCoverPresets?: Record<string, CoverPreset>;
   newDeckInput: string;
   setNewDeckInput: (value: string) => void;
-  createCustomDeck: (name: string) => Promise<void>;
+  createCustomDeck: (name: string, preset?: CoverPreset) => Promise<void>;
   activeCustomDeck: string;
   setActiveCustomDeck: (value: string) => void;
   cards: CardData[];
@@ -315,6 +317,7 @@ export function LibraryTools({
   setActiveDate,
   availableDates,
   customDecks,
+  customDeckCoverPresets = {},
   newDeckInput,
   setNewDeckInput,
   createCustomDeck,
@@ -334,6 +337,7 @@ export function LibraryTools({
   const [isCreatingDeck, setIsCreatingDeck] = useState(false);
   const [deckCreationError, setDeckCreationError] = useState(false);
   const [deckCreationPhase, setDeckCreationPhase] = useState<LibraryDialogPhase>('idle');
+  const [deckCoverPreset, setDeckCoverPreset] = useState<CoverPreset>(defaultCoverPreset);
   const [isDeletingDeck, setIsDeletingDeck] = useState(false);
   const [deckDeletionError, setDeckDeletionError] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(
@@ -376,7 +380,7 @@ export function LibraryTools({
     try {
       await createDeckThenClearInput(
         newDeckInput.trim(),
-        createCustomDeck,
+        name => createCustomDeck(name, deckCoverPreset),
         () => {
           setNewDeckInput('');
         },
@@ -828,7 +832,7 @@ export function LibraryTools({
                       onClick={() => setActiveCustomDeck(deck)}
                       className="flex min-h-11 min-w-11 items-center gap-1.5 py-1"
                     >
-                      <Folder size={12} />
+                      <span className={`grid size-5 place-items-center rounded-md text-[10px] text-white library-deck-cover--${normalizeCoverPreset(customDeckCoverPresets[customDeckCoverKey(deck)])}`} aria-hidden="true">{deckMonogram(deck)}</span>
                       <span className="max-w-28 truncate">{deck}</span>
                       {(!authenticated || activeCustomDeck === deck) && (
                         <span className="text-[10px] opacity-70">
@@ -922,6 +926,8 @@ export function LibraryTools({
           setNewDeckInput(value);
         }}
         onSubmit={() => { void handleCreateDeck(); }}
+        preset={deckCoverPreset}
+        onPresetChange={setDeckCoverPreset}
         status={deckCreationPhase}
         errorMessage={deckCreationError ? i18n._(msg({ id: 'library.deck.create-error', message: 'Could not create this deck. Check your connection and try again.' })) : null}
         restoreFocusRef={deckCreatorRestoreRef}
