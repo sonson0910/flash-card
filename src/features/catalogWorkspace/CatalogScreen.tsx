@@ -31,6 +31,7 @@ import type {
   CatalogTrackPresentation,
   CatalogVocabularyPresentation,
 } from './catalogPresentation';
+import type { CatalogPathUnitProgress } from './catalogProgressProjectionService';
 
 interface CatalogScreenProps {
   model: CatalogScreenModel;
@@ -163,7 +164,7 @@ function PersonalLibraryPaths({
   );
 }
 
-function TrackCard({ track, selected, onSelect }: { track: CatalogTrackPresentation; selected: boolean; onSelect: () => void }) {
+function TrackCard({ track, selected, progressAvailable, onSelect }: { track: CatalogTrackPresentation; selected: boolean; progressAvailable: boolean; onSelect: () => void }) {
   const copy = catalogTrackMessages[track.id];
   const progress = track.total === 0 ? 0 : Math.round((track.mastered / track.total) * 100);
   return (
@@ -172,24 +173,74 @@ function TrackCard({ track, selected, onSelect }: { track: CatalogTrackPresentat
       <span className="relative flex items-center justify-between gap-3"><span className="text-xl font-black tracking-tight">{i18n._(copy.label)}</span>{selected && <span className="inline-flex items-center gap-1 rounded-full border border-[var(--sf-brand)]/30 bg-[var(--sf-brand)]/10 px-2 py-1 text-[11px] font-black text-[var(--sf-brand-text)]"><Check aria-hidden="true" className="size-3.5" /><Trans id="paths.selected" message="Selected" /></span>}</span>
       <span className="relative mt-2 block text-sm leading-6 text-[var(--sf-text-muted)]">{i18n._(copy.description)}</span>
       <span className="relative mt-5 block h-1.5 overflow-hidden rounded-full bg-[var(--sf-border)]"><span className="block h-full rounded-full bg-[var(--sf-brand)] transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${progress}%` }} /></span>
-      <span className="relative mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--sf-text-muted)]"><Metric value={track.total} label={i18n._(msg({ id: 'paths.metric.words', message: 'words' }))} /><Metric value={track.started} label={i18n._(msg({ id: 'paths.metric.started', message: 'started' }))} /><Metric value={track.mastered} label={i18n._(msg({ id: 'paths.metric.mastered', message: 'mastered' }))} /></span>
+      <span className="relative mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--sf-text-muted)]"><Metric value={track.total} label={i18n._(msg({ id: 'paths.metric.words', message: 'words' }))} />{progressAvailable ? <><Metric value={track.started} label={i18n._(msg({ id: 'paths.metric.started', message: 'started' }))} /><Metric value={track.mastered} label={i18n._(msg({ id: 'paths.metric.mastered', message: 'mastered' }))} /></> : <span><Trans id="paths.unit.status.unavailable" message="Progress unavailable" /></span>}</span>
     </button>
   );
 }
 
-function TierStep({ tier, selected, onSelect }: { tier: CatalogTierPresentation; selected: boolean; onSelect: () => void }) {
+function TierStep({ tier, selected, progressAvailable, onSelect }: { tier: CatalogTierPresentation; selected: boolean; progressAvailable: boolean; onSelect: () => void }) {
   const { label: stateLabel, Icon } = tierStatePresentation[tier.state];
   const copy = catalogTierMessages[tier.id];
-  const isLocked = tier.state === 'locked';
+  const isLocked = progressAvailable && tier.state === 'locked';
   return (
     <li className="min-w-0 flex-1">
       <button type="button" onClick={onSelect} disabled={isLocked} aria-pressed={selected} className={`catalog-tier-step h-full min-h-12 w-full rounded-2xl border p-4 text-left transition-all hover:border-cyan-400 focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-70 ${selected ? 'border-cyan-400 bg-cyan-50 shadow-[inset_4px_0_0_#0891B2] dark:bg-cyan-950/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
-        <span className="flex items-center gap-2 text-sm font-bold"><Icon className="size-4 shrink-0" aria-hidden="true" />{i18n._(stateLabel)}</span>
+        <span className="flex items-center gap-2 text-sm font-bold"><Icon className="size-4 shrink-0" aria-hidden="true" />{progressAvailable ? i18n._(stateLabel) : <Trans id="paths.unit.status.unavailable" message="Progress unavailable" />}</span>
         <span className="mt-2 block text-lg font-black">{i18n._(copy.label)}{tier.cefrRange && ` · ${tier.cefrRange}`}{selected && <> · <Trans id="paths.selected" message="Selected" /></>}</span>
         <span className="mt-1 block text-sm text-[var(--sf-text-muted)]">{i18n._(copy.description)}</span>
-        <span className="mt-3 block text-xs text-[var(--sf-text-muted)]"><Trans id="paths.tier.progress" message="{mastered} of {total} mastered · {started} started" values={{ mastered: formatNumber(tier.mastered), total: formatNumber(tier.total), started: formatNumber(tier.started) }} /></span>
+        {progressAvailable && <span className="mt-3 block text-xs text-[var(--sf-text-muted)]"><Trans id="paths.tier.progress" message="{mastered} of {total} mastered · {started} started" values={{ mastered: formatNumber(tier.mastered), total: formatNumber(tier.total), started: formatNumber(tier.started) }} /></span>}
       </button>
     </li>
+  );
+}
+
+function pathUnitTitle(unit: CatalogPathUnitProgress['unit'], language: string): string {
+  return unit.titles.find(title => title.language === language)?.text
+    ?? unit.titles[0]?.text
+    ?? unit.unitId;
+}
+
+const pathUnitKey = (unit: CatalogPathUnitProgress['unit']): string => `${unit.trackId}\u0000${unit.unitId}`;
+
+function PathUnitShelf({
+  units, selectedUnitId, language, onSelect,
+}: {
+  units: readonly CatalogPathUnitProgress[];
+  selectedUnitId: string | null | undefined;
+  language: string;
+  onSelect: (trackId: string, unitId: string) => void;
+}) {
+  const selected = units.find(unit => pathUnitKey(unit.unit) === selectedUnitId) ?? units[0];
+  const status = (unit: CatalogPathUnitProgress) => unit.status === 'complete'
+    ? msg({ id: 'paths.unit.status.complete', message: 'Complete' })
+    : unit.status === 'active'
+      ? msg({ id: 'paths.unit.status.active', message: 'In progress' })
+      : unit.status === 'unavailable'
+        ? msg({ id: 'paths.unit.status.unavailable', message: 'Progress unavailable' })
+      : msg({ id: 'paths.unit.status.not-started', message: 'Not started' });
+  return (
+    <section aria-labelledby="catalog-units-heading" className="catalog-shelf rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 sm:p-5">
+      <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="paths.units.kicker" message="Catalog units" /></p><h2 id="catalog-units-heading" className="mt-1 text-xl font-black tracking-tight"><Trans id="paths.units.title" message="Choose a unit" /></h2></div>
+      <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label={i18n._(msg({ id: 'paths.units.list-label', message: 'Catalog units' }))}>
+        {units.map(progress => {
+          const unit = progress.unit;
+          const isSelected = progress === selected;
+          return <li key={`${unit.trackId}:${unit.unitId}`}><button type="button" onClick={() => onSelect(unit.trackId, unit.unitId)} aria-pressed={isSelected} className={`min-h-11 w-full rounded-2xl border p-4 text-left transition-colors focus-visible:outline-2 motion-reduce:transition-none ${isSelected ? 'border-[var(--sf-brand)] bg-[var(--sf-surface)]' : 'border-[var(--sf-border)] bg-[var(--sf-surface)] hover:border-[var(--sf-brand)]'}`}>
+            <span className="flex items-start justify-between gap-3"><span className="font-black"><Trans id="paths.unit.ordinal" message="Unit {ordinal}" values={{ ordinal: unit.ordinal }} /> · {pathUnitTitle(unit, language)}</span><span className="shrink-0 text-xs font-bold text-[var(--sf-text-muted)]">{i18n._(status(progress))}</span></span>
+            <span className="mt-2 block text-sm text-[var(--sf-text-muted)]"><Trans id="paths.unit.count" message="{count} words" values={{ count: formatNumber(unit.total) }} /></span>
+          </button></li>;
+        })}
+      </ol>
+      <aside className="mt-4 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4" aria-live="polite">
+        <h3 className="font-black"><Trans id="paths.unit.preview" message="Preview: {title}" values={{ title: pathUnitTitle(selected.unit, language) }} /></h3>
+        {selected.introduced === null || selected.mastered === null
+          ? <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans id="paths.unit.progress-unavailable" message="Progress is unavailable until your library can be verified." /></p>
+          : <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans id="paths.unit.progress" message="{introduced} introduced · {mastered} mastered" values={{ introduced: formatNumber(selected.introduced), mastered: formatNumber(selected.mastered) }} /></p>}
+        <ol className="mt-3 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
+          {selected.unit.preview.map((lexeme, index) => <li key={`${lexeme.lexemeId}:${index}`} lang={language} className="rounded-lg bg-[var(--sf-surface-raised)] px-3 py-2 font-semibold">{lexeme.lemma}</li>)}
+        </ol>
+      </aside>
+    </section>
   );
 }
 
@@ -253,6 +304,8 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
   const isEmpty = isReady && !model.isLoadingPage && model.cards.length === 0;
   const activeTrack = model.tracks.find(track => track.id === model.selectedTrack);
   const activeTrackCopy = activeTrack ? catalogTrackMessages[activeTrack.id] : null;
+  const progressAvailable = model.progressAvailable ?? true;
+  const pathUnits = model.pathUnits?.filter(unit => unit.unit.trackId === model.selectedTrack);
   const kicker = isPersonal
     ? i18n._(msg({ id: 'paths.personal.kicker', message: 'Personal learning paths' }))
     : i18n._(msg({ id: 'paths.catalog.kicker', message: 'Reviewed catalog' }));
@@ -285,7 +338,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
               <p className="premium-kicker uppercase tracking-[0.16em]"><Trans id="paths.current.kicker" message="Your current path" /></p>
               <h2 id="catalog-current-path-heading" className="mt-3 text-balance text-3xl font-black tracking-tight sm:text-5xl">{i18n._(activeTrackCopy.label)}</h2>
               <p className="mt-3 max-w-xl text-pretty leading-7 text-[var(--sf-text-muted)]">{i18n._(activeTrackCopy.description)}</p>
-              <p className="mt-5 text-sm font-bold text-[var(--sf-brand-text)]"><Trans id="paths.current.progress" message="{started} started · {mastered} mastered" values={{ started: formatNumber(activeTrack.started), mastered: formatNumber(activeTrack.mastered) }} /></p>
+              {progressAvailable ? <p className="mt-5 text-sm font-bold text-[var(--sf-brand-text)]"><Trans id="paths.current.progress" message="{started} started · {mastered} mastered" values={{ started: formatNumber(activeTrack.started), mastered: formatNumber(activeTrack.mastered) }} /></p> : <p className="mt-5 text-sm font-bold text-[var(--sf-brand-text)]"><Trans id="paths.unit.status.unavailable" message="Progress unavailable" /></p>}
             </div>
             <div className="catalog-roadmap-panel rounded-[22px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
               <p className="text-xs font-black uppercase tracking-[0.14em] text-[var(--sf-text-muted)]"><Trans id="paths.current.roadmap" message="Roadmap" /></p>
@@ -296,14 +349,16 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
           </div>
         </section>}
 
+        {pathUnits && pathUnits.length > 0 && <PathUnitShelf units={pathUnits} selectedUnitId={model.selectedPathUnitId} language={model.uiLocale ?? model.selectedLanguage} onSelect={actions.selectPathUnit} />}
+
         <section aria-labelledby="catalog-tracks-heading" className="catalog-shelf rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 sm:p-5">
           <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="paths.goal.kicker" message="Choose your goal" /></p><h2 id="catalog-tracks-heading" className="mt-1 text-xl font-black tracking-tight"><Trans id="paths.goal.title" message="Choose the path that fits your next goal" /></h2></div>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">{model.tracks.map(track => <TrackCard key={track.id} track={track} selected={track.id === model.selectedTrack} onSelect={() => actions.selectTrack(track.id)} />)}</div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">{model.tracks.map(track => <TrackCard key={track.id} track={track} selected={track.id === model.selectedTrack} progressAvailable={progressAvailable} onSelect={() => actions.selectTrack(track.id)} />)}</div>
         </section>
 
         <section aria-labelledby="catalog-roadmap-heading" className="catalog-roadmap">
           <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="paths.roadmap.kicker" message="Your roadmap" /></p><h2 id="catalog-roadmap-heading" className="mt-1 text-2xl font-black tracking-tight"><Trans id="paths.roadmap.title" message="Foundation to advanced" /></h2></div>
-          <ol className="grid grid-cols-1 gap-3 md:grid-cols-3">{model.tiers.map(tier => <TierStep key={tier.id} tier={tier} selected={tier.id === model.selectedTier} onSelect={() => actions.selectTier(tier.id)} />)}</ol>
+          <ol className="grid grid-cols-1 gap-3 md:grid-cols-3">{model.tiers.map(tier => <TierStep key={tier.id} tier={tier} selected={tier.id === model.selectedTier} progressAvailable={progressAvailable} onSelect={() => actions.selectTier(tier.id)} />)}</ol>
         </section>
 
         <section aria-labelledby="catalog-vocabulary-heading" className="catalog-explorer" aria-busy={model.isLoadingPage || model.isLoadingMore}>

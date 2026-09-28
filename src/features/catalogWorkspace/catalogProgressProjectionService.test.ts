@@ -89,4 +89,13 @@ describe('catalog progress projection reader', () => {
       { unit: { unitId: 'toeic-1' }, introduced: 1, mastered: 1, status: 'complete' },
     ]);
   });
+
+  it('keeps V2 descriptors and previews while making unavailable progress explicit', () => {
+    const [unit] = projectCatalogPathUnits(v2Summary([{
+      unitId: 'ielts-1', trackId: 'ielts', tier: 'foundation', ordinal: 1, titles: [],
+      total: 2, started: 0, mastered: 0, preview: [{ lexemeId: 'one', lemma: 'one' }],
+    }]), false)!;
+
+    expect(unit).toMatchObject({ unit: { unitId: 'ielts-1', preview: [{ lemma: 'one' }] }, status: 'unavailable', introduced: null, mastered: null });
+  });
 });

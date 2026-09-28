@@ -21,6 +21,7 @@ import {
   fetchCatalogReleaseManifest,
   type CatalogWorkspaceRuntimePort,
 } from './catalogWorkspaceService';
+import { createCatalogProgressQueryCache } from './CatalogWorkspace';
 
 const manifest: CatalogReleaseManifestV1 = {
   manifestVersion: 1,
@@ -164,6 +165,20 @@ describe('catalog manifest fetch', () => {
 });
 
 describe('catalog workspace service', () => {
+  it('reuses one progress query per owner, release, language, and verified epoch', async () => {
+    const read = vi.fn(async () => new Map<string, 'started' | 'mastered'>());
+    const cache = createCatalogProgressQueryCache();
+    const input = { ownerId: 'owner-a', catalogId: 'english-core', releaseId: 'release-1', targetLanguage: 'en', libraryEpoch: 3 };
+
+    await Promise.all([cache.read(input, read), cache.read(input, read)]);
+    await cache.read({ ...input, targetLanguage: 'vi' }, read);
+    cache.clear();
+    await cache.read(input, read);
+
+    expect(read).toHaveBeenCalledTimes(3);
+    expect(read).toHaveBeenNthCalledWith(1, input);
+  });
+
   it('keeps production runtime source independent from the draft pilot', () => {
     const source = readFileSync(new URL('./catalogWorkspaceService.ts', import.meta.url), 'utf8');
 
@@ -240,27 +255,18 @@ describe('catalog workspace service', () => {
       .resolves.toMatchObject({ status: 'current', value: { items: hydrated } });
   });
 
-  it('derives progress only from bounded Learning State evidence before summary aggregation', async () => {
+  it('passes the projection status map directly to summary aggregation', async () => {
     const summarize = vi.fn(async () => null);
     const service = createCatalogWorkspaceService({
       origin: 'https://learn.example.test/',
       ports: runtime({ summarize }),
       fetcher: vi.fn(async () => jsonResponse(manifest)),
     });
-    const state = {
-      lexemeId: 'lexeme-1', reviewHistory: [{ rating: 'good' }], mastery: 0.4,
-    } as never;
+    const statuses = new Map<string, 'started' | 'mastered'>([['lexeme-1', 'started']]);
 
-    await expect(service.summarize('english-core', new Map([['lexeme-1', state]])))
+    await expect(service.summarize('english-core', statuses))
       .resolves.toMatchObject({ status: 'current' });
-    expect(summarize).toHaveBeenCalledWith('english-core', new Map([['lexeme-1', 'started']]));
-
-    await expect(service.summarize('english-core', new Map([
-      ['different-key', state],
-    ]))).rejects.toThrow(/does not match/i);
-    await expect(service.summarize('english-core', new Map(
-      Array.from({ length: 10_001 }, (_, index) => [`lexeme-${index}`, null] as const),
-    ))).rejects.toThrow(/10,000/);
+    expect(summarize).toHaveBeenCalledWith('english-core', statuses);
   });
 
   it('fetches then atomically installs, while a failed download leaves the prior active release intact', async () => {

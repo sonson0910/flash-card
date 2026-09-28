@@ -1,6 +1,7 @@
 import type { RefObject } from 'react';
 import { msg } from '@lingui/core/macro';
 import type { PersonalLibraryPathPresentation } from './personalLibraryPaths';
+import type { CatalogPathUnitProgress } from './catalogProgressProjectionService';
 
 export type CatalogAvailabilityStatus =
   | { kind: 'checking'; message: string }
@@ -123,6 +124,8 @@ export interface CatalogScreenModel {
   headingRef?: RefObject<HTMLHeadingElement | null>;
   status: CatalogAvailabilityStatus;
   selectedLanguage: string;
+  uiLocale?: string;
+  progressAvailable?: boolean;
   languages: CatalogLanguageOption[];
   selectedTrack: CatalogTrackPresentation['id'];
   tracks: CatalogTrackPresentation[];
@@ -135,6 +138,8 @@ export interface CatalogScreenModel {
   isLoadingPage: boolean;
   isLoadingMore: boolean;
   personalLibrary?: PersonalLibraryPathPresentation;
+  pathUnits?: readonly CatalogPathUnitProgress[] | null;
+  selectedPathUnitId?: string | null;
 }
 
 export interface CatalogScreenActions {
@@ -153,4 +158,5 @@ export interface CatalogScreenActions {
   addToLibrary: (cardId: string) => void;
   openVocabulary: () => void;
   continueReview: () => void;
+  selectPathUnit: (trackId: string, unitId: string) => void;
 }

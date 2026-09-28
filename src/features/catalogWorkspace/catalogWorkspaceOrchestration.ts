@@ -1,5 +1,4 @@
-import type { LearningStateV3 } from '../multilingual/schemaV3';
-import type { CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
+import type { CatalogLearningStatus, CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
 import {
   createCatalogWorkspaceLocation,
   patchCatalogWorkspaceQuery,
@@ -8,15 +7,10 @@ import {
 } from './catalogWorkspaceQuery';
 import type { CatalogWorkspaceService } from './catalogWorkspaceService';
 
-export interface CatalogLearningStateLoadResult {
-  readonly states: ReadonlyMap<string, LearningStateV3>;
-  readonly rejected: number;
-}
-
 export type InstalledCatalogInspection =
   | { readonly status: 'stale' }
   | { readonly status: 'missing' }
-  | { readonly status: 'ready'; readonly summary: CatalogWorkspaceSummary };
+  | { readonly status: 'ready'; readonly summary: CatalogWorkspaceSummary; readonly progressAvailable: boolean };
 
 type CatalogReleaseSelection = Pick<CatalogWorkspaceQuery, 'catalogId' | 'releaseId'>;
 
@@ -24,29 +18,33 @@ export async function inspectInstalledCatalog({
   service,
   catalogId,
   releaseId,
-  loadLearningStates,
+  loadProgress,
   isCurrent = () => true,
 }: {
   service: CatalogWorkspaceService;
   catalogId: string;
   releaseId: string;
-  loadLearningStates: () => Promise<CatalogLearningStateLoadResult | null>;
+  loadProgress?: () => Promise<ReadonlyMap<string, CatalogLearningStatus>>;
   isCurrent?: () => boolean;
 }): Promise<InstalledCatalogInspection> {
   const release = await service.inspect(catalogId);
   if (release.status === 'stale' || !isCurrent()) return { status: 'stale' };
   if (!release.value || release.value.releaseId !== releaseId) return { status: 'missing' };
 
-  let states: ReadonlyMap<string, LearningStateV3 | null> = new Map();
-  try {
-    states = (await loadLearningStates())?.states ?? states;
-  } catch {
-    // Progress is remote/best-effort; the verified local release remains usable offline.
+  let statuses: ReadonlyMap<string, CatalogLearningStatus> = new Map();
+  let progressAvailable = false;
+  if (release.value.schemaVersion === 2 && loadProgress) {
+    try {
+      statuses = await loadProgress();
+      progressAvailable = true;
+    } catch {
+      // Progress is remote/best-effort; the verified local release remains usable offline.
+    }
   }
   if (!isCurrent()) return { status: 'stale' };
-  const summary = await service.summarize(catalogId, states);
+  const summary = await service.summarize(catalogId, statuses);
   if (summary.status === 'stale' || !isCurrent()) return { status: 'stale' };
-  return summary.value ? { status: 'ready', summary: summary.value } : { status: 'missing' };
+  return summary.value ? { status: 'ready', summary: summary.value, progressAvailable } : { status: 'missing' };
 }
 
 export function synchronizeCatalogHistoryInspection({

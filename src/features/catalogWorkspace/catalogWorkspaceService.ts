@@ -22,11 +22,6 @@ import {
   parseCatalogReleaseManifestV1,
   parseCatalogReleaseManifestV2,
 } from '../catalogPipeline/catalogValidation';
-import type { LearningStateV3 } from '../multilingual/schemaV3';
-import {
-  CATALOG_PROGRESS_MEMBERSHIP_LIMIT,
-  classifyCatalogLearningState,
-} from './catalogProgress';
 
 // Covers the worst-case bounded 100-chunk descriptor set (including track IDs)
 // while remaining far below the 50 MiB release-content ceiling.
@@ -98,7 +93,7 @@ export interface CatalogWorkspaceService {
   inspect(catalogId: string): Promise<CatalogWorkspaceResult<CatalogReleaseDescriptor | null>>;
   summarize(
     catalogId: string,
-    learningStates: ReadonlyMap<string, LearningStateV3 | null>,
+    statuses: ReadonlyMap<string, CatalogCacheLearningStatus>,
   ): Promise<CatalogWorkspaceResult<CatalogWorkspaceSummary | null>>;
   download(
     manifestUrl: string,
@@ -350,26 +345,6 @@ const defaultRuntimePort = (
   readPage: readCatalogCachePage,
 });
 
-const catalogLearningStatuses = (
-  learningStates: ReadonlyMap<string, LearningStateV3 | null>,
-): ReadonlyMap<string, CatalogCacheLearningStatus> => {
-  if (!(learningStates instanceof Map) || learningStates.size > CATALOG_PROGRESS_MEMBERSHIP_LIMIT) {
-    throw new TypeError(`Learning State input must be a Map with at most ${CATALOG_PROGRESS_MEMBERSHIP_LIMIT.toLocaleString('en-US')} entries.`);
-  }
-  const statuses = new Map<string, CatalogCacheLearningStatus>();
-  for (const [lexemeId, state] of learningStates) {
-    if (typeof lexemeId !== 'string' || lexemeId.length === 0 || lexemeId.length > 128) {
-      throw new TypeError('Each Learning State key must be a bounded Lexeme ID.');
-    }
-    if (state !== null && state.lexemeId !== lexemeId) {
-      throw new TypeError(`Learning State key does not match Lexeme ID: ${lexemeId}`);
-    }
-    const status = classifyCatalogLearningState(state);
-    if (status !== 'not-started') statuses.set(lexemeId, status);
-  }
-  return statuses;
-};
-
 export function createCatalogWorkspaceService(
   options: CatalogWorkspaceServiceOptions,
 ): CatalogWorkspaceService {
@@ -400,9 +375,9 @@ export function createCatalogWorkspaceService(
 
   return {
     inspect: catalogId => runLatest('inspect', () => ports.inspect(catalogId)),
-    summarize: (catalogId, learningStates) => runLatest(
+    summarize: (catalogId, statuses) => runLatest(
       'summary',
-      () => ports.summarize(catalogId, catalogLearningStatuses(learningStates)),
+      () => ports.summarize(catalogId, statuses),
     ),
     async download(manifestUrl, expectedRelease, reportProgress) {
       const token = guard.begin('download');

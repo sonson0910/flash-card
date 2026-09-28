@@ -99,6 +99,7 @@ const actions: CatalogScreenActions = {
   addToLibrary: vi.fn(),
   openVocabulary: vi.fn(),
   continueReview: vi.fn(),
+  selectPathUnit: vi.fn(),
 };
 
 describe('CatalogScreen', () => {
@@ -126,6 +127,77 @@ describe('CatalogScreen', () => {
     expect(html).toContain('Add to library');
     expect(html).toContain('Load more words');
     expect(html).toContain('aria-labelledby="catalog-heading"');
+  });
+
+  it('renders descriptor-backed unit shelves and the selected preview', () => {
+    const html = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel,
+      selectedPathUnitId: 'ielts\u0000unit-2',
+      pathUnits: [
+        { unit: { unitId: 'unit-1', trackId: 'ielts', tier: 'foundation', ordinal: 1, titles: [{ language: 'en', text: 'Start here' }], total: 2, started: 0, mastered: 0, preview: [{ lexemeId: 'one', lemma: 'one' }] }, introduced: 0, mastered: 0, status: 'not-started' },
+        { unit: { unitId: 'unit-2', trackId: 'ielts', tier: 'foundation', ordinal: 2, titles: [{ language: 'en', text: 'Next words' }], total: 2, started: 1, mastered: 1, preview: [{ lexemeId: 'two', lemma: 'two' }, { lexemeId: 'three', lemma: 'three' }] }, introduced: 1, mastered: 1, status: 'active' },
+      ],
+    }} actions={actions} />);
+
+    expect(html).toContain('Unit 1 · Start here');
+    expect(html).toContain('Unit 2 · Next words');
+    expect(html).toContain('Preview: Next words');
+    expect(html).toContain('two');
+    expect(html).toContain('three');
+  });
+
+  it('does not render an empty progress map as zero progress', () => {
+    const html = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel,
+      pathUnits: [{ unit: { unitId: 'unit-1', trackId: 'ielts', tier: 'foundation', ordinal: 1, titles: [{ language: 'en', text: 'Start here' }], total: 2, started: 0, mastered: 0, preview: [{ lexemeId: 'one', lemma: 'one' }] }, introduced: null, mastered: null, status: 'unavailable' }],
+    }} actions={actions} />);
+
+    expect(html).toContain('Progress unavailable');
+    expect(html).toContain('Progress is unavailable until your library can be verified.');
+    expect(html).not.toContain('0 introduced · 0 mastered');
+  });
+
+  it('marks track and tier progress unavailable instead of presenting V1 zeroes as progress', () => {
+    const html = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel,
+      progressAvailable: false,
+      tracks: readyModel.tracks.map(track => ({ ...track, started: 0, mastered: 0 })),
+      tiers: readyModel.tiers.map(tier => ({ ...tier, started: 0, mastered: 0, state: 'available' as const })),
+    }} actions={actions} />);
+
+    expect(html).toContain('Progress unavailable');
+    expect(html).not.toContain('0 started');
+    expect(html).not.toContain('0 mastered');
+  });
+
+  it('uses the UI locale for unit titles and only renders the selected track shelf', () => {
+    const units = ['ielts', 'toeic', 'general'].flatMap(track => Array.from({ length: 15 }, (_, index) => ({
+      unit: { unitId: `${track}-${index + 1}`, trackId: track, tier: 'foundation', ordinal: index + 1, titles: [{ language: 'en', text: `English ${track} ${index + 1}` }, { language: 'vi', text: `Tiếng Việt ${track} ${index + 1}` }], total: 1, started: 0, mastered: 0, preview: [{ lexemeId: `${track}-${index + 1}`, lemma: `${track} word` }] },
+      introduced: 0, mastered: 0, status: 'not-started' as const,
+    })));
+    const html = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel, selectedLanguage: 'en', uiLocale: 'vi', selectedTrack: 'toeic', pathUnits: units,
+    }} actions={actions} />);
+    const englishHtml = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel, selectedLanguage: 'en', uiLocale: 'en', selectedTrack: 'toeic', pathUnits: units,
+    }} actions={actions} />);
+
+    expect(html).toContain('Tiếng Việt toeic 1');
+    expect(html).toContain('Tiếng Việt toeic 15');
+    expect(html).not.toContain('Tiếng Việt ielts 1');
+    expect(html).not.toContain('Tiếng Việt general 1');
+    expect((html.match(/Unit /g) ?? []).length).toBe(15);
+    expect(englishHtml).toContain('English toeic 1');
+    expect(englishHtml).not.toContain('Tiếng Việt toeic 1');
+  });
+
+  it('selects the first unit when the selected track has no explicit unit selection', () => {
+    const html = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel,
+      pathUnits: [{ unit: { unitId: 'unit-1', trackId: 'ielts', tier: 'foundation', ordinal: 1, titles: [{ language: 'en', text: 'Start here' }], total: 1, started: 0, mastered: 0, preview: [] }, introduced: 0, mastered: 0, status: 'not-started' }],
+    }} actions={actions} />);
+
+    expect(html).toContain('aria-pressed="true"');
   });
 
   it('presents idempotent add states without hiding reviewed evidence', () => {

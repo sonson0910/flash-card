@@ -13,7 +13,7 @@ export const CATALOG_PROGRESS_PROJECTION_LIMIT = 10_000;
 export const CATALOG_PATH_UNIT_LEXEME_LIMIT = 20;
 
 export type CatalogProgressProjectionStatus = 'active' | 'mastered';
-export type CatalogPathUnitStatus = 'not-started' | 'active' | 'complete';
+export type CatalogPathUnitStatus = 'not-started' | 'active' | 'complete' | 'unavailable';
 
 export interface CatalogProgressProjection {
   readonly lexemeId: string;
@@ -22,8 +22,8 @@ export interface CatalogProgressProjection {
 
 export interface CatalogPathUnitProgress {
   readonly unit: CatalogUnitSummary;
-  readonly introduced: number;
-  readonly mastered: number;
+  readonly introduced: number | null;
+  readonly mastered: number | null;
   readonly status: CatalogPathUnitStatus;
 }
 
@@ -105,15 +105,16 @@ const assertUnitCounts = (unit: CatalogUnitSummary): void => {
  */
 export function projectCatalogPathUnits(
   summary: CatalogWorkspaceSummary | null,
+  progressAvailable = true,
 ): readonly CatalogPathUnitProgress[] | null {
   if (!summary || summary.release.schemaVersion !== 2 || !summary.units) return null;
   return summary.units.map(unit => {
     assertUnitCounts(unit);
     return {
       unit,
-      introduced: unit.started,
-      mastered: unit.mastered,
-      status: unit.mastered === unit.total ? 'complete' : unit.started > 0 ? 'active' : 'not-started',
+      introduced: progressAvailable ? unit.started : null,
+      mastered: progressAvailable ? unit.mastered : null,
+      status: !progressAvailable ? 'unavailable' : unit.mastered === unit.total ? 'complete' : unit.started > 0 ? 'active' : 'not-started',
     };
   });
 }

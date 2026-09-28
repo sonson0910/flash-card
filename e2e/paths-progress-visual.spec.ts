@@ -71,29 +71,36 @@ import { loadCatalog } from '/src/i18n/loadCatalog';
 import { ThemeProvider } from '/src/features/theme/ThemeProvider';
 import { CatalogScreen } from '/src/features/catalogWorkspace/CatalogScreen';
 import { catalogFiltersFromSummary, catalogTiersFromSummary, catalogTracksFromSummary } from '/src/features/catalogWorkspace/catalogWorkspacePresenter';
+import { projectCatalogPathUnits } from '/src/features/catalogWorkspace/catalogProgressProjectionService';
 
 const summary = {
-  release: { catalogId: 'english-core', releaseId: 'reviewed-visual-1', schemaVersion: 1, contentLanguage: 'en', chunkCount: 1, membershipCount: 9, encodedBytes: 2048 },
+  release: { catalogId: 'english-core', releaseId: 'reviewed-visual-1', schemaVersion: 2, contentLanguage: 'en', chunkCount: 1, membershipCount: 9, encodedBytes: 2048 },
   scannedMemberships: 9,
   tracks: [
     { trackId: 'ielts', total: 4, started: 3, mastered: 1, tiers: [{ tier: 'foundation', total: 2, started: 2, mastered: 1 }, { tier: 'core', total: 1, started: 1, mastered: 0 }, { tier: 'advanced', total: 1, started: 0, mastered: 0 }], facets: { cefrLevels: ['A2', 'B2', 'C1'], topics: ['education', 'science'], partsOfSpeech: ['noun', 'verb'], skills: ['reading', 'writing'] } },
     { trackId: 'toeic', total: 3, started: 1, mastered: 0, tiers: [{ tier: 'foundation', total: 1, started: 1, mastered: 0 }, { tier: 'core', total: 1, started: 0, mastered: 0 }, { tier: 'advanced', total: 1, started: 0, mastered: 0 }], facets: { cefrLevels: ['A2', 'B1'], topics: ['business'], partsOfSpeech: ['noun'], skills: ['listening'] } },
     { trackId: 'general', total: 2, started: 1, mastered: 1, tiers: [{ tier: 'foundation', total: 1, started: 1, mastered: 1 }, { tier: 'core', total: 1, started: 0, mastered: 0 }, { tier: 'advanced', total: 0, started: 0, mastered: 0 }], facets: { cefrLevels: ['A1', 'B1'], topics: ['daily-life'], partsOfSpeech: ['adjective'], skills: ['speaking'] } },
   ],
+  units: [
+    { unitId: 'analysis-basics', trackId: 'ielts', tier: 'foundation', ordinal: 1, titles: [{ language: 'en', text: 'Ideas and evidence' }, { language: 'vi', text: 'Ý tưởng và dẫn chứng' }], total: 2, started: 2, mastered: 1, preview: [{ lexemeId: 'analysis', lemma: 'analysis' }, { lexemeId: 'evidence', lemma: 'evidence' }] },
+    { unitId: 'research-terms', trackId: 'ielts', tier: 'core', ordinal: 2, titles: [{ language: 'en', text: 'Research language' }, { language: 'vi', text: 'Ngôn ngữ nghiên cứu' }], total: 1, started: 1, mastered: 0, preview: [{ lexemeId: 'hypothesis', lemma: 'hypothesis' }] },
+    { unitId: 'academic-argument', trackId: 'ielts', tier: 'advanced', ordinal: 3, titles: [{ language: 'en', text: 'Academic argument' }, { language: 'vi', text: 'Lập luận học thuật' }], total: 1, started: 0, mastered: 0, preview: [{ lexemeId: 'justify', lemma: 'justify' }] },
+  ],
 };
-
-const actions = { selectLanguage() {}, selectTrack() {}, selectTier() {}, changeTerm() {}, changeCefr() {}, changeTopic() {}, changePartOfSpeech() {}, changeSkill() {}, resetFilters() {}, download() {}, retry() {}, loadMore() {}, addToLibrary() {}, openVocabulary() {}, continueReview() {} };
 
 function CatalogReadyFixture() {
   const locale = useUiLocale();
   const [ready, setReady] = useState(false);
+  const [selectedUnitId, setSelectedUnitId] = useState(null);
   useEffect(() => { void loadCatalog(locale, 'catalog').then(() => setReady(true)); }, [locale]);
   if (!ready) return null;
   const tracks = catalogTracksFromSummary(summary);
+  const actions = { selectLanguage() {}, selectTrack() {}, selectTier() {}, selectPathUnit(trackId, unitId) { setSelectedUnitId(trackId + '\\u0000' + unitId); }, changeTerm() {}, changeCefr() {}, changeTopic() {}, changePartOfSpeech() {}, changeSkill() {}, resetFilters() {}, download() {}, retry() {}, loadMore() {}, addToLibrary() {}, openVocabulary() {}, continueReview() {} };
   return <main className="min-h-screen p-4 sm:p-8"><CatalogScreen model={{
     status: { kind: 'ready', isOnline: false, message: 'Reviewed catalog reviewed-visual-1 is ready on this device.' },
-    selectedLanguage: 'en', languages: [{ code: 'en', label: 'English', nativeLabel: 'English', isAvailable: true }, { code: 'ja', label: 'Japanese', nativeLabel: '日本語', isAvailable: false }],
+    selectedLanguage: 'en', uiLocale: locale, languages: [{ code: 'en', label: 'English', nativeLabel: 'English', isAvailable: true }, { code: 'ja', label: 'Japanese', nativeLabel: '日本語', isAvailable: false }],
     selectedTrack: 'ielts', tracks, selectedTier: 'foundation', tiers: catalogTiersFromSummary(summary, 'ielts'), filters: catalogFiltersFromSummary(summary, 'ielts'),
+    pathUnits: projectCatalogPathUnits(summary), selectedPathUnitId: selectedUnitId,
     cards: [{ id: 'catalog-analysis', lemma: 'analysis', language: 'en', phonetic: '/əˈnæləsɪs/', partOfSpeech: 'noun', cefr: 'B2', tier: 'Foundation', topics: ['Education'], skills: ['Reading'], meaning: 'a careful study of something', meaningLanguage: 'en', translation: 'sự phân tích', translationLanguage: 'vi', example: 'The report provides a detailed analysis of the results.', exampleTranslation: 'Báo cáo cung cấp phân tích chi tiết về kết quả.', collocations: ['detailed analysis', 'data analysis'], provenance: { sourceLabel: 'Reviewed editorial catalog', licenseLabel: 'CC BY 4.0', reviewerLabel: 'Human editorial review' }, libraryState: 'available' }],
     resultSummary: 'Showing 1 reviewed IELTS Foundation word.', hasMore: false, isLoadingPage: false, isLoadingMore: false,
   }} actions={actions} /></main>;
@@ -301,6 +308,8 @@ for (const theme of themes) {
       else await expect(root).not.toHaveClass(/\bdark\b/);
       await expect(page.getByRole('heading', { level: 1, name: 'Language paths' })).toBeVisible();
       await expect(page.getByRole('region', { name: 'IELTS' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Choose a unit' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Preview: Ideas and evidence' })).toBeVisible();
       await expect(page.getByRole('heading', { name: /choose the path that fits/i })).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Foundation to advanced' })).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Vocabulary explorer' })).toBeVisible();
@@ -313,6 +322,8 @@ for (const theme of themes) {
       await expectAccessibleAndContained(page, 'Reviewed catalog Paths');
       await expectReducedMotion(page, 'Reviewed catalog Paths');
       await attachScreen(page, testInfo, `paths-reviewed-${theme.family}-${theme.mode}-${viewport.name}`);
+      await page.getByRole('button', { name: /Unit 2 · Research language/i }).click();
+      await expect(page.getByRole('heading', { name: 'Preview: Research language' })).toBeVisible();
     });
   }
 }

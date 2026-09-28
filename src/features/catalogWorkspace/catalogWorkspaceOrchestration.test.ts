@@ -19,13 +19,13 @@ const service = (overrides: Partial<CatalogWorkspaceService> = {}): CatalogWorks
 });
 
 describe('catalog workspace orchestration', () => {
-  it('inspects the offline cache first and treats progress sync failure as best-effort', async () => {
+  it('inspects the offline cache first and treats the one V2 progress query as best-effort', async () => {
     const order: string[] = [];
     const summary = { release: { releaseId: 'offline-1' } } as CatalogWorkspaceSummary;
     const ports = service({
       inspect: async () => {
         order.push('inspect');
-        return { status: 'current' as const, value: { catalogId: 'english-core', releaseId: 'offline-1' } as never };
+        return { status: 'current' as const, value: { catalogId: 'english-core', releaseId: 'offline-1', schemaVersion: 2 } as never };
       },
       summarize: async (_catalogId, states) => {
         order.push(`summarize:${states.size}`);
@@ -37,11 +37,11 @@ describe('catalog workspace orchestration', () => {
       service: ports,
       catalogId: 'english-core',
       releaseId: 'offline-1',
-      loadLearningStates: async () => {
+      loadProgress: async () => {
         order.push('progress');
         throw new Error('offline');
       },
-    })).resolves.toEqual({ status: 'ready', summary });
+    })).resolves.toEqual({ status: 'ready', summary, progressAvailable: false });
     expect(order).toEqual(['inspect', 'progress', 'summarize:0']);
   });
 
@@ -66,14 +66,14 @@ describe('catalog workspace orchestration', () => {
   });
 
   it('does not start a summary when a language switch supersedes deferred progress', async () => {
-    let resolveProgress!: (value: null) => void;
-    const progress = new Promise<null>(resolve => { resolveProgress = resolve; });
+    let resolveProgress!: (value: ReadonlyMap<string, 'started' | 'mastered'>) => void;
+    const progress = new Promise<ReadonlyMap<string, 'started' | 'mastered'>>(resolve => { resolveProgress = resolve; });
     let current = true;
     const summarize = vi.fn();
     const ports = service({
       inspect: async () => ({
         status: 'current' as const,
-        value: { catalogId: 'english-core', releaseId: 'offline-1' } as never,
+        value: { catalogId: 'english-core', releaseId: 'offline-1', schemaVersion: 2 } as never,
       }),
       summarize,
     });
@@ -81,12 +81,12 @@ describe('catalog workspace orchestration', () => {
       service: ports,
       catalogId: 'english-core',
       releaseId: 'offline-1',
-      loadLearningStates: () => progress,
+      loadProgress: () => progress,
       isCurrent: () => current,
     });
 
     current = false;
-    resolveProgress(null);
+    resolveProgress(new Map());
 
     await expect(pending).resolves.toEqual({ status: 'stale' });
     expect(summarize).not.toHaveBeenCalled();
@@ -137,8 +137,40 @@ describe('catalog workspace orchestration', () => {
       service: ports,
       catalogId: 'english-core',
       releaseId: 'approved-release',
-      loadLearningStates: async () => null,
+      loadProgress: async () => new Map(),
     })).resolves.toEqual({ status: 'missing' });
     expect(summarize).not.toHaveBeenCalled();
+  });
+
+  it('does not query progress for V1 releases or without a verified progress loader', async () => {
+    const loadProgress = vi.fn(async () => new Map<string, 'started' | 'mastered'>());
+    const summarize = vi.fn(async () => ({ status: 'current' as const, value: { release: { releaseId: 'offline-1' } } as never }));
+    const ports = service({
+      inspect: async () => ({ status: 'current' as const, value: { catalogId: 'english-core', releaseId: 'offline-1', schemaVersion: 1 } as never }),
+      summarize,
+    });
+
+    await inspectInstalledCatalog({ service: ports, catalogId: 'english-core', releaseId: 'offline-1', loadProgress });
+    await inspectInstalledCatalog({
+      service: service({
+        inspect: async () => ({ status: 'current' as const, value: { catalogId: 'english-core', releaseId: 'offline-1', schemaVersion: 2 } as never }),
+        summarize,
+      }),
+      catalogId: 'english-core', releaseId: 'offline-1',
+    });
+
+    expect(loadProgress).not.toHaveBeenCalled();
+    expect(summarize).toHaveBeenCalledTimes(2);
+  });
+
+  it('marks a successful V2 projection read available even when it returns no documents', async () => {
+    const summary = { release: { releaseId: 'offline-1' } } as CatalogWorkspaceSummary;
+    await expect(inspectInstalledCatalog({
+      service: service({
+        inspect: async () => ({ status: 'current' as const, value: { catalogId: 'english-core', releaseId: 'offline-1', schemaVersion: 2 } as never }),
+        summarize: async () => ({ status: 'current' as const, value: summary }),
+      }),
+      catalogId: 'english-core', releaseId: 'offline-1', loadProgress: async () => new Map(),
+    })).resolves.toEqual({ status: 'ready', summary, progressAvailable: true });
   });
 });

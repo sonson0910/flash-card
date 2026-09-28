@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
-import { appDependencies } from '../../app/appDependencies';
+import type { Firestore } from 'firebase/firestore';
 import { useUiLocale } from '../../i18n/I18nProvider';
 import type { CardData } from '../../types/card';
-import type { CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
+import type { CatalogLearningStatus, CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
 import { CatalogCacheOpenError, type HydratedCatalogEntry } from '../catalogCache/catalogCache';
 import type { IntakeSharingSessionActions } from '../intake/useIntakeSharingSession';
 import { CatalogScreen } from './CatalogScreen';
@@ -29,6 +29,7 @@ import {
   type CatalogWorkspaceQueryPatch,
 } from './catalogWorkspaceQuery';
 import { createCatalogWorkspaceService } from './catalogWorkspaceService';
+import { projectCatalogPathUnits, readCatalogProgressProjection } from './catalogProgressProjectionService';
 import { catalogReleaseManifestPath, type CatalogTierId } from './catalogWorkspaceRegistry';
 import {
   inspectInstalledCatalog,
@@ -59,6 +60,36 @@ export interface CatalogWorkspaceProps {
   readonly libraryStats?: PersonalLibraryPathInput;
   readonly openVocabulary?: () => void;
   readonly continueReview?: () => void | Promise<void>;
+  readonly database?: Firestore | null;
+  readonly verifiedLibraryEpoch?: number | null;
+}
+
+interface CatalogProgressQueryInput {
+  readonly ownerId: string;
+  readonly catalogId: string;
+  readonly releaseId: string;
+  readonly targetLanguage: string;
+  readonly libraryEpoch: number;
+}
+
+export function createCatalogProgressQueryCache() {
+  const pending = new Map<string, Promise<ReadonlyMap<string, CatalogLearningStatus>>>();
+  return {
+    read(
+      input: CatalogProgressQueryInput,
+      load: (input: CatalogProgressQueryInput) => Promise<ReadonlyMap<string, CatalogLearningStatus>>,
+    ): Promise<ReadonlyMap<string, CatalogLearningStatus>> {
+      const key = [input.ownerId, input.catalogId, input.releaseId, input.targetLanguage, input.libraryEpoch].join('\u0000');
+      const existing = pending.get(key);
+      if (existing) return existing;
+      const result = load(input);
+      pending.set(key, result);
+      return result;
+    },
+    clear(): void {
+      pending.clear();
+    },
+  };
 }
 
 const browserLocation = (): string => globalThis.location?.href ?? '/?view=catalog';
@@ -107,6 +138,8 @@ export const catalogErrorStatus = (
 
 export default function CatalogWorkspace({
   ownerId,
+  database = null,
+  verifiedLibraryEpoch = null,
   headingRef,
   focusIntent = 0,
   cards: libraryCards = [],
@@ -116,7 +149,7 @@ export default function CatalogWorkspace({
   openVocabulary = () => undefined,
   continueReview = () => undefined,
 }: CatalogWorkspaceProps) {
-  useUiLocale();
+  const uiLocale = useUiLocale();
   const libraryActions = useCatalogLibraryActions({ cards: libraryCards, adoptCards, notify });
   const service = useMemo(() => createCatalogWorkspaceService({
     origin: globalThis.location?.origin ?? 'https://sonflash.invalid',
@@ -124,14 +157,18 @@ export default function CatalogWorkspace({
   const [query, setQuery] = useState<CatalogWorkspaceQuery>(() => readCatalogWorkspaceQuery(browserLocation()));
   const [termDraft, setTermDraft] = useState(query.term);
   const [summary, setSummary] = useState<CatalogWorkspaceSummary | null>(null);
+  const [progressAvailable, setProgressAvailable] = useState(false);
   const [hydrated, setHydrated] = useState<readonly HydratedCatalogEntry[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingPage, setIsLoadingPage] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [selectedPathUnitId, setSelectedPathUnitId] = useState<string | null>(null);
+  const progressQueries = useRef(createCatalogProgressQueryCache());
   const ownerScope = useRef({ ownerId, version: 0 });
   if (ownerScope.current.ownerId !== ownerId) {
     ownerScope.current = { ownerId, version: ownerScope.current.version + 1 };
+    progressQueries.current.clear();
   }
   const ownerVersion = ownerScope.current.version;
   const [optimisticLibrary, setOptimisticLibrary] = useState(() => (
@@ -167,6 +204,7 @@ export default function CatalogWorkspace({
     try {
       if (!query.catalogId || !query.releaseId) {
         setSummary(null);
+        setProgressAvailable(false);
         setHydrated([]);
         setIsLoadingPage(false);
         setStatus(query.languageCode === 'en'
@@ -187,16 +225,28 @@ export default function CatalogWorkspace({
             });
         return;
       }
+      const catalogId = query.catalogId;
+      const releaseId = query.releaseId;
+      const progressOwner = ownerId;
+      const progressDatabase = database;
+      const progressEpoch = verifiedLibraryEpoch;
+      const loadProgress = progressOwner && progressDatabase && progressEpoch !== null && progressEpoch !== undefined
+        ? () => progressQueries.current.read({
+            ownerId: progressOwner, catalogId, releaseId,
+            targetLanguage: query.languageCode, libraryEpoch: progressEpoch,
+          }, input => readCatalogProgressProjection(progressDatabase, input.ownerId, input.targetLanguage, input.libraryEpoch))
+        : undefined;
       const inspection = await inspectInstalledCatalog({
         service,
-        catalogId: query.catalogId,
-        releaseId: query.releaseId,
-        loadLearningStates: () => appDependencies.catalog.loadLearningStates(ownerId, 10_000),
+        catalogId,
+        releaseId,
+        loadProgress,
         isCurrent: () => mounted.current && workflowGeneration.current === generation,
       });
       if (inspection.status === 'stale' || !mounted.current) return;
       if (inspection.status === 'missing') {
         setSummary(null);
+        setProgressAvailable(false);
         setHydrated([]);
         setIsLoadingPage(false);
         setStatus({
@@ -208,13 +258,14 @@ export default function CatalogWorkspace({
       }
       const nextSummary = inspection.summary;
       setSummary(nextSummary);
+      setProgressAvailable(inspection.progressAvailable);
       setStatus(readyStatus(nextSummary.release.releaseId));
     } catch (error) {
       if (!mounted.current) return;
       setIsLoadingPage(false);
       setStatus(catalogErrorStatus(error, isOnline, 'catalogOpenError'));
     }
-  }, [isOnline, ownerId, personalLibrary, query.catalogId, query.languageCode, query.releaseId, readyStatus, service]);
+  }, [database, isOnline, ownerId, personalLibrary, query.catalogId, query.languageCode, query.releaseId, readyStatus, service, verifiedLibraryEpoch]);
 
   const loadPage = useCallback(async (cursor: string | null, append: boolean) => {
     if (!query.catalogId || !query.trackId || !summary) return;
@@ -389,6 +440,8 @@ export default function CatalogWorkspace({
       ? { ...status, message: i18n._(copy[status.messageKey].id, status.messageValues) }
       : status,
     selectedLanguage: query.languageCode,
+    uiLocale,
+    progressAvailable,
     languages: catalogLanguagesPresentation(),
     selectedTrack,
     tracks,
@@ -410,10 +463,15 @@ export default function CatalogWorkspace({
     isLoadingPage,
     isLoadingMore,
     ...(status.kind === 'personal' ? { personalLibrary } : {}),
+    pathUnits: projectCatalogPathUnits(summary, progressAvailable),
+    selectedPathUnitId,
   };
   const actions: CatalogScreenActions = {
     selectLanguage: languageCode => updateQuery({ languageCode }),
-    selectTrack: trackId => updateQuery({ trackId, tier: 'foundation' }),
+    selectTrack: trackId => {
+      setSelectedPathUnitId(null);
+      updateQuery({ trackId, tier: 'foundation' });
+    },
     selectTier: tier => updateQuery({ tier }),
     changeTerm: term => {
       setTermDraft(term);
@@ -458,6 +516,7 @@ export default function CatalogWorkspace({
     },
     openVocabulary,
     continueReview: () => { void continueReview(); },
+    selectPathUnit: (trackId, unitId) => setSelectedPathUnitId(`${trackId}\u0000${unitId}`),
   };
 
   return <CatalogScreen model={model} actions={actions} />;

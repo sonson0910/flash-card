@@ -10,6 +10,7 @@ import { UndoToast, type UndoToastItem } from '../components/ui/UndoToast';
 import { LEARNING_WORKSPACE_ID, SkipToContentLink } from '../components/shell/SkipToContentLink';
 import { useOverlayState } from '../features/overlays/useOverlayState';
 import { appDependencies } from './appDependencies';
+import { db, isFirebaseConfigured } from '../lib/firebase';
 import { AppDeferredCreateCardDialog, AppDeferredLibraryView, AppDeferredPracticeView } from './AppDeferredViews';
 import { AppViewStage } from './AppViewStage';
 import { useAppLibraryRuntime } from './useAppLibraryRuntime';
@@ -511,6 +512,8 @@ export default function AppRuntime({
             <AppViewStage
               viewMode={viewMode}
               ownerId={user?.uid ?? null}
+              database={isFirebaseConfigured ? db : null}
+              verifiedLibraryEpoch={user && library.model.libraryEpochState?.userId === user.uid ? library.model.libraryEpochState.value : null}
               languageProfile={languageProfile}
               isOffline={!isBrowserOnline}
               isDarkMode={isDarkMode}
