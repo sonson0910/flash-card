@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import { useWebWordsRoute } from './webWordsRoute';
 
@@ -12,12 +13,18 @@ const WebWordsPage = lazy(() => Promise.all([
  * The app shell lazy-loads this host so neither the route listener nor the
  * page adds to the initial bundle.
  */
-export function WebWordsRouteHost() {
+export interface WebWordsRouteHostProps {
+  readonly ownerId: string | null;
+  readonly targetLanguage: string | null;
+}
+
+export function WebWordsRouteHost({ ownerId, targetLanguage }: WebWordsRouteHostProps) {
   const route = useWebWordsRoute();
   if (!route.isOpen) return null;
-  return (
+  return createPortal(
     <Suspense fallback={null}>
-      <WebWordsPage onClose={route.close} />
-    </Suspense>
+      <WebWordsPage ownerId={ownerId} targetLanguage={targetLanguage} onClose={route.close} />
+    </Suspense>,
+    document.body,
   );
 }

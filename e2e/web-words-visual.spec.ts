@@ -33,7 +33,7 @@ const webWordsStateFixturePlugin = (): Plugin => ({
       const actions = {
         setSiteFilter: () => undefined, setDayFilter: () => undefined, setTierFilter: () => undefined,
         toggleSelected: () => undefined, clearSelection: () => undefined, loadMore: () => undefined,
-        addSelectedToToday: () => undefined, retry: () => undefined,
+        addSelectedToToday: () => undefined, addAllFilteredToToday: () => undefined, retry: () => undefined,
       };
       export function useWebWordsPage() {
         const status = new URLSearchParams(location.search).get('state') || 'loading';
@@ -82,20 +82,20 @@ async function attachScreen(page: Page, testInfo: TestInfo, name: string) {
 }
 
 async function expectStateAccessibleAndContained(page: Page, name: string, state: (typeof visualStates)[number]) {
-  const dialog = page.getByRole('dialog', { name: 'Web words' });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole('button', { name: 'Close web words' })).toBeVisible();
+  const workspace = page.getByRole('region', { name: 'Web words' });
+  await expect(workspace).toBeVisible();
+  await expect(workspace.getByRole('button', { name: 'Close web words' }).first()).toBeVisible();
   if (state === 'loading') {
-    await expect(dialog.getByRole('status')).toHaveText('Loading your web words…');
-    await expect(dialog.getByRole('status')).toHaveAttribute('aria-live', 'polite');
+    await expect(workspace.getByRole('status')).toHaveText('Loading your web words…');
+    await expect(workspace.getByRole('status')).toHaveAttribute('aria-live', 'polite');
   } else if (state === 'empty') {
-    await expect(dialog.getByText('No web words yet', { exact: true })).toBeVisible();
-    await expect(dialog.getByText('Save a word while reading on the web, and it will show up here.')).toBeVisible();
+    await expect(workspace.getByText('No web words yet', { exact: true })).toBeVisible();
+    await expect(workspace.getByText('Save a word while reading on the web, and it will show up here.')).toBeVisible();
   } else if (state === 'error') {
-    await expect(dialog.getByText('Web words could not load. Try again.')).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(workspace.getByText('Web words could not load. Try again.')).toBeVisible();
+    await expect(workspace.getByRole('button', { name: 'Try again' })).toBeVisible();
   } else {
-    await expect(dialog.getByText('Sign in to see words you saved from the web.')).toBeVisible();
+    await expect(workspace.getByText('Sign in to see words you saved from the web.')).toBeVisible();
   }
   await expectNoHorizontalOverflow(page, name);
 }
@@ -146,25 +146,28 @@ for (const theme of themes) for (const viewport of viewports) {
     await blockExternalNetwork(page);
     await signIn(page, '/?view=today&locale=en&webWords=1');
 
-    const dialog = page.getByRole('dialog', { name: 'Web words' });
-    await expect(dialog).toBeVisible();
-    await expect(dialog.getByText('Words captured while reading the web.')).toBeVisible();
-    await expect(dialog.getByLabel('Site')).toBeVisible();
-    await expect(dialog.getByLabel('Day')).toBeVisible();
-    await expect(dialog.getByLabel('Status')).toBeVisible();
-    await expect(dialog.getByText('The flood that rewrote a city’s plans overnight')).toBeVisible();
-    await expect(dialog.getByText('Oceans are heating faster than models predicted')).toBeVisible();
-    await expect(dialog.getByText('resilient', { exact: true })).toBeVisible();
-    await expect(dialog.getByText('unprecedented', { exact: true })).toBeVisible();
-    await expect(dialog.getByText('The resilient community rebuilt the bridge after the flood.')).toBeVisible();
-    await expect(dialog.getByRole('checkbox')).toHaveCount(4);
-    await dialog.getByRole('checkbox', { name: 'Select resilient' }).check();
-    await expect(dialog.getByRole('button', { name: 'Add to today' })).toBeVisible();
+    const workspace = page.getByRole('region', { name: 'Web words' });
+    await expect(workspace).toBeVisible();
+    await expect(workspace.getByText('Words captured while reading the web.')).toBeVisible();
+    await expect(workspace.getByLabel('Site')).toBeVisible();
+    await expect(workspace.getByLabel('Day')).toBeVisible();
+    await expect(workspace.getByLabel('Status')).toBeVisible();
+    await expect(workspace.getByText('The flood that rewrote a city’s plans overnight')).toBeVisible();
+    await expect(workspace.getByText('Oceans are heating faster than models predicted')).toBeVisible();
+    await expect(workspace.getByText('resilient', { exact: true })).toBeVisible();
+    await expect(workspace.getByText('unprecedented', { exact: true })).toBeVisible();
+    await expect(workspace.getByText('The resilient community rebuilt the bridge after the flood.')).toBeVisible();
+    await expect(workspace.getByRole('checkbox')).toHaveCount(4);
+    await workspace.getByRole('checkbox', { name: 'Select resilient' }).check();
+    await expect(workspace.getByRole('button', { name: 'Add to today' })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme-family', theme.family);
     if (theme.mode === 'dark') await expect(page.locator('html')).toHaveClass(/\bdark\b/);
     else await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
     await expectNoHorizontalOverflow(page, name);
     await attachScreen(page, testInfo, name);
+    await workspace.getByRole('checkbox', { name: 'Select resilient' }).uncheck();
+    await workspace.getByLabel('Site').selectOption('bbc.com');
+    await expect(workspace.getByRole('button', { name: 'Add all 2 to today' })).toBeVisible();
   });
 }
 

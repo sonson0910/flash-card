@@ -1,21 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
-import { auth, db } from '../../lib/firebase';
-import { LEGACY_CARD_LANGUAGE } from '../../types/card';
+import { db } from '../../lib/firebase';
 import type { CardData } from '../../types/card';
 import { getLibraryCardTier, type LibraryCardTier } from '../library/libraryViewModel';
 import { promoteCardsToActiveSessionNewStage } from '../dailyLearning/webWordsSessionPriority';
 import { fetchWebWordsPage } from './webWordsQuery';
 import { groupWebWordsByArticle, webWordsDayFromCard, webWordsSiteFromUrl, type WebWordsArticleGroup } from './webWordsGrouping';
-
-/**
- * Every current card already carries an explicit `language` (`canonicalCard`
- * always writes one); the real multi-course selector is phase-10 work in
- * progress (`CourseSwitcherSlot`, not touched here). Matches the same
- * "single-course today" seam `DailySessionPointer.targetLanguage` documents.
- */
-const DEFAULT_TARGET_LANGUAGE = LEGACY_CARD_LANGUAGE;
 
 export type WebWordsPageStatus = 'loading' | 'ready' | 'empty' | 'signed-out' | 'error';
 export type AddToTodayStatus = 'idle' | 'added' | 'added-session-not-started' | 'added-after-new-stage';
@@ -46,13 +36,21 @@ export interface WebWordsPageActions {
   readonly setTierFilter: (tier: LibraryCardTier | null) => void;
   readonly toggleSelected: (cardId: string) => void;
   readonly clearSelection: () => void;
+  readonly addAllFilteredToToday: () => void;
   readonly loadMore: () => void;
   readonly addSelectedToToday: () => void;
   readonly retry: () => void;
 }
 
-export function useWebWordsPage(): { readonly state: WebWordsPageState; readonly actions: WebWordsPageActions } {
-  const [ownerId, setOwnerId] = useState<string | null | undefined>(undefined);
+export interface UseWebWordsPageOptions {
+  readonly ownerId: string | null;
+  readonly targetLanguage: string | null;
+}
+
+export function useWebWordsPage({ ownerId, targetLanguage }: UseWebWordsPageOptions): { readonly state: WebWordsPageState; readonly actions: WebWordsPageActions } {
+  const scopeKey = `${ownerId ?? ''}\u0000${targetLanguage ?? ''}`;
+  const activeScopeRef = useRef(scopeKey);
+  activeScopeRef.current = scopeKey;
   const [items, setItems] = useState<readonly CardData[]>([]);
   const [cursor, setCursor] = useState<QueryDocumentSnapshot | null>(null);
   const [hasNext, setHasNext] = useState(false);
@@ -64,25 +62,24 @@ export function useWebWordsPage(): { readonly state: WebWordsPageState; readonly
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
-    if (!auth) {
-      setOwnerId(null);
+    setItems([]);
+    setCursor(null);
+    setHasNext(false);
+    setIsLoadingMore(false);
+    setFilters(emptyFilters);
+    setSelectedCardIds(new Set());
+    setAddToTodayStatus('idle');
+    if (ownerId === null) {
+      setStatus('signed-out');
       return;
     }
-    return onAuthStateChanged(auth, user => setOwnerId(user?.uid ?? null));
-  }, []);
-
-  useEffect(() => {
-    if (ownerId === undefined) return;
-    if (ownerId === null || !db) {
-      setStatus(ownerId === null ? 'signed-out' : 'error');
-      setItems([]);
-      setCursor(null);
-      setHasNext(false);
+    if (!targetLanguage || !db) {
+      setStatus('error');
       return;
     }
     let cancelled = false;
     setStatus('loading');
-    fetchWebWordsPage({ db, ownerId, targetLanguage: DEFAULT_TARGET_LANGUAGE })
+    fetchWebWordsPage({ db, ownerId, targetLanguage })
       .then(page => {
         if (cancelled) return;
         setItems(page.items);
@@ -97,13 +94,15 @@ export function useWebWordsPage(): { readonly state: WebWordsPageState; readonly
     return () => {
       cancelled = true;
     };
-  }, [ownerId, reloadToken]);
+  }, [ownerId, targetLanguage, reloadToken]);
 
   const loadMore = useCallback(() => {
-    if (!ownerId || !db || !hasNext || isLoadingMore) return;
+    if (!ownerId || !targetLanguage || !db || !hasNext || isLoadingMore) return;
     setIsLoadingMore(true);
-    fetchWebWordsPage({ db, ownerId, targetLanguage: DEFAULT_TARGET_LANGUAGE, cursor })
+    const scope = scopeKey;
+    fetchWebWordsPage({ db, ownerId, targetLanguage, cursor })
       .then(page => {
+        if (scope !== activeScopeRef.current) return;
         setItems(previous => [...previous, ...page.items]);
         setCursor(page.cursor);
         setHasNext(page.hasNext);
@@ -111,8 +110,10 @@ export function useWebWordsPage(): { readonly state: WebWordsPageState; readonly
       .catch(() => {
         /* Leave the already-loaded page visible; hasNext/isLoadingMore reset below lets the learner retry. */
       })
-      .finally(() => setIsLoadingMore(false));
-  }, [ownerId, cursor, hasNext, isLoadingMore]);
+      .finally(() => {
+        if (scope === activeScopeRef.current) setIsLoadingMore(false);
+      });
+  }, [ownerId, targetLanguage, scopeKey, cursor, hasNext, isLoadingMore]);
 
   const retry = useCallback(() => setReloadToken(token => token + 1), []);
 
@@ -153,18 +154,24 @@ export function useWebWordsPage(): { readonly state: WebWordsPageState; readonly
 
   const clearSelection = useCallback(() => setSelectedCardIds(new Set()), []);
 
-  const addSelectedToToday = useCallback(() => {
-    if (!ownerId || selectedCardIds.size === 0) return;
-    const selectedCards = items.filter(card => selectedCardIds.has(card.id));
-    if (selectedCards.length === 0) return;
-    const outcome = promoteCardsToActiveSessionNewStage(ownerId, selectedCards);
+  const addCardsToToday = useCallback((cards: readonly CardData[]) => {
+    if (!ownerId || cards.length === 0) return;
+    const outcome = promoteCardsToActiveSessionNewStage(ownerId, cards);
     setAddToTodayStatus(
       outcome === 'no-active-session' ? 'added-session-not-started'
         : outcome === 'new-stage-already-passed' ? 'added-after-new-stage'
           : 'added',
     );
     clearSelection();
-  }, [ownerId, items, selectedCardIds, clearSelection]);
+  }, [ownerId, clearSelection]);
+
+  const addSelectedToToday = useCallback(() => {
+    addCardsToToday(items.filter(card => selectedCardIds.has(card.id)));
+  }, [addCardsToToday, items, selectedCardIds]);
+
+  const addAllFilteredToToday = useCallback(() => {
+    addCardsToToday(filteredItems);
+  }, [addCardsToToday, filteredItems]);
 
   return {
     state: { status, groups, filters, availableSites, availableDays, hasNext, isLoadingMore, selectedCardIds, addToTodayStatus },
@@ -174,6 +181,7 @@ export function useWebWordsPage(): { readonly state: WebWordsPageState; readonly
       setTierFilter: tier => setFilters(previous => ({ ...previous, tier })),
       toggleSelected,
       clearSelection,
+      addAllFilteredToToday,
       loadMore,
       addSelectedToToday,
       retry,

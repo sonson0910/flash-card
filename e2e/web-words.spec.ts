@@ -4,7 +4,7 @@ import { expect, test } from './fixtures/firebase-emulator';
  * The WebWords page is mounted in `src/app/AppRuntime.tsx` via the lazy
  * `WebWordsRouteHost` (backed by `useWebWordsRoute()`'s `?webWords=1` query
  * param, `src/features/webWords/webWordsRoute.ts`), so `?webWords=1` renders
- * the dialog below normally.
+ * the workspace below normally.
  */
 
 const webCard = (overrides: Record<string, unknown>) => ({
@@ -66,17 +66,17 @@ test.describe('WebWords page', () => {
 
     await page.getByRole('button', { name: 'Review web words' }).click();
     await expect(page).toHaveURL(/webWords=1/);
-    const dialog = page.getByRole('dialog', { name: 'Web words' });
-    await expect(dialog).toBeVisible();
+    const workspace = page.getByRole('region', { name: 'Web words' });
+    await expect(workspace).toBeVisible();
 
-    const group = dialog.getByText('A piece worth reading');
+    const group = workspace.getByText('A piece worth reading');
     await expect(group).toBeVisible();
-    await dialog.getByRole('checkbox', { name: /ephemeral/i }).check();
-    await dialog.getByRole('button', { name: 'Add to today' }).click();
+    await workspace.getByRole('checkbox', { name: /ephemeral/i }).check();
+    await workspace.getByRole('button', { name: 'Add to today' }).click();
 
-    await expect(dialog.getByText(/these words will appear once you start today's session/i)).toBeVisible();
-    await dialog.getByRole('button', { name: 'Close web words' }).click();
-    await expect(dialog).toBeHidden();
+    await expect(workspace.getByText(/these words will appear once you start today's session/i)).toBeVisible();
+    await workspace.getByRole('button', { name: 'Close web words' }).first().click();
+    await expect(workspace).toBeHidden();
 
     await page.getByRole('button', { name: "Start today's session" }).click();
     await expect(page.getByText('ephemeral')).toBeVisible();
@@ -110,10 +110,10 @@ test.describe('WebWords page', () => {
     }, { sessionKey: `sonflash:daily-session:${testUser.uid}`, ownerId: testUser.uid });
 
     await page.getByRole('button', { name: 'Review web words' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Web words' });
-    await dialog.getByRole('checkbox', { name: /lucid/i }).check();
-    await dialog.getByRole('button', { name: 'Add to today' }).click();
-    await expect(dialog.getByText("Added to today's new words.")).toBeVisible();
+    const workspace = page.getByRole('region', { name: 'Web words' });
+    await workspace.getByRole('checkbox', { name: /lucid/i }).check();
+    await workspace.getByRole('button', { name: 'Add to today' }).click();
+    await expect(workspace.getByText("Added to today's new words.")).toBeVisible();
 
     const pointer = await readSessionPointer(page, testUser.uid);
     expect(pointer?.freshLogicalIds).toHaveLength(2);
@@ -121,9 +121,11 @@ test.describe('WebWords page', () => {
     expect(pointer?.freshLogicalIds[1]).toBe('already-fresh');
 
     // Adding the same word again must not duplicate its entry in the pointer.
-    await dialog.getByRole('checkbox', { name: /lucid/i }).check();
-    await dialog.getByRole('button', { name: 'Add to today' }).click();
+    await workspace.getByRole('checkbox', { name: /lucid/i }).check();
+    await workspace.getByRole('button', { name: 'Add to today' }).click();
     const pointerAfterRepeat = await readSessionPointer(page, testUser.uid);
     expect(pointerAfterRepeat?.freshLogicalIds).toHaveLength(2);
+    await page.keyboard.press('Escape');
+    await expect(workspace).toBeHidden();
   });
 });

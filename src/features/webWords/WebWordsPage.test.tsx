@@ -2,25 +2,22 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createRadixDialogPassthroughMock } from '../../testing/radix-dialog-passthrough';
 import type { CardData } from '../../types/card';
 import type { WebWordsPageState, WebWordsPageActions } from './useWebWordsPage';
-
-vi.mock('@radix-ui/react-dialog', () => createRadixDialogPassthroughMock());
 
 const mocks = vi.hoisted(() => ({ useWebWordsPage: vi.fn() }));
 vi.mock('./useWebWordsPage', () => ({ useWebWordsPage: mocks.useWebWordsPage }));
 
-import { WebWordsPage } from './WebWordsPage';
+import { closeWebWordsWorkspaceOnEscape, WebWordsPage } from './WebWordsPage';
 
 i18n.load('en', {});
 i18n.activate('en');
 
-const render = () => renderToStaticMarkup(<I18nProvider i18n={i18n}><WebWordsPage onClose={vi.fn()} /></I18nProvider>);
+const render = () => renderToStaticMarkup(<I18nProvider i18n={i18n}><WebWordsPage ownerId="owner-1" targetLanguage="en" onClose={vi.fn()} /></I18nProvider>);
 
 const noopActions: WebWordsPageActions = {
   setSiteFilter: vi.fn(), setDayFilter: vi.fn(), setTierFilter: vi.fn(),
-  toggleSelected: vi.fn(), clearSelection: vi.fn(), loadMore: vi.fn(), addSelectedToToday: vi.fn(), retry: vi.fn(),
+  toggleSelected: vi.fn(), clearSelection: vi.fn(), addAllFilteredToToday: vi.fn(), loadMore: vi.fn(), addSelectedToToday: vi.fn(), retry: vi.fn(),
 };
 
 const baseState: WebWordsPageState = {
@@ -44,6 +41,17 @@ describe('WebWordsPage', () => {
   it('shows a loading message while the first page is in flight', () => {
     setState({ status: 'loading' });
     expect(render()).toContain('Loading your web words');
+    expect(mocks.useWebWordsPage).toHaveBeenCalledWith({ ownerId: 'owner-1', targetLanguage: 'en' });
+  });
+
+  it('closes the workspace only for Escape and prevents the browser default', () => {
+    const onClose = vi.fn();
+    const preventDefault = vi.fn();
+    closeWebWordsWorkspaceOnEscape({ key: 'Enter', preventDefault }, onClose);
+    closeWebWordsWorkspaceOnEscape({ key: 'Escape', preventDefault }, onClose);
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(preventDefault).toHaveBeenCalledTimes(1);
   });
 
   it('prompts to sign in when there is no owner', () => {
@@ -119,6 +127,18 @@ describe('WebWordsPage', () => {
     const html = render();
     expect(html).toContain('1 word selected');
     expect(html).toContain('Add to today');
+  });
+
+  it('uses a full-screen route surface and discloses the loaded filtered count for Add all', () => {
+    setState({
+      status: 'ready',
+      groups: [{ key: 'card:card-1', site: null, title: null, url: null, day: 'Today', cards: [webCard()] }],
+    });
+
+    const html = render();
+    expect(html).toContain('fixed inset-0');
+    expect(html).toContain('Add all 1 to today');
+    expect(html).not.toContain('role="dialog"');
   });
 
   it('surfaces the "session not started" outcome distinctly from a plain success', () => {

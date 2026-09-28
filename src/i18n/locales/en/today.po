@@ -308,17 +308,17 @@ msgid "daily.placement.title"
 msgstr "Placement check"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:93
+#: src/features/webWords/WebWordsPage.tsx:119
 msgid "flashcard.tier.learning"
 msgstr "Bloom"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:94
+#: src/features/webWords/WebWordsPage.tsx:120
 msgid "flashcard.tier.mastered"
 msgstr "Star"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:92
+#: src/features/webWords/WebWordsPage.tsx:118
 msgid "flashcard.tier.new"
 msgstr "Bud"
 
@@ -368,17 +368,17 @@ msgid "progress.evidence"
 msgstr "Supporting evidence"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:44
+#: src/features/dailyLearning/ProgressWorkspace.tsx:45
 msgid "progress.evidence.forecast-and-mastery"
 msgstr "Forecast and recently mastered cards"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:45
+#: src/features/dailyLearning/ProgressWorkspace.tsx:46
 msgid "progress.forecast.title"
 msgstr "Due over the next 13 days"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:45
+#: src/features/dailyLearning/ProgressWorkspace.tsx:46
 msgid "progress.forecast.unavailable"
 msgstr "Forecast is unavailable while saved progress is loading."
 
@@ -403,27 +403,27 @@ msgid "progress.loading.title"
 msgstr "Your saved progress"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:46
+#: src/features/dailyLearning/ProgressWorkspace.tsx:47
 msgid "progress.mastered.empty"
 msgstr "No cards have reached mastery yet."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:46
+#: src/features/dailyLearning/ProgressWorkspace.tsx:47
 msgid "progress.mastered.title"
 msgstr "Recently mastered"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:40
+#: src/features/dailyLearning/ProgressWorkspace.tsx:41
 msgid "progress.message.error"
 msgstr "Showing saved progress. {error}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:40
+#: src/features/dailyLearning/ProgressWorkspace.tsx:41
 msgid "progress.message.loading"
 msgstr "Refreshing progress; saved metrics remain visible."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:40
+#: src/features/dailyLearning/ProgressWorkspace.tsx:41
 msgid "progress.message.ready"
 msgstr "Progress is calculated from your learning history."
 
@@ -463,7 +463,7 @@ msgid "progress.title"
 msgstr "Progress"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:52
+#: src/features/dailyLearning/ProgressWorkspace.tsx:53
 msgid "progress.weeklyRecap.open"
 msgstr "View weekly recap"
 
@@ -646,7 +646,7 @@ msgstr "Plan unavailable"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/TodayScreen.tsx:358
-#: src/features/webWords/WebWordsPage.tsx:165
+#: src/features/webWords/WebWordsPage.tsx:197
 msgid "today.error.retry"
 msgstr "Try again"
 
@@ -1117,112 +1117,119 @@ msgid "today.title"
 msgstr "Today"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:203
+#: src/features/webWords/WebWordsPage.tsx:239
+msgid "webWords.actions.add-all-to-today"
+msgstr "Add all {count} to today"
+
+#. js-lingui-explicit-id
+#: src/features/webWords/WebWordsPage.tsx:238
 msgid "webWords.actions.add-to-today"
 msgstr "Add to today"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:189
+#: src/features/webWords/WebWordsPage.tsx:221
 msgid "webWords.actions.load-more"
 msgstr "Load more"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:68
+#: src/features/webWords/WebWordsPage.tsx:79
 msgid "webWords.card.select-label"
 msgstr "Select {word}"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:210
+#: src/features/webWords/WebWordsPage.tsx:247
 msgid "webWords.feedback.added"
 msgstr "Added to today's new words."
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:212
+#: src/features/webWords/WebWordsPage.tsx:249
 msgid "webWords.feedback.added-after-new-stage"
 msgstr "Saved — you already finished today's new words, so they'll appear in tomorrow's plan."
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:211
+#: src/features/webWords/WebWordsPage.tsx:248
 msgid "webWords.feedback.added-session-not-started"
 msgstr "Saved — these words will appear once you start today's session."
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:135
+#: src/features/webWords/WebWordsPage.tsx:165
 msgid "webWords.filter.day.all"
 msgstr "All days"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:129
+#: src/features/webWords/WebWordsPage.tsx:159
 msgid "webWords.filter.day.label"
 msgstr "Day"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:124
+#: src/features/webWords/WebWordsPage.tsx:154
 msgid "webWords.filter.site.all"
 msgstr "All sites"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:118
+#: src/features/webWords/WebWordsPage.tsx:148
 msgid "webWords.filter.site.label"
 msgstr "Site"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:146
+#: src/features/webWords/WebWordsPage.tsx:176
 msgid "webWords.filter.status.all"
 msgstr "All statuses"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:140
+#: src/features/webWords/WebWordsPage.tsx:170
 msgid "webWords.filter.status.label"
 msgstr "Status"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:40
+#: src/features/webWords/WebWordsPage.tsx:51
 msgid "webWords.group.untitled"
 msgstr "Untitled capture"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:109
+#: src/features/webWords/WebWordsPage.tsx:128
+#: src/features/webWords/WebWordsPage.tsx:137
 msgid "webWords.page.close-label"
 msgstr "Close web words"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:105
+#: src/features/webWords/WebWordsPage.tsx:130
 msgid "webWords.page.subtitle"
 msgstr "Words captured while reading the web."
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:104
+#: src/features/webWords/WebWordsPage.tsx:124
+#: src/features/webWords/WebWordsPage.tsx:129
 msgid "webWords.page.title"
 msgstr "Web words"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:200
+#: src/features/webWords/WebWordsPage.tsx:234
 msgid "webWords.selection.count"
 msgstr "{count, plural, one {# word selected} other {# words selected}}"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:171
+#: src/features/webWords/WebWordsPage.tsx:203
 msgid "webWords.status.empty.description"
 msgstr "Save a word while reading on the web, and it will show up here."
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:170
+#: src/features/webWords/WebWordsPage.tsx:202
 msgid "webWords.status.empty.title"
 msgstr "No web words yet"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:164
+#: src/features/webWords/WebWordsPage.tsx:196
 msgid "webWords.status.error"
 msgstr "Web words could not load. Try again."
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:156
+#: src/features/webWords/WebWordsPage.tsx:188
 msgid "webWords.status.loading"
 msgstr "Loading your web words…"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:160
+#: src/features/webWords/WebWordsPage.tsx:192
 msgid "webWords.status.signed-out"
 msgstr "Sign in to see words you saved from the web."
 

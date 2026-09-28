@@ -612,7 +612,7 @@ export default function AppRuntime({
 
       {user && viewMode !== 'landing' && (
         <Suspense fallback={null}>
-          <WebWordsRouteHost />
+          <WebWordsRouteHost ownerId={user.uid} targetLanguage={languageProfile.source.code} />
         </Suspense>
       )}
 
