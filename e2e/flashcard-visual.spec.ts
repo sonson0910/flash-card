@@ -112,7 +112,8 @@ async function expectNoMetadataControlOverlap(shell: Locator, metadata: Locator[
   }
 }
 
-test.beforeEach(async ({ page, seedCards }) => {
+test.beforeEach(async ({ page, seedCards, blockExternalNetwork }) => {
+  await blockExternalNetwork(page);
   await page.route(url => url.origin === 'https://images.pexels.com' && url.pathname === '/photos/123/luminous.jpg',
     route => route.fulfill({ body: cardPhoto, contentType: 'image/jpeg' }));
   await seedCards([card]);
@@ -199,6 +200,77 @@ for (const tier of cardTiers) {
         await expect(shell.getByText('New card', { exact: true })).toHaveCount(0);
         await expectCardPhotoReady(shell);
         await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-${tier.name}-front.png`, {
+          animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
+        });
+      });
+    }
+  }
+}
+
+const canvasCardStates = ['new-hover-spotlight', 'learning-back', 'mastered-hover', 'starred-back'] as const;
+
+for (const state of canvasCardStates) {
+  for (const theme of themes) {
+    for (const viewport of viewports) {
+      test(`${theme.family} ${theme.mode} ${state} card matches Canvas at ${viewport.name}`, async ({ page, seedCards, signIn }) => {
+        const futureReview = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        const stateCard = state === 'learning-back'
+          ? { ...card, difficulty: 'good', nextReviewDate: futureReview }
+          : state === 'mastered-hover'
+            ? { ...card, difficulty: 'easy', nextReviewDate: futureReview }
+            : state === 'starred-back'
+              ? { ...card, bookmarked: true }
+              : card;
+        await seedCards([stateCard]);
+        await page.setViewportSize(viewport);
+        await page.emulateMedia({ reducedMotion: 'no-preference' });
+        await page.addInitScript(({ family, mode }) => {
+          localStorage.setItem('sonflash_theme_family', family);
+          localStorage.setItem('lingoflash_theme', mode);
+        }, theme);
+        await signIn(page, '/?view=library&locale=en');
+        await page.locator('.library-word-open').click();
+
+        const shell = page.getByRole('group', { name: /luminous flashcard/i });
+        await expectCardPhotoReady(shell);
+
+        if (state === 'new-hover-spotlight') {
+          const spotlight = shell.locator('[data-card-effect="spotlight"]');
+          await expect(shell).toHaveAttribute('data-card-tier', 'new');
+          await expect(shell).toHaveAttribute('data-card-side', 'front');
+          await expect(shell.getByText('New card', { exact: true })).toBeVisible();
+          const box = await shell.boundingBox();
+          if (!box) throw new Error('Flashcard shell is not measurable');
+          await page.mouse.move(box.x + box.width * 0.28, box.y + box.height * 0.3);
+          await expect(shell).toHaveAttribute('data-card-hovered', 'true');
+          await expect(spotlight).toHaveCSS('opacity', '1');
+          await expect.poll(() => spotlight.evaluate(element => element.style.getPropertyValue('--spotlight-x'))).not.toBe('');
+          await expect.poll(() => spotlight.evaluate(element => element.style.getPropertyValue('--spotlight-y'))).not.toBe('');
+        } else if (state === 'learning-back') {
+          await expect(shell).toHaveAttribute('data-card-tier', 'learning');
+          await shell.getByRole('button', { name: /Reveal the Vietnamese meaning of luminous/ }).click();
+          await expect(shell).toHaveAttribute('data-card-side', 'back');
+          await expect(shell.locator('.flashcard-back')).toBeVisible();
+        } else if (state === 'mastered-hover') {
+          await expect(shell).toHaveAttribute('data-card-tier', 'mastered');
+          const box = await shell.boundingBox();
+          if (!box) throw new Error('Flashcard shell is not measurable');
+          await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.2);
+          await expect(shell).toHaveAttribute('data-card-hovered', 'true');
+          await expect(shell.locator('[data-card-effect="hover-wings"]')).toHaveAttribute('data-card-effect-tier', 'mastered');
+          await expect(shell.locator('[data-card-effect="holo"]')).toHaveCSS('opacity', theme.family === 'crystal' ? '0.55' : '0.35');
+          await expect(shell.locator('[data-card-effect="specular"]')).toHaveCSS('opacity', '0.92');
+        } else {
+          const star = shell.locator('[data-card-effect="star-pop"]');
+          await expect(shell).toHaveAttribute('data-card-tier', 'new');
+          await expect(star).toHaveAttribute('aria-pressed', 'true');
+          await shell.getByRole('button', { name: /Reveal the Vietnamese meaning of luminous/ }).click();
+          await expect(shell).toHaveAttribute('data-card-side', 'back');
+          await expect(star).toHaveAttribute('aria-pressed', 'true');
+          await expect(shell.locator('.flashcard-star-selected')).toBeVisible();
+        }
+
+        await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-${state}.png`, {
           animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
         });
       });
@@ -347,9 +419,11 @@ for (const theme of themes) {
 
       const audio = shell.getByRole('button', { name: 'Play pronunciation' });
       await audio.click();
+      await expect(shell).toHaveAttribute('data-card-side', 'front');
+      await expect(shell).toHaveAttribute('data-card-tier', 'learning');
       await expect(audio.locator('.wave-bar-1')).toBeVisible();
       await expect(audio.locator('.wave-bar-1')).toHaveCSS('animation-name', 'audio-wave-bounce');
-      await captureState(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-playing.png`);
+      await captureState(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-learning-front-blind-starred-playing.png`);
       await expectNoBlockingViolations(page);
     });
   }
