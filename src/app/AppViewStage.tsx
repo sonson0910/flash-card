@@ -49,6 +49,7 @@ interface AppViewStageProps {
   readonly openVocabulary: () => void;
   readonly openPaths: () => void;
   readonly continueReview: () => void | Promise<void>;
+  readonly continueCatalogUnit: (cards: readonly CardData[], isCurrent: () => boolean) => Promise<'started' | 'stale' | 'partial' | 'unavailable'>;
   readonly openMorePractice: (opener: HTMLButtonElement) => void;
   readonly libraryContent: ReactNode;
   readonly practiceContent: ReactNode;
@@ -59,9 +60,9 @@ const fallback = (message: ReactNode) => <WorkspaceLoadingPanel>{message}</Works
 export function AppViewStage({
   viewMode, ownerId, database, verifiedLibraryEpoch, languageProfile, isOffline, isDarkMode, headingRef, focusIntent, stats, streak, isStatsLoading, statsError, loadPracticePool, reviewCard,
   catalogCards, adoptCatalogCards, notifyCatalog,
-  openVocabulary, openPaths, continueReview, openMorePractice, libraryContent, practiceContent,
+  openVocabulary, openPaths, continueReview, continueCatalogUnit, openMorePractice, libraryContent, practiceContent,
 }: AppViewStageProps) {
-  if (viewMode === 'catalog') return <Suspense fallback={fallback(<Trans id="shell.loading.paths" message="Preparing learning paths…" />)}><div className="async-content-enter" data-async-content="catalog"><CatalogWorkspace ownerId={ownerId} database={database} verifiedLibraryEpoch={verifiedLibraryEpoch} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} openVocabulary={openVocabulary} continueReview={continueReview} /></div></Suspense>;
+  if (viewMode === 'catalog') return <Suspense fallback={fallback(<Trans id="shell.loading.paths" message="Preparing learning paths…" />)}><div className="async-content-enter" data-async-content="catalog"><CatalogWorkspace ownerId={ownerId} database={database} verifiedLibraryEpoch={verifiedLibraryEpoch} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} openVocabulary={openVocabulary} continueReview={continueReview} continueCatalogUnit={continueCatalogUnit} /></div></Suspense>;
   if (viewMode === 'today') {
     const route = readDailyLearningUrlState(window.location.href);
     const openLesson = (lesson: DailyLessonMode | null) => {

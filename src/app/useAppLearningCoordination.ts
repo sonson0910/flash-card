@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useRef, type RefObject } from 'react';
-import { buildVocabularyImageQuery, fetchImageUrl, isRetryableImageSearchError, isSupportedImageUrl } from '../lib/images';
 import { cardWordKey } from '../lib/cardIdentity';
 import { db } from '../lib/firebase';
 import { retainCardsForSession } from '../lib/sessionCards';
@@ -8,7 +7,6 @@ import type { UndoToastItem } from '../components/ui/UndoToast';
 import { useIntakeSharingSession } from '../features/intake/useIntakeSharingSession';
 import type { LanguageProfile } from '../features/language/languageProfile';
 import type { SharedDeckCoursePort } from '../features/sharing/shareCourseMatching';
-import { useCardMediaHydration } from '../features/library/useCardMediaHydration';
 import { useCustomDeckWorkspace } from '../features/library/useCustomDeckWorkspace';
 import { useLibraryScreenContract } from '../features/library/useLibraryScreenContract';
 import { canStartLibraryClear } from '../features/library/libraryMutationRecovery';
@@ -18,9 +16,7 @@ import {
   cloudPageCacheKey,
   removeCloudStatsCaches,
   clearImageNegativeCache,
-  hasImageNegativeCache,
   isCloudBackoffActive,
-  markImageNegativeCache,
   removeLocalValue,
 } from '../features/library/libraryStorage';
 import { useLearningWorkspace, type LearningWorkspaceActions } from '../features/learning/useLearningWorkspace';
@@ -30,6 +26,8 @@ import type { CeremonyEvent, VerifiedGamificationOutcome } from '../features/gam
 import { appDependencies } from './appDependencies';
 import type { AppLibraryRuntime } from './useAppLibraryRuntime';
 import { useLibraryMutationFeedback } from './use-library-mutation-feedback';
+import { useCatalogUnitContinuation } from './useCatalogUnitContinuation';
+import { useAppCardMediaHydration } from './useAppCardMediaHydration';
 export interface LearningCeremony {
   ownerId: string; operationId: string; events: readonly CeremonyEvent[];
   card?: Pick<CardData, 'word' | 'translation' | 'imageUrl'>; gamification?: VerifiedGamificationOutcome;
@@ -98,47 +96,8 @@ export function useAppLearningCoordination({
   });
   ports.practicePublicationRef.current = practiceWorkspace.snapshotRef.current;
   const { streak, xp, xpHistory, level, rewards, reviewActivityByLanguage, rewardTimeZone, acceptAuthoritativeOutcome, equipFrame } = practiceWorkspace.model.gamification;
-  const mediaHydration = useCardMediaHydration({
-    ownerKey: user?.uid ?? null,
-    cards,
-    enabled: viewMode === 'library',
-    port: {
-      hasMedia: card => isSupportedImageUrl(card.imageUrl) || (
-        hasImageNegativeCache(user?.uid ?? null, card.id)
-      ),
-      fetchMedia: async card => {
-        try {
-          const context = {
-            word: (card.normalizedWord || card.word).trim(),
-            searchQuery: card.imageSearchQuery,
-            category: card.category,
-            partOfSpeech: card.partOfSpeech,
-            explanation: card.explanation,
-          };
-          if (!context.word) return null;
-          const imageUrl = await fetchImageUrl(context);
-          if (!isSupportedImageUrl(imageUrl)) {
-            markImageNegativeCache(user?.uid ?? null, card.id);
-            return null;
-          }
-          const imageSearchQuery = card.imageSearchQuery?.trim() || buildVocabularyImageQuery(context);
-          return { imageUrl, ...(imageSearchQuery ? { imageSearchQuery } : {}) };
-        } catch (cause) {
-          if (isRetryableImageSearchError(cause)) throw cause;
-          console.warn('The missing card image could not be loaded yet.', cause);
-          return null;
-        }
-      },
-      previewCard: (cardId, fields) => ports.setCards(current =>
-        current.map(card => card.id === cardId ? { ...card, ...fields } : card)),
-      updateCard: async (cardId, fields, options) => {
-        const promoted = ports.recentlyPromotedCardsRef.current.get(cardWordKey(options.source));
-        if (promoted) {
-          ports.recentlyPromotedCardsRef.current.set(cardWordKey(options.source), { ...promoted, ...fields });
-        }
-        await learningActionsRef.current?.updateCard(cardId, fields, options);
-      },
-    },
+  const mediaHydration = useAppCardMediaHydration({
+    ownerId: user?.uid ?? null, cards, enabled: viewMode === 'library', ports, learningActionsRef,
   });
   const learningCommands = useLearningWorkspace({
     owner: {
@@ -278,6 +237,18 @@ export function useAppLearningCoordination({
     feedback: { reportError, notify },
     externalBusy: externalLibraryBusy,
   }, appDependencies.sessions.intakeSharing);
+  const catalogEpoch = user && libraryEpochState?.userId === user.uid
+    ? libraryEpochState.value
+    : null;
+  const continueCatalogUnit = useCatalogUnitContinuation({
+    scope: {
+      ownerId: user?.uid ?? null,
+      libraryEpoch: catalogEpoch,
+      targetLanguage: languageProfile.source.code,
+    },
+    createMissing: intakeSharing.actions.createConfirmedCatalogCards,
+    startStudy: practiceWorkspace.actions.startStudyWithCards,
+  });
   const isLibraryBusy = intakeSharing.model.isBusy;
   const shareCategory = async (category: string) => {
     rememberOpener(shareOpenerRef);
@@ -341,6 +312,7 @@ export function useAppLearningCoordination({
       practice: practiceWorkspace.actions,
       intakeSharing: intakeSharing.actions,
       loadPracticePool: practiceWorkspace.ports.loadPracticePool,
+      continueCatalogUnit,
       reviewCard: practiceLearning.reviewCard,
       clearAll,
     },

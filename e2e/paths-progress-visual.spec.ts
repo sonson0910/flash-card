@@ -102,17 +102,21 @@ const summary = {
 
 function CatalogReadyFixture() {
   const locale = useUiLocale();
+  const continueDemo = new URLSearchParams(window.location.search).has('continueDemo');
   const [ready, setReady] = useState(false);
   const [selectedUnitId, setSelectedUnitId] = useState(null);
+  const [confirmationUnitId, setConfirmationUnitId] = useState(null);
   useEffect(() => { void loadCatalog(locale, 'catalog').then(() => setReady(true)); }, [locale]);
   if (!ready) return null;
   const tracks = catalogTracksFromSummary(summary);
-  const actions = { selectLanguage() {}, selectTrack() {}, selectTier() {}, selectPathUnit(trackId, unitId) { setSelectedUnitId(trackId + '\\u0000' + unitId); }, changeTerm() {}, changeCefr() {}, changeTopic() {}, changePartOfSpeech() {}, changeSkill() {}, resetFilters() {}, download() {}, retry() {}, loadMore() {}, addToLibrary() {}, openVocabulary() {}, continueReview() {} };
+  const currentUnitId = selectedUnitId ?? 'ielts\\u0000analysis-basics';
+  const actions = { selectLanguage() {}, selectTrack() {}, selectTier() {}, selectPathUnit(trackId, unitId) { setSelectedUnitId(trackId + '\\u0000' + unitId); setConfirmationUnitId(null); }, openNextUnitPreview() { setSelectedUnitId('ielts\\u0000analysis-basics'); setConfirmationUnitId('ielts\\u0000analysis-basics'); }, prepareSelectedUnit() { setConfirmationUnitId(currentUnitId); }, confirmSelectedUnit() {}, changeTerm() {}, changeCefr() {}, changeTopic() {}, changePartOfSpeech() {}, changeSkill() {}, resetFilters() {}, download() {}, retry() {}, loadMore() {}, addToLibrary() {}, openVocabulary() {}, continueReview() {} };
   return <main className="min-h-screen p-4 sm:p-8"><CatalogScreen model={{
     status: { kind: 'ready', isOnline: false, message: 'Reviewed catalog reviewed-visual-1 is ready on this device.' },
     selectedLanguage: 'en', uiLocale: locale, languages: [{ code: 'en', label: 'English', nativeLabel: 'English', isAvailable: true }, { code: 'ja', label: 'Japanese', nativeLabel: '日本語', isAvailable: false }],
     selectedTrack: 'ielts', tracks, selectedTier: 'foundation', tiers: catalogTiersFromSummary(summary, 'ielts'), filters: catalogFiltersFromSummary(summary, 'ielts'),
     pathUnits: projectCatalogPathUnits(summary), selectedPathUnitId: selectedUnitId,
+    ...(continueDemo ? { pathUnitContinue: { selectedUnitId: currentUnitId, confirmationUnitId, busy: false, error: null, etaDays: currentUnitId.endsWith('academic-argument') ? 1 : 0, allComplete: false } } : {}),
     cards: [{ id: 'catalog-analysis', lemma: 'analysis', language: 'en', phonetic: '/əˈnæləsɪs/', partOfSpeech: 'noun', cefr: 'B2', tier: 'Foundation', topics: ['Education'], skills: ['Reading'], meaning: 'a careful study of something', meaningLanguage: 'en', translation: 'sự phân tích', translationLanguage: 'vi', example: 'The report provides a detailed analysis of the results.', exampleTranslation: 'Báo cáo cung cấp phân tích chi tiết về kết quả.', collocations: ['detailed analysis', 'data analysis'], provenance: { sourceLabel: 'Reviewed editorial catalog', licenseLabel: 'CC BY 4.0', reviewerLabel: 'Human editorial review' }, libraryState: 'available' }],
     resultSummary: 'Showing 1 reviewed IELTS Foundation word.', hasMore: false, isLoadingPage: false, isLoadingMore: false,
   }} actions={actions} /></main>;
@@ -336,6 +340,32 @@ for (const theme of themes) {
       await attachScreen(page, testInfo, `paths-reviewed-${theme.family}-${theme.mode}-${viewport.name}`);
       await page.getByRole('button', { name: /Unit 2 · Research language/i }).click();
       await expect(page.getByRole('heading', { name: 'Preview: Research language' })).toBeVisible();
+    });
+  }
+}
+
+for (const theme of themes) {
+  for (const viewport of viewports) {
+    test(`${theme.family} ${theme.mode} Paths Continue confirmation is visible at ${viewport.name}`, async ({ page }, testInfo) => {
+      await page.setViewportSize(viewport);
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript(({ family, mode }) => {
+        localStorage.setItem('sonflash_theme_family', family);
+        localStorage.setItem('lingoflash_theme', mode);
+        localStorage.setItem('sonflash_theme_follow_system', 'false');
+      }, theme);
+
+      await page.goto(`${catalogFixtureOrigin}${catalogFixturePath}?locale=en&continueDemo=1`);
+      await page.getByRole('button', { name: /Unit 3 · Academic argument/i }).click();
+      await expect(page.getByRole('heading', { name: 'Preview: Academic argument' })).toBeVisible();
+      await expect(page.getByText('Estimated 1 day left at your pace.')).toBeVisible();
+      await page.getByRole('button', { name: 'Continue with this unit' }).click();
+      await expect(page.getByText('Any missing unit words will be added to your Library before study.')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Add missing words and study' })).toBeVisible();
+      await expectAccessibleAndContained(page, 'Paths Continue');
+      await expectReducedMotion(page, 'Paths Continue');
+      await page.getByRole('article', { name: /analysis/i }).scrollIntoViewIfNeeded();
+      await attachScreen(page, testInfo, `paths-continue-${theme.family}-${theme.mode}-${viewport.name}`);
     });
   }
 }

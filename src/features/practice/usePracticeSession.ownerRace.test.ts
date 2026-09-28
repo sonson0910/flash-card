@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
+import { createLexemeId } from '../multilingual/lexemeIdentity';
 
 type EffectRecord = {
   cleanup?: () => void;
@@ -120,6 +121,20 @@ const card = (index: number): CardData => ({
   imageUrl: null,
   difficulty: 'good',
 });
+
+const canonicalCard = (index: number, language = 'en'): CardData => {
+  const normalizedLemma = `word-${index}`;
+  const partOfSpeech = 'noun';
+  const senseKey = `sense-${index}`;
+  return {
+    ...card(index),
+    language,
+    normalizedLemma,
+    partOfSpeech,
+    senseKey,
+    lexemeId: createLexemeId({ language, normalizedLemma, partOfSpeech, senseKey }),
+  };
+};
 
 const flushEffects = () => {
   const pending = hookRuntime.pendingEffects.splice(0);
@@ -247,6 +262,78 @@ describe('usePracticeSession owner isolation', () => {
     });
   });
 
+  it('starts an ordered unit study without loading the practice pool', async () => {
+    const { openView, render } = createSessionHarness([card(1)]);
+    const loadPracticePool = vi.fn(async () => [card(99)]);
+    const unitCards = [canonicalCard(2), canonicalCard(1)];
+    let session = render({ loadPracticePool });
+    flushEffects();
+
+    await expect(session.commands.startStudyWithCards(unitCards)).resolves.toBe(true);
+    session = renderAfterEffects(render);
+
+    expect(session.study.cards).toEqual(unitCards);
+    expect(openView).toHaveBeenCalledWith('study');
+    expect(loadPracticePool).not.toHaveBeenCalled();
+  });
+
+  it('rejects unit study cards that exceed the cap, repeat a lexeme, or target another language', async () => {
+    const { openView, render } = createSessionHarness([card(1)]);
+    const reportError = vi.fn();
+    let session = render({ reportError });
+    flushEffects();
+
+    await expect(session.commands.startStudyWithCards(Array.from({ length: 21 }, (_, index) => canonicalCard(index)))).resolves.toBe(false);
+    await expect(session.commands.startStudyWithCards([canonicalCard(1), canonicalCard(1)])).resolves.toBe(false);
+    await expect(session.commands.startStudyWithCards([canonicalCard(1, 'ko')])).resolves.toBe(false);
+    session = renderAfterEffects(render);
+
+    expect(session.study.cards).toEqual([]);
+    expect(openView).not.toHaveBeenCalledWith('study');
+    expect(reportError).toHaveBeenCalledTimes(3);
+  });
+
+  it('ignores a unit-study command retained across an owner or target-language change', async () => {
+    const { openView, render } = createSessionHarness([card(1)]);
+    let session = render();
+    flushEffects();
+    const staleOwnerStart = session.commands.startStudyWithCards;
+    render({ ownerId: 'owner-b', languageDrillScopeKey: 'owner-b:en' });
+    renderAfterEffects(render);
+
+    await expect(staleOwnerStart([canonicalCard(1)])).resolves.toBe(false);
+
+    session = render();
+    const staleLanguageStart = session.commands.startStudyWithCards;
+    const koreanProfile = {
+      id: 'ko-en',
+      source: { code: 'ko', displayName: 'Korean' },
+      target: { code: 'en', displayName: 'English' },
+      speechLocale: 'ko-KR',
+      normalize: (value: unknown) => typeof value === 'string' ? value.trim() : '',
+    };
+    render({ languageProfile: koreanProfile, languageDrillScopeKey: 'owner-b:ko' });
+    renderAfterEffects(render);
+
+    await expect(staleLanguageStart([canonicalCard(1)])).resolves.toBe(false);
+
+    expect(render().study.cards).toEqual([]);
+    expect(openView).not.toHaveBeenCalledWith('study');
+  });
+
+  it('does not activate unit study when its catalog scope changes during preparation', async () => {
+    const { openView, render } = createSessionHarness([]);
+    const session = render();
+    flushEffects();
+    let isCurrent = true;
+
+    const starting = session.commands.startStudyWithCards([canonicalCard(1)], () => isCurrent);
+    isCurrent = false;
+
+    await expect(starting).resolves.toBe(false);
+    expect(openView).not.toHaveBeenCalledWith('study');
+  });
+
   it('pauses review and navigation while editing, then resumes the same revealed card', async () => {
     const { render, learning } = createSessionHarness([card(1), card(2)]);
     let session = render();
@@ -259,6 +346,7 @@ describe('usePracticeSession owner isolation', () => {
     session.commands.setStudyEditorOpen(activeId, true);
     session.commands.setStudyIndex(1);
     session.commands.setRecallMode('native-to-target');
+    expect(await session.commands.startStudyWithCards([canonicalCard(3)])).toBe(false);
     expect(await session.commands.submitStudyRating('good')).toBe('ignored');
     expect(learning.reviewCard).not.toHaveBeenCalled();
     session = render();

@@ -117,6 +117,7 @@ describe('Card Intake Pipeline contract', () => {
       touchExisting: pipeline.touchExisting,
       generateCard: pipeline.generateCard,
       persistCards: pipeline.persistCards,
+      createConfirmedCatalogCards: pipeline.createConfirmedCatalogCards,
       applyMedia: pipeline.applyMedia,
       persistStructured: pipeline.persistStructured,
       generate: pipeline.generate,
@@ -148,6 +149,100 @@ describe('Card Intake Pipeline contract', () => {
       opId: expect.stringMatching(/^create-/),
       timeZone: expect.any(String),
     }));
+  });
+
+  it('waits for every canonical catalog create before publishing authoritative cards once', async () => {
+    const context = createContext();
+    const first = { ...card('catalog-first'), lexemeId: 'lexeme-first' };
+    const second = { ...card('catalog-second'), lexemeId: 'lexeme-second' };
+    const firstResult = deferred<{ card: typeof first; created: boolean; gamification: null }>();
+    const secondResult = deferred<{ card: typeof second; created: boolean; gamification: null }>();
+    repositoryRuntime.createCardV2IfAbsent
+      .mockReturnValueOnce(firstResult.promise)
+      .mockReturnValueOnce(secondResult.promise);
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    const creation = pipeline.createConfirmedCatalogCards([first, second]);
+    expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalledTimes(2);
+    expect(context.publishCards).not.toHaveBeenCalled();
+    firstResult.resolve({ card: { ...first, translation: 'authoritative first' }, created: true, gamification: null });
+    await Promise.resolve();
+    expect(context.publishCards).not.toHaveBeenCalled();
+    secondResult.resolve({ card: { ...second, translation: 'authoritative second' }, created: false, gamification: null });
+
+    await expect(creation).resolves.toEqual({
+      status: 'completed',
+      cards: [
+        { ...first, translation: 'authoritative first' },
+        { ...second, translation: 'authoritative second' },
+      ],
+      createdCount: 1,
+      reusedCount: 1,
+    });
+    expect(context.publishCards).toHaveBeenCalledTimes(1);
+    expect(context.publishCards).toHaveBeenCalledWith([
+      { ...first, translation: 'authoritative first' },
+      { ...second, translation: 'authoritative second' },
+    ]);
+    expect(context.updateCloudStats).toHaveBeenCalledTimes(1);
+    expect(context.updateCategoryFacets).toHaveBeenCalledTimes(1);
+    expect(context.resetCatalog).toHaveBeenCalledTimes(1);
+    expect(context.resetCloudPage).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns a partial catalog result only after all canonical creates settle', async () => {
+    const context = createContext();
+    const rejected = { ...card('catalog-rejected'), lexemeId: 'lexeme-rejected' };
+    const confirmed = { ...card('catalog-confirmed'), lexemeId: 'lexeme-confirmed' };
+    repositoryRuntime.createCardV2IfAbsent
+      .mockRejectedValueOnce(new Error('unavailable'))
+      .mockResolvedValueOnce({ card: confirmed, created: true, gamification: null });
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await expect(pipeline.createConfirmedCatalogCards([rejected, confirmed])).resolves.toEqual({
+      status: 'partial', cards: [confirmed], failedCount: 1,
+    });
+    expect(context.publishCards).toHaveBeenCalledTimes(1);
+    expect(context.updateCategoryFacets).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns stale without publishing when the owner changes during catalog confirmation', async () => {
+    const ownerA = createContext();
+    const ownerB = createContext();
+    ownerB.ownerId = 'owner-b';
+    let context = ownerA;
+    const candidate = { ...card('catalog-stale'), lexemeId: 'lexeme-stale' };
+    const confirmation = deferred<{ card: typeof candidate; created: boolean; gamification: null }>();
+    repositoryRuntime.createCardV2IfAbsent.mockReturnValueOnce(confirmation.promise);
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    const creation = pipeline.createConfirmedCatalogCards([candidate]);
+    context = ownerB;
+    pipeline.replaceOwner('owner-b');
+    confirmation.resolve({ card: candidate, created: true, gamification: null });
+
+    await expect(creation).resolves.toEqual({ status: 'stale' });
+    expect(ownerA.publishCards).not.toHaveBeenCalled();
+    expect(ownerB.publishCards).not.toHaveBeenCalled();
+  });
+
+  it('does not publish old-generation catalog cards after the library epoch advances', async () => {
+    let context = createContext();
+    const previous = context;
+    const candidate = { ...card('catalog-cleared'), lexemeId: 'lexeme-cleared' };
+    const confirmation = deferred<{ card: typeof candidate; created: boolean; gamification: null }>();
+    repositoryRuntime.createCardV2IfAbsent.mockReturnValueOnce(confirmation.promise);
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    const creation = pipeline.createConfirmedCatalogCards([candidate]);
+    context = { ...context, libraryEpoch: 4 };
+    confirmation.resolve({ card: candidate, created: true, gamification: null });
+
+    await expect(creation).resolves.toEqual({ status: 'stale' });
+    expect(previous.publishCards).not.toHaveBeenCalled();
+    expect(context.publishCards).not.toHaveBeenCalled();
+    expect(context.updateCloudStats).not.toHaveBeenCalled();
+    expect(context.updateCategoryFacets).not.toHaveBeenCalled();
   });
 
   it('returns confirmed structured save outcomes, including already-present patches', async () => {

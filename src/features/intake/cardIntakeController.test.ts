@@ -49,6 +49,9 @@ const createFakePort = () => {
       mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }),
     })),
     persistCards,
+    createConfirmedCatalogCards: vi.fn(async cards => ({
+      status: 'completed' as const, cards, createdCount: cards.length, reusedCount: 0,
+    })),
     applyMedia: vi.fn(async () => undefined),
   };
   return { port, persistCards };
@@ -87,6 +90,20 @@ describe('card intake controller', () => {
       reportFailure,
     )).resolves.toBeUndefined();
     expect(reportFailure).toHaveBeenLastCalledWith(persistFailure);
+  });
+
+  it('rejects an oversized or duplicate catalog batch before it reaches the port', async () => {
+    const { port } = createFakePort();
+    const intake = createCardIntakeController({ port });
+    const catalogCard = (id: string) => ({ ...card(id), lexemeId: `lexeme-${id}` });
+
+    await expect(intake.createConfirmedCatalogCards(
+      Array.from({ length: 21 }, (_, index) => catalogCard(String(index))),
+    )).resolves.toEqual({ status: 'invalid', reason: 'too-many-cards' });
+    await expect(intake.createConfirmedCatalogCards([
+      catalogCard('one'), catalogCard('one'),
+    ])).resolves.toEqual({ status: 'invalid', reason: 'invalid-catalog-cards' });
+    expect(port.createConfirmedCatalogCards).not.toHaveBeenCalled();
   });
 
   it('stages an AI preview and saves only after an explicit save action', async () => {

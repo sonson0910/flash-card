@@ -11,6 +11,9 @@ import {
   readCatalogCachePage,
   type CatalogCachePageResult,
   type CatalogCacheQuery,
+  readCatalogCacheUnit,
+  type CatalogCacheUnitQuery,
+  type CatalogCacheUnitResult,
 } from '../catalogCache/catalogIndex';
 import {
   summarizeActiveCatalog,
@@ -32,7 +35,7 @@ const DEFAULT_TIMEOUT_MILLISECONDS = 15_000;
 const MAXIMUM_TIMEOUT_MILLISECONDS = 60_000;
 const MAXIMUM_PAGE_SIZE = 100;
 
-export type CatalogWorkspaceRequestChannel = 'inspect' | 'summary' | 'download' | 'page';
+export type CatalogWorkspaceRequestChannel = 'inspect' | 'summary' | 'download' | 'page' | 'unit';
 
 export interface CatalogWorkspaceRequestToken {
   readonly channel: CatalogWorkspaceRequestChannel;
@@ -79,6 +82,7 @@ export interface CatalogWorkspaceRuntimePort {
     reportProgress?: (progress: CatalogDownloadProgress) => void,
   ): Promise<CatalogReleaseInstallResult>;
   readPage(input: CatalogCacheQuery): Promise<CatalogCachePageResult>;
+  readUnit(input: CatalogCacheUnitQuery): Promise<CatalogCacheUnitResult | null>;
 }
 
 export interface CatalogWorkspaceServiceOptions {
@@ -101,6 +105,7 @@ export interface CatalogWorkspaceService {
     reportProgress?: (progress: CatalogDownloadProgress) => void,
   ): Promise<CatalogWorkspaceResult<CatalogReleaseInstallResult>>;
   readPage(input: CatalogCacheQuery): Promise<CatalogWorkspaceResult<CatalogCachePageResult>>;
+  readUnit(input: CatalogCacheUnitQuery): Promise<CatalogWorkspaceResult<CatalogCacheUnitResult | null>>;
   invalidate(): void;
 }
 
@@ -343,6 +348,7 @@ const defaultRuntimePort = (
     );
   },
   readPage: readCatalogCachePage,
+  readUnit: readCatalogCacheUnit,
 });
 
 export function createCatalogWorkspaceService(
@@ -421,6 +427,7 @@ export function createCatalogWorkspaceService(
       )) throw new TypeError(`Catalog query pageSize must be between 1 and ${MAXIMUM_PAGE_SIZE}.`);
       return runLatest('page', () => ports.readPage(input));
     },
+    readUnit: input => runLatest('unit', () => ports.readUnit(input)),
     invalidate: () => guard.invalidate(),
   };
 }

@@ -531,6 +531,7 @@ export default function AppRuntime({
               openVocabulary={() => setViewMode('library')}
               openPaths={() => setViewMode('catalog')}
               continueReview={practiceActions.startStudy}
+              continueCatalogUnit={learning.actions.continueCatalogUnit}
               openMorePractice={openPractice}
               libraryContent={<AppDeferredLibraryView model={libraryScreen.model} actions={libraryScreen.actions} />}
               practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} />}

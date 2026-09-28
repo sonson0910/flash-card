@@ -64,6 +64,7 @@ import {
   applyCardPatchIfCurrent,
   clearCustomDeckAssignments,
   deleteCardWithTombstone,
+  fetchCatalogUnitCards,
   findCardByNormalizedWord,
   findCardById,
   findCardsByNormalizedWords,
@@ -105,6 +106,61 @@ function mockDeleteCallableFailure(error: unknown): ReturnType<typeof vi.fn> {
   functionsRuntime.httpsCallable.mockReturnValue(callable);
   return callable;
 }
+
+describe('catalog unit card hydration', () => {
+  beforeEach(() => firestore.getDocs.mockReset());
+
+  it('reads at most 20 cards in one server query and retains the learned duplicate', async () => {
+    firestore.getDocs.mockResolvedValueOnce(snapshot([
+      { id: 'first', data: { lexemeId: 'lexeme-a', language: 'en', libraryEpoch: 2, word: 'alpha' } },
+      { id: 'learned', data: { lexemeId: 'lexeme-a', language: 'en', libraryEpoch: 2, word: 'alpha', correctStreak: 3 } },
+      { id: 'second', data: { lexemeId: 'lexeme-b', language: 'en', libraryEpoch: 2, word: 'beta' } },
+    ]));
+
+    const cards = await fetchCatalogUnitCards({} as never, 'owner-a', {
+      lexemeIds: ['lexeme-a', 'lexeme-b'], targetLanguage: 'en', libraryEpoch: 2,
+    });
+
+    expect(firestore.getDocs).toHaveBeenCalledTimes(1);
+    expect(firestore.getDocs.mock.calls[0]?.[0]).toMatchObject({
+      type: 'query',
+      args: [
+        expect.anything(),
+        { type: 'where', args: ['lexemeId', 'in', ['lexeme-a', 'lexeme-b']] },
+        { type: 'where', args: ['libraryEpoch', '==', 2] },
+        { type: 'where', args: ['language', '==', 'en'] },
+        { type: 'limit', args: [20] },
+      ],
+    });
+    expect([...cards.keys()]).toEqual(['lexeme-a', 'lexeme-b']);
+    expect(cards.get('lexeme-a')?.id).toBe('learned');
+  });
+
+  it('rejects an oversized or repeated unit before reading Firestore', async () => {
+    await expect(fetchCatalogUnitCards({} as never, 'owner-a', {
+      lexemeIds: Array.from({ length: 21 }, (_, index) => `lexeme-${index}`),
+      targetLanguage: 'en', libraryEpoch: 0,
+    })).rejects.toThrow('Invalid catalog unit card request');
+    await expect(fetchCatalogUnitCards({} as never, 'owner-a', {
+      lexemeIds: ['lexeme-a', 'lexeme-a'], targetLanguage: 'en', libraryEpoch: 0,
+    })).rejects.toThrow('Invalid catalog unit card request');
+    expect(firestore.getDocs).not.toHaveBeenCalled();
+  });
+
+  it('rejects a card from another epoch, language, or unit', async () => {
+    for (const data of [
+      { lexemeId: 'lexeme-a', language: 'en', libraryEpoch: 1 },
+      { lexemeId: 'lexeme-a', language: 'ko', libraryEpoch: 2 },
+      { lexemeId: 'lexeme-other', language: 'en', libraryEpoch: 2 },
+    ]) {
+      firestore.getDocs.mockResolvedValueOnce(snapshot([{ id: 'wrong', data }]));
+      await expect(fetchCatalogUnitCards({} as never, 'owner-a', {
+        lexemeIds: ['lexeme-a'], targetLanguage: 'en', libraryEpoch: 2,
+      })).rejects.toThrow('unexpected card');
+    }
+    expect(firestore.getDocs).toHaveBeenCalledTimes(3);
+  });
+});
 
 describe('findCardByNormalizedWord', () => {
   beforeEach(() => {

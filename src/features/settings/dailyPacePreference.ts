@@ -29,6 +29,19 @@ export const readDailyPace = (storage: Pick<PaceStorage, 'getItem'> | null = get
   }
 };
 
+/** ETA requires an explicitly saved pace; unlike settings, it must not invent a default. */
+export const readDailyPaceForEta = (
+  storage: Pick<PaceStorage, 'getItem'> | null = getStorage(),
+): DailyPace | null => {
+  try {
+    const raw = storage?.getItem(DAILY_PACE_STORAGE_KEY);
+    const parsed = raw === null || raw === undefined ? NaN : Number(raw);
+    return isDailyPace(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
 export const writeDailyPace = (pace: DailyPace, storage: Pick<PaceStorage, 'setItem'> | null = getStorage()): void => {
   try { storage?.setItem(DAILY_PACE_STORAGE_KEY, String(pace)); } catch { /* the in-memory choice still applies for this view */ }
 };

@@ -28,6 +28,8 @@ import { normalizeCardOperationId } from '../../lib/cardMutationProtocol';
 import {
   RequestedDeckUnavailableError,
   settleMediaBestEffort,
+  catalogCardBatchError,
+  type ConfirmedCatalogCardsResult,
   type CardIntakeControllerPort,
 } from './cardIntakeController';
 import type { CardIntakePortOptions } from './cardIntakePortContract';
@@ -474,6 +476,86 @@ export function createCardIntakePipeline({
     }
   };
 
+  const createConfirmedCatalogCards: CardIntakeControllerPort['createConfirmedCatalogCards'] = async (
+    cards,
+  ): Promise<ConfirmedCatalogCardsResult> => {
+    const invalidReason = catalogCardBatchError(cards);
+    if (invalidReason) return { status: 'invalid', reason: invalidReason };
+    const current = getContext();
+    const session = sessionGuard.capture();
+    const ownerId = current.ownerId;
+    if (!ownerId) throw classifyProtectedFunctionError({ code: 'unauthenticated' }, 'Card creation');
+    if (current.libraryEpoch === null || !db || !isFirebaseConfigured) {
+      throw new Error('Cloud library storage is not ready yet. Try again in a moment.');
+    }
+    const database = db;
+    const activeLibraryEpoch = current.libraryEpoch;
+    const operationIds = cards.map(createOperationId);
+    const settlements = await Promise.allSettled(cards.map((card, index) =>
+      createCardV2IfAbsent(database, ownerId, card, {
+        libraryEpoch: activeLibraryEpoch,
+        opId: operationIds[index]!,
+        operationCreatedAt: card.createdAt,
+        timeZone: rewardTimeZone(),
+      }),
+    ));
+    if (!sessionGuard.isCurrent(session) || getContext().libraryEpoch !== activeLibraryEpoch) return { status: 'stale' };
+
+    const confirmed = settlements.flatMap((settlement, index) => settlement.status === 'fulfilled'
+      ? [{
+        card: settlement.value.card,
+        created: settlement.value.created,
+        gamification: settlement.value.gamification,
+        operationId: operationIds[index]!,
+      }]
+      : []);
+    const active = getContext();
+    if (confirmed.length > 0) {
+      const authoritativeCards = confirmed.map(result => result.card);
+      authoritativeCards.forEach(active.rememberPromoted);
+      active.publishCards(retainCardsForSession(
+        mergeCards(active.getCards(), authoritativeCards),
+        active.cardsPerPage,
+      ));
+      const createdCards = confirmed.filter(result => result.created).map(result => result.card);
+      if (createdCards.length > 0) {
+        active.updateCloudStats(stats => ({
+          ...stats,
+          total: stats.total + createdCards.length,
+          unrated: stats.unrated + createdCards.filter(card => card.difficulty === 'unrated').length,
+        }));
+        active.updateCloudTotal(total => Math.max(total, active.getCards().length));
+        const deltas = createdCards.reduce<Record<string, number>>((counts, card) => {
+          const category = card.category || 'Other';
+          counts[category] = (counts[category] || 0) + 1;
+          return counts;
+        }, {});
+        const facetOperationId = createLibraryFacetOperationId();
+        void active.updateCategoryFacets(
+          deltas,
+          deriveLibraryFacetOperationId(facetOperationId, 'create'),
+        );
+        confirmed.forEach(result => {
+          if (result.created && result.gamification) {
+            active.acceptGamificationOutcome?.(result.gamification, result.operationId);
+          }
+        });
+      }
+      active.resetCatalog();
+      active.resetCloudPage();
+    }
+    const authoritativeCards = confirmed.map(result => result.card);
+    const failedCount = settlements.length - confirmed.length;
+    return failedCount > 0
+      ? { status: 'partial', cards: authoritativeCards, failedCount }
+      : {
+        status: 'completed',
+        cards: authoritativeCards,
+        createdCount: confirmed.filter(result => result.created).length,
+        reusedCount: confirmed.filter(result => !result.created).length,
+      };
+  };
+
   const pipeline: CardIntakePipeline = {
     replaceOwner: ownerId => {
       const previousOwnerId = sessionGuard.capture().ownerId;
@@ -489,6 +571,7 @@ export function createCardIntakePipeline({
     assignExistingDeck,
     generateCard,
     persistCards,
+    createConfirmedCatalogCards,
     applyMedia: async (card, media) => {
       const session = mediaSessions.get(card);
       if (!session || !sessionGuard.isCurrent(session)) return;

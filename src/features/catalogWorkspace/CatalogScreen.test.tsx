@@ -100,7 +100,40 @@ const actions: CatalogScreenActions = {
   openVocabulary: vi.fn(),
   continueReview: vi.fn(),
   selectPathUnit: vi.fn(),
+  openNextUnitPreview: vi.fn(),
+  prepareSelectedUnit: vi.fn(),
+  confirmSelectedUnit: vi.fn(),
 };
+
+type Tree = { type?: unknown; props?: Record<string, unknown> };
+
+function walk(node: unknown, visit: (element: Tree) => void): void {
+  if (Array.isArray(node)) {
+    node.forEach(child => walk(child, visit));
+    return;
+  }
+  if (!node || typeof node !== 'object') return;
+  const element = node as Tree;
+  visit(element);
+  walk(element.props?.children, visit);
+}
+
+function pathUnitShelf(model: CatalogScreenModel): Tree {
+  let result: Tree | undefined;
+  walk(CatalogScreen({ model, actions }), element => {
+    if (typeof element.type === 'function' && (element.type as { name?: string }).name === 'PathUnitShelf') result = element;
+  });
+  if (!result) throw new Error('PathUnitShelf was not rendered.');
+  return (result.type as (props: Record<string, unknown>) => Tree)(result.props ?? {});
+}
+
+function buttonsWithAction(node: unknown, action: unknown): Tree[] {
+  const buttons: Tree[] = [];
+  walk(node, element => {
+    if (element.type === 'button' && element.props?.onClick === action) buttons.push(element);
+  });
+  return buttons;
+}
 
 describe('CatalogScreen', () => {
   it('renders a semantic ready workspace with track progress, roadmap and honest vocabulary evidence', () => {
@@ -144,6 +177,73 @@ describe('CatalogScreen', () => {
     expect(html).toContain('Preview: Next words');
     expect(html).toContain('two');
     expect(html).toContain('three');
+  });
+
+  it('uses the controller-selected active unit ahead of a not-started unit for Continue preview', () => {
+    const model: CatalogScreenModel = {
+      ...readyModel,
+      selectedPathUnitId: 'ielts\u0000unit-1',
+      pathUnitContinue: { selectedUnitId: 'ielts\u0000unit-2', confirmationUnitId: null, busy: false, error: null, etaDays: 3, allComplete: false },
+      pathUnits: [
+        { unit: { unitId: 'unit-1', trackId: 'ielts', tier: 'foundation', ordinal: 1, titles: [{ language: 'en', text: 'Start here' }], total: 2, started: 0, mastered: 0, preview: [{ lexemeId: 'one', lemma: 'one' }] }, introduced: 0, mastered: 0, status: 'not-started' },
+        { unit: { unitId: 'unit-2', trackId: 'ielts', tier: 'foundation', ordinal: 2, titles: [{ language: 'en', text: 'Resume here' }], total: 2, started: 1, mastered: 0, preview: [{ lexemeId: 'two', lemma: 'two' }] }, introduced: 1, mastered: 0, status: 'active' },
+      ],
+    };
+    const html = renderToStaticMarkup(<CatalogScreen model={model} actions={actions} />);
+
+    expect(html).toContain('Preview: Resume here');
+    expect(html).toContain('Estimated 3 days left at your pace.');
+    const [continueButton] = buttonsWithAction(CatalogScreen({ model, actions }), actions.openNextUnitPreview);
+    expect(continueButton).toBeDefined();
+    (continueButton.props?.onClick as () => void)();
+    expect(actions.openNextUnitPreview).toHaveBeenCalledOnce();
+  });
+
+  it('requires an armed confirmation before the selected unit can continue', () => {
+    const pathUnits: NonNullable<CatalogScreenModel['pathUnits']> = [{ unit: { unitId: 'unit-1', trackId: 'ielts', tier: 'foundation', ordinal: 1, titles: [{ language: 'en', text: 'Start here' }], total: 2, started: 0, mastered: 0, preview: [] }, introduced: 0, mastered: 0, status: 'not-started' }];
+    const preview = pathUnitShelf({ ...readyModel, pathUnits, pathUnitContinue: { selectedUnitId: 'ielts\u0000unit-1', confirmationUnitId: null, busy: false, error: null, etaDays: null, allComplete: false } });
+    const confirmation = pathUnitShelf({ ...readyModel, pathUnits, pathUnitContinue: { selectedUnitId: 'ielts\u0000unit-1', confirmationUnitId: 'ielts\u0000unit-1', busy: false, error: null, etaDays: null, allComplete: false } });
+
+    const [prepareButton] = buttonsWithAction(preview, actions.prepareSelectedUnit);
+    expect(prepareButton).toBeDefined();
+    expect(buttonsWithAction(preview, actions.confirmSelectedUnit)).toHaveLength(0);
+    expect(buttonsWithAction(confirmation, actions.prepareSelectedUnit)).toHaveLength(0);
+    const [confirmButton] = buttonsWithAction(confirmation, actions.confirmSelectedUnit);
+    expect(confirmButton).toBeDefined();
+    const disclosure = renderToStaticMarkup(<CatalogScreen model={{ ...readyModel, pathUnits, pathUnitContinue: { selectedUnitId: 'ielts\u0000unit-1', confirmationUnitId: 'ielts\u0000unit-1', busy: false, error: null, etaDays: null, allComplete: false } }} actions={actions} />);
+    expect(disclosure).toContain('Any missing unit words will be added to your Library before study.');
+    expect(disclosure).toContain('Add missing words and study');
+    (prepareButton.props?.onClick as () => void)();
+    (confirmButton.props?.onClick as () => void)();
+    expect(actions.prepareSelectedUnit).toHaveBeenCalledOnce();
+    expect(actions.confirmSelectedUnit).toHaveBeenCalledOnce();
+  });
+
+  it('uses a study label when every unit word is already introduced', () => {
+    const unit = { unitId: 'unit-1', trackId: 'ielts', tier: 'foundation', ordinal: 1, titles: [{ language: 'en', text: 'Start here' }], total: 2, started: 2, mastered: 1, preview: [] };
+    const html = renderToStaticMarkup(<CatalogScreen model={{ ...readyModel, pathUnits: [{ unit, introduced: 2, mastered: 1, status: 'active' }], pathUnitContinue: { selectedUnitId: 'ielts\u0000unit-1', confirmationUnitId: 'ielts\u0000unit-1', busy: false, error: null, etaDays: 0, allComplete: false } }} actions={actions} />);
+    expect(html).toContain('Study this unit');
+    expect(html).toContain('Any missing unit words will be added to your Library before study.');
+  });
+
+  it('disables Continue when progress is unavailable and reports complete, busy, and error states honestly', () => {
+    const unit = { unitId: 'unit-1', trackId: 'ielts', tier: 'foundation', ordinal: 1, titles: [{ language: 'en', text: 'Start here' }], total: 1, started: 0, mastered: 0, preview: [] };
+    const unavailable = renderToStaticMarkup(<CatalogScreen model={{ ...readyModel, progressAvailable: false, pathUnits: [{ unit, introduced: null, mastered: null, status: 'unavailable' }], pathUnitContinue: { selectedUnitId: 'ielts\u0000unit-1', confirmationUnitId: null, busy: false, error: null, etaDays: null, allComplete: false } }} actions={actions} />);
+    const complete = renderToStaticMarkup(<CatalogScreen model={{ ...readyModel, pathUnits: [{ unit: { ...unit, started: 1, mastered: 1 }, introduced: 1, mastered: 1, status: 'complete' }], pathUnitContinue: { selectedUnitId: 'ielts\u0000unit-1', confirmationUnitId: null, busy: false, error: null, etaDays: null, allComplete: true } }} actions={actions} />);
+    const pending = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel,
+      pathUnits: [{ unit: { unitId: 'unit-1', trackId: 'ielts', tier: 'foundation', ordinal: 1, titles: [{ language: 'en', text: 'Start here' }], total: 1, started: 0, mastered: 0, preview: [] }, introduced: 0, mastered: 0, status: 'not-started' }],
+      pathUnitContinue: { selectedUnitId: 'ielts\u0000unit-1', confirmationUnitId: 'ielts\u0000unit-1', busy: true, error: 'Could not start this unit.', etaDays: 1, allComplete: false },
+    }} actions={actions} />);
+
+    expect(unavailable).toContain('Continue');
+    expect(unavailable).toContain('disabled=""');
+    expect(complete).toContain('All units in this path are complete.');
+    expect(complete).not.toContain('>Continue<');
+    expect(pending).toContain('Estimated 1 day left at your pace.');
+    expect(pending).toContain('Starting unit…');
+    expect(pending).toContain('Could not start this unit.');
+    expect(pending).toContain('role="alert"');
   });
 
   it('does not render an empty progress map as zero progress', () => {
@@ -430,7 +530,7 @@ describe('CatalogScreen', () => {
     expect(screenSource).toContain('motion-reduce:transition-none');
     expect(screenSource).toContain('focus-visible:');
     expect(screenSource).not.toContain('outline-none');
-    expect(screenSource).not.toMatch(/pilotCatalog|firebase|firestore|IndexedDB/);
+    expect(screenSource).not.toMatch(/pilotCatalog|firebase|firestore|IndexedDB|cardRepository|getDocs\(|getDoc\(/);
     expect(presentationSource).not.toMatch(/pilotCatalog|firebase|firestore|IndexedDB/);
   });
 });

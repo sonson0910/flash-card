@@ -7,6 +7,7 @@ const runtimeUrl = new URL('./AppRuntime.tsx', import.meta.url);
 const signInRequestUrl = new URL('./landingSignInRequest.ts', import.meta.url);
 const libraryRuntimeUrl = new URL('./useAppLibraryRuntime.ts', import.meta.url);
 const learningCoordinationUrl = new URL('./useAppLearningCoordination.ts', import.meta.url);
+const cardMediaHydrationUrl = new URL('./useAppCardMediaHydration.ts', import.meta.url);
 
 const readIfPresent = (url: URL): string => {
   const file = fileURLToPath(url);
@@ -28,6 +29,7 @@ describe('App composition root contract', () => {
     const signInRequestSource = readIfPresent(signInRequestUrl);
     const libraryRuntimeSource = readIfPresent(libraryRuntimeUrl);
     const learningCoordinationSource = readIfPresent(learningCoordinationUrl);
+    const cardMediaHydrationSource = readIfPresent(cardMediaHydrationUrl);
 
     expect(appSource).toContain("import('./app/AppRuntimeInitial.virtual')");
     expect(appSource).toContain("import('./app/AppRuntimeRetry.virtual')");
@@ -74,7 +76,8 @@ describe('App composition root contract', () => {
     expect(learningCoordinationSource).toContain('usePracticeWorkspace');
     expect(learningCoordinationSource).toContain('useLearningWorkspace');
     expect(learningCoordinationSource).toContain('useIntakeSharingSession');
-    expect(learningCoordinationSource).toContain('useCardMediaHydration');
+    expect(learningCoordinationSource).toContain('useAppCardMediaHydration');
+    expect(cardMediaHydrationSource).toContain('useCardMediaHydration');
     expect(learningCoordinationSource).toContain('useCustomDeckWorkspace');
     expect(learningCoordinationSource).toContain('useLibraryScreenContract');
   });

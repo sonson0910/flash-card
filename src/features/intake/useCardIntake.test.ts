@@ -38,6 +38,9 @@ const createPort = () => {
     })),
     persistCards: vi.fn(async (cards: readonly CardData[]) =>
       cards.map((value: CardData) => ({ card: value, created: true }))),
+    createConfirmedCatalogCards: vi.fn(async cards => ({
+      status: 'completed' as const, cards, createdCount: cards.length, reusedCount: 0,
+    })),
     applyMedia: vi.fn(async () => undefined),
   };
   return port;

@@ -3,6 +3,7 @@ import type { LanguageProfile } from '../language/languageProfile';
 import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
+import { cardLogicalKey, effectiveCardTargetLanguage, normalizeCardLanguage } from '../../lib/cardIdentity';
 import { playRewardSound, playSuccessSound } from '../../lib/interactionSounds';
 import type { CardData } from '../../types/card';
 import { createPracticeSnapshot } from './practiceModel';
@@ -47,6 +48,7 @@ export interface PracticeSessionController {
   quiz: ReturnType<typeof usePracticeGames>;
   commands: {
     startStudy: () => Promise<void>;
+    startStudyWithCards: (cards: readonly CardData[], isSourceCurrent?: () => boolean) => Promise<boolean>;
     startQuiz: () => Promise<void>;
     startSpelling: () => Promise<void>;
     startLanguageDrill: () => Promise<void>;
@@ -68,6 +70,18 @@ export interface PracticeSessionController {
 type PracticeGamesController = ReturnType<typeof usePracticeGames>;
 
 const STUDY_PREPARATION_TIMEOUT_MS = 15_000;
+export const MAXIMUM_UNIT_STUDY_LEXEMES = 20;
+
+const unitStudyCardsAreValid = (cards: readonly CardData[], targetLanguage: string): boolean => {
+  if (cards.length === 0 || cards.length > MAXIMUM_UNIT_STUDY_LEXEMES) return false;
+  const lexemes = new Set<string>();
+  return cards.every(card => {
+    const lexeme = cardLogicalKey(card);
+    if (!lexeme.startsWith('lexeme:') || lexemes.has(lexeme)) return false;
+    lexemes.add(lexeme);
+    return effectiveCardTargetLanguage(card) === targetLanguage;
+  });
+};
 
 const scopePracticeGames = (
   games: PracticeGamesController,
@@ -145,9 +159,17 @@ export function usePracticeSession({
   const isPracticeStateCurrent = practiceStateSessionRef.current === ownerSessionToken;
   const languageDrillScopeRef = useRef(languageDrillScopeKey);
   const isLanguageDrillCurrent = languageDrillScopeRef.current === languageDrillScopeKey;
+  const studyScopeKey = `${ownerId ?? ''}:${normalizeCardLanguage(languageProfile.source.code)}`;
+  const studyScopeRef = useRef(studyScopeKey);
+  if (studyScopeRef.current !== studyScopeKey) {
+    lifecycle.clear('study');
+    studyScopeRef.current = studyScopeKey;
+  }
+  const studyCardsScopeRef = useRef(studyScopeKey);
+  const isStudyScopeCurrent = studyCardsScopeRef.current === studyScopeKey;
   const [studyCards, setStudyCards] = useState<CardData[]>([]);
   const studyCardsRef = useRef(studyCards);
-  const scopedStudyCards = isPracticeStateCurrent ? studyCards : [];
+  const scopedStudyCards = isPracticeStateCurrent && isStudyScopeCurrent ? studyCards : [];
   studyCardsRef.current = scopedStudyCards;
   const [studyIndex, setStudyIndex] = useState(0);
   const [recallMode, setRecallMode] = useState<RecallMode>('adaptive');
@@ -191,13 +213,26 @@ export function usePracticeSession({
     practiceStateSessionRef.current = ownerSessionToken;
   }, [ownerSessionToken]);
   useEffect(() => {
+    if (studyCardsScopeRef.current === studyScopeKey) return;
+    setStudyCards([]);
+    setStudyIndex(0);
+    setRecallMode('adaptive');
+    setRevealed(false);
+    setReviewedCardId(null);
+    setIsStartingStudy(false);
+    setSavingReviewCardId(null);
+    setReviewFailure(null);
+    setEditingCardId(null);
+    studyCardsScopeRef.current = studyScopeKey;
+  }, [studyScopeKey]);
+  useEffect(() => {
     if (languageDrillScopeRef.current === languageDrillScopeKey) return;
     quiz.clearLanguageDrill();
     languageDrillScopeRef.current = languageDrillScopeKey;
   }, [languageDrillScopeKey, quiz]);
 
   const startStudy = useCallback(async () => {
-    if (editorRef.current) return;
+    if (editorRef.current || studyScopeRef.current !== studyScopeKey) return;
     const result = await lifecycle.prepare(
       'study',
       async () => createPracticeSnapshot(await withTimeout(
@@ -211,7 +246,8 @@ export function usePracticeSession({
       const cards = result.value;
       if (cards.length === 0) {
         reportError('There are no new or due cards to review right now.');
-      } else if (lifecycle.activate('study', result.sessionToken)) {
+      } else if (studyScopeRef.current === studyScopeKey && lifecycle.activate('study', result.sessionToken)) {
+        studyCardsScopeRef.current = studyScopeKey;
         setStudyCards(cards);
         setRevealed(false);
         setReviewedCardId(null);
@@ -220,15 +256,43 @@ export function usePracticeSession({
         setStudyIndex(0);
         openPracticeView('study');
       }
-      if (lifecycle.isCurrent(result.sessionToken)) setIsStartingStudy(false);
+      if (lifecycle.isCurrent(result.sessionToken) && studyScopeRef.current === studyScopeKey) setIsStartingStudy(false);
     } else if (result.status === 'failed') {
       console.warn('Could not prepare the study session.', result.error);
       reportError(result.error instanceof OperationTimeoutError
         ? result.error.message
         : 'Could not prepare your review. Check your connection and try again.');
-      if (lifecycle.isCurrent(result.sessionToken)) setIsStartingStudy(false);
+      if (lifecycle.isCurrent(result.sessionToken) && studyScopeRef.current === studyScopeKey) setIsStartingStudy(false);
     }
-  }, [lifecycle, loadPracticePool, openPracticeView, reportError]);
+  }, [lifecycle, loadPracticePool, openPracticeView, reportError, studyScopeKey]);
+
+  const startStudyWithCards = useCallback(async (cards: readonly CardData[], isSourceCurrent: () => boolean = () => true) => {
+    if (editorRef.current || studyScopeRef.current !== studyScopeKey || !isSourceCurrent()) return false;
+    const targetLanguage = normalizeCardLanguage(languageProfile.source.code);
+    if (!unitStudyCardsAreValid(cards, targetLanguage)) {
+      reportError('This unit cannot start because its cards are invalid.');
+      return false;
+    }
+    const result = await lifecycle.prepare('study', async () => [...cards], () => setIsStartingStudy(true));
+    let started = false;
+    if (result.status === 'ready') {
+      if (studyScopeRef.current === studyScopeKey && isSourceCurrent() && lifecycle.activate('study', result.sessionToken)) {
+        studyCardsScopeRef.current = studyScopeKey;
+        setStudyCards(result.value);
+        setRevealed(false);
+        setReviewedCardId(null);
+        setSavingReviewCardId(null);
+        setReviewFailure(null);
+        setStudyIndex(0);
+        openPracticeView('study');
+        started = true;
+      }
+      if (lifecycle.isCurrent(result.sessionToken) && studyScopeRef.current === studyScopeKey) {
+        setIsStartingStudy(false);
+      }
+    }
+    return started;
+  }, [languageProfile.source.code, lifecycle, openPracticeView, reportError, studyScopeKey]);
 
   const activeCardId = scopedStudyCards[studyIndex]?.id;
   useEffect(() => {
@@ -331,7 +395,7 @@ export function usePracticeSession({
 
   return {
     mode,
-    study: isPracticeStateCurrent
+    study: isPracticeStateCurrent && isStudyScopeCurrent
       ? {
           cards: scopedStudyCards,
           index: studyIndex,
@@ -357,6 +421,7 @@ export function usePracticeSession({
     quiz: scopedQuiz,
     commands: {
       startStudy,
+      startStudyWithCards,
       startQuiz: quiz.startQuiz,
       startSpelling: quiz.startSpelling,
       startLanguageDrill: quiz.startLanguageDrill,

@@ -962,6 +962,52 @@ export async function findCardById(
     : null;
 }
 
+/** Hydrates only the cards explicitly confirmed for one catalog unit. */
+export async function fetchCatalogUnitCards(
+  db: Firestore,
+  userId: string,
+  {
+    lexemeIds,
+    targetLanguage,
+    libraryEpoch,
+  }: {
+    lexemeIds: readonly string[];
+    targetLanguage: CardLanguageCode;
+    libraryEpoch: number;
+  },
+): Promise<Map<string, CardData>> {
+  const language = effectiveIdentityTargetLanguage({ language: targetLanguage });
+  if (!userId || !language || !Number.isSafeInteger(libraryEpoch) || libraryEpoch < 0
+    || lexemeIds.length > 20
+    || lexemeIds.some(id => typeof id !== 'string' || !id || id !== id.trim())
+    || new Set(lexemeIds).size !== lexemeIds.length) {
+    throw new TypeError('Invalid catalog unit card request.');
+  }
+  if (lexemeIds.length === 0) return new Map();
+
+  const snapshot = await getDocsFromServer(query(
+    cardsCollection(db, userId),
+    where('lexemeId', 'in', [...lexemeIds]),
+    where('libraryEpoch', '==', libraryEpoch),
+    where('language', '==', language),
+    limit(20),
+  ));
+  const requested = new Set(lexemeIds);
+  const cards = new Map<string, CardData>();
+  for (const document of snapshot.docs) {
+    const raw = document.data() as Partial<CardData>;
+    if (!raw.lexemeId || !requested.has(raw.lexemeId)
+      || !cardHasExplicitLibraryEpoch(raw, libraryEpoch)
+      || !cardMatchesTargetLanguage(raw, language)) {
+      throw new TypeError('Catalog unit card query returned an unexpected card.');
+    }
+    const card = normalizeCardData(raw, document.id);
+    const existing = cards.get(raw.lexemeId);
+    cards.set(raw.lexemeId, existing ? preferCardWithLearningProgress(existing, card) : card);
+  }
+  return cards;
+}
+
 export async function findCardByNormalizedWord(
   db: Firestore,
   userId: string,

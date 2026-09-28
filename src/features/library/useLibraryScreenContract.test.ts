@@ -60,6 +60,7 @@ const createInput = () => {
     },
     changeDraft: vi.fn(), clearDraft: vi.fn(), generate: vi.fn(async () => ({ status: 'busy' as const })),
     importFile: vi.fn(async () => ({ status: 'missing' as const })), shareCategory: vi.fn(async () => ({ status: 'invalid' as const })),
+    createConfirmedCatalogCards: vi.fn(async () => ({ status: 'invalid' as const, reason: 'invalid-catalog-cards' as const })),
     acceptShared: vi.fn(async () => ({ status: 'missing' as const })), cancelShared: vi.fn(),
     revokeShare: vi.fn(), dismissShareLink: vi.fn(), showShareDialog: vi.fn(),
     clearShareError: vi.fn(), clearError: vi.fn(), clearNotice: vi.fn(), invalidateCard: vi.fn(),

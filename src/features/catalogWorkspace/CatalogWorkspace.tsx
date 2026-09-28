@@ -3,6 +3,7 @@ import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { useUiLocale } from '../../i18n/I18nProvider';
 import type { CardData } from '../../types/card';
+import { readDailyPaceForEta } from '../settings/dailyPacePreference';
 import type { CatalogLearningStatus, CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
 import { CatalogCacheOpenError, type HydratedCatalogEntry } from '../catalogCache/catalogCache';
 import type { IntakeSharingSessionActions } from '../intake/useIntakeSharingSession';
@@ -28,7 +29,7 @@ import {
   type CatalogWorkspaceQueryPatch,
 } from './catalogWorkspaceQuery';
 import { createCatalogWorkspaceService } from './catalogWorkspaceService';
-import { projectCatalogPathUnits, readCatalogProgressProjection } from './catalogProgressProjectionService';
+import { projectCatalogPathUnits, readCatalogProgressProjection, type CatalogPathUnitProgress } from './catalogProgressProjectionService';
 import { catalogReleaseManifestPath, type CatalogTierId } from './catalogWorkspaceRegistry';
 import {
   inspectInstalledCatalog,
@@ -40,6 +41,7 @@ import {
   createCatalogOptimisticLibraryState,
   scopeCatalogOptimisticLibraryState,
   settleCatalogLibraryAdd,
+  catalogEntryToLibraryCard,
 } from './catalogLearningFlow';
 import { createCatalogPagingGuard } from './catalogPagingGuard';
 import { createCatalogSearchDebouncer } from './catalogSearchDebouncer';
@@ -59,6 +61,7 @@ export interface CatalogWorkspaceProps {
   readonly libraryStats?: PersonalLibraryPathInput;
   readonly openVocabulary?: () => void;
   readonly continueReview?: () => void | Promise<void>;
+  readonly continueCatalogUnit?: (cards: readonly CardData[], isCurrent: () => boolean) => Promise<'started' | 'stale' | 'partial' | 'unavailable'>;
   readonly database?: Parameters<typeof readCatalogProgressProjection>[0] | null;
   readonly verifiedLibraryEpoch?: number | null;
 }
@@ -93,6 +96,7 @@ export function createCatalogProgressQueryCache() {
 
 const browserLocation = (): string => globalThis.location?.href ?? '/?view=catalog';
 const browserOnline = (): boolean => globalThis.navigator?.onLine ?? true;
+const pathUnitKey = (unit: CatalogPathUnitProgress['unit']): string => `${unit.trackId}\u0000${unit.unitId}`;
 
 const copy = {
   checking: msg({ id: 'catalog.workspace.checking', message: 'Checking this device for a reviewed catalog…' }),
@@ -111,6 +115,9 @@ const copy = {
   storageTimeout: msg({ id: 'catalog.workspace.storage-timeout', message: 'Catalog storage did not respond in time. Close older SonFlash tabs, then try again.' }),
   updating: msg({ id: 'catalog.workspace.updating', message: 'Updating vocabulary…' }),
   emptyResults: msg({ id: 'catalog.workspace.empty-results', message: 'No words match all selected filters.' }),
+  unitUnavailable: msg({ id: 'paths.unit.continue-scope-unavailable', message: 'This unit is unavailable. Reopen Paths and try again.' }),
+  unitPartial: msg({ id: 'paths.unit.continue-partial', message: 'Some words could not be confirmed. Try again to continue this unit.' }),
+  unitReadError: msg({ id: 'paths.unit.continue-read-error', message: 'This unit could not be prepared. Check your connection and try again.' }),
   resultSummary: msg({ id: 'catalog.workspace.result-summary', message: 'Showing {count, number}{more} {track} {tier} {count, plural, one {word} other {words}}.' }),
 };
 
@@ -147,6 +154,7 @@ export default function CatalogWorkspace({
   libraryStats,
   openVocabulary = () => undefined,
   continueReview = () => undefined,
+  continueCatalogUnit,
 }: CatalogWorkspaceProps) {
   const uiLocale = useUiLocale();
   const libraryActions = useCatalogLibraryActions({ cards: libraryCards, adoptCards, notify });
@@ -163,6 +171,11 @@ export default function CatalogWorkspace({
   const [isLoadingPage, setIsLoadingPage] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [selectedPathUnitId, setSelectedPathUnitId] = useState<string | null>(null);
+  const [confirmationUnitId, setConfirmationUnitId] = useState<string | null>(null);
+  const [isContinuingUnit, setIsContinuingUnit] = useState(false);
+  const [continueError, setContinueError] = useState<string | null>(null);
+  const continueGeneration = useRef(0);
+  const continuingUnitRef = useRef(false);
   const progressQueries = useRef(createCatalogProgressQueryCache());
   const ownerScope = useRef({ ownerId, version: 0 });
   if (ownerScope.current.ownerId !== ownerId) {
@@ -170,6 +183,8 @@ export default function CatalogWorkspace({
     progressQueries.current.clear();
   }
   const ownerVersion = ownerScope.current.version;
+  const continuationScope = useRef({ ownerId, libraryEpoch: verifiedLibraryEpoch, query });
+  continuationScope.current = { ownerId, libraryEpoch: verifiedLibraryEpoch, query };
   const [optimisticLibrary, setOptimisticLibrary] = useState(() => (
     createCatalogOptimisticLibraryState(ownerId, ownerVersion)
   ));
@@ -257,6 +272,8 @@ export default function CatalogWorkspace({
       }
       const nextSummary = inspection.summary;
       setSummary(nextSummary);
+      setConfirmationUnitId(null);
+      setContinueError(null);
       setProgressAvailable(inspection.progressAvailable);
       setStatus(readyStatus(nextSummary.release.releaseId));
     } catch (error) {
@@ -295,6 +312,10 @@ export default function CatalogWorkspace({
 
   const updateQuery = useCallback((patch: CatalogWorkspaceQueryPatch, replace = false) => {
     workflowGeneration.current += 1;
+    continueGeneration.current += 1;
+    setConfirmationUnitId(null);
+    setContinueError(null);
+    setIsContinuingUnit(false);
     pagingGuard.current!.invalidate();
     setIsLoadingPage(true);
     setNextCursor(null);
@@ -325,6 +346,7 @@ export default function CatalogWorkspace({
     return () => {
       mounted.current = false;
       workflowGeneration.current += 1;
+      continueGeneration.current += 1;
       service.invalidate();
     };
   }, [inspect, service]);
@@ -342,6 +364,10 @@ export default function CatalogWorkspace({
       if (synchronizeCatalogHistoryInspection({ service, current: query, restored })) {
         workflowGeneration.current += 1;
       }
+      continueGeneration.current += 1;
+      setConfirmationUnitId(null);
+      setContinueError(null);
+      setIsContinuingUnit(false);
       pagingGuard.current!.invalidate();
       searchDebouncer.cancel();
       setIsLoadingPage(true);
@@ -433,6 +459,97 @@ export default function CatalogWorkspace({
             : 'available' as const,
     };
   });
+  const pathUnits = projectCatalogPathUnits(summary, progressAvailable);
+  const trackUnits = pathUnits?.filter(progress => progress.unit.trackId === selectedTrack) ?? [];
+  const nextUnit = trackUnits.find(progress => progress.status === 'active')
+    ?? trackUnits.find(progress => progress.status === 'not-started');
+  const selectedUnit = trackUnits.find(progress => pathUnitKey(progress.unit) === selectedPathUnitId)
+    ?? nextUnit ?? trackUnits[0];
+  const selectedUnitKey = selectedUnit ? pathUnitKey(selectedUnit.unit) : null;
+  const allUnitsComplete = trackUnits.length > 0 && trackUnits.every(progress => progress.status === 'complete');
+  const pace = readDailyPaceForEta();
+  const etaDays = pace && selectedUnit?.introduced !== null && selectedUnit?.introduced !== undefined
+    ? Math.ceil((selectedUnit.unit.total - selectedUnit.introduced) / pace)
+    : null;
+  const focusUnitPreview = () => globalThis.requestAnimationFrame?.(() => {
+    globalThis.document?.getElementById('catalog-unit-preview')?.focus({ preventScroll: false });
+  });
+  const selectPathUnit = (trackId: string, unitId: string) => {
+    continueGeneration.current += 1;
+    setSelectedPathUnitId(`${trackId}\u0000${unitId}`);
+    setConfirmationUnitId(null);
+    setContinueError(null);
+    setIsContinuingUnit(false);
+  };
+  const openNextUnitPreview = () => {
+    if (!nextUnit || !progressAvailable || continuingUnitRef.current) return;
+    selectPathUnit(nextUnit.unit.trackId, nextUnit.unit.unitId);
+    setConfirmationUnitId(pathUnitKey(nextUnit.unit));
+    focusUnitPreview();
+  };
+  const prepareSelectedUnit = () => {
+    if (!selectedUnit || continuingUnitRef.current
+      || selectedUnit.status === 'complete' || selectedUnit.status === 'unavailable') return;
+    setConfirmationUnitId(pathUnitKey(selectedUnit.unit));
+    setContinueError(null);
+    focusUnitPreview();
+  };
+  const confirmSelectedUnit = async () => {
+    if (!selectedUnit || !selectedUnitKey || confirmationUnitId !== selectedUnitKey
+      || continuingUnitRef.current || !continueCatalogUnit || !query.catalogId || !query.releaseId
+      || !ownerId || verifiedLibraryEpoch === null || !progressAvailable
+      || selectedUnit.status === 'complete' || selectedUnit.status === 'unavailable') return;
+    const generation = ++continueGeneration.current;
+    continuingUnitRef.current = true;
+    const scope = { ownerId, libraryEpoch: verifiedLibraryEpoch, query };
+    const isCurrent = () => mounted.current && continueGeneration.current === generation
+      && continuationScope.current.ownerId === scope.ownerId
+      && continuationScope.current.libraryEpoch === scope.libraryEpoch
+      && continuationScope.current.query.catalogId === scope.query.catalogId
+      && continuationScope.current.query.releaseId === scope.query.releaseId
+      && continuationScope.current.query.languageCode === scope.query.languageCode
+      && continuationScope.current.query.trackId === scope.query.trackId;
+    setIsContinuingUnit(true);
+    setContinueError(null);
+    try {
+      const result = await service.readUnit({
+        catalogId: query.catalogId,
+        releaseId: query.releaseId,
+        language: query.languageCode,
+        trackId: selectedUnit.unit.trackId,
+        unitId: selectedUnit.unit.unitId,
+      });
+      if (!isCurrent() || result.status === 'stale') return;
+      const unit = result.value;
+      if (!unit || unit.descriptor.unitId !== selectedUnit.unit.unitId
+        || unit.descriptor.trackId !== selectedUnit.unit.trackId
+        || unit.descriptor.tier !== selectedUnit.unit.tier
+        || unit.descriptor.ordinal !== selectedUnit.unit.ordinal
+        || unit.entries.length !== selectedUnit.unit.total
+        || unit.entries.length > 20
+        || unit.entries.some(entry => entry.membership.language !== query.languageCode
+          || entry.lexeme.language !== query.languageCode
+          || entry.membership.lexemeId !== entry.lexeme.id)) {
+        setContinueError(i18n._(copy.unitUnavailable));
+        return;
+      }
+      const candidates = unit.entries.map(entry => catalogEntryToLibraryCard(presentHydratedCatalogEntry(entry)));
+      if (new Set(candidates.map(card => card.lexemeId)).size !== candidates.length) {
+        setContinueError(i18n._(copy.unitUnavailable));
+        return;
+      }
+      const outcome = await continueCatalogUnit(candidates, isCurrent);
+      if (!isCurrent()) return;
+      if (outcome !== 'started') {
+        setContinueError(i18n._(outcome === 'partial' ? copy.unitPartial : copy.unitUnavailable));
+      }
+    } catch {
+      if (isCurrent()) setContinueError(i18n._(copy.unitReadError));
+    } finally {
+      continuingUnitRef.current = false;
+      if (isCurrent()) setIsContinuingUnit(false);
+    }
+  };
   const model: CatalogScreenModel = {
     headingRef,
     status: status.messageKey
@@ -462,13 +579,24 @@ export default function CatalogWorkspace({
     isLoadingPage,
     isLoadingMore,
     ...(status.kind === 'personal' ? { personalLibrary } : {}),
-    pathUnits: projectCatalogPathUnits(summary, progressAvailable),
-    selectedPathUnitId,
+    pathUnits,
+    selectedPathUnitId: selectedUnitKey,
+    pathUnitContinue: {
+      selectedUnitId: selectedUnitKey,
+      confirmationUnitId,
+      busy: isContinuingUnit,
+      error: continueError,
+      etaDays,
+      allComplete: allUnitsComplete,
+    },
   };
   const actions: CatalogScreenActions = {
     selectLanguage: languageCode => updateQuery({ languageCode }),
     selectTrack: trackId => {
       setSelectedPathUnitId(null);
+      setConfirmationUnitId(null);
+      setContinueError(null);
+      continueGeneration.current += 1;
       updateQuery({ trackId, tier: 'foundation' });
     },
     selectTier: tier => updateQuery({ tier }),
@@ -515,7 +643,10 @@ export default function CatalogWorkspace({
     },
     openVocabulary,
     continueReview: () => { void continueReview(); },
-    selectPathUnit: (trackId, unitId) => setSelectedPathUnitId(`${trackId}\u0000${unitId}`),
+    selectPathUnit,
+    openNextUnitPreview,
+    prepareSelectedUnit,
+    confirmSelectedUnit: () => { void confirmSelectedUnit(); },
   };
 
   return <CatalogScreen model={model} actions={actions} />;

@@ -12,7 +12,12 @@ import {
   type CatalogReleaseDescriptor,
   type HydratedCatalogEntry,
 } from '../catalogCache/catalogCache';
-import type { CatalogCachePageResult, CatalogCacheQuery } from '../catalogCache/catalogIndex';
+import type {
+  CatalogCachePageResult,
+  CatalogCacheQuery,
+  CatalogCacheUnitQuery,
+  CatalogCacheUnitResult,
+} from '../catalogCache/catalogIndex';
 import type { CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
 import type { CatalogReleaseManifestV1, CatalogReleaseManifestV2 } from '../catalogPipeline/catalogContracts';
 import {
@@ -54,6 +59,7 @@ const runtime = (overrides: Partial<CatalogWorkspaceRuntimePort> = {}): CatalogW
     installedMemberships: (value as CatalogReleaseManifestV1).counts.memberships,
   })),
   readPage: vi.fn(async () => ({ items: [], scanned: 0, hasMore: false, nextCursor: null })),
+  readUnit: vi.fn(async () => null),
   ...overrides,
 });
 
@@ -225,6 +231,26 @@ describe('catalog workspace service', () => {
     await expect(first).resolves.toEqual({ status: 'stale' });
 
     await expect(service.readPage({ ...input, pageSize: 101 })).rejects.toThrow(/100/);
+  });
+
+  it('keeps only the latest unit read current within its own request channel', async () => {
+    let resolveFirst!: (value: CatalogCacheUnitResult | null) => void;
+    const firstResult = new Promise<CatalogCacheUnitResult | null>(resolve => { resolveFirst = resolve; });
+    const readUnit = vi.fn()
+      .mockReturnValueOnce(firstResult)
+      .mockResolvedValueOnce(null);
+    const service = createCatalogWorkspaceService({
+      origin: 'https://learn.example.test/', ports: runtime({ readUnit }),
+      fetcher: vi.fn(async () => jsonResponse(manifest)),
+    });
+    const input: CatalogCacheUnitQuery = {
+      catalogId: 'english-core', releaseId: 'release-1', language: 'en', trackId: 'ielts', unitId: 'unit-1',
+    };
+
+    const first = service.readUnit(input);
+    await expect(service.readUnit(input)).resolves.toEqual({ status: 'current', value: null });
+    resolveFirst(null);
+    await expect(first).resolves.toEqual({ status: 'stale' });
   });
 
   it('uses injected cache ports for inspection, summaries and hydrated page reads', async () => {

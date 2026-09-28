@@ -13,6 +13,7 @@ import type {
 import type { SharedDeckCoursePort } from '../sharing/shareCourseMatching';
 import { useSharedDeckSession } from '../sharing/useSharedDeckSession';
 import type { CardIntakeControllerPort, CardIntakeDraftPort } from './cardIntakeController';
+import type { CardData } from '../../types/card';
 import { useCardIntake, type CardIntakeActions } from './useCardIntake';
 import type { CardCreatorActions, CardCreatorModel } from './card-creator-model';
 import {
@@ -104,6 +105,7 @@ export interface IntakeSharingSessionActions {
     | Awaited<ReturnType<CardIntakeActions['importSpreadsheet']>>
   >;
   adoptCards?(cards: readonly unknown[]): ReturnType<CardIntakeActions['adoptShared']>;
+  createConfirmedCatalogCards(cards: readonly CardData[]): ReturnType<CardIntakeActions['createConfirmedCatalogCards']>;
   shareCategory(category: string): Promise<ShareCategoryResult>;
   acceptShared(): ReturnType<ReturnType<typeof useSharedDeckSession>['actions']['acceptShared']>;
   cancelShared(): void;
@@ -278,6 +280,7 @@ dependencies: IntakeSharingSessionDependencies,
     generate: cardIntake.actions.generate,
     importFile,
     adoptCards: cards => cardIntake.actions.adoptShared({ cards }),
+    createConfirmedCatalogCards: cards => cardIntake.actions.createConfirmedCatalogCards(cards),
     shareCategory,
     acceptShared: sharedDeck.actions.acceptShared,
     cancelShared: sharedDeck.actions.cancelShared,

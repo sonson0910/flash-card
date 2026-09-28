@@ -140,6 +140,14 @@ export interface CatalogScreenModel {
   personalLibrary?: PersonalLibraryPathPresentation;
   pathUnits?: readonly CatalogPathUnitProgress[] | null;
   selectedPathUnitId?: string | null;
+  pathUnitContinue?: {
+    selectedUnitId: string | null;
+    confirmationUnitId: string | null;
+    busy: boolean;
+    error: string | null;
+    etaDays: number | null;
+    allComplete: boolean;
+  };
 }
 
 export interface CatalogScreenActions {
@@ -159,4 +167,7 @@ export interface CatalogScreenActions {
   openVocabulary: () => void;
   continueReview: () => void;
   selectPathUnit: (trackId: string, unitId: string) => void;
+  openNextUnitPreview: () => void;
+  prepareSelectedUnit: () => void;
+  confirmSelectedUnit: () => void;
 }

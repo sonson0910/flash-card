@@ -9,6 +9,7 @@ import {
   type CardIntakeSnapshot,
 } from './cardIntakeController';
 import type { CardCreatorActions } from './card-creator-model';
+import type { CardData } from '../../types/card';
 
 type IntakeController = ReturnType<typeof createCardIntakeController>;
 
@@ -36,6 +37,7 @@ export interface CardIntakeActions {
   generate(options?: CardGenerationOptions): ReturnType<IntakeController['generateDraft']>;
   importSpreadsheet(request: SpreadsheetImportRequest): ReturnType<IntakeController['importSpreadsheet']>;
   adoptShared(request: { cards: readonly unknown[] }): ReturnType<IntakeController['adoptSharedDeck']>;
+  createConfirmedCatalogCards(cards: readonly CardData[]): ReturnType<IntakeController['createConfirmedCatalogCards']>;
   invalidateCard(cardId: string): void;
   clearError(): void;
   clearSharedAdoptionError(): void;
@@ -98,6 +100,7 @@ export function createCardIntakeBindingOwner(
     generate: options => controller.generateDraft(options),
     importSpreadsheet: request => controller.importSpreadsheet(request),
     adoptShared: request => controller.adoptSharedDeck(request),
+    createConfirmedCatalogCards: cards => controller.createConfirmedCatalogCards(cards),
     invalidateCard: cardId => controller.invalidateCard(cardId),
     clearError: () => controller.clearError(),
     clearSharedAdoptionError: () => controller.clearSharedAdoptionError(),

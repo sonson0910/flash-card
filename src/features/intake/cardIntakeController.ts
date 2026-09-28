@@ -75,8 +75,29 @@ export interface CardIntakeControllerPort extends SpreadsheetCardIntakePort {
     card: CardData;
     created: boolean;
   }>>;
+  createConfirmedCatalogCards(cards: readonly CardData[]): Promise<ConfirmedCatalogCardsResult>;
   applyMedia(card: CardData, media: CardMediaPatch): Promise<void>;
 }
+
+export type ConfirmedCatalogCardsResult =
+  | { status: 'busy' | 'stale' }
+  | { status: 'invalid'; reason: 'invalid-catalog-cards' | 'too-many-cards' }
+  | { status: 'completed'; cards: readonly CardData[]; createdCount: number; reusedCount: number }
+  | { status: 'partial'; cards: readonly CardData[]; failedCount: number };
+
+export const catalogCardBatchError = (
+  cards: readonly CardData[],
+): 'invalid-catalog-cards' | 'too-many-cards' | null => {
+  if (cards.length === 0) return 'invalid-catalog-cards';
+  if (cards.length > 20) return 'too-many-cards';
+  const lexemeIds = new Set<string>();
+  for (const card of cards) {
+    const lexemeId = typeof card.lexemeId === 'string' ? card.lexemeId.trim() : '';
+    if (!lexemeId || lexemeIds.has(lexemeId)) return 'invalid-catalog-cards';
+    lexemeIds.add(lexemeId);
+  }
+  return null;
+};
 
 export const settleMediaBestEffort = async <Media,>(
   mediaPromise: Promise<Media>,
@@ -396,7 +417,7 @@ export function createCardIntakeController({
     error: null,
     cardCreator: createInitialCardCreatorModel(),
   };
-  let activeOperation: 'generate' | 'spreadsheet' | 'shared' | 'creator-generate' | 'creator-save' | null = null;
+  let activeOperation: 'generate' | 'spreadsheet' | 'shared' | 'catalog' | 'creator-generate' | 'creator-save' | null = null;
   let errorSource: CardIntakeErrorSource = null;
   let draftOperation = readDraftOperation(draftPort);
   let controllerLifecycle = 0;
@@ -1118,6 +1139,26 @@ export function createCardIntakeController({
     }
   };
 
+  const createConfirmedCatalogCards = async (
+    cards: readonly CardData[],
+  ): Promise<ConfirmedCatalogCardsResult> => {
+    const invalidReason = catalogCardBatchError(cards);
+    if (invalidReason) return { status: 'invalid', reason: invalidReason };
+    if (activeOperation) return { status: 'busy' };
+    activeOperation = 'catalog';
+    publishError(null, null, { isSubmitting: true });
+    try {
+      return await port.createConfirmedCatalogCards(cards);
+    } catch (error) {
+      diagnostics.generationFailed?.(error);
+      publishError('Could not confirm the catalog cards. Check your connection and try again.', 'generation');
+      return { status: 'partial', cards: [], failedCount: cards.length };
+    } finally {
+      activeOperation = null;
+      publish({ isSubmitting: false });
+    }
+  };
+
   const invalidateCard = (cardId: string) => {
     cardLifecycles.set(cardId, (cardLifecycles.get(cardId) ?? 0) + 1);
   };
@@ -1153,6 +1194,7 @@ export function createCardIntakeController({
     } satisfies CardCreatorActions,
     importSpreadsheet,
     adoptSharedDeck,
+    createConfirmedCatalogCards,
     invalidateCard,
     clearError,
     clearSharedAdoptionError,
