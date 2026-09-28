@@ -97,7 +97,7 @@ export function useAppLearningCoordination({
     reportError,
   });
   ports.practicePublicationRef.current = practiceWorkspace.snapshotRef.current;
-  const { streak, xp, xpHistory, level, rewards, acceptAuthoritativeOutcome, equipFrame } = practiceWorkspace.model.gamification;
+  const { streak, xp, xpHistory, level, rewards, reviewActivityByLanguage, rewardTimeZone, acceptAuthoritativeOutcome, equipFrame } = practiceWorkspace.model.gamification;
   const mediaHydration = useCardMediaHydration({
     ownerKey: user?.uid ?? null,
     cards,
@@ -308,7 +308,7 @@ export function useAppLearningCoordination({
       customDeckCoverPresets: deckWorkspace.model.coverPresets,
       pageSize: cardsPerPage,
     },
-    gamification: { streak, level, xp, xpHistory },
+    gamification: { streak, level, xp, xpHistory, reviewActivityByLanguage, targetLanguage: languageProfile.source.code, rewardTimeZone },
     ui: {
       isLibraryBusy,
       newDeckInput: deckWorkspace.model.newDeckInput,

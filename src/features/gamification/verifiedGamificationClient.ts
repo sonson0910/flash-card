@@ -25,6 +25,8 @@ export interface AuthoritativeGamification {
 
 export interface VerifiedGamificationOutcome extends AuthoritativeGamification {
   readonly events?: readonly CeremonyEvent[];
+  readonly rewardTimeZone?: string;
+  readonly reviewActivity?: ReviewActivitySnapshot;
 }
 
 export interface ReviewGamificationOutcome {
@@ -48,11 +50,30 @@ export interface LegacyGamificationHistory {
   readonly history: Readonly<Record<string, number>>;
 }
 
+export interface ReviewActivityDay {
+  readonly reviewed: number;
+  readonly again: number;
+  readonly hard: number;
+  readonly good: number;
+  readonly easy: number;
+}
+
+export interface ReviewActivity {
+  readonly coverageStartedOn: string;
+  readonly days: Readonly<Record<string, ReviewActivityDay>>;
+}
+
+export interface ReviewActivitySnapshot extends ReviewActivity {
+  readonly targetLanguage: string;
+}
+
 export interface VerifiedGamificationState extends AuthoritativeGamification {
   readonly studyDay?: string;
   readonly xpHistory: Readonly<Record<string, number>>;
   readonly rewards: RewardInventory;
   readonly legacyHistory: LegacyGamificationHistory;
+  readonly reviewActivityByLanguage: Readonly<Record<string, ReviewActivity>>;
+  readonly rewardTimeZone?: string;
 }
 
 export interface UseVerifiedGamificationOptions {
@@ -68,6 +89,7 @@ const zeroInventory: RewardInventory = Object.freeze({
 const zeroState = (): VerifiedGamificationState => ({
   xp: 0, level: 1, streak: 0, xpHistory: {}, rewards: zeroInventory,
   legacyHistory: { label: 'legacy', xp: 0, streak: 0, history: {} },
+  reviewActivityByLanguage: {},
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -86,6 +108,60 @@ const history = (value: unknown, verified = true): Record<string, number> => {
     (verified ? /^\d{4}-\d{2}-\d{2}$/.test(day) : day.length > 0 && day.length <= 64 && !['__proto__', 'constructor', 'prototype'].includes(day))
       && counter(amount) > 0 ? [[day, counter(amount)]] : []
   )));
+};
+
+const isLanguage = (value: unknown): value is string => typeof value === 'string'
+  && value.length <= 16
+  && /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(value);
+const localDay = (value: unknown): value is string => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+const activityCounter = (value: unknown): number | undefined =>
+  Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : undefined;
+const reviewActivityDay = (value: unknown): ReviewActivityDay | undefined => {
+  if (!isRecord(value) || Object.keys(value).length !== 5) return undefined;
+  const reviewed = activityCounter(value.reviewed);
+  const again = activityCounter(value.again);
+  const hard = activityCounter(value.hard);
+  const good = activityCounter(value.good);
+  const easy = activityCounter(value.easy);
+  return reviewed === undefined || again === undefined || hard === undefined || good === undefined || easy === undefined
+    || reviewed !== again + hard + good + easy ? undefined
+    : { reviewed, again, hard, good, easy };
+};
+const timeZone = (value: unknown): string | undefined => {
+  if (typeof value !== 'string' || !value) return undefined;
+  try { new Intl.DateTimeFormat(undefined, { timeZone: value }); return value; } catch { return undefined; }
+};
+
+const reviewActivity = (value: unknown): Record<string, ReviewActivity> => {
+  if (!isRecord(value) || !isRecord(value.coverageStartedOnByLanguage) || !isRecord(value.daysByLanguage)) return {};
+  const daysByLanguage = value.daysByLanguage;
+  return Object.fromEntries(Object.entries(value.coverageStartedOnByLanguage).flatMap(([language, coverageStartedOn]) => {
+    const sourceDays = daysByLanguage[language];
+    if (!isLanguage(language) || !localDay(coverageStartedOn) || !isRecord(sourceDays) || Object.keys(sourceDays).length > 182) return [];
+    const days = Object.fromEntries(Object.entries(sourceDays).flatMap(([day, counters]) => {
+      const parsed = reviewActivityDay(counters);
+      return localDay(day) && parsed ? [[day, parsed]] : [];
+    }));
+    return Object.keys(days).length === Object.keys(sourceDays).length ? [[language, { coverageStartedOn, days }]] : [];
+  }));
+};
+
+const reviewActivitySnapshot = (value: unknown): ReviewActivitySnapshot | undefined => {
+  if (!isRecord(value)
+    || typeof value.targetLanguage !== 'string'
+    || !isLanguage(value.targetLanguage)
+    || !localDay(value.coverageStartedOn)
+    || !isRecord(value.days)
+    || Object.keys(value.days).length > 182) return undefined;
+  const activity = reviewActivity({
+    coverageStartedOnByLanguage: { [value.targetLanguage]: value.coverageStartedOn },
+    daysByLanguage: { [value.targetLanguage]: value.days },
+  })[value.targetLanguage];
+  return activity ? { targetLanguage: value.targetLanguage, ...activity } : undefined;
 };
 
 const levelForXp = (xp: number) => Math.floor(Math.sqrt(xp / 100)) + 1;
@@ -120,6 +196,8 @@ export function verifiedGamificationFromDocuments(
     streak: counter(stats.verifiedStreak),
     xpHistory: history(isRecord(historyValue) ? historyValue.verifiedByDayV1 : undefined),
     rewards: inventory(rewardsValue),
+    reviewActivityByLanguage: reviewActivity(stats.reviewActivityV1),
+    rewardTimeZone: timeZone(stats.rewardTimeZone),
     legacyHistory: {
       label: 'legacy', xp: counter(stats.xp), streak: counter(stats.streak), history: history(historyValue, false),
     },
@@ -135,6 +213,8 @@ export function acceptAuthoritativeGamificationOutcome(
   if (outcome.level !== outcomeLevel) return current;
   const isNewer = outcomeXp > current.xp;
   const xp = Math.max(current.xp, outcomeXp);
+  const activity = reviewActivitySnapshot(outcome.reviewActivity);
+  const rewardTimeZone = timeZone(outcome.rewardTimeZone);
   const events = new Set(outcome.events);
   const rewards = current.rewards;
   const add = (items: readonly string[], item: string) => items.includes(item) ? items : [...items, item];
@@ -145,6 +225,13 @@ export function acceptAuthoritativeGamificationOutcome(
     xp,
     level: levelForXp(xp),
     streak: isNewer ? counter(outcome.streak) : current.streak,
+    ...(isNewer && activity ? {
+      reviewActivityByLanguage: {
+        ...current.reviewActivityByLanguage,
+        [activity.targetLanguage]: { coverageStartedOn: activity.coverageStartedOn, days: activity.days },
+      },
+    } : {}),
+    ...(isNewer && rewardTimeZone ? { rewardTimeZone } : {}),
     ...(isNewer && typeof outcome.studyDay === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(outcome.studyDay) ? {
       studyDay: outcome.studyDay,
       xpHistory: {

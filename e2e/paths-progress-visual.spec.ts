@@ -37,6 +37,18 @@ const xpHistory = {
   '2026-09-23': 72,
 };
 
+const reviewActivity = {
+  coverageStartedOnByLanguage: { en: '2026-03-27' },
+  daysByLanguage: { en: Object.fromEntries(Array.from({ length: 26 }, (_, index) => {
+    const date = new Date(Date.UTC(2026, 3, 1 + index * 7)).toISOString().slice(0, 10);
+    const reviewed = 3 + index % 5;
+    const again = index % 4 === 0 ? 1 : 0;
+    const hard = index % 3 === 0 ? 1 : 0;
+    const easy = index % 5 === 0 ? 1 : 0;
+    return [date, { reviewed, again, hard, good: reviewed - again - hard - easy, easy }];
+  })) },
+};
+
 const themes = [
   { family: 'classic', mode: 'light' },
   { family: 'classic', mode: 'dark' },
@@ -158,7 +170,7 @@ test.beforeEach(async ({ page, db, testUser, seedCards, blockExternalNetwork }) 
   // this executes.
   await blockExternalNetwork(page, [catalogFixturePort]);
   await Promise.all([
-    db.doc(`users/${testUser.uid}/profile/stats`).set({ verifiedXp: 547, verifiedStreak: 2 }),
+    db.doc(`users/${testUser.uid}/profile/stats`).set({ verifiedXp: 547, verifiedStreak: 2, rewardTimeZone: 'UTC', reviewActivityV1: reviewActivity }),
     db.doc(`users/${testUser.uid}/profile/xp_history`).set({ verifiedByDayV1: xpHistory }),
   ]);
   await seedCards(cards);

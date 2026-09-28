@@ -80,16 +80,47 @@ describe('review conflict recovery', () => {
       applied: true,
       duplicate: true,
       card: { ...card, schemaVersion: 2 },
-      gamification: { xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: ['streak'] },
+      gamification: {
+        xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: ['streak'], rewardTimeZone: 'Asia/Saigon',
+        reviewActivity: {
+          targetLanguage: 'en', coverageStartedOn: '2026-08-24',
+          days: { '2026-08-24': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 } },
+        },
+      },
       ceremonyEvents: ['tierup', 'streak'],
     } });
 
     await expect(applyReviewViaCallable({} as never, 'owner-a', command)).resolves.toMatchObject({
       applied: true,
       duplicate: true,
-      gamification: { xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: ['streak'] },
+      gamification: {
+        xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: ['streak'], rewardTimeZone: 'Asia/Saigon',
+        reviewActivity: {
+          targetLanguage: 'en', coverageStartedOn: '2026-08-24',
+          days: { '2026-08-24': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 } },
+        },
+      },
       ceremonyEvents: ['tierup', 'streak'],
     });
+  });
+
+  it.each([
+    { targetLanguage: 'en', coverageStartedOn: '2026-02-30', days: {} },
+    { targetLanguage: 'language-code-that-is-too-long', coverageStartedOn: '2026-08-24', days: {} },
+    {
+      targetLanguage: 'en', coverageStartedOn: '2026-08-24',
+      days: { '2026-08-24': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0, extra: 0 } },
+    },
+  ])('rejects malformed authoritative review activity: %o', async reviewActivity => {
+    mocks.httpsCallable.mockReturnValue(mocks.callable);
+    mocks.callable.mockResolvedValue({ data: {
+      applied: true,
+      duplicate: false,
+      card: { ...card, schemaVersion: 2 },
+      gamification: { xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: [], reviewActivity },
+    } });
+
+    await expect(applyReviewViaCallable({} as never, 'owner-a', command)).rejects.toThrow('Invalid review response.');
   });
 
   it('recomputes from the authoritative card and retries exactly once with the same operation', async () => {

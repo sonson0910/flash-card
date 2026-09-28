@@ -174,6 +174,20 @@ describe('library screen contract', () => {
     expect(contract.overlays).toMatchObject({ visibleLibraryCount: 1, stats: { total: 4, dueToday: 1 } });
   });
 
+  it('passes only the active course language review activity into progress stats', () => {
+    const { input } = createInput();
+    input.gamification = {
+      ...input.gamification,
+      targetLanguage: 'ko',
+      reviewActivityByLanguage: {
+        en: { coverageStartedOn: '2026-09-01', days: { '2026-09-27': { reviewed: 2, again: 0, hard: 0, good: 1, easy: 1 } } },
+        ko: { coverageStartedOn: '2026-09-20', days: { '2026-09-27': { reviewed: 1, again: 1, hard: 0, good: 0, easy: 0 } } },
+      },
+    };
+
+    expect(buildLibraryScreenContract(input).overlays.stats.reviewActivity).toEqual(input.gamification.reviewActivityByLanguage!.ko);
+  });
+
   it('publishes truthful signed-out access for protected production AI generation', () => {
     const { input } = createInput();
     input.workspace.session.model.identity = {

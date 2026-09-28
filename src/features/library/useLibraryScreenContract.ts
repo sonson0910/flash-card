@@ -20,6 +20,7 @@ import {
   buildLibraryViewModel,
   type LibraryStatsViewModel,
 } from './libraryViewModel';
+import type { ReviewActivity } from '../gamification/verifiedGamificationClient';
 import type { LibraryScreenActions, LibraryScreenModel } from './LibraryScreen';
 import {
   resolveAiGenerationAccess,
@@ -51,6 +52,9 @@ export interface LibraryScreenGamificationInput {
   level: number;
   xp: number;
   xpHistory: Record<string, number>;
+  reviewActivityByLanguage?: Readonly<Record<string, ReviewActivity>>;
+  targetLanguage?: string;
+  rewardTimeZone?: string;
 }
 
 export interface LibraryScreenUiInput {
@@ -133,6 +137,8 @@ export function buildLibraryScreenContract({
     hasNextCloudPage: cloud.hasNext,
     knownLibraryTotal: library.knownTotal,
     xpHistory: gamification.xpHistory,
+    reviewActivity: gamification.targetLanguage ? gamification.reviewActivityByLanguage?.[gamification.targetLanguage] : undefined,
+    rewardTimeZone: gamification.rewardTimeZone,
   });
   const libraryCount = view.counts.total;
   const visibleLibraryCount = view.counts.visible;

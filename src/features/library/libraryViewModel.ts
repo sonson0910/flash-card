@@ -6,6 +6,7 @@ import { isCardDue } from '../../lib/srs';
 import type { CardData } from '../../types/card';
 import type { LibraryDifficulty } from '../catalog/libraryCatalogQuery';
 import { formatCardDate, groupCardsByDate } from './libraryPresentation';
+import type { ReviewActivity } from '../gamification/verifiedGamificationClient';
 
 export type LibraryCardTier = 'new' | 'learning' | 'mastered';
 export type LibrarySortOrder = 'recent' | 'alphabetical' | 'due';
@@ -83,6 +84,8 @@ export interface LibraryViewModelInput {
   hasNextCloudPage: boolean;
   knownLibraryTotal: number;
   xpHistory: Record<string, number>;
+  reviewActivity?: ReviewActivity;
+  rewardTimeZone?: string;
 }
 
 export interface LibraryStatsViewModel {
@@ -97,6 +100,8 @@ export interface LibraryStatsViewModel {
   xpChartData: Array<{ date: string; XP: number }>;
   dueForecast?: Array<{ date: string; count: number }>;
   recentlyMastered?: Array<{ id: string; word: string; translation: string; masteredAt: string }>;
+  reviewActivity?: ReviewActivity;
+  rewardTimeZone?: string;
 }
 
 const libraryCountLabel = ({
@@ -206,8 +211,10 @@ export const selectLibraryStats = ({
   cloudFacetsComplete,
   cloudCategoryCounts,
   xpHistory,
+  reviewActivity,
+  rewardTimeZone,
 }: Pick<LibraryViewModelInput,
-  'cards' | 'isAuthenticated' | 'cloudFacetsComplete' | 'cloudCategoryCounts' | 'xpHistory'> & {
+  'cards' | 'isAuthenticated' | 'cloudFacetsComplete' | 'cloudCategoryCounts' | 'xpHistory' | 'reviewActivity' | 'rewardTimeZone'> & {
     difficultySummary: LibraryDifficultySummary & Pick<LibraryStatsViewModel, 'dueForecast' | 'recentlyMastered'>;
   }): LibraryStatsViewModel => {
   const categoryCounts = isAuthenticated && cloudFacetsComplete
@@ -235,6 +242,8 @@ export const selectLibraryStats = ({
     categoryChartIsPartial: Boolean(isAuthenticated && !cloudFacetsComplete),
     difficultyChart,
     xpChartData,
+    reviewActivity: isAuthenticated ? reviewActivity : undefined,
+    rewardTimeZone: isAuthenticated ? rewardTimeZone : undefined,
     dueForecast: isAuthenticated ? difficultySummary.dueForecast : undefined,
     recentlyMastered: isAuthenticated ? difficultySummary.recentlyMastered : undefined,
   };

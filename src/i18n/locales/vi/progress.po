@@ -14,14 +14,20 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:94
+#: src/components/stats/ActivityHeatmap.tsx:124
 msgid "stats.active-days"
 msgstr "ngày hoạt động"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.activity-description"
-msgstr "XP từ các hoạt động học đã hoàn thành."
+msgstr "XP từ các hoạt động học đã hoàn thành trên toàn tài khoản."
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:144
+#: src/components/stats/ActivityHeatmap.tsx:144
+msgid "stats.activity-unavailable"
+msgstr "Chưa có dữ liệu hoạt động trước khi bắt đầu ghi nhận"
 
 #. js-lingui-explicit-id
 #: src/components/stats/AchievementsMatrix.tsx:62
@@ -74,52 +80,52 @@ msgid "stats.bud-routine-description"
 msgstr "Duy trì thói quen học trong ba ngày hoạt động."
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.cards"
 msgstr "thẻ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.category"
 msgstr "Danh mục"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.category-chart"
 msgstr "Biểu đồ phân bố danh mục"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.category-data"
 msgstr "Dữ liệu phân bố danh mục"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.category-distribution"
 msgstr "Phân bố danh mục"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.current-state"
 msgstr "Trạng thái hiện tại"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.daily-xp"
-msgstr "XP hằng ngày và sự đều đặn"
+msgstr "XP toàn tài khoản và sự đều đặn"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.daily-xp-chart"
 msgstr "Biểu đồ XP hằng ngày"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.daily-xp-data"
 msgstr "Dữ liệu XP hằng ngày"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.date"
 msgstr "Ngày"
 
@@ -129,22 +135,22 @@ msgid "stats.days"
 msgstr "ngày"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:97
+#: src/components/stats/ActivityHeatmap.tsx:127
 msgid "stats.heatmap-legend"
 msgstr "Mức độ học từ ít đến nhiều"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.heatmap-title"
-msgstr "Bản đồ nhiệt học tập · 20 tuần gần đây"
+msgstr "Hoạt động ôn tập"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:31
+#: src/components/stats/StatsCharts.tsx:34
 msgid "stats.learning"
 msgstr "Đang học"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.learning-activity"
 msgstr "Hoạt động học"
 
@@ -154,62 +160,68 @@ msgid "stats.legend.label"
 msgstr "Chú giải trạng thái huy hiệu"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:98
+#: src/components/stats/ActivityHeatmap.tsx:128
 msgid "stats.less"
 msgstr "Ít"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.library-breakdown"
 msgstr "Phân loại thư viện"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:31
+#: src/components/stats/StatsCharts.tsx:34
 msgid "stats.mastered"
 msgstr "Đã thuộc"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.memory-chart"
 msgstr "Biểu đồ độ vững của trí nhớ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.memory-data"
 msgstr "Dữ liệu độ vững của trí nhớ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.memory-status"
 msgstr "Trạng thái ghi nhớ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.memory-strength"
 msgstr "Độ vững của trí nhớ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:100
+#: src/components/stats/ActivityHeatmap.tsx:130
 msgid "stats.more"
 msgstr "Nhiều"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:29
+#: src/components/stats/StatsCharts.tsx:32
 msgid "stats.no-data"
 msgstr "Chưa có dữ liệu"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:29
+#: src/components/stats/StatsCharts.tsx:32
 msgid "stats.no-xp-history"
 msgstr "Chưa có lịch sử XP"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:31
+#: src/components/stats/StatsCharts.tsx:34
 msgid "stats.not-reviewed"
 msgstr "Chưa ôn"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/ActivityHeatmap.tsx:144
+#: src/components/stats/ActivityHeatmap.tsx:144
+msgid "stats.outside-selected-range"
+msgstr "Ngoài khoảng thời gian đã chọn"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.partial-categories"
 msgstr "Chỉ có dữ liệu trang hiện tại; chưa quét toàn bộ thư viện."
 
@@ -219,12 +231,58 @@ msgid "stats.progress"
 msgstr "Tiến độ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
+msgid "stats.recall-again"
+msgstr "Học lại"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:33
+msgid "stats.recall-easy"
+msgstr "Dễ"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:33
+msgid "stats.recall-good"
+msgstr "Nhớ được"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:33
+msgid "stats.recall-hard"
+msgstr "Khó"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:97
+msgid "stats.review-activity-partial"
+msgstr "Dữ liệu bắt đầu từ {date}; khoảng thời gian này chưa đầy đủ."
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:33
+msgid "stats.review-activity-unavailable"
+msgstr "Chưa có dữ liệu ôn tập cho đến khi bắt đầu ghi nhận."
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:97
+msgid "stats.review-range-26-weeks"
+msgstr "26 tuần"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:97
+msgid "stats.review-range-30-days"
+msgstr "30 ngày"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:144
+#: src/components/stats/ActivityHeatmap.tsx:144
+msgid "stats.reviews"
+msgstr "lượt ôn tập"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.show-all-categories"
 msgstr "Hiện tất cả danh mục"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.show-top-categories"
 msgstr "Hiện 5 danh mục hàng đầu"
 
@@ -249,8 +307,8 @@ msgid "stats.star-keeper-description"
 msgstr "Giúp năm mươi từ tỏa sáng khi đã thành thạo."
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:103
-#: src/components/stats/ActivityHeatmap.tsx:104
+#: src/components/stats/ActivityHeatmap.tsx:133
+#: src/components/stats/ActivityHeatmap.tsx:134
 msgid "stats.study-activity"
 msgstr "Hoạt động học"
 
@@ -275,7 +333,12 @@ msgid "stats.tier-star"
 msgstr "Star"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:95
+#: src/components/stats/ActivityHeatmap.tsx:125
+msgid "stats.total-reviews"
+msgstr "lượt ôn tập"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:125
 msgid "stats.total-xp"
 msgstr "tổng XP"
 
@@ -285,7 +348,7 @@ msgid "stats.unlocked"
 msgstr "đã mở khóa"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.value"
 msgstr "Giá trị"
 

@@ -28,6 +28,8 @@ export type VerifiedGamificationOutcome = {
   streak: number;
   studyDay: string;
   events: RewardEvent[];
+  rewardTimeZone: string;
+  reviewActivity?: VerifiedReviewActivity;
 };
 
 export type PreparedVerifiedGamification = {
@@ -81,6 +83,12 @@ type ReviewActivityCounters = Record<'reviewed' | 'again' | 'hard' | 'good' | 'e
 type ReviewActivity = {
   coverageStartedOnByLanguage: Record<string, string>;
   daysByLanguage: Record<string, Record<string, ReviewActivityCounters>>;
+};
+
+export type VerifiedReviewActivity = {
+  targetLanguage: string;
+  coverageStartedOn: string;
+  days: Record<string, ReviewActivityCounters>;
 };
 
 const isLanguage = (value: unknown): value is string => typeof value === 'string'
@@ -149,13 +157,21 @@ const nextReviewActivity = (stored: unknown, language: unknown, day: string, rat
     throw new InputValidationError('Review activity counter exceeds its limit.');
   }
   allDays[language] = { ...(allDays[language] ?? {}), [day]: { ...counters, reviewed: counters.reviewed + 1, [rating]: counters[rating as keyof ReviewActivityCounters] + 1 } };
-  const windowStart = activityWindowStart(day);
   for (const [activityLanguage, days] of Object.entries(allDays)) {
+    const latestDay = Object.keys(days).reduce((latest, localDay) => localDay > latest ? localDay : latest, day);
+    const windowStart = activityWindowStart(latestDay);
     allDays[activityLanguage] = Object.fromEntries(Object.entries(days)
-      .filter(([localDay]) => localDay >= windowStart && localDay <= day));
+      .filter(([localDay]) => localDay >= windowStart));
   }
   coverageStartedOnByLanguage[language] ??= day;
   return { coverageStartedOnByLanguage, daysByLanguage: allDays };
+};
+
+const reviewActivityOutcome = (activity: ReviewActivity | undefined, language: unknown): VerifiedReviewActivity | undefined => {
+  if (!activity || !isLanguage(language)) return undefined;
+  const coverageStartedOn = activity.coverageStartedOnByLanguage[language];
+  const days = activity.daysByLanguage[language];
+  return coverageStartedOn && days ? { targetLanguage: language, coverageStartedOn, days } : undefined;
 };
 
 const previousDay = (day: string): string => {
@@ -197,7 +213,7 @@ export async function prepareVerifiedGamification(
   }
   const timeZone = storedTimeZone ?? actionTimeZone as string;
   const studyDay = dayInTimeZone(action.receivedAt, timeZone);
-  const activity = action.kind === 'review'
+  const activity = action.kind === 'review' && storedTimeZone
     ? nextReviewActivity(stats.reviewActivityV1, action.targetLanguage, studyDay, action.rating ?? '')
     : undefined;
   const xp = counter(stats.verifiedXp);
@@ -238,8 +254,12 @@ export async function prepareVerifiedGamification(
     rewardsPatch.ownedTitleIds = Array.from(new Set([...(Array.isArray(rewards.ownedTitleIds) ? rewards.ownedTitleIds : []), 'word-collector']));
   }
   const hasRewardsPatch = Object.keys(rewardsPatch).length > 0;
+  const activityOutcome = reviewActivityOutcome(activity, action.targetLanguage);
   return {
-    outcome: { xp: nextXp, level, streak: nextStreak, studyDay, events },
+    outcome: {
+      xp: nextXp, level, streak: nextStreak, studyDay, events, rewardTimeZone: timeZone,
+      ...(activityOutcome ? { reviewActivity: activityOutcome } : {}),
+    },
     statsRef: refs.stats,
     historyRef: refs.history,
     rewardsRef: hasRewardsPatch ? refs.rewards : undefined,

@@ -33,6 +33,63 @@ describe('verified gamification client', () => {
     }).rewards.equippedFrameId).toBeNull();
   });
 
+  it('accepts only bounded, internally consistent review activity by language', () => {
+    const state = verifiedGamificationFromDocuments({ reviewActivityV1: {
+      coverageStartedOnByLanguage: { en: '2026-09-01', ko: 'bad-date' },
+      daysByLanguage: {
+        en: { '2026-09-27': { reviewed: 3, again: 1, hard: 0, good: 1, easy: 1 } },
+        ko: { '2026-09-27': { reviewed: 1, again: 0, hard: 0, good: 0, easy: 1 } },
+      },
+    } }, {}, {});
+
+    expect(state.reviewActivityByLanguage).toEqual({
+      en: { coverageStartedOn: '2026-09-01', days: { '2026-09-27': { reviewed: 3, again: 1, hard: 0, good: 1, easy: 1 } } },
+    });
+  });
+
+  it('rejects impossible activity dates, invalid languages, and invalid counters', () => {
+    const state = verifiedGamificationFromDocuments({ reviewActivityV1: {
+      coverageStartedOnByLanguage: { ja: '2026-09-01', en: '2026-09-01', invalid: '2026-09-01', ko: '2026-02-30' },
+      daysByLanguage: {
+        ja: { '2026-09-27': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 } },
+        en: { '2026-09-27': { reviewed: 0, again: -1, hard: 0, good: 1, easy: 0 } },
+        invalid: { '2026-09-27': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 } },
+        ko: { '2026-09-27': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 } },
+      },
+    } }, {}, {});
+    expect(state.reviewActivityByLanguage).toEqual({
+      ja: { coverageStartedOn: '2026-09-01', days: { '2026-09-27': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 } } },
+    });
+  });
+
+  it('retains only a valid server reward time zone for activity boundaries', () => {
+    expect(verifiedGamificationFromDocuments({ rewardTimeZone: 'Asia/Ho_Chi_Minh' }, {}, {}).rewardTimeZone).toBe('Asia/Ho_Chi_Minh');
+    expect(verifiedGamificationFromDocuments({ rewardTimeZone: 'not/a-time-zone' }, {}, {}).rewardTimeZone).toBeUndefined();
+  });
+
+  it('replaces target activity from a newer strict-review snapshot once', () => {
+    const initial = verifiedGamificationFromDocuments({
+      verifiedXp: 2, verifiedStreak: 1, rewardTimeZone: 'UTC', reviewActivityV1: {
+        coverageStartedOnByLanguage: { en: '2026-09-26' },
+        daysByLanguage: { en: { '2026-09-26': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 } } },
+      },
+    }, {}, {});
+    const outcome = {
+      xp: 4, level: 1, streak: 2, studyDay: '2026-09-27', rewardTimeZone: 'Asia/Ho_Chi_Minh',
+      reviewActivity: {
+        targetLanguage: 'en', coverageStartedOn: '2026-09-26',
+        days: {
+          '2026-09-26': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 },
+          '2026-09-27': { reviewed: 1, again: 0, hard: 0, good: 0, easy: 1 },
+        },
+      },
+    } as const;
+    const updated = acceptAuthoritativeGamificationOutcome(initial, outcome);
+    expect(updated.rewardTimeZone).toBe('Asia/Ho_Chi_Minh');
+    expect(updated.reviewActivityByLanguage.en?.days).toEqual(outcome.reviewActivity.days);
+    expect(acceptAuthoritativeGamificationOutcome(updated, outcome)).toEqual(updated);
+  });
+
   it('accepts only a level consistent with the authoritative XP outcome', () => {
     const current = verifiedGamificationFromDocuments({}, {}, {});
     expect(acceptAuthoritativeGamificationOutcome(current, { xp: 14_400, level: 13, streak: 30 }))

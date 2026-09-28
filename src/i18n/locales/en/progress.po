@@ -14,14 +14,20 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:94
+#: src/components/stats/ActivityHeatmap.tsx:124
 msgid "stats.active-days"
 msgstr "active days"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.activity-description"
-msgstr "XP from completed learning activity."
+msgstr "XP from completed learning activity across your account."
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:144
+#: src/components/stats/ActivityHeatmap.tsx:144
+msgid "stats.activity-unavailable"
+msgstr "Activity unavailable before coverage began"
 
 #. js-lingui-explicit-id
 #: src/components/stats/AchievementsMatrix.tsx:62
@@ -74,52 +80,52 @@ msgid "stats.bud-routine-description"
 msgstr "Give your study habit three active days."
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.cards"
 msgstr "cards"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.category"
 msgstr "Category"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.category-chart"
 msgstr "Category distribution chart"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.category-data"
 msgstr "Category distribution data"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.category-distribution"
 msgstr "Category distribution"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.current-state"
 msgstr "Current state"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.daily-xp"
-msgstr "Daily XP and consistency"
+msgstr "Account-wide XP and consistency"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.daily-xp-chart"
 msgstr "Daily XP chart"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.daily-xp-data"
 msgstr "Daily XP data"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.date"
 msgstr "Date"
 
@@ -129,22 +135,22 @@ msgid "stats.days"
 msgstr "days"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:97
+#: src/components/stats/ActivityHeatmap.tsx:127
 msgid "stats.heatmap-legend"
 msgstr "Less to more study activity"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.heatmap-title"
-msgstr "Study heatmap · recent 20 weeks"
+msgstr "Review activity"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:31
+#: src/components/stats/StatsCharts.tsx:34
 msgid "stats.learning"
 msgstr "Learning"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.learning-activity"
 msgstr "Learning activity"
 
@@ -154,62 +160,68 @@ msgid "stats.legend.label"
 msgstr "Badge status legend"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:98
+#: src/components/stats/ActivityHeatmap.tsx:128
 msgid "stats.less"
 msgstr "Less"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.library-breakdown"
 msgstr "Library breakdown"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:31
+#: src/components/stats/StatsCharts.tsx:34
 msgid "stats.mastered"
 msgstr "Mastered"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.memory-chart"
 msgstr "Memory strength chart"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.memory-data"
 msgstr "Memory strength data"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.memory-status"
 msgstr "Memory status"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.memory-strength"
 msgstr "Memory strength"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:100
+#: src/components/stats/ActivityHeatmap.tsx:130
 msgid "stats.more"
 msgstr "More"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:29
+#: src/components/stats/StatsCharts.tsx:32
 msgid "stats.no-data"
 msgstr "No data yet"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:29
+#: src/components/stats/StatsCharts.tsx:32
 msgid "stats.no-xp-history"
 msgstr "No XP history yet"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:31
+#: src/components/stats/StatsCharts.tsx:34
 msgid "stats.not-reviewed"
 msgstr "Not reviewed"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/ActivityHeatmap.tsx:144
+#: src/components/stats/ActivityHeatmap.tsx:144
+msgid "stats.outside-selected-range"
+msgstr "Outside selected range"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.partial-categories"
 msgstr "Current-page data only; the full library is not scanned."
 
@@ -219,12 +231,58 @@ msgid "stats.progress"
 msgstr "Progress"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
+msgid "stats.recall-again"
+msgstr "Again"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:33
+msgid "stats.recall-easy"
+msgstr "Easy"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:33
+msgid "stats.recall-good"
+msgstr "Good"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:33
+msgid "stats.recall-hard"
+msgstr "Hard"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:97
+msgid "stats.review-activity-partial"
+msgstr "Coverage begins {date}; this range is partial."
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:33
+msgid "stats.review-activity-unavailable"
+msgstr "Review activity is unavailable until coverage begins."
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:97
+msgid "stats.review-range-26-weeks"
+msgstr "26 weeks"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:97
+msgid "stats.review-range-30-days"
+msgstr "30 days"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:144
+#: src/components/stats/ActivityHeatmap.tsx:144
+msgid "stats.reviews"
+msgstr "reviews"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.show-all-categories"
 msgstr "Show all categories"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.show-top-categories"
 msgstr "Show top 5 categories"
 
@@ -249,8 +307,8 @@ msgid "stats.star-keeper-description"
 msgstr "Help fifty words shine as mastered."
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:103
-#: src/components/stats/ActivityHeatmap.tsx:104
+#: src/components/stats/ActivityHeatmap.tsx:133
+#: src/components/stats/ActivityHeatmap.tsx:134
 msgid "stats.study-activity"
 msgstr "Study activity"
 
@@ -275,7 +333,12 @@ msgid "stats.tier-star"
 msgstr "Star"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:95
+#: src/components/stats/ActivityHeatmap.tsx:125
+msgid "stats.total-reviews"
+msgstr "reviews"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:125
 msgid "stats.total-xp"
 msgstr "total XP"
 
@@ -285,7 +348,7 @@ msgid "stats.unlocked"
 msgstr "unlocked"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:30
+#: src/components/stats/StatsCharts.tsx:33
 msgid "stats.value"
 msgstr "Value"
 

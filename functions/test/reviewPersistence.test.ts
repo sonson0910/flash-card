@@ -266,7 +266,13 @@ describe('review persistence', () => {
         fields: scheduleReviewTransition(stored, 'easy', new Date('2026-08-24T00:00:00.000Z')),
       });
       const result = await applyReviewForOwner(test.database, 'owner', request);
-      expect(result.gamification).toMatchObject({ xp: 14_401, level: 13, streak: 30, events: ['streak', 'levelup'] });
+      expect(result.gamification).toMatchObject({
+        xp: 14_401, level: 13, streak: 30, events: ['streak', 'levelup'], rewardTimeZone: 'UTC',
+        reviewActivity: {
+          targetLanguage: 'en', coverageStartedOn: '2026-09-27',
+          days: { '2026-09-27': { reviewed: 1, again: 0, hard: 0, good: 0, easy: 1 } },
+        },
+      });
       expect(result.ceremonyEvents).toEqual(['tierup', 'streak', 'levelup']);
       expect(test.writes).toEqual(expect.arrayContaining([
         expect.objectContaining({ path: 'users/owner/profile/stats' }),

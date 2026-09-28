@@ -84,11 +84,49 @@ const normalizeConflictReason = (value: unknown): ReviewConflictReason | null =>
 const isSafeNonNegativeInteger = (value: unknown): value is number =>
   Number.isSafeInteger(value) && Number(value) >= 0;
 
+const isLocalDay = (value: unknown): value is string => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+
+const isLanguage = (value: unknown): value is string => typeof value === 'string'
+  && value.length <= 16
+  && /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(value);
+
 const parseCeremonyEvents = (value: unknown): readonly ReviewCeremonyEvent[] => {
   if (!Array.isArray(value) || value.some(event => event !== 'tierup' && event !== 'streak' && event !== 'levelup')) {
     throw new Error('Invalid review response.');
   }
   return value as ReviewCeremonyEvent[];
+};
+
+const parseReviewActivity = (value: unknown): NonNullable<AuthoritativeGamification['reviewActivity']> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid review response.');
+  const source = value as Record<string, unknown>;
+  if (!isLanguage(source.targetLanguage)
+    || !isLocalDay(source.coverageStartedOn)
+    || !source.days || typeof source.days !== 'object' || Array.isArray(source.days) || Object.keys(source.days).length > 182) {
+    throw new Error('Invalid review response.');
+  }
+  for (const [day, counters] of Object.entries(source.days)) {
+    if (!isLocalDay(day) || !counters || typeof counters !== 'object' || Array.isArray(counters)) {
+      throw new Error('Invalid review response.');
+    }
+    const record = counters as Record<string, unknown>;
+    if (Object.keys(record).length !== 5
+      || !['reviewed', 'again', 'hard', 'good', 'easy'].every(key => isSafeNonNegativeInteger(record[key]))
+      || Number(record.reviewed) !== Number(record.again) + Number(record.hard) + Number(record.good) + Number(record.easy)) {
+      throw new Error('Invalid review response.');
+    }
+  }
+  return source as unknown as NonNullable<AuthoritativeGamification['reviewActivity']>;
+};
+
+const parseRewardTimeZone = (value: unknown): string | undefined => {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string' || !value) throw new Error('Invalid review response.');
+  try { return new Intl.DateTimeFormat('en-US', { timeZone: value }).resolvedOptions().timeZone; } catch { throw new Error('Invalid review response.'); }
 };
 
 const parseGamification = (value: unknown): AuthoritativeGamification => {
@@ -97,13 +135,17 @@ const parseGamification = (value: unknown): AuthoritativeGamification => {
   if (!isSafeNonNegativeInteger(source.xp)
     || !isSafeNonNegativeInteger(source.streak)
     || !Number.isSafeInteger(source.level) || Number(source.level) < 1
-    || typeof source.studyDay !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(source.studyDay)) {
+    || !isLocalDay(source.studyDay)) {
     throw new Error('Invalid review response.');
   }
   const events = parseCeremonyEvents(source.events);
   if (events.some(event => event === 'tierup')) throw new Error('Invalid review response.');
+  const reviewActivity = source.reviewActivity === undefined ? undefined : parseReviewActivity(source.reviewActivity);
+  const rewardTimeZone = parseRewardTimeZone(source.rewardTimeZone);
   return {
     xp: Number(source.xp), streak: Number(source.streak), level: Number(source.level), studyDay: source.studyDay, events,
+    ...(reviewActivity ? { reviewActivity } : {}),
+    ...(rewardTimeZone ? { rewardTimeZone } : {}),
   };
 };
 

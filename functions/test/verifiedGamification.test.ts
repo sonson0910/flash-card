@@ -49,6 +49,15 @@ describe('verified gamification', () => {
     expect(test.writes[1].data).toMatchObject({ verifiedByDayV1: { '2026-03-08': expect.anything() } });
   });
 
+  it('does not bootstrap review activity from a client timezone hint', async () => {
+    const test = harness();
+    const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action());
+    expect(prepared.statsPatch).toMatchObject({ rewardTimeZone: expect.any(String) });
+    expect(prepared.statsPatch).not.toHaveProperty('reviewActivityV1');
+    expect(prepared.outcome).not.toHaveProperty('reviewActivity');
+    expect(test.reads).toEqual(['users/owner/profile/stats']);
+  });
+
   it('keeps the immutable stored timezone and only reviews advance the streak', async () => {
     const test = harness({ 'users/owner/profile/stats': {
       verifiedXp: 4, verifiedStreak: 5, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'America/New_York',
@@ -105,6 +114,24 @@ describe('verified gamification', () => {
     }));
     const days = (prepared.statsPatch.reviewActivityV1 as { daysByLanguage: Record<string, Record<string, unknown>> }).daysByLanguage.en;
     expect(Object.keys(days)).toEqual(['2025-09-08', '2026-03-07', '2026-03-08']);
+  });
+
+  it('retains a newer activity day when a transaction retry records an older receipt day', async () => {
+    const test = harness({ 'users/owner/profile/stats': {
+      rewardTimeZone: 'UTC',
+      reviewActivityV1: {
+        coverageStartedOnByLanguage: { en: '2026-03-08' },
+        daysByLanguage: { en: {
+          '2026-03-08': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 },
+        } },
+      },
+    } });
+    const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({
+      receivedAt: new Date('2026-03-07T23:59:59.000Z'), timeZone: 'UTC', rating: 'easy',
+    }));
+    const days = (prepared.statsPatch.reviewActivityV1 as { daysByLanguage: Record<string, Record<string, unknown>> }).daysByLanguage.en;
+    expect(days).toHaveProperty('2026-03-07');
+    expect(days).toHaveProperty('2026-03-08');
   });
 
   it('grants both threshold rewards in one rewards read and caps inventory', async () => {

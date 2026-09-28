@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { useLingui } from '@lingui/react';
+import { Trans, useLingui } from '@lingui/react';
 import { msg } from '@lingui/core/macro';
 import { formatNumber } from '../../lib/format';
-import { ActivityHeatmap } from './ActivityHeatmap';
+import { ActivityHeatmap, dayInTimeZone } from './ActivityHeatmap';
+import type { ReviewActivity } from '../../features/gamification/verifiedGamificationClient';
 
 interface StatsChartsProps {
   darkMode: boolean;
@@ -12,6 +13,8 @@ interface StatsChartsProps {
     difficultyChart: Array<{ name: string; value: number }>;
     categoryChart: Array<{ name: string; value: number }>;
     categoryChartIsPartial: boolean;
+    reviewActivity?: ReviewActivity;
+    rewardTimeZone?: string;
   };
 }
 
@@ -27,7 +30,7 @@ function AccessibleChartTable({ caption, firstColumn, rows, emptyMessage, valueL
 const XP_CHART = { width: 640, height: 240, left: 44, right: 18, top: 16, bottom: 42 } as const;
 const text = {
   noHistory: msg({ id: 'stats.no-xp-history', message: 'No XP history yet' }), noData: msg({ id: 'stats.no-data', message: 'No data yet' }),
-  learningActivity: msg({ id: 'stats.learning-activity', message: 'Learning activity' }), dailyXp: msg({ id: 'stats.daily-xp', message: 'Daily XP and consistency' }), activityDescription: msg({ id: 'stats.activity-description', message: 'XP from completed learning activity.' }), heatmapTitle: msg({ id: 'stats.heatmap-title', message: 'Study heatmap · recent 20 weeks' }), dailyXpData: msg({ id: 'stats.daily-xp-data', message: 'Daily XP data' }), date: msg({ id: 'stats.date', message: 'Date' }), value: msg({ id: 'stats.value', message: 'Value' }), dailyXpChart: msg({ id: 'stats.daily-xp-chart', message: 'Daily XP chart' }), currentState: msg({ id: 'stats.current-state', message: 'Current state' }), memoryStrength: msg({ id: 'stats.memory-strength', message: 'Memory strength' }), memoryData: msg({ id: 'stats.memory-data', message: 'Memory strength data' }), memoryStatus: msg({ id: 'stats.memory-status', message: 'Memory status' }), memoryChart: msg({ id: 'stats.memory-chart', message: 'Memory strength chart' }), cards: msg({ id: 'stats.cards', message: 'cards' }), libraryBreakdown: msg({ id: 'stats.library-breakdown', message: 'Library breakdown' }), categoryDistribution: msg({ id: 'stats.category-distribution', message: 'Category distribution' }), partialCategories: msg({ id: 'stats.partial-categories', message: 'Current-page data only; the full library is not scanned.' }), categoryData: msg({ id: 'stats.category-data', message: 'Category distribution data' }), category: msg({ id: 'stats.category', message: 'Category' }), categoryChart: msg({ id: 'stats.category-chart', message: 'Category distribution chart' }), showTop: msg({ id: 'stats.show-top-categories', message: 'Show top 5 categories' }), showAll: msg({ id: 'stats.show-all-categories', message: 'Show all categories' }),
+  learningActivity: msg({ id: 'stats.learning-activity', message: 'Learning activity' }), dailyXp: msg({ id: 'stats.daily-xp', message: 'Account-wide XP and consistency' }), activityDescription: msg({ id: 'stats.activity-description', message: 'XP from completed learning activity across your account.' }), heatmapTitle: msg({ id: 'stats.heatmap-title', message: 'Review activity' }), activityUnavailable: msg({ id: 'stats.review-activity-unavailable', message: 'Review activity is unavailable until coverage begins.' }), again: msg({ id: 'stats.recall-again', message: 'Again' }), hard: msg({ id: 'stats.recall-hard', message: 'Hard' }), good: msg({ id: 'stats.recall-good', message: 'Good' }), easy: msg({ id: 'stats.recall-easy', message: 'Easy' }), dailyXpData: msg({ id: 'stats.daily-xp-data', message: 'Daily XP data' }), date: msg({ id: 'stats.date', message: 'Date' }), value: msg({ id: 'stats.value', message: 'Value' }), dailyXpChart: msg({ id: 'stats.daily-xp-chart', message: 'Daily XP chart' }), currentState: msg({ id: 'stats.current-state', message: 'Current state' }), memoryStrength: msg({ id: 'stats.memory-strength', message: 'Memory strength' }), memoryData: msg({ id: 'stats.memory-data', message: 'Memory strength data' }), memoryStatus: msg({ id: 'stats.memory-status', message: 'Memory status' }), memoryChart: msg({ id: 'stats.memory-chart', message: 'Memory strength chart' }), cards: msg({ id: 'stats.cards', message: 'cards' }), libraryBreakdown: msg({ id: 'stats.library-breakdown', message: 'Library breakdown' }), categoryDistribution: msg({ id: 'stats.category-distribution', message: 'Category distribution' }), partialCategories: msg({ id: 'stats.partial-categories', message: 'Current-page data only; the full library is not scanned.' }), categoryData: msg({ id: 'stats.category-data', message: 'Category distribution data' }), category: msg({ id: 'stats.category', message: 'Category' }), categoryChart: msg({ id: 'stats.category-chart', message: 'Category distribution chart' }), showTop: msg({ id: 'stats.show-top-categories', message: 'Show top 5 categories' }), showAll: msg({ id: 'stats.show-all-categories', message: 'Show all categories' }),
   mastered: msg({ id: 'stats.mastered', message: 'Mastered' }), learning: msg({ id: 'stats.learning', message: 'Learning' }), notReviewed: msg({ id: 'stats.not-reviewed', message: 'Not reviewed' }),
 };
 
@@ -75,13 +78,23 @@ function CategoryChart({ entries, noData, showAll, showTop }: { entries: Array<{
 export default function StatsCharts({ data }: StatsChartsProps) {
   const { _, i18n } = useLingui();
   const locale = i18n.locale || 'en';
+  const [reviewRangeDays, setReviewRangeDays] = useState<30 | 182>(182);
   const noHistory = _(text.noHistory); const noData = _(text.noData);
   const memoryLabels: Record<string, string> = { Mastered: _(text.mastered), Learning: _(text.learning), 'Not reviewed': _(text.notReviewed) };
   const memoryEntries = data.difficultyChart.map(entry => ({ ...entry, name: memoryLabels[entry.name] ?? entry.name, color: memoryColors[entry.name] ?? 'var(--sf-heat-2)' }));
+  let todayKey: string | undefined;
+  try { if (data.reviewActivity && data.rewardTimeZone) todayKey = dayInTimeZone(new Date(), data.rewardTimeZone); } catch { /* Activity remains unavailable without the server time zone. */ }
+  const rangeStart = todayKey ? new Date(`${todayKey}T12:00:00`) : new Date();
+  rangeStart.setHours(0, 0, 0, 0);
+  rangeStart.setDate(rangeStart.getDate() - reviewRangeDays + 1);
+  const rangeStartKey = [rangeStart.getFullYear(), String(rangeStart.getMonth() + 1).padStart(2, '0'), String(rangeStart.getDate()).padStart(2, '0')].join('-');
+  const reviewActivity = data.reviewActivity && todayKey ? data.reviewActivity : undefined;
+  const partialCoverage = reviewActivity && reviewActivity.coverageStartedOn > rangeStartKey;
+  const recallTotals = Object.entries(reviewActivity?.days ?? {}).filter(([date]) => date >= rangeStartKey && date <= (todayKey ?? '')).reduce((totals, [, day]) => ({ again: totals.again + day.again, hard: totals.hard + day.hard, good: totals.good + day.good, easy: totals.easy + day.easy }), { again: 0, hard: 0, good: 0, easy: 0 });
   return <div className="stats-canvas">
     <section className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 text-[var(--sf-text)] sm:p-7 shadow-[0_28px_70px_-52px_var(--sf-shadow)]" aria-labelledby="xp-chart-title">
       <div className="mb-5"><p className="premium-kicker uppercase tracking-[0.14em]">{_(text.learningActivity)}</p><h2 id="xp-chart-title" className="mt-2 text-balance text-xl font-black tracking-tight">{_(text.dailyXp)}</h2><p className="mt-1 text-pretty text-sm text-[var(--sf-text-muted)]">{_(text.activityDescription)}</p></div>
-      <div className="mb-6 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 shadow-xs"><p className="mb-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--sf-text-muted)]">{_(text.heatmapTitle)}</p><ActivityHeatmap entries={data.xpChartData} /></div>
+      <div className="mb-6 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 shadow-xs"><div className="mb-3 flex flex-wrap items-center justify-between gap-3"><p className="text-xs font-black uppercase tracking-[0.12em] text-[var(--sf-text-muted)]">{_(text.heatmapTitle)}</p>{reviewActivity && <div className="inline-flex rounded-xl border border-[var(--sf-border)] p-1" role="group" aria-label={_(text.heatmapTitle)}><button type="button" onClick={() => setReviewRangeDays(30)} aria-pressed={reviewRangeDays === 30} className={`min-h-11 rounded-lg px-3 text-xs font-bold ${reviewRangeDays === 30 ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : ''}`}><span><Trans id="stats.review-range-30-days" message="30 days" /></span></button><button type="button" onClick={() => setReviewRangeDays(182)} aria-pressed={reviewRangeDays === 182} className={`min-h-11 rounded-lg px-3 text-xs font-bold ${reviewRangeDays === 182 ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : ''}`}><span><Trans id="stats.review-range-26-weeks" message="26 weeks" /></span></button></div>}</div>{reviewActivity ? <><ActivityHeatmap entries={[]} reviewActivity={reviewActivity} rangeDays={reviewRangeDays} todayKey={todayKey ?? ''} /><dl className="mt-4 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4"><div><dt className="text-[var(--sf-text-muted)]">{_(text.again)}</dt><dd className="font-bold tabular-nums">{formatNumber(recallTotals.again)}</dd></div><div><dt className="text-[var(--sf-text-muted)]">{_(text.hard)}</dt><dd className="font-bold tabular-nums">{formatNumber(recallTotals.hard)}</dd></div><div><dt className="text-[var(--sf-text-muted)]">{_(text.good)}</dt><dd className="font-bold tabular-nums">{formatNumber(recallTotals.good)}</dd></div><div><dt className="text-[var(--sf-text-muted)]">{_(text.easy)}</dt><dd className="font-bold tabular-nums">{formatNumber(recallTotals.easy)}</dd></div></dl>{partialCoverage && <p className="mt-3 text-xs text-[var(--sf-text-muted)]"><Trans id="stats.review-activity-partial" message="Coverage begins {date}; this range is partial." values={{ date: reviewActivity.coverageStartedOn }} /></p>}</> : <p className="text-sm text-[var(--sf-text-muted)]">{_(text.activityUnavailable)}</p>}</div>
       <AccessibleChartTable caption={_(text.dailyXpData)} firstColumn={_(text.date)} valueLabel={_(text.value)} rows={data.xpChartData.map(entry => ({ label: chartDate(entry.date, locale), value: entry.XP }))} emptyMessage={noHistory} />
       <div className="h-56 w-full sm:h-64" role="img" aria-label={_(text.dailyXpChart)} data-native-chart="xp"><XpChart entries={data.xpChartData} locale={locale} noHistory={noHistory} /></div>
     </section>
