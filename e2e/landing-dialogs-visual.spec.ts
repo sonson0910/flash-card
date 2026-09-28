@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures/firebase-emulator';
-import type { Page, TestInfo } from '@playwright/test';
+import type { Locator, Page, TestInfo } from '@playwright/test';
 
 const fixedTime = new Date('2026-09-27T12:00:00.000Z');
 const themes = [
@@ -13,6 +13,24 @@ const viewports = [
   { name: 'desktop', width: 1440, height: 900 },
   { name: '390px', width: 390, height: 844 },
 ] as const;
+const reportCard = {
+  id: 'visual-report-card',
+  word: 'resilient',
+  normalizedWord: 'resilient',
+  translation: 'kiên cường',
+  explanation: 'Able to recover after difficulty.',
+  explanationTranslation: 'Có khả năng phục hồi sau khó khăn.',
+  phonetic: '/rɪˈzɪliənt/',
+  emoji: '🌱',
+  category: 'Vocabulary',
+  audioUrl: null,
+  imageUrl: null,
+  createdAt: fixedTime.toISOString(),
+  bookmarked: false,
+  difficulty: 'unrated',
+  origin: 'ai',
+  customDeck: null,
+};
 
 async function expectAccessibleAndContained(page: Page, label: string) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -32,11 +50,15 @@ async function expectAccessibleAndContained(page: Page, label: string) {
   expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
 }
 
-async function attachDialog(page: Page, testInfo: TestInfo, name: string) {
-  const dialog = page.getByRole('dialog');
+async function captureDialogEvidence(dialog: Locator, testInfo: TestInfo, name: string) {
   const screenshot = testInfo.outputPath(`${name}.png`);
-  await dialog.screenshot({ path: screenshot, animations: 'disabled', caret: 'hide' });
+  const buffer = await dialog.screenshot({ path: screenshot, animations: 'disabled', caret: 'hide' });
   await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
+  return buffer;
+}
+
+function expectDialogSnapshot(buffer: Buffer, name: string) {
+  expect(buffer).toMatchSnapshot(name, { maxDiffPixelRatio: 0.01 });
 }
 
 async function openManagementMenu(page: Page) {
@@ -45,7 +67,7 @@ async function openManagementMenu(page: Page) {
 }
 
 for (const theme of themes) for (const viewport of viewports) {
-  test(`${theme.family} ${theme.mode} account and plan dialogs match the signed-in shell at ${viewport.name}`, async ({ page, seedCourseProfile, signIn, blockExternalNetwork }, testInfo) => {
+  test(`${theme.family} ${theme.mode} account, plan, and report dialogs match the signed-in shell at ${viewport.name}`, async ({ page, seedCards, seedCourseProfile, signIn, blockExternalNetwork }, testInfo) => {
     await page.clock.install({ time: fixedTime });
     await page.setViewportSize(viewport);
     await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
@@ -56,6 +78,7 @@ for (const theme of themes) for (const viewport of viewports) {
       localStorage.setItem('sonflash_theme_follow_system', 'false');
       localStorage.setItem('sonflash_reduced_motion', 'true');
     }, theme);
+    await seedCards([reportCard]);
     await seedCourseProfile();
     await signIn(page, '/?view=library&locale=en');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -65,7 +88,7 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(page.getByRole('heading', { name: 'Add momentum to your learning' })).toBeVisible();
     await expect(page.getByText('Loading plan details…')).toBeHidden();
     await expectAccessibleAndContained(page, `${theme.family}-${theme.mode}-${viewport.name}-plan-dialog`);
-    await attachDialog(page, testInfo, `landing-plan-${theme.family}-${theme.mode}-${viewport.name}`);
+    await captureDialogEvidence(page.getByRole('dialog', { name: 'Add momentum to your learning' }), testInfo, `landing-plan-${theme.family}-${theme.mode}-${viewport.name}`);
     await page.getByRole('button', { name: 'Close' }).first().click();
     await expect(page.getByRole('dialog')).toBeHidden();
 
@@ -75,6 +98,31 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(page.getByRole('button', { name: 'Download account data (JSON)' })).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Delete my account' })).toBeEnabled();
     await expectAccessibleAndContained(page, `${theme.family}-${theme.mode}-${viewport.name}-account-dialog`);
-    await attachDialog(page, testInfo, `landing-account-${theme.family}-${theme.mode}-${viewport.name}`);
+    const accountDialog = page.getByRole('dialog', { name: 'Account data' });
+    await captureDialogEvidence(accountDialog, testInfo, `landing-account-${theme.family}-${theme.mode}-${viewport.name}`);
+    await page.getByRole('button', { name: 'Delete my account' }).click();
+    await expect(page.getByLabel(/Type XÓA TÀI KHOẢN/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm permanent deletion' })).toBeDisabled();
+    await expectAccessibleAndContained(page, `${theme.family}-${theme.mode}-${viewport.name}-account-delete-confirmation`);
+    const accountConfirmationScreenshot = await captureDialogEvidence(accountDialog, testInfo, `landing-account-delete-confirmation-${theme.family}-${theme.mode}-${viewport.name}`);
+    await page.getByRole('button', { name: 'Close' }).last().click();
+    await expect(page.getByRole('dialog')).toBeHidden();
+
+    await page.locator(`[data-library-card-id="${reportCard.id}"] .library-word-open`).click();
+    await page.getByRole('button', { name: /Reveal the Vietnamese meaning of resilient/ }).click();
+    await page.getByRole('button', { name: 'Report incorrect card' }).click();
+    await expect(page.getByRole('heading', { name: 'Report a wrong card' })).toBeVisible();
+    await expectAccessibleAndContained(page, `${theme.family}-${theme.mode}-${viewport.name}-report-request`);
+    const reportDialog = page.getByRole('dialog', { name: 'Report a wrong card' });
+    const reportRequestScreenshot = await captureDialogEvidence(reportDialog, testInfo, `landing-report-request-${theme.family}-${theme.mode}-${viewport.name}`);
+    await page.getByLabel('Note').fill('The Vietnamese meaning needs review.');
+    await page.getByRole('button', { name: 'Send report' }).click();
+    await expect(reportDialog.getByRole('status')).toContainText('Thank you. Your report has been sent for review.');
+    await expectAccessibleAndContained(page, `${theme.family}-${theme.mode}-${viewport.name}-report-submitted`);
+    const reportSubmittedScreenshot = await captureDialogEvidence(reportDialog, testInfo, `landing-report-submitted-${theme.family}-${theme.mode}-${viewport.name}`);
+
+    expectDialogSnapshot(accountConfirmationScreenshot, `landing-account-delete-confirmation-${theme.family}-${theme.mode}-${viewport.name}.png`);
+    expectDialogSnapshot(reportRequestScreenshot, `landing-report-request-${theme.family}-${theme.mode}-${viewport.name}.png`);
+    expectDialogSnapshot(reportSubmittedScreenshot, `landing-report-submitted-${theme.family}-${theme.mode}-${viewport.name}.png`);
   });
 }
