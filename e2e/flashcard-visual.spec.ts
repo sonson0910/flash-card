@@ -272,78 +272,85 @@ test('reduced motion changes the card face without spatial animation', async ({ 
   await expect(shell.locator('.flashcard-back')).toHaveCSS('transform', 'none');
   const transitionDuration = await shell.locator('.flashcard-back').evaluate(element => parseFloat(getComputedStyle(element).transitionDuration));
   expect(transitionDuration).toBeLessThanOrEqual(0.001);
-});
-
-test('Crystal dark card captures the Canvas hover, starred, blind, and playing states', async ({ page, seedCards, signIn }, testInfo) => {
-  const audioBody = Buffer.alloc(44 + 16_000);
-  audioBody.write('RIFF', 0);
-  audioBody.writeUInt32LE(audioBody.length - 8, 4);
-  audioBody.write('WAVEfmt ', 8);
-  audioBody.writeUInt32LE(16, 16);
-  audioBody.writeUInt16LE(1, 20);
-  audioBody.writeUInt16LE(1, 22);
-  audioBody.writeUInt32LE(8_000, 24);
-  audioBody.writeUInt32LE(16_000, 28);
-  audioBody.writeUInt16LE(2, 32);
-  audioBody.writeUInt16LE(16, 34);
-  audioBody.write('data', 36);
-  audioBody.writeUInt32LE(16_000, 40);
-  await page.route(fixtureAudioUrl, route => route.fulfill({ body: audioBody, contentType: 'audio/wav' }));
-  await seedCards([{
-    ...card,
-    difficulty: 'good',
-    nextReviewDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-  }]);
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.addInitScript(() => {
-    localStorage.setItem('sonflash_theme_family', 'crystal');
-    localStorage.setItem('lingoflash_theme', 'dark');
-    HTMLMediaElement.prototype.play = () => Promise.resolve();
-    HTMLMediaElement.prototype.pause = () => undefined;
+  await expect(shell).toHaveScreenshot('flashcard-crystal-dark-mobile-reduced-motion-back.png', {
+    animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
   });
-  await signIn(page, '/?view=library&locale=en');
-  await page.locator('.library-word-open').click();
-
-  const shell = page.getByRole('group', { name: /luminous flashcard/i });
-  const captureState = async (name: string) => {
-    const screenshot = testInfo.outputPath(name);
-    await shell.screenshot({ path: screenshot, animations: 'disabled', caret: 'hide' });
-    await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
-    await expect(shell).toHaveScreenshot(name, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
-  };
-  const face = shell.locator('.flashcard-face');
-  const spotlight = shell.locator('[data-card-effect="spotlight"]');
-  await expect(shell).toHaveAttribute('data-card-tier', 'learning');
-  await expect(face).toBeVisible();
-  await expectCardPhotoReady(shell);
-
-  const box = await shell.boundingBox();
-  if (!box) throw new Error('Flashcard shell is not measurable');
-  await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.2);
-  await expect(shell).toHaveAttribute('data-card-hovered', 'true');
-  await expect(spotlight).toHaveCSS('opacity', '1');
-  await expect.poll(() => spotlight.evaluate(element => element.style.getPropertyValue('--spotlight-x'))).not.toBe('');
-  await captureState('flashcard-crystal-dark-desktop-hover-spotlight.png');
-
-  const star = shell.locator('[data-card-effect="star-pop"]');
-  await expect(star).toHaveAccessibleName('Star this word');
-  await star.click();
-  await expect(star).toHaveAttribute('aria-pressed', 'true');
-  await expect(shell.locator('.flashcard-star-selected')).toBeVisible();
-  await captureState('flashcard-crystal-dark-desktop-starred.png');
-
-  const blind = shell.getByRole('button', { name: 'Hide image and definition' });
-  await blind.click();
-  await expect(shell.getByRole('button', { name: 'Reveal image and definition' })).toHaveAttribute('aria-pressed', 'true');
-  await expect(shell).toHaveAttribute('data-card-blind', 'true');
-  await expect(shell.locator('[data-card-effect="blind-image"]')).toHaveAttribute('aria-hidden', 'true');
-  await captureState('flashcard-crystal-dark-desktop-blind.png');
-
-  const audio = shell.getByRole('button', { name: 'Play pronunciation' });
-  await audio.click();
-  await expect(audio.locator('.wave-bar-1')).toBeVisible();
-  await expect(audio.locator('.wave-bar-1')).toHaveCSS('animation-name', 'audio-wave-bounce');
-  await captureState('flashcard-crystal-dark-desktop-playing.png');
-  await expectNoBlockingViolations(page);
 });
+
+for (const theme of themes) {
+  for (const viewport of viewports) {
+    test(`${theme.family} ${theme.mode} card captures Canvas interaction states at ${viewport.name}`, async ({ page, seedCards, signIn }, testInfo) => {
+      const audioBody = Buffer.alloc(44 + 16_000);
+      audioBody.write('RIFF', 0);
+      audioBody.writeUInt32LE(audioBody.length - 8, 4);
+      audioBody.write('WAVEfmt ', 8);
+      audioBody.writeUInt32LE(16, 16);
+      audioBody.writeUInt16LE(1, 20);
+      audioBody.writeUInt16LE(1, 22);
+      audioBody.writeUInt32LE(8_000, 24);
+      audioBody.writeUInt32LE(16_000, 28);
+      audioBody.writeUInt16LE(2, 32);
+      audioBody.writeUInt16LE(16, 34);
+      audioBody.write('data', 36);
+      audioBody.writeUInt32LE(16_000, 40);
+      await page.route(fixtureAudioUrl, route => route.fulfill({ body: audioBody, contentType: 'audio/wav' }));
+      await seedCards([{
+        ...card,
+        difficulty: 'good',
+        nextReviewDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      }]);
+      await page.setViewportSize(viewport);
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      await page.addInitScript(({ family, mode }) => {
+        localStorage.setItem('sonflash_theme_family', family);
+        localStorage.setItem('lingoflash_theme', mode);
+        HTMLMediaElement.prototype.play = () => Promise.resolve();
+        HTMLMediaElement.prototype.pause = () => undefined;
+      }, theme);
+      await signIn(page, '/?view=library&locale=en');
+      await page.locator('.library-word-open').click();
+
+      const shell = page.getByRole('group', { name: /luminous flashcard/i });
+      const captureState = async (name: string) => {
+        const screenshot = testInfo.outputPath(name);
+        await shell.screenshot({ path: screenshot, animations: 'disabled', caret: 'hide' });
+        await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
+        await expect(shell).toHaveScreenshot(name, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
+      };
+      const face = shell.locator('.flashcard-face');
+      const spotlight = shell.locator('[data-card-effect="spotlight"]');
+      await expect(shell).toHaveAttribute('data-card-tier', 'learning');
+      await expect(face).toBeVisible();
+      await expectCardPhotoReady(shell);
+
+      const box = await shell.boundingBox();
+      if (!box) throw new Error('Flashcard shell is not measurable');
+      await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.2);
+      await expect(shell).toHaveAttribute('data-card-hovered', 'true');
+      await expect(spotlight).toHaveCSS('opacity', '1');
+      await expect.poll(() => spotlight.evaluate(element => element.style.getPropertyValue('--spotlight-x'))).not.toBe('');
+      await captureState(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-hover-spotlight.png`);
+
+      const star = shell.locator('[data-card-effect="star-pop"]');
+      await expect(star).toHaveAccessibleName('Star this word');
+      await star.click();
+      await expect(star).toHaveAttribute('aria-pressed', 'true');
+      await expect(shell.locator('.flashcard-star-selected')).toBeVisible();
+      await captureState(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-starred.png`);
+
+      const blind = shell.getByRole('button', { name: 'Hide image and definition' });
+      await blind.click();
+      await expect(shell.getByRole('button', { name: 'Reveal image and definition' })).toHaveAttribute('aria-pressed', 'true');
+      await expect(shell).toHaveAttribute('data-card-blind', 'true');
+      await expect(shell.locator('[data-card-effect="blind-image"]')).toHaveAttribute('aria-hidden', 'true');
+      await captureState(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-blind.png`);
+
+      const audio = shell.getByRole('button', { name: 'Play pronunciation' });
+      await audio.click();
+      await expect(audio.locator('.wave-bar-1')).toBeVisible();
+      await expect(audio.locator('.wave-bar-1')).toHaveCSS('animation-name', 'audio-wave-bounce');
+      await captureState(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-playing.png`);
+      await expectNoBlockingViolations(page);
+    });
+  }
+}
