@@ -81,6 +81,8 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 
 > **Paths architecture gate 2026-09-28.** `CatalogWorkspace.tsx` lấy kiểu database từ chữ ký service `.ts`, không import `firebase/firestore` tại presentation boundary. Architecture Analyzer focused 12/12 pass sau khi gate rộng phát hiện một violation. Không đổi hành vi hoặc Firestore I/O.
 
+> **Functions test runner 2026-09-28.** Một lượt `verify:deploy` fail 3 callable tests do Vitest chạy nhiều worker khiến import vượt deadline; ba file fail pass 15/15 và toàn suite Functions pass 430/430 khi chạy 1 worker, không sửa timeout/assertion. `functions/vitest.config.ts` nay cố định 1 fork worker để chính gate mặc định dùng cùng cấu hình; focused callable 15/15 pass. Không đổi production behavior hoặc Firestore I/O.
+
 Stats/ActivityHeatmap/catalog tests; e2e/paths-progress-visual.spec.ts và catalog-workspace.spec.ts; new weekly-recap unit+export journey; gates chung.
 
 Hợp đồng chung: [acceptance-contract.md](acceptance-contract.md). Tên test mới là đề xuất; trước chạy phải kiểm inventory file thực, không báo file vắng là PASS. Với flow có mutation, test dùng emulator/fixtures, không dữ liệu người học hay Gemini thật.
