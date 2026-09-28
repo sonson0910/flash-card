@@ -1,6 +1,6 @@
 ---
-title: "Pending decision — Paths and Progress Canvas data"
-status: pending-owner-decision
+title: "Approved contract — Paths and Progress Canvas data"
+status: approved by owner 2026-09-28; local implementation pending
 ---
 
 # Paths and Progress Canvas data
@@ -16,7 +16,7 @@ Progress currently uses XP history for its activity heatmap. XP is not a count o
 | Canvas datum | Proposed source | Incremental Firestore document I/O |
 |---|---|---|
 | Unit title/order/count and preview | Versioned unit descriptors in the downloaded catalog artifact; validate against membership at build time and cache with the catalog | 0 reads, 0 writes |
-| Active unit and unit completion | A maintained, server-owned progress projection; its write path must be designed against create/review/delete/import before implementation | Cost not approved or estimated yet |
+| Active unit and unit completion | A maintained, server-owned progress projection | +1 write per canonical create/review/delete with a real lexemeId; 1 query and P document reads per Paths open |
 | Unit ETA | `dailyPacePreference` only if owner defines it as new words per day; otherwise unavailable | 0 reads, 0 writes if device-local |
 | Reviews by day and recall buckets | Bounded 182-day, target-language-scoped projection inside the already-read/written `profile/stats` document, updated in the strict-review transaction | 0 additional reads, 0 additional writes per review or hydration |
 | Due forecast, today through day 13 | Reuse due-today aggregate; 13 bounded aggregate count queries for future days, cached by owner/language/local date | 13 aggregate query reads on first daily hydration, 0 on same-day cache hit; 0 writes |
@@ -24,14 +24,15 @@ Progress currently uses XP history for its activity heatmap. XP is not a count o
 
 History and mastery begin on the date the new projection becomes authoritative. Legacy XP and capped card histories cannot reconstruct complete review counts. The UI must label older coverage as partial unless a separately approved backfill exists. Existing card writes are counted as existing writes; added fields increase document/index bytes.
 
-## Decisions required before implementation
+## Owner decisions
 
-1. Approve a versioned catalog unit contract and a maintained active-unit/progress source. Define whether Continue starts existing review, adds unit words, or performs another action. The current `learning_states` reader is not sufficient without a proven writer.
-2. Define `dailyPacePreference` as new words per day for ETA, or omit ETA until a separate pace model exists.
+1. **Approved 2026-09-28:** Catalog V2 unit descriptors and server-owned progress projection. Continue opens a unit preview, requests explicit card creation for missing words, then starts that unit's study session. The current `learning_states` reader is not sufficient without a proven writer.
+2. **Approved 2026-09-28:** `dailyPacePreference` means new words per day for a device-local ETA.
 3. **Approved 2026-09-28:** match Library's Mastered definition: `difficulty=easy` or `interval` ≥21 days (`fsrs.scheduledDays` is a fallback only when `interval` is absent). Clear `masteredAt` when a later review falls below that threshold.
 4. **Approved 2026-09-27:** 13 cached aggregate count queries for the due forecast on the first Progress open per owner/target language/local date. A same-day cache hit uses no forecast queries.
 5. **Approved 2026-09-27:** add server-owned `masteredAt` on the existing card write, Rules/index changes, and a bounded 0–4 document read query per Progress hydration.
-6. Approve forward-only activity/mastery coverage and target-language scope. Account-wide XP remains separately labelled.
+6. **Approved 2026-09-28:** forward-only activity/mastery coverage and target-language scope. Account-wide XP remains separately labelled.
+7. **Approved 2026-09-28:** the wave uses the real catalog's three tracks with 15 units each; six shelves and 12 units in the Canvas are illustrative, not the content authority.
 
 The forecast cache uses one browser-storage key per owner/language with the
 local date inside its value. It stores counts only, validates all 13 dates and
@@ -42,11 +43,11 @@ count leaves the daily reservation in place to avoid repeated billed queries.
 
 The current phase-06 Canvas comparison checkbox remains open. UI can display honest unavailable states without additional I/O, but those states do not make the ready-state Canvas MATCH.
 
-## Phase 06 proposal for owner review (not approved)
+## Approved local implementation contract
 
-This proposal fills the remaining real-data gaps for Paths unit shelves, Continue,
-unit ETA, Progress review activity, and range controls. It does not authorize an
-implementation, a migration, or a backfill.
+This contract fills the remaining real-data gaps for Paths unit shelves, Continue,
+unit ETA, Progress review activity, and range controls. The owner approved local
+implementation only; it does not authorize a production migration or backfill.
 
 ### 1. Catalog V2 unit descriptors
 
@@ -160,7 +161,7 @@ XP remains a separate metric and cannot be presented as course or review activit
 The contract supports only the 30-day and 26-week ranges. All time is unsupported
 until the owner funds and approves a separate lifetime-activity contract.
 
-### Owner decisions requested
+### Approved scope and costs
 
 Approve or amend all of the following as one Phase 06 contract:
 
@@ -177,10 +178,8 @@ Approve or amend all of the following as one Phase 06 contract:
 5. `reviewActivityV1` stores 182 days per target language inside `profile/stats`,
    with coverage-start dates, the stated receipt-time/time-zone rule, parser change,
    30-day/26-week ranges, and no incremental documents.
-6. The Canvas/content decision: whether Paths should show six shelves or the three
-   real tracks, and whether the authoritative current unit count is 12 or 15. No UI
-   or schema count follows from either conflicting visual example until this is
-   decided.
+6. Paths uses the real three tracks and 15 units per track in this wave. This
+   content count is validated editorially and is not hard-coded into the schema.
 
 ### Rollout and rollback
 

@@ -339,3 +339,18 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
   thường **1 document read** cho mỗi lần tạo, contention có thể retry read;
   **0 writes, queries, subscriptions mới**. Xóa deck giữ một profile write hiện
   có và xóa đúng key preset. Chỉ code/test local, không deploy.
+
+## 2026-09-28 — Owner duyệt Paths/Progress unit và review activity
+
+- Duyệt toàn bộ [contract-paths-progress-canvas.md](contract-paths-progress-canvas.md)
+  cho triển khai local: Catalog V2 có descriptor unit; projection server-only
+  theo canonical card có `lexemeId`; Continue mở preview và chỉ thêm thẻ sau
+  xác nhận; ETA dùng daily pace trên thiết bị; reviewActivityV1 nằm trong stats
+  đang được đọc/ghi, giới hạn 182 ngày mỗi target language.
+- Projection thêm **1 document write** cho mỗi create/review/delete canonical có
+  `lexemeId`. Mỗi lần mở Paths thêm **1 query và P document reads** với P là số
+  projection của target language; không có listener hoặc query theo unit.
+  Review activity thêm **0 document reads/writes** trong strict review và hydrate,
+  nhưng tăng bytes của stats. Không backfill dữ liệu cũ.
+- Nội dung wave này theo catalog thật: **3 track × 15 unit**. Sáu shelf và 12
+  unit trong Canvas không là nguồn dữ liệu chuẩn. Không deploy/migrate production.
