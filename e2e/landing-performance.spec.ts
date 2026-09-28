@@ -106,13 +106,23 @@ test('atmosphere controls activate every video without moving the page', async (
 
 test('failed runtime import restores landing and retries with a fresh runtime entry', async ({ page, seedCards, signInInPlace }) => {
   await seedCards(landingCards);
+  const initialRuntimeScript = /\/assets\/AppRuntimeInitial\.virtual-[^/]+\.js$/i;
+  const retryRuntimeScript = /\/assets\/AppRuntimeRetry\.virtual-[^/]+\.js$/i;
   const requests: string[] = [];
+  const failedRuntimeRequests: string[] = [];
+  const finishedRuntimeRequests: string[] = [];
   let documentRequests = 0;
   let blockRuntime = true;
-  await page.route(/\/assets\/AppRuntimeInitial\.virtual-[^/]+\.js$/i, route => (blockRuntime ? route.abort() : route.continue()));
+  await page.route(initialRuntimeScript, route => (blockRuntime ? route.abort() : route.continue()));
   page.on('request', request => {
     requests.push(request.url());
     if (request.resourceType() === 'document' && request.frame() === page.mainFrame()) documentRequests += 1;
+  });
+  page.on('requestfailed', request => {
+    if (initialRuntimeScript.test(request.url()) || retryRuntimeScript.test(request.url())) failedRuntimeRequests.push(request.url());
+  });
+  page.on('requestfinished', request => {
+    if (initialRuntimeScript.test(request.url()) || retryRuntimeScript.test(request.url())) finishedRuntimeRequests.push(request.url());
   });
 
   await page.goto('/?view=landing');
@@ -123,6 +133,9 @@ test('failed runtime import restores landing and retries with a fresh runtime en
   await expect(page.getByRole('heading', { name: /Remember words\. Use them when it matters\./ })).toBeHidden();
   await expect(page.getByRole('button', { name: 'Retry workspace', exact: true })).toBeVisible();
   await expect(page).toHaveURL('http://127.0.0.1:4173/');
+  const initialRequestsBeforeRetry = requests.filter(url => initialRuntimeScript.test(url));
+  expect(initialRequestsBeforeRetry.length).toBeGreaterThan(0);
+  expect(failedRuntimeRequests).toEqual(initialRequestsBeforeRetry);
 
   blockRuntime = false;
   await page.getByRole('button', { name: 'Retry workspace', exact: true }).click();
@@ -139,8 +152,11 @@ test('failed runtime import restores landing and retries with a fresh runtime en
   await signInInPlace(page);
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
   expect(documentRequests).toBe(2);
-  const runtimeRequests = requests.filter(url => /\/assets\/AppRuntime(?:Initial|Retry)\.virtual-[^/]+\.js$/i.test(url));
-  expect(runtimeRequests).toHaveLength(2);
-  expect(runtimeRequests[0]).toContain('AppRuntimeInitial.virtual-');
-  expect(runtimeRequests[1]).toContain('AppRuntimeRetry.virtual-');
+  const runtimeRequests = requests.filter(url => initialRuntimeScript.test(url) || retryRuntimeScript.test(url));
+  const retryRequestIndex = runtimeRequests.findIndex(url => retryRuntimeScript.test(url));
+  expect(retryRequestIndex).toBe(initialRequestsBeforeRetry.length);
+  expect(runtimeRequests.slice(retryRequestIndex + 1).filter(url => initialRuntimeScript.test(url))).toEqual([]);
+  expect(runtimeRequests.filter(url => retryRuntimeScript.test(url))).toHaveLength(1);
+  expect(failedRuntimeRequests.filter(url => retryRuntimeScript.test(url))).toEqual([]);
+  expect(finishedRuntimeRequests.filter(url => retryRuntimeScript.test(url))).toHaveLength(1);
 });
