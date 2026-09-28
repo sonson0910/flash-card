@@ -8,6 +8,7 @@ import {
 import { scheduleReviewTransition } from '../src/reviewScheduler.js';
 import { resolveJapanesePitchAccent } from '../src/japanesePitch.js';
 import { canonicalCard } from '../src/cardPersistence.js';
+import { createHash } from 'node:crypto';
 
 const snapshot = (exists: boolean, data?: DocumentData): DocumentSnapshot => ({
   exists,
@@ -91,6 +92,12 @@ const reviewRequest = (overrides: Partial<ReviewRequest> = {}): ReviewRequest =>
   ...overrides,
 });
 
+const canonicalLexemeId = () => {
+  const tuple = JSON.stringify(['en', 'lead', 'noun', 'metal']);
+  const bytes = Buffer.from(tuple).toString('hex');
+  return `lexeme-${bytes.slice(0, 90)}-${createHash('sha256').update(`\u0000${bytes}`).digest('hex').slice(0, 24)}`;
+};
+
 const harness = (card = baseCard(), fenced = false, cardPathId = 'word-focus') => {
   const values = new Map<string, DocumentSnapshot>([
     ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
@@ -156,6 +163,31 @@ describe('review persistence', () => {
         expiresAt: expect.any(Date),
       }),
     });
+  });
+
+  it('updates the canonical lexeme projection from the server review result', async () => {
+    const lexemeId = canonicalLexemeId();
+    const stored = {
+      ...baseCard(),
+      id: lexemeId, word: 'lead', normalizedWord: 'lead', normalizedLemma: 'lead',
+      partOfSpeech: 'noun', lexemeId, language: 'en', senseKey: 'metal',
+    };
+    const request = reviewRequest({
+      cardId: lexemeId,
+      rating: 'easy',
+      fields: scheduleReviewTransition(stored, 'easy', new Date('2026-08-24T00:00:00.000Z')),
+    });
+    const test = harness(stored, false, lexemeId);
+
+    await applyReviewForOwner(test.database, 'owner', request);
+
+    expect(test.writes).toContainEqual(expect.objectContaining({
+      path: `users/owner/catalog_progress/${lexemeId}`,
+      data: expect.objectContaining({
+        schemaVersion: 1, ownerId: 'owner', lexemeId, targetLanguage: 'en',
+        status: 'mastered', cardRevision: 4, libraryEpoch: 2,
+      }),
+    }));
   });
 
   it('removes mastery from both persistence and the response after a lapse', async () => {

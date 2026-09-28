@@ -148,6 +148,15 @@ describe('parseBulkCardMutationRequest', () => {
     expect(() => parseBulkCardMutationRequest({ libraryEpoch: 0, patches, deletes: [] })).toThrow();
   });
 
+  it('accounts for a catalog projection as the third delete document', () => {
+    const deletes = Array.from({ length: 134 }, (_, index) => ({
+      cardId: `word-${index}`,
+      baseRevision: 0,
+      opId: `device-a:delete-${index}`,
+    }));
+    expect(() => parseBulkCardMutationRequest({ libraryEpoch: 0, patches: [], deletes })).toThrow();
+  });
+
   it('accepts a request exactly at the document footprint bound', () => {
     const patches = Array.from({ length: 400 }, (_, index) => ({
       cardId: `word-${index}`,
@@ -236,12 +245,30 @@ describe('applyBulkCardMutationsForOwner', () => {
     });
     expect(result.results).toEqual([{
       cardId: 'word-focus', op: 'delete', applied: true, revision: 4, deletedAt: expect.any(String),
+      opId: 'device-a:delete-1', libraryEpoch: 2,
     }]);
     expect(test.deletes).toEqual(['users/owner/cards/word-focus']);
     expect(test.writes).toEqual([{
       path: 'users/owner/card_tombstones/word-focus',
       data: expect.objectContaining({ opId: 'device-a:delete-1', libraryEpoch: 2, revision: 4 }),
     }]);
+  });
+
+  it('removes a canonical card projection with its successful delete', async () => {
+    const test = harness({
+      'users/owner/cards/word-focus': snapshot(true, baseCard({
+        lexemeId: 'lexeme-focus', language: 'en',
+      })),
+    });
+    await applyBulkCardMutationsForOwner(test.database, 'owner', {
+      libraryEpoch: 2,
+      patches: [],
+      deletes: [{ cardId: 'word-focus', baseRevision: 3, opId: 'device-a:delete-1' }],
+    });
+    expect(test.deletes).toEqual(expect.arrayContaining([
+      'users/owner/catalog_progress/lexeme-focus',
+      'users/owner/cards/word-focus',
+    ]));
   });
 
   it('replays an idempotent delete retry without writing again', async () => {
@@ -257,6 +284,7 @@ describe('applyBulkCardMutationsForOwner', () => {
     });
     expect(result.results).toEqual([{
       cardId: 'word-focus', op: 'delete', applied: true, revision: 4, deletedAt: '2026-08-24T00:00:00.000Z',
+      opId: 'device-a:delete-1', libraryEpoch: 2,
     }]);
     expect(test.writes).toEqual([]);
     expect(test.deletes).toEqual([]);

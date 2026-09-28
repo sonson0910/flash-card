@@ -154,6 +154,13 @@ describe('Firestore rules source invariants', () => {
     expect(rules).toMatch(/profileDocId != 'plan'/);
   });
 
+  it('routes catalog-card deletes through trusted code so progress stays atomic', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+    const cardMatch = extractRulesBlock(rules, 'match /users/{userId}/cards/{cardId}');
+
+    expect(cardMatch).toContain("!resource.data.keys().hasAny(['lexemeId'])");
+  });
+
   it('schema-locks bounded gamification documents without a generic-profile bypass', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
     const statsSchema = extractRulesBlock(rules, 'function isValidGamificationStats(data)');
@@ -315,6 +322,17 @@ describe('Firestore rules source invariants', () => {
     expect(learningStateMatch).toMatch(/allow create, update, delete: if false/);
     expect(learningStateMatch).not.toMatch(/request\.resource/);
     expect(rules).not.toContain('function isValidLearningStateV3');
+  });
+
+  it('keeps catalog progress owner-readable and server-only', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+    const progressMatch = extractRulesBlock(
+      rules,
+      'match /users/{userId}/catalog_progress/{lexemeId}',
+    );
+
+    expect(progressMatch).toContain('allow read: if isOwner(userId);');
+    expect(progressMatch).toContain('allow create, update, delete: if false;');
   });
 
   it('requires immutable matching reservations for legacy and canonical identity repair', () => {

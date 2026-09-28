@@ -209,6 +209,29 @@ describe('card persistence', () => {
     expect(harness.transaction.get).toHaveBeenCalledTimes(6);
   });
 
+  it('projects a newly created canonical lexeme in the same transaction', async () => {
+    const lexemeId = canonicalLexemeId();
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+    ]));
+
+    await createCardForOwner(harness.database, 'owner', {
+      ...card,
+      word: 'lead', normalizedWord: 'lead', normalizedLemma: 'lead', partOfSpeech: 'noun',
+      lexemeId, language: 'en', senseKey: 'metal',
+    }, { maximumCards: 5, libraryEpoch: 2 });
+
+    expect(harness.writes).toContainEqual(expect.objectContaining({
+      method: 'set',
+      path: `users/owner/catalog_progress/${lexemeId}`,
+      data: expect.objectContaining({
+        schemaVersion: 1, ownerId: 'owner', lexemeId, targetLanguage: 'en',
+        status: 'active', cardRevision: 1, libraryEpoch: 2,
+      }),
+    }));
+  });
+
   it('keeps a plain Korean card separate from an English card with the same spelling and preserves translationLanguage', async () => {
     const englishHarness = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],

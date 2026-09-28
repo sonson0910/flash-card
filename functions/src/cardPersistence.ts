@@ -12,6 +12,7 @@ import {
   parseCardSourceMetadata,
 } from './inputValidation.js';
 import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
+import { upsertCatalogProgressForCard } from './catalogProgressPersistence.js';
 import {
   applyLibraryFacetMutationInTransaction,
   libraryFacetRestoreOperationId,
@@ -946,6 +947,7 @@ export async function createCardForOwner(
       });
       await applyRestoreFacetDelta();
       transaction.create(reservation, expectedReservation);
+      upsertCatalogProgressForCard(database, transaction, ownerId, createdCard);
       if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
       else transaction.create(canonical, createdCard);
       transaction.set(resourceUsage, {
@@ -962,6 +964,7 @@ export async function createCardForOwner(
     });
     await applyRestoreFacetDelta();
     if (existingCard && !existingReservation) transaction.create(reservation, expectedReservation);
+    upsertCatalogProgressForCard(database, transaction, ownerId, createdCard);
     if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
     else transaction.create(canonical, createdCard);
     return result;

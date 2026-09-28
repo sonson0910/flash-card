@@ -885,6 +885,9 @@ service cloud.firestore {
       allow update: if isOwner(userId) && canPatchOwnedCard(userId, cardId, request.resource.data);
       allow delete: if isOwner(userId)
         && !hasActiveLibraryMigrationFence(userId)
+        // Catalog cards have a server-owned progress projection. Their delete
+        // must go through the callable so both documents change atomically.
+        && !resource.data.keys().hasAny(['lexemeId'])
         && (
           isOldCardGeneration(userId, resource.data)
           || hasValidDeletionBarrier(userId, cardId, resource.data)
@@ -1076,6 +1079,13 @@ service cloud.firestore {
     // through future trusted server/Admin code, where strict parsing and atomic
     // revision/epoch checks can be enforced together without a bypass path.
     match /users/{userId}/learning_states/{lexemeId} {
+      allow read: if isOwner(userId);
+      allow create, update, delete: if false;
+    }
+
+    // Paths joins this server-owned projection with the downloaded catalog.
+    // Only trusted callable code creates, updates, or removes it.
+    match /users/{userId}/catalog_progress/{lexemeId} {
       allow read: if isOwner(userId);
       allow create, update, delete: if false;
     }

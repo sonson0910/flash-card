@@ -5,6 +5,7 @@ import { InputValidationError } from './inputValidation.js';
 import { canonicalCard, serializeCardResponse, type CardRecord } from './cardPersistence.js';
 import { scheduleReviewTransition } from './reviewScheduler.js';
 import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
+import { upsertCatalogProgressForCard } from './catalogProgressPersistence.js';
 import {
   commitVerifiedGamification,
   prepareVerifiedGamification,
@@ -450,6 +451,7 @@ export async function applyReviewForOwner(
       schemaVersion: 2,
       updatedAt,
     });
+    upsertCatalogProgressForCard(database, transaction, ownerId, responseCard);
     const ceremonyEvents: ReviewCeremonyEvent[] = [
       ...(isMastered(candidate) && !isMastered(stored) ? ['tierup'] as const : []),
       ...(gamification?.events ?? []),

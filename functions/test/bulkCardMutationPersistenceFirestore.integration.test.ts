@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
 import { getFirestore, type DocumentReference, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -6,9 +6,55 @@ import {
   applyBulkCardMutationsForOwner,
   BulkMutationEpochError,
 } from '../src/bulkCardMutationPersistence.js';
+import { createCardForOwner } from '../src/cardPersistence.js';
+import { applyReviewForOwner, type ReviewRequest } from '../src/reviewPersistence.js';
+import { scheduleReviewTransition } from '../src/reviewScheduler.js';
 
 const describeWithEmulator = process.env.FIRESTORE_EMULATOR_HOST ? describe : describe.skip;
 const DATABASE_ID = 'ai-studio-945b4052-4462-4668-8936-277f09f07a37';
+
+const canonicalLexemeId = () => {
+  const tuple = JSON.stringify(['en', 'lead', 'noun', 'metal']);
+  const bytes = Buffer.from(tuple).toString('hex');
+  return `lexeme-${bytes.slice(0, 90)}-${createHash('sha256').update(`\u0000${bytes}`).digest('hex').slice(0, 24)}`;
+};
+
+const canonicalCard = (lexemeId: string) => ({
+  id: lexemeId,
+  word: 'lead',
+  normalizedWord: 'lead',
+  normalizedLemma: 'lead',
+  lexemeId,
+  language: 'en',
+  senseKey: 'metal',
+  translation: 'chì',
+  explanation: 'a metal',
+  explanationTranslation: 'một kim loại',
+  phonetic: '/liːd/',
+  category: 'Basics',
+  emoji: '📝',
+  audioUrl: null,
+  imageUrl: null,
+  imageSearchQuery: 'lead metal',
+  bookmarked: false,
+  difficulty: 'unrated',
+  customDeck: null,
+  reviews: 0,
+  interval: 0,
+  easeFactor: 2.5,
+  correctStreak: 0,
+  partOfSpeech: 'noun',
+  cefrLevel: 'B1',
+  exampleSentence: 'Lead is a metal.',
+  exampleTranslation: 'Chì là một kim loại.',
+  collocations: [],
+  synonyms: [],
+  antonyms: [],
+  register: '',
+  commonMistake: '',
+  reviewHistory: [],
+  createdAt: '2026-08-01T00:00:00.000Z',
+});
 
 describeWithEmulator('Firestore bulk card mutation persistence', () => {
   let app: App;
@@ -87,7 +133,10 @@ describeWithEmulator('Firestore bulk card mutation persistence', () => {
       deletes: [{ cardId: 'card-c', baseRevision: 1, opId }],
     });
     expect(first.results).toEqual([
-      { cardId: 'card-c', op: 'delete', applied: true, revision: 2, deletedAt: expect.any(String) },
+      {
+        cardId: 'card-c', op: 'delete', applied: true, revision: 2, deletedAt: expect.any(String),
+        opId, libraryEpoch: 0,
+      },
     ]);
 
     const [cardAfterDelete, tombstone] = await Promise.all([
@@ -106,8 +155,79 @@ describeWithEmulator('Firestore bulk card mutation persistence', () => {
       deletes: [{ cardId: 'card-c', baseRevision: 1, opId }],
     });
     expect(replay.results).toEqual([
-      { cardId: 'card-c', op: 'delete', applied: true, revision: 2, deletedAt: expect.any(String) },
+      {
+        cardId: 'card-c', op: 'delete', applied: true, revision: 2, deletedAt: expect.any(String),
+        opId, libraryEpoch: 0,
+      },
     ]);
+  });
+
+  it('keeps canonical projection create, review replay, and delete atomic', async () => {
+    const ownerId = `catalog-progress-${randomUUID()}`;
+    const owner = database.collection('users').doc(ownerId);
+    const lexemeId = canonicalLexemeId();
+    await owner.collection('profile').doc('library_state').set({ libraryEpoch: 0 });
+
+    const created = await createCardForOwner(database, ownerId, canonicalCard(lexemeId), {
+      maximumCards: 5_000,
+      libraryEpoch: 0,
+    });
+    expect(created).toMatchObject({ created: true, card: { id: lexemeId, revision: 1 } });
+    const progressRef = owner.collection('catalog_progress').doc(lexemeId);
+    expect((await progressRef.get()).data()).toMatchObject({
+      schemaVersion: 1, ownerId, lexemeId, targetLanguage: 'en',
+      status: 'active', cardRevision: 1, libraryEpoch: 0,
+    });
+
+    const cardRef = owner.collection('cards').doc(lexemeId);
+    const stored = (await cardRef.get()).data();
+    if (!stored) throw new Error('Canonical card was not persisted.');
+    const reviewedAt = '2026-09-28T00:00:00.000Z';
+    const reviewRequest: ReviewRequest = {
+      opId: `device-a:review-${randomUUID()}`,
+      cardId: lexemeId,
+      baseRevision: 1,
+      libraryEpoch: 0,
+      rating: 'easy' as const,
+      reviewedAt,
+      fields: scheduleReviewTransition(stored, 'easy', new Date(reviewedAt)),
+      fieldMask: [
+        'difficulty', 'nextReviewDate', 'reviews', 'interval', 'easeFactor',
+        'fsrs', 'reviewHistory', 'correctStreak',
+      ],
+    };
+    const reviewed = await applyReviewForOwner(database, ownerId, reviewRequest);
+    expect(reviewed).toMatchObject({ applied: true, duplicate: false, card: { revision: 2 } });
+    expect((await progressRef.get()).data()).toMatchObject({
+      status: 'mastered', cardRevision: 2, libraryEpoch: 0,
+    });
+
+    const replay = await applyReviewForOwner(database, ownerId, reviewRequest);
+    expect(replay).toMatchObject({ applied: true, duplicate: true, card: { revision: 2 } });
+    expect((await progressRef.get()).data()).toMatchObject({ status: 'mastered', cardRevision: 2 });
+
+    const deleteRequest = {
+      libraryEpoch: 0,
+      patches: [],
+      deletes: [{ cardId: lexemeId, baseRevision: 2, opId: `device-a:delete-${randomUUID()}` }],
+    };
+    await applyBulkCardMutationsForOwner(database, ownerId, deleteRequest);
+    const [deletedCard, tombstone, deletedProgress] = await Promise.all([
+      cardRef.get(), owner.collection('card_tombstones').doc(lexemeId).get(), progressRef.get(),
+    ]);
+    expect(deletedCard.exists).toBe(false);
+    expect(tombstone.data()).toMatchObject({ cardId: lexemeId, libraryEpoch: 0, revision: 3 });
+    expect(deletedProgress.exists).toBe(false);
+
+    const deleteReplay = await applyBulkCardMutationsForOwner(database, ownerId, deleteRequest);
+    expect(deleteReplay.results).toEqual([
+      expect.objectContaining({
+        cardId: lexemeId, op: 'delete', applied: true, revision: 3, deletedAt: expect.any(String),
+        opId: deleteRequest.deletes[0].opId, libraryEpoch: 0,
+      }),
+    ]);
+    expect((await owner.collection('card_tombstones').doc(lexemeId).get()).data()).toMatchObject({ revision: 3 });
+    expect((await progressRef.get()).exists).toBe(false);
   });
 
   it('rejects the entire request without writing anything when the caller library epoch is stale', async () => {

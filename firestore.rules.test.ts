@@ -166,6 +166,33 @@ describe('Firestore security rules', () => {
     await assertFails(getDoc(doc(signedOut, 'users/owner/cards/card-1')));
   });
 
+  it('allows only the owner to read catalog progress and denies every client mutation', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'users/owner/catalog_progress/lexeme-lead'), {
+        schemaVersion: 1,
+        ownerId: 'owner',
+        lexemeId: 'lexeme-lead',
+        targetLanguage: 'en',
+        status: 'active',
+        cardRevision: 1,
+        libraryEpoch: 0,
+        updatedAt: '2026-09-28T00:00:00.000Z',
+      });
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const intruder = testEnvironment.authenticatedContext('intruder').firestore();
+    const ownerRef = doc(owner, 'users/owner/catalog_progress/lexeme-lead');
+
+    await assertSucceeds(getDoc(ownerRef));
+    await assertFails(getDoc(doc(intruder, 'users/owner/catalog_progress/lexeme-lead')));
+    await assertFails(updateDoc(ownerRef, { status: 'mastered' }));
+    await assertFails(deleteDoc(ownerRef));
+    await assertFails(setDoc(doc(owner, 'users/owner/catalog_progress/lexeme-new'), {
+      schemaVersion: 1, ownerId: 'owner', lexemeId: 'lexeme-new', targetLanguage: 'en',
+      status: 'active', cardRevision: 1, libraryEpoch: 0,
+    }));
+  });
+
   it('blocks direct owner mutations while the merged migration fence field is active', async () => {
     await seedCurrentCard(testEnvironment, 'owner', 'card-1', validCard());
     await testEnvironment.withSecurityRulesDisabled(async context => {
@@ -1799,6 +1826,34 @@ describe('Firestore security rules', () => {
     await assertFails(updateDoc(tombstone, { revision: 2, opId: 'older-op' }));
     await assertSucceeds(setDoc(tombstone, validTombstone));
     await assertFails(deleteDoc(tombstone));
+  });
+
+  it('denies client deletion of a catalog card so its progress projection cannot be orphaned', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    await assertSucceeds(setDoc(
+      doc(owner, 'users/owner/profile/library_state'),
+      { schemaVersion: 2, libraryEpoch: 9 },
+    ));
+    await seedReservedCard(testEnvironment, 'owner', 'catalog-card', {
+      ...validCard('catalog-card'),
+      libraryEpoch: 9,
+      lexemeId: 'lexeme-catalog-card',
+      language: 'en',
+      normalizedLemma: 'catalog',
+      senseKey: 'default',
+      partOfSpeech: 'noun',
+    });
+    const deletion = writeBatch(owner);
+    deletion.set(doc(owner, 'users/owner/card_tombstones/catalog-card'), {
+      cardId: 'catalog-card',
+      opId: 'delete-catalog-card',
+      libraryEpoch: 9,
+      revision: 2,
+      deletedAt: '2026-09-28T00:00:00.000Z',
+    });
+    deletion.delete(doc(owner, 'users/owner/cards/catalog-card'));
+
+    await assertFails(deletion.commit());
   });
 
   it('allows a newer tombstone libraryEpoch to reset revision to one', async () => {

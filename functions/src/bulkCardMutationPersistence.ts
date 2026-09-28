@@ -8,11 +8,13 @@ import type {
 import { FieldValue } from 'firebase-admin/firestore';
 import { InputValidationError } from './inputValidation.js';
 import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
+import { deleteCatalogProgressForCard } from './catalogProgressPersistence.js';
 
 export const MAX_PROTOCOL_COUNTER = Number.MAX_SAFE_INTEGER;
 
 // Firestore transactions cap the number of documents they can touch at 500.
-// Every delete reads and writes two documents (the card and its tombstone),
+// Every delete reads and writes three documents (the card, its tombstone, and
+// its catalog projection),
 // a patch touches one, and the shared library-state read costs one more, so
 // this bound keeps every request safely under that ceiling regardless of mix.
 export const MAX_BULK_MUTATION_DOCUMENTS = 400;
@@ -59,7 +61,15 @@ export type BulkMutationConflictReason =
 export type BulkCardMutationItemResult =
   | { cardId: string; op: 'patch'; applied: true; revision: number }
   | { cardId: string; op: 'patch'; applied: false; reason: BulkMutationConflictReason; currentRevision?: number }
-  | { cardId: string; op: 'delete'; applied: true; revision: number; deletedAt: string }
+  | {
+    cardId: string;
+    op: 'delete';
+    applied: true;
+    revision: number;
+    deletedAt: string;
+    opId: string;
+    libraryEpoch: number;
+  }
   | { cardId: string; op: 'delete'; applied: false; reason: 'revision-conflict'; currentRevision: number };
 
 export type BulkCardMutationResult = {
@@ -184,10 +194,10 @@ export function parseBulkCardMutationRequest(value: unknown): BulkCardMutationRe
   if (totalCommands < 1) {
     throw new InputValidationError('Bulk card mutation request must contain at least one command.');
   }
-  // Each delete touches two documents (card + tombstone); each patch touches
-  // one. Bound the total so the transaction never approaches Firestore's
+  // Each delete has weight three (card + tombstone + catalog projection); each
+  // patch has weight one. Bound the total so the transaction never approaches
   // 500-document-per-transaction ceiling regardless of the patch/delete mix.
-  if (parsedPatches.length + parsedDeletes.length * 2 > MAX_BULK_MUTATION_DOCUMENTS) {
+  if (parsedPatches.length + parsedDeletes.length * 3 > MAX_BULK_MUTATION_DOCUMENTS) {
     throw new InputValidationError('Bulk card mutation request is too large.');
   }
   const seenIds = new Set<string>();
@@ -256,7 +266,9 @@ function resolvePatchResult(
 }
 
 function resolveDeleteResult(
+  database: Firestore,
   transaction: Transaction,
+  ownerId: string,
   cardRef: DocumentReference,
   tombstoneRef: DocumentReference,
   cardSnapshot: DocumentSnapshot,
@@ -274,10 +286,21 @@ function resolveDeleteResult(
   const deletedAt = new Date().toISOString();
 
   if (tombstoneData && tombstoneData.opId === command.opId && tombstoneEpoch === serverEpoch) {
-    return { cardId: command.cardId, op: 'delete', applied: true, revision: safeCounter(tombstoneData.revision, 1) || 1, deletedAt: String(tombstoneData.deletedAt ?? deletedAt) };
+    return {
+      cardId: command.cardId, op: 'delete', applied: true,
+      revision: safeCounter(tombstoneData.revision, 1) || 1,
+      deletedAt: String(tombstoneData.deletedAt ?? deletedAt),
+      opId: String(tombstoneData.opId), libraryEpoch: tombstoneEpoch,
+    };
   }
   if (!cardData && tombstoneData && tombstoneEpoch === serverEpoch) {
-    return { cardId: command.cardId, op: 'delete', applied: true, revision: safeCounter(tombstoneData.revision, 1) || 1, deletedAt: String(tombstoneData.deletedAt ?? deletedAt) };
+    return {
+      cardId: command.cardId, op: 'delete', applied: true,
+      revision: safeCounter(tombstoneData.revision, 1) || 1,
+      deletedAt: String(tombstoneData.deletedAt ?? deletedAt),
+      opId: typeof tombstoneData.opId === 'string' ? tombstoneData.opId : command.opId,
+      libraryEpoch: tombstoneEpoch,
+    };
   }
   if (cardData && command.baseRevision !== cardRevision) {
     return { cardId: command.cardId, op: 'delete', applied: false, reason: 'revision-conflict', currentRevision: cardRevision };
@@ -291,8 +314,14 @@ function resolveDeleteResult(
     revision: tombstoneRevision,
     deletedAt,
   }, { merge: false });
-  if (cardData) transaction.delete(cardRef);
-  return { cardId: command.cardId, op: 'delete', applied: true, revision: tombstoneRevision, deletedAt };
+  if (cardData) {
+    deleteCatalogProgressForCard(database, transaction, ownerId, cardData);
+    transaction.delete(cardRef);
+  }
+  return {
+    cardId: command.cardId, op: 'delete', applied: true, revision: tombstoneRevision,
+    deletedAt, opId: command.opId, libraryEpoch: serverEpoch,
+  };
 }
 
 export async function applyBulkCardMutationsForOwner(
@@ -327,7 +356,9 @@ export async function applyBulkCardMutationsForOwner(
     });
     request.deletes.forEach((del, index) => {
       results.push(resolveDeleteResult(
+        database,
         transaction,
+        ownerId,
         deleteCardRefs[index],
         deleteTombstoneRefs[index],
         deleteCardSnapshots[index],

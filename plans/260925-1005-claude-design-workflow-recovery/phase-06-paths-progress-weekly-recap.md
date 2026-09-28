@@ -59,6 +59,8 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 
 > **Progress evidence layout 2026-09-28.** Forecast nay có bar tỷ lệ theo count thật (ngày 0 thẻ có bar 0%) và nhãn ngày/count; ô mastered hiển thị word, translation và ngày từ bốn thẻ đã hydrate. Đã xem tám PNG actual Classic/Crystal × light/dark × desktop/390px, so trực tiếp `ProgressScreen-light.png` và `AnimeProgress-dark.png`, rồi cập nhật đúng tám baseline `progress-evidence-*` Chromium; rerun 8/8 pass. Focused unit 10/10 pass, không thêm Firestore I/O hoặc schema. Canvas checkbox vẫn mở vì Paths unit/review-range contract.
 
+> **Server-owned unit projection 2026-09-28.** Canonical create, strict review và trusted bulk delete cùng transaction ghi/xóa `users/{uid}/catalog_progress/{lexemeId}`; Rules cho owner đọc projection, chặn mọi client write vào đó và chặn direct client delete thẻ có `lexemeId`. Replay không ghi lại projection. Chỉ thẻ có real `lexemeId` phát sinh đúng 1 projection write cho mỗi create/review/delete thành công; không thêm projection read. Functions focused 120/120, Rules source 17/17, Rules emulator 92/92 và projection integration emulator 4/4 pass. Single delete client và Clear Library cần route qua trusted callable trước khi coi projection là đầy đủ; checklist Canvas vẫn mở.
+
 Stats/ActivityHeatmap/catalog tests; e2e/paths-progress-visual.spec.ts và catalog-workspace.spec.ts; new weekly-recap unit+export journey; gates chung.
 
 Hợp đồng chung: [acceptance-contract.md](acceptance-contract.md). Tên test mới là đề xuất; trước chạy phải kiểm inventory file thực, không báo file vắng là PASS. Với flow có mutation, test dùng emulator/fixtures, không dữ liệu người học hay Gemini thật.
