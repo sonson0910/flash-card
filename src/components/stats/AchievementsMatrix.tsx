@@ -1,11 +1,14 @@
-import { Award, Flame, Moon, Sparkles, Star, Target, Trophy } from 'lucide-react';
+import { ArrowLeft, Award, Flame, Moon, Sparkles, Star, Target, Trophy } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { formatNumber } from '../../lib/format';
 import type { LibraryStatsViewModel } from '../../features/library/libraryViewModel';
 
-interface AchievementsMatrixProps { stats: LibraryStatsViewModel; }
+interface AchievementsMatrixProps {
+  stats: LibraryStatsViewModel;
+  readonly onBackToProgress?: () => void;
+}
 
 /** Visual/eligibility state of a badge, derived only from real progress numbers — no invented gating conditions. */
 export type AchievementBadgeVisualState = 'earned' | 'in-progress' | 'locked';
@@ -67,6 +70,7 @@ const text = {
   growingCollection: msg({ id: 'stats.star-collection', message: 'Growing collection' }), growingCollectionDescription: msg({ id: 'stats.star-collection-description', message: 'Collect 500 XP from your study sessions.' }),
   gentleNightStudy: msg({ id: 'stats.bud-night-study', message: 'Gentle night study' }), gentleNightStudyDescription: msg({ id: 'stats.bud-night-study-description', message: 'Return for five active study days.' }),
   studyMilestones: msg({ id: 'stats.study-milestones', message: 'Study milestones' }), wordGarden: msg({ id: 'stats.word-garden', message: 'Your word garden' }), wordGardenDescription: msg({ id: 'stats.word-garden-description', message: 'Small study sessions grow into lasting memory.' }),
+  achievements: msg({ id: 'stats.achievements', message: 'Achievements' }), backToProgress: msg({ id: 'stats.back-to-progress', message: 'Back to Progress' }),
 };
 
 export function findNewlyUnlockedBadgeIds(previous: ReadonlySet<string>, current: ReadonlySet<string>): string[] {
@@ -85,7 +89,7 @@ export const achievementBadgeCopy: Record<AchievementBadgeId, {
   night_owl: { title: text.gentleNightStudy, description: text.gentleNightStudyDescription, tier: text.bud, tierKey: 'bud', icon: Moon, unit: text.days },
 };
 
-export function AchievementsMatrix({ stats }: AchievementsMatrixProps) {
+export function AchievementsMatrix({ stats, onBackToProgress }: AchievementsMatrixProps) {
   const { _ } = useLingui();
   const badgeStats = computeAchievementBadgeStats(stats);
   const badges: Badge[] = badgeStats.map(stat => {
@@ -126,7 +130,7 @@ export function AchievementsMatrix({ stats }: AchievementsMatrixProps) {
   const celebrationMessage = badges.filter(badge => celebratingIds.has(badge.id)).map(badge => `${badge.title} ${_(text.unlocked)}`).join('. ');
   return <section className="achievements-canvas liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 text-[var(--sf-text)] sm:p-7 shadow-[0_28px_70px_-52px_var(--sf-shadow)]" aria-labelledby="achievements-heading">
     <span className="sr-only" aria-live="polite">{celebrationMessage}</span>
-    <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><p className="premium-kicker uppercase tracking-[0.14em]">{_(text.studyMilestones)}</p><h2 id="achievements-heading" className="mt-2 text-balance text-2xl font-black tracking-tight">{_(text.wordGarden)}</h2><p className="mt-1 max-w-2xl text-sm text-[var(--sf-text-muted)]">{_(text.wordGardenDescription)}</p></div><div className="inline-flex items-center gap-2 self-start rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-1.5 text-xs font-bold text-[var(--sf-text)] sm:self-auto"><Star size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" /><span>{formatNumber(unlockedIds.size)} / {formatNumber(badges.length)} {_(text.unlocked)}</span></div></div>
+    <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div>{onBackToProgress && <button type="button" onClick={onBackToProgress} className="mb-5 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"><ArrowLeft size={16} aria-hidden="true" />{_(text.backToProgress)}</button>}<p className="premium-kicker uppercase tracking-[0.14em]">{onBackToProgress ? _(text.achievements) : _(text.studyMilestones)}</p><h2 id="achievements-heading" className="mt-2 text-balance text-2xl font-black tracking-tight">{_(text.wordGarden)}</h2><p className="mt-1 max-w-2xl text-sm text-[var(--sf-text-muted)]">{_(text.wordGardenDescription)}</p></div><div className="inline-flex items-center gap-2 self-start rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-1.5 text-xs font-bold text-[var(--sf-text)] sm:self-auto"><Star size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" /><span>{formatNumber(unlockedIds.size)} / {formatNumber(badges.length)} {_(text.unlocked)}</span></div></div>
     <ul className="mb-5 flex flex-wrap items-center gap-4 text-[11px] font-bold text-[var(--sf-text-muted)]" aria-label={_(text.legendLabel)}>
       <li className="flex items-center gap-1.5"><span aria-hidden="true" className="size-2 rounded-full bg-[var(--sf-brand)]" />{_(text.unlocked)}</li>
       <li className="flex items-center gap-1.5"><span aria-hidden="true" className="size-2 rounded-full border border-current" />{_(text.inProgress)}</li>

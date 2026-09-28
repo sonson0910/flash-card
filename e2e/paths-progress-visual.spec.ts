@@ -332,6 +332,33 @@ for (const theme of themes) for (const viewport of viewports) {
   });
 }
 
+for (const theme of themes) for (const viewport of viewports) {
+  test(`${theme.family} ${theme.mode} achievements are visible at ${viewport.name}`, async ({ page, signIn }, testInfo) => {
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.addInitScript(({ family, mode }) => {
+      localStorage.setItem('sonflash_theme_family', family);
+      localStorage.setItem('lingoflash_theme', mode);
+      localStorage.setItem('sonflash_theme_follow_system', 'false');
+    }, theme);
+    await signIn(page, '/?view=progress&locale=en');
+    await page.getByRole('button', { name: 'View achievements' }).click();
+    await expect(page.getByRole('heading', { name: 'Your word garden' })).toBeVisible();
+    await expect(page.getByText(/\d \/ 6 unlocked/)).toBeVisible();
+    await expectAccessibleAndContained(page, 'Achievements');
+    await expect.poll(() => page.locator('.claude-workspace').evaluate(element => element.scrollTop)).toBe(0);
+    await expect(page).toHaveScreenshot(`achievements-${theme.family}-${theme.mode}-${viewport.name}.png`, {
+      animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
+    });
+    const screenshot = testInfo.outputPath(`achievements-${theme.family}-${theme.mode}-${viewport.name}.png`);
+    await page.screenshot({ path: screenshot, animations: 'disabled', caret: 'hide' });
+    await testInfo.attach('Achievements', { path: screenshot, contentType: 'image/png' });
+    await page.getByRole('button', { name: 'Back to Progress' }).click();
+    await expect(page.getByRole('button', { name: 'View achievements' })).toBeVisible();
+    await expect.poll(() => page.locator('.claude-workspace').evaluate(element => element.scrollTop)).toBe(0);
+  });
+}
+
 for (const theme of themes) {
   for (const viewport of viewports) {
     test(`${theme.family} ${theme.mode} reviewed catalog Paths are visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {

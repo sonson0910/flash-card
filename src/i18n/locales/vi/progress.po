@@ -14,6 +14,11 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:73
+msgid "stats.achievements"
+msgstr "Thành tích"
+
+#. js-lingui-explicit-id
 #: src/components/stats/ActivityHeatmap.tsx:126
 msgid "stats.active-days"
 msgstr "ngày hoạt động"
@@ -30,52 +35,57 @@ msgid "stats.activity-unavailable"
 msgstr "Chưa có dữ liệu hoạt động trước khi bắt đầu ghi nhận"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:62
+#: src/components/stats/AchievementsMatrix.tsx:73
+msgid "stats.back-to-progress"
+msgstr "Quay lại tiến độ"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:65
 msgid "stats.badge-state.in-progress"
 msgstr "Đang thực hiện"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:62
+#: src/components/stats/AchievementsMatrix.tsx:65
 msgid "stats.badge-state.locked"
 msgstr "Chưa bắt đầu"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:66
+#: src/components/stats/AchievementsMatrix.tsx:69
 msgid "stats.bloom-day"
 msgstr "Ngày học rực rỡ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:66
+#: src/components/stats/AchievementsMatrix.tsx:69
 msgid "stats.bloom-day-description"
 msgstr "Nhận 100 XP trong một ngày luyện tập."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:64
+#: src/components/stats/AchievementsMatrix.tsx:67
 msgid "stats.blooming-recall"
 msgstr "Gợi nhớ đang nở rộ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:64
+#: src/components/stats/AchievementsMatrix.tsx:67
 msgid "stats.blooming-recall-description"
 msgstr "Giúp mười từ ổn định trong trí nhớ."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:68
+#: src/components/stats/AchievementsMatrix.tsx:71
 msgid "stats.bud-night-study"
 msgstr "Buổi học đêm nhẹ nhàng"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:68
+#: src/components/stats/AchievementsMatrix.tsx:71
 msgid "stats.bud-night-study-description"
 msgstr "Quay lại học trong năm ngày hoạt động."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:63
+#: src/components/stats/AchievementsMatrix.tsx:66
 msgid "stats.bud-routine"
 msgstr "Thói quen chớm nở"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:63
+#: src/components/stats/AchievementsMatrix.tsx:66
 msgid "stats.bud-routine-description"
 msgstr "Duy trì thói quen học trong ba ngày hoạt động."
 
@@ -130,7 +140,7 @@ msgid "stats.date"
 msgstr "Ngày"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:61
+#: src/components/stats/AchievementsMatrix.tsx:64
 msgid "stats.days"
 msgstr "ngày"
 
@@ -155,7 +165,7 @@ msgid "stats.learning-activity"
 msgstr "Hoạt động học"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:62
+#: src/components/stats/AchievementsMatrix.tsx:65
 msgid "stats.legend.label"
 msgstr "Chú giải trạng thái huy hiệu"
 
@@ -226,7 +236,7 @@ msgid "stats.partial-categories"
 msgstr "Chỉ có dữ liệu trang hiện tại; chưa quét toàn bộ thư viện."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:61
+#: src/components/stats/AchievementsMatrix.tsx:64
 msgid "stats.progress"
 msgstr "Tiến độ"
 
@@ -287,22 +297,22 @@ msgid "stats.show-top-categories"
 msgstr "Hiện 5 danh mục hàng đầu"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:67
+#: src/components/stats/AchievementsMatrix.tsx:70
 msgid "stats.star-collection"
 msgstr "Bộ sưu tập đang lớn dần"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:67
+#: src/components/stats/AchievementsMatrix.tsx:70
 msgid "stats.star-collection-description"
 msgstr "Tích lũy 500 XP từ các buổi học của bạn."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:65
+#: src/components/stats/AchievementsMatrix.tsx:68
 msgid "stats.star-keeper"
 msgstr "Người giữ sao"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:65
+#: src/components/stats/AchievementsMatrix.tsx:68
 msgid "stats.star-keeper-description"
 msgstr "Giúp năm mươi từ tỏa sáng khi đã thành thạo."
 
@@ -313,22 +323,22 @@ msgid "stats.study-activity"
 msgstr "Hoạt động học"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:69
+#: src/components/stats/AchievementsMatrix.tsx:72
 msgid "stats.study-milestones"
 msgstr "Cột mốc học tập"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:60
+#: src/components/stats/AchievementsMatrix.tsx:63
 msgid "stats.tier-bloom"
 msgstr "Bloom"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:60
+#: src/components/stats/AchievementsMatrix.tsx:63
 msgid "stats.tier-bud"
 msgstr "Bud"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:60
+#: src/components/stats/AchievementsMatrix.tsx:63
 msgid "stats.tier-star"
 msgstr "Star"
 
@@ -343,7 +353,7 @@ msgid "stats.total-xp"
 msgstr "tổng XP"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:61
+#: src/components/stats/AchievementsMatrix.tsx:64
 msgid "stats.unlocked"
 msgstr "đã mở khóa"
 
@@ -353,32 +363,32 @@ msgid "stats.value"
 msgstr "Giá trị"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:69
+#: src/components/stats/AchievementsMatrix.tsx:72
 msgid "stats.word-garden"
 msgstr "Khu vườn từ vựng của bạn"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:69
+#: src/components/stats/AchievementsMatrix.tsx:72
 msgid "stats.word-garden-description"
 msgstr "Những buổi học ngắn sẽ nuôi dưỡng trí nhớ bền lâu."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:61
+#: src/components/stats/AchievementsMatrix.tsx:64
 msgid "stats.words"
 msgstr "từ"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:123
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:117
 msgid "weeklyRecap.action.download"
 msgstr "Tải ảnh PNG"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:122
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:116
 msgid "weeklyRecap.action.share"
 msgstr "Chia sẻ"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:104
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:106
 msgid "weeklyRecap.caption.label"
 msgstr "Chú thích"
 
@@ -393,22 +403,22 @@ msgid "weeklyRecap.caption.suggested-quiet"
 msgstr "Một tuần nhẹ nhàng — mai học tiếp nhé."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:97
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:98
 msgid "weeklyRecap.dialog.close"
 msgstr "Đóng"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:96
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:97
 msgid "weeklyRecap.dialog.title"
 msgstr "Tổng kết tuần của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:77
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:78
 msgid "weeklyRecap.empty"
 msgstr "Tuần này chưa có hoạt động học nào. Hãy quay lại sau một lượt ôn để xem tổng kết."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:119
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:113
 msgid "weeklyRecap.export-error"
 msgstr "Không tạo được ảnh. Vui lòng thử lại."
 
@@ -418,22 +428,22 @@ msgid "weeklyRecap.heatmap.label"
 msgstr "XP mỗi ngày trong 7 ngày qua"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:71
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:72
 msgid "weeklyRecap.kicker"
 msgstr "Tổng kết tuần"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:82
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:83
 msgid "weeklyRecap.metric.active-days"
 msgstr "Ngày học"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:83
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:84
 msgid "weeklyRecap.metric.best-day"
 msgstr "Ngày tốt nhất"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:81
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:82
 msgid "weeklyRecap.metric.total-xp"
 msgstr "XP tuần này"
 
@@ -463,12 +473,12 @@ msgid "weeklyRecap.outcome.shared"
 msgstr "Đã chia sẻ."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:116
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:111
 msgid "weeklyRecap.privacy"
 msgstr "Ảnh chia sẻ chỉ chứa những mục bạn bật ở trên. Từ riêng tư không bao giờ được tự động đưa vào."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:96
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:98
 msgid "weeklyRecap.selection.legend"
 msgstr "Hiển thị trên thẻ"
 
@@ -498,6 +508,6 @@ msgid "weeklyRecap.toggle.total-xp"
 msgstr "Tổng XP"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:92
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:94
 msgid "weeklyRecap.unavailable"
 msgstr "Từ của tuần và tỷ lệ nhớ lại cần một nguồn dữ liệu theo tuần đáng tin cậy mà hiện chưa có, nên được bỏ qua thay vì đoán."

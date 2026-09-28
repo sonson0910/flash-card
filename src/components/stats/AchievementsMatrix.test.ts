@@ -1,5 +1,15 @@
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
 import { describe, expect, it } from 'vitest';
-import { achievementBadgeCopy, findNewlyUnlockedBadgeIds, resolveAchievementBadgeState } from './AchievementsMatrix';
+import type { LibraryStatsViewModel } from '../../features/library/libraryViewModel';
+import { achievementBadgeCopy, AchievementsMatrix, findNewlyUnlockedBadgeIds, resolveAchievementBadgeState } from './AchievementsMatrix';
+
+i18n.load('en', {});
+i18n.activate('en');
+
+const stats = (): LibraryStatsViewModel => ({ total: 1, reviewed: 1, learned: 0, learning: 1, dueToday: 1, categoryChart: [], categoryChartIsPartial: false, difficultyChart: [], xpChartData: [{ date: '2026-09-28', XP: 100 }] });
 
 describe('achievement unlock feedback', () => {
   it('celebrates only badges that changed from locked to unlocked', () => {
@@ -44,5 +54,15 @@ describe('achievement badge tier grouping', () => {
       xp_total_500: 'star',
       night_owl: 'bud',
     });
+  });
+});
+
+describe('dedicated achievements presentation', () => {
+  it('uses the six real computed badges and provides a route back to Progress', () => {
+    const html = renderToStaticMarkup(createElement(I18nProvider, { i18n }, createElement(AchievementsMatrix, { stats: stats(), onBackToProgress: () => {} })));
+
+    expect(html).toContain('Back to Progress');
+    expect(html).toContain('1 / 6 unlocked');
+    expect(html).not.toContain('of 12 earned');
   });
 });

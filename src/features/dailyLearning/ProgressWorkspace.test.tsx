@@ -95,6 +95,16 @@ describe('ProgressWorkspace learning activity gate', () => {
     expect(hasProgressActivity(value)).toBe(true);
   });
 
+  it('offers the dedicated achievements view only after real activity exists', () => {
+    const html = renderProgress(<ProgressWorkspace
+      darkMode={false} isOffline={false} stats={stats({ reviewed: 1 })} isStatsLoading={false} statsError={null}
+      continueReview={vi.fn()} openVocabulary={vi.fn()}
+    />);
+
+    expect(html).toContain('View achievements');
+    expect(html).not.toContain('Your word garden');
+  });
+
   it('opens Progress when completed practice has recorded XP without a card review', () => {
     const value = stats({ xpChartData: [{ date: 'Aug 26, 2026', XP: 5 }] });
 
