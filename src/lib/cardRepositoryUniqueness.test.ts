@@ -90,6 +90,22 @@ beforeEach(() => {
   functionsRuntime.httpsCallable.mockReset();
 });
 
+function mockDeleteCallable(result: Record<string, unknown>): ReturnType<typeof vi.fn> {
+  firebaseRuntime.isFirebaseConfigured = true;
+  firebaseRuntime.protectedFunctionsCapability.available = true;
+  const callable = vi.fn().mockResolvedValue({ data: { results: [result] } });
+  functionsRuntime.httpsCallable.mockReturnValue(callable);
+  return callable;
+}
+
+function mockDeleteCallableFailure(error: unknown): ReturnType<typeof vi.fn> {
+  firebaseRuntime.isFirebaseConfigured = true;
+  firebaseRuntime.protectedFunctionsCapability.available = true;
+  const callable = vi.fn().mockRejectedValue(error);
+  functionsRuntime.httpsCallable.mockReturnValue(callable);
+  return callable;
+}
+
 describe('findCardByNormalizedWord', () => {
   beforeEach(() => {
     firestore.getDocs.mockReset();
@@ -1508,52 +1524,27 @@ describe('createCardIfAbsent', () => {
     );
   });
 
-  it('deletes a recreated card without carrying an older epoch tombstone revision forward', async () => {
-    const set = vi.fn();
-    const remove = vi.fn();
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        const collectionName = reference.args?.at(-2);
-        if (path === 'library_state') {
-          return { exists: (): boolean => true, data: () => ({ libraryEpoch: 7 }) };
-        }
-        if (collectionName === 'card_tombstones') {
-          return {
-            exists: (): boolean => true,
-            data: () => ({
-              cardId: 'word-quite',
-              opId: 'old-delete',
-              libraryEpoch: 6,
-              revision: 12,
-              deletedAt: '2026-07-25T00:00:00.000Z',
-            }),
-          };
-        }
-        return {
-          exists: (): boolean => true,
-          data: () => ({ id: 'word-quite', schemaVersion: 2, revision: 1, libraryEpoch: 7 }),
-        };
-      }),
-      set,
-      delete: remove,
-    }));
+  it('routes a delete through the trusted callable and preserves its tombstone receipt', async () => {
+    const callable = mockDeleteCallable({
+      cardId: 'word-quite', op: 'delete', applied: true, revision: 2,
+      deletedAt: '2026-09-28T00:00:00.000Z', opId: 'server-delete', libraryEpoch: 7,
+    });
 
     await expect(deleteCardWithTombstone({} as never, 'user-1', {
-      cardId: 'word-quite',
-      opId: 'delete-current',
-      libraryEpoch: 7,
-      baseRevision: 1,
-    })).resolves.toMatchObject({
+      cardId: 'word-quite', opId: 'delete-current', libraryEpoch: 7, baseRevision: 1,
+    })).resolves.toEqual({
       deleted: true,
-      tombstone: { cardId: 'word-quite', libraryEpoch: 7, revision: 2 },
+      tombstone: {
+        cardId: 'word-quite', opId: 'server-delete', libraryEpoch: 7, revision: 2,
+        deletedAt: '2026-09-28T00:00:00.000Z',
+      },
     });
-    expect(set).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ libraryEpoch: 7, revision: 2 }),
-      { merge: false },
-    );
-    expect(remove).toHaveBeenCalledOnce();
+    expect(functionsRuntime.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'bulkMutateCards');
+    expect(callable).toHaveBeenCalledWith({
+      libraryEpoch: 7,
+      patches: [],
+      deletes: [{ cardId: 'word-quite', baseRevision: 1, opId: 'delete-current' }],
+    });
   });
 
   it('does not promote a deterministic-id card from an older explicit generation', async () => {
@@ -2286,156 +2277,81 @@ describe('createCardIfAbsent', () => {
     expect(set).not.toHaveBeenCalled();
   });
 
-  it('deletes a card and writes its revisioned tombstone in one transaction', async () => {
-    const set = vi.fn();
-    const remove = vi.fn();
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        if (path === 'library_state') {
-          return { exists: (): boolean => true, data: () => ({ libraryEpoch: 2 }) };
-        }
-        if (path === 'word-quite') {
-          const collectionName = reference.args?.at(-2);
-          if (collectionName === 'card_tombstones') return { exists: () => false };
-          return { exists: () => true, data: () => ({ revision: 4 }) };
-        }
-        return { exists: () => false };
-      }),
-      set,
-      delete: remove,
-    }));
+  it('normalizes a legacy delete operation ID before calling the trusted endpoint', async () => {
+    const callable = mockDeleteCallable({
+      cardId: 'word-quite', op: 'delete', applied: true, revision: 5,
+      deletedAt: '2026-09-28T00:00:00.000Z', opId: 'legacy-delete-word-quite-2026-07-26T04-12-03-456Z', libraryEpoch: 2,
+    });
 
-    const result = await deleteCardWithTombstone({} as never, 'user-1', {
+    await deleteCardWithTombstone({} as never, 'user-1', {
       cardId: 'word-quite',
       opId: 'legacy-delete-word-quite-2026-07-26T04:12:03.456Z',
       libraryEpoch: 2,
       baseRevision: 4,
     });
-    expect(result).toMatchObject({
-      deleted: true,
-      tombstone: {
-        cardId: 'word-quite',
-        libraryEpoch: 2,
-        revision: 5,
-      },
-    });
-    if (!result.deleted) throw new Error('Expected the delete to succeed.');
-    expect(result.tombstone.opId).toMatch(/^[a-zA-Z0-9_-]{1,128}$/);
-    expect(set).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        opId: expect.stringMatching(/^[a-zA-Z0-9_-]{1,128}$/),
-        revision: 5,
-      }),
-      { merge: false },
-    );
-    expect(remove).toHaveBeenCalledWith(expect.anything());
+
+    expect(callable).toHaveBeenCalledWith(expect.objectContaining({
+      deletes: [expect.objectContaining({
+        opId: expect.stringMatching(/^op-legacy-delete-word-quite-2026-07-26t04-12-03-456z-[a-f0-9]+$/),
+      })],
+    }));
   });
 
-  it('acknowledges a different same-epoch delete when the card is already gone', async () => {
-    const set = vi.fn();
-    const existingTombstone = {
-      cardId: 'word-quite',
-      opId: 'other-device-delete',
-      libraryEpoch: 2,
-      revision: 5,
-      deletedAt: '2026-07-26T00:00:00.000Z',
-    };
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        const collectionName = reference.args?.at(-2);
-        if (path === 'library_state') {
-          return { exists: () => true, data: () => ({ libraryEpoch: 2 }) };
-        }
-        if (collectionName === 'card_tombstones') {
-          return { exists: (): boolean => true, data: () => existingTombstone };
-        }
-        return { exists: (): boolean => false };
-      }),
-      set,
-      delete: vi.fn(),
-    }));
+  it('preserves the server tombstone when another device already deleted the card', async () => {
+    mockDeleteCallable({
+      cardId: 'word-quite', op: 'delete', applied: true, revision: 5,
+      deletedAt: '2026-07-26T00:00:00.000Z', opId: 'other-device-delete', libraryEpoch: 2,
+    });
 
     await expect(deleteCardWithTombstone({} as never, 'user-1', {
-      cardId: 'word-quite',
-      opId: 'local-delete',
-      libraryEpoch: 2,
-      baseRevision: 3,
+      cardId: 'word-quite', opId: 'local-delete', libraryEpoch: 2, baseRevision: 3,
     })).resolves.toEqual({
       deleted: true,
-      tombstone: existingTombstone,
-    });
-    expect(set).not.toHaveBeenCalled();
-  });
-
-  it('does not allocate a tombstone for a card that never existed', async () => {
-    const set = vi.fn();
-    const remove = vi.fn();
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => (
-        reference.args?.at(-1) === 'library_state'
-          ? { exists: (): boolean => true, data: () => ({ libraryEpoch: 2 }) }
-          : { exists: (): boolean => false }
-      )),
-      set,
-      delete: remove,
-    }));
-
-    await expect(deleteCardWithTombstone({} as never, 'user-1', {
-      cardId: 'never-created',
-      opId: 'local-delete',
-      libraryEpoch: 2,
-      baseRevision: 0,
-    })).resolves.toMatchObject({ deleted: true });
-    expect(set).not.toHaveBeenCalled();
-    expect(remove).not.toHaveBeenCalled();
-  });
-
-  it('does not treat the same delete id from an earlier epoch as a current retry', async () => {
-    const set = vi.fn();
-    const remove = vi.fn();
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        const collectionName = reference.args?.at(-2);
-        if (path === 'library_state') {
-          return { exists: (): boolean => true, data: () => ({ libraryEpoch: 3 }) };
-        }
-        if (collectionName === 'card_tombstones') {
-          return {
-            exists: (): boolean => true,
-            data: () => ({
-              cardId: 'word-quite',
-              opId: 'same-delete-id',
-              libraryEpoch: 2,
-              revision: 5,
-              deletedAt: '2026-07-25T00:00:00.000Z',
-            }),
-          };
-        }
-        return { exists: (): boolean => false };
-      }),
-      set,
-      delete: remove,
-    }));
-
-    await expect(deleteCardWithTombstone({} as never, 'user-1', {
-      cardId: 'word-quite',
-      opId: 'same-delete-id',
-      libraryEpoch: 3,
-      baseRevision: 0,
-    })).resolves.toMatchObject({
-      deleted: true,
       tombstone: {
-        libraryEpoch: 3,
-        revision: 1,
+        cardId: 'word-quite', opId: 'other-device-delete', libraryEpoch: 2, revision: 5,
+        deletedAt: '2026-07-26T00:00:00.000Z',
       },
     });
-    expect(set).toHaveBeenCalled();
-    expect(remove).not.toHaveBeenCalled();
   });
+
+  it('preserves the callable receipt for a card that was already absent', async () => {
+    mockDeleteCallable({
+      cardId: 'never-created', op: 'delete', applied: true, revision: 1,
+      deletedAt: '2026-09-28T00:00:00.000Z', opId: 'local-delete', libraryEpoch: 2,
+    });
+
+    await expect(deleteCardWithTombstone({} as never, 'user-1', {
+      cardId: 'never-created', opId: 'local-delete', libraryEpoch: 2, baseRevision: 0,
+    })).resolves.toMatchObject({ deleted: true });
+  });
+
+  it('uses the callable tombstone from the current library epoch', async () => {
+    mockDeleteCallable({
+      cardId: 'word-quite', op: 'delete', applied: true, revision: 1,
+      deletedAt: '2026-09-28T00:00:00.000Z', opId: 'same-delete-id', libraryEpoch: 3,
+    });
+
+    await expect(deleteCardWithTombstone({} as never, 'user-1', {
+      cardId: 'word-quite', opId: 'same-delete-id', libraryEpoch: 3, baseRevision: 0,
+    })).resolves.toMatchObject({
+      deleted: true,
+      tombstone: { libraryEpoch: 3, revision: 1 },
+    });
+  });
+
+  it.each(['stale-library-epoch', 'future-library-epoch'] as const)(
+    'returns %s from the callable as a delete conflict result',
+    async reason => {
+      mockDeleteCallableFailure(Object.assign(new Error('failed-precondition'), {
+        code: 'functions/failed-precondition',
+        details: { reason },
+      }));
+
+      await expect(deleteCardWithTombstone({} as never, 'user-1', {
+        cardId: 'word-quite', opId: 'epoch-delete', libraryEpoch: 2, baseRevision: 1,
+      })).resolves.toEqual({ deleted: false, reason });
+    },
+  );
 });
 
 describe('library epoch', () => {

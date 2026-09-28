@@ -55,7 +55,7 @@ describe('bulkMutateCardsViaCallable', () => {
       data: {
         results: [
           { cardId: 'card-1', op: 'patch', applied: true, revision: 4 },
-          { cardId: 'card-2', op: 'delete', applied: true, revision: 6, deletedAt: '2026-09-26T00:00:00.000Z' },
+          { cardId: 'card-2', op: 'delete', applied: true, revision: 6, deletedAt: '2026-09-26T00:00:00.000Z', opId: 'device-a:delete-1', libraryEpoch: 2 },
         ],
       },
     });
@@ -71,7 +71,7 @@ describe('bulkMutateCardsViaCallable', () => {
     });
     expect(results).toEqual([
       { cardId: 'card-1', op: 'patch', applied: true, revision: 4 },
-      { cardId: 'card-2', op: 'delete', applied: true, revision: 6, deletedAt: '2026-09-26T00:00:00.000Z' },
+      { cardId: 'card-2', op: 'delete', applied: true, revision: 6, deletedAt: '2026-09-26T00:00:00.000Z', opId: 'device-a:delete-1', libraryEpoch: 2 },
     ]);
   });
 

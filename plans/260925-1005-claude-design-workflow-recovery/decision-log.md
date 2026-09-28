@@ -375,3 +375,13 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
 - Owner sẽ cung cấp nội dung publishable 3 track × 15 unit, 45 title localized
   cùng quyền sử dụng. Trước khi có nội dung được review, Catalog V2 chỉ được
   triển khai và kiểm bằng fixture; không kích hoạt AI pilot làm release thật.
+
+## 2026-09-28 — Owner duyệt chi phí single delete qua trusted callable
+
+- Sau khi dùng `libraryMigrationFenceActive` từ `library_state` đã đọc, phần
+  transaction xóa thẻ có 3 document reads (state/card/tombstone). Callable còn
+  đọc 1 account tombstone và 1 rate-limit document, ghi 1 rate-limit document
+  mỗi lần gọi. Owner duyệt tổng 5 reads + 1 rate-limit write trước các write
+  card/tombstone và, nếu thẻ có real `lexemeId`, 1 projection delete write.
+- Giữ account-deletion guard và persistent rate limit hiện có. Không thêm read
+  hoặc write nào khác cho route single delete.

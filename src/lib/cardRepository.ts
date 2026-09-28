@@ -67,12 +67,12 @@ import {
 import {
   BulkMutationEpochConflictError,
   bulkMutateCardsViaCallable,
+  type BulkCardDeleteCommand,
   type BulkCardMutationItemResult,
   type BulkCardPatchCommand,
 } from './bulkCardMutationRepository';
 import {
   cardAlreadyHasPatch,
-  buildCardTombstone,
   MAX_PROTOCOL_COUNTER,
   normalizeCardOperationId,
   prepareCardForCreate,
@@ -1432,84 +1432,41 @@ export async function deleteCardWithTombstone(
     baseRevision: number;
   },
 ): Promise<DeleteCardWithTombstoneResult> {
-  const stateRef = libraryStateRef(db, userId);
-  const cardRef = doc(db, 'users', userId, 'cards', command.cardId);
-  const tombstoneRef = cardTombstoneRef(db, userId, command.cardId);
   const operationId = normalizeCardOperationId(command.opId);
-  return runTransaction(db, async transaction => {
-    const stateSnapshot = await transaction.get(stateRef);
-    const serverEpoch = stateSnapshot.exists()
-      ? normalizedLibraryEpoch((stateSnapshot.data() as Record<string, unknown>).libraryEpoch)
-      : 0;
-    if (command.libraryEpoch < serverEpoch) return { deleted: false, reason: 'stale-library-epoch' };
-    if (command.libraryEpoch > serverEpoch) return { deleted: false, reason: 'future-library-epoch' };
-
-    const cardSnapshot = await transaction.get(cardRef);
-    const tombstoneSnapshot = await transaction.get(tombstoneRef);
-    const cardRevision = cardSnapshot.exists()
-      ? normalizedLibraryEpoch((cardSnapshot.data() as Record<string, unknown>).revision)
-      : command.baseRevision;
-    const previousTombstoneEpoch = tombstoneSnapshot.exists()
-      ? normalizedLibraryEpoch((tombstoneSnapshot.data() as Record<string, unknown>).libraryEpoch)
-      : -1;
-    const previousTombstoneRevision = tombstoneSnapshot.exists() && previousTombstoneEpoch === serverEpoch
-      ? normalizedLibraryEpoch((tombstoneSnapshot.data() as Record<string, unknown>).revision)
-      : 0;
-    if (
-      tombstoneSnapshot.exists()
-      && (tombstoneSnapshot.data() as Record<string, unknown>).opId === operationId
-      && normalizedLibraryEpoch(
-        (tombstoneSnapshot.data() as Record<string, unknown>).libraryEpoch,
-      ) === serverEpoch
-    ) {
-      return {
-        deleted: true,
-        tombstone: tombstoneSnapshot.data() as CardTombstone,
-      };
+  const deleteCommand: BulkCardDeleteCommand = {
+    cardId: command.cardId,
+    baseRevision: command.baseRevision,
+    opId: operationId,
+  };
+  let result: BulkCardMutationItemResult | undefined;
+  try {
+    [result] = await bulkMutateCardsViaCallable(db, userId, command.libraryEpoch, [], [deleteCommand]);
+  } catch (cause) {
+    if (cause instanceof BulkMutationEpochConflictError) {
+      return { deleted: false, reason: cause.reason };
     }
-    if (
-      !cardSnapshot.exists()
-      && tombstoneSnapshot.exists()
-      && normalizedLibraryEpoch(
-        (tombstoneSnapshot.data() as Record<string, unknown>).libraryEpoch,
-      ) === serverEpoch
-    ) {
-      return {
-        deleted: true,
-        tombstone: tombstoneSnapshot.data() as CardTombstone,
-      };
-    }
-    if (!cardSnapshot.exists() && !tombstoneSnapshot.exists()) {
-      return {
-        deleted: true,
-        tombstone: buildCardTombstone({
-          cardId: command.cardId,
-          opId: operationId,
-          libraryEpoch: command.libraryEpoch,
-          baseRevision: command.baseRevision,
-          deletedAt: new Date().toISOString(),
-        }),
-      };
-    }
-    if (cardSnapshot.exists() && command.baseRevision !== cardRevision) {
-      return {
-        deleted: false,
-        reason: 'revision-conflict',
-        currentRevision: cardRevision,
-      };
-    }
-    const baseRevision = Math.max(command.baseRevision, cardRevision, previousTombstoneRevision);
-    const tombstone = buildCardTombstone({
-      cardId: command.cardId,
-      opId: operationId,
-      libraryEpoch: command.libraryEpoch,
-      baseRevision,
-      deletedAt: new Date().toISOString(),
-    });
-    transaction.set(tombstoneRef, tombstone, { merge: false });
-    if (cardSnapshot.exists()) transaction.delete(cardRef);
-    return { deleted: true, tombstone };
-  });
+    throw cause;
+  }
+  if (!result || result.cardId !== command.cardId || result.op !== 'delete') {
+    throw new Error('The protected bulk mutation service returned an invalid delete result.');
+  }
+  if (!result.applied) {
+    return {
+      deleted: false,
+      reason: 'revision-conflict',
+      currentRevision: result.currentRevision,
+    };
+  }
+  return {
+    deleted: true,
+    tombstone: {
+      cardId: result.cardId,
+      opId: result.opId,
+      libraryEpoch: result.libraryEpoch,
+      revision: result.revision,
+      deletedAt: result.deletedAt,
+    },
+  };
 }
 
 async function createCardIfAbsentLocally(

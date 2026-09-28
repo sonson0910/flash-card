@@ -33,7 +33,15 @@ export type BulkMutationConflictReason =
 export type BulkCardMutationItemResult =
   | { cardId: string; op: 'patch'; applied: true; revision: number }
   | { cardId: string; op: 'patch'; applied: false; reason: BulkMutationConflictReason; currentRevision?: number }
-  | { cardId: string; op: 'delete'; applied: true; revision: number; deletedAt: string }
+  | {
+      cardId: string;
+      op: 'delete';
+      applied: true;
+      revision: number;
+      deletedAt: string;
+      opId: string;
+      libraryEpoch: number;
+    }
   | { cardId: string; op: 'delete'; applied: false; reason: 'revision-conflict'; currentRevision: number };
 
 // Extends ProtectedFunctionError (not plain Error) so `runProtectedFunction`'s
@@ -73,11 +81,28 @@ const parseItemResult = (value: unknown): BulkCardMutationItemResult => {
     if (!Number.isSafeInteger(source.revision) || Number(source.revision) < 0) {
       throw new Error('The protected bulk mutation service returned an invalid result.');
     }
-    if (source.op === 'delete' && typeof source.deletedAt !== 'string') {
+    if (
+      source.op === 'delete'
+      && (
+        typeof source.deletedAt !== 'string'
+        || typeof source.opId !== 'string'
+        || !source.opId
+        || !Number.isSafeInteger(source.libraryEpoch)
+        || Number(source.libraryEpoch) < 0
+      )
+    ) {
       throw new Error('The protected bulk mutation service returned an invalid result.');
     }
     return source.op === 'delete'
-      ? { cardId: source.cardId, op: 'delete', applied: true, revision: Number(source.revision), deletedAt: source.deletedAt as string }
+      ? {
+          cardId: source.cardId,
+          op: 'delete',
+          applied: true,
+          revision: Number(source.revision),
+          deletedAt: source.deletedAt as string,
+          opId: source.opId as string,
+          libraryEpoch: Number(source.libraryEpoch),
+        }
       : { cardId: source.cardId, op: 'patch', applied: true, revision: Number(source.revision) };
   }
   if (source.applied !== false || !isConflictReason(source.reason)) {

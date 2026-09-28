@@ -69,6 +69,8 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 
 > **Trusted delete transaction cost 2026-09-28.** Bulk mutation đọc cờ `libraryMigrationFenceActive` từ `library_state` đã có trong transaction; migration engine set/clear cờ cùng transaction với durable fence. Vì vậy mutation single delete đọc 3 document (state/card/tombstone), giảm 1 fence read so với callable cũ. Focused Functions 25/25 và typecheck pass. Toàn callable vẫn đọc thêm account tombstone và rate-limit document, đồng thời ghi rate-limit document; owner đã duyệt chi phí đầy đủ này cho single delete.
 
+> **Single delete callable 2026-09-28.** Client single delete chuyển qua `bulkMutateCards`, giữ exact server tombstone `opId`/`libraryEpoch` để Undo và nhận stale/future epoch thành conflict result như trước. Focused client 122/122, typecheck và diff check pass. Owner đã duyệt 5 document reads + 1 rate-limit write/call trước card/tombstone writes; catalog card có thêm 1 projection delete write. Clear Library vẫn cần route riêng; checkbox Canvas còn mở.
+
 Stats/ActivityHeatmap/catalog tests; e2e/paths-progress-visual.spec.ts và catalog-workspace.spec.ts; new weekly-recap unit+export journey; gates chung.
 
 Hợp đồng chung: [acceptance-contract.md](acceptance-contract.md). Tên test mới là đề xuất; trước chạy phải kiểm inventory file thực, không báo file vắng là PASS. Với flow có mutation, test dùng emulator/fixtures, không dữ liệu người học hay Gemini thật.
