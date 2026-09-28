@@ -232,6 +232,31 @@ for (const theme of themes) for (const viewport of viewports) for (const [group,
   });
 }
 
+test('Library edit image removal makes the unsaved draft state explicit', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await page.route(new RegExp(`^https?://(?!127\\.0\\.0\\.1:${fixturePort})`), route => route.abort());
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'classic');
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+    localStorage.setItem('sonflash_reduced_motion', 'true');
+  });
+  await gotoFixture(page, 'locale=en&dialog=edit-image-remove');
+
+  await expect(page.locator('[data-edit-image-remove]')).toBeVisible();
+  await page.locator('[data-edit-image-remove]').click();
+
+  await expect(page.locator('[data-edit-image-remove]')).toHaveCount(0);
+  await expect(page.locator('[data-edit-preview] img')).toHaveCount(0);
+  await expect(page.locator('[data-edit-dirty]')).toHaveText('Unsaved');
+  await expect(page.getByRole('button', { name: 'Discard' })).toBeVisible();
+  const screenshot = testInfo.outputPath('library-edit-image-removed-classic-light-mobile.png');
+  const image = await page.locator('[role="dialog"]').last().screenshot({ path: screenshot, animations: 'disabled', caret: 'hide' });
+  await testInfo.attach('library-edit-image-removed-classic-light-mobile', { path: screenshot, contentType: 'image/png' });
+  expect(image).toMatchSnapshot('library-edit-image-removed-classic-light-mobile.png');
+});
+
 for (const theme of themes) for (const viewport of viewports) {
   test(`${theme.family} ${theme.mode} Library inline tools are visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport);

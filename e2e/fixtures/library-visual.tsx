@@ -161,6 +161,7 @@ function LibraryFixture() {
       onDownloadErrorReport={noOp}
     />}
     {dialog === 'edit' && <EditCardDialog card={cards[0]!} open onOpenChange={noOp} onSave={async () => published} />}
+    {dialog === 'edit-image-remove' && <EditCardDialog card={{ ...cards[0]!, imageUrl: 'https://images.pexels.com/photos/267885/pexels-photo-267885.jpeg?auto=compress&cs=tinysrgb&w=300', imageSearchQuery: 'adapt' }} open onOpenChange={noOp} onSave={async () => published} />}
     {dialog === 'edit-review' && <EditCardDialog card={cards[0]!} open onOpenChange={noOp} onSave={async () => published} context={{ kind: 'review', current: 2, total: 6 }} />}
     {dialog === 'deck-delete' && <DeckDeletionDialog deckName="IELTS" assignedCardCount={2} open onOpenChange={noOp} onConfirm={noOp} isDeleting={false} error={false} />}
     <AppOverlays {...overlayProps} />
