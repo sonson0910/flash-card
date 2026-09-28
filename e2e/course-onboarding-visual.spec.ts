@@ -29,8 +29,9 @@ async function expectScreen(page: Page, testInfo: TestInfo, name: string) {
   await expect(page.locator('html')).toHaveAttribute('data-theme-family', /classic|crystal/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `${name} has horizontal overflow`).toBe(true);
   const screenshot = testInfo.outputPath(`${name}.png`);
-  await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide' });
+  const image = await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide' });
   await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
+  return { image, name };
 }
 
 async function seedCourses(db: Firestore, ownerId: string) {
@@ -122,10 +123,40 @@ test('mobile onboarding keeps selected options and actions clear through the stu
 
   const pace = onboarding.getByRole('button', { name: /10 cards \/ day/ });
   await expect(pace).toHaveAttribute('aria-pressed', 'true');
-  await expectScreen(page, testInfo, 'course-onboarding-pace-classic-light-mobile');
+  await expect(onboarding.locator('.onboarding-pace-grid > button')).toHaveCount(4);
+  const paceScreenshot = await expectScreen(page, testInfo, 'course-onboarding-pace-classic-light-mobile');
   for (const name of ['Back', 'Continue']) {
     const button = onboarding.getByRole('button', { name });
     const box = await button.boundingBox();
     expect(box?.width, `${name} spans the mobile content width`).toBeGreaterThan(300);
   }
+
+  await onboarding.getByRole('button', { name: 'Continue' }).click();
+  await onboarding.getByRole('button', { name: 'Add 5 starter cards' }).click();
+  const createdCards = onboarding.locator('.onboarding-created-starter-cards');
+  await expect(createdCards).toHaveCount(1);
+  await expect(createdCards.getByText('안녕하세요', { exact: true })).toBeVisible();
+  await expect(createdCards.getByText('annyeonghaseyo', { exact: true })).toBeVisible();
+  await expect(createdCards.getByText('hello', { exact: true })).toBeVisible();
+  const ahaScreenshot = await expectScreen(page, testInfo, 'course-onboarding-aha-success-classic-light-mobile');
+  expect(paceScreenshot.image).toMatchSnapshot(`${paceScreenshot.name}.png`);
+  expect(ahaScreenshot.image).toMatchSnapshot(`${ahaScreenshot.name}.png`);
+});
+
+test('desktop onboarding presents the four pace choices in one row', async ({ page, signIn, blockExternalNetwork }, testInfo) => {
+  await prepareTheme(page, themes[0], viewports[0]);
+  await blockExternalNetwork(page);
+  await signIn(page, '/?view=today&locale=en');
+  const onboarding = page.getByRole('dialog', { name: 'Set up your course' });
+  await onboarding.getByRole('button', { name: 'Continue' }).click();
+  await onboarding.getByRole('button', { name: /Korean/ }).click();
+  await onboarding.getByRole('button', { name: 'Continue' }).click();
+  await onboarding.getByRole('button', { name: 'Continue' }).click();
+  const paceCards = onboarding.locator('.onboarding-pace-grid > button');
+  await expect(paceCards).toHaveCount(4);
+  const firstRow = await Promise.all([0, 1, 2, 3].map(index => paceCards.nth(index).boundingBox()));
+  const rowPositions = firstRow.map(box => box?.y ?? Number.NaN);
+  expect(Math.max(...rowPositions) - Math.min(...rowPositions)).toBeLessThanOrEqual(1);
+  const paceScreenshot = await expectScreen(page, testInfo, 'course-onboarding-pace-classic-light-desktop');
+  expect(paceScreenshot.image).toMatchSnapshot(`${paceScreenshot.name}.png`);
 });

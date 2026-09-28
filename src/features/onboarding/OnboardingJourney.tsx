@@ -19,6 +19,7 @@ const primaryButtonClass = 'min-h-11 rounded-xl bg-[var(--sf-brand)] px-4 text-s
 const secondaryButtonClass = 'min-h-11 rounded-xl border border-[var(--sf-border)] px-4 text-sm font-bold text-[var(--sf-text)]';
 const optionButtonClass = (active: boolean) => `relative flex min-h-20 w-full flex-col items-start justify-center rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${active ? 'border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)]' : 'border-[var(--sf-border)] text-[var(--sf-text)] hover:bg-[var(--sf-surface-muted)]'}`;
 const footerClass = 'mt-10 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between';
+const paceFooterClass = 'mt-auto flex flex-col-reverse gap-3 border-t border-[var(--sf-border)] pt-6 sm:flex-row sm:items-center sm:justify-between sm:py-6';
 
 export interface OnboardingJourneyProps {
   readonly ownerId: string;
@@ -188,17 +189,21 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
       </>}
 
       {step === 'pace' && <>
-        <h2 className="font-serif-hero text-4xl font-bold tracking-tight sm:text-5xl"><Trans id="onboarding.pace.title" message="How many cards a day?" /></h2>
-        <div className="mt-8 grid gap-3 sm:grid-cols-3">
-          {DAILY_PACE_OPTIONS.map(option => <button key={option} type="button" aria-pressed={pace === option} className={optionButtonClass(pace === option)} onClick={() => setPace(option)}>
-            <span className="font-serif-hero text-2xl font-bold">{option}</span>
-            <span className="mt-1 text-xs font-medium opacity-75"><Trans id="onboarding.pace.option" message="{count} cards / day" values={{ count: option }} /></span>
-            {pace === option && <Check aria-hidden="true" size={18} className="absolute right-3 top-3" />}
-          </button>)}
-        </div>
-        <div className={footerClass}>
-          <button type="button" className={`${secondaryButtonClass} w-full sm:w-auto`} onClick={goBack}><Trans id="onboarding.back" message="Back" /></button>
-          <button type="button" className={`${primaryButtonClass} w-full sm:w-auto`} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button>
+        <div className="flex flex-1 flex-col">
+          <div className="mx-auto my-auto w-full max-w-5xl text-center">
+            <h2 className="font-serif-hero text-4xl font-bold tracking-tight sm:text-5xl"><Trans id="onboarding.pace.title" message="How many cards a day?" /></h2>
+            <div className="onboarding-pace-grid mt-8 grid gap-4 sm:grid-cols-4">
+              {DAILY_PACE_OPTIONS.map(option => <button key={option} type="button" aria-pressed={pace === option} className={optionButtonClass(pace === option)} style={{ minHeight: 'clamp(5rem, 12vw, 11rem)' }} onClick={() => setPace(option)}>
+                <span className="font-serif-hero text-2xl font-bold">{option}</span>
+                <span className="mt-1 text-xs font-medium opacity-75"><Trans id="onboarding.pace.option" message="{count} cards / day" values={{ count: option }} /></span>
+                {pace === option && <Check aria-hidden="true" size={18} className="absolute right-3 top-3" />}
+              </button>)}
+            </div>
+          </div>
+          <div className={paceFooterClass} style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
+            <button type="button" className={`${secondaryButtonClass} w-full sm:w-auto`} onClick={goBack}><Trans id="onboarding.back" message="Back" /></button>
+            <button type="button" className={`${primaryButtonClass} w-full sm:w-auto`} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button>
+          </div>
         </div>
       </>}
 
@@ -218,6 +223,13 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
           {ahaOutcome.created.length > 0
             ? <p className="mt-8 text-base font-semibold text-[var(--sf-success)]"><Trans id="onboarding.aha.success" message="Added {count} cards to your library." values={{ count: ahaOutcome.created.length }} /></p>
             : <p className="mt-8 text-base text-[var(--sf-text-muted)]"><Trans id="onboarding.aha.none-added" message="No cards were added." /></p>}
+          {ahaOutcome.created.length > 0 && <ul className="onboarding-created-starter-cards mt-4 grid max-w-4xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {ahaOutcome.created.map(card => <li key={card.id} className="rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 text-left">
+              <span lang={card.language || undefined} className="block font-serif-hero text-lg font-bold text-[var(--sf-text)]">{card.word}</span>
+              {card.phonetic && <span className="mt-1 block text-xs text-[var(--sf-text-muted)]">{card.phonetic}</span>}
+              <span className="mt-2 block text-sm text-[var(--sf-brand-text)]">{card.translation}</span>
+            </li>)}
+          </ul>}
           {ahaOutcome.skippedForQuota > 0 && <p className="mt-3 max-w-2xl text-sm text-[var(--sf-text-muted)]"><Trans id="onboarding.aha.quota-note" message="Your monthly Free card allowance is almost used up, so {count} card(s) were not added." values={{ count: ahaOutcome.skippedForQuota }} /></p>}
           <button type="button" className={`${primaryButtonClass} mt-6`} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button>
         </>}

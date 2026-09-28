@@ -73,6 +73,24 @@ describe('OnboardingGate', () => {
     }
   });
 
+  it('renders all four real pace choices in the desktop grid', () => {
+    vi.stubGlobal('localStorage', { getItem: vi.fn(() => 'pace') });
+    try {
+      const html = renderToStaticMarkup(<I18nProvider i18n={i18n}>
+        <CourseContext.Provider value={snapshot('absent')}><OnboardingJourney ownerId="owner-pace" /></CourseContext.Provider>
+      </I18nProvider>);
+
+      expect(html).toContain('onboarding-pace-grid');
+      expect(html).toContain('sm:grid-cols-4');
+      expect(html).toContain('5 cards / day');
+      expect(html).toContain('10 cards / day');
+      expect(html).toContain('15 cards / day');
+      expect(html).toContain('20 cards / day');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('keeps selected goal details and Chinese script in the course creation input', () => {
     expect(onboardingCourseInput({
       targetLanguage: 'zh', nativeLanguage: 'vi', goalKind: 'hsk', goalLevel: ' HSK 4 ', goalTargetDate: '2027-01-17', zhScript: 'hant',
