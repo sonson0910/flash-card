@@ -88,7 +88,7 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(page.getByRole('heading', { name: 'Add momentum to your learning' })).toBeVisible();
     await expect(page.getByText('Loading plan details…')).toBeHidden();
     await expectAccessibleAndContained(page, `${theme.family}-${theme.mode}-${viewport.name}-plan-dialog`);
-    await captureDialogEvidence(page.getByRole('dialog', { name: 'Add momentum to your learning' }), testInfo, `landing-plan-${theme.family}-${theme.mode}-${viewport.name}`);
+    const planScreenshot = await captureDialogEvidence(page.getByRole('dialog', { name: 'Add momentum to your learning' }), testInfo, `landing-plan-${theme.family}-${theme.mode}-${viewport.name}`);
     await page.getByRole('button', { name: 'Close' }).first().click();
     await expect(page.getByRole('dialog')).toBeHidden();
 
@@ -99,7 +99,7 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(page.getByRole('button', { name: 'Delete my account' })).toBeEnabled();
     await expectAccessibleAndContained(page, `${theme.family}-${theme.mode}-${viewport.name}-account-dialog`);
     const accountDialog = page.getByRole('dialog', { name: 'Account data' });
-    await captureDialogEvidence(accountDialog, testInfo, `landing-account-${theme.family}-${theme.mode}-${viewport.name}`);
+    const accountScreenshot = await captureDialogEvidence(accountDialog, testInfo, `landing-account-${theme.family}-${theme.mode}-${viewport.name}`);
     await page.getByRole('button', { name: 'Delete my account' }).click();
     await expect(page.getByLabel(/Type XÓA TÀI KHOẢN/)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Confirm permanent deletion' })).toBeDisabled();
@@ -121,6 +121,8 @@ for (const theme of themes) for (const viewport of viewports) {
     await expectAccessibleAndContained(page, `${theme.family}-${theme.mode}-${viewport.name}-report-submitted`);
     const reportSubmittedScreenshot = await captureDialogEvidence(reportDialog, testInfo, `landing-report-submitted-${theme.family}-${theme.mode}-${viewport.name}`);
 
+    expectDialogSnapshot(planScreenshot, `landing-plan-${theme.family}-${theme.mode}-${viewport.name}.png`);
+    expectDialogSnapshot(accountScreenshot, `landing-account-${theme.family}-${theme.mode}-${viewport.name}.png`);
     expectDialogSnapshot(accountConfirmationScreenshot, `landing-account-delete-confirmation-${theme.family}-${theme.mode}-${viewport.name}.png`);
     expectDialogSnapshot(reportRequestScreenshot, `landing-report-request-${theme.family}-${theme.mode}-${viewport.name}.png`);
     expectDialogSnapshot(reportSubmittedScreenshot, `landing-report-submitted-${theme.family}-${theme.mode}-${viewport.name}.png`);
