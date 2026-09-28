@@ -291,6 +291,29 @@ describe('spreadsheet workbook loader', () => {
     });
   });
 
+  it('preserves source coordinates through leading and internal blank CSV rows', async () => {
+    const workbook = await loadSpreadsheetWorkbook(csvFile('\n\nWord,Translation\napple,táo\n\npear,\n'));
+    expect(workbook).toMatchObject({ hasStructuredHeader: true });
+    expect(workbook.structuredSourceRows).toEqual([
+      expect.objectContaining({ sourceRow: 4, row: { Word: 'apple', Translation: 'táo' } }),
+      expect.objectContaining({ sourceRow: 6, row: { Word: 'pear' } }),
+    ]);
+    expect(workbook.flatSourceCells).toContainEqual({ value: 'Word', sourceRow: 3, sourceColumn: 1 });
+  });
+
+  it('adds the worksheet range offset to XLSX source coordinates', async () => {
+    const sheet = XLSX.utils.aoa_to_sheet([]);
+    XLSX.utils.sheet_add_aoa(sheet, [['Word', 'Translation'], ['apple', 'táo']], { origin: 'C3' });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, sheet, 'Cards');
+    const bytes = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+    const loaded = await loadSpreadsheetWorkbook(new File([bytes], 'cards.xlsx'));
+    expect(loaded.structuredSourceRows).toEqual([
+      expect.objectContaining({ sourceRow: 4, row: { Word: 'apple', Translation: 'táo' } }),
+    ]);
+    expect(loaded.flatSourceCells).toContainEqual({ value: 'Word', sourceRow: 3, sourceColumn: 3 });
+  });
+
   it('does not mistake CSV text beginning with PK for a ZIP archive', async () => {
     await expect(loadSpreadsheetWorkbook(csvFile('PK,Translation\napple,táo\n')))
       .resolves.toMatchObject({ structuredRows: [{ PK: 'apple', Translation: 'táo' }] });

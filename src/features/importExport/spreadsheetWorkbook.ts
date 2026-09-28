@@ -14,6 +14,20 @@ export const MAX_SPREADSHEET_WORKSHEET_XML_BYTES = 16 * 1024 * 1024;
 export interface SpreadsheetWorkbook {
   structuredRows: unknown[];
   flatRows: unknown[][];
+  hasStructuredHeader?: boolean;
+  structuredSourceRows?: SpreadsheetStructuredSourceRow[];
+  flatSourceCells?: SpreadsheetFlatSourceCell[];
+}
+
+export interface SpreadsheetStructuredSourceRow {
+  row: unknown;
+  sourceRow: number;
+}
+
+export interface SpreadsheetFlatSourceCell {
+  value: unknown;
+  sourceRow: number;
+  sourceColumn: number;
 }
 
 export class SpreadsheetReadError extends Error {
@@ -740,8 +754,25 @@ const validateCellBounds = (matrix: unknown[][]): void => {
   }
 };
 
-const matrixToWorkbook = (matrix: unknown[][]): SpreadsheetWorkbook => {
-  const headers = matrix[0] ?? [];
+const isNonBlankRow = (row: unknown[]): boolean => row.some(cell => cell !== '' && cell !== null && cell !== undefined);
+
+const hasStructuredCardHeader = (row: unknown[]): boolean => {
+  const headers = new Set(row.map(value => String(value ?? '').trim().toLocaleLowerCase()));
+  return (headers.has('word') || headers.has('từ vựng'))
+    && (headers.has('translation') || headers.has('nghĩa') || headers.has('ý nghĩa'));
+};
+
+const matrixToWorkbook = (
+  matrix: unknown[][],
+  sourceRowOffset = 0,
+  sourceColumnOffset = 0,
+): SpreadsheetWorkbook => {
+  const firstNonBlankRow = matrix.findIndex(isNonBlankRow);
+  const structuredHeaderIndex = firstNonBlankRow >= 0 && hasStructuredCardHeader(matrix[firstNonBlankRow])
+    ? firstNonBlankRow
+    : -1;
+  const headerIndex = structuredHeaderIndex >= 0 ? structuredHeaderIndex : 0;
+  const headers = matrix[headerIndex] ?? [];
   const usedHeaders = new Set<string>();
   const keys = headers.map(header => {
     const base = header === '' || header === null || header === undefined ? '__EMPTY' : String(header);
@@ -754,10 +785,27 @@ const matrixToWorkbook = (matrix: unknown[][]): SpreadsheetWorkbook => {
     usedHeaders.add(key);
     return key;
   });
-  const structuredRows = matrix.slice(1).map(row => Object.fromEntries(
-    keys.flatMap((key, index) => row[index] === undefined || row[index] === '' ? [] : [[key, row[index]]]),
-  ));
-  return { structuredRows, flatRows: matrix };
+  const structuredSourceRows = matrix.slice(headerIndex + 1)
+    .map((row, index) => ({ row, sourceRow: sourceRowOffset + headerIndex + index + 2 }))
+    .filter(({ row }) => isNonBlankRow(row))
+    .map(({ row, sourceRow }) => ({
+      row: Object.fromEntries(
+        keys.flatMap((key, index) => row[index] === undefined || row[index] === '' ? [] : [[key, row[index]]]),
+      ),
+      sourceRow,
+    }));
+  const flatSourceCells = matrix.flatMap((row, rowIndex) => row.map((value, columnIndex) => ({
+    value,
+    sourceRow: sourceRowOffset + rowIndex + 1,
+    sourceColumn: sourceColumnOffset + columnIndex + 1,
+  })));
+  return {
+    structuredRows: structuredSourceRows.map(({ row }) => row),
+    flatRows: matrix,
+    hasStructuredHeader: structuredHeaderIndex >= 0,
+    structuredSourceRows,
+    flatSourceCells,
+  };
 };
 
 const parseWorkbook = async (bytes: Uint8Array, format: SpreadsheetFormat): Promise<SpreadsheetWorkbook> => {
@@ -812,7 +860,7 @@ const parseWorkbook = async (bytes: Uint8Array, format: SpreadsheetFormat): Prom
       header: 1,
       raw: true,
       defval: '',
-      blankrows: false,
+      blankrows: true,
     }) as unknown[][];
   } catch {
     throw new SpreadsheetReadError('Spreadsheet cells could not be converted.');
@@ -821,7 +869,7 @@ const parseWorkbook = async (bytes: Uint8Array, format: SpreadsheetFormat): Prom
     throw new SpreadsheetReadError(`Spreadsheet exceeds ${MAX_SPREADSHEET_ROWS - 1} data rows.`);
   }
   validateCellBounds(matrix);
-  return matrixToWorkbook(matrix);
+  return matrixToWorkbook(matrix, range.s.r, range.s.c);
 };
 
 export const loadSpreadsheetWorkbook = async (file: File): Promise<SpreadsheetWorkbook> => {

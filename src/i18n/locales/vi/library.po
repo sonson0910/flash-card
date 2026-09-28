@@ -1781,6 +1781,46 @@ msgid "library.import.in-progress"
 msgstr "Đang nhập"
 
 #. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:198
+msgid "library.import.issue-column"
+msgstr "Cột {column, number}"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:200
+msgid "library.import.issue-duplicate"
+msgstr "Trùng lặp"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:200
+msgid "library.import.issue-failed"
+msgstr "Không lưu được"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:200
+msgid "library.import.issue-generation"
+msgstr "Không tạo được thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:200
+msgid "library.import.issue-invalid"
+msgstr "Dòng không hợp lệ"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:200
+msgid "library.import.issue-pending"
+msgstr "Chưa xác nhận lưu"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:197
+msgid "library.import.issue-row"
+msgstr "Dòng {row, number}"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:194
+msgid "library.import.issues-title"
+msgstr "Các dòng cần xem lại"
+
+#. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:89
 msgid "library.import.kicker"
 msgstr "Nhập dữ liệu"
@@ -1801,6 +1841,11 @@ msgid "library.import.mapping-title"
 msgstr "Ánh xạ cột"
 
 #. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:203
+msgid "library.import.more-issues"
+msgstr "Và {count, number} vấn đề khác"
+
+#. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:159
 #: src/features/library/LibraryTools.tsx:146
 msgid "library.import.partial"
@@ -1815,6 +1860,16 @@ msgstr "Một số dòng đã được lưu. Xem lại phần tóm tắt và th�
 #: src/features/library/LibraryTools.tsx:154
 msgid "library.import.partial-guidance"
 msgstr "Hãy thử lại các từ thất bại hoặc đã bỏ qua sau."
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:177
+msgid "library.import.pending"
+msgstr "Đang chờ"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:177
+msgid "library.import.pending-hint"
+msgstr "chưa xác nhận lưu"
 
 #. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:109
@@ -1832,6 +1887,11 @@ msgstr "Đang nhập {current, number} trên {total, number}"
 #: src/features/importExport/SpreadsheetImportDialog.tsx:113
 msgid "library.import.progress-fallback"
 msgstr "{current}/{total}"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:182
+msgid "library.import.results-so-far"
+msgstr "Kết quả đến lúc này"
 
 #. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:165

@@ -1,5 +1,5 @@
 import { fetchAudioUrl } from '../../lib/audio';
-import { withTimeout } from '../../lib/async';
+import { OperationTimeoutError, withTimeout } from '../../lib/async';
 import { mapWithConcurrency } from '../../lib/asyncPool';
 import { cardLogicalKey, createWordCardId, normalizeCardWord } from '../../lib/cardIdentity';
 import { isRetryableCloudError } from '../../lib/cloudError';
@@ -17,7 +17,10 @@ import { fetchImageUrl } from '../../lib/images';
 import { classifyProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import { retainCardsForSession } from '../../lib/sessionCards';
 import type { CardData } from '../../types/card';
-import { indexCardsByNormalizedWord } from '../importExport/spreadsheetImportService';
+import {
+  indexCardsByNormalizedWord,
+  type SpreadsheetSaveOutcome,
+} from '../importExport/spreadsheetImportService';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
 import { promoteExistingCard } from '../library/libraryPresentation';
 import { waitForInitialMedia } from '../library/libraryStorage';
@@ -326,6 +329,9 @@ export function createCardIntakePipeline({
     source: 'generate' | 'shared',
     operationIds = cards.map(createOperationId),
     onSettlementFailure?: (operationId: string) => void,
+    awaitSettlements = false,
+    onSettlement?: (index: number, outcome: SpreadsheetSaveOutcome) => void,
+    onSettlementsReady?: (settlement: Promise<SpreadsheetSaveOutcome[]>) => void,
   ): Promise<Array<{ card: CardData; created: boolean }>> => {
     const current = getContext();
     const session = sessionGuard.capture();
@@ -343,6 +349,7 @@ export function createCardIntakePipeline({
       settle: () => Promise<CreateCardV2IfAbsentResult>;
       candidate: CardData;
       operationId: string;
+      index: number;
     }> = [];
 
     for (const [index, candidate] of candidates.entries()) {
@@ -361,6 +368,7 @@ export function createCardIntakePipeline({
         ),
         candidate,
         operationId,
+        index,
       });
       results.push({ card: candidate, created: true });
       if (source === 'generate') mediaSessions.set(candidate, session);
@@ -392,36 +400,52 @@ export function createCardIntakePipeline({
       active.resetCloudPage();
     }
 
-    void mapWithConcurrency(cloudSettlements, 6, async ({ settle, candidate, operationId }) => {
+    const settlements = mapWithConcurrency(cloudSettlements, 6, async ({ settle, candidate, operationId, index }) => {
       try {
         const result = await settle();
-        if (!sessionGuard.isCurrent(session)) return;
-        const latest = getContext();
-        if (latest.ownerId !== ownerId) return;
-        if (result.created && result.gamification) {
-          latest.acceptGamificationOutcome?.(result.gamification, operationId);
+        const outcome: SpreadsheetSaveOutcome = result.created ? 'created' : 'reused';
+        onSettlement?.(index, outcome);
+        try {
+          if (!sessionGuard.isCurrent(session)) return outcome;
+          const latest = getContext();
+          if (latest.ownerId !== ownerId) return outcome;
+          if (result.created && result.gamification) {
+            latest.acceptGamificationOutcome?.(result.gamification, operationId);
+          }
+          if (result.created) return outcome;
+          // Someone else already created this word; reconcile the optimistic
+          // duplicate with the authoritative card the cloud returned.
+          if (!latest.getCards().some(existing => existing.id === result.card.id)) {
+            compensateOptimisticDuplicateCard(candidate, latest, facetOperationId);
+            const cardToTouch = candidate.customDeck && candidate.customDeck !== result.card.customDeck
+              ? await assignExistingDeck(result.card, candidate.customDeck)
+              : result.card;
+            await touchExisting(cardToTouch, new Date().toISOString());
+          }
+        } catch (cause) {
+          console.warn('The saved card could not be reconciled locally.', cause);
         }
-        if (result.created) return;
-        // Someone else already created this word; reconcile the optimistic
-        // duplicate with the authoritative card the cloud returned.
-        if (!latest.getCards().some(existing => existing.id === result.card.id)) {
-          compensateOptimisticDuplicateCard(candidate, latest, facetOperationId);
-          const cardToTouch = candidate.customDeck && candidate.customDeck !== result.card.customDeck
-            ? await assignExistingDeck(result.card, candidate.customDeck)
-            : result.card;
-          await touchExisting(cardToTouch, new Date().toISOString());
-        }
+        return outcome;
       } catch (cause) {
+        if (onSettlement && cause instanceof OperationTimeoutError) {
+          onSettlement?.(index, 'pending');
+          return 'pending' as const;
+        }
         console.warn('The card could not be saved to the cloud.', cause);
         onSettlementFailure?.(operationId);
+        onSettlement?.(index, 'failed');
         if (sessionGuard.isCurrent(session)) {
           const latest = getContext();
           latest.publishCards(latest.getCards().filter(existing => existing.id !== candidate.id));
           latest.setCloudUnavailable(true);
           latest.notify('The card could not be saved. Check your connection and try again.');
         }
+        return 'failed' as const;
       }
     });
+    onSettlementsReady?.(settlements);
+    if (awaitSettlements) await settlements;
+    else void settlements;
     return results;
   };
 
@@ -470,15 +494,40 @@ export function createCardIntakePipeline({
       if (!session || !sessionGuard.isCurrent(session)) return;
       await getContext().patchCard(card.id, media, card);
     },
-    persistStructured: async ({ creates, patches }) => {
+    persistStructured: async ({ creates, patches }, onSettlement) => {
       const session = sessionGuard.capture();
-      const results = creates.length ? await persistCards(creates, 'generate') : [];
+      const outcomes: SpreadsheetSaveOutcome[] = [];
+      if (creates.length) {
+        await persistCardsInternal(
+          creates,
+          'generate',
+          undefined,
+          undefined,
+          true,
+          (index, outcome) => {
+            outcomes[index] = outcome;
+            onSettlement?.(index, outcome);
+          },
+        );
+      }
       assertCurrent(session);
-      for (const patch of patches) {
-        await getContext().patchCard(patch.card.id, patch.fields, patch.card);
+      for (const [patchIndex, patch] of patches.entries()) {
+        const index = creates.length + patchIndex;
+        try {
+          await getContext().patchCard(patch.card.id, patch.fields, patch.card);
+          outcomes[index] = 'reused';
+          onSettlement?.(index, 'reused');
+        } catch (cause) {
+          const outcome: SpreadsheetSaveOutcome = cause instanceof OperationTimeoutError ? 'pending' : 'failed';
+          outcomes[index] = outcome;
+          onSettlement?.(index, outcome);
+        }
         assertCurrent(session);
       }
-      return { createdCount: results.filter(result => result.created).length };
+      return {
+        createdCount: outcomes.filter(outcome => outcome === 'created').length,
+        outcomes,
+      };
     },
     generate: async word => {
       const session = sessionGuard.capture();
@@ -487,16 +536,30 @@ export function createCardIntakePipeline({
         language: getContext().languageProfile ?? ENGLISH_TO_VIETNAMESE_PROFILE,
       });
       assertCurrent(session);
-      const [persisted] = await persistCards([generated.card], 'generate');
+      let settlement!: Promise<SpreadsheetSaveOutcome[]>;
+      const [persisted] = await persistCardsInternal(
+        [generated.card],
+        'generate',
+        undefined,
+        undefined,
+        false,
+        () => undefined,
+        ready => { settlement = ready; },
+      );
       assertCurrent(session);
-      if (persisted?.created || (persisted?.card && !persisted.card.imageUrl)) {
-        void settleMediaBestEffort(
+      void settlement.then(([outcome]) => {
+        if (outcome !== 'created' || !persisted?.card) return;
+        return settleMediaBestEffort(
           generated.mediaPromise,
           media => pipeline.applyMedia(persisted.card, media),
           cause => console.warn('The card was saved, but its generated media could not be applied.', cause),
         );
-      }
-      return { created: Boolean(persisted?.created), category: persisted?.card.category };
+      });
+      return {
+        created: Boolean(persisted?.created),
+        category: persisted?.card.category,
+        settlement: settlement.then(([outcome]) => outcome ?? 'failed'),
+      };
     },
     completeFlat: async () => getContext().resetCloudPage(),
   };

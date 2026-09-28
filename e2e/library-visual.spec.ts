@@ -139,7 +139,7 @@ for (const theme of themes) for (const viewport of viewports) {
   });
 }
 
-const dialogViews = [
+const otherDialogViews = [
   ['edit', 'Edit card'], ['edit-review', 'Edit card'], ['deck-delete', /Delete “IELTS” deck/],
   // AppOverlays.tsx's share dialog title is now dynamic: outgoing shows
   // `Share "{category}"` (shell.share.outgoing-title), incoming shows the
@@ -148,13 +148,20 @@ const dialogViews = [
   // phrase. The fixture (library-visual.tsx) always uses category "IELTS".
   ['share', 'Share “IELTS”'], ['share-in', 'IELTS'],
   ['clear', 'Clear the entire library?'], ['insights', 'Learning insights'],
+] as const;
+const deckDialogViews = [
   ['deck-create-ready', 'New deck'], ['deck-create-progress', 'New deck'], ['deck-create-error', 'New deck'],
+] as const;
+const importDialogViews = [
   ['import-ready', 'Import from spreadsheet'], ['import-progress', 'Import from spreadsheet'], ['import-error', 'Import from spreadsheet'],
+] as const;
+const dialogGroups = [
+  ['other', otherDialogViews], ['deck', deckDialogViews], ['import', importDialogViews],
 ] as const;
 const inlineViews = [['import', 'Import cards']] as const;
 
-for (const theme of themes) for (const viewport of viewports) {
-  test(`${theme.family} ${theme.mode} Library dialog surfaces are visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
+for (const theme of themes) for (const viewport of viewports) for (const [group, dialogViews] of dialogGroups) {
+  test(`${theme.family} ${theme.mode} Library ${group} dialog surfaces are visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
     page.on('pageerror', error => { throw error; });
     await page.setViewportSize(viewport);
     await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
@@ -202,6 +209,17 @@ for (const theme of themes) for (const viewport of viewports) {
         await testInfo.attach(`${name}-page`, { path: screenshot, contentType: 'image/png' });
       }
       await expectDialogScreen(page, testInfo, name);
+      if (dialog === 'import-progress') {
+        await expect(page.getByText('Results so far')).toBeVisible();
+        await expect(page.getByText('Row 7')).toBeVisible();
+        await expect(page.getByText('Column 3')).toBeVisible();
+      }
+      if (dialog === 'import-error') {
+        await expect(page.getByText('Row 4')).toBeVisible();
+        await expect(page.getByText('Column 2')).toBeVisible();
+        await expect(page.getByText('Row 7')).toBeVisible();
+        await expect(page.getByText('Column 3')).toBeVisible();
+      }
     }
   });
 }

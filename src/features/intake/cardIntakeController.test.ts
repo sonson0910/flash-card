@@ -744,6 +744,137 @@ describe('card intake controller', () => {
     expect(resetSource).toHaveBeenCalledOnce();
   });
 
+  it('keeps an active import running while its view closes and reopens', async () => {
+    const { port } = createFakePort();
+    const settlement = deferred<'created' | 'reused' | 'failed' | 'pending'>();
+    vi.mocked(port.generate).mockResolvedValue({
+      created: true,
+      category: 'Imported',
+      settlement: settlement.promise,
+    });
+    const intake = createCardIntakeController({ port });
+    const closedView = vi.fn();
+    const close = intake.subscribe(closedView);
+    const importing = intake.importSpreadsheet({
+      sizeBytes: 100,
+      loadWorkbook: async () => ({ structuredRows: [], flatRows: [['apple']] }),
+    });
+    await vi.waitFor(() => expect(port.generate).toHaveBeenCalledOnce());
+
+    close();
+    const reopenedSnapshots: ReturnType<typeof intake.getSnapshot>[] = [];
+    intake.subscribe(snapshot => reopenedSnapshots.push(snapshot));
+    settlement.resolve('created');
+
+    await expect(importing).resolves.toMatchObject({
+      status: 'completed',
+      summary: { total: 1, created: 1, pending: 0 },
+    });
+    expect(intake.getSnapshot()).toMatchObject({
+      isImporting: false,
+      importProgress: null,
+      importResult: { status: 'completed', summary: { created: 1 } },
+    });
+    expect(reopenedSnapshots.some(snapshot => snapshot.importResult?.status === 'completed')).toBe(true);
+  });
+
+  it('fences an import to its captured owner session and allows the new owner to retry', async () => {
+    const { port } = createFakePort();
+    const existing = deferred<Map<string, CardData>>();
+    let owner = 'owner-a';
+    port.captureSession = vi.fn(() => {
+      const capturedOwner = owner;
+      return () => owner === capturedOwner;
+    });
+    vi.mocked(port.findExisting).mockReturnValueOnce(existing.promise);
+    const resetSource = vi.fn();
+    const intake = createCardIntakeController({
+      port,
+      resetImportSource: resetSource,
+      spreadsheetDelay: async () => undefined,
+    });
+    const snapshots: ReturnType<typeof intake.getSnapshot>[] = [];
+    intake.subscribe(snapshot => snapshots.push(snapshot));
+    const staleImport = intake.importSpreadsheet({
+      sizeBytes: 100,
+      loadWorkbook: async () => ({ structuredRows: [], flatRows: [['apple']] }),
+    });
+    await vi.waitFor(() => expect(port.findExisting).toHaveBeenCalledOnce());
+
+    owner = 'owner-b';
+    const publicationCountAtSwitch = snapshots.length;
+    existing.resolve(new Map());
+
+    await expect(staleImport).resolves.toEqual({ status: 'stale' });
+    expect(snapshots).toHaveLength(publicationCountAtSwitch);
+    expect(port.generate).not.toHaveBeenCalled();
+    expect(resetSource).not.toHaveBeenCalled();
+
+    vi.mocked(port.findExisting).mockResolvedValue(new Map());
+    await expect(intake.importSpreadsheet({
+      sizeBytes: 100,
+      loadWorkbook: async () => ({ structuredRows: [], flatRows: [['pear']] }),
+    })).resolves.toMatchObject({
+      status: 'completed',
+      summary: { total: 1, created: 1 },
+    });
+    expect(port.generate).toHaveBeenCalledWith('pear', 0);
+    expect(port.captureSession).toHaveBeenCalledTimes(2);
+    expect(resetSource).toHaveBeenCalledOnce();
+  });
+
+  it('does not mix a pending import or its late settlement into a retry', async () => {
+    const { port } = createFakePort();
+    const secondSave = deferred<Awaited<ReturnType<CardIntakeControllerPort['persistStructured']>>>();
+    const settlementCallbacks: Array<Parameters<CardIntakeControllerPort['persistStructured']>[1]> = [];
+    vi.mocked(port.persistStructured)
+      .mockImplementationOnce(async (_plan, onSettlement) => {
+        settlementCallbacks.push(onSettlement);
+        return { createdCount: 0, outcomes: ['pending'] };
+      })
+      .mockImplementationOnce(async (_plan, onSettlement) => {
+        settlementCallbacks.push(onSettlement);
+        return secondSave.promise;
+      });
+    const intake = createCardIntakeController({ port });
+    const request = (word: string) => ({
+      sizeBytes: 100,
+      loadWorkbook: async () => ({
+        structuredRows: [{ Word: word, Translation: `${word}-vi` }],
+        flatRows: [],
+      }),
+    });
+
+    await expect(intake.importSpreadsheet(request('apple'))).resolves.toMatchObject({
+      status: 'partial',
+      summary: { total: 1, created: 0, pending: 1 },
+      issues: [{ word: 'apple', kind: 'pending' }],
+    });
+
+    const retry = intake.importSpreadsheet(request('pear'));
+    await vi.waitFor(() => expect(port.persistStructured).toHaveBeenCalledTimes(2));
+    const retrySnapshot = intake.getSnapshot();
+    expect(retrySnapshot).toMatchObject({
+      isImporting: true,
+      importResult: null,
+      importProgress: { word: 'pear', summary: { pending: 1 } },
+    });
+
+    settlementCallbacks[0]?.(0, 'created');
+    expect(intake.getSnapshot()).toEqual(retrySnapshot);
+
+    settlementCallbacks[1]?.(0, 'created');
+    secondSave.resolve({ createdCount: 1, outcomes: ['created'] });
+    await expect(retry).resolves.toMatchObject({
+      status: 'completed',
+      summary: { total: 1, created: 1, pending: 0 },
+    });
+    expect(intake.getSnapshot().importResult).toMatchObject({
+      status: 'completed',
+      summary: { total: 1, created: 1, pending: 0 },
+    });
+  });
+
   it('surfaces a busy import attempt instead of silently ignoring it', async () => {
     const { port } = createFakePort();
     const pending = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();

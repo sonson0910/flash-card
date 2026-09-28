@@ -3,7 +3,7 @@ import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { Check, Download, Loader2, RotateCcw, X } from 'lucide-react';
 import type { RefObject } from 'react';
-import type { SpreadsheetImportProgress, SpreadsheetImportResult } from './spreadsheetImportService';
+import type { SpreadsheetImportIssue, SpreadsheetImportProgress, SpreadsheetImportResult, SpreadsheetImportSummary } from './spreadsheetImportService';
 import './spreadsheet-import-dialog.css';
 
 export interface SpreadsheetColumnMapping {
@@ -42,6 +42,8 @@ export function createSpreadsheetImportErrorReport(
     ...(result.status === 'failed' ? { reason: result.reason } : {}),
     summary: result.summary,
     message: result.message,
+    issues: result.issues ?? [],
+    omittedIssues: result.omittedIssues ?? 0,
   }, null, 2);
 }
 
@@ -90,7 +92,7 @@ export function SpreadsheetImportDialog({
               <Dialog.Title className="spreadsheet-import-title"><Trans id="library.import.dialog-title" message="Import from spreadsheet" /></Dialog.Title>
               <Dialog.Description className="spreadsheet-import-description">
                 {fileName ? <code>{fileName}</code> : <Trans id="library.import.waiting-file" message="Preparing the selected file" />}
-                {result ? <span> · <Trans id="library.import.rows-count" message="{count, plural, one {# row} other {# rows}}" values={{ count: result.summary.total }} /></span> : null}
+                {result || progress?.summary ? <span> · <Trans id="library.import.rows-count" message="{count, plural, one {# row} other {# rows}}" values={{ count: result?.summary.total ?? progress?.summary?.total ?? 0 }} /></span> : null}
               </Dialog.Description>
             </div>
             <Dialog.Close className="spreadsheet-import-close" aria-label={i18n._(msg({ id: 'library.close', message: 'Close' }))}>
@@ -98,26 +100,29 @@ export function SpreadsheetImportDialog({
             </Dialog.Close>
           </header>
 
-          <div className="spreadsheet-import-body">
+          <div className="spreadsheet-import-body" tabIndex={0}>
             {isImporting ? (
               <div className="spreadsheet-import-progress" role="status" aria-live="polite">
                 <div className="spreadsheet-import-progress-heading">
                   <span className="spreadsheet-import-spinner"><Loader2 size={17} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /></span>
-                  {progress ? (
+                  {progress && progress.total > 0 ? (
                     <strong><Trans id="library.import.progress" message="Importing {current, number} of {total, number}" values={{ current: progress.current, total: progress.total }} /></strong>
                   ) : (
                     <strong><Trans id="library.import.preparing" message="Reading your spreadsheet…" /></strong>
                   )}
                   {progress ? <span>{progress.word}</span> : null}
                 </div>
-                {progress ? <progress value={progress.current} max={progress.total}><Trans id="library.import.progress-fallback" message="{current} of {total}" values={{ current: progress.current, total: progress.total }} /></progress> : <div className="spreadsheet-import-indeterminate" />}
+                {progress && progress.total > 0 ? <progress value={progress.current} max={progress.total}><Trans id="library.import.progress-fallback" message="{current} of {total}" values={{ current: progress.current, total: progress.total }} /></progress> : <div className="spreadsheet-import-indeterminate" />}
                 <p><Trans id="library.import.background" message="You can close this — the import keeps running in the background." /></p>
               </div>
+            ) : null}
+            {isImporting && progress?.summary ? (
+              <ImportSummaryPanel summary={progress.summary} issues={progress.issues ?? []} omittedIssues={progress.omittedIssues ?? 0} inProgress />
             ) : isTerminal && result ? (
               <ImportResultPanel result={result} mapping={mapping} />
-            ) : (
+            ) : !isImporting ? (
               <div className="spreadsheet-import-empty" role="status"><Trans id="library.import.waiting" message="Select a spreadsheet to begin importing." /></div>
-            )}
+            ) : null}
 
             {!isImporting && mapping.length > 0 ? <ImportMapping mapping={mapping} /> : null}
           </div>
@@ -144,14 +149,6 @@ export function SpreadsheetImportDialog({
 
 function ImportResultPanel({ result, mapping }: { result: SpreadsheetImportResult; mapping: readonly SpreadsheetColumnMapping[] }) {
   const isCompleted = result.status === 'completed';
-  const summary = result.summary;
-  const rows = [
-    { id: 'created', value: summary.created, label: <Trans id="library.import.created" message="Created" />, hint: <Trans id="library.import.created-hint" message="new cards" /> },
-    { id: 'reused', value: summary.reused, label: <Trans id="library.import.reused" message="Reused" />, hint: <Trans id="library.import.reused-hint" message="already in library" /> },
-    { id: 'skipped', value: summary.skipped, label: <Trans id="library.import.skipped" message="Skipped" />, hint: <Trans id="library.import.skipped-hint" message="duplicate or safety limit" /> },
-    { id: 'failed', value: summary.failed, label: <Trans id="library.import.summary-failed" message="Failed" />, hint: <Trans id="library.import.failed-hint" message="needs attention" /> },
-  ];
-
   return (
     <div className="spreadsheet-import-result" aria-live={isCompleted ? 'polite' : 'assertive'} role={isCompleted ? 'status' : 'alert'}>
       <div className={`spreadsheet-import-result-heading${isCompleted ? ' is-complete' : ''}`}>
@@ -159,13 +156,52 @@ function ImportResultPanel({ result, mapping }: { result: SpreadsheetImportResul
         <strong>{isCompleted ? <Trans id="library.import.complete" message="Import complete" /> : result.status === 'partial' ? <Trans id="library.import.partial" message="Import partly complete" /> : <Trans id="library.import.status-failed" message="Import failed" />}</strong>
       </div>
       <p className="spreadsheet-import-result-message"><ImportResultDescription result={result} /></p>
+      <ImportSummaryPanel summary={result.summary} issues={result.issues ?? []} omittedIssues={result.omittedIssues ?? 0} />
+      {!isCompleted ? <p className="spreadsheet-import-result-guidance"><Trans id="library.import.retry-guidance" message="Retry failed or skipped words after checking the source rows." /></p> : null}
+      {mapping.length === 0 ? <p className="spreadsheet-import-result-guidance"><Trans id="library.import.mapping-service" message="The import service validated the supported Word and Translation fields before saving." /></p> : null}
+    </div>
+  );
+}
+
+function ImportSummaryPanel({ summary, issues, omittedIssues, inProgress = false }: {
+  summary: SpreadsheetImportSummary;
+  issues: readonly SpreadsheetImportIssue[];
+  omittedIssues: number;
+  inProgress?: boolean;
+}) {
+  const rows = [
+    { id: 'created', value: summary.created, label: <Trans id="library.import.created" message="Created" />, hint: <Trans id="library.import.created-hint" message="new cards" /> },
+    { id: 'reused', value: summary.reused, label: <Trans id="library.import.reused" message="Reused" />, hint: <Trans id="library.import.reused-hint" message="already in library" /> },
+    { id: 'skipped', value: summary.skipped, label: <Trans id="library.import.skipped" message="Skipped" />, hint: <Trans id="library.import.skipped-hint" message="duplicate or safety limit" /> },
+    { id: 'failed', value: summary.failed, label: <Trans id="library.import.summary-failed" message="Failed" />, hint: <Trans id="library.import.failed-hint" message="needs attention" /> },
+    { id: 'pending', value: summary.pending ?? 0, label: <Trans id="library.import.pending" message="Pending" />, hint: <Trans id="library.import.pending-hint" message="save not confirmed" /> },
+  ];
+
+  return (
+    <div className="spreadsheet-import-result">
+      {inProgress ? <strong><Trans id="library.import.results-so-far" message="Results so far" /></strong> : null}
       <dl className="spreadsheet-import-summary">
         {rows.map(row => <div key={row.id}><dt>{row.label}<small>{row.hint}</small></dt><dd>{row.value.toLocaleString()}</dd></div>)}
       </dl>
-      {!isCompleted ? <p className="spreadsheet-import-result-guidance"><Trans id="library.import.retry-guidance" message="Retry failed or skipped words after checking the source rows." /></p> : null}
-      {mapping.length === 0 ? <p className="spreadsheet-import-result-guidance"><Trans id="library.import.mapping-service" message="The import service validated the supported Word and Translation fields before saving." /></p> : null}
-  </div>
+      {issues.length > 0 ? <ImportIssues issues={issues} omittedIssues={omittedIssues} /> : null}
+    </div>
   );
+}
+
+function ImportIssues({ issues, omittedIssues }: { issues: readonly SpreadsheetImportIssue[]; omittedIssues: number }) {
+  const visible = issues.slice(0, 10);
+  return <section className="spreadsheet-import-mapping">
+    <h3><Trans id="library.import.issues-title" message="Rows needing attention" /></h3>
+    <ul>
+      {visible.map((issue, index) => <li key={`${issue.sourceRow}-${issue.sourceColumn ?? 0}-${index}`}>
+        <strong><Trans id="library.import.issue-row" message="Row {row, number}" values={{ row: issue.sourceRow }} /></strong>
+        {issue.sourceColumn ? <span><Trans id="library.import.issue-column" message="Column {column, number}" values={{ column: issue.sourceColumn }} /></span> : null}
+        {issue.word ? <code>{issue.word}</code> : null}
+        <span>{issue.kind === 'pending' ? <Trans id="library.import.issue-pending" message="Save not confirmed" /> : issue.kind === 'duplicate' ? <Trans id="library.import.issue-duplicate" message="Duplicate" /> : issue.kind === 'invalid' ? <Trans id="library.import.issue-invalid" message="Invalid row" /> : issue.kind === 'generation' ? <Trans id="library.import.issue-generation" message="Not generated" /> : <Trans id="library.import.issue-failed" message="Could not save" />}</span>
+      </li>)}
+    </ul>
+    {issues.length > visible.length || omittedIssues > 0 ? <p><Trans id="library.import.more-issues" message="{count, plural, one {# more issue in the error report} other {# more issues in the error report}}" values={{ count: issues.length - visible.length + omittedIssues }} /></p> : null}
+  </section>;
 }
 
 function ImportResultDescription({ result }: { result: SpreadsheetImportResult }) {

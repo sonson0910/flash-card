@@ -1,6 +1,6 @@
 ---
 title: "Contract — spreadsheet import live result preview"
-status: proposed; owner approval required before implementation
+status: approved by owner 2026-09-28; implemented and verified locally
 ---
 
 # Spreadsheet import live result preview
@@ -71,4 +71,4 @@ No Firestore document schema, Rules or index changes. Do not expose raw exceptio
 
 ## Approval gate
 
-Owner approval is required because this changes the import feedback/result contract and the meaning/timing of `Created`, even though it adds no Firestore I/O. Do not implement the new contract until approved.
+Owner approved this contract on 2026-09-28. The implementation changes the import feedback/result contract and the meaning/timing of `Created` without adding Firestore I/O.

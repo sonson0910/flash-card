@@ -19,8 +19,10 @@ const renderMarkup = (node: React.ReactNode) => renderToStaticMarkup(
 
 const partialResult = {
   status: 'partial' as const,
-  summary: { total: 4, created: 2, reused: 1, failed: 1, skipped: 0 },
+  summary: { total: 5, created: 2, reused: 1, failed: 1, skipped: 0, pending: 1 },
   message: 'service detail should stay in the report',
+  issues: [{ sourceRow: 5, sourceColumn: 2, word: 'banana', kind: 'pending' as const, message: 'Save not confirmed' }],
+  omittedIssues: 3,
 };
 
 describe('SpreadsheetImportDialog', () => {
@@ -31,6 +33,8 @@ describe('SpreadsheetImportDialog', () => {
       status: 'partial',
       summary: partialResult.summary,
       message: partialResult.message,
+      issues: partialResult.issues,
+      omittedIssues: 3,
     });
     expect(report.reason).toBeUndefined();
   });
@@ -42,12 +46,19 @@ describe('SpreadsheetImportDialog', () => {
         onOpenChange={vi.fn()}
         fileName="lesson.xlsx"
         isImporting
-        progress={{ current: 2, total: 4, word: 'banana' }}
+        progress={{
+          current: 2, total: 5, word: 'banana', phase: 'saving',
+          summary: { total: 5, created: 1, reused: 0, failed: 0, skipped: 0, pending: 4 },
+          issues: partialResult.issues,
+        }}
         result={null}
       />,
     );
-    expect(progress).toContain('Importing 2 of 4');
+    expect(progress).toContain('Importing 2 of 5');
     expect(progress).toContain('banana');
+    expect(progress).toContain('Results so far');
+    expect(progress).toContain('Row 5');
+    expect(progress).toContain('Pending');
 
     const terminal = renderMarkup(
       <SpreadsheetImportDialog
@@ -64,6 +75,8 @@ describe('SpreadsheetImportDialog', () => {
     expect(terminal).toContain('Import partly complete');
     expect(terminal).toContain('Column mapping');
     expect(terminal).toContain('Download error report');
+    expect(terminal).toContain('Pending');
+    expect(terminal).toContain('3 more issues in the error report');
     expect(terminal).not.toContain(partialResult.message);
   });
 });

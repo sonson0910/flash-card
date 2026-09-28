@@ -1781,6 +1781,46 @@ msgid "library.import.in-progress"
 msgstr "Import in progress"
 
 #. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:198
+msgid "library.import.issue-column"
+msgstr "Column {column, number}"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:200
+msgid "library.import.issue-duplicate"
+msgstr "Duplicate"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:200
+msgid "library.import.issue-failed"
+msgstr "Could not save"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:200
+msgid "library.import.issue-generation"
+msgstr "Not generated"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:200
+msgid "library.import.issue-invalid"
+msgstr "Invalid row"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:200
+msgid "library.import.issue-pending"
+msgstr "Save not confirmed"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:197
+msgid "library.import.issue-row"
+msgstr "Row {row, number}"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:194
+msgid "library.import.issues-title"
+msgstr "Rows needing attention"
+
+#. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:89
 msgid "library.import.kicker"
 msgstr "Import"
@@ -1801,6 +1841,11 @@ msgid "library.import.mapping-title"
 msgstr "Column mapping"
 
 #. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:203
+msgid "library.import.more-issues"
+msgstr "{count, plural, one {# more issue in the error report} other {# more issues in the error report}}"
+
+#. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:159
 #: src/features/library/LibraryTools.tsx:146
 msgid "library.import.partial"
@@ -1815,6 +1860,16 @@ msgstr "Some rows were saved. Review the summary and retry the rows that need at
 #: src/features/library/LibraryTools.tsx:154
 msgid "library.import.partial-guidance"
 msgstr "Retry the failed or skipped words later."
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:177
+msgid "library.import.pending"
+msgstr "Pending"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:177
+msgid "library.import.pending-hint"
+msgstr "save not confirmed"
 
 #. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:109
@@ -1832,6 +1887,11 @@ msgstr "Importing {current, number} of {total, number}"
 #: src/features/importExport/SpreadsheetImportDialog.tsx:113
 msgid "library.import.progress-fallback"
 msgstr "{current} of {total}"
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:182
+msgid "library.import.results-so-far"
+msgstr "Results so far"
 
 #. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:165

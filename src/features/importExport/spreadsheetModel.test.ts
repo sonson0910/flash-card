@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { cardsToSpreadsheetRows, extractFlatWords, parseStructuredCardRows } from './spreadsheetModel';
+import {
+  cardsToSpreadsheetRows,
+  classifyFlatWords,
+  classifyStructuredCardRows,
+  extractFlatWords,
+  parseStructuredCardRows,
+} from './spreadsheetModel';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
 import { getActiveUiLocale, setActiveUiLocale } from '../../i18n/loadCatalog';
 
@@ -29,6 +35,39 @@ describe('spreadsheet import/export model', () => {
       id: '1', word: 'apple', translation: 'táo', explanation: '', phonetic: '', emoji: '🍎',
       category: 'Food', partOfSpeech: 'Noun', audioUrl: null, imageUrl: null,
     }])[0]).toMatchObject({ Word: 'apple', Translation: 'táo', 'Part of Speech': 'noun' });
+  });
+
+  it('classifies structured rows with their physical source rows', () => {
+    expect(classifyStructuredCardRows([
+      { row: { Word: 'apple', Translation: 'táo' }, sourceRow: 4 },
+      { row: { Word: 'apple', Translation: 'trùng' }, sourceRow: 6 },
+      { row: { Word: 'pear', Translation: '' }, sourceRow: 7 },
+    ])).toEqual([
+      expect.objectContaining({ kind: 'accepted', sourceRow: 4 }),
+      { kind: 'duplicate', word: 'apple', sourceRow: 6 },
+      { kind: 'invalid', word: 'pear', sourceRow: 7 },
+    ]);
+  });
+
+  it('classifies flat duplicates and items beyond the unique-word cap with coordinates', () => {
+    expect(Array.from(classifyFlatWords([
+      { value: ' Apple ', sourceRow: 3, sourceColumn: 2 },
+      { value: 'apple', sourceRow: 5, sourceColumn: 1 },
+      { value: 'pear', sourceRow: 5, sourceColumn: 3 },
+    ], 1))).toEqual([
+      { kind: 'accepted', word: 'Apple', sourceRow: 3, sourceColumn: 2 },
+      { kind: 'duplicate', word: 'apple', sourceRow: 5, sourceColumn: 1 },
+      { kind: 'skipped', word: 'pear', sourceRow: 5, sourceColumn: 3 },
+    ]);
+  });
+
+  it('streams flat classifications without building a candidate array', () => {
+    const classifications = classifyFlatWords([
+      { value: 'apple', sourceRow: 1, sourceColumn: 1 },
+      { value: 'pear', sourceRow: 2, sourceColumn: 1 },
+    ]);
+    expect(Array.isArray(classifications)).toBe(false);
+    expect(Array.from(classifications)).toHaveLength(2);
   });
 
   it('keeps distinct validated canonical senses of the same word', () => {

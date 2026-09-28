@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CardIntakePortOptions } from './cardIntakePortContract';
 import { createCardIntakePipeline } from './cardIntakePipeline';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
+import { OperationTimeoutError } from '../../lib/async';
 
 const generationRuntime = vi.hoisted(() => ({
   generateWordInfo: vi.fn(),
@@ -32,6 +33,8 @@ vi.mock('../../lib/cardRepository', () => ({
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  vi.useRealTimers();
+  generationRuntime.generateWordInfo.mockClear();
   repositoryRuntime.createCardV2IfAbsent.mockClear();
 });
 
@@ -145,6 +148,134 @@ describe('Card Intake Pipeline contract', () => {
       opId: expect.stringMatching(/^create-/),
       timeZone: expect.any(String),
     }));
+  });
+
+  it('returns confirmed structured save outcomes, including already-present patches', async () => {
+    const context = createContext();
+    const candidate = card('structured-created');
+    const existing = card('structured-existing');
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+    const settlements: Array<[number, string]> = [];
+
+    repositoryRuntime.createCardV2IfAbsent.mockResolvedValueOnce({
+      card: candidate,
+      created: true,
+      gamification: null,
+    });
+
+    await expect(pipeline.persistStructured({
+      creates: [candidate],
+      patches: [{ card: existing, fields: { translation: 'đã cập nhật' } }],
+    }, (index, outcome) => settlements.push([index, outcome]))).resolves.toEqual({
+      createdCount: 1,
+      outcomes: ['created', 'reused'],
+    });
+
+    expect(settlements).toEqual([[0, 'created'], [1, 'reused']]);
+  });
+
+  it('reports a server deduplication as reused for a structured create', async () => {
+    const context = createContext();
+    const candidate = card('structured-reused');
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    repositoryRuntime.createCardV2IfAbsent.mockResolvedValueOnce({
+      card: candidate,
+      created: false,
+      gamification: null,
+    });
+
+    await expect(pipeline.persistStructured({ creates: [candidate], patches: [] })).resolves.toEqual({
+      createdCount: 0,
+      outcomes: ['reused'],
+    });
+  });
+
+  it('keeps a timed-out structured save pending even if its callable succeeds later', async () => {
+    vi.useFakeTimers();
+    const context = createContext();
+    const candidate = card('structured-pending');
+    const cloud = deferred<{ card: typeof candidate; created: boolean; gamification: null }>();
+    repositoryRuntime.createCardV2IfAbsent.mockReturnValueOnce(cloud.promise);
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    const persistence = pipeline.persistStructured({ creates: [candidate], patches: [] });
+    await vi.advanceTimersByTimeAsync(8_000);
+
+    await expect(persistence).resolves.toEqual({
+      createdCount: 0,
+      outcomes: ['pending'],
+    });
+    cloud.resolve({ card: candidate, created: true, gamification: null });
+    await Promise.resolve();
+  });
+
+  it('classifies definitive and timed-out structured patches without treating either as reused', async () => {
+    const context = createContext();
+    const first = card('patch-failed');
+    const second = card('patch-pending');
+    context.patchCard = vi.fn()
+      .mockRejectedValueOnce(new Error('patch rejected'))
+      .mockRejectedValueOnce(new OperationTimeoutError('patch timed out'));
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await expect(pipeline.persistStructured({
+      creates: [],
+      patches: [
+        { card: first, fields: { translation: 'x' } },
+        { card: second, fields: { translation: 'y' } },
+      ],
+    })).resolves.toEqual({
+      createdCount: 0,
+      outcomes: ['failed', 'pending'],
+    });
+  });
+
+  it('returns an optimistic generated card with its authoritative settlement promise', async () => {
+    const context = createContext();
+    const candidate = card('flat-created');
+    const cloud = deferred<{ card: typeof candidate; created: boolean; gamification: null }>();
+    repositoryRuntime.createCardV2IfAbsent.mockReturnValueOnce(cloud.promise);
+    generationRuntime.generateWordInfo.mockResolvedValueOnce({
+      translation: candidate.translation,
+      explanation: '', explanationTranslation: '', phonetic: '', emoji: '📝', category: 'General',
+      partOfSpeech: '', cefrLevel: '', exampleSentence: '', exampleTranslation: '', collocations: [],
+      synonyms: [], antonyms: [], register: '', commonMistake: '', imageSearchQuery: '',
+    });
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    const generated = await pipeline.generate(candidate.word, 0);
+
+    expect(generated.created).toBe(true);
+    cloud.resolve({ card: candidate, created: true, gamification: null });
+    await expect(generated.settlement).resolves.toBe('created');
+  });
+
+  it('keeps a flat generated save pending after timeout when its callable later succeeds', async () => {
+    vi.useFakeTimers();
+    const context = createContext();
+    const candidate = card('flat-pending');
+    const cloud = deferred<{ card: typeof candidate; created: boolean; gamification: null }>();
+    repositoryRuntime.createCardV2IfAbsent.mockReturnValueOnce(cloud.promise);
+    generationRuntime.generateWordInfo.mockResolvedValueOnce({
+      translation: candidate.translation,
+      explanation: '', explanationTranslation: '', phonetic: '', emoji: '📝', category: 'General',
+      partOfSpeech: '', cefrLevel: '', exampleSentence: '', exampleTranslation: '', collocations: [],
+      synonyms: [], antonyms: [], register: '', commonMistake: '', imageSearchQuery: '',
+    });
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+    const generated = await pipeline.generate(candidate.word, 0);
+    const settlements: string[] = [];
+    if (!generated.settlement) throw new Error('Expected a settlement promise.');
+    void generated.settlement.then(outcome => settlements.push(outcome));
+
+    await vi.advanceTimersByTimeAsync(8_000);
+    await expect(generated.settlement).resolves.toBe('pending');
+    expect(settlements).toEqual(['pending']);
+
+    cloud.resolve({ card: candidate, created: true, gamification: null });
+    await Promise.resolve();
+    expect(settlements).toEqual(['pending']);
   });
 
   it('reuses the original create operation after a lost-response retry', async () => {

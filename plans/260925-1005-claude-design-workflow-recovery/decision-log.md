@@ -317,3 +317,14 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
   1 document write. **0 reads, writes, queries, subscriptions và callable calls
   mới**; không đổi persisted schema hay Firestore Rules. Chỉ code/test local,
   không deploy.
+
+## 2026-09-28 — Owner duyệt live preview cho spreadsheet import
+
+- Duyệt [contract-spreadsheet-import-live-preview.md](contract-spreadsheet-import-live-preview.md):
+  hiện kết quả và lỗi theo dòng/cột nguồn trong lúc import, phân biệt `Created`
+  chỉ sau khi server xác nhận, và giữ `pending` khi callable quá thời gian chờ.
+  Callable hoàn tất muộn không đổi kết quả đã trả về; thử lại do người dùng khởi
+  tạo vẫn dùng đường deduplication hiện có.
+- Giới hạn 5.000 lỗi hiển thị/báo cáo và đếm phần bị lược. Không thêm Firestore
+  document read/write, query, subscription hoặc callable call; chỉ quan sát
+  settlement của request lưu hiện có. Không deploy trong lượt này.

@@ -137,12 +137,23 @@ function LibraryFixture() {
       onOpenChange={noOp}
       fileName="vocabulary.xlsx"
       isImporting={dialog === 'import-progress'}
-      progress={dialog === 'import-progress' ? { current: 12, total: 24, word: 'serendipity' } : null}
+      progress={dialog === 'import-progress' ? {
+        current: 12,
+        total: 24,
+        word: 'serendipity',
+        phase: 'saving',
+        summary: { total: 24, created: 5, reused: 1, failed: 1, skipped: 2, pending: 15 },
+        issues: [{ sourceRow: 7, sourceColumn: 3, word: 'serendipity', kind: 'duplicate', message: 'This word appears earlier in the file.' }],
+      } : null}
       result={dialog === 'import-error' ? {
         status: 'failed',
-        reason: 'parse',
-        summary: { total: 0, created: 0, reused: 0, failed: 0, skipped: 0 },
-        message: 'Could not understand this spreadsheet. Check its columns and file format, then try again.',
+        reason: 'items',
+        summary: { total: 3, created: 0, reused: 0, failed: 2, skipped: 1 },
+        message: 'No cards were imported. Check the failed rows and try again.',
+        issues: [
+          { sourceRow: 4, sourceColumn: 2, word: 'apple', kind: 'invalid', message: 'A required field is invalid.' },
+          { sourceRow: 7, sourceColumn: 3, word: 'apple', kind: 'duplicate', message: 'This word appears earlier in the file.' },
+        ],
       } : null}
       onDownloadErrorReport={noOp}
     />}

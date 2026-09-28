@@ -1781,6 +1781,46 @@ msgid "library.import.in-progress"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:198
+msgid "library.import.issue-column"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:200
+msgid "library.import.issue-duplicate"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:200
+msgid "library.import.issue-failed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:200
+msgid "library.import.issue-generation"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:200
+msgid "library.import.issue-invalid"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:200
+msgid "library.import.issue-pending"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:197
+msgid "library.import.issue-row"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:194
+msgid "library.import.issues-title"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:89
 msgid "library.import.kicker"
 msgstr ""
@@ -1801,6 +1841,11 @@ msgid "library.import.mapping-title"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:203
+msgid "library.import.more-issues"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:159
 #: src/features/library/LibraryTools.tsx:146
 msgid "library.import.partial"
@@ -1814,6 +1859,16 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/features/library/LibraryTools.tsx:154
 msgid "library.import.partial-guidance"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:177
+msgid "library.import.pending"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:177
+msgid "library.import.pending-hint"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -1831,6 +1886,11 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:113
 msgid "library.import.progress-fallback"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/importExport/SpreadsheetImportDialog.tsx:182
+msgid "library.import.results-so-far"
 msgstr ""
 
 #. js-lingui-explicit-id
