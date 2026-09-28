@@ -1,6 +1,6 @@
 ---
 title: "Owner review — remaining extension and WebWords Canvas gaps"
-status: proposed
+status: owner decisions recorded 2026-09-28; local implementation in progress
 ---
 
 # Owner review: Phase 07 Canvas completion
@@ -42,24 +42,24 @@ any Canvas panel for which real, scoped data is unavailable.
 
 ## Decisions required from the owner
 
-1. **ExtLoop fidelity:** choose either the zero-I/O honest reminder described
-   in Decision A, or authorize the aggregate contract in Decision B. The
-   existing reminder must remain if no decision is made.
-2. **Language presentation:** choose whether the extension may label the
-   active target language using a bundled locale label only, or whether a
-   learner-editable course display name is required. The latter expands the
-   course profile contract and is not proposed by default.
-3. **Language detection:** choose whether to retain the current active-course
-   routing only, or authorize a detector with an explicit accuracy, provider,
-   privacy, and cost contract. Do not show a confidence percentage or mismatch
-   action before that decision.
-4. **WebWords shell:** choose whether `?webWords=1` remains a dialog route or
-   becomes a first-class full workspace route. The Canvas comparison stays
-   open while it remains a dialog.
-5. **Bulk-add meaning:** if the workspace is approved, choose whether “Add
-   all” means every loaded/filtered item or every matching item. The latter is
-   not bounded by the current page query and requires a new server-side
-   operation or a stated cap.
+**Owner decision 2026-09-28:** use Decision A for ExtLoop (truthful recent saves,
+zero new Firestore I/O); show only the already-synced target-language label in
+LangExt (no detector, confidence claim or in-page course chooser); and make
+`?webWords=1` a full-screen workspace aligned with the Canvas. “Add all” applies
+only to currently loaded and filtered cards and discloses their count. The
+workspace keeps the existing bounded page query (at most 31 document reads per
+page), with no new write or subscription. The owner delegated visual treatment
+to the implementation while retaining these data and cost boundaries.
+
+1. **ExtLoop fidelity:** Decision A approved. Decision B remains unapproved.
+2. **Language presentation:** bundled label for the synced target language
+   approved; no learner-editable course display name.
+3. **Language detection:** retain active-course routing only. No detector,
+   confidence percentage or mismatch action in this wave.
+4. **WebWords shell:** full-screen workspace route approved, preserving the
+   existing `?webWords=1` deep link and back behavior.
+5. **Bulk-add meaning:** “Add all” means currently loaded and filtered cards
+   only. Every matching item across unseen pages remains unapproved.
 
 ## Decision A — no-new-I/O extension completion
 

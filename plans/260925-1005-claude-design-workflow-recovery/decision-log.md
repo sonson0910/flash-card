@@ -354,3 +354,15 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
   nhưng tăng bytes của stats. Không backfill dữ liệu cũ.
 - Nội dung wave này theo catalog thật: **3 track × 15 unit**. Sáu shelf và 12
   unit trong Canvas không là nguồn dữ liệu chuẩn. Không deploy/migrate production.
+
+## 2026-09-28 — Owner chốt Extension và WebWords Canvas
+
+- ExtLoop giữ nhắc nhở recent-save trung thực theo Decision A trong
+  [contract-extension-canvas.md](contract-extension-canvas.md): không dựng biểu đồ
+  tuần/site/streak khi không có dữ liệu, **0 Firestore I/O mới**.
+- LangExt chỉ hiện target language đã sync từ active course; không thêm detector,
+  confidence, mismatch action hoặc course chooser trong content script.
+- `?webWords=1` thành workspace full-screen theo Canvas, giữ deep link/back,
+  query tối đa 31 card document reads mỗi trang như hiện có; “Add all” chỉ áp
+  dụng tập đang tải và đang lọc với count rõ ràng. Không thêm Firestore write,
+  subscription hoặc query ngoài đường phân trang hiện có. Không deploy.
