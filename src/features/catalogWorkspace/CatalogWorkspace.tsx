@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
-import type { Firestore } from 'firebase/firestore';
 import { useUiLocale } from '../../i18n/I18nProvider';
 import type { CardData } from '../../types/card';
 import type { CatalogLearningStatus, CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
@@ -60,7 +59,7 @@ export interface CatalogWorkspaceProps {
   readonly libraryStats?: PersonalLibraryPathInput;
   readonly openVocabulary?: () => void;
   readonly continueReview?: () => void | Promise<void>;
-  readonly database?: Firestore | null;
+  readonly database?: Parameters<typeof readCatalogProgressProjection>[0] | null;
   readonly verifiedLibraryEpoch?: number | null;
 }
 

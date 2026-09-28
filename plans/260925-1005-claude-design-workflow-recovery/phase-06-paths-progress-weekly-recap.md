@@ -79,6 +79,8 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 
 > **Clear Library projection cleanup 2026-09-28.** Sau khi tăng epoch, client chỉ liệt kê thẻ từ server và gọi trusted callable theo page tối đa 249 thẻ; mỗi transaction xóa card đời cũ và projection đời cũ, giữ projection được tạo lại ở epoch mới. Page quá lớn được chia nhỏ theo 8 MiB JSON và chỉ retry khi Firestore xác nhận lỗi kích thước transaction. Focused client 34/34, Functions 10/10, Firestore Emulator integration 5/5 pass (gồm ca projection được tạo lại). Page đầy `N` catalog cards có `N` reads liệt kê ở client, tối đa `2N+3` reads và `2N+1` writes ở trusted route; page retry phát sinh thêm guard/rate-limit/transaction reads như contract. Không chạy trên dữ liệu thật; checklist Canvas vẫn mở vì Continue và release publishable chưa có.
 
+> **Paths architecture gate 2026-09-28.** `CatalogWorkspace.tsx` lấy kiểu database từ chữ ký service `.ts`, không import `firebase/firestore` tại presentation boundary. Architecture Analyzer focused 12/12 pass sau khi gate rộng phát hiện một violation. Không đổi hành vi hoặc Firestore I/O.
+
 Stats/ActivityHeatmap/catalog tests; e2e/paths-progress-visual.spec.ts và catalog-workspace.spec.ts; new weekly-recap unit+export journey; gates chung.
 
 Hợp đồng chung: [acceptance-contract.md](acceptance-contract.md). Tên test mới là đề xuất; trước chạy phải kiểm inventory file thực, không báo file vắng là PASS. Với flow có mutation, test dùng emulator/fixtures, không dữ liệu người học hay Gemini thật.
