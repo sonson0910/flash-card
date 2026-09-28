@@ -7,7 +7,7 @@ import type {
 } from 'firebase-admin/firestore';
 import { FieldValue } from 'firebase-admin/firestore';
 import { InputValidationError } from './inputValidation.js';
-import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
+import { LegacyLibraryMigrationFenceError } from './legacyLibraryMigrationOwnerScope.js';
 import { deleteCatalogProgressForCard } from './catalogProgressPersistence.js';
 
 export const MAX_PROTOCOL_COUNTER = Number.MAX_SAFE_INTEGER;
@@ -337,9 +337,10 @@ export async function applyBulkCardMutationsForOwner(
   const deleteTombstoneRefs = request.deletes.map(del => owner.collection('card_tombstones').doc(del.cardId));
 
   return database.runTransaction(async (transaction: Transaction) => {
-    await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
     const stateSnapshot = await transaction.get(stateRef);
-    const serverEpoch = stateSnapshot.exists ? safeCounter(stateSnapshot.data()?.libraryEpoch) : 0;
+    const state = stateSnapshot.exists ? stateSnapshot.data() : undefined;
+    if (state?.libraryMigrationFenceActive === true) throw new LegacyLibraryMigrationFenceError();
+    const serverEpoch = stateSnapshot.exists ? safeCounter(state?.libraryEpoch) : 0;
     if (request.libraryEpoch !== serverEpoch) {
       throw new BulkMutationEpochError(request.libraryEpoch < serverEpoch ? 'stale-library-epoch' : 'future-library-epoch');
     }

@@ -26,11 +26,9 @@ const baseCard = (overrides: DocumentData = {}): DocumentData => ({
 
 const harness = (
   entries: Record<string, DocumentSnapshot> = {},
-  fenced = false,
 ) => {
   const values = new Map<string, DocumentSnapshot>([
     ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
-    ...(fenced ? [['users/owner/profile/library_migration_fence', snapshot(true, { schemaVersion: 1, active: true })] as const] : []),
     ...Object.entries(entries),
   ]);
   const writes: Array<{ path: string; data: DocumentData }> = [];
@@ -58,7 +56,7 @@ const harness = (
     collection: (name: string) => nestedCollection(name),
     runTransaction: vi.fn(async (update: (value: Transaction) => Promise<unknown>) => update(transaction)),
   } as unknown as Firestore;
-  return { database, writes, deletes, values };
+  return { database, writes, deletes, values, transaction };
 };
 
 const patchRequest = (overrides: Partial<BulkCardMutationRequest> = {}): BulkCardMutationRequest => ({
@@ -169,11 +167,21 @@ describe('parseBulkCardMutationRequest', () => {
 });
 
 describe('applyBulkCardMutationsForOwner', () => {
-  it('rejects the whole batch while the durable migration fence is active', async () => {
-    const test = harness({ 'users/owner/cards/word-focus': snapshot(true, baseCard()) }, true);
+  it('rejects the whole batch while the library-state migration fence mirror is active', async () => {
+    const test = harness({
+      'users/owner/profile/library_state': snapshot(true, {
+        libraryEpoch: 2,
+        libraryMigrationFenceActive: true,
+      }),
+      'users/owner/cards/word-focus': snapshot(true, baseCard()),
+    });
     await expect(applyBulkCardMutationsForOwner(test.database, 'owner', patchRequest()))
       .rejects.toMatchObject({ name: 'LegacyLibraryMigrationFenceError' });
     expect(test.writes).toEqual([]);
+    expect(test.transaction.get).toHaveBeenCalledTimes(1);
+    expect(test.transaction.get).toHaveBeenCalledWith(expect.objectContaining({
+      path: 'users/owner/profile/library_state',
+    }));
   });
 
   it('rejects the whole batch on a shared library-epoch mismatch without any writes', async () => {
@@ -252,6 +260,11 @@ describe('applyBulkCardMutationsForOwner', () => {
       path: 'users/owner/card_tombstones/word-focus',
       data: expect.objectContaining({ opId: 'device-a:delete-1', libraryEpoch: 2, revision: 4 }),
     }]);
+    expect(test.transaction.get).toHaveBeenCalledTimes(1);
+    expect(test.transaction.getAll).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'users/owner/cards/word-focus' }),
+      expect.objectContaining({ path: 'users/owner/card_tombstones/word-focus' }),
+    );
   });
 
   it('removes a canonical card projection with its successful delete', async () => {
