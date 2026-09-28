@@ -78,8 +78,9 @@
 }
 .practice-board--shadowing button.size-20 { box-shadow: 0 16px 36px -15px var(--sf-shadow), 0 0 0 8px color-mix(in srgb, var(--sf-brand) 10%, transparent); }
 .practice-board--study [data-study-progress] { border-radius: 18px; box-shadow: inset 0 1px rgb(255 255 255 / .14), var(--sf-panel-shadow); }
-.practice-board--study [data-study-card] { max-width: 680px; }
-.practice-board--study [data-study-rating] { max-width: 680px; }
+.practice-board--study [data-study-card] { max-width: 460px; }
+.practice-board--study [data-study-card] h2 { max-width: 100%; overflow-wrap: anywhere; }
+.practice-board--study [data-study-rating] { max-width: 460px; }
 .practice-rating-board { border-color: var(--practice-line, var(--sf-border)) !important; }
 .practice-rating-board button { border-radius: 14px; }
 .practice-recap-board {

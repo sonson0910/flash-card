@@ -63,6 +63,10 @@ test('study reveal keeps progress visible and scrolls rating controls into view'
   // copy no longer exists.
   await page.getByRole('button', { name: 'Study now' }).click();
   await expect(page.locator('[data-study-progress]')).toBeVisible();
+  await page.getByRole('button', { name: 'Next card' }).click();
+  const heading = page.locator('[data-study-card] h2').first();
+  await expect(heading).toHaveText(longWord);
+  expect(await heading.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   await page.getByRole('button', { name: 'Reveal answer' }).click();
 
   const rating = page.locator('[data-study-rating]');
@@ -92,7 +96,7 @@ for (const viewport of [
       localStorage.setItem('sonflash_theme_follow_system', 'false');
       localStorage.setItem('sonflash_reduced_motion', 'true');
     });
-    await seedCards([{ ...richCard, phonetic: '/rɪˈzɛmbləns/', explanationTranslation: 'Sự giống nhau về hình dáng hoặc tính chất.', exampleSentence: 'These designs bear a resemblance.', exampleTranslation: 'Những thiết kế này có nét tương đồng.' }]);
+    await seedCards([{ ...card, word: 'resemblance', normalizedWord: 'resemblance', translation: 'sự tương đồng', category: 'Writing', phonetic: '/rɪˈzɛmbləns/', explanationTranslation: 'Sự giống nhau về hình dáng hoặc tính chất.', exampleSentence: 'These designs bear a resemblance.', exampleTranslation: 'Những thiết kế này có nét tương đồng.' }]);
     await signIn(page, '/?view=library&locale=en');
     await page.getByRole('button', { name: 'Study now' }).click();
 
