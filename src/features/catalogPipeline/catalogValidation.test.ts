@@ -11,7 +11,9 @@ import {
   parseCatalogCandidateProvenanceV1,
   parseCatalogChunkV1,
   parseCatalogReleaseManifestV1,
+  parseCatalogReleaseManifestV2,
   parseCatalogSourceManifestV1,
+  parseCatalogSourceManifestV2,
   validateCatalogSourceBundle,
 } from './catalogValidation';
 
@@ -97,6 +99,15 @@ const sourceManifest = () => ({
 describe('catalog contract parsers', () => {
   it('strictly parses an explicit bounded source manifest', () => {
     expect(parseCatalogSourceManifestV1(sourceManifest())).toEqual(sourceManifest());
+  });
+
+  it('keeps V1 source manifests unchanged and parses a bounded V2 descriptor file', () => {
+    const v2 = { ...sourceManifest(), manifestVersion: 2, unitDescriptorFile: 'units/foundation.json' };
+    expect(parseCatalogSourceManifestV2(v2)).toEqual(v2);
+    expect(() => parseCatalogSourceManifestV2({
+      ...v2,
+      unitDescriptorFile: v2.lexemeFiles[0],
+    })).toThrow(CatalogValidationError);
   });
 
   it.each([
@@ -196,6 +207,34 @@ describe('catalog contract parsers', () => {
     expect(() => parseCatalogReleaseManifestV1({
       ...manifest,
       chunks: [{ ...manifest.chunks[0], sha256: 'not-a-digest' }],
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('parses V2 descriptors only with localized title coverage', () => {
+    const manifest = {
+      manifestVersion: 2,
+      catalogId: 'english-pilot',
+      releaseId: 'english-pilot-0001',
+      sequence: 1,
+      contentLanguage: 'en',
+      supportLanguages: ['vi'],
+      createdAt: now,
+      previousReleaseId: null,
+      counts: { lexemes: 1, memberships: 1, chunks: 1, encodedBytes: 100 },
+      chunks: [{
+        id: 'chunk-0001', ordinal: 0, path: 'english-pilot-0001/chunk-0001.json',
+        sha256: 'a'.repeat(64), byteLength: 100, lexemeCount: 1, membershipCount: 1,
+        trackIds: ['general'],
+      }],
+      unitDescriptors: [{
+        unitId: 'pilot-1', trackId: 'general', tier: 'foundation', ordinal: 1,
+        titles: [{ language: 'en', text: 'First steps' }, { language: 'vi', text: 'Bước đầu tiên' }],
+      }],
+    };
+    expect(parseCatalogReleaseManifestV2(manifest)).toEqual(manifest);
+    expect(() => parseCatalogReleaseManifestV2({
+      ...manifest,
+      unitDescriptors: [{ ...manifest.unitDescriptors[0], titles: [{ language: 'en', text: 'First steps' }] }],
     })).toThrow(CatalogValidationError);
   });
 

@@ -7,6 +7,7 @@ export const CATALOG_PIPELINE_LIMITS = Object.freeze({
   maximumChunks: 100,
   maximumReleaseBytes: 50 * 1024 * 1024,
   maximumChunkMemberships: 100,
+  maximumUnitMemberships: 20,
   maximumChunkBytes: 512 * 1024,
   maximumPathLength: 512,
   maximumIdentifierLength: 128,
@@ -26,6 +27,13 @@ export interface CatalogSourceManifestV1 {
   readonly lexemeFiles: readonly string[];
   readonly membershipFiles: readonly string[];
 }
+
+export interface CatalogSourceManifestV2 extends Omit<CatalogSourceManifestV1, 'manifestVersion'> {
+  readonly manifestVersion: 2;
+  readonly unitDescriptorFile: string;
+}
+
+export type CatalogSourceManifest = CatalogSourceManifestV1 | CatalogSourceManifestV2;
 
 export type CatalogCandidateOriginV1 = 'human-authored' | 'ai-assisted' | 'imported';
 export type CatalogCandidatePublishabilityV1 =
@@ -81,10 +89,28 @@ export interface CatalogMembershipCandidateV1 {
   readonly review: CatalogReviewEvidenceV1;
 }
 
+export interface CatalogUnitTitleV1 {
+  readonly language: string;
+  readonly text: string;
+}
+
+/** Editorial unit metadata emitted only by a Catalog V2 release. */
+export interface CatalogUnitDescriptorV1 {
+  /** Must exactly match a membership's stable `lessonGroup`. */
+  readonly unitId: string;
+  readonly trackId: string;
+  readonly tier: string;
+  /** One-based order within a track. */
+  readonly ordinal: number;
+  readonly titles: readonly CatalogUnitTitleV1[];
+}
+
 export interface CatalogSourceBundleV1 {
-  readonly manifest: CatalogSourceManifestV1;
+  readonly manifest: CatalogSourceManifest;
   readonly lexemes: readonly CatalogLexemeCandidateV1[];
   readonly memberships: readonly CatalogMembershipCandidateV1[];
+  /** Omit for a compatible Catalog V1 release. */
+  readonly unitDescriptors?: readonly CatalogUnitDescriptorV1[];
 }
 
 /** Protected operator approval; candidate source data cannot supply this authority. */
@@ -124,6 +150,13 @@ export interface CatalogReleaseManifestV1 {
   readonly counts: CatalogReleaseCountsV1;
   readonly chunks: readonly CatalogChunkDescriptorV1[];
 }
+
+export interface CatalogReleaseManifestV2 extends Omit<CatalogReleaseManifestV1, 'manifestVersion'> {
+  readonly manifestVersion: 2;
+  readonly unitDescriptors: readonly CatalogUnitDescriptorV1[];
+}
+
+export type CatalogReleaseManifest = CatalogReleaseManifestV1 | CatalogReleaseManifestV2;
 
 export interface CatalogChunkV1 {
   readonly formatVersion: 1;

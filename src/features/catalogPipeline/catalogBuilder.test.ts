@@ -287,6 +287,76 @@ describe('buildCatalogRelease', () => {
       .toBe(canonicalCatalogJson(result.artifact.manifest));
   });
 
+  it('builds a V2 release only when descriptors cover ordered memberships and localized titles', async () => {
+    const source = await bundle();
+    const withUnits: CatalogSourceBundleV1 = {
+      ...source,
+      manifest: { ...source.manifest, manifestVersion: 2, unitDescriptorFile: 'units.json' },
+      unitDescriptors: [{
+        unitId: 'pilot', trackId: 'general', tier: 'foundation', ordinal: 1,
+        titles: [{ language: 'en', text: 'First steps' }, { language: 'vi', text: 'Bước đầu tiên' }],
+      }],
+    };
+    const result = await buildCatalogRelease(withUnits, await optionsFor(withUnits));
+    expect(result).toMatchObject({
+      status: 'built',
+      artifact: { manifest: { manifestVersion: 2, unitDescriptors: withUnits.unitDescriptors } },
+    });
+    expect(await fingerprintCatalogSourceBundle(withUnits))
+      .not.toBe(await fingerprintCatalogSourceBundle(source));
+
+    const invalid = { ...withUnits, unitDescriptors: [{
+      ...withUnits.unitDescriptors![0], ordinal: 2,
+    }] };
+    await expect(buildCatalogRelease(invalid, await optionsFor(invalid))).resolves.toMatchObject({
+      status: 'rejected', reason: 'invalid-unit-descriptors',
+    });
+  });
+
+  it('rejects a V2 unit with more than 20 memberships', async () => {
+    const source = await bundle(21);
+    const withUnits: CatalogSourceBundleV1 = {
+      ...source,
+      manifest: { ...source.manifest, manifestVersion: 2, unitDescriptorFile: 'units.json' },
+      unitDescriptors: [{
+        unitId: 'pilot', trackId: 'general', tier: 'foundation', ordinal: 1,
+        titles: [{ language: 'en', text: 'First steps' }, { language: 'vi', text: 'Bước đầu tiên' }],
+      }],
+    };
+    await expect(buildCatalogRelease(withUnits, await optionsFor(withUnits))).resolves.toMatchObject({
+      status: 'rejected', reason: 'invalid-unit-descriptors', path: 'memberships',
+    });
+  });
+
+  it('rejects a compatible release that moves an existing lexeme to another unit', async () => {
+    const source = await bundle();
+    const first: CatalogSourceBundleV1 = {
+      ...source,
+      manifest: { ...source.manifest, manifestVersion: 2, unitDescriptorFile: 'units.json' },
+      unitDescriptors: [{
+        unitId: 'pilot', trackId: 'general', tier: 'foundation', ordinal: 1,
+        titles: [{ language: 'en', text: 'First steps' }, { language: 'vi', text: 'Bước đầu tiên' }],
+      }],
+    };
+    const moved: CatalogSourceBundleV1 = {
+      ...first,
+      memberships: first.memberships.map(candidate => ({
+        ...candidate,
+        entity: { ...candidate.entity, lessonGroup: 'next' },
+      })),
+      unitDescriptors: [{
+        ...first.unitDescriptors![0], unitId: 'next',
+      }],
+    };
+    const options = await optionsFor(moved);
+    await expect(buildCatalogRelease(moved, {
+      ...options,
+      sequence: 2,
+      previousReleaseId: 'english-pilot-0001',
+      compatiblePreviousMemberships: first.memberships.map(candidate => candidate.entity),
+    })).resolves.toMatchObject({ status: 'rejected', reason: 'incompatible-unit-assignment' });
+  });
+
   it('derives immutable release ids from canonical content and lineage metadata', async () => {
     const source = await bundle(2);
     const reordered = {

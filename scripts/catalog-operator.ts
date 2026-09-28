@@ -17,19 +17,27 @@ import {
   type CatalogMembershipCandidateV1,
   type CatalogReviewerAuthorityV1,
   type CatalogSourceBundleV1,
+  type CatalogReleaseManifest,
 } from '../src/features/catalogPipeline/catalogContracts';
 import {
   buildCatalogRelease,
   fingerprintCatalogSourceBundle,
+  sha256Hex,
   type BuiltCatalogRelease,
   type CatalogReleaseBuildResult,
 } from '../src/features/catalogPipeline/catalogBuilder';
 import {
+  parseCatalogChunkV1,
   parseCatalogReleaseManifestV1,
-  parseCatalogSourceManifestV1,
+  parseCatalogReleaseManifestV2,
+  parseCatalogSourceManifest,
+  parseCatalogUnitDescriptorsV1,
   validateCatalogSourceBundle,
 } from '../src/features/catalogPipeline/catalogValidation';
-import { installCatalogRelease } from '../src/features/catalogCache/catalogDelivery';
+import {
+  installCatalogRelease,
+  type CatalogCacheInstallationPort,
+} from '../src/features/catalogCache/catalogDelivery';
 
 const MANIFEST_BYTES = 64 * 1024;
 const decoder = new TextDecoder('utf-8', { fatal: true });
@@ -122,7 +130,7 @@ const jsonLines = <T>(bytes: Uint8Array, label: string, maximumItems: number): r
 
 export async function loadCatalogSource(manifestInputPath: string): Promise<CatalogSourceBundleV1> {
   const source = await safeRoot(manifestInputPath);
-  const manifest = parseCatalogSourceManifestV1(json(
+  const manifest = parseCatalogSourceManifest(json(
     await readBoundedFile(source.manifestPath, MANIFEST_BYTES),
     'Catalog source manifest',
   ));
@@ -149,7 +157,17 @@ export async function loadCatalogSource(manifestInputPath: string): Promise<Cata
     'Membership source',
     CATALOG_PIPELINE_LIMITS.maximumReleaseMemberships,
   );
-  return { manifest, lexemes, memberships };
+  if (manifest.manifestVersion === 1) return { manifest, lexemes, memberships };
+  const descriptorPath = await safeRelativeFile(source.root, manifest.unitDescriptorFile);
+  const remaining = CATALOG_PIPELINE_LIMITS.maximumReleaseBytes - totalBytes;
+  if (remaining < 1) throw new RangeError('Catalog source exceeds the total byte limit.');
+  const descriptorBytes = await readBoundedFile(descriptorPath, remaining);
+  return {
+    manifest,
+    lexemes,
+    memberships,
+    unitDescriptors: parseCatalogUnitDescriptorsV1(json(descriptorBytes, 'Unit descriptor source')),
+  };
 }
 
 export async function validateCatalogFiles(inputPath: string): Promise<CatalogOperatorReport> {
@@ -168,6 +186,17 @@ export async function validateCatalogFiles(inputPath: string): Promise<CatalogOp
 export interface AtomicArtifactHooks {
   readonly beforeWrite?: (relativePath: string, ordinal: number) => Promise<void>;
 }
+
+const verificationCache: CatalogCacheInstallationPort = {
+  begin: async descriptor => ({
+    catalogId: descriptor.catalogId,
+    releaseId: descriptor.releaseId,
+    releaseKey: `${descriptor.catalogId}:${descriptor.releaseId}`,
+    installId: 'read-only-verification',
+  }),
+  stage: async () => 'staged',
+  activate: async () => undefined,
+};
 
 export async function writeBuiltReleaseAtomic(
   artifact: BuiltCatalogRelease,
@@ -207,11 +236,23 @@ export async function buildCatalogFiles(
   inputPath: string,
   outputDirectory: string,
   reviewerAuthority: CatalogReviewerAuthorityV1,
+  previousManifestPath?: string,
+  initialRelease = false,
 ): Promise<CatalogOperatorReport> {
   const source = await loadCatalogSource(inputPath);
+  const previous = previousManifestPath === undefined ? null : await loadReleaseArtifact(previousManifestPath);
+  if (source.manifest.manifestVersion === 2 && previous === null && !initialRelease) {
+    return { status: 'rejected', reason: 'lineage-proof-required' };
+  }
+  if (previous !== null && initialRelease) return { status: 'rejected', reason: 'invalid-lineage-options' };
+  if (previous !== null && (
+    previous.manifest.catalogId !== source.manifest.catalogId
+    || previous.manifest.contentLanguage !== source.manifest.contentLanguage
+  )) return { status: 'rejected', reason: 'incompatible-lineage' };
   const result: CatalogReleaseBuildResult = await buildCatalogRelease(source, {
-    sequence: 1,
-    previousReleaseId: null,
+    sequence: previous === null ? 1 : previous.manifest.sequence + 1,
+    previousReleaseId: previous?.manifest.releaseId ?? null,
+    ...(previous === null ? {} : { compatiblePreviousMemberships: previous.memberships }),
     reviewerAuthority,
   });
   if (result.status === 'rejected') {
@@ -228,32 +269,81 @@ export async function buildCatalogFiles(
   };
 }
 
-export async function verifyCatalogFiles(manifestInputPath: string): Promise<CatalogOperatorReport> {
+const parseCatalogReleaseManifest = (value: unknown): CatalogReleaseManifest => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new TypeError('Catalog release manifest must be an object.');
+  }
+  const manifestVersion = (value as Record<string, unknown>).manifestVersion;
+  if (manifestVersion === 1) return parseCatalogReleaseManifestV1(value);
+  if (manifestVersion === 2) return parseCatalogReleaseManifestV2(value);
+  throw new TypeError('Catalog release manifest must use version 1 or 2.');
+};
+
+const loadReleaseArtifact = async (manifestInputPath: string): Promise<{
+  manifest: CatalogReleaseManifest;
+  memberships: readonly import('../src/features/multilingual/schemaV3').TrackMembershipV3[];
+}> => {
   const source = await safeRoot(manifestInputPath);
-  const manifest = parseCatalogReleaseManifestV1(json(
+  const manifest = parseCatalogReleaseManifest(json(
     await readBoundedFile(source.manifestPath, MANIFEST_BYTES),
     'Catalog release manifest',
   ));
-  const result = await installCatalogRelease(manifest, {
+  await installCatalogRelease(manifest, {
     fetchChunk: async relativePath => readBoundedFile(
       await safeRelativeFile(source.root, relativePath),
       CATALOG_PIPELINE_LIMITS.maximumChunkBytes,
     ),
-  }, {
-    begin: async descriptor => ({
-      catalogId: descriptor.catalogId,
-      releaseId: descriptor.releaseId,
-      releaseKey: `${descriptor.catalogId}:${descriptor.releaseId}`,
-      installId: 'read-only-verification',
-    }),
-    stage: async () => 'staged',
-    activate: async () => undefined,
-  });
+  }, verificationCache);
+  const memberships = [] as import('../src/features/multilingual/schemaV3').TrackMembershipV3[];
+  for (const descriptor of manifest.chunks) {
+    const bytes = await readBoundedFile(
+      await safeRelativeFile(source.root, descriptor.path),
+      CATALOG_PIPELINE_LIMITS.maximumChunkBytes,
+    );
+    if (await sha256Hex(bytes) !== descriptor.sha256) throw new TypeError('Catalog chunk SHA-256 does not match manifest.');
+    memberships.push(...parseCatalogChunkV1(json(bytes, `Catalog chunk ${descriptor.id}`), {
+      expectedReleaseId: manifest.releaseId,
+      expectedOrdinal: descriptor.ordinal,
+      expectedLexemeCount: descriptor.lexemeCount,
+      expectedMembershipCount: descriptor.membershipCount,
+    }).memberships);
+  }
+  if (manifest.manifestVersion === 2) {
+    const descriptorByKey = new Map(manifest.unitDescriptors.map(descriptor => [
+      `${descriptor.trackId}\u0000${descriptor.unitId}`,
+      descriptor,
+    ]));
+    const ranksByUnit = new Map<string, number[]>();
+    for (const membership of memberships) {
+      const key = `${membership.trackId}\u0000${membership.lessonGroup}`;
+      if (descriptorByKey.get(key)?.tier !== membership.tier) {
+        throw new TypeError('Catalog V2 membership does not match a unit descriptor.');
+      }
+      ranksByUnit.set(key, [...(ranksByUnit.get(key) ?? []), membership.rank]);
+    }
+    if (manifest.unitDescriptors.some(descriptor => !ranksByUnit.has(`${descriptor.trackId}\u0000${descriptor.unitId}`))) {
+      throw new TypeError('Catalog V2 descriptor has no membership.');
+    }
+    for (const ranks of ranksByUnit.values()) {
+      const ordered = [...ranks].sort((left, right) => left - right);
+      if (ordered.some((rank, index) => index > 0 && rank === ordered[index - 1])) {
+        throw new TypeError('Catalog V2 memberships must have unique ranks within a unit.');
+      }
+      if (ordered.length > CATALOG_PIPELINE_LIMITS.maximumUnitMemberships) {
+        throw new TypeError('Catalog V2 units may contain at most 20 memberships.');
+      }
+    }
+  }
+  return { manifest, memberships };
+};
+
+export async function verifyCatalogFiles(manifestInputPath: string): Promise<CatalogOperatorReport> {
+  const result = await loadReleaseArtifact(manifestInputPath);
   return {
     status: 'verified',
-    catalogId: result.catalogId,
-    releaseId: result.releaseId,
-    memberships: result.installedMemberships,
-    chunks: manifest.counts.chunks,
+    catalogId: result.manifest.catalogId,
+    releaseId: result.manifest.releaseId,
+    memberships: result.memberships.length,
+    chunks: result.manifest.counts.chunks,
   };
 }

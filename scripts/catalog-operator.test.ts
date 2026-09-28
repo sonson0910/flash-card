@@ -67,6 +67,13 @@ const writeSource = async (root: string, source: CatalogSourceBundleV1): Promise
     membershipPath,
     `${source.memberships.map(value => JSON.stringify(value)).join('\n')}\n`,
   );
+  if (source.manifest.manifestVersion === 2) {
+    await mkdir(path.dirname(path.join(root, source.manifest.unitDescriptorFile)), { recursive: true });
+    await writeFile(
+      path.join(root, source.manifest.unitDescriptorFile),
+      JSON.stringify(source.unitDescriptors),
+    );
+  }
   return manifestPath;
 };
 
@@ -150,6 +157,18 @@ const authorityFor = async (
   approvedDigest: await fingerprintCatalogSourceBundle(source),
   reviewedAt,
 });
+
+const publishedV2Source = async (): Promise<CatalogSourceBundleV1> => {
+  const source = await publishedSource();
+  return {
+    ...source,
+    manifest: { ...source.manifest, manifestVersion: 2, unitDescriptorFile: 'units.json' },
+    unitDescriptors: [{
+      unitId: 'pilot', trackId: 'general', tier: 'foundation', ordinal: 1,
+      titles: [{ language: 'en', text: 'First steps' }, { language: 'vi', text: 'Bước đầu tiên' }],
+    }],
+  };
+};
 
 describe('catalog filesystem operator', () => {
   it('runs the real validate CLI against explicit bounded JSONL files', async () => {
@@ -353,6 +372,28 @@ describe('catalog filesystem operator', () => {
     expect(JSON.parse(verifyCli.stdout)).toMatchObject({ status: 'verified', memberships: 1 });
   }, CLI_TEST_TIMEOUT_MS);
 
+  it('loads owner-provided V2 descriptors and verifies the resulting V2 artifact through the CLI', async () => {
+    const root = await temporaryDirectory();
+    const source = await publishedV2Source();
+    const manifestPath = await writeSource(root, source);
+    const output = path.join(root, 'release-v2');
+    const authority = await authorityFor(source);
+
+    const built = await buildCatalogFiles(manifestPath, output, authority, undefined, true);
+    expect(built).toMatchObject({ status: 'built', memberships: 1 });
+    const release = JSON.parse(await readFile(path.join(output, 'release-manifest.json'), 'utf8'));
+    expect(release).toMatchObject({ manifestVersion: 2, unitDescriptors: source.unitDescriptors });
+    await expect(verifyCatalogFiles(path.join(output, 'release-manifest.json'))).resolves.toMatchObject({
+      status: 'verified', memberships: 1,
+    });
+
+    const cliVerify = spawnSync(process.execPath, [
+      'scripts/catalog-gate.mjs', 'verify', '--manifest', path.join(output, 'release-manifest.json'),
+    ], { cwd: path.resolve('.'), encoding: 'utf8', timeout: CLI_PROCESS_TIMEOUT_MS });
+    expect(cliVerify.status).toBe(0);
+    expect(JSON.parse(cliVerify.stdout)).toMatchObject({ status: 'verified', memberships: 1 });
+  }, CLI_TEST_TIMEOUT_MS);
+
   it('rejects a tampered chunk hash and leaves the artifact tree unchanged', async () => {
     const root = await temporaryDirectory();
     const source = await publishedSource();
@@ -371,5 +412,65 @@ describe('catalog filesystem operator', () => {
 
     await expect(verifyCatalogFiles(releaseManifestPath)).rejects.toThrow(/SHA-256/i);
     expect(await readdir(output, { recursive: true })).toEqual(before);
+  });
+
+  it('rejects a hash-valid artifact with an invalid release graph', async () => {
+    const root = await temporaryDirectory();
+    const source = await publishedSource();
+    const manifestPath = await writeSource(root, source);
+    const output = path.join(root, 'release');
+    await buildCatalogFiles(manifestPath, output, await authorityFor(source));
+    const releaseManifestPath = path.join(output, 'release-manifest.json');
+    const release = JSON.parse(await readFile(releaseManifestPath, 'utf8')) as {
+      counts: { encodedBytes: number; lexemes: number };
+      chunks: Array<{ path: string; sha256: string; byteLength: number; lexemeCount: number }>;
+    };
+    const chunkPath = path.join(output, release.chunks[0].path);
+    const chunk = JSON.parse(await readFile(chunkPath, 'utf8')) as {
+      lexemes: Array<Record<string, unknown>>;
+    };
+    chunk.lexemes.push({ ...chunk.lexemes[0] });
+    const bytes = new TextEncoder().encode(JSON.stringify(chunk));
+    const previousLength = release.chunks[0].byteLength;
+    release.chunks[0] = {
+      ...release.chunks[0],
+      byteLength: bytes.byteLength,
+      sha256: await sha256Hex(bytes),
+      lexemeCount: release.chunks[0].lexemeCount + 1,
+    };
+    release.counts.encodedBytes += bytes.byteLength - previousLength;
+    release.counts.lexemes += 1;
+    await writeFile(chunkPath, bytes);
+    await writeFile(releaseManifestPath, JSON.stringify(release));
+
+    await expect(verifyCatalogFiles(releaseManifestPath)).rejects.toThrow('duplicate lexeme');
+  });
+
+  it('requires explicit initial lineage for a V2 root and rejects a mismatched predecessor', async () => {
+    const root = await temporaryDirectory();
+    const v2 = await publishedV2Source();
+    const v2Manifest = await writeSource(root, v2);
+    const authority = await authorityFor(v2);
+    await expect(buildCatalogFiles(v2Manifest, path.join(root, 'v2'), authority)).resolves.toMatchObject({
+      status: 'rejected', reason: 'lineage-proof-required',
+    });
+
+    const previousRoot = await temporaryDirectory();
+    const previous = await publishedSource();
+    const previousManifest = await writeSource(previousRoot, previous);
+    const previousOutput = path.join(previousRoot, 'release');
+    await buildCatalogFiles(previousManifest, previousOutput, await authorityFor(previous));
+    const mismatched = {
+      ...v2,
+      manifest: { ...v2.manifest, catalogId: 'different-catalog' },
+    };
+    const mismatchRoot = await temporaryDirectory();
+    const mismatchManifest = await writeSource(mismatchRoot, mismatched);
+    await expect(buildCatalogFiles(
+      mismatchManifest,
+      path.join(mismatchRoot, 'release'),
+      await authorityFor(mismatched),
+      path.join(previousOutput, 'release-manifest.json'),
+    )).resolves.toMatchObject({ status: 'rejected', reason: 'incompatible-lineage' });
   });
 });

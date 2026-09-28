@@ -45,6 +45,16 @@ configuration is not evidence that staging, migration, deployment or rollback ra
    in the language registry before any catalog deployment. Environment branch
    and reviewer policy remains an external protected control; verify it through
    the Task18 runbook rather than simulating it in a local build.
+
+   A Catalog V2 build must declare its lineage explicitly: use
+   `--initial-release` only when the protected release record confirms there is
+   no earlier published release for that catalog, or pass
+   `--previous-manifest <path>` for a compatible successor. The operator rejects
+   a predecessor from another catalog or content language and rejects a
+   successor that moves a lexeme to a different unit. `catalog:verify` runs the
+   same release graph validation as cache installation. The local flag is not
+   proof that a release is unpublished; the protected promotion review must
+   check the release record before publication.
 6. For shared decks, verify Firestore TTL is enabled on `expiresAt` for both
    `shared_decks` and `shared_deck_owners`. Current shares contain at most 100 cards
    and expire 30 days after creation. Product copy must disclose the current client's
