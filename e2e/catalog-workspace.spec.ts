@@ -49,7 +49,7 @@ test('Paths lazily installs the approved release and remains accessible offline'
 
   await page.getByRole('button', { name: 'Paths' }).first().click();
   await expect(page).toHaveURL(/view=catalog.*utm_source=phase4.*#catalog-test/);
-  await expect(page.getByRole('heading', { name: 'Language paths' })).toBeFocused();
+  await expect(page.getByRole('heading', { name: 'Paths' })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'My vocabulary' })).toBeFocused();
   await page.keyboard.press('Tab');
@@ -112,7 +112,7 @@ test('a direct Catalog URL never invents reviewed vocabulary or an installable r
   await signIn(page, '/?view=catalog&lang=ja');
 
   await expect(page).toHaveURL(/view=catalog/);
-  await expect(page.getByRole('heading', { name: 'Language paths' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Paths' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Catalog unavailable' })).toBeVisible();
   await expect(page.getByText('Draft vocabulary is never shown here.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'My vocabulary' })).toBeVisible();

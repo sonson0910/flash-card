@@ -376,11 +376,11 @@ for (const theme of themes) {
       await expect(root).toHaveAttribute('data-theme-family', theme.family);
       if (theme.mode === 'dark') await expect(root).toHaveClass(/\bdark\b/);
       else await expect(root).not.toHaveClass(/\bdark\b/);
-      await expect(page.getByRole('heading', { level: 1, name: 'Language paths' })).toBeVisible();
+      await expect(page.getByRole('heading', { level: 1, name: 'Paths' })).toBeVisible();
       await expect(page.getByRole('region', { name: 'IELTS' })).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Choose a unit' })).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Preview: Ideas and evidence' })).toBeVisible();
-      await expect(page.getByRole('heading', { name: /choose the path that fits/i })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Your shelf' })).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Your learning level' })).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Vocabulary explorer' })).toBeVisible();
       const vocabularyCard = page.getByRole('article', { name: /analysis/i });
@@ -412,7 +412,7 @@ for (const theme of themes) {
       await page.goto(`${catalogFixtureOrigin}${catalogFixturePath}?locale=en&continueDemo=1`);
       await page.getByRole('button', { name: /Unit 3 · Academic argument/i }).click();
       await expect(page.getByRole('heading', { name: 'Preview: Academic argument' })).toBeVisible();
-      await expect(page.getByText('Estimated 1 day left at your pace.')).toBeVisible();
+      await expect(page.locator('#catalog-unit-preview').getByText('Estimated 1 day left at your pace.')).toBeVisible();
       await page.getByRole('button', { name: 'Continue with this unit' }).click();
       await expect(page.getByText('Any missing unit words will be added to your Library before study.')).toBeVisible();
       await expect(page.getByRole('button', { name: 'Add missing words and study' })).toBeVisible();

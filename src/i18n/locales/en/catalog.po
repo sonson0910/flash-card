@@ -19,7 +19,7 @@ msgid "catalog.action.continue-review"
 msgstr "Continue review"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:429
+#: src/features/catalogWorkspace/CatalogScreen.tsx:436
 msgid "catalog.action.load-more"
 msgstr "Load more words"
 
@@ -123,22 +123,22 @@ msgid "catalog.card.try-adding-again"
 msgstr "Try adding again"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:424
+#: src/features/catalogWorkspace/CatalogScreen.tsx:431
 msgid "catalog.empty.filtered"
 msgstr "Try fewer filters or clear them to see this path again."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:424
+#: src/features/catalogWorkspace/CatalogScreen.tsx:431
 msgid "catalog.empty.path"
 msgstr "This reviewed catalog does not contain words for the selected path yet."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:424
+#: src/features/catalogWorkspace/CatalogScreen.tsx:431
 msgid "catalog.empty.title"
 msgstr "No vocabulary found"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:395
+#: src/features/catalogWorkspace/CatalogScreen.tsx:402
 msgid "catalog.explorer.title"
 msgstr "Vocabulary explorer"
 
@@ -148,43 +148,43 @@ msgid "catalog.filter.all"
 msgstr "All"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:406
+#: src/features/catalogWorkspace/CatalogScreen.tsx:413
 msgid "catalog.filters.cefr"
 msgstr "CEFR level"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:411
-#: src/features/catalogWorkspace/CatalogScreen.tsx:424
+#: src/features/catalogWorkspace/CatalogScreen.tsx:418
+#: src/features/catalogWorkspace/CatalogScreen.tsx:431
 msgid "catalog.filters.clear"
 msgstr "Clear all filters"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:408
+#: src/features/catalogWorkspace/CatalogScreen.tsx:415
 msgid "catalog.filters.part-of-speech"
 msgstr "Part of speech"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:405
+#: src/features/catalogWorkspace/CatalogScreen.tsx:412
 msgid "catalog.filters.search"
 msgstr "Search vocabulary"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:405
+#: src/features/catalogWorkspace/CatalogScreen.tsx:412
 msgid "catalog.filters.search-placeholder"
 msgstr "e.g. analysis…"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:409
+#: src/features/catalogWorkspace/CatalogScreen.tsx:416
 msgid "catalog.filters.skill"
 msgstr "Skill"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:398
+#: src/features/catalogWorkspace/CatalogScreen.tsx:405
 msgid "catalog.filters.title"
 msgstr "Filters"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:407
+#: src/features/catalogWorkspace/CatalogScreen.tsx:414
 msgid "catalog.filters.topic"
 msgstr "Topic"
 
@@ -194,17 +194,17 @@ msgid "catalog.language.coming-soon"
 msgstr "{names} — coming soon"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:421
+#: src/features/catalogWorkspace/CatalogScreen.tsx:428
 msgid "catalog.loading.matches"
 msgstr "Loading matching vocabulary…"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:429
+#: src/features/catalogWorkspace/CatalogScreen.tsx:436
 msgid "catalog.loading.more"
 msgstr "Loading more words…"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:429
+#: src/features/catalogWorkspace/CatalogScreen.tsx:436
 msgid "catalog.loading.next-page"
 msgstr "Loading the next vocabulary page."
 
@@ -400,52 +400,47 @@ msgid "catalog.workspace.updating"
 msgstr "Updating vocabulary…"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:370
+#: src/features/catalogWorkspace/CatalogScreen.tsx:383
 msgid "paths.action.continue"
 msgstr "Continue"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:336
+#: src/features/catalogWorkspace/CatalogScreen.tsx:337
 msgid "paths.catalog.description"
 msgstr "Choose a reviewed language catalog and follow its ordered learning units."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:333
+#: src/features/catalogWorkspace/CatalogScreen.tsx:334
 msgid "paths.catalog.kicker"
 msgstr "Reviewed catalog"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:366
+#: src/features/catalogWorkspace/CatalogScreen.tsx:368
 msgid "paths.current.kicker"
 msgstr "Your current path"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:369
+#: src/features/catalogWorkspace/CatalogScreen.tsx:382
 msgid "paths.current.progress"
 msgstr "{started} started · {mastered} mastered"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:373
-msgid "paths.current.roadmap"
-msgstr "Roadmap"
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:374
+#: src/features/catalogWorkspace/CatalogScreen.tsx:378
 msgid "paths.current.roadmap-label"
 msgstr "Current path roadmap"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:384
+#: src/features/catalogWorkspace/CatalogScreen.tsx:377
+msgid "paths.current.unit-of"
+msgstr "Unit {current} of {total}"
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:388
 msgid "paths.goal.kicker"
 msgstr "Choose your goal"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:384
-msgid "paths.goal.title"
-msgstr "Choose the path that fits your next goal"
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:349
+#: src/features/catalogWorkspace/CatalogScreen.tsx:350
 msgid "paths.language.label"
 msgstr "Language"
 
@@ -465,22 +460,22 @@ msgid "paths.metric.words"
 msgstr "words"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:335
+#: src/features/catalogWorkspace/CatalogScreen.tsx:336
 msgid "paths.personal.description"
 msgstr "Follow practical paths built from cards you already own. Switch to the reviewed catalog whenever you want."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:332
+#: src/features/catalogWorkspace/CatalogScreen.tsx:333
 msgid "paths.personal.kicker"
 msgstr "Personal learning paths"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:389
+#: src/features/catalogWorkspace/CatalogScreen.tsx:396
 msgid "paths.roadmap.kicker"
 msgstr "Your roadmap"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:389
+#: src/features/catalogWorkspace/CatalogScreen.tsx:396
 msgid "paths.roadmap.title"
 msgstr "Your learning level"
 
@@ -491,17 +486,22 @@ msgid "paths.selected"
 msgstr "Selected"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:345
+#: src/features/catalogWorkspace/CatalogScreen.tsx:388
+msgid "paths.shelf.title"
+msgstr "Your shelf"
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:346
 msgid "paths.source.label"
 msgstr "Path source"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:346
+#: src/features/catalogWorkspace/CatalogScreen.tsx:347
 msgid "paths.source.personal"
 msgstr "My vocabulary"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:347
+#: src/features/catalogWorkspace/CatalogScreen.tsx:348
 msgid "paths.source.reviewed"
 msgstr "Reviewed catalog"
 
@@ -561,9 +561,9 @@ msgid "paths.tier.progress"
 msgstr "{mastered} of {total} mastered · {started} started"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:342
+#: src/features/catalogWorkspace/CatalogScreen.tsx:343
 msgid "paths.title"
-msgstr "Language paths"
+msgstr "Paths"
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/catalogPresentation.ts:36
@@ -602,7 +602,7 @@ msgstr "Add missing words and study"
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:251
-#: src/features/catalogWorkspace/CatalogScreen.tsx:370
+#: src/features/catalogWorkspace/CatalogScreen.tsx:383
 msgid "paths.unit.all-complete"
 msgstr "All units in this path are complete."
 
@@ -648,6 +648,7 @@ msgstr "{count} words"
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:245
+#: src/features/catalogWorkspace/CatalogScreen.tsx:382
 msgid "paths.unit.eta"
 msgstr "Estimated {days, plural, one {# day} other {# days}} left at your pace."
 
@@ -695,7 +696,7 @@ msgstr "Not started"
 #: src/features/catalogWorkspace/CatalogScreen.tsx:176
 #: src/features/catalogWorkspace/CatalogScreen.tsx:188
 #: src/features/catalogWorkspace/CatalogScreen.tsx:222
-#: src/features/catalogWorkspace/CatalogScreen.tsx:369
+#: src/features/catalogWorkspace/CatalogScreen.tsx:382
 msgid "paths.unit.status.unavailable"
 msgstr "Progress unavailable"
 

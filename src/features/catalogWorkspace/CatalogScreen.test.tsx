@@ -143,7 +143,7 @@ describe('CatalogScreen', () => {
     expect(html).toContain('<section');
     expect(html).not.toContain('<main');
     expect(html).toContain('<h1');
-    expect(html).toContain('Language paths');
+    expect(html).toContain('>Paths</h1>');
     expect(html).toContain('aria-label="Path source"');
     expect(html).toContain('My vocabulary');
     expect(html).toContain('Reviewed catalog');
@@ -290,7 +290,7 @@ describe('CatalogScreen', () => {
     expect(html).toContain('Tiếng Việt toeic 15');
     expect(html).not.toContain('Tiếng Việt ielts 1');
     expect(html).not.toContain('Tiếng Việt general 1');
-    expect((html.match(/Unit /g) ?? []).length).toBe(15);
+    expect((html.match(/Unit \d+ ·/g) ?? []).length).toBe(15);
     expect(englishHtml).toContain('English toeic 1');
     expect(englishHtml).not.toContain('Tiếng Việt toeic 1');
   });

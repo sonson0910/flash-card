@@ -327,6 +327,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
   const progressAvailable = model.progressAvailable ?? true;
   const pathUnits = model.pathUnits?.filter(unit => unit.unit.trackId === model.selectedTrack);
   const pathUnitContinue = model.pathUnitContinue;
+  const featuredUnit = pathUnits?.find(unit => pathUnitKey(unit.unit) === pathUnitContinue?.selectedUnitId) ?? pathUnits?.[0];
   const continueDisabled = !progressAvailable || !pathUnitContinue?.selectedUnitId || pathUnitContinue.allComplete || pathUnitContinue.busy;
   const kicker = isPersonal
     ? i18n._(msg({ id: 'paths.personal.kicker', message: 'Personal learning paths' }))
@@ -339,7 +340,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
     <section className="catalog-canvas mx-auto w-full min-w-0 max-w-7xl space-y-6 sm:space-y-8" aria-labelledby="catalog-heading">
       <header className="catalog-heading grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.32fr)] lg:items-end">
         <div><p className="premium-kicker uppercase tracking-[0.16em]">{kicker}</p>
-        <h1 id="catalog-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 break-words text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl"><Trans id="paths.title" message="Language paths" /></h1>
+        <h1 id="catalog-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 break-words text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl"><Trans id="paths.title" message="Paths" /></h1>
         <p className="mt-3 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)] sm:text-base">{description}</p></div>
         <div className="flex flex-col gap-3">
           <div data-catalog-mode-switch role="group" aria-label={i18n._(msg({ id: 'paths.source.label', message: 'Path source' }))} className="flex flex-wrap gap-2">
@@ -359,31 +360,37 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
       {isPersonal && model.personalLibrary && <PersonalLibraryPaths library={model.personalLibrary} actions={actions} />}
 
       {isReady && <>
+        <div className="catalog-feature-grid">
         {activeTrack && activeTrackCopy && <section aria-labelledby="catalog-current-path-heading" className="catalog-current-path liquid-glass crystal-chamfer relative overflow-hidden rounded-[28px] border border-[var(--sf-border)] p-6 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-8">
           {isCrystal && <span aria-hidden="true" className="crystal-starfield pointer-events-none absolute inset-0 opacity-70 motion-reduce:animate-none" />}
-          <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.46fr)] lg:items-end">
+          <div className="catalog-current-path-content relative">
             <div className="min-w-0">
               <p className="premium-kicker uppercase tracking-[0.16em]"><Trans id="paths.current.kicker" message="Your current path" /></p>
               <h2 id="catalog-current-path-heading" className="mt-3 text-balance text-3xl font-black tracking-tight sm:text-5xl">{i18n._(activeTrackCopy.label)}</h2>
               <p className="mt-3 max-w-xl text-pretty leading-7 text-[var(--sf-text-muted)]">{i18n._(activeTrackCopy.description)}</p>
-              {progressAvailable ? <p className="mt-5 text-sm font-bold text-[var(--sf-brand-text)]"><Trans id="paths.current.progress" message="{started} started · {mastered} mastered" values={{ started: formatNumber(activeTrack.started), mastered: formatNumber(activeTrack.mastered) }} /></p> : <p className="mt-5 text-sm font-bold text-[var(--sf-brand-text)]"><Trans id="paths.unit.status.unavailable" message="Progress unavailable" /></p>}
-              {pathUnitContinue && pathUnits && pathUnits.length > 0 && (pathUnitContinue.allComplete ? <p className="mt-5 text-sm font-bold text-[var(--sf-brand-text)]"><Trans id="paths.unit.all-complete" message="All units in this path are complete." /></p> : <button type="button" onClick={actions.openNextUnitPreview} disabled={continueDisabled} className="brand-action mt-5 min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-2.5 text-sm font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.03] hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-65 cursor-pointer"><Trans id="paths.action.continue" message="Continue" /></button>)}
+              {featuredUnit && <ul className="catalog-feature-words">
+                {featuredUnit.unit.preview.map((lexeme, index) => <li key={`${lexeme.lexemeId}:${index}`} lang={model.selectedLanguage}>{lexeme.lemma}</li>)}
+              </ul>}
             </div>
-            <div className="catalog-roadmap-panel rounded-[22px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-[var(--sf-text-muted)]"><Trans id="paths.current.roadmap" message="Roadmap" /></p>
-              <ol className="mt-4 space-y-3" aria-label={i18n._(msg({ id: 'paths.current.roadmap-label', message: 'Current path roadmap' }))}>
-                {model.tiers.map((tier, index) => <li key={tier.id} className="flex items-center gap-3 text-sm"><span aria-hidden="true" className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${tier.id === model.selectedTier ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)]'}`}>{index + 1}</span><span className={tier.id === model.selectedTier ? 'font-black text-[var(--sf-text)]' : 'font-semibold text-[var(--sf-text-muted)]'}>{i18n._(catalogTierMessages[tier.id].label)}</span></li>)}
-              </ol>
+            <div className="catalog-feature-progress">
+              {pathUnits && pathUnits.length > 0 && <>
+                <p className="catalog-feature-unit"><Trans id="paths.current.unit-of" message="Unit {current} of {total}" values={{ current: featuredUnit?.unit.ordinal ?? 1, total: pathUnits.length }} />{featuredUnit && <> · {pathUnitTitle(featuredUnit.unit, model.uiLocale ?? model.selectedLanguage)}</>}</p>
+                <ol className="catalog-feature-segments" aria-label={i18n._(msg({ id: 'paths.current.roadmap-label', message: 'Current path roadmap' }))}>
+                  {pathUnits.map(unit => <li key={pathUnitKey(unit.unit)} className={unit.status === 'complete' ? 'complete' : unit === featuredUnit ? 'current' : ''} />)}
+                </ol>
+              </>}
+              {progressAvailable ? <p className="catalog-feature-count"><Trans id="paths.current.progress" message="{started} started · {mastered} mastered" values={{ started: formatNumber(activeTrack.started), mastered: formatNumber(activeTrack.mastered) }} />{pathUnitContinue?.etaDays !== null && pathUnitContinue?.etaDays !== undefined && <span><Trans id="paths.unit.eta" message="Estimated {days, plural, one {# day} other {# days}} left at your pace." values={{ days: pathUnitContinue.etaDays }} /></span>}</p> : <p className="catalog-feature-count"><Trans id="paths.unit.status.unavailable" message="Progress unavailable" /></p>}
+              {pathUnitContinue && pathUnits && pathUnits.length > 0 && (pathUnitContinue.allComplete ? <p className="mt-5 text-sm font-bold"><Trans id="paths.unit.all-complete" message="All units in this path are complete." /></p> : <button type="button" onClick={actions.openNextUnitPreview} disabled={continueDisabled} className="catalog-feature-continue brand-action min-h-11 font-extrabold focus-visible:outline-2 disabled:cursor-not-allowed disabled:opacity-65"><Trans id="paths.action.continue" message="Continue" /></button>)}
             </div>
           </div>
         </section>}
-
-        {pathUnits && pathUnits.length > 0 && <PathUnitShelf units={pathUnits} selectedUnitId={pathUnitContinue?.selectedUnitId ?? model.selectedPathUnitId} language={model.uiLocale ?? model.selectedLanguage} continueState={pathUnitContinue} actions={actions} />}
-
         <section aria-labelledby="catalog-tracks-heading" className="catalog-shelf rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 sm:p-5">
-          <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="paths.goal.kicker" message="Choose your goal" /></p><h2 id="catalog-tracks-heading" className="mt-1 text-xl font-black tracking-tight"><Trans id="paths.goal.title" message="Choose the path that fits your next goal" /></h2></div>
+          <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="paths.goal.kicker" message="Choose your goal" /></p><h2 id="catalog-tracks-heading" className="mt-1 text-xl font-black tracking-tight"><Trans id="paths.shelf.title" message="Your shelf" /></h2></div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">{model.tracks.map(track => <TrackCard key={track.id} track={track} selected={track.id === model.selectedTrack} progressAvailable={progressAvailable} onSelect={() => actions.selectTrack(track.id)} />)}</div>
         </section>
+        </div>
+
+        {pathUnits && pathUnits.length > 0 && <PathUnitShelf units={pathUnits} selectedUnitId={pathUnitContinue?.selectedUnitId ?? model.selectedPathUnitId} language={model.uiLocale ?? model.selectedLanguage} continueState={pathUnitContinue} actions={actions} />}
 
         <section aria-labelledby="catalog-roadmap-heading" className="catalog-roadmap">
           <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="paths.roadmap.kicker" message="Your roadmap" /></p><h2 id="catalog-roadmap-heading" className="mt-1 text-2xl font-black tracking-tight"><Trans id="paths.roadmap.title" message="Your learning level" /></h2></div>
