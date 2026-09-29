@@ -53,6 +53,7 @@ function LibraryFixture() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [deckCoverPreset, setDeckCoverPreset] = useState<'aurora' | 'violet' | 'amber' | 'slate' | 'moss'>('violet');
+  const [editOpen, setEditOpen] = useState(true);
   const dialog = new URLSearchParams(location.search).get('dialog');
 
   useEffect(() => { void Promise.all([loadCatalog(locale, 'library'), loadCatalog(locale, 'shell'), loadCatalog(locale, 'progress')]).then(() => setReady(true)); }, [locale]);
@@ -160,9 +161,21 @@ function LibraryFixture() {
       } : null}
       onDownloadErrorReport={noOp}
     />}
-    {dialog === 'edit' && <EditCardDialog card={cards[0]!} open onOpenChange={noOp} onSave={async () => published} />}
-    {dialog === 'edit-image-remove' && <EditCardDialog card={{ ...cards[0]!, imageUrl: 'https://images.pexels.com/photos/267885/pexels-photo-267885.jpeg?auto=compress&cs=tinysrgb&w=300', imageSearchQuery: 'adapt' }} open onOpenChange={noOp} onSave={async () => published} />}
-    {dialog === 'edit-review' && <EditCardDialog card={cards[0]!} open onOpenChange={noOp} onSave={async () => published} context={{ kind: 'review', current: 2, total: 6 }} />}
+    {(dialog === 'edit' || dialog?.startsWith('edit-')) && <EditCardDialog
+      card={dialog === 'edit' || dialog === 'edit-review'
+        ? cards[0]!
+        : { ...cards[0]!, imageUrl: 'https://images.pexels.com/photos/267885/pexels-photo-267885.jpeg?auto=compress&cs=tinysrgb&w=300', imageSearchQuery: 'adapt' }}
+      open={editOpen}
+      onOpenChange={setEditOpen}
+      onSave={dialog === 'edit-working'
+        ? () => new Promise<never>(() => undefined)
+        : dialog === 'edit-conflict'
+          ? async () => ({ status: 'stale-owner' as const })
+          : dialog === 'edit-error'
+            ? async () => { throw new Error('fixture save failure'); }
+            : async () => published}
+      context={dialog === 'edit-review' ? { kind: 'review', current: 2, total: 6 } : undefined}
+    />}
     {dialog === 'deck-delete' && <DeckDeletionDialog deckName="IELTS" assignedCardCount={2} open onOpenChange={noOp} onConfirm={noOp} isDeleting={false} error={false} />}
     <AppOverlays {...overlayProps} />
     <output data-library-generate-count hidden>{generationCount}</output>

@@ -257,6 +257,62 @@ test('Library edit image removal makes the unsaved draft state explicit', async 
   expect(image).toMatchSnapshot('library-edit-image-removed-classic-light-mobile.png');
 });
 
+test('Library edit mutation states render their real field and submit feedback', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await page.route(new RegExp(`^https?://(?!127\\.0\\.0\\.1:${fixturePort})`), route => route.abort());
+  await page.route(/https:\/\/images\.pexels\.com\/photos\/267885\//, route => route.fulfill({
+    path: 'docs/design/sonflash-redesign/canvas/assets/blob/dc9678b28352d8aeb0fea95d3a58a38d.jpg',
+    contentType: 'image/jpeg',
+  }));
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'classic');
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+    localStorage.setItem('sonflash_reduced_motion', 'true');
+  });
+
+  await gotoFixture(page, 'locale=en&dialog=edit-ready');
+  await expect(page.locator('[data-edit-word-input]')).toHaveValue('adapt');
+  await expect(page.locator('[data-edit-partofspeech-input]')).toHaveValue('verb');
+  await expect(page.locator('[data-edit-category-input]')).toHaveValue('IELTS');
+  await expect(page.locator('[data-edit-image-remove]')).toBeVisible();
+  await expect(page.locator('[data-edit-image-find]')).toBeEnabled();
+  await expect.poll(() => page.locator('img[src*="267885"]').first().evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+  for (const control of [page.locator('[data-edit-word-save]'), page.locator('[data-edit-image-find]'), page.locator('[data-edit-image-remove]')]) {
+    const box = await control.boundingBox();
+    expect(box).toBeTruthy();
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+  }
+  await expectDialogScreen(page, testInfo, 'library-edit-ready-fields-classic-light-mobile');
+  await page.locator('[data-edit-image-find]').click({ trial: true });
+  await page.locator('[data-edit-image-remove]').click({ trial: true });
+
+  await page.locator('[data-edit-category-input]').fill('Academic');
+  await expect(page.locator('[data-edit-dirty]')).toHaveText('Unsaved');
+  await page.getByRole('button', { name: 'Discard' }).click();
+  await expect(page.getByRole('alertdialog', { name: 'Discard unsaved changes?' })).toBeVisible();
+  await expectDialogScreen(page, testInfo, 'library-edit-discard-classic-light-mobile');
+  await page.getByRole('button', { name: 'Keep editing' }).click();
+
+  for (const state of ['working', 'conflict', 'error'] as const) {
+    await gotoFixture(page, `locale=en&dialog=edit-${state}`);
+    await expect.poll(() => page.locator('img[src*="267885"]').first().evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+    await page.locator('[data-edit-category-input]').fill('Academic');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    if (state === 'working') {
+      await expect(page.locator('form#edit-card-form')).toHaveAttribute('aria-busy', 'true');
+      await expect(page.getByRole('button', { name: 'Saving changes…' })).toBeDisabled();
+    } else {
+      await expect(page.getByRole('alert')).toHaveText('Your changes could not be saved. This card may have changed elsewhere. Try again.');
+      await expect(page.getByRole('button', { name: 'Retry save' })).toBeVisible();
+      await page.getByRole('alert').scrollIntoViewIfNeeded();
+    }
+    await expectDialogScreen(page, testInfo, `library-edit-${state}-classic-light-mobile`);
+  }
+});
+
 for (const theme of themes) for (const viewport of viewports) {
   test(`${theme.family} ${theme.mode} Library inline tools are visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport);

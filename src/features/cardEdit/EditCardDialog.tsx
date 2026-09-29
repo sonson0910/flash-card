@@ -453,7 +453,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
                         data-edit-image-find
                         disabled={imageSearching || !cardEditCloudAvailable}
                         onClick={findAnotherPhoto}
-                        className="flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                        className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
                       >
                         {imageSearching && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
                         <Trans id="library.edit-card.find-another-photo" message="Find another photo" />
@@ -464,7 +464,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
                           data-edit-image-remove
                           onClick={removeImage}
                           aria-label={_(msg({ id: 'library.edit-card.remove-image', message: 'Remove image' }))}
-                          className="flex size-9 shrink-0 items-center justify-center rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-danger)] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                          className="flex size-11 shrink-0 items-center justify-center rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-danger)] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
                         >
                           <X size={14} aria-hidden="true" />
                         </button>
