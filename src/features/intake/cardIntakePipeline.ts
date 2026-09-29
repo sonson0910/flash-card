@@ -446,12 +446,20 @@ export function createCardIntakePipeline({
       }
     });
     onSettlementsReady?.(settlements);
-    if (awaitSettlements) await settlements;
-    else void settlements;
+    if (awaitSettlements) {
+      const outcomes = await settlements;
+      if (source === 'shared') {
+        if (outcomes.some(outcome => outcome !== 'created' && outcome !== 'reused')) {
+          throw new Error('Some shared cards could not be confirmed.');
+        }
+        return results.map((result, index) => ({ ...result, created: outcomes[index] === 'created' }));
+      }
+    } else void settlements;
     return results;
   };
 
   const persistCards: CardIntakeControllerPort['persistCards'] = async (cards, source) => {
+    if (source === 'shared') return persistCardsInternal(cards, source, undefined, undefined, true);
     if (cards.length !== 1) return persistCardsInternal(cards, source);
     const candidate = cards[0];
     const key = `${source}:${candidate.id}:${JSON.stringify(candidate)}`;

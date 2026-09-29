@@ -1129,7 +1129,7 @@ export function createCardIntakeController({
     } catch (error) {
       diagnostics.sharedDeckFailed?.(error);
       publishError(
-        'Could not verify the complete library for this shared deck, so no cards were created.',
+        'Could not finish adding this shared deck. Retry the same link; cards already saved will be reused.',
         'shared-adoption',
       );
       return { status: 'failed', error };

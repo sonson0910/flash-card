@@ -157,6 +157,49 @@ describe('shared deck session controller', () => {
     });
   });
 
+  it('allows a full shared deck time to confirm its bounded cloud writes', async () => {
+    const { controller, adapter, intake, browser } = setup('https://sonflash.test/library?share=deck-1');
+    vi.mocked(adapter.load).mockResolvedValue({
+      category: 'Shared',
+      cards: Array.from({ length: 100 }, (_, index) => card(`word-${index}`)),
+    });
+    await controller.activate('owner-1');
+    const confirmation = deferred<{
+      status: 'completed'; candidateCount: number; createdCount: number; reusedCount: number;
+    }>();
+    vi.mocked(intake.adoptShared).mockReturnValueOnce(confirmation.promise);
+
+    vi.useFakeTimers();
+    try {
+      const acceptance = controller.actions.acceptShared();
+      await vi.advanceTimersByTimeAsync(20_001);
+      expect(controller.getSnapshot()).toMatchObject({ isLoading: true, isShareDialogOpen: true, error: null });
+      expect(browser.url).toContain('share=deck-1');
+
+      confirmation.resolve({ status: 'completed', candidateCount: 100, createdCount: 100, reusedCount: 0 });
+      await expect(acceptance).resolves.toEqual({ status: 'accepted' });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps a stalled shared deck pending after its cloud write budget expires', async () => {
+    const { controller, intake, browser } = setup('https://sonflash.test/library?share=deck-1');
+    await controller.activate('owner-1');
+    vi.mocked(intake.adoptShared).mockReturnValueOnce(new Promise(() => undefined));
+
+    vi.useFakeTimers();
+    try {
+      const acceptance = controller.actions.acceptShared();
+      await vi.advanceTimersByTimeAsync(28_001);
+      await expect(acceptance).resolves.toEqual({ status: 'failed' });
+      expect(controller.getSnapshot()).toMatchObject({ isLoading: false, isShareDialogOpen: true });
+      expect(browser.url).toContain('share=deck-1');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('keeps a shared deck pending when intake reports no valid candidates', async () => {
     const originalUrl = 'https://sonflash.test/library?share=deck-1&q=airport#words';
     const { controller, intake, browser } = setup(originalUrl);

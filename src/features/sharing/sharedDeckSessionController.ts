@@ -7,6 +7,9 @@ const MAX_SHARED_CARDS = 100;
 const MAX_SHARE_ID_LENGTH = 128;
 const SHARE_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
 const SHARED_DECK_OPERATION_TIMEOUT_MS = 20_000;
+// Shared intake confirms writes in batches of six, each bounded to eight seconds.
+const SHARED_DECK_INTAKE_BATCH_SIZE = 6;
+const SHARED_DECK_INTAKE_WRITE_TIMEOUT_MS = 8_000;
 const SHARED_DECK_OPERATION_STORAGE_KEY = 'lingoflash_shared_deck_operation_v1';
 const SHARED_DECK_OPERATION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1_000;
 const MAX_PENDING_SHARED_DECK_OPERATIONS = 20;
@@ -724,7 +727,8 @@ export function createSharedDeckSessionController({
         }
         const adoption = await withTimeout(
           intake.adoptShared({ cards: pending.cards }),
-          SHARED_DECK_OPERATION_TIMEOUT_MS,
+          SHARED_DECK_OPERATION_TIMEOUT_MS
+            + Math.ceil(pending.cards.length / SHARED_DECK_INTAKE_BATCH_SIZE) * SHARED_DECK_INTAKE_WRITE_TIMEOUT_MS,
         );
         if (!isCurrent(operationLifecycle, owner) || pendingSharedDeck !== pending) {
           return { status: 'stale' };

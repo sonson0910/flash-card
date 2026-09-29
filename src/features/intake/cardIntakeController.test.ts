@@ -424,6 +424,26 @@ describe('card intake controller', () => {
     expect(existing.createdAt).toBe('2024-02-02T00:00:00.000Z');
   });
 
+  it('retries only missing shared cards after a partial save', async () => {
+    const { port, persistCards } = createFakePort();
+    vi.mocked(port.findExisting)
+      .mockResolvedValueOnce(new Map())
+      .mockResolvedValueOnce(new Map([['apple', card('apple')]]));
+    persistCards.mockRejectedValueOnce(new Error('banana save failed'));
+    const intake = createCardIntakeController({ port });
+    const shared = { cards: [
+      { word: 'apple', translation: 'táo' },
+      { word: 'banana', translation: 'chuối' },
+    ] };
+
+    await expect(intake.adoptSharedDeck(shared)).resolves.toMatchObject({ status: 'failed' });
+    await expect(intake.adoptSharedDeck(shared)).resolves.toMatchObject({
+      status: 'completed', candidateCount: 2, createdCount: 1, reusedCount: 1,
+    });
+    expect(persistCards).toHaveBeenCalledTimes(2);
+    expect(persistCards.mock.calls[1]![0].map(value => value.word)).toEqual(['banana']);
+  });
+
   it('preserves bounded rich learning fields when adopting a shared card', async () => {
     const { port, persistCards } = createFakePort();
     const intake = createCardIntakeController({ port });
@@ -538,7 +558,7 @@ describe('card intake controller', () => {
     vi.mocked(port.findExisting).mockRejectedValueOnce(new Error('shared lookup failed'));
     await expect(intake.adoptSharedDeck({ cards: sharedCards })).resolves.toMatchObject({ status: 'failed' });
     expect(intake.getSnapshot().error).toBe(
-      'Could not verify the complete library for this shared deck, so no cards were created.',
+      'Could not finish adding this shared deck. Retry the same link; cards already saved will be reused.',
     );
     intake.clearSharedAdoptionError();
     expect(intake.getSnapshot().error).toBeNull();

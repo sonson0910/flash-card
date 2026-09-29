@@ -132,23 +132,54 @@ describe('Card Intake Pipeline contract', () => {
     expect(pipeline).toMatchObject(methods);
   });
 
-  it('publishes a new card optimistically, then confirms it against the cloud', async () => {
+  it('publishes a shared card optimistically but waits for cloud confirmation', async () => {
     const context = createContext();
     const candidate = card('queued-card');
+    const confirmation = deferred<{ card: typeof candidate; created: boolean; gamification: null }>();
+    repositoryRuntime.createCardV2IfAbsent.mockReturnValueOnce(confirmation.promise);
     const pipeline = createCardIntakePipeline({
       getContext: () => context,
     });
 
-    await expect(pipeline.persistCards([candidate], 'shared')).resolves.toEqual([
-      { card: candidate, created: true },
-    ]);
-
+    const persistence = pipeline.persistCards([candidate], 'shared');
     expect(context.publishCards).toHaveBeenCalledWith([candidate]);
     await vi.waitFor(() => expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalledWith({}, 'owner-a', candidate, {
       libraryEpoch: 3,
       opId: expect.stringMatching(/^create-/),
       timeZone: expect.any(String),
     }));
+    let finished = false;
+    void persistence.then(() => { finished = true; });
+    expect(finished).toBe(false);
+    confirmation.resolve({ card: candidate, created: true, gamification: null });
+    await expect(persistence).resolves.toEqual([{ card: candidate, created: true }]);
+  });
+
+  it('rejects a shared save when cloud confirmation fails', async () => {
+    const context = createContext();
+    const candidate = card('failed-shared-card');
+    repositoryRuntime.createCardV2IfAbsent.mockRejectedValueOnce(new Error('cloud write failed'));
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await expect(pipeline.persistCards([candidate], 'shared')).rejects.toThrow(
+      'Some shared cards could not be confirmed.',
+    );
+    expect(context.publishCards).toHaveBeenLastCalledWith([]);
+  });
+
+  it('reports a shared card as reused when the server already has it', async () => {
+    const context = createContext();
+    const candidate = card('shared-duplicate');
+    repositoryRuntime.createCardV2IfAbsent.mockResolvedValueOnce({
+      card: candidate,
+      created: false,
+      gamification: null,
+    });
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await expect(pipeline.persistCards([candidate], 'shared')).resolves.toEqual([
+      { card: candidate, created: false },
+    ]);
   });
 
   it('waits for every canonical catalog create before publishing authoritative cards once', async () => {
@@ -558,7 +589,7 @@ describe('Card Intake Pipeline contract', () => {
     pipeline.replaceOwner('owner-b');
     queued.resolve();
 
-    await expect(persistence).resolves.toEqual([{ card: candidate, created: true }]);
+    await expect(persistence).rejects.toThrow('Some shared cards could not be confirmed.');
     await vi.waitFor(() => expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalled());
     expect(ownerB.publishCards).not.toHaveBeenCalled();
     expect(ownerA.setCloudUnavailable).not.toHaveBeenCalled();
