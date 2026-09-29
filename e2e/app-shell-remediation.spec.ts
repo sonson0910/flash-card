@@ -249,6 +249,30 @@ test('a deck can be created, reloaded, and deleted from Library', async ({ page,
   await expect(page.getByRole('button', { name: 'Weekend words', exact: true })).toHaveCount(0);
 });
 
+test('a structured CSV imports a card from Library and persists after reload', async ({ page, signIn }) => {
+  await signIn(page, '/?view=library');
+  await expect(page.getByRole('status').filter({ hasText: 'Synced' })).toBeVisible();
+  await page.locator('summary').filter({ hasText: 'More library tools' }).click();
+
+  const chooserPromise = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Import cards from Excel or CSV' }).click();
+  const chooser = await chooserPromise;
+  await chooser.setFiles({
+    name: 'new-vocabulary.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('Word,Translation\nluminous,phát sáng\n'),
+  });
+
+  const dialog = page.getByRole('dialog', { name: 'Import from spreadsheet' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('Import complete')).toBeVisible({ timeout: 15_000 });
+  await dialog.getByRole('button', { name: 'Done' }).click();
+
+  await page.reload();
+  await page.getByRole('searchbox', { name: /Search words/ }).fill('luminous');
+  await expect(page.getByRole('heading', { name: 'luminous' })).toBeVisible();
+});
+
 test('Today and Progress empty states expose concrete next actions without initial autofocus', async ({ page, seedCourseProfile, signIn }) => {
   // An existing course profile keeps first-run onboarding out of the empty states under test.
   await seedCourseProfile();
