@@ -214,6 +214,26 @@ test('learning insights open from the library menu and lead to Progress', async 
   await expect(page.getByRole('heading', { name: 'Progress' })).toBeVisible();
 });
 
+test('a deck can be created from Library and remains after reload', async ({ page, signIn }) => {
+  await signIn(page, '/?view=library');
+  await page.locator('summary').filter({ hasText: 'More library tools' }).click();
+
+  const opener = page.getByRole('button', { name: 'New deck' });
+  await opener.click();
+  const dialog = page.getByRole('dialog', { name: 'New deck' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('textbox', { name: 'Deck name' }).fill('Weekend words');
+  await dialog.getByRole('button', { name: 'Create deck' }).click();
+  await expect(dialog.getByText('Deck created.')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Done' }).click();
+  await expect(opener).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Weekend words', exact: true })).toBeVisible();
+
+  await page.reload();
+  await page.locator('summary').filter({ hasText: 'More library tools' }).click();
+  await expect(page.getByRole('button', { name: 'Weekend words', exact: true })).toBeVisible();
+});
+
 test('Today and Progress empty states expose concrete next actions without initial autofocus', async ({ page, seedCourseProfile, signIn }) => {
   // An existing course profile keeps first-run onboarding out of the empty states under test.
   await seedCourseProfile();
