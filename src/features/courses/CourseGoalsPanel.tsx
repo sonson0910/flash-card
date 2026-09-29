@@ -7,7 +7,7 @@ import type { Course, CourseGoal } from './courseModel';
 import { goalKindLabel, goalKindsFor } from './courseGoalCatalog';
 
 const rowClass = 'flex min-h-11 w-full items-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm';
-const iconButtonClass = 'grid size-9 shrink-0 place-items-center rounded-lg text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2';
+const iconButtonClass = 'grid size-11 shrink-0 place-items-center rounded-lg text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2';
 
 function GoalRow({ course, goal, pending }: { readonly course: Course; readonly goal: CourseGoal; readonly pending: boolean }) {
   const { _ } = useLingui();
@@ -73,7 +73,7 @@ function AddGoalForm({ course, pending }: { readonly course: Course; readonly pe
 export function CourseGoalsPanel({ course, onClose }: { readonly course: Course; readonly onClose: () => void }) {
   const { model } = useCourseSession();
   return <div className="claude-course-goals-panel">
-    <button type="button" onClick={onClose} className="mb-2 text-sm font-bold text-[var(--sf-brand-text)]">&larr; <Trans id="course.goals.back" message="Back to courses" /></button>
+    <button type="button" onClick={onClose} className="mb-2 min-h-11 text-sm font-bold text-[var(--sf-brand-text)]">&larr; <Trans id="course.goals.back" message="Back to courses" /></button>
     {course.goals.length === 0
       ? <p className="text-sm text-[var(--sf-text-muted)]"><Trans id="course.goals.empty" message="No goals yet. Studying without one is fine too." /></p>
       : <ul className="space-y-2">{course.goals.map(goal => <GoalRow key={goal.id} course={course} goal={goal} pending={model.pending} />)}</ul>}

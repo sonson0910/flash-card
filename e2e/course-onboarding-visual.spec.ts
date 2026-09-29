@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/firebase-emulator';
-import type { Page, TestInfo } from '@playwright/test';
+import type { Locator, Page, TestInfo } from '@playwright/test';
 import type { Firestore } from 'firebase-admin/firestore';
 
 const themes = [
@@ -32,6 +32,13 @@ async function expectScreen(page: Page, testInfo: TestInfo, name: string) {
   const image = await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide' });
   await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
   return { image, name };
+}
+
+async function expectBox(locator: Locator, name: string) {
+  const box = await locator.boundingBox();
+  expect(box, `${name} has a rendered bounding box`).toBeTruthy();
+  if (!box) throw new Error(`${name} has no rendered bounding box`);
+  return box;
 }
 
 async function seedCourses(db: Firestore, ownerId: string) {
@@ -69,6 +76,11 @@ for (const theme of themes) for (const viewport of viewports) {
     const onboarding = page.getByRole('dialog', { name: 'Set up your course' });
     await expect(onboarding.getByRole('heading', { name: 'Choose your language' })).toBeVisible();
     await expect(onboarding.getByRole('button', { name: 'English' })).toBeVisible();
+    await expect(onboarding.getByRole('progressbar')).toHaveAttribute('aria-valuetext', '1 / 6');
+    const onboardingSurface = page.locator('.claude-onboarding-journey');
+    const onboardingBox = await expectBox(onboardingSurface, 'onboarding journey');
+    expect(onboardingBox.width, 'onboarding fills the viewport width').toBe(viewport.width);
+    expect(onboardingBox.height, 'onboarding fills the viewport height').toBe(viewport.height);
     await expectScreen(page, testInfo, `course-onboarding-${theme.family}-${theme.mode}-${viewport.name}`);
 
     await seedCourses(db, testUser.uid);
@@ -80,6 +92,22 @@ for (const theme of themes) for (const viewport of viewports) {
     const courses = page.getByRole('dialog', { name: 'Courses' });
     await expect(courses).toBeVisible();
     await expect(courses.getByRole('button', { name: /Korean.*Vietnamese/ })).toHaveAttribute('aria-current', 'true');
+    const coursesBox = await expectBox(courses, 'course switcher');
+    if (viewport.name === 'desktop') {
+      expect(coursesBox.width, 'desktop course switcher uses the Canvas-aligned popover width').toBe(480);
+    } else {
+      expect(coursesBox.width, 'mobile course switcher spans the viewport as a bottom sheet').toBe(viewport.width);
+      expect(coursesBox.y + coursesBox.height, 'mobile course switcher is anchored to the viewport bottom').toBe(viewport.height);
+    }
+    const activeCourseButton = courses.getByRole('button', { name: /Korean.*Vietnamese/ });
+    expect((await expectBox(activeCourseButton, 'active course control')).height, 'course switcher controls meet the 44px touch target').toBeGreaterThanOrEqual(44);
+    const activeCourseRow = activeCourseButton.locator('xpath=ancestor::li');
+    for (const name of ['Close', 'Manage goals', 'Archive course']) {
+      const scope = name === 'Close' ? courses : activeCourseRow;
+      const box = await expectBox(scope.getByRole('button', { name, exact: true }), `${name} control`);
+      expect(box.width, `${name} width meets the 44px touch target`).toBeGreaterThanOrEqual(44);
+      expect(box.height, `${name} height meets the 44px touch target`).toBeGreaterThanOrEqual(44);
+    }
     await expectScreen(page, testInfo, `course-switcher-${theme.family}-${theme.mode}-${viewport.name}`);
     await courses.getByRole('button', { name: 'Add a language' }).click();
     const targetCards = courses.locator('.course-target-card');
@@ -93,6 +121,11 @@ for (const theme of themes) for (const viewport of viewports) {
     const goals = courses.locator('.claude-course-goals-panel');
     await expect(goals.getByText('TOPIK', { exact: true })).toBeVisible();
     await expect(goals.getByText('TOPIK II', { exact: true })).toBeVisible();
+    for (const control of await goals.locator('li button').all()) {
+      const box = await expectBox(control, 'course goal action');
+      expect(box.width, 'goal action width meets the 44px touch target').toBeGreaterThanOrEqual(44);
+      expect(box.height, 'goal action height meets the 44px touch target').toBeGreaterThanOrEqual(44);
+    }
     await expectScreen(page, testInfo, `course-goals-${theme.family}-${theme.mode}-${viewport.name}`);
 
     await page.goto('/?view=settings&locale=en');
@@ -101,6 +134,7 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(settings.getByText('Meaning language')).toBeVisible();
     await expect(settings.getByText('Daily pace')).toBeVisible();
     await expect(settings.getByRole('switch')).toBeChecked();
+    await expect(settings.getByText('Applies to new cards. Existing card meanings do not change.')).toBeVisible();
     const activeCourse = settings.locator('[data-settings-active-course]');
     const courseLanguage = settings.locator('[data-settings-course-language]');
     const coursePreferences = settings.locator('[data-settings-course-preferences]');
@@ -118,6 +152,9 @@ for (const theme of themes) for (const viewport of viewports) {
         expect(activeCourseBox.y, 'active course stays before language controls on mobile').toBeLessThan(courseLanguageBox.y);
         expect(courseLanguageBox.y, 'language controls stay before preferences on mobile').toBeLessThan(coursePreferencesBox.y);
       }
+    }
+    for (const control of await settings.locator('select').all()) {
+      expect((await expectBox(control, 'course settings select')).height, 'settings selects meet the 44px touch target').toBeGreaterThanOrEqual(44);
     }
     const appearance = page.getByRole('heading', { name: 'Appearance' }).locator('xpath=ancestor::section');
     const coursePosition = await settings.boundingBox();

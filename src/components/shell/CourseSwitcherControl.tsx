@@ -16,7 +16,7 @@ import { CourseGoalsPanel } from '../../features/courses/CourseGoalsPanel';
 import './course-switcher.css';
 
 const rowClass = 'flex min-h-11 w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold text-[var(--sf-text)] transition-colors hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
-const iconButtonClass = 'grid size-9 shrink-0 place-items-center rounded-lg text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2';
+const iconButtonClass = 'grid size-11 shrink-0 place-items-center rounded-lg text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2';
 
 function CourseRow({ course, isActive, onSwitch, onArchive, onReopen, onManageGoals, pending }: {
   readonly course: Course; readonly isActive: boolean; readonly pending: boolean;
