@@ -214,7 +214,7 @@ test('learning insights open from the library menu and lead to Progress', async 
   await expect(page.getByRole('heading', { name: 'Progress' })).toBeVisible();
 });
 
-test('a deck can be created from Library and remains after reload', async ({ page, signIn }) => {
+test('a deck can be created, reloaded, and deleted from Library', async ({ page, signIn }) => {
   await signIn(page, '/?view=library');
   await page.locator('summary').filter({ hasText: 'More library tools' }).click();
 
@@ -232,6 +232,21 @@ test('a deck can be created from Library and remains after reload', async ({ pag
   await page.reload();
   await page.locator('summary').filter({ hasText: 'More library tools' }).click();
   await expect(page.getByRole('button', { name: 'Weekend words', exact: true })).toBeVisible();
+
+  const deleteDeck = page.getByRole('button', { name: 'Delete Weekend words deck' });
+  await deleteDeck.click();
+  const confirmation = page.getByRole('alertdialog', { name: 'Delete “Weekend words” deck?' });
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole('button', { name: 'Keep deck' }).click();
+  await expect(page.getByRole('button', { name: 'Weekend words', exact: true })).toBeVisible();
+
+  await deleteDeck.click();
+  await confirmation.getByRole('button', { name: 'Delete deck' }).click();
+  await expect(confirmation).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Weekend words', exact: true })).toHaveCount(0);
+  await page.reload();
+  await page.locator('summary').filter({ hasText: 'More library tools' }).click();
+  await expect(page.getByRole('button', { name: 'Weekend words', exact: true })).toHaveCount(0);
 });
 
 test('Today and Progress empty states expose concrete next actions without initial autofocus', async ({ page, seedCourseProfile, signIn }) => {
