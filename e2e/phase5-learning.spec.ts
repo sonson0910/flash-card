@@ -100,6 +100,32 @@ test('Today is the default four-part shell and completes the answer-feedback-rat
   await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 });
 
+test('Quiz and Spelling accept an answer and advance from the Today practice menu', async ({ page, signIn }) => {
+  await signIn(page, '/?view=today');
+
+  await page.getByRole('button', { name: 'More practice' }).click();
+  await page.getByRole('button', { name: /^Quiz/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary quiz' })).toBeVisible();
+  await page.getByRole('group', { name: 'Choose one answer' }).getByRole('button').first().click();
+  await expect(page.getByRole('status').filter({ hasText: /Correct answer\.|Incorrect\. The correct answer is/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(page.getByText(/^Question 2 \/ \d+$/)).toBeVisible();
+  await page.getByRole('button', { name: 'Exit' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary library' })).toBeVisible();
+  await page.getByRole('button', { name: 'Today', exact: true }).first().click();
+
+  await page.getByRole('button', { name: 'More practice' }).click();
+  await page.getByRole('button', { name: /^Spelling/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Spelling practice' })).toBeVisible();
+  await page.getByRole('textbox', { name: 'Type the English word' }).fill('not-the-card');
+  await page.getByRole('textbox', { name: 'Type the English word' }).press('Enter');
+  await expect(page.getByRole('status').filter({ hasText: 'Incorrect. The correct answer is' })).toBeVisible();
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(page.getByText(/^Question 2 \/ \d+$/)).toBeVisible();
+  await page.getByRole('button', { name: 'Exit' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary library' })).toBeVisible();
+});
+
 test('placement is diagnostic and Progress is a real URL-backed lazy workspace', async ({ page, signIn }) => {
   await signIn(page, '/?view=today&lesson=placement');
   await expect(page.getByRole('heading', { name: 'Placement check' })).toBeVisible();
