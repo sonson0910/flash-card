@@ -409,3 +409,23 @@ New gap found and closed: nothing noindexed the `staging` build (`SONFLASH_TARGE
   **5 card document reads mỗi lần mount hoặc đổi owner/course** khi Today đang
   mở. Không polling, subscription, write hay query loại mới. Trước sửa, strip
   chỉ query một lần lúc mount và luôn lọc English, nên có thể hiện sai count.
+
+## 2026-09-29 — Owner duyệt nội dung English Paths
+
+- Owner phê duyệt nội dung và quyền sử dụng của bản draft English Paths đã chuẩn bị:
+  300 lexemes, 300 memberships, 3 track × 15 unit và 45 title song ngữ.
+  Reviewer ID do owner xác nhận là `sonson0910`, khác author ID
+  `codex-editorial-draft`. Quyết định áp dụng đúng draft source digest
+  `871ca255da3950bfcef1d8e0277bdc9b2f15b07ecd274c65ec0bdc9d9718426d`;
+  mọi sửa nội dung sau đó phải được review và duyệt lại.
+- Nguồn đã duyệt giữ provenance `ai-assisted` và generator gốc, dùng license
+  `project-authored` với rights evidence ID
+  `owner-approval-2026-09-29-english-paths`. Source digest sau khi gắn review
+  evidence là `f8e057befc0bec8497fdfc035048db229a5a0cf827ae3cfe22e9352888f18a54`.
+  Local Catalog V2 build/verify cho release `r-261124da6107eb25204587aa` đạt;
+  đây không phải bằng chứng đã deploy hoặc được protected operator promote.
+- Mỗi track chỉ mở tier có nội dung thật: IELTS advanced (B2–C1), TOEIC core
+  (B1), General foundation (A2). Không dựng tier rỗng theo hình minh họa.
+  Không thêm Firestore I/O khi chuẩn bị source hoặc artifact. Khi người học mở
+  Paths V2 sau khi cài release, chi phí projection đã duyệt vẫn là 1 query và
+  P document reads; Continue giữ mức tối đa 20 card reads sau xác nhận.
