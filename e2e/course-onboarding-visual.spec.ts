@@ -82,6 +82,12 @@ for (const theme of themes) for (const viewport of viewports) {
     expect(onboardingBox.width, 'onboarding fills the viewport width').toBe(viewport.width);
     expect(onboardingBox.height, 'onboarding fills the viewport height').toBe(viewport.height);
     await expectScreen(page, testInfo, `course-onboarding-${theme.family}-${theme.mode}-${viewport.name}`);
+    await onboarding.getByRole('button', { name: 'Continue' }).click();
+    await onboarding.getByRole('button', { name: /Korean/ }).click();
+    await onboarding.getByRole('button', { name: 'Continue' }).click();
+    await onboarding.getByRole('button', { name: /^TOPIK Target level/ }).click();
+    await expect(onboarding.getByRole('button', { name: 'Continue' })).toBeInViewport();
+    await expectScreen(page, testInfo, `course-onboarding-goal-${theme.family}-${theme.mode}-${viewport.name}`);
 
     await seedCourses(db, testUser.uid);
     await page.reload();
@@ -181,7 +187,12 @@ test('mobile onboarding keeps selected options and actions clear through the stu
   const topik = onboarding.getByRole('button', { name: /^TOPIK Target level/ });
   await topik.click();
   await expect(topik).toHaveAttribute('aria-pressed', 'true');
+  await expect(onboarding.getByRole('button', { name: 'Continue' })).toBeInViewport();
+  await expect(onboarding.getByRole('button', { name: 'Back' })).toBeInViewport();
   await expectScreen(page, testInfo, 'course-onboarding-goal-classic-light-mobile');
+  await onboarding.getByLabel('Exam or target date (optional)').scrollIntoViewIfNeeded();
+  await expect(onboarding.getByLabel('Exam or target date (optional)')).toBeInViewport();
+  await expect(onboarding.getByRole('button', { name: 'Continue' })).toBeInViewport();
   await onboarding.getByRole('button', { name: 'Continue' }).click();
 
   const pace = onboarding.getByRole('button', { name: /10 cards \/ day/ });

@@ -17,8 +17,9 @@ import {
 
 const primaryButtonClass = 'min-h-11 rounded-xl bg-[var(--sf-brand)] px-4 text-sm font-bold text-[var(--sf-on-brand)] disabled:opacity-60';
 const secondaryButtonClass = 'min-h-11 rounded-xl border border-[var(--sf-border)] px-4 text-sm font-bold text-[var(--sf-text)]';
-const optionButtonClass = (active: boolean) => `relative flex min-h-20 w-full flex-col items-start justify-center rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${active ? 'border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)]' : 'border-[var(--sf-border)] text-[var(--sf-text)] hover:bg-[var(--sf-surface-muted)]'}`;
+const optionButtonClass = (active: boolean, compact = false) => `relative flex ${compact ? 'min-h-16 sm:min-h-20' : 'min-h-20'} w-full flex-col items-start justify-center rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${active ? 'border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)]' : 'border-[var(--sf-border)] text-[var(--sf-text)] hover:bg-[var(--sf-surface-muted)]'}`;
 const footerClass = 'mt-10 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between';
+const goalFooterClass = `${footerClass} sticky bottom-0 z-10 border-t border-[var(--sf-border)] bg-[var(--sf-surface)] py-3 sm:static sm:border-0 sm:py-0`;
 const paceFooterClass = 'mt-auto flex flex-col-reverse gap-3 border-t border-[var(--sf-border)] pt-6 sm:flex-row sm:items-center sm:justify-between sm:py-6';
 
 export interface OnboardingJourneyProps {
@@ -164,9 +165,9 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
       {step === 'goal' && <>
         <h2 className="font-serif-hero text-4xl font-bold tracking-tight sm:text-5xl"><Trans id="onboarding.goal.title" message="Have an exam or goal in mind?" /></h2>
         <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--sf-text-muted)]"><Trans id="onboarding.goal.subtitle" message="Optional. You can add or change this later in the course switcher." /></p>
-        <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          <button type="button" aria-pressed={goalKind === null} className={optionButtonClass(goalKind === null)} onClick={() => setGoalKind(null)}><span className="text-base font-bold"><Trans id="onboarding.goal.none" message="No specific goal yet" /></span>{goalKind === null && <Check aria-hidden="true" size={18} className="absolute right-3 top-3" />}</button>
-          {goalOptions.map(option => <button key={option.kind} type="button" aria-pressed={goalKind === option.kind} className={optionButtonClass(goalKind === option.kind)} onClick={() => setGoalKind(option.kind)}><span className="text-base font-bold">{_(option.label)}</span><span className="mt-1 text-xs font-medium opacity-75">{_(option.levelHint)}</span>{goalKind === option.kind && <Check aria-hidden="true" size={18} className="absolute right-3 top-3" />}</button>)}
+        <div className="mt-8 grid gap-2 sm:grid-cols-2 sm:gap-3">
+          <button type="button" aria-pressed={goalKind === null} className={optionButtonClass(goalKind === null, true)} onClick={() => setGoalKind(null)}><span className="text-base font-bold"><Trans id="onboarding.goal.none" message="No specific goal yet" /></span>{goalKind === null && <Check aria-hidden="true" size={18} className="absolute right-3 top-3" />}</button>
+          {goalOptions.map(option => <button key={option.kind} type="button" aria-pressed={goalKind === option.kind} className={optionButtonClass(goalKind === option.kind, true)} onClick={() => setGoalKind(option.kind)}><span className="text-base font-bold">{_(option.label)}</span><span className="mt-1 text-xs font-medium opacity-75">{_(option.levelHint)}</span>{goalKind === option.kind && <Check aria-hidden="true" size={18} className="absolute right-3 top-3" />}</button>)}
         </div>
         {selectedGoal && <div className="mt-4 grid max-w-2xl gap-3 sm:grid-cols-2">
           <label className="text-sm font-bold text-[var(--sf-text)]"><Trans id="course.goal.add.level-label" message="Level or target (optional)" />
@@ -182,7 +183,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
             <option value="hant"><Trans id="settings.course.script.traditional" message="Traditional" /></option>
           </select>
         </label>}
-        <div className={footerClass}>
+        <div className={goalFooterClass}>
           <button type="button" className={`${secondaryButtonClass} w-full sm:w-auto`} onClick={goBack}><Trans id="onboarding.back" message="Back" /></button>
           <button type="button" className={`${primaryButtonClass} w-full sm:w-auto`} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button>
         </div>
