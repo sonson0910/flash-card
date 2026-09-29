@@ -23,8 +23,11 @@ configuration is not evidence that staging, migration, deployment or rollback ra
    artifacts have bounded retention; before expiry, move an approved last-known-good
    candidate to the organization's immutable release archive or block deployment for
    lack of a recoverable artifact.
-4. Confirm the content gate still blocks the draft AI-assisted pilot. Publishing
-   requires source/rights evidence, independent review and matching digest.
+4. Confirm the content gate still blocks the draft AI-assisted pilot. The
+   owner-approved English Paths source and local artifact are under
+   `catalog/english-paths-approved/source/` and `public/catalog/english-core/`;
+   neither path proves protected promotion. Publishing still requires matching
+   source/rights evidence, independent review and the protected digest approval.
 5. Catalog review follows a protected validate → digest → approval flow. Run the
    catalog validator first and record its exact `sourceDigest`. A separately
    protected operator environment must then provide all three values:
@@ -80,8 +83,10 @@ Deploy the exact sealed candidate to an approved HTTPS staging environment. Then
 ```sh
 STAGING_ORIGIN=https://staging.example.test \
 EXPECTED_REVISION=<full-immutable-commit-sha> \
-CATALOG_MANIFEST_PATH=/catalog/english-core/release-manifest.json npm run phase6:smoke
+CATALOG_MANIFEST_PATH=/catalog/english-core/r-261124da6107eb25204587aa/release-manifest.json npm run phase6:smoke
 ```
+
+Use the immutable path of the release under test for later releases.
 
 The operator rejects redirects, a non-2xx application document, revision mismatch,
 unhealthy metadata, missing CSP/nosniff/referrer headers, a failed manifest probe and

@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures/firebase-emulator';
 
-test('personal catalog status follows a live interface-language change', async ({ page, seedCourseProfile, signIn }) => {
+test('reviewed catalog availability follows a live interface-language change', async ({ page, seedCourseProfile, signIn }) => {
   // A fresh emulator user with zero cards and no course-profile doc would
   // otherwise show OnboardingGate's full-screen journey overlay on top of
   // this view (suppress = knownLibraryTotal > 0, which is false here); the
@@ -11,17 +11,19 @@ test('personal catalog status follows a live interface-language change', async (
   // library language scope.
   await seedCourseProfile();
   await signIn(page, '/?view=catalog');
-  await expect(page.getByText('Add your first vocabulary cards to start a personal path.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Catalog unavailable' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Check for reviewed catalog' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Choose language' }).click();
   await page.getByRole('menuitemradio', { name: 'Tiếng Việt' }).click();
 
   await expect(page.locator('html')).toHaveAttribute('lang', 'vi');
-  await expect(page.getByText('Thêm thẻ từ vựng đầu tiên để bắt đầu lộ trình cá nhân.')).toBeVisible();
-  await expect(page.getByText('Add your first vocabulary cards to start a personal path.')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Danh mục không khả dụng' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Kiểm tra danh mục đã duyệt' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Catalog unavailable' })).toHaveCount(0);
 });
 
-test('Paths is lazy, URL-addressable, useful without a shared release and accessible', async ({ page, browserName, signIn }) => {
+test('Paths lazily installs the approved release and remains accessible offline', async ({ page, browserName, seedCourseProfile, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const requestedScripts: string[] = [];
   const requestedCatalogAssets: string[] = [];
@@ -36,6 +38,7 @@ test('Paths is lazy, URL-addressable, useful without a shared release and access
   // visitors now bounce to the landing page), so this test signs in first;
   // the lazy-load, URL-addressability, and accessibility guarantees it checks
   // apply equally to an authenticated session with no installed catalog.
+  await seedCourseProfile();
   await signIn(page, '/?view=library&utm_source=phase4#catalog-test');
   // A fresh emulator test user has zero cards, so LibraryCardGrid's "Your
   // library" heading never mounts (LibraryScreen.tsx only renders it once
@@ -48,29 +51,24 @@ test('Paths is lazy, URL-addressable, useful without a shared release and access
   await expect(page).toHaveURL(/view=catalog.*utm_source=phase4.*#catalog-test/);
   await expect(page.getByRole('heading', { name: 'Language paths' })).toBeFocused();
   await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'Open vocabulary' })).toBeFocused();
+  await expect(page.locator('#catalog-language')).toBeFocused();
   expect(requestedScripts.some(url => /CatalogWorkspace/i.test(url))).toBe(true);
 
-  await expect(page.getByRole('heading', { name: 'Personal learning mode' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Your personal paths' })).toBeVisible();
-  const personalPath = page.getByRole('list', { name: 'Personal learning path: Review due → Keep learning → Mastered' });
-  await expect(personalPath).toBeVisible();
-  await expect(personalPath.locator('li')).toHaveCount(3);
-  await expect(personalPath.getByText('Review due')).toBeVisible();
-  await expect(personalPath.getByText('Keep learning')).toBeVisible();
-  await expect(personalPath.getByText('Mastered')).toBeVisible();
-  await expect(page.getByText('No draft catalog vocabulary is mixed into these paths.')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Catalog unavailable' })).toHaveCount(0);
-  await expect(page.locator('#catalog-language')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /install|reviewed catalog/i })).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: 'Vocabulary explorer' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Add to library' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Catalog unavailable' })).toBeVisible();
+  await expect(page.locator('#catalog-language')).toBeVisible();
   expect(requestedCatalogAssets).toEqual([]);
+
+  await page.getByRole('button', { name: 'Check for reviewed catalog' }).click();
+  await expect(page.getByText('Reviewed catalog r-261124da6107eb25204587aa is ready on this device.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Choose a unit' })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Catalog units' }).locator('li')).toHaveCount(15);
+  await expect(page.getByRole('heading', { name: 'Vocabulary explorer' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add to library' }).first()).toBeVisible();
+  expect(requestedCatalogAssets.filter(url => url.endsWith('.json'))).toHaveLength(4);
 
   await page.context().setOffline(true);
   await expect.poll(() => page.evaluate(() => navigator.onLine)).toBe(false);
-  await expect(page.getByRole('button', { name: /install|reviewed catalog/i })).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: 'Your personal paths' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Choose a unit' })).toBeVisible();
   await page.context().setOffline(false);
 
   await page.setViewportSize({ width: 320, height: 800 });

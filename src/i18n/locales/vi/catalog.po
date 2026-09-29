@@ -401,7 +401,7 @@ msgstr "Học tiếp"
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:335
 msgid "paths.catalog.description"
-msgstr "Chọn danh mục ngôn ngữ đã duyệt và theo lộ trình từng cấp độ được xây từ từ vựng đã kiểm chứng."
+msgstr "Chọn danh mục ngôn ngữ đã duyệt và học theo các bài được sắp xếp theo thứ tự."
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:332
@@ -476,7 +476,7 @@ msgstr "Lộ trình của bạn"
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:382
 msgid "paths.roadmap.title"
-msgstr "Từ nền tảng đến nâng cao"
+msgstr "Cấp độ học của bạn"
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:173
@@ -507,7 +507,7 @@ msgstr "Đã khóa"
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/catalogPresentation.ts:51
 msgid "paths.tier.advanced.description"
-msgstr "Dùng ngôn ngữ chính xác và tinh tế từ C1 đến C2."
+msgstr "Dùng ngôn ngữ chính xác và tinh tế."
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/catalogPresentation.ts:50
@@ -517,7 +517,7 @@ msgstr "Nâng cao"
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/catalogPresentation.ts:47
 msgid "paths.tier.core.description"
-msgstr "Mở rộng vốn từ vững chắc từ B1 đến B2."
+msgstr "Mở rộng vốn từ vững chắc."
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/catalogPresentation.ts:46
@@ -527,7 +527,7 @@ msgstr "Cốt lõi"
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/catalogPresentation.ts:43
 msgid "paths.tier.foundation.description"
-msgstr "Xây dựng nền tảng ngôn ngữ thiết yếu từ A1 đến A2."
+msgstr "Xây dựng nền tảng từ vựng thiết yếu."
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/catalogPresentation.ts:42

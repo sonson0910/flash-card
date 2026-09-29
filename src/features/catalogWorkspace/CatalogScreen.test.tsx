@@ -339,7 +339,7 @@ describe('CatalogScreen', () => {
       });
 
       expect(html).toContain('Nền tảng');
-      expect(html).toContain('Xây dựng nền tảng ngôn ngữ thiết yếu từ A1 đến A2.');
+      expect(html).toContain('Xây dựng nền tảng từ vựng thiết yếu.');
       expect(summary).toContain('IELTS Nền tảng');
     } finally {
       i18n.activate('en');

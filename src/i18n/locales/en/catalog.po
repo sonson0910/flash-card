@@ -401,7 +401,7 @@ msgstr "Continue"
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:335
 msgid "paths.catalog.description"
-msgstr "Choose a reviewed language catalog and follow a level-by-level path built from verified vocabulary."
+msgstr "Choose a reviewed language catalog and follow its ordered learning units."
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:332
@@ -476,7 +476,7 @@ msgstr "Your roadmap"
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:382
 msgid "paths.roadmap.title"
-msgstr "Foundation to advanced"
+msgstr "Your learning level"
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:173
@@ -507,7 +507,7 @@ msgstr "Locked"
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/catalogPresentation.ts:51
 msgid "paths.tier.advanced.description"
-msgstr "Use precise and nuanced language from C1 to C2."
+msgstr "Use precise and nuanced language."
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/catalogPresentation.ts:50
@@ -517,7 +517,7 @@ msgstr "Advanced"
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/catalogPresentation.ts:47
 msgid "paths.tier.core.description"
-msgstr "Grow a confident working range from B1 to B2."
+msgstr "Grow a confident working range."
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/catalogPresentation.ts:46
@@ -527,7 +527,7 @@ msgstr "Core"
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/catalogPresentation.ts:43
 msgid "paths.tier.foundation.description"
-msgstr "Build essential language from A1 to A2."
+msgstr "Build an essential vocabulary base."
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/catalogPresentation.ts:42

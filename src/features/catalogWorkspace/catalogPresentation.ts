@@ -40,15 +40,15 @@ export const catalogTrackMessages = {
 export const catalogTierMessages = {
   foundation: {
     label: msg({ id: 'paths.tier.foundation.label', message: 'Foundation' }),
-    description: msg({ id: 'paths.tier.foundation.description', message: 'Build essential language from A1 to A2.' }),
+    description: msg({ id: 'paths.tier.foundation.description', message: 'Build an essential vocabulary base.' }),
   },
   core: {
     label: msg({ id: 'paths.tier.core.label', message: 'Core' }),
-    description: msg({ id: 'paths.tier.core.description', message: 'Grow a confident working range from B1 to B2.' }),
+    description: msg({ id: 'paths.tier.core.description', message: 'Grow a confident working range.' }),
   },
   advanced: {
     label: msg({ id: 'paths.tier.advanced.label', message: 'Advanced' }),
-    description: msg({ id: 'paths.tier.advanced.description', message: 'Use precise and nuanced language from C1 to C2.' }),
+    description: msg({ id: 'paths.tier.advanced.description', message: 'Use precise and nuanced language.' }),
   },
 } as const;
 

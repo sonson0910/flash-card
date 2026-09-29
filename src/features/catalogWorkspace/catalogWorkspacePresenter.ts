@@ -61,9 +61,9 @@ const trackSummary = (summary: CatalogWorkspaceSummary, trackId: string) => (
 );
 
 const tierDescription: Record<CatalogTierId, string> = {
-  foundation: 'Build essential language from A1 to A2.',
-  core: 'Grow a confident working range from B1 to B2.',
-  advanced: 'Use precise and nuanced language from C1 to C2.',
+  foundation: 'Build an essential vocabulary base.',
+  core: 'Grow a confident working range.',
+  advanced: 'Use precise and nuanced language.',
 };
 
 export function catalogTracksFromSummary(summary: CatalogWorkspaceSummary): CatalogTrackPresentation[] {

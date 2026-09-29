@@ -229,7 +229,7 @@ function PathUnitShelf({
           const unit = progress.unit;
           const isSelected = progress === selected;
           return <li key={`${unit.trackId}:${unit.unitId}`}><button type="button" onClick={() => actions.selectPathUnit(unit.trackId, unit.unitId)} aria-pressed={isSelected} className={`min-h-11 w-full rounded-2xl border p-4 text-left transition-colors focus-visible:outline-2 motion-reduce:transition-none ${isSelected ? 'border-[var(--sf-brand)] bg-[var(--sf-surface)]' : 'border-[var(--sf-border)] bg-[var(--sf-surface)] hover:border-[var(--sf-brand)]'}`}>
-            <span className="flex items-start justify-between gap-3"><span className="font-black"><Trans id="paths.unit.ordinal" message="Unit {ordinal}" values={{ ordinal: unit.ordinal }} /> · {pathUnitTitle(unit, language)}</span><span className="shrink-0 text-xs font-bold text-[var(--sf-text-muted)]">{i18n._(status(progress))}</span></span>
+            <span className="flex flex-col gap-1"><span className="font-black"><Trans id="paths.unit.ordinal" message="Unit {ordinal}" values={{ ordinal: unit.ordinal }} /> · {pathUnitTitle(unit, language)}</span><span className="text-xs font-bold text-[var(--sf-text-muted)]">{i18n._(status(progress))}</span></span>
             <span className="mt-2 block text-sm text-[var(--sf-text-muted)]"><Trans id="paths.unit.count" message="{count} words" values={{ count: formatNumber(unit.total) }} /></span>
           </button></li>;
         })}
@@ -332,13 +332,13 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
     : i18n._(msg({ id: 'paths.catalog.kicker', message: 'Reviewed catalog' }));
   const description = isPersonal
     ? i18n._(msg({ id: 'paths.personal.description', message: 'Follow practical paths built from cards you already own. Reviewed shared catalogs can be added later without blocking your learning.' }))
-    : i18n._(msg({ id: 'paths.catalog.description', message: 'Choose a reviewed language catalog and follow a level-by-level path built from verified vocabulary.' }));
+    : i18n._(msg({ id: 'paths.catalog.description', message: 'Choose a reviewed language catalog and follow its ordered learning units.' }));
 
   return (
     <section className="catalog-canvas mx-auto w-full min-w-0 max-w-7xl space-y-6 sm:space-y-8" aria-labelledby="catalog-heading">
       <header className="catalog-heading grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.32fr)] lg:items-end">
         <div><p className="premium-kicker uppercase tracking-[0.16em]">{kicker}</p>
-        <h1 id="catalog-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl"><Trans id="paths.title" message="Language paths" /></h1>
+        <h1 id="catalog-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 break-words text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl"><Trans id="paths.title" message="Language paths" /></h1>
         <p className="mt-3 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)] sm:text-base">{description}</p></div>
         {!isPersonal && <label htmlFor="catalog-language" className="block text-sm font-bold"><Trans id="paths.language.label" message="Language" />
           <select id="catalog-language" name="catalog-language" value={model.selectedLanguage} onChange={event => actions.selectLanguage(event.target.value)} className="glass-field mt-2 min-h-12 w-full rounded-xl px-3 font-semibold focus-visible:outline-2">
@@ -379,8 +379,8 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
         </section>
 
         <section aria-labelledby="catalog-roadmap-heading" className="catalog-roadmap">
-          <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="paths.roadmap.kicker" message="Your roadmap" /></p><h2 id="catalog-roadmap-heading" className="mt-1 text-2xl font-black tracking-tight"><Trans id="paths.roadmap.title" message="Foundation to advanced" /></h2></div>
-          <ol className="grid grid-cols-1 gap-3 md:grid-cols-3">{model.tiers.map(tier => <TierStep key={tier.id} tier={tier} selected={tier.id === model.selectedTier} progressAvailable={progressAvailable} onSelect={() => actions.selectTier(tier.id)} />)}</ol>
+          <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="paths.roadmap.kicker" message="Your roadmap" /></p><h2 id="catalog-roadmap-heading" className="mt-1 text-2xl font-black tracking-tight"><Trans id="paths.roadmap.title" message="Your learning level" /></h2></div>
+          <ol className={model.tiers.length > 1 ? 'grid grid-cols-1 gap-3 md:grid-cols-3' : 'grid grid-cols-1 gap-3'}>{model.tiers.map(tier => <TierStep key={tier.id} tier={tier} selected={tier.id === model.selectedTier} progressAvailable={progressAvailable} onSelect={() => actions.selectTier(tier.id)} />)}</ol>
         </section>
 
         <section aria-labelledby="catalog-vocabulary-heading" className="catalog-explorer" aria-busy={model.isLoadingPage || model.isLoadingMore}>
