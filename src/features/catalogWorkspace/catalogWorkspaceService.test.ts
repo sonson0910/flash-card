@@ -316,7 +316,7 @@ describe('catalog workspace service', () => {
       catalogId: 'english-core', releaseId: 'release-1',
     })).rejects.toThrow(/checksum/);
     expect(activeRelease).toBe('release-0');
-    expect(install).toHaveBeenCalledWith(manifest, 'https://learn.example.test/');
+    expect(install).toHaveBeenCalledWith(manifest, 'https://learn.example.test/catalog/');
   });
 
   it('reports bounded manifest, chunk and completion progress only for the current download', async () => {
@@ -374,9 +374,13 @@ describe('catalog workspace service', () => {
     ));
     const service = createCatalogWorkspaceService({ origin: 'https://learn.example.test/', fetcher });
 
-    await expect(service.download('/catalog/release-manifest.json', {
+    await expect(service.download('/catalog/english-core/release-1/release-manifest.json', {
       catalogId: 'english-core', releaseId: 'release-1',
     })).rejects.toThrow(/SHA-256/);
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://learn.example.test/catalog/english-core/release-1/english-core/release-1/chunk-1.json',
+      expect.objectContaining({ credentials: 'same-origin', redirect: 'error' }),
+    );
     await expect(getActiveCatalogRelease('english-core')).resolves.toMatchObject({ releaseId: 'release-0' });
 
     closeCatalogCacheForTests();

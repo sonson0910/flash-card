@@ -304,10 +304,11 @@ const createChunkSource = (
   reportProgress?: (progress: CatalogDownloadProgress) => void,
 ): CatalogChunkFetchPort => {
   const origin = originUrl(baseUrl);
+  const base = requestUrl(baseUrl, origin, 'Catalog release base URL');
   let receivedBytes = 0;
   return {
     async fetchChunk(path, signal) {
-      const url = requestUrl(path, origin, 'Catalog chunk URL');
+      const url = requestUrl(new URL(path, base).href, origin, 'Catalog chunk URL');
       const bytes = await fetchBytes(
         url,
         fetcher,
@@ -408,9 +409,10 @@ export function createCatalogWorkspaceService(
           phase: 'chunks', receivedBytes: 0,
           totalBytes: manifest.counts.encodedBytes, progressPercent: 0,
         });
+        const releaseBaseUrl = new URL('.', requestUrl(manifestUrl, origin, 'Catalog manifest URL')).href;
         const value = reportProgress
-          ? await ports.install(manifest, origin.href, reportIfCurrent)
-          : await ports.install(manifest, origin.href);
+          ? await ports.install(manifest, releaseBaseUrl, reportIfCurrent)
+          : await ports.install(manifest, releaseBaseUrl);
         reportIfCurrent({
           phase: 'complete', receivedBytes: manifest.counts.encodedBytes,
           totalBytes: manifest.counts.encodedBytes, progressPercent: 100,
