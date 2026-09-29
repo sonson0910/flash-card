@@ -14,6 +14,7 @@ describe('catalog workspace URL state', () => {
 
     expect(query).toEqual({
       view: 'catalog',
+      mode: 'reviewed',
       catalogId: 'english-core',
       releaseId: 'r-261124da6107eb25204587aa',
       languageCode: 'en',
@@ -36,6 +37,26 @@ describe('catalog workspace URL state', () => {
         trackId: null,
         tier: null,
       });
+  });
+
+  it('keeps personal paths addressable alongside a published English release', () => {
+    const personal = readCatalogWorkspaceQuery('?view=catalog&catalog=personal&lang=en&track=ielts');
+    expect(personal).toMatchObject({ catalogId: null, releaseId: null, trackId: null, tier: null });
+    expect(createCatalogWorkspaceLocation('/?view=catalog&utm=kept', personal)).toContain('catalog=personal');
+    expect(patchCatalogWorkspaceQuery(personal, { mode: 'reviewed' })).toMatchObject({
+      catalogId: 'english-core', releaseId: 'r-261124da6107eb25204587aa',
+    });
+    expect(patchCatalogWorkspaceQuery(readCatalogWorkspaceQuery('?view=catalog&lang=en'), { mode: 'personal' }))
+      .toMatchObject({ catalogId: null, releaseId: null });
+  });
+
+  it('keeps a non-English personal route distinct from an unavailable reviewed release', () => {
+    const personal = readCatalogWorkspaceQuery('?view=catalog&catalog=personal&lang=ko');
+    const reviewed = readCatalogWorkspaceQuery('?view=catalog&lang=ko');
+    expect(personal).toMatchObject({ mode: 'personal', languageCode: 'ko', catalogId: null });
+    expect(reviewed).toMatchObject({ mode: 'reviewed', languageCode: 'ko', catalogId: null });
+    expect(createCatalogWorkspaceLocation('/?view=catalog', personal)).toContain('catalog=personal');
+    expect(patchCatalogWorkspaceQuery(personal, { mode: 'reviewed' }).mode).toBe('reviewed');
   });
 
   it('rejects overlong and invalid values without silently falling back to English', () => {

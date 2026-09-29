@@ -529,6 +529,8 @@ export default function AppRuntime({
               headingRef={viewHeadingRef}
               focusIntent={viewFocusIntent}
               stats={libraryScreen.overlays.stats}
+              cloudStats={librarySession.cloud.stats}
+              cloudStatsTargetLanguage={librarySession.cloud.statsTargetLanguage}
               streak={libraryScreen.model.overview.streak}
               isStatsLoading={librarySession.cloud.isStatsLoading}
               statsError={librarySession.cloud.error}

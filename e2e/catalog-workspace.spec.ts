@@ -51,6 +51,10 @@ test('Paths lazily installs the approved release and remains accessible offline'
   await expect(page).toHaveURL(/view=catalog.*utm_source=phase4.*#catalog-test/);
   await expect(page.getByRole('heading', { name: 'Language paths' })).toBeFocused();
   await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'My vocabulary' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'Reviewed catalog', exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
   await expect(page.locator('#catalog-language')).toBeFocused();
   expect(requestedScripts.some(url => /CatalogWorkspace/i.test(url))).toBe(true);
 
@@ -64,6 +68,25 @@ test('Paths lazily installs the approved release and remains accessible offline'
   await expect(page.getByRole('list', { name: 'Catalog units' }).locator('li')).toHaveCount(15);
   await expect(page.getByRole('heading', { name: 'Vocabulary explorer' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Add to library' }).first()).toBeVisible();
+  expect(requestedCatalogAssets.filter(url => url.endsWith('.json'))).toHaveLength(4);
+
+  const search = page.getByRole('searchbox', { name: 'Search vocabulary' });
+  await search.fill('analysis');
+  await expect(page).toHaveURL(/term=analysis/);
+  await page.getByRole('button', { name: 'My vocabulary' }).click();
+  await expect(page).toHaveURL(/catalog=personal/);
+  await expect(page).not.toHaveURL(/term=/);
+  await expect(page.getByRole('heading', { name: 'Personal learning mode' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Choose a unit' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Reviewed catalog', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Choose a unit' })).toBeVisible();
+  await expect(search).toHaveValue('');
+  await search.fill('evidence');
+  await page.getByRole('button', { name: 'My vocabulary' }).click();
+  await page.waitForTimeout(350);
+  await expect(page).not.toHaveURL(/term=/);
+  await page.getByRole('button', { name: 'Reviewed catalog', exact: true }).click();
+  await expect(search).toHaveValue('');
   expect(requestedCatalogAssets.filter(url => url.endsWith('.json'))).toHaveLength(4);
 
   await page.context().setOffline(true);
@@ -92,7 +115,20 @@ test('a direct Catalog URL never invents reviewed vocabulary or an installable r
   await expect(page.getByRole('heading', { name: 'Language paths' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Catalog unavailable' })).toBeVisible();
   await expect(page.getByText('Draft vocabulary is never shown here.')).toBeVisible();
-  await expect(page.getByRole('button', { name: /install|reviewed catalog/i })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'My vocabulary' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /check for reviewed catalog|install/i })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'IELTS, TOEIC or everyday English' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Vocabulary explorer' })).toHaveCount(0);
+});
+
+test('personal paths follow the active course language even from a stale direct URL', async ({ page, seedCourseProfile, signIn }) => {
+  await seedCourseProfile({ targetLanguage: 'ko' });
+  await signIn(page, '/?view=catalog&catalog=personal&lang=en');
+  await expect(page).toHaveURL(/catalog=personal.*lang=ko/);
+  await expect(page.getByRole('heading', { name: 'Personal learning mode' })).toBeVisible();
+  await page.getByRole('button', { name: 'Reviewed catalog', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Catalog unavailable' })).toBeVisible();
+  await page.getByRole('button', { name: 'My vocabulary' }).click();
+  await expect(page).toHaveURL(/catalog=personal.*lang=ko/);
+  await expect(page.getByRole('heading', { name: 'Personal learning mode' })).toBeVisible();
 });

@@ -110,7 +110,7 @@ function CatalogReadyFixture() {
   if (!ready) return null;
   const tracks = catalogTracksFromSummary(summary);
   const currentUnitId = selectedUnitId ?? 'ielts\\u0000analysis-basics';
-  const actions = { selectLanguage() {}, selectTrack() {}, selectTier() {}, selectPathUnit(trackId, unitId) { setSelectedUnitId(trackId + '\\u0000' + unitId); setConfirmationUnitId(null); }, openNextUnitPreview() { setSelectedUnitId('ielts\\u0000analysis-basics'); setConfirmationUnitId('ielts\\u0000analysis-basics'); }, prepareSelectedUnit() { setConfirmationUnitId(currentUnitId); }, confirmSelectedUnit() {}, changeTerm() {}, changeCefr() {}, changeTopic() {}, changePartOfSpeech() {}, changeSkill() {}, resetFilters() {}, download() {}, retry() {}, loadMore() {}, addToLibrary() {}, openVocabulary() {}, continueReview() {} };
+  const actions = { selectMode() {}, selectLanguage() {}, selectTrack() {}, selectTier() {}, selectPathUnit(trackId, unitId) { setSelectedUnitId(trackId + '\\u0000' + unitId); setConfirmationUnitId(null); }, openNextUnitPreview() { setSelectedUnitId('ielts\\u0000analysis-basics'); setConfirmationUnitId('ielts\\u0000analysis-basics'); }, prepareSelectedUnit() { setConfirmationUnitId(currentUnitId); }, confirmSelectedUnit() {}, changeTerm() {}, changeCefr() {}, changeTopic() {}, changePartOfSpeech() {}, changeSkill() {}, resetFilters() {}, download() {}, retry() {}, loadMore() {}, addToLibrary() {}, openVocabulary() {}, continueReview() {} };
   return <main className="min-h-screen p-4 sm:p-8"><CatalogScreen model={{
     status: { kind: 'ready', isOnline: false, message: 'Reviewed catalog reviewed-visual-1 is ready on this device.' },
     selectedLanguage: 'en', uiLocale: locale, languages: [{ code: 'en', label: 'English', nativeLabel: 'English', isAvailable: true }, { code: 'ja', label: 'Japanese', nativeLabel: '日本語', isAvailable: false }],
@@ -227,13 +227,14 @@ for (const theme of themes) {
         localStorage.setItem('sonflash_theme_follow_system', 'false');
       }, theme);
 
-      await signIn(page, '/?view=catalog&locale=en');
+      await signIn(page, '/?view=catalog&catalog=personal&locale=en');
       const root = page.locator('html');
       await expect(root).toHaveAttribute('data-theme-family', theme.family);
       if (theme.mode === 'dark') await expect(root).toHaveClass(/\bdark\b/);
       else await expect(root).not.toHaveClass(/\bdark\b/);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await expect(page.getByRole('button', { name: 'Continue review' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Reviewed catalog', exact: true })).toBeVisible();
       await expectAccessibleAndContained(page, 'Paths');
       await expectReducedMotion(page, 'Paths');
       await attachScreen(page, testInfo, `paths-${theme.family}-${theme.mode}-${viewport.name}`);

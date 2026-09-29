@@ -84,6 +84,7 @@ const readyModel: CatalogScreenModel = {
 };
 
 const actions: CatalogScreenActions = {
+  selectMode: vi.fn(),
   selectLanguage: vi.fn(),
   selectTrack: vi.fn(),
   selectTier: vi.fn(),
@@ -143,6 +144,9 @@ describe('CatalogScreen', () => {
     expect(html).not.toContain('<main');
     expect(html).toContain('<h1');
     expect(html).toContain('Language paths');
+    expect(html).toContain('aria-label="Path source"');
+    expect(html).toContain('My vocabulary');
+    expect(html).toContain('Reviewed catalog');
     expect(html).toContain('Japanese (日本語) — coming soon');
     expect(html).toContain('disabled=""');
     expect(html).toContain('IELTS');
@@ -373,6 +377,7 @@ describe('CatalogScreen', () => {
   it('does not offer a no-op install action when no reviewed release is published', () => {
     const html = renderToStaticMarkup(<CatalogScreen model={{
       ...readyModel,
+      selectedLanguage: 'ja',
       status: {
         kind: 'unavailable',
         isOnline: true,
@@ -383,7 +388,7 @@ describe('CatalogScreen', () => {
     }} actions={actions} />);
 
     expect(html).toContain('A download will appear after a reviewed release is published.');
-    expect(html).not.toContain('<button');
+    expect(html).not.toContain('Check for reviewed catalog');
     expect(html).not.toContain('Install English starter catalog');
   });
 
@@ -400,6 +405,7 @@ describe('CatalogScreen', () => {
     }} actions={personalActions} />);
 
     expect(html).toContain('Your personal paths');
+    expect(html).toMatch(/aria-pressed="true"[^>]*>My vocabulary/);
     expect(html).toContain('Review due');
     expect(html).toContain('82');
     expect(html).toContain('aria-label="Personal learning path: Review due → Keep learning → Mastered"');
@@ -421,6 +427,21 @@ describe('CatalogScreen', () => {
     }} actions={actions} />);
 
     expect(html).toContain('Continue review');
+  });
+
+  it('hides personal counts when the active course has no scoped summary', () => {
+    const html = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel,
+      mode: 'personal',
+      status: { kind: 'personal', message: 'Your library summary is unavailable for this course.' },
+      cards: [],
+    }} actions={actions} />);
+
+    expect(html).toContain('Personal learning mode');
+    expect(html).toContain('Open vocabulary');
+    expect(html).not.toContain('Your personal paths');
+    expect(html).not.toContain('Review due');
+    expect(html).not.toContain('Choose a unit');
   });
 
   it('offers a reviewed-catalog check only when the unavailable release is downloadable', () => {

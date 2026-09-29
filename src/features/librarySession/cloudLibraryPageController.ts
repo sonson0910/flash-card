@@ -81,8 +81,8 @@ export interface CloudLibraryCachePort {
     countedAt: number | null;
   }): void | Promise<void>;
   readCount(ownerId: string, queryKey: string): { total: number; cachedAt: number | null } | null;
-  readStats(ownerId: string): { stats: CloudLibraryStats; cachedAt: number | null } | null;
-  writeStats(ownerId: string, stats: CloudLibraryStats, updatedAt: number): void;
+  readStats(ownerId: string, targetLanguage: string | null): { stats: CloudLibraryStats; cachedAt: number | null } | null;
+  writeStats(ownerId: string, targetLanguage: string | null, stats: CloudLibraryStats, updatedAt: number): void;
   readFacets(ownerId: string): { categories: Record<string, number>; complete: boolean } | null;
   writeFacets(ownerId: string, facets: { categories: Record<string, number>; complete: boolean }): void;
   isBackoffActive(ownerId: string): boolean;
@@ -100,6 +100,7 @@ export interface CloudLibraryPageSnapshot {
   cloudUnavailable: boolean;
   error: string | null;
   stats: CloudLibraryStats;
+  statsTargetLanguage?: string | null;
   isStatsLoading: boolean;
   facets: Record<string, number>;
   facetsComplete: boolean;
@@ -166,7 +167,7 @@ export function createCloudLibraryPageController({
     listeners.forEach(listener => listener(snapshot));
   };
 
-  const setupOwner = (ownerId: string) => {
+  const setupOwner = (ownerId: string, targetLanguage: string | null) => {
     if (activeOwnerId === ownerId) return;
     activeOwnerId = ownerId;
     ownerGeneration += 1;
@@ -177,11 +178,12 @@ export function createCloudLibraryPageController({
     unsubscribeFacets?.();
     unsubscribeFacets = null;
 
-    const cachedStats = safeCacheRead(() => cache.readStats(ownerId), null);
+    const cachedStats = safeCacheRead(() => cache.readStats(ownerId, targetLanguage), null);
     const cachedFacets = safeCacheRead(() => cache.readFacets(ownerId), null);
     publish({
       ownerId,
       stats: cachedStats?.stats ?? EMPTY_LIBRARY_STATS,
+      statsTargetLanguage: cachedStats ? targetLanguage : undefined,
       items: [],
       total: 0,
       hasNext: false,
@@ -299,7 +301,7 @@ export function createCloudLibraryPageController({
     const generation = ++pageGeneration;
     const continuesSameQuery = snapshot.ownerId === request.ownerId
       && snapshot.queryKey === request.queryKey;
-    setupOwner(request.ownerId);
+    setupOwner(request.ownerId, request.query.targetLanguage ?? null);
     const scope = `${request.ownerId}\u0000${request.queryKey}`;
     const pageCursors = cursors.get(scope) ?? new Map<number, string | null>([[1, null]]);
     cursors.set(scope, pageCursors);
@@ -395,7 +397,7 @@ export function createCloudLibraryPageController({
               );
               activeTotal = total;
               const cachedStats = defaultQuery
-                ? safeCacheRead(() => cache.readStats(request.ownerId), null)
+                ? safeCacheRead(() => cache.readStats(request.ownerId, request.query.targetLanguage ?? null), null)
                 : null;
               const nextStats = defaultQuery
                 ? {
@@ -410,6 +412,7 @@ export function createCloudLibraryPageController({
                 // the full stats cache so requestStats still refreshes its facets.
                 safeCacheWrite(() => cache.writeStats(
                   request.ownerId,
+                  request.query.targetLanguage ?? null,
                   nextStats,
                   cachedStatsAt,
                 ));
@@ -478,11 +481,11 @@ export function createCloudLibraryPageController({
     if (progressEvidenceLanguage !== targetLanguage) {
       progressEvidenceLanguage = targetLanguage;
       progressEvidenceGeneration += 1;
-      publish({ stats: { ...snapshot.stats, dueForecast: undefined, recentlyMastered: undefined } });
+      publish({ stats: EMPTY_LIBRARY_STATS, statsTargetLanguage: undefined, isStatsLoading: false });
     }
-    const cached = safeCacheRead(() => cache.readStats(ownerId), null);
+    const cached = safeCacheRead(() => cache.readStats(ownerId, targetLanguage), null);
     if (cached && !shouldRefreshCloudStats(cached.cachedAt, now())) {
-      publish({ stats: cached.stats });
+      publish({ stats: cached.stats, statsTargetLanguage: targetLanguage, isStatsLoading: false });
       return;
     }
     if (safeCacheRead(() => cache.isBackoffActive(ownerId), false)) return;
@@ -498,9 +501,10 @@ export function createCloudLibraryPageController({
             recentlyMastered: snapshot.stats.recentlyMastered,
           } : {}),
         },
+        statsTargetLanguage: targetLanguage,
         isStatsLoading: false,
       });
-      safeCacheWrite(() => cache.writeStats(ownerId, stats, now()));
+      safeCacheWrite(() => cache.writeStats(ownerId, targetLanguage, stats, now()));
     } catch (error) {
       if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration) return;
       publish({

@@ -123,6 +123,7 @@ export interface CatalogVocabularyPresentation {
 export interface CatalogScreenModel {
   headingRef?: RefObject<HTMLHeadingElement | null>;
   status: CatalogAvailabilityStatus;
+  mode?: 'personal' | 'reviewed';
   selectedLanguage: string;
   uiLocale?: string;
   progressAvailable?: boolean;
@@ -151,6 +152,7 @@ export interface CatalogScreenModel {
 }
 
 export interface CatalogScreenActions {
+  selectMode: (mode: 'personal' | 'reviewed') => void;
   selectLanguage: (language: string) => void;
   selectTrack: (track: CatalogTrackPresentation['id']) => void;
   selectTier: (tier: CatalogTierPresentation['id']) => void;

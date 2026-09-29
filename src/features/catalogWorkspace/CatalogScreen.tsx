@@ -58,7 +58,7 @@ function languageOptionLabel(label: string, nativeLabel: string, isAvailable: bo
   return isAvailable ? names : i18n._(msg({ id: 'catalog.language.coming-soon', message: '{names} — coming soon' }).id, { names });
 }
 
-function AvailabilityPanel({ status, actions }: { status: CatalogAvailabilityStatus; actions: CatalogScreenActions }) {
+function AvailabilityPanel({ status, actions, hasPersonalLibrary = true }: { status: CatalogAvailabilityStatus; actions: CatalogScreenActions; hasPersonalLibrary?: boolean }) {
   if (status.kind === 'ready') {
     return (
       <div className="flex flex-col gap-3 rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100 sm:flex-row sm:items-center sm:justify-between" role="status" aria-live="polite" aria-atomic="true">
@@ -80,7 +80,7 @@ function AvailabilityPanel({ status, actions }: { status: CatalogAvailabilitySta
     return (
       <section className="flex items-start gap-3 rounded-2xl border border-cyan-300 bg-cyan-50 p-5 text-cyan-950 dark:border-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-100" aria-labelledby="personal-path-status-title" aria-live="polite">
         <BookOpen className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-        <div><h2 id="personal-path-status-title" className="font-black"><Trans id="catalog.personal.status-title" message="Personal learning mode" /></h2><p className="mt-1 text-sm">{status.message}</p></div>
+        <div><h2 id="personal-path-status-title" className="font-black"><Trans id="catalog.personal.status-title" message="Personal learning mode" /></h2><p className="mt-1 text-sm">{status.message}</p>{!hasPersonalLibrary && <button type="button" onClick={actions.openVocabulary} className="mt-3 min-h-11 rounded-xl border border-current px-4 py-2 font-bold"><Trans id="catalog.action.open-vocabulary" message="Open vocabulary" /></button>}</div>
       </section>
     );
   }
@@ -319,7 +319,8 @@ function VocabularyCard({ card, onAdd }: { card: CatalogVocabularyPresentation; 
 export function CatalogScreen({ model, actions }: CatalogScreenProps) {
   const isCrystal = globalThis.document?.documentElement.dataset.themeFamily === 'crystal';
   const isReady = model.status.kind === 'ready';
-  const isPersonal = model.status.kind === 'personal' && Boolean(model.personalLibrary);
+  const isPersonal = model.mode === 'personal' || (model.status.kind === 'personal' && Boolean(model.personalLibrary));
+  const selectedMode = model.mode ?? (isPersonal ? 'personal' : 'reviewed');
   const isEmpty = isReady && !model.isLoadingPage && model.cards.length === 0;
   const activeTrack = model.tracks.find(track => track.id === model.selectedTrack);
   const activeTrackCopy = activeTrack ? catalogTrackMessages[activeTrack.id] : null;
@@ -331,7 +332,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
     ? i18n._(msg({ id: 'paths.personal.kicker', message: 'Personal learning paths' }))
     : i18n._(msg({ id: 'paths.catalog.kicker', message: 'Reviewed catalog' }));
   const description = isPersonal
-    ? i18n._(msg({ id: 'paths.personal.description', message: 'Follow practical paths built from cards you already own. Reviewed shared catalogs can be added later without blocking your learning.' }))
+    ? i18n._(msg({ id: 'paths.personal.description', message: 'Follow practical paths built from cards you already own. Switch to the reviewed catalog whenever you want.' }))
     : i18n._(msg({ id: 'paths.catalog.description', message: 'Choose a reviewed language catalog and follow its ordered learning units.' }));
 
   return (
@@ -340,14 +341,20 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
         <div><p className="premium-kicker uppercase tracking-[0.16em]">{kicker}</p>
         <h1 id="catalog-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 break-words text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl"><Trans id="paths.title" message="Language paths" /></h1>
         <p className="mt-3 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)] sm:text-base">{description}</p></div>
-        {!isPersonal && <label htmlFor="catalog-language" className="block text-sm font-bold"><Trans id="paths.language.label" message="Language" />
-          <select id="catalog-language" name="catalog-language" value={model.selectedLanguage} onChange={event => actions.selectLanguage(event.target.value)} className="glass-field mt-2 min-h-12 w-full rounded-xl px-3 font-semibold focus-visible:outline-2">
-            {model.languages.map(language => <option key={language.code} value={language.code} disabled={!language.isAvailable}>{languageOptionLabel(language.label, language.nativeLabel, language.isAvailable)}</option>)}
-          </select>
-        </label>}
+        <div className="flex flex-col gap-3">
+          <div data-catalog-mode-switch role="group" aria-label={i18n._(msg({ id: 'paths.source.label', message: 'Path source' }))} className="flex flex-wrap gap-2">
+            <button type="button" aria-pressed={selectedMode === 'personal'} onClick={() => actions.selectMode('personal')} className={`min-h-11 rounded-xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold focus-visible:outline-2 ${selectedMode === 'personal' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'bg-[var(--sf-surface)] text-[var(--sf-text)]'}`}><Trans id="paths.source.personal" message="My vocabulary" /></button>
+            <button type="button" aria-pressed={selectedMode === 'reviewed'} onClick={() => actions.selectMode('reviewed')} className={`min-h-11 rounded-xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold focus-visible:outline-2 ${selectedMode === 'reviewed' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'bg-[var(--sf-surface)] text-[var(--sf-text)]'}`}><Trans id="paths.source.reviewed" message="Reviewed catalog" /></button>
+          </div>
+          {!isPersonal && <label htmlFor="catalog-language" className="block text-sm font-bold"><Trans id="paths.language.label" message="Language" />
+            <select id="catalog-language" name="catalog-language" value={model.selectedLanguage} onChange={event => actions.selectLanguage(event.target.value)} className="glass-field mt-2 min-h-12 w-full rounded-xl px-3 font-semibold focus-visible:outline-2">
+              {model.languages.map(language => <option key={language.code} value={language.code} disabled={!language.isAvailable}>{languageOptionLabel(language.label, language.nativeLabel, language.isAvailable)}</option>)}
+            </select>
+          </label>}
+        </div>
       </header>
 
-      <AvailabilityPanel status={model.status} actions={actions} />
+      <AvailabilityPanel status={model.status} actions={actions} hasPersonalLibrary={Boolean(model.personalLibrary)} />
 
       {isPersonal && model.personalLibrary && <PersonalLibraryPaths library={model.personalLibrary} actions={actions} />}
 

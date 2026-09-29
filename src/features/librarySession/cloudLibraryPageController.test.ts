@@ -37,8 +37,9 @@ const card = (id: string, category = 'General'): CardData => ({
 
 const deferred = <T,>() => {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>(resolvePromise => { resolve = resolvePromise; });
-  return { promise, resolve };
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => { resolve = resolvePromise; reject = rejectPromise; });
+  return { promise, resolve, reject };
 };
 
 const createFakes = () => {
@@ -133,6 +134,55 @@ describe('cloud library page controller', () => {
       total: 5,
       dueForecast: [{ date: '2026-09-28', count: 3 }],
     });
+  });
+
+  it('does not publish old-course personal counts while a new-course read is delayed or fails', async () => {
+    const { adapter, cache } = createFakes();
+    const koreanStats = deferred<typeof EMPTY_LIBRARY_STATS>();
+    vi.mocked(adapter.loadStats).mockImplementation((_ownerId, language) => language === 'ko'
+      ? koreanStats.promise
+      : Promise.resolve({ ...EMPTY_LIBRARY_STATS, total: 8, easy: 3 }));
+    const controller = createCloudLibraryPageController({ adapter, cache });
+    controller.activate({ ownerId: 'owner-a', query: { ...filters, targetLanguage: 'en' }, queryKey: 'all-en', page: 1 });
+    await controller.requestStats('en');
+    expect(controller.getSnapshot()).toMatchObject({ statsTargetLanguage: 'en', stats: { total: 8, easy: 3 } });
+
+    controller.activate({ ownerId: 'owner-a', query: { ...filters, targetLanguage: 'ko' }, queryKey: 'all-ko', page: 1 });
+    const pending = controller.requestStats('ko');
+    expect(controller.getSnapshot()).toMatchObject({ stats: { total: 0, easy: 0 }, isStatsLoading: true });
+    expect(controller.getSnapshot().statsTargetLanguage).toBeUndefined();
+
+    koreanStats.reject(new Error('Cloud stats unavailable'));
+    await pending;
+    expect(controller.getSnapshot().statsTargetLanguage).toBeUndefined();
+    expect(controller.getSnapshot()).toMatchObject({ stats: { total: 0, easy: 0 }, isStatsLoading: false });
+  });
+
+  it('writes an in-flight stats response to the language that started its request', async () => {
+    const { adapter, cache } = createFakes();
+    const englishStats = deferred<typeof EMPTY_LIBRARY_STATS>();
+    const saved = new Map<string, ReturnType<CloudLibraryCachePort['readStats']>>();
+    vi.mocked(cache.readStats).mockImplementation((_ownerId, language) => saved.get(language ?? '') ?? null);
+    vi.mocked(cache.writeStats).mockImplementation((_ownerId, language, stats, cachedAt) => {
+      saved.set(language ?? '', { stats, cachedAt });
+    });
+    vi.mocked(adapter.loadStats).mockImplementation((_ownerId, language) => language === 'en'
+      ? englishStats.promise
+      : Promise.resolve({ ...EMPTY_LIBRARY_STATS, total: 2 }));
+    const controller = createCloudLibraryPageController({ adapter, cache });
+    controller.activate({ ownerId: 'owner-a', query: { ...filters, targetLanguage: 'en' }, queryKey: 'all-en', page: 1 });
+    const oldRequest = controller.requestStats('en');
+
+    controller.activate({ ownerId: 'owner-a', query: { ...filters, targetLanguage: 'ko' }, queryKey: 'all-ko', page: 1 });
+    englishStats.resolve({ ...EMPTY_LIBRARY_STATS, total: 8 });
+    await oldRequest;
+    expect(saved.get('en')?.stats.total).toBe(8);
+    expect(saved.has('ko')).toBe(false);
+    expect(controller.getSnapshot().statsTargetLanguage).toBe('en');
+
+    await controller.requestStats('ko');
+    expect(controller.getSnapshot()).toMatchObject({ statsTargetLanguage: 'ko', stats: { total: 2 } });
+    expect(saved.get('ko')?.stats.total).toBe(2);
   });
 
   it('keeps controller and cursor contracts free of Firebase vendor types', () => {
@@ -382,7 +432,7 @@ describe('cloud library page controller', () => {
       cachedAt: -100_000_000,
     };
     vi.mocked(cache.readStats).mockImplementation(() => statsCache);
-    vi.mocked(cache.writeStats).mockImplementation((_ownerId, stats, cachedAt) => {
+    vi.mocked(cache.writeStats).mockImplementation((_ownerId, _targetLanguage, stats, cachedAt) => {
       statsCache = { stats, cachedAt };
     });
     vi.mocked(adapter.loadStats).mockResolvedValue({
@@ -412,6 +462,7 @@ describe('cloud library page controller', () => {
     expect(controller.getSnapshot().stats.unrated).toBe(4);
     expect(cache.writeStats).toHaveBeenLastCalledWith(
       'owner-a',
+      null,
       expect.objectContaining({ total: 1 }),
       -100_000_000,
     );
@@ -425,7 +476,7 @@ describe('cloud library page controller', () => {
     const { adapter, cache, subscriptions } = createFakes();
     let statsCache: ReturnType<CloudLibraryCachePort['readStats']> = null;
     vi.mocked(cache.readStats).mockImplementation(() => statsCache);
-    vi.mocked(cache.writeStats).mockImplementation((_ownerId, stats, cachedAt) => {
+    vi.mocked(cache.writeStats).mockImplementation((_ownerId, _targetLanguage, stats, cachedAt) => {
       statsCache = { stats, cachedAt };
     });
     vi.mocked(adapter.countCards).mockResolvedValue(2);
@@ -454,6 +505,7 @@ describe('cloud library page controller', () => {
     expect(adapter.loadStats).toHaveBeenCalledOnce();
     expect(cache.writeStats).toHaveBeenCalledWith(
       'owner-a',
+      null,
       expect.objectContaining({ total: 2, reviewed: 1 }),
       1_000,
     );
@@ -482,7 +534,7 @@ describe('cloud library page controller', () => {
       facets: { Current: 2 },
       stats: { ...EMPTY_LIBRARY_STATS, total: 1 },
     });
-    expect(cache.writeStats).not.toHaveBeenCalledWith('owner-a', expect.anything(), expect.anything());
+    expect(cache.writeStats).not.toHaveBeenCalledWith('owner-a', null, expect.anything(), expect.anything());
   });
 
   it('keeps the route usable when every browser-backed cache operation is denied', async () => {

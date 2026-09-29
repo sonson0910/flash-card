@@ -48,8 +48,6 @@ export function useCloudLibraryPage({
     }), []);
 
   const controller = useMemo(() => {
-    // The cache reads the current course without recreating its controller.
-    const getTargetLanguage = () => queryRef.current.targetLanguage ?? null;
     const adapter = createCloudLibraryPageFirebaseAdapter({ database: db, configured: isFirebaseConfigured, transformPage });
     const cache: CloudLibraryCachePort = {
       readPage: async request => {
@@ -79,10 +77,8 @@ export function useCloudLibraryPage({
         } satisfies CachedCloudPage));
       },
       readCount: readCachedCloudTotal,
-      // Course-scoped: a stats cache written for course A must never answer
-      // a read for course B, so both sides key off the active target language.
-      readStats: id => readCachedCloudStats(id, getTargetLanguage()),
-      writeStats: (id, stats, updatedAt) => { writeLocalValue(cloudStatsCacheKey(id, getTargetLanguage()), JSON.stringify({ stats, updatedAt: new Date(updatedAt).toISOString() } satisfies CachedCloudStats)); },
+      readStats: (id, targetLanguage) => readCachedCloudStats(id, targetLanguage),
+      writeStats: (id, targetLanguage, stats, updatedAt) => { writeLocalValue(cloudStatsCacheKey(id, targetLanguage), JSON.stringify({ stats, updatedAt: new Date(updatedAt).toISOString() } satisfies CachedCloudStats)); },
       readFacets: id => {
         const value = readLocalJson<unknown>(cloudFacetsCacheKey(id), null);
         if (!value || typeof value !== 'object' || Array.isArray(value)) return null;

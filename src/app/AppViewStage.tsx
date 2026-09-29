@@ -2,6 +2,7 @@ import { lazy, Suspense, type ReactNode, type RefObject } from 'react';
 import type { Firestore } from 'firebase/firestore';
 import type { CardData, ReviewRatingValue } from '../types/card';
 import type { LibraryStatsViewModel } from '../features/library/libraryViewModel';
+import type { CloudLibraryStats } from '../features/librarySession/cloudLibraryPageController';
 import type { LanguageProfile } from '../features/language/languageProfile';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { createDailyLearningLocation, readDailyLearningUrlState, type DailyLessonMode } from '../features/dailyLearning/dailyLearningUrl';
@@ -38,6 +39,8 @@ interface AppViewStageProps {
   readonly headingRef: RefObject<HTMLHeadingElement | null>;
   readonly focusIntent: number;
   readonly stats: LibraryStatsViewModel;
+  readonly cloudStats: CloudLibraryStats;
+  readonly cloudStatsTargetLanguage?: string | null;
   readonly streak: number;
   readonly isStatsLoading: boolean;
   readonly statsError: string | null;
@@ -58,11 +61,11 @@ interface AppViewStageProps {
 const fallback = (message: ReactNode) => <WorkspaceLoadingPanel>{message}</WorkspaceLoadingPanel>;
 
 export function AppViewStage({
-  viewMode, ownerId, database, verifiedLibraryEpoch, languageProfile, isOffline, isDarkMode, headingRef, focusIntent, stats, streak, isStatsLoading, statsError, loadPracticePool, reviewCard,
+  viewMode, ownerId, database, verifiedLibraryEpoch, languageProfile, isOffline, isDarkMode, headingRef, focusIntent, stats, cloudStats, cloudStatsTargetLanguage, streak, isStatsLoading, statsError, loadPracticePool, reviewCard,
   catalogCards, adoptCatalogCards, notifyCatalog,
   openVocabulary, openPaths, continueReview, continueCatalogUnit, openMorePractice, libraryContent, practiceContent,
 }: AppViewStageProps) {
-  if (viewMode === 'catalog') return <Suspense fallback={fallback(<Trans id="shell.loading.paths" message="Preparing learning paths…" />)}><div className="async-content-enter" data-async-content="catalog"><CatalogWorkspace ownerId={ownerId} database={database} verifiedLibraryEpoch={verifiedLibraryEpoch} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} openVocabulary={openVocabulary} continueReview={continueReview} continueCatalogUnit={continueCatalogUnit} /></div></Suspense>;
+  if (viewMode === 'catalog') return <Suspense fallback={fallback(<Trans id="shell.loading.paths" message="Preparing learning paths…" />)}><div className="async-content-enter" data-async-content="catalog"><CatalogWorkspace ownerId={ownerId} targetLanguage={languageProfile.source.code} database={database} verifiedLibraryEpoch={verifiedLibraryEpoch} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} cloudStats={cloudStats} cloudStatsTargetLanguage={cloudStatsTargetLanguage} openVocabulary={openVocabulary} continueReview={continueReview} continueCatalogUnit={continueCatalogUnit} /></div></Suspense>;
   if (viewMode === 'today') {
     const route = readDailyLearningUrlState(window.location.href);
     const openLesson = (lesson: DailyLessonMode | null) => {

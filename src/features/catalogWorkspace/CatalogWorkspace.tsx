@@ -3,6 +3,7 @@ import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { useUiLocale } from '../../i18n/I18nProvider';
 import type { CardData } from '../../types/card';
+import type { CloudLibraryStats } from '../librarySession/cloudLibraryPageController';
 import { readDailyPaceForEta } from '../settings/dailyPacePreference';
 import type { CatalogLearningStatus, CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
 import { CatalogCacheOpenError, type HydratedCatalogEntry } from '../catalogCache/catalogCache';
@@ -53,12 +54,15 @@ import {
 
 export interface CatalogWorkspaceProps {
   readonly ownerId: string | null;
+  readonly targetLanguage: string;
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
   readonly focusIntent?: number;
   readonly cards?: readonly CardData[];
   readonly adoptCards?: IntakeSharingSessionActions['adoptCards'];
   readonly notify?: (message: string) => void;
   readonly libraryStats?: PersonalLibraryPathInput;
+  readonly cloudStats?: CloudLibraryStats;
+  readonly cloudStatsTargetLanguage?: string | null;
   readonly openVocabulary?: () => void;
   readonly continueReview?: () => void | Promise<void>;
   readonly continueCatalogUnit?: (cards: readonly CardData[], isCurrent: () => boolean) => Promise<'started' | 'stale' | 'partial' | 'unavailable'>;
@@ -103,6 +107,7 @@ const copy = {
   ready: msg({ id: 'catalog.workspace.ready', message: 'Reviewed catalog {releaseId} is ready on this device.' }),
   personalWithCards: msg({ id: 'catalog.workspace.personal-with-cards', message: 'Your path is built from {count, number} cards already in your library.' }),
   personalEmpty: msg({ id: 'catalog.workspace.personal-empty', message: 'Add your first vocabulary cards to start a personal path.' }),
+  personalUnavailable: msg({ id: 'catalog.workspace.personal-unavailable', message: 'Your library summary is unavailable for this course. Open vocabulary to see your cards.' }),
   languageUnavailable: msg({ id: 'catalog.workspace.language-unavailable', message: 'This language does not have a reviewed release yet.' }),
   releaseMissingOnline: msg({ id: 'catalog.workspace.release-missing-online', message: 'No reviewed catalog release is installed. You can check the same-origin release channel.' }),
   releaseMissingOffline: msg({ id: 'catalog.workspace.release-missing-offline', message: 'No reviewed catalog is stored on this device. Connect once to download it.' }),
@@ -144,6 +149,7 @@ export const catalogErrorStatus = (
 
 export default function CatalogWorkspace({
   ownerId,
+  targetLanguage,
   database = null,
   verifiedLibraryEpoch = null,
   headingRef,
@@ -152,6 +158,8 @@ export default function CatalogWorkspace({
   adoptCards,
   notify = () => undefined,
   libraryStats,
+  cloudStats,
+  cloudStatsTargetLanguage,
   openVocabulary = () => undefined,
   continueReview = () => undefined,
   continueCatalogUnit,
@@ -196,14 +204,21 @@ export default function CatalogWorkspace({
   const workflowGeneration = useRef(0);
   const pagingGuard = useRef<ReturnType<typeof createCatalogPagingGuard> | null>(null);
   if (!pagingGuard.current) pagingGuard.current = createCatalogPagingGuard();
-  const personalLibrary = useMemo(() => createPersonalLibraryPathPresentation(
-    libraryStats ?? {
+  const personalLibrary = useMemo(() => ownerId && cloudStats && cloudStatsTargetLanguage !== targetLanguage
+    ? null
+    : createPersonalLibraryPathPresentation(
+    ownerId && cloudStats ? {
+      total: cloudStats.total,
+      dueToday: cloudStats.due,
+      learning: cloudStats.good + cloudStats.hard + cloudStats.unrated,
+      learned: cloudStats.easy,
+    } : libraryStats ?? {
       total: libraryCards.length,
       dueToday: 0,
       learning: libraryCards.length,
       learned: 0,
     },
-  ), [libraryCards.length, libraryStats]);
+  ), [cloudStats, cloudStatsTargetLanguage, libraryCards.length, libraryStats, ownerId, targetLanguage]);
 
   const readyStatus = useCallback((releaseId: string): WorkspaceStatus => ({
     kind: 'ready',
@@ -221,14 +236,17 @@ export default function CatalogWorkspace({
         setProgressAvailable(false);
         setHydrated([]);
         setIsLoadingPage(false);
-        setStatus(query.languageCode === 'en'
+        if (query.mode === 'personal' && query.languageCode !== targetLanguage) return;
+        setStatus(query.mode === 'personal'
           ? {
               kind: 'personal',
-              message: personalLibrary.total > 0
+              message: personalLibrary === null
+                ? i18n._(copy.personalUnavailable)
+                : personalLibrary.total > 0
                 ? i18n._(copy.personalWithCards.id, { count: personalLibrary.total })
                 : i18n._(copy.personalEmpty),
-              messageKey: personalLibrary.total > 0 ? 'personalWithCards' : 'personalEmpty',
-              messageValues: { count: personalLibrary.total },
+              messageKey: personalLibrary === null ? 'personalUnavailable' : personalLibrary.total > 0 ? 'personalWithCards' : 'personalEmpty',
+              messageValues: { count: personalLibrary?.total ?? 0 },
             }
           : {
               kind: 'unavailable',
@@ -281,7 +299,7 @@ export default function CatalogWorkspace({
       setIsLoadingPage(false);
       setStatus(catalogErrorStatus(error, isOnline, 'catalogOpenError'));
     }
-  }, [database, isOnline, ownerId, personalLibrary, query.catalogId, query.languageCode, query.releaseId, readyStatus, service, verifiedLibraryEpoch]);
+  }, [database, isOnline, ownerId, personalLibrary, query.catalogId, query.languageCode, query.mode, query.releaseId, readyStatus, service, targetLanguage, verifiedLibraryEpoch]);
 
   const loadPage = useCallback(async (cursor: string | null, append: boolean) => {
     if (!query.catalogId || !query.trackId || !summary) return;
@@ -335,6 +353,13 @@ export default function CatalogWorkspace({
   const searchDebouncer = useMemo(() => createCatalogSearchDebouncer(
     term => updateQuery({ term }, true),
   ), [updateQuery]);
+
+  useEffect(() => {
+    if (query.mode !== 'personal' || query.languageCode === targetLanguage) return;
+    searchDebouncer.cancel();
+    setTermDraft('');
+    updateQuery({ languageCode: targetLanguage, mode: 'personal', term: '' }, true);
+  }, [query.languageCode, query.mode, searchDebouncer, targetLanguage, updateQuery]);
 
   useLayoutEffect(() => {
     if (focusIntent > 0) headingRef?.current?.focus({ preventScroll: true });
@@ -552,6 +577,7 @@ export default function CatalogWorkspace({
   };
   const model: CatalogScreenModel = {
     headingRef,
+    mode: query.mode,
     status: status.messageKey
       ? { ...status, message: i18n._(copy[status.messageKey].id, status.messageValues) }
       : status,
@@ -578,7 +604,7 @@ export default function CatalogWorkspace({
     hasMore,
     isLoadingPage,
     isLoadingMore,
-    ...(status.kind === 'personal' ? { personalLibrary } : {}),
+    ...(status.kind === 'personal' && personalLibrary ? { personalLibrary } : {}),
     pathUnits,
     selectedPathUnitId: selectedUnitKey,
     pathUnitContinue: {
@@ -591,6 +617,11 @@ export default function CatalogWorkspace({
     },
   };
   const actions: CatalogScreenActions = {
+    selectMode: mode => {
+      searchDebouncer.cancel();
+      setTermDraft('');
+      updateQuery({ mode, languageCode: mode === 'personal' ? targetLanguage : query.languageCode, trackId: null, tier: null, cefrLevel: null, topic: null, partOfSpeech: null, skill: null, term: '' });
+    },
     selectLanguage: languageCode => updateQuery({ languageCode }),
     selectTrack: trackId => {
       setSelectedPathUnitId(null);
