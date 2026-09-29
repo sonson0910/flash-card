@@ -5,6 +5,8 @@
 .landing-copy h1 { font-family: Fraunces, Georgia, serif; font-weight: 450; }
 .landing-copy > p:first-child { letter-spacing: .01em; }
 .landing-card > div:last-child { border-radius: 28px; }
+.landing-demo-pronunciation { position: absolute; z-index: 1; top: 27%; left: -5.5rem; display: inline-flex; align-items: center; gap: .45rem; min-height: 2.5rem; padding: 0 .9rem; border-radius: 999px; background: var(--sf-surface-raised); box-shadow: var(--sf-panel-shadow); color: var(--sf-text-muted); font-family: ui-monospace, monospace; font-size: .75rem; white-space: nowrap; }
+.landing-demo-pronunciation > span { display: grid; width: 1.25rem; height: 1.25rem; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--sf-brand) 12%, transparent); color: var(--sf-brand-text); font-size: .55rem; }
 .landing-atmospheres { border-left: 0; padding-left: 0; }
 html[data-theme-family="classic"] .landing-canvas { background-image: radial-gradient(circle at 74% 40%, color-mix(in srgb, var(--sf-brand) 9%, transparent), transparent 27%); }
 html[data-theme-family="classic"] .landing-hero { min-height: 600px; padding: 40px 48px 0; }
@@ -28,7 +30,7 @@ html[data-theme-family="crystal"] .landing-theme-toggle { border-radius: 0; clip
 html[data-theme-family="crystal"] .landing-copy h1 { font-family: var(--sf-font-display, Geist, sans-serif); font-style: italic; font-weight: 900; text-shadow: 0 5px 0 color-mix(in srgb, var(--sf-brand-hover) 80%, #7a0820); }
 html[data-theme-family="crystal"] .landing-card > div:last-child { clip-path: polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px); border-radius: 0; }
 @media (min-width: 1024px) { .landing-header { padding-inline: 16px; } .landing-hero { grid-template-columns: minmax(0, 1fr) 500px !important; gap: 56px; } .landing-card { max-width: 380px; } }
-@media (max-width: 639px) { .landing-header { min-height: 64px; } html[data-theme-family="classic"] .landing-hero { min-height: 0; padding: 24px 0 0; } .landing-copy h1 { font-size: clamp(3.5rem, 18vw, 5.5rem) !important; } .landing-card { max-width: 320px; } html[data-theme-family="classic"] .landing-card > div:last-child img { height: 144px; } .landing-atmospheres { margin-top: 8px; } }
+@media (max-width: 639px) { .landing-header { min-height: 64px; } html[data-theme-family="classic"] .landing-hero { min-height: 0; padding: 24px 0 0; } .landing-copy h1 { font-size: clamp(3.5rem, 18vw, 5.5rem) !important; } .landing-card { max-width: 320px; } .landing-demo-pronunciation { display: none; } html[data-theme-family="classic"] .landing-card > div:last-child img { height: 144px; } .landing-atmospheres { margin-top: 8px; } }
 
 /* Direct port of AnimeLanding's full-bleed Crystal Star composition. */
 .crystal-landing-hero { position: relative; flex: none; width: calc(100% + 96px); height: calc(100svh - 84px); min-height: 760px; margin-inline: -48px; display: grid; grid-template-columns: 640px minmax(0, 1fr); align-items: start; overflow: hidden; padding: 32px 0 76px 80px; }

@@ -36,7 +36,7 @@ async function expectReducedMotion(page: Page, label: string) {
 }
 
 for (const theme of themes) for (const locale of locales) for (const viewport of viewports) {
-  test(`${theme.family} ${theme.mode} ${locale.name} landing is visually accessible at ${viewport.name}`, async ({ page }) => {
+  test(`${theme.family} ${theme.mode} ${locale.name} landing is visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
     const name = `landing-${locale.name}-${theme.family}-${theme.mode}-${viewport.name}`;
     await page.setViewportSize(viewport);
     await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
@@ -67,9 +67,19 @@ for (const theme of themes) for (const locale of locales) for (const viewport of
       expect(iconBox?.width).toBeGreaterThanOrEqual(18);
       expect(iconBox?.height).toBeGreaterThanOrEqual(18);
     }
+    if (theme.family === 'classic') {
+      const pronunciation = page.locator('.landing-demo-pronunciation');
+      if (viewport.name === 'desktop') await expect(pronunciation).toBeVisible();
+      else await expect(pronunciation).toBeHidden();
+    }
     await expectAccessibleAndContained(page, name);
     await expectReducedMotion(page, name);
     await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true, animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
+    if (theme.family === 'classic' && viewport.name === 'desktop') {
+      const screenshot = testInfo.outputPath(`${name}-actual.png`);
+      await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide' });
+      await testInfo.attach('Classic landing', { path: screenshot, contentType: 'image/png' });
+    }
   });
 }
 

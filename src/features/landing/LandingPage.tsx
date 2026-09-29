@@ -382,6 +382,9 @@ function ClassicLandingHero({
             className="crystal-ornament pointer-events-none absolute -bottom-12 -left-[13rem] z-10 hidden h-[420px] w-[154px] max-w-none object-contain min-[1440px]:block"
           />
         )}
+        <span className="landing-demo-pronunciation" aria-hidden="true">
+          <span>▶</span> {samplePronunciation}
+        </span>
         <div style={{ perspective: reduceMotion ? 'none' : '1600px' }}>
           <div
             role="button"

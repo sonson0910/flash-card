@@ -125,6 +125,10 @@ Không wiring vào pipeline deploy staging (`staging:deploy:hosting` trong `pack
 - `e2e/landing-locales.spec.ts` pass **4/4**. Case runtime retry từng đỏ với chuỗi hai request `AppRuntimeInitial.virtual` rồi một `AppRuntimeRetry.virtual`: build Vite preload entry Initial trước dynamic import, nên khi test chủ động abort preload thì import tạo lần thử Initial thứ hai. `e2e/landing-performance.spec.ts` nay kiểm đúng outcome/order: mọi Initial trước reload đều fail, đúng một Retry request hoàn tất không fail, không còn Initial sau Retry và tổng document vẫn là 2. Lệnh Chromium riêng cho case này pass **1/1** ngày 2026-09-28.
 - `LandingPage.tsx` chỉ đổi markup/asset layout của landing và các kích thước nội tại ảnh; không thêm Firestore read, write hay subscription. `train-window.webp` tiếp tục lazy, ưu tiên thấp vì là texture opacity 4% và H1 vẫn là LCP.
 
+## Classic pronunciation chip follow-up (2026-09-29)
+
+- Chip phát âm dùng dữ liệu demo hiện có trong hero Classic và ẩn ở 390px. Đã mở bốn PNG actual Classic EN/VI × light/dark desktop, so với `LandingScreen-light.png` và `LandingScreen-dark.png`, rồi cập nhật đúng bốn baseline desktop; tám ca Classic desktop/mobile chạy lại 8/8 không update. Trong lượt visual rộng, cả 20 ca Landing pass, gồm kiểm tra chip hiện trên desktop, ẩn trên mobile, axe và overflow. `LandingAssets.test.ts` 10/10; i18n check, lint, build và bundle pass. Chip không tạo Firestore I/O. Checklist Canvas toàn phase giữ mở cho các state và claim đã ghi ở trên.
+
 
 
 landing locale/visual/performance tests, check-locale-pages.mjs; pilot/account/report/quota component tests; E2E sign-in return/export/delete confirmation với fixtures; gates chung.
