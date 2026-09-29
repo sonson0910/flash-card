@@ -2,7 +2,6 @@ import { expect, test } from './fixtures/firebase-emulator';
 
 const emptyStateTestTitle = 'Today and Progress empty states expose concrete next actions without initial autofocus';
 const emptyExtractorTestTitle = 'empty Library Scan a text restores focus after close';
-const recipientShareTestTitle = 'a recipient accepts a shared deck into a separate Library';
 
 const cards = [
   'serendipity', 'resilient', 'curious', 'flourish', 'meticulous', 'eloquent',
@@ -48,8 +47,7 @@ test.beforeEach(async ({ page, seedCards, blockExternalNetwork }, testInfo) => {
   await blockExternalNetwork(page);
   // Empty-library tests intentionally start from zero cards; every fresh
   // emulator test user already has none, so they skip seeding.
-  if (testInfo.title !== emptyStateTestTitle && testInfo.title !== emptyExtractorTestTitle
-    && testInfo.title !== recipientShareTestTitle) await seedCards(cards);
+  if (testInfo.title !== emptyStateTestTitle && testInfo.title !== emptyExtractorTestTitle) await seedCards(cards);
 });
 
 test('library exposes one canonical heading and a keyboard-operable skip link', async ({ page, signIn, browserName }) => {
@@ -325,11 +323,10 @@ test('Library Share creates and revokes a real deck link', async ({ page, signIn
   await expect(page.getByText('The shared deck link has been revoked.')).toBeVisible();
 });
 
-test(recipientShareTestTitle, async ({
-  page, signIn, seedCards, adminAuth, db, testUser, browser, blockExternalNetwork,
+test('a recipient accepts a shared deck batch into a separate Library', async ({
+  page, signIn, adminAuth, db, testUser, browser, blockExternalNetwork,
 }) => {
-  test.setTimeout(60_000);
-  await seedCards([cards[0]!]);
+  test.setTimeout(120_000);
   await signIn(page, '/?view=library');
   await expect(page.getByRole('status').filter({ hasText: 'Synced' })).toBeVisible();
   await page.getByRole('button', { name: 'Share', exact: true }).click();
@@ -358,13 +355,20 @@ test(recipientShareTestTitle, async ({
 
     const incoming = recipientPage.getByRole('dialog');
     await expect(incoming).toBeVisible();
-    await expect(incoming.getByRole('button', { name: 'Add 1 cards' })).toBeVisible();
-    await incoming.getByRole('button', { name: 'Add 1 cards' }).click();
-    await expect(incoming).toBeHidden({ timeout: 25_000 });
+    const addCards = incoming.getByRole('button', { name: `Add ${cards.length} cards` });
+    await expect(addCards).toBeVisible();
+    await addCards.click();
+    await expect(incoming).toBeHidden({ timeout: 90_000 });
     await expect(recipientPage).not.toHaveURL(/share=/);
+    await expect.poll(async () => (
+      await db.collection('users').doc(recipientId).collection('cards').get()
+    ).size).toBe(cards.length);
     await recipientPage.reload();
-    await recipientPage.getByRole('searchbox', { name: /Search words/ }).fill('serendipity');
-    await expect(recipientPage.getByRole('heading', { name: 'serendipity' })).toBeVisible();
+    const search = recipientPage.getByRole('searchbox', { name: /Search words/ });
+    await search.fill(cards[0]!.word);
+    await expect(recipientPage.getByRole('heading', { name: cards[0]!.word })).toBeVisible();
+    await search.fill(cards.at(-1)!.word);
+    await expect(recipientPage.getByRole('heading', { name: cards.at(-1)!.word })).toBeVisible();
   } finally {
     await recipientContext.close();
   }

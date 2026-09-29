@@ -155,6 +155,25 @@ describe('Card Intake Pipeline contract', () => {
     await expect(persistence).resolves.toEqual([{ card: candidate, created: true }]);
   });
 
+  it('bounds concurrent shared-card creates while preserving the full batch', async () => {
+    const context = createContext();
+    const candidates = [card('shared-one'), card('shared-two'), card('shared-three')];
+    const confirmations = candidates.map(candidate =>
+      deferred<{ card: typeof candidate; created: boolean; gamification: null }>());
+    confirmations.forEach(confirmation => {
+      repositoryRuntime.createCardV2IfAbsent.mockReturnValueOnce(confirmation.promise);
+    });
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    const persistence = pipeline.persistCards(candidates, 'shared');
+    expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalledTimes(2);
+    confirmations[0]!.resolve({ card: candidates[0]!, created: true, gamification: null });
+    await vi.waitFor(() => expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalledTimes(3));
+    confirmations[1]!.resolve({ card: candidates[1]!, created: true, gamification: null });
+    confirmations[2]!.resolve({ card: candidates[2]!, created: true, gamification: null });
+    await expect(persistence).resolves.toEqual(candidates.map(candidate => ({ card: candidate, created: true })));
+  });
+
   it('rejects a shared save when cloud confirmation fails', async () => {
     const context = createContext();
     const candidate = card('failed-shared-card');

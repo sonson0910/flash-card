@@ -71,7 +71,7 @@ describeWithEmulator('Firestore shared-deck persistence', () => {
     ]);
     await expect(firstOwnership.get()).resolves.toMatchObject({ exists: true });
     await expect(secondOwnership.get()).resolves.toMatchObject({ exists: true });
-  });
+  }, 15_000);
 
   it('commits one share for concurrent identical operations', async () => {
     const ownerUid = `shared-deck-idempotency-${randomUUID()}`;
@@ -90,5 +90,5 @@ describeWithEmulator('Firestore shared-deck persistence', () => {
     expect([...new Set(results.map(result => result && result.shareId))]).toHaveLength(1);
     const shares = await Promise.all([database.collection('shared_decks').doc(firstId).get(), database.collection('shared_decks').doc(secondId).get()]);
     expect(shares.filter(share => share.exists)).toHaveLength(1);
-  });
+  }, 15_000);
 });

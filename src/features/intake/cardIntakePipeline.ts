@@ -402,7 +402,7 @@ export function createCardIntakePipeline({
       active.resetCloudPage();
     }
 
-    const settlements = mapWithConcurrency(cloudSettlements, 6, async ({ settle, candidate, operationId, index }) => {
+    const settlements = mapWithConcurrency(cloudSettlements, source === 'shared' ? 2 : 6, async ({ settle, candidate, operationId, index }) => {
       try {
         const result = await settle();
         const outcome: SpreadsheetSaveOutcome = result.created ? 'created' : 'reused';

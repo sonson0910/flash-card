@@ -7,8 +7,8 @@ const MAX_SHARED_CARDS = 100;
 const MAX_SHARE_ID_LENGTH = 128;
 const SHARE_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
 const SHARED_DECK_OPERATION_TIMEOUT_MS = 20_000;
-// Shared intake confirms writes in batches of six, each bounded to eight seconds.
-const SHARED_DECK_INTAKE_BATCH_SIZE = 6;
+// Shared intake confirms writes in batches of two, each bounded to eight seconds.
+const SHARED_DECK_INTAKE_BATCH_SIZE = 2;
 const SHARED_DECK_INTAKE_WRITE_TIMEOUT_MS = 8_000;
 const SHARED_DECK_OPERATION_STORAGE_KEY = 'lingoflash_shared_deck_operation_v1';
 const SHARED_DECK_OPERATION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1_000;
