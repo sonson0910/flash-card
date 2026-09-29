@@ -148,6 +148,30 @@ describe('card media hydration workspace', () => {
     expect(controller.getSnapshot()).toEqual({ pendingCount: 0, isHydrating: false });
   });
 
+  it('defaults to one background image request at a time', async () => {
+    const cards = Array.from({ length: 3 }, (_, index) => ({ ...card, id: `word-${index}` }));
+    const pending = new Map(cards.map(candidate => [candidate.id, deferred<CardMediaUpdate | null>()]));
+    const updates: CardMediaHydrationPort = {
+      hasMedia: () => false,
+      fetchMedia: vi.fn(candidate => pending.get(candidate.id)!.promise),
+      updateCard: vi.fn(async () => undefined),
+    };
+    const controller = createCardMediaHydrationController(updates);
+    controller.replace({ ownerKey: 'owner-a', cards, enabled: true });
+
+    const hydration = controller.hydrateLibrary();
+    try {
+      expect(updates.fetchMedia).toHaveBeenCalledTimes(1);
+      pending.get(cards[0].id)!.resolve(null);
+      await vi.waitFor(() => expect(updates.fetchMedia).toHaveBeenCalledTimes(2));
+      pending.get(cards[1].id)!.resolve(null);
+      await vi.waitFor(() => expect(updates.fetchMedia).toHaveBeenCalledTimes(3));
+    } finally {
+      pending.forEach(request => request.resolve(null));
+      await hydration;
+    }
+  });
+
   it('keeps one background concurrency limit when visible cards change during hydration', async () => {
     const cards = Array.from({ length: 6 }, (_, index) => ({ ...card, id: `word-${index}` }));
     const pending = new Map(cards.map(candidate => [candidate.id, deferred<CardMediaUpdate | null>()]));
@@ -156,7 +180,7 @@ describe('card media hydration workspace', () => {
       fetchMedia: vi.fn(candidate => pending.get(candidate.id)!.promise),
       updateCard: vi.fn(async () => undefined),
     };
-    const controller = createCardMediaHydrationController(updates);
+    const controller = createCardMediaHydrationController(updates, 3);
     controller.replace({ ownerKey: 'owner-a', cards: cards.slice(3), enabled: true });
 
     const first = controller.hydrateLibrary();
@@ -188,7 +212,7 @@ describe('card media hydration workspace', () => {
       }),
       updateCard: vi.fn(async () => undefined),
     };
-    const controller = createCardMediaHydrationController(updates);
+    const controller = createCardMediaHydrationController(updates, 3);
     controller.replace({ ownerKey: 'owner-a', cards: cards.slice(1), enabled: true });
 
     const first = controller.hydrateLibrary();

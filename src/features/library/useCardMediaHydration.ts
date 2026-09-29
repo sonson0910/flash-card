@@ -43,9 +43,12 @@ export interface CardMediaHydrationScope {
   enabled: boolean;
 }
 
+// Image searches for one owner share a persistent rate-limit document.
+const DEFAULT_MEDIA_CONCURRENCY = 1;
+
 export function createCardMediaHydrationController(
   port: CardMediaHydrationPort,
-  concurrency = 3,
+  concurrency = DEFAULT_MEDIA_CONCURRENCY,
 ) {
   const attempted = new Set<string>();
   const inFlight = new Map<string, Promise<CardMediaUpdate | null>>();
@@ -210,7 +213,7 @@ export function useCardMediaHydration({
   cards,
   enabled,
   port,
-  concurrency = 3,
+  concurrency = DEFAULT_MEDIA_CONCURRENCY,
 }: UseCardMediaHydrationOptions): {
   model: CardMediaHydrationSnapshot;
   actions: CardMediaHydrationActions;
