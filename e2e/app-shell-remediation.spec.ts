@@ -2,6 +2,7 @@ import { expect, test } from './fixtures/firebase-emulator';
 
 const emptyStateTestTitle = 'Today and Progress empty states expose concrete next actions without initial autofocus';
 const emptyExtractorTestTitle = 'empty Library Scan a text restores focus after close';
+const maximumShareTestTitle = 'a recipient accepts a shared deck at the 100-card limit';
 
 const cards = [
   'serendipity', 'resilient', 'curious', 'flourish', 'meticulous', 'eloquent',
@@ -40,6 +41,21 @@ const cards = [
   revision: 1,
 }));
 
+const maximumShareCards = [
+  ...cards,
+  ...Array.from({ length: 100 - cards.length }, (_, index) => {
+    const word = `batchword${String(index + cards.length + 1).padStart(3, '0')}`;
+    return {
+      ...cards[0],
+      id: `word-${word}`,
+      word,
+      normalizedWord: word,
+      translation: `translation ${index + cards.length + 1}`,
+      explanation: `Explanation for ${word}.`,
+    };
+  }),
+];
+
 test.beforeEach(async ({ page, seedCards, blockExternalNetwork }, testInfo) => {
   await page.addInitScript(() => {
     localStorage.setItem('lingoflash_theme', 'dark');
@@ -47,7 +63,9 @@ test.beforeEach(async ({ page, seedCards, blockExternalNetwork }, testInfo) => {
   await blockExternalNetwork(page);
   // Empty-library tests intentionally start from zero cards; every fresh
   // emulator test user already has none, so they skip seeding.
-  if (testInfo.title !== emptyStateTestTitle && testInfo.title !== emptyExtractorTestTitle) await seedCards(cards);
+  if (testInfo.title !== emptyStateTestTitle && testInfo.title !== emptyExtractorTestTitle) {
+    await seedCards(testInfo.title === maximumShareTestTitle ? maximumShareCards : cards);
+  }
 });
 
 test('library exposes one canonical heading and a keyboard-operable skip link', async ({ page, signIn, browserName }) => {
@@ -323,56 +341,70 @@ test('Library Share creates and revokes a real deck link', async ({ page, signIn
   await expect(page.getByText('The shared deck link has been revoked.')).toBeVisible();
 });
 
-test('a recipient accepts a shared deck batch into a separate Library', async ({
-  page, signIn, adminAuth, db, testUser, browser, blockExternalNetwork,
-}) => {
-  test.setTimeout(120_000);
-  await signIn(page, '/?view=library');
-  await expect(page.getByRole('status').filter({ hasText: 'Synced' })).toBeVisible();
-  await page.getByRole('button', { name: 'Share', exact: true }).click();
-  const outgoing = page.getByRole('dialog', { name: /Share “All library cards”/ });
-  const linkInput = outgoing.getByRole('textbox', { name: 'Vocabulary deck share link' });
-  await expect(linkInput).toHaveValue(/\?share=[A-Za-z0-9_-]+/);
-  const shareId = new URL(await linkInput.inputValue()).searchParams.get('share');
-  expect(shareId).toBeTruthy();
+for (const [title, sharedCards] of [
+  ['a recipient accepts a shared deck batch into a separate Library', cards],
+  [maximumShareTestTitle, maximumShareCards],
+] as const) {
+  test(title, async ({
+    page, signIn, adminAuth, db, testUser, browser, blockExternalNetwork,
+  }) => {
+    const acceptanceTimeout = sharedCards.length === 100 ? 850_000 : 90_000;
+    test.setTimeout(acceptanceTimeout + 30_000);
+    await signIn(page, '/?view=library');
+    await expect(page.getByRole('status').filter({ hasText: 'Synced' })).toBeVisible();
+    await page.getByRole('button', { name: 'Share', exact: true }).click();
+    const outgoing = page.getByRole('dialog', { name: /Share “All library cards”/ });
+    const linkInput = outgoing.getByRole('textbox', { name: 'Vocabulary deck share link' });
+    await expect(linkInput).toHaveValue(/\?share=[A-Za-z0-9_-]+/);
+    const shareId = new URL(await linkInput.inputValue()).searchParams.get('share');
+    expect(shareId).toBeTruthy();
 
-  const recipientId = `${testUser.uid}-recipient`;
-  await adminAuth.createUser({ uid: recipientId });
-  const token = await adminAuth.createCustomToken(recipientId);
-  await db.collection('users').doc(recipientId).collection('profile').doc('courses').set({
-    courses: [], activeCourseId: null,
+    const recipientId = `${testUser.uid}-recipient`;
+    await adminAuth.createUser({ uid: recipientId });
+    const token = await adminAuth.createCustomToken(recipientId);
+    await db.collection('users').doc(recipientId).collection('profile').doc('courses').set({
+      courses: [], activeCourseId: null,
+    });
+    const recipientContext = await browser.newContext({ baseURL: 'http://127.0.0.1:4173' });
+    try {
+      const recipientPage = await recipientContext.newPage();
+      await blockExternalNetwork(recipientPage);
+      await recipientPage.goto('/?view=today');
+      await recipientPage.waitForFunction(() => Boolean(window.__SONFLASH_TEST__?.signInWithCustomToken));
+      await recipientPage.evaluate(async customToken => {
+        await window.__SONFLASH_TEST__!.signInWithCustomToken(customToken);
+      }, token);
+      await recipientPage.goto(`/?view=library&share=${shareId}`);
+
+      const incoming = recipientPage.getByRole('dialog');
+      await expect(incoming).toBeVisible();
+      const addCards = incoming.getByRole('button', { name: `Add ${sharedCards.length} cards` });
+      await expect(addCards).toBeVisible();
+      await addCards.click();
+      const outcome = await Promise.race([
+        incoming.waitFor({ state: 'hidden', timeout: acceptanceTimeout }).then(() => 'accepted' as const),
+        incoming.getByRole('alert').waitFor({ state: 'visible', timeout: acceptanceTimeout }).then(() => 'failed' as const),
+      ]);
+      if (outcome === 'failed') {
+        const message = await incoming.getByRole('alert').innerText();
+        const persisted = (await db.collection('users').doc(recipientId).collection('cards').get()).size;
+        throw new Error(`Shared deck saved ${persisted}/${sharedCards.length} cards: ${message}`);
+      }
+      await expect(recipientPage).not.toHaveURL(/share=/);
+      await expect.poll(async () => (
+        await db.collection('users').doc(recipientId).collection('cards').get()
+      ).size).toBe(sharedCards.length);
+      await recipientPage.reload();
+      const search = recipientPage.getByRole('searchbox', { name: /Search words/ });
+      await search.fill(sharedCards[0]!.word);
+      await expect(recipientPage.getByRole('heading', { name: sharedCards[0]!.word })).toBeVisible();
+      await search.fill(sharedCards.at(-1)!.word);
+      await expect(recipientPage.getByRole('heading', { name: sharedCards.at(-1)!.word })).toBeVisible();
+    } finally {
+      await recipientContext.close();
+    }
   });
-  const recipientContext = await browser.newContext({ baseURL: 'http://127.0.0.1:4173' });
-  try {
-    const recipientPage = await recipientContext.newPage();
-    await blockExternalNetwork(recipientPage);
-    await recipientPage.goto('/?view=today');
-    await recipientPage.waitForFunction(() => Boolean(window.__SONFLASH_TEST__?.signInWithCustomToken));
-    await recipientPage.evaluate(async customToken => {
-      await window.__SONFLASH_TEST__!.signInWithCustomToken(customToken);
-    }, token);
-    await recipientPage.goto(`/?view=library&share=${shareId}`);
-
-    const incoming = recipientPage.getByRole('dialog');
-    await expect(incoming).toBeVisible();
-    const addCards = incoming.getByRole('button', { name: `Add ${cards.length} cards` });
-    await expect(addCards).toBeVisible();
-    await addCards.click();
-    await expect(incoming).toBeHidden({ timeout: 90_000 });
-    await expect(recipientPage).not.toHaveURL(/share=/);
-    await expect.poll(async () => (
-      await db.collection('users').doc(recipientId).collection('cards').get()
-    ).size).toBe(cards.length);
-    await recipientPage.reload();
-    const search = recipientPage.getByRole('searchbox', { name: /Search words/ });
-    await search.fill(cards[0]!.word);
-    await expect(recipientPage.getByRole('heading', { name: cards[0]!.word })).toBeVisible();
-    await search.fill(cards.at(-1)!.word);
-    await expect(recipientPage.getByRole('heading', { name: cards.at(-1)!.word })).toBeVisible();
-  } finally {
-    await recipientContext.close();
-  }
-});
+}
 
 test('Today and Progress empty states expose concrete next actions without initial autofocus', async ({ page, seedCourseProfile, signIn }) => {
   // An existing course profile keeps first-run onboarding out of the empty states under test.

@@ -166,12 +166,20 @@ describe('Card Intake Pipeline contract', () => {
     const pipeline = createCardIntakePipeline({ getContext: () => context });
 
     const persistence = pipeline.persistCards(candidates, 'shared');
-    expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalledTimes(2);
-    confirmations[0]!.resolve({ card: candidates[0]!, created: true, gamification: null });
-    await vi.waitFor(() => expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalledTimes(3));
-    confirmations[1]!.resolve({ card: candidates[1]!, created: true, gamification: null });
-    confirmations[2]!.resolve({ card: candidates[2]!, created: true, gamification: null });
-    await expect(persistence).resolves.toEqual(candidates.map(candidate => ({ card: candidate, created: true })));
+    try {
+      expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalledTimes(1);
+      confirmations[0]!.resolve({ card: candidates[0]!, created: true, gamification: null });
+      await vi.waitFor(() => expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalledTimes(2));
+      confirmations[1]!.resolve({ card: candidates[1]!, created: true, gamification: null });
+      await vi.waitFor(() => expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalledTimes(3));
+      confirmations[2]!.resolve({ card: candidates[2]!, created: true, gamification: null });
+      await expect(persistence).resolves.toEqual(candidates.map(candidate => ({ card: candidate, created: true })));
+    } finally {
+      confirmations.forEach((confirmation, index) => confirmation.resolve({
+        card: candidates[index]!, created: true, gamification: null,
+      }));
+      await persistence;
+    }
   });
 
   it('rejects a shared save when cloud confirmation fails', async () => {

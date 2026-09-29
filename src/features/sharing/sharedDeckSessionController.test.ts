@@ -172,7 +172,7 @@ describe('shared deck session controller', () => {
     vi.useFakeTimers();
     try {
       const acceptance = controller.actions.acceptShared();
-      await vi.advanceTimersByTimeAsync(20_001);
+      await vi.advanceTimersByTimeAsync(420_001);
       expect(controller.getSnapshot()).toMatchObject({ isLoading: true, isShareDialogOpen: true, error: null });
       expect(browser.url).toContain('share=deck-1');
 
