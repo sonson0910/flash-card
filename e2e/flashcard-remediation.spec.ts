@@ -63,8 +63,10 @@ test('study reveal keeps progress visible and scrolls rating controls into view'
   // copy no longer exists.
   await page.getByRole('button', { name: 'Study now' }).click();
   await expect(page.locator('[data-study-progress]')).toBeVisible();
-  await page.getByRole('button', { name: 'Next card' }).click();
   const heading = page.locator('[data-study-card] h2').first();
+  if (await heading.textContent() !== longWord) {
+    await page.getByRole('button', { name: 'Next card' }).click();
+  }
   await expect(heading).toHaveText(longWord);
   expect(await heading.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   await page.getByRole('button', { name: 'Reveal answer' }).click();
@@ -90,64 +92,88 @@ test('study timer pauses for the card editor and resumes from the elapsed time',
   await page.getByRole('button', { name: 'Reveal answer' }).click();
   await page.getByRole('button', { name: 'Edit card' }).first().click();
   await expect(page.getByRole('dialog', { name: 'Edit card' })).toBeVisible();
+  await expect(page.locator('[data-study-session]')).toHaveAttribute('data-study-paused', 'true');
+  const pausedTime = await timer.textContent();
+  expect(pausedTime).toMatch(/^\d{2}:\d{2}$/);
   await page.clock.runFor(5_000);
-  await expect(timer).toHaveText('00:02');
+  await expect(timer).toHaveText(pausedTime!);
 
   await page.getByRole('button', { name: 'Close editor' }).click();
   await expect(page.getByRole('dialog', { name: 'Edit card' })).toBeHidden();
+  await expect(page.locator('[data-study-session]')).toHaveAttribute('data-study-paused', 'false');
   await page.clock.runFor(1_000);
-  await expect(timer).toHaveText('00:03');
+  const [minutes, seconds] = pausedTime!.split(':').map(Number);
+  const resumedSeconds = minutes * 60 + seconds + 1;
+  await expect(timer).toHaveText(`${String(Math.floor(resumedSeconds / 60)).padStart(2, '0')}:${String(resumedSeconds % 60).padStart(2, '0')}`);
 });
 
 async function captureStudyState(testInfo: TestInfo, page: Page, name: string) {
   const screenshot = testInfo.outputPath(`${name}.png`);
   await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide' });
   await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
+  await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true, animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
 }
 
-for (const viewport of [
-  { name: 'desktop', width: 1440, height: 900, ratingRows: 1 },
-  { name: '390px', width: 390, height: 844, ratingRows: 2 },
+for (const theme of [
+  { name: 'classic-light', family: 'classic', mode: 'light' },
+  { name: 'classic-dark', family: 'classic', mode: 'dark' },
+  { name: 'crystal-light', family: 'crystal', mode: 'light' },
+  { name: 'crystal-dark', family: 'crystal', mode: 'dark' },
 ]) {
-  test(`Crystal light StudyView captures prompt and revealed rating states at ${viewport.name}`, async ({ page, signIn, seedCards }, testInfo) => {
-    await page.setViewportSize(viewport);
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.addInitScript(() => {
-      localStorage.setItem('sonflash_theme_family', 'crystal');
-      localStorage.setItem('lingoflash_theme', 'light');
-      localStorage.setItem('sonflash_theme_follow_system', 'false');
-      localStorage.setItem('sonflash_reduced_motion', 'true');
+  for (const viewport of [
+    { name: 'desktop', width: 1440, height: 900, ratingRows: 1 },
+    { name: '390px', width: 390, height: 844, ratingRows: 1 },
+  ]) {
+    test(`${theme.name} StudyView captures prompt and revealed rating states at ${viewport.name}`, async ({ page, signIn, seedCards }, testInfo) => {
+      await page.setViewportSize(viewport);
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript(theme => {
+        localStorage.setItem('sonflash_theme_family', theme.family);
+        localStorage.setItem('lingoflash_theme', theme.mode);
+        localStorage.setItem('sonflash_theme_follow_system', 'false');
+        localStorage.setItem('sonflash_reduced_motion', 'true');
+      }, theme);
+      const visualCard = { ...card, word: 'resemblance', normalizedWord: 'resemblance', translation: 'sự tương đồng', category: 'Writing', phonetic: '/rɪˈzɛmbləns/', explanationTranslation: 'Sự giống nhau về hình dáng hoặc tính chất.', exampleSentence: 'These designs bear a resemblance.', exampleTranslation: 'Những thiết kế này có nét tương đồng.' };
+      await seedCards([{ ...visualCard, id: card.id }, { ...visualCard, id: richCard.id }]);
+      await signIn(page, '/?view=library&locale=en');
+      await page.clock.install();
+      await page.getByRole('button', { name: 'Study now' }).click();
+
+      const session = page.locator('[data-study-session]');
+      const rating = page.locator('[data-study-rating]');
+      const ratingButtons = rating.getByRole('button');
+      await expect(session).toBeVisible();
+      await expect(session).toHaveAttribute('data-study-state', 'prompt');
+      await expect(session.locator('[data-study-progress-segments] > span')).toHaveCount(12);
+      await expect(session.locator('[data-study-timer]')).toBeVisible();
+      await expect(session.locator('[data-study-recall-mode] select')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Reveal answer' })).toBeVisible();
+      await expect(rating.locator('[data-review-state]')).toHaveAttribute('data-review-state', 'locked');
+      await expect(rating).toContainText('Reveal the answer before rating');
+      await expect(ratingButtons).toHaveCount(4);
+      for (const index of [0, 1, 2, 3]) await expect(ratingButtons.nth(index)).toBeDisabled();
+      await captureStudyState(testInfo, page, `study-review-${theme.name}-${viewport.name}-prompt`);
+
+      await page.getByRole('button', { name: 'Reveal answer' }).click();
+      await expect(session).toHaveAttribute('data-study-state', 'revealed');
+      await expect(session.locator('.flashcard-back')).toBeVisible();
+      await expect(session.locator('.flashcard-back')).toContainText('These designs bear a resemblance.');
+      await expect(rating.locator('[data-review-state]')).toHaveAttribute('data-review-state', 'ready');
+      await expect(rating).toContainText('How well did you remember this card?');
+      for (const index of [0, 1, 2, 3]) await expect(ratingButtons.nth(index)).toBeEnabled();
+
+      const ratingLayout = await ratingButtons.evaluateAll(buttons => buttons.map(button => {
+        const box = button.getBoundingClientRect();
+        return { top: Math.round(box.top), width: box.width, height: box.height };
+      }));
+      expect(new Set(ratingLayout.map(button => button.top)).size).toBe(viewport.ratingRows);
+      for (const button of ratingLayout) {
+        expect(button.width).toBeGreaterThanOrEqual(44);
+        expect(button.height).toBeGreaterThanOrEqual(44);
+      }
+      await captureStudyState(testInfo, page, `study-review-${theme.name}-${viewport.name}-revealed-rating`);
     });
-    await seedCards([{ ...card, word: 'resemblance', normalizedWord: 'resemblance', translation: 'sự tương đồng', category: 'Writing', phonetic: '/rɪˈzɛmbləns/', explanationTranslation: 'Sự giống nhau về hình dáng hoặc tính chất.', exampleSentence: 'These designs bear a resemblance.', exampleTranslation: 'Những thiết kế này có nét tương đồng.' }]);
-    await signIn(page, '/?view=library&locale=en');
-    await page.getByRole('button', { name: 'Study now' }).click();
-
-    const session = page.locator('[data-study-session]');
-    const rating = page.locator('[data-study-rating]');
-    const ratingButtons = rating.getByRole('button');
-    await expect(session).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Reveal answer' })).toBeVisible();
-    await expect(rating).toContainText('Reveal the answer before rating');
-    await expect(ratingButtons).toHaveCount(4);
-    for (const index of [0, 1, 2, 3]) await expect(ratingButtons.nth(index)).toBeDisabled();
-    await captureStudyState(testInfo, page, `study-review-crystal-light-${viewport.name}-prompt`);
-
-    await page.getByRole('button', { name: 'Reveal answer' }).click();
-    await expect(session.locator('.flashcard-back')).toBeVisible();
-    await expect(rating).toContainText('How well did you remember this card?');
-    for (const index of [0, 1, 2, 3]) await expect(ratingButtons.nth(index)).toBeEnabled();
-
-    const ratingLayout = await ratingButtons.evaluateAll(buttons => buttons.map(button => {
-      const box = button.getBoundingClientRect();
-      return { top: Math.round(box.top), width: box.width, height: box.height };
-    }));
-    expect(new Set(ratingLayout.map(button => button.top)).size).toBe(viewport.ratingRows);
-    for (const button of ratingLayout) {
-      expect(button.width).toBeGreaterThanOrEqual(44);
-      expect(button.height).toBeGreaterThanOrEqual(44);
-    }
-    await captureStudyState(testInfo, page, `study-review-crystal-light-${viewport.name}-revealed-rating`);
-  });
+  }
 }
 
 test('long vocabulary content wraps without horizontal loss on both faces', async ({ page, signIn }) => {

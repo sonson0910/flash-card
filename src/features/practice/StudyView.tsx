@@ -111,6 +111,7 @@ export function StudyView({
   const elapsedStartedAtRef = useRef<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const elapsedTime = formatStudyElapsedTime(elapsedSeconds);
+  const progressRatio = (index + 1) / Math.max(cards.length, 1);
   const direction: 1 | -1 = index < previousIndexRef.current ? -1 : 1;
 
   useEffect(() => {
@@ -306,27 +307,26 @@ export function StudyView({
   if (!card) return null;
 
   return (
-    <div ref={studySurfaceRef} tabIndex={-1} data-study-session onKeyDown={event => handleStudyShortcut(event, event.currentTarget)} className="practice-board practice-board--study mx-auto flex h-full max-w-5xl flex-col items-center px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-5 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-      <div className="mb-4 flex w-full items-center justify-between gap-3">
+    <div ref={studySurfaceRef} tabIndex={-1} data-study-session data-study-state={revealed ? 'revealed' : 'prompt'} data-study-paused={paused ? 'true' : 'false'} onKeyDown={event => handleStudyShortcut(event, event.currentTarget)} className="practice-board practice-board--study mx-auto flex h-full max-w-5xl flex-col items-center px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-5 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <div data-study-header className="mb-3 flex w-full items-center gap-3">
         <button type="button" onClick={onClose} disabled={paused} className="crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none" aria-label={_(msg({ id: 'study.close', message: 'Close study mode' }))}>
           <X size={24} aria-hidden="true" />
         </button>
-        <span data-study-timer aria-label={_(msg({ id: 'study.elapsed-time', message: 'Elapsed study time: {time}' }).id, { time: elapsedTime })} className="min-w-12 font-mono text-sm font-bold tabular-nums text-[var(--sf-text-muted)]">
+        <p data-study-title className="hidden min-w-max text-xs font-black uppercase tracking-[0.12em] text-[var(--sf-text-muted)] sm:block"><Trans id="study.progress" message="Study progress" /></p>
+        <div data-study-progress role="progressbar" aria-label={_(msg({ id: 'study.progress', message: 'Study progress' }))} aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={index + 1} className="min-w-0 flex flex-1 items-center gap-1">
+          <div data-study-progress-segments className="flex min-w-0 flex-1 gap-1" aria-hidden="true">
+            {Array.from({ length: 12 }, (_, segment) => (
+              <span key={segment} data-study-progress-segment={(segment + 1) / 12 <= progressRatio ? 'complete' : 'pending'} />
+            ))}
+          </div>
+          <span className="shrink-0 font-mono text-xs font-bold tabular-nums text-[var(--sf-text-muted)]"><Trans id="study.card-count" message="Card {current} / {total}" values={{ current: index + 1, total: cards.length }} /></span>
+        </div>
+        <span data-study-timer aria-label={_(msg({ id: 'study.elapsed-time', message: 'Elapsed study time: {time}' }).id, { time: elapsedTime })} className="min-w-12 font-mono text-xs font-bold tabular-nums text-[var(--sf-text-muted)]">
           {elapsedTime}
         </span>
-        <div data-study-progress role="progressbar" aria-label={_(msg({ id: 'study.progress', message: 'Study progress' }))} aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={index + 1} className="crystal-chamfer min-w-0 flex-1 max-w-xl border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] px-4 py-2.5 text-center shadow-[var(--sf-panel-shadow)]">
-          <div className="flex items-center justify-between gap-3 text-xs font-bold text-[var(--sf-text-muted)]">
-            <span><Trans id="study.progress" message="Study progress" /></span>
-            <span className="tabular-nums"><Trans id="study.card-count" message="Card {current} / {total}" values={{ current: index + 1, total: cards.length }} /></span>
-          </div>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--sf-surface-raised)]" aria-hidden="true">
-            <div className="h-full rounded-full bg-[var(--sf-brand)] transition-[width] duration-200 motion-reduce:transition-none" style={{ width: `${((index + 1) / Math.max(cards.length, 1)) * 100}%` }} />
-          </div>
-        </div>
-        <div className="w-10" aria-hidden="true" />
       </div>
 
-      <label className="mb-4 flex flex-wrap items-center justify-center gap-3 text-xs font-black uppercase tracking-widest text-[var(--sf-text-muted)]">
+      <label data-study-recall-mode className="mb-4 flex flex-wrap items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest text-[var(--sf-text-muted)]">
         <Trans id="study.recall-mode" message="Recall mode" />
         <select name="study-recall-mode" value={activeRecallMode} onChange={event => onRecallMode(resolveStudyRecallMode(card, event.target.value as RecallMode))} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm normal-case tracking-normal text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2">
           <option value="target-to-native"><Trans id="study.recall-mode.target-to-native" message="{targetLanguage} → {nativeLanguage}" values={{ targetLanguage, nativeLanguage }} /></option>

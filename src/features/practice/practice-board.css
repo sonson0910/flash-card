@@ -77,12 +77,18 @@
   box-shadow: inset 0 1px rgb(255 255 255 / .12);
 }
 .practice-board--shadowing button.size-20 { box-shadow: 0 16px 36px -15px var(--sf-shadow), 0 0 0 8px color-mix(in srgb, var(--sf-brand) 10%, transparent); }
-.practice-board--study [data-study-progress] { border-radius: 18px; box-shadow: inset 0 1px rgb(255 255 255 / .14), var(--sf-panel-shadow); }
+.practice-board--study [data-study-header] { max-width: 960px; min-height: 44px; }
+.practice-board--study [data-study-progress] { max-width: 460px; }
+.practice-board--study [data-study-progress-segments] > span { height: 6px; min-width: 0; flex: 1; transform: skewX(-24deg); background: color-mix(in srgb, var(--sf-border) 82%, transparent); }
+.practice-board--study [data-study-progress-segment='complete'] { background: linear-gradient(90deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 55%, #5ef2ff)); box-shadow: 0 0 8px color-mix(in srgb, var(--sf-brand) 45%, transparent); }
+.practice-board--study [data-study-recall-mode] select { max-width: min(100%, 23rem); }
 .practice-board--study [data-study-card] { max-width: 460px; }
 .practice-board--study [data-study-card] h2 { max-width: 100%; overflow-wrap: anywhere; }
-.practice-board--study [data-study-rating] { max-width: 460px; }
+.practice-board--study [data-study-rating] { max-width: 460px; scroll-margin-bottom: 8px; }
 .practice-rating-board { border-color: var(--practice-line, var(--sf-border)) !important; }
-.practice-rating-board button { border-radius: 14px; }
+.practice-rating-board[data-review-state='ready'] { background: color-mix(in srgb, var(--sf-surface-glass) 92%, var(--sf-brand) 8%); }
+.practice-rating-board button { min-width: 0; border-radius: 14px; }
+.practice-rating-board button > span:last-child { overflow-wrap: anywhere; }
 .practice-recap-board {
   isolation: isolate;
   overflow: hidden;
@@ -124,6 +130,12 @@
   .practice-board--story aside { position: static; }
   .practice-board--match button[lang] { min-height: 56px; }
   .practice-board--shadowing section > div.border-y { border-radius: 16px; }
+  .practice-board--study [data-study-header] { gap: 10px; }
+  .practice-board--study [data-study-progress-segments] > span { height: 4px; }
+  .practice-board--study [data-study-recall-mode] { margin-bottom: 12px; }
+  .practice-rating-board { gap: 8px; padding: 10px; margin-bottom: 8px; }
+  .practice-rating-board > p { font-size: 13px; }
+  .practice-rating-board button { min-height: 56px; padding-inline: 4px; font-size: 11px; }
   /* The frame (fixed positioning + centering transform) and the board (GSAP-animated
      visual box, sized to fill the frame via width/height 100%) are separate elements
      so GSAP's entrance tween never overwrites the centering transform — see
