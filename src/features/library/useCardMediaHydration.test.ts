@@ -148,6 +148,63 @@ describe('card media hydration workspace', () => {
     expect(controller.getSnapshot()).toEqual({ pendingCount: 0, isHydrating: false });
   });
 
+  it('keeps one background concurrency limit when visible cards change during hydration', async () => {
+    const cards = Array.from({ length: 6 }, (_, index) => ({ ...card, id: `word-${index}` }));
+    const pending = new Map(cards.map(candidate => [candidate.id, deferred<CardMediaUpdate | null>()]));
+    const updates: CardMediaHydrationPort = {
+      hasMedia: () => false,
+      fetchMedia: vi.fn(candidate => pending.get(candidate.id)!.promise),
+      updateCard: vi.fn(async () => undefined),
+    };
+    const controller = createCardMediaHydrationController(updates);
+    controller.replace({ ownerKey: 'owner-a', cards: cards.slice(3), enabled: true });
+
+    const first = controller.hydrateLibrary();
+    expect(updates.fetchMedia).toHaveBeenCalledTimes(3);
+    controller.replace({ ownerKey: 'owner-a', cards, enabled: true });
+    const second = controller.hydrateLibrary();
+    try {
+      expect(updates.fetchMedia).toHaveBeenCalledTimes(3);
+      cards.slice(3).forEach(candidate => pending.get(candidate.id)!.resolve(null));
+      await vi.waitFor(() => expect(updates.fetchMedia).toHaveBeenCalledTimes(6));
+    } finally {
+      pending.forEach(request => request.resolve(null));
+      await Promise.all([first, second]);
+    }
+  });
+
+  it('drains pending requests before new cards and retries a failed card on a later run', async () => {
+    const cards = Array.from({ length: 4 }, (_, index) => ({ ...card, id: `word-${index}` }));
+    const pending = new Map(cards.map(candidate => [candidate.id, deferred<CardMediaUpdate | null>()]));
+    let failedOnce = false;
+    const updates: CardMediaHydrationPort = {
+      hasMedia: () => false,
+      fetchMedia: vi.fn(candidate => {
+        if (candidate.id === cards[1].id && !failedOnce) {
+          failedOnce = true;
+          return Promise.reject(new Error('image service unavailable'));
+        }
+        return pending.get(candidate.id)!.promise;
+      }),
+      updateCard: vi.fn(async () => undefined),
+    };
+    const controller = createCardMediaHydrationController(updates);
+    controller.replace({ ownerKey: 'owner-a', cards: cards.slice(1), enabled: true });
+
+    const first = controller.hydrateLibrary();
+    controller.replace({ ownerKey: 'owner-a', cards, enabled: true });
+    const second = controller.hydrateLibrary();
+    expect(updates.fetchMedia).toHaveBeenCalledTimes(3);
+    pending.get(cards[2].id)!.resolve(null);
+    pending.get(cards[3].id)!.resolve(null);
+    await vi.waitFor(() => expect(updates.fetchMedia).toHaveBeenCalledTimes(4));
+    pending.get(cards[0].id)!.resolve(null);
+    await expect(Promise.all([first, second])).rejects.toThrow('image service unavailable');
+    pending.get(cards[1].id)!.resolve(null);
+    await controller.hydrateLibrary();
+    expect(updates.fetchMedia).toHaveBeenCalledTimes(5);
+  });
+
   it('previews a recovered image only after durable persistence settles', async () => {
     const persistence = deferred<void>();
     const updates = {
@@ -204,6 +261,30 @@ describe('card media hydration workspace', () => {
     await hydration;
 
     expect(updates.updateCard).not.toHaveBeenCalled();
+  });
+
+  it('does not use a queued card from the previous owner after an account switch', async () => {
+    const firstImage = deferred<CardMediaUpdate | null>();
+    const oldCard = { ...card, id: 'shared', word: 'old word' };
+    const newCard = { ...oldCard, word: 'new word' };
+    const updates: CardMediaHydrationPort = {
+      hasMedia: () => false,
+      fetchMedia: vi.fn(candidate => candidate.id === card.id
+        ? firstImage.promise
+        : Promise.resolve(null)),
+      updateCard: vi.fn(async () => undefined),
+    };
+    const controller = createCardMediaHydrationController(updates, 1);
+    controller.replace({ ownerKey: 'owner-a', cards: [card, oldCard], enabled: true });
+
+    const first = controller.hydrateLibrary();
+    controller.replace({ ownerKey: 'owner-b', cards: [newCard], enabled: true });
+    const second = controller.hydrateLibrary();
+    firstImage.resolve(null);
+    await Promise.all([first, second]);
+
+    expect(updates.fetchMedia).toHaveBeenCalledTimes(2);
+    expect(updates.fetchMedia).toHaveBeenLastCalledWith(newCard);
   });
 
   it('suppresses a late result after the card disappears from the active library', async () => {
