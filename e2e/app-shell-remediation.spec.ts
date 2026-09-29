@@ -1,6 +1,7 @@
 import { expect, test } from './fixtures/firebase-emulator';
 
 const emptyStateTestTitle = 'Today and Progress empty states expose concrete next actions without initial autofocus';
+const emptyExtractorTestTitle = 'empty Library Scan a text restores focus after close';
 
 const cards = [
   'serendipity', 'resilient', 'curious', 'flourish', 'meticulous', 'eloquent',
@@ -44,9 +45,9 @@ test.beforeEach(async ({ page, seedCards, blockExternalNetwork }, testInfo) => {
     localStorage.setItem('lingoflash_theme', 'dark');
   });
   await blockExternalNetwork(page);
-  // The empty-state test intentionally starts from zero cards; every fresh
-  // emulator test user already has none, so it simply skips seeding.
-  if (testInfo.title !== emptyStateTestTitle) await seedCards(cards);
+  // Empty-library tests intentionally start from zero cards; every fresh
+  // emulator test user already has none, so they skip seeding.
+  if (testInfo.title !== emptyStateTestTitle && testInfo.title !== emptyExtractorTestTitle) await seedCards(cards);
 });
 
 test('library exposes one canonical heading and a keyboard-operable skip link', async ({ page, signIn, browserName }) => {
@@ -271,6 +272,41 @@ test('a structured CSV imports a card from Library and persists after reload', a
   await page.reload();
   await page.getByRole('searchbox', { name: /Search words/ }).fill('luminous');
   await expect(page.getByRole('heading', { name: 'luminous' })).toBeVisible();
+});
+
+test('Library Scan Text opens its production dialog and clears the draft on close', async ({ page, signIn }) => {
+  await signIn(page, '/?view=library');
+  await page.locator('summary').filter({ hasText: 'More library tools' }).click();
+
+  const opener = page.getByRole('button', { name: 'Scan Text' });
+  await opener.click();
+  const dialog = page.getByRole('dialog', { name: 'Scan text' });
+  await expect(dialog).toBeVisible();
+  const input = dialog.getByRole('textbox', { name: 'Text to scan' });
+  const extract = dialog.getByRole('button', { name: 'Extract vocabulary' });
+  await expect(extract).toBeDisabled();
+  await input.fill('A luminous idea can change a room.');
+  await expect(extract).toBeEnabled();
+
+  await dialog.getByRole('button', { name: 'Close' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(opener).toBeFocused();
+  await opener.click();
+  await expect(page.getByRole('dialog', { name: 'Scan text' }).getByRole('textbox', { name: 'Text to scan' })).toBeEmpty();
+});
+
+test(emptyExtractorTestTitle, async ({ page, seedCourseProfile, signIn }) => {
+  await seedCourseProfile();
+  await signIn(page, '/?view=library');
+  await expect(page.getByRole('status').filter({ hasText: 'Synced' })).toBeVisible();
+  const opener = page.getByRole('button', { name: 'Scan a text' });
+  await expect(opener).toBeVisible();
+  await opener.click();
+  const dialog = page.getByRole('dialog', { name: 'Scan text' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Close' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(opener).toBeFocused();
 });
 
 test('Today and Progress empty states expose concrete next actions without initial autofocus', async ({ page, seedCourseProfile, signIn }) => {

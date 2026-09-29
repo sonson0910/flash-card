@@ -353,6 +353,7 @@ export function LibraryTools({
   const deckDeletionRestoreRef = useRef<HTMLButtonElement | null>(null);
   const deckCreatorRestoreRef = useRef<HTMLButtonElement | null>(null);
   const importRestoreRef = useRef<HTMLButtonElement | null>(null);
+  const extractorRestoreRef = useRef<HTMLButtonElement | null>(null);
   const pendingDeckCardCount = deckPendingDeletion
     ? cards.filter(card => card.customDeck === deckPendingDeletion).length
     : 0;
@@ -567,6 +568,7 @@ export function LibraryTools({
               type="button"
               data-color-role="secondary"
               onClick={() => setShowExtractorModal(true)}
+              ref={extractorRestoreRef}
               className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/90 dark:border-white/10 dark:bg-white/5 px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:bg-slate-200 dark:hover:bg-white/10 hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
               <ScanText size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" />
@@ -591,6 +593,7 @@ export function LibraryTools({
           open={showExtractorModal}
           onOpenChange={setShowExtractorModal}
           cards={cards}
+          restoreFocusRef={extractorRestoreRef}
           onImportWords={words => {
             if (words.length > 0) {
               const csvContent = 'word\n' + words.map(w => `"${w.replace(/"/g, '""')}"`).join('\n');

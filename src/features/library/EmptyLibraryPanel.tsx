@@ -43,6 +43,7 @@ export function EmptyLibraryPanel({
   const showLumi = isCrystal && readLumiEnabled();
   const [scanOpen, setScanOpen] = useState(false);
   const isComposing = useRef(false);
+  const extractorRestoreRef = useRef<HTMLButtonElement | null>(null);
   const canGenerate = Boolean(wordInput.trim())
     && generationAccess.available
     && !isLoading
@@ -105,6 +106,7 @@ export function EmptyLibraryPanel({
               onCompositionStart={() => { isComposing.current = true; }}
               onCompositionEnd={() => { isComposing.current = false; }}
               setScanOpen={setScanOpen}
+              extractorRestoreRef={extractorRestoreRef}
               importStatus={importStatus}
             />
           </div>
@@ -133,13 +135,19 @@ export function EmptyLibraryPanel({
             onCompositionStart={() => { isComposing.current = true; }}
             onCompositionEnd={() => { isComposing.current = false; }}
             setScanOpen={setScanOpen}
+            extractorRestoreRef={extractorRestoreRef}
             importStatus={importStatus}
           />
         </div>
       )}
       {scanOpen && (
         <Suspense fallback={null}>
-          <WordExtractorModal open onOpenChange={setScanOpen} onImportWords={setDraftFromScan} />
+          <WordExtractorModal
+            open
+            onOpenChange={setScanOpen}
+            onImportWords={setDraftFromScan}
+            restoreFocusRef={extractorRestoreRef}
+          />
         </Suspense>
       )}
     </section>
@@ -155,6 +163,7 @@ type ActionProps = Pick<EmptyLibraryPanelProps,
     onCompositionStart: () => void;
     onCompositionEnd: () => void;
     setScanOpen: (open: boolean) => void;
+    extractorRestoreRef: RefObject<HTMLButtonElement | null>;
     importStatus: ReactNode;
   };
 
@@ -174,6 +183,7 @@ function EmptyLibraryActions({
   onCompositionStart,
   onCompositionEnd,
   setScanOpen,
+  extractorRestoreRef,
   importStatus,
 }: ActionProps) {
   const { i18n } = useLingui();
@@ -214,7 +224,7 @@ function EmptyLibraryActions({
       {isGenerating && <p className="empty-library__status" role="status" aria-live="polite"><Trans id="library.create.analysing" message="AI is analysing" /> · <Trans id="library.create.building" message="Building your card" /></p>}
       {importStatus}
       <div className="empty-library__links">
-        <button type="button" onClick={() => setScanOpen(true)} disabled={isBusy}>
+        <button type="button" onClick={() => setScanOpen(true)} ref={extractorRestoreRef} disabled={isBusy}>
           <Trans id="library.empty.scan" message="Scan a text" />
         </button>
         <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isBusy}>

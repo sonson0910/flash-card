@@ -2,7 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { i18n, type MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { Check, Loader2, Plus, Sparkles, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type RefObject } from 'react';
 import { normalizeCardWord } from '../../lib/cardIdentity';
 import { translateText } from '../../lib/gemini';
 import { getProtectedFunctionUserMessage, ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
@@ -29,6 +29,7 @@ interface WordExtractorModalProps {
   onOpenChange: (open: boolean) => void;
   onImportWords: (words: string[]) => void;
   cards?: readonly Pick<CardData, 'word' | 'normalizedWord'>[];
+  restoreFocusRef?: RefObject<HTMLElement | null>;
 }
 
 const translate = (descriptor: MessageDescriptor, values?: Record<string, unknown>) =>
@@ -291,14 +292,21 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (
   );
 }
 
-export function WordExtractorModal({ open, onOpenChange, onImportWords, cards = [] }: WordExtractorModalProps) {
+export function WordExtractorModal({ open, onOpenChange, onImportWords, cards = [], restoreFocusRef }: WordExtractorModalProps) {
   if (!open) return null;
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm" />
-        <Dialog.Content className="fixed inset-x-4 top-1/2 z-50 mx-auto w-auto max-w-2xl -translate-y-1/2 focus:outline-none sm:inset-x-6">
+        <Dialog.Content
+          className="fixed inset-x-4 top-1/2 z-50 mx-auto w-auto max-w-2xl -translate-y-1/2 focus:outline-none sm:inset-x-6"
+          onCloseAutoFocus={event => {
+            if (!restoreFocusRef?.current) return;
+            event.preventDefault();
+            restoreFocusRef.current.focus();
+          }}
+        >
           <WordExtractorContent
             onClose={() => onOpenChange(false)}
             onImportWords={onImportWords}
