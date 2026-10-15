@@ -10,12 +10,15 @@
   const IMPORT_UNVERIFIED_TYPE = 'LINGOFLASH_EXTENSION_IMPORT_UNVERIFIED';
   const IMPORT_CLAIMED_TYPE = 'LINGOFLASH_EXTENSION_IMPORT_CLAIMED';
   const VERIFY_IMPORT_TYPE = 'VERIFY_IMPORT_INTENT';
+  const APP_BRIDGE_PORT_NAME = 'sonflash-app-bridge';
+  const APP_BRIDGE_PROVIDER_TYPE = 'LINGOFLASH_EXTENSION_PROVIDER';
+  const APP_BRIDGE_PROVIDER_READY_TYPE = 'LINGOFLASH_EXTENSION_PROVIDER_READY';
+  const APP_BRIDGE_RECONNECT_DELAY_MS = 250;
+  const APP_BRIDGE_RECONNECT_ATTEMPTS = 3;
   const DECK_METADATA_TYPE = 'LINGOFLASH_EXTENSION_DECK_METADATA';
   const DECK_METADATA_CLEAR_TYPE = 'LINGOFLASH_EXTENSION_DECK_METADATA_CLEAR';
   // 07.6: due count follows the exact same app -> bridge -> background relay
-  // as deck metadata. Nothing yet posts DUE_COUNT_TYPE from the app; see the
-  // phase report for the small src/features/browserExtension addition needed
-  // to complete real delivery end to end.
+  // as deck metadata and shares the bridge document lifetime.
   const DUE_COUNT_TYPE = 'LINGOFLASH_EXTENSION_DUE_COUNT';
   const DUE_COUNT_CLEAR_TYPE = 'LINGOFLASH_EXTENSION_DUE_COUNT_CLEAR';
   // Course locale follows the exact same app -> bridge -> background relay as
@@ -65,6 +68,11 @@
   let fallbackStarted = false;
   let initialRoute = null;
   let verifiedIntent = null;
+  let appBridgePort = null;
+  let providerId = '';
+  let reconnectTimer = null;
+  let reconnectAttempts = 0;
+  const queuedProviderMessages = [];
 
   const sendRuntimeMessage = message => {
     if (!extensionApi?.runtime?.sendMessage) return Promise.reject(new Error('Extension runtime is unavailable.'));
@@ -98,6 +106,75 @@
     });
   };
 
+  const dispatchProviderMessage = (type, payload, token) => {
+    if (!token || token !== providerId || !appBridgePort) {
+      return Promise.reject(new Error('The LingoFlash app bridge is no longer connected.'));
+    }
+    return sendRuntimeMessage({ type, providerId: token, payload })
+      .then(response => ({ response, providerId: token }));
+  };
+  const flushProviderMessages = () => {
+    if (!providerId) return;
+    const token = providerId;
+    for (const queued of queuedProviderMessages.splice(0)) {
+      void dispatchProviderMessage(queued.type, queued.payload, token)
+        .then(queued.resolve, queued.reject);
+    }
+  };
+  const sendProviderMessage = (type, payload, token = providerId) => {
+    if (token) return dispatchProviderMessage(type, payload, token);
+    if (!appBridgePort) return Promise.reject(new Error('The LingoFlash app bridge is unavailable.'));
+    return new Promise((resolve, reject) => {
+      queuedProviderMessages.push({ type, payload, resolve, reject });
+    });
+  };
+  const notifyProviderReady = generation => {
+    try {
+      globalThis.postMessage?.({
+        source: BRIDGE_SOURCE,
+        type: APP_BRIDGE_PROVIDER_READY_TYPE,
+        generation,
+      }, globalThis.location.origin);
+    } catch { /* The app may be navigating away. */ }
+  };
+  const scheduleAppBridgeReconnect = () => {
+    if (reconnectTimer !== null || reconnectAttempts >= APP_BRIDGE_RECONNECT_ATTEMPTS) return;
+    reconnectAttempts += 1;
+    reconnectTimer = globalThis.setTimeout(() => {
+      reconnectTimer = null;
+      if (!appBridgePort) connectAppBridge();
+    }, APP_BRIDGE_RECONNECT_DELAY_MS);
+  };
+  const connectAppBridge = () => {
+    if (typeof extensionApi?.runtime?.connect !== 'function') return;
+    try {
+      const port = extensionApi.runtime.connect({ name: APP_BRIDGE_PORT_NAME });
+      appBridgePort = port;
+      port.onMessage?.addListener?.(message => {
+        if (appBridgePort !== port) return;
+        if (!message || typeof message !== 'object' || Array.isArray(message)
+          || message.type !== APP_BRIDGE_PROVIDER_TYPE || typeof message.providerId !== 'string') return;
+        providerId = message.providerId;
+        reconnectAttempts = 0;
+        flushProviderMessages();
+        notifyProviderReady(message.generation);
+      });
+      port.onDisconnect?.addListener?.(() => {
+        if (appBridgePort !== port) return;
+        appBridgePort = null;
+        providerId = '';
+        for (const queued of queuedProviderMessages.splice(0)) {
+          queued.reject(new Error('The LingoFlash app bridge was disconnected.'));
+        }
+        scheduleAppBridgeReconnect();
+      });
+    } catch {
+      appBridgePort = null;
+      providerId = '';
+      scheduleAppBridgeReconnect();
+    }
+  };
+
   const sendResult = (intent, payload) => {
     if (!intent || !payload || payload.id !== intent.id
       || (payload.nonce !== undefined && payload.nonce !== intent.nonce)) return;
@@ -109,7 +186,7 @@
   };
 
   const relayDeckMetadataClear = (payload, attemptsRemaining = DECK_METADATA_CLEAR_RETRIES) => {
-    void sendRuntimeMessage({ type: 'CLEAR_DECK_METADATA', payload }).then(response => {
+    void sendProviderMessage('CLEAR_DECK_METADATA', payload).then(({ response }) => {
       if (response?.ok !== true) throw new Error('Deck metadata clear was not acknowledged.');
     }).catch(() => {
       if (attemptsRemaining > 0) {
@@ -119,7 +196,7 @@
   };
 
   const relayDueCountClear = (payload, attemptsRemaining = DECK_METADATA_CLEAR_RETRIES) => {
-    void sendRuntimeMessage({ type: 'CLEAR_DUE_COUNT', payload }).then(response => {
+    void sendProviderMessage('CLEAR_DUE_COUNT', payload).then(({ response }) => {
       if (response?.ok !== true) throw new Error('Due count clear was not acknowledged.');
     }).catch(() => {
       if (attemptsRemaining > 0) {
@@ -129,7 +206,7 @@
   };
 
   const relayCourseLocaleClear = (payload, attemptsRemaining = DECK_METADATA_CLEAR_RETRIES) => {
-    void sendRuntimeMessage({ type: 'CLEAR_COURSE_LOCALE', payload }).then(response => {
+    void sendProviderMessage('CLEAR_COURSE_LOCALE', payload).then(({ response }) => {
       if (response?.ok !== true) throw new Error('Course locale clear was not acknowledged.');
     }).catch(() => {
       if (attemptsRemaining > 0) {
@@ -436,6 +513,9 @@
     else start();
   }
 
+  const initialIntent = captureInitialIntent();
+  const isImportHandoffDocument = hasImportHash();
+  if (!isImportHandoffDocument) connectAppBridge();
   globalThis.addEventListener('message', event => {
     if (event.source !== globalThis || event.origin !== globalThis.location.origin) return;
     const message = event.data;
@@ -448,7 +528,7 @@
     }
     if (message.source !== APP_SOURCE) return;
     if (message.type === DECK_METADATA_TYPE) {
-      void sendRuntimeMessage({ type: 'SYNC_DECK_METADATA', payload: message.payload }).catch(() => undefined);
+      void sendProviderMessage('SYNC_DECK_METADATA', message.payload).catch(() => undefined);
       return;
     }
     if (message.type === DECK_METADATA_CLEAR_TYPE) {
@@ -456,7 +536,7 @@
       return;
     }
     if (message.type === DUE_COUNT_TYPE) {
-      void sendRuntimeMessage({ type: 'SYNC_DUE_COUNT', payload: message.payload }).catch(() => undefined);
+      void sendProviderMessage('SYNC_DUE_COUNT', message.payload).catch(() => undefined);
       return;
     }
     if (message.type === DUE_COUNT_CLEAR_TYPE) {
@@ -464,7 +544,7 @@
       return;
     }
     if (message.type === COURSE_LOCALE_TYPE) {
-      void sendRuntimeMessage({ type: 'SYNC_COURSE_LOCALE', payload: message.payload }).catch(() => undefined);
+      void sendProviderMessage('SYNC_COURSE_LOCALE', message.payload).catch(() => undefined);
       return;
     }
     if (message.type === COURSE_LOCALE_CLEAR_TYPE) {
@@ -477,7 +557,6 @@
     sendResult(verifiedIntent, message.payload);
   });
 
-  const initialIntent = captureInitialIntent();
   try {
     const initialUrl = new URL(globalThis.location.href);
     initialRoute = { pathname: initialUrl.pathname, search: initialUrl.search };
@@ -485,6 +564,6 @@
     initialRoute = null;
   }
   if (initialIntent && initialIntent.mode === undefined) notifyUnverifiedIntent(initialIntent);
-  if (hasImportHash()) removeImportHash();
+  if (isImportHandoffDocument) removeImportHash();
   if (initialIntent?.mode === 'silent') void verifyAndDispatch(initialIntent);
 })();

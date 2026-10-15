@@ -58,6 +58,7 @@ const createBridgeContext = async ({
   promiseApi = false,
   response = { ok: true, verified: true },
   fallbackMode = null,
+  deferFallbackTimers = false,
   initialIntent,
 } = {}) => {
   const calls = [];
@@ -67,14 +68,22 @@ const createBridgeContext = async ({
   const dateApi = fallbackMode
     ? { now: () => { fakeNow += 1_000; return fakeNow; } }
     : Date;
+  const deferredTimers = [];
   const timerApi = fallbackMode
-    ? callback => globalThis.setTimeout(callback, 0)
+    ? callback => {
+        if (deferFallbackTimers) {
+          deferredTimers.push(callback);
+          return deferredTimers.length;
+        }
+        return globalThis.setTimeout(callback, 0);
+      }
     : setTimeout;
   const createdAt = Date.UTC(2026, 7, 19, 8, 0, 0);
   const nonce = 'nonce_1234567890123456789012';
-  let currentUrl = `https://encoded-hangout-433912-h2.web.app/?view=library#lf-import=${encodePayload(initialIntent ?? {
+  const hashIntent = initialIntent === undefined ? {
     v: 3, id: 'job_123456789', nonce, text: 'resilient', createdAt, mode: 'silent',
-  })}`;
+  } : initialIntent;
+  let currentUrl = `https://encoded-hangout-433912-h2.web.app/?view=library${hashIntent ? `#lf-import=${encodePayload(hashIntent)}` : ''}`;
   const location = {
     get href() { return currentUrl; },
     get hash() { return new URL(currentUrl).hash; },
@@ -148,14 +157,36 @@ const createBridgeContext = async ({
     setItem: (key, value) => storageValues.set(key, value),
     removeItem: key => storageValues.delete(key),
   };
+  const providerId = 'provider_test_123456789';
+  const providerPorts = [];
+  const connect = details => {
+    calls.push({ type: 'runtime.connect', details });
+    const providerMessages = createEventTarget();
+    providerMessages.addListener = listener => providerMessages.addEventListener('message', listener);
+    const providerDisconnect = createEventTarget();
+    providerDisconnect.addListener = listener => providerDisconnect.addEventListener('disconnect', listener);
+    const providerPort = {
+      onMessage: providerMessages,
+      onDisconnect: providerDisconnect,
+      postMessage: message => calls.push({ type: 'runtime.port.postMessage', message }),
+    };
+    providerPorts.push({ providerMessages, providerDisconnect, providerPort });
+    Promise.resolve().then(() => providerMessages.dispatch('message', {
+      type: 'LINGOFLASH_EXTENSION_PROVIDER',
+      providerId,
+    }));
+    return providerPort;
+  };
   const runtime = promiseApi
     ? {
+        connect,
         sendMessage: (...args) => {
           calls.push({ type: 'runtime.sendMessage', args });
           return Promise.resolve(response);
         },
       }
     : {
+        connect,
         sendMessage: (message, callback) => {
           calls.push({ type: 'runtime.sendMessage', args: [message, callback] });
           callback(response);
@@ -212,6 +243,14 @@ const createBridgeContext = async ({
     storageValues,
     wasFallbackSubmitted: () => fallbackSubmitted,
     dispatchMessage: event => messages.dispatch('message', event),
+    disconnectProvider: () => providerPorts.at(-1)?.providerDisconnect.dispatch('disconnect', {}),
+    providerId,
+    flushTimers: async () => {
+      while (deferredTimers.length) {
+        deferredTimers.shift()();
+        await Promise.resolve();
+      }
+    },
   };
 };
 
@@ -328,7 +367,7 @@ test('drops an unrecognized source language from a verified v3 handoff without i
 });
 
 test('relays deck metadata only from same-origin app messages', async () => {
-  const bridge = await createBridgeContext({ response: { ok: true, verified: false } });
+  const bridge = await createBridgeContext({ initialIntent: null, response: { ok: true, verified: false } });
   bridge.dispatchMessage({
     source: bridge.bridgeGlobal,
     origin: 'https://encoded-hangout-433912-h2.web.app',
@@ -354,10 +393,77 @@ test('relays deck metadata only from same-origin app messages', async () => {
   assert.deepEqual(relayed.payload, { scope: 'opaque_scope_123456', decks: ['Reading'] });
   assert.equal(bridge.calls.filter(call => call.type === 'runtime.sendMessage'
     && call.args[0].type === 'SYNC_DECK_METADATA').length, 1);
+  assert.equal(relayed.providerId, bridge.providerId);
+});
+
+test('uses the named live bridge port identity for metadata and stops relaying after disconnect', async () => {
+  const bridge = await createBridgeContext({ initialIntent: null, response: { ok: true, verified: false } });
+  bridge.dispatchMessage({
+    source: bridge.bridgeGlobal,
+    origin: 'https://encoded-hangout-433912-h2.web.app',
+    data: {
+      source: 'lingoflash-web-app',
+      type: 'LINGOFLASH_EXTENSION_DUE_COUNT',
+      payload: { scope: 'opaque_scope_123456', count: 12 },
+    },
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  const beforeDisconnect = bridge.calls.filter(call => call.type === 'runtime.sendMessage')
+    .map(call => call.args[0])
+    .find(message => message.type === 'SYNC_DUE_COUNT');
+  assert.equal(beforeDisconnect.providerId, bridge.providerId);
+
+  bridge.disconnectProvider();
+  bridge.dispatchMessage({
+    source: bridge.bridgeGlobal,
+    origin: 'https://encoded-hangout-433912-h2.web.app',
+    data: {
+      source: 'lingoflash-web-app',
+      type: 'LINGOFLASH_EXTENSION_DUE_COUNT',
+      payload: { scope: 'opaque_scope_late_123456', count: 999 },
+    },
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(bridge.calls.filter(call => call.type === 'runtime.sendMessage'
+    && call.args[0]?.type === 'SYNC_DUE_COUNT').length, 1);
+});
+
+test('reconnects once after a live port disconnect and asks the app to publish current metadata again', async () => {
+  const bridge = await createBridgeContext({ initialIntent: null, response: { ok: true, verified: false } });
+  const initialReadyCount = bridge.calls.filter(call => call.type === 'window.postMessage'
+    && call.message.type === 'LINGOFLASH_EXTENSION_PROVIDER_READY').length;
+  assert.equal(initialReadyCount, 1);
+
+  bridge.disconnectProvider();
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  assert.equal(bridge.calls.filter(call => call.type === 'runtime.connect').length, 2);
+  assert.equal(bridge.calls.filter(call => call.type === 'window.postMessage'
+    && call.message.type === 'LINGOFLASH_EXTENSION_PROVIDER_READY').length, 2);
+  bridge.dispatchMessage({
+    source: bridge.bridgeGlobal,
+    origin: 'https://encoded-hangout-433912-h2.web.app',
+    data: {
+      source: 'lingoflash-web-app',
+      type: 'LINGOFLASH_EXTENSION_DUE_COUNT',
+      payload: { scope: 'opaque_scope_reconnected_123456', count: 7 },
+    },
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(bridge.calls.some(call => call.type === 'runtime.sendMessage'
+    && call.args[0]?.type === 'SYNC_DUE_COUNT'
+    && call.args[0]?.payload?.count === 7));
+});
+
+test('does not elect an import handoff document as a metadata provider', async () => {
+  const bridge = await createBridgeContext();
+  assert.equal(bridge.calls.some(call => call.type === 'runtime.connect'), false);
+  assert.equal(bridge.calls.some(call => call.type === 'runtime.sendMessage'
+    && call.args[0]?.type === 'VERIFY_IMPORT_INTENT'), true);
 });
 
 test('relays deck metadata clear messages through the runtime', async () => {
-  const bridge = await createBridgeContext({ response: { ok: true, verified: false } });
+  const bridge = await createBridgeContext({ initialIntent: null, response: { ok: true, verified: false } });
   bridge.dispatchMessage({
     source: bridge.bridgeGlobal,
     origin: 'https://encoded-hangout-433912-h2.web.app',
@@ -373,7 +479,7 @@ test('relays deck metadata clear messages through the runtime', async () => {
 });
 
 test('retries an unacknowledged deck metadata clear after a transient runtime failure', async () => {
-  const bridge = await createBridgeContext({ response: { ok: false } });
+  const bridge = await createBridgeContext({ initialIntent: null, response: { ok: false } });
   bridge.dispatchMessage({
     source: bridge.bridgeGlobal,
     origin: 'https://encoded-hangout-433912-h2.web.app',
@@ -389,7 +495,7 @@ test('retries an unacknowledged deck metadata clear after a transient runtime fa
 });
 
 test('relays a real due count only from same-origin app messages (07.6)', async () => {
-  const bridge = await createBridgeContext({ response: { ok: true, verified: false } });
+  const bridge = await createBridgeContext({ initialIntent: null, response: { ok: true, verified: false } });
   bridge.dispatchMessage({
     source: bridge.bridgeGlobal,
     origin: 'https://encoded-hangout-433912-h2.web.app',
@@ -418,7 +524,7 @@ test('relays a real due count only from same-origin app messages (07.6)', async 
 });
 
 test('retries an unacknowledged due-count clear after a transient runtime failure (07.6)', async () => {
-  const bridge = await createBridgeContext({ response: { ok: false } });
+  const bridge = await createBridgeContext({ initialIntent: null, response: { ok: false } });
   bridge.dispatchMessage({
     source: bridge.bridgeGlobal,
     origin: 'https://encoded-hangout-433912-h2.web.app',
@@ -434,7 +540,7 @@ test('retries an unacknowledged due-count clear after a transient runtime failur
 });
 
 test('relays a real course locale only from same-origin app messages (07.5)', async () => {
-  const bridge = await createBridgeContext({ response: { ok: true, verified: false } });
+  const bridge = await createBridgeContext({ initialIntent: null, response: { ok: true, verified: false } });
   bridge.dispatchMessage({
     source: bridge.bridgeGlobal,
     origin: 'https://encoded-hangout-433912-h2.web.app',
@@ -463,7 +569,7 @@ test('relays a real course locale only from same-origin app messages (07.5)', as
 });
 
 test('retries an unacknowledged course-locale clear after a transient runtime failure (07.5)', async () => {
-  const bridge = await createBridgeContext({ response: { ok: false } });
+  const bridge = await createBridgeContext({ initialIntent: null, response: { ok: false } });
   bridge.dispatchMessage({
     source: bridge.bridgeGlobal,
     origin: 'https://encoded-hangout-433912-h2.web.app',
@@ -520,6 +626,31 @@ test('uses stable data selectors for the library fallback form', async () => {
   const result = bridge.calls.find(call => call.type === 'runtime.sendMessage' && call.args[0]?.type === 'APP_IMPORT_RESULT');
   assert.ok(result);
   assert.equal(result.args[0].payload.status, 'created');
+});
+
+test('cancels the library fallback when the app rejects a verified intent before claiming it', async () => {
+  const bridge = await createBridgeContext({ fallbackMode: 'stable', deferFallbackTimers: true });
+  bridge.dispatchMessage({
+    source: bridge.bridgeGlobal,
+    origin: 'https://encoded-hangout-433912-h2.web.app',
+    data: {
+      source: 'lingoflash-web-app',
+      type: 'LINGOFLASH_EXTENSION_RESULT',
+      payload: {
+        v: 1,
+        id: 'job_123456789',
+        nonce: 'nonce_1234567890123456789012',
+        status: 'error',
+        word: 'resilient',
+        message: 'Import cancelled because the signed-in account changed.',
+      },
+    },
+  });
+  await bridge.flushTimers();
+
+  assert.equal(bridge.wasFallbackSubmitted(), false);
+  const result = bridge.calls.find(call => call.type === 'runtime.sendMessage' && call.args[0]?.type === 'APP_IMPORT_RESULT');
+  assert.equal(result.args[0].payload.status, 'error');
 });
 
 test('keeps the legacy selectors working for older app markup', async () => {

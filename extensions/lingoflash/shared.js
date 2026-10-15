@@ -605,6 +605,54 @@
   // course's native language (07.5) without needing a page reload.
   let localeOverrideCatalog = null;
   let activeCourseTargetLanguage = '';
+  let courseLocaleMetadataGeneration = 0;
+  let courseLocaleMetadataScope = '';
+  let metadataInvalidationEpoch = 0;
+  const invalidatedCourseLocaleScopes = new Map();
+  let minimumValidCourseLocaleGeneration = 0;
+
+  const normalizeMetadataGeneration = value => Number.isSafeInteger(value) && value > 0 ? value : 0;
+  const normalizeMetadataScope = value => normalizeDeckScope(value);
+  const clearCourseLocaleState = () => {
+    localeOverrideCatalog = null;
+    activeCourseTargetLanguage = '';
+    courseLocaleMetadataGeneration = 0;
+    courseLocaleMetadataScope = '';
+  };
+
+  const courseLocaleResponseIsInvalidated = (generation, scope) => {
+    if (!generation) return false;
+    if (generation < minimumValidCourseLocaleGeneration) return true;
+    const invalidatedScopes = invalidatedCourseLocaleScopes.get(generation);
+    return Boolean(invalidatedScopes?.has('*') || (scope && invalidatedScopes?.has(scope)));
+  };
+
+  // Background retirement messages carry the provider generation and the
+  // retired scope for each channel. A lower generation, or a same-generation
+  // message for a different scope, must never clear a newer popup state.
+  const invalidateExtensionMetadata = message => {
+    if (!message || typeof message !== 'object' || Array.isArray(message)) return false;
+    const generation = normalizeMetadataGeneration(message.generation);
+    const scopes = message.scopes;
+    if (!generation || !scopes || typeof scopes !== 'object' || Array.isArray(scopes)
+      || !Object.prototype.hasOwnProperty.call(scopes, 'locale')) return false;
+    const scope = normalizeMetadataScope(scopes.locale);
+    const currentStateIsNewer = courseLocaleMetadataGeneration > generation
+      || (courseLocaleMetadataGeneration === generation
+        && courseLocaleMetadataScope && scope && courseLocaleMetadataScope !== scope);
+    metadataInvalidationEpoch += 1;
+    minimumValidCourseLocaleGeneration = Math.max(minimumValidCourseLocaleGeneration, generation);
+    const invalidatedScopes = invalidatedCourseLocaleScopes.get(generation) || new Set();
+    invalidatedScopes.add(scope || '*');
+    invalidatedCourseLocaleScopes.set(generation, invalidatedScopes);
+    if (currentStateIsNewer) return false;
+    const shouldClear = generation > courseLocaleMetadataGeneration
+      || !courseLocaleMetadataScope
+      || !scope
+      || courseLocaleMetadataScope === scope;
+    if (shouldClear) clearCourseLocaleState();
+    return shouldClear;
+  };
 
   // Chrome's own `chrome.i18n.getMessage` resolves `$NAME$` placeholders
   // against a message's declared `placeholders` map itself; this reimplements
@@ -648,19 +696,41 @@
   // whenever there is no confirmed course locale, or it already matches the
   // browser's own resolved UI language.
   const applyCourseUiLocale = async () => {
+    const requestEpoch = metadataInvalidationEpoch;
     try {
       const response = await apiCall(extensionApi.runtime, 'sendMessage', { type: 'GET_COURSE_LOCALE' });
+      const generation = normalizeMetadataGeneration(response?.generation);
+      const scope = normalizeMetadataScope(response?.scope);
+      if ((!generation && requestEpoch !== metadataInvalidationEpoch)
+        || courseLocaleResponseIsInvalidated(generation, scope)) return false;
+      if (generation && courseLocaleMetadataGeneration > generation) return false;
+      if (generation && courseLocaleMetadataGeneration === generation
+        && courseLocaleMetadataScope && scope && courseLocaleMetadataScope !== scope) return false;
       const nativeLanguage = response?.ok ? normalizeCourseNativeLanguage(response.nativeLanguage) : '';
       activeCourseTargetLanguage = response?.ok ? normalizeCourseTargetLanguage(response.targetLanguage) : '';
-      if (!nativeLanguage) return false;
+      if (!nativeLanguage) {
+        localeOverrideCatalog = null;
+        courseLocaleMetadataGeneration = generation;
+        courseLocaleMetadataScope = scope;
+        return false;
+      }
       const uiLanguage = String(i18nApi()?.getUILanguage?.() || '').toLowerCase().split('-')[0];
-      if (uiLanguage === nativeLanguage) return false;
+      if (uiLanguage === nativeLanguage) {
+        localeOverrideCatalog = null;
+        courseLocaleMetadataGeneration = generation;
+        courseLocaleMetadataScope = scope;
+        return false;
+      }
       const catalog = await loadLocaleMessageCatalog(nativeLanguage);
-      if (!catalog) return false;
+      if (!catalog
+        || (!generation && requestEpoch !== metadataInvalidationEpoch)
+        || courseLocaleResponseIsInvalidated(generation, scope)) return false;
       localeOverrideCatalog = catalog;
+      courseLocaleMetadataGeneration = generation;
+      courseLocaleMetadataScope = scope;
       return true;
     } catch {
-      activeCourseTargetLanguage = '';
+      clearCourseLocaleState();
       return false;
     }
   };
@@ -804,6 +874,7 @@
     applyColorScheme,
     applyThemeFamily,
     applyCourseUiLocale,
+    invalidateExtensionMetadata,
     getActiveCourseTargetLanguage,
     readRecentLookups,
     recordRecentLookup,

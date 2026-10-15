@@ -395,6 +395,77 @@ test('retires course-locale scopes with the same bounded dedup rules as deck met
   assert.deepEqual(normalizeRetiredCourseLocaleScopes(null), []);
 });
 
+test('ignores a delayed locale catalog after its provider scope is retired', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { runInNewContext } = await import('node:vm');
+  const source = await readFile(new URL('../shared.js', import.meta.url), 'utf8');
+  let resolveLocaleResponse;
+  let resolveCatalog;
+  const context = {
+    browser: {
+      runtime: {
+        sendMessage: () => new Promise(resolve => { resolveLocaleResponse = resolve; }),
+        getURL: path => `chrome-extension://test/${path}`,
+      },
+      i18n: {
+        getUILanguage: () => 'vi',
+        getMessage: () => '',
+      },
+      storage: {
+        session: { get: () => Promise.resolve({}), set: () => Promise.resolve(), remove: () => Promise.resolve() },
+        sync: { get: () => Promise.resolve({}), set: () => Promise.resolve(), remove: () => Promise.resolve() },
+      },
+    },
+    fetch: () => Promise.resolve({
+      ok: true,
+      json: () => new Promise(resolve => { resolveCatalog = resolve; }),
+    }),
+    URL,
+    URLSearchParams,
+    TextEncoder,
+    TextDecoder,
+    Uint8Array,
+    Uint32Array,
+    Promise,
+    Error,
+    String,
+    Number,
+    Array,
+    Object,
+    Math,
+    Date,
+    crypto: globalThis.crypto,
+    btoa,
+    atob,
+  };
+  context.globalThis = context;
+  runInNewContext(source, context);
+  const api = context.LingoFlashExtension;
+  const applying = api.applyCourseUiLocale();
+  resolveLocaleResponse({
+    ok: true,
+    nativeLanguage: 'en',
+    targetLanguage: 'ko',
+    generation: 1,
+    scope: 'opaque_scope_locale_a_123456',
+  });
+  await Promise.resolve();
+  await Promise.resolve();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(typeof resolveCatalog, 'function');
+
+  api.invalidateExtensionMetadata({
+    generation: 1,
+    scopes: { locale: 'opaque_scope_locale_a_123456' },
+  });
+  resolveCatalog({
+    dueCountBadge: { message: '$COUNT$ cards due' },
+  });
+
+  assert.equal(await applying, false);
+  assert.equal(api.getActiveCourseTargetLanguage(), '');
+});
+
 test('locks the extension to the production LingoFlash origin', () => {
   assert.equal(validateAppUrl(DEFAULT_APP_URL).ok, true);
   assert.equal(validateAppUrl(`${APP_ORIGIN}/another-path`).ok, true);

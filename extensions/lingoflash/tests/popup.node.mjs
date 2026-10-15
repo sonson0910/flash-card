@@ -91,7 +91,13 @@ const createPopupContext = async ({
   shortcutSettingsAvailable = true,
   deckLoadError = false,
   deckResponseError = false,
+  deckResponsePending = false,
   dueCount = null,
+  dueResponsePending = false,
+  metadataGeneration = 0,
+  deckScope = '',
+  dueScope = '',
+  localeScope = '',
   retryQuickAddResponse = { ok: true, id: 'job_retry_1', text: 'resilient' },
   // Defaults to today's behavior: no confirmed course locale synced yet, so
   // applyCourseUiLocale() finds nothing to override (07.5).
@@ -113,6 +119,8 @@ const createPopupContext = async ({
   const permissionCalls = [];
   let resolveTranslate = () => undefined;
   let resolveSelection = () => undefined;
+  let resolveDeckResponse = () => undefined;
+  let resolveDueResponse = () => undefined;
   let closeCalls = 0;
   const speechSynthesis = {
     cancelCalls: 0,
@@ -133,8 +141,10 @@ const createPopupContext = async ({
       if (message.type === 'GET_RECENT_LOOKUPS') return Promise.resolve({ ok: true, items: recentItems });
       if (message.type === 'GET_DECKS') {
         if (deckLoadError) return Promise.reject(new Error('deck metadata unavailable'));
-        if (deckResponseError) return Promise.resolve({ ok: false, error: 'deck metadata unavailable' });
-        return Promise.resolve({ ok: true, decks });
+        const response = deckResponseError ? { ok: false, error: 'deck metadata unavailable' } : { ok: true, decks };
+        const tagged = metadataGeneration ? { ...response, generation: metadataGeneration, scope: deckScope } : response;
+        if (deckResponsePending) return new Promise(resolve => { resolveDeckResponse = () => resolve(tagged); });
+        return Promise.resolve(tagged);
       }
       if (message.type === 'TRANSLATE_SELECTION') {
         if (translatePending) return new Promise(resolve => { resolveTranslate = resolve; });
@@ -144,13 +154,19 @@ const createPopupContext = async ({
         return Promise.resolve({ ok: true, id: 'job_123456789', text: 'resilient' });
       }
       if (message.type === 'GET_DUE_COUNT') {
-        return Promise.resolve({ ok: true, count: dueCount });
+        const response = metadataGeneration
+          ? { ok: true, count: dueCount, generation: metadataGeneration, scope: dueScope }
+          : { ok: true, count: dueCount };
+        if (dueResponsePending) return new Promise(resolve => { resolveDueResponse = () => resolve(response); });
+        return Promise.resolve(response);
       }
       if (message.type === 'RETRY_QUICK_ADD') {
         return Promise.resolve(retryQuickAddResponse);
       }
       if (message.type === 'GET_COURSE_LOCALE') {
-        return Promise.resolve(courseLocaleResponse);
+        return Promise.resolve(metadataGeneration
+          ? { ...courseLocaleResponse, generation: metadataGeneration, scope: localeScope }
+          : courseLocaleResponse);
       }
       return Promise.resolve({ ok: true });
     },
@@ -238,6 +254,8 @@ const createPopupContext = async ({
     permissionCalls,
     resolveTranslate: value => resolveTranslate(value),
     resolveSelection: value => resolveSelection(value),
+    resolveDeckResponse: () => resolveDeckResponse(),
+    resolveDueResponse: () => resolveDueResponse(),
     speechSynthesis,
     fetchCalls,
     get closeCalls() { return closeCalls; },
@@ -584,6 +602,77 @@ test('shows a real synced due count next to the library link, never a placeholde
   const withoutCount = await createPopupContext({ dueCount: null });
   assert.equal(withoutCount.elements.get('due-count-suffix').hidden, true);
   assert.equal(withoutCount.elements.get('due-count-suffix').textContent, '');
+});
+
+test('clears rendered deck, due-count, and course-locale metadata when the provider retires', async () => {
+  const popup = await createPopupContext({
+    decks: ['Owner A'],
+    dueCount: 12,
+    metadataGeneration: 1,
+    deckScope: 'opaque_scope_deck_a_123456',
+    dueScope: 'opaque_scope_due_a_123456',
+    localeScope: 'opaque_scope_locale_a_123456',
+    courseLocaleResponse: { ok: true, nativeLanguage: 'vi', targetLanguage: 'ko' },
+  });
+  assert.equal(popup.elements.get('requested-deck').children.some(child => child.textContent === 'Owner A'), true);
+  assert.equal(popup.elements.get('due-count-suffix').hidden, false);
+  assert.equal(popup.elements.get('target-language-label').hidden, false);
+
+  popup.runtimeListeners[0]({
+    type: 'LINGOFLASH_EXTENSION_METADATA_INVALIDATED',
+    generation: 1,
+    scopes: {
+      deck: 'opaque_scope_deck_a_123456',
+      due: 'opaque_scope_due_a_123456',
+      locale: 'opaque_scope_locale_a_123456',
+    },
+  });
+
+  assert.equal(popup.elements.get('requested-deck').children.length, 0);
+  assert.equal(popup.elements.get('requested-deck').disabled, true);
+  assert.equal(popup.elements.get('due-count-suffix').hidden, true);
+  assert.equal(popup.elements.get('due-count-suffix').textContent, '');
+  assert.equal(popup.elements.get('target-language-label').hidden, true);
+  assert.equal(popup.elements.get('target-language-label').textContent, '');
+});
+
+test('ignores a late due-count response for a retired provider scope', async () => {
+  const popup = await createPopupContext({
+    dueCount: 12,
+    dueResponsePending: true,
+    metadataGeneration: 1,
+    dueScope: 'opaque_scope_due_a_123456',
+  });
+  popup.runtimeListeners[0]({
+    type: 'LINGOFLASH_EXTENSION_METADATA_INVALIDATED',
+    generation: 1,
+    scopes: { due: 'opaque_scope_due_a_123456' },
+  });
+  popup.resolveDueResponse();
+  await new Promise(resolve => setImmediate(resolve));
+
+  assert.equal(popup.elements.get('due-count-suffix').hidden, true);
+  assert.equal(popup.elements.get('due-count-suffix').textContent, '');
+  assert.equal(popup.elements.get('open-app-label').textContent, 'Đăng nhập');
+});
+
+test('accepts a fresh same-generation due scope after the old scope retires', async () => {
+  const popup = await createPopupContext({
+    dueCount: 12,
+    dueResponsePending: true,
+    metadataGeneration: 1,
+    dueScope: 'opaque_scope_due_b_123456',
+  });
+  popup.runtimeListeners[0]({
+    type: 'LINGOFLASH_EXTENSION_METADATA_INVALIDATED',
+    generation: 1,
+    scopes: { due: 'opaque_scope_due_a_123456' },
+  });
+  popup.resolveDueResponse();
+  await new Promise(resolve => setImmediate(resolve));
+
+  assert.equal(popup.elements.get('due-count-suffix').hidden, false);
+  assert.equal(popup.elements.get('due-count-suffix').textContent, '12 thẻ đến hạn');
 });
 
 test('clicking the due-count badge opens the app on the session it is counting, not the plain library (07.6)', async () => {

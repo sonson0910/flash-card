@@ -11,6 +11,7 @@ const {
   applyColorScheme,
   applyThemeFamily,
   applyCourseUiLocale,
+  invalidateExtensionMetadata,
   getActiveCourseTargetLanguage,
   readSettings,
 } = globalThis.LingoFlashExtension;
@@ -81,6 +82,33 @@ let selectionInputTouched = false;
 let decksReady = false;
 const pendingQuickAddStatuses = new Map();
 const speechRequestIds = new WeakMap();
+const METADATA_INVALIDATED_MESSAGE = 'LINGOFLASH_EXTENSION_METADATA_INVALIDATED';
+const metadataState = {
+  deck: { generation: 0, scope: '' },
+  due: { generation: 0, scope: '' },
+  locale: { generation: 0, scope: '' },
+};
+const invalidatedMetadataKeys = new Set();
+let metadataInvalidationEpoch = 0;
+const normalizeMetadataGeneration = value => Number.isSafeInteger(value) && value > 0 ? value : 0;
+const normalizeMetadataScope = value => typeof value === 'string' ? value.trim() : '';
+const metadataKey = (channel, generation, scope) => `${channel}:${generation}:${scope || '*'}`;
+const metadataResponseIsCurrent = (channel, response) => {
+  const generation = normalizeMetadataGeneration(response?.generation);
+  const scope = normalizeMetadataScope(response?.scope);
+  // Old workers did not tag GET responses. Preserve that wire compatibility;
+  // current workers always include generation/scope before exposing data.
+  if (!generation) return true;
+  if (invalidatedMetadataKeys.has(metadataKey(channel, generation, scope))
+    || invalidatedMetadataKeys.has(metadataKey(channel, generation, ''))) return false;
+  const state = metadataState[channel];
+  if (!state) return false;
+  if (state.generation > generation) return false;
+  if (state.generation === generation && state.scope && scope && state.scope !== scope) return false;
+  state.generation = generation;
+  state.scope = scope;
+  return true;
+};
 const speechLocaleForLanguage = value => {
   const code = String(value || '').toLowerCase().split('-')[0];
   const locales = { en: 'en-US', vi: 'vi-VN', fr: 'fr-FR', de: 'de-DE', es: 'es-ES', it: 'it-IT', pt: 'pt-BR', ja: 'ja-JP', ko: 'ko-KR', zh: 'zh-CN', ru: 'ru-RU' };
@@ -116,6 +144,52 @@ const renderTargetLanguageLabel = targetLanguage => {
   targetLanguageLabel.textContent = language;
   targetLanguageLabel.setAttribute('aria-label', t('targetLanguageBadgeAria', [language], `Ngôn ngữ đích: ${language}`));
   targetLanguageLabel.hidden = false;
+};
+
+const clearDeckMetadataView = () => {
+  decksReady = false;
+  requestedDeckSelect?.replaceChildren();
+  if (requestedDeckSelect) requestedDeckSelect.disabled = true;
+  if (deckStatus) {
+    deckStatus.textContent = t('deckSyncError', undefined, 'Chưa đồng bộ được deck; hãy mở SonFlash một lần.');
+    deckStatus.dataset.tone = 'error';
+  }
+  updateInputState();
+};
+
+const clearDueCountView = () => {
+  if (dueCountSuffix) {
+    dueCountSuffix.hidden = true;
+    dueCountSuffix.textContent = '';
+  }
+  setOpenAppLabel(false);
+};
+
+const handleMetadataInvalidation = message => {
+  if (!message || typeof message !== 'object' || Array.isArray(message)) return;
+  const generation = normalizeMetadataGeneration(message.generation);
+  const scopes = message.scopes;
+  if (!generation || !scopes || typeof scopes !== 'object' || Array.isArray(scopes)) return;
+  metadataInvalidationEpoch += 1;
+
+  for (const channel of ['deck', 'due', 'locale']) {
+    if (!Object.prototype.hasOwnProperty.call(scopes, channel)) continue;
+    const scope = normalizeMetadataScope(scopes[channel]);
+    invalidatedMetadataKeys.add(metadataKey(channel, generation, scope));
+    const state = metadataState[channel];
+    if (state.generation > generation
+      || (state.generation === generation && state.scope && scope && state.scope !== scope)) continue;
+    state.generation = Math.max(state.generation, generation);
+    state.scope = '';
+    if (channel === 'deck') clearDeckMetadataView();
+    if (channel === 'due') clearDueCountView();
+  }
+
+  if (Object.prototype.hasOwnProperty.call(scopes, 'locale')) {
+    invalidateExtensionMetadata?.(message);
+    localizeDocument(document);
+    renderTargetLanguageLabel(getActiveCourseTargetLanguage());
+  }
 };
 
 const renderResultCard = ({ word = '', translation = '', phonetic = '', explanation = '', example = '', exampleTranslation = '', sourceLanguage = '', speechLocale = '', canSave = false, status = '' } = {}) => {
@@ -484,6 +558,7 @@ const applyQuickAddStatus = payload => {
 
 extensionApi.runtime?.onMessage?.addListener?.(message => {
   if (message?.type === 'QUICK_ADD_STATUS') applyQuickAddStatus(message.payload);
+  if (message?.type === METADATA_INVALIDATED_MESSAGE) handleMetadataInvalidation(message);
 });
 
 const loadSelection = async () => {
@@ -639,12 +714,18 @@ const loadRecentLookups = async () => {
 
 const loadDecks = async () => {
   if (!requestedDeckSelect) return;
+  const requestEpoch = metadataInvalidationEpoch;
   decksReady = false;
   requestedDeckSelect.disabled = true;
   if (deckStatus) deckStatus.dataset.tone = 'busy';
   updateInputState();
   try {
     const response = await sendMessage({ type: 'GET_DECKS' });
+    if ((!normalizeMetadataGeneration(response?.generation) && requestEpoch !== metadataInvalidationEpoch)
+      || !metadataResponseIsCurrent('deck', response)) {
+      clearDeckMetadataView();
+      return;
+    }
     if (!response?.ok) throw new Error(response?.error || t('errorReadRecentUnavailable', undefined, 'Không thể đọc danh sách deck.'));
     const decks = Array.isArray(response?.decks) ? response.decks : [];
     requestedDeckSelect.replaceChildren();
@@ -808,8 +889,14 @@ const setOpenAppLabel = signedIn => {
 
 const loadDueCount = async () => {
   if (!dueCountSuffix) return;
+  const requestEpoch = metadataInvalidationEpoch;
   try {
     const response = await sendMessage({ type: 'GET_DUE_COUNT' });
+    if ((!normalizeMetadataGeneration(response?.generation) && requestEpoch !== metadataInvalidationEpoch)
+      || !metadataResponseIsCurrent('due', response)) {
+      clearDueCountView();
+      return;
+    }
     if (response?.ok && Number.isSafeInteger(response.count) && response.count >= 0) {
       dueCountSuffix.textContent = t('dueCountBadge', [response.count], `${response.count} thẻ đến hạn`);
       dueCountSuffix.hidden = false;

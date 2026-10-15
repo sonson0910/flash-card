@@ -42,13 +42,13 @@ already use) is not implemented yet; see the phase report for what remains.
 
 ## Due-card badge
 
-The library link in the popup can show a real, synced due-card count (07.6).
-It is always driven by state the signed-in app actually posted through the
-same-origin bridge — like deck names, it is session-only, scoped, and retired
-on account switch so a previous account's count can never leak. It stays
-hidden (no placeholder number) until the app has synced a real value; the
-small app-side change needed to start sending it is out of this phase's file
-ownership and is tracked in the phase report.
+The browser action and library link in the popup show a real, synced due-card
+count (07.6). It is always driven by state the signed-in app actually posted
+through the same-origin bridge — like deck names, it is session-only, scoped,
+and retired on account switch so a previous account's count can never leak.
+It stays hidden (no placeholder number) until the app has synced a real value.
+The action badge clears while a restarted worker awaits fresh scope proof; a
+browser without action-badge support still shows the count in the popup.
 
 ## Security
 
