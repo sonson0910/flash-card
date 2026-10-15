@@ -159,10 +159,14 @@ test.describe('WebWords page', () => {
 
     await page.getByRole('button', { name: "Start today's session" }).click();
     await expect(page.getByText('selected-latest', { exact: true })).toBeVisible();
-    await expect.poll(() => readSessionPointer(page, testUser.uid).then(pointer => pointer?.freshLogicalIds.length)).toBe(15);
+    const expectedFreshLogicalIds = ['selected-latest', 'older-0', 'older-1', 'older-2', 'older-3'];
+    await expect.poll(() => readSessionPointer(page, testUser.uid).then(pointer => pointer?.freshLogicalIds))
+      .toEqual(expectedFreshLogicalIds);
 
     await page.reload();
     await expect(page.getByText('selected-latest', { exact: true })).toBeVisible();
+    await expect.poll(() => readSessionPointer(page, testUser.uid).then(pointer => pointer?.freshLogicalIds))
+      .toEqual(expectedFreshLogicalIds);
   });
 
   test('puts a newly added word at the front of an already-started session\'s new stage, never duplicating it', async ({
