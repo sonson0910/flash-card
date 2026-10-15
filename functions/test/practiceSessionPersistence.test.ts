@@ -100,23 +100,44 @@ describe('practice session persistence', () => {
     await expect(startPracticeSessionV1(test.database, 'owner', request(), new Date('2026-09-27T11:00:00.000Z'))).resolves.toEqual(first);
   });
 
-  it('computes spelling XP from the stored key and writes session, stats, and history', async () => {
+  it('scores spelling with the persisted target-language normalization and writes session, stats, and history', async () => {
     const test = harness({
-      'users/owner/cards/card-1': card('card-1', 'hello', 'xin chào'),
-      'users/owner/cards/card-2': card('card-2', 'bye', 'tạm biệt'),
+      'users/owner/cards/card-1': { ...card('card-1', 'カタカナ', 'katakana'), language: 'ja' },
+      'users/owner/cards/card-2': { ...card('card-2', 'café', 'coffee'), language: 'en' },
     });
     await startPracticeSessionV1(test.database, 'owner', request(), new Date('2026-09-27T10:00:00.000Z'));
+    expect(test.values.get('users/owner/practice_sessions/practice-1')?.answerKey).toMatchObject([
+      { targetLanguage: 'ja' }, { targetLanguage: 'en' },
+    ]);
     test.reads.length = 0;
     test.writes.length = 0;
     const result = await completePracticeSessionV1(test.database, 'owner', {
       sessionId: 'practice-1', completionId: 'complete-1', timeZone: 'UTC',
-      answers: { responses: { 'card-1': 'hello', 'card-2': 'wrong' } },
+      answers: { responses: { 'card-1': 'ｶﾀｶﾅ', 'card-2': 'ＣＡＦÉ' } },
     }, new Date('2026-09-27T10:01:00.000Z'));
-    expect(result).toMatchObject({ correct: 1, total: 2, awardedXp: 5, outcome: { xp: 5 } });
+    expect(result).toMatchObject({ correct: 2, total: 2, awardedXp: 10, outcome: { xp: 10 } });
     expect(test.reads).toEqual(['users/owner/practice_sessions/practice-1', 'users/owner/profile/stats']);
     expect(test.writes.map(write => write.path)).toEqual([
       'users/owner/profile/stats', 'users/owner/profile/xp_history', 'users/owner/practice_sessions/practice-1',
     ]);
+  });
+
+  it('accepts legacy spelling answer keys without a target language', async () => {
+    const test = harness({
+      'users/owner/cards/card-1': card('card-1', 'hello', 'xin chào'),
+    });
+    await startPracticeSessionV1(test.database, 'owner', request({ cardIds: ['card-1'] }), new Date('2026-09-27T10:00:00.000Z'));
+    const path = 'users/owner/practice_sessions/practice-1';
+    const session = test.values.get(path)!;
+    test.values.set(path, {
+      ...session,
+      answerKey: session.answerKey.map(({ targetLanguage: _targetLanguage, ...answer }: { targetLanguage: string; cardId: string; word: string; translation: string }) => answer),
+    });
+
+    await expect(completePracticeSessionV1(test.database, 'owner', {
+      sessionId: 'practice-1', completionId: 'complete-1', timeZone: 'UTC',
+      answers: { responses: { 'card-1': 'ＨＥＬＬＯ' } },
+    }, new Date('2026-09-27T10:01:00.000Z'))).resolves.toMatchObject({ correct: 1, awardedXp: 5 });
   });
 
   it('replays a completed result from the session alone and rejects changed answers', async () => {

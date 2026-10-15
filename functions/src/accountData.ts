@@ -13,7 +13,8 @@ export const ACCOUNT_RATE_SCOPES = [
   'purchase-intent', 'card-review', 'shared-deck-create', 'shared-deck-create-service-owner',
   'shared-deck-revoke', 'legacy-library-migration', 'account-export', 'practice-session-start',
   'practice-session-complete', 'reward-frame-equip',
-  'clear-library-page',
+  'clear-library-page', 'card-headword-rename', 'bulk-card-mutation', 'course-profile',
+  'reminder-settings', 'push-token-revoke', 'push-session-end', 'ai-card-cancel', 'ai-tutor-turn',
 ] as const;
 
 const jsonValue = (value: unknown): unknown => {
@@ -32,17 +33,28 @@ const rows = async (query: Query) => (await query.get()).docs.map(doc => ({ id: 
 export async function exportAccountData(database: Firestore, uid: string, key: string) {
   const owner = database.collection('users').doc(uid);
   const pid = analyticsPseudonym(uid, key);
-  const [profile, entitlements, aiUsage, aiDaily, xpStreams, reviewReceipts, cardCreateReceipts, practiceSessions, reports, events] = await Promise.all([
+  const [profile, entitlements, paymentReceipts, catalogProgress, aiUsage, aiDaily, xpStreams, reviewReceipts, reviewXpAwards, cardCreateReceipts, practiceSessions,
+    reminderState, reminderReceipts, pushTokens, pushTokenSessionCutoffs, pushTokenOwners,
+    mail, reports, events] = await Promise.all([
     rows(owner.collection('profile')), rows(owner.collection('entitlements')),
+    rows(owner.collection('payment_receipts')), rows(owner.collection('catalog_progress')),
     rows(owner.collection('ai_usage')), rows(owner.collection('ai_daily')),
     rows(owner.collection('xp_streams')),
     rows(owner.collection('review_receipts')),
+    rows(owner.collection('review_xp_awards')),
     rows(owner.collection('card_create_receipts')), rows(owner.collection('practice_sessions')),
+    rows(owner.collection('reminderState')), rows(owner.collection('reminderReceipts')),
+    rows(owner.collection('pushTokens')),
+    rows(owner.collection('pushTokenSessionCutoffs')),
+    rows(database.collection('pushTokenOwners').where('ownerId', '==', uid)),
+    rows(database.collection('mail').where('ownerId', '==', uid)),
     rows(database.collection('card_reports').where('uid', '==', uid)),
     database.collection('analytics_events').where('pid', '==', pid).count().get(),
   ]);
-  return jsonValue({ exportedAt: new Date(), profile, entitlements, aiUsage, aiDaily,
-    xpStreams, reviewReceipts, cardCreateReceipts, practiceSessions, cardReports: reports,
+  return jsonValue({ exportedAt: new Date(), profile, entitlements, paymentReceipts, catalogProgress, aiUsage, aiDaily,
+    xpStreams, reviewReceipts, reviewXpAwards, cardCreateReceipts, practiceSessions,
+    reminderState, reminderReceipts, pushTokens, pushTokenSessionCutoffs, pushTokenOwners,
+    mail, cardReports: reports,
     analyticsEventCount: events.data().count });
 }
 
@@ -83,11 +95,28 @@ async function revokeOwnSharedDecks(database: Firestore, uid: string): Promise<v
   }
 }
 
+async function deleteOwnedPushRegistrations(database: Firestore, uid: string): Promise<void> {
+  const registrations = database.collection('pushTokenOwners').where('ownerId', '==', uid);
+  for (;;) {
+    const snapshot = await registrations.limit(100).get();
+    if (snapshot.empty) return;
+    for (const candidate of snapshot.docs) {
+      await database.runTransaction(async transaction => {
+        const current = await transaction.get(candidate.ref);
+        if (current.data()?.ownerId === uid) transaction.delete(candidate.ref);
+      });
+    }
+  }
+}
+
 export async function purgeAccountData(database: Firestore, uid: string, pid: string): Promise<void> {
+  await deleteOwnedPushRegistrations(database, uid);
   await database.recursiveDelete(database.collection('users').doc(uid));
   await deleteQuery(database, database.collection('ai_cost_ledger').where('uid', '==', uid));
   await deleteQuery(database, database.collection('card_reports').where('uid', '==', uid));
+  await deleteQuery(database, database.collection('mail').where('ownerId', '==', uid));
   await deleteQuery(database, database.collection('analytics_events').where('pid', '==', pid));
+  // payment_settlements stay: they hold only the pid and back the books for ten years.
   await deleteQuery(database, database.collection('admin_shared_deck_migration_quarantine')
     .where('ownerUid', '==', uid));
   await database.collection('_serviceConfig').doc('pilotExclusions')

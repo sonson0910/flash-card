@@ -29,10 +29,19 @@ describe('vocabulary AI request budgets', () => {
     });
   });
 
+  it('bounds tutor turns separately from card generation', () => {
+    expect(getVocabularyAiBudget('tutor')).toEqual({
+      scope: 'ai-tutor-turn',
+      maximum: 60,
+      message: 'Tutor limit reached. Try again later.',
+    });
+  });
+
   it('only enables the memory fallback for declared vocabulary AI scopes', () => {
     expect(isVocabularyAiRateLimitScope('ai-card')).toBe(true);
     expect(isVocabularyAiRateLimitScope('ai-story')).toBe(true);
     expect(isVocabularyAiRateLimitScope('ai-translate')).toBe(true);
+    expect(isVocabularyAiRateLimitScope('ai-tutor-turn')).toBe(true);
     expect(isVocabularyAiRateLimitScope('ai')).toBe(false);
     expect(isVocabularyAiRateLimitScope('image')).toBe(false);
   });

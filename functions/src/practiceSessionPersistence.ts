@@ -28,10 +28,11 @@ export type CompletePracticeSessionV1Request = {
   timeZone?: string;
 };
 
-type SessionCard = { cardId: string; word: string; translation: string };
+type TargetLanguage = 'en' | 'ko' | 'ja' | 'zh';
+type SessionCard = { cardId: string; word: string; translation: string; targetLanguage: TargetLanguage };
 type QuizChallenge = { kind: 'quiz'; questions: Array<{ cardId: string; prompt: string; options: string[] }> };
 type SpellingChallenge = { kind: 'spelling'; prompts: Array<{ cardId: string; prompt: string; word: string }> };
-type MatchChallenge = { kind: 'match'; cards: SessionCard[] };
+type MatchChallenge = { kind: 'match'; cards: Array<Omit<SessionCard, 'targetLanguage'>> };
 export type PracticeSessionChallenge = QuizChallenge | SpellingChallenge | MatchChallenge;
 export type StartPracticeSessionV1Response = {
   sessionId: string;
@@ -64,6 +65,16 @@ const identifier = (value: unknown, message: string): string => {
 const text = (value: unknown, message: string): string => {
   if (typeof value !== 'string' || value.trim().length === 0 || value.length > MAX_TEXT) throw new InputValidationError(message);
   return value.trim();
+};
+
+const targetLanguage = (value: unknown): TargetLanguage => {
+  const code = typeof value === 'string' ? value.trim().toLowerCase().split('-')[0] : '';
+  return code === 'ko' || code === 'ja' || code === 'zh' ? code : 'en';
+};
+
+const normalizeSpellingAnswer = (value: string, language: TargetLanguage): string => {
+  const normalized = value.normalize('NFKC').trim().replace(/\s+/g, ' ');
+  return language === 'en' ? normalized.toLocaleLowerCase('en-US') : normalized;
 };
 
 const canonicalJson = (value: unknown): string => {
@@ -150,7 +161,12 @@ const asDate = (value: unknown): Date | null => {
 const cardsFromSnapshots = (cardIds: readonly string[], snapshots: readonly DocumentSnapshot[]): SessionCard[] => snapshots.map((snapshot, index) => {
   const data = snapshot.data();
   if (!snapshot.exists || !data) throw new InputValidationError('Practice session card is missing.');
-  return { cardId: cardIds[index], word: text(data.word, 'Practice session card word is invalid.'), translation: text(data.translation, 'Practice session card translation is invalid.') };
+  return {
+    cardId: cardIds[index],
+    word: text(data.word, 'Practice session card word is invalid.'),
+    translation: text(data.translation, 'Practice session card translation is invalid.'),
+    targetLanguage: targetLanguage(data.language),
+  };
 });
 
 const buildChallenge = (game: PracticeSessionGame, cards: SessionCard[]): PracticeSessionChallenge => {
@@ -158,7 +174,10 @@ const buildChallenge = (game: PracticeSessionGame, cards: SessionCard[]): Practi
     kind: 'spelling',
     prompts: cards.map(card => ({ cardId: card.cardId, prompt: card.translation, word: card.word })),
   };
-  if (game === 'match') return { kind: 'match', cards };
+  if (game === 'match') return {
+    kind: 'match',
+    cards: cards.map(({ cardId, word, translation }) => ({ cardId, word, translation })),
+  };
   return {
     kind: 'quiz',
     questions: cards.map(card => {
@@ -221,7 +240,12 @@ const sessionCards = (data: Record<string, unknown>): SessionCard[] => {
   }
   return data.answerKey.map(value => {
     const source = record(value, 'Practice session answer key is invalid.');
-    return { cardId: identifier(source.cardId, 'Practice session answer key is invalid.'), word: text(source.word, 'Practice session answer key is invalid.'), translation: text(source.translation, 'Practice session answer key is invalid.') };
+    return {
+      cardId: identifier(source.cardId, 'Practice session answer key is invalid.'),
+      word: text(source.word, 'Practice session answer key is invalid.'),
+      translation: text(source.translation, 'Practice session answer key is invalid.'),
+      targetLanguage: targetLanguage(source.targetLanguage),
+    };
   });
 };
 
@@ -236,8 +260,9 @@ const score = (game: PracticeSessionGame, cards: SessionCard[], answers: Practic
   }
   if (!('responses' in answers) || Object.keys(answers.responses).length !== cards.length
     || !cards.every(card => Object.hasOwn(answers.responses, card.cardId))) throw new InputValidationError('Practice answers do not match the session.');
-  const correct = cards.filter(card => answers.responses[card.cardId].trim().toLocaleLowerCase('en-US')
-    === (game === 'quiz' ? card.translation : card.word).trim().toLocaleLowerCase('en-US')).length;
+  const correct = cards.filter(card => game === 'quiz'
+    ? answers.responses[card.cardId].trim().toLocaleLowerCase('en-US') === card.translation.trim().toLocaleLowerCase('en-US')
+    : normalizeSpellingAnswer(answers.responses[card.cardId], card.targetLanguage) === normalizeSpellingAnswer(card.word, card.targetLanguage)).length;
   return { correct, total: cards.length, awardedXp: correct * 5 };
 };
 

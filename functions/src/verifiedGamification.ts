@@ -1,5 +1,6 @@
 import type { DocumentData, DocumentReference, Firestore, Transaction } from 'firebase-admin/firestore';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { createHash } from 'node:crypto';
 import { InputValidationError } from './inputValidation.js';
 
 const VERIFIED_SCHEMA_VERSION = 1;
@@ -20,6 +21,7 @@ export type VerifiedGamificationAction = {
   targetLanguage?: string;
   rating?: 'again' | 'hard' | 'good' | 'easy';
   resultXp?: number;
+  cardId?: string;
 };
 
 export type VerifiedGamificationOutcome = {
@@ -29,21 +31,27 @@ export type VerifiedGamificationOutcome = {
   studyDay: string;
   events: RewardEvent[];
   rewardTimeZone: string;
+  xpAwarded?: number;
   reviewActivity?: VerifiedReviewActivity;
 };
 
 export type PreparedVerifiedGamification = {
   outcome: VerifiedGamificationOutcome;
   statsRef: DocumentReference;
-  historyRef: DocumentReference;
+  historyRef?: DocumentReference;
   rewardsRef?: DocumentReference;
   statsPatch: DocumentData;
-  historyPatch: DocumentData;
+  historyPatch?: DocumentData;
+  hasXpAward: boolean;
+  reviewXpAwardRef?: DocumentReference;
+  reviewXpAwardPatch?: DocumentData;
   rewardsPatch?: DocumentData;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const isReceiptTime = (value: unknown): boolean => value instanceof Date || value instanceof Timestamp;
 
 const ownerReferences = (database: Firestore, ownerId: string) => {
   if (!ownerId || ownerId.includes('/')) throw new InputValidationError('Gamification owner is invalid.');
@@ -99,6 +107,13 @@ const isLocalDay = (value: unknown): value is string => {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(`${value}T00:00:00.000Z`);
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+
+export const reviewXpAwardId = (cardId: string, studyDay: string): string => {
+  if (!/^[a-zA-Z0-9_-]{1,128}$/.test(cardId) || !isLocalDay(studyDay)) {
+    throw new InputValidationError('Verified review award identity is invalid.');
+  }
+  return createHash('sha256').update(`${cardId}\u0000${studyDay}`).digest('hex');
 };
 
 const activityWindowStart = (day: string): string => {
@@ -203,6 +218,10 @@ export async function prepareVerifiedGamification(
   const statsSnapshot = await transaction.get(refs.stats);
   const statsData = statsSnapshot.data();
   const stats: Record<string, unknown> = statsSnapshot.exists && isRecord(statsData) ? statsData : {};
+  const lastVerifiedReviewAt = stats.lastVerifiedReviewAt;
+  if (lastVerifiedReviewAt !== undefined && lastVerifiedReviewAt !== null && !(lastVerifiedReviewAt instanceof Timestamp)) {
+    throw new InputValidationError('Stored verified review time is invalid.');
+  }
   const storedTimeZone = canonicalTimeZone(stats.rewardTimeZone);
   if (stats.rewardTimeZone !== undefined && !storedTimeZone) {
     throw new InputValidationError('Stored reward time zone is invalid.');
@@ -213,11 +232,28 @@ export async function prepareVerifiedGamification(
   }
   const timeZone = storedTimeZone ?? actionTimeZone as string;
   const studyDay = dayInTimeZone(action.receivedAt, timeZone);
+  if (action.kind === 'review' && (typeof action.cardId !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(action.cardId))) {
+    throw new InputValidationError('Verified review card is invalid.');
+  }
+  const awardId = action.kind === 'review' ? reviewXpAwardId(action.cardId!, studyDay) : undefined;
+  const reviewXpAwardRef = awardId === undefined ? undefined
+    : database.collection('users').doc(ownerId).collection('review_xp_awards').doc(awardId);
+  const awardSnapshot = reviewXpAwardRef === undefined ? undefined : await transaction.get(reviewXpAwardRef);
+  if (awardSnapshot?.exists) {
+    const award = awardSnapshot.data();
+    if (!isRecord(award) || award.schemaVersion !== VERIFIED_SCHEMA_VERSION || award.ownerId !== ownerId
+      || award.cardId !== action.cardId || award.studyDay !== studyDay || award.xpAwarded !== 2
+      || !isReceiptTime(award.expiresAt)) {
+      throw new InputValidationError('Stored review XP award is invalid.');
+    }
+  }
+  const xpAwarded = action.kind === 'review' ? (awardSnapshot?.exists ? 0 : xpFor(action)) : xpFor(action);
+  const hasXpAward = xpAwarded > 0;
   const activity = action.kind === 'review' && storedTimeZone
     ? nextReviewActivity(stats.reviewActivityV1, action.targetLanguage, studyDay, action.rating ?? '')
     : undefined;
   const xp = counter(stats.verifiedXp);
-  const nextXp = xp + xpFor(action);
+  const nextXp = xp + xpAwarded;
   if (!Number.isSafeInteger(nextXp)) throw new InputValidationError('Verified XP exceeds its limit.');
   const oldLevel = levelForXp(xp);
   const level = levelForXp(nextXp);
@@ -229,7 +265,7 @@ export async function prepareVerifiedGamification(
     ? streak
     : lastDay === previousDay(studyDay) ? streak + 1 : 1;
   const streakThreshold = streak < 30 && nextStreak >= 30;
-  const levelThreshold = oldLevel < 13 && level >= 13;
+  const levelThreshold = hasXpAward && oldLevel < 13 && level >= 13;
   let rewards: Record<string, unknown> = {};
   if (streakThreshold || levelThreshold) {
     const rewardsSnapshot = await transaction.get(refs.rewards);
@@ -258,10 +294,10 @@ export async function prepareVerifiedGamification(
   return {
     outcome: {
       xp: nextXp, level, streak: nextStreak, studyDay, events, rewardTimeZone: timeZone,
+      ...(action.kind === 'review' ? { xpAwarded } : {}),
       ...(activityOutcome ? { reviewActivity: activityOutcome } : {}),
     },
     statsRef: refs.stats,
-    historyRef: refs.history,
     rewardsRef: hasRewardsPatch ? refs.rewards : undefined,
     statsPatch: {
       ...(statsSnapshot.exists ? {} : { streak: 0, xp: 0, lastActive: null }),
@@ -272,9 +308,21 @@ export async function prepareVerifiedGamification(
         ? { lastVerifiedStudyDay: studyDay }
         : stats.lastVerifiedStudyDay === undefined ? { lastVerifiedStudyDay: null } : {}),
       ...(stats.rewardTimeZone === undefined ? { rewardTimeZone: timeZone } : {}),
+      ...(action.kind === 'review' && (!(lastVerifiedReviewAt instanceof Timestamp)
+        || action.receivedAt.getTime() > lastVerifiedReviewAt.toMillis())
+        ? { lastVerifiedReviewAt: Timestamp.fromDate(action.receivedAt) } : {}),
       ...(activity ? { reviewActivityV1: activity } : {}),
     },
-    historyPatch: { verifiedByDayV1: { [studyDay]: FieldValue.increment(xpFor(action)) } },
+    ...(hasXpAward ? { historyRef: refs.history, historyPatch: { verifiedByDayV1: { [studyDay]: FieldValue.increment(xpAwarded) } } } : {}),
+    hasXpAward,
+    ...(hasXpAward && reviewXpAwardRef ? {
+      reviewXpAwardRef,
+      reviewXpAwardPatch: {
+        schemaVersion: VERIFIED_SCHEMA_VERSION, ownerId, cardId: action.cardId, studyDay, xpAwarded,
+        awardedAt: FieldValue.serverTimestamp(),
+        expiresAt: new Date(action.receivedAt.getTime() + 7 * 24 * 60 * 60 * 1000),
+      },
+    } : {}),
     rewardsPatch: hasRewardsPatch ? {
       schemaVersion: VERIFIED_SCHEMA_VERSION,
       receipts: rewardReceiptsPatch,
@@ -288,7 +336,8 @@ export function commitVerifiedGamification(
   prepared: PreparedVerifiedGamification,
 ): VerifiedGamificationOutcome {
   transaction.set(prepared.statsRef, prepared.statsPatch, { merge: true });
-  transaction.set(prepared.historyRef, prepared.historyPatch, { merge: true });
+  if (prepared.historyRef && prepared.historyPatch) transaction.set(prepared.historyRef, prepared.historyPatch, { merge: true });
+  if (prepared.reviewXpAwardRef && prepared.reviewXpAwardPatch) transaction.create(prepared.reviewXpAwardRef, prepared.reviewXpAwardPatch);
   if (prepared.rewardsRef && prepared.rewardsPatch) transaction.set(prepared.rewardsRef, prepared.rewardsPatch, { merge: true });
   return prepared.outcome;
 }

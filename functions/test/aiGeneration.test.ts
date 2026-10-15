@@ -8,6 +8,7 @@ describe('AI generation limits', () => {
       word: 2_048,
       story: 1_024,
       translate: 1_536,
+      tutor: 768,
     });
 
     for (const maximum of Object.values(MAX_AI_OUTPUT_TOKENS)) {
@@ -35,7 +36,7 @@ describe('AI generation limits', () => {
   it('wires the bounded configuration into every model request', () => {
     const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
 
-    for (const action of ['word', 'story', 'translate']) {
+    for (const action of ['word', 'story', 'translate', 'tutor']) {
       expect(source).toContain(`config: createAiGenerationConfig('${action}'`);
     }
   });
@@ -50,7 +51,7 @@ describe('AI generation limits', () => {
     const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
     const generateVocabulary = source.slice(
       source.indexOf('export const generateVocabulary'),
-      source.indexOf('export const findVocabularyImage'),
+      source.indexOf('export const cancelCardGeneration'),
     );
 
     expect(generateVocabulary).toMatch(/maxInstances:\s*1/);

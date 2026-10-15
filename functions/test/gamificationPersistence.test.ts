@@ -5,6 +5,7 @@ import type {
   Firestore,
   Transaction,
 } from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
@@ -277,6 +278,18 @@ describe('gamification persistence', () => {
         history: { 'Aug 9, 2026': 100 },
       },
       {
+        stats: {
+          ...validStats,
+          verifiedSchemaVersion: 1,
+          verifiedXp: 100,
+          verifiedStreak: 2,
+          lastVerifiedStudyDay: '2026-08-09',
+          rewardTimeZone: 'UTC',
+          lastVerifiedReviewAt: '2026-08-09T12:00:00.000Z',
+        },
+        history: { 'Aug 9, 2026': 100 },
+      },
+      {
         stats: validStats,
         history: { 'Aug 9, 2026': 100, verifiedByDayV1: { '2026-08-09': Number.POSITIVE_INFINITY } },
       },
@@ -350,6 +363,7 @@ describe('gamification persistence', () => {
         verifiedStreak: 4,
         lastVerifiedStudyDay: null,
         rewardTimeZone: 'Asia/Ho_Chi_Minh',
+        lastVerifiedReviewAt: Timestamp.fromDate(new Date('2026-08-09T12:00:00.000Z')),
       },
       'users/owner/profile/xp_history': {
         'Aug 9, 2026': 110,

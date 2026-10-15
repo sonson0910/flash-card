@@ -118,6 +118,13 @@ export async function settleWordOperation(database: Firestore, uid: string, oper
   });
 }
 
+export async function cancelWordOperation(database: Firestore, uid: string, operationId: string, now: Date): Promise<boolean> {
+  const operation = (await database.collection('users').doc(uid).collection('ai_operations').doc(operationId).get())
+    .data() as AiOperationRecord | undefined;
+  if (operation?.status !== 'reserved' || typeof operation.attemptId !== 'string') return false;
+  return settleWordOperation(database, uid, operationId, operation.attemptId, null, now);
+}
+
 export async function reserveNonCardAction(database: Firestore, uid: string, now: Date, config: PilotConfig): Promise<string> {
   const day = dayKey(now, config.pilotTimezone);
   const owner = database.collection('users').doc(uid);

@@ -563,22 +563,6 @@ service cloud.firestore {
         && data.normalizedWord.size() > 0;
     }
 
-    // Rules cannot recreate the byte-level V3 hash, so direct client updates
-    // prove the tuple against the immutable published lexeme it names. Trusted
-    // callable writes independently recompute the hash before persistence.
-    function hasValidCanonicalLexemeMetadata(data) {
-      let lexeme = /databases/$(database)/documents/lexemes/$(data.lexemeId);
-      return data.keys().hasAll(['lexemeId', 'language', 'senseKey', 'partOfSpeech', 'normalizedWord', 'normalizedLemma'])
-        && data.lexemeId is string
-        && exists(lexeme)
-        && get(lexeme).data.schemaVersion == 3
-        && get(lexeme).data.id == data.lexemeId
-        && get(lexeme).data.language == data.language
-        && get(lexeme).data.normalizedLemma == data.normalizedLemma
-        && get(lexeme).data.partOfSpeech == data.partOfSpeech
-        && get(lexeme).data.senseKey == data.senseKey;
-    }
-
     function hasValidCardIdentityUpdate(userId, cardId, data, epoch) {
       return (
         hasCardIdentity(resource.data)
@@ -795,7 +779,6 @@ service cloud.firestore {
     // actually changed.
     function isValidCardUpdate(data) {
       let fields = data.keys();
-      let previousFields = resource.data.keys();
       let mapDiff = data.diff(resource.data);
       let changed = mapDiff.affectedKeys();
       let canonicalFields = [
@@ -821,12 +804,12 @@ service cloud.firestore {
           'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'masteredAt', 'japanesePitchAccent', 'source'
         ])
         && (!removedCanonicalKey || isCanonical)
-        && !changed.hasAny(['origin'])
-        // Server-owned capture, mastery and pitch metadata cannot be
-        // introduced, removed or changed by a client update. Their write
-        // paths validate them before the Admin SDK persists a card.
-        && !changed.hasAny(['source', 'masteredAt', 'japanesePitchAccent'])
-        && !changed.hasAny(['language', 'translationLanguage'])
+        // Server-owned origin, capture, mastery, pitch and canonical lexeme
+        // identity cannot be introduced, removed or changed by a client update.
+        && !changed.hasAny([
+          'origin', 'source', 'masteredAt', 'japanesePitchAccent',
+          'lexemeId', 'language', 'translationLanguage', 'senseKey', 'normalizedLemma'
+        ])
         // language/translationLanguage are immutable after creation (the
         // guard above), so an update never introduces a malformed value
         // through this diff; it only ever carries an already-stored value
@@ -839,13 +822,7 @@ service cloud.firestore {
         && (isCanonical || fields.hasAll(['id', 'word', 'translation']))
         && (!fields.hasAny(['lexemeId', 'senseKey', 'normalizedLemma'])
           || (fields.hasAll(['lexemeId', 'language', 'senseKey', 'partOfSpeech', 'normalizedLemma'])
-            && hasValidCanonicalLexemeMetadata(data)
-            && (!previousFields.hasAny(['lexemeId', 'senseKey', 'normalizedLemma'])
-              || (data.lexemeId == resource.data.lexemeId
-                && data.language == resource.data.language
-                && data.senseKey == resource.data.senseKey
-                && data.partOfSpeech == resource.data.partOfSpeech
-                && data.normalizedLemma == resource.data.normalizedLemma))))
+            && !changed.hasAny(['partOfSpeech'])))
         && isValidChangedCardFields(data, changed);
     }
 
@@ -927,6 +904,11 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /users/{userId}/review_xp_awards/{awardId} {
+      // Award receipts are created and checked only by the review transaction.
+      allow read, write: if false;
+    }
+
     match /users/{userId}/profile/library_state {
       allow read: if isOwner(userId);
       // Only the trusted migration engine (Admin SDK, bypasses these Rules)
@@ -957,6 +939,27 @@ service cloud.firestore {
       // Admin writers validate nested review activity; clients cannot mutate stats.
       allow read: if isOwner(userId);
       allow create, update, delete: if false;
+    }
+
+    match /users/{userId}/reminderState/{stateId} {
+      allow get: if isOwner(userId) && stateId == 'current';
+      allow list, create, update, delete: if false;
+    }
+
+    match /users/{userId}/pushTokens/{tokenId} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId}/pushTokenSessionCutoffs/{tokenId} {
+      allow read, write: if false;
+    }
+
+    match /pushTokenOwners/{tokenId} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId}/reminderReceipts/{receiptId} {
+      allow read, write: if false;
     }
 
     // Reward inventory is server-authoritative. Owners may only hydrate their
@@ -1102,6 +1105,12 @@ service cloud.firestore {
     }
 
     match /catalog_audit/{eventId} {
+      allow read, write: if false;
+    }
+
+    // Trigger Email consumes these documents with Admin privileges. Clients
+    // must not enqueue mail or read a recipient's digest.
+    match /mail/{messageId} {
       allow read, write: if false;
     }
 

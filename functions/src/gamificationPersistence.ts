@@ -4,6 +4,7 @@ import type {
   Firestore,
   Transaction,
 } from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
 import { InputValidationError } from './inputValidation.js';
 
 export const MAX_XP_VALUE = Number.MAX_SAFE_INTEGER;
@@ -392,6 +393,7 @@ const parseStoredStats = (value: DocumentData | undefined): StoredGamificationSt
     'rewardTimeZone',
   ];
   const hasVerifiedSchema = verifiedKeys.some(key => Object.prototype.hasOwnProperty.call(source, key));
+  const hasVerifiedReviewAt = Object.prototype.hasOwnProperty.call(source, 'lastVerifiedReviewAt');
   const hasReviewActivity = Object.prototype.hasOwnProperty.call(source, REVIEW_ACTIVITY_FIELD);
   if (hasLegacySequenceMap && hasSchemaVersion) {
     throw new GamificationMigrationRequiredError();
@@ -404,6 +406,7 @@ const parseStoredStats = (value: DocumentData | undefined): StoredGamificationSt
       ? ['appliedXpSequenceByClient']
       : hasSchemaVersion ? ['xpStreamSchemaVersion'] : []),
     ...(hasVerifiedSchema ? verifiedKeys : []),
+    ...(hasVerifiedSchema && hasVerifiedReviewAt ? ['lastVerifiedReviewAt'] : []),
     ...(hasReviewActivity ? [REVIEW_ACTIVITY_FIELD] : []),
   ];
   if (Object.keys(source).length !== expectedKeys.length
@@ -436,6 +439,9 @@ const parseStoredStats = (value: DocumentData | undefined): StoredGamificationSt
     }
   }
   if (hasReviewActivity && (!hasVerifiedSchema || !validReviewActivity(source[REVIEW_ACTIVITY_FIELD]))) {
+    throw new GamificationMigrationRequiredError();
+  }
+  if (hasVerifiedReviewAt && source.lastVerifiedReviewAt !== null && !(source.lastVerifiedReviewAt instanceof Timestamp)) {
     throw new GamificationMigrationRequiredError();
   }
   const lastActive = source.lastActive === null ? null : validLastActive(source.lastActive);

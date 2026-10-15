@@ -2,9 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Firestore } from 'firebase-admin/firestore';
 import {
   analyticsCardRef, analyticsOpRef, analyticsPseudonym, ClientEventLimitError,
-  parseClientEvents, validateAnalyticsProps, writeAnalyticsEvent, writeClientEvents,
+  parseClientEvents, purchaseIntentOfferVersion, validateAnalyticsProps, writeAnalyticsEvent, writeClientEvents,
   type AnalyticsEventName,
 } from '../src/analyticsEvents.js';
+import { PILOT_CONFIG_DEFAULTS } from '../src/pilotConfig.js';
 
 const key = 'x'.repeat(32);
 const ref = 'a'.repeat(32);
@@ -17,7 +18,10 @@ const fixtures: Record<AnalyticsEventName, Record<string, unknown>> = {
   pro_granted: { source: 'operator' }, pro_revoked: { source: 'operator' },
   pro_expired: { offerId: 'pro-vn-30d-v1' },
   card_reported: { reason: 'wrong-meaning' },
-  purchase_intent: { trigger: 'quota', offerId: 'pro-vn-30d-v1', displayPriceVnd: null },
+  purchase_intent: {
+    trigger: 'quota', offerId: 'pro-vn-30d-v1', displayPriceVnd: null, offerVersion: null,
+    proMonthlyAiCards: null, proDurationDays: null,
+  },
   capture_started: { requestId, surface: 'app', appVersion: '1.0.0' },
   capture_failed: { requestId, surface: 'app', latencyMs: 500, errorCode: 'network', appVersion: '1.0.0' },
   paywall_viewed: { trigger: 'menu', offerId: 'pro-vn-30d-v1' },
@@ -40,6 +44,11 @@ describe('private analytics event schemas', () => {
     expect(analyticsCardRef('owner-a', 'word-lead', key)).not.toBe(analyticsCardRef('owner-b', 'word-lead', key));
     expect(analyticsOpRef(requestId, key)).toMatch(/^[a-f0-9]{32}$/);
     expect(analyticsOpRef(requestId, key)).not.toContain(requestId);
+  });
+
+  it('versions the exact server-owned purchase offer terms', () => {
+    expect(purchaseIntentOfferVersion({ ...PILOT_CONFIG_DEFAULTS, displayPriceVnd: 85_320 }))
+      .toBe('d013df77b4bb8010304b254b01d0e079ac6b4d2586c7a93559da85fa93d93c1c');
   });
 
   it('accepts only client events, drops unknown props and rejects invalid known values', () => {

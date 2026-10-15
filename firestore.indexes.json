@@ -1,6 +1,30 @@
 {
   "indexes": [
     {
+      "collectionGroup": "entitlements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "expiresAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "reminderState",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "channels.push", "order": "ASCENDING" },
+        { "fieldPath": "nextEligibleSendAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "reminderState",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "channels.emailDigest", "order": "ASCENDING" },
+        { "fieldPath": "nextWeeklyDigestAt", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "ai_operations",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
@@ -4215,6 +4239,12 @@
     {
       "collectionGroup": "sealed_manifest_chunks",
       "fieldPath": "entries",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "review_xp_awards",
+      "fieldPath": "expiresAt",
+      "ttl": true,
       "indexes": []
     }
   ]

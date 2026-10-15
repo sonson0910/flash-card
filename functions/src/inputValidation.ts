@@ -1,3 +1,10 @@
+import {
+  COURSE_NATIVE_LANGUAGES,
+  COURSE_TARGET_LANGUAGES,
+  type CourseNativeLanguage,
+  type CourseTargetLanguage,
+} from './course-profile-contract.js';
+
 export class InputValidationError extends Error {
   constructor(message: string) {
     super(message);
@@ -5,16 +12,24 @@ export class InputValidationError extends Error {
   }
 }
 
-export function parsePurchaseIntentRequest(value: unknown): { trigger: 'quota' | 'menu' } {
+export function parsePurchaseIntentRequest(value: unknown): { trigger: 'quota' | 'menu'; expectedOwnerId?: string; offerVersion?: string } {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new InputValidationError('Purchase intent must be an object.');
   }
   const source = value as Record<string, unknown>;
-  if (Object.keys(source).length !== 1 || !Object.hasOwn(source, 'trigger')
+  if (Object.keys(source).some(key => key !== 'trigger' && key !== 'expectedOwnerId' && key !== 'offerVersion') || !Object.hasOwn(source, 'trigger')
     || (source.trigger !== 'quota' && source.trigger !== 'menu')) {
     throw new InputValidationError('Purchase intent trigger must be quota or menu.');
   }
-  return { trigger: source.trigger };
+  const expectedOwnerId = parseExpectedOwnerId(source.expectedOwnerId);
+  if (source.offerVersion !== undefined && (typeof source.offerVersion !== 'string' || !/^[a-f0-9]{64}$/.test(source.offerVersion))) {
+    throw new InputValidationError('Purchase intent offer version is invalid.');
+  }
+  return {
+    trigger: source.trigger,
+    ...(expectedOwnerId === undefined ? {} : { expectedOwnerId }),
+    ...(source.offerVersion === undefined ? {} : { offerVersion: source.offerVersion }),
+  };
 }
 
 export const PART_OF_SPEECH_HINTS = [
@@ -27,7 +42,7 @@ export type PartOfSpeechHint = typeof PART_OF_SPEECH_HINTS[number];
 
 type VocabularyRequest =
   | { action: 'word'; word: string; operationId?: string; context?: string; language?: { source: string; target: string }; partOfSpeech?: PartOfSpeechHint }
-  | { action: 'story'; words: string[] }
+  | { action: 'story'; words: string[]; targetLanguage: CourseTargetLanguage; translationLanguage: CourseNativeLanguage }
   | { action: 'translate'; text: string };
 
 type ImageRequest = { word: string; query: string };
@@ -391,13 +406,34 @@ const SHARED_AUDIO_HOSTS = new Set([
   'ssl.gstatic.com',
 ]);
 
+const WORD_OPERATION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export const parseExpectedOwnerId = (value: unknown): string | undefined => {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string' || value.length === 0 || value.length > 128 || value.includes('/')) {
+    throw new InputValidationError('Expected owner is invalid.');
+  }
+  return value;
+};
+
+export const parseCancelCardGenerationRequest = (value: unknown): string => {
+  const data = asRecord(value);
+  assertAllowedFields(data, ['operationId', 'expectedOwnerId'], 'Unsupported cancellation field.');
+  parseExpectedOwnerId(data.expectedOwnerId);
+  if (typeof data.operationId !== 'string' || !WORD_OPERATION_ID.test(data.operationId)) {
+    throw new InputValidationError('Operation ID must be a UUID v4.');
+  }
+  return data.operationId;
+};
+
 export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
   const data = asRecord(value);
-  assertAllowedFields(data, ['action', 'input', 'operationId'], 'Unsupported vocabulary request field.');
+  assertAllowedFields(data, ['action', 'input', 'operationId', 'expectedOwnerId'], 'Unsupported vocabulary request field.');
+  parseExpectedOwnerId(data.expectedOwnerId);
   const action = boundedText(data.action, 16);
   const operationId = data.operationId === undefined ? undefined : data.operationId;
   if (operationId !== undefined && (action !== 'word' || typeof operationId !== 'string'
-    || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(operationId))) {
+    || !WORD_OPERATION_ID.test(operationId))) {
     throw new InputValidationError('Operation ID must be a UUID v4 for a word request.');
   }
 
@@ -431,15 +467,34 @@ export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
   }
 
   if (action === 'story') {
-    if (!Array.isArray(data.input)) {
+    const legacyInput = Array.isArray(data.input);
+    if (!legacyInput && (!data.input || typeof data.input !== 'object')) {
       throw new InputValidationError('At least one word is required.');
     }
-    if (data.input.length > 5) {
+    const input = legacyInput ? undefined : data.input as Record<string, unknown>;
+    if (input) assertAllowedFields(input, ['words', 'targetLanguage', 'translationLanguage'], 'Unsupported story input field.');
+    const wordInput = legacyInput ? data.input : input?.words;
+    if (!Array.isArray(wordInput)) throw new InputValidationError('At least one word is required.');
+    if (wordInput.length > 5) {
       throw new InputValidationError('A story can contain at most five words.');
     }
-    const words = data.input.map(item => boundedText(item, 80)).filter(Boolean);
+    const words = wordInput.map(item => boundedText(item, 80)).filter(Boolean);
     if (words.length === 0) throw new InputValidationError('At least one word is required.');
-    return { action, words };
+    const targetLanguage = legacyInput ? 'en' : input?.targetLanguage;
+    const translationLanguage = legacyInput ? 'vi' : input?.translationLanguage;
+    if (typeof targetLanguage !== 'string' || !COURSE_TARGET_LANGUAGES.includes(targetLanguage as CourseTargetLanguage)) {
+      throw new InputValidationError('Story target language is invalid.');
+    }
+    if (typeof translationLanguage !== 'string'
+      || !COURSE_NATIVE_LANGUAGES.includes(translationLanguage as CourseNativeLanguage)) {
+      throw new InputValidationError('Story translation language is invalid.');
+    }
+    return {
+      action,
+      words,
+      targetLanguage: targetLanguage as CourseTargetLanguage,
+      translationLanguage: translationLanguage as CourseNativeLanguage,
+    };
   }
 
   if (action === 'translate') {

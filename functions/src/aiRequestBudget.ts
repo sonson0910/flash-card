@@ -1,7 +1,7 @@
-export type VocabularyAiAction = 'word' | 'story' | 'translate';
+export type VocabularyAiAction = 'word' | 'story' | 'translate' | 'tutor';
 
 export interface VocabularyAiBudget {
-  scope: 'ai-card' | 'ai-story' | 'ai-translate';
+  scope: 'ai-card' | 'ai-story' | 'ai-translate' | 'ai-tutor-turn';
   maximum: number;
   message: string;
 }
@@ -21,6 +21,11 @@ const VOCABULARY_AI_BUDGETS: Record<VocabularyAiAction, VocabularyAiBudget> = {
     scope: 'ai-translate',
     maximum: 120,
     message: 'Translation limit reached. Try again later.',
+  },
+  tutor: {
+    scope: 'ai-tutor-turn',
+    maximum: 60,
+    message: 'Tutor limit reached. Try again later.',
   },
 };
 

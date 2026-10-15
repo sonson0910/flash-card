@@ -3,7 +3,7 @@ import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
-  freePeriod, refundNonCardAction, reserveNonCardAction, reserveWordOperation,
+  cancelWordOperation, freePeriod, refundNonCardAction, reserveNonCardAction, reserveWordOperation,
   settleWordOperation, sweepExpiredWordOperations,
 } from '../src/aiQuota.js';
 import { PILOT_CONFIG_DEFAULTS } from '../src/pilotConfig.js';
@@ -65,6 +65,18 @@ describeWithEmulator('Firestore account AI quota', () => {
     const usage = await database.collection('users').doc(uid).collection('ai_usage').doc(original.periodKey).get();
     expect(usage.data()?.used).toBe(0);
   }, 15_000);
+
+  it('cancels one reserved generation and refunds its card quota once', async () => {
+    const uid = `cancel-${randomUUID()}`;
+    const operationId = randomUUID();
+    const reservation = await reserveWordOperation(database, uid, operationId, 'same', now, config);
+    expect(reservation.kind).toBe('reserved');
+    expect(await cancelWordOperation(database, uid, operationId, now)).toBe(true);
+    expect(await cancelWordOperation(database, uid, operationId, now)).toBe(false);
+    const owner = database.collection('users').doc(uid);
+    expect((await owner.collection('ai_operations').doc(operationId).get()).data()?.status).toBe('failed');
+    expect((await owner.collection('ai_usage').doc(freePeriod(now, config).periodKey).get()).data()?.used).toBe(0);
+  });
 
   it('rejects a hash conflict on a live operation but allows a different hash once it failed', async () => {
     const uid = `hash-${randomUUID()}`;

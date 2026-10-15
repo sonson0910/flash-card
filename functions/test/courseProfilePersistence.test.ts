@@ -155,6 +155,31 @@ describe('course profile persistence', () => {
     expect(test.writes).toHaveLength(1);
   });
 
+  it('replays a course creation with the same operation ID without another course', async () => {
+    const first = harness();
+    const request = parseCourseProfileMutationRequest('createCourse', {
+      ownerId: 'owner',
+      input: { targetLanguage: 'ko', nativeLanguage: 'vi', operationId: 'course-create-ko-1' },
+    });
+    const created = await applyCourseProfileMutation(first.database, 'owner', request, {
+      createId: deterministicIds(), now,
+    });
+    const replay = harness(created);
+    const replayed = await applyCourseProfileMutation(replay.database, 'owner', request, {
+      createId: deterministicIds(), now,
+    });
+
+    expect(created.courses).toHaveLength(2);
+    expect(created.courses[1]?.id).toBe('course-create-ko-1');
+    expect(replayed).toEqual(created);
+    expect(replay.writes).toHaveLength(1);
+    await expect(applyCourseProfileMutation(replay.database, 'owner',
+      parseCourseProfileMutationRequest('createCourse', {
+        ownerId: 'owner',
+        input: { targetLanguage: 'ko', nativeLanguage: 'vi', operationId: 'course-create-ko-2' },
+      }), { createId: deterministicIds(), now })).rejects.toMatchObject({ reason: 'course-exists' });
+  });
+
   it('activates the requested course even after a competing create forces a transaction retry', async () => {
     const competing = harness(createLegacyCourseProfile());
     const competingProfile = await applyCourseProfileMutation(competing.database, 'owner',
@@ -187,6 +212,32 @@ describe('course profile persistence', () => {
       { createId: deterministicIds(), now })).rejects.toMatchObject({ reason: 'course-exists' });
     expect(test.transaction.get).toHaveBeenCalledTimes(2);
     expect(test.writes).toEqual([]);
+  });
+
+  it('merges a partial preference update with the latest profile after a transaction retry', async () => {
+    const legacy = createLegacyCourseProfile();
+    const course = legacy.courses[0]!;
+    const initial = parseCourseProfile({
+      ...legacy,
+      courses: [{ ...course, preferences: { ...course.preferences, pronunciationVariant: 'voice-a' } }],
+    });
+    const competing = parseCourseProfile({
+      ...initial,
+      courses: [{ ...initial.courses[0]!, preferences: { ...initial.courses[0]!.preferences, pronunciationVariant: null } }],
+    });
+    const test = harness(initial, competing);
+    const request = parseCourseProfileMutationRequest('updateCourse', {
+      ownerId: 'owner', courseId: course.id,
+      input: { preferences: { showRomanization: true } },
+    });
+
+    const result = await applyCourseProfileMutation(test.database, 'owner', request);
+
+    expect(test.transaction.get).toHaveBeenCalledTimes(2);
+    expect(result.courses[0]?.preferences).toEqual({
+      pronunciationVariant: null, showRomanization: true, zhScript: null,
+    });
+    expect(test.writes).toEqual([{ path: profilePath, data: result }]);
   });
 
   it('serializes archive and re-open policies, including duplicate archived targets', async () => {

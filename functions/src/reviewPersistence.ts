@@ -44,6 +44,7 @@ export type ReviewCeremonyEvent = 'tierup' | 'streak' | 'levelup';
 export type ReviewPersistenceResult = {
   applied: true;
   duplicate: boolean;
+  xpAwarded: number;
   card: CardRecord;
   gamification?: VerifiedGamificationOutcome;
   ceremonyEvents?: ReviewCeremonyEvent[];
@@ -265,9 +266,11 @@ const receiptResult = (value: unknown): ReviewPersistenceResult | null => {
   if (receipt.fingerprint === undefined || !receipt.result || typeof receipt.result !== 'object') return null;
   const result = receipt.result as Record<string, unknown>;
   if (result.applied !== true || typeof result.duplicate !== 'boolean' || !result.card || typeof result.card !== 'object') return null;
+  if (result.xpAwarded !== undefined && result.xpAwarded !== 0 && result.xpAwarded !== 2) return null;
   return {
     applied: true,
     duplicate: true,
+    xpAwarded: result.xpAwarded === 2 ? 2 : 0,
     card: result.card as CardRecord,
     ...(result.gamification === undefined ? {} : { gamification: result.gamification as VerifiedGamificationOutcome }),
     ...(result.ceremonyEvents === undefined ? {} : { ceremonyEvents: result.ceremonyEvents as ReviewCeremonyEvent[] }),
@@ -360,7 +363,7 @@ export async function applyReviewForOwner(
       ? stored.appliedReviewOperationIds as string[]
       : [];
     if (!strict && operationIds.includes(request.opId)) {
-      return { applied: true, duplicate: true, card: serializeCardResponse(stored) };
+      return { applied: true, duplicate: true, xpAwarded: 0, card: serializeCardResponse(stored) };
     }
     if (request.baseRevision !== revision) {
       throw new ReviewPersistenceConflictError('revision-conflict', revision, serializeCardResponse(stored));
@@ -411,10 +414,25 @@ export async function applyReviewForOwner(
     let preparedGamification: PreparedVerifiedGamification | undefined;
     let gamification: VerifiedGamificationOutcome | undefined;
     if (strict) {
+      let reminderTimeZone: string | undefined;
+      if (request.timeZone === undefined) {
+        const reminderState = (await transaction.get(database.collection('users').doc(ownerId)
+          .collection('reminderState').doc('current'))).data();
+        const channels = reminderState?.channels;
+        if ((channels?.push === true || channels?.emailDigest === true)
+          && typeof reminderState?.timezone === 'string') {
+          try {
+            reminderTimeZone = parseTimeZone(reminderState.timezone);
+          } catch {
+            // Invalid reminder settings must not prevent a valid legacy review.
+          }
+        }
+      }
       try {
         preparedGamification = await prepareVerifiedGamification(database, transaction, ownerId, {
-          kind: 'review', receivedAt: receivedAt!, timeZone: request.timeZone,
+          kind: 'review', receivedAt: receivedAt!, timeZone: request.timeZone ?? reminderTimeZone,
           targetLanguage: typeof candidate.language === 'string' ? candidate.language : undefined, rating: request.rating,
+          cardId: request.cardId,
         });
         gamification = preparedGamification.outcome;
       } catch (error) {
@@ -460,6 +478,7 @@ export async function applyReviewForOwner(
     const result = {
       applied: true as const,
       duplicate: false,
+      xpAwarded: gamification?.xpAwarded ?? 0,
       card: responseCard,
       ...(gamification === undefined ? {} : { gamification }),
       ...(ceremonyEvents.length === 0 ? {} : { ceremonyEvents }),

@@ -1,9 +1,14 @@
-import { createHmac } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import { dayKey } from './aiCostLedger.js';
+import { resolvePlan } from './aiQuota.js';
+import type { PilotConfig } from './pilotConfig.js';
+import { consumePersistentRateLimitsInTransaction } from './rateLimiter.js';
 
 export const purchaseIntentOfferId = 'pro-vn-30d-v1';
+export class PurchaseIntentIneligibleError extends Error {}
 const HEX_REF = /^[a-f0-9]{32}$/;
+const OFFER_VERSION = /^[a-f0-9]{64}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const APP_VERSION = /^\d+\.\d+\.\d+$/;
 const enumValue = (...values: string[]) => (value: unknown): boolean => typeof value === 'string' && values.includes(value);
@@ -16,13 +21,16 @@ const schemas = {
     xpAwarded: integer(1_000), cardRef: (value: unknown) => typeof value === 'string' && HEX_REF.test(value),
   },
   quota_exhausted: { kind: enumValue('card', 'daily-allowance', 'account-spend'), tier: enumValue('free', 'pro') },
-  pro_granted: { source: enumValue('operator') },
-  pro_revoked: { source: enumValue('operator') },
+  pro_granted: { source: enumValue('operator', 'payment') },
+  pro_revoked: { source: enumValue('operator', 'payment') },
   pro_expired: { offerId: enumValue(purchaseIntentOfferId) },
   card_reported: { reason: enumValue('wrong-meaning', 'wrong-example', 'wrong-pronunciation', 'wrong-image', 'offensive', 'other') },
   purchase_intent: {
     trigger: enumValue('quota', 'menu'), offerId: enumValue(purchaseIntentOfferId),
     displayPriceVnd: (value: unknown) => value === null || (Number.isSafeInteger(value) && Number(value) > 0 && Number(value) <= 1_000_000_000),
+    offerVersion: (value: unknown) => value === null || (typeof value === 'string' && OFFER_VERSION.test(value)),
+    proMonthlyAiCards: (value: unknown) => value === null || (Number.isSafeInteger(value) && Number(value) > 0 && Number(value) <= 100_000),
+    proDurationDays: (value: unknown) => value === null || (Number.isSafeInteger(value) && Number(value) > 0),
   },
   capture_started: { requestId: (value: unknown) => typeof value === 'string' && UUID.test(value), surface: enumValue('extension', 'app'), appVersion: (value: unknown) => typeof value === 'string' && APP_VERSION.test(value) },
   capture_failed: {
@@ -73,6 +81,9 @@ const hmac = (value: string, key: string): string => {
 export const analyticsPseudonym = (uid: string, key: string): string => hmac(uid, key);
 export const analyticsCardRef = (uid: string, cardId: string, key: string): string => hmac(JSON.stringify([uid, cardId]), key);
 export const analyticsOpRef = (operationId: string, key: string): string => hmac(operationId, key);
+export const purchaseIntentOfferVersion = (config: PilotConfig): string => createHash('sha256')
+  .update(JSON.stringify([purchaseIntentOfferId, config.proMonthlyAiCards, config.displayPriceVnd, config.proDurationDays]))
+  .digest('hex');
 
 export async function writeAnalyticsEvent(database: Firestore, uid: string, key: string,
   name: AnalyticsEventName, props: AnalyticsProps, now = new Date()): Promise<void> {
@@ -92,9 +103,30 @@ export async function emitAnalyticsBestEffort(database: Firestore, uid: string, 
 }
 
 export async function writePurchaseIntent(database: Firestore, uid: string, key: string,
-  trigger: 'quota' | 'menu', displayPriceVnd: number | null, now = new Date()): Promise<void> {
-  await writeAnalyticsEvent(database, uid, key, 'purchase_intent',
-    { trigger, offerId: purchaseIntentOfferId, displayPriceVnd }, now);
+  trigger: 'quota' | 'menu', config: PilotConfig, offerVersion: string | null, now = new Date()): Promise<void> {
+  const owner = database.collection('users').doc(uid);
+  const eventRef = database.collection('analytics_events').doc();
+  const props = validateAnalyticsProps('purchase_intent', {
+    trigger, offerId: purchaseIntentOfferId,
+    displayPriceVnd: offerVersion === null ? null : config.displayPriceVnd,
+    offerVersion,
+    proMonthlyAiCards: offerVersion === null ? null : config.proMonthlyAiCards,
+    proDurationDays: offerVersion === null ? null : config.proDurationDays,
+  });
+  await database.runTransaction(async transaction => {
+    const plan = (await transaction.get(owner.collection('profile').doc('plan'))).data();
+    if (resolvePlan(plan, now, config).tier === 'pro') throw new PurchaseIntentIneligibleError();
+    const active = await transaction.get(owner.collection('entitlements')
+      .where('status', '==', 'active').where('expiresAt', '>', now).limit(1));
+    if (!active.empty) throw new PurchaseIntentIneligibleError();
+    await consumePersistentRateLimitsInTransaction(transaction, database,
+      [{ userId: uid, scope: 'purchase-intent', maximum: 5 }], now.getTime());
+    transaction.create(eventRef, {
+      name: 'purchase_intent', pid: analyticsPseudonym(uid, key), ts: now,
+      day: dayKey(now, 'Asia/Ho_Chi_Minh'), props,
+      expiresAt: new Date(now.getTime() + 180 * 86_400_000),
+    });
+  });
 }
 
 export class ClientEventLimitError extends Error {}

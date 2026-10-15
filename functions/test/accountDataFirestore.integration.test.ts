@@ -42,26 +42,43 @@ describeWithEmulator('account export and deletion', () => {
     for (const [collection, id] of [
       ['cards', 'card-1'], ['card_reservations', 'reserve-1'], ['card_tombstones', 'card-1'],
       ['profile', 'stats'], ['profile', 'xp_history'], ['profile', 'plan'],
-      ['xp_streams', 'stream-1'], ['review_receipts', 'card-1:op'],
+      ['xp_streams', 'stream-1'], ['review_receipts', 'card-1:op'], ['review_xp_awards', 'award-1'],
       ['card_create_receipts', 'create-1'], ['practice_sessions', 'practice-1'],
       ['ai_usage', 'free-2026-09'], ['ai_operations', 'op-1'], ['ai_daily', '2026-09-24'],
-      ['entitlements', 'pro-1'], ['analytics_rate', 'current'], ['library_facet_receipts', 'op-1'],
+      ['entitlements', 'pro-1'], ['payment_receipts', 'pay-1'], ['catalog_progress', 'lex-1'],
+      ['analytics_rate', 'current'], ['library_facet_receipts', 'op-1'],
+      ['reminderState', 'current'], ['reminderReceipts', '2026-09-27_push'], ['pushTokens', 'device-1'],
+      ['pushTokenSessionCutoffs', 'device-1'],
     ] as const) await owner.collection(collection).doc(id).set({ ownerId: uid, value: 'private value' });
+    await database.collection('mail').doc(`digest-${uid}`).set({ ownerId: uid, to: ['private@example.test'] });
+    await database.collection('pushTokenOwners').doc(`token-${uid}`).set({ ownerId: uid });
+    await database.collection('pushTokenOwners').doc(`token-${other}`).set({ ownerId: other });
     await database.collection('card_reports').doc(`report-${uid}`).set({ uid, card: { word: 'private' } });
     await database.collection('ai_cost_ledger').doc(`cost-${uid}`).set({ uid, estimatedUsdMicros: 3 });
     await database.collection('analytics_events').doc(`event-${uid}`).set({ pid, name: 'purchase_intent' });
+    await database.collection('payment_settlements').doc(`pay-${uid}`).set({ pid, amountVnd: 79_000 });
     for (const scope of ACCOUNT_RATE_SCOPES) {
       await database.collection('_functionRateLimitBudgets').doc(budgetDocumentId(uid, scope))
         .set({ scope, calls: 1 });
     }
     await database.collection('users').doc(other).collection('profile').doc('stats').set({ ownerId: other });
     await database.collection('card_reports').doc(`report-${other}`).set({ uid: other });
+    await database.collection('mail').doc(`digest-${other}`).set({ ownerId: other, to: ['other@example.test'] });
     const exportResult = await exportAccountData(database, uid, key);
     expect(JSON.stringify(exportResult)).toContain('private value');
     expect(JSON.stringify(exportResult)).not.toContain(other);
+    expect((exportResult as { paymentReceipts: Array<{ id: string; ownerId: string; value: string }> }).paymentReceipts)
+      .toEqual([{ id: 'pay-1', ownerId: uid, value: 'private value' }]);
+    expect((exportResult as { catalogProgress: Array<{ id: string; ownerId: string; value: string }> }).catalogProgress)
+      .toEqual([{ id: 'lex-1', ownerId: uid, value: 'private value' }]);
     expect((exportResult as { reviewReceipts: Array<{ id: string; ownerId: string; value: string }> }).reviewReceipts)
       .toEqual([{ id: 'card-1:op', ownerId: uid, value: 'private value' }]);
+    expect((exportResult as { reviewXpAwards: Array<{ id: string; ownerId: string; value: string }> }).reviewXpAwards)
+      .toEqual([{ id: 'award-1', ownerId: uid, value: 'private value' }]);
     expect((exportResult as { analyticsEventCount: number }).analyticsEventCount).toBe(1);
+    expect((exportResult as { mail: Array<{ id: string }> }).mail.map(item => item.id)).toEqual([`digest-${uid}`]);
+    expect((exportResult as { pushTokenOwners: Array<{ id: string }> }).pushTokenOwners.map(item => item.id))
+      .toEqual([`token-${uid}`]);
 
     const expiry = new Date(now.getTime() - 60_000);
     await database.collection('shared_decks').doc(`owned-${uid}`).set({ schemaVersion: 2 });
@@ -84,10 +101,10 @@ describeWithEmulator('account export and deletion', () => {
     await expect(exportMyData.run({ auth: { uid }, data: {} } as never))
       .rejects.toMatchObject({ code: 'resource-exhausted' });
     await expect(deleteMyAccount.run({ auth: { uid, token: { auth_time: 1 } },
-      data: { confirmation: 'XÓA TÀI KHOẢN' } } as never))
+      data: { confirmation: 'XÓA TÀI KHOẢN', expectedUid: uid } } as never))
       .rejects.toMatchObject({ code: 'failed-precondition' });
     await expect(deleteMyAccount.run({ auth: { uid, token: { auth_time: Math.floor(Date.now() / 1000) } },
-      data: { confirmation: 'wrong' } } as never))
+      data: { confirmation: 'wrong', expectedUid: uid } } as never))
       .rejects.toMatchObject({ code: 'invalid-argument' });
     const { auth, revokeRefreshTokens, deleteUser } = fakeAuth();
     expect(await beginAccountDeletion(database, auth, uid, key, now)).toBe('waiting');
@@ -106,7 +123,12 @@ describeWithEmulator('account export and deletion', () => {
     expect((await owner.listCollections()).length).toBe(0);
     expect((await database.collection('ai_cost_ledger').where('uid', '==', uid).get()).empty).toBe(true);
     expect((await database.collection('card_reports').where('uid', '==', uid).get()).empty).toBe(true);
+    expect((await database.collection('mail').where('ownerId', '==', uid).get()).empty).toBe(true);
+    expect((await database.collection('pushTokenOwners').doc(`token-${uid}`).get()).exists).toBe(false);
+    expect((await database.collection('pushTokenOwners').doc(`token-${other}`).get()).exists).toBe(true);
+    expect((await database.collection('mail').doc(`digest-${other}`).get()).exists).toBe(true);
     expect((await database.collection('analytics_events').where('pid', '==', pid).get()).empty).toBe(true);
+    expect((await database.collection('payment_settlements').doc(`pay-${uid}`).get()).exists).toBe(true);
     for (const scope of ACCOUNT_RATE_SCOPES) expect((await database.collection('_functionRateLimitBudgets')
       .doc(budgetDocumentId(uid, scope)).get()).exists).toBe(false);
 

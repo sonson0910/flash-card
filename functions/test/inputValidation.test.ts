@@ -4,6 +4,7 @@ import {
   PART_OF_SPEECH_HINTS,
   canonicalLexemeId,
   calculateSharedDeckPayloadBytes,
+  parseCancelCardGenerationRequest,
   sharedDeckRequestFingerprint,
   parseCardLanguagePair,
   parseCreateSharedDeckRequest,
@@ -18,16 +19,32 @@ import {
 } from '../src/inputValidation.js';
 
 describe('parsePurchaseIntentRequest', () => {
-  it('accepts only one of the two purchase triggers', () => {
+  it('accepts purchase triggers with optional owner and offer version', () => {
     expect(parsePurchaseIntentRequest({ trigger: 'quota' })).toEqual({ trigger: 'quota' });
     expect(parsePurchaseIntentRequest({ trigger: 'menu' })).toEqual({ trigger: 'menu' });
-    for (const value of [{ trigger: 'menu', price: 1 }, { trigger: 'checkout' }, {}, null]) {
+    expect(parsePurchaseIntentRequest({ trigger: 'menu', expectedOwnerId: 'owner-1' }))
+      .toEqual({ trigger: 'menu', expectedOwnerId: 'owner-1' });
+    expect(parsePurchaseIntentRequest({ trigger: 'menu', offerVersion: 'a'.repeat(64) }))
+      .toEqual({ trigger: 'menu', offerVersion: 'a'.repeat(64) });
+    for (const value of [
+      { trigger: 'menu', price: 1 }, { trigger: 'menu', expectedOwnerId: '' },
+      { trigger: 'menu', expectedOwnerId: 'other/owner' }, { trigger: 'menu', offerVersion: 'A'.repeat(64) },
+      { trigger: 'menu', offerVersion: 'a'.repeat(63) }, { trigger: 'checkout' }, {}, null,
+    ]) {
       expect(() => parsePurchaseIntentRequest(value)).toThrow(InputValidationError);
     }
   });
 });
 
 describe('parseVocabularyRequest', () => {
+  it('accepts only a word-operation ID for cancellation', () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    expect(parseCancelCardGenerationRequest({ operationId })).toBe(operationId);
+    for (const request of [{ operationId: 'bad' }, { operationId, ownerId: 'another' }, {}]) {
+      expect(() => parseCancelCardGenerationRequest(request)).toThrow(InputValidationError);
+    }
+  });
+
   it('parses and trims a supported word request', () => {
     expect(parseVocabularyRequest({ action: 'word', input: '  resilient  ' })).toEqual({
       action: 'word',
@@ -108,11 +125,30 @@ describe('parseVocabularyRequest', () => {
       .toThrowError(new InputValidationError('A story can contain at most five words.'));
   });
 
-  it('normalizes no more than five non-empty story words', () => {
+  it('normalizes legacy story words with English and Vietnamese defaults', () => {
     expect(parseVocabularyRequest({ action: 'story', input: [' one ', '', 'two', 'three', 'four'] })).toEqual({
       action: 'story',
       words: ['one', 'two', 'three', 'four'],
+      targetLanguage: 'en',
+      translationLanguage: 'vi',
     });
+  });
+
+  it('parses an exact structured story language pair', () => {
+    expect(parseVocabularyRequest({
+      action: 'story',
+      input: { words: [' 안녕 ', '학교'], targetLanguage: 'ko', translationLanguage: 'en' },
+    })).toEqual({
+      action: 'story', words: ['안녕', '학교'], targetLanguage: 'ko', translationLanguage: 'en',
+    });
+  });
+
+  it.each([
+    { words: ['hello'], targetLanguage: 'KO', translationLanguage: 'en' },
+    { words: ['hello'], targetLanguage: 'en', translationLanguage: 'ko' },
+    { words: ['hello'], targetLanguage: 'en', translationLanguage: 'vi', extra: true },
+  ])('rejects unsupported or unexpected structured story input: %o', input => {
+    expect(() => parseVocabularyRequest({ action: 'story', input })).toThrow(InputValidationError);
   });
 
   it('rejects an unsupported action', () => {

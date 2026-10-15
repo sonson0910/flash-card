@@ -5,6 +5,7 @@ import {
   parseReviewRequest,
   type ReviewRequest,
 } from '../src/reviewPersistence.js';
+import { reviewXpAwardId } from '../src/verifiedGamification.js';
 import { scheduleReviewTransition } from '../src/reviewScheduler.js';
 import { resolveJapanesePitchAccent } from '../src/japanesePitch.js';
 import { canonicalCard } from '../src/cardPersistence.js';
@@ -98,6 +99,8 @@ const canonicalLexemeId = () => {
   return `lexeme-${bytes.slice(0, 90)}-${createHash('sha256').update(`\u0000${bytes}`).digest('hex').slice(0, 24)}`;
 };
 
+const awardPath = (cardId: string, studyDay: string) => `users/owner/review_xp_awards/${reviewXpAwardId(cardId, studyDay)}`;
+
 const harness = (card = baseCard(), fenced = false, cardPathId = 'word-focus') => {
   const values = new Map<string, DocumentSnapshot>([
     ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
@@ -105,8 +108,12 @@ const harness = (card = baseCard(), fenced = false, cardPathId = 'word-focus') =
     ...(fenced ? [['users/owner/profile/library_migration_fence', snapshot(true, { schemaVersion: 1, active: true })] as const] : []),
   ]);
   const writes: Array<{ path: string; data: DocumentData }> = [];
+  const reads: string[] = [];
   const transaction = {
-    get: vi.fn(async (reference: DocumentReference) => values.get(reference.path) ?? snapshot(false)),
+    get: vi.fn(async (reference: DocumentReference) => {
+      reads.push(reference.path);
+      return values.get(reference.path) ?? snapshot(false);
+    }),
     set: vi.fn((reference: DocumentReference, data: DocumentData) => {
       writes.push({ path: reference.path, data });
       return transaction;
@@ -127,7 +134,7 @@ const harness = (card = baseCard(), fenced = false, cardPathId = 'word-focus') =
     collection: (name: string) => nestedCollection(name),
     runTransaction: vi.fn(async (update: (value: Transaction) => Promise<unknown>) => update(transaction)),
   } as unknown as Firestore;
-  return { database, writes, values };
+  return { database, writes, reads, values };
 };
 
 describe('review persistence', () => {
@@ -241,6 +248,9 @@ describe('review persistence', () => {
     const request = reviewRequest();
     const first = await applyReviewForOwner(test.database, 'owner', request);
     expect(first).not.toHaveProperty('gamification');
+    expect(first.xpAwarded).toBe(0);
+    expect(test.reads.filter(path => path === 'users/owner/reminderState/current')).toHaveLength(1);
+    expect(test.writes.some(write => write.path === 'users/owner/profile/stats')).toBe(false);
     const receipt = test.writes.find(write => write.path.includes('review_receipts'));
     if (!receipt) throw new Error('receipt was not written');
     expect(receipt.data.result).not.toHaveProperty('gamification');
@@ -250,6 +260,67 @@ describe('review persistence', () => {
       ...first,
       duplicate: true,
     });
+  });
+
+  it('uses opted-in reminder timezone for a cached V2 review without adding a reminder write', async () => {
+    const test = harness();
+    test.values.set('users/owner/reminderState/current', snapshot(true, {
+      timezone: 'Asia/Ho_Chi_Minh', channels: { push: true, emailDigest: false },
+    }));
+
+    const result = await applyReviewForOwner(test.database, 'owner', reviewRequest());
+
+    expect(result.gamification?.rewardTimeZone).toBe('Asia/Saigon');
+    expect(test.reads.filter(path => path === 'users/owner/reminderState/current')).toHaveLength(1);
+    expect(test.writes.some(write => write.path === 'users/owner/profile/stats'
+      && write.data.lastVerifiedReviewAt)).toBe(true);
+    expect(test.writes.some(write => write.path === 'users/owner/reminderState/current')).toBe(false);
+  });
+
+  it('does not read reminder settings when the review supplies its timezone', async () => {
+    const test = harness();
+    const result = await applyReviewForOwner(test.database, 'owner', reviewRequest({ timeZone: 'UTC' }));
+
+    expect(result.gamification?.rewardTimeZone).toBe('UTC');
+    expect(test.reads).not.toContain('users/owner/reminderState/current');
+    expect(test.writes.some(write => write.path === 'users/owner/profile/stats'
+      && write.data.lastVerifiedReviewAt)).toBe(true);
+  });
+
+  it('updates a same-day review without awarding XP for a distinct operation ID', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-27T12:00:00.000Z'));
+    try {
+      const test = harness();
+      test.values.set('users/owner/profile/stats', snapshot(true, {
+        rewardTimeZone: 'UTC', verifiedXp: 10, verifiedStreak: 1, lastVerifiedStudyDay: '2026-09-27',
+      }));
+      test.values.set(awardPath('word-focus', '2026-09-27'), snapshot(true, {
+        schemaVersion: 1, ownerId: 'owner', cardId: 'word-focus', studyDay: '2026-09-27', xpAwarded: 2,
+        expiresAt: new Date('2026-10-04T00:00:00.000Z'),
+      }));
+      const result = await applyReviewForOwner(test.database, 'owner', reviewRequest({ timeZone: 'UTC' }));
+
+      expect(result).toMatchObject({
+        duplicate: false,
+        xpAwarded: 0,
+        card: { revision: 4, reviews: 1 },
+        gamification: {
+          xp: 10, events: [], studyDay: '2026-09-27',
+          xpAwarded: 0,
+          reviewActivity: { days: { '2026-09-27': { reviewed: 1, good: 1 } } },
+        },
+      });
+      expect(result.ceremonyEvents).toBeUndefined();
+      expect(test.writes.some(write => write.path === 'users/owner/profile/xp_history')).toBe(false);
+      expect(test.writes.find(write => write.path === 'users/owner/profile/stats')?.data)
+        .toMatchObject({
+          lastVerifiedReviewAt: expect.anything(),
+          reviewActivityV1: { daysByLanguage: { en: { '2026-09-27': { reviewed: 1, good: 1 } } } },
+        });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('awards a strict review from its stored timezone and records threshold ceremonies in the receipt', async () => {
@@ -266,6 +337,7 @@ describe('review persistence', () => {
         fields: scheduleReviewTransition(stored, 'easy', new Date('2026-08-24T00:00:00.000Z')),
       });
       const result = await applyReviewForOwner(test.database, 'owner', request);
+      expect(result.xpAwarded).toBe(2);
       expect(result.gamification).toMatchObject({
         xp: 14_401, level: 13, streak: 30, events: ['streak', 'levelup'], rewardTimeZone: 'UTC',
         reviewActivity: {
@@ -281,19 +353,27 @@ describe('review persistence', () => {
       ]));
       const statsWrite = test.writes.find(write => write.path === 'users/owner/profile/stats');
       expect(statsWrite?.data).toMatchObject({
+        lastVerifiedReviewAt: expect.anything(),
         reviewActivityV1: {
           coverageStartedOnByLanguage: { en: '2026-09-27' },
           daysByLanguage: { en: { '2026-09-27': { reviewed: 1, easy: 1 } } },
         },
       });
+      expect(statsWrite?.data.lastVerifiedReviewAt.toDate()).toEqual(new Date('2026-09-27T12:00:00.000Z'));
+      expect(test.writes).toContainEqual(expect.objectContaining({
+        path: awardPath('word-focus', '2026-09-27'),
+        data: expect.objectContaining({ cardId: 'word-focus', studyDay: '2026-09-27', xpAwarded: 2, expiresAt: expect.any(Date) }),
+      }));
       const receipt = test.writes.find(write => write.path.includes('review_receipts'));
       if (!receipt) throw new Error('receipt was not written');
+      expect(receipt.data.result.xpAwarded).toBe(2);
       test.values.set(receipt.path, snapshot(true, receipt.data));
       await expect(applyReviewForOwner(test.database, 'owner', request)).resolves.toEqual({
         ...result,
         duplicate: true,
       });
       expect(test.writes.filter(write => write.path === 'users/owner/profile/stats')).toHaveLength(1);
+      expect(test.writes.filter(write => write.path === 'users/owner/profile/xp_history')).toHaveLength(1);
     } finally {
       vi.useRealTimers();
     }

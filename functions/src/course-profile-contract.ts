@@ -18,6 +18,7 @@ export type CourseGoalStatus = (typeof GOAL_STATUSES)[number];
 export const MAX_COURSES_PER_PROFILE = 4;
 export const MAX_GOALS_PER_COURSE = 32;
 export const MAX_COURSE_ID_LENGTH = 128;
+export const MAX_COURSE_OPERATION_ID_LENGTH = 128;
 export const MAX_GOAL_ID_LENGTH = 128;
 export const MAX_GOAL_KIND_LENGTH = 64;
 export const MAX_GOAL_LEVEL_LENGTH = 32;
@@ -68,6 +69,8 @@ export interface CreateCourseInput {
   readonly goals?: readonly CreateGoalInput[];
   readonly preferences?: Partial<CoursePreferences>;
   readonly activateOnCreate?: boolean;
+  /** Replays of the same create operation return the originally created course. */
+  readonly operationId?: string;
 }
 
 export interface UpdateCourseInput {
@@ -295,9 +298,10 @@ export const normalizeCreateCourseInput = (value: unknown): {
   goals: readonly CreateGoalInput[];
   preferences: CoursePreferences;
   activateOnCreate?: boolean;
+  operationId?: string;
 } => {
   const record = optionalRecordAt(value, 'course', [
-    'targetLanguage', 'nativeLanguage', 'goals', 'preferences', 'activateOnCreate',
+    'targetLanguage', 'nativeLanguage', 'goals', 'preferences', 'activateOnCreate', 'operationId',
   ]);
   const rawGoals = arrayAt(hasOwn(record, 'goals') ? record.goals : [], 'course.goals');
   if (rawGoals.length > MAX_GOALS_PER_COURSE) {
@@ -342,6 +346,9 @@ export const normalizeCreateCourseInput = (value: unknown): {
     preferences,
     ...(hasOwn(record, 'activateOnCreate')
       ? { activateOnCreate: booleanAt(record.activateOnCreate, 'course.activateOnCreate') }
+      : {}),
+    ...(hasOwn(record, 'operationId')
+      ? { operationId: idAt(record.operationId, 'course.operationId', MAX_COURSE_OPERATION_ID_LENGTH) }
       : {}),
   };
 };

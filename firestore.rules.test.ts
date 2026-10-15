@@ -14,6 +14,7 @@ import {
   normalizeCardWord,
 } from './src/lib/cardIdentity';
 import { normalizeCardData } from './src/lib/cardNormalization';
+import { createLexemeId } from './src/features/multilingual/lexemeIdentity';
 import { createOwnerDeckMutationFirebaseAdapter } from './src/features/librarySession/ownerLibrarySessionFirebaseAdapter';
 import { customDeckCoverKey } from './src/features/library/customDecks';
 
@@ -191,6 +192,33 @@ describe('Firestore security rules', () => {
       schemaVersion: 1, ownerId: 'owner', lexemeId: 'lexeme-new', targetLanguage: 'en',
       status: 'active', cardRevision: 1, libraryEpoch: 0,
     }));
+  });
+
+  it('keeps reminder delivery state private and server-owned', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      const database = context.firestore();
+      await setDoc(doc(database, 'users/owner/reminderState/current'), { channels: { push: true } });
+      await setDoc(doc(database, 'users/owner/pushTokens/device'), { token: 'private-token' });
+      await setDoc(doc(database, 'users/owner/pushTokenSessionCutoffs/device'), { authTimeSeconds: 123 });
+      await setDoc(doc(database, 'pushTokenOwners/device'), { ownerId: 'owner' });
+      await setDoc(doc(database, 'users/owner/reminderReceipts/2026-10-04_push'), { channel: 'push' });
+      await setDoc(doc(database, 'mail/owner_2026-10-04_emailDigest'), { ownerId: 'owner', to: ['private@example.test'] });
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const intruder = testEnvironment.authenticatedContext('intruder').firestore();
+    const state = doc(owner, 'users/owner/reminderState/current');
+    await assertSucceeds(getDoc(state));
+    await assertFails(getDoc(doc(intruder, state.path)));
+    await assertFails(getDocs(collection(owner, 'users/owner/reminderState')));
+    await assertFails(updateDoc(state, { timezone: 'UTC' }));
+    await assertFails(getDoc(doc(owner, 'users/owner/pushTokens/device')));
+    await assertFails(getDoc(doc(owner, 'users/owner/pushTokenSessionCutoffs/device')));
+    await assertFails(getDoc(doc(owner, 'users/owner/reminderReceipts/2026-10-04_push')));
+    await assertFails(setDoc(doc(owner, 'users/owner/pushTokens/other'), { token: 'unsafe' }));
+    await assertFails(getDoc(doc(owner, 'pushTokenOwners/device')));
+    await assertFails(setDoc(doc(owner, 'pushTokenOwners/other'), { ownerId: 'owner' }));
+    await assertFails(getDoc(doc(owner, 'mail/owner_2026-10-04_emailDigest')));
+    await assertFails(setDoc(doc(owner, 'mail/unsafe'), { to: ['other@example.test'] }));
   });
 
   it('blocks direct owner mutations while the merged migration fence field is active', async () => {
@@ -2390,6 +2418,72 @@ describe('Firestore security rules', () => {
       bookmarked: true,
       revision: 2,
     }));
+  });
+
+  it('updates trusted canonical cards without requiring a duplicate public lexeme', async () => {
+    const owner = testEnvironment.authenticatedContext('canonical-owner').firestore();
+    const identity = {
+      language: 'en',
+      normalizedLemma: 'break the news',
+      partOfSpeech: 'phrase',
+      senseKey: 'share-bad-news',
+    };
+    const id = createLexemeId(identity);
+    const cardRef = doc(owner, `users/canonical-owner/cards/${id}`);
+
+    await seedCurrentCard(testEnvironment, 'canonical-owner', id, {
+      ...validCard(id),
+      id,
+      word: identity.normalizedLemma,
+      normalizedWord: identity.normalizedLemma,
+      ...identity,
+      lexemeId: id,
+      imageUrl: null,
+      imageSearchQuery: '',
+    });
+
+    await assertSucceeds(updateDoc(cardRef, {
+      imageUrl: 'https://images.pexels.com/photos/123/example.jpeg',
+      imageSearchQuery: 'breaking news',
+      revision: 2,
+      updatedAt: Timestamp.fromMillis(2),
+    }));
+    await assertFails(updateDoc(cardRef, {
+      normalizedLemma: 'changed identity',
+      revision: 3,
+    }));
+  });
+
+  it('keeps canonical identity assignment server-only even for a published lexeme', async () => {
+    const identity = {
+      language: 'en',
+      normalizedLemma: 'break the news',
+      partOfSpeech: 'phrase',
+      senseKey: 'share-bad-news',
+    };
+    const id = createLexemeId(identity);
+    const owner = testEnvironment.authenticatedContext('canonical-adoption-owner').firestore();
+    await seedCurrentCard(testEnvironment, 'canonical-adoption-owner', id, {
+      ...validCard(id),
+      id,
+      word: identity.normalizedLemma,
+      normalizedWord: identity.normalizedLemma,
+    });
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      const database = context.firestore();
+      await setDoc(doc(database, `lexemes/${id}`), {
+        schemaVersion: 3,
+        id,
+        ...identity,
+        provenance: { editorialStatus: 'published' },
+      });
+    });
+
+    const canonicalPatch = { ...identity, lexemeId: id, revision: 2 };
+    await assertFails(updateDoc(
+      doc(owner, `users/canonical-adoption-owner/cards/${id}`),
+      canonicalPatch,
+    ));
   });
 
   describe('card edit-sheet mutation allowlist', () => {

@@ -1,9 +1,10 @@
-type AiVocabularyAction = 'word' | 'story' | 'translate';
+type AiVocabularyAction = 'word' | 'story' | 'translate' | 'tutor';
 
 export const MAX_AI_OUTPUT_TOKENS: Readonly<Record<AiVocabularyAction, number>> = Object.freeze({
   word: 2_048,
   story: 1_024,
   translate: 1_536,
+  tutor: 768,
 });
 
 export const createAiGenerationConfig = <T extends object>(

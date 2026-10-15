@@ -251,6 +251,7 @@ const createCourse = (
 ): CourseProfile => {
   const existing = profile.courses.find(course => course.targetLanguage === input.targetLanguage);
   if (existing) {
+    if (input.operationId === existing.id) return profile;
     throw new CourseProfileConflictError(
       'course-exists',
       `A course for ${input.targetLanguage} already exists.`,
@@ -261,7 +262,14 @@ const createCourse = (
     throw new CourseProfileConflictError('course-limit', 'A profile can contain at most four courses.');
   }
   const usedCourseIds = new Set(profile.courses.map(course => course.id));
-  const courseId = uniqueId('course', factory, usedCourseIds);
+  const courseId = input.operationId ?? uniqueId('course', factory, usedCourseIds);
+  if (usedCourseIds.has(courseId)) {
+    throw new CourseProfileConflictError(
+      'course-exists',
+      'A course operation ID already exists.',
+      { courseId },
+    );
+  }
   const usedGoalIds = new Set<string>();
   const goals = input.goals.map(goalInput => {
     const goal = createGoal(goalInput, factory, clock, usedGoalIds);

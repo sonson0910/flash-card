@@ -7,6 +7,12 @@ const parseStartPracticeSessionV1Request = vi.fn();
 const completePracticeSessionV1ForOwner = vi.fn();
 const parseCompletePracticeSessionV1Request = vi.fn();
 const equipOwnedFrameForOwner = vi.fn();
+const updateReminderSettingsForOwner = vi.fn();
+const revokePushTokenForOwner = vi.fn();
+const endPushSessionForOwner = vi.fn();
+const parseReminderSettingsRequest = vi.fn();
+const parsePushTokenRequest = vi.fn();
+const parseEndPushSessionRequest = vi.fn();
 const consumePersistentRateLimit = vi.fn();
 const isAccountDeleting = vi.fn();
 
@@ -26,6 +32,15 @@ vi.mock('../src/verifiedGamification.js', async importOriginal => ({
   ...await importOriginal<typeof import('../src/verifiedGamification.js')>(),
   equipOwnedFrame: (...args: unknown[]) => equipOwnedFrameForOwner(...args),
 }));
+vi.mock('../src/reminderSettingsPersistence.js', async importOriginal => ({
+  ...await importOriginal<typeof import('../src/reminderSettingsPersistence.js')>(),
+  updateReminderSettingsForOwner: (...args: unknown[]) => updateReminderSettingsForOwner(...args),
+  revokePushTokenForOwner: (...args: unknown[]) => revokePushTokenForOwner(...args),
+  endPushSessionForOwner: (...args: unknown[]) => endPushSessionForOwner(...args),
+  parseReminderSettingsRequest: (...args: unknown[]) => parseReminderSettingsRequest(...args),
+  parsePushTokenRequest: (...args: unknown[]) => parsePushTokenRequest(...args),
+  parseEndPushSessionRequest: (...args: unknown[]) => parseEndPushSessionRequest(...args),
+}));
 vi.mock('../src/rateLimiter.js', async importOriginal => ({
   ...await importOriginal<typeof import('../src/rateLimiter.js')>(),
   consumePersistentRateLimit: (...args: unknown[]) => consumePersistentRateLimit(...args),
@@ -37,7 +52,7 @@ vi.mock('../src/accountData.js', async importOriginal => ({
 
 type Callable = { run(request: unknown): Promise<unknown> };
 const previousEnv = { ...process.env };
-let handlers: Record<'createCardV2' | 'startPracticeSessionV1' | 'completePracticeSessionV1' | 'equipOwnedFrame', Callable>;
+let handlers: Record<'createCardV2' | 'startPracticeSessionV1' | 'completePracticeSessionV1' | 'equipOwnedFrame' | 'updateReminderSettings' | 'revokePushToken' | 'endPushSession', Callable>;
 
 beforeAll(async () => {
   process.env.ANALYTICS_PSEUDONYM_KEY = 'x'.repeat(32);
@@ -47,6 +62,9 @@ beforeAll(async () => {
     startPracticeSessionV1: module.startPracticeSessionV1 as unknown as Callable,
     completePracticeSessionV1: module.completePracticeSessionV1 as unknown as Callable,
     equipOwnedFrame: module.equipOwnedFrame as unknown as Callable,
+    updateReminderSettings: module.updateReminderSettings as unknown as Callable,
+    revokePushToken: module.revokePushToken as unknown as Callable,
+    endPushSession: module.endPushSession as unknown as Callable,
   };
 });
 
@@ -60,6 +78,12 @@ beforeEach(() => {
   completePracticeSessionV1ForOwner.mockReset().mockResolvedValue({ sessionId: 'practice-1', awardedXp: 5 });
   parseCompletePracticeSessionV1Request.mockReset().mockReturnValue({ sessionId: 'practice-1', completionId: 'complete-1', answers: { responses: { 'card-1': 'answer' } } });
   equipOwnedFrameForOwner.mockReset().mockResolvedValue({ equippedFrameId: 'crimson-wing' });
+  updateReminderSettingsForOwner.mockReset().mockResolvedValue({ channels: { push: false } });
+  revokePushTokenForOwner.mockReset().mockResolvedValue(true);
+  endPushSessionForOwner.mockReset().mockResolvedValue(undefined);
+  parseReminderSettingsRequest.mockReset().mockReturnValue({ channels: { push: false, emailDigest: false } });
+  parsePushTokenRequest.mockReset().mockReturnValue('a'.repeat(64));
+  parseEndPushSessionRequest.mockReset().mockReturnValue('owner-1');
   consumePersistentRateLimit.mockReset().mockResolvedValue(undefined);
   isAccountDeleting.mockReset().mockResolvedValue(false);
 });
@@ -94,5 +118,32 @@ describe('server authority callables', () => {
     await expect(handlers.startPracticeSessionV1.run({ data: {} })).rejects.toMatchObject({ code: 'unauthenticated' });
     expect(parseStartPracticeSessionV1Request).not.toHaveBeenCalled();
     expect(consumePersistentRateLimit).not.toHaveBeenCalled();
+  });
+
+  it('routes reminder settings and token revocation through owner-scoped persistence', async () => {
+    const auth = { uid: 'owner-1', token: { auth_time: 100 } };
+    await expect(handlers.updateReminderSettings.run({ auth, data: {} }))
+      .resolves.toEqual({ saved: true });
+    await expect(handlers.revokePushToken.run({ auth, data: { endSession: true, expectedOwnerId: 'owner-1' } }))
+      .resolves.toEqual({ revoked: true });
+    expect(updateReminderSettingsForOwner).toHaveBeenCalledWith(expect.anything(), 'owner-1', expect.anything(), expect.any(Date), 100);
+    expect(revokePushTokenForOwner).toHaveBeenCalledWith(expect.anything(), 'owner-1', 'a'.repeat(64), expect.any(Date), true, 100);
+    expect(consumePersistentRateLimit.mock.calls.map(call => call[2])).toEqual([
+      'reminder-settings', 'push-token-revoke',
+    ]);
+  });
+
+  it('ends all server push tokens without a local token and rejects a stale owner or auth session', async () => {
+    const auth = { uid: 'owner-1', token: { auth_time: 100 } };
+    await expect(handlers.endPushSession.run({ auth, data: { expectedOwnerId: 'owner-1' } }))
+      .resolves.toEqual({ ended: true });
+    expect(endPushSessionForOwner).toHaveBeenCalledWith(expect.anything(), 'owner-1', 100, expect.any(Date));
+    expect(consumePersistentRateLimit).toHaveBeenCalledWith(expect.anything(), 'owner-1', 'push-session-end', 30);
+
+    parseEndPushSessionRequest.mockReturnValueOnce('owner-2');
+    await expect(handlers.endPushSession.run({ auth, data: { expectedOwnerId: 'owner-2' } }))
+      .rejects.toMatchObject({ code: 'permission-denied' });
+    await expect(handlers.endPushSession.run({ auth: { uid: 'owner-1', token: {} }, data: { expectedOwnerId: 'owner-1' } }))
+      .rejects.toMatchObject({ code: 'failed-precondition' });
   });
 });
