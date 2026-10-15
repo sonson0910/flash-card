@@ -10,6 +10,7 @@ import { formatNumber } from '../../lib/format';
 import { triggerHaptic } from '../../lib/haptics';
 import { playRewardSound } from '../../lib/interactionSounds';
 import { readLumiEnabled } from '../settings/lumi-preference';
+import { useTheme } from '../theme/ThemeProvider';
 import type { CardData } from '../../types/card';
 import { loadTomorrowDueCount } from './session-recap-service';
 import './practice-board.css';
@@ -31,10 +32,11 @@ interface SessionRecapModalProps {
 
 export function SessionRecapModal({ open, onClose, onViewWeeklyRecap, onRetryWeak, totalCards, goodCount, againCount, xpEarned, weakCards, targetLanguage, summary }: SessionRecapModalProps) {
   const { _ } = useLingui();
+  const { family } = useTheme();
   const saved = summary?.saved ?? goodCount + againCount;
   const complete = totalCards > 0 && saved === totalCards;
   const accuracy = saved > 0 ? Math.round((goodCount / saved) * 100) : 0;
-  const isCrystal = globalThis.document?.documentElement.dataset.themeFamily === 'crystal';
+  const isCrystal = family === 'crystal';
   const showLumi = isCrystal && readLumiEnabled();
 
   // The session-finale cue: fires once when the recap is actually reached (this component

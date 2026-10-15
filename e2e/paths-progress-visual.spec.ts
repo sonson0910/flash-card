@@ -153,7 +153,7 @@ async function expectAccessibleAndContained(page: Page, screen: string, root = p
     .analyze();
   const blocking = results.violations
     .filter(violation => violation.impact === 'serious' || violation.impact === 'critical')
-    .map(violation => ({ id: violation.id, impact: violation.impact, nodes: violation.nodes.map(node => node.target) }));
+    .map(violation => ({ id: violation.id, impact: violation.impact, nodes: violation.nodes.map(node => ({ target: node.target, checks: node.any.map(check => check.data), summary: node.failureSummary })) }));
   expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
 }
 
@@ -249,6 +249,17 @@ for (const theme of themes) {
       await expectAccessibleAndContained(page, 'Paths');
       await expectReducedMotion(page, 'Paths');
       await attachScreen(page, testInfo, `paths-${theme.family}-${theme.mode}-${viewport.name}`);
+      if (viewport.name === '390px') {
+        for (const name of ['Continue review', 'Open vocabulary']) {
+          const action = page.getByRole('button', { name, exact: true });
+          await action.evaluate(element => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
+          await expect(action).toBeInViewport({ ratio: 1 });
+          await action.hover({ trial: true });
+        }
+        const actionsScreenshot = testInfo.outputPath(`paths-actions-${theme.family}-${theme.mode}.png`);
+        await page.screenshot({ path: actionsScreenshot, animations: 'disabled' });
+        await testInfo.attach('Reachable mobile Paths actions', { path: actionsScreenshot, contentType: 'image/png' });
+      }
 
       await page.goto('/?view=progress&locale=en');
       await expect(page.getByRole('heading', { level: 1, name: /progress/i })).toBeVisible();
@@ -269,6 +280,15 @@ for (const theme of themes) {
         caret: 'hide',
         maxDiffPixelRatio: 0.01,
       });
+      if (viewport.name === '390px') {
+        const inspectDay = page.getByLabel('Inspect a day');
+        await inspectDay.evaluate(element => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
+        await expect(inspectDay).toBeInViewport({ ratio: 1 });
+        await inspectDay.hover({ trial: true });
+        const activityScreenshot = testInfo.outputPath(`progress-inspect-day-${theme.family}-${theme.mode}.png`);
+        await page.screenshot({ path: activityScreenshot, animations: 'disabled' });
+        await testInfo.attach('Reachable mobile Progress date control', { path: activityScreenshot, contentType: 'image/png' });
+      }
     });
   }
 }
@@ -279,7 +299,7 @@ test('Progress inspects covered review days and returns to range totals', async 
   const activity = page.getByRole('region', { name: 'Review activity' });
   const date = activity.getByLabel('Inspect a day');
   await expect(date).toHaveAttribute('min', '2026-03-27');
-  expect((await date.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await expect.poll(async () => (await date.boundingBox())?.height).toBeGreaterThanOrEqual(44);
 
   const coveredDay = activity.getByRole('button', { name: 'Sep 23, 2026: 3 reviews' });
   await coveredDay.click();
@@ -612,6 +632,9 @@ for (const theme of themes) {
       await expect(root).toHaveAttribute('data-theme-family', theme.family);
       if (theme.mode === 'dark') await expect(root).toHaveClass(/\bdark\b/);
       else await expect(root).not.toHaveClass(/\bdark\b/);
+      if (theme.family === 'crystal') {
+        await expect(page.locator('body')).toHaveCSS('color', theme.mode === 'dark' ? 'rgb(243, 245, 250)' : 'rgb(13, 26, 51)');
+      }
       await expect(page.getByRole('heading', { level: 1, name: 'Paths' })).toBeVisible();
       await expect(page.getByRole('region', { name: 'IELTS' })).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Choose a unit' })).toBeVisible();

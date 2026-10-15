@@ -89,7 +89,7 @@ describe('surface theme tokens', () => {
       flashcardStylesheet.indexOf('html[data-save-data="true"]', constrainedStart),
     );
 
-    expect(zenGlass).toContain('rgba(8, 20, 26, 0.92)');
+    expect(zenGlass).toContain('rgb(8, 20, 26)');
     expect(zenGlass).not.toContain('rgba(255, 255, 255, 0.9)');
     expect(constrained).toContain('.flashcard-panel');
     expect(constrained).toContain('.zen-glass-slab');

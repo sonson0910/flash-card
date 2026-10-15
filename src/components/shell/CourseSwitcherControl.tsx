@@ -138,7 +138,7 @@ export function CourseSwitcherControl() {
       <ChevronDown size={16} aria-hidden="true" className={`shrink-0 transition-transform ${open ? 'rotate-180' : ''} motion-reduce:transition-none`} />
     </button>
     {open && <div role="dialog" aria-label={_(msg({ id: 'course.switcher.dialog-label', message: 'Courses' }))}
-      className="claude-course-switcher-panel fixed inset-x-0 bottom-0 z-50 overflow-y-auto border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 shadow-xl crystal-chamfer">
+      className="claude-course-switcher-panel fixed inset-x-0 bottom-0 z-50 overflow-y-auto border border-[var(--sf-border)] bg-[var(--sf-surface)] p-3 shadow-xl crystal-chamfer">
       <div className="flex items-center justify-between px-1 pb-2">
         <h2 className="text-sm font-black text-[var(--sf-text)]"><Trans {...msg({ context: 'course.switcher.title', message: 'Your courses' })} /></h2>
         <button type="button" onClick={closeAndFocus} className={iconButtonClass} aria-label={_(msg({ id: 'course.switcher.close', message: 'Close' }))}><X size={18} aria-hidden="true" /></button>

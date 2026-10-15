@@ -58,7 +58,7 @@ msgctxt "flashcard.ai.usage-note"
 msgid "AI-generated · each question uses 1 AI request"
 msgstr "AI-generated · each question uses 1 AI request"
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:136
+#: src/components/flashcard/ActiveRecallPrompt.tsx:137
 msgctxt "flashcard.recall.correct"
 msgid "Correct. Reveal the answer to compare."
 msgstr "Correct. Reveal the answer to compare."
@@ -129,7 +129,7 @@ msgctxt "shell.share.no-sample-preview"
 msgid "A card preview is not available for this shared deck."
 msgstr "A card preview is not available for this shared deck."
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:109
+#: src/components/flashcard/ActiveRecallPrompt.tsx:110
 msgctxt "flashcard.recall.instructions"
 msgid "Recall first, then type your answer to check it."
 msgstr "Recall first, then type your answer to check it."
@@ -494,7 +494,7 @@ msgid "flashcard.hints.show"
 msgstr "Show hints"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:86
+#: src/components/flashcard/ActiveRecallPrompt.tsx:87
 #: src/components/flashcard/CardFront.tsx:81
 msgid "flashcard.image.illustration"
 msgstr "Illustration for {word}"
@@ -571,7 +571,7 @@ msgid "flashcard.reading.verified-pitch"
 msgstr "Verified Japanese pitch contour"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:123
+#: src/components/flashcard/ActiveRecallPrompt.tsx:124
 msgid "flashcard.recall.answer-placeholder"
 msgstr "Type your answer…"
 
@@ -581,7 +581,7 @@ msgid "flashcard.recall.audio-recall"
 msgstr "Audio recall"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:111
+#: src/components/flashcard/ActiveRecallPrompt.tsx:112
 msgid "flashcard.recall.check-answer"
 msgstr "Check recalled answer"
 
@@ -611,12 +611,12 @@ msgid "flashcard.recall.native-meaning"
 msgstr "Recall the {language} meaning"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:92
+#: src/components/flashcard/ActiveRecallPrompt.tsx:93
 msgid "flashcard.recall.no-illustration"
 msgstr "No illustration available"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:101
+#: src/components/flashcard/ActiveRecallPrompt.tsx:102
 msgid "flashcard.recall.play-word"
 msgstr "Play word for listening practice"
 
@@ -717,7 +717,7 @@ msgctxt "shell.share.copy-private"
 msgid "This link opens a preview. The recipient decides whether to add a separate copy."
 msgstr "This link opens a preview. The recipient decides whether to add a separate copy."
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:131
+#: src/components/flashcard/ActiveRecallPrompt.tsx:132
 msgctxt "flashcard.recall.check"
 msgid "Check"
 msgstr "Check"
@@ -840,7 +840,7 @@ msgctxt "shell.share.no-translation"
 msgid "Translation not available"
 msgstr "Translation not available"
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:145
+#: src/components/flashcard/ActiveRecallPrompt.tsx:146
 msgctxt "flashcard.recall.reveal"
 msgid "Reveal answer"
 msgstr "Reveal answer"
@@ -895,7 +895,7 @@ msgctxt "flashcard.ai.question"
 msgid "Q:"
 msgstr "Q:"
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:112
+#: src/components/flashcard/ActiveRecallPrompt.tsx:113
 msgctxt "flashcard.recall.answer"
 msgid "Your answer"
 msgstr "Your answer"
@@ -1233,7 +1233,7 @@ msgctxt "shell.undo.window"
 msgid "Undo is available for {seconds} seconds."
 msgstr "Undo is available for {seconds} seconds."
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:136
+#: src/components/flashcard/ActiveRecallPrompt.tsx:137
 msgctxt "flashcard.recall.incorrect"
 msgid "Not quite. Try again or reveal the answer to check."
 msgstr "Not quite. Try again or reveal the answer to check."

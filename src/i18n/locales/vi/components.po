@@ -58,7 +58,7 @@ msgctxt "flashcard.ai.usage-note"
 msgid "AI-generated · each question uses 1 AI request"
 msgstr "Do AI tạo · mỗi câu hỏi dùng 1 yêu cầu AI"
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:136
+#: src/components/flashcard/ActiveRecallPrompt.tsx:137
 msgctxt "flashcard.recall.correct"
 msgid "Correct. Reveal the answer to compare."
 msgstr "Đúng rồi. Hãy hiện đáp án để so sánh."
@@ -129,7 +129,7 @@ msgctxt "shell.share.no-sample-preview"
 msgid "A card preview is not available for this shared deck."
 msgstr "Không có bản xem trước thẻ cho bộ thẻ được chia sẻ này."
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:109
+#: src/components/flashcard/ActiveRecallPrompt.tsx:110
 msgctxt "flashcard.recall.instructions"
 msgid "Recall first, then type your answer to check it."
 msgstr "Nhớ trước, rồi nhập câu trả lời để kiểm tra."
@@ -494,7 +494,7 @@ msgid "flashcard.hints.show"
 msgstr "Hiện gợi ý"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:86
+#: src/components/flashcard/ActiveRecallPrompt.tsx:87
 #: src/components/flashcard/CardFront.tsx:81
 msgid "flashcard.image.illustration"
 msgstr "Minh họa cho {word}"
@@ -571,7 +571,7 @@ msgid "flashcard.reading.verified-pitch"
 msgstr "Đường cao độ tiếng Nhật đã kiểm chứng"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:123
+#: src/components/flashcard/ActiveRecallPrompt.tsx:124
 msgid "flashcard.recall.answer-placeholder"
 msgstr "Nhập câu trả lời…"
 
@@ -581,7 +581,7 @@ msgid "flashcard.recall.audio-recall"
 msgstr "Gợi nhớ qua âm thanh"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:111
+#: src/components/flashcard/ActiveRecallPrompt.tsx:112
 msgid "flashcard.recall.check-answer"
 msgstr "Kiểm tra câu trả lời"
 
@@ -611,12 +611,12 @@ msgid "flashcard.recall.native-meaning"
 msgstr "Nhớ lại nghĩa {language}"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:92
+#: src/components/flashcard/ActiveRecallPrompt.tsx:93
 msgid "flashcard.recall.no-illustration"
 msgstr "Không có hình minh họa"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:101
+#: src/components/flashcard/ActiveRecallPrompt.tsx:102
 msgid "flashcard.recall.play-word"
 msgstr "Phát từ để luyện nghe"
 
@@ -717,7 +717,7 @@ msgctxt "shell.share.copy-private"
 msgid "This link opens a preview. The recipient decides whether to add a separate copy."
 msgstr "Liên kết này mở bản xem trước. Người nhận sẽ tự chọn có thêm bản sao riêng hay không."
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:131
+#: src/components/flashcard/ActiveRecallPrompt.tsx:132
 msgctxt "flashcard.recall.check"
 msgid "Check"
 msgstr "Kiểm tra"
@@ -840,7 +840,7 @@ msgctxt "shell.share.no-translation"
 msgid "Translation not available"
 msgstr "Chưa có bản dịch"
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:145
+#: src/components/flashcard/ActiveRecallPrompt.tsx:146
 msgctxt "flashcard.recall.reveal"
 msgid "Reveal answer"
 msgstr "Hiện đáp án"
@@ -895,7 +895,7 @@ msgctxt "flashcard.ai.question"
 msgid "Q:"
 msgstr "Hỏi:"
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:112
+#: src/components/flashcard/ActiveRecallPrompt.tsx:113
 msgctxt "flashcard.recall.answer"
 msgid "Your answer"
 msgstr "Câu trả lời của bạn"
@@ -1233,7 +1233,7 @@ msgctxt "shell.undo.window"
 msgid "Undo is available for {seconds} seconds."
 msgstr "Có thể hoàn tác trong {seconds} giây."
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:136
+#: src/components/flashcard/ActiveRecallPrompt.tsx:137
 msgctxt "flashcard.recall.incorrect"
 msgid "Not quite. Try again or reveal the answer to check."
 msgstr "Chưa đúng. Hãy thử lại hoặc hiện đáp án để kiểm tra."

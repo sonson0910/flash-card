@@ -34,7 +34,7 @@
 .practice-board--spelling [aria-labelledby='spelling-question-heading'] {
   border-radius: 24px;
 }
-.practice-board--quiz [aria-labelledby='quiz-question-heading'] > :first-of-type {
+.practice-board--quiz [data-quiz-question-panel] {
   min-height: 260px;
   border: 1px solid var(--practice-line);
   background: linear-gradient(145deg, color-mix(in srgb, var(--sf-surface-glass) 92%, transparent), color-mix(in srgb, var(--sf-brand) 6%, var(--sf-surface)));
@@ -162,8 +162,8 @@
 :root[data-theme-family='crystal'] .practice-board :is(article, aside, [aria-labelledby$='question-heading'], .practice-rating-board) { clip-path: var(--sf-chamfer, none); }
 @media (max-width: 640px) {
   .practice-board { min-height: auto; padding-inline: 12px; }
-  .practice-board::before { inset-inline: -20px; top: 36px; height: 230px; }
-  .practice-board--quiz [aria-labelledby='quiz-question-heading'] > :first-of-type { min-height: 210px; }
+  .practice-board::before { inset-inline: 0; top: 36px; height: 230px; }
+  .practice-board--quiz [data-quiz-question-panel] { min-height: 210px; }
   .practice-board--spelling [aria-labelledby='spelling-question-heading'] { min-height: 360px; }
   .practice-board--story article { min-height: auto; }
   .practice-board--story aside { position: static; }

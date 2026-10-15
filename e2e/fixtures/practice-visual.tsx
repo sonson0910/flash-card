@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import '../../src/index.css';
+import '../../src/features/practice/practice-board.css';
 import { AppOverlays } from '../../src/components/AppOverlays';
 import { ThemeProvider } from '../../src/features/theme/ThemeProvider';
 import { I18nProvider, useUiLocale } from '../../src/i18n/I18nProvider';
@@ -60,7 +61,7 @@ function PracticeFixture() {
   useEffect(() => { void Promise.all([loadCatalog(locale, 'practice'), loadCatalog(locale, 'shell'), loadCatalog(locale, 'components')]).then(() => setReady(true)); }, [locale]);
   if (!ready) return null;
 
-  return <main data-practice-visual-view={view} className="min-h-screen px-4 py-5 sm:px-8 sm:py-8"><Suspense fallback={null}>
+  return <Suspense fallback={null}><main data-practice-visual-view={view} className="min-h-screen px-4 py-5 sm:px-8 sm:py-8">
     {(view === 'quiz' || view === 'quiz-answered') && <QuizView questions={quiz} currentIndex={0} selectedAnswer={view === 'quiz-answered' ? cards[0].translation : null} answeredCorrectly={view === 'quiz-answered' ? true : null} score={view === 'quiz-answered' ? 1 : 0} showResults={false} onSelect={noop} onNext={noop} onRestart={noop} onClose={noop} />}
     {(view === 'spelling' || isCheckedSpelling) && <><SpellingView cards={cards} currentIndex={0} input={isCheckedSpelling ? cards[0].word : ''} checked={isCheckedSpelling} correct={isCheckedSpelling} score={isCheckedSpelling ? 1 : 0} showResults={false} onInput={noop} onCheck={event => { event.preventDefault(); setSpellingChecks(count => count + 1); }} onNext={noop} onRestart={noop} onClose={noop} /><span data-spelling-check-count hidden>{spellingChecks}</span></>}
     {view === 'story' && <StoryView story={{ story: 'Careful learners adapt their study plan when new evidence gives useful context.', translation: 'Người học cẩn thận điều chỉnh kế hoạch học khi bằng chứng mới mang lại bối cảnh hữu ích.', language: 'en', translationLanguage: 'vi' }} loading={false} onGenerate={noop} onClose={noop} />}
@@ -76,8 +77,8 @@ function PracticeFixture() {
       generateStory={asyncNoop} isStatsOpen={false} setIsStatsOpen={noop} statsData={emptyStats} isDarkMode={false}
       showClearConfirm={false} setShowClearConfirm={noop} clearAll={asyncNoop} clearStatus="idle" clearError={null} resetClearFeedback={noop} isLoading={false}
       shareOpenerRef={{ current: null }} practiceOpenerRef={{ current: null }} statsOpenerRef={{ current: null }} clearOpenerRef={{ current: null }}
-    />}</Suspense>
-  </main>;
+    />}
+  </main></Suspense>;
 }
 
 Math.random = () => 0.37;

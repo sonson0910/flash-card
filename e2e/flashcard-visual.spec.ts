@@ -80,7 +80,7 @@ async function expectReadableZenGlass(panel: Locator) {
   expect(styles.opacity).toBe('1');
   expect(background.length, styles.backgroundColor).toBeGreaterThanOrEqual(3);
   expect(background.slice(0, 3).every(channel => channel <= 40), styles.backgroundColor).toBe(true);
-  expect(background[3] ?? 1, styles.backgroundColor).toBeGreaterThanOrEqual(0.9);
+  expect(background[3] ?? 1, styles.backgroundColor).toBe(1);
   expect(foreground.length, styles.color).toBeGreaterThanOrEqual(3);
   expect(foreground.slice(0, 3).every(channel => channel >= 240), styles.color).toBe(true);
 }
@@ -125,6 +125,14 @@ async function expectCardPhotoReady(shell: Locator) {
   await expect.poll(() => image.evaluate(element => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
 }
 
+async function expectPaintedSurface(panel: Locator) {
+  await expect.poll(() => panel.evaluate(element => {
+    const style = getComputedStyle(element);
+    const color = style.backgroundColor.match(/[\d.]+/g)?.map(Number) ?? [];
+    return style.backgroundImage !== 'none' || (color.length >= 3 && (color[3] ?? 1) > 0);
+  })).toBe(true);
+}
+
 for (const theme of themes) {
   for (const viewport of viewports) {
     test(`${theme.family} ${theme.mode} card front and back pass visual acceptance at ${viewport.name}`, async ({ page, signIn }) => {
@@ -150,6 +158,7 @@ for (const theme of themes) {
       await expect(shell).toHaveAttribute('data-card-side', 'front');
       await expect(shell.locator('[data-card-tier-label]')).toHaveText('Bud');
       await expect(shell.locator('.flashcard-face')).toBeVisible();
+      await expectPaintedSurface(shell.locator('.flashcard-face'));
       await expectCardPhotoReady(shell);
       await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-front.png`, {
         animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
@@ -165,6 +174,7 @@ for (const theme of themes) {
       await shell.getByRole('button', { name: /Reveal the Vietnamese meaning of luminous/ }).click();
       await expect(shell).toHaveAttribute('data-card-side', 'back');
       await expect(shell.locator('.flashcard-back')).toBeVisible();
+      await expectPaintedSurface(shell.locator('.flashcard-back'));
       await expect(shell.getByText('adjective', { exact: true })).toBeVisible();
       await expect(shell.getByText('/ˈluːmɪnəs/', { exact: true })).toBeVisible();
       await expect(shell.getByText('The luminous dial remained visible at night.', { exact: true })).toBeVisible();
@@ -324,6 +334,22 @@ for (const theme of themes) {
     });
   }
 }
+
+test('Zen keeps both faces readable when backdrop blur is unavailable', async ({ page, signIn }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'classic');
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_zen_glass_mode', 'true');
+  });
+  await signIn(page, '/?view=library&locale=en');
+  await page.addStyleTag({ content: '.zen-glass-slab { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }' });
+  await page.locator('.library-word-open').click();
+  const shell = page.getByRole('group', { name: /luminous flashcard/i });
+  await expectReadableZenGlass(shell.locator('.flashcard-face.zen-glass-slab'));
+  await shell.getByRole('button', { name: 'Reveal meaning' }).click();
+  await expectReadableZenGlass(shell.locator('.flashcard-back.zen-glass-slab'));
+});
 
 test('reduced motion changes the card face without spatial animation', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 390, height: 844 });

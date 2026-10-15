@@ -8,11 +8,12 @@ import type { Locator, Page, TestInfo } from '@playwright/test';
 // ever produces the 'new' bucket (see `reasonFor` in dailyPlan.ts), so it can
 // never reach `beginMultiStageSession`'s review branch. This file's fixture
 // is split so every stage in the plan is non-empty and gets exercised for
-// real: 6 due cards (reviews > 0 with a past `nextReviewDate`) and 6 unrated
-// cards, all with distinct word/translation pairs so Word Match also clears
+// real: 6 due cards (reviews > 0 with a past `nextReviewDate`) and 5 unrated
+// cards, matching the daily plan's default maximum of 5 new words. All have
+// distinct word/translation pairs so Word Match also clears
 // its 4-pair minimum on the same pool.
 const dueWords = ['analyse', 'benefit', 'context', 'develop', 'evidence', 'focus'];
-const newWords = ['generate', 'hypothesis', 'identify', 'justify', 'knowledge', 'language'];
+const newWords = ['generate', 'hypothesis', 'identify', 'justify', 'knowledge'];
 
 function buildCard(word: string, index: number, kind: 'due' | 'new') {
   return {
@@ -72,6 +73,8 @@ const viewports = [
 async function expectAccessibleAndContained(page: Page, screen: string) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow, `${screen} has horizontal overflow`).toBeLessThanOrEqual(1);
+  const workspaceOverflow = await page.locator('.claude-workspace').evaluate(element => element.scrollWidth - element.clientWidth);
+  expect(workspaceOverflow, `${screen} has horizontal workspace overflow`).toBeLessThanOrEqual(1);
 
   const clippedControls = await page.locator('button:visible, input:visible, select:visible, textarea:visible, summary:visible').evaluateAll(elements => elements
     .map(element => {
@@ -112,6 +115,22 @@ async function attachScreen(page: Page, testInfo: TestInfo, name: string) {
   const screenshot = testInfo.outputPath(`${name}.png`);
   await page.screenshot({ path: screenshot, fullPage: true });
   await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
+}
+
+async function attachReachableControls(page: Page, testInfo: TestInfo, name: string, surface: Locator, controls: Locator) {
+  const workspace = page.locator('.claude-workspace');
+  const scroll = await workspace.evaluate(element => ({ top: element.scrollTop, left: element.scrollLeft }));
+  try {
+    await expect(controls).not.toHaveCount(0);
+    await surface.evaluate(element => element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' }));
+    for (const control of await controls.all()) {
+      await expect(control).toBeInViewport({ ratio: 1 });
+      await control.hover({ trial: true });
+    }
+    await testInfo.attach(`${name}-controls-in-viewport`, { body: await page.screenshot({ animations: 'disabled', caret: 'hide' }), contentType: 'image/png' });
+  } finally {
+    await workspace.evaluate((element, position) => element.scrollTo({ ...position, behavior: 'instant' }), scroll);
+  }
 }
 
 async function dismissRewards(page: Page) {
@@ -210,7 +229,7 @@ test.beforeEach(async ({ seedCards, blockExternalNetwork, page }) => {
 for (const theme of themes) {
   for (const viewport of viewports) {
     test(`${theme.family} ${theme.mode} unified daily session flow is visually accessible at ${viewport.name}`, async ({ page, signIn }, testInfo) => {
-      // Six lesson items per stage plus a Word Match round, each rated
+      // Eleven lesson items plus a Word Match round, each rated
       // through the real reviewCardV2 emulator round-trip, comfortably
       // exceeds Playwright's 30s default under cold-dev-server load.
       test.setTimeout(150_000);
@@ -225,7 +244,7 @@ for (const theme of themes) {
 
       await signIn(page, '/?view=today&locale=en');
       await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
-      await expect(page.getByRole('heading', { level: 1, name: /12 items ready to remember/ })).toBeVisible();
+      await expect(page.getByRole('heading', { level: 1, name: `${cards.length} items ready to remember.` })).toBeVisible();
       await page.evaluate(() => {
         let seed = 0x51f1a5;
         Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 0x100000000);
@@ -240,10 +259,14 @@ for (const theme of themes) {
         async () => {
           await expectAccessibleAndContained(page, 'Review front');
           await attachScreen(page, testInfo, `${label}-review-front`);
+          const submit = page.getByRole('button', { name: 'Submit answer' });
+          await attachReachableControls(page, testInfo, `${label}-review-front`, submit, submit);
         },
         async () => {
           await expectAccessibleAndContained(page, 'Review back');
           await attachScreen(page, testInfo, `${label}-review-back`);
+          const ratings = page.locator('.lesson-rating-grid');
+          await attachReachableControls(page, testInfo, `${label}-review-back`, ratings, ratings.getByRole('button'));
         },
       );
       await expect(page.locator('.claude-topbar')).toBeHidden();
@@ -259,9 +282,11 @@ for (const theme of themes) {
       expect(bridgeEdges.right).toBeGreaterThanOrEqual(bridgeEdges.viewport - 1);
       await expectAccessibleAndContained(page, 'Bridge');
       await attachScreen(page, testInfo, `${label}-bridge`);
+      const continueButton = page.getByRole('button', { name: 'Continue', exact: true });
+      await attachReachableControls(page, testInfo, `${label}-bridge`, continueButton, continueButton);
       await page.getByRole('button', { name: 'Continue' }).click();
 
-      // New words: the plan's 6 unrated cards. Only the front is a distinct
+      // New words: the plan's 5 unrated cards. Only the front is a distinct
       // named state for this task; the feedback tone is already covered by
       // "review back" above.
       await runLessonStage(page, freshCount, async () => {
@@ -277,7 +302,7 @@ for (const theme of themes) {
       });
       await page.getByRole('button', { name: 'Continue' }).click();
 
-      // Word Match: the same 12-card pool clears the 4-pair minimum.
+      // Word Match: the same 11-card pool clears the 4-pair minimum.
       await expect(page.getByRole('button', { name: 'Close word match' })).toBeVisible({ timeout: 15_000 });
       await expect(page.locator('.claude-topbar')).toBeHidden();
       await expect(page.locator('.claude-mobile-nav')).toBeHidden();
@@ -286,6 +311,7 @@ for (const theme of themes) {
       const lastMeaning = page.locator('.practice-board--match button[lang="vi"]').last();
       await lastMeaning.scrollIntoViewIfNeeded();
       await expect(lastMeaning).toBeInViewport();
+      await attachReachableControls(page, testInfo, `${label}-match`, lastMeaning, page.locator('.practice-board--match button[lang="vi"]'));
       await page.getByRole('button', { name: 'Close word match' }).click();
 
       // Recap: the session-finale modal, reached through the real flow

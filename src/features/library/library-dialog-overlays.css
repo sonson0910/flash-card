@@ -1,6 +1,6 @@
 .library-dialog-overlay { position: fixed; inset: 0; z-index: 50; background: var(--sf-scrim, rgb(7 10 20 / .72)); backdrop-filter: blur(5px); }
 .library-dialog-overlay--danger { background: color-mix(in srgb, var(--sf-scrim, rgb(7 10 20 / .78)) 88%, #8a0a26); }
-.library-dialog-frame { position: fixed; inset: 50% auto auto 50%; z-index: 51; width: min(calc(100vw - 2rem), 40rem); max-height: calc(100dvh - 2rem); overflow: auto; transform: translate(-50%, -50%); border: 1px solid var(--sf-border); border-radius: 24px; background: var(--sf-dialog-bg, var(--sf-surface)); color: var(--sf-text); box-shadow: 0 30px 60px -28px var(--sf-shadow); outline: none; }
+.library-dialog-frame { position: fixed; inset: 50% auto auto 50%; z-index: 51; width: min(calc(100vw - 2rem), 40rem); max-height: calc(100dvh - 2rem); overflow: auto; transform: translate(-50%, -50%); border: 1px solid var(--sf-border); border-radius: 24px; background: var(--sf-dialog-bg, var(--sf-surface)); background-color: var(--sf-surface); color: var(--sf-text); box-shadow: 0 30px 60px -28px var(--sf-shadow); outline: none; }
 .library-dialog-frame--manage { width: min(calc(100vw - 2rem), 34rem); }
 .library-dialog-frame--danger { width: min(calc(100vw - 2rem), 38rem); border-color: color-mix(in srgb, var(--sf-danger, #e0173f) 50%, var(--sf-border)); }
 .library-dialog-frame--insights { display: flex; flex-direction: column; width: min(calc(100vw - 2rem), 48rem); overflow: hidden; }

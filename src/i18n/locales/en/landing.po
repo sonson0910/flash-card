@@ -18,18 +18,18 @@ msgctxt "landing.atmosphere.golden-hour"
 msgid "Golden Hour"
 msgstr "Golden Hour"
 
-#: src/features/landing/LandingPage.tsx:648
-#: src/features/landing/LandingPage.tsx:773
+#: src/features/landing/LandingPage.tsx:656
+#: src/features/landing/LandingPage.tsx:781
 msgctxt "landing.nav.curriculum"
 msgid "Curriculum"
 msgstr "Curriculum"
 
-#: src/features/landing/LandingPage.tsx:1021
+#: src/features/landing/LandingPage.tsx:1029
 msgctxt "landing.methods.preview.caption"
 msgid "Built for the words you actually meet."
 msgstr "Built for the words you actually meet."
 
-#: src/features/landing/LandingPage.tsx:1100
+#: src/features/landing/LandingPage.tsx:1108
 msgctxt "landing.closing.eyebrow"
 msgid "Your next word is waiting"
 msgstr "Your next word is waiting"
@@ -39,12 +39,12 @@ msgctxt "landing.demo.meaning.spelling"
 msgid "spelling"
 msgstr "spelling"
 
-#: src/features/landing/LandingPage.tsx:1159
+#: src/features/landing/LandingPage.tsx:1167
 msgctxt "landing.footer.privacy"
 msgid "Privacy Policy"
 msgstr "Privacy Policy"
 
-#: src/features/landing/LandingPage.tsx:887
+#: src/features/landing/LandingPage.tsx:895
 msgctxt "landing.extension.description"
 msgid "The SonFlash Chrome extension turns any selected word or passage into a flashcard without leaving the page."
 msgstr "The SonFlash Chrome extension turns any selected word or passage into a flashcard without leaving the page."
@@ -54,7 +54,7 @@ msgctxt "landing.pricing.faq.checkout.question"
 msgid "Can I buy Pro right now?"
 msgstr "Can I buy Pro right now?"
 
-#: src/features/landing/LandingPage.tsx:952
+#: src/features/landing/LandingPage.tsx:960
 msgctxt "landing.languages.pack.chinese"
 msgid "中文 · Chinese"
 msgstr "中文 · Chinese"
@@ -76,13 +76,13 @@ msgid "Bud"
 msgstr "Bud"
 
 #: src/features/landing/LandingPage.tsx:293
-#: src/features/landing/LandingPage.tsx:694
-#: src/features/landing/LandingPage.tsx:1122
+#: src/features/landing/LandingPage.tsx:702
+#: src/features/landing/LandingPage.tsx:1130
 msgctxt "landing.hero.start"
 msgid "Start learning"
 msgstr "Start learning"
 
-#: src/features/landing/LandingPage.tsx:1049
+#: src/features/landing/LandingPage.tsx:1057
 msgctxt "landing.pricing.eyebrow"
 msgid "Free to start, Pro when you want more"
 msgstr "Free to start, Pro when you want more"
@@ -92,7 +92,7 @@ msgctxt "landing.atmosphere.deep-woods"
 msgid "Deep Woods"
 msgstr "Deep Woods"
 
-#: src/features/landing/LandingPage.tsx:449
+#: src/features/landing/LandingPage.tsx:457
 msgctxt "landing.demo.meaning"
 msgid "happening or done without delay"
 msgstr "happening or done without delay"
@@ -108,12 +108,12 @@ msgid "30 / month"
 msgstr "30 / month"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:536
+#: src/features/landing/LandingPage.tsx:544
 msgid "account.data.delete.cache-warning"
 msgstr "SonFlash couldn't clear saved account data from this device. Clear SonFlash site data in your browser."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:535
+#: src/features/landing/LandingPage.tsx:543
 msgid "account.data.delete.started"
 msgstr "We could not confirm whether account deletion finished. If you can still sign in later, contact support."
 
@@ -122,8 +122,8 @@ msgctxt "landing.pricing.row.ai-cards"
 msgid "AI-generated cards"
 msgstr "AI-generated cards"
 
-#: src/features/landing/LandingPage.tsx:640
-#: src/features/landing/LandingPage.tsx:762
+#: src/features/landing/LandingPage.tsx:648
+#: src/features/landing/LandingPage.tsx:770
 msgctxt "landing.nav.paths"
 msgid "Paths"
 msgstr "Paths"
@@ -133,8 +133,8 @@ msgctxt "landing.flow.read.description"
 msgid "See the word in plain language before asking yourself to recall it."
 msgstr "See the word in plain language before asking yourself to recall it."
 
-#: src/features/landing/LandingPage.tsx:633
-#: src/features/landing/LandingPage.tsx:752
+#: src/features/landing/LandingPage.tsx:641
+#: src/features/landing/LandingPage.tsx:760
 msgctxt "landing.nav.chrome-extension"
 msgid "Chrome extension"
 msgstr "Chrome extension"
@@ -144,14 +144,14 @@ msgctxt "landing.pricing.row.extension"
 msgid "Chrome extension"
 msgstr "Chrome extension"
 
-#: src/features/landing/LandingPage.tsx:667
-#: src/features/landing/LandingPage.tsx:797
+#: src/features/landing/LandingPage.tsx:675
+#: src/features/landing/LandingPage.tsx:805
 msgctxt "landing.nav.languages"
 msgid "Languages"
 msgstr "Languages"
 
-#: src/features/landing/LandingPage.tsx:661
-#: src/features/landing/LandingPage.tsx:790
+#: src/features/landing/LandingPage.tsx:669
+#: src/features/landing/LandingPage.tsx:798
 msgctxt "landing.nav.extension"
 msgid "Extension"
 msgstr "Extension"
@@ -161,17 +161,17 @@ msgctxt "landing.pricing.faq.free.question"
 msgid "Is the free plan really free?"
 msgstr "Is the free plan really free?"
 
-#: src/features/landing/LandingPage.tsx:1007
+#: src/features/landing/LandingPage.tsx:1015
 msgctxt "landing.methods.recall.title"
 msgid "Judge your recall honestly"
 msgstr "Judge your recall honestly"
 
-#: src/features/landing/LandingPage.tsx:988
+#: src/features/landing/LandingPage.tsx:996
 msgctxt "landing.methods.description"
 msgid "Your feedback helps plan a useful next review with FSRS scheduling."
 msgstr "Your feedback helps plan a useful next review with FSRS scheduling."
 
-#: src/features/landing/LandingPage.tsx:883
+#: src/features/landing/LandingPage.tsx:891
 msgctxt "landing.extension.title"
 msgid "Learn from the page you're already on."
 msgstr "Learn from the page you're already on."
@@ -196,7 +196,7 @@ msgctxt "landing.ribbon.learn-at-your-pace"
 msgid "Learn at your pace"
 msgstr "Learn at your pace"
 
-#: src/features/landing/LandingPage.tsx:1061
+#: src/features/landing/LandingPage.tsx:1069
 msgctxt "landing.pricing.free-vs-pro.free"
 msgid "Free"
 msgstr "Free"
@@ -211,12 +211,12 @@ msgctxt "landing.flow.capture.description"
 msgid "Turn a word or passage into a card with its meaning, pronunciation, and example."
 msgstr "Turn a word or passage into a card with its meaning, pronunciation, and example."
 
-#: src/features/landing/LandingPage.tsx:1072
+#: src/features/landing/LandingPage.tsx:1080
 msgctxt "landing.pricing.price"
 msgid "The final Pro price will be confirmed before sales open."
 msgstr "The final Pro price will be confirmed before sales open."
 
-#: src/features/landing/LandingPage.tsx:1076
+#: src/features/landing/LandingPage.tsx:1084
 msgctxt "landing.pricing.purchase-note"
 msgid "Registering your interest does not charge you. Purchases are not open yet — we will follow up by email when they are."
 msgstr "Registering your interest does not charge you. Purchases are not open yet — we will follow up by email when they are."
@@ -226,13 +226,13 @@ msgctxt "landing.flow.capture.title"
 msgid "Keep the context"
 msgstr "Keep the context"
 
-#: src/features/landing/LandingPage.tsx:673
-#: src/features/landing/LandingPage.tsx:805
+#: src/features/landing/LandingPage.tsx:681
+#: src/features/landing/LandingPage.tsx:813
 msgctxt "landing.nav.pricing"
 msgid "Pricing & access"
 msgstr "Pricing & access"
 
-#: src/features/landing/LandingPage.tsx:1055
+#: src/features/landing/LandingPage.tsx:1063
 msgctxt "landing.pricing.title"
 msgid "Pricing & access"
 msgstr "Pricing & access"
@@ -242,22 +242,22 @@ msgctxt "landing.demo.tier.learning"
 msgid "Learning"
 msgstr "Learning"
 
-#: src/features/landing/LandingPage.tsx:420
+#: src/features/landing/LandingPage.tsx:426
 msgctxt "landing.demo.part-of-speech"
 msgid "Adjective"
 msgstr "Adjective"
 
-#: src/features/landing/LandingPage.tsx:983
+#: src/features/landing/LandingPage.tsx:991
 msgctxt "landing.methods.title"
 msgid "Review what is ready."
 msgstr "Review what is ready."
 
-#: src/features/landing/LandingPage.tsx:840
+#: src/features/landing/LandingPage.tsx:848
 msgctxt "landing.atmosphere.static"
 msgid "Static atmosphere is enabled for this device or motion preference."
 msgstr "Static atmosphere is enabled for this device or motion preference."
 
-#: src/features/landing/LandingPage.tsx:877
+#: src/features/landing/LandingPage.tsx:885
 msgctxt "landing.extension.eyebrow"
 msgid "Save from anywhere"
 msgstr "Save from anywhere"
@@ -272,12 +272,12 @@ msgctxt "landing.demo.grade.star"
 msgid "Star"
 msgstr "Star"
 
-#: src/features/landing/LandingPage.tsx:1012
+#: src/features/landing/LandingPage.tsx:1020
 msgctxt "landing.methods.recall.description"
 msgid "Four familiar ratings keep the choice quick."
 msgstr "Four familiar ratings keep the choice quick."
 
-#: src/features/landing/LandingPage.tsx:959
+#: src/features/landing/LandingPage.tsx:967
 msgctxt "landing.languages.status.in-progress"
 msgid "In progress"
 msgstr "In progress"
@@ -287,7 +287,7 @@ msgctxt "landing.extension.feature.save.description"
 msgid "Select text on any website, then save it straight into your library as a flashcard with context."
 msgstr "Select text on any website, then save it straight into your library as a flashcard with context."
 
-#: src/features/landing/LandingPage.tsx:1026
+#: src/features/landing/LandingPage.tsx:1034
 msgctxt "landing.methods.preview.quote"
 msgid "A vocabulary is useful when you can reach for it."
 msgstr "A vocabulary is useful when you can reach for it."
@@ -297,22 +297,22 @@ msgctxt "landing.flow.read.title"
 msgid "Read it clearly"
 msgstr "Read it clearly"
 
-#: src/features/landing/LandingPage.tsx:454
+#: src/features/landing/LandingPage.tsx:462
 msgctxt "landing.demo.example"
 msgid "The new policy takes immediate effect."
 msgstr "The new policy takes immediate effect."
 
-#: src/features/landing/LandingPage.tsx:1137
+#: src/features/landing/LandingPage.tsx:1145
 msgctxt "landing.closing.consent"
 msgid "SonFlash is for learners aged 18 and over. By signing in, you agree to the <terms>Terms</terms> and have read the <privacy>Privacy Policy</privacy>."
 msgstr "SonFlash is for learners aged 18 and over. By signing in, you agree to the <terms>Terms</terms> and have read the <privacy>Privacy Policy</privacy>."
 
-#: src/features/landing/LandingPage.tsx:950
+#: src/features/landing/LandingPage.tsx:958
 msgctxt "landing.languages.pack.korean"
 msgid "한국어 · Korean"
 msgstr "한국어 · Korean"
 
-#: src/features/landing/LandingPage.tsx:1113
+#: src/features/landing/LandingPage.tsx:1121
 msgctxt "landing.closing.description"
 msgid "Start with the cards ready today, then make each new word easier to find again."
 msgstr "Start with the cards ready today, then make each new word easier to find again."
@@ -327,13 +327,13 @@ msgctxt "landing.ribbon.spaced-review"
 msgid "Spaced review"
 msgstr "Spaced review"
 
-#: src/features/landing/LandingPage.tsx:609
-#: src/features/landing/LandingPage.tsx:1150
+#: src/features/landing/LandingPage.tsx:617
+#: src/features/landing/LandingPage.tsx:1158
 msgctxt "landing.brand.plain"
 msgid "SonFlash"
 msgstr "SonFlash"
 
-#: src/features/landing/LandingPage.tsx:995
+#: src/features/landing/LandingPage.tsx:1003
 msgctxt "landing.methods.context.title"
 msgid "See the meaning in context"
 msgstr "See the meaning in context"
@@ -355,7 +355,7 @@ msgstr "Sample English vocabulary card"
 
 #. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:328
-#: src/features/landing/LandingPage.tsx:432
+#: src/features/landing/LandingPage.tsx:438
 msgid "landing.demo.reveal-prompt"
 msgstr "Tap to reveal the meaning"
 
@@ -375,27 +375,27 @@ msgid "landing.meta.title"
 msgstr "SonFlash — Remember words. Use them when it matters."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:710
+#: src/features/landing/LandingPage.tsx:718
 msgid "landing.mobile-menu.open"
 msgstr "Open navigation menu"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:730
+#: src/features/landing/LandingPage.tsx:738
 msgid "landing.mobile-nav.label"
 msgstr "Mobile navigation"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:615
+#: src/features/landing/LandingPage.tsx:623
 msgid "landing.nav.label"
 msgstr "Landing navigation"
 
-#: src/features/landing/LandingPage.tsx:655
-#: src/features/landing/LandingPage.tsx:783
+#: src/features/landing/LandingPage.tsx:663
+#: src/features/landing/LandingPage.tsx:791
 msgctxt "landing.nav.vocabulary"
 msgid "Vocabulary"
 msgstr "Vocabulary"
 
-#: src/features/landing/LandingPage.tsx:1169
+#: src/features/landing/LandingPage.tsx:1177
 msgctxt "landing.footer.copyright"
 msgid "© {year} SonFlash"
 msgstr "© {year} SonFlash"
@@ -405,12 +405,12 @@ msgctxt "landing.demo.tier.new"
 msgid "New"
 msgstr "New"
 
-#: src/features/landing/LandingPage.tsx:1081
+#: src/features/landing/LandingPage.tsx:1089
 msgctxt "landing.pricing.faq.title"
 msgid "Questions"
 msgstr "Questions"
 
-#: src/features/landing/LandingPage.tsx:611
+#: src/features/landing/LandingPage.tsx:619
 msgctxt "landing.brand.crystal-wordmark"
 msgid "SON<0>FLASH</0>"
 msgstr "SON<0>FLASH</0>"
@@ -438,7 +438,7 @@ msgctxt "landing.demo.meaning.instant"
 msgid "a moment"
 msgstr "a moment"
 
-#: src/features/landing/LandingPage.tsx:935
+#: src/features/landing/LandingPage.tsx:943
 msgctxt "landing.languages.title"
 msgid "English today. More languages on the way."
 msgstr "English today. More languages on the way."
@@ -448,18 +448,18 @@ msgctxt "landing.extension.feature.popup.description"
 msgid "Open the extension icon to see how many reviews are due, then jump back into today's session."
 msgstr "Open the extension icon to see how many reviews are due, then jump back into today's session."
 
-#: src/features/landing/LandingPage.tsx:1108
+#: src/features/landing/LandingPage.tsx:1116
 msgctxt "landing.closing.title"
 msgid "Build a vocabulary you can reach for."
 msgstr "Build a vocabulary you can reach for."
 
-#: src/features/landing/LandingPage.tsx:626
-#: src/features/landing/LandingPage.tsx:743
+#: src/features/landing/LandingPage.tsx:634
+#: src/features/landing/LandingPage.tsx:751
 msgctxt "landing.nav.how-it-works"
 msgid "How it works"
 msgstr "How it works"
 
-#: src/features/landing/LandingPage.tsx:686
+#: src/features/landing/LandingPage.tsx:694
 msgctxt "landing.nav.sign-in"
 msgid "Sign in"
 msgstr "Sign in"
@@ -469,12 +469,12 @@ msgctxt "landing.pricing.faq.exhausted.answer"
 msgid "You can keep reviewing and add cards manually. AI generation resumes next month, or right away with Pro."
 msgstr "You can keep reviewing and add cards manually. AI generation resumes next month, or right away with Pro."
 
-#: src/features/landing/LandingPage.tsx:929
+#: src/features/landing/LandingPage.tsx:937
 msgctxt "landing.languages.eyebrow"
 msgid "Where SonFlash is headed"
 msgstr "Where SonFlash is headed"
 
-#: src/features/landing/LandingPage.tsx:939
+#: src/features/landing/LandingPage.tsx:947
 msgctxt "landing.languages.description"
 msgid "SonFlash currently teaches English vocabulary, with meanings shown in English or Vietnamese. These vocabulary packs are in development and are not yet available to switch to."
 msgstr "SonFlash currently teaches English vocabulary, with meanings shown in English or Vietnamese. These vocabulary packs are in development and are not yet available to switch to."
@@ -495,11 +495,11 @@ msgid "Yes. Reviews, manual cards, and the Chrome extension stay free with no ti
 msgstr "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:678
+#: src/features/landing/LandingPage.tsx:686
 msgid "shell.theme.quick-toggle"
 msgstr "Switch light and dark mode"
 
-#: src/features/landing/LandingPage.tsx:459
+#: src/features/landing/LandingPage.tsx:467
 msgctxt "landing.demo.caption"
 msgid "One clear card, ready for the next review."
 msgstr "One clear card, ready for the next review."
@@ -510,7 +510,7 @@ msgid "Mastered"
 msgstr "Mastered"
 
 #: src/features/landing/LandingPage.tsx:294
-#: src/features/landing/LandingPage.tsx:1131
+#: src/features/landing/LandingPage.tsx:1139
 msgctxt "landing.hero.sign-in"
 msgid "Sign in to sync"
 msgstr "Sign in to sync"
@@ -520,7 +520,7 @@ msgctxt "landing.ribbon.chrome-extension"
 msgid "Chrome extension"
 msgstr "Chrome extension"
 
-#: src/features/landing/LandingPage.tsx:1165
+#: src/features/landing/LandingPage.tsx:1173
 msgctxt "landing.footer.extension"
 msgid "Extension"
 msgstr "Extension"
@@ -545,7 +545,7 @@ msgctxt "landing.atmosphere.still-water"
 msgid "Still Water"
 msgstr "Still Water"
 
-#: src/features/landing/LandingPage.tsx:822
+#: src/features/landing/LandingPage.tsx:830
 msgctxt "landing.hero.atmosphere"
 msgid "Choose an atmosphere"
 msgstr "Choose an atmosphere"
@@ -556,17 +556,17 @@ msgctxt "landing.pricing.value.included"
 msgid "Included"
 msgstr "Included"
 
-#: src/features/landing/LandingPage.tsx:958
+#: src/features/landing/LandingPage.tsx:966
 msgctxt "landing.languages.status.available"
 msgid "Available now"
 msgstr "Available now"
 
-#: src/features/landing/LandingPage.tsx:1000
+#: src/features/landing/LandingPage.tsx:1008
 msgctxt "landing.methods.context.description"
 msgid "A clear card gives each word room to make sense."
 msgstr "A clear card gives each word room to make sense."
 
-#: src/features/landing/LandingPage.tsx:1062
+#: src/features/landing/LandingPage.tsx:1070
 msgctxt "landing.pricing.free-vs-pro.pro"
 msgid "Pro"
 msgstr "Pro"
@@ -586,7 +586,7 @@ msgctxt "landing.extension.feature.popup.title"
 msgid "Check in from the toolbar"
 msgstr "Check in from the toolbar"
 
-#: src/features/landing/LandingPage.tsx:1162
+#: src/features/landing/LandingPage.tsx:1170
 msgctxt "landing.footer.terms"
 msgid "Terms"
 msgstr "Terms"
@@ -596,12 +596,12 @@ msgctxt "landing.extension.feature.save.title"
 msgid "Right-click to save"
 msgstr "Right-click to save"
 
-#: src/features/landing/LandingPage.tsx:849
+#: src/features/landing/LandingPage.tsx:857
 msgctxt "landing.features.title"
 msgid "Keep the words you meet."
 msgstr "Keep the words you meet."
 
-#: src/features/landing/LandingPage.tsx:1153
+#: src/features/landing/LandingPage.tsx:1161
 msgctxt "landing.footer.description"
 msgid "for intentional vocabulary learning."
 msgstr "for intentional vocabulary learning."
@@ -611,17 +611,17 @@ msgctxt "landing.pricing.row.manual-cards"
 msgid "Manual flashcards"
 msgstr "Manual flashcards"
 
-#: src/features/landing/LandingPage.tsx:1060
+#: src/features/landing/LandingPage.tsx:1068
 msgctxt "landing.pricing.free-vs-pro.title"
 msgid "Free vs Pro"
 msgstr "Free vs Pro"
 
-#: src/features/landing/LandingPage.tsx:949
+#: src/features/landing/LandingPage.tsx:957
 msgctxt "landing.languages.pack.english"
 msgid "English"
 msgstr "English"
 
-#: src/features/landing/LandingPage.tsx:951
+#: src/features/landing/LandingPage.tsx:959
 msgctxt "landing.languages.pack.japanese"
 msgid "日本語 · Japanese"
 msgstr "日本語 · Japanese"
@@ -631,7 +631,7 @@ msgctxt "landing.pricing.row.reviews"
 msgid "Reviews & spaced scheduling"
 msgstr "Reviews & spaced scheduling"
 
-#: src/features/landing/LandingPage.tsx:1035
+#: src/features/landing/LandingPage.tsx:1043
 msgctxt "landing.methods.open-library"
 msgid "Open your library"
 msgstr "Open your library"

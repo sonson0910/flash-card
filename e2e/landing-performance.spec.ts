@@ -1,7 +1,19 @@
 import { expect, test } from './fixtures/firebase-emulator';
+import type { Page } from '@playwright/test';
 
 const cloudRequest = /firebase|googleapis|recaptcha|identitytoolkit|securetoken|\/api\/device-cards/i;
 const runtimeCloudScript = /\/assets\/(?:AppRuntime|firebase|firebase-functions)[^/]*\.js$/i;
+const heroMedia = /\/assets\/(?:still-water|deep-woods|quiet-dawn|golden-hour)[^/]*\.(?:mp4|webm)(?:\?|$)/i;
+
+async function setAtmospherePreference(page: Page, mode: 'light' | 'dark', reduced: boolean) {
+  await page.emulateMedia({ colorScheme: mode, reducedMotion: reduced ? 'reduce' : 'no-preference' });
+  await page.addInitScript(({ mode, reduced }) => {
+    localStorage.setItem('sonflash_theme_family', 'classic');
+    localStorage.setItem('lingoflash_theme', mode);
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+    localStorage.setItem('sonflash_reduced_motion', String(reduced));
+  }, { mode, reduced });
+}
 const landingCards = Array.from({ length: 6 }, (_, index) => ({
   id: `landing-${index}`,
   word: `landing-word-${index}`,
@@ -21,6 +33,7 @@ const landingCards = Array.from({ length: 6 }, (_, index) => ({
 }));
 
 test('cold landing is cloud-free and warm runtime stays mounted across navigation', async ({ page, seedCards, signInInPlace }) => {
+  await setAtmospherePreference(page, 'dark', false);
   await seedCards(landingCards);
   const requests: string[] = [];
   let documentRequests = 0;
@@ -87,6 +100,7 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
 });
 
 test('atmosphere controls activate every video without moving the page', async ({ page }) => {
+  await setAtmospherePreference(page, 'dark', false);
   await page.goto('/?view=landing');
 
   for (const label of ['Still Water', 'Deep Woods', 'Quiet Dawn', 'Golden Hour']) {
@@ -103,6 +117,19 @@ test('atmosphere controls activate every video without moving the page', async (
     expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
   }
 });
+
+for (const condition of ['light', 'reduced-motion', 'compact'] as const) {
+  test(`cold ${condition} landing stays cloud-free without loading hero media`, async ({ page }) => {
+    await setAtmospherePreference(page, condition === 'light' ? 'light' : 'dark', condition === 'reduced-motion');
+    if (condition === 'compact') await page.setViewportSize({ width: 390, height: 844 });
+    const requests: string[] = [];
+    page.on('request', request => requests.push(request.url()));
+    await page.goto('/?view=landing');
+    await expect(page.getByRole('status').filter({ hasText: 'Static atmosphere is enabled' })).toHaveCount(1);
+    await expect(page.locator('video[data-hero-video]')).toHaveCount(0);
+    expect(requests.filter(url => cloudRequest.test(url) || heroMedia.test(url))).toEqual([]);
+  });
+}
 
 test('failed runtime import restores landing and retries with a fresh runtime entry', async ({ page, seedCards, signInInPlace }) => {
   await seedCards(landingCards);

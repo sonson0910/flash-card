@@ -317,7 +317,7 @@ export function SpellingView({
               >
                 <div aria-hidden="true">
                   {correct ? (
-                    <span className="flex items-center gap-2 text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="flex items-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-400">
                       <CheckCircle2 size={17} />{" "}
                       <Trans {...msg({ context: 'practice.spelling.correct', message: 'Correct' })} />
                     </span>

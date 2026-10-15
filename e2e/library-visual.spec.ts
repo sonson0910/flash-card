@@ -21,10 +21,6 @@ async function gotoFixture(page: Page, query = 'locale=en') {
   const url = `${fixtureOrigin}${fixturePath}?${query}`;
   await page.goto(url);
   const root = page.locator('[data-library-visual-view]');
-  if (await root.isVisible({ timeout: 5_000 }).catch(() => false)) return;
-
-  // Vite can serve the first dependency-optimization request before its module graph is ready.
-  await page.reload();
   await expect(root).toBeVisible({ timeout: 15_000 });
 }
 const viewports = [{ name: 'desktop', width: 1440, height: 900 }, { name: '390px', width: 390, height: 844 }] as const;
@@ -64,6 +60,13 @@ async function expectDialogScreen(page: Page, testInfo: TestInfo, name: string) 
   await expect(dialog).toHaveScreenshot(`${name}.png`, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
 }
 
+async function expectDialogInViewport(page: Page, testInfo: TestInfo, name: string) {
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeInViewport({ ratio: 1 });
+  await expect(dialog.getByRole('button').last()).toBeInViewport({ ratio: 1 });
+  await testInfo.attach(`${name}-viewport`, { body: await page.screenshot(), contentType: 'image/png' });
+}
+
 test.beforeAll(async ({}, testInfo) => {
   fixturePort = FIXTURE_PORT_BASE + testInfo.parallelIndex;
   fixtureOrigin = `http://127.0.0.1:${fixturePort}`;
@@ -89,6 +92,36 @@ test('Library create input defers submit during IME composition', async ({ page 
   await input.press('Enter');
   await expect(count).toHaveText('1');
 });
+
+for (const mode of ['light', 'dark'] as const) {
+  test(`Crystal ${mode} library dialogs keep an opaque surface without backdrop blur`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ colorScheme: mode, reducedMotion: 'reduce' });
+    await page.addInitScript(mode => {
+      localStorage.setItem('sonflash_theme_family', 'crystal');
+      localStorage.setItem('lingoflash_theme', mode);
+      localStorage.setItem('sonflash_theme_follow_system', 'false');
+      localStorage.setItem('sonflash_reduced_motion', 'true');
+    }, mode);
+    await gotoFixture(page, 'locale=en&dialog=clear');
+    await page.addStyleTag({ content: '.library-dialog-overlay { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }' });
+    const dialog = page.getByRole('alertdialog');
+    await expect(dialog).toHaveCSS('background-color', mode === 'light' ? 'rgb(230, 245, 255)' : 'rgb(14, 17, 28)');
+    await expect(dialog).toHaveCSS('background-image', /linear-gradient/);
+    await expect(dialog.getByRole('button', { name: 'Keep library' })).toBeInViewport({ ratio: 1 });
+    await expect(dialog.getByRole('button', { name: 'Delete everything' })).toBeDisabled();
+    await expectAccessibleAndContained(page, `Crystal ${mode} clear dialog without backdrop blur`);
+    await testInfo.attach(`crystal-${mode}-clear-without-blur`, { body: await page.screenshot(), contentType: 'image/png' });
+    await gotoFixture(page, 'locale=en&dialog=import-error');
+    await page.addStyleTag({ content: '.spreadsheet-import-overlay { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }' });
+    const importDialog = page.getByRole('dialog');
+    await expect(importDialog).toHaveCSS('background-color', mode === 'light' ? 'rgb(230, 245, 255)' : 'rgb(14, 17, 28)');
+    await expect(importDialog).toHaveCSS('background-image', /linear-gradient/);
+    await expect(importDialog.getByRole('alert')).toBeVisible();
+    await expectAccessibleAndContained(page, `Crystal ${mode} import dialog without backdrop blur`);
+    await testInfo.attach(`crystal-${mode}-import-without-blur`, { body: await page.screenshot(), contentType: 'image/png' });
+  });
+}
 
 for (const theme of themes) for (const viewport of viewports) {
   test(`${theme.family} ${theme.mode} Library and dialogs are visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
@@ -127,6 +160,7 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(page.getByRole('heading', { name: 'Practice in context' })).toBeVisible();
     await expectAccessibleAndContained(page, `${name}-dialogue`);
     await expectReducedMotion(page, `${name}-dialogue`);
+    await expectDialogInViewport(page, testInfo, `${name}-dialogue`);
     await expectScreen(page, testInfo, `${name}-dialogue`);
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toBeHidden();
@@ -135,6 +169,7 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(page.getByRole('heading', { name: 'Scan text' })).toBeVisible();
     await expectAccessibleAndContained(page, `${name}-extractor`);
     await expectReducedMotion(page, `${name}-extractor`);
+    await expectDialogInViewport(page, testInfo, `${name}-extractor`);
     await expectScreen(page, testInfo, `${name}-extractor`);
   });
 }

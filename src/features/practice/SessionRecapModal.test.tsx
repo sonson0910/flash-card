@@ -19,7 +19,8 @@ describe('SessionRecapModal', () => {
   });
 
   it('shows the proud Lumi pose only for Crystal Star when enabled', () => {
-    expect(source).toContain("dataset.themeFamily === 'crystal'");
+    expect(source).toContain('const { family } = useTheme()');
+    expect(source).toContain("family === 'crystal'");
     expect(source).toContain('readLumiEnabled()');
     expect(source).toContain('<Lumi pose="proud"');
   });

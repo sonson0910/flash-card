@@ -26,14 +26,17 @@ let fixtureServer: ViteDevServer | undefined;
 
 async function expectAccessibleAndContained(page: Page, label: string) {
   const surface = page.locator('[data-practice-visual-view]');
+  const view = await surface.getAttribute('data-practice-visual-view');
+  const scrollingView = view === 'match' || view === 'shadowing';
+  await expect(surface.getByRole('button').first()).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow, `${label} has horizontal overflow`).toBeLessThanOrEqual(1);
-  const clipped = await surface.locator('button:visible, input:visible').evaluateAll(elements => elements.map(element => {
+  const clipped = await surface.locator('button:visible, input:visible').evaluateAll((elements, scrollingView) => elements.map(element => {
     const box = element.getBoundingClientRect();
     return { label: element.getAttribute('aria-label') || element.textContent?.trim(), left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height };
   }).filter(control => control.width > 0 && control.height > 0 && (
-    control.left < -1 || control.right > window.innerWidth + 1 || control.top < -1 || control.bottom > window.innerHeight + 1
-  )));
+    control.left < -1 || control.right > window.innerWidth + 1 || (!scrollingView && (control.top < -1 || control.bottom > window.innerHeight + 1))
+  )), scrollingView);
   expect(clipped, `${label} has clipped controls`).toEqual([]);
   const results = await new AxeBuilder({ page }).include('[data-practice-visual-view]').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
   const blocking = results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical');
@@ -50,6 +53,23 @@ async function expectScreen(page: Page, testInfo: TestInfo, name: string) {
   const screenshot = testInfo.outputPath(`${name}.png`);
   await page.screenshot({ path: screenshot, fullPage: true });
   await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
+}
+
+
+async function expectScrollingControlsReachable(page: Page, testInfo: TestInfo, name: string) {
+  const position = await page.evaluate(() => ({ left: scrollX, top: scrollY }));
+  try {
+    const controls = page.locator('.practice-board').getByRole('button');
+    await expect(controls).not.toHaveCount(0);
+    for (const control of await controls.all()) {
+      await control.evaluate(element => element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' }));
+      await expect(control).toBeInViewport({ ratio: 1 });
+      await control.hover({ trial: true });
+    }
+    await testInfo.attach(`${name}-controls-in-viewport`, { body: await page.screenshot({ animations: 'disabled', caret: 'hide' }), contentType: 'image/png' });
+  } finally {
+    await page.evaluate(position => window.scrollTo({ ...position, behavior: 'instant' }), position);
+  }
 }
 
 test.beforeAll(async ({}, testInfo) => {
@@ -92,15 +112,27 @@ for (const theme of themes) for (const viewport of viewports) {
     }, theme);
     for (const view of practiceViews) {
       const name = `practice-${view}-${theme.family}-${theme.mode}-${viewport.name}`;
+      if (view === 'match') await page.clock.setFixedTime('2026-09-25T09:00:00Z');
       await page.goto(`${fixtureOrigin}${fixturePath}?view=${view}&locale=en`);
       await expect(page.locator(`[data-practice-visual-view="${view}"]`)).toBeVisible({ timeout: 15_000 });
       await expect(page.locator('html')).toHaveAttribute('data-theme-family', theme.family);
       if (theme.mode === 'dark') await expect(page.locator('html')).toHaveClass(/\bdark\b/);
       else await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
       if (theme.family === 'crystal') await expect(page.locator('#sonflash-crystal-theme')).toHaveAttribute('href', '/theme-crystal.css');
+      if (view === 'quiz' || view === 'quiz-answered') {
+        const category = page.getByText('IELTS', { exact: true });
+        await expect(category).toBeVisible();
+        expect(await category.evaluate(element => element.getBoundingClientRect().height), 'Quiz category badge stays compact').toBeLessThanOrEqual(44);
+        await expect.poll(() => category.evaluate(element => {
+          const bounds = element.getBoundingClientRect();
+          const painted = document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+          return painted === element || element.contains(painted);
+        }), { message: 'Quiz category text is not covered by an answer' }).toBe(true);
+      }
       await expectAccessibleAndContained(page, name);
       await expectReducedMotion(page, name);
       await expectScreen(page, testInfo, name);
+      if (view === 'match' || view === 'shadowing') await expectScrollingControlsReachable(page, testInfo, name);
     }
   });
 }

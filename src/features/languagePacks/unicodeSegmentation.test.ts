@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { segmentGraphemes, segmentWords, supportsIntlSegmenter } from './unicodeSegmentation';
 
 describe('segmentGraphemes', () => {
@@ -17,6 +17,30 @@ describe('segmentGraphemes', () => {
 });
 
 describe('segmentWords', () => {
+  it('retains Japanese words and numbers when an engine marks them non-word-like', async () => {
+    vi.resetModules();
+    vi.stubGlobal('Intl', Object.create(Intl, {
+      Segmenter: { value: class {
+        segment() {
+          return [
+            { segment: '毎朝', isWordLike: false },
+            { segment: ' ', isWordLike: false },
+            { segment: '123', isWordLike: false },
+            { segment: '。', isWordLike: false },
+            { segment: '✨', isWordLike: false },
+          ];
+        }
+      } },
+    }));
+    try {
+      const engine = await import('./unicodeSegmentation');
+      expect(engine.segmentWords('毎朝 123。✨')).toEqual(['毎朝', '123']);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.resetModules();
+    }
+  });
+
   it('splits whitespace-delimited text into words', () => {
     expect(segmentWords('hello world')).toEqual(['hello', 'world']);
   });

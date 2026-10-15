@@ -85,6 +85,38 @@ for (const theme of themes) for (const locale of locales) for (const viewport of
   });
 }
 
+for (const mode of ['light', 'dark'] as const) for (const reducedMotion of ['reduce', 'no-preference'] as const) {
+  test(`Classic ${mode} sample card exposes only its active face with ${reducedMotion} motion`, async ({ page }, testInfo) => {
+    await page.emulateMedia({ colorScheme: mode, reducedMotion });
+    await page.addInitScript(({ mode, reducedMotion }) => {
+      localStorage.setItem('sonflash_theme_family', 'classic');
+      localStorage.setItem('lingoflash_theme', mode);
+      localStorage.setItem('sonflash_theme_follow_system', 'false');
+      localStorage.setItem('sonflash_reduced_motion', String(reducedMotion === 'reduce'));
+    }, { mode, reducedMotion });
+    await page.goto('/');
+    const card = page.locator('.landing-card [role="button"]');
+    await expect(card).toHaveAccessibleName('Tap to reveal the meaning');
+    const front = card.locator(':scope > div').first();
+    const back = card.locator(':scope > div').last();
+    await expect(front).toBeVisible();
+    await expect(back).toBeHidden();
+    await expect(front.getByText('immediate', { exact: true })).toBeVisible();
+    await card.focus();
+    await page.keyboard.press('Enter');
+    await expect(card).toHaveAttribute('aria-pressed', 'true');
+    await expect(front).toBeHidden();
+    await expect(back).toBeVisible();
+    await expect(back).toContainText('happening or done without delay');
+    await testInfo.attach('Sample card meaning', { body: await card.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
+    await page.keyboard.press('Space');
+    await expect(card).toHaveAttribute('aria-pressed', 'false');
+    await expect(front).toBeVisible();
+    await expect(back).toBeHidden();
+    await testInfo.attach('Sample card word', { body: await card.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
+  });
+}
+
 test('Crystal landing keeps a usable menu until the full navigation fits', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('sonflash_theme_family', 'crystal');
@@ -139,8 +171,16 @@ test('narrow landing menus retain each theme’s desktop destinations', async ({
   await expect(menu.getByRole('button', { name: 'Paths' })).toHaveCount(0);
 });
 
-test('light landing first paint remains text-first without CJK fonts or video', async ({ page }) => {
+test('light landing paints its heading before its illustration without CJK fonts or video', async ({ page }, testInfo) => {
   const requested: string[] = [];
+  let releaseIllustration = () => {};
+  let illustrationRequested = false;
+  const illustrationGate = new Promise<void>(resolve => { releaseIllustration = resolve; });
+  await page.route(/\/assets\/anime-immediate[^/]*\.jpg$/, async route => {
+    illustrationRequested = true;
+    await illustrationGate;
+    await route.continue();
+  });
   await page.addInitScript(() => {
     const entries: PerformanceEntry[] = [];
     new PerformanceObserver(list => entries.push(...list.getEntries())).observe({ type: 'largest-contentful-paint', buffered: true });
@@ -151,17 +191,31 @@ test('light landing first paint remains text-first without CJK fonts or video', 
   });
   page.on('request', request => requested.push(request.url()));
   await page.bringToFront();
-  await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  await page.waitForFunction(() => (window as Window & { __landingLcpEntries?: PerformanceEntry[] }).__landingLcpEntries?.length, undefined, { timeout: 5_000 });
-  const lcp = await page.evaluate(() => {
-    const entry = (window as Window & { __landingLcpEntries?: PerformanceEntry[] }).__landingLcpEntries?.at(-1) as (PerformanceEntry & { loadTime?: number; size?: number; url?: string }) | undefined;
-    return { loadTime: entry?.loadTime, size: entry?.size, url: entry?.url };
-  });
-  expect(lcp.size, 'largest paint must have visible area').toBeGreaterThan(0);
-  expect(lcp.url, 'largest paint must be a text candidate').toBe('');
-  expect(lcp.loadTime, 'text LCP must not wait for a resource load').toBe(0);
-  expect(requested.filter(url => /noto-sans-cjk|cjk-font|\.(?:av1|mp4)(?:\?|$)/i.test(url))).toEqual([]);
+  try {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect.poll(() => illustrationRequested).toBe(true);
+    await page.waitForFunction(() => (window as Window & { __landingLcpEntries?: PerformanceEntry[] }).__landingLcpEntries?.some(entry => (entry as PerformanceEntry & { element?: Element }).element?.id === 'landing-heading'), undefined, { timeout: 5_000 });
+    const lcp = await page.evaluate(() => {
+      const entry = (window as Window & { __landingLcpEntries?: PerformanceEntry[] }).__landingLcpEntries?.at(-1) as (PerformanceEntry & { loadTime?: number; size?: number; url?: string }) | undefined;
+      return { loadTime: entry?.loadTime, size: entry?.size, url: entry?.url };
+    });
+    expect(lcp.size, 'heading paint must have visible area before the illustration loads').toBeGreaterThan(0);
+    expect(lcp.url, 'paint before the pending illustration must be a text candidate').toBe('');
+    expect(lcp.loadTime, 'text paint must not wait for the illustration').toBe(0);
+    releaseIllustration();
+    await page.locator('.landing-card img').first().evaluate(image => (image as HTMLImageElement).decode());
+    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    const settled = await page.evaluate(() => (window as Window & { __landingLcpEntries?: PerformanceEntry[] }).__landingLcpEntries?.map(entry => {
+      const paint = entry as PerformanceEntry & { loadTime?: number; renderTime?: number; size?: number; url?: string };
+      return { loadTime: paint.loadTime, renderTime: paint.renderTime, size: paint.size, url: paint.url };
+    }));
+    await testInfo.attach('landing-paint-with-delayed-illustration', { body: JSON.stringify(settled), contentType: 'application/json' });
+    expect(requested.filter(url => /noto-sans-cjk|cjk-font|\.(?:av1|mp4)(?:\?|$)/i.test(url))).toEqual([]);
+  } finally {
+    releaseIllustration();
+  }
 });
 
 test('Crystal light keeps text as the final LCP after Lumi loads', async ({ page }, testInfo: TestInfo) => {

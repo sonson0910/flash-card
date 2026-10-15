@@ -224,7 +224,7 @@ export function QuizView({
             className="relative mb-6 grid gap-5 text-[var(--sf-text)] lg:grid-cols-[minmax(19rem,.78fr)_minmax(26rem,1.22fr)] lg:items-center lg:gap-8"
             aria-labelledby="quiz-question-heading"
           >
-            <div className="absolute right-4 top-4 max-w-40 break-words rounded-xl bg-[var(--sf-brand)] px-2.5 py-1 text-center text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)]">
+            <div className="absolute right-4 top-4 z-10 max-w-40 break-words rounded-xl bg-[var(--sf-brand)] px-2.5 py-1 text-center text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)]">
               {question.card.category}
             </div>
             {isSupportedImageUrl(question.card.imageUrl) ? (
@@ -251,7 +251,7 @@ export function QuizView({
                 <ImageOff size={28} />
               </div>
             )}
-            <div className="crystal-chamfer flex min-h-64 w-full flex-col justify-end rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-6 pt-24 shadow-[var(--sf-panel-shadow)] sm:min-h-80 sm:p-8 sm:pt-28">
+            <div data-quiz-question-panel className="crystal-chamfer flex min-h-64 w-full flex-col justify-end rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-6 pt-24 shadow-[var(--sf-panel-shadow)] sm:min-h-80 sm:p-8 sm:pt-28">
               <span className="mb-2 block font-display text-xs font-bold uppercase tracking-[.12em] text-[var(--sf-text-muted)]">
                 <Trans
                   {...msg({ context: 'practice.question-progress', message: 'Question {current} / {total}' })}
@@ -350,7 +350,7 @@ export function QuizView({
               >
                 <div aria-hidden="true">
                   {answeredCorrectly ? (
-                    <span className="flex items-center gap-2 text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="flex items-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-400">
                       <CheckCircle2 size={17} />
                       <Trans
                         {...msg({ context: 'practice.feedback.correct-short', message: 'Correct' })}

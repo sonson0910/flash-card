@@ -91,16 +91,28 @@ for (const theme of themes) for (const viewport of viewports) {
 
     await seedCourses(db, testUser.uid);
     await page.reload();
+    await expect(page.getByRole('heading', { name: 'Build your first learning plan', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Learn → Immerse → Communicate', exact: true })).toBeVisible();
 
     const switcher = page.locator('.claude-course-switcher-trigger:visible');
     await expect(switcher).toContainText('Korean');
     await switcher.click();
     const courses = page.getByRole('dialog', { name: 'Courses' });
     await expect(courses).toBeVisible();
+    const surface = await courses.evaluate(element => {
+      const probe = document.createElement('span');
+      probe.style.backgroundColor = 'var(--sf-surface)';
+      element.append(probe);
+      const expected = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return { actual: getComputedStyle(element).backgroundColor, expected };
+    });
+    expect(surface.actual, 'course overlay hides text underneath it').toBe(surface.expected);
+    expect(surface.actual).toMatch(/^rgb\(/);
     await expect(courses.getByRole('button', { name: /Korean.*Vietnamese/ })).toHaveAttribute('aria-current', 'true');
     const coursesBox = await expectBox(courses, 'course switcher');
     if (viewport.name === 'desktop') {
-      expect(coursesBox.width, 'desktop course switcher uses the Canvas-aligned popover width').toBe(480);
+      expect(coursesBox.width, 'desktop course switcher uses the Canvas-aligned popover width').toBeCloseTo(480, 3);
     } else {
       expect(coursesBox.width, 'mobile course switcher spans the viewport as a bottom sheet').toBe(viewport.width);
       expect(coursesBox.y + coursesBox.height, 'mobile course switcher is anchored to the viewport bottom').toBe(viewport.height);

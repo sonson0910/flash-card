@@ -53,7 +53,10 @@ export function segmentWords(value: string): string[] {
   if (!value) return [];
   if (wordSegmenter) {
     return Array.from(wordSegmenter.segment(value))
-      .filter(part => part.isWordLike !== false && part.segment.trim().length > 0)
+      // Some engines mark valid Japanese words as non-word-like. Preserve
+      // their word boundaries while retaining segments containing letters/numbers.
+      .filter(part => (part.isWordLike !== false || /[\p{L}\p{N}]/u.test(part.segment))
+        && part.segment.trim().length > 0)
       .map(part => part.segment);
   }
   return value

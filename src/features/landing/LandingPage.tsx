@@ -403,7 +403,13 @@ function ClassicLandingHero({
             className="cursor-pointer rounded-[2rem] focus-visible:outline-2 focus-visible:outline-offset-4"
           >
             <div
-              style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
+              style={{
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                visibility: flipped ? 'hidden' : 'visible',
+                // The rotation's easing reaches its half turn after about 83ms.
+                transition: reduceMotion ? 'none' : 'visibility 0s 83ms',
+              }}
               className="crystal-chamfer relative overflow-hidden rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-card-bg)] p-3 shadow-[0_28px_70px_-35px_var(--sf-shadow)]"
             >
               <div className="rounded-[1.45rem] bg-[var(--sf-surface-raised)] px-6 py-7 sm:px-8">
@@ -440,6 +446,8 @@ function ClassicLandingHero({
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden',
                 transform: 'rotateY(180deg)',
+                visibility: flipped ? 'visible' : 'hidden',
+                transition: reduceMotion ? 'none' : 'visibility 0s 83ms',
               }}
               className="crystal-chamfer overflow-hidden rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-card-bg)] p-3 shadow-[0_28px_70px_-35px_var(--sf-shadow)]"
             >

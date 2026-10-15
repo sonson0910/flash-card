@@ -21,8 +21,9 @@ async function startExtensionServer() {
     const file = join(extensionRoot, pathname || 'popup.html');
     if (!file.startsWith(extensionRoot)) return response.writeHead(403).end();
     try {
+      const content = await readFile(file);
       response.writeHead(200, { 'content-type': mimeTypes[extname(file)] || 'application/octet-stream' });
-      response.end(await readFile(file));
+      response.end(content);
     } catch { response.writeHead(404).end(); }
   });
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));

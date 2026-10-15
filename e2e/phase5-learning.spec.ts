@@ -35,6 +35,7 @@ const cards = [
 const emptyTodayHoverContrastTest = 'empty Today primary action retains compliant contrast while hovered';
 const dailyPlanTest = 'Today is the default four-part shell and completes the answer-feedback-rating transition';
 const practiceAnswerTest = 'Quiz and Spelling accept an answer and advance from the Today practice menu';
+const practiceDecorationTest = 'Practice decorations stay inside the mobile workspace';
 const dailyPlanCards = cards.map((card, index) => ({
   ...card,
   difficulty: index < 7 ? 'hard' : 'unrated',
@@ -47,10 +48,24 @@ test.beforeEach(async ({ page, seedCards, blockExternalNetwork }, testInfo) => {
     localStorage.setItem('lingoflash_theme', 'dark');
   });
   await blockExternalNetwork(page);
-  if (testInfo.title === practiceAnswerTest) {
+  if (testInfo.title === practiceAnswerTest || testInfo.title === practiceDecorationTest) {
     await seedCards(cards.map(card => ({ ...card, difficulty: 'good', reviews: 1 })));
   } else if (testInfo.title !== emptyTodayHoverContrastTest) {
     await seedCards(testInfo.title === dailyPlanTest ? dailyPlanCards : cards);
+  }
+});
+
+test(practiceDecorationTest, async ({ page, signIn }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page, '/?view=today');
+  for (const mode of ['Quiz', 'Spelling']) {
+    await page.getByRole('button', { name: 'More practice' }).click();
+    await page.getByRole('button', { name: new RegExp(`^${mode}`) }).click();
+    await expect(page.locator('.practice-board')).toBeVisible();
+    const workspace = page.locator('.claude-workspace');
+    await expect.poll(() => workspace.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+    await page.getByRole('button', { name: 'Exit', exact: true }).click();
+    await page.getByRole('button', { name: 'Today', exact: true }).first().click();
   }
 });
 

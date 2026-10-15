@@ -71,6 +71,27 @@ test.afterAll(async () => {
   await fixtureServer?.close();
 });
 
+test('Crystal recap retains its enabled mascot when theme assets load after the dialog', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'crystal');
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+    localStorage.setItem('sonflash_reduced_motion', 'true');
+  });
+  await page.route('**/theme-crystal.css', async route => {
+    await new Promise(resolve => setTimeout(resolve, 1_000));
+    await route.continue();
+  });
+  await page.goto(`${fixtureOrigin}${fixturePath}?locale=en`);
+  const recap = page.locator('[data-session-recap]');
+  await expect(recap).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('data-theme-family', 'crystal');
+  const mascot = recap.locator('img[data-lumi-pose="proud"]');
+  await expect(mascot).toBeVisible();
+  await expect.poll(() => mascot.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+});
+
 for (const theme of themes) {
   for (const viewport of viewports) {
     test(`${theme.family} ${theme.mode} recap is visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {

@@ -58,7 +58,7 @@ msgctxt "flashcard.ai.usage-note"
 msgid "AI-generated · each question uses 1 AI request"
 msgstr ""
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:136
+#: src/components/flashcard/ActiveRecallPrompt.tsx:137
 msgctxt "flashcard.recall.correct"
 msgid "Correct. Reveal the answer to compare."
 msgstr ""
@@ -129,7 +129,7 @@ msgctxt "shell.share.no-sample-preview"
 msgid "A card preview is not available for this shared deck."
 msgstr ""
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:109
+#: src/components/flashcard/ActiveRecallPrompt.tsx:110
 msgctxt "flashcard.recall.instructions"
 msgid "Recall first, then type your answer to check it."
 msgstr ""
@@ -494,7 +494,7 @@ msgid "flashcard.hints.show"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:86
+#: src/components/flashcard/ActiveRecallPrompt.tsx:87
 #: src/components/flashcard/CardFront.tsx:81
 msgid "flashcard.image.illustration"
 msgstr ""
@@ -571,7 +571,7 @@ msgid "flashcard.reading.verified-pitch"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:123
+#: src/components/flashcard/ActiveRecallPrompt.tsx:124
 msgid "flashcard.recall.answer-placeholder"
 msgstr ""
 
@@ -581,7 +581,7 @@ msgid "flashcard.recall.audio-recall"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:111
+#: src/components/flashcard/ActiveRecallPrompt.tsx:112
 msgid "flashcard.recall.check-answer"
 msgstr ""
 
@@ -611,12 +611,12 @@ msgid "flashcard.recall.native-meaning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:92
+#: src/components/flashcard/ActiveRecallPrompt.tsx:93
 msgid "flashcard.recall.no-illustration"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:101
+#: src/components/flashcard/ActiveRecallPrompt.tsx:102
 msgid "flashcard.recall.play-word"
 msgstr ""
 
@@ -717,7 +717,7 @@ msgctxt "shell.share.copy-private"
 msgid "This link opens a preview. The recipient decides whether to add a separate copy."
 msgstr ""
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:131
+#: src/components/flashcard/ActiveRecallPrompt.tsx:132
 msgctxt "flashcard.recall.check"
 msgid "Check"
 msgstr ""
@@ -840,7 +840,7 @@ msgctxt "shell.share.no-translation"
 msgid "Translation not available"
 msgstr ""
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:145
+#: src/components/flashcard/ActiveRecallPrompt.tsx:146
 msgctxt "flashcard.recall.reveal"
 msgid "Reveal answer"
 msgstr ""
@@ -895,7 +895,7 @@ msgctxt "flashcard.ai.question"
 msgid "Q:"
 msgstr ""
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:112
+#: src/components/flashcard/ActiveRecallPrompt.tsx:113
 msgctxt "flashcard.recall.answer"
 msgid "Your answer"
 msgstr ""
@@ -1233,7 +1233,7 @@ msgctxt "shell.undo.window"
 msgid "Undo is available for {seconds} seconds."
 msgstr ""
 
-#: src/components/flashcard/ActiveRecallPrompt.tsx:136
+#: src/components/flashcard/ActiveRecallPrompt.tsx:137
 msgctxt "flashcard.recall.incorrect"
 msgid "Not quite. Try again or reveal the answer to check."
 msgstr ""

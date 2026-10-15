@@ -69,7 +69,8 @@
         rgba(255, 255, 255, 0.02) 40%,
         rgba(255, 255, 255, 0.04) 100%
       ),
-      rgba(8, 20, 26, 0.92);
+      /* Keep underlying text out when backdrop blur is unavailable. */
+      rgb(8, 20, 26);
     box-shadow:
       0 35px 90px -20px rgba(0, 0, 0, 0.72),
       inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.4),
@@ -209,6 +210,11 @@
   }
   .flashcard-shell[data-card-tier] .flashcard-back:not(.zen-glass-slab) {
     --flashcard-surface: var(--sf-dialog-bg);
+  }
+  :root:not([data-theme-family]):not(.dark) .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab),
+  :root[data-theme-family="classic"]:not(.dark) .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab) {
+    /* A color cannot occupy the first layer of a multi-background surface. */
+    --flashcard-surface: linear-gradient(var(--sf-surface), var(--sf-surface));
   }
   .flashcard-shell[data-card-tier="new"] {
     --flashcard-tier-rim: var(--sf-rim-new);
