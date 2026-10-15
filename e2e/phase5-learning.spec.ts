@@ -34,10 +34,11 @@ const cards = [
 
 const emptyTodayHoverContrastTest = 'empty Today primary action retains compliant contrast while hovered';
 const dailyPlanTest = 'Today is the default four-part shell and completes the answer-feedback-rating transition';
+const practiceAnswerTest = 'Quiz and Spelling accept an answer and advance from the Today practice menu';
 const dailyPlanCards = cards.map((card, index) => ({
   ...card,
   difficulty: index < 7 ? 'hard' : 'unrated',
-  nextReviewDate: index < 7 ? '2026-08-20T00:00:00.000Z' : undefined,
+  ...(index < 7 ? { nextReviewDate: '2026-08-20T00:00:00.000Z' } : {}),
   reviews: index < 7 ? 1 : 0,
 }));
 
@@ -46,7 +47,11 @@ test.beforeEach(async ({ page, seedCards, blockExternalNetwork }, testInfo) => {
     localStorage.setItem('lingoflash_theme', 'dark');
   });
   await blockExternalNetwork(page);
-  if (testInfo.title !== emptyTodayHoverContrastTest) await seedCards(testInfo.title === dailyPlanTest ? dailyPlanCards : cards);
+  if (testInfo.title === practiceAnswerTest) {
+    await seedCards(cards.map(card => ({ ...card, difficulty: 'good', reviews: 1 })));
+  } else if (testInfo.title !== emptyTodayHoverContrastTest) {
+    await seedCards(testInfo.title === dailyPlanTest ? dailyPlanCards : cards);
+  }
 });
 
 test(dailyPlanTest, async ({ page, signIn }) => {
@@ -107,7 +112,7 @@ test(dailyPlanTest, async ({ page, signIn }) => {
   await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 });
 
-test('Quiz and Spelling accept an answer and advance from the Today practice menu', async ({ page, signIn }) => {
+test(practiceAnswerTest, async ({ page, signIn }) => {
   await signIn(page, '/?view=today');
 
   await page.getByRole('button', { name: 'More practice' }).click();
@@ -252,7 +257,7 @@ test(emptyTodayHoverContrastTest, async ({ page, signIn, seedCourseProfile }) =>
   // Today screen this test is actually checking.
   await seedCourseProfile();
   await signIn(page, '/?view=today');
-  const openVocabulary = page.getByRole('button', { name: 'Add vocabulary' });
+  const openVocabulary = page.getByRole('button', { name: 'Add vocabulary', exact: true });
   await expect(openVocabulary).toBeVisible();
   await openVocabulary.hover();
 

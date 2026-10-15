@@ -139,7 +139,8 @@ safelist the debug token printed in the browser console. Never commit that token
 # Type checking
 npm run lint
 
-# Unit and component tests
+# Unit and component tests (release tests read the compiled Functions target)
+npm --prefix functions run build
 npm test -- --run
 
 # Firestore Rules tests (requires Java 21)
