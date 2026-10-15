@@ -33,6 +33,21 @@ for (const { path, language, canonical } of locales) {
       await expect(page.locator(`link[rel="alternate"][hreflang="${alternate.language}"]`))
         .toHaveAttribute('href', alternate.href);
     }
+    const languagesSection = page.locator('#languages');
+    const expectedPacks = language === 'vi'
+      ? [
+        'Tiếng AnhĐã có',
+        '한국어 · Tiếng HànĐang phát triển',
+        '日本語 · Tiếng NhậtĐang phát triển',
+        '中文 · Tiếng TrungĐang phát triển',
+      ]
+      : [
+        'EnglishAvailable now',
+        '한국어 · KoreanIn progress',
+        '日本語 · JapaneseIn progress',
+        '中文 · ChineseIn progress',
+      ];
+    await expect(languagesSection.locator('li')).toHaveText(expectedPacks);
     expect(cloudRequests).toEqual([]);
   });
 }

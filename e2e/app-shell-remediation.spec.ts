@@ -3,6 +3,7 @@ import { expect, test } from './fixtures/firebase-emulator';
 const emptyStateTestTitle = 'Today and Progress empty states expose concrete next actions without initial autofocus';
 const emptyExtractorTestTitle = 'empty Library Scan a text restores focus after close';
 const maximumShareTestTitle = 'a recipient accepts a shared deck at the 100-card limit';
+const meaningLanguageMismatchShareTestTitle = 'a shared Korean-Vietnamese deck stays retryable when the recipient course uses English meanings';
 
 const cards = [
   'serendipity', 'resilient', 'curious', 'flourish', 'meticulous', 'eloquent',
@@ -56,6 +57,17 @@ const maximumShareCards = [
   }),
 ];
 
+const koreanVietnameseShareCards = [{
+  ...cards[0]!,
+  id: 'word-ko-0f2a01b02bdd4a7ae7fcfbe6',
+  word: '사과',
+  normalizedWord: '사과',
+  translation: 'quả táo',
+  explanation: 'Một loại trái cây.',
+  language: 'ko',
+  translationLanguage: 'vi',
+}];
+
 test.beforeEach(async ({ page, seedCards, blockExternalNetwork }, testInfo) => {
   await page.addInitScript(() => {
     localStorage.setItem('lingoflash_theme', 'dark');
@@ -64,7 +76,11 @@ test.beforeEach(async ({ page, seedCards, blockExternalNetwork }, testInfo) => {
   // Empty-library tests intentionally start from zero cards; every fresh
   // emulator test user already has none, so they skip seeding.
   if (testInfo.title !== emptyStateTestTitle && testInfo.title !== emptyExtractorTestTitle) {
-    await seedCards(testInfo.title === maximumShareTestTitle ? maximumShareCards : cards);
+    await seedCards(testInfo.title === maximumShareTestTitle
+      ? maximumShareCards
+      : testInfo.title === meaningLanguageMismatchShareTestTitle
+        ? koreanVietnameseShareCards
+        : cards);
   }
 });
 
@@ -333,7 +349,7 @@ test('Library Share creates and revokes a real deck link', async ({ page, signIn
   await page.getByRole('button', { name: 'Share', exact: true }).click();
 
   const dialog = page.getByRole('dialog', { name: /Share “All library cards”/ });
-  await expect(dialog).toBeVisible();
+  await expect(dialog).toBeVisible({ timeout: 15_000 });
   await expect(dialog.getByRole('textbox', { name: 'Vocabulary deck share link' })).toHaveValue(/\?share=[A-Za-z0-9_-]+/);
   await expect(dialog.getByRole('button', { name: 'Revoke link' })).toBeVisible();
   await dialog.getByRole('button', { name: 'Revoke link' }).click();
@@ -405,6 +421,87 @@ for (const [title, sharedCards] of [
     }
   });
 }
+
+test(meaningLanguageMismatchShareTestTitle, async ({
+  page, signIn, adminAuth, db, testUser, browser, blockExternalNetwork,
+}) => {
+  test.setTimeout(60_000);
+  await db.collection('users').doc(testUser.uid).collection('profile').doc('courses').set({
+    activeCourseId: 'course-ko',
+    courses: [{
+      id: 'course-ko', targetLanguage: 'ko', nativeLanguage: 'vi', status: 'active', goals: [],
+      preferences: { pronunciationVariant: null, showRomanization: false, zhScript: null },
+      createdAt: '2026-01-01T00:00:00.000Z',
+    }],
+  });
+  await signIn(page, '/?view=library');
+  await expect(page.getByRole('status').filter({ hasText: 'Synced' })).toBeVisible();
+  await page.getByRole('button', { name: 'Share', exact: true }).click();
+  const shareLink = page.getByRole('textbox', { name: 'Vocabulary deck share link' });
+  await expect(shareLink).toHaveValue(/\?share=[A-Za-z0-9_-]+/);
+  const shareId = new URL(await shareLink.inputValue())
+    .searchParams.get('share');
+  expect(shareId).toBeTruthy();
+
+  const recipientId = `${testUser.uid}-meaning-language-recipient`;
+  await adminAuth.createUser({ uid: recipientId });
+  const token = await adminAuth.createCustomToken(recipientId);
+  await db.collection('users').doc(recipientId).collection('profile').doc('courses').set({
+    activeCourseId: 'course-ko',
+    courses: [{
+      id: 'course-ko', targetLanguage: 'ko', nativeLanguage: 'en', status: 'active', goals: [],
+      preferences: { pronunciationVariant: null, showRomanization: false, zhScript: null },
+      createdAt: '2026-01-01T00:00:00.000Z',
+    }],
+  });
+
+  const recipientContext = await browser.newContext({ baseURL: 'http://127.0.0.1:4173' });
+  try {
+    const recipientPage = await recipientContext.newPage();
+    await blockExternalNetwork(recipientPage);
+    await recipientPage.goto('/?view=today');
+    await recipientPage.waitForFunction(() => Boolean(window.__SONFLASH_TEST__?.signInWithCustomToken));
+    await recipientPage.evaluate(async customToken => {
+      await window.__SONFLASH_TEST__!.signInWithCustomToken(customToken);
+    }, token);
+    await recipientPage.goto(`/?view=library&share=${shareId}`);
+
+    const incoming = recipientPage.getByRole('dialog');
+    await expect(incoming).toBeVisible();
+    await expect(incoming.getByText('Korean → Vietnamese')).toBeVisible();
+    const addCards = incoming.getByRole('button', { name: `Add ${koreanVietnameseShareCards.length} cards` });
+    await addCards.click();
+    await expect(incoming.getByRole('alert')).toHaveText("This shared deck uses a different meaning language from your existing course. Change the course's Meaning language in Settings, then try again.");
+    await expect(recipientPage).toHaveURL(new RegExp(`share=${shareId}`));
+    await expect.poll(async () => (
+      await db.collection('users').doc(recipientId).collection('cards').get()
+    ).size).toBe(0);
+
+    const settingsPage = await recipientContext.newPage();
+    await blockExternalNetwork(settingsPage);
+    await settingsPage.goto('/?view=settings');
+    const meaningLanguage = settingsPage.locator('[data-settings-course-language] select').nth(1);
+    await expect(meaningLanguage).toHaveValue('en');
+    await meaningLanguage.selectOption('vi');
+    await expect.poll(async () => (
+      (await db.collection('users').doc(recipientId).collection('profile').doc('courses').get())
+        .data()?.courses?.[0]?.nativeLanguage
+    )).toBe('vi');
+    await settingsPage.close();
+
+    await expect.poll(async () => {
+      if (await incoming.isHidden()) return true;
+      if (await addCards.isVisible()) await addCards.click();
+      return incoming.isHidden();
+    }, { timeout: 15_000, intervals: [250, 500, 1000] }).toBe(true);
+    await expect(recipientPage).not.toHaveURL(/share=/);
+    await expect.poll(async () => (
+      await db.collection('users').doc(recipientId).collection('cards').get()
+    ).size).toBe(koreanVietnameseShareCards.length);
+  } finally {
+    await recipientContext.close();
+  }
+});
 
 test('Today and Progress empty states expose concrete next actions without initial autofocus', async ({ page, seedCourseProfile, signIn }) => {
   // An existing course profile keeps first-run onboarding out of the empty states under test.

@@ -150,6 +150,9 @@ for (const theme of themes) for (const viewport of viewports) {
     await surface.screenshot({ path: screenshot, animations: 'disabled', caret: 'hide' });
     await testInfo.attach('Japanese sentence completion', { path: screenshot, contentType: 'image/png' });
     await surface.locator('.language-practice-drill__segments').getByRole('button', { name: /毎朝/ }).click();
+    const gloss = surface.locator('.language-practice-drill__sentence-gloss');
+    await expect(gloss.locator('[lang="ja"]')).toHaveText('まいあさ');
+    await expect(gloss.locator('[lang="vi"]')).toHaveText('mỗi sáng');
     await surface.getByRole('button', { name: 'Check' }).click();
     await expect(surface.getByRole('status')).toContainText('Correct');
   });
@@ -164,6 +167,22 @@ test('Korean drill accepts a correct two-set physical keyboard answer', async ({
   await expect(surface.locator('.language-practice-drill__hangul-diagnostic').first()).toContainText('결심');
   await surface.getByRole('button', { name: 'Check' }).click();
   await expect(surface.getByRole('status')).toContainText('Correct');
+});
+
+test('Korean on-screen Shift enters a doubled consonant and resets', async ({ page }) => {
+  await page.goto(`${fixtureOrigin}${fixturePath}?kind=ko&locale=en`);
+  const surface = page.locator('.language-practice-drill');
+  await expect(surface.locator(readySelectors.ko)).toBeVisible({ timeout: 15_000 });
+  const shift = surface.getByRole('button', { name: 'Shift' });
+  await shift.click();
+  await expect(shift).toHaveAttribute('aria-pressed', 'true');
+  await surface.getByRole('button', { name: /^ㅃ/ }).click();
+  await expect(surface.locator('.language-practice-drill__hangul-diagnostic').first()).toContainText('ㅃ');
+  await expect(shift).toHaveAttribute('aria-pressed', 'false');
+  await expect(surface.getByRole('button', { name: /^ㅂ/ })).toBeVisible();
+  await shift.click();
+  await surface.getByRole('button', { name: /^ㅒ/ }).click();
+  await expect(surface.locator('.language-practice-drill__hangul-diagnostic').first()).toContainText('ㅒ');
 });
 
 test('Korean drill lets the learner repair a wrong final consonant before checking', async ({ page }) => {

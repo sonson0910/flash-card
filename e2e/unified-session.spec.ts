@@ -102,6 +102,7 @@ async function expectAccessibleAndContained(page: Page, screen: string) {
 }
 
 async function attachScreen(page: Page, testInfo: TestInfo, name: string) {
+  await page.mouse.move(0, 0);
   await expect(page).toHaveScreenshot(`${name}.png`, {
     fullPage: true,
     animations: 'disabled',
@@ -113,6 +114,34 @@ async function attachScreen(page: Page, testInfo: TestInfo, name: string) {
   await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
 }
 
+async function dismissRewards(page: Page) {
+  const reward = page.locator('.anime-reveal');
+  for (let index = 0; index < 3 && await reward.isVisible(); index += 1) {
+    await reward.getByRole('button', { name: 'Close reward' }).click();
+  }
+}
+
+async function clickAfterRewards(page: Page, action: Locator) {
+  try {
+    await action.click({ timeout: 2_500 });
+  } catch (error) {
+    if (!await page.locator('.anime-reveal').isVisible()) throw error;
+    await dismissRewards(page);
+    await action.click();
+  }
+}
+
+async function waitForNextQuestionOrCompletion(page: Page, complete: Locator) {
+  const submitButton = page.getByRole('button', { name: 'Submit answer' });
+  const reward = page.locator('.anime-reveal');
+  for (let index = 0; index < 5; index += 1) {
+    await expect(submitButton.or(complete).or(reward)).toBeVisible({ timeout: 15_000 });
+    await dismissRewards(page);
+    if (await submitButton.or(complete).isVisible()) return;
+  }
+  await expect(submitButton.or(complete)).toBeVisible();
+}
+
 /**
  * Answers the current lesson question with the first offered choice, rates it
  * "Good", and waits for either the next question or the stage's own "Lesson
@@ -122,17 +151,17 @@ async function attachScreen(page: Page, testInfo: TestInfo, name: string) {
  * rest of this suite already uses for that round-trip.
  */
 async function rateCurrentQuestion(page: Page, complete: Locator): Promise<void> {
-  await page.getByRole('group', { name: 'Choose one answer' }).getByRole('button').first().click();
-  await page.getByRole('button', { name: 'Submit answer' }).click();
+  await dismissRewards(page);
+  await clickAfterRewards(page, page.getByRole('group', { name: 'Choose one answer' }).getByRole('button').first());
+  await clickAfterRewards(page, page.getByRole('button', { name: 'Submit answer' }));
   await expect(page.locator('[data-lesson-feedback]')).toBeVisible();
-  await page.getByRole('button', { name: 'Good' }).click();
+  await clickAfterRewards(page, page.getByRole('button', { name: 'Good' }));
   // `AnswerControl`'s <fieldset> is the same DOM node across questions (only
   // its `disabled` attribute and options change), so waiting for its "group"
   // role to reappear never proves advancement. "Submit answer" is only
   // rendered while `model.status === 'answering'` (LessonScreen.tsx), so its
   // remount is the real signal that a fresh question is ready.
-  const submitButton = page.getByRole('button', { name: 'Submit answer' });
-  await expect(submitButton.or(complete)).toBeVisible({ timeout: 15_000 });
+  await waitForNextQuestionOrCompletion(page, complete);
 }
 
 /**
@@ -148,6 +177,10 @@ async function runLessonStage(
   onBack?: () => Promise<void>,
 ): Promise<void> {
   await expect(page.locator('[data-session-shell="lesson"]')).toBeVisible();
+  await expect(page.locator('.claude-topbar')).toBeHidden();
+  await expect(page.locator('.claude-mobile-nav')).toBeHidden();
+  await expect(page.locator('.claude-workspace-inner')).toHaveCSS('padding-left', '0px');
+  await expect(page.getByRole('button', { name: 'Switch light and dark mode' })).toBeVisible();
   await onFront();
 
   const complete = page.getByRole('heading', { level: 1, name: 'Lesson complete' });
@@ -155,15 +188,17 @@ async function runLessonStage(
   await page.getByRole('button', { name: 'Submit answer' }).click();
   await expect(page.locator('[data-lesson-feedback]')).toBeVisible();
   if (onBack) await onBack();
-  await page.getByRole('button', { name: 'Good' }).click();
-  const submitButton = page.getByRole('button', { name: 'Submit answer' });
-  await expect(submitButton.or(complete)).toBeVisible({ timeout: 15_000 });
+  await clickAfterRewards(page, page.getByRole('button', { name: 'Good' }));
+  await waitForNextQuestionOrCompletion(page, complete);
 
   for (let index = 1; index < itemCount; index += 1) {
     if (await complete.isVisible()) break;
     await rateCurrentQuestion(page, complete);
   }
-  if (await complete.isVisible()) await page.getByRole('button', { name: 'Back to Today' }).click();
+  if (await complete.isVisible()) {
+    await expect(page.locator('.claude-topbar')).toBeHidden();
+    await page.getByRole('button', { name: 'Back to Today' }).click();
+  }
   await expect(page.locator('[data-session-shell="bridge"]')).toBeVisible({ timeout: 15_000 });
 }
 
@@ -190,7 +225,11 @@ for (const theme of themes) {
 
       await signIn(page, '/?view=today&locale=en');
       await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
-      await expect(page.getByText('12 items')).toBeVisible();
+      await expect(page.getByRole('heading', { level: 1, name: /12 items ready to remember/ })).toBeVisible();
+      await page.evaluate(() => {
+        let seed = 0x51f1a5;
+        Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 0x100000000);
+      });
       await page.getByRole('button', { name: "Start today's session" }).click();
 
       // Review: the plan's 6 due cards. Captures the answering ("front") and
@@ -232,12 +271,21 @@ for (const theme of themes) {
       // The review→new bridge above already covers the Bridge board's
       // fidelity; this second bridge (new→match) is only a transition, not a
       // distinct state to capture.
+      await page.evaluate(() => {
+        let seed = 0x51f1a5;
+        Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 0x100000000);
+      });
       await page.getByRole('button', { name: 'Continue' }).click();
 
       // Word Match: the same 12-card pool clears the 4-pair minimum.
       await expect(page.getByRole('button', { name: 'Close word match' })).toBeVisible({ timeout: 15_000 });
+      await expect(page.locator('.claude-topbar')).toBeHidden();
+      await expect(page.locator('.claude-mobile-nav')).toBeHidden();
       await expectAccessibleAndContained(page, 'Match');
       await attachScreen(page, testInfo, `${label}-match`);
+      const lastMeaning = page.locator('.practice-board--match button[lang="vi"]').last();
+      await lastMeaning.scrollIntoViewIfNeeded();
+      await expect(lastMeaning).toBeInViewport();
       await page.getByRole('button', { name: 'Close word match' }).click();
 
       // Recap: the session-finale modal, reached through the real flow
@@ -247,6 +295,9 @@ for (const theme of themes) {
       await expect(page.getByText(/\d+ cards? due/)).toBeVisible();
       await expectAccessibleAndContained(page, 'Recap');
       await attachScreen(page, testInfo, `${label}-recap`);
+      await page.getByRole('button', { name: 'Continue learning' }).click();
+      await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
+      await expect(page).not.toHaveURL(/[?&]lesson=session(?:&|$)/);
     });
   }
 }

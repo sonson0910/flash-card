@@ -400,6 +400,7 @@ function ShellShareFixture() {
                 setFixtureAction('empty-library:generate-requested');
               }}
               onImport={event => setFixtureAction(event.currentTarget.files?.length ? 'empty-library:import-selected' : 'empty-library:import-cleared')}
+              importFile={file => setFixtureAction(`empty-library:import-${file.name}`)}
               onOpenPaths={() => setFixtureAction('empty-library:paths')}
               isLoading={false}
               isGenerating={false}
@@ -407,6 +408,7 @@ function ShellShareFixture() {
               generationAccess={{ available: true }}
               importProgress={null}
               importResult={null}
+              cards={[]}
             />
           </div>
         </main>
@@ -515,6 +517,9 @@ function ShellShareFixture() {
             showClearConfirm={false}
             setShowClearConfirm={noOp}
             clearAll={asyncNoOp}
+            clearStatus="idle"
+            clearError={null}
+            resetClearFeedback={noOp}
             isLoading={sharing.model.isLoading}
             shareOpenerRef={shareOpenerRef}
             practiceOpenerRef={practiceOpenerRef}

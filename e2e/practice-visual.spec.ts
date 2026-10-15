@@ -68,7 +68,12 @@ test('spelling defers submit during IME composition', async ({ page }) => {
   await input.dispatchEvent('compositionstart');
   await input.press('Enter');
   await expect(checks).toHaveText('0');
-  await input.dispatchEvent('compositionend');
+  await input.evaluate(element => {
+    element.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
+    element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+  });
+  await expect(checks).toHaveText('0');
+  await page.waitForTimeout(20);
   await input.press('Enter');
   await expect(checks).toHaveText('1');
 });

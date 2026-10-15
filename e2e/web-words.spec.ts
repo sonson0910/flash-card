@@ -65,6 +65,23 @@ test.describe('WebWords page', () => {
     const koreanImage = testInfo.outputPath('today-web-words-korean.png');
     await koreanStrip.screenshot({ path: koreanImage, animations: 'disabled' });
     await testInfo.attach('Korean WebWords preview', { path: koreanImage, contentType: 'image/png' });
+
+    // A stale match completion from the English course must not intercept Start in Korean.
+    await page.evaluate(ownerId => {
+      sessionStorage.setItem(`sonflash:daily-session:${ownerId}`, JSON.stringify({
+        ownerId, targetLanguage: 'en', translationLanguage: 'vi', stage: 'match',
+        reviewLogicalIds: [], freshLogicalIds: [], matchCardIds: [], matchSkipReason: null,
+        matchCompletionPending: true,
+        stats: { goodCount: 0, againCount: 0, weakCardIds: [], matchXp: 0 },
+        startedAt: new Date().toISOString(),
+      }));
+    }, testUser.uid);
+    await page.getByRole('button', { name: "Start today's session" }).click();
+    await expect(page).toHaveURL(/[?&]lesson=session(?:&|$)/);
+    await expect.poll(() => page.evaluate(ownerId => {
+      const raw = sessionStorage.getItem(`sonflash:daily-session:${ownerId}`);
+      return raw ? (JSON.parse(raw) as { targetLanguage: string }).targetLanguage : null;
+    }, testUser.uid)).toBe('ko');
   });
 
   test('groups a saved web word by its article and adds it to a not-yet-started session\'s new stage', async ({
@@ -109,7 +126,7 @@ test.describe('WebWords page', () => {
     await workspace.getByRole('checkbox', { name: /ephemeral/i }).check();
     await workspace.getByRole('button', { name: 'Add to today' }).click();
 
-    await expect(workspace.getByText(/these words will appear once you start today's session/i)).toBeVisible();
+    await expect(workspace.getByText(/were not added to today's new-word stage/i)).toBeVisible();
     await workspace.getByRole('button', { name: 'Close web words' }).first().click();
     await expect(workspace).toBeHidden();
 
@@ -119,11 +136,43 @@ test.describe('WebWords page', () => {
     await expect(page.getByText('ephemeral', { exact: true })).toHaveCount(1);
   });
 
+  test('admits a selected web word beyond the old fifteen-card cutoff and resumes it', async ({
+    page, seedCards, signIn, blockExternalNetwork, testUser,
+  }) => {
+    const older = Array.from({ length: 15 }, (_, index) => webCard({
+      id: `older-${index}`, word: `older-${index}`, translation: `meaning-${index}`,
+      createdAt: `2026-09-${String(index + 1).padStart(2, '0')}T09:00:00.000Z`,
+    }));
+    await seedCards([...older, webCard({
+      id: 'selected-latest', word: 'selected-latest', translation: 'selected meaning',
+      createdAt: '2026-09-26T09:00:00.000Z',
+      source: { url: 'https://example.com/last', title: 'Latest article', capturedAt: '2026-09-26T09:00:00.000Z' },
+    })]);
+    await blockExternalNetwork(page);
+    await signIn(page, '/?view=today&locale=en');
+
+    await page.getByRole('button', { name: 'Review web words' }).click();
+    const workspace = page.getByRole('region', { name: 'Web words' });
+    await workspace.getByRole('checkbox', { name: /selected-latest/i }).check();
+    await workspace.getByRole('button', { name: 'Add to today' }).click();
+    await workspace.getByRole('button', { name: 'Close web words' }).first().click();
+
+    await page.getByRole('button', { name: "Start today's session" }).click();
+    await expect(page.getByText('selected-latest', { exact: true })).toBeVisible();
+    await expect.poll(() => readSessionPointer(page, testUser.uid).then(pointer => pointer?.freshLogicalIds.length)).toBe(15);
+
+    await page.reload();
+    await expect(page.getByText('selected-latest', { exact: true })).toBeVisible();
+  });
+
   test('puts a newly added word at the front of an already-started session\'s new stage, never duplicating it', async ({
     page, seedCards, signIn, blockExternalNetwork, testUser,
   }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await seedCards([
+      webCard({
+        id: 'word-already-fresh', word: 'already-fresh', translation: 'đã sẵn sàng', createdAt: '2026-09-25T09:00:00.000Z',
+      }),
       webCard({
         id: 'word-lucid', word: 'lucid', translation: 'sáng suốt', createdAt: '2026-09-26T09:00:00.000Z',
         source: { url: 'https://example.com/reading/piece-two', title: 'Another piece', capturedAt: '2026-09-26T09:00:00.000Z' },
@@ -134,25 +183,27 @@ test.describe('WebWords page', () => {
     await signIn(page, '/?view=today&locale=en');
 
     // Simulate a session already in progress at the 'new' stage, matching the shape
-    // `dailySessionStages.ts` writes and `SessionBridge.tsx` reads.
+    // `dailySessionStages.ts` writes and `DailyLearningWorkspace.tsx` resumes.
     await page.evaluate(({ sessionKey, ownerId }) => {
       sessionStorage.setItem(sessionKey, JSON.stringify({
-        ownerId, targetLanguage: '', stage: 'new',
+        ownerId, targetLanguage: 'en', translationLanguage: 'vi', stage: 'new',
         reviewLogicalIds: [], freshLogicalIds: ['already-fresh'], matchCardIds: [], matchSkipReason: null,
         stats: { goodCount: 0, againCount: 0, weakCardIds: [], matchXp: 0 },
         startedAt: new Date().toISOString(),
       }));
     }, { sessionKey: `sonflash:daily-session:${testUser.uid}`, ownerId: testUser.uid });
+    await page.goto('/?view=today&lesson=session&webWords=1&locale=en');
+    await expect(page.getByRole('heading', { level: 1, name: 'Lesson' })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Review web words' }).click();
     const workspace = page.getByRole('region', { name: 'Web words' });
+    await expect(workspace).toBeVisible();
     await workspace.getByRole('checkbox', { name: /lucid/i }).check();
     await workspace.getByRole('button', { name: 'Add to today' }).click();
     await expect(workspace.getByText("Added to today's new words.")).toBeVisible();
 
     const pointer = await readSessionPointer(page, testUser.uid);
     expect(pointer?.freshLogicalIds).toHaveLength(2);
-    expect(pointer?.freshLogicalIds[0]).not.toBe('already-fresh');
+    expect(pointer?.freshLogicalIds[0]).toBe('lucid');
     expect(pointer?.freshLogicalIds[1]).toBe('already-fresh');
 
     // Adding the same word again must not duplicate its entry in the pointer.

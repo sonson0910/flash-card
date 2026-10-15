@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures/firebase-emulator';
 import type { Page, TestInfo } from '@playwright/test';
 import { createServer, type ViteDevServer } from 'vite';
+import { readFile } from 'node:fs/promises';
 
 const fixedTime = new Date('2026-09-24T12:00:00.000Z');
 const cards = Array.from({ length: 12 }, (_, index) => ({
@@ -125,16 +126,26 @@ function CatalogReadyFixture() {
 createRoot(document.getElementById('root')).render(<ThemeProvider><I18nProvider><CatalogReadyFixture /></I18nProvider></ThemeProvider>);
 `;
 
-async function expectAccessibleAndContained(page: Page, screen: string) {
+async function expectAccessibleAndContained(page: Page, screen: string, root = page.locator('body')) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow, `${screen} has horizontal overflow`).toBeLessThanOrEqual(1);
 
-  const clippedControls = await page.locator('button:visible, input:visible, select:visible, textarea:visible, summary:visible').evaluateAll(elements => elements
+  const clippedControls = await root.locator('button:visible, input:visible, select:visible, textarea:visible, summary:visible').evaluateAll(elements => elements
     .map(element => {
       const box = element.getBoundingClientRect();
-      return { name: element.getAttribute('aria-label') || element.textContent?.trim() || element.tagName, left: box.left, right: box.right, width: box.width, height: box.height };
+      const insideHorizontalScroll = (() => {
+        for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+          const bounds = parent.getBoundingClientRect();
+          if (/^(auto|scroll)$/.test(getComputedStyle(parent).overflowX)
+            && parent.scrollWidth > parent.clientWidth + 1
+            && bounds.left >= -1 && bounds.right <= window.innerWidth + 1
+            && (box.left < bounds.left || box.right > bounds.right)) return true;
+        }
+        return false;
+      })();
+      return { name: element.getAttribute('aria-label') || element.textContent?.trim() || element.tagName, left: box.left, right: box.right, width: box.width, height: box.height, insideHorizontalScroll };
     })
-    .filter(control => control.width > 0 && control.height > 0 && (control.left < -1 || control.right > window.innerWidth + 1)));
+    .filter(control => control.width > 0 && control.height > 0 && !control.insideHorizontalScroll && (control.left < -1 || control.right > window.innerWidth + 1)));
   expect(clippedControls, `${screen} has horizontally clipped controls`).toEqual([]);
 
   const results = await new AxeBuilder({ page })
@@ -243,7 +254,7 @@ for (const theme of themes) {
       await expect(page.getByRole('heading', { level: 1, name: /progress/i })).toBeVisible();
       await expect(page.getByRole('region', { name: /study activity/i })).toBeVisible();
       await expect(page.locator('[data-native-chart="xp"]')).toBeVisible();
-      await expect(page.getByRole('heading', { name: 'Due over the next 13 days' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Due today and over the next 13 days' })).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Recently mastered' })).toBeVisible();
       await expectAccessibleAndContained(page, 'Progress');
       await expectReducedMotion(page, 'Progress');
@@ -262,6 +273,36 @@ for (const theme of themes) {
   }
 }
 
+test('Progress inspects covered review days and returns to range totals', async ({ page, signIn }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page, '/?view=progress&locale=en');
+  const activity = page.getByRole('region', { name: 'Review activity' });
+  const date = activity.getByLabel('Inspect a day');
+  await expect(date).toHaveAttribute('min', '2026-03-27');
+  expect((await date.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+
+  const coveredDay = activity.getByRole('button', { name: 'Sep 23, 2026: 3 reviews' });
+  await coveredDay.click();
+  await expect(coveredDay).toHaveAttribute('aria-pressed', 'true');
+  await expect(date).toHaveValue('2026-09-23');
+  await expect(activity.getByRole('status')).toHaveText('Sep 23, 2026: 3 reviews');
+  await expect(activity.locator('dt').filter({ hasText: 'Good' }).locator('..').locator('dd')).toHaveText('2');
+
+  await activity.getByRole('button', { name: 'Show range totals' }).click();
+  await expect(date).toHaveValue('');
+  await expect(activity.getByRole('status')).toHaveCount(0);
+  await expect(activity.locator('dt').filter({ hasText: 'Good' }).locator('..').locator('dd')).toHaveText('106');
+
+  await date.fill('2026-09-22');
+  await expect(activity.getByRole('status')).toHaveText('Sep 22, 2026: 0 reviews');
+  await expect(activity.locator('dt').filter({ hasText: 'Good' }).locator('..').locator('dd')).toHaveText('0');
+
+  await activity.getByRole('button', { name: '30 days' }).click();
+  await expect(date).toHaveValue('');
+  await expect(date).toHaveAttribute('min', '2026-08-26');
+  await expect(activity.getByRole('status')).toHaveCount(0);
+});
+
 test('weekly recap opens with real totals computed from verified XP history', async ({ page, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await signIn(page, '/?view=progress&locale=en');
@@ -277,12 +318,11 @@ test('weekly recap opens with real totals computed from verified XP history', as
   // These figures come from plain number formatting, not from Lingui message
   // catalogs, so they are meaningful even before the new weeklyRecap.* ids below
   // go through the controller's i18n:extract/compile/translate pass.
-  await expect(dialog.getByText('Sep 18')).toBeVisible();
-  await expect(dialog.getByText('Sep 24')).toBeVisible();
+  await expect(dialog.locator('.weekly-recap-card__range').first()).toHaveText('Sep 18 – Sep 24');
   await expect(dialog.getByText('XP this week')).toBeVisible();
   await expect(dialog.getByText('220', { exact: true })).toBeVisible();
   await expect(dialog.getByText('2 / 7')).toBeVisible();
-  await expect(dialog.getByText('148', { exact: true })).toBeVisible(); // Best day metric: Sep 18 alone.
+  await expect(dialog.getByText('2026-09-18 · 148 XP')).toBeVisible(); // Best day metric: Sep 18 alone.
 
   const captionField = dialog.getByRole('textbox', { name: /caption/i });
   await expect(captionField).not.toHaveValue('');
@@ -291,9 +331,9 @@ test('weekly recap opens with real totals computed from verified XP history', as
   // data-selection-key attribute rather than the (not-yet-extracted) toggle
   // label text, so this assertion does not depend on the translation pass.
   await dialog.locator('input[data-selection-key="bestDay"]').uncheck();
-  await expect(dialog.getByText('148', { exact: true })).toHaveCount(0);
+  await expect(dialog.getByText('2026-09-18 · 148 XP')).toHaveCount(0);
   await dialog.locator('input[data-selection-key="bestDay"]').check();
-  await expect(dialog.getByText('148', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('2026-09-18 · 148 XP')).toBeVisible();
 
   // Editing the caption is a real user action; the character budget updates live
   // (also plain number formatting, independent of the translation pass).
@@ -305,6 +345,153 @@ test('weekly recap opens with real totals computed from verified XP history', as
   await expect(dialog).toBeHidden();
   await page.getByRole('button', { name: /view weekly recap/i }).click();
   await expect(page.getByRole('dialog', { name: /your weekly recap/i }).getByRole('textbox', { name: /caption/i })).not.toHaveValue('A great study week!');
+});
+
+test('weekly recap downloads a real PNG from Progress', async ({ page, signIn }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await signIn(page, '/?view=progress&locale=en');
+  await page.getByRole('button', { name: /view weekly recap/i }).click();
+  const dialog = page.getByRole('dialog', { name: /your weekly recap/i });
+  await expect(dialog).toBeVisible();
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    dialog.getByRole('button', { name: 'Download PNG' }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe('sonflash-weekly-recap-2026-09-18-to-2026-09-24.png');
+  expect(await download.failure()).toBeNull();
+  const exportedPng = testInfo.outputPath('weekly-recap-export.png');
+  await download.saveAs(exportedPng);
+  const png = await readFile(exportedPng);
+  expect(png.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1350]);
+  expect(png).toMatchSnapshot('weekly-recap-export.png');
+  await testInfo.attach('Weekly recap export', { path: exportedPng, contentType: 'image/png' });
+  await expect(dialog.getByRole('status').filter({ hasText: 'Downloaded.' })).toBeVisible();
+});
+
+test('switching courses on another device cancels an in-flight weekly recap download', async ({
+  page, browser, db, testUser, signIn, blockExternalNetwork,
+}) => {
+  test.setTimeout(60_000);
+  await db.doc(`users/${testUser.uid}/profile/courses`).set({
+    activeCourseId: 'course-en',
+    courses: [
+      {
+        id: 'course-en', targetLanguage: 'en', nativeLanguage: 'vi', status: 'active', goals: [],
+        preferences: { pronunciationVariant: null, showRomanization: false, zhScript: null },
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        id: 'course-ko', targetLanguage: 'ko', nativeLanguage: 'vi', status: 'active', goals: [],
+        preferences: { pronunciationVariant: null, showRomanization: false, zhScript: null },
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+    ],
+  });
+
+  const peerContext = await browser.newContext({ baseURL: 'http://127.0.0.1:4173' });
+  let releaseExport!: () => void;
+  const exportGate = new Promise<void>(resolve => { releaseExport = resolve; });
+  let exportRequested!: () => void;
+  const exportRequest = new Promise<void>(resolve => { exportRequested = resolve; });
+  const exportChunk = /\/assets\/weeklyRecapExport-.*\.js(?:\?.*)?$/;
+  try {
+    const peerPage = await peerContext.newPage();
+    await blockExternalNetwork(peerPage);
+    await page.addInitScript(() => {
+      const observed = window as Window & { __recapCanvasSettled?: boolean; __recapDownloadClicks?: number };
+      const toBlob = HTMLCanvasElement.prototype.toBlob;
+      HTMLCanvasElement.prototype.toBlob = function (callback, type, quality) {
+        return toBlob.call(this, blob => {
+          callback(blob);
+          setTimeout(() => { observed.__recapCanvasSettled = true; }, 0);
+        }, type, quality);
+      };
+      const click = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function () {
+        if (this.download.startsWith('sonflash-weekly-recap-')) {
+          observed.__recapDownloadClicks = (observed.__recapDownloadClicks ?? 0) + 1;
+        }
+        return click.call(this);
+      };
+    });
+    await page.route(exportChunk, async route => {
+      exportRequested();
+      await exportGate;
+      await route.continue();
+    });
+    await Promise.all([
+      signIn(page, '/?view=progress&locale=en'),
+      signIn(peerPage, '/?view=settings&locale=en'),
+    ]);
+    await page.getByRole('button', { name: /view weekly recap/i }).click();
+    const dialog = page.getByRole('dialog', { name: /your weekly recap/i });
+    await expect(dialog).toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Download PNG' }).click();
+    await exportRequest;
+    await expect(dialog.getByRole('button', { name: 'Download PNG' })).toBeDisabled();
+
+    await peerPage.locator('.claude-course-switcher-trigger').click();
+    await peerPage.getByRole('dialog', { name: 'Courses' })
+      .getByRole('button', { name: /Korean.*Vietnamese/ }).click();
+    await expect(peerPage.locator('.claude-course-switcher-trigger')).toHaveText(/Korean/);
+    await expect(dialog).toBeHidden();
+
+    const exportResponse = page.waitForResponse(response => exportChunk.test(response.url()));
+    releaseExport();
+    await (await exportResponse).finished();
+    await page.waitForFunction(() => (window as Window & { __recapCanvasSettled?: boolean }).__recapCanvasSettled === true);
+    expect(await page.evaluate(() => (window as Window & { __recapDownloadClicks?: number }).__recapDownloadClicks ?? 0)).toBe(0);
+  } finally {
+    releaseExport();
+    await peerContext.close();
+  }
+});
+
+test('weekly recap Share sends the PNG and falls back to download', async ({ page, signIn }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: async (data: { files: File[]; text?: string }) => {
+        const file = data.files[0];
+        (window as Window & { __weeklyShare?: unknown }).__weeklyShare = {
+          name: file.name,
+          type: file.type,
+          text: data.text,
+          signature: [...new Uint8Array(await file.slice(0, 8).arrayBuffer())],
+        };
+      },
+    });
+  });
+  await signIn(page, '/?view=progress&locale=en');
+  await page.getByRole('button', { name: /view weekly recap/i }).click();
+  const dialog = page.getByRole('dialog', { name: /your weekly recap/i });
+  await dialog.getByRole('textbox', { name: /caption/i }).fill('A great study week!');
+  await dialog.getByRole('button', { name: 'Share', exact: true }).click();
+  await expect(dialog.getByRole('status').filter({ hasText: 'Shared.' })).toBeVisible();
+  expect(await page.evaluate(() => (window as Window & { __weeklyShare?: unknown }).__weeklyShare)).toEqual({
+    name: 'sonflash-weekly-recap-2026-09-18-to-2026-09-24.png',
+    type: 'image/png',
+    text: 'A great study week!',
+    signature: [137, 80, 78, 71, 13, 10, 26, 10],
+  });
+
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'share', { configurable: true, value: undefined });
+    Object.defineProperty(navigator, 'canShare', { configurable: true, value: undefined });
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+  });
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    dialog.getByRole('button', { name: 'Share', exact: true }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe('sonflash-weekly-recap-2026-09-18-to-2026-09-24.png');
+  expect(await download.failure()).toBeNull();
+  await expect(dialog.getByRole('status').filter({ hasText: 'Downloaded.' })).toBeVisible();
 });
 
 for (const theme of themes) for (const viewport of viewports) {
@@ -324,14 +511,63 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(dialog.getByRole('button', { name: 'Share' })).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Download PNG' })).toBeVisible();
     expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await expectAccessibleAndContained(page, 'Weekly recap', dialog);
+    await expectReducedMotion(page, 'Weekly recap');
     await expect(dialog).toHaveScreenshot(`weekly-recap-${theme.family}-${theme.mode}-${viewport.name}.png`, {
       animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
     });
     const screenshot = testInfo.outputPath(`weekly-recap-${theme.family}-${theme.mode}-${viewport.name}.png`);
     await dialog.screenshot({ path: screenshot, animations: 'disabled', caret: 'hide' });
     await testInfo.attach('Weekly recap', { path: screenshot, contentType: 'image/png' });
+    if (viewport.name === '390px') {
+      const caption = dialog.getByRole('textbox', { name: /caption/i });
+      const share = dialog.getByRole('button', { name: 'Share', exact: true });
+      const download = dialog.getByRole('button', { name: 'Download PNG', exact: true });
+      await caption.scrollIntoViewIfNeeded();
+      await share.scrollIntoViewIfNeeded();
+      await download.scrollIntoViewIfNeeded();
+      await expect(share).toBeInViewport();
+      await expect(download).toBeInViewport();
+      const controls = dialog.locator('.weekly-recap-controls__actions');
+      const controlsScreenshot = testInfo.outputPath(`weekly-recap-controls-${theme.family}-${theme.mode}-${viewport.name}.png`);
+      await controls.screenshot({ path: controlsScreenshot, animations: 'disabled', caret: 'hide' });
+      await testInfo.attach('Weekly recap controls', { path: controlsScreenshot, contentType: 'image/png' });
+    }
   });
 }
+
+test('approved reviewed catalog selects all 45 real units without horizontal clipping', async ({ page, seedCourseProfile, signIn }) => {
+  await seedCourseProfile();
+  await signIn(page, '/?view=catalog&locale=en');
+  await page.getByRole('button', { name: 'Check for reviewed catalog' }).click();
+  await expect(page.getByText('Reviewed catalog r-261124da6107eb25204587aa is ready on this device.')).toBeVisible();
+
+  const shelf = page.locator('.catalog-shelf').filter({ has: page.getByRole('heading', { name: 'Your shelf' }) });
+  const reviewedUnitTitles = new Set<string>();
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    const tracks = shelf.getByRole('button');
+    await expect(tracks).toHaveCount(3);
+    for (let trackIndex = 0; trackIndex < 3; trackIndex += 1) {
+      const track = tracks.nth(trackIndex);
+      await track.click();
+      await expect(track).toHaveAttribute('aria-pressed', 'true');
+      const units = page.getByRole('list', { name: 'Catalog units' }).getByRole('button');
+      await expect(units).toHaveCount(15);
+      const selections = viewport.name === 'desktop' ? 15 : 1;
+      for (let unitIndex = 0; unitIndex < selections; unitIndex += 1) {
+        const unit = units.nth(unitIndex);
+        if (viewport.name === 'desktop') reviewedUnitTitles.add((await unit.locator('span.font-black').innerText()).trim());
+        await unit.click();
+        await expect(unit).toHaveAttribute('aria-pressed', 'true');
+      }
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(overflow, `Reviewed catalog ${viewport.name} track ${trackIndex + 1} has horizontal overflow`).toBeLessThanOrEqual(1);
+    }
+    await expectAccessibleAndContained(page, `Reviewed catalog ${viewport.name}`);
+  }
+  expect(reviewedUnitTitles.size, 'three reviewed tracks expose and select 45 distinct real units').toBe(45);
+});
 
 for (const theme of themes) for (const viewport of viewports) {
   test(`${theme.family} ${theme.mode} achievements are visible at ${viewport.name}`, async ({ page, signIn }, testInfo) => {
@@ -345,7 +581,7 @@ for (const theme of themes) for (const viewport of viewports) {
     await signIn(page, '/?view=progress&locale=en');
     await page.getByRole('button', { name: 'View achievements' }).click();
     await expect(page.getByRole('heading', { name: 'Your word garden' })).toBeVisible();
-    await expect(page.getByText(/\d \/ 6 unlocked/)).toBeVisible();
+    await expect(page.getByText(/^Achievements · \d \/ 6 unlocked$/)).toBeVisible();
     await expectAccessibleAndContained(page, 'Achievements');
     await expect.poll(() => page.locator('.claude-workspace').evaluate(element => element.scrollTop)).toBe(0);
     await expect(page).toHaveScreenshot(`achievements-${theme.family}-${theme.mode}-${viewport.name}.png`, {
@@ -416,9 +652,9 @@ for (const theme of themes) {
       await page.getByRole('button', { name: 'Continue with this unit' }).click();
       await expect(page.getByText('Any missing unit words will be added to your Library before study.')).toBeVisible();
       await expect(page.getByRole('button', { name: 'Add missing words and study' })).toBeVisible();
+      await page.getByRole('article', { name: /analysis/i }).scrollIntoViewIfNeeded();
       await expectAccessibleAndContained(page, 'Paths Continue');
       await expectReducedMotion(page, 'Paths Continue');
-      await page.getByRole('article', { name: /analysis/i }).scrollIntoViewIfNeeded();
       await attachScreen(page, testInfo, `paths-continue-${theme.family}-${theme.mode}-${viewport.name}`);
     });
   }

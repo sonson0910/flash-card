@@ -2,13 +2,14 @@ import { expect, test } from './fixtures/firebase-emulator';
 import type { Page } from '@playwright/test';
 
 const card = {
-  id: 'mobile-review-card', word: 'resilience', normalizedWord: 'resilience',
+  id: 'word-resilience', word: 'resilience', normalizedWord: 'resilience',
   translation: 'khả năng phục hồi', explanation: 'The ability to recover.',
   explanationTranslation: 'Khả năng phục hồi sau khó khăn. '.repeat(80),
   phonetic: '/rɪˈzɪliəns/', emoji: '📚', category: 'Reading',
   audioUrl: null, imageUrl: null, origin: 'ai',
   createdAt: '2026-09-24T00:00:00.000Z', bookmarked: false,
   difficulty: 'unrated', customDeck: null, reviews: 0,
+  schemaVersion: 2, revision: 1,
 };
 
 type SeedCards = (cards: readonly (typeof card)[]) => Promise<void>;
@@ -23,7 +24,7 @@ async function openReview(page: Page, seedCards: SeedCards, signIn: SignIn, zen 
   }, zen);
   await seedCards([card]);
   await signIn(page, '/?view=library');
-  await page.getByRole('button', { name: /Start a review|Review \d+ due/ }).first().click();
+  await page.locator('[data-library-card-collection]').getByRole('button', { name: 'Study now', exact: true }).click();
 }
 
 async function touchPath(page: Page, selector: string, dx: number, dy: number) {
@@ -68,23 +69,25 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
   });
 }
 
-test('tap rates a card and commits the review honestly', async ({ page, seedCards, signIn }) => {
+test('tap rates a card and commits the review honestly', async ({ page, db, testUser, seedCards, signIn }) => {
   await openReview(page, seedCards, signIn);
   await page.getByRole('button', { name: 'Reveal answer' }).tap();
   const ratingRegion = page.getByRole('region', { name: 'Rate memory strength' });
   await ratingRegion.getByRole('button', { name: /Good/ }).tap();
-  await expect(ratingRegion.getByText('Review saved. Move to the next card.')).toBeVisible();
-  await expect(page.getByRole('dialog', { name: 'Session Complete!' })).toHaveCount(0);
+  await expect.poll(async () => Number((await db.doc(`users/${testUser.uid}/cards/${card.id}`).get()).get('reviews') ?? 0)).toBe(1);
+  await expect(page.locator('[data-session-recap]')).toBeVisible();
+  await page.getByRole('button', { name: 'View weekly recap' }).click();
+  await expect(page).toHaveURL(/[?&]view=progress(?:&|$)/);
+  await expect(page.getByRole('dialog', { name: 'Your weekly recap' })).toBeVisible();
 });
 
 test('vertical card scroll does not rate; horizontal swipe does', async ({ page, seedCards, signIn }) => {
   await openReview(page, seedCards, signIn);
   await page.getByRole('button', { name: 'Reveal answer' }).tap();
-  const ratingRegion = page.getByRole('region', { name: 'Rate memory strength' });
   await touchPath(page, '[data-study-card] [data-card-content="revealed"]', -130, -230);
-  await expect(ratingRegion.getByText('Review saved. Move to the next card.')).toHaveCount(0);
+  await expect(page.locator('[data-session-recap]')).toHaveCount(0);
   await touchPath(page, '[data-study-card]', -150, 5);
-  await expect(ratingRegion.getByText('Review saved. Move to the next card.')).toBeVisible();
+  await expect(page.locator('[data-session-recap]')).toBeVisible();
 });
 
 test('long Zen answer scrolls inside the card', async ({ page, seedCards, signIn }) => {

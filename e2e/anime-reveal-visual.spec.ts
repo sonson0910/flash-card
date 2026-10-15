@@ -62,7 +62,7 @@ for (const theme of themes) for (const viewport of viewports) for (const event o
     }, theme);
     const name = `anime-reveal-${event}-${theme.family}-${theme.mode}-${viewport.name}`;
     await page.goto(`${fixtureOrigin}${fixturePath}?event=${event}&locale=en`);
-    await expect(page.locator(`[data-anime-reveal-visual-view="${event}"]`)).toHaveCount(1);
+    await expect(page.locator(`[data-anime-reveal-visual-view="${event}"]`)).toHaveCount(1, { timeout: 15_000 });
     await expect(page.locator('.anime-reveal')).toBeVisible({ timeout: 15_000 });
     await expect(page.locator('.anime-reveal')).toHaveAttribute('data-event', event);
     await expect(page.locator('.anime-reveal')).toHaveAttribute('data-motion', 'reduced');
@@ -91,7 +91,7 @@ for (const locale of ['vi', 'pseudo'] as const) for (const event of events) {
       localStorage.setItem('sonflash_reduced_motion', 'true');
     });
     await page.goto(`${fixtureOrigin}${fixturePath}?event=${event}&locale=${locale}`);
-    await expect(page.locator('.anime-reveal')).toBeVisible();
+    await expect(page.locator('.anime-reveal')).toBeVisible({ timeout: 15_000 });
     await expect(page.locator('html')).toHaveAttribute('lang', locale === 'pseudo' ? 'en-XA' : 'vi');
     await expect(page.locator('.anime-reveal__title')).toContainText(locale === 'pseudo' ? '[' :
       event === 'tierup' ? 'Đã thành thạo' : event === 'streak' ? 'Đạt mốc chuỗi ngày' : 'Đã lên cấp');

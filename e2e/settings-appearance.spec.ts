@@ -92,6 +92,21 @@ test('Lumi, motion and sound settings persist after reload', async ({ page, sign
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'reduced');
 });
 
+test('reminder schedule saves to the signed-in owner and loads after reload', async ({ page, signIn, seedCourseProfile }) => {
+  await seedCourseProfile();
+  await signIn(page, '/?view=settings&locale=en');
+  const reminders = page.getByRole('region', { name: 'Study reminders' });
+  await expect(reminders.getByRole('button', { name: 'Save reminders' })).toBeEnabled();
+  await reminders.getByLabel('Send at').fill('09:30');
+  await reminders.getByLabel('Sun', { exact: true }).uncheck();
+  await reminders.getByRole('button', { name: 'Save reminders' }).click();
+  await expect(reminders.getByRole('status')).toHaveText('Reminder settings saved.');
+
+  await page.reload();
+  await expect(reminders.getByLabel('Send at')).toHaveValue('09:30');
+  await expect(reminders.getByLabel('Sun', { exact: true })).not.toBeChecked();
+});
+
 test('mobile shell opens settings and keeps the page inside 390px', async ({ page, seedCourseProfile, signIn }) => {
   await seedCourseProfile();
   await page.setViewportSize({ width: 390, height: 844 });

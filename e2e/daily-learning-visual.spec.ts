@@ -80,12 +80,15 @@ async function attachScreen(page: Page, testInfo: TestInfo, name: string) {
 }
 
 async function expectReducedProgressMotion(page: Page) {
-  const durations = await page.locator('[role="progressbar"] div[style]').evaluateAll(elements => elements.map(element => {
-    const duration = getComputedStyle(element).transitionDuration;
-    return Number.parseFloat(duration) || 0;
+  const durations = await page.locator('[role="progressbar"] *').evaluateAll(elements => elements.flatMap(element => {
+    const style = getComputedStyle(element);
+    return [style.transitionDuration, style.animationDuration].flatMap(value => value.split(',').map(duration => {
+      const time = duration.trim();
+      return (Number.parseFloat(time) || 0) * (time.endsWith('ms') ? 1 : 1000);
+    }));
   }));
   expect(durations).not.toEqual([]);
-  expect(durations.every(duration => duration <= 0.001)).toBe(true);
+  expect(durations.every(duration => duration <= 1)).toBe(true);
 }
 
 test.beforeEach(async ({ page, seedCards, blockExternalNetwork }) => {
@@ -95,7 +98,7 @@ test.beforeEach(async ({ page, seedCards, blockExternalNetwork }) => {
 
 for (const theme of themes) {
   for (const viewport of viewports) {
-    test(`${theme.family} ${theme.mode} daily learning screens are visually accessible at ${viewport.name}`, async ({ page, testUser, signIn }, testInfo) => {
+    test(`${theme.family} ${theme.mode} daily learning screens are visually accessible at ${viewport.name}`, async ({ page, db, testUser, signIn }, testInfo) => {
       await page.setViewportSize(viewport);
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.addInitScript(({ family, mode }) => {
@@ -103,6 +106,13 @@ for (const theme of themes) {
         localStorage.setItem('lingoflash_theme', mode);
         localStorage.setItem('sonflash_theme_follow_system', 'false');
       }, theme);
+
+      const profile = `users/${testUser.uid}/profile`;
+      const verified = db.batch();
+      verified.set(db.doc(`${profile}/stats`), { verifiedXp: 30, verifiedStreak: 3, rewardTimeZone: 'UTC' });
+      verified.set(db.doc(`${profile}/xp_history`), { verifiedByDayV1: { [new Date().toISOString().slice(0, 10)]: 30 } });
+      verified.set(db.doc(`${profile}/rewards`), { ownedFrameIds: [], ownedTitleIds: [], equippedFrameId: null });
+      await verified.commit();
 
       await signIn(page, '/?view=today&locale=en');
       const root = page.locator('html');
@@ -112,26 +122,17 @@ for (const theme of themes) {
 
       await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
       await expect(page.getByRole('button', { name: /Recognition/ })).toBeVisible();
-      await expect(page.getByRole('button', { name: /study days?/i })).toHaveCount(0);
+      const streakChip = page.getByRole('button', { name: '3 study days' });
+      await expect(streakChip).toBeVisible();
+      if (viewport.name === 'mobile') {
+        const action = await page.getByRole('button', { name: "Start today's session" }).boundingBox();
+        const dock = await page.locator('.claude-mobile-nav').boundingBox();
+        expect(action && dock && action.y + action.height <= dock.y, 'Today action remains above the mobile dock').toBe(true);
+      }
       await expectAccessibleAndContained(page, 'Today');
       await attachScreen(page, testInfo, `${theme.family}-${theme.mode}-${viewport.name}-today`);
 
-      await page.evaluate(uid => {
-        const now = new Date();
-        const day = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        // Key must match gamificationStorageKeys()'s `lingoflash_gamification:user:<uid>:snapshot`.
-        localStorage.setItem(`lingoflash_gamification:user:${uid}:snapshot`, JSON.stringify({
-          version: 1,
-          snapshot: { streak: 3, xp: 30, lastActive: now.toDateString(), history: { [day]: 30 } },
-        }));
-      }, testUser.uid);
-      await page.reload();
-      // A reload cold-starts the dev bundle again; under heavy concurrent
-      // emulator/build load this can exceed the default 5s budget, so give it
-      // the same generous timeout used elsewhere in this suite for post-reload
-      // or lazy-chunk waits.
-      await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible({ timeout: 15_000 });
-      await page.getByRole('button', { name: '3 study days' }).click();
+      await streakChip.click();
       await expect(page.getByRole('dialog', { name: 'Your study rhythm' })).toBeVisible();
       await expectAccessibleAndContained(page, 'Study streak');
       await attachScreen(page, testInfo, `${theme.family}-${theme.mode}-${viewport.name}-streak`);
@@ -146,6 +147,8 @@ for (const theme of themes) {
 
       await page.goto('/?view=today&lesson=placement&locale=en');
       await expect(page.getByRole('heading', { level: 1, name: 'Placement check' })).toBeVisible();
+      await expect(page.locator('.claude-topbar')).toBeHidden();
+      await expect(page.locator('.claude-mobile-nav')).toBeHidden();
       await page.getByRole('button', { name: 'Start placement check' }).click();
       await expect(page.getByRole('progressbar', { name: 'Placement progress' })).toBeVisible();
       await expectReducedProgressMotion(page);

@@ -83,6 +83,60 @@ for (const theme of themes) for (const locale of locales) for (const viewport of
   });
 }
 
+test('Crystal landing keeps a usable menu until the full navigation fits', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'crystal');
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+  });
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-theme-family', 'crystal');
+  const navigation = page.locator('.landing-header > nav');
+  const menu = page.locator('.landing-header details');
+
+  for (const width of [1024, 1279]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(menu).toBeVisible();
+    await expect(navigation).toBeHidden();
+  }
+  for (const width of [1280, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(navigation).toBeVisible();
+    await expect(menu).toBeHidden();
+    await expectAccessibleAndContained(page, `Crystal navigation at ${width}px`);
+  }
+});
+
+test('narrow landing menus retain each theme’s desktop destinations', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('sonflash_theme_family')) {
+      localStorage.setItem('sonflash_theme_family', 'classic');
+    }
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+  });
+  await page.goto('/');
+  const menu = page.locator('.landing-header details');
+  await menu.locator('summary').click();
+  await expect(menu.getByRole('link', { name: 'How it works' })).toBeVisible();
+  await expect(menu.getByRole('link', { name: 'Chrome extension' })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Paths' })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Curriculum' })).toHaveCount(0);
+  await menu.getByRole('link', { name: 'Chrome extension' }).click();
+  await expect(menu).not.toHaveAttribute('open');
+
+  await page.evaluate(() => localStorage.setItem('sonflash_theme_family', 'crystal'));
+  await page.reload();
+  await menu.locator('summary').click();
+  await expect(menu.getByRole('button', { name: 'Curriculum' })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Vocabulary' })).toBeVisible();
+  await expect(menu.getByRole('link', { name: 'Extension' })).toBeVisible();
+  await expect(menu.getByRole('link', { name: 'Languages' })).toBeVisible();
+  await expect(menu.getByRole('link', { name: 'Pricing & access' })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Paths' })).toHaveCount(0);
+});
+
 test('light landing first paint remains text-first without CJK fonts or video', async ({ page }) => {
   const requested: string[] = [];
   await page.addInitScript(() => {

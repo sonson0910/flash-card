@@ -12,7 +12,7 @@ function WebWordsVisualFixture() {
 
   useEffect(() => { void loadCatalog(locale, 'today').then(() => setReady(true)); }, [locale]);
   if (!ready) return null;
-  return <WebWordsPage ownerId={null} targetLanguage="en" onClose={() => undefined} />;
+  return <WebWordsPage ownerId={null} targetLanguage="en" translationLanguage="vi" onClose={() => undefined} />;
 }
 
 createRoot(document.getElementById('root')!).render(

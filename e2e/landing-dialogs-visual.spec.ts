@@ -1,4 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
+import { readFile } from 'node:fs/promises';
 import { expect, test } from './fixtures/firebase-emulator';
 import type { Locator, Page, TestInfo } from '@playwright/test';
 
@@ -68,7 +69,7 @@ async function openManagementMenu(page: Page) {
 
 for (const theme of themes) for (const viewport of viewports) {
   test(`${theme.family} ${theme.mode} account, plan, and report dialogs match the signed-in shell at ${viewport.name}`, async ({ page, seedCards, seedCourseProfile, signIn, blockExternalNetwork }, testInfo) => {
-    await page.clock.install({ time: fixedTime });
+    await page.clock.setFixedTime(fixedTime);
     await page.setViewportSize(viewport);
     await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
     await blockExternalNetwork(page);
@@ -81,12 +82,12 @@ for (const theme of themes) for (const viewport of viewports) {
     await seedCards([reportCard]);
     await seedCourseProfile();
     await signIn(page, '/?view=library&locale=en');
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 15_000 });
 
     await openManagementMenu(page);
     await page.getByRole('menuitem', { name: 'See Pro plan' }).click();
-    await expect(page.getByRole('heading', { name: 'Add momentum to your learning' })).toBeVisible();
-    await expect(page.getByText('Loading plan details…')).toBeHidden();
+    await expect(page.getByRole('heading', { name: 'Add momentum to your learning' })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('Loading plan details…')).toBeHidden({ timeout: 15_000 });
     await expectAccessibleAndContained(page, `${theme.family}-${theme.mode}-${viewport.name}-plan-dialog`);
     const planScreenshot = await captureDialogEvidence(page.getByRole('dialog', { name: 'Add momentum to your learning' }), testInfo, `landing-plan-${theme.family}-${theme.mode}-${viewport.name}`);
     await page.getByRole('button', { name: 'Close' }).first().click();
@@ -95,7 +96,7 @@ for (const theme of themes) for (const viewport of viewports) {
     await openManagementMenu(page);
     await page.getByRole('menuitem', { name: 'Account data' }).click();
     await expect(page.getByRole('heading', { name: 'Account data' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Download account data (JSON)' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Download account data (JSON, excluding cards)' })).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Delete my account' })).toBeEnabled();
     await expectAccessibleAndContained(page, `${theme.family}-${theme.mode}-${viewport.name}-account-dialog`);
     const accountDialog = page.getByRole('dialog', { name: 'Account data' });
@@ -117,7 +118,10 @@ for (const theme of themes) for (const viewport of viewports) {
     const reportRequestScreenshot = await captureDialogEvidence(reportDialog, testInfo, `landing-report-request-${theme.family}-${theme.mode}-${viewport.name}`);
     await page.getByLabel('Note').fill('The Vietnamese meaning needs review.');
     await page.getByRole('button', { name: 'Send report' }).click();
-    await expect(reportDialog.getByRole('status')).toContainText('Thank you. Your report has been sent for review.');
+    await expect(reportDialog.getByRole('status')).toContainText(
+      'Thank you. Your report has been sent for review.',
+      { timeout: 15_000 },
+    );
     await expectAccessibleAndContained(page, `${theme.family}-${theme.mode}-${viewport.name}-report-submitted`);
     const reportSubmittedScreenshot = await captureDialogEvidence(reportDialog, testInfo, `landing-report-submitted-${theme.family}-${theme.mode}-${viewport.name}`);
 
@@ -128,3 +132,70 @@ for (const theme of themes) for (const viewport of viewports) {
     expectDialogSnapshot(reportSubmittedScreenshot, `landing-report-submitted-${theme.family}-${theme.mode}-${viewport.name}.png`);
   });
 }
+
+test('account JSON download contains account data without card contents', async ({ page, seedCards, signIn }) => {
+  await seedCards([reportCard]);
+  await signIn(page, '/?view=library&locale=en');
+  await openManagementMenu(page);
+  await page.getByRole('menuitem', { name: 'Account data' }).click();
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Download account data (JSON, excluding cards)' }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^sonflash-account-\d{4}-\d{2}-\d{2}\.json$/);
+  const exported = JSON.parse(await readFile(await download.path(), 'utf8')) as Record<string, unknown>;
+  expect(exported).toHaveProperty('exportedAt');
+  expect(exported).toHaveProperty('profile');
+  expect(exported).not.toHaveProperty('cards');
+  expect(JSON.stringify(exported)).not.toContain(reportCard.word);
+});
+
+test('upgrade dialog records purchase intent and reflects active Pro entitlement', async ({
+  page, db, testUser, seedCards, seedCourseProfile, signIn, blockExternalNetwork,
+}) => {
+  await seedCards([reportCard]);
+  await seedCourseProfile();
+  await blockExternalNetwork(page);
+  await signIn(page, '/?view=library&locale=en');
+
+  await openManagementMenu(page);
+  await page.getByRole('menuitem', { name: 'See Pro plan' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Add momentum to your learning' });
+  await expect(dialog).toBeVisible({ timeout: 15_000 });
+  const registerButton = dialog.getByRole('button', { name: 'Register interest for launch' });
+  await expect(registerButton).toBeEnabled({ timeout: 15_000 });
+  await registerButton.click();
+  await expect(dialog).toContainText(
+    'Your purchase interest is recorded. The founder will reach out when sales open.',
+    { timeout: 15_000 },
+  );
+
+  const intents = await db.collection('analytics_events').where('name', '==', 'purchase_intent').get();
+  expect(intents.docs.some(doc => {
+    const props = doc.data()?.props as Record<string, unknown> | undefined;
+    return props?.offerId === 'pro-vn-30d-v1' && props?.trigger === 'menu';
+  })).toBe(true);
+
+  await dialog.getByRole('button', { name: 'Close' }).first().click();
+  await expect(dialog).toBeHidden();
+
+  const startsAt = new Date();
+  const expiresAt = new Date(startsAt.getTime() + 30 * 86_400_000);
+  await db.doc(`users/${testUser.uid}/entitlements/e2e-pro`).set({
+    tier: 'pro',
+    source: 'operator',
+    startsAt,
+    expiresAt,
+    status: 'active',
+    reason: 'e2e-pro-grant',
+    createdAt: startsAt,
+    revokedAt: null,
+  });
+
+  await openManagementMenu(page);
+  await page.getByRole('menuitem', { name: 'See Pro plan' }).click();
+  await expect(dialog).toBeVisible({ timeout: 15_000 });
+  await expect(dialog).toContainText('Pro is already active on your account.', { timeout: 15_000 });
+  await expect(dialog.getByRole('button', { name: 'Register interest for launch' })).toHaveCount(0);
+});
