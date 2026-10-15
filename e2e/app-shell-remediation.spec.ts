@@ -570,7 +570,7 @@ test('mobile library presents the card grid before tools and the filter shortcut
   await expect(tools).toBeInViewport();
 });
 
-test('study shortcuts require modifiers for single-character commands and views expose a focused heading', async ({ page, signIn, seedCards }) => {
+test('study shortcuts require modifiers for single-character commands and views expose a focused heading', async ({ page, signIn, seedCards, db, testUser }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   // "Study now" only starts a session when at least one card is due or
   // unrated ("new") per fetchPracticeCards' Firestore queries; every shared
@@ -602,14 +602,30 @@ test('study shortcuts require modifiers for single-character commands and views 
   await page.getByRole('button', { name: 'Study now' }).click();
   const studyHeading = page.getByRole('heading', { level: 1, name: 'Study session' });
   await expect(studyHeading).toBeFocused();
+  const introduction = page.getByRole('region', { name: 'Meet this word' });
+  await expect(introduction).toBeVisible();
+  await introduction.getByRole('button', { name: 'I’ve reviewed it — start recall' }).click();
+  await expect(page.locator('[data-study-session]')).toBeFocused();
   await expect(page.getByRole('button', { name: 'Reveal answer' })).toBeVisible();
+  const reviewedCard = db.doc(`users/${testUser.uid}/cards/word-tenacious`);
+  const before = (await reviewedCard.get()).data()!;
 
   await page.keyboard.press('Space');
   await expect(page.getByText('How well did you remember this card?')).toBeVisible();
   await page.keyboard.press('1');
   await expect(page.getByText('How well did you remember this card?')).toBeVisible();
+  expect((await reviewedCard.get()).data()).toEqual(before);
+  const ratingResponse = page.waitForResponse(response => response.request().method() === 'POST' && response.url().endsWith('/reviewCardV2'));
   await page.keyboard.press('Alt+1');
-  await expect(page.getByText('Review saved on this device and waiting to sync.')).toBeVisible();
+  expect((await ratingResponse).status()).toBe(200);
+  await expect.poll(async () => (await reviewedCard.get()).data()?.revision).toBe(before.revision + 1);
+  const saved = (await reviewedCard.get()).data()!;
+  expect(saved.reviews).toBe(1);
+  expect(saved.reviewHistory).toHaveLength(1);
+  expect(saved.reviewHistory[0].rating).toBe('again');
+  const recap = page.getByRole('dialog', { name: 'Session complete' });
+  await expect(recap).toBeVisible();
+  await recap.getByRole('button', { name: 'Close recap', exact: true }).click();
 
   await page.getByRole('button', { name: 'Close study mode' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary library' })).toBeFocused();

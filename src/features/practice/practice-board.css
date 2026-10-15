@@ -121,6 +121,7 @@
 .practice-board--study [data-study-progress-segment='complete'] { background: linear-gradient(90deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 55%, #5ef2ff)); box-shadow: 0 0 8px color-mix(in srgb, var(--sf-brand) 45%, transparent); }
 .practice-board--study [data-study-recall-mode] select { max-width: min(100%, 23rem); }
 .practice-board--study [data-study-card] { max-width: 460px; }
+.practice-board--study [data-active-recall] { height: min(clamp(300px, 60dvh, 480px), max(300px, calc(100dvh - 340px))); }
 .practice-board--study [data-study-card] h2 { max-width: 100%; overflow-wrap: anywhere; }
 .practice-board--study [data-study-rating] { max-width: 460px; scroll-margin-bottom: 8px; }
 .practice-rating-board { border-color: var(--practice-line, var(--sf-border)) !important; }

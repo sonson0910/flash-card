@@ -45,6 +45,9 @@ test('an AI card can be edited, bookmarked and reviewed from the local queue', a
   // LibraryCardGrid.tsx's collection actions render a single "Study now"
   // button (library.grid.study-now); see study-runtime-image.spec.ts.
   await page.getByRole('button', { name: 'Study now' }).click();
+  const introduction = page.getByRole('region', { name: 'Meet this word' });
+  await expect(introduction).toBeVisible();
+  await introduction.getByRole('button', { name: 'I’ve reviewed it — start recall' }).click();
   await page.getByRole('button', { name: 'Reveal answer' }).click();
   await expect(page.locator('[data-study-rating]')).toBeVisible();
   await page.getByRole('button', { name: 'Edit card' }).click();

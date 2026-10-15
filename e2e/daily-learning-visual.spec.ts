@@ -139,6 +139,10 @@ for (const theme of themes) {
       await page.getByRole('button', { name: 'Close streak details' }).click();
 
       await page.getByRole('button', { name: /Recognition/ }).click();
+      const introduction = page.getByRole('region', { name: 'Meet this word' });
+      await expect(introduction.getByRole('heading', { level: 1, name: 'Meet this word' })).toBeVisible();
+      await expect(introduction.getByRole('button', { name: "I don't know this yet", exact: true })).toBeVisible();
+      await introduction.getByRole('button', { name: 'I already know it — test me', exact: true }).click();
       await expect(page.getByRole('heading', { level: 1, name: 'Lesson' })).toBeVisible();
       await expect(page.getByRole('progressbar', { name: 'Lesson progress' })).toBeVisible();
       await expectReducedProgressMotion(page);

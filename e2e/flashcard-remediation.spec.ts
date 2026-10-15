@@ -1,6 +1,22 @@
 import { expect, test } from './fixtures/firebase-emulator';
 import type { Page, TestInfo } from '@playwright/test';
 
+async function beginFreshCardRecall(page: Page) {
+  const introduction = page.getByRole('region', { name: 'Meet this word' });
+  await expect(introduction).toBeVisible();
+  await introduction.getByRole('button', { name: 'I’ve reviewed it — start recall' }).click();
+  await expect(page.getByRole('button', { name: 'Reveal answer' })).toBeVisible();
+  await expect(page.locator('[data-study-session]')).toBeFocused();
+  const bounds = await page.locator('.claude-workspace').evaluate(element => {
+    const box = element.getBoundingClientRect();
+    return { top: box.top + element.clientTop, bottom: Math.min(window.innerHeight, box.top + element.clientTop + element.clientHeight) };
+  });
+  for (const control of [page.locator('[data-study-progress]'), page.locator('[data-study-recall-mode]'), page.locator('[data-study-card] h2').first(), page.getByRole('button', { name: 'Reveal answer' })]) {
+    const box = await control.boundingBox();
+    expect(box && box.y >= bounds.top && box.y + box.height <= bounds.bottom).toBe(true);
+  }
+}
+
 const longWord = 'counterintelligence';
 const longCategory = 'AcademicCategoryWithoutBreaks'.repeat(4);
 const longPhonetic = `/${'phoneticwithoutbreaks'.repeat(5)}/`;
@@ -40,6 +56,30 @@ const richCard = {
   explanationTranslation: richVietnameseExplanation,
 };
 
+for (const family of ['classic', 'crystal']) {
+  for (const mode of ['light', 'dark']) {
+    test(`${family} ${mode} keeps recall controls usable at 1280 by 720`, async ({ page, signIn, seedCards }) => {
+      await page.setViewportSize({ width: 1280, height: 720 });
+      await page.addInitScript(({ family, mode }) => {
+        localStorage.setItem('sonflash_theme_family', family);
+        localStorage.setItem('lingoflash_theme', mode);
+        localStorage.setItem('sonflash_theme_follow_system', 'false');
+      }, { family, mode });
+      await seedCards([richCard]);
+      await signIn(page, '/?view=library&locale=en');
+      await page.getByRole('button', { name: 'Study now' }).click();
+      await beginFreshCardRecall(page);
+      const answer = page.getByRole('textbox', { name: 'Your answer', exact: true });
+      await answer.fill('sự tương đồng');
+      await page.getByRole('button', { name: 'Check', exact: true }).click();
+      await expect(page.getByRole('button', { name: 'Reveal answer' })).toBeInViewport({ ratio: 1 });
+      await page.getByRole('button', { name: 'Reveal answer' }).click();
+      await expect(page.locator('[data-study-session]')).toHaveAttribute('data-study-state', 'revealed');
+      await expect(page.locator('[data-study-rating]').getByRole('button').first()).toBeEnabled();
+    });
+  }
+}
+
 test.beforeEach(async ({ page, seedCards, seedCourseProfile }) => {
   await page.addInitScript(() => {
     localStorage.setItem('lingoflash_theme', 'light');
@@ -63,9 +103,11 @@ test('study reveal keeps progress visible and scrolls rating controls into view'
   // copy no longer exists.
   await page.getByRole('button', { name: 'Study now' }).click();
   await expect(page.locator('[data-study-progress]')).toBeVisible();
+  await beginFreshCardRecall(page);
   const heading = page.locator('[data-study-card] h2').first();
   if (await heading.textContent() !== longWord) {
     await page.getByRole('button', { name: 'Next card' }).click();
+    await beginFreshCardRecall(page);
   }
   await expect(heading).toHaveText(longWord);
   expect(await heading.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
@@ -77,6 +119,9 @@ test('study reveal keeps progress visible and scrolls rating controls into view'
     const box = await rating.boundingBox();
     return Boolean(box && box.y >= 0 && box.y + box.height <= 844);
   }).toBe(true);
+  const prepareOffline = page.getByRole('region', { name: 'Offline access' }).getByRole('button', { name: 'Prepare offline' });
+  await prepareOffline.scrollIntoViewIfNeeded();
+  await expect(prepareOffline).toBeInViewport();
 });
 
 test('study timer pauses for the card editor and resumes from the elapsed time', async ({ page, signIn }) => {
@@ -89,6 +134,7 @@ test('study timer pauses for the card editor and resumes from the elapsed time',
   await page.clock.runFor(2_000);
   await expect(timer).toHaveText('00:02');
 
+  await beginFreshCardRecall(page);
   await page.getByRole('button', { name: 'Reveal answer' }).click();
   await page.getByRole('button', { name: 'Edit card' }).first().click();
   await expect(page.getByRole('dialog', { name: 'Edit card' })).toBeVisible();
@@ -108,6 +154,10 @@ test('study timer pauses for the card editor and resumes from the elapsed time',
 });
 
 async function captureStudyState(testInfo: TestInfo, page: Page, name: string) {
+  if (name.endsWith('revealed-rating')) {
+    // Rating auto-scroll must not leave the pointer applying incidental hover effects.
+    await page.mouse.move(0, 0);
+  }
   const screenshot = testInfo.outputPath(`${name}.png`);
   await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide' });
   await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
@@ -138,6 +188,7 @@ for (const theme of [
       await signIn(page, '/?view=library&locale=en');
       await page.clock.install();
       await page.getByRole('button', { name: 'Study now' }).click();
+      await beginFreshCardRecall(page);
 
       const session = page.locator('[data-study-session]');
       const rating = page.locator('[data-study-rating]');

@@ -584,14 +584,14 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
         <div className="mt-1 flex flex-wrap items-center gap-2"><p className="text-sm font-bold text-[var(--sf-brand-text)]">{model.courseLabel ?? _(msg({ id: 'today.course.fallback', message: 'Your current course' }))}</p><StreakChip streak={model.streak} /></div>
       </header>
       {model.isOffline && <p className="rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite">{_(msg({ id: 'today.offline', message: "You're offline. Reconnect to start today's session." }))}</p>}
-      <RecommendedNext model={model} actions={actions} />
-      <LearningJourney model={model} actions={actions} />
       <div className="today-ready-board">
         <PlanSummary model={model} actions={actions} showLumi={showLumi} />
         <div className="today-ready-web-words">
           <Suspense fallback={null}><WebWordsTodayStrip ownerId={ownerId ?? null} targetLanguage={targetLanguage ?? null} translationLanguage={translationLanguage ?? null} /></Suspense>
         </div>
       </div>
+      <RecommendedNext model={model} actions={actions} />
+      <LearningJourney model={model} actions={actions} />
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]">
         <PracticeModes model={model} actions={actions} />
         {model.placementAvailable && (

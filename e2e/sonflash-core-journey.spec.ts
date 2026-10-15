@@ -62,9 +62,14 @@ test('a signed-in learner completes the core course, library, review, recap, and
   await recallSelector.selectOption('target-to-native');
   const studyCard = page.locator('[data-study-card]');
   await expect(studyCard).toBeVisible();
+  const introduction = page.getByRole('region', { name: 'Meet this word' });
+  await expect(introduction).toBeVisible();
+  await introduction.getByRole('button', { name: 'I’ve reviewed it — start recall' }).click();
   const journeyHeading = studyCard.getByRole('heading', { name: 'journey', exact: true });
   if (await journeyHeading.count() === 0) {
     await page.getByRole('button', { name: 'Next card' }).click();
+    await expect(introduction).toBeVisible();
+    await introduction.getByRole('button', { name: 'I’ve reviewed it — start recall' }).click();
   }
   await expect(journeyHeading).toBeVisible();
   await page.getByRole('button', { name: 'Reveal answer' }).click();

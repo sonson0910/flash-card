@@ -139,6 +139,10 @@ test('a reviewed Paths unit is persisted and opened as the exact Study deck', as
   await expect(page.getByRole('heading', { name: 'Study session', level: 1 })).toBeVisible();
   await expect(study.getByRole('progressbar', { name: 'Study progress' })).toHaveAttribute('aria-valuemax', String(reviewedGeneralUnit.length));
   for (const [index, card] of reviewedGeneralUnit.entries()) {
+    const introduction = study.getByRole('region', { name: 'Meet this word' });
+    await expect(introduction).toBeVisible();
+    await expect(introduction.getByRole('group', { name: `${card.word} flashcard. Showing the Vietnamese meaning.` })).toBeVisible();
+    await introduction.getByRole('button', { name: 'I’ve reviewed it — start recall' }).click();
     await expect(study.getByRole('heading', { name: card.word, exact: true })).toBeVisible();
     await expect(study.getByRole('textbox', { name: 'Your answer' })).toHaveAttribute('id', `recall-answer-${card.id}`);
     if (index < reviewedGeneralUnit.length - 1) {

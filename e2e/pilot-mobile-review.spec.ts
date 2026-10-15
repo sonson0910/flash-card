@@ -25,6 +25,9 @@ async function openReview(page: Page, seedCards: SeedCards, signIn: SignIn, zen 
   await seedCards([card]);
   await signIn(page, '/?view=library');
   await page.locator('[data-library-card-collection]').getByRole('button', { name: 'Study now', exact: true }).click();
+  const introduction = page.getByRole('region', { name: 'Meet this word' });
+  await expect(introduction).toBeVisible();
+  await introduction.getByRole('button', { name: 'I’ve reviewed it — start recall' }).click();
 }
 
 async function touchPath(page: Page, selector: string, dx: number, dy: number) {

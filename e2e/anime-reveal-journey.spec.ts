@@ -37,6 +37,9 @@ async function seedThresholdReview(
 
 async function triggerThresholdReview(page: Page) {
   await page.getByRole('button', { name: 'Study now' }).click();
+  const introduction = page.getByRole('region', { name: 'Meet this word' });
+  await expect(introduction).toBeVisible();
+  await introduction.getByRole('button', { name: 'I’ve reviewed it — start recall' }).click();
   await page.getByRole('button', { name: 'Reveal answer' }).click();
   const easy = page.getByRole('region', { name: 'Rate memory strength' }).getByRole('button', { name: /Easy/ });
   await easy.click();

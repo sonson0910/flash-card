@@ -174,6 +174,20 @@ export function StudyView({
   const imageRecallAvailable = Boolean(imageKey && !imageUnavailable);
   const ratingRef = useRef<HTMLDivElement | null>(null);
   const studySurfaceRef = useRef<HTMLDivElement | null>(null);
+  const recallTransitionPendingRef = useRef(false);
+
+  useEffect(() => {
+    if (needsIntroduction || !recallTransitionPendingRef.current) return;
+    recallTransitionPendingRef.current = false;
+    const surface = studySurfaceRef.current;
+    const workspace = surface?.closest<HTMLElement>('.claude-workspace');
+    if (surface && workspace) {
+      const top = workspace.scrollTop + surface.getBoundingClientRect().top - workspace.getBoundingClientRect().top - workspace.clientTop;
+      workspace.scrollTo({ top: Math.max(0, top), behavior: 'instant' });
+    }
+    surface?.focus({ preventScroll: true });
+  }, [needsIntroduction]);
+
   const handleDeleteCard = useCallback(async (cardId: string) => {
     const deleted = await onDeleteCard?.(cardId) ?? false;
     if (deleted) globalThis.requestAnimationFrame?.(() => studySurfaceRef.current?.focus({ preventScroll: true }));
@@ -424,7 +438,10 @@ export function StudyView({
               />
               <button
                 type="button"
-                onClick={() => onBeginStudyRecall?.()}
+                onClick={() => {
+                  recallTransitionPendingRef.current = true;
+                  onBeginStudyRecall?.();
+                }}
                 className="mt-4 flex min-h-12 w-full items-center justify-center rounded-2xl bg-[var(--sf-brand)] px-4 py-3 text-sm font-black text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] motion-reduce:transition-none"
               ><Trans {...msg({ context: 'study-view.i-ve-reviewed-it-start-recall', message: 'I’ve reviewed it — start recall' })} /></button>
             </section>
