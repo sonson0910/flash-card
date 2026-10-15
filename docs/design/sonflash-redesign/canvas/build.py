@@ -9,9 +9,10 @@ ROOT = Path(__file__).parent
 SRC = ROOT / 'src'
 OUT = ROOT / 'project'
 SEED = ROOT / 'seed'
+CHECK = '--check' in sys.argv
 OUT.mkdir(exist_ok=True)
 for seed_file in SEED.iterdir():
-    if seed_file.is_file():
+    if seed_file.is_file() and not (CHECK and seed_file.name == 'canvas.json'):
         shutil.copyfile(seed_file, OUT / seed_file.name)
 
 parts = {}
@@ -119,7 +120,6 @@ SHARED_CSS = review_css + '''
 @media (prefers-reduced-motion: reduce){.nk-pop,.nk-pop-2,.nk-pop-3,.nk-stamp,.nk-spark,.nk-speed,.nk-rim-spin,.nk-float,.nk-slide,.nk-slide-2,.nk-slide-3,.nk-slide-4,.nk-flash,.nk-bar,.nk-shine,.nk-marquee{animation:none}.nk-press{transition:none}}
 @media (prefers-reduced-motion: reduce){.sf-fall,.sf-rise,.sf-rise-2,.sf-rise-3,.sf-deal-1,.sf-deal-2,.sf-deal-3,.sf-sheen,.sf-grow,.sf-bob-a,.sf-bob-b,.sf-pop,.sf-pulse,.sf-wave,.sf-shimmer,.sf-spin,.sf-shake{animation:none}.sf-fall{display:none}.sf-press,.sf-lift{transition:none}}
 '''
-CHECK = '--check' in sys.argv
 COMPONENTS = sorted(f.name[:-len('.dc.html')] for f in SRC.glob('*.dc.html'))
 for name in COMPONENTS:
     s = (SRC / f'{name}.dc.html').read_text()
@@ -333,6 +333,10 @@ for frag in sorted(SRC.glob('boards-anime-*.py')):
 LANG_GROUPS = []
 for frag in sorted(SRC.glob('boards-lang-*.py')):
     exec(frag.read_text(), globals())
+# Supplemental auth and file workflows are designed here before their API migration.
+PHASE14_GROUPS = []
+for frag in sorted(SRC.glob('boards-phase14-*.py')):
+    exec(frag.read_text(), globals())
 import os
 READY = os.environ.get('ANIME_READY')
 for bname, comp in ANIME_SRC.items():
@@ -361,6 +365,7 @@ groups = [
     ('home', 'Home, library and progress', ['PairToday', 'PairVocabulary', 'PairPaths', 'PairProgress', 'PairAchievements']),
     ('dialogs', 'Dialogs (top: dark · bottom: light)', ['Dialogs1', 'Dialogs2', 'Dialogs3']),
     ('states', 'Feedback, menus and system states', ['PairFeedback', 'PairSystem']),
+    *PHASE14_GROUPS,
     ('web', 'Landing', ['PairLanding', 'PairLandingSales']),
     ('mobile', 'Mobile', ['Mobile']),
     ('ext', 'Chrome extension', ['ExtPopups', 'PairExtInPage', 'PairExtOptions']),

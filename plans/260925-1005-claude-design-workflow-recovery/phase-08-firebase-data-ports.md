@@ -1,6 +1,6 @@
 ---
 title: "Ports và hợp đồng dữ liệu Firebase cho đa ngôn ngữ"
-status: in_progress
+status: done
 ---
 
 # 08. Ports và hợp đồng dữ liệu Firebase cho đa ngôn ngữ
@@ -45,6 +45,8 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 - [x] Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log. (2026-09-27, revision `ffbc9be`) — `verify:deploy` pass (2126 unit, 375 functions, 82 rules, 42 script tests); build + `verify:bundle` pass (JS 70.996 / CSS 29.498 B gzip); `i18n:check` pass; e2e chromium với Functions emulator: 240/242 pass ở lượt toàn bộ, 2 spec còn lại (`daily-learning-visual`, `practice-visual`) pass 25/25 khi chạy lại. Ngoại lệ: 2 fail đó là trang trắng do `ERR_NETWORK_CHANGED` khi Docker trên máy liên tục tạo/xoá interface veth, không phải lỗi code; runner emulator chuyển sang 1 worker vì 2 worker làm rate limiter quá hạn đọc Firestore.
 
 ## Verification
+
+**Spreadsheet pair round-trip 2026-10-03.** Export thêm cột `Translation Language`; import giữ target/native trên thẻ thường, không coi riêng `Language` là canonical identity. Hai hàng cùng từ nhưng khác target có identity/ID và lookup riêng; tuple canonical thiếu thành phần vẫn bị từ chối. Intake tra cứu thẻ thường explicit-language theo target; hàng legacy thiếu language giữ đường EN cũ. `source` riêng tư không xuất ra bảng. Focused frontend/Functions, toàn `src` 2540/2540 và typecheck đạt; Rules/emulator và browser import vẫn cần nghiệm thu trên source hiện tại.
 
 Quyết định dữ liệu ngày 25/09: owner chọn chỉ mục course riêng, không sửa thẻ legacy. Chuẩn bị và test local bootstrap theo batch có checkpoint, generation hoàn tất, mirror create/update/review/delete/restore/clear và replay; chỉ mở query khi generation hoàn tất. Không chạy bootstrap/cloud mutation trong công việc này. [Phân tích query](../reports/architect-260925-1520-course-query-contract.md) giải thích vì sao query trực tiếp không thể chọn chính xác thẻ thiếu trường language.
 

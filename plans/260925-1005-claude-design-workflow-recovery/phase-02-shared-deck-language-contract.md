@@ -47,6 +47,8 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 
 Vitest src/features/sharing/*test.ts và firestoreRulesSource.test.ts; npm --prefix functions test -- inputValidation.test.ts sharedDeckPersistence.test.ts legacySharedDeckMigration.test.ts; npm run test:rules; gates chung.
 
+**Bổ sung 2026-10-03 — nhận deck sau đổi khóa/tài khoản.** Intake chỉ nhận thẻ khi cặp ngôn ngữ đã cam kết khớp cặp của share; bộ điều khiển chờ cặp mới hội tụ trong thời gian hữu hạn và giữ bản xem trước để thử lại khi chưa hội tụ. Khi tài khoản đổi A→B, hook vô hiệu lượt nhận của A trước khi chuyển cổng intake sang B. Test gắn component cùng cặp A/B xác nhận không lookup hoặc ghi thẻ vào B từ lượt nhận cũ. Ba file Vitest liên quan đạt 86/86; review nguồn độc lập không còn finding trong phạm vi này. Chưa chạy lại hành trình share trên Chromium/emulator sau sửa.
+
 Hợp đồng chung: [acceptance-contract.md](acceptance-contract.md). Tên test mới là đề xuất; trước chạy phải kiểm inventory file thực, không báo file vắng là PASS. Với flow có mutation, test dùng emulator/fixtures, không dữ liệu người học hay Gemini thật.
 
 ## Rủi ro và rollback

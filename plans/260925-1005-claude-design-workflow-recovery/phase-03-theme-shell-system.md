@@ -46,6 +46,10 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 
 ## Verification
 
+**Đổi theme khi chạy — 2026-10-03.** Classic chỉ chuyển sang Crystal sau khi CSS/tài nguyên Crystal đã tải; context và root dùng cùng family đã áp dụng trong thời gian chờ. Link Crystal đã lỗi được tạo lại để retry, và đổi nhanh theme hoặc system mode trong khi tải không ghi đè lựa chọn cuối. Theme tests 13/13, toàn `src` 2519/2519, lint, build và bundle đạt. Ảnh first-paint của Crystal đã lưu trong trình duyệt thật vẫn cần Chromium/Canvas; chưa coi việc kiểm mã là nghiệm thu hình ảnh.
+
+**Nhãn mobile Crystal — 2026-10-03.** Tab Library trong bottom nav Crystal nay hiện “Words”/“Từ” theo MobileToday; Classic vẫn là “Vocabulary”, desktop vẫn là “Collection”, route và icon giữ nguyên. Focused nav 3/3, toàn frontend 292 file/2.662 test, lint, i18n 12 catalog, build/bundle đạt. Ảnh mobile hiện tại cần chạy lại bằng Chromium và so Canvas trước khi coi nhãn/layout đã nghiệm thu hình ảnh.
+
 AppNavigation và theme/settings tests; e2e/ui-shell.spec.ts, e2e/settings-appearance.spec.ts, accessibility.spec.ts; Canvas comparisons + gates chung.
 
 Hợp đồng chung: [acceptance-contract.md](acceptance-contract.md). Tên test mới là đề xuất; trước chạy phải kiểm inventory file thực, không báo file vắng là PASS. Với flow có mutation, test dùng emulator/fixtures, không dữ liệu người học hay Gemini thật.

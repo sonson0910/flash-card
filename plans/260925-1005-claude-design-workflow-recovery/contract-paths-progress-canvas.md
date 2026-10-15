@@ -19,7 +19,7 @@ Progress currently uses XP history for its activity heatmap. XP is not a count o
 | Active unit and unit completion | A maintained, server-owned progress projection | +1 write per canonical create/review/delete with a real lexemeId; 1 query and P document reads per Paths open |
 | Unit ETA | `dailyPacePreference` only if owner defines it as new words per day; otherwise unavailable | 0 reads, 0 writes if device-local |
 | Reviews by day and recall buckets | Bounded 182-day, target-language-scoped projection inside the already-read/written `profile/stats` document, updated in the strict-review transaction | 0 additional reads, 0 additional writes per review or hydration |
-| Due forecast, today through day 13 | Reuse due-today aggregate; 13 bounded aggregate count queries for future days, cached by owner/language/local date | 13 aggregate query reads on first daily hydration, 0 on same-day cache hit; 0 writes |
+| Due forecast, today through day 13 | Reuse due-today aggregate; 13 bounded aggregate count queries for future days, cached by owner/language/local date | 13 aggregate query reads on first daily hydration, 0 on same-day cache hit; 0 writes. When a 24-hour stats cache crosses local midnight, refresh only the due-today count with 1 aggregate query; an expired or missing full stats cache still uses its existing 8 aggregate queries. |
 | Four recently mastered cards | Server-owned `masteredAt` on each card's existing review write, then a bounded indexed query | 0–4 document reads per hydration; 0 additional writes on review; schema/Rules/index change |
 
 History and mastery begin on the date the new projection becomes authoritative. Legacy XP and capped card histories cannot reconstruct complete review counts. The UI must label older coverage as partial unless a separately approved backfill exists. Existing card writes are counted as existing writes; added fields increase document/index bytes.
@@ -41,6 +41,11 @@ counts before reuse, and is removed on account deletion. If browser storage
 cannot reserve the daily query budget, forecast remains unavailable and no
 forecast queries run; the bounded recent-mastery read still runs. A failed
 count leaves the daily reservation in place to avoid repeated billed queries.
+
+The due-today count carries the local date used when its aggregate query starts.
+Progress hides that count, its action, and the combined 14-day chart after a
+midnight rollover until the current day's count succeeds. This prevents a saved
+count from being relabelled as today's count during an offline/error state.
 
 The current phase-06 Canvas comparison checkbox remains open. UI can display honest unavailable states without additional I/O, but those states do not make the ready-state Canvas MATCH.
 

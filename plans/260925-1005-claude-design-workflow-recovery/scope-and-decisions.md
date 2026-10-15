@@ -32,9 +32,9 @@ Nguồn riêng trên máy: session `5e520499-5fed-45db-bd78-9a938ff7db56`, proje
 | Today/Bridge/Recap | Phiên bốn chặng, trạng thái chuyển, bước học kế tiếp | XP thật, không chép +160/bonus từ mẫu; league/bonus do phase 15 quyết định. |
 | Onboarding | Native/target, Goals, level/script, pace, trải nghiệm thẻ đầu tiên, tùy chọn reminder | Gộp các board thành một journey có nhánh; bỏ thử Pro tự động khi chưa được phép. |
 | Weekly recap | Báo cáo, chọn thông tin hiện, caption, tải ảnh/chia sẻ có chủ động | Chưa có referral reward thì không hứa thưởng; không bịa study time/recall. |
-| Streak | Thông tin streak, mốc/động viên, trạng thái tiếp tục/mất streak | Repair/freeze và mua vật phẩm có task phase 15; chưa mở trong pilot. |
+| Streak | Thông tin streak, mốc/động viên, trạng thái tiếp tục/mất streak | Decision 8 chọn freeze/repair kiếm bằng học, không bán; phase 15 vẫn cần luật, dữ liệu và nghiệm thu trước khi bật. |
 | Pricing/Paywall/Checkout/Pro | Màn và luồng đầy đủ, nối entitlement thật theo hợp đồng cuối | R5/R6/R8 vẫn quyết định giá/quota. Thanh toán chờ doanh nghiệp/gateway; pilot chỉ purchase intent. |
-| Referral/League | Màn, empty/loading/error, luồng mời/xếp hạng theo policy | Chưa có quyết định 8 thì chưa bật reward/league cho pilot. |
+| Referral/League | Màn, empty/loading/error, luồng mời/xếp hạng theo policy | Decision 8 chọn league bạn bè trước, XP server xác minh; referral cần điều kiện xác thực và entitlement ledger trước khi bật thưởng. Không tạo người chơi giả. |
 | Tutor/AI streaming | Flow thật, định nghĩa request, output, quota, lỗi/cancel/save | R7 có allowance cho AI ngoài tạo thẻ; không được tự đánh dấu Tutor bị cấm. Không giả streaming bằng timer. |
 | Landing/Sales/LangLanding | Tích hợp sections, demo và journey chuyển đổi theo Canvas | `sonflash.app` đã chốt. Chỉ claim các tính năng đã mở; review/testimonials phải có nguồn. |
 
@@ -50,11 +50,11 @@ Hai tên board cho cùng chức năng được gộp vào một runtime route/co
 |---|---|---|
 | G1 và frontend mở rộng | Owner chốt 25/09: cho phép code/test local 08–10 trước G1, giải quyết mâu thuẫn giữa roadmap và handoff. | G1 vẫn chặn phát hành tương ứng; không có quyền deploy trong công việc này. |
 | Course query cho thẻ legacy thiếu language | Owner chốt 25/09: tạo chỉ mục course riêng, giữ nguyên thẻ gốc. Code và test local gồm bootstrap theo batch, kiểm tra hoàn tất và đồng bộ mọi mutation. | Chưa chạy bootstrap trên cloud. Course query chỉ được dùng khi generation của chỉ mục đã hoàn tất; không lọc sau giới hạn page/practice. |
-| Quota, giá, VAT, feature entitlements | R5–R8 là giá trị đã chốt; decision 8 còn mở. | Live checkout, paywall, rewards, streak purchase, league. |
+| Quota, giá, VAT, feature entitlements | R5–R8 giữ giá/quota; decision 8 đã chọn Option B ngày 30/09. | Live checkout còn chờ đăng ký doanh nghiệp, gateway và VAT; rewards/league còn chờ dữ liệu server và luật nghiệm thu. |
 | Reminder delivery | Canvas có browser push, email digest, extension badge; repo chưa có hợp đồng reminder. Phase 11 phải thiết kế/kiểm chứng kênh, timezone, opt-in và hủy. | Delivery thật khi app đóng; không được chỉ lưu toggle rồi gọi xong. |
 | Streaming/tutor | UI có design, backend hiện trả kết quả một lần và chưa có tutor chat contract hoàn chỉnh. | Streaming/chấm/tutor live; phase 11 có task contract trước code. |
-| Progress dự báo band/coverage, combo thưởng | Canvas có số mẫu; chưa có model/data và chưa chốt quy tắc thưởng. | Claim band/coverage hoặc cộng XP bonus; giữ task phân tích và nghiệm thu mô hình. |
-| Migration/auth/upload | Gate migration trong roadmap 04; auth và upload có source phases nhưng thiếu board chi tiết. | Hạ tầng live. Phải thiết kế bổ sung cùng hệ Canvas trước khi implement các màn thiếu. |
+| Progress dự báo band/coverage, combo thưởng | Canvas có số mẫu. Decision 8 chọn combo theo số thẻ đã trả lời, không theo Again/Good; chưa duyệt XP bonus cho combo hay nguồn dữ liệu band/coverage. | Claim band/coverage hoặc cộng XP bonus; giữ task phân tích và nghiệm thu mô hình. |
+| Migration/auth/upload | R1 giữ Firebase qua pilot đến khi thanh toán hoặc chi phí đo được biện minh migration; roadmap 04 là gate đánh giá bằng chứng và owner xác nhận ngày bắt đầu. Auth và upload có source phases nhưng thiếu board chi tiết. | Hạ tầng live/cutover. UI và contract local có thể chuẩn bị; phải thiết kế bổ sung cùng hệ Canvas trước khi implement các màn thiếu. |
 
 Không cần hỏi lại quyền làm landing, domain hay phạm vi “mọi màn”: user đã chốt. Khi tới gate kinh doanh/hạ tầng, trình phương án cụ thể và phần đã chuẩn bị để owner quyết định.
 

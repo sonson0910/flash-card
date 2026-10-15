@@ -7,11 +7,17 @@ This directory is the design reference; application UI lives under `src/` at the
 
 ## Sources and rebuild
 
-- `src/*.dc.html` are the 112 editable component boards. `src/boards-*.py` declare the comparison boards and their sizes.
+- `src/*.dc.html` are the editable component boards (112 from the original capture, 116 after the phase-14 additions). `src/boards-*.py` declare the comparison boards and their sizes.
 - `src/tokens.js` defines the classic `sfTokens`; `src/anime-tokens.js` defines the Crystal Star `nkTokens` and the Lumi paths. Edit these sources, then regenerate `tokens.json`.
 - `assets/blob/MAP.txt` maps the original canvas blob IDs to local files. All source and seed references now use relative `../assets/blob/...` paths. The ten transparent Lumi WebP files used by the app are also copied to `src/assets/lumi/` at the repository root.
 - `seed/` contains the baseline Canvas runtime, index, and ten archived artboards needed by the original builder and its index. `build.py` copies these into `project/` before compiling. `project/` is generated and ignored by Git.
-- `reference/` contains one dark and one light PNG for each source component, plus one comparison PNG for each generated comparison or archived board. A comparison PNG shows its paired themes in one artboard. The 219 artboards produce 331 reference PNGs.
+- `reference/` contains one dark and one light PNG for each original source component, plus one comparison PNG for each original comparison or archived board. A comparison PNG shows its paired themes in one artboard. The original 219 artboards produced 331 reference PNGs.
+
+Phase 14 adds four editable auth/upload sources (`AuthStates`, `AnimeAuthStates`,
+`UploadStates`, and `AnimeUploadStates`) and 106 generated comparison boards in
+`src/boards-phase14-workflows.py`. The current builder indexes 116 source
+components and 329 artboards. Their 114 new reference PNGs are still pending render
+and visual review; inventory paths alone are not approval of the design.
 
 Run from the repository root:
 
@@ -24,7 +30,7 @@ node docs/design/sonflash-redesign/canvas/render-reference.mjs
 node docs/design/sonflash-redesign/canvas/render-reference.mjs --check
 ```
 
-The reference renderer uses Playwright Chromium, each board's fixed viewport, and reduced motion. Use `--board=AnimeToday` to render or check one board; use `--force` to replace existing PNGs after a source change. The reference files are review artifacts, not web bundle assets. Google Fonts in the source canvas still require network access for exact typography; the application font implementation belongs to the theme work.
+The reference renderer uses Playwright Chromium, each board's fixed viewport, and reduced motion. It serves local Canvas files through Playwright request interception without opening a localhost port. Use `--board=AnimeToday` to render or check one board; use `--force` to replace existing PNGs after a source change. The reference files are review artifacts, not web bundle assets. Google Fonts in the source canvas still require network access for exact typography; the application font implementation belongs to the theme work.
 
 ## Crystal Star copy audit
 

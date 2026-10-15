@@ -1,4 +1,3 @@
-import { createServer } from 'node:http';
 import { readFile, readdir, mkdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -42,9 +41,14 @@ if (process.argv.includes('--check')) {
 }
 
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.png': 'image/png' };
-const server = createServer(async (request, response) => {
+const origin = 'http://sonflash-canvas.invalid';
+const browser = await chromium.launch({ headless: true });
+const page = await browser.newPage({ deviceScaleFactor: 1, reducedMotion: 'reduce' });
+const pageErrors = [];
+page.on('pageerror', error => pageErrors.push(error.message));
+await page.route(`${origin}/**`, async route => {
   try {
-    const url = new URL(request.url, 'http://127.0.0.1');
+    const url = new URL(route.request().url());
     const file = path.resolve(root, `.${decodeURIComponent(url.pathname)}`);
     if (!file.startsWith(`${root}${path.sep}`)) throw new Error('Outside canvas');
     await stat(file);
@@ -56,29 +60,25 @@ const server = createServer(async (request, response) => {
       if (replaced === html && !html.includes(`"default":"${theme}"`)) throw new Error(`No theme prop: ${file}`);
       body = Buffer.from(replaced);
     }
-    response.writeHead(200, { 'Content-Type': mime[path.extname(file)] ?? 'application/octet-stream' });
-    response.end(body);
+    await route.fulfill({ status: 200, contentType: mime[path.extname(file)] ?? 'application/octet-stream', body });
   } catch {
-    response.writeHead(404);
-    response.end();
+    await route.fulfill({ status: 404, body: '' });
   }
 });
-
-await mkdir(output, { recursive: true });
-await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-const address = server.address();
-const browser = await chromium.launch({ headless: true });
-const page = await browser.newPage({ deviceScaleFactor: 1, reducedMotion: 'reduce' });
 const failures = [];
 try {
+  await mkdir(output, { recursive: true });
   for (const reference of selectedReferences) {
     if (!process.argv.includes('--force') && await isPng(reference)) continue;
     try {
+      pageErrors.length = 0;
       await page.setViewportSize({ width: reference.width, height: reference.height });
-      const url = `http://127.0.0.1:${address.port}/project/${reference.name}`
+      const url = `${origin}/project/${reference.name}`
         + (reference.theme === 'comparison' ? '' : `?reference-theme=${reference.theme}`);
       await page.goto(url, { waitUntil: 'domcontentloaded' });
-      await page.waitForFunction(() => document.body.innerText.trim().length > 0, null, { timeout: 5000 });
+      await page.waitForFunction(() => document.querySelector('#dc-root')?.innerText.trim().length > 0, null, { timeout: 5000 });
+      if (pageErrors.length) throw new Error(pageErrors.join('; '));
+      if (await page.locator('.sc-placeholder-error').count()) throw new Error('Canvas component failed to render');
       await page.screenshot({ path: path.join(output, reference.filename), animations: 'disabled' });
       if (!await isPng(reference)) throw new Error('PNG dimensions or signature mismatch');
     } catch (error) {
@@ -87,7 +87,6 @@ try {
   }
 } finally {
   await browser.close();
-  await new Promise(resolve => server.close(resolve));
 }
 if (failures.length) throw new Error(`${failures.length} renders failed:\n${failures.join('\n')}`);
 console.log(`Rendered ${selectedReferences.length} reference PNGs.`);

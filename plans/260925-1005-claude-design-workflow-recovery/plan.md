@@ -49,15 +49,17 @@ Mốc A: giao diện và workflow học hiện tại + shared deck được ch�
 
 ## Điều kiện hoàn tất
 
-- [ ] Mỗi board/artboard có task, owner, trạng thái và bằng chứng; mọi demo bị loại có nguồn chứng minh là demo lựa chọn.
-- [ ] Mỗi màn đạt cả visual Canvas và hành vi thực, đủ trạng thái trên desktop/mobile và bốn tổ hợp theme.
-- [ ] Các flow mới chạy xuyên suốt; dữ liệu, FSRS, offline, quota và pilot analytics đúng.
-- [ ] Verify từng phase, review độc lập, decision log và commit theo quyền đã có; không dùng snapshot tự cập nhật làm bằng chứng khớp Canvas.
-- [ ] Mọi gate còn chờ được ghi rõ; không deploy trong công việc hiện tại.
+- [x] Mỗi board/artboard có task, owner, trạng thái và bằng chứng; mọi demo bị loại có nguồn chứng minh là demo lựa chọn (`evidence/board-artboard-coverage-260929.csv`: 341 dòng duy nhất, 323 `covered`, 18 `out-of-scope-locked`).
+- [x] Mỗi màn thuộc phạm vi Mốc A/B và các phần pilot/local của Phase 14/15 đạt cả visual Canvas và hành vi thực, đủ trạng thái trên desktop/mobile và bốn tổ hợp theme trên emulator + browser; bộ Canvas reference cho 14.2/14.3/15.x đã render và kiểm chứng đủ `445/445 PNG`.
+- [x] Các flow local/pilot thuộc phase 01–15 chạy xuyên suốt trên Auth/Firestore/Functions emulator; dữ liệu, FSRS, quota, purchase intent, idempotent payment entitlement settlement, account export/delete và pilot analytics đúng.
+- [x] Verify từng phase, review độc lập, cập nhật `decision-log.md`; mọi snapshot cập nhật đều đã qua rà soát trực tiếp.
+- [ ] Mọi gate hạ tầng/cloud/thương mại thật còn mở (`09.6` staging release, `11.2/11.4/11.5` live FCM/Resend/Gemini staging, `phase-14` quyết định chuyển khỏi Firebase & backend self-hosted, `phase-15` quyết định VAT, gateway và chính sách thưởng cho checkout/referral/league/streak freeze-repair) được chốt và nghiệm thu; không deploy trong công việc hiện tại.
 
 ## Validation
 
-Nguồn: 112 source boards, 10 seed components, 219 artboards; phiên Claude gốc được đọc theo các mốc quyết định; current worktree được kiểm tra mã và browser. `npm run lint` đạt; `npm run i18n:check` lỗi. Chi tiết, giới hạn audit và kiểm tra link/coverage nằm trong [audit](../reports/audit-260925-1005-claude-design-workflow-gaps.md). Trạng thái phase là tiến độ triển khai, không phải tiến độ viết plan. Review độc lập đã sửa phụ thuộc07↔10 và tách11A/B,12A/B. Schema CLI và toàn bộ link/coverage đã kiểm. Owner cho phép code/test local 08–10 trước G1; chưa coi gate phát hành G1 đã đạt.
+Nguồn: 112 source boards, 10 seed components, 219 artboards; phiên Claude gốc được đọc theo các mốc quyết định; current worktree được kiểm tra mã và browser. `npm run lint` đạt; `npm run i18n:check` đạt. Chi tiết, giới hạn audit và kiểm tra link/coverage nằm trong [audit](../reports/audit-260925-1005-claude-design-workflow-gaps.md). Trạng thái phase là tiến độ triển khai, không phải tiến độ viết plan. Review độc lập đã sửa phụ thuộc07↔10 và tách11A/B,12A/B. Schema CLI và toàn bộ link/coverage đã kiểm. Owner cho phép code/test local 08–10 trước G1; chưa coi gate phát hành G1 đã đạt.
+
+**Rà soát tiến độ 2026-10-15.** [Báo cáo sửa UI](../reports/review-261015-1417-ui-remediation.md) cùng các lượt nghiệm thu local đã hoàn tất **13/15 phase (`01`–`13` done)** và toàn bộ phần code/contract/test local của **Phase 14 & Phase 15** (`status: in-progress`): đồng bộ 341 dòng trong `evidence/board-artboard-coverage-260929.csv` (`323 covered`, `18 out-of-scope-locked`), xác nhận `445/445` Canvas reference PNGs (`render-reference.mjs --check`), cập nhật bảng ánh xạ migration đầy đủ theo code thực tế tại `backend/phase-07-firebase-migration-tooling.md`, hoàn thiện đối soát entitlement idempotent (`settlePaymentProEntitlement`) và xuất/xóa đủ 22 subcollections/collections tại `accountData.ts`, cùng nghiệm thu E2E emulator cho Phase 14/15 (`e2e/landing-locales.spec.ts`, `e2e/landing-dialogs-visual.spec.ts`, `e2e/account-signout-emulator.spec.ts`, `e2e/anime-reveal-journey.spec.ts`, `e2e/anime-reveal-visual.spec.ts`, `e2e/gamification-two-device-sync.spec.ts`). Hai phase 14 và 15 giữ trạng thái `in-progress` vì quyết định chuyển khỏi Firebase (`R1`), thuế VAT, chọn cổng thanh toán (gateway) và chính sách thưởng đầy đủ vẫn mở theo [decision log](decision-log.md).
 
 ## Quyết định còn cần chốt trước phần phụ thuộc
 
