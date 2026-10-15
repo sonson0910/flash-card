@@ -8,12 +8,13 @@ on:
         required: true
         type: string
       mode:
-        description: Inventory, protected apply, supersede, or separately approved index preparation
+        description: Inventory, verify a completed migration, protected apply, supersede, or prepare indexes
         required: true
         default: inventory
         type: choice
         options:
           - inventory
+          - verify
           - apply
           - supersede
           - prepare-indexes
@@ -23,6 +24,14 @@ on:
         type: string
       indexes_report_sha256:
         description: Exact SHA-256 of the sealed index-preparation report
+        required: false
+        type: string
+      firestore_safety_run_id:
+        description: Successful Firestore backup, restore, and TTL verification run ID required by index preparation
+        required: false
+        type: string
+      firestore_safety_receipt_sha256:
+        description: SHA-256 of the Firestore release-safety receipt required by index preparation
         required: false
         type: string
       supersede_inventory_digest:
@@ -37,13 +46,17 @@ on:
         description: Sealed manifest root digest for the separately approved supersede
         required: false
         type: string
+      source_revision:
+        description: Immutable revision that owns the completed migration required by verify
+        required: false
+        type: string
 
 permissions:
   actions: read
   contents: read
 
 concurrency:
-  group: legacy-shared-deck-inventory
+  group: ${{ inputs.mode == 'prepare-indexes' && 'firestore-production-mutations' || 'legacy-shared-deck-inventory' }}
   cancel-in-progress: false
 
 jobs:
@@ -66,18 +79,25 @@ jobs:
           OWNER_UID: ${{ inputs.mode != 'prepare-indexes' && secrets.OWNER_UID || '' }}
           INDEXES_RUN_ID: ${{ inputs.indexes_run_id }}
           INDEXES_REPORT_SHA256: ${{ inputs.indexes_report_sha256 }}
+          FIRESTORE_SAFETY_RUN_ID: ${{ inputs.firestore_safety_run_id }}
+          FIRESTORE_SAFETY_RECEIPT_SHA256: ${{ inputs.firestore_safety_receipt_sha256 }}
           SUPERSEDE_CONFIRMATION: ${{ inputs.mode == 'supersede' && secrets.SUPERSEDE_CONFIRMATION || '' }}
           PREPARE_INDEXES_CONFIRMATION: ${{ inputs.mode == 'prepare-indexes' && secrets.PREPARE_INDEXES_CONFIRMATION || '' }}
           SUPERSEDE_SOURCE_REVISION: ${{ inputs.supersede_source_revision }}
           SUPERSEDE_INVENTORY_DIGEST: ${{ inputs.supersede_inventory_digest }}
           SUPERSEDE_ROOT_DIGEST: ${{ inputs.supersede_root_digest }}
+          MIGRATION_SOURCE_REVISION: ${{ inputs.source_revision }}
         run: |
           if [[ ! "$INVENTORY_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]; then
             echo "revision must be a full lowercase immutable commit SHA" >&2
             exit 1
           fi
           test "$INVENTORY_REVISION" = "$GITHUB_SHA"
-          [[ "$MIGRATION_MODE" = inventory || "$MIGRATION_MODE" = apply || "$MIGRATION_MODE" = supersede || "$MIGRATION_MODE" = prepare-indexes ]]
+          [[ "$MIGRATION_MODE" = inventory || "$MIGRATION_MODE" = verify || "$MIGRATION_MODE" = apply || "$MIGRATION_MODE" = supersede || "$MIGRATION_MODE" = prepare-indexes ]]
+          if [[ "$MIGRATION_MODE" = verify ]]; then
+            [[ "$MIGRATION_SOURCE_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]
+            test "$MIGRATION_SOURCE_REVISION" != "$INVENTORY_REVISION"
+          fi
           if [[ "$MIGRATION_MODE" = apply ]]; then
             test "$APPLY_CONFIRMATION" = "APPLY_SHARED_DECK_V2"
             test -n "$BACKUP_MANIFEST_JSON"
@@ -94,6 +114,8 @@ jobs:
           fi
           if [[ "$MIGRATION_MODE" = prepare-indexes ]]; then
             test "$PREPARE_INDEXES_CONFIRMATION" = "PREPARE_INDEXES_V2"
+            [[ "$FIRESTORE_SAFETY_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
+            [[ "$FIRESTORE_SAFETY_RECEIPT_SHA256" =~ ^[a-f0-9]{64}$ ]]
           fi
           test "$FIREBASE_PROJECT_ID" = "encoded-hangout-433912-h2"
           test "$FIRESTORE_DATABASE_ID" = "ai-studio-945b4052-4462-4668-8936-277f09f07a37"
@@ -112,8 +134,12 @@ jobs:
         env:
           INVENTORY_REVISION: ${{ inputs.revision }}
           SUPERSEDE_SOURCE_REVISION: ${{ inputs.supersede_source_revision }}
+          MIGRATION_SOURCE_REVISION: ${{ inputs.source_revision }}
         run: |
           git merge-base --is-ancestor "$INVENTORY_REVISION" "origin/${GITHUB_DEFAULT_BRANCH:-main}"
+          if [[ -n "$MIGRATION_SOURCE_REVISION" ]]; then
+            git merge-base --is-ancestor "$MIGRATION_SOURCE_REVISION" "$INVENTORY_REVISION"
+          fi
           if [[ -n "$SUPERSEDE_SOURCE_REVISION" ]]; then
             git merge-base --is-ancestor "$SUPERSEDE_SOURCE_REVISION" "$INVENTORY_REVISION"
           fi
@@ -143,6 +169,67 @@ jobs:
           test "$(jq -r '.revision' "$report")" = "$GITHUB_SHA"
           test "$(jq -r '.indexDigest' "$report")" = "$(sha256sum firestore.indexes.json | awk '{print $1}')"
           echo "json=$(jq -c . "$report")" >> "$GITHUB_OUTPUT"
+
+      - name: Validate Firestore release-safety provenance
+        if: inputs.mode == 'prepare-indexes'
+        shell: bash
+        env:
+          FIRESTORE_SAFETY_RUN_ID: ${{ inputs.firestore_safety_run_id }}
+          GH_TOKEN: ${{ github.token }}
+          INVENTORY_REVISION: ${{ inputs.revision }}
+        run: |
+          run_json="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$FIRESTORE_SAFETY_RUN_ID")"
+          test "$(jq -er '.conclusion' <<<"$run_json")" = success
+          test "$(jq -er '.event' <<<"$run_json")" = workflow_dispatch
+          test "$(jq -er '.path' <<<"$run_json")" = .github/workflows/verify-firestore-release-safety.yml
+          test "$(jq -er '.head_sha' <<<"$run_json")" = "$INVENTORY_REVISION"
+          artifact_json="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$FIRESTORE_SAFETY_RUN_ID/artifacts?name=firestore-release-safety-${INVENTORY_REVISION}-${FIRESTORE_SAFETY_RUN_ID}")"
+          test "$(jq -er '[.artifacts[] | select(.expired == false and .workflow_run.id == ($run | tonumber))] | length' --arg run "$FIRESTORE_SAFETY_RUN_ID" <<<"$artifact_json")" = 1
+
+      - name: Download the exact Firestore release-safety receipt
+        if: inputs.mode == 'prepare-indexes'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: firestore-release-safety-${{ inputs.revision }}-${{ inputs.firestore_safety_run_id }}
+          path: artifacts/firestore-release-safety
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.firestore_safety_run_id }}
+
+      - name: Verify the Firestore release-safety receipt
+        if: inputs.mode == 'prepare-indexes'
+        shell: bash
+        env:
+          FIRESTORE_SAFETY_RECEIPT_SHA256: ${{ inputs.firestore_safety_receipt_sha256 }}
+          FIRESTORE_SAFETY_RUN_ID: ${{ inputs.firestore_safety_run_id }}
+          INVENTORY_REVISION: ${{ inputs.revision }}
+        run: |
+          receipt=artifacts/firestore-release-safety/receipt.json
+          test "$(sha256sum "$receipt" | cut -d' ' -f1)" = "$FIRESTORE_SAFETY_RECEIPT_SHA256"
+          jq -e \
+            --arg revision "$INVENTORY_REVISION" \
+            --arg runId "$FIRESTORE_SAFETY_RUN_ID" \
+            '([keys[]] | sort) == ["backup","completedAt","restore","revision","runId","schemaVersion","source","status","ttlPolicies"]
+            and .schemaVersion == 1
+            and .status == "verified"
+            and .revision == $revision
+            and .runId == $runId
+            and .source == {projectId:"encoded-hangout-433912-h2",databaseId:"ai-studio-945b4052-4462-4668-8936-277f09f07a37"}
+            and (.backup.bucket | type == "string" and test("^[a-z0-9][a-z0-9._-]{1,61}[a-z0-9]$"))
+            and (.backup.exportUri | type == "string")
+            and (.backup as $backup | ($backup.exportUri | startswith("gs://" + $backup.bucket + "/firestore-backups/" + $revision + "/" + $runId + "-")))
+            and .backup.retentionLocked == true
+            and (.backup.retentionSeconds | type == "number" and . >= 7776000)
+            and (.backup.documentCount | type == "number" and . >= 0 and floor == .)
+            and (.restore.databaseId | test("^release-restore-" + $runId + "-[1-9][0-9]{0,9}$"))
+            and .restore.documentCount == .backup.documentCount
+            and .restore.deletedAfterVerification == true
+            and (.ttlPolicies | sort_by(.collectionGroup)) == [
+              {collectionGroup:"library_facet_receipts",field:"expiresAt",state:"ACTIVE"},
+              {collectionGroup:"shared_deck_receipts",field:"expiresAt",state:"ACTIVE"}
+            ]
+            and (.completedAt | type == "string" and test("^20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"))' \
+            "$receipt"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -232,7 +319,7 @@ jobs:
               --output artifacts/firestore-indexes-report.json; then
               exit 0
             fi
-            sleep 10
+            if (( attempt < 120 )); then sleep 10; fi
           done
           echo "Firestore index active readback did not converge before timeout." >&2
           exit 1
@@ -254,6 +341,7 @@ jobs:
           SUPERSEDE_SOURCE_REVISION: ${{ inputs.supersede_source_revision }}
           SUPERSEDE_INVENTORY_DIGEST: ${{ inputs.supersede_inventory_digest }}
           SUPERSEDE_ROOT_DIGEST: ${{ inputs.supersede_root_digest }}
+          MIGRATION_SOURCE_REVISION: ${{ inputs.source_revision }}
           INDEX_PREPARATION_RUN_ID: ${{ inputs.indexes_run_id }}
           INDEX_PREPARATION_REPORT_SHA256: ${{ inputs.indexes_report_sha256 }}
           INDEX_PREPARATION_REPORT_JSON: ${{ inputs.mode == 'apply' && steps.index_report.outputs.json || '' }}

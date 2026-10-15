@@ -16,7 +16,7 @@ const extensionRoot = process.env.LINGOFLASH_EXTENSION_ROOT
 const productionPattern = 'https://encoded-hangout-433912-h2.web.app/*';
 const translatePattern = 'https://translate.googleapis.com/*';
 const optionalHostPermissions = ['http://*/*', 'https://*/*'];
-const fail = message => { console.error(`Extension check failed: ${message}`); process.exit(1); };
+const fail = message => { throw new Error(`Extension check failed: ${message}`); };
 const manifest = await readExtensionManifest(extensionRoot);
 const packageFiles = await collectExtensionFiles(extensionRoot, manifest);
 if (manifest.manifest_version !== 3) fail('manifest_version must be 3.');

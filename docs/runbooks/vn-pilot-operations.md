@@ -26,24 +26,30 @@ From the repository root:
 ```sh
 npm run staging:prepare
 npm run build:staging
+SONFLASH_TARGET=staging node scripts/check-locale-pages.mjs
 npm run verify:secrets:staging
 npm run verify:bundle
 ```
 
 `staging:prepare` verifies the sealed staging project/app/database/region/App Check target against the deployment and Functions runtime database, then writes the ignored, hook-free `firebase.staging.json` at the repository root and an ignored project-specific Functions env file containing `ENFORCE_APP_CHECK=true`. Firebase resolves deploy paths relative to the config and requires that env file for a noninteractive Functions deploy. `build:staging` packages the staging app config with the current Git revision in `health.json`. The normal `npm run build` and `npm run build:release` stay production-default; `npm run verify:release-config` rejects `SONFLASH_TARGET=staging`.
 
-When the owner authorizes a **staging** deploy and Gemini billing/quota is ready, first run `npm run verify:core`, `npm run build:staging`, `npm run verify:secrets:staging` and `npm run verify:bundle`. Then run one command at a time, in order, and confirm the layer is live before continuing:
+When the owner authorizes a **staging** deploy and Gemini billing/quota is ready, first run `npm run verify:core` and the build checks above. `staging:deploy:hosting` repeats the locale-page check after its own build and before Firebase deploy; the production hosting predeploy does the same for the production build. Then run one command at a time, in order, and confirm the layer is live before continuing:
 
 ```sh
 npm run staging:deploy:rules
 # Verify the Rules release and run its staging checks before proceeding.
+npm run staging:deploy:indexes
+npm run staging:verify:indexes
+# Proceed only after the required index reports READY.
 npm run staging:deploy:functions
 # Verify Functions health/compatibility before proceeding.
 npm run staging:deploy:hosting
 ```
 
-Each command hard-codes the staging project and passes `--config firebase.staging.json` plus `--project sonflash-staging-20260906`. Do not copy `firebase.staging.json` into production release workflows.
-The Functions command deploys two explicit groups of at most 10 endpoints. This keeps the pre-existing `assessPronunciation` endpoint in staging until a separate compatibility review authorizes its removal; a blanket Functions deploy would offer to delete it.
+Each deployment command hard-codes the staging project and passes `--config firebase.staging.json` plus `--project sonflash-staging-20260906`. The index readback uses the same project and named database. Do not copy `firebase.staging.json` into production release workflows.
+`staging:deploy:rules` deploys only Firestore Rules. The pilot Upgrade offer and intent callables require the `entitlements(status, expiresAt)` collection index in `firestore.indexes.json`. The staging index command deploys that manifest to the sealed staging target; `staging:verify:indexes` reads the exact project/database with `gcloud` and fails unless the index reports **READY**. The local emulator passes without proving staging readiness. These deployment commands are documented for an authorized release and were not run in this local task. The protected production Functions workflow now checks the same index before promotion and fails closed until an authorized production index rollout is ready.
+The Functions command deploys two explicit allowlists, defined in `package.json` (`staging:deploy:functions:existing` and `staging:deploy:functions:pilot`). The pilot list now includes the reminder delivery and AI tutor/generation endpoints; this is a local deployment-route change, not evidence that they are live. The bounded lists keep the pre-existing `assessPronunciation` endpoint in staging until a separate compatibility review authorizes its removal; a blanket Functions deploy would offer to delete it.
+The allowlist invariant is checked by `scripts/staging-functions-allowlist.test.mjs`. Reminder push and email links resolve from the running Firebase project in `functions/src/reminderAppOrigin.ts`: staging links stay on the staging Hosting origin, production links stay on `sonflash.app`, and an unknown project fails closed. Validate both destinations before enabling delivery in staging.
 
 ## W0 gate — do not mark passed until every item has evidence
 
@@ -91,6 +97,14 @@ gcloud firestore fields ttls list \
 
 Save the list output in the decision log after redacting unrelated identifiers. TTL mutations are not part of this staging preparation.
 
+Queued `mail` documents carry the learner's address and an `expiresAt` 30 days after queueing; enable the `mail` TTL before turning on the weekly digest. `payment_settlements` hold only the pid and an `expiresAt` ten years after settlement, because they back the books; account deletion keeps them while it removes the learner's own `payment_receipts`. A payment the settlement function cannot grant on its own (no price set, amount below the price, an offer version that no longer matches, or a Pro window already open) is recorded with `status: needs-review` and a `reviewReason` instead of being rejected. Review those settlements and grant, refund or credit each one by hand.
+
+### Verified review XP cutover
+
+The strict review Function awards two XP only for the first review of each card on the account's local study day. Its server-only `review_xp_awards` receipts have a seven-day `expiresAt` field and a TTL declaration in `firestore.indexes.json`. Before promoting this Function, rehearse the cutover on staging, enable and read back that collection group's TTL on the explicit named database, and confirm both current and previous clients still complete reviews.
+
+The [backfill operator](../../scripts/backfill-review-xp-awards.mjs) reads existing strict `review_receipts` and creates only missing card/day award receipts; it never changes XP totals. It defaults to a dry run and requires an explicit sealed staging or production project, named database, and inclusive coverage dates. Save only its aggregate report; `preflightMissing` counts missing awards before apply, while `created` records writes completed by this run. For each write, the transaction rereads its source receipt and checks that account deletion has not begun. A clean scan cannot prove that old Function writers have stopped or that Firestore retained every receipt for the cutover day. Record independent evidence for both, pause review writers **and account deletion/final purge** during scan and apply, resolve malformed/conflicting receipts, and obtain the owner's written environment-specific go before any `--apply` invocation. The operator requires `--confirm APPLY_REVIEW_XP_AWARDS_WITH_EXTERNAL_COVERAGE_EVIDENCE` for apply; do not use that confirmation based only on the script's report. Backfill and verify before admitting reviews to the new Function or resuming account deletion. If coverage is incomplete, keep the release blocked rather than infer prior awards from aggregate XP or client history.
+
 For a G2 operator rehearsal, build Functions, then run `node functions/lib/pilotOperator.js`
 with explicit `PILOT_TARGET`, `FIREBASE_PROJECT_ID`, `FIRESTORE_DATABASE_ID`,
 `PILOT_OPERATOR_MODE`, `PILOT_OPERATOR_UID` and
@@ -103,6 +117,15 @@ The audit record stores a pseudonym instead of the UID. Pro grants last exactly 
 configured `proDurationDays`; extending access is a revoke followed by a new grant.
 `getPilotOffer` is the only client-facing offer config. Its `displayPriceVnd` stays null
 until the accountant confirms the VAT-inclusive final price; G2 remains blocked until then.
+The callable also returns `offerVersion`, derived from the offer ID, AI-card quota,
+display price and duration. The current client submits that version with
+`recordPurchaseIntent`; a changed version is rejected before any rate-budget or
+analytics write, so the learner must reopen the offer. Accepted versioned intents
+record the server-owned terms. Older clients may still submit without a version;
+their intent events leave the price and terms null because the displayed offer
+cannot be verified. Deploy the compatible Functions before a Hosting build that
+requires `offerVersion`; a new client treats an older response without it as an
+unavailable offer.
 
 At G3, the account menu offers the existing Excel card export, a JSON account export
 (`exportMyData`, at most five per hour), and deletion after a fresh Google sign-in.

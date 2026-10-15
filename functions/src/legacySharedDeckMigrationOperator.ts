@@ -24,18 +24,20 @@ const FULL_REVISION = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
 const OWNER_UID = /^[A-Za-z0-9_-]{1,128}$/;
 const PROJECT_ID = /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/;
 
-export type LegacySharedDeckOperatorMode = 'inventory' | 'apply' | 'supersede' | 'prepare-indexes';
+export type LegacySharedDeckOperatorMode = 'inventory' | 'apply' | 'verify' | 'supersede' | 'prepare-indexes';
 
 export const buildLegacySharedDeckMigrationOperatorReport = (
   inventory: LegacySharedDeckInventory,
   verification: LegacySharedDeckCutoverVerification,
+  releaseRevision = inventory.revision,
 ): string => {
   const migratedCount = inventory.entries.filter(entry => entry.action === 'migrate').length;
   const quarantinedCount = inventory.entries.filter(entry => entry.action === 'quarantine').length;
   return JSON.stringify({
     schemaVersion: 2,
     target: inventory.target,
-    revision: inventory.revision,
+    revision: releaseRevision,
+    migrationRevision: inventory.revision,
     ownerKey: inventory.activeOwner.ownerKey,
     inventoryDigest: inventory.inventoryDigest,
     sealedManifestRootDigest: inventory.sealedManifest?.rootDigest ?? null,
@@ -54,6 +56,28 @@ export const runLegacySharedDeckApplyAndVerify = async <TApply, TVerify>(
 ): Promise<TVerify> => {
   await apply();
   return verify();
+};
+
+export const runLegacySharedDeckVerification = async (
+  environment: Pick<LegacySharedDeckOperatorEnvironment, 'ownerUid' | 'revision' | 'sourceRevision'> & {
+    readonly target: string;
+  },
+  read: (expected: {
+    readonly ownerUid: string;
+    readonly revision: string;
+    readonly target: string;
+    readonly phase: 'verified';
+  }) => Promise<LegacySharedDeckInventory>,
+  verify: (inventory: LegacySharedDeckInventory) => Promise<LegacySharedDeckCutoverVerification>,
+): Promise<string> => {
+  const inventory = await read({
+    ownerUid: environment.ownerUid,
+    revision: environment.sourceRevision,
+    target: environment.target,
+    phase: 'verified',
+  });
+  const verification = await verify(inventory);
+  return buildLegacySharedDeckMigrationOperatorReport(inventory, verification, environment.revision);
 };
 
 export type LegacySharedDeckSupersedeOperatorInput = Pick<
@@ -92,6 +116,7 @@ export const parseLegacySharedDeckOperatorMode = (
 ): LegacySharedDeckOperatorMode => {
   const mode = environment.MIGRATION_MODE?.trim() || 'inventory';
   if (mode === 'inventory') return mode;
+  if (mode === 'verify') return mode;
   if (mode === 'apply' && environment.APPLY_CONFIRMATION === 'APPLY_SHARED_DECK_V2') return mode;
   if (mode === 'supersede' && environment.SUPERSEDE_CONFIRMATION === 'SUPERSEDE_SHARED_DECK_V2') return mode;
   if (mode === 'prepare-indexes' && environment.PREPARE_INDEXES_CONFIRMATION === 'PREPARE_INDEXES_V2') return mode;
@@ -113,6 +138,7 @@ export type LegacySharedDeckOperatorEnvironment = {
   readonly supersedeSourceRevision: string;
   readonly supersedeInventoryDigest: string;
   readonly supersedeRootDigest: string;
+  readonly sourceRevision: string;
   readonly indexPreparationRunId: string;
   readonly indexPreparationReportSha256: string;
   readonly indexPreparationReport: string;
@@ -135,6 +161,7 @@ export const validateLegacySharedDeckOperatorEnvironment = (
   const supersedeSourceRevision = (environment.SUPERSEDE_SOURCE_REVISION ?? '').trim();
   const supersedeInventoryDigest = (environment.SUPERSEDE_INVENTORY_DIGEST ?? '').trim();
   const supersedeRootDigest = (environment.SUPERSEDE_ROOT_DIGEST ?? '').trim();
+  const sourceRevision = (environment.MIGRATION_SOURCE_REVISION ?? '').trim();
   const indexPreparationRunId = (environment.INDEX_PREPARATION_RUN_ID ?? '').trim();
   const indexPreparationReportSha256 = (environment.INDEX_PREPARATION_REPORT_SHA256 ?? '').trim();
   const indexPreparationReport = (environment.INDEX_PREPARATION_REPORT_JSON ?? '').trim();
@@ -159,6 +186,9 @@ export const validateLegacySharedDeckOperatorEnvironment = (
     || !/^[a-f0-9]{64}$/.test(supersedeRootDigest))) {
     throw new Error('Supersede requires an immutable source revision and exact sealed inventory and root digests.');
   }
+  if (mode === 'verify' && (!FULL_REVISION.test(sourceRevision) || sourceRevision === revision)) {
+    throw new Error('Verification requires the immutable revision that owns the completed migration.');
+  }
   return {
     projectId,
     databaseId,
@@ -174,6 +204,7 @@ export const validateLegacySharedDeckOperatorEnvironment = (
     supersedeSourceRevision,
     supersedeInventoryDigest,
     supersedeRootDigest,
+    sourceRevision,
     indexPreparationRunId,
     indexPreparationReportSha256,
     indexPreparationReport,
@@ -218,6 +249,15 @@ export const runLegacySharedDeckInventoryOperator = async (
       rootDigest: environment.supersedeRootDigest,
       confirmation: environment.supersedeConfirmation,
     }, options => supersedeLegacySharedDeckMigration(database, options));
+  }
+  if (environment.mode === 'verify') {
+    return runLegacySharedDeckVerification({
+      ownerUid: environment.ownerUid,
+      revision: environment.revision,
+      sourceRevision: environment.sourceRevision,
+      target,
+    }, expected => readSealedLegacySharedDeckInventory(database, expected),
+    inventory => verifyLegacySharedDeckCutover(database, inventory));
   }
   const inventory = environment.mode === 'inventory'
     ? await createFrozenLegacySharedDeckInventory({

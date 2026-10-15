@@ -27,12 +27,9 @@
 //    pseudonym key long enough to pass validation, and an obviously-invalid
 //    placeholder for GEMINI_API_KEY/PEXELS_API_KEY/UNSPLASH_API_KEY) so the
 //    emulator never attempts that fetch, then deletes the file afterward.
-//    GEMINI_API_KEY is deliberately never a working key: no spec that uses
-//    the firebase-emulator fixture calls the live generateVocabulary
-//    callable (all seed cards straight into Firestore), so this only matters
-//    as a safety net — an invalid key makes generateVocabulary fail the way
-//    "no key configured" should, instead of quietly reaching the real
-//    Gemini API.
+//    GEMINI_API_KEY is deliberately never a working key. The callable rejects
+//    this exact sentinel before constructing a model client, including when
+//    an e2e spec invokes a real AI callable through the Functions emulator.
 import { randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';

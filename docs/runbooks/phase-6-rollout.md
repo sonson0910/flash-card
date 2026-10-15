@@ -107,23 +107,38 @@ account JSON in each deployment environment. Configure both protected
 candidate-build environment alone supplies the
 public `VITE_FIREBASE_APP_CHECK_SITE_KEY`.
 
-1. Decide target order from the recorded compatibility review. If Hosting calls a new,
+1. Configure `production-shared-deck-index-preparation` with
+   `FIRESTORE_BACKUP_BUCKET` naming a same-project, retention-locked bucket whose
+   retention period is at least 90 days, plus the protected
+   `FIRESTORE_RELEASE_SAFETY_CONFIRMATION=BACKUP_RESTORE_TTL_V1` secret. Dispatch
+   only after the safety credential has the bounded custom role documented in the
+   [security remediation preconditions](security-remediation-rollout.md#preconditions).
+   `Verify Firestore release safety` from the exact protected `main` revision. The
+   workflow must export production, import the export into its disposable database,
+   compare required export/import document counters, delete the disposable database,
+   and read back both receipt TTL policies as `ACTIVE`. Record its successful run ID
+   and the SHA-256 of `receipt.json`. The hourly scheduled cleanup reconciles only
+   databases matching `release-restore-<run-id>-<attempt>` and shares the Firestore
+   mutation concurrency lock; alert on any failed or approval-waiting cleanup run.
+2. Decide target order from the recorded compatibility review. If Hosting calls a new,
    backward-compatible Function, dispatch `Deploy production artifact` with
    `promote_functions=true` so the protected Functions job completes before Hosting.
-   Otherwise leave it false for a Hosting-only compatibility stage. The workflow
-   verifies the source workflow's path/conclusion/head SHA, downloads that exact
-   artifact, rehashes every sealed component and removes rebuild hooks from a derived
-   deployment config before either protected deployment.
-2. Run production smoke against the deployed revision. Observe App Check token metrics
+   Otherwise leave it false for a Hosting-only compatibility stage. Include
+   `firestore_safety_run_id` and `firestore_safety_receipt_sha256` from the successful
+   safety workflow summary. The workflow verifies the source workflow's path/conclusion/head
+   SHA, downloads that exact artifact and safety receipt, rehashes every sealed component
+   and removes rebuild hooks from a derived deployment config before either protected
+   deployment.
+3. Run production smoke against the deployed revision. Observe App Check token metrics
    and protected-call success long enough for the authorized operator to rule out stale
    clients. Do not treat a successful artifact download as deployment evidence.
-3. If a Hosting-first compatibility stage was required and the observation is accepted,
+4. If a Hosting-first compatibility stage was required and the observation is accepted,
    dispatch the same candidate with `promote_functions=true` and a bounded
    `app_check_observation_ref`. Functions waits for separate `production-functions`
    approval and deploys only the sealed compiled Functions; the already-compatible
    Hosting artifact is then promoted idempotently. `ENFORCE_APP_CHECK` defaults to
    true. Never deploy incompatible Functions enforcement before its Hosting client.
-4. Do not select or infer an all-target deploy. Firestore Rules use only the protected
+5. Do not select or infer an all-target deploy. Firestore Rules use only the protected
    candidate-bound workflow in section 2.
 
 ## 5. Canary decision (advisory only)

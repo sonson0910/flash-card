@@ -1,18 +1,25 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import {
+  buildLegacySharedDeckMigrationOperatorReport,
   canonicalLegacySharedDeckBackupManifest,
   parseLegacySharedDeckOperatorMode,
   runLegacySharedDeckApplyAndVerify,
+  runLegacySharedDeckVerification,
   runLegacySharedDeckSupersedeOperator,
   validateLegacySharedDeckOperatorEnvironment,
   verifyLegacySharedDeckBackupManifest,
 } from '../src/legacySharedDeckMigrationOperator.js';
-import type { LegacySharedDeckSupersedeOptions } from '../src/legacySharedDeckMigration.js';
+import type {
+  LegacySharedDeckCutoverVerification,
+  LegacySharedDeckInventory,
+  LegacySharedDeckSupersedeOptions,
+} from '../src/legacySharedDeckMigration.js';
 
 describe('legacy shared-deck migration operator', () => {
   it('accepts apply only with the exact confirmation', () => {
     expect(parseLegacySharedDeckOperatorMode({ MIGRATION_MODE: 'inventory' })).toBe('inventory');
+    expect(parseLegacySharedDeckOperatorMode({ MIGRATION_MODE: 'verify' })).toBe('verify');
     expect(parseLegacySharedDeckOperatorMode({
       MIGRATION_MODE: 'apply',
       APPLY_CONFIRMATION: 'APPLY_SHARED_DECK_V2',
@@ -29,6 +36,77 @@ describe('legacy shared-deck migration operator', () => {
       MIGRATION_MODE: 'prepare-indexes',
       PREPARE_INDEXES_CONFIRMATION: 'PREPARE_INDEXES_V2',
     })).toBe('prepare-indexes');
+  });
+
+  it('binds a verified migration to a newer release without changing its sealed source', () => {
+    const migrationRevision = 'a'.repeat(40);
+    const releaseRevision = 'b'.repeat(40);
+    const inventory = {
+      revision: migrationRevision,
+      target: 'project/database',
+      inventoryDigest: 'c'.repeat(64),
+      activeOwner: { ownerKey: 'd'.repeat(64) },
+      sealedManifest: { rootDigest: 'e'.repeat(64) },
+      entries: [],
+    } as unknown as LegacySharedDeckInventory;
+    const verification = {
+      verified: true,
+      validLegacyPublicCount: 0,
+      activeLedgerCount: 0,
+    } satisfies LegacySharedDeckCutoverVerification;
+
+    expect(JSON.parse(buildLegacySharedDeckMigrationOperatorReport(
+      inventory,
+      verification,
+      releaseRevision,
+    ))).toMatchObject({
+      revision: releaseRevision,
+      migrationRevision,
+      inventoryDigest: inventory.inventoryDigest,
+      verified: true,
+    });
+  });
+
+  it('routes verification through the verified source without an apply operation', async () => {
+    const migrationRevision = 'a'.repeat(40);
+    const releaseRevision = 'b'.repeat(40);
+    const inventory = {
+      revision: migrationRevision,
+      target: 'project/database',
+      inventoryDigest: 'c'.repeat(64),
+      activeOwner: { ownerKey: 'd'.repeat(64) },
+      sealedManifest: { rootDigest: 'e'.repeat(64) },
+      entries: [],
+    } as unknown as LegacySharedDeckInventory;
+    const read = vi.fn(async () => inventory);
+    const verify = vi.fn(async () => ({
+      verified: true,
+      validLegacyPublicCount: 0,
+      activeLedgerCount: 0,
+    }));
+
+    const report = JSON.parse(await runLegacySharedDeckVerification({
+      ownerUid: 'protected-owner',
+      revision: releaseRevision,
+      sourceRevision: migrationRevision,
+      target: inventory.target,
+    }, read, verify));
+
+    expect(read).toHaveBeenCalledOnce();
+    expect(read).toHaveBeenCalledWith({
+      ownerUid: 'protected-owner',
+      revision: migrationRevision,
+      target: inventory.target,
+      phase: 'verified',
+    });
+    expect(verify).toHaveBeenCalledOnce();
+    expect(verify).toHaveBeenCalledWith(inventory);
+    expect(report).toMatchObject({
+      revision: releaseRevision,
+      migrationRevision,
+      inventoryDigest: inventory.inventoryDigest,
+      verified: true,
+    });
   });
 
   it('requires a non-placeholder backup manifest bound to the owner and revision', () => {
@@ -96,6 +174,26 @@ describe('legacy shared-deck migration operator', () => {
       ...base,
       SUPERSEDE_SOURCE_REVISION: 'a'.repeat(40),
     })).toMatchObject({ mode: 'supersede', supersedeSourceRevision: 'a'.repeat(40) });
+  });
+
+  it('requires a distinct immutable source revision for verification', () => {
+    const base = {
+      FIREBASE_PROJECT_ID: 'encoded-hangout-433912-h2',
+      FIRESTORE_DATABASE_ID: 'ai-studio-945b4052-4462-4668-8936-277f09f07a37',
+      OWNER_UID: 'protected-owner',
+      MIGRATION_REVISION: 'b'.repeat(40),
+      SCAN_STARTED_AT: '2026-08-25T00:00:00.000Z',
+      MIGRATION_MODE: 'verify',
+    } as NodeJS.ProcessEnv;
+    expect(() => validateLegacySharedDeckOperatorEnvironment(base)).toThrow(/completed migration/i);
+    expect(() => validateLegacySharedDeckOperatorEnvironment({
+      ...base,
+      MIGRATION_SOURCE_REVISION: base.MIGRATION_REVISION,
+    })).toThrow(/completed migration/i);
+    expect(validateLegacySharedDeckOperatorEnvironment({
+      ...base,
+      MIGRATION_SOURCE_REVISION: 'a'.repeat(40),
+    })).toMatchObject({ mode: 'verify', sourceRevision: 'a'.repeat(40) });
   });
 
   it('resumes an active verification through the operator apply-then-verify path', async () => {

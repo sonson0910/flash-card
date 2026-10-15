@@ -199,6 +199,39 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toMatch(/firebase-tools@[^\n]+ deploy --non-interactive\s*$/m);
   });
 
+  it('checks the ready Pro entitlement index before promoting production Functions', () => {
+    const workflow = read('.github/workflows/deploy-production.yml');
+    expect(workflow).toContain('gcloud firestore indexes composite list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --format=json');
+    expect(workflow).toContain('node scripts/verify-entitlement-index.mjs "$FIREBASE_PROJECT_ID" "$FIRESTORE_DATABASE_ID"');
+    expect(workflow.indexOf('Verify Pro intent Firestore index is ready')).toBeLessThan(
+      workflow.indexOf('Promote only the sealed Functions artifact'),
+    );
+  });
+
+  it('requires a revision-bound Firestore safety receipt before production promotion', () => {
+    const workflow = read('.github/workflows/deploy-production.yml');
+    const validateJob = workflow.slice(workflow.indexOf('  validate_candidate:'), workflow.indexOf('  deploy_hosting:'));
+    const safetyReceiptIndex = workflow.indexOf('name: Verify the Firestore release-safety receipt');
+    const hostingDeployIndex = workflow.indexOf('Promote only the sealed Hosting artifact');
+
+    expect(workflow).toContain('firestore_safety_run_id:');
+    expect(workflow).toContain('firestore_safety_receipt_sha256:');
+    expect(validateJob).toContain('.github/workflows/verify-firestore-release-safety.yml');
+    expect(validateJob).toContain('test "$(jq -er \'.head_sha\' <<<"$run_json")" = "$REVISION"');
+    expect(validateJob).toContain('firestore-release-safety-${REVISION}-${FIRESTORE_SAFETY_RUN_ID}');
+    expect(validateJob).toContain('run-id: ${{ inputs.firestore_safety_run_id }}');
+    expect(validateJob).toContain('sha256sum "$receipt"');
+    expect(validateJob).toContain('.backup.retentionLocked == true');
+    expect(validateJob).toContain('.backup.retentionSeconds | type == "number" and . >= 7776000');
+    expect(validateJob).toContain('.restore.documentCount == .backup.documentCount');
+    expect(validateJob).toContain('.restore.deletedAfterVerification == true');
+    expect(validateJob).toContain('library_facet_receipts');
+    expect(validateJob).toContain('shared_deck_receipts');
+    expect(safetyReceiptIndex).toBeGreaterThan(-1);
+    expect(hostingDeployIndex).toBeGreaterThan(safetyReceiptIndex);
+    expect(workflow).toContain('group: firestore-production-mutations');
+  });
+
   it('does not retain the completed reservation migration workflow', () => {
     expect(fs.existsSync(new URL('../.github/workflows/reservation-migration.yml', import.meta.url))).toBe(false);
   });
@@ -252,6 +285,9 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('test "$INVENTORY_REVISION" = "$GITHUB_SHA"');
     expect(workflow).toContain('APPLY_SHARED_DECK_V2');
     expect(workflow).toContain('SUPERSEDE_SHARED_DECK_V2');
+    expect(workflow).toContain('source_revision:');
+    expect(workflow).toContain('MIGRATION_SOURCE_REVISION');
+    expect(workflow).toContain('test "$MIGRATION_SOURCE_REVISION" != "$INVENTORY_REVISION"');
     expect(workflow).toContain('supersede_source_revision:');
     expect(workflow).toContain('SUPERSEDE_SOURCE_REVISION');
     expect(workflow).toContain('test "$SUPERSEDE_SOURCE_REVISION" != "$INVENTORY_REVISION"');
@@ -287,6 +323,119 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('MIGRATION_MODE');
     expect(workflow).toContain('git merge-base --is-ancestor');
     expect(workflow).not.toContain('functions/lib/legacySharedDeckMigrationOperator.js --');
+  });
+
+  it('requires the same Firestore safety receipt before legacy index preparation', () => {
+    const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
+    const receiptIndex = workflow.indexOf('name: Verify the Firestore release-safety receipt');
+    const deployIndex = workflow.indexOf('./node_modules/.bin/firebase deploy --only firestore:indexes');
+
+    expect(workflow).toContain('firestore_safety_run_id:');
+    expect(workflow).toContain('firestore_safety_receipt_sha256:');
+    expect(workflow).toContain("inputs.mode == 'prepare-indexes' && 'firestore-production-mutations'");
+    expect(workflow).toContain('.github/workflows/verify-firestore-release-safety.yml');
+    expect(workflow).toContain('firestore-release-safety-${INVENTORY_REVISION}-${FIRESTORE_SAFETY_RUN_ID}');
+    expect(workflow).toContain('sha256sum "$receipt"');
+    expect(receiptIndex).toBeGreaterThan(-1);
+    expect(deployIndex).toBeGreaterThan(receiptIndex);
+  });
+
+  it('backs up and restores Firestore before enabling receipt TTL policies', () => {
+    const workflow = read('.github/workflows/verify-firestore-release-safety.yml');
+    const exportIndex = workflow.indexOf('gcloud firestore export');
+    const importIndex = workflow.indexOf('gcloud firestore import');
+    const deleteIndex = workflow.indexOf('gcloud firestore databases delete');
+    const ttlIndex = workflow.indexOf('gcloud firestore fields ttls update');
+    const operationDescribeIndexes = [...workflow.matchAll(/gcloud firestore operations describe/g)]
+      .map((match) => match.index);
+    const exportStep = workflow.slice(
+      workflow.lastIndexOf('\n      - name:', exportIndex),
+      workflow.indexOf('\n      - name:', exportIndex),
+    );
+    const importStep = workflow.slice(
+      workflow.lastIndexOf('\n      - name:', importIndex),
+      workflow.indexOf('\n      - name:', importIndex),
+    );
+    const completedOperationCheck = '.done == true and (has("error") | not)';
+
+    expect(workflow).toContain('environment: production-shared-deck-index-preparation');
+    expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"');
+    expect(workflow).toContain('FIRESTORE_RELEASE_SAFETY_CONFIRMATION');
+    expect(workflow).toContain('BACKUP_RESTORE_TTL_V1');
+    expect(workflow).toContain('gcloud storage buckets describe "gs://$FIRESTORE_BACKUP_BUCKET"');
+    expect(workflow).toContain('--raw --format=json > artifacts/firestore-release-safety/backup-bucket.json');
+    expect(workflow).not.toContain('token_format: access_token');
+    expect(workflow).not.toContain('steps.auth.outputs.access_token');
+    expect(workflow).toContain('.retentionPolicy.isLocked == true');
+    expect(workflow).toContain('retentionPolicy.retentionPeriod | tonumber) >= 7776000');
+    expect(execFileSync('jq', [
+      '-e',
+      '.retentionPolicy.isLocked == true and ((.retentionPolicy.retentionPeriod | tonumber) >= 7776000)',
+    ], {
+      input: JSON.stringify({
+        retentionPolicy: { isLocked: true, retentionPeriod: '7776000' },
+      }),
+      encoding: 'utf8',
+    })).toContain('true');
+    expect(exportIndex).toBeGreaterThan(-1);
+    expect(importIndex).toBeGreaterThan(exportIndex);
+    expect(operationDescribeIndexes).toHaveLength(2);
+    expect(operationDescribeIndexes[0]).toBeGreaterThan(exportIndex);
+    expect(operationDescribeIndexes[0]).toBeLessThan(importIndex);
+    expect(operationDescribeIndexes[1]).toBeGreaterThan(importIndex);
+    expect(operationDescribeIndexes[1]).toBeLessThan(deleteIndex);
+    expect(exportStep).toContain('> artifacts/firestore-release-safety/export-operation-start.json');
+    expect(exportStep).toContain(`export_operation="$(jq -er '.name' artifacts/firestore-release-safety/export-operation-start.json)"`);
+    expect(exportStep).toContain('[[ "$export_operation" == "projects/$FIREBASE_PROJECT_ID/databases/$FIRESTORE_DATABASE_ID/operations/"* ]]');
+    expect(exportStep).toContain('gcloud firestore operations describe "$export_operation"');
+    expect(exportStep).toContain('--format=json > artifacts/firestore-release-safety/export-operation.json');
+    expect(exportStep).toContain("jq -e '.done == true and (has(\"error\") | not)' \\");
+    expect(exportStep).toContain("jq -er '.response.outputUriPrefix // .metadata.outputUriPrefix' artifacts/firestore-release-safety/export-operation.json");
+    expect(exportStep).toContain("jq -er '.metadata.progressDocuments.completedWork | select(type == \"string\" or type == \"number\") | tostring' artifacts/firestore-release-safety/export-operation.json");
+    expect(importStep).toContain('> artifacts/firestore-release-safety/import-operation-start.json');
+    expect(importStep).toContain(`import_operation="$(jq -er '.name' artifacts/firestore-release-safety/import-operation-start.json)"`);
+    expect(importStep).toContain('[[ "$import_operation" == "projects/$FIREBASE_PROJECT_ID/databases/$RESTORE_DATABASE_ID/operations/"* ]]');
+    expect(importStep).toContain('gcloud firestore operations describe "$import_operation"');
+    expect(importStep).toContain('--format=json > artifacts/firestore-release-safety/import-operation.json');
+    expect(importStep).toContain("jq -e '.done == true and (has(\"error\") | not)' \\");
+    expect(importStep).toContain("jq -er '.metadata.progressDocuments.completedWork | select(type == \"string\" or type == \"number\") | tostring' artifacts/firestore-release-safety/import-operation.json");
+    assert.throws(() => execFileSync('jq', ['-e', completedOperationCheck], {
+      input: JSON.stringify({ metadata: { operationState: 'PROCESSING' } }),
+      encoding: 'utf8',
+    }));
+    expect(execFileSync('jq', ['-e', completedOperationCheck], {
+      input: JSON.stringify({ done: true, metadata: { operationState: 'SUCCESSFUL' }, response: {} }),
+      encoding: 'utf8',
+    })).toContain('true');
+    expect(deleteIndex).toBeGreaterThan(importIndex);
+    expect(ttlIndex).toBeGreaterThan(deleteIndex);
+    expect(workflow).toContain('release-restore-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT');
+    expect(workflow).toContain('test "$import_documents" = "$FIRESTORE_EXPORT_DOCUMENTS"');
+    expect(workflow).toContain('always() && env.RESTORE_DATABASE_ID !=');
+    expect(workflow).toContain('needs: verify');
+    expect(workflow).toContain('if: ${{ always() }}');
+    expect(workflow).toContain('group: firestore-production-mutations');
+    expect(workflow).toContain("cron: '17 * * * *'");
+    expect(workflow).toContain("if: ${{ github.event_name == 'workflow_dispatch' }}");
+    expect(workflow.slice(workflow.indexOf('  cleanup:'))).toContain('timeout-minutes: 60');
+    expect(workflow).toContain('CLEANUP_MODE=scheduled');
+    expect(workflow).toContain('release-restore-[1-9][0-9]{0,19}-[1-9][0-9]{0,9}');
+    expect(workflow).toContain('cleanup_failures+=("operations:$restore_database_id")');
+    expect(workflow).toContain('cleanup_failures+=("deletion:$restore_database_id")');
+    expect(workflow).toContain('Firestore cleanup failed for: %s');
+    expect(workflow).toContain("--filter='done:false'");
+    expect(workflow).toContain('gcloud firestore operations cancel');
+    expect(workflow).toContain('test "$restore_database_id" != "$FIRESTORE_DATABASE_ID"');
+    expect(workflow).toContain('VERIFY_RESULT: ${{ needs.verify.result }}');
+    expect(workflow).toContain('Unable to rule out late creation');
+    expect(workflow).toContain('select(type == "string" or type == "number") | tostring');
+    expect(workflow).not.toContain('completedWork // "0"');
+    expect(workflow).toContain('library_facet_receipts');
+    expect(workflow).toContain('shared_deck_receipts');
+    expect(workflow).toContain('(.ttlConfig.state // "") == "ACTIVE"');
+    expect(workflow).toContain('artifacts/firestore-release-safety/receipt.json');
+    expect(workflow).toContain('retention-days: 90');
+    expect(workflow).not.toContain('firebase deploy');
   });
 
   it('installs and verifies the local Firebase CLI before preparing indexes', () => {
