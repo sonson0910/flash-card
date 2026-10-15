@@ -88,7 +88,7 @@ export type SpreadsheetSaveOutcome = 'created' | 'reused' | 'failed' | 'pending'
 
 export interface CardIntakePort {
   findExisting(words: readonly (string | Pick<CardData, 'word' | 'normalizedWord' | 'lexemeId' | 'language' | 'senseKey' | 'partOfSpeech' | 'normalizedLemma'>)[]): Promise<Map<string, CardData>>;
-  persistStructured(plan: StructuredIntakePlan, onSettlement?: (index: number, outcome: SpreadsheetSaveOutcome) => void): Promise<{ createdCount: number; outcomes?: SpreadsheetSaveOutcome[] }>;
+  persistStructured(plan: StructuredIntakePlan, onSettlement?: (index: number, outcome: SpreadsheetSaveOutcome) => void): Promise<{ createdCount: number; outcomes?: SpreadsheetSaveOutcome[]; patchedCount?: number; failedPatchCount?: number }>;
   touchExisting(card: CardData, touchedAt: string): Promise<void>;
   generate(word: string, generatedBefore: number): Promise<{ created: boolean; category?: string; settlement?: Promise<SpreadsheetSaveOutcome> }>;
   completeFlat(summary: FlatIntakeSummary): Promise<void>;
@@ -323,7 +323,10 @@ export function createSpreadsheetImportService({
           all.forEach((id, index) => {
             if (!unsettled.has(id)) return;
             const outcome = persisted.outcomes?.[index]
-              ?? (index < Math.min(candidates.length, persisted.createdCount) ? 'created' : 'reused');
+              ?? (index < candidates.length
+                ? index < persisted.createdCount ? 'created' : 'reused'
+                : persisted.failedPatchCount && index - candidates.length >= (persisted.patchedCount ?? patches.length - persisted.failedPatchCount)
+                  ? 'failed' : 'reused');
             settle(id, outcome);
           });
         }

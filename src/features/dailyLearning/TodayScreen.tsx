@@ -1,4 +1,6 @@
+import { Trans } from '@lingui/react';
 import { Suspense, lazy } from 'react';
+import { useState } from 'react';
 import {
   Brain,
   Check,
@@ -58,6 +60,35 @@ function PageHeading({ model }: Pick<TodayScreenProps, 'model'>) {
   };
 
   return <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className={headingClass}>{_(msg({ id: 'today.title', message: 'Today' }))}</h1>;
+}
+
+function RecommendedNext({ model, actions }: TodayScreenProps) {
+  const { _ } = useLingui();
+  const recommendation = model.recommendation;
+  if (!recommendation) return null;
+  const modeLabel = _([...featuredLessonModes, ...additionalLessonModes].find(mode => mode.id === recommendation.mode)!.label);
+
+  return (
+    <section data-recommended-next="true" aria-labelledby="recommended-next-heading" className="liquid-glass rounded-[28px] border border-cyan-500/30 bg-cyan-500/5 p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <Sparkles size={14} className="text-cyan-700 dark:text-cyan-400" aria-hidden="true" />
+            <p className="premium-kicker uppercase tracking-[0.14em]"><Trans {...msg({ context: 'today-screen.adaptive-suggestion', message: 'Adaptive suggestion' })} /></p>
+          </div>
+          <h2 id="recommended-next-heading" className="mt-1 text-xl font-black tracking-tight"><Trans {...msg({ context: 'today-screen.recommended-next', message: 'Recommended next' })} /></h2>
+          <p className="mt-1 text-sm leading-6 text-[var(--sf-text-muted)]">{recommendation.reason} · {modeLabel}</p>
+        </div>
+        <button
+          type="button"
+          data-recommended-next-action="true"
+          aria-label={i18n._(msg({ id: "today.recommended.aria", message: "Recommended next: start {mode}" }).id, { mode: modeLabel.toLowerCase() })}
+          onClick={actions.startRecommended}
+          className={`${primaryButton} w-full text-sm sm:w-auto`}
+        ><Trans {...msg({ context: 'today-screen.start-recommended-lesson', message: 'Start recommended lesson' })} /></button>
+      </div>
+    </section>
+  );
 }
 
 export const sessionStageContent = {
@@ -157,6 +188,7 @@ function PlanSummary({ model, actions, showLumi }: TodayScreenProps & { readonly
   const { family } = useTheme();
   const isCrystal = family === 'crystal';
   const { plan } = model;
+  const [target, setTarget] = useState<5 | 10 | 15>(10);
   if (!plan) return null;
   const reviewCount = plan.due + plan.weak;
   const readyCount = plan.total || model.sessionStages?.find(stage => stage.id === 'match' && !stage.skipped)?.count || 0;
@@ -185,6 +217,7 @@ function PlanSummary({ model, actions, showLumi }: TodayScreenProps & { readonly
         </div>
         <div className="today-ready-session">
           <StageRail model={model} />
+          <fieldset className="flex flex-wrap gap-2"><legend>{_(msg({ id: 'today.plan.length', message: 'Practice length' }))}</legend>{([5, 10, 15] as const).map(size => <button key={size} type="button" aria-pressed={target === size} onClick={() => setTarget(size)} className={secondaryButton}>{size}</button>)}<button type="button" disabled={model.isOffline} onClick={() => actions.startDailyPlan(target)} className={secondaryButton}>{_(msg({ id: 'today.plan.sized-start', message: 'Start selected practice' }))}</button></fieldset>
           <button
             type="button"
             data-primary-learning-action="true"
@@ -393,6 +426,91 @@ function StreakChip({ streak }: Pick<TodayScreenProps['model'], 'streak'>) {
   );
 }
 
+function LearningJourney({ model, actions }: TodayScreenProps) {
+  const { plan } = model;
+  const isEmpty = model.status === 'empty';
+  const canImmerse = model.listenPilotAvailable ?? !isEmpty;
+  if (!plan && !isEmpty) return null;
+
+  const learnLabel = isEmpty ? i18n._(msg({ id: "today.journey.add-vocabulary", message: "Add vocabulary" })) : (plan?.due ?? 0) > 0 ? i18n._(msg({ id: "today.journey.review-due-words", message: "Review due words" })) : i18n._(msg({ id: "today.journey.start-recognition-lesson", message: "Start recognition lesson" }));
+  const unavailableLabel = i18n._(msg({ id: "today.journey.available-after-your-first-plan", message: "Available after your first plan" }));
+
+  return (
+    <section data-learning-journey="true" aria-labelledby="learning-journey-heading" className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-6">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="premium-kicker uppercase tracking-[0.14em]"><Trans {...msg({ context: 'today-screen.one-learning-loop', message: 'One learning loop' })} /></p>
+          <h2 id="learning-journey-heading" className="mt-1 text-2xl font-black tracking-tight sm:text-3xl"><Trans {...msg({ context: 'today-screen.learn-immerse-communicate', message: 'Learn → Immerse → Communicate' })} /></h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'today-screen.start-with-memory-meet-the-words-in-sound-then-use-them-in-a-real', message: 'Start with memory, meet the words in sound, then use them in a real context.' })} /></p>
+        </div>
+      </div>
+
+      <ol aria-label={i18n._(msg({ id: "today-screen.learning-journey", message: "Learning journey" }))} className="mt-5 grid gap-3 lg:grid-cols-3">
+        <li data-journey-stage="learn" className="flex min-w-0 flex-col rounded-2xl border border-cyan-500/25 bg-cyan-500/5 p-4">
+          <span className="flex size-9 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300" aria-hidden="true"><Brain size={18} /></span>
+          <h3 className="mt-4 text-lg font-black"><Trans {...msg({ context: 'today-screen.learn', message: 'Learn' })} /></h3>
+          <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'today-screen.build-recall-with-the-next-scheduled-words', message: 'Build recall with the next scheduled words.' })} /></p>
+          <button
+            type="button"
+            data-journey-action="learn"
+            aria-label={i18n._(msg({ id: "today.journey.learn.aria", message: "Learn: {action}" }).id, { action: learnLabel.toLowerCase() })}
+            onClick={() => {
+              if (isEmpty) actions.openVocabulary();
+              else if ((plan?.due ?? 0) > 0) actions.continueReview();
+              else actions.startLesson('recognition');
+            }}
+            className={`${primaryButton} mt-4 w-full text-sm`}
+          >
+            {learnLabel}
+          </button>
+        </li>
+
+        <li data-journey-stage="immerse" className="flex min-w-0 flex-col rounded-2xl border border-sky-500/25 bg-sky-500/5 p-4">
+          <span className="flex size-9 items-center justify-center rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300" aria-hidden="true"><Headphones size={18} /></span>
+          <h3 className="mt-4 text-lg font-black"><Trans {...msg({ context: 'today-screen.immerse', message: 'Immerse' })} /></h3>
+          <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">{canImmerse ? i18n._(msg({ id: "today.journey.train-your-ear-with-a-focused-listening-lesson", message: "Train your ear with a focused listening lesson." })) : isEmpty ? i18n._(msg({ id: "today.journey.build-a-plan-to-unlock-listening-practice", message: "Build a plan to unlock listening practice." })) : i18n._(msg({ id: "today.journey.a-listening-lesson-is-not-available-yet", message: "A listening lesson is not available yet." }))}</p>
+          <button
+            type="button"
+            data-journey-action="immerse"
+            aria-label={canImmerse ? i18n._(msg({ id: "today.journey.immerse-start-listening-practice", message: "Immerse: start listening practice" })) : i18n._(msg({ id: "today.journey.immerse.aria", message: "Immerse: {action}" }).id, { action: unavailableLabel.toLowerCase() })}
+            disabled={!canImmerse}
+            onClick={() => actions.startLesson('listening')}
+            className={`${secondaryButton} mt-4 w-full text-sm`}
+          >
+            {canImmerse ? i18n._(msg({ id: "today.journey.start-listening-practice", message: "Start listening practice" })) : unavailableLabel}
+          </button>
+        </li>
+
+        <li data-journey-stage="communicate" className="flex min-w-0 flex-col rounded-2xl border border-violet-500/25 bg-violet-500/5 p-4">
+          <span className="flex size-9 items-center justify-center rounded-xl border border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300" aria-hidden="true"><Sparkles size={18} /></span>
+          <h3 className="mt-4 text-lg font-black"><Trans {...msg({ context: 'today-screen.communicate', message: 'Communicate' })} /></h3>
+          <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">{isEmpty ? i18n._(msg({ id: "today.journey.build-a-plan-to-unlock-story-shadowing-and-ai-dialogue", message: "Build a plan to unlock Story, Shadowing, and AI Dialogue." })) : i18n._(msg({ id: "today.journey.use-a-bounded-text-mission-story-or-shadowing-practice-with-your-", message: "Use a bounded text mission, story, or shadowing practice with your vocabulary." }))}</p>
+          <button
+            type="button"
+            data-journey-action="communicate"
+            aria-label={isEmpty ? i18n._(msg({ id: "today.journey.communicate.aria", message: "Communicate: {action}" }).id, { action: unavailableLabel.toLowerCase() }) : i18n._(msg({ id: "today.journey.communicate-open-text-story-or-shadowing-practice", message: "Communicate: open text, Story, or Shadowing practice" }))}
+            disabled={isEmpty}
+            onClick={event => actions.openMorePractice(event.currentTarget)}
+            className={`${secondaryButton} mt-4 w-full text-sm`}
+          >
+            {isEmpty ? unavailableLabel : i18n._(msg({ id: "today.journey.open-communication-practice", message: "Open communication practice" }))}
+          </button>
+          <button
+            type="button"
+            data-journey-action="communicate-ai"
+            aria-label={isEmpty ? i18n._(msg({ id: "today.journey.communicate.aria", message: "Communicate: {action}" }).id, { action: unavailableLabel.toLowerCase() }) : i18n._(msg({ id: "today.journey.communicate-go-to-vocabulary-tools-for-ai-dialogue", message: "Communicate: go to Vocabulary tools for AI Dialogue" }))}
+            disabled={isEmpty}
+            onClick={actions.openVocabulary}
+            className="mt-2 min-h-11 rounded-xl px-3 py-2 text-xs font-bold text-[var(--sf-brand-text)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:no-underline"
+          >
+            {isEmpty ? unavailableLabel : i18n._(msg({ id: "today.journey.go-to-vocabulary-tools-for-ai-dialogue", message: "Go to Vocabulary tools for AI Dialogue" }))}
+          </button>
+        </li>
+      </ol>
+    </section>
+  );
+}
+
 export function TodayScreen({ model, actions, ownerId, targetLanguage, translationLanguage }: TodayScreenProps) {
   const { _ } = useLingui();
   const { family } = useTheme();
@@ -421,6 +539,7 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
             </div>
           </div>
         </div>
+        <LearningJourney model={model} actions={actions} />
       </section>
     );
   }
@@ -465,6 +584,8 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
         <div className="mt-1 flex flex-wrap items-center gap-2"><p className="text-sm font-bold text-[var(--sf-brand-text)]">{model.courseLabel ?? _(msg({ id: 'today.course.fallback', message: 'Your current course' }))}</p><StreakChip streak={model.streak} /></div>
       </header>
       {model.isOffline && <p className="rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite">{_(msg({ id: 'today.offline', message: "You're offline. Reconnect to start today's session." }))}</p>}
+      <RecommendedNext model={model} actions={actions} />
+      <LearningJourney model={model} actions={actions} />
       <div className="today-ready-board">
         <PlanSummary model={model} actions={actions} showLumi={showLumi} />
         <div className="today-ready-web-words">

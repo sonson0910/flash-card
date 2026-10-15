@@ -1,3 +1,4 @@
+import { msg } from '@lingui/core/macro';
 import { Trans } from '@lingui/react';
 import { AudioLines } from 'lucide-react';
 import { resolveLanguagePackId } from '../../features/languagePacks/registry';
@@ -39,7 +40,7 @@ export function CardHeadword({ card, variant = 'standard' }: CardHeadwordProps) 
   const isEnglish = resolveLanguagePackId(card.language) === 'en';
   return (
     <div data-card-headword>
-      {card.partOfSpeech && <span className="mb-1 inline-flex rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2 py-0.5 text-[10px] font-semibold text-[var(--sf-text-muted)]"><span className="sr-only"><Trans id="flashcard.part-of-speech-prefix" message="Part of speech:" /> </span><span lang={targetLanguage}>{card.partOfSpeech}</span></span>}
+      {card.partOfSpeech && <span className="mb-1 inline-flex rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2 py-0.5 text-[10px] font-semibold text-[var(--sf-text-muted)]"><span className="sr-only"><Trans {...msg({ context: 'flashcard.part-of-speech-prefix', message: 'Part of speech:' })} /> </span><span lang={targetLanguage}>{card.partOfSpeech}</span></span>}
       <h2 className={variant !== 'standard'
         ? `zen-editorial-serif break-words text-balance font-normal tracking-tight text-white ${variant === 'zen' ? 'text-5xl sm:text-6xl' : 'text-4xl sm:text-5xl'}`
         : 'flashcard-word-gradient break-words text-balance text-3xl font-black tracking-[-0.04em] drop-shadow-xs [overflow-wrap:anywhere] sm:text-4xl'} lang={targetLanguage}>{word}</h2>

@@ -57,6 +57,7 @@ export function createLibraryCloudProjectionController({
   let model = EMPTY_MODEL;
   let identityKey: string | null = null;
   let lastReportedError: string | null = null;
+  let publishedCloudItems: CardData[] | null = null;
   let exhaustedPageKey: string | null = null;
 
   const listeners = new Set<() => void>();
@@ -75,6 +76,7 @@ export function createLibraryCloudProjectionController({
     exhaustedPageKey = null;
     publication.presentCards([]);
     publication.resetCloud();
+    publishedCloudItems = null;
     publishModel({ ownerId, status: 'idle', source: 'none' });
   };
 
@@ -95,7 +97,10 @@ export function createLibraryCloudProjectionController({
 
     const cloud = input.session.cloud;
     if (cloud.ownerId !== ownerId) return;
-    publication.presentCards(cloud.items);
+    if (publishedCloudItems !== cloud.items) {
+      publishedCloudItems = cloud.items;
+      publication.presentCards(cloud.items);
+    }
     publication.presentCloud({
       items: cloud.items,
       total: cloud.total,

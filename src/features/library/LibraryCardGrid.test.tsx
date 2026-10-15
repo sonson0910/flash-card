@@ -1,3 +1,5 @@
+import { getLibraryHeading } from './LibraryCardGrid';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -107,6 +109,11 @@ describe('library collection hierarchy', () => {
     expect(source).toContain('formatNumber(currentPage)');
     expect(source).not.toMatch(/liquid-glass lg:hidden/);
     expect(source).not.toMatch(/liquid-glass mx-auto mt-10/);
+  });
+
+  it('names the active deck space in the collection heading', () => {
+    expect(getLibraryHeading('All', { kind: 'deck', name: 'IELTS' })).toBe('IELTS deck');
+    expect(getLibraryHeading('Study', ALL_PRACTICE_DECK_SCOPE)).toBe('Study');
   });
 });
 

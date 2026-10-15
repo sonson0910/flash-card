@@ -65,4 +65,16 @@ describe('WordMatchView', () => {
     expect(localVictory).not.toContain('playRewardSound');
     expect(localVictory).not.toContain('triggerConfetti');
   });
+
+  it.each([4, 5, 6])('shows the actual %s-pair round size', pairCount => {
+    const html = render(sampleCards.slice(0, pairCount));
+
+    expect(html).toContain(`0 / ${pairCount}`);
+  });
+
+  it('shows an empty zero-pair score when no eligible cards exist', () => {
+    const html = render([]);
+
+    expect(html).toContain('0 / 0');
+  });
 });

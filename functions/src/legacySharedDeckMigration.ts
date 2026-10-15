@@ -3,6 +3,7 @@ import { Timestamp, type DocumentSnapshot, type Firestore, type Transaction } fr
 import {
   isCanonicalLanguageCode,
   parseCreateSharedDeckRequest,
+  validSharedLexemeIdentity,
 } from './inputValidation.js';
 
 export const LEGACY_SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
@@ -624,6 +625,7 @@ const CURRENT_CARD_KEYS = [
   'commonMistake', 'imageSearchQuery', 'emoji', 'audioUrl', 'imageUrl',
 ] as const;
 
+
 const validTextList = (value: unknown, maximum: number): value is string[] => (
   Array.isArray(value)
   && value.length <= 4
@@ -657,6 +659,8 @@ const validCurrentCard = (value: unknown): value is DataRecord => {
     || key === 'mnemonic' || key === 'wordFamily' || key === 'origin'
     || key === 'lexemeId' || key === 'language' || key === 'senseKey' || key === 'normalizedLemma')) return false;
   if (!CURRENT_CARD_KEYS.every(key => hasOwn(value, key))) return false;
+  const hasCanonicalIdentity = hasOwn(value, 'lexemeId')
+    || hasOwn(value, 'senseKey') || hasOwn(value, 'normalizedLemma');
   return validExactText(value.word, 256, true)
     && validExactText(value.translation, 256, true)
     && validExactText(value.explanation, 2_048)
@@ -682,7 +686,20 @@ const validCurrentCard = (value: unknown): value is DataRecord => {
     && (!hasOwn(value, 'senseKey') || validExactText(value.senseKey, 128, true))
     && (!hasOwn(value, 'normalizedLemma') || validExactText(value.normalizedLemma, 256, true))
     && (!hasOwn(value, 'mnemonic') || validExactText(value.mnemonic, 2_048, true))
-    && (!hasOwn(value, 'wordFamily') || validWordFamily(value.wordFamily));
+    && (!hasOwn(value, 'wordFamily') || validWordFamily(value.wordFamily))
+    && (!hasCanonicalIdentity || (
+      validExactText(value.lexemeId, 128, true)
+      && validExactText(value.language, 64, true)
+      && validExactText(value.senseKey, 128, true)
+      && validExactText(value.normalizedLemma, 256, true)
+      && validSharedLexemeIdentity({
+        lexemeId: value.lexemeId as string,
+        language: value.language as string,
+        senseKey: value.senseKey as string,
+        normalizedLemma: value.normalizedLemma as string,
+        partOfSpeech: value.partOfSpeech as string,
+      })
+    ));
 };
 
 const validLegacyCreatedAt = (value: unknown): value is string => (

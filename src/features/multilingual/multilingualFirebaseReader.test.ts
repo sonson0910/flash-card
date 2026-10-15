@@ -68,6 +68,7 @@ describe('multilingual Firebase source port', () => {
       'lexemeId',
       'editorialStatus',
       'schemaVersion',
+      '__name__',
     ]);
   });
 

@@ -10,8 +10,10 @@ describe('SessionRecapModal', () => {
   });
 
   it('uses localized plural copy and locale-aware animated summary formats', () => {
-    expect(source).toContain('message="{count, plural, one {# word} other {# words}}"');
-    expect(source).toContain('<CountUp to={totalCards} />');
+    expect(source.match(/msg\(\{ context: 'recap.word-count', message: '\{count, plural, one \{# word\} other \{# words\}\}' \}\)/g)).toHaveLength(2);
+    expect(source).toContain('values={{ count: goodCount }}');
+    expect(source).toContain('values={{ count: againCount }}');
+    expect(source).toContain('<CountUp to={saved} />');
     expect(source).toContain('<CountUp to={accuracy} suffix="%" />');
     expect(source).toContain('<CountUp to={xpEarned} />');
   });
@@ -28,7 +30,7 @@ describe('SessionRecapModal', () => {
     // those helpers live: haptics.test.ts, interactionSounds.test.ts and motion.test.ts.
     expect(source).toContain("import { triggerHaptic } from '../../lib/haptics'");
     expect(source).toContain("import { playRewardSound } from '../../lib/interactionSounds'");
-    expect(source).toMatch(/useEffect\(\(\) => \{\s*if \(!open\) return;\s*playRewardSound\(\);\s*triggerHaptic\('success'\);/);
+    expect(source).toMatch(/useEffect\(\(\) => \{\s*if \(!open \|\| !complete\) return;\s*playRewardSound\(\);\s*triggerHaptic\('success'\);/);
     expect(source).not.toContain('navigator.vibrate');
   });
 
@@ -38,4 +40,12 @@ describe('SessionRecapModal', () => {
     expect(source).toContain('variant="result"');
   });
 
+  });
+describe('SessionRecapModal touch targets', () => {
+  it('keeps its close and action controls at least 44px', () => {
+    const source = readFileSync(new URL('./SessionRecapModal.tsx', import.meta.url), 'utf8');
+
+    expect(source).toContain('flex size-11 shrink-0 items-center justify-center rounded-xl');
+    expect(source.match(/flex min-h-11 flex-1 items-center justify-center gap-2/g)).toHaveLength(3);
+  });
 });

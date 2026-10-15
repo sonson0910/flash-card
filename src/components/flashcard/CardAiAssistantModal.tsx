@@ -155,13 +155,13 @@ export function CardAiAssistantModal({
               </div>
               <div>
                 <Dialog.Title className="text-balance text-lg font-black sm:text-xl">
-                  <Trans id="flashcard.ai.tutor-title" message="AI Tutor" /> · <span lang={card.language || 'en'} className="text-[var(--sf-brand-text)]">{card.word}</span>
+                  <Trans {...msg({ context: 'flashcard.ai.tutor-title', message: 'AI Tutor' })} /> · <span lang={card.language || 'en'} className="text-[var(--sf-brand-text)]">{card.word}</span>
                 </Dialog.Title>
                 <Dialog.Description
                   id={`ai-assistant-description-${card.id}`}
                   className="mt-0.5 text-xs text-[var(--sf-text-muted)]"
                 >
-                  <Trans id="flashcard.ai.description" message="Ask questions about usage, nuances & practical examples." />
+                  <Trans {...msg({ context: 'flashcard.ai.description', message: 'Ask questions about usage, nuances & practical examples.' })} />
                 </Dialog.Description>
                 <p className="mt-1 text-[11px] font-semibold text-[var(--sf-text-muted)]">
                   {(card.language || 'en').toUpperCase()} → {(card.translationLanguage || 'vi').toUpperCase()}
@@ -179,7 +179,7 @@ export function CardAiAssistantModal({
           <div className="mt-5 space-y-4">
             <div>
               <p className="mb-2 text-xs font-bold text-[var(--sf-text-muted)] uppercase tracking-wider">
-                <Trans id="flashcard.ai.quick-suggestions" message="Quick Suggestions" />
+                <Trans {...msg({ context: 'flashcard.ai.quick-suggestions', message: 'Quick Suggestions' })} />
               </p>
               <div className="flex flex-wrap gap-2">
                 {PRESET_PROMPTS.map((preset, i) => (
@@ -202,7 +202,7 @@ export function CardAiAssistantModal({
                 {turns.map((turn, index) => (
                   <div key={index} className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-sm">
                     <p className="mb-2.5 flex items-center gap-1.5 border-b border-[var(--sf-border)] pb-2 text-xs font-bold text-cyan-600 dark:text-cyan-300">
-                      <span><Trans id="flashcard.ai.question" message="Q:" /></span> {turn.label || turn.question}
+                      <span><Trans {...msg({ context: 'flashcard.ai.question', message: 'Q:' })} /></span> {turn.label || turn.question}
                     </p>
                     <p className="whitespace-pre-line text-xs leading-relaxed sm:text-sm">{turn.answer}</p>
                   </div>
@@ -212,7 +212,7 @@ export function CardAiAssistantModal({
                   {isLoading ? (
                   <div className="flex items-center gap-2 py-3 text-xs font-bold text-[var(--sf-text-muted)]">
                     <Loader2 size={16} className="animate-spin text-[var(--sf-brand)]" />
-                    <span><Trans id="flashcard.ai.formulating" message="AI is formulating an answer…" /></span>
+                    <span><Trans {...msg({ context: 'flashcard.ai.formulating', message: 'AI is formulating an answer…' })} /></span>
                   </div>
                   ) : <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">{error}</p>}
                 </div>}
@@ -241,7 +241,7 @@ export function CardAiAssistantModal({
               </button>
             </form>
             <div className="flex items-center justify-between gap-2 text-[11px] text-[var(--sf-text-muted)]">
-              <span><Trans id="flashcard.ai.usage-note" message="AI-generated · each question uses 1 AI request" /></span>
+              <span><Trans {...msg({ context: 'flashcard.ai.usage-note', message: 'AI-generated · each question uses 1 AI request' })} /></span>
               <span>{customQuery.length}/300</span>
             </div>
           </div>

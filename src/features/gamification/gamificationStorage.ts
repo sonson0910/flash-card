@@ -46,7 +46,8 @@ export const gamificationStorageKeys = (userId: string | null) => {
   };
 };
 
-const readValue = (storage: GamificationStorage, key: string): string | null => {
+const readValue = (storage: GamificationStorage | null, key: string): string | null => {
+  if (!storage) return null;
   try {
     return storage.getItem(key);
   } catch {
@@ -54,7 +55,8 @@ const readValue = (storage: GamificationStorage, key: string): string | null => 
   }
 };
 
-const writeValue = (storage: GamificationStorage, key: string, value: string) => {
+const writeValue = (storage: GamificationStorage | null, key: string, value: string) => {
+  if (!storage) return;
   try {
     storage.setItem(key, value);
   } catch {
@@ -64,12 +66,12 @@ const writeValue = (storage: GamificationStorage, key: string, value: string) =>
 
 const STORED_GAMIFICATION_VERSION = 1;
 
-const readNumber = (storage: GamificationStorage, key: string): number => {
+const readNumber = (storage: GamificationStorage | null, key: string): number => {
   const value = Number(readValue(storage, key) ?? 0);
   return finiteNonNegativeGamificationValue(value);
 };
 
-const readHistory = (storage: GamificationStorage, key: string): Record<string, number> => {
+const readHistory = (storage: GamificationStorage | null, key: string): Record<string, number> => {
   try {
     return normalizeGamificationHistory(JSON.parse(readValue(storage, key) ?? '{}'));
   } catch {
@@ -78,7 +80,7 @@ const readHistory = (storage: GamificationStorage, key: string): Record<string, 
 };
 
 const readPendingOperations = (
-  storage: GamificationStorage,
+  storage: GamificationStorage | null,
   key: string,
 ): PendingXpOperation[] => {
   try {
@@ -88,7 +90,7 @@ const readPendingOperations = (
   }
 };
 
-const readLastActive = (storage: GamificationStorage, key: string): string | null => {
+const readLastActive = (storage: GamificationStorage | null, key: string): string | null => {
   const value = readValue(storage, key);
   return value && value.length <= 64 && Number.isFinite(Date.parse(value)) ? value : null;
 };
@@ -119,7 +121,7 @@ const normalizeStoredGamificationSnapshot = (value: unknown): StoredGamification
 };
 
 const readStoredGamificationSnapshot = (
-  storage: GamificationStorage,
+  storage: GamificationStorage | null,
   key: string,
 ): StoredGamificationSnapshot | null => {
   const serialized = readValue(storage, key);
@@ -146,7 +148,7 @@ const serializeGamificationSnapshot = (snapshot: StoredGamificationSnapshot): st
 };
 
 export const readGamificationSnapshot = (
-  storage: GamificationStorage,
+  storage: GamificationStorage | null,
   userId: string | null,
 ): StoredGamificationSnapshot => {
   const keys = gamificationStorageKeys(userId);
@@ -181,7 +183,7 @@ export const readGamificationSnapshot = (
 };
 
 export const writeGamificationSnapshot = (
-  storage: GamificationStorage,
+  storage: GamificationStorage | null,
   userId: string | null,
   snapshot: StoredGamificationSnapshot,
 ) => {
@@ -211,7 +213,7 @@ const createXpClientId = (): string => {
   ].join('-');
 };
 
-const operationStreamStorage = (fallback: GamificationStorage): GamificationStorage => {
+const operationStreamStorage = (fallback: GamificationStorage | null): GamificationStorage | null => {
   try {
     return globalThis.sessionStorage ?? fallback;
   } catch {
@@ -234,7 +236,7 @@ const shouldForkClonedOperationStream = (): boolean => {
 };
 
 const createPendingXpOperation = (
-  storage: GamificationStorage,
+  storage: GamificationStorage | null,
   userId: string | null,
   delta: number,
   day: string,
@@ -282,7 +284,7 @@ const createPendingXpOperation = (
 };
 
 const upgradeLegacyPendingXpOperations = (
-  storage: GamificationStorage,
+  storage: GamificationStorage | null,
   userId: string | null,
   operations: readonly PendingXpOperation[],
   knownOperations: readonly PendingXpOperation[] = [],
@@ -329,7 +331,7 @@ const mergePendingXpOperations = (
 };
 
 export const addXpToStoredGamification = (
-  storage: GamificationStorage,
+  storage: GamificationStorage | null,
   userId: string | null,
   snapshot: StoredGamificationSnapshot,
   amount: number,
@@ -402,7 +404,7 @@ export const addXpToStoredGamification = (
 };
 
 export const acknowledgeStoredGamificationSave = (
-  storage: GamificationStorage,
+  storage: GamificationStorage | null,
   userId: string | null,
   current: StoredGamificationSnapshot,
   committed: StoredGamificationSnapshot,

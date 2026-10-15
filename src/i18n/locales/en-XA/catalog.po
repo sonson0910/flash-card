@@ -13,35 +13,44 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:160
-msgid "catalog.action.continue-review"
+#: src/features/catalogWorkspace/CatalogScreen.tsx:440
+msgctxt "catalog.empty.title"
+msgid "No vocabulary found"
 msgstr ""
 
-#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:397
+msgctxt "paths.shelf.title"
+msgid "Your shelf"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:113
+msgctxt "catalog.status.check-reviewed"
+msgid "Check for reviewed catalog"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:405
+msgctxt "paths.roadmap.title"
+msgid "Your learning level"
+msgstr ""
+
 #: src/features/catalogWorkspace/CatalogScreen.tsx:445
-msgid "catalog.action.load-more"
+msgctxt "catalog.action.load-more"
+msgid "Load more words"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:90
-#: src/features/catalogWorkspace/CatalogScreen.tsx:161
-msgid "catalog.action.open-vocabulary"
+#: src/features/catalogWorkspace/CatalogScreen.tsx:405
+msgctxt "paths.roadmap.kicker"
+msgid "Your roadmap"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:138
-msgid "catalog.action.retry"
+#: src/features/catalogWorkspace/CatalogScreen.tsx:386
+msgctxt "paths.current.unit-of"
+msgid "Unit {current} of {total}"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:317
 msgid "catalog.card.add-action"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:316
-msgid "catalog.card.add-failed"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -52,11 +61,6 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:292
 msgid "catalog.card.adding"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:304
-msgid "catalog.card.cefr"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -77,16 +81,6 @@ msgid "catalog.card.in-library"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:315
-msgid "catalog.card.learning-context"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:313
-msgid "catalog.card.license"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:313
 msgid "catalog.card.license-missing"
 msgstr ""
@@ -99,17 +93,7 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:314
-msgid "catalog.card.review"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:314
 msgid "catalog.card.review-missing"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:312
-msgid "catalog.card.source"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -123,49 +107,13 @@ msgid "catalog.card.try-adding-again"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:440
-msgid "catalog.empty.filtered"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:440
-msgid "catalog.empty.path"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:440
-msgid "catalog.empty.title"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:411
-msgid "catalog.explorer.title"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:278
-msgid "catalog.filter.all"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:422
 msgid "catalog.filters.cefr"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:427
-#: src/features/catalogWorkspace/CatalogScreen.tsx:440
-msgid "catalog.filters.clear"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:424
 msgid "catalog.filters.part-of-speech"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:421
-msgid "catalog.filters.search"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -179,11 +127,6 @@ msgid "catalog.filters.skill"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:414
-msgid "catalog.filters.title"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:423
 msgid "catalog.filters.topic"
 msgstr ""
@@ -194,26 +137,6 @@ msgid "catalog.language.coming-soon"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:437
-msgid "catalog.loading.matches"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:445
-msgid "catalog.loading.more"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:445
-msgid "catalog.loading.next-page"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:158
-msgid "catalog.personal.description"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:152
 msgid "catalog.personal.keep-learning"
 msgstr ""
@@ -221,11 +144,6 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:152
 msgid "catalog.personal.keep-learning-description"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:158
-msgid "catalog.personal.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -251,51 +169,6 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:151
 msgid "catalog.personal.review-due-description"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:90
-msgid "catalog.personal.status-title"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:158
-msgid "catalog.personal.title"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:113
-msgid "catalog.status.check-reviewed"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:115
-msgid "catalog.status.connect-first-download"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:125
-msgid "catalog.status.error-title"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:110
-msgid "catalog.status.no-drafts"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:117
-msgid "catalog.status.release-pending"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:130
-msgid "catalog.status.technical-detail"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:110
-msgid "catalog.status.unavailable-title"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -399,9 +272,148 @@ msgstr ""
 msgid "catalog.workspace.updating"
 msgstr ""
 
-#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:397
+msgctxt "paths.goal.kicker"
+msgid "Choose your goal"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:263
+msgctxt "paths.unit.continuing"
+msgid "Starting unit…"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:445
+msgctxt "catalog.loading.next-page"
+msgid "Loading the next vocabulary page."
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:377
+msgctxt "paths.current.kicker"
+msgid "Your current path"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:391
+msgctxt "paths.current.progress"
+msgid "{started} started · {mastered} mastered"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:240
+msgctxt "paths.unit.count"
+msgid "{count} words"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:160
+msgctxt "catalog.action.continue-review"
+msgid "Continue review"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:130
+msgctxt "catalog.status.technical-detail"
+msgid "Technical detail"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:110
+msgctxt "catalog.status.unavailable-title"
+msgid "Catalog unavailable"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:180
+#: src/features/catalogWorkspace/CatalogScreen.tsx:196
+msgctxt "paths.selected"
+msgid "Selected"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:256
+msgctxt "paths.unit.complete-message"
+msgid "This unit is complete."
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:421
+msgctxt "catalog.filters.search"
+msgid "Search vocabulary"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:414
+msgctxt "catalog.filters.title"
+msgid "Filters"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:304
+msgctxt "catalog.card.cefr"
+msgid "CEFR {level}"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:263
+msgctxt "paths.unit.study"
+msgid "Study this unit"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:437
+msgctxt "catalog.loading.matches"
+msgid "Loading matching vocabulary…"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:352
+msgctxt "paths.title"
+msgid "Paths"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:138
+msgctxt "catalog.action.retry"
+msgid "Try again"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:233
+msgctxt "paths.units.title"
+msgid "Choose a unit"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:356
+msgctxt "paths.source.personal"
+msgid "My vocabulary"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:263
+msgctxt "paths.unit.prepare-continue"
+msgid "Continue with this unit"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:90
+#: src/features/catalogWorkspace/CatalogScreen.tsx:161
+msgctxt "catalog.action.open-vocabulary"
+msgid "Open vocabulary"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:117
+msgctxt "catalog.status.release-pending"
+msgid "A download will appear after a reviewed release is published."
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:258
 #: src/features/catalogWorkspace/CatalogScreen.tsx:392
-msgid "paths.action.continue"
+msgctxt "paths.unit.all-complete"
+msgid "All units in this path are complete."
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:315
+msgctxt "catalog.card.learning-context"
+msgid "Learning context:"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:248
+msgctxt "paths.unit.progress"
+msgid "{introduced} introduced · {mastered} mastered"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:427
+#: src/features/catalogWorkspace/CatalogScreen.tsx:440
+msgctxt "catalog.filters.clear"
+msgid "Clear all filters"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:239
+msgctxt "paths.unit.ordinal"
+msgid "Unit {ordinal}"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -415,33 +427,8 @@ msgid "paths.catalog.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:377
-msgid "paths.current.kicker"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:391
-msgid "paths.current.progress"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:387
 msgid "paths.current.roadmap-label"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:386
-msgid "paths.current.unit-of"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:397
-msgid "paths.goal.kicker"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:359
-msgid "paths.language.label"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -470,39 +457,8 @@ msgid "paths.personal.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:405
-msgid "paths.roadmap.kicker"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:405
-msgid "paths.roadmap.title"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:180
-#: src/features/catalogWorkspace/CatalogScreen.tsx:196
-msgid "paths.selected"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:397
-msgid "paths.shelf.title"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:355
 msgid "paths.source.label"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:356
-msgid "paths.source.personal"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:357
-msgid "paths.source.reviewed"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -556,16 +512,6 @@ msgid "paths.tier.foundation.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:198
-msgid "paths.tier.progress"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:352
-msgid "paths.title"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/features/catalogWorkspace/catalogPresentation.ts:36
 msgid "paths.track.general.description"
 msgstr ""
@@ -596,27 +542,6 @@ msgid "paths.track.toeic.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:263
-msgid "paths.unit.add-and-study"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:258
-#: src/features/catalogWorkspace/CatalogScreen.tsx:392
-msgid "paths.unit.all-complete"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:256
-msgid "paths.unit.complete-message"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:260
-msgid "paths.unit.confirm-disclosure"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogWorkspace.tsx:122
 msgid "paths.unit.continue-partial"
 msgstr ""
@@ -629,52 +554,6 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogWorkspace.tsx:121
 msgid "paths.unit.continue-scope-unavailable"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:254
-msgid "paths.unit.continue-unavailable"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:263
-msgid "paths.unit.continuing"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:240
-msgid "paths.unit.count"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:252
-#: src/features/catalogWorkspace/CatalogScreen.tsx:391
-msgid "paths.unit.eta"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:239
-msgid "paths.unit.ordinal"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:263
-msgid "paths.unit.prepare-continue"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:245
-msgid "paths.unit.preview"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:248
-msgid "paths.unit.progress"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:247
-msgid "paths.unit.progress-unavailable"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -701,21 +580,142 @@ msgid "paths.unit.status.unavailable"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:263
-msgid "paths.unit.study"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:233
-msgid "paths.units.kicker"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.tsx:234
 msgid "paths.units.list-label"
 msgstr ""
 
-#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:260
+msgctxt "paths.unit.confirm-disclosure"
+msgid "Any missing unit words will be added to your Library before study."
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:110
+msgctxt "catalog.status.no-drafts"
+msgid "Draft vocabulary is never shown here."
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:263
+msgctxt "paths.unit.add-and-study"
+msgid "Add missing words and study"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:254
+msgctxt "paths.unit.continue-unavailable"
+msgid "Continue is unavailable until progress can be verified."
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:158
+msgctxt "catalog.personal.title"
+msgid "Your personal paths"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:90
+msgctxt "catalog.personal.status-title"
+msgid "Personal learning mode"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:198
+msgctxt "paths.tier.progress"
+msgid "{mastered} of {total} mastered · {started} started"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:316
+msgctxt "catalog.card.add-failed"
+msgid "Could not add “{lemma}” to your library. Check your connection or sign in, then try again."
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:411
+msgctxt "catalog.explorer.title"
+msgid "Vocabulary explorer"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:392
+msgctxt "paths.action.continue"
+msgid "Continue"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:278
+msgctxt "catalog.filter.all"
+msgid "All"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:158
+msgctxt "catalog.personal.description"
+msgid "Use your {count} saved cards now. No draft catalog vocabulary is mixed into these paths."
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:440
+msgctxt "catalog.empty.path"
+msgid "This reviewed catalog does not contain words for the selected path yet."
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:115
+msgctxt "catalog.status.connect-first-download"
+msgid "Connect to the internet for the first verified download."
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:125
+msgctxt "catalog.status.error-title"
+msgid "Catalog needs attention"
+msgstr ""
+
 #: src/features/catalogWorkspace/CatalogScreen.tsx:233
-msgid "paths.units.title"
+msgctxt "paths.units.kicker"
+msgid "Catalog units"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:359
+msgctxt "paths.language.label"
+msgid "Language"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:252
+#: src/features/catalogWorkspace/CatalogScreen.tsx:391
+msgctxt "paths.unit.eta"
+msgid "Estimated {days, plural, one {# day} other {# days}} left at your pace."
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:158
+msgctxt "catalog.personal.kicker"
+msgid "Built from your library"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:357
+msgctxt "paths.source.reviewed"
+msgid "Reviewed catalog"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:445
+msgctxt "catalog.loading.more"
+msgid "Loading more words…"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:314
+msgctxt "catalog.card.review"
+msgid "Review:"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:313
+msgctxt "catalog.card.license"
+msgid "License:"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:247
+msgctxt "paths.unit.progress-unavailable"
+msgid "Progress is unavailable until your library can be verified."
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:312
+msgctxt "catalog.card.source"
+msgid "Source:"
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:440
+msgctxt "catalog.empty.filtered"
+msgid "Try fewer filters or clear them to see this path again."
+msgstr ""
+
+#: src/features/catalogWorkspace/CatalogScreen.tsx:245
+msgctxt "paths.unit.preview"
+msgid "Preview: {title}"
 msgstr ""

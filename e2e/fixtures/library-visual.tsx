@@ -67,7 +67,7 @@ function LibraryFixture() {
     isAuthenticated: false,
     overview: { total: cards.length, due: 2, mastered: 1, streak: 4, level: 3, xp: 480, canStudy: true },
     grid: {
-      searchQuery: search, legacyCardsPending: 0, legacyIssue: null, isMigratingLegacy: false, activeCategory: category,
+      searchQuery: search, legacyCardsPending: 0, legacyIssue: null, isMigratingLegacy: false, activeCategory: category, activeCustomDeck: { kind: 'all' },
       filteredCards, isSharing: false, currentPage: 1, paginatedCards: filteredCards,
       isPageLoading: false, cloudReadUnavailable: false, importProgress: null,
       groupedCards: { 'Sep 24, 2026': filteredCards }, customDecks: ['IELTS', 'Work'], totalPages: 1,
@@ -77,7 +77,7 @@ function LibraryFixture() {
       fileInputRef, wordInput, isLoading: false, isGenerating: false, isImporting: false,
       generationAccess: { available: true }, importProgress: null, importResult: null, libraryCount: cards.length,
       searchQuery: search, showStarredOnly: false, activeDifficulty: 'All', activePartOfSpeech: 'All', activeDate: 'All',
-      availableDates: ['All', 'Sep 24, 2026'], customDecks: ['IELTS', 'Work'], newDeckInput: '', activeCustomDeck: 'All', cards,
+      availableDates: ['All', 'Sep 24, 2026'], customDecks: ['IELTS', 'Work'], newDeckInput: '', activeCustomDeck: { kind: 'all' }, cards,
       cloudFacetsComplete: true, sortedCategories: ['All', 'IELTS', 'Work'], categoryCounts: { All: cards.length, IELTS: 2, Work: 2 }, activeCategory: category,
     },
   };

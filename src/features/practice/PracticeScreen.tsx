@@ -1,3 +1,4 @@
+import { msg } from '@lingui/core/macro';
 import { lazy, Suspense, type ReactNode } from 'react';
 import { Trans } from '@lingui/react';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
@@ -43,13 +44,14 @@ export function PracticeScreen({
 
   if (mode === 'study') {
     return (
-      <Suspense fallback={<PracticeFallback label={<Trans id="practice.loading.study" message="Loading study session" />} wide />}>
+      <Suspense fallback={<PracticeFallback label={<Trans {...msg({ context: 'practice.loading.study', message: 'Loading study session' })} />} wide />}>
         <StudyView
           key={study.sessionKey}
           cards={study.cards}
           index={study.index}
           recallMode={study.recallMode}
           revealed={study.revealed}
+          needsIntroduction={study.needsIntroduction}
           reviewedCardId={study.reviewedCardId}
           reviewStatus={study.reviewStatus}
           reviewError={study.reviewError}
@@ -57,6 +59,16 @@ export function PracticeScreen({
           customDecks={customDecks}
           onClose={commands.close}
           onViewWeeklyRecap={() => { commands.close(); openWeeklyRecap(); }}
+          goodCount={study.goodCount}
+          againCount={study.againCount}
+          weakCards={study.weakCards}
+          showRecap={study.showRecap}
+          summary={study.summary}
+          xpEarned={study.xpEarned}
+          onDismissRecap={commands.dismissStudyRecap}
+          onBeginStudyRecall={commands.beginStudyRecall}
+          onLearnFirst={commands.requestStudyIntroduction}
+          onRetryWeak={() => void commands.startStudy({ cards: study.weakCards })}
           onRecallMode={commands.setRecallMode}
           onReveal={commands.reveal}
           onBookmark={learning.toggleBookmark}
@@ -72,7 +84,7 @@ export function PracticeScreen({
   }
   if (mode === 'quiz') {
     return (
-      <Suspense fallback={<PracticeFallback label={<Trans id="practice.loading.quiz" message="Loading quiz" />} />}>
+      <Suspense fallback={<PracticeFallback label={<Trans {...msg({ context: 'practice.loading.quiz', message: 'Loading quiz' })} />} />}>
         <QuizView
           questions={quiz.quizQuestions}
           currentIndex={quiz.currentQuizIndex}
@@ -82,6 +94,7 @@ export function PracticeScreen({
           showResults={quiz.showQuizResults}
           savingResult={quiz.quizCompletionSaving}
           onSelect={quiz.selectQuizAnswer}
+          onLearnFirst={() => { const card = quiz.quizQuestions[quiz.currentQuizIndex]?.card; if (card) void commands.startStudy({ cards: [card], introduce: true }); }}
           onNext={quiz.nextQuizQuestion}
           onRestart={commands.startQuiz}
           onClose={commands.close}
@@ -91,7 +104,7 @@ export function PracticeScreen({
   }
   if (mode === 'spelling') {
     return (
-      <Suspense fallback={<PracticeFallback label={<Trans id="practice.loading.spelling" message="Loading spelling practice" />} />}>
+      <Suspense fallback={<PracticeFallback label={<Trans {...msg({ context: 'practice.loading.spelling', message: 'Loading spelling practice' })} />} />}>
         <SpellingView
           cards={quiz.spellingCards}
           currentIndex={quiz.currentSpellingIndex}
@@ -102,6 +115,7 @@ export function PracticeScreen({
           showResults={quiz.showSpellingResults}
           savingResult={quiz.spellingCompletionSaving}
           onInput={quiz.setSpellingInput}
+          onLearnFirst={() => { const card = quiz.spellingCards[quiz.currentSpellingIndex]; if (card) void commands.startStudy({ cards: [card], introduce: true }); }}
           onCheck={quiz.checkSpelling}
           onNext={quiz.nextSpelling}
           onRestart={commands.startSpelling}
@@ -113,7 +127,7 @@ export function PracticeScreen({
   if (mode === 'language-drill') {
     const card = quiz.languageDrillCards[quiz.currentLanguageDrillIndex];
     return (
-      <Suspense fallback={<PracticeFallback label={<Trans id="practice.loading.language-drill" message="Loading language drill" />} />}>
+      <Suspense fallback={<PracticeFallback label={<Trans {...msg({ context: 'practice.loading.language-drill', message: 'Loading language drill' })} />} />}>
         {quiz.showLanguageDrillResults ? (
           <LanguagePracticeDrillResults
             correct={quiz.languageDrillCorrect}
@@ -136,8 +150,9 @@ export function PracticeScreen({
   }
   if (mode === 'match') {
     return (
-      <Suspense fallback={<PracticeFallback label={<Trans id="practice.loading.match" message="Loading word match" />} />}>
+      <Suspense fallback={<PracticeFallback label={<Trans {...msg({ context: 'practice.loading.match', message: 'Loading word match' })} />} />}>
         <WordMatchView
+          key={session.sessionKey}
           cards={quiz.spellingCards.length > 0 ? quiz.spellingCards : study.cards}
           onClose={commands.close}
           onComplete={quiz.completeMatch}
@@ -148,8 +163,9 @@ export function PracticeScreen({
   }
   if (mode === 'shadowing') {
     return (
-      <Suspense fallback={<PracticeFallback label={<Trans id="practice.loading.shadowing" message="Loading shadowing practice" />} />}>
+      <Suspense fallback={<PracticeFallback label={<Trans {...msg({ context: 'practice.loading.shadowing', message: 'Loading shadowing practice' })} />} />}>
         <ShadowingView
+          key={session.sessionKey}
           cards={quiz.spellingCards.length > 0 ? quiz.spellingCards : study.cards}
           onClose={commands.close}
         />
@@ -158,7 +174,7 @@ export function PracticeScreen({
   }
   if (mode === 'story') {
     return (
-      <Suspense fallback={<PracticeFallback label={<Trans id="practice.loading.story" message="Loading story" />} />}>
+      <Suspense fallback={<PracticeFallback label={<Trans {...msg({ context: 'practice.loading.story', message: 'Loading story' })} />} />}>
         <StoryView story={quiz.story} loading={quiz.isGeneratingStory} error={quiz.storyError} onGenerate={commands.generateStory} onClose={commands.close} />
       </Suspense>
     );

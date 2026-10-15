@@ -85,26 +85,26 @@ export function CardBack({
           <div className="pointer-events-none absolute -bottom-20 -right-20 size-72 rounded-full border border-slate-200/40 bg-slate-100/20 dark:border-white/10 dark:bg-white/5" aria-hidden="true" />
           <div className={`absolute top-5 z-20 flex flex-wrap items-center gap-2 ${canDelete ? 'left-16' : 'left-5'}`}>
             <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300">
-              <Languages size={13} aria-hidden="true" /> <Trans id="flashcard.language.vietnamese" message="Vietnamese" />
+              <Languages size={13} aria-hidden="true" /> <Trans {...msg({ context: 'flashcard.language.vietnamese', message: 'Vietnamese' })} />
             </div>
               {data.nextReviewDate && isCardDue(data) && (
                 <div className="bg-rose-600/95 dark:bg-rose-950/80 text-white dark:text-rose-200 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase border border-rose-400/20 dark:border-rose-800/40 shadow-sm flex items-center gap-1">
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-rose-400"></span>
                   </span>
-                  <span><Trans id="flashcard.status.overdue" message="Review overdue" /></span>
+                  <span><Trans {...msg({ context: 'flashcard.status.overdue', message: 'Review overdue' })} /></span>
                 </div>
               )}
           </div>
           <div data-card-content="revealed" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4 pt-16 text-center scrollbar-thin sm:px-7">
             <section data-card-section="meaning" aria-labelledby={`flashcard-meaning-${data.id}`} className="relative mx-auto w-full max-w-xl px-1 pb-3 pt-2 text-center sm:px-3">
-              <p id={`flashcard-meaning-${data.id}`} className="relative text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300"><Trans id="flashcard.meaning.vietnamese" message="Vietnamese meaning" /></p>
+              <p id={`flashcard-meaning-${data.id}`} className="relative text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300"><Trans {...msg({ context: 'flashcard.meaning.vietnamese', message: 'Vietnamese meaning' })} /></p>
               <h2 data-translation-reveal lang={data.translationLanguage || 'vi'} className="flashcard-translation-gradient flashcard-translation-reveal zen-editorial-serif relative mt-2 break-words text-balance text-4xl font-normal tracking-tight drop-shadow-xs first-letter:uppercase [overflow-wrap:anywhere] sm:text-5xl">
                 {data.translation}
               </h2>
               {data.origin === 'ai' && (
                 <p data-ai-disclosure className="relative mt-2 text-xs font-medium text-slate-600 dark:text-slate-300">
-                  <Trans id="flashcard.ai-disclosure" message="AI-generated content may be incorrect. Please check the meaning." />
+                  <Trans {...msg({ context: 'flashcard.ai-disclosure', message: 'AI-generated content may be incorrect. Please check the meaning.' })} />
                 </p>
               )}
               <div className="relative mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center">
@@ -123,8 +123,8 @@ export function CardBack({
                 </button>
               </div>
               <div className="relative flex flex-wrap items-center justify-center gap-1 text-center">
-                {isAccountSignedIn() && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowReportDialog(true)} className="min-h-11 px-3 text-xs font-bold text-rose-800 underline underline-offset-4 dark:text-rose-200"><Trans id="flashcard.report" message="Report incorrect card" /></button>}
-                {onUpdateCard && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowEditDialog(true)} className="min-h-11 px-3 text-xs font-bold text-cyan-800 underline underline-offset-4 dark:text-cyan-200"><Trans id="flashcard.edit" message="Edit card" /></button>}
+                {isAccountSignedIn() && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowReportDialog(true)} className="min-h-11 px-3 text-xs font-bold text-rose-800 underline underline-offset-4 dark:text-rose-200"><Trans {...msg({ context: 'flashcard.report', message: 'Report incorrect card' })} /></button>}
+                {onUpdateCard && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowEditDialog(true)} className="min-h-11 px-3 text-xs font-bold text-cyan-800 underline underline-offset-4 dark:text-cyan-200"><Trans {...msg({ id: 'flashcard.edit', message: 'Edit card' })} /></button>}
               </div>
                {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-600 dark:text-rose-100" role="alert">{pronunciationError}</p>}
             </section>
@@ -135,7 +135,7 @@ export function CardBack({
             </section>}
 
             <section data-card-section="explanation" aria-labelledby={`flashcard-explanation-${data.id}`} className="mx-auto mt-3 flex w-full max-w-xl flex-col items-start text-left">
-              <p id={`flashcard-explanation-${data.id}`} className="sr-only"><Trans id="flashcard.explanation.vietnamese" message="Explanation in Vietnamese" /></p>
+              <p id={`flashcard-explanation-${data.id}`} className="sr-only"><Trans {...msg({ context: 'flashcard.explanation.vietnamese', message: 'Explanation in Vietnamese' })} /></p>
               {data.explanationTranslation ? (
                 <RichVietnameseExplanation value={data.explanationTranslation} lang={data.translationLanguage || 'vi'} />
               ) : (
@@ -148,9 +148,9 @@ export function CardBack({
                     className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-cyan-400 bg-cyan-400 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#071014] shadow-sm shadow-cyan-500/20 transition-[background-color,box-shadow] duration-200 hover:bg-cyan-300"
                   >
                     {isTranslating ? (
-                      <><Loader2 size={13} className="animate-spin" /><span><Trans id="flashcard.translating" message="Translating…" /></span></>
+                      <><Loader2 size={13} className="animate-spin" /><span><Trans {...msg({ context: 'flashcard.translating', message: 'Translating…' })} /></span></>
                     ) : (
-                      <><Languages size={13} /><span><Trans id="flashcard.translate-explanation" message="Translate explanation" /></span></>
+                      <><Languages size={13} /><span><Trans {...msg({ context: 'flashcard.translate-explanation', message: 'Translate explanation' })} /></span></>
                     )}
                   </button>
                   {translationError ? (
@@ -180,7 +180,7 @@ export function CardBack({
                 className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-slate-200/90 px-4 text-xs font-bold text-slate-800 transition-colors hover:bg-cyan-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] dark:border-white/15 dark:text-slate-100 dark:hover:bg-cyan-400/10"
               >
                 <Sparkles size={14} className="shrink-0 text-cyan-700 dark:text-cyan-300" aria-hidden="true" />
-                <span><Trans id="flashcard.ask-ai-tutor" message="Ask AI Tutor" /></span>
+                <span><Trans {...msg({ context: 'flashcard.ask-ai-tutor', message: 'Ask AI Tutor' })} /></span>
               </button>
             </div>
 
@@ -188,7 +188,7 @@ export function CardBack({
               <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 px-4 py-2 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] [&::-webkit-details-marker]:hidden">
                 <BookOpen size={16} className="shrink-0 text-slate-600 dark:text-slate-300" aria-hidden="true" />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-slate-700 dark:text-slate-200"><Trans id="flashcard.explore-more" message="Explore more" /></span>
+                  <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-slate-700 dark:text-slate-200"><Trans {...msg({ context: 'flashcard.explore-more', message: 'Explore more' })} /></span>
                 </span>
                 <ChevronRight size={15} className="shrink-0 text-slate-400 transition-transform duration-200 group-open/disclosure:rotate-90" aria-hidden="true" />
               </summary>
@@ -204,7 +204,7 @@ export function CardBack({
                     className="flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-xl px-3 text-left text-slate-800 outline-none transition-colors duration-200 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] dark:text-slate-100 dark:hover:bg-white/[0.07]"
                   >
                     <BookOpen size={15} className="shrink-0 text-slate-500 dark:text-slate-300" />
-                    <span className="min-w-0 flex-1"><span className="block text-xs font-bold"><Trans id="flashcard.lexicon-context" message="Lexicon context" /></span><span className="block truncate text-[11px] text-slate-500 dark:text-slate-300"><Trans id="flashcard.lexicon-context-description" message="Examples, collocations & nuances" /></span></span>
+                    <span className="min-w-0 flex-1"><span className="block text-xs font-bold"><Trans {...msg({ context: 'flashcard.lexicon-context', message: 'Lexicon context' })} /></span><span className="block truncate text-[11px] text-slate-500 dark:text-slate-300"><Trans {...msg({ context: 'flashcard.lexicon-context-description', message: 'Examples, collocations & nuances' })} /></span></span>
                     <ChevronRight size={15} className="text-slate-400" />
                   </button>
                 )}
@@ -235,7 +235,7 @@ export function CardBack({
               aria-hidden="true"
             />
             <ChevronRight size={16} className="rotate-180 transition-transform duration-200 group-hover/back:-translate-x-0.5 motion-reduce:transform-none motion-reduce:transition-none" aria-hidden="true" />
-            <span><Trans id="flashcard.back-to-english" message="Back to English" /></span>
+            <span><Trans {...msg({ context: 'flashcard.back-to-english', message: 'Back to English' })} /></span>
           </button>
 
     </div>
@@ -277,7 +277,7 @@ function ZenCardBack({
             <div className="flex w-full items-center justify-between z-20">
               <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-300">
                 <span className="size-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]" />
-                <span><Trans id="flashcard.language.vietnamese" message="Vietnamese" /></span>
+                <span><Trans {...msg({ context: 'flashcard.language.vietnamese', message: 'Vietnamese' })} /></span>
               </div>
               <CardTierBadge tier={tier} />
             </div>
@@ -317,13 +317,13 @@ function ZenCardBack({
               </div>
               {data.origin === 'ai' && (
                 <p data-ai-disclosure className="mt-3 max-w-lg text-xs font-medium text-cyan-100/90">
-                  <Trans id="flashcard.ai-disclosure" message="AI-generated content may be incorrect. Please check the meaning." />
+                  <Trans {...msg({ context: 'flashcard.ai-disclosure', message: 'AI-generated content may be incorrect. Please check the meaning.' })} />
                 </p>
               )}
               {isAccountSignedIn() && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowReportDialog(true)} className="mt-2 min-h-11 px-3 text-xs font-bold text-cyan-100 underline underline-offset-4">
-                <Trans id="flashcard.report" message="Report incorrect card" />
+                <Trans {...msg({ context: 'flashcard.report', message: 'Report incorrect card' })} />
               </button>}
-              {onUpdateCard && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowEditDialog(true)} className="mt-2 min-h-11 px-3 text-xs font-bold text-cyan-100 underline underline-offset-4"><Trans id="flashcard.edit" message="Edit card" /></button>}
+              {onUpdateCard && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowEditDialog(true)} className="mt-2 min-h-11 px-3 text-xs font-bold text-cyan-100 underline underline-offset-4"><Trans {...msg({ id: 'flashcard.edit', message: 'Edit card' })} /></button>}
 
               {/* Memory Hook / Mnemonic if available */}
               {data.mnemonic && (
@@ -348,7 +348,7 @@ function ZenCardBack({
                 }}
                 className="relative group inline-flex min-h-11 items-center justify-center rounded-full border border-white/20 bg-white/10 px-9 py-2.5 text-sm font-medium tracking-wide text-white/95 shadow-[0_12px_35px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-all duration-300 hover:bg-white/20 hover:scale-105 active:scale-95 cursor-pointer"
               >
-                <span><Trans id="flashcard.return-to-english" message="Return to English" /></span>
+                <span><Trans {...msg({ context: 'flashcard.return-to-english', message: 'Return to English' })} /></span>
                 <span
                   className="absolute -bottom-px left-[22%] right-[22%] h-[2.5px] rounded-full bg-cyan-400 shadow-[0_0_12px_#22d3ee,0_0_24px_#06b6d4] transition-all duration-300 group-hover:left-[16%] group-hover:right-[16%]"
                   aria-hidden="true"

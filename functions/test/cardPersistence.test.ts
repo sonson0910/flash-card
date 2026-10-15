@@ -856,6 +856,7 @@ describe('card persistence', () => {
 
   it('rejects oversized canonical input before opening an Admin transaction', () => {
     expect(() => parseCreateCardRequest({
+      expectedOwnerId: 'owner',
       card: { ...card, explanation: 'x'.repeat(2_049) },
     })).toThrow(/explanation/i);
   });
@@ -863,23 +864,24 @@ describe('card persistence', () => {
   it('requires exact restore intent plus protocol metadata', () => {
     const operationCreatedAt = new Date().toISOString();
     expect(parseCreateCardRequest({
-      card, restore: true, opId: 'restore-hello', operationCreatedAt,
+      expectedOwnerId: 'owner', card, restore: true, opId: 'restore-hello', operationCreatedAt,
     })).toMatchObject({ restore: true, opId: 'restore-hello', operationCreatedAt });
-    expect(() => parseCreateCardRequest({ card, restore: false })).toThrow(/restore/i);
-    expect(() => parseCreateCardRequest({ card, restore: true, operationCreatedAt })).toThrow(/metadata/i);
-    expect(() => parseCreateCardRequest({ card, restore: true, opId: 'invalid:restore', operationCreatedAt })).toThrow(/metadata/i);
-    expect(() => parseCreateCardRequest({ card, restore: true, opId: 'restore-hello' })).toThrow(/metadata/i);
+    expect(() => parseCreateCardRequest({ expectedOwnerId: 'owner', card, restore: false })).toThrow(/restore/i);
+    expect(() => parseCreateCardRequest({ expectedOwnerId: 'owner', card, restore: true, operationCreatedAt })).toThrow(/metadata/i);
+    expect(() => parseCreateCardRequest({ expectedOwnerId: 'owner', card, restore: true, opId: 'invalid:restore', operationCreatedAt })).toThrow(/metadata/i);
+    expect(() => parseCreateCardRequest({ expectedOwnerId: 'owner', card, restore: true, opId: 'restore-hello' })).toThrow(/metadata/i);
   });
 
   it('requires a stable V2 operation ID and reward time zone', () => {
-    expect(parseCreateCardV2Request({ card, opId: 'create-hello', timeZone: 'UTC' }))
+    expect(parseCreateCardV2Request({ expectedOwnerId: 'owner', card, opId: 'create-hello', timeZone: 'UTC' }))
       .toMatchObject({ opId: 'create-hello', timeZone: 'UTC' });
-    expect(() => parseCreateCardV2Request({ card, timeZone: 'UTC' })).toThrow(/metadata/i);
-    expect(() => parseCreateCardV2Request({ card, opId: 'create:hello', timeZone: 'UTC' })).toThrow(/metadata/i);
+    expect(() => parseCreateCardV2Request({ expectedOwnerId: 'owner', card, timeZone: 'UTC' })).toThrow(/metadata/i);
+    expect(() => parseCreateCardV2Request({ expectedOwnerId: 'owner', card, opId: 'create:hello', timeZone: 'UTC' })).toThrow(/metadata/i);
   });
 
   it('rejects canonical output that expands beyond the existing identity and URL limits', () => {
     expect(() => parseCreateCardRequest({
+      expectedOwnerId: 'owner',
       card: {
         ...card,
         word: 'ﬃ'.repeat(100),
@@ -887,6 +889,7 @@ describe('card persistence', () => {
       },
     })).toThrow(/identity|normalizedWord/i);
     expect(() => parseCreateCardRequest({
+      expectedOwnerId: 'owner',
       card: {
         ...card,
         imageUrl: `https://images.pexels.com/${'é'.repeat(1_000)}`,

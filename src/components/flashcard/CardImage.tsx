@@ -55,7 +55,7 @@ export function CardImage({ src, alt, priority = false, onUnavailable }: CardIma
         <div className="absolute inset-0 flex items-center justify-center bg-[var(--sf-surface-raised)]">
           <div className="flex flex-col items-center gap-3 text-[var(--sf-text-muted)]" role="img" aria-label={i18n._(msg({ id: 'flashcard.image.none-description', message: 'No image for {description}' }).id, { description: alt })}>
             <span className="liquid-control flex size-16 items-center justify-center rounded-[22px]"><ImageOff size={28} strokeWidth={1.5} /></span>
-            <span className="text-sm font-semibold"><Trans id="flashcard.image.unavailable" message="Image cue unavailable" /></span>
+            <span className="text-sm font-semibold"><Trans {...msg({ context: 'flashcard.image.unavailable', message: 'Image cue unavailable' })} /></span>
           </div>
         </div>
       ) : (

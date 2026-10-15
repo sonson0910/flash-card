@@ -13,97 +13,97 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/features/rewards/AnimeReveal.tsx:31
+msgctxt "rewards.reveal.tier.new"
+msgid "New"
+msgstr "[Nëw]"
+
+#: src/features/rewards/AnimeReveal.tsx:25
+msgctxt "rewards.reveal.streak.kicker"
+msgid "Streak milestone"
+msgstr "[Strëåk mïlëstønë]"
+
+#: src/features/rewards/AnimeReveal.tsx:24
+msgctxt "rewards.reveal.tierup.continue"
+msgid "Continue learning"
+msgstr "[Cøntïnüë lëârnïng]"
+
+#: src/features/rewards/AnimeReveal.tsx:26
+msgctxt "rewards.reveal.levelup.description"
+msgid "You unlocked the Crimson Wing frame and Word Collector title. You can hold up to three hint tokens."
+msgstr "[Yøü ünløckëd thë Crïmsøn Wïng frâmë ând Wørd Cøllëctør tïtlë. Yøü cân høld üp tø thrëë hïnt tøkëns.]"
+
+#: src/features/rewards/AnimeReveal.tsx:24
+msgctxt "rewards.reveal.tierup.description"
+msgid "This card is now mastered. Review it again when it is due."
+msgstr "[Thïs cård ïs nØw måstërëd. Rëvïëw ït âgâïn whën ït ïs düë.]"
+
+#: src/features/rewards/AnimeReveal.tsx:70
+msgctxt "rewards.reveal.later"
+msgid "Later"
+msgstr "[Lâtër]"
+
+#: src/features/rewards/AnimeReveal.tsx:25
+msgctxt "rewards.reveal.streak.description"
+msgid "Your verified review streak earned the Web Wanderer badge."
+msgstr "[Yøür vërïfïëd rëvïëw strëåk ünløckëd Wëb Wåndërër. Yøü cân høld ønë strëåk frëëzë.]"
+
+#: src/features/rewards/AnimeReveal.tsx:24
+msgctxt "rewards.reveal.tierup.kicker"
+msgid "Tier up"
+msgstr "[Tïër üp]"
+
+#: src/features/rewards/AnimeReveal.tsx:35
+msgctxt "rewards.reveal.tier.mastered"
+msgid "Mastered"
+msgstr "[Mâstërëd]"
+
+#: src/features/rewards/AnimeReveal.tsx:26
+msgctxt "rewards.reveal.levelup.kicker"
+msgid "Level up"
+msgstr "[Lëvël üp]"
+
+#: src/features/rewards/AnimeReveal.tsx:25
+msgctxt "rewards.reveal.streak.title"
+msgid "Streak reached"
+msgstr "[Strëåk rëâchëd]"
+
+#: src/features/rewards/AnimeReveal.tsx:25
+msgctxt "rewards.reveal.streak.continue"
+msgid "Continue learning"
+msgstr "[Cøntïnüë lëârnïng]"
+
+#: src/features/rewards/AnimeReveal.tsx:24
+msgctxt "rewards.reveal.tierup.title"
+msgid "Mastered"
+msgstr "[Mâstërëd]"
+
+#: src/features/rewards/AnimeReveal.tsx:26
+msgctxt "rewards.reveal.levelup.equip"
+msgid "Use frame"
+msgstr "[Ûsë frâmë]"
+
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:65
 msgid "rewards.reveal.close"
 msgstr "[Cløsë rëwård]"
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:69
-msgid "rewards.reveal.equip-error"
-msgstr "[Cøüld nøt üsë thïs rëwård. Trÿ âgâïn.]"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:70
-msgid "rewards.reveal.later"
-msgstr "[Lâtër]"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:26
-msgid "rewards.reveal.levelup.description"
-msgstr "[Yøü ünløckëd thë Crïmsøn Wïng frâmë ând Wørd Cøllëctør tïtlë. Yøü cân høld üp tø thrëë hïnt tøkëns.]"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:26
-msgid "rewards.reveal.levelup.equip"
-msgstr "[Ûsë frâmë]"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:26
-msgid "rewards.reveal.levelup.kicker"
-msgstr "[Lëvël üp]"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:26
-msgid "rewards.reveal.levelup.title"
-msgstr "[Lëvël üp]"
-
-#. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:68
 msgid "rewards.reveal.rewards-label"
 msgstr "[Ûnløckëd rëwårds]"
 
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:25
-msgid "rewards.reveal.streak.continue"
-msgstr "[Cøntïnüë lëârnïng]"
+#: src/features/rewards/AnimeReveal.tsx:26
+msgctxt "rewards.reveal.levelup.title"
+msgid "Level up"
+msgstr "[Lëvël üp]"
 
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:25
-msgid "rewards.reveal.streak.description"
-msgstr "[Yøür vërïfïëd rëvïëw strëåk ünløckëd Wëb Wåndërër. Yøü cân høld ønë strëåk frëëzë.]"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:25
-msgid "rewards.reveal.streak.kicker"
-msgstr "[Strëåk mïlëstønë]"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:25
-msgid "rewards.reveal.streak.title"
-msgstr "[Strëåk rëâchëd]"
-
-#. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:33
-msgid "rewards.reveal.tier.learning"
+msgctxt "rewards.reveal.tier.learning"
+msgid "Learning"
 msgstr "[Lëârnïng]"
 
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:35
-msgid "rewards.reveal.tier.mastered"
-msgstr "[Mâstërëd]"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:31
-msgid "rewards.reveal.tier.new"
-msgstr "[Nëw]"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:24
-msgid "rewards.reveal.tierup.continue"
-msgstr "[Cøntïnüë lëârnïng]"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:24
-msgid "rewards.reveal.tierup.description"
-msgstr "[Thïs cård ïs nØw måstërëd. Rëvïëw ït âgâïn whën ït ïs düë.]"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:24
-msgid "rewards.reveal.tierup.kicker"
-msgstr "[Tïër üp]"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:24
-msgid "rewards.reveal.tierup.title"
-msgstr "[Mâstërëd]"
+#: src/features/rewards/AnimeReveal.tsx:69
+msgctxt "rewards.reveal.equip-error"
+msgid "Could not use this reward. Try again."
+msgstr "[Cøüld nøt üsë thïs rëwård. Trÿ âgâïn.]"

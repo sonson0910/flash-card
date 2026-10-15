@@ -104,7 +104,7 @@ describe('AppRuntime onboarding library binding', () => {
     await act(async () => { root.render(<Probe canClassify />); });
     await vi.waitFor(() => expect(countCards).toHaveBeenCalledOnce());
     expect(countCards.mock.calls[0][2]).toMatchObject({
-      category: null, customDeck: null, difficulty: null, partOfSpeech: null,
+      category: null, customDeck: { kind: 'all' }, difficulty: null, partOfSpeech: null,
       bookmarkedOnly: false, createdDate: null, wordPrefix: '', targetLanguage: null,
     });
 

@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import * as path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import ts from 'typescript';
 
 export interface ForbiddenImportRule {
@@ -26,6 +27,7 @@ export interface ModuleSizeReport {
   file: string;
   lineCount: number;
   imports: string[];
+  fanIn: number;
 }
 
 export type ArchitectureViolation =
@@ -45,6 +47,7 @@ export type ArchitectureViolation =
 
 export interface ArchitectureReport {
   modules: ModuleSizeReport[];
+  largestModules: ModuleSizeReport[];
   cycles: string[][];
   violations: ArchitectureViolation[];
 }
@@ -52,9 +55,11 @@ export interface ArchitectureReport {
 interface ParsedImport {
   path: string;
   line: number;
+  relative?: boolean;
 }
 
-const TYPESCRIPT_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts'];
+const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'];
+const TYPESCRIPT_EXTENSIONS = SOURCE_EXTENSIONS.slice(0, 4);
 
 const normalizeFile = (file: string): string => file.replaceAll('\\', '/').replace(/^\.\//, '');
 
@@ -63,8 +68,12 @@ const matches = (pattern: RegExp, value: string): boolean => {
   return pattern.test(value);
 };
 
-const scriptKindFor = (file: string): ts.ScriptKind =>
-  file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+const scriptKindFor = (file: string): ts.ScriptKind => {
+  if (file.endsWith('.tsx')) return ts.ScriptKind.TSX;
+  if (file.endsWith('.jsx')) return ts.ScriptKind.JSX;
+  if (/\.(?:js|mjs|cjs)$/.test(file)) return ts.ScriptKind.JS;
+  return ts.ScriptKind.TS;
+};
 
 const parseImports = (file: string, source: string): { sourceFile: ts.SourceFile; imports: ParsedImport[] } => {
   const sourceFile = ts.createSourceFile(
@@ -75,11 +84,12 @@ const parseImports = (file: string, source: string): { sourceFile: ts.SourceFile
     scriptKindFor(file),
   );
   const imports: ParsedImport[] = [];
-  const add = (node: ts.Node, value: ts.Expression | undefined) => {
+  const add = (node: ts.Node, value: ts.Expression | undefined, relative = false) => {
     if (!value || !ts.isStringLiteralLike(value)) return;
     imports.push({
       path: value.text,
       line: sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1,
+      relative,
     });
   };
 
@@ -96,6 +106,13 @@ const parseImports = (file: string, source: string): { sourceFile: ts.SourceFile
       && node.expression.kind === ts.SyntaxKind.ImportKeyword
     ) {
       add(node, node.arguments[0]);
+    } else if (
+      ts.isCallExpression(node)
+      && ts.isIdentifier(node.expression)
+      && (node.expression.text === 'importScripts' || node.expression.text === 'require')
+    ) {
+      const isImportScripts = node.expression.text === 'importScripts';
+      node.arguments.forEach(argument => add(node, argument, isImportScripts));
     }
     ts.forEachChild(node, visit);
   };
@@ -107,9 +124,11 @@ const resolveRelativeImport = (
   importer: string,
   importPath: string,
   files: ReadonlySet<string>,
+  allowBareRelative = false,
 ): string | null => {
-  if (!importPath.startsWith('.')) return null;
-  const raw = normalizeFile(path.posix.normalize(path.posix.join(path.posix.dirname(importer), importPath)));
+  if (!importPath.startsWith('.') && !allowBareRelative) return null;
+  const relativePath = importPath.startsWith('.') ? importPath : `./${importPath}`;
+  const raw = normalizeFile(path.posix.normalize(path.posix.join(path.posix.dirname(importer), relativePath)));
   const extension = path.posix.extname(raw);
   const withoutRuntimeExtension = ['.js', '.jsx', '.mjs', '.cjs'].includes(extension)
     ? raw.slice(0, -extension.length)
@@ -177,7 +196,7 @@ export function analyzeSourceModules({
     left.localeCompare(right))) {
     const parsed = parseImports(file, source);
     const dependencies = parsed.imports.flatMap(item => {
-      const resolved = resolveRelativeImport(file, item.path, files);
+      const resolved = resolveRelativeImport(file, item.path, files, item.relative);
       return resolved ? [resolved] : [];
     });
     graph.set(file, [...new Set(dependencies)].sort());
@@ -185,6 +204,7 @@ export function analyzeSourceModules({
       file,
       lineCount: parsed.sourceFile.getLineStarts().length,
       imports: parsed.imports.map(item => item.path),
+      fanIn: 0,
     });
 
     for (const item of parsed.imports) {
@@ -212,7 +232,20 @@ export function analyzeSourceModules({
     }
   }
 
-  return { modules, cycles: findCycles(graph), violations };
+  const fanIn = new Map<string, number>([...files].map(file => [file, 0]));
+  for (const dependencies of graph.values()) {
+    for (const dependency of dependencies) {
+      fanIn.set(dependency, (fanIn.get(dependency) ?? 0) + 1);
+    }
+  }
+  const enrichedModules = modules.map(module => ({
+    ...module,
+    fanIn: fanIn.get(module.file) ?? 0,
+  }));
+  const largestModules = [...enrichedModules]
+    .sort((left, right) => right.lineCount - left.lineCount || left.file.localeCompare(right.file))
+    .slice(0, 10);
+  return { modules: enrichedModules, largestModules, cycles: findCycles(graph), violations };
 }
 
 const collectFiles = (
@@ -231,7 +264,7 @@ const collectFiles = (
         .forEach(entry => visit(path.join(absolutePath, entry.name)));
       return;
     }
-    if (!TYPESCRIPT_EXTENSIONS.includes(path.extname(absolutePath))) return;
+    if (!SOURCE_EXTENSIONS.includes(path.extname(absolutePath))) return;
     sources[relativePath] = readFileSync(absolutePath, 'utf8');
   };
 
@@ -266,6 +299,8 @@ export interface CurrentRepoArchitectureOptions {
   includeApp?: boolean;
   /** Applied only when includeApp is true. */
   appMaxLines?: number;
+  /** Explicit production roots to scan instead of the default frontend root. */
+  includePaths?: readonly string[];
 }
 
 export function createCurrentRepoArchitectureConfig(
@@ -277,8 +312,12 @@ export function createCurrentRepoArchitectureConfig(
     rootDir,
     // Scan the complete production graph so cycles through domain/lib modules cannot hide
     // behind a presentation-only entry list. Boundary rules decide which importers are gated.
-    includePaths: ['src'],
-    exclude: [/\.(?:test|spec)\.[cm]?[jt]sx?$/, /\.d\.[cm]?ts$/],
+    includePaths: options.includePaths ?? ['src'],
+    exclude: [
+      /\.(?:test|spec)\.[cm]?[jt]sx?$/,
+      /\.d\.[cm]?ts$/,
+      /(?:^|\/)tests\//,
+    ],
     forbiddenImports: [createPresentationBoundaryRule(includeApp)],
     maxLines: includeApp && options.appMaxLines !== undefined
       ? { 'src/App.tsx': options.appMaxLines }
@@ -291,4 +330,14 @@ export function createPresentationArchitectureConfig(
   options: CurrentRepoArchitectureOptions = {},
 ): ArchitectureConfig {
   return createCurrentRepoArchitectureConfig(rootDir, options);
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  const includePaths = process.argv.slice(2);
+  const report = analyzeArchitecture(createCurrentRepoArchitectureConfig(process.cwd(), {
+    includePaths: includePaths.length > 0
+      ? includePaths
+      : ['src', 'functions/src', 'extensions/lingoflash'],
+  }));
+  console.log(JSON.stringify(report, null, 2));
 }

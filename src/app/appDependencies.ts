@@ -1,5 +1,6 @@
 import type { CardData } from '../types/card';
 import type { LibraryFacets } from '../lib/cardRepository';
+import type { PracticeDeckScope } from '../lib/practiceScope';
 import {
   applyCategoryDeltas,
   countCards,
@@ -20,6 +21,7 @@ import type {
   SharedDeckAdapter,
   SharedDeckCardBatch,
 } from '../features/sharing/sharedDeckSessionController';
+import type { ShareCategorySelection } from '../features/intake/useIntakeSharingSession';
 import { isQuotaError } from '../features/library/libraryStorage';
 import { defaultLearningPersistenceHook } from '../features/learning/learningWorkspacePersistenceAdapter';
 import { useCardIntakePort } from '../features/intake/useCardIntakePort';
@@ -61,12 +63,8 @@ const practicePool = practiceDatabase ? {
   load: async (
     ownerId: string,
     maximum: number,
-    options: { includeFuture: boolean; targetLanguage?: string },
-  ) =>
-    fetchPracticeCards(practiceDatabase, ownerId, maximum, {
-      includeFuture: options.includeFuture,
-      targetLanguage: options.targetLanguage,
-    }),
+    options: { includeFuture: boolean; targetLanguage?: string; customDeck: PracticeDeckScope },
+  ) => fetchPracticeCards(practiceDatabase, ownerId, maximum, options),
   classifyFailure: (error: unknown) => isQuotaError(error) ? 'quota' as const : 'unavailable' as const,
 } : null;
 
@@ -77,15 +75,15 @@ const loadAllCards = async (ownerId: string | null): Promise<CardData[] | null> 
 
 const loadCategoryCards = async (
   ownerId: string | null,
-  category: string,
+  selection: ShareCategorySelection,
   targetLanguage?: string,
 ): Promise<SharedDeckCardBatch> => {
   if (!cloudAvailable || !db || !ownerId) {
     return { cards: [], total: 0, hasNext: false };
   }
   const filters = {
-    category: category === 'All' ? null : category,
-    customDeck: null,
+    category: selection.category === 'All' ? null : selection.category,
+    customDeck: selection.customDeck,
     difficulty: null,
     partOfSpeech: null,
     bookmarkedOnly: false,
@@ -166,10 +164,10 @@ export const appDependencies = {
   intake: {
     forOwner: (ownerId: string | null, targetLanguage?: string): {
       adapter: SharedDeckAdapter;
-      loadCards(category: string): Promise<SharedDeckCardBatch>;
+      loadCards(selection: ShareCategorySelection): Promise<SharedDeckCardBatch>;
     } => ({
       adapter: sharedDeck,
-      loadCards: category => loadCategoryCards(ownerId, category, targetLanguage),
+      loadCards: selection => loadCategoryCards(ownerId, selection, targetLanguage),
     }),
   },
 };

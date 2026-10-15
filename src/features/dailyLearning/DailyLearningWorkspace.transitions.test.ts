@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
 import { cardsForLanguagePair } from '../practice/practiceModel';
-import { buildDailyPlan } from './dailyPlan';
+import { buildDailyLessonSteps, buildDailyPlan } from './dailyPlan';
 import { dailyTodayStatus, didDailyPracticePoolScopeChange, freshItemsForResume, hasMatchOnlySession } from './DailyLearningWorkspace';
 import { getEligibleExerciseModes } from './exerciseEngine';
 import { buildPlacementCheck } from './placementEngine';
@@ -165,7 +165,8 @@ describe('DailyLearningWorkspace session transitions', () => {
     expect(buildPlacementCheck(placementCandidates)).toEqual({ status: 'insufficient', eligibleCount: 4, requiredCount: 6 });
     expect(source).toContain('getEligibleExerciseModes(card, currentPairCards).includes(\'recognition\')');
     expect(source).toContain('buildExercise(item.card, currentPairCards, \'recognition\')');
-    expect(source).toContain('card, currentPairCards, mode, inferScriptScoringPolicy(card.word)');
+    const steps = buildDailyLessonSteps([{ card: activePair[0], reason: 'due', logicalId: 'ko-word' }], currentPairCards, 'active-recall');
+    expect(steps[0].exercise).toMatchObject({ scoringPolicy: 'hangul' });
     expect(source).toContain('session.start(exercisesFor(items, currentPairCards));');
   });
 

@@ -1,10 +1,12 @@
 import { i18n, type Messages } from '@lingui/core';
 import type { ActiveUiLocale } from './locales';
 
-const catalogs = import.meta.glob<{ messages: Messages }>([
-  './locales/en/*.po',
-  './locales/vi/*.po',
-]);
+const catalogs: Record<string, () => Promise<{ messages: Messages }>> = {
+  'en/landing': () => import('./locales/en/landing.po'),
+  'en/shell': () => import('./locales/en/shell.po'),
+  'vi/landing': () => import('./locales/vi/landing.po'),
+  'vi/shell': () => import('./locales/vi/shell.po'),
+};
 const loaded = new Map<string, Promise<void>>();
 const visitedAreas = new Set<string>();
 let activeUiLocale: ActiveUiLocale = 'en';
@@ -18,8 +20,9 @@ export const loadCatalog = (locale: ActiveUiLocale, area: string): Promise<void>
   const key = `${code}/${area}`;
   const existing = loaded.get(key);
   if (existing) return existing;
-  const importer = catalogs[`./locales/${locale === 'pseudo' ? 'en' : code}/${area}.po`];
-  if (!importer) return Promise.reject(new Error(`Missing UI catalog: ${key}`));
+  const catalogKey = locale === 'pseudo' ? `en/${area}` : key;
+  const importer = catalogs[catalogKey] ?? (() => import('./workspace-catalogs')
+    .then(({ loadWorkspaceCatalog }) => loadWorkspaceCatalog(catalogKey, key)));
   visitedAreas.add(area);
   const promise = importer().then(async ({ messages }) => {
     const catalog = locale === 'pseudo'

@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { Timestamp } from 'firebase-admin/firestore';
 import {
-  normalizeCleanupWord,
+  cleanupCardIdentity,
 } from './duplicateCleanup.js';
 
 export const LEGACY_LIBRARY_DISCOVERY_SCHEMA_VERSION = 3;
@@ -30,6 +30,7 @@ export type LegacyLibrarySourceDescriptor = {
 };
 
 export type LegacyLibraryIdentityGroup = {
+  readonly identity: string;
   readonly normalizedWord: string;
   readonly sources: readonly LegacyLibrarySourceDescriptor[];
   readonly sourceBytes: number;
@@ -183,7 +184,7 @@ export const digestLegacyLibraryValue = (value: unknown): string => (
 
 export const normalizedLegacyLibraryIdentity = (data: Record<string, unknown>): string => (
   data && typeof data === 'object' && !Array.isArray(data)
-    ? normalizeCleanupWord(data.normalizedWord) || normalizeCleanupWord(data.word)
+    ? cleanupCardIdentity(data)?.key ?? ''
     : ''
 );
 
@@ -247,17 +248,18 @@ const buildProjectedGroups = (
   scanId: string,
   sourceRevision: string,
 ): LegacyLibraryIdentityGroup[] => {
-  const byWord = new Map(previousGroups.map(group => [group.normalizedWord, {
+  const byWord = new Map(previousGroups.map(group => [group.identity, {
     ...group,
     sources: [...group.sources],
   }]));
   page.documents.forEach((document, index) => {
-    const normalizedWord = normalizedLegacyLibraryIdentity(document.data);
-    if (!normalizedWord || normalizedWord.length > 256) {
+    const identity = cleanupCardIdentity(document.data);
+    if (!identity) {
       throw new LegacyLibraryDiscoveryBlockedError('invalid-normalized-word');
     }
-    const group = byWord.get(normalizedWord) ?? {
-      normalizedWord,
+    const group = byWord.get(identity.key) ?? {
+      identity: identity.key,
+      normalizedWord: identity.normalizedWord,
       sources: [],
       sourceBytes: 0,
       schemaVersion: 3 as const,
@@ -273,7 +275,7 @@ const buildProjectedGroups = (
     if (sourceBytes > MAX_DISCOVERY_GROUP_BYTES) {
       throw new LegacyLibraryDiscoveryBlockedError('identity-group-byte-limit');
     }
-    byWord.set(normalizedWord, {
+    byWord.set(identity.key, {
       ...group,
       sources,
       sourceBytes,
@@ -359,7 +361,7 @@ export async function runLegacyLibraryDiscovery(
     const pageBytes = descriptors.reduce((total, source) => total + source.sourceBytes, 0);
     if (pageBytes > MAX_DISCOVERY_PAGE_BYTES) throw new LegacyLibraryDiscoveryBlockedError('page-byte-limit');
     const normalizedWords = [...new Set(page.documents.map(document => normalizedLegacyLibraryIdentity(document.data)))];
-    if (normalizedWords.some(word => !word || word.length > 256)) {
+    if (normalizedWords.some(word => !word || word.length > 256 + 'word:'.length)) {
       throw new LegacyLibraryDiscoveryBlockedError('invalid-normalized-word');
     }
     const previousGroups = await store.readDiscoveryGroups(ownerId, options.jobId, normalizedWords);

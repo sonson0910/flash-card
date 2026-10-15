@@ -1,9 +1,13 @@
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { i18n } from '@lingui/core';
 import { I18nProvider as LinguiProvider } from '@lingui/react';
 import { BookOpen } from 'lucide-react';
 import { describe, expect, it, vi } from 'vitest';
+import type { CardData } from '../types/card';
+import { capListenPracticeCards, listenPracticeUnavailableMessage } from '../app/AppViewStage';
 import {
+  canStartTextPractice,
   IncomingSharePreview,
   isWordMatchAvailable,
   OutgoingShareDetails,
@@ -13,12 +17,18 @@ import {
 } from './AppOverlays';
 import { getPracticeModes, registerPracticeMode, resolvePracticeModeAction, wordMatchEligibleCardCount } from '../features/practice/practiceModeRegistry';
 import { setFormatLocale } from '../lib/format';
-import type { CardData } from '../types/card';
 
 i18n.load('en', {});
 i18n.activate('en');
 
 describe('share overlays', () => {
+  it('cancels pending focus restoration when text practice opens', () => {
+    const source = readFileSync(new URL('./AppOverlays.tsx', import.meta.url), 'utf8');
+
+    expect(source).toContain('|| isTextPracticeOpen ||');
+    expect(source).toContain('[shareDialogOpen, isPracticeMenuOpen, isTextPracticeOpen, isStatsOpen, showClearConfirm]');
+  });
+
   it('renders an explicit, write-free incoming preview decision', () => {
     const html = renderToStaticMarkup(
       <LinguiProvider i18n={i18n}><IncomingSharePreview
@@ -197,8 +207,8 @@ describe('share overlays', () => {
       <LinguiProvider i18n={i18n}><PracticeModeChoices practiceCards={practiceCards} visibleLibraryCount={0} practiceAction={null} actions={actions} onRun={async () => undefined} /></LinguiProvider>,
     );
 
-    expect(wordMatchEligibleCardCount(ineligibleCards)).toBe(3);
-    expect(renderMatch(ineligibleCards)).toContain('Needs 4 cards · you have 3');
+    expect(wordMatchEligibleCardCount(ineligibleCards)).toBe(2);
+    expect(renderMatch(ineligibleCards)).toContain('Needs 4 cards · you have 2');
     expect(renderMatch(eligibleCards)).not.toContain('Needs 4 cards');
   });
 
@@ -240,5 +250,35 @@ describe('share overlays', () => {
     );
 
     expect(html).toContain('Pack drill');
+  });
+});
+
+describe('practice menu copy', () => {
+  const cards = [{
+    id: 'card-1', word: 'hello', translation: 'xin chào',
+  } as CardData];
+
+  it('only enables text practice for an authenticated online owner with usable cards', () => {
+    expect(canStartTextPractice(cards, 'owner-a', false)).toBe(true);
+    expect(canStartTextPractice(cards, null, false)).toBe(false);
+    expect(canStartTextPractice(cards, 'owner-a', true)).toBe(false);
+    expect(canStartTextPractice([{ ...cards[0], translation: ' ' }], 'owner-a', false)).toBe(false);
+  });
+
+  it('bounds a listening handoff to the existing conversation card limit', () => {
+    const selected = Array.from({ length: 8 }, (_, index) => ({
+      ...cards[0], id: `card-${index}`,
+    }));
+
+    expect(capListenPracticeCards(selected)).toHaveLength(5);
+    expect(capListenPracticeCards(selected).map(card => card.id)).toEqual([
+      'card-0', 'card-1', 'card-2', 'card-3', 'card-4',
+    ]);
+  });
+
+  it('explains why a guest or offline learner cannot open AI practice', () => {
+    expect(listenPracticeUnavailableMessage(null, false)).toBe('Sign in to practise this phrase.');
+    expect(listenPracticeUnavailableMessage('owner-a', true)).toBe('Reconnect to practise this phrase.');
+    expect(listenPracticeUnavailableMessage('owner-a', false)).toBeNull();
   });
 });

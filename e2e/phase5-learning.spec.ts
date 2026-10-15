@@ -33,16 +33,23 @@ const cards = [
 }));
 
 const emptyTodayHoverContrastTest = 'empty Today primary action retains compliant contrast while hovered';
+const dailyPlanTest = 'Today is the default four-part shell and completes the answer-feedback-rating transition';
+const dailyPlanCards = cards.map((card, index) => ({
+  ...card,
+  difficulty: index < 7 ? 'hard' : 'unrated',
+  nextReviewDate: index < 7 ? '2026-08-20T00:00:00.000Z' : undefined,
+  reviews: index < 7 ? 1 : 0,
+}));
 
 test.beforeEach(async ({ page, seedCards, blockExternalNetwork }, testInfo) => {
   await page.addInitScript(() => {
     localStorage.setItem('lingoflash_theme', 'dark');
   });
   await blockExternalNetwork(page);
-  if (testInfo.title !== emptyTodayHoverContrastTest) await seedCards(cards);
+  if (testInfo.title !== emptyTodayHoverContrastTest) await seedCards(testInfo.title === dailyPlanTest ? dailyPlanCards : cards);
 });
 
-test('Today is the default four-part shell and completes the answer-feedback-rating transition', async ({ page, signIn }) => {
+test(dailyPlanTest, async ({ page, signIn }) => {
   test.setTimeout(60_000);
   await signIn(page, '/?view=today');
 

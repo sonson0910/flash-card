@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import type { StoryInfo, PlainStoryInfo } from '../../lib/wordInfo';
 import { i18n, type MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { playCorrectSound, playIncorrectSound, playWordAudio, type WordAudioPlayback } from '../../lib/audio';
@@ -9,6 +10,7 @@ import { getProtectedFunctionUserMessage, ProtectedFunctionError } from '../../l
 import { voiceForActiveCourseCard } from '../../lib/courseVoicePreference';
 import { speechLocaleFor } from '../../lib/speechLocale';
 import { normalizeCardLanguage } from '../../lib/cardIdentity';
+import { hasReviewEvidence } from '../../lib/cardLearningStatus';
 import type { CardData } from '../../types/card';
 import { useCourseSession } from '../courses/CourseGate';
 import {
@@ -109,8 +111,11 @@ function storyFailureMessage(error: unknown): string {
     ?? translate(msg({ id: 'practice.error.story', message: 'Could not generate a story right now. Please try again.' }));
 }
 
+
 export function usePracticeGames({
   lifecycle,
+  ownerId = null,
+  activeMode,
   loadPracticePool,
   languageDrillCards: availableLanguageDrillCards,
   languageDrillScopeKey,
@@ -123,6 +128,8 @@ export function usePracticeGames({
   normalizeAnswer = value => typeof value === 'string' ? value.trim().toLocaleLowerCase() : '',
 }: {
   lifecycle: PracticeSessionLifecycle;
+  ownerId?: string | null;
+  activeMode?: string;
   loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
   languageDrillCards: readonly CardData[];
   languageDrillScopeKey: string;
@@ -155,7 +162,7 @@ export function usePracticeGames({
   const [currentLanguageDrillIndex, setCurrentLanguageDrillIndex] = useState(0);
   const [languageDrillCorrect, setLanguageDrillCorrect] = useState(0);
   const [showLanguageDrillResults, setShowLanguageDrillResults] = useState(false);
-  const [story, setStory] = useState<{ story: string; translation: string; language: string; translationLanguage: string } | null>(null);
+  const [story, setStory] = useState<((StoryInfo | PlainStoryInfo) & { language: string; translationLanguage: string }) | null>(null);
   const [storyError, setStoryError] = useState<string | null>(null);
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
   const [isStartingQuiz, setIsStartingQuiz] = useState(false);
@@ -215,23 +222,24 @@ export function usePracticeGames({
   };
 
   const scheduleDelayedAudio = (
-    timers: Set<number>,
     activity: Extract<PracticeActivity, 'quiz' | 'spelling'>,
     card: CardData,
     answerSession: number,
   ) => {
+    cancelPracticeAudio();
     const timerId = window.setTimeout(() => {
-      timers.delete(timerId);
+      quizAudioTimersRef.current.delete(timerId);
+      spellingAudioTimersRef.current.delete(timerId);
       if (lifecycle.isCurrent(answerSession) && lifecycle.isActive(activity)) {
         audioPlaybackRef.current?.cancel();
         const voice = voiceForActiveCourseCard(card, courseModel.activeCourse);
         audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl, speechLocaleFor(card), voice);
       }
     }, 400);
-    timers.add(timerId);
+    (activity === 'quiz' ? quizAudioTimersRef : spellingAudioTimersRef).current.add(timerId);
   };
 
-  useEffect(() => () => cancelPracticeAudio(), []);
+  useEffect(() => () => cancelPracticeAudio(), [ownerId, activeMode]);
   useEffect(() => {
     languageDrillAnswerLockedRef.current = false;
     setLanguageDrillCards([]);
@@ -333,9 +341,9 @@ export function usePracticeGames({
       },
     );
     if (result.status === 'ready' && isCurrentPracticePair()) {
-      const cards = cardsForPracticePair(result.value);
+      const cards = cardsForPracticePair(result.value).filter(hasReviewEvidence);
       if (cards.length < 4) {
-        reportError(translate(msg({ id: 'practice.error.quiz-card-count', message: 'You need at least 4 cards to start a quiz.' })));
+        reportError(translate(msg({ id: 'practice.error.quiz-card-count', message: 'You need at least 4 learned cards to start a quiz.' })));
       } else {
         const questions = createQuizQuestions(cards, 10, Math.random, normalizeAnswer);
         const started = await startRemoteGame(
@@ -377,7 +385,6 @@ export function usePracticeGames({
     }
     if (quizSessionRef.current) quizSessionRef.current.responses[question.card.id] = option;
     scheduleDelayedAudio(
-      quizAudioTimersRef.current,
       'quiz',
       question.card,
       lifecycle.currentToken(),
@@ -412,9 +419,9 @@ export function usePracticeGames({
     );
     if (spellingPreparationRef.current === preparationId) spellingPreparationRef.current = null;
     if (result.status === 'ready' && isCurrentPracticePair()) {
-      const cards = cardsForPracticePair(result.value);
+      const cards = cardsForPracticePair(result.value).filter(hasReviewEvidence);
       if (cards.length < 4) {
-        reportError(translate(msg({ id: 'practice.error.spelling-card-count', message: 'You need at least 4 cards for spelling practice.' })));
+        reportError(translate(msg({ id: 'practice.error.spelling-card-count', message: 'You need at least 4 learned cards for spelling practice.' })));
       } else {
         const queue = createSpellingQueue(cards);
         const started = await startRemoteGame(
@@ -457,7 +464,6 @@ export function usePracticeGames({
     }
     if (spellingSessionRef.current) spellingSessionRef.current.responses[card.id] = spellingInput;
     scheduleDelayedAudio(
-      spellingAudioTimersRef.current,
       'spelling',
       card,
       lifecycle.currentToken(),
@@ -520,10 +526,9 @@ export function usePracticeGames({
         const learningCards = activeCourseCards.filter(card => card.difficulty !== 'easy');
         const pool = learningCards.length >= 3 ? learningCards : activeCourseCards;
         const selected = createSpellingQueue(pool, 5);
-        const generated = await generateStoryContext(selected.map(card => card.word), {
-          targetLanguage,
-          translationLanguage,
-        });
+        const generated = targetLanguage === 'en' && translationLanguage === 'vi'
+          ? await generateStoryContext(selected.map(card => card.word), ownerId)
+          : await generateStoryContext(selected.map(card => card.word), { targetLanguage, translationLanguage }, ownerId);
         return {
           ...generated,
           language: targetLanguage,

@@ -143,11 +143,11 @@ export default function WeeklyRecapDialog({ open, onOpenChange, stats, showingSa
       <Dialog.Overlay className="weekly-recap-dialog-overlay" />
       <Dialog.Content className="weekly-recap-dialog crystal-chamfer">
         <div className="weekly-recap-dialog__header">
-          <Dialog.Title className="weekly-recap-dialog__title"><Trans id="weeklyRecap.dialog.title" message="Your weekly recap" /></Dialog.Title>
+          <Dialog.Title className="weekly-recap-dialog__title"><Trans {...msg({ id: 'weeklyRecap.dialog.title', message: 'Your weekly recap' })} /></Dialog.Title>
           <Dialog.Close aria-label={_(msg({ id: 'weeklyRecap.dialog.close', message: 'Close' }))} className="weekly-recap-dialog__close liquid-control"><X size={18} /></Dialog.Close>
         </div>
         <div className="weekly-recap-dialog__body">
-          {showingSavedStats && <p role="status" className="mb-3 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 text-sm text-[var(--sf-text-muted)]"><Trans id="weeklyRecap.saved-warning" message="Showing saved recap. Recent reviews may not be included." /></p>}
+          {showingSavedStats && <p role="status" className="mb-3 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'weeklyRecap.saved-warning', message: 'Showing saved recap. Recent reviews may not be included.' })} /></p>}
           <WeeklyRecapScreen
             data={data}
             dateRangeLabel={dateRangeLabel}

@@ -1,3 +1,4 @@
+import { msg } from '@lingui/core/macro';
 import type { ReactNode } from 'react';
 import { Trans } from '@lingui/react';
 import lumiThinking from '../assets/lumi/lumi-thinking.webp';
@@ -17,7 +18,7 @@ export function WorkspaceLoadingPanel({ children }: { children?: ReactNode }) {
         <span className="workspace-loading-bar workspace-loading-bar-footer skeleton-sheen" aria-hidden="true" />
         <span className="workspace-loading-label">
           <span className="workspace-loading-spinner" />
-          <span>{children ?? <Trans id="shell.loading.workspace" message="Loading workspace…" />}</span>
+          <span>{children ?? <Trans {...msg({ context: 'shell.loading.workspace', message: 'Loading workspace…' })} />}</span>
         </span>
         <img
           src={lumiThinking}

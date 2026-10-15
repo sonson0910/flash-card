@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { CardData } from '../types/card';
 const mocks = vi.hoisted(() => ({
   callable: vi.fn(),
@@ -58,6 +59,14 @@ const command: ReviewCommand = {
   fields: { reviewHistory: [] },
   fieldMask: ['reviewHistory'],
 };
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.httpsCallable.mockReturnValue(mocks.callable);
+  mocks.callable.mockResolvedValue({
+    data: { applied: true, duplicate: false, xpAwarded: 0, card: { ...card, schemaVersion: 2 } },
+  });
+});
 
 describe('review conflict recovery', () => {
   it('uses the strict V2 callable for the current client contract', async () => {
@@ -193,5 +202,17 @@ describe('review conflict recovery', () => {
       reason: 'stale-review',
     });
     expect(apply).toHaveBeenCalledOnce();
+  });
+});
+
+describe('review callable owner binding', () => {
+  it('sends the captured owner ID in the callable payload', async () => {
+    await applyReviewViaCallable({} as never, 'owner-a', command);
+
+    expect(mocks.callable).toHaveBeenCalledWith(expect.objectContaining({
+      expectedOwnerId: 'owner-a',
+      cardId: command.cardId,
+      opId: command.opId,
+    }));
   });
 });

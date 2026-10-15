@@ -126,9 +126,9 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
       <header className="shrink-0 border-b border-[var(--sf-border)] bg-[var(--sf-surface)] px-5 py-5 sm:px-8 lg:px-14 lg:pt-7">
         <div className="mx-auto flex w-full max-w-[1328px] items-start justify-between gap-4">
             <div className="min-w-0">
-              <button type="button" onClick={onClose} className="mb-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]"><Trans id="webWords.page.close-label" message="Close web words" /></button>
-              <h1 className="text-balance font-serif text-3xl font-black tracking-tight sm:text-4xl"><Trans id="webWords.page.title" message="Web words" /></h1>
-              <p className="mt-1 text-pretty text-sm text-[var(--sf-text-muted)]"><Trans id="webWords.page.subtitle" message="Words captured while reading the web." /></p>
+              <button type="button" onClick={onClose} className="mb-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]"><Trans {...msg({ id: 'webWords.page.close-label', message: 'Close web words' })} /></button>
+              <h1 className="text-balance font-serif text-3xl font-black tracking-tight sm:text-4xl"><Trans {...msg({ id: 'webWords.page.title', message: 'Web words' })} /></h1>
+              <p className="mt-1 text-pretty text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'webWords.page.subtitle', message: 'Words captured while reading the web.' })} /></p>
             </div>
             <button
               ref={closeButtonRef}
@@ -146,7 +146,7 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
         <div className="shrink-0 border-b border-[var(--sf-border)] px-5 py-3 sm:px-8 lg:px-14">
           <div className="mx-auto flex w-full max-w-[1328px] flex-wrap gap-3">
               <label className="flex items-center gap-2 text-xs font-bold text-[var(--sf-text-muted)]">
-                <Trans id="webWords.filter.site.label" message="Site" />
+                <Trans {...msg({ context: 'webWords.filter.site.label', message: 'Site' })} />
                 <select
                   value={state.filters.site ?? ''}
                   onChange={event => actions.setSiteFilter(event.target.value || null)}
@@ -157,7 +157,7 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
                 </select>
               </label>
               <label className="flex items-center gap-2 text-xs font-bold text-[var(--sf-text-muted)]">
-                <Trans id="webWords.filter.day.label" message="Day" />
+                <Trans {...msg({ context: 'webWords.filter.day.label', message: 'Day' })} />
                 <select
                   value={state.filters.day ?? ''}
                   onChange={event => actions.setDayFilter(event.target.value || null)}
@@ -168,7 +168,7 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
                 </select>
               </label>
               <label className="flex items-center gap-2 text-xs font-bold text-[var(--sf-text-muted)]">
-                <Trans id="webWords.filter.status.label" message="Status" />
+                <Trans {...msg({ context: 'webWords.filter.status.label', message: 'Status' })} />
                 <select
                   value={state.filters.tier ?? ''}
                   onChange={event => actions.setTierFilter((event.target.value || null) as typeof state.filters.tier)}
@@ -186,29 +186,29 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
         <div className="mx-auto w-full max-w-[1328px]">
             {state.status === 'loading' && (
               <p role="status" aria-live="polite" className="py-10 text-center text-sm font-semibold text-[var(--sf-text-muted)]">
-                <Trans id="webWords.status.loading" message="Loading your web words…" />
+                <Trans {...msg({ context: 'webWords.status.loading', message: 'Loading your web words…' })} />
               </p>
             )}
             {state.status === 'signed-out' && (
-              <p className="py-10 text-center text-sm font-semibold text-[var(--sf-text-muted)]"><Trans id="webWords.status.signed-out" message="Sign in to see words you saved from the web." /></p>
+              <p className="py-10 text-center text-sm font-semibold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'webWords.status.signed-out', message: 'Sign in to see words you saved from the web.' })} /></p>
             )}
             {state.status === 'error' && (
               <div className="py-10 text-center">
-                <p className="text-sm font-semibold text-[var(--sf-text-muted)]"><Trans id="webWords.status.error" message="Web words could not load. Try again." /></p>
-                <button type="button" onClick={actions.retry} className="mt-3 min-h-9 rounded-full border border-[var(--sf-border)] px-4 text-sm font-bold text-[var(--sf-text)]"><Trans id="today.error.retry" message="Try again" /></button>
+                <p className="text-sm font-semibold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'webWords.status.error', message: 'Web words could not load. Try again.' })} /></p>
+                <button type="button" onClick={actions.retry} className="mt-3 min-h-9 rounded-full border border-[var(--sf-border)] px-4 text-sm font-bold text-[var(--sf-text)]"><Trans {...msg({ id: 'today.error.retry', message: 'Try again' })} /></button>
               </div>
             )}
             {state.status === 'empty' && (
               <div className="py-10 text-center">
-                <p className="font-black text-[var(--sf-text)]"><Trans id="webWords.status.empty.title" message="No web words yet" /></p>
-                <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans id="webWords.status.empty.description" message="Save a word while reading on the web, and it will show up here." /></p>
+                <p className="font-black text-[var(--sf-text)]"><Trans {...msg({ context: 'webWords.status.empty.title', message: 'No web words yet' })} /></p>
+                <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'webWords.status.empty.description', message: 'Save a word while reading on the web, and it will show up here.' })} /></p>
               </div>
             )}
             {state.status === 'ready' && (
               <>
                 {state.groups.length === 0 && state.hasNext && (
                   <p role="status" className="py-10 text-center text-sm font-semibold text-[var(--sf-text-muted)]">
-                    <Trans id="webWords.status.empty-batch" message="No web words for this course are in this batch. Load more to keep looking." />
+                    <Trans {...msg({ context: 'webWords.status.empty-batch', message: 'No web words for this course are in this batch. Load more to keep looking.' })} />
                   </p>
                 )}
                 <ul className="grid gap-4 xl:grid-cols-2">
@@ -224,7 +224,7 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
                       disabled={state.isLoadingMore}
                       className="min-h-9 rounded-full border border-[var(--sf-border)] px-4 text-sm font-bold text-[var(--sf-text)] disabled:opacity-50"
                     >
-                      <Trans id="webWords.actions.load-more" message="Load more" />
+                      <Trans {...msg({ context: 'webWords.actions.load-more', message: 'Load more' })} />
                     </button>
                   </div>
                 )}
@@ -237,12 +237,12 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
         <footer className="shrink-0 border-t border-[var(--sf-border)] bg-[var(--sf-surface)] px-5 py-4 sm:px-8 lg:px-14">
           <div className="mx-auto flex w-full max-w-[1328px] items-center justify-between gap-3">
               {state.selectedCardIds.size > 0 && <p className="text-sm font-bold text-[var(--sf-text)]">
-                <Trans id="webWords.selection.count" message="{count, plural, one {# word selected} other {# words selected}}" values={{ count: state.selectedCardIds.size }} />
+                <Trans {...msg({ context: 'webWords.selection.count', message: '{count, plural, one {# word selected} other {# words selected}}' })} values={{ count: state.selectedCardIds.size }} />
               </p>}
               <button type="button" onClick={state.selectedCardIds.size > 0 ? actions.addSelectedToToday : actions.addAllFilteredToToday} className="brand-action min-h-11 rounded-full bg-[var(--sf-brand)] px-5 font-extrabold text-[var(--sf-on-brand)]">
                 {state.selectedCardIds.size > 0
-                  ? <Trans id="webWords.actions.add-to-today" message="Add to today" />
-                  : <Trans id="webWords.actions.add-all-to-today" message="Add all {count} to today" values={{ count: state.groups.flatMap(group => group.cards).length }} />}
+                  ? <Trans {...msg({ context: 'webWords.actions.add-to-today', message: 'Add to today' })} />
+                  : <Trans {...msg({ context: 'webWords.actions.add-all-to-today', message: 'Add all {count} to today' })} values={{ count: state.groups.flatMap(group => group.cards).length }} />}
               </button>
           </div>
         </footer>
@@ -250,11 +250,11 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
 
       {state.addToTodayStatus !== 'idle' && (
         <p role="status" aria-live="polite" className="shrink-0 border-t border-[var(--sf-border)] px-5 py-3 text-sm font-semibold text-[var(--sf-brand-text)] sm:px-8 lg:px-14">
-              {state.addToTodayStatus === 'added' && <Trans id="webWords.feedback.added" message="Added to today's new words." />}
-              {state.addToTodayStatus === 'added-partial' && <Trans id="webWords.feedback.added-partial" message="Added the words that fit today; the rest are queued for a later session." />}
-              {['added-capped', 'added-unloaded', 'added-session-not-started', 'added-after-new-stage'].includes(state.addToTodayStatus) && <Trans id="webWords.feedback.not-added" message="These cards were not added to today's new-word stage. You can study them elsewhere or try again later." />}
-              {state.addToTodayStatus === 'scheduled-normal-review' && <Trans id="webWords.feedback.scheduled-normal-review" message="These cards already follow their normal review schedule." />}
-              {state.addToTodayHasNormallyScheduledCards && state.addToTodayStatus !== 'scheduled-normal-review' && <span className="ml-1"><Trans id="webWords.feedback.some-scheduled-normal-review" message="Other selected cards follow their normal review schedule." /></span>}
+              {state.addToTodayStatus === 'added' && <Trans {...msg({ context: 'webWords.feedback.added', message: 'Added to today\'s new words.' })} />}
+              {state.addToTodayStatus === 'added-partial' && <Trans {...msg({ context: 'webWords.feedback.added-partial', message: 'Added the words that fit today; the rest are queued for a later session.' })} />}
+              {['added-capped', 'added-unloaded', 'added-session-not-started', 'added-after-new-stage'].includes(state.addToTodayStatus) && <Trans {...msg({ context: 'webWords.feedback.not-added', message: 'These cards were not added to today\'s new-word stage. You can study them elsewhere or try again later.' })} />}
+              {state.addToTodayStatus === 'scheduled-normal-review' && <Trans {...msg({ context: 'webWords.feedback.scheduled-normal-review', message: 'These cards already follow their normal review schedule.' })} />}
+              {state.addToTodayHasNormallyScheduledCards && state.addToTodayStatus !== 'scheduled-normal-review' && <span className="ml-1"><Trans {...msg({ context: 'webWords.feedback.some-scheduled-normal-review', message: 'Other selected cards follow their normal review schedule.' })} /></span>}
         </p>
       )}
     </section>

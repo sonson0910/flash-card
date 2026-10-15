@@ -33,12 +33,44 @@ vi.mock('firebase/functions', () => ({
 import {
   askCardTutor,
   cancelWordInfoGeneration,
+  askVocabularyTutor,
+  extractVocabulary,
+  generateDialogue,
+  generateMnemonic,
   generateStoryContext,
   generateWordInfo,
+  sendTextConversationTurn,
   translateText,
   withNetworkRetry,
 } from './gemini';
 import { ProtectedFunctionError } from './protectedFunctionsCapability';
+import type {
+  TextConversationMissionV1,
+  TextConversationRequestV1,
+} from '../features/conversation/textConversationModel';
+
+const storyResult = {
+  title: 'A short story',
+  segments: [
+    { english: 'A short scene begins.', vietnamese: 'Một cảnh ngắn bắt đầu.' },
+    { english: 'The learner finds an opportunity.', vietnamese: 'Người học tìm thấy một cơ hội.' },
+  ],
+  comprehension: {
+    question: 'What does the learner find?',
+    options: ['An opportunity', 'A problem', 'A train'],
+    correctIndex: 0 as const,
+    explanationVi: 'Người học tìm thấy một cơ hội.',
+  },
+  grammar: {
+    label: 'Past simple',
+    explanationVi: 'Dùng thì quá khứ đơn.',
+    sourceSentence: 'The learner finds an opportunity.',
+    prompt: 'Rewrite the sentence in the past.',
+    acceptedAnswer: 'The learner found an opportunity.',
+  },
+  retellPrompt: 'Retell the story in two sentences.',
+  targetPhrases: ['opportunity'],
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -226,7 +258,7 @@ describe('production AI protected-service capability', () => {
     runtime.auth.currentUser = { uid: 'owner-2' };
     functions.resolve({ region: 'asia-southeast1' });
 
-    await expect(pending).rejects.toThrow('AI generation needs a current sign-in.');
+    await expect(pending).rejects.toMatchObject({ kind: 'authentication', code: 'owner-mismatch' });
     expect(streamCall).not.toHaveBeenCalled();
   });
 
@@ -336,17 +368,19 @@ describe('production AI protected-service capability', () => {
         result: action === 'word'
           ? wordInfo
           : action === 'story'
-            ? { story: 'A short story.', translation: 'Một câu chuyện ngắn.' }
+            ? storyResult
             : 'Một tình huống thuận lợi.',
       },
     }));
 
     await expect(generateWordInfo('opportunity')).resolves.toMatchObject({ translation: 'cơ hội' });
-    await expect(generateStoryContext(['opportunity'])).resolves.toEqual({
-      story: 'A short story.',
-      translation: 'Một câu chuyện ngắn.',
-    });
+    await expect(generateStoryContext(['opportunity'])).resolves.toEqual(storyResult);
     await expect(translateText('A favorable situation.')).resolves.toBe('Một tình huống thuận lợi.');
+
+    expect(runtime.callable).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'story',
+      input: { schemaVersion: 2, words: ['opportunity'] },
+    }));
 
     expect(runtime.httpsCallable).toHaveBeenCalledTimes(3);
     expect(runtime.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'generateVocabulary');
@@ -371,6 +405,255 @@ describe('production AI protected-service capability', () => {
       expectedOwnerId: 'owner-1',
       input: { words: ['안녕'], targetLanguage: 'ko', translationLanguage: 'vi' },
     });
+  });
+  it('uses dedicated bounded tutor and mnemonic actions', async () => {
+    runtime.callable.mockImplementation(async ({ action }: { action: string }) => ({
+      data: { result: action === 'tutor' ? '  Ask a question.  ' : '  Greet sounds like great.  ' },
+    }));
+
+    await expect(
+      askVocabularyTutor({
+        word: ' lead ',
+        translation: ' lãnh đạo ',
+        partOfSpeech: ' verb ',
+        question: ' How is this used? ',
+      }),
+    ).resolves.toBe('Ask a question.');
+    await expect(
+      generateMnemonic({ word: 'greet', translation: 'chào', partOfSpeech: 'verb' }),
+    ).resolves.toBe('Greet sounds like great.');
+
+    expect(runtime.callable.mock.calls.map(([payload]) => payload)).toEqual([
+      {
+        action: 'tutor', expectedOwnerId: 'owner-1',
+        input: {
+          word: 'lead',
+          translation: 'lãnh đạo',
+          partOfSpeech: 'verb',
+          question: 'How is this used?',
+        },
+      },
+      {
+        action: 'mnemonic', expectedOwnerId: 'owner-1',
+        input: { word: 'greet', translation: 'chào', partOfSpeech: 'verb' },
+      },
+    ]);
+  });
+
+  it('uses dedicated extractor and dialogue actions with validated results', async () => {
+    runtime.callable.mockImplementation(async ({ action }: { action: string }) => ({
+      data: {
+        result:
+          action === 'extract'
+            ? [
+                {
+                  word: 'resilient',
+                  translation: 'bền bỉ',
+                  partOfSpeech: 'adjective',
+                  cefrLevel: 'B1',
+                  example: 'She is resilient.',
+                },
+              ]
+            : {
+                title: 'At café',
+                context: 'Two friends meet.',
+                turns: [
+                  { speaker: 'Alex', en: 'Hello.', vi: 'Xin chào.' },
+                  { speaker: 'Sarah', en: 'Hi.', vi: 'Chào.' },
+                  { speaker: 'Alex', en: 'Ready?', vi: 'Sẵn sàng?' },
+                  { speaker: 'Sarah', en: 'Yes.', vi: 'Có.' },
+                ],
+              },
+      },
+    }));
+
+    await expect(extractVocabulary(` ${'text '.repeat(600)} `)).resolves.toEqual([
+      {
+        word: 'resilient',
+        translation: 'bền bỉ',
+        partOfSpeech: 'adjective',
+        cefrLevel: 'B1',
+        example: 'She is resilient.',
+      },
+    ]);
+    await expect(
+      generateDialogue([
+        { word: 'lead', translation: 'lãnh đạo' },
+        { word: 'resilient', translation: 'bền bỉ' },
+      ]),
+    ).resolves.toMatchObject({ title: 'At café', turns: expect.any(Array) });
+
+    expect(runtime.callable.mock.calls.map(([payload]) => payload)).toEqual([
+      { action: 'extract', expectedOwnerId: 'owner-1', input: expect.stringMatching(/^text text/) },
+      {
+        action: 'dialogue', expectedOwnerId: 'owner-1',
+        input: [
+          { word: 'lead', translation: 'lãnh đạo' },
+          { word: 'resilient', translation: 'bền bỉ' },
+        ],
+      },
+    ]);
+    expect((runtime.callable.mock.calls[0][0] as { input: string }).input.length).toBe(2_000);
+  });
+
+  it('bounds multilingual extraction and fences its captured owner', async () => {
+    const extracted = [{ word: '문장', translation: 'câu', partOfSpeech: 'noun', cefrLevel: 'A1', example: '문장을 읽어요.' }];
+    runtime.callable.mockResolvedValue({ data: { result: extracted } });
+    const text = ' 문장 '.repeat(1000);
+    await expect(extractVocabulary(text, { targetLanguage: 'ko', translationLanguage: 'vi' }, 'owner-1')).resolves.toEqual(extracted);
+    expect(runtime.callable).toHaveBeenCalledWith({
+      action: 'extract', expectedOwnerId: 'owner-1',
+      input: { text: text.trim().slice(0, 2000), targetLanguage: 'ko', translationLanguage: 'vi' },
+    });
+    runtime.auth.currentUser = { uid: 'owner-2' };
+    await expect(extractVocabulary(text, { targetLanguage: 'ko', translationLanguage: 'vi' }, 'owner-1'))
+      .rejects.toMatchObject({ kind: 'authentication', code: 'owner-mismatch' });
+    expect(runtime.callable).toHaveBeenCalledOnce();
+  });
+
+  it('rejects malformed structured AI responses', async () => {
+    runtime.callable.mockResolvedValue({
+      data: {
+        result: { title: 'Too short', context: 'No turns', turns: [] },
+      },
+    });
+
+    await expect(generateDialogue([{ word: 'lead', translation: 'lãnh đạo' }])).rejects.toThrow(
+      'Invalid AI dialogue response',
+    );
+  });
+
+  it('sends one bounded text conversation turn through the existing callable', async () => {
+    runtime.callable.mockResolvedValue({ data: { result: {
+      reply: 'The menu is right here.',
+      translation: 'Thực đơn ở ngay đây.',
+      correction: null,
+      sessionComplete: false,
+      nextPrompt: 'Ask for a recommendation.',
+    } } });
+    const mission: TextConversationMissionV1 = {
+      schemaVersion: 1,
+      id: 'cafe-mission',
+      title: 'At the café',
+      goal: 'Order a drink.',
+      cards: [{ id: 'menu', word: 'menu', translation: 'thực đơn' }],
+    };
+    const request: TextConversationRequestV1 = {
+      sessionId: 'session-1',
+      mission,
+      turn: 1,
+      history: [],
+      userMessage: 'Can I see the menu?',
+    };
+
+    await expect(sendTextConversationTurn(request)).resolves.toMatchObject({
+      reply: 'The menu is right here.',
+      sessionComplete: false,
+    });
+    expect(runtime.callable).toHaveBeenCalledWith({
+      action: 'conversation', expectedOwnerId: 'owner-1',
+      input: request,
+    });
+  });
+
+  it('forces the transport completion flag on the sixth learner turn', async () => {
+    runtime.callable.mockResolvedValue({ data: { result: {
+      reply: 'That completes the mission.',
+      correction: null,
+      sessionComplete: false,
+    } } });
+    const request: TextConversationRequestV1 = {
+      sessionId: 'session-1',
+      mission: {
+        schemaVersion: 1,
+        id: 'cafe-mission',
+        title: 'At the café',
+        goal: 'Order a drink.',
+        cards: [{ id: 'menu', word: 'menu', translation: 'thực đơn' }],
+      },
+      turn: 6,
+      history: Array.from({ length: 10 }, (_, index) => ({
+        role: (index % 2 === 0 ? 'user' : 'assistant') as 'user' | 'assistant',
+        text: `message-${index}`,
+      })),
+      userMessage: 'I will order the menu item now.',
+    };
+
+    await expect(sendTextConversationTurn(request)).resolves.toMatchObject({
+      sessionComplete: true,
+    });
+  });
+
+  it('rejects an oversized provider reply instead of truncating it', async () => {
+    runtime.callable.mockResolvedValue({ data: { result: {
+      reply: 'x'.repeat(801),
+      sessionComplete: false,
+    } } });
+    const request: TextConversationRequestV1 = {
+      sessionId: 'session-1',
+      mission: {
+        schemaVersion: 1,
+        id: 'cafe-mission',
+        title: 'At the café',
+        goal: 'Order a drink.',
+        cards: [{ id: 'menu', word: 'menu', translation: 'thực đơn' }],
+      },
+      turn: 1,
+      history: [],
+      userMessage: 'Can I see the menu?',
+    };
+
+    await expect(sendTextConversationTurn(request)).rejects.toThrow(
+      'Invalid AI text conversation response',
+    );
+  });
+
+  it('stops a conversation retry when the authenticated owner changes', async () => {
+    runtime.callable.mockImplementationOnce(async () => {
+      runtime.auth.currentUser = { uid: 'owner-2' };
+      throw Object.assign(new Error('temporarily unavailable'), { code: 'functions/unavailable' });
+    });
+    const request: TextConversationRequestV1 = {
+      sessionId: 'session-1',
+      mission: {
+        schemaVersion: 1,
+        id: 'cafe-mission',
+        title: 'At the café',
+        goal: 'Order a drink.',
+        cards: [{ id: 'menu', word: 'menu', translation: 'thực đơn' }],
+      },
+      turn: 1,
+      history: [],
+      userMessage: 'Can I see the menu?',
+    };
+
+    const result = sendTextConversationTurn(request, 'owner-1');
+    await expect(result).rejects.toMatchObject({
+      kind: 'authentication',
+      code: 'owner-mismatch',
+      retryable: false,
+    });
+    expect(runtime.callable).toHaveBeenCalledOnce();
+  });
+
+  it('rejects malformed plain-text AI responses', async () => {
+    runtime.callable.mockResolvedValue({ data: { result: null } });
+
+    await expect(
+      askVocabularyTutor({ word: 'lead', translation: 'lãnh đạo', question: 'How?' }),
+    ).rejects.toThrow('Invalid AI tutor response');
+  });
+
+  it('rejects empty extractor input before making a request', async () => {
+    await expect(extractVocabulary('   ')).rejects.toThrow('Vocabulary text is required');
+    expect(runtime.callable).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid dialogue cards before making a request', async () => {
+    await expect(generateDialogue([{ word: 'lead', translation: '' }])).rejects.toThrow(
+      'A vocabulary card requires word and translation',
+    );
+    expect(runtime.callable).not.toHaveBeenCalled();
   });
 
   it('rejects signed-out generation with a typed non-retryable authentication error', async () => {

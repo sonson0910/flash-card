@@ -5,6 +5,7 @@ import {
   readLibraryQuery,
   type LibraryCatalogQuery,
 } from './libraryCatalogQuery';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 
 describe('libraryCatalogQuery', () => {
   it('bounds and normalizes untrusted URL query values', () => {
@@ -20,7 +21,7 @@ describe('libraryCatalogQuery', () => {
     const current: LibraryCatalogQuery = {
       search: 'hello',
       category: 'Travel',
-      deck: 'Deck A',
+      deck: { kind: 'deck', name: 'Deck A' },
       difficulty: 'hard',
       partOfSpeech: 'noun',
       starred: true,
@@ -31,7 +32,7 @@ describe('libraryCatalogQuery', () => {
     expect(normalizeLibraryQuery(current)).toEqual({
       search: 'hello',
       category: 'All',
-      deck: 'All',
+      deck: ALL_PRACTICE_DECK_SCOPE,
       difficulty: 'All',
       partOfSpeech: 'All',
       starred: false,
@@ -42,7 +43,7 @@ describe('libraryCatalogQuery', () => {
     expect(normalizeLibraryQuery({ ...current, search: '', difficulty: 'due' })).toEqual({
       search: '',
       category: 'All',
-      deck: 'All',
+      deck: ALL_PRACTICE_DECK_SCOPE,
       difficulty: 'due',
       partOfSpeech: 'All',
       starred: false,
@@ -57,7 +58,7 @@ describe('libraryCatalogQuery', () => {
       {
         search: 'new word',
         category: 'All',
-        deck: 'IELTS',
+        deck: { kind: 'deck', name: 'IELTS' },
         difficulty: 'All',
         partOfSpeech: 'All',
         starred: true,
@@ -67,5 +68,17 @@ describe('libraryCatalogQuery', () => {
     );
 
     expect(location).toBe('/app?campaign=summer&q=new+word&deck=IELTS&starred=1&page=2#library');
+  });
+
+  it.each([
+    ['?deck=All', ALL_PRACTICE_DECK_SCOPE, '/app'],
+    ['?deck=Unassigned', { kind: 'unassigned' }, '/app?deck=Unassigned'],
+    ['?deck=All&deckKind=custom', { kind: 'deck', name: 'All' }, '/app?deck=All&deckKind=custom'],
+    ['?deck=Unassigned&deckKind=custom', { kind: 'deck', name: 'Unassigned' }, '/app?deck=Unassigned&deckKind=custom'],
+  ] as const)('round-trips %s without conflating custom reserved names', (url, scope, serialized) => {
+    const parsed = readLibraryQuery(url);
+
+    expect(parsed.deck).toEqual(scope);
+    expect(createLibraryLocation('/app', parsed)).toBe(serialized);
   });
 });

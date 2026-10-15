@@ -87,6 +87,29 @@ vi.mock('../../lib/gemini', () => ({
 
 import { shuffleQuizOptions, usePracticeGames } from './usePracticeGames';
 
+const storyResult = {
+  title: 'A short story',
+  segments: [
+    { english: 'Story scene one.', vietnamese: 'Cảnh truyện một.' },
+    { english: 'Story scene two.', vietnamese: 'Cảnh truyện hai.' },
+  ],
+  comprehension: {
+    question: 'What happened?',
+    options: ['Scene one', 'Scene two', 'Nothing'],
+    correctIndex: 0 as const,
+    explanationVi: 'Đó là cảnh thứ nhất.',
+  },
+  grammar: {
+    label: 'Past simple',
+    explanationVi: 'Dùng thì quá khứ đơn.',
+    sourceSentence: 'She walks.',
+    prompt: 'Rewrite in the past.',
+    acceptedAnswer: 'She walked.',
+  },
+  retellPrompt: 'Retell the story briefly.',
+  targetPhrases: ['word-1'],
+};
+
 const card = (index: number, difficulty: CardData['difficulty'] = 'good'): CardData => ({
   id: `card-${index}`,
   word: `word-${index}`,
@@ -115,6 +138,7 @@ const renderPracticeGames = (
 ) => {
   const dependencies = {
     lifecycle: createPracticeSessionLifecycle('owner-a'),
+    ownerId: 'owner-a',
     loadPracticePool: vi.fn(async () => pool),
     languageDrillCards: pool,
     languageDrillScopeKey: 'owner-a:en',
@@ -193,8 +217,70 @@ describe('usePracticeGames', () => {
     await games.startSpelling();
 
     expect(dependencies.openView).not.toHaveBeenCalled();
-    expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards to start a quiz.');
-    expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards for spelling practice.');
+    expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 learned cards to start a quiz.');
+    expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 learned cards for spelling practice.');
+  });
+
+  it('gates quiz and spelling on four learned cards, then excludes fresh cards from both queues', async () => {
+    const fresh = (index: number) => ({ ...card(index, 'unrated'), reviews: 0, correctStreak: 0 });
+    const learnedPool = [card(1), card(2), card(3), card(4)];
+    const { dependencies, render } = renderPracticeGames([...learnedPool, fresh(5), fresh(6)]);
+
+    await render().startQuiz();
+    expect(render().quizQuestions.map(question => question.card.id).sort()).toEqual(
+      learnedPool.map(candidate => candidate.id).sort(),
+    );
+
+    render().reset();
+    await render().startSpelling();
+    expect(render().spellingCards.map(candidate => candidate.id).sort()).toEqual(
+      learnedPool.map(candidate => candidate.id).sort(),
+    );
+
+    expect(dependencies.reportError).not.toHaveBeenCalled();
+  });
+
+  it('requires four learned cards even when the raw pool has four or more cards', async () => {
+    const fresh = (index: number) => ({ ...card(index, 'unrated'), reviews: 0, correctStreak: 0 });
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), fresh(4), fresh(5)]);
+
+    await render().startQuiz();
+    await render().startSpelling();
+
+    expect(dependencies.openView).not.toHaveBeenCalled();
+    expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 learned cards to start a quiz.');
+    expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 learned cards for spelling practice.');
+  });
+
+  it('does not open Word Match when fewer than four pairs are eligible', async () => {
+    const pool = [
+      card(1),
+      card(2),
+      { ...card(3), word: 'word-2', translation: 'another translation' },
+      { ...card(4), word: '', translation: 'missing word' },
+      { ...card(5), word: 'same', translation: 'same' },
+    ];
+    const { dependencies, render } = renderPracticeGames(pool);
+
+    await render().startMatch();
+
+    expect(dependencies.openView).not.toHaveBeenCalledWith('match');
+    expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards to play Word Match.');
+  });
+
+  it('requires four unique nonblank pairs before opening Word Match', async () => {
+    const pool = [
+      card(1), card(2), card(3),
+      { ...card(1), id: 'duplicate', word: ' WORD-1 ', translation: ' translation-1 ' },
+      { ...card(4), word: ' ' },
+      { ...card(5), translation: ' ' },
+    ];
+    const { dependencies, render } = renderPracticeGames(pool);
+
+    await render().startMatch();
+
+    expect(dependencies.openView).not.toHaveBeenCalled();
+    expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards to play Word Match.');
   });
 
   it('starts a language drill from its supplied course cards without loading a practice pool', async () => {
@@ -217,7 +303,7 @@ describe('usePracticeGames', () => {
 
     await render().startQuiz();
 
-    expect(dependencies.reportError).toHaveBeenCalledWith('Bạn cần ít nhất 4 thẻ để bắt đầu bài kiểm tra.');
+    expect(dependencies.reportError).toHaveBeenCalledWith('Bạn cần ít nhất 4 thẻ đã học để bắt đầu bài kiểm tra.');
   });
 
   it('requires four unique nonblank pairs before opening Word Match', async () => {
@@ -689,6 +775,22 @@ describe('usePracticeGames', () => {
     expect(playback.cancel).toHaveBeenCalledOnce();
   });
 
+  it('cancels owned playback when navigating away after delayed audio starts', async () => {
+    const cancel = vi.fn();
+    const playback = Object.assign(cancel, { cancel });
+    audio.word.mockReturnValue(playback);
+    const { render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    await render().startQuiz();
+    let games = render();
+
+    games.selectQuizAnswer(games.quizQuestions[0].correctAnswer);
+    vi.advanceTimersByTime(400);
+    games = render();
+    games.nextQuizQuestion();
+
+    expect(playback.cancel).toHaveBeenCalledOnce();
+  });
+
   it('cancels delayed quiz audio when quiz state is cleared', async () => {
     const { render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
     await render().startQuiz();
@@ -786,7 +888,7 @@ describe('usePracticeGames', () => {
   });
 
   it('uses non-easy cards for a story when at least three are available', async () => {
-    gemini.generateStoryContext.mockResolvedValue({ story: 'Story', translation: 'Translation' });
+    gemini.generateStoryContext.mockResolvedValue(storyResult);
     const pool = [card(1, 'easy'), card(2, 'hard'), card(3, 'good'), card(4, 'unrated'), card(5, 'easy')];
     const { dependencies, render } = renderPracticeGames(pool);
 
@@ -794,6 +896,7 @@ describe('usePracticeGames', () => {
 
     const selectedWords = gemini.generateStoryContext.mock.calls[0][0] as string[];
     expect(selectedWords.sort()).toEqual(['word-2', 'word-3', 'word-4']);
+    expect(gemini.generateStoryContext).toHaveBeenCalledWith(expect.any(Array), 'owner-a');
     expect(dependencies.openView).toHaveBeenCalledWith('story');
   });
 
@@ -809,7 +912,7 @@ describe('usePracticeGames', () => {
     expect(render().story).toMatchObject({ language: 'ko', translationLanguage: 'vi' });
     expect(gemini.generateStoryContext).toHaveBeenCalledWith(
       expect.arrayContaining(['word-1', 'word-2', 'word-3', 'word-4']),
-      { targetLanguage: 'ko', translationLanguage: 'vi' },
+      { targetLanguage: 'ko', translationLanguage: 'vi' }, 'owner-a',
     );
   });
 
@@ -833,7 +936,7 @@ describe('usePracticeGames', () => {
 
   it('opens the story loading view before waiting for the practice pool', async () => {
     const pool = deferred<CardData[]>();
-    gemini.generateStoryContext.mockResolvedValue({ story: 'Story', translation: 'Translation' });
+    gemini.generateStoryContext.mockResolvedValue(storyResult);
     const { dependencies, render } = renderPracticeGames([]);
     dependencies.loadPracticePool.mockImplementation(() => pool.promise);
 

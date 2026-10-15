@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardQueryState } from './cardQuery';
+import { ALL_PRACTICE_DECK_SCOPE, practiceDeckScopeForLibraryDeck } from './practiceScope';
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn(), doc: vi.fn(), documentId: vi.fn(), endAt: vi.fn(), getCountFromServer: vi.fn(),
@@ -28,7 +29,11 @@ const values = <T>(items: readonly T[]): T[] => [...items];
 
 const queryStates = function* (): Generator<CardQueryState> {
   for (const category of values([null, 'IELTS'])) {
-    for (const customDeck of values<CardQueryState['customDeck']>([null, 'Deck', 'unassigned'])) {
+    for (const customDeck of values<CardQueryState['customDeck']>([
+      ALL_PRACTICE_DECK_SCOPE,
+      practiceDeckScopeForLibraryDeck('Deck'),
+      practiceDeckScopeForLibraryDeck('Unassigned'),
+    ])) {
       for (const difficulty of values<CardQueryState['difficulty']>([null, 'easy', 'good', 'hard', 'unrated', 'due'])) {
         for (const partOfSpeech of values([null, 'noun'])) {
           for (const bookmarkedOnly of [false, true]) {
@@ -102,6 +107,7 @@ describe('library Firestore query index contract', () => {
         { fieldPath: 'lexemeId', order: 'ASCENDING' },
         { fieldPath: 'editorialStatus', order: 'ASCENDING' },
         { fieldPath: 'schemaVersion', order: 'ASCENDING' },
+        { fieldPath: '__name__', order: 'ASCENDING' },
       ],
     });
   });

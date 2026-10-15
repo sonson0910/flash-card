@@ -97,6 +97,24 @@ describe('production artifact secret scan', () => {
     expect(result.status, result.stderr).toBe(0);
   });
 
+  it('allows public Firebase web API keys declared by sealed deployment targets', () => {
+    const productionKey = `AIza${'A'.repeat(35)}`;
+    const stagingKey = `AIza${'B'.repeat(35)}`;
+    const directory = createArtifact(
+      `window.firebaseTargets = ["${productionKey}", "${stagingKey}"];`,
+      {
+        targets: {
+          production: { apiKey: productionKey },
+          staging: { apiKey: stagingKey },
+        },
+      },
+    );
+
+    const result = scan(directory);
+
+    expect(result.status, result.stderr).toBe(0);
+  });
+
   it('rejects a Google API key that is not declared by the Firebase app config', () => {
     const publicFirebaseApiKey = `AIza${'A'.repeat(35)}`;
     const unlistedGoogleApiKey = `AIza${'B'.repeat(35)}`;

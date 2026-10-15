@@ -86,7 +86,7 @@ class MemoryStorage {
 
 const setup = (
   url = 'https://sonflash.test/library',
-  storage?: MemoryStorage,
+  storage: MemoryStorage | null = new MemoryStorage(),
   coursePort?: { ensureCourseForIncomingShare(preview: unknown): Promise<void> },
 ) => {
   const browser = new FakeBrowser(url);
@@ -747,6 +747,29 @@ describe('shared deck session controller', () => {
         value: 'word-0', language: 'en', translation: 'word-0-vi',
         translationLanguage: 'vi', origin: 'manual',
       }]));
+  });
+  it('does not create a share when its retry operation cannot be persisted', async () => {
+    const { controller, adapter } = setup('https://sonflash.test/library', null);
+    await controller.activate('owner-1');
+
+    await expect(controller.actions.createShare({
+      category: 'IELTS', cards: [card('apple')], total: 1, hasNext: false,
+    })).resolves.toEqual({ status: 'failed' });
+
+    expect(adapter.create).not.toHaveBeenCalled();
+  });
+
+  it('does not create a share when persistent storage rejects the operation', async () => {
+    const storage = new MemoryStorage();
+    vi.spyOn(storage, 'setItem').mockImplementation(() => { throw new Error('storage denied'); });
+    const { controller, adapter } = setup('https://sonflash.test/library', storage);
+    await controller.activate('owner-1');
+
+    await expect(controller.actions.createShare({
+      category: 'IELTS', cards: [card('apple')], total: 1, hasNext: false,
+    })).resolves.toEqual({ status: 'failed' });
+
+    expect(adapter.create).not.toHaveBeenCalled();
   });
 
   it('does not expose an old owner share to the next owner', async () => {

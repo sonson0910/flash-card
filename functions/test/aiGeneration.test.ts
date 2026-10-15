@@ -8,7 +8,11 @@ describe('AI generation limits', () => {
       word: 2_048,
       story: 1_024,
       translate: 1_536,
-      tutor: 768,
+      tutor: 1_024,
+      mnemonic: 512,
+      extract: 1_536,
+      dialogue: 2_048,
+      conversation: 1_024,
     });
 
     for (const maximum of Object.values(MAX_AI_OUTPUT_TOKENS)) {
@@ -36,9 +40,18 @@ describe('AI generation limits', () => {
   it('wires the bounded configuration into every model request', () => {
     const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
 
-    for (const action of ['word', 'story', 'translate', 'tutor']) {
+    for (const action of ['word', 'story', 'translate', 'tutor', 'mnemonic', 'extract', 'dialogue', 'conversation']) {
       expect(source).toContain(`config: createAiGenerationConfig('${action}'`);
     }
+    expect(source).toMatch(/responseSchema:\s*{\s*type:\s*Type\.ARRAY/);
+    expect(source).toContain("input.action === 'extract'");
+    expect(source).toContain("input.action === 'dialogue'");
+    expect(source).toContain("input.action === 'conversation'");
+    expect(source).toContain("input.schemaVersion === 1");
+    expect(source).toContain('Write an engaging English story of at most 150 words');
+    expect(source).toContain('parseStoryModelResponse(response.text, words)');
+    expect(source).toContain('never comment on pronunciation');
+    expect(source).toContain("required: ['reply', 'sessionComplete']");
   });
 
   it('keeps webpage context explicitly data-only in the word prompt', () => {
@@ -55,18 +68,10 @@ describe('AI generation limits', () => {
     );
 
     expect(generateVocabulary).toMatch(/maxInstances:\s*1/);
-    // The word action only spends the hourly Gemini budget once it knows a real
-    // reservation (not a cached replay or an in-flight poll) needs the model; story and
-    // translate still spend it up front, next to their own allowance reservation. See
-    // generateVocabularyCallable.test.ts for the behavioural coverage of that branching,
-    // the request-hash conflict mapping, and the refund-preserves-original-error paths.
-    expect(generateVocabulary.match(/await consumeBudget/g)).toHaveLength(3);
-    for (const action of ['word', 'story', 'translate']) {
-      const actionStart = generateVocabulary.indexOf(`if (input.action === '${action}')`);
-      const nextActionStart = generateVocabulary.indexOf('if (input.action ===', actionStart + 1);
-      const actionBody = generateVocabulary.slice(actionStart, nextActionStart === -1 ? undefined : nextActionStart);
-      expect(actionBody).toMatch(/budget\.message,\s*'gemini',\s*MAX_GEMINI_CALLS_PER_HOUR/);
-    }
+    // Word replays avoid model spend; all non-card tools share the allowance boundary.
+    expect(generateVocabulary.match(/await consumeBudget/g)).toHaveLength(2);
+    expect(generateVocabulary.match(/budget\.message,\s*'gemini',\s*MAX_GEMINI_CALLS_PER_HOUR/g)).toHaveLength(2);
+    expect(generateVocabulary).not.toContain('ai.models.generateContent(');
     expect(source).toContain('consumeRateLimitFailClosed');
     expect(source).toContain('consumeOwnerAndServiceBudget');
     expect(source).not.toContain('createMemoryRateLimitStore');

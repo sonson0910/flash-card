@@ -9,6 +9,9 @@ import productionFirebaseConfig from './firebase-applet-config.json';
 const runtimeSourceId = path.resolve(__dirname, 'src/app/AppRuntime.tsx');
 const runtimeInitialId = path.resolve(__dirname, 'src/app/AppRuntimeInitial.virtual.tsx');
 const runtimeRetryId = path.resolve(__dirname, 'src/app/AppRuntimeRetry.virtual.tsx');
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const appRuntimeVariantsPlugin = (): Plugin => ({
   name: 'app-runtime-variants',
   enforce: 'pre',
@@ -19,7 +22,25 @@ const appRuntimeVariantsPlugin = (): Plugin => ({
   },
   load(id) {
     if (id !== runtimeInitialId && id !== runtimeRetryId) return null;
-    return fs.readFileSync(runtimeSourceId, 'utf8');
+    const variant = id === runtimeInitialId ? 'initial' : 'retry';
+    return `export { default } from ${JSON.stringify(runtimeSourceId)}; export const runtimeVariant = ${JSON.stringify(variant)};`;
+  },
+});
+
+const appRuntimeRetryIdentityPlugin = (): Plugin => ({
+  name: 'app-runtime-retry-identity',
+  apply: 'build',
+  renderChunk(code, chunk) {
+    if (chunk.facadeModuleId !== runtimeRetryId) return null;
+    const runtimeAsset = chunk.imports.find(asset => /(?:^|\/)AppRuntime-[^/]+\.js$/.test(asset));
+    if (!runtimeAsset) throw new Error('Missing shared AppRuntime chunk for retry entry.');
+    const runtimeSpecifier = runtimeAsset.replace(/^assets\//, '');
+    const retryCode = code.replace(
+      new RegExp(`(["'])\\./${escapeRegExp(runtimeSpecifier)}\\1`),
+      `$1./${runtimeSpecifier}?runtime-retry=1$1`,
+    );
+    if (retryCode === code) throw new Error('Missing shared AppRuntime import in retry entry.');
+    return { code: retryCode, map: null };
   },
 });
 
@@ -34,13 +55,13 @@ export const resolveBuildTarget = (mode: string) => {
   }
   if (target === 'production') {
     return {
-      firebaseConfig: productionFirebaseConfig,
-      appCheckSiteKey: environment.VITE_FIREBASE_APP_CHECK_SITE_KEY?.trim() ?? '',
+      firebaseConfig: productionFirebaseConfig.targets.production,
+      appCheckSiteKey: productionFirebaseConfig.targets.production.appCheckSiteKey,
     };
   }
   if (target !== 'staging') throw new Error(`Unsupported SONFLASH_TARGET: ${target}`);
   const stagingConfigPath = path.resolve(__dirname, 'firebase-targets/staging.json');
-  const stagingConfig = JSON.parse(fs.readFileSync(stagingConfigPath, 'utf8')) as typeof productionFirebaseConfig & {
+  const stagingConfig = JSON.parse(fs.readFileSync(stagingConfigPath, 'utf8')) as typeof productionFirebaseConfig.targets.staging & {
     appId?: string;
     appCheckSiteKey?: string;
     region?: string;
@@ -66,12 +87,14 @@ export default defineConfig(({ mode }) => {
     define: {
       'import.meta.env.VITE_SONFLASH_FIREBASE_CONFIG': JSON.stringify(JSON.stringify(buildTarget.firebaseConfig)),
       'import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY': JSON.stringify(buildTarget.appCheckSiteKey),
+      'import.meta.env.VITE_SONFLASH_BUILD_TARGET': JSON.stringify(process.env.SONFLASH_TARGET?.trim() || 'production'),
     },
     plugins: [
       react({ babel: { plugins: ['@lingui/babel-plugin-lingui-macro'] } }),
       lingui(),
       tailwindcss(),
       appRuntimeVariantsPlugin(),
+      appRuntimeRetryIdentityPlugin(),
     ],
     esbuild: {
       legalComments: 'eof',
@@ -87,7 +110,7 @@ export default defineConfig(({ mode }) => {
       // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: {
-        ignored: ['**/.worktrees/**'],
+        ignored: ['**/.lingoflash-device-sync/**', '**/.worktrees/**'],
       },
     },
     build: {
@@ -99,8 +122,15 @@ export default defineConfig(({ mode }) => {
       terserOptions: { ecma: 2020, compress: { passes: 3 } },
       sourcemap: false,
       chunkSizeWarningLimit: 600,
+      modulePreload: {
+        resolveDependencies(filename, dependencies) {
+          if (!/AppRuntimeRetry\.virtual-[^/]+\.js$/.test(filename)) return dependencies;
+          return dependencies.filter(dependency => !/(?:^|\/)AppRuntime-[^/]+\.js$/.test(dependency));
+        },
+      },
       rollupOptions: {
         output: {
+          hoistTransitiveImports: false,
           manualChunks(id) {
             if (
               id.includes('/node_modules/react/')
@@ -109,6 +139,15 @@ export default defineConfig(({ mode }) => {
             ) return 'react';
             if (id.includes('/node_modules/firebase/functions') || id.includes('/node_modules/@firebase/functions')) {
               return 'firebase-functions';
+            }
+            if (id.includes('/node_modules/firebase/auth') || id.includes('/node_modules/@firebase/auth')) {
+              return 'firebase-auth';
+            }
+            if (id.includes('/node_modules/firebase/firestore') || id.includes('/node_modules/@firebase/firestore')) {
+              return 'firebase-firestore';
+            }
+            if (id.includes('/node_modules/firebase/storage') || id.includes('/node_modules/@firebase/storage')) {
+              return 'firebase-storage';
             }
             if (id.includes('/node_modules/firebase/') || id.includes('/node_modules/@firebase/')) return 'firebase';
             return undefined;

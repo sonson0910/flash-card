@@ -6,8 +6,9 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   failOnFlakyTests: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  // Keep multi-browser local runs deterministic on shared developer machines.
-  workers: process.env.CI ? 1 : 4,
+  // Offline scenarios change Chromium's network state; serialize contexts so
+  // one scenario cannot interrupt another context's lazy chunk requests.
+  workers: 1,
   reporter: process.env.CI
     ? [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]]
     : 'list',

@@ -47,6 +47,7 @@ export const migratedFiles = [
   'src/features/practice/QuizView.tsx',
   'src/features/practice/SpellingView.tsx',
   'src/features/practice/StoryView.tsx',
+  'src/features/practice/rich-story-view.tsx',
   'src/features/practice/StudyView.tsx',
   'src/features/practice/WordMatchView.tsx',
   'src/features/practice/ShadowingView.tsx',

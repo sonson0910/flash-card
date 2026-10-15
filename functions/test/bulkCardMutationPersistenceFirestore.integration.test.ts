@@ -185,6 +185,7 @@ describeWithEmulator('Firestore bulk card mutation persistence', () => {
     if (!stored) throw new Error('Canonical card was not persisted.');
     const reviewedAt = '2026-09-28T00:00:00.000Z';
     const reviewRequest: ReviewRequest = {
+      expectedOwnerId: ownerId,
       opId: `device-a:review-${randomUUID()}`,
       cardId: lexemeId,
       baseRevision: 1,

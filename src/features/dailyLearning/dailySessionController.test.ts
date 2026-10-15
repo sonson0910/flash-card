@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Exercise } from './exerciseEngine';
+import type { LessonStep } from './lessonReducer';
 import { createDailySessionController } from './dailySessionController';
 
 const published = (xpAwarded = 0) => ({ status: 'published' as const, result: { xpAwarded } as never });
@@ -21,6 +22,66 @@ const deferred = <T,>() => {
 };
 
 describe('daily session controller', () => {
+  it('reintroduces a forgotten reviewed word without saving or growing repeated guidance', async () => {
+    const reviewCard = vi.fn(async () => published());
+    const card = { id: 'old', word: 'work', translation: 'job', explanation: '', phonetic: '', emoji: '', category: '', audioUrl: null, imageUrl: null, reviews: 3 };
+    const controller = createDailySessionController({ reviewCard });
+    controller.start([{ stage: 'review', card, exercise: exercise('old') }]);
+    expect(controller.requestGuidance()).toBe(true);
+    expect(controller.getSnapshot()?.phase).toBe('introduction');
+    await controller.rate('again');
+    controller.chooseIntroduction('guided');
+    controller.continueGuided();
+    expect(controller.getSnapshot()?.steps).toHaveLength(3);
+    expect(controller.requestGuidance()).toBe(true);
+    expect(controller.getSnapshot()?.steps).toHaveLength(3);
+    expect(reviewCard).not.toHaveBeenCalled();
+    expect(card.reviews).toBe(3);
+    controller.chooseIntroduction('independent-recall');
+    controller.submit('work');
+    await expect(controller.rate('good')).resolves.toEqual({ status: 'completed', xpAwarded: 0 });
+    expect(reviewCard).toHaveBeenCalledOnce();
+  });
+
+  it('keeps introduction and guided practice persistence-free until independent recall is rated', async () => {
+    const reviewCard = vi.fn(async () => published());
+    const source = exercise('new-card');
+    const steps: readonly LessonStep[] = [
+      { stage: 'introduction', exercise: source },
+      { stage: 'guided', exercise: source },
+      { stage: 'independent-recall', exercise: source },
+    ];
+    const controller = createDailySessionController({ reviewCard, createOperationId: () => 'new-op' });
+    controller.start(steps);
+
+    expect(controller.getSnapshot()?.phase).toBe('introduction');
+    expect(controller.chooseIntroduction('guided')).toBe(true);
+    expect(controller.getSnapshot()).toMatchObject({ phase: 'answering', index: 1 });
+    expect(reviewCard).not.toHaveBeenCalled();
+    expect(controller.continueGuided()).toBe(true);
+    expect(controller.getSnapshot()).toMatchObject({ phase: 'answering', index: 2 });
+    expect(reviewCard).not.toHaveBeenCalled();
+
+    controller.submit('word-new-card');
+    await expect(controller.rate('good')).resolves.toEqual({ status: 'completed', xpAwarded: 0 });
+    expect(reviewCard).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets test-now skip guidance without creating a review operation', async () => {
+    const reviewCard = vi.fn(async () => published());
+    const steps: readonly LessonStep[] = [
+      { stage: 'introduction', exercise: exercise('known-new') },
+      { stage: 'guided', exercise: exercise('known-new') },
+      { stage: 'independent-recall', exercise: exercise('known-new') },
+    ];
+    const controller = createDailySessionController({ reviewCard, createOperationId: () => 'test-now-op' });
+    controller.start(steps);
+
+    expect(controller.chooseIntroduction('independent-recall')).toBe(true);
+    expect(controller.getSnapshot()).toMatchObject({ phase: 'answering', index: 2 });
+    expect(reviewCard).not.toHaveBeenCalled();
+  });
+
   it('uses collision-resistant operation ids across controller instances', async () => {
     const operationIds: string[] = [];
     const reviewCard = vi.fn(async (_cardId: string, _rating: string, operationId: string) => {

@@ -75,7 +75,12 @@ export function UndoToast({ toast, onDismiss, stacked = false }: UndoToastProps)
   };
 
   useEffect(() => {
-    if (!toast) return;
+    if (!toast) {
+      hoveredRef.current = false;
+      focusedRef.current = false;
+      setPaused(false);
+      return;
+    }
     dismissedRef.current = false;
     timeoutRef.current = createUndoTimeout(duration, dismissOnce);
     updatePause();
@@ -146,7 +151,7 @@ export function UndoToast({ toast, onDismiss, stacked = false }: UndoToastProps)
           aria-keyshortcuts="Meta+Z Control+Z"
           className="undo-toast-action"
         >
-          <span><Trans id="shell.undo.action" message="Undo" /></span>
+          <span><Trans {...msg({ context: 'shell.undo.action', message: 'Undo' })} /></span>
           <kbd className="undo-toast-shortcut">{shortcut}</kbd>
         </button>
         <button
@@ -160,11 +165,11 @@ export function UndoToast({ toast, onDismiss, stacked = false }: UndoToastProps)
       </div>
 
       <span className="sr-only">
-        <Trans id="shell.undo.window" message="Undo is available for {seconds} seconds." values={{ seconds: Math.ceil(duration / 1000) }} />
+        <Trans {...msg({ context: 'shell.undo.window', message: 'Undo is available for {seconds} seconds.' })} values={{ seconds: Math.ceil(duration / 1000) }} />
       </span>
       <div className="undo-toast-progress-track" aria-hidden="true">
         <div
-          key={toast.id}
+          key={`${toast.id}:${duration}`}
           className="undo-toast-progress"
           style={{ animationDuration: `${duration}ms`, animationPlayState: paused ? 'paused' : 'running' }}
         />

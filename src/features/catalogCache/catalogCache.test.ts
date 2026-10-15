@@ -255,6 +255,23 @@ describe('catalog IndexedDB cache', () => {
     }, [entry('one')])).resolves.toBe('already-staged');
   });
 
+  it('treats a matching completed install handle as idempotent', async () => {
+    const first = await beginCatalogInstall(descriptor('release-1'));
+    await stageCatalogChunk(first, {
+      chunkId: 'chunk-0001', sha256: 'c'.repeat(64), membershipCount: 1, encodedBytes: 128,
+      lexemeCount: 0,
+    }, [entry('one')]);
+    await activateCatalogInstall(first);
+
+    const second = await beginCatalogInstall(descriptor('release-1'));
+    expect(second).toEqual(first);
+    await expect(stageCatalogChunk(second, {
+      chunkId: 'chunk-0001', sha256: 'c'.repeat(64), membershipCount: 1, encodedBytes: 128,
+      lexemeCount: 0,
+    }, [entry('one')])).resolves.toBe('already-staged');
+    await expect(activateCatalogInstall(second)).resolves.toBeUndefined();
+  });
+
   it('rejects stale install handles after a newer release starts', async () => {
     const stale = await beginCatalogInstall(descriptor('release-1'));
     await beginCatalogInstall(descriptor('release-2'));

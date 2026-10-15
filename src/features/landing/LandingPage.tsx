@@ -79,25 +79,25 @@ const sectionTitleClass = "mt-3 text-3xl font-black tracking-tight sm:text-4xl";
 const videos = [
   {
     id: "golden-hour",
-    label: <Trans id="landing.atmosphere.golden-hour" message="Golden Hour" />,
+    label: <Trans {...msg({ context: 'landing.atmosphere.golden-hour', message: 'Golden Hour' })} />,
     av1: goldenHourAv1,
     h264: goldenHourH264,
   },
   {
     id: "still-water",
-    label: <Trans id="landing.atmosphere.still-water" message="Still Water" />,
+    label: <Trans {...msg({ context: 'landing.atmosphere.still-water', message: 'Still Water' })} />,
     av1: stillWaterAv1,
     h264: stillWaterH264,
   },
   {
     id: "deep-woods",
-    label: <Trans id="landing.atmosphere.deep-woods" message="Deep Woods" />,
+    label: <Trans {...msg({ context: 'landing.atmosphere.deep-woods', message: 'Deep Woods' })} />,
     av1: deepWoodsAv1,
     h264: deepWoodsH264,
   },
   {
     id: "quiet-dawn",
-    label: <Trans id="landing.atmosphere.quiet-dawn" message="Quiet Dawn" />,
+    label: <Trans {...msg({ context: 'landing.atmosphere.quiet-dawn', message: 'Quiet Dawn' })} />,
     av1: quietDawnAv1,
     h264: quietDawnH264,
   },
@@ -106,31 +106,28 @@ const videos = [
 const learningFlow = [
   {
     id: "capture",
-    title: <Trans id="landing.flow.capture.title" message="Keep the context" />,
+    title: <Trans {...msg({ context: 'landing.flow.capture.title', message: 'Keep the context' })} />,
     description: (
       <Trans
-        id="landing.flow.capture.description"
-        message="Turn a word or passage into a card with its meaning, pronunciation, and example."
+        {...msg({ context: 'landing.flow.capture.description', message: 'Turn a word or passage into a card with its meaning, pronunciation, and example.' })}
       />
     ),
   },
   {
     id: "read",
-    title: <Trans id="landing.flow.read.title" message="Read it clearly" />,
+    title: <Trans {...msg({ context: 'landing.flow.read.title', message: 'Read it clearly' })} />,
     description: (
       <Trans
-        id="landing.flow.read.description"
-        message="See the word in plain language before asking yourself to recall it."
+        {...msg({ context: 'landing.flow.read.description', message: 'See the word in plain language before asking yourself to recall it.' })}
       />
     ),
   },
   {
     id: "practice",
-    title: <Trans id="landing.flow.practice.title" message="Practise recall" />,
+    title: <Trans {...msg({ context: 'landing.flow.practice.title', message: 'Practise recall' })} />,
     description: (
       <Trans
-        id="landing.flow.practice.description"
-        message="Review, listen, spell, or speak when that is the useful next step."
+        {...msg({ context: 'landing.flow.practice.description', message: 'Review, listen, spell, or speak when that is the useful next step.' })}
       />
     ),
   },
@@ -140,33 +137,30 @@ const extensionFeatures = [
   {
     id: "save",
     icon: MousePointerClick,
-    title: <Trans id="landing.extension.feature.save.title" message="Right-click to save" />,
+    title: <Trans {...msg({ context: 'landing.extension.feature.save.title', message: 'Right-click to save' })} />,
     description: (
       <Trans
-        id="landing.extension.feature.save.description"
-        message="Select text on any website, then save it straight into your library as a flashcard with context."
+        {...msg({ context: 'landing.extension.feature.save.description', message: 'Select text on any website, then save it straight into your library as a flashcard with context.' })}
       />
     ),
   },
   {
     id: "popup",
     icon: Bell,
-    title: <Trans id="landing.extension.feature.popup.title" message="Check in from the toolbar" />,
+    title: <Trans {...msg({ context: 'landing.extension.feature.popup.title', message: 'Check in from the toolbar' })} />,
     description: (
       <Trans
-        id="landing.extension.feature.popup.description"
-        message="Open the extension icon to see how many reviews are due, then jump back into today's session."
+        {...msg({ context: 'landing.extension.feature.popup.description', message: 'Open the extension icon to see how many reviews are due, then jump back into today\'s session.' })}
       />
     ),
   },
   {
     id: "opt-in",
     icon: ToggleLeft,
-    title: <Trans id="landing.extension.feature.optin.title" message="Your call, site by site" />,
+    title: <Trans {...msg({ context: 'landing.extension.feature.optin.title', message: 'Your call, site by site' })} />,
     description: (
       <Trans
-        id="landing.extension.feature.optin.description"
-        message="Turn on the optional in-page save icon only for the websites you choose."
+        {...msg({ context: 'landing.extension.feature.optin.description', message: 'Turn on the optional in-page save icon only for the websites you choose.' })}
       />
     ),
   },
@@ -185,58 +179,55 @@ const languageOffers = [
 const pricingRows = [
   {
     id: "reviews",
-    label: <Trans id="landing.pricing.row.reviews" message="Reviews & spaced scheduling" />,
-    free: <Trans id="landing.pricing.value.unlimited" message="Unlimited" />,
-    pro: <Trans id="landing.pricing.value.unlimited" message="Unlimited" />,
+    label: <Trans {...msg({ context: 'landing.pricing.row.reviews', message: 'Reviews & spaced scheduling' })} />,
+    free: <Trans {...msg({ context: 'landing.pricing.value.unlimited', message: 'Unlimited' })} />,
+    pro: <Trans {...msg({ context: 'landing.pricing.value.unlimited', message: 'Unlimited' })} />,
   },
   {
     id: "manual-cards",
-    label: <Trans id="landing.pricing.row.manual-cards" message="Manual flashcards" />,
-    free: <Trans id="landing.pricing.value.unlimited" message="Unlimited" />,
-    pro: <Trans id="landing.pricing.value.unlimited" message="Unlimited" />,
+    label: <Trans {...msg({ context: 'landing.pricing.row.manual-cards', message: 'Manual flashcards' })} />,
+    free: <Trans {...msg({ context: 'landing.pricing.value.unlimited', message: 'Unlimited' })} />,
+    pro: <Trans {...msg({ context: 'landing.pricing.value.unlimited', message: 'Unlimited' })} />,
   },
   {
     id: "ai-cards",
-    label: <Trans id="landing.pricing.row.ai-cards" message="AI-generated cards" />,
-    free: <Trans id="landing.pricing.value.ai-free" message="30 / month" />,
-    pro: <Trans id="landing.pricing.value.ai-pro" message="More each month" />,
+    label: <Trans {...msg({ context: 'landing.pricing.row.ai-cards', message: 'AI-generated cards' })} />,
+    free: <Trans {...msg({ context: 'landing.pricing.value.ai-free', message: '30 / month' })} />,
+    pro: <Trans {...msg({ context: 'landing.pricing.value.ai-pro', message: 'More each month' })} />,
   },
   {
     id: "extension",
-    label: <Trans id="landing.pricing.row.extension" message="Chrome extension" />,
-    free: <Trans id="landing.pricing.value.included" message="Included" />,
-    pro: <Trans id="landing.pricing.value.included" message="Included" />,
+    label: <Trans {...msg({ context: 'landing.pricing.row.extension', message: 'Chrome extension' })} />,
+    free: <Trans {...msg({ context: 'landing.pricing.value.included', message: 'Included' })} />,
+    pro: <Trans {...msg({ context: 'landing.pricing.value.included', message: 'Included' })} />,
   },
 ];
 
 const pricingFaq = [
   {
     id: "free",
-    question: <Trans id="landing.pricing.faq.free.question" message="Is the free plan really free?" />,
+    question: <Trans {...msg({ context: 'landing.pricing.faq.free.question', message: 'Is the free plan really free?' })} />,
     answer: (
       <Trans
-        id="landing.pricing.faq.free.answer"
-        message="Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month."
+        {...msg({ context: 'landing.pricing.faq.free.answer', message: 'Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month.' })}
       />
     ),
   },
   {
     id: "exhausted",
-    question: <Trans id="landing.pricing.faq.exhausted.question" message="What happens if I use all 30 AI cards?" />,
+    question: <Trans {...msg({ context: 'landing.pricing.faq.exhausted.question', message: 'What happens if I use all 30 AI cards?' })} />,
     answer: (
       <Trans
-        id="landing.pricing.faq.exhausted.answer"
-        message="You can keep reviewing and add cards manually. AI generation resumes next month, or right away with Pro."
+        {...msg({ context: 'landing.pricing.faq.exhausted.answer', message: 'You can keep reviewing and add cards manually. AI generation resumes next month, or right away with Pro.' })}
       />
     ),
   },
   {
     id: "checkout",
-    question: <Trans id="landing.pricing.faq.checkout.question" message="Can I buy Pro right now?" />,
+    question: <Trans {...msg({ context: 'landing.pricing.faq.checkout.question', message: 'Can I buy Pro right now?' })} />,
     answer: (
       <Trans
-        id="landing.pricing.faq.checkout.answer"
-        message="Not yet. Sign in and open Pro from your account menu to register interest — nothing is charged during the pilot."
+        {...msg({ context: 'landing.pricing.faq.checkout.answer', message: 'Not yet. Sign in and open Pro from your account menu to register interest — nothing is charged during the pilot.' })}
       />
     ),
   },
@@ -294,23 +285,23 @@ function CrystalLandingHero({ onEnterApp, onSignIn, user, showLumi }: Pick<Landi
   const { _ } = useLingui();
   return <section className="crystal-landing-hero" aria-labelledby="landing-heading">
     <div className="crystal-copy">
-      <span className="crystal-badge"><Trans id="landing.hero.crystal-badge" message="Crystal Star" /></span>
+      <span className="crystal-badge"><Trans {...msg({ context: 'landing.hero.crystal-badge', message: 'Crystal Star' })} /></span>
       <h1 id="landing-heading">SonFlash</h1>
-      <p className="crystal-tagline"><Trans id="landing.hero.title" message="Remember words.<0/>Use them when it matters." components={{ 0: <br /> }} /></p>
-      <p className="crystal-description"><Trans id="landing.hero.description" message="Build an English vocabulary you can reach for with context, spaced review, and active recall." /></p>
+      <p className="crystal-tagline"><Trans {...msg({ context: 'landing.hero.title', message: 'Remember words.<0/>Use them when it matters.' })} components={{ 0: <br /> }} /></p>
+      <p className="crystal-description"><Trans {...msg({ context: 'landing.hero.description', message: 'Build an English vocabulary you can reach for with context, spaced review, and active recall.' })} /></p>
       <div className="crystal-actions">
-        <button type="button" onClick={onEnterApp} className="crystal-primary"><Trans id="landing.hero.start" message="Start learning" /> <ArrowRight size={18} aria-hidden="true" /></button>
-        {onSignIn && !user && <button type="button" onClick={() => void onSignIn()} className="crystal-secondary"><Trans id="landing.hero.sign-in" message="Sign in to sync" /></button>}
+        <button type="button" onClick={onEnterApp} className="crystal-primary"><Trans {...msg({ context: 'landing.hero.start', message: 'Start learning' })} /> <ArrowRight size={18} aria-hidden="true" /></button>
+        {onSignIn && !user && <button type="button" onClick={() => void onSignIn()} className="crystal-secondary"><Trans {...msg({ context: 'landing.hero.sign-in', message: 'Sign in to sync' })} /></button>}
       </div>
     </div>
     <div className="crystal-card-stage" aria-label={_(msg({ id: 'landing.demo.cards.label', message: 'Sample English vocabulary cards' }))}>
       <div className="crystal-flare" aria-hidden="true" />
-      <article className="crystal-demo-card crystal-demo-left" aria-hidden="true"><img src={animeSpelling} width={1000} height={667} alt="" loading="lazy" decoding="async" /><span><i><Trans id="landing.demo.grade.bud" message="Bud" /></i>{' '}<Trans id="landing.demo.tier.new" message="New" /></span><strong>{crystalDemoWords.spelling.word}</strong><small>{crystalDemoWords.spelling.ipa}</small><b><Trans id="landing.demo.meaning.spelling" message="spelling" /></b></article>
-      <article className="crystal-demo-card crystal-demo-right" aria-hidden="true"><img src={animeImmediate} width={1000} height={667} alt="" loading="lazy" decoding="async" /><span><i><Trans id="landing.demo.grade.bloom" message="Bloom" /></i>{' '}<Trans id="landing.demo.tier.learning" message="Learning" /></span><strong>{crystalDemoWords.immediate.word}</strong><small>{crystalDemoWords.immediate.ipa}</small><b><Trans id="landing.demo.meaning.immediate" message="without delay" /></b></article>
-      <article className="crystal-demo-card crystal-demo-main"><img src={animeInstant} width={1000} height={667} alt="" decoding="async" fetchPriority="high" /><span><i><Trans id="landing.demo.grade.star" message="Star" /></i>{' '}<Trans id="landing.demo.tier.mastered" message="Mastered" /></span><strong>{crystalDemoWords.instant.word}</strong><small>{crystalDemoWords.instant.ipa}</small><b><Trans id="landing.demo.meaning.instant" message="a moment" /></b></article>
+      <article className="crystal-demo-card crystal-demo-left" aria-hidden="true"><img src={animeSpelling} width={1000} height={667} alt="" loading="lazy" decoding="async" /><span><i><Trans {...msg({ context: 'landing.demo.grade.bud', message: 'Bud' })} /></i>{' '}<Trans {...msg({ context: 'landing.demo.tier.new', message: 'New' })} /></span><strong>{crystalDemoWords.spelling.word}</strong><small>{crystalDemoWords.spelling.ipa}</small><b><Trans {...msg({ context: 'landing.demo.meaning.spelling', message: 'spelling' })} /></b></article>
+      <article className="crystal-demo-card crystal-demo-right" aria-hidden="true"><img src={animeImmediate} width={1000} height={667} alt="" loading="lazy" decoding="async" /><span><i><Trans {...msg({ context: 'landing.demo.grade.bloom', message: 'Bloom' })} /></i>{' '}<Trans {...msg({ context: 'landing.demo.tier.learning', message: 'Learning' })} /></span><strong>{crystalDemoWords.immediate.word}</strong><small>{crystalDemoWords.immediate.ipa}</small><b><Trans {...msg({ context: 'landing.demo.meaning.immediate', message: 'without delay' })} /></b></article>
+      <article className="crystal-demo-card crystal-demo-main"><img src={animeInstant} width={1000} height={667} alt="" decoding="async" fetchPriority="high" /><span><i><Trans {...msg({ context: 'landing.demo.grade.star', message: 'Star' })} /></i>{' '}<Trans {...msg({ context: 'landing.demo.tier.mastered', message: 'Mastered' })} /></span><strong>{crystalDemoWords.instant.word}</strong><small>{crystalDemoWords.instant.ipa}</small><b><Trans {...msg({ context: 'landing.demo.meaning.instant', message: 'a moment' })} /></b></article>
       {showLumi && <Lumi pose="hero" eager className="crystal-hero-lumi" />}
     </div>
-    <div className="crystal-ribbon" aria-hidden="true"><span><Trans id="landing.ribbon.spaced-review" message="Spaced review" /></span><span><Trans id="landing.ribbon.context-first" message="Context first" /></span><span><Trans id="landing.ribbon.learn-at-your-pace" message="Learn at your pace" /></span><span><Trans id="landing.ribbon.chrome-extension" message="Chrome extension" /></span></div>
+    <div className="crystal-ribbon" aria-hidden="true"><span><Trans {...msg({ context: 'landing.ribbon.spaced-review', message: 'Spaced review' })} /></span><span><Trans {...msg({ context: 'landing.ribbon.context-first', message: 'Context first' })} /></span><span><Trans {...msg({ context: 'landing.ribbon.learn-at-your-pace', message: 'Learn at your pace' })} /></span><span><Trans {...msg({ context: 'landing.ribbon.chrome-extension', message: 'Chrome extension' })} /></span></div>
   </section>;
 }
 
@@ -340,8 +331,7 @@ function ClassicLandingHero({
       <div className="landing-copy max-w-3xl">
         <p className="mb-5 inline-flex rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-1 text-sm font-bold text-[var(--sf-brand-text)]">
           <Trans
-            id="landing.hero.eyebrow"
-            message="English for Vietnamese speakers"
+            {...msg({ context: 'landing.hero.eyebrow', message: 'English for Vietnamese speakers' })}
           />
         </p>
         <h1
@@ -349,15 +339,13 @@ function ClassicLandingHero({
           className="font-serif-hero text-balance text-[clamp(3.5rem,8vw,7.6rem)] leading-[.88] tracking-[-.055em]"
         >
           <Trans
-            id="landing.classic-hero.title"
-            message="Words<0/>that <1>stay.</1>"
+            {...msg({ context: 'landing.classic-hero.title', message: 'Words<0/>that <1>stay.</1>' })}
             components={{ 0: <br />, 1: <em /> }}
           />
         </h1>
         <p className="mt-7 max-w-xl text-pretty text-base leading-7 text-[var(--sf-text-muted)] sm:text-lg">
           <Trans
-            id="landing.hero.description"
-            message="Build an English vocabulary you can reach for with context, spaced review, and active recall."
+            {...msg({ context: 'landing.hero.description', message: 'Build an English vocabulary you can reach for with context, spaced review, and active recall.' })}
           />
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
@@ -366,12 +354,12 @@ function ClassicLandingHero({
             onClick={onEnterApp}
             className="brand-action inline-flex min-h-12 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-6 font-black text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer"
           >
-            <Trans id="landing.classic-hero.start" message="Start learning free" />
+            <Trans {...msg({ context: 'landing.classic-hero.start', message: 'Start learning free' })} />
             <ArrowRight size={18} aria-hidden="true" />
           </button>
           <a href="#extension" className={`${actionClass} inline-flex items-center`}>
             <Puzzle size={18} aria-hidden="true" />
-            <span className="ml-2"><Trans id="landing.classic-hero.extension" message="Explore Chrome extension" /></span>
+            <span className="ml-2"><Trans {...msg({ context: 'landing.classic-hero.extension', message: 'Explore Chrome extension' })} /></span>
           </a>
         </div>
       </div>
@@ -429,7 +417,7 @@ function ClassicLandingHero({
                   className="mb-5 h-28 w-full rounded-2xl object-cover"
                 />
                 <p className="text-xs font-black uppercase tracking-[.16em] text-[var(--sf-text-muted)]">
-                  <Trans id="landing.demo.part-of-speech" message="Adjective" />
+                  <Trans {...msg({ context: 'landing.demo.part-of-speech', message: 'Adjective' })} />
                 </p>
                 <p
                   lang="en"
@@ -441,7 +429,7 @@ function ClassicLandingHero({
                   {samplePronunciation}
                 </p>
                 <p className="mt-8 border-t border-[var(--sf-border)] pt-5 text-center text-sm font-bold text-[var(--sf-brand-text)]">
-                  <Trans id="landing.demo.reveal-prompt" message="Tap to reveal the meaning" />
+                  <Trans {...msg({ id: 'landing.demo.reveal-prompt', message: 'Tap to reveal the meaning' })} />
                 </p>
               </div>
             </div>
@@ -458,20 +446,17 @@ function ClassicLandingHero({
               <div className="flex h-full flex-col justify-center rounded-[1.45rem] bg-[var(--sf-surface-raised)] px-6 py-7 sm:px-8">
                 <p className="font-bold">
                   <Trans
-                    id="landing.demo.meaning"
-                    message="happening or done without delay"
+                    {...msg({ context: 'landing.demo.meaning', message: 'happening or done without delay' })}
                   />
                 </p>
                 <p className={sectionLeadClass}>
                   <Trans
-                    id="landing.demo.example"
-                    message="The new policy takes immediate effect."
+                    {...msg({ context: 'landing.demo.example', message: 'The new policy takes immediate effect.' })}
                   />
                 </p>
                 <p className="mt-6 text-sm font-semibold text-[var(--sf-brand-text)]">
                   <Trans
-                    id="landing.demo.caption"
-                    message="One clear card, ready for the next review."
+                    {...msg({ context: 'landing.demo.caption', message: 'One clear card, ready for the next review.' })}
                   />
                 </p>
               </div>
@@ -495,6 +480,15 @@ export function LandingPage({
   const { mode, family, setMode } = useTheme();
   const prefersReducedMotion = useReducedMotion();
   const [saveData, setSaveData] = useState(false);
+  const [compactDevice, setCompactDevice] = useState(true);
+  const videoEnabled = mode === 'dark' && !prefersReducedMotion && !saveData && !compactDevice;
+  useEffect(() => {
+    const media = matchMedia('(max-width: 767px), (pointer: coarse)');
+    const update = () => setCompactDevice(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
   const [afterFirstPaint, setAfterFirstPaint] = useState(false);
   const [accountDeletionStarted, setAccountDeletionStarted] = useState(false);
   const [accountDeletionCacheWarning, setAccountDeletionCacheWarning] = useState(false);
@@ -523,16 +517,13 @@ export function LandingPage({
     videoRefs.current.forEach((video, index) => {
       if (!video) return;
       if (
-        mode === "dark" &&
-        index === activeVideo &&
-        !prefersReducedMotion &&
-        !saveData
+        videoEnabled && index === activeVideo
       ) {
         if (video.readyState === HTMLMediaElement.HAVE_NOTHING) video.load();
         video.play().catch(() => undefined);
       } else video.pause();
     });
-  }, [activeVideo, mode, prefersReducedMotion, saveData]);
+  }, [activeVideo, videoEnabled]);
   const closeMobileNav = () => mobileNavRef.current?.removeAttribute("open");
   const showLumi = afterFirstPaint && family === "crystal" && readLumiEnabled();
   const actionClass =
@@ -541,8 +532,8 @@ export function LandingPage({
   return (
     <div className="landing-canvas min-h-[100svh] overflow-x-clip bg-[var(--sf-canvas)] text-[var(--sf-text)] selection:bg-[var(--sf-brand)] selection:text-[var(--sf-on-brand)]">
       <main>
-        {!user && accountDeletionStarted && <p role="status" className="mx-auto max-w-[92rem] px-5 pt-5 text-sm text-emerald-700 dark:text-emerald-300 sm:px-8 lg:px-12"><Trans id="account.data.delete.started" message="We could not confirm whether account deletion finished. If you can still sign in later, contact support." /></p>}
-        {!user && accountDeletionCacheWarning && <p role="alert" className="mx-auto max-w-[92rem] px-5 pt-5 text-sm text-[var(--sf-danger)] sm:px-8 lg:px-12"><Trans id="account.data.delete.cache-warning" message="SonFlash couldn't clear saved account data from this device. Clear SonFlash site data in your browser." /></p>}
+        {!user && accountDeletionStarted && <p role="status" className="mx-auto max-w-[92rem] px-5 pt-5 text-sm text-emerald-700 dark:text-emerald-300 sm:px-8 lg:px-12"><Trans {...msg({ id: 'account.data.delete.started', message: 'We could not confirm whether account deletion finished. If you can still sign in later, contact support.' })} /></p>}
+        {!user && accountDeletionCacheWarning && <p role="alert" className="mx-auto max-w-[92rem] px-5 pt-5 text-sm text-[var(--sf-danger)] sm:px-8 lg:px-12"><Trans {...msg({ id: 'account.data.delete.cache-warning', message: 'SonFlash couldn\'t clear saved account data from this device. Clear SonFlash site data in your browser.' })} /></p>}
         <section
           id="top"
           className="relative min-h-[100svh] overflow-hidden border-b border-[var(--sf-border)]"
@@ -556,27 +547,18 @@ export function LandingPage({
             className="absolute inset-0 opacity-0 [html.dark_&]:opacity-100"
             aria-hidden="true"
           >
-            {videos.map((video, index) => (
+            {videoEnabled && videos.map((video, index) => (
               <video
                 key={video.id}
                 ref={(element) => {
                   videoRefs.current[index] = element;
                 }}
                 data-hero-video
-                autoPlay={
-                  mode === "dark" &&
-                  index === activeVideo &&
-                  !prefersReducedMotion &&
-                  !saveData
-                }
+                autoPlay={index === activeVideo && videoEnabled}
                 muted
                 loop
                 playsInline
-                preload={
-                  mode === "dark" && index === activeVideo && !saveData
-                    ? "metadata"
-                    : "none"
-                }
+                preload={index === activeVideo && videoEnabled ? 'metadata' : 'none'}
                 className={`absolute inset-0 size-full object-cover transition-opacity duration-700 motion-reduce:transition-none ${index === activeVideo ? "opacity-70" : "opacity-0"}`}
               >
                 <source
@@ -624,9 +606,9 @@ export function LandingPage({
                 />
                 <svg className="landing-crystal-mark" viewBox="0 0 100 100" width="36" height="36" aria-hidden="true"><path d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" fill="#ff5470"/><path d="M50 4 62 36 96 37 69 59 78 91 50 72Z" fill="#7a0820"/></svg>
                 <span className="landing-classic-brand font-serif-hero text-2xl font-bold tracking-tight text-[var(--sf-brand-text)]">
-                  <Trans id="landing.brand.plain" message="SonFlash" />
+                  <Trans {...msg({ context: 'landing.brand.plain', message: 'SonFlash' })} />
                 </span>
-                <span className="landing-crystal-brand" aria-hidden="true"><Trans id="landing.brand.crystal-wordmark" message="SON<0>FLASH</0>" components={{ 0: <em /> }} /></span>
+                <span className="landing-crystal-brand" aria-hidden="true"><Trans {...msg({ context: 'landing.brand.crystal-wordmark', message: 'SON<0>FLASH</0>' })} components={{ 0: <em /> }} /></span>
               </a>
               <nav
                 aria-label={_(
@@ -641,21 +623,21 @@ export function LandingPage({
                   href="#how-it-works"
                   className={desktopNavItemClass}
                 >
-                  <Trans id="landing.nav.how-it-works" message="How it works" />
+                  <Trans {...msg({ context: 'landing.nav.how-it-works', message: 'How it works' })} />
                 </a>
                 {family === "classic" ? <>
                   <a
                     href="#extension"
                     className={desktopNavItemClass}
                   >
-                    <Trans id="landing.nav.chrome-extension" message="Chrome extension" />
+                    <Trans {...msg({ context: 'landing.nav.chrome-extension', message: 'Chrome extension' })} />
                   </a>
                   <button
                     type="button"
                     onClick={onOpenCatalog ?? onEnterApp}
                     className={desktopNavItemClass}
                   >
-                    <Trans id="landing.nav.paths" message="Paths" />
+                    <Trans {...msg({ context: 'landing.nav.paths', message: 'Paths' })} />
                   </button>
                 </> : <>
                   <button
@@ -663,32 +645,32 @@ export function LandingPage({
                     onClick={onOpenCatalog ?? onEnterApp}
                     className={desktopNavItemClass}
                   >
-                    <Trans id="landing.nav.curriculum" message="Curriculum" />
+                    <Trans {...msg({ context: 'landing.nav.curriculum', message: 'Curriculum' })} />
                   </button>
                   <button
                     type="button"
                     onClick={onOpenLibrary ?? onEnterApp}
                     className={desktopNavItemClass}
                   >
-                    <Trans id="landing.nav.vocabulary" message="Vocabulary" />
+                    <Trans {...msg({ context: 'landing.nav.vocabulary', message: 'Vocabulary' })} />
                   </button>
                   <a
                     href="#extension"
                     className={desktopNavItemClass}
                   >
-                    <Trans id="landing.nav.extension" message="Extension" />
+                    <Trans {...msg({ context: 'landing.nav.extension', message: 'Extension' })} />
                   </a>
                   <a
                     href="#languages"
                     className={desktopNavItemClass}
                   >
-                    <Trans id="landing.nav.languages" message="Languages" />
+                    <Trans {...msg({ context: 'landing.nav.languages', message: 'Languages' })} />
                   </a>
                   <a
                     href="#pricing"
                     className={desktopNavItemClass}
                   >
-                    <Trans id="landing.nav.pricing" message="Pricing & access" />
+                    <Trans {...msg({ context: 'landing.nav.pricing', message: 'Pricing & access' })} />
                   </a>
                 </>}
               </nav>
@@ -701,7 +683,7 @@ export function LandingPage({
                     onClick={() => void onSignIn()}
                     className="min-h-11 rounded-lg px-3 text-sm font-bold hover:text-[var(--sf-brand-text)] focus-visible:outline-2"
                   >
-                    <Trans id="landing.nav.sign-in" message="Sign in" />
+                    <Trans {...msg({ context: 'landing.nav.sign-in', message: 'Sign in' })} />
                   </button>
                 )}
                 <button
@@ -709,7 +691,7 @@ export function LandingPage({
                   onClick={onEnterApp}
                   className="brand-action min-h-11 rounded-xl bg-[var(--sf-brand)] px-4 text-sm font-black text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
                 >
-                  <Trans id="landing.hero.start" message="Start learning" />
+                  <Trans {...msg({ context: 'landing.hero.start', message: 'Start learning' })} />
                 </button>
               </div>
               <details
@@ -758,8 +740,7 @@ export function LandingPage({
                     className={mobileNavItemClass}
                   >
                     <Trans
-                      id="landing.nav.how-it-works"
-                      message="How it works"
+                      {...msg({ context: 'landing.nav.how-it-works', message: 'How it works' })}
                     />
                   </a>
                   {family === "classic" ? <>
@@ -768,7 +749,7 @@ export function LandingPage({
                       onClick={closeMobileNav}
                       className={mobileNavItemClass}
                     >
-                      <Trans id="landing.nav.chrome-extension" message="Chrome extension" />
+                      <Trans {...msg({ context: 'landing.nav.chrome-extension', message: 'Chrome extension' })} />
                     </a>
                     <button
                       type="button"
@@ -778,7 +759,7 @@ export function LandingPage({
                       }}
                       className={mobileNavButtonClass}
                     >
-                      <Trans id="landing.nav.paths" message="Paths" />
+                      <Trans {...msg({ context: 'landing.nav.paths', message: 'Paths' })} />
                     </button>
                   </> : <>
                     <button
@@ -789,7 +770,7 @@ export function LandingPage({
                       }}
                       className={mobileNavButtonClass}
                     >
-                      <Trans id="landing.nav.curriculum" message="Curriculum" />
+                      <Trans {...msg({ context: 'landing.nav.curriculum', message: 'Curriculum' })} />
                     </button>
                     <button
                       type="button"
@@ -799,21 +780,21 @@ export function LandingPage({
                       }}
                       className={mobileNavButtonClass}
                     >
-                      <Trans id="landing.nav.vocabulary" message="Vocabulary" />
+                      <Trans {...msg({ context: 'landing.nav.vocabulary', message: 'Vocabulary' })} />
                     </button>
                     <a
                       href="#extension"
                       onClick={closeMobileNav}
                       className={mobileNavItemClass}
                     >
-                      <Trans id="landing.nav.extension" message="Extension" />
+                      <Trans {...msg({ context: 'landing.nav.extension', message: 'Extension' })} />
                     </a>
                     <a
                       href="#languages"
                       onClick={closeMobileNav}
                       className={mobileNavItemClass}
                     >
-                      <Trans id="landing.nav.languages" message="Languages" />
+                      <Trans {...msg({ context: 'landing.nav.languages', message: 'Languages' })} />
                     </a>
                     <a
                       href="#pricing"
@@ -821,8 +802,7 @@ export function LandingPage({
                       className={mobileNavItemClass}
                     >
                       <Trans
-                        id="landing.nav.pricing"
-                        message="Pricing & access"
+                        {...msg({ context: 'landing.nav.pricing', message: 'Pricing & access' })}
                       />
                     </a>
                   </>}
@@ -835,11 +815,11 @@ export function LandingPage({
             {family === "crystal"
               ? <CrystalLandingHero onEnterApp={onEnterApp} onSignIn={onSignIn} user={user} showLumi={showLumi} />
               : <ClassicLandingHero onEnterApp={onEnterApp} showLumi={showLumi} actionClass={actionClass} />}
+            {videoEnabled ? (
             <fieldset className="landing-atmospheres mb-3 border-l border-[var(--sf-border)] pl-4">
               <legend className="mb-2 text-xs font-bold text-[var(--sf-text-muted)]">
                 <Trans
-                  id="landing.hero.atmosphere"
-                  message="Choose an atmosphere"
+                  {...msg({ context: 'landing.hero.atmosphere', message: 'Choose an atmosphere' })}
                 />
               </legend>
               <div className="flex flex-wrap gap-x-4 gap-y-1">
@@ -857,6 +837,7 @@ export function LandingPage({
                 ))}
               </div>
             </fieldset>
+            ) : <p role="status" className="sr-only"><Trans {...msg({ context: 'landing.atmosphere.static', message: 'Static atmosphere is enabled for this device or motion preference.' })} /></p>}
           </div>
         </section>
         <section
@@ -865,7 +846,7 @@ export function LandingPage({
           aria-labelledby="classic-features-heading"
         >
           <h2 id="classic-features-heading" className="sr-only">
-            <Trans id="landing.features.title" message="Keep the words you meet." />
+            <Trans {...msg({ context: 'landing.features.title', message: 'Keep the words you meet.' })} />
           </h2>
           <ol className="grid gap-5 border-t border-[var(--sf-border)] pt-6 sm:grid-cols-3">
             {learningFlow.map((item, index) => (
@@ -893,18 +874,17 @@ export function LandingPage({
                 <Puzzle size={21} />
               </div>
               <p className={brandCalloutClass}>
-                <Trans id="landing.extension.eyebrow" message="Save from anywhere" />
+                <Trans {...msg({ context: 'landing.extension.eyebrow', message: 'Save from anywhere' })} />
               </p>
               <h2
                 id="extension-heading"
                 className="mt-4 max-w-md text-balance text-4xl font-black tracking-tight sm:text-5xl"
               >
-                <Trans id="landing.extension.title" message="Learn from the page you're already on." />
+                <Trans {...msg({ context: 'landing.extension.title', message: 'Learn from the page you\'re already on.' })} />
               </h2>
               <p className="mt-5 max-w-md leading-7 text-[var(--sf-text-muted)]">
                 <Trans
-                  id="landing.extension.description"
-                  message="The SonFlash Chrome extension turns any selected word or passage into a flashcard without leaving the page."
+                  {...msg({ context: 'landing.extension.description', message: 'The SonFlash Chrome extension turns any selected word or passage into a flashcard without leaving the page.' })}
                 />
               </p>
             </header>
@@ -946,18 +926,17 @@ export function LandingPage({
               <LanguagesIcon size={21} />
             </div>
             <p className={brandCalloutClass}>
-              <Trans id="landing.languages.eyebrow" message="Where SonFlash is headed" />
+              <Trans {...msg({ context: 'landing.languages.eyebrow', message: 'Where SonFlash is headed' })} />
             </p>
             <h2
               id="languages-heading"
               className={sectionTitleClass}
             >
-              <Trans id="landing.languages.title" message="English today. More languages on the way." />
+              <Trans {...msg({ context: 'landing.languages.title', message: 'English today. More languages on the way.' })} />
             </h2>
             <p className="mt-4 leading-7 text-[var(--sf-text-muted)]">
               <Trans
-                id="landing.languages.description"
-                message="SonFlash currently teaches English vocabulary, with meanings shown in English or Vietnamese. These vocabulary packs are in development and are not yet available to switch to."
+                {...msg({ context: 'landing.languages.description', message: 'SonFlash currently teaches English vocabulary, with meanings shown in English or Vietnamese. These vocabulary packs are in development and are not yet available to switch to.' })}
               />
             </p>
             <ul className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -967,17 +946,17 @@ export function LandingPage({
                   className="flex items-center justify-between gap-3 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-3 text-sm [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
                 >
                   <span className="font-semibold">
-                    {pack.id === "en" && <Trans id="landing.languages.pack.english" message="English" />}
-                    {pack.id === "ko" && <Trans id="landing.languages.pack.korean" message="한국어 · Korean" />}
-                    {pack.id === "ja" && <Trans id="landing.languages.pack.japanese" message="日本語 · Japanese" />}
-                    {pack.id === "zh" && <Trans id="landing.languages.pack.chinese" message="中文 · Chinese" />}
+                    {pack.id === "en" && <Trans {...msg({ context: 'landing.languages.pack.english', message: 'English' })} />}
+                    {pack.id === "ko" && <Trans {...msg({ context: 'landing.languages.pack.korean', message: '한국어 · Korean' })} />}
+                    {pack.id === "ja" && <Trans {...msg({ context: 'landing.languages.pack.japanese', message: '日本語 · Japanese' })} />}
+                    {pack.id === "zh" && <Trans {...msg({ context: 'landing.languages.pack.chinese', message: '中文 · Chinese' })} />}
                   </span>
                   <span
                     className={`rounded-full px-2.5 py-1 text-xs font-bold ${pack.available ? "bg-[color-mix(in_srgb,var(--sf-brand)_12%,transparent)] text-[var(--sf-brand-text)]" : "bg-[var(--sf-surface-muted)] text-[var(--sf-text-muted)]"}`}
                   >
                     {pack.available
-                      ? <Trans id="landing.languages.status.available" message="Available now" />
-                      : <Trans id="landing.languages.status.in-progress" message="In progress" />}
+                      ? <Trans {...msg({ context: 'landing.languages.status.available', message: 'Available now' })} />
+                      : <Trans {...msg({ context: 'landing.languages.status.in-progress', message: 'In progress' })} />}
                   </span>
                 </li>
               ))}
@@ -1001,42 +980,36 @@ export function LandingPage({
                 className="mt-6 text-balance text-4xl font-black tracking-tight sm:text-5xl"
               >
                 <Trans
-                  id="landing.methods.title"
-                  message="Review what is ready."
+                  {...msg({ context: 'landing.methods.title', message: 'Review what is ready.' })}
                 />
               </h2>
               <p className="mt-5 max-w-xl leading-7 text-[var(--sf-text-muted)]">
                 <Trans
-                  id="landing.methods.description"
-                  message="Your feedback helps plan a useful next review with FSRS scheduling."
+                  {...msg({ context: 'landing.methods.description', message: 'Your feedback helps plan a useful next review with FSRS scheduling.' })}
                 />
               </p>
               <dl className="mt-8 space-y-4 border-l border-[var(--sf-brand)] pl-5">
                 <div>
                   <dt className="font-bold">
                     <Trans
-                      id="landing.methods.context.title"
-                      message="See the meaning in context"
+                      {...msg({ context: 'landing.methods.context.title', message: 'See the meaning in context' })}
                     />
                   </dt>
                   <dd className={detailCopyClass}>
                     <Trans
-                      id="landing.methods.context.description"
-                      message="A clear card gives each word room to make sense."
+                      {...msg({ context: 'landing.methods.context.description', message: 'A clear card gives each word room to make sense.' })}
                     />
                   </dd>
                 </div>
                 <div>
                   <dt className="font-bold">
                     <Trans
-                      id="landing.methods.recall.title"
-                      message="Judge your recall honestly"
+                      {...msg({ context: 'landing.methods.recall.title', message: 'Judge your recall honestly' })}
                     />
                   </dt>
                   <dd className={detailCopyClass}>
                     <Trans
-                      id="landing.methods.recall.description"
-                      message="Four familiar ratings keep the choice quick."
+                      {...msg({ context: 'landing.methods.recall.description', message: 'Four familiar ratings keep the choice quick.' })}
                     />
                   </dd>
                 </div>
@@ -1045,14 +1018,12 @@ export function LandingPage({
             <div className="crystal-chamfer rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-7 shadow-[var(--sf-panel-shadow)]">
               <p className={brandTextClass}>
                 <Trans
-                  id="landing.methods.preview.caption"
-                  message="Built for the words you actually meet."
+                  {...msg({ context: 'landing.methods.preview.caption', message: 'Built for the words you actually meet.' })}
                 />
               </p>
               <p className="mt-4 font-serif-hero text-4xl leading-tight">
                 <Trans
-                  id="landing.methods.preview.quote"
-                  message="A vocabulary is useful when you can reach for it."
+                  {...msg({ context: 'landing.methods.preview.quote', message: 'A vocabulary is useful when you can reach for it.' })}
                 />
               </p>
               <button
@@ -1061,8 +1032,7 @@ export function LandingPage({
                 className={`${actionClass} mt-7 inline-flex items-center gap-2`}
               >
                 <Trans
-                  id="landing.methods.open-library"
-                  message="Open your library"
+                  {...msg({ context: 'landing.methods.open-library', message: 'Open your library' })}
                 />
                 <ArrowRight size={17} aria-hidden="true" />
               </button>
@@ -1076,20 +1046,20 @@ export function LandingPage({
         >
           <div className="mx-auto max-w-5xl">
             <p className={brandTextClass}>
-              <Trans id="landing.pricing.eyebrow" message="Free to start, Pro when you want more" />
+              <Trans {...msg({ context: 'landing.pricing.eyebrow', message: 'Free to start, Pro when you want more' })} />
             </p>
             <h2
               id="pricing-heading"
               className={sectionTitleClass}
             >
-              <Trans id="landing.pricing.title" message="Pricing & access" />
+              <Trans {...msg({ context: 'landing.pricing.title', message: 'Pricing & access' })} />
             </h2>
             <div className="mt-8 grid gap-8 lg:grid-cols-2">
               <div className="rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8 [html[data-theme-family=crystal]_&]:crystal-chamfer">
                 <div className="grid grid-cols-3 items-end gap-2 border-b border-[var(--sf-border)] pb-3">
-                  <span className="font-serif-hero text-lg"><Trans id="landing.pricing.free-vs-pro.title" message="Free vs Pro" /></span>
-                  <span className="text-center text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="landing.pricing.free-vs-pro.free" message="Free" /></span>
-                  <span className="text-center text-xs font-bold text-[var(--sf-brand-text)]"><Trans id="landing.pricing.free-vs-pro.pro" message="Pro" /></span>
+                  <span className="font-serif-hero text-lg"><Trans {...msg({ context: 'landing.pricing.free-vs-pro.title', message: 'Free vs Pro' })} /></span>
+                  <span className="text-center text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'landing.pricing.free-vs-pro.free', message: 'Free' })} /></span>
+                  <span className="text-center text-xs font-bold text-[var(--sf-brand-text)]"><Trans {...msg({ context: 'landing.pricing.free-vs-pro.pro', message: 'Pro' })} /></span>
                 </div>
                 {pricingRows.map(row => (
                   <div key={row.id} className="grid grid-cols-3 items-center gap-2 border-b border-[var(--sf-border)] py-3 text-sm last:border-b-0">
@@ -1099,17 +1069,16 @@ export function LandingPage({
                   </div>
                 ))}
                 <p className="mt-5 font-serif-hero text-2xl">
-                  <Trans id="landing.pricing.price" message="The final Pro price will be confirmed before sales open." />
+                  <Trans {...msg({ context: 'landing.pricing.price', message: 'The final Pro price will be confirmed before sales open.' })} />
                 </p>
                 <p className={sectionLeadClass}>
                   <Trans
-                    id="landing.pricing.purchase-note"
-                    message="Registering your interest does not charge you. Purchases are not open yet — we will follow up by email when they are."
+                    {...msg({ context: 'landing.pricing.purchase-note', message: 'Registering your interest does not charge you. Purchases are not open yet — we will follow up by email when they are.' })}
                   />
                 </p>
               </div>
               <div>
-                <h3 className="text-xl font-black tracking-tight"><Trans id="landing.pricing.faq.title" message="Questions" /></h3>
+                <h3 className="text-xl font-black tracking-tight"><Trans {...msg({ context: 'landing.pricing.faq.title', message: 'Questions' })} /></h3>
                 <dl className="mt-4 space-y-4 border-l border-[var(--sf-border)] pl-5">
                   {pricingFaq.map(item => (
                     <div key={item.id}>
@@ -1128,8 +1097,7 @@ export function LandingPage({
         >
           <p className={brandTextClass}>
             <Trans
-              id="landing.closing.eyebrow"
-              message="Your next word is waiting"
+              {...msg({ context: 'landing.closing.eyebrow', message: 'Your next word is waiting' })}
             />
           </p>
           <h2
@@ -1137,14 +1105,12 @@ export function LandingPage({
             className="mx-auto mt-4 max-w-3xl text-balance text-4xl font-black tracking-tight sm:text-6xl"
           >
             <Trans
-              id="landing.closing.title"
-              message="Build a vocabulary you can reach for."
+              {...msg({ context: 'landing.closing.title', message: 'Build a vocabulary you can reach for.' })}
             />
           </h2>
           <p className="mx-auto mt-5 max-w-xl leading-7 text-[var(--sf-text-muted)]">
             <Trans
-              id="landing.closing.description"
-              message="Start with the cards ready today, then make each new word easier to find again."
+              {...msg({ context: 'landing.closing.description', message: 'Start with the cards ready today, then make each new word easier to find again.' })}
             />
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -1153,7 +1119,7 @@ export function LandingPage({
               onClick={onEnterApp}
               className="brand-action inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-8 font-black text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none sm:w-auto [html[data-theme-family=crystal]_&]:crystal-chamfer"
             >
-              <Trans id="landing.hero.start" message="Start learning" />
+              <Trans {...msg({ context: 'landing.hero.start', message: 'Start learning' })} />
               <ArrowRight size={18} aria-hidden="true" />
             </button>
             {onSignIn && !user && (
@@ -1162,14 +1128,13 @@ export function LandingPage({
                 onClick={() => void onSignIn()}
                 className={`${actionClass} w-full sm:w-auto`}
               >
-                <Trans id="landing.hero.sign-in" message="Sign in to sync" />
+                <Trans {...msg({ context: 'landing.hero.sign-in', message: 'Sign in to sync' })} />
               </button>
             )}
           </div>
           <p className="mx-auto mt-5 max-w-2xl text-sm text-[var(--sf-text-muted)]">
             <Trans
-              id="landing.closing.consent"
-              message="SonFlash is for learners aged 18 and over. By signing in, you agree to the <terms>Terms</terms> and have read the <privacy>Privacy Policy</privacy>."
+              {...msg({ context: 'landing.closing.consent', message: 'SonFlash is for learners aged 18 and over. By signing in, you agree to the <terms>Terms</terms> and have read the <privacy>Privacy Policy</privacy>.' })}
               components={{
                 terms: <a className="rounded underline focus-visible:outline-2 focus-visible:outline-offset-2" href="/terms.html" />,
                 privacy: <a className="rounded underline focus-visible:outline-2 focus-visible:outline-offset-2" href="/privacy.html" />,
@@ -1182,28 +1147,26 @@ export function LandingPage({
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <p>
             <span className="font-bold text-[var(--sf-text)]">
-              <Trans id="landing.brand.plain" message="SonFlash" />
+              <Trans {...msg({ context: 'landing.brand.plain', message: 'SonFlash' })} />
             </span>{" "}
             <Trans
-              id="landing.footer.description"
-              message="for intentional vocabulary learning."
+              {...msg({ context: 'landing.footer.description', message: 'for intentional vocabulary learning.' })}
             />
           </p>
           <LocaleLinks compact />
           <p className="flex flex-wrap gap-x-4 gap-y-2">
             <a href="/privacy.html" className="rounded underline focus-visible:outline-2 focus-visible:outline-offset-2">
-              <Trans id="landing.footer.privacy" message="Privacy Policy" />
+              <Trans {...msg({ context: 'landing.footer.privacy', message: 'Privacy Policy' })} />
             </a>
             <a href="/terms.html" className="rounded underline focus-visible:outline-2 focus-visible:outline-offset-2">
-              <Trans id="landing.footer.terms" message="Terms" />
+              <Trans {...msg({ context: 'landing.footer.terms', message: 'Terms' })} />
             </a>
             <a href="/browser-extension-privacy.html" className="rounded underline focus-visible:outline-2 focus-visible:outline-offset-2">
-              <Trans id="landing.footer.extension" message="Extension" />
+              <Trans {...msg({ context: 'landing.footer.extension', message: 'Extension' })} />
             </a>
             <span>
               <Trans
-                id="landing.footer.copyright"
-                message="© {year} SonFlash"
+                {...msg({ context: 'landing.footer.copyright', message: '© {year} SonFlash' })}
                 values={{ year: new Date().getFullYear() }}
               />
             </span>

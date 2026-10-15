@@ -6,6 +6,7 @@ import {
   type LibraryCatalogQuery,
   type LibraryDifficulty,
 } from './libraryCatalogQuery';
+import { samePracticeDeckScope, type PracticeDeckScope } from '../../lib/practiceScope';
 
 export interface LibraryCatalogBrowser {
   getCurrentUrl(): string;
@@ -28,6 +29,7 @@ export interface LibraryCatalogActions {
   changeSearch(search: string): void;
   chooseCategory(category: string): void;
   chooseDeck(deck: string): void;
+  chooseDeckScope(scope: PracticeDeckScope): void;
   chooseDifficulty(difficulty: LibraryDifficulty): void;
   choosePartOfSpeech(partOfSpeech: string): void;
   chooseDate(date: string): void;
@@ -80,7 +82,7 @@ function sameModel(left: LibraryCatalogModel, right: LibraryCatalogModel): boole
   return left.search === right.search
     && left.debouncedSearch === right.debouncedSearch
     && left.category === right.category
-    && left.deck === right.deck
+    && samePracticeDeckScope(left.deck, right.deck)
     && left.difficulty === right.difficulty
     && left.partOfSpeech === right.partOfSpeech
     && left.starred === right.starred
@@ -207,7 +209,8 @@ export function createLibraryCatalogQueryController(
       }, searchDebounceMs);
     },
     chooseCategory: category => applyFilterIntent({ category }),
-    chooseDeck: deck => applyFilterIntent({ deck }),
+    chooseDeck: deck => applyFilterIntent({ deck: { kind: 'deck', name: deck } }),
+    chooseDeckScope: deck => applyFilterIntent({ deck }),
     chooseDifficulty: difficulty => applyFilterIntent({ difficulty }),
     choosePartOfSpeech: partOfSpeech => applyFilterIntent({ partOfSpeech }),
     chooseDate: date => applyFilterIntent({ date }),

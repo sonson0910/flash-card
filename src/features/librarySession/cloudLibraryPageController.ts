@@ -1,6 +1,7 @@
 import { shouldRefreshCloudCount, shouldRefreshCloudStats } from '../../lib/cloudReadPolicy';
-import { isCloudQuotaError } from '../../lib/cloudError';
+import { isCloudQuotaError, isRetryableCloudError } from '../../lib/cloudError';
 import type { CardQueryState } from '../../lib/cardQuery';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import { shouldRefreshCountForRealtimeChanges, type RealtimeChangeType } from '../../lib/realtimeSync';
 import type { CardData } from '../../types/card';
 
@@ -103,6 +104,8 @@ export interface CloudLibraryPageSnapshot {
   hasNext: boolean;
   isLoading: boolean;
   cloudUnavailable: boolean;
+  serverConfirmed?: boolean;
+  canRetryAutomatically: boolean;
   error: string | null;
   stats: CloudLibraryStats;
   statsTargetLanguage?: string | null;
@@ -151,6 +154,8 @@ export function createCloudLibraryPageController({
     hasNext: false,
     isLoading: false,
     cloudUnavailable: false,
+    serverConfirmed: false,
+    canRetryAutomatically: false,
     error: null,
     stats: EMPTY_LIBRARY_STATS,
     isStatsLoading: false,
@@ -174,13 +179,12 @@ export function createCloudLibraryPageController({
   };
 
   const setupOwner = (ownerId: string, targetLanguage: string | null) => {
-    if (activeOwnerId === ownerId) return;
-    activeOwnerId = ownerId;
-    ownerGeneration += 1;
-    statsGeneration += 1;
-    progressEvidenceGeneration += 1;
-    progressEvidenceLanguage = undefined;
-    const generation = ownerGeneration;
+    if (activeOwnerId !== ownerId) {
+      activeOwnerId = ownerId;
+      ownerGeneration += 1;
+      statsGeneration += 1;
+      progressEvidenceGeneration += 1;
+      progressEvidenceLanguage = undefined;
     unsubscribeFacets?.();
     unsubscribeFacets = null;
 
@@ -198,8 +202,9 @@ export function createCloudLibraryPageController({
       facets: cachedFacets?.categories ?? {},
       facetsComplete: cachedFacets?.complete ?? false,
     });
-
-    if (!adapter.available || safeCacheRead(() => cache.isBackoffActive(ownerId), false)) return;
+    }
+    if (unsubscribeFacets || !adapter.available || safeCacheRead(() => cache.isBackoffActive(ownerId), false)) return;
+    const generation = ownerGeneration;
     unsubscribeFacets = adapter.subscribeFacets(ownerId, facets => {
       if (generation !== ownerGeneration || activeOwnerId !== ownerId) return;
       publish({ facets: facets.categories, facetsComplete: facets.complete });
@@ -225,6 +230,7 @@ export function createCloudLibraryPageController({
         hasNext: fallback.hasNext,
         isLoading: false,
         cloudUnavailable: true,
+        canRetryAutomatically: isRetryableCloudError(error),
         error: null,
         ...(Object.keys(snapshot.facets).length === 0
           ? { facets: fallbackCategories(fallback.items), facetsComplete: false }
@@ -237,6 +243,7 @@ export function createCloudLibraryPageController({
       hasNext: false,
       isLoading: false,
       cloudUnavailable: true,
+      canRetryAutomatically: isRetryableCloudError(error),
       error: isCloudQuotaError(error)
         ? 'Firebase has reached today’s read quota and this page is not cached on the device.'
         : 'Could not load this card page. The filter may need a Firestore index or a working network connection.',
@@ -319,6 +326,8 @@ export function createCloudLibraryPageController({
       page: request.page,
       isLoading: true,
       cloudUnavailable: false,
+      serverConfirmed: false,
+      canRetryAutomatically: false,
       error: null,
     });
 
@@ -335,7 +344,7 @@ export function createCloudLibraryPageController({
       const defaultQuery = request.page === 1
         && request.query.wordPrefix === ''
         && !request.query.category
-        && !request.query.customDeck
+        && (request.query.customDeck?.kind ?? 'all') === ALL_PRACTICE_DECK_SCOPE.kind
         && !request.query.difficulty
         && !request.query.partOfSpeech
         && !request.query.bookmarkedOnly
@@ -379,6 +388,8 @@ export function createCloudLibraryPageController({
             hasNext: page.hasNext,
             isLoading: awaitingServerForEmptyCache,
             cloudUnavailable: false,
+            serverConfirmed: !page.fromCache && !page.hasPendingWrites,
+            canRetryAutomatically: false,
             error: null,
           });
           await safeCacheWriteAsync(() => cache.writePage({
@@ -444,6 +455,7 @@ export function createCloudLibraryPageController({
             publish({
               isLoading: false,
               cloudUnavailable: true,
+              canRetryAutomatically: isRetryableCloudError(error),
               error: null,
             });
           }

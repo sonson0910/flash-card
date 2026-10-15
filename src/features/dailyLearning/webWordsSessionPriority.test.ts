@@ -107,7 +107,7 @@ describe('promoteCardsToActiveSessionNewStage', () => {
     promoteCardsToActiveSessionNewStage(OWNER, [outsidePool, cards[0]], PAIR);
     const plan = buildDailyPlan(cards, { now: new Date('2026-09-28T00:00:00.000Z'), freshPriorityLogicalIds: readPendingFreshPriority(OWNER, PAIR) });
     const stages = buildSessionStagePlan(plan, cards);
-    expect(stages.fresh).toHaveLength(15);
+    expect(stages.fresh).toHaveLength(5);
 
     consumeScheduledFreshPriority(OWNER, PAIR, [...logicalIdsOf(stages.review), ...logicalIdsOf(stages.fresh)]);
     expect(readPendingFreshPriority(OWNER, PAIR)).toEqual([logicalIdentity(outsidePool)]);

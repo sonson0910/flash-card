@@ -1,7 +1,21 @@
 import { withTimeout } from './async';
 import { app, auth, getSonFlashFunctions, protectedFunctionsCapability } from './firebase';
 import { ProtectedFunctionError, runProtectedFunction } from './protectedFunctionsCapability';
-import { parseStoryInfo, parseWordInfo, type StoryInfo, type WordInfo } from './wordInfo';
+import {
+  parseDialogue,
+  parseExtractedWords,
+  parseMnemonic,
+  parseTextConversationResponse,
+  parseTutorAnswer,
+  type DialogueResult,
+  type ExtractedWordItem,
+} from './aiFeatureInfo';
+import { parseStoryInfo, parsePlainStoryInfo, parseWordInfo, type PlainStoryInfo, type StoryInfo, type WordInfo } from './wordInfo';
+import {
+  TEXT_CONVERSATION_LIMITS,
+  type TextConversationRequestV1,
+  type TextConversationResponseV1,
+} from '../features/conversation/textConversationModel';
 
 const AI_ATTEMPT_TIMEOUT_MS = 65_000;
 const AI_MAX_ATTEMPTS = 2;
@@ -10,6 +24,11 @@ const protectedOperationLabel = {
   word: 'AI generation',
   story: 'Story generation',
   translate: 'Translation',
+  tutor: 'AI tutor',
+  mnemonic: 'AI mnemonic',
+  extract: 'Vocabulary extraction',
+  dialogue: 'Dialogue generation',
+  conversation: 'Text conversation',
 } as const;
 
 export type WordGenerationProgress = {
@@ -22,7 +41,7 @@ export type WordGenerationProgress = {
 };
 
 const callProductionAI = async <T,>(
-  action: 'word' | 'story' | 'translate', input: unknown, expectedOwnerId: string | null,
+  action: keyof typeof protectedOperationLabel, input: unknown, expectedOwnerId: string | null = auth?.currentUser?.uid ?? null,
   operationId?: string,
   onProgress?: (progress: WordGenerationProgress) => void,
   signal?: AbortSignal,
@@ -35,14 +54,17 @@ const callProductionAI = async <T,>(
         code: 'failed-precondition',
       });
     }
-    if (!expectedOwnerId || auth?.currentUser?.uid !== expectedOwnerId) {
+    if (expectedOwnerId && auth?.currentUser?.uid !== expectedOwnerId) {
+      throw new ProtectedFunctionError({ message: 'The AI account changed.', kind: 'authentication', code: 'owner-mismatch', retryable: false });
+    }
+    if (!expectedOwnerId) {
       throw Object.assign(new Error('Authentication is unavailable.'), {
         code: 'unauthenticated',
       });
     }
     const functions = await getSonFlashFunctions(app);
     if (auth?.currentUser?.uid !== expectedOwnerId) {
-      throw Object.assign(new Error('The AI account changed.'), { code: 'unauthenticated' });
+      throw new ProtectedFunctionError({ message: 'The AI account changed.', kind: 'authentication', code: 'owner-mismatch', retryable: false });
     }
     const callable = httpsCallable<{
       action: string; input: unknown; expectedOwnerId: string; operationId?: string;
@@ -189,11 +211,18 @@ export interface StoryGenerationOptions {
   translationLanguage: 'vi' | 'en';
 }
 
-export async function generateStoryContext(words: string[], options?: StoryGenerationOptions): Promise<StoryInfo> {
-  const expectedOwnerId = auth?.currentUser?.uid ?? null;
+export function generateStoryContext(words: string[], options: StoryGenerationOptions, ownerId?: string | null): Promise<PlainStoryInfo>;
+export function generateStoryContext(words: string[], expectedOwnerId?: string | null): Promise<StoryInfo>;
+export async function generateStoryContext(
+  words: string[], optionsOrOwner?: StoryGenerationOptions | string | null, capturedOwnerId?: string | null,
+): Promise<StoryInfo | PlainStoryInfo> {
+  const options = typeof optionsOrOwner === 'object' && optionsOrOwner !== null ? optionsOrOwner : undefined;
+  const expectedOwnerId = typeof optionsOrOwner === 'string' || optionsOrOwner === null
+    ? optionsOrOwner : capturedOwnerId ?? auth?.currentUser?.uid ?? null;
   const safeWords = words.slice(0, 5).map(word => word.trim().slice(0, 80)).filter(Boolean);
-  const input = options ? { words: safeWords, ...options } : safeWords;
-  return parseStoryInfo(await withNetworkRetry(() => callProductionAI<unknown>('story', input, expectedOwnerId)));
+  const input = options ? { words: safeWords, ...options } : { schemaVersion: 2, words: safeWords };
+  const result = await withNetworkRetry(() => callProductionAI<unknown>('story', input, expectedOwnerId));
+  return options ? parsePlainStoryInfo(result) : parseStoryInfo(result, safeWords);
 }
 
 export async function translateText(text: string): Promise<string> {
@@ -201,4 +230,86 @@ export async function translateText(text: string): Promise<string> {
   const safeText = text.trim().slice(0, 2048);
   const translated = await withNetworkRetry(() => callProductionAI<unknown>('translate', safeText, expectedOwnerId));
   return typeof translated === 'string' ? translated.trim().slice(0, 2048) : '';
+}
+
+export interface VocabularyTutorInput {
+  word: string;
+  translation: string;
+  partOfSpeech?: string;
+  question: string;
+}
+
+export interface VocabularyCardInput {
+  word: string;
+  translation: string;
+  partOfSpeech?: string;
+}
+
+const normalizeVocabularyCard = (input: VocabularyCardInput): VocabularyCardInput => {
+  const word = input.word.trim().slice(0, 80);
+  const translation = input.translation.trim().slice(0, 256);
+  const partOfSpeech = input.partOfSpeech?.trim().slice(0, 64);
+  if (!word || !translation) throw new Error('A vocabulary card requires word and translation.');
+  return { word, translation, ...(partOfSpeech ? { partOfSpeech } : {}) };
+};
+
+export async function askVocabularyTutor(input: VocabularyTutorInput): Promise<string> {
+  const card = normalizeVocabularyCard(input);
+  const question = input.question.trim().slice(0, 500);
+  if (!question) throw new Error('A tutor question is required.');
+  return parseTutorAnswer(
+    await withNetworkRetry(() => callProductionAI<unknown>('tutor', { ...card, question })),
+  );
+}
+
+export async function generateMnemonic(input: VocabularyCardInput): Promise<string> {
+  const card = normalizeVocabularyCard(input);
+  return parseMnemonic(await withNetworkRetry(() => callProductionAI<unknown>('mnemonic', card)));
+}
+
+export async function extractVocabulary(text: string, language?: { targetLanguage: string; translationLanguage: string }, expectedOwnerId?: string | null): Promise<ExtractedWordItem[]> {
+  const safeText = text.trim().slice(0, 2_000);
+  if (!safeText) throw new Error('Vocabulary text is required.');
+  return parseExtractedWords(
+    await withNetworkRetry(() => callProductionAI<unknown>('extract', language ? { text: safeText, ...language } : safeText, expectedOwnerId)),
+  );
+}
+
+export async function generateDialogue(
+  cards: VocabularyCardInput[],
+  expectedOwnerId?: string | null,
+): Promise<DialogueResult> {
+  const safeCards = cards.slice(0, 5).map(normalizeVocabularyCard).map(({ word, translation }) => ({
+    word,
+    translation,
+  }));
+  if (safeCards.length === 0) throw new Error('At least one vocabulary card is required.');
+  return parseDialogue(
+    await withNetworkRetry(() => callProductionAI<unknown>('dialogue', safeCards, expectedOwnerId)),
+  );
+}
+
+export async function sendTextConversationTurn(
+  input: TextConversationRequestV1,
+  expectedOwnerId?: string | null,
+): Promise<TextConversationResponseV1> {
+  const safeInput = {
+    sessionId: input.sessionId,
+    mission: {
+      schemaVersion: input.mission.schemaVersion,
+      id: input.mission.id,
+      title: input.mission.title,
+      goal: input.mission.goal,
+      cards: input.mission.cards.map(({ id, word, translation }) => ({ id, word, translation })),
+    },
+    turn: input.turn,
+    history: input.history.map(({ role, text }) => ({ role, text })),
+    userMessage: input.userMessage,
+  };
+  const response = parseTextConversationResponse(
+    await withNetworkRetry(() => callProductionAI<unknown>('conversation', safeInput, expectedOwnerId)),
+  );
+  return input.turn >= TEXT_CONVERSATION_LIMITS.maximumTurns
+    ? { ...response, sessionComplete: true }
+    : response;
 }

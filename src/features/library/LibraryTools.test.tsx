@@ -7,12 +7,15 @@ import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import type { AiGenerationAccess } from './aiGenerationAccess';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import {
   DeckDeletionDialogContent,
   LibraryTools,
   SpreadsheetImportStatus,
   createDeckThenClearInput,
   deleteDeckThenCloseDialog,
+  getDeckCreationValidationError,
+  getGenerationDeckSelection,
   restoreDeckDeletionFocus,
 } from './LibraryTools';
 import { createExtractedWordsCsv } from './extractedWordsImport';
@@ -45,11 +48,15 @@ const renderLibraryTools = ({
   generationAccess,
   libraryCount = 0,
   activePartOfSpeech = 'All',
+  customDecks = [],
+  activeCustomDeck = ALL_PRACTICE_DECK_SCOPE,
 }: {
   isAuthenticated: boolean;
   generationAccess: AiGenerationAccess;
   libraryCount?: number;
   activePartOfSpeech?: string;
+  customDecks?: string[];
+  activeCustomDeck?: typeof ALL_PRACTICE_DECK_SCOPE | { kind: 'unassigned' } | { kind: 'deck'; name: string };
 }) => renderMarkup(
   <LibraryTools
     fileInputRef={{ current: null }}
@@ -74,11 +81,11 @@ const renderLibraryTools = ({
     activeDate="All"
     setActiveDate={vi.fn()}
     availableDates={['All']}
-    customDecks={[]}
+    customDecks={customDecks}
     newDeckInput=""
     setNewDeckInput={vi.fn()}
     createCustomDeck={vi.fn(async () => undefined)}
-    activeCustomDeck="All"
+    activeCustomDeck={activeCustomDeck}
     setActiveCustomDeck={vi.fn()}
     cards={[]}
     deleteCustomDeck={vi.fn(async () => undefined)}
@@ -225,6 +232,40 @@ describe('quick learning tools', () => {
     expect(html).toMatch(/data-library-tool="filters"[^>]*data-tool-priority="secondary"/);
     expect(html).not.toContain('liquid-glass');
   });
+
+  it('gives deck spaces their own primary section and a native card destination selector', () => {
+    const html = renderLibraryTools({
+      isAuthenticated: true,
+      generationAccess: { available: true },
+      libraryCount: 1,
+      customDecks: ['IELTS'],
+      activeCustomDeck: { kind: 'deck', name: 'IELTS' },
+    });
+
+    expect(html).toMatch(/data-library-tool="deck-spaces"[^>]*data-tool-priority="primary"/);
+    expect(html).toContain('Deck space');
+    expect(html).toContain('id="new-card-deck"');
+    expect(html).toContain('<option value="">Unassigned</option>');
+    expect(html).toMatch(/<option value="IELTS"(?: selected="")?>IELTS<\/option>/);
+    expect(html.indexOf('data-library-tool="deck-spaces"')).toBeLessThan(html.indexOf('data-library-tool="filters"'));
+  });
+
+  it('keeps Unassigned and deleted deck selections out of generation requests', () => {
+    expect(getGenerationDeckSelection({ kind: 'unassigned' }, ['IELTS'])).toBe('');
+    expect(getGenerationDeckSelection(ALL_PRACTICE_DECK_SCOPE, ['IELTS'])).toBe('');
+    expect(getGenerationDeckSelection({ kind: 'deck', name: 'Removed' }, ['IELTS'])).toBe('');
+    expect(getGenerationDeckSelection({ kind: 'deck', name: 'IELTS' }, ['IELTS'])).toBe('IELTS');
+  });
+});
+
+describe('library touch targets', () => {
+  it('keeps filters, deck controls, and creation actions at least 44px tall', () => {
+    const source = readFileSync(fileURLToPath(new URL('./LibraryTools.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--sf-brand)]');
+    expect(source).toContain('flex size-11 items-center justify-center rounded-lg');
+    expect(source).toContain('flex min-h-11 min-w-11 items-center gap-1.5 rounded-full border px-3 py-1');
+  });
 });
 
 describe('library touch targets', () => {
@@ -313,6 +354,12 @@ const deferred = <T,>() => {
 };
 
 describe('custom deck mutation feedback', () => {
+  it('explains reserved deck names without flagging ordinary names', () => {
+    expect(getDeckCreationValidationError(' Ａｌｌ ')).toContain('reserved');
+    expect(getDeckCreationValidationError(' TOEIC ')).toBeNull();
+    expect(getDeckCreationValidationError('One more')).toBeNull();
+  });
+
   it('clears the deck name only after creation is confirmed', async () => {
     const remoteCreate = deferred<void>();
     const clearInput = vi.fn();
@@ -342,7 +389,12 @@ describe('custom deck mutation feedback', () => {
     const remoteDelete = deferred<void>();
     const closeDialog = vi.fn();
 
-    const deletion = deleteDeckThenCloseDialog('IELTS', () => remoteDelete.promise, closeDialog);
+    const deletion = deleteDeckThenCloseDialog(
+      { name: 'IELTS', ownerId: 'alice' },
+      'alice',
+      () => remoteDelete.promise,
+      closeDialog,
+    );
     expect(closeDialog).not.toHaveBeenCalled();
 
     remoteDelete.resolve();
@@ -355,11 +407,27 @@ describe('custom deck mutation feedback', () => {
     const closeDialog = vi.fn();
 
     await expect(deleteDeckThenCloseDialog(
-      'IELTS',
+      { name: 'IELTS', ownerId: 'alice' },
+      'alice',
       async () => { throw new Error('offline'); },
       closeDialog,
     )).rejects.toThrow('offline');
 
+    expect(closeDialog).not.toHaveBeenCalled();
+  });
+
+  it('does not invoke a stale deletion intent for another owner', async () => {
+    const deleteDeck = vi.fn(async () => undefined);
+    const closeDialog = vi.fn();
+
+    await expect(deleteDeckThenCloseDialog(
+      { name: 'IELTS', ownerId: 'alice' },
+      'bob',
+      deleteDeck,
+      closeDialog,
+    )).resolves.toBe(false);
+
+    expect(deleteDeck).not.toHaveBeenCalled();
     expect(closeDialog).not.toHaveBeenCalled();
   });
 

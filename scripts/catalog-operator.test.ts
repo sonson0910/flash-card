@@ -9,10 +9,12 @@ import type { LexemeV3, TrackMembershipV3 } from '../src/features/multilingual/s
 import type {
   CatalogCandidateProvenanceV1,
   CatalogReviewerAuthorityV1,
+  CatalogSourceAssetRegistryV1,
   CatalogSourceBundleV1,
 } from '../src/features/catalogPipeline/catalogContracts';
 import {
   buildCatalogRelease,
+  fingerprintCatalogApproval,
   fingerprintCatalogReviewContent,
   fingerprintCatalogSourceBundle,
   sha256Hex,
@@ -21,6 +23,7 @@ import { createEnglishPilotCatalog } from '../src/features/catalogPipeline/pilot
 import {
   buildCatalogFiles,
   loadCatalogSource,
+  loadCatalogSourceAssetRegistry,
   validateCatalogFiles,
   verifyCatalogFiles,
   writeBuiltReleaseAtomic,
@@ -29,18 +32,48 @@ import {
 const temporaryDirectories: string[] = [];
 const CLI_PROCESS_TIMEOUT_MS = 25_000;
 const CLI_TEST_TIMEOUT_MS = 30_000;
+const runCatalogCli = (
+  args: string[],
+  options: { env?: NodeJS.ProcessEnv; timeout?: number; cwd?: string; encoding?: 'utf8' } = {},
+) => spawnSync(process.execPath, args, {
+  cwd: path.resolve('.'),
+  encoding: 'utf8',
+  timeout: CLI_PROCESS_TIMEOUT_MS,
+  ...options,
+});
 const now = new Date().toISOString();
 const provenance: CatalogCandidateProvenanceV1 = {
   schemaVersion: 1,
   sourceRef: 'editorial-team',
   sourceUrl: null,
   licenseId: 'CC0-1.0',
-  rightsEvidenceId: null,
+  rightsEvidenceId: 'rights:editorial-2026',
   attribution: 'LingoFlash editorial team',
   authorId: 'author-1',
   origin: 'human-authored',
   publishability: 'publishable',
 };
+
+const rightsRegistry = (): CatalogSourceAssetRegistryV1 => ({
+  registryVersion: 1,
+  assets: [{
+    sourceRef: 'editorial-team',
+    sourceUrl: null,
+    licenseId: 'CC0-1.0',
+    rightsEvidenceId: 'rights:editorial-2026',
+    basis: 'open-license',
+    commercialUse: 'allowed',
+    derivatives: 'allowed',
+    rehosting: 'allowed',
+    attribution: { required: false, text: null },
+    thirdPartyFragments: 'none',
+    territory: 'worldwide',
+    expiresAt: null,
+    sourceRevision: 'revision-1',
+    sourceAssetSha256: 'a'.repeat(64),
+    revokedAt: null,
+  }],
+});
 
 const temporaryDirectory = async (): Promise<string> => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'lingoflash-catalog-'));
@@ -74,6 +107,7 @@ const writeSource = async (root: string, source: CatalogSourceBundleV1): Promise
       JSON.stringify(source.unitDescriptors),
     );
   }
+  await writeFile(path.join(root, 'rights-registry.json'), JSON.stringify(rightsRegistry()));
   return manifestPath;
 };
 
@@ -154,7 +188,7 @@ const authorityFor = async (
   reviewerId = 'fixture-reviewer',
 ): Promise<CatalogReviewerAuthorityV1> => ({
   reviewerId,
-  approvedDigest: await fingerprintCatalogSourceBundle(source),
+  approvedDigest: await fingerprintCatalogApproval(source, rightsRegistry()),
   reviewedAt,
 });
 
@@ -171,13 +205,20 @@ const publishedV2Source = async (): Promise<CatalogSourceBundleV1> => {
 };
 
 describe('catalog filesystem operator', () => {
+  it('terminates a hung CLI child at a finite timeout', () => {
+    const result = runCatalogCli(['-e', 'setTimeout(() => {}, 1000)'], { timeout: 25 });
+
+    expect(result.status).toBeNull();
+    expect(result.error).toMatchObject({ code: 'ETIMEDOUT' });
+  });
+
   it('runs the real validate CLI against explicit bounded JSONL files', async () => {
     const root = await temporaryDirectory();
     const source = createEnglishPilotCatalog();
     const manifestPath = await writeSource(root, source);
-    const result = spawnSync(process.execPath, [
+    const result = runCatalogCli([
       'scripts/catalog-gate.mjs', 'validate', '--input', manifestPath,
-    ], { cwd: path.resolve('.'), encoding: 'utf8', timeout: CLI_PROCESS_TIMEOUT_MS });
+    ]);
 
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({
@@ -187,6 +228,30 @@ describe('catalog filesystem operator', () => {
       memberships: 900,
       sourceDigest: await fingerprintCatalogSourceBundle(source),
     });
+  }, CLI_TEST_TIMEOUT_MS);
+
+  it('feeds optional rights-aware validation approvalDigest into the build', async () => {
+    const root = await temporaryDirectory();
+    const source = await publishedSource();
+    const manifestPath = await writeSource(root, source);
+    const rightsPath = path.join(root, 'rights-registry.json');
+    const validateCli = runCatalogCli([
+      'scripts/catalog-gate.mjs', 'validate', '--input', manifestPath, '--rights', rightsPath,
+    ]);
+    expect(validateCli.status).toBe(0);
+    const validation = JSON.parse(validateCli.stdout) as { approvalDigest?: string };
+    expect(validation).toMatchObject({
+      status: 'accepted',
+      approvalDigest: await fingerprintCatalogApproval(source, rightsRegistry()),
+    });
+    if (validation.approvalDigest === undefined) throw new Error('Expected approval digest.');
+
+    const result = await buildCatalogFiles(manifestPath, path.join(root, 'release'), rightsPath, {
+      reviewerId: 'fixture-reviewer',
+      approvedDigest: validation.approvalDigest,
+      reviewedAt: now,
+    });
+    expect(result).toMatchObject({ status: 'built', memberships: 1 });
   }, CLI_TEST_TIMEOUT_MS);
 
   it('rejects traversal, symlink, and oversized manifest inputs', async () => {
@@ -210,13 +275,48 @@ describe('catalog filesystem operator', () => {
     await expect(loadCatalogSource(oversizedManifest)).rejects.toThrow(/exceeds/i);
   });
 
+  it('requires a separate bounded non-symlink rights registry for builds', async () => {
+    const root = await temporaryDirectory();
+    const manifestPath = await writeSource(root, await publishedSource());
+    const output = path.join(root, 'release');
+    await expect(buildCatalogFiles(
+      manifestPath,
+      output,
+      path.join(root, 'missing-rights.json'),
+      await authorityFor(await publishedSource()),
+    )).rejects.toThrow();
+    await expect(readdir(output)).rejects.toMatchObject({ code: 'ENOENT' });
+
+    const linkedRights = path.join(root, 'linked-rights.json');
+    await symlink(path.join(root, 'rights-registry.json'), linkedRights);
+    await expect(loadCatalogSourceAssetRegistry(linkedRights)).rejects.toThrow(/symbolic link/i);
+  });
+
+  it('requires --rights for CLI builds', async () => {
+    const root = await temporaryDirectory();
+    const manifestPath = await writeSource(root, await publishedSource());
+    const output = path.join(root, 'release');
+    const result = runCatalogCli([
+      'scripts/catalog-gate.mjs', 'build', '--input', manifestPath, '--out', output,
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(JSON.parse(result.stderr)).toMatchObject({
+      status: 'error', message: expect.stringContaining('--rights'),
+    });
+    await expect(readdir(output)).rejects.toMatchObject({ code: 'ENOENT' });
+  }, CLI_TEST_TIMEOUT_MS);
+
   it('rejects the draft pilot build without creating its output directory', async () => {
     const root = await temporaryDirectory();
     const source = createEnglishPilotCatalog();
     const manifestPath = await writeSource(root, source);
     const output = path.join(root, 'release');
 
-    await expect(buildCatalogFiles(manifestPath, output, await authorityFor(source, now, 'fixture-reviewer'))).resolves.toMatchObject({
+    await expect(buildCatalogFiles(
+      manifestPath, output, path.join(root, 'rights-registry.json'),
+      await authorityFor(source, now, 'fixture-reviewer'),
+    )).resolves.toMatchObject({
       status: 'rejected', reason: 'entity-not-published',
     });
     await expect(readdir(output)).rejects.toMatchObject({ code: 'ENOENT' });
@@ -228,9 +328,10 @@ describe('catalog filesystem operator', () => {
     const manifestPath = await writeSource(root, source);
     const output = path.join(root, 'release');
 
-    await expect(buildCatalogFiles(manifestPath, output, await authorityFor(
-      source, now, 'different-fixture-reviewer',
-    ))).resolves.toMatchObject({
+    await expect(buildCatalogFiles(
+      manifestPath, output, path.join(root, 'rights-registry.json'),
+      await authorityFor(source, now, 'different-fixture-reviewer'),
+    )).resolves.toMatchObject({
       status: 'rejected', reason: 'reviewer-not-trusted',
     });
     await expect(readdir(output)).rejects.toMatchObject({ code: 'ENOENT' });
@@ -245,6 +346,7 @@ describe('catalog filesystem operator', () => {
     await expect(buildCatalogFiles(
       manifestPath,
       output,
+      path.join(root, 'rights-registry.json'),
       await authorityFor(source, '2020-01-01T00:00:00.000Z'),
     )).resolves.toMatchObject({ status: 'rejected', reason: 'approval-stale' });
     await expect(readdir(output)).rejects.toMatchObject({ code: 'ENOENT' });
@@ -260,11 +362,10 @@ describe('catalog filesystem operator', () => {
     delete environment.CATALOG_APPROVED_DIGEST;
     delete environment.CATALOG_REVIEWED_AT;
 
-    const result = spawnSync(process.execPath, [
+    const result = runCatalogCli([
       'scripts/catalog-gate.mjs', 'build', '--input', manifestPath, '--out', output,
-    ], {
-      cwd: path.resolve('.'), encoding: 'utf8', env: environment, timeout: CLI_PROCESS_TIMEOUT_MS,
-    });
+      '--rights', path.join(root, 'rights-registry.json'),
+    ], { env: environment });
 
     expect(result.status).toBe(1);
     expect(JSON.parse(result.stderr)).toMatchObject({
@@ -279,10 +380,10 @@ describe('catalog filesystem operator', () => {
     const manifestPath = await writeSource(root, source);
     const output = path.join(root, 'release');
 
-    const result = spawnSync(process.execPath, [
+    const result = runCatalogCli([
       'scripts/catalog-gate.mjs', 'build', '--input', manifestPath, '--out', output,
+      '--rights', path.join(root, 'rights-registry.json'),
     ], {
-      cwd: path.resolve('.'), encoding: 'utf8',
       env: {
         ...process.env,
         CATALOG_REVIEWER_ID: 'fixture-reviewer',
@@ -305,6 +406,7 @@ describe('catalog filesystem operator', () => {
     const build = await buildCatalogRelease(source, {
       sequence: 1, previousReleaseId: null,
       reviewerAuthority: await authorityFor(source),
+      trustedAssetRegistry: rightsRegistry(),
     });
     expect(build.status).toBe('built');
     if (build.status !== 'built') throw new Error('Expected publishable fixture to build.');
@@ -327,8 +429,12 @@ describe('catalog filesystem operator', () => {
     const secondManifest = await writeSource(secondRoot, source);
 
     const authority = await authorityFor(source);
-    const first = await buildCatalogFiles(firstManifest, path.join(firstRoot, 'release'), authority);
-    const second = await buildCatalogFiles(secondManifest, path.join(secondRoot, 'release'), authority);
+    const first = await buildCatalogFiles(
+      firstManifest, path.join(firstRoot, 'release'), path.join(firstRoot, 'rights-registry.json'), authority,
+    );
+    const second = await buildCatalogFiles(
+      secondManifest, path.join(secondRoot, 'release'), path.join(secondRoot, 'rights-registry.json'), authority,
+    );
     expect(second).toEqual(first);
     const firstManifestBytes = await readFile(path.join(firstRoot, 'release/release-manifest.json'));
     const secondManifestBytes = await readFile(path.join(secondRoot, 'release/release-manifest.json'));
@@ -351,10 +457,10 @@ describe('catalog filesystem operator', () => {
     await expect(validateCatalogFiles(firstManifest)).resolves.toMatchObject({ status: 'accepted' });
 
     const cliOutput = path.join(firstRoot, 'cli-release');
-    const buildCli = spawnSync(process.execPath, [
+    const buildCli = runCatalogCli([
       'scripts/catalog-gate.mjs', 'build', '--input', firstManifest, '--out', cliOutput,
+      '--rights', path.join(firstRoot, 'rights-registry.json'),
     ], {
-      cwd: path.resolve('.'), encoding: 'utf8',
       env: {
         ...process.env,
         CATALOG_REVIEWER_ID: authority.reviewerId,
@@ -365,7 +471,7 @@ describe('catalog filesystem operator', () => {
     });
     expect(buildCli.status).toBe(0);
     expect(JSON.parse(buildCli.stdout)).toMatchObject({ status: 'built', memberships: 1 });
-    const verifyCli = spawnSync(process.execPath, [
+    const verifyCli = runCatalogCli([
       'scripts/catalog-gate.mjs', 'verify', '--manifest', path.join(cliOutput, 'release-manifest.json'),
     ], { cwd: path.resolve('.'), encoding: 'utf8', timeout: CLI_PROCESS_TIMEOUT_MS });
     expect(verifyCli.status).toBe(0);
@@ -379,7 +485,7 @@ describe('catalog filesystem operator', () => {
     const output = path.join(root, 'release-v2');
     const authority = await authorityFor(source);
 
-    const built = await buildCatalogFiles(manifestPath, output, authority, undefined, true);
+    const built = await buildCatalogFiles(manifestPath, output, path.join(root, 'rights-registry.json'), authority, undefined, true);
     expect(built).toMatchObject({ status: 'built', memberships: 1 });
     const release = JSON.parse(await readFile(path.join(output, 'release-manifest.json'), 'utf8'));
     expect(release).toMatchObject({ manifestVersion: 2, unitDescriptors: source.unitDescriptors });
@@ -399,7 +505,9 @@ describe('catalog filesystem operator', () => {
     const source = await publishedSource();
     const manifestPath = await writeSource(root, source);
     const output = path.join(root, 'release');
-    await buildCatalogFiles(manifestPath, output, await authorityFor(source));
+    await buildCatalogFiles(
+      manifestPath, output, path.join(root, 'rights-registry.json'), await authorityFor(source),
+    );
     const releaseManifestPath = path.join(output, 'release-manifest.json');
     const releaseManifest = JSON.parse(await readFile(releaseManifestPath, 'utf8')) as {
       chunks: readonly { path: string }[];
@@ -419,7 +527,7 @@ describe('catalog filesystem operator', () => {
     const source = await publishedSource();
     const manifestPath = await writeSource(root, source);
     const output = path.join(root, 'release');
-    await buildCatalogFiles(manifestPath, output, await authorityFor(source));
+    await buildCatalogFiles(manifestPath, output, path.join(root, 'rights-registry.json'), await authorityFor(source));
     const releaseManifestPath = path.join(output, 'release-manifest.json');
     const release = JSON.parse(await readFile(releaseManifestPath, 'utf8')) as {
       counts: { encodedBytes: number; lexemes: number };
@@ -451,7 +559,7 @@ describe('catalog filesystem operator', () => {
     const v2 = await publishedV2Source();
     const v2Manifest = await writeSource(root, v2);
     const authority = await authorityFor(v2);
-    await expect(buildCatalogFiles(v2Manifest, path.join(root, 'v2'), authority)).resolves.toMatchObject({
+    await expect(buildCatalogFiles(v2Manifest, path.join(root, 'v2'), path.join(root, 'rights-registry.json'), authority)).resolves.toMatchObject({
       status: 'rejected', reason: 'lineage-proof-required',
     });
 
@@ -459,7 +567,7 @@ describe('catalog filesystem operator', () => {
     const previous = await publishedSource();
     const previousManifest = await writeSource(previousRoot, previous);
     const previousOutput = path.join(previousRoot, 'release');
-    await buildCatalogFiles(previousManifest, previousOutput, await authorityFor(previous));
+    await buildCatalogFiles(previousManifest, previousOutput, path.join(previousRoot, 'rights-registry.json'), await authorityFor(previous));
     const mismatched = {
       ...v2,
       manifest: { ...v2.manifest, catalogId: 'different-catalog' },
@@ -469,6 +577,7 @@ describe('catalog filesystem operator', () => {
     await expect(buildCatalogFiles(
       mismatchManifest,
       path.join(mismatchRoot, 'release'),
+      path.join(mismatchRoot, 'rights-registry.json'),
       await authorityFor(mismatched),
       path.join(previousOutput, 'release-manifest.json'),
     )).resolves.toMatchObject({ status: 'rejected', reason: 'incompatible-lineage' });

@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardQueryState } from '../../lib/cardQuery';
 import type { CardData } from '../../types/card';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import { EMPTY_LIBRARY_STATS } from './cloudLibraryPageController';
 import {
   useLibrarySession,
@@ -12,7 +13,7 @@ import {
 
 const query: CardQueryState = {
   category: null,
-  customDeck: null,
+  customDeck: ALL_PRACTICE_DECK_SCOPE,
   difficulty: null,
   partOfSpeech: null,
   bookmarkedOnly: false,
@@ -104,6 +105,7 @@ const createDependencies = (authenticated = true) => {
       hasNext: true,
       isLoading: false,
       cloudUnavailable: false,
+      canRetryAutomatically: false,
       error: null,
       stats: EMPTY_LIBRARY_STATS,
       isStatsLoading: false,

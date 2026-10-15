@@ -26,9 +26,9 @@ function GoalRow({ course, goal, pending }: { readonly course: Course; readonly 
         {goal.level && <span>{goal.level}</span>}
         {goal.level && goal.targetDate && <span> · </span>}
         {goal.targetDate && <span>{goal.targetDate}</span>}
-        {!goal.level && !goal.targetDate && <Trans id="course.goal.no-detail" message="No level or date set" />}
-        {goal.status === 'paused' && <span className="ml-1 font-semibold"><Trans id="course.goal.paused" message="(paused)" /></span>}
-        {goal.status === 'completed' && <span className="ml-1 font-semibold"><Trans id="course.goal.completed" message="(completed)" /></span>}
+        {!goal.level && !goal.targetDate && <Trans {...msg({ context: 'course.goal.no-detail', message: 'No level or date set' })} />}
+        {goal.status === 'paused' && <span className="ml-1 font-semibold"><Trans {...msg({ context: 'course.goal.paused', message: '(paused)' })} /></span>}
+        {goal.status === 'completed' && <span className="ml-1 font-semibold"><Trans {...msg({ context: 'course.goal.completed', message: '(completed)' })} /></span>}
       </span>
     </span>
     {!editing && <button type="button" disabled={pending} onClick={() => { setLevel(goal.level ?? ''); setTargetDate(goal.targetDate ?? ''); setEditing(true); }} className={iconButtonClass}
@@ -47,17 +47,17 @@ function GoalRow({ course, goal, pending }: { readonly course: Course; readonly 
         if (result.ok) setEditing(false);
       }).finally(() => setSaving(false));
     }}>
-      <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="course.goal.add.level-label" message="Level or target (optional)" />
+      <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.goal.add.level-label', message: 'Level or target (optional)' })} />
         <input className={goalFieldClass}
           value={level} onChange={event => setLevel(event.target.value)} disabled={pending || saving} maxLength={32} />
       </label>
-      <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="course.goal.add.date-label" message="Exam or target date (optional)" />
+      <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.goal.add.date-label', message: 'Exam or target date (optional)' })} />
         <input type="date" className={goalFieldClass}
           value={targetDate} onChange={event => setTargetDate(event.target.value)} disabled={pending || saving} />
       </label>
       <div className="flex gap-2">
-        <button type="button" disabled={pending || saving} onClick={() => setEditing(false)} className="min-h-11 flex-1 rounded-xl border border-[var(--sf-border)] px-3 text-sm font-bold text-[var(--sf-text)] disabled:opacity-60"><Trans id="course.goal.edit.cancel" message="Cancel" /></button>
-        <button type="submit" disabled={pending || saving} className="min-h-11 flex-1 rounded-xl bg-[var(--sf-brand)] px-3 text-sm font-bold text-[var(--sf-on-brand)] disabled:opacity-60"><Trans id="course.goal.edit.save" message="Save goal" /></button>
+        <button type="button" disabled={pending || saving} onClick={() => setEditing(false)} className="min-h-11 flex-1 rounded-xl border border-[var(--sf-border)] px-3 text-sm font-bold text-[var(--sf-text)] disabled:opacity-60"><Trans {...msg({ context: 'course.goal.edit.cancel', message: 'Cancel' })} /></button>
+        <button type="submit" disabled={pending || saving} className="min-h-11 flex-1 rounded-xl bg-[var(--sf-brand)] px-3 text-sm font-bold text-[var(--sf-on-brand)] disabled:opacity-60"><Trans {...msg({ context: 'course.goal.edit.save', message: 'Save goal' })} /></button>
       </div>
     </form>}
   </li>;
@@ -85,21 +85,21 @@ function AddGoalForm({ course, pending }: { readonly course: Course; readonly pe
       if (result.ok) { setLevel(''); setTargetDate(''); }
     }).finally(() => setSaving(false));
   }}>
-    <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="course.goal.add.kind-label" message="Goal" />
+    <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.goal.add.kind-label', message: 'Goal' })} />
       <select disabled={pending || saving} className={goalFieldClass} value={kind} onChange={event => setKind(event.target.value)}>
         {options.map(option => <option key={option.kind} value={option.kind}>{_(option.label)}</option>)}
       </select>
     </label>
-    <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="course.goal.add.level-label" message="Level or target (optional)" />
+    <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.goal.add.level-label', message: 'Level or target (optional)' })} />
       <input className={goalFieldClass}
         value={level} onChange={event => setLevel(event.target.value)} disabled={pending || saving} placeholder={selected ? _(selected.levelHint) : ''} maxLength={32} />
     </label>
-    <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="course.goal.add.date-label" message="Exam or target date (optional)" />
+    <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.goal.add.date-label', message: 'Exam or target date (optional)' })} />
       <input type="date" className={goalFieldClass}
         value={targetDate} onChange={event => setTargetDate(event.target.value)} disabled={pending || saving} />
     </label>
     <button type="submit" disabled={pending || saving} className="min-h-11 w-full rounded-xl bg-[var(--sf-brand)] px-3 text-sm font-bold text-[var(--sf-on-brand)] disabled:opacity-60">
-      <Plus size={16} aria-hidden="true" className="mr-1 inline" /><Trans id="course.goal.add.submit" message="Add goal" />
+      <Plus size={16} aria-hidden="true" className="mr-1 inline" /><Trans {...msg({ context: 'course.goal.add.submit', message: 'Add goal' })} />
     </button>
   </form>;
 }
@@ -108,9 +108,9 @@ function AddGoalForm({ course, pending }: { readonly course: Course; readonly pe
 export function CourseGoalsPanel({ course, onClose }: { readonly course: Course; readonly onClose: () => void }) {
   const { model } = useCourseSession();
   return <div className="claude-course-goals-panel">
-    <button type="button" onClick={onClose} className="mb-2 min-h-11 text-sm font-bold text-[var(--sf-brand-text)]">&larr; <Trans id="course.goals.back" message="Back to courses" /></button>
+    <button type="button" onClick={onClose} className="mb-2 min-h-11 text-sm font-bold text-[var(--sf-brand-text)]">&larr; <Trans {...msg({ context: 'course.goals.back', message: 'Back to courses' })} /></button>
     {course.goals.length === 0
-      ? <p className="text-sm text-[var(--sf-text-muted)]"><Trans id="course.goals.empty" message="No goals yet. Studying without one is fine too." /></p>
+      ? <p className="text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.goals.empty', message: 'No goals yet. Studying without one is fine too.' })} /></p>
       : <ul className="space-y-2">{course.goals.map(goal => <GoalRow key={goal.id} course={course} goal={goal} pending={model.pending} />)}</ul>}
     <AddGoalForm course={course} pending={model.pending} />
   </div>;

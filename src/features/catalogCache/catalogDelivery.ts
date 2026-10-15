@@ -44,7 +44,7 @@ export interface CatalogCacheInstallationPort {
     entries: readonly CatalogCacheEntry[],
     lexemes: readonly LexemeV3[],
   ): Promise<'staged' | 'already-staged'>;
-  activate(handle: CatalogInstallHandle): Promise<void>;
+  activate(handle: CatalogInstallHandle, signal?: AbortSignal): Promise<void>;
 }
 
 export interface CatalogReleaseInstallResult {
@@ -247,13 +247,40 @@ export async function installCatalogRelease(
   manifestInput: unknown,
   source: CatalogChunkFetchPort,
   cache: CatalogCacheInstallationPort = browserCachePort,
+  signal?: AbortSignal,
 ): Promise<CatalogReleaseInstallResult> {
   const manifest = parseCatalogReleaseManifest(manifestInput);
-  const chunks = await mapWithConcurrencyUntilFailure(
-    manifest.chunks,
-    FETCH_CONCURRENCY,
-    (descriptor, _index, signal) => fetchAndVerifyChunk(manifest, descriptor, source, signal),
+  const throwIfAborted = (): void => {
+    if (signal?.aborted) throw signal.reason ?? new Error('Catalog install was aborted.');
+  };
+  throwIfAborted();
+  const requestController = new AbortController();
+  const abortFromCaller = () => requestController.abort(
+    signal?.reason ?? new Error('Catalog install was aborted.'),
   );
+  if (signal?.aborted) abortFromCaller();
+  else signal?.addEventListener('abort', abortFromCaller, { once: true });
+  let workerSignal: AbortSignal | undefined;
+  const abortFromWorker = () => requestController.abort(workerSignal?.reason);
+  let chunks: VerifiedChunk[];
+  try {
+    chunks = await mapWithConcurrencyUntilFailure(
+      manifest.chunks,
+      FETCH_CONCURRENCY,
+      (descriptor, _index, currentWorkerSignal) => {
+        if (!workerSignal) {
+          workerSignal = currentWorkerSignal;
+          if (workerSignal.aborted) abortFromWorker();
+          else workerSignal.addEventListener('abort', abortFromWorker, { once: true });
+        }
+        return fetchAndVerifyChunk(manifest, descriptor, source, requestController.signal);
+      },
+    );
+  } finally {
+    signal?.removeEventListener('abort', abortFromCaller);
+    workerSignal?.removeEventListener('abort', abortFromWorker);
+  }
+  throwIfAborted();
   const lexemesById = validateReleaseGraph(manifest, chunks);
   const descriptor: CatalogReleaseDescriptor = {
     catalogId: manifest.catalogId,
@@ -267,7 +294,9 @@ export async function installCatalogRelease(
     ...(manifest.manifestVersion === 2 ? { unitDescriptors: manifest.unitDescriptors } : {}),
   };
   const handle = await cache.begin(descriptor);
+  throwIfAborted();
   for (const chunk of chunks) {
+    throwIfAborted();
     const entries = chunk.value.memberships.map(value => cacheEntry(
       value,
       lexemesById.get(value.lexemeId) as LexemeV3,
@@ -280,7 +309,9 @@ export async function installCatalogRelease(
       encodedBytes: chunk.descriptor.byteLength,
     }, entries, chunk.value.lexemes);
   }
-  await cache.activate(handle);
+  throwIfAborted();
+  await cache.activate(handle, signal);
+  throwIfAborted();
   return {
     catalogId: manifest.catalogId,
     releaseId: manifest.releaseId,

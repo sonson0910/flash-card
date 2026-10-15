@@ -9,7 +9,8 @@ if (!Object.hasOwn(RELEASE_TARGETS, expectedTarget ?? '')) {
 const healthPath = path.resolve('dist/health.json');
 if (!fs.existsSync(healthPath)) throw new Error('dist/health.json does not exist. Build the release first.');
 
-const { projectId } = JSON.parse(fs.readFileSync(new URL(`../${RELEASE_TARGETS[expectedTarget].configPath}`, import.meta.url), 'utf8'));
+const targetConfig = JSON.parse(fs.readFileSync(new URL(`../${RELEASE_TARGETS[expectedTarget].configPath}`, import.meta.url), 'utf8'));
+const { projectId } = targetConfig.targets?.[expectedTarget] ?? targetConfig;
 const errors = validateDistTarget(JSON.parse(fs.readFileSync(healthPath, 'utf8')), expectedTarget, projectId);
 if (errors.length > 0) {
   throw new Error(`Refusing to deploy dist:\n- ${errors.join('\n- ')}`);

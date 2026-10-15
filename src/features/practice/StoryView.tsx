@@ -1,3 +1,6 @@
+import { RichStoryView } from './rich-story-view';
+import type { StoryInfo, PlainStoryInfo } from '../../lib/wordInfo';
+export { normalizeGrammarAnswer, isGrammarAnswerCorrect, isComprehensionAnswerCorrect } from './rich-story-view';
 import { BookOpen, CircleAlert, Loader2, RefreshCw, X } from "lucide-react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react";
@@ -18,7 +21,7 @@ interface StoryViewProps {
   onClose: () => void;
 }
 
-export function StoryView({
+function PlainStoryView({
   story,
   loading,
   error = null,
@@ -91,7 +94,7 @@ export function StoryView({
           <X size={24} aria-hidden="true" />
         </button>
         <div className="text-sm font-bold text-[var(--sf-text-muted)]">
-          <Trans id="practice.story.context" message="Context story" />
+          <Trans {...msg({ context: 'practice.story.context', message: 'Context story' })} />
         </div>
         <div className="w-11" aria-hidden="true" />
       </div>
@@ -112,8 +115,7 @@ export function StoryView({
           />
           <p className="text-center font-bold text-[var(--sf-text)]">
             <Trans
-              id="practice.story.creating-progress"
-              message="Creating your story…"
+              {...msg({ context: 'practice.story.creating-progress', message: 'Creating your story…' })}
             />
           </p>
         </GsapEntrance>
@@ -129,8 +131,7 @@ export function StoryView({
           <CircleAlert className="mx-auto mb-4" size={36} aria-hidden="true" />
           <h2 className="text-lg font-black">
             <Trans
-              id="practice.story.generation-stopped"
-              message="Story generation stopped"
+              {...msg({ context: 'practice.story.generation-stopped', message: 'Story generation stopped' })}
             />
           </h2>
           <p className="mt-2 text-sm leading-relaxed">{error}</p>
@@ -140,7 +141,7 @@ export function StoryView({
             className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-rose-700 px-5 py-3 font-bold text-white transition-colors hover:bg-rose-800 focus-visible:outline-2 motion-reduce:transition-none"
           >
             <RefreshCw size={17} aria-hidden="true" />{" "}
-            <Trans id="practice.actions.try-again" message="Try again" />
+            <Trans {...msg({ context: 'practice.actions.try-again', message: 'Try again' })} />
           </button>
         </GsapEntrance>
       ) : story ? (
@@ -165,14 +166,12 @@ export function StoryView({
                 className="text-balance text-2xl font-black tracking-tight focus-visible:outline-2"
               >
                 <Trans
-                  id="practice.story.reading-context"
-                  message="Reading in context"
+                  {...msg({ context: 'practice.story.reading-context', message: 'Reading in context' })}
                 />
               </h2>
               <p className="text-pretty text-xs font-bold text-[var(--sf-text-muted)]">
                 <Trans
-                  id="practice.story.vocabulary-subtitle"
-                  message="A story built from your own vocabulary"
+                  {...msg({ context: 'practice.story.vocabulary-subtitle', message: 'A story built from your own vocabulary' })}
                 />
               </p>
             </div>
@@ -181,8 +180,7 @@ export function StoryView({
             <article className="crystal-chamfer rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8">
               <span className="mb-3 block text-xs font-bold text-[var(--sf-brand-text)]">
                 <Trans
-                  id="practice.story.target-language"
-                  message="{languageName}"
+                  {...msg({ context: 'practice.story.target-language', message: '{languageName}' })}
                   values={{ languageName: languageName(language) }}
                 />
               </span>
@@ -196,8 +194,7 @@ export function StoryView({
             <aside className="crystal-chamfer rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-5 shadow-[var(--sf-panel-shadow)]">
               <span className="mb-3 block text-xs font-bold text-[var(--sf-brand-text)]">
                 <Trans
-                  id="practice.story.translation-language"
-                  message="{languageName} translation"
+                  {...msg({ context: 'practice.story.translation-language', message: '{languageName} translation' })}
                   values={{ languageName: languageName(translationLanguage) }}
                 />
               </span>
@@ -216,8 +213,7 @@ export function StoryView({
                 >
                   <RefreshCw size={18} aria-hidden="true" />{" "}
                   <Trans
-                    id="practice.story.create-another"
-                    message="Create another story"
+                    {...msg({ context: 'practice.story.create-another', message: 'Create another story' })}
                   />
                 </button>
               </div>
@@ -227,4 +223,10 @@ export function StoryView({
       ) : null}
     </div>
   );
+}
+
+export function StoryView(props: Omit<StoryViewProps, 'story'> & { story: StoryInfo | (PlainStoryInfo & { language?: string; translationLanguage?: string }) | null }) {
+  return props.story && 'segments' in props.story
+    ? <RichStoryView {...props} story={props.story} />
+    : <PlainStoryView {...props} story={props.story} />;
 }

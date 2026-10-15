@@ -1,3 +1,4 @@
+import { msg } from '@lingui/core/macro';
 import { Trans } from '@lingui/react';
 import { Globe2 } from 'lucide-react';
 import { openWebWordsRoute } from './webWordsRoute';
@@ -14,11 +15,10 @@ export function WebWordsTodayStripView({ previewCount, isAtCap }: { readonly pre
       <span className="flex items-center gap-2 text-sm font-bold text-[var(--sf-text)]">
         <Globe2 size={16} className="shrink-0 text-cyan-600 dark:text-cyan-400" aria-hidden="true" />
         {isAtCap ? (
-          <Trans id="webWords.todayStrip.summary-at-least" message="{count}+ words saved from the web" values={{ count: previewCount }} />
+          <Trans {...msg({ context: 'webWords.todayStrip.summary-at-least', message: '{count}+ words saved from the web' })} values={{ count: previewCount }} />
         ) : (
           <Trans
-            id="webWords.todayStrip.summary"
-            message="{count, plural, one {# word} other {# words}} saved from the web"
+            {...msg({ context: 'webWords.todayStrip.summary', message: '{count, plural, one {# word} other {# words}} saved from the web' })}
             values={{ count: previewCount }}
           />
         )}
@@ -28,7 +28,7 @@ export function WebWordsTodayStripView({ previewCount, isAtCap }: { readonly pre
         onClick={openWebWordsRoute}
         className="min-h-9 rounded-full border border-[var(--sf-border)] px-4 text-sm font-bold text-[var(--sf-brand-text)] transition-colors hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 focus-visible:outline-offset-2"
       >
-        <Trans id="webWords.todayStrip.action" message="Review web words" />
+        <Trans {...msg({ context: 'webWords.todayStrip.action', message: 'Review web words' })} />
       </button>
     </aside>
   );

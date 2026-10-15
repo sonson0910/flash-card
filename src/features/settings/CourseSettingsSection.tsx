@@ -103,8 +103,8 @@ export function CourseSettingsSection() {
     <div className="flex items-start gap-3">
       <span className="grid size-10 place-items-center rounded-xl bg-[var(--sf-surface-control)] text-[var(--sf-brand-text)]"><BookOpen size={20} aria-hidden="true" /></span>
       <div>
-        <h2 id="settings-course" className="text-xl font-black text-[var(--sf-text)]"><Trans id="settings.course.title" message="Course and learning" /></h2>
-        <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans id="settings.course.description" message="Language, goals and how words are read to you." /></p>
+        <h2 id="settings-course" className="text-xl font-black text-[var(--sf-text)]"><Trans {...msg({ context: 'settings.course.title', message: 'Course and learning' })} /></h2>
+        <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'settings.course.description', message: 'Language, goals and how words are read to you.' })} /></p>
       </div>
     </div>
 
@@ -112,21 +112,21 @@ export function CourseSettingsSection() {
       {activeCourse && <div data-settings-active-course className="flex items-center gap-3 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3">
         <span aria-hidden="true" className="text-2xl">{TARGET_LANGUAGE_FLAG[activeCourse.targetLanguage]}</span>
         <span className="min-w-0">
-          <span className="block font-bold text-[var(--sf-text)]"><Trans id="course.status.active" message="Active course" /> · {_(TARGET_LANGUAGE_LABEL[activeCourse.targetLanguage])} <span aria-hidden="true">←</span> {_(NATIVE_LANGUAGE_LABEL[activeCourse.nativeLanguage])}</span>
+          <span className="block font-bold text-[var(--sf-text)]"><Trans {...msg({ context: 'course.status.active', message: 'Active course' })} /> · {_(TARGET_LANGUAGE_LABEL[activeCourse.targetLanguage])} <span aria-hidden="true">←</span> {_(NATIVE_LANGUAGE_LABEL[activeCourse.nativeLanguage])}</span>
           {activeGoal && <span className="mt-0.5 block text-sm text-[var(--sf-text-muted)]">{activeGoalLabel ? _(activeGoalLabel) : activeGoal.kind}{activeGoal.level ? ` · ${activeGoal.level}` : ''}{activeGoal.targetDate ? ` · ${activeGoal.targetDate}` : ''}</span>}
         </span>
       </div>}
 
       <div data-settings-course-language className="grid gap-3">
         <label className={rowClass}>
-          <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.ui-language" message="App language" /></span>
+          <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans {...msg({ context: 'settings.course.ui-language', message: 'App language' })} /></span>
           <select className={selectClass} value={uiLocale} onChange={event => void setUiLocale(event.target.value as UiLocale)}>
             {ENABLED_UI_LOCALES.map(locale => <option key={locale} value={locale}>{UI_LOCALES[locale].autonym}</option>)}
           </select>
         </label>
 
         {activeCourse && <label className={rowClass}>
-          <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.meaning-language" message="Meaning language" /><span className="block text-xs font-normal text-[var(--sf-text-muted)]"><Trans id="settings.course.meaning-language.scope" message="Applies to new cards. Existing card meanings do not change." /></span></span>
+          <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans {...msg({ context: 'settings.course.meaning-language', message: 'Meaning language' })} /><span className="block text-xs font-normal text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'settings.course.meaning-language.scope', message: 'Applies to new cards. Existing card meanings do not change.' })} /></span></span>
           <select className={selectClass} disabled={model.pending} value={activeCourse.nativeLanguage} onChange={event => updateCourse({ nativeLanguage: event.target.value as CourseNativeLanguage })}>
             {COURSE_NATIVE_LANGUAGES.map(language => <option key={language} value={language}>{_(NATIVE_LANGUAGE_LABEL[language])}</option>)}
           </select>
@@ -135,14 +135,14 @@ export function CourseSettingsSection() {
 
       {saveError && <p role="alert" className="rounded-lg border border-[var(--sf-danger)] bg-[color-mix(in_srgb,var(--sf-danger)_10%,var(--sf-surface))] px-3 py-2 text-sm font-semibold text-[var(--sf-danger)]">
         {saveError === 'course'
-          ? <Trans id="course.error.generic" message="That course action did not go through. Please try again." />
-          : <Trans id="settings.course.pace.error" message="Daily pace could not be saved. Please try again." />}
+          ? <Trans {...msg({ context: 'course.error.generic', message: 'That course action did not go through. Please try again.' })} />
+          : <Trans {...msg({ context: 'settings.course.pace.error', message: 'Daily pace could not be saved. Please try again.' })} />}
       </p>}
 
       {activeCourse && <div data-settings-course-preferences className="grid gap-3 border-t border-[var(--sf-border)] pt-5">
         <div className={rowClass}>
           <Gauge size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
-          <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.pace" message="Daily pace" /></span>
+          <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans {...msg({ context: 'settings.course.pace', message: 'Daily pace' })} /></span>
           <select className={selectClass} value={pace} onChange={event => changePace(Number(event.target.value) as DailyPace)}>
             {DAILY_PACE_OPTIONS.map(option => <option key={option} value={option}>{_(msg({ id: 'settings.course.pace.option', message: '{count} cards / day' }).id, { count: option })}</option>)}
           </select>
@@ -150,14 +150,14 @@ export function CourseSettingsSection() {
 
         <label className={rowClass}>
           <Volume2 size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
-          <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.romanization" message="Show romanization" /></span>
+          <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans {...msg({ context: 'settings.course.romanization', message: 'Show romanization' })} /></span>
           <input type="checkbox" role="switch" disabled={model.pending} checked={activeCourse.preferences.showRomanization} onChange={event => updatePreferences({ showRomanization: event.target.checked })} className="h-6 w-11 shrink-0 accent-[var(--sf-brand)]" />
         </label>
 
         <label data-settings-course-voice className={rowClass}>
           <Volume2 size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
           <span className="min-w-0 flex-1">
-            <span className="block font-bold text-[var(--sf-text)]"><Trans id="settings.voice" message="Voice" /></span>
+            <span className="block font-bold text-[var(--sf-text)]"><Trans {...msg({ context: 'settings.voice', message: 'Voice' })} /></span>
           </span>
           <select
             className={selectClass}
@@ -166,8 +166,8 @@ export function CourseSettingsSection() {
             value={savedVoiceKey ?? ''}
             onChange={event => updatePreferences({ pronunciationVariant: event.target.value || null })}
           >
-            <option value=""><Trans id="settings.voice.automatic" message="Automatic" /></option>
-            {savedVoiceKey && savedVoiceUnavailable && <option value={savedVoiceKey} disabled><Trans id="settings.voice.unavailable" message="Saved voice unavailable · Automatic" /></option>}
+            <option value=""><Trans {...msg({ context: 'settings.voice.automatic', message: 'Automatic' })} /></option>
+            {savedVoiceKey && savedVoiceUnavailable && <option value={savedVoiceKey} disabled><Trans {...msg({ context: 'settings.voice.unavailable', message: 'Saved voice unavailable · Automatic' })} /></option>}
             {targetVoices.map(voice => <option key={courseVoicePreferenceKey(voice)} value={courseVoicePreferenceKey(voice)}>{voice.name} · {voice.lang}</option>)}
           </select>
         </label>
@@ -176,17 +176,17 @@ export function CourseSettingsSection() {
         {activeCourse.targetLanguage === 'ko' && <div className={rowClass}>
           <Keyboard size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
           <span className="min-w-0 flex-1">
-            <span className="block font-bold text-[var(--sf-text)]"><Trans id="settings.course.keyboard" message="Keyboard" /> · <span lang="ko">두벌식</span></span>
-            <span className="block text-xs text-[var(--sf-text-muted)]"><Trans id="settings.course.keyboard.ko-help" message="Korean 2-set (두벌식): add Korean in your device keyboard settings, or use the on-screen keys in Korean practice." /></span>
+            <span className="block font-bold text-[var(--sf-text)]"><Trans {...msg({ context: 'settings.course.keyboard', message: 'Keyboard' })} /> · <span lang="ko">두벌식</span></span>
+            <span className="block text-xs text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'settings.course.keyboard.ko-help', message: 'Korean 2-set (두벌식): add Korean in your device keyboard settings, or use the on-screen keys in Korean practice.' })} /></span>
           </span>
         </div>}
 
         {activeCourse.targetLanguage === 'zh' && <div className={rowClass}>
           <Keyboard size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
-          <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.script" message="Chinese script" /></span>
+          <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans {...msg({ context: 'settings.course.script', message: 'Chinese script' })} /></span>
           <select className={selectClass} disabled={model.pending} value={activeCourse.preferences.zhScript ?? 'hans'} onChange={event => updatePreferences({ zhScript: event.target.value as 'hans' | 'hant' })}>
-            <option value="hans"><Trans id="settings.course.script.simplified" message="Simplified" /></option>
-            <option value="hant"><Trans id="settings.course.script.traditional" message="Traditional" /></option>
+            <option value="hans"><Trans {...msg({ context: 'settings.course.script.simplified', message: 'Simplified' })} /></option>
+            <option value="hant"><Trans {...msg({ context: 'settings.course.script.traditional', message: 'Traditional' })} /></option>
           </select>
         </div>}
       </div>}
@@ -194,7 +194,7 @@ export function CourseSettingsSection() {
       {archivedCourses.length > 0 && <div data-settings-grid-wide className={rowClass}>
         <Archive size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
         <span className="min-w-0 flex-1">
-          <span className="block font-bold text-[var(--sf-text)]"><Trans id="settings.course.archived" message="Archived courses" /></span>
+          <span className="block font-bold text-[var(--sf-text)]"><Trans {...msg({ context: 'settings.course.archived', message: 'Archived courses' })} /></span>
           <span className="mt-1 flex flex-wrap gap-2">
             {archivedCourses.map(course => <button key={course.id} type="button" disabled={model.pending} onClick={() => runCourseAction(() => actions.reopenCourse(course.id))}
               className="flex min-h-9 items-center gap-1.5 rounded-lg border border-[var(--sf-border)] px-2.5 text-xs font-bold text-[var(--sf-text)]">
@@ -205,10 +205,10 @@ export function CourseSettingsSection() {
       </div>}
 
       <div data-settings-grid-wide className={infoRowClass}>
-        <Trans id="settings.course.extension-badge" message="If you have the browser extension installed, its badge shows how many cards are due — this is read-only information, there is nothing to turn on or off here." />
+        <Trans {...msg({ context: 'settings.course.extension-badge', message: 'If you have the browser extension installed, its badge shows how many cards are due — this is read-only information, there is nothing to turn on or off here.' })} />
       </div>
       <div data-settings-grid-wide className="text-sm text-[var(--sf-text-muted)]">
-        <Trans id="settings.course.account-plan-hint" message="Account and plan settings are available from your profile menu." />
+        <Trans {...msg({ context: 'settings.course.account-plan-hint', message: 'Account and plan settings are available from your profile menu.' })} />
       </div>
     </div>
   </section>;

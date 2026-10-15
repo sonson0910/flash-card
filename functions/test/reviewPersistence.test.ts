@@ -54,6 +54,7 @@ const baseCard = (reviewHistory: unknown[] = [], operationIds: string[] = []) =>
 });
 
 const reviewRequest = (overrides: Partial<ReviewRequest> = {}): ReviewRequest => ({
+  expectedOwnerId: 'owner',
   opId: 'device-a:review-1',
   cardId: 'word-focus',
   baseRevision: 3,
@@ -149,6 +150,14 @@ describe('review persistence', () => {
     expect(parseReviewRequest(reviewRequest())).toMatchObject({ opId: 'device-a:review-1' });
     expect(parseReviewRequest({ ...reviewRequest(), timeZone: 'Etc/UTC' })).toMatchObject({ timeZone: 'UTC' });
     expect(() => parseReviewRequest({ ...reviewRequest(), timeZone: 'Not/AZone' })).toThrow('Review time zone is invalid.');
+    expect(parseReviewRequest(reviewRequest())).toMatchObject({
+      expectedOwnerId: 'owner',
+      opId: 'device-a:review-1',
+    });
+    expect(parseReviewRequest({ ...reviewRequest(), expectedOwnerId: 'owner@example.com' }))
+      .toMatchObject({ expectedOwnerId: 'owner@example.com' });
+    expect(() => parseReviewRequest({ ...reviewRequest(), expectedOwnerId: undefined })).toThrow();
+    expect(() => parseReviewRequest({ ...reviewRequest(), expectedOwnerId: 'x'.repeat(129) })).toThrow();
     expect(() => parseReviewRequest({ ...reviewRequest(), fieldMask: ['reviewHistory'] })).toThrow();
     expect(() => parseReviewRequest({ ...reviewRequest(), opId: '../unsafe' })).toThrow();
   });

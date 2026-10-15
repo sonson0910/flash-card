@@ -33,6 +33,7 @@
 
 @import "@fontsource-variable/geist";
 @import "tailwindcss" source("./");
+@source not "./**/*.test.{ts,tsx}";
 @import "./styles/themes/classic.css";
 @import "./styles/themes/fraunces-fonts.css";
 
@@ -573,16 +574,27 @@
   .premium-surface,
   .liquid-glass,
   .liquid-control,
-  .liquid-content-dock {
+  .liquid-content-dock,
+  .flashcard-panel,
+  .zen-glass-slab,
+  .dark .flashcard-panel,
+  .dark .zen-glass-slab {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     background: var(--sf-surface);
   }
 
+  .zen-glass-slab,
+  .dark .zen-glass-slab {
+    background: #081418;
+  }
+
   .dark .premium-surface,
   .dark .liquid-glass,
   .dark .liquid-control,
-  .dark .liquid-content-dock {
+  .dark .liquid-content-dock,
+  .dark .flashcard-panel,
+  .dark .zen-glass-slab {
     background: var(--sf-surface);
   }
 }
@@ -592,27 +604,36 @@ html[data-save-data="true"] .app-canvas::before {
   display: none;
 }
 
-html[data-save-data="true"]
-  :is(.premium-surface, .liquid-glass, .liquid-control, .liquid-content-dock) {
+html[data-save-data="true"] :is(.premium-surface, .liquid-glass, .liquid-control, .liquid-content-dock, .flashcard-panel, .zen-glass-slab) {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   background: var(--sf-surface);
 }
 
-@supports not (
-  (-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))
-) {
+html[data-save-data="true"] .zen-glass-slab {
+  background: #081418;
+}
+
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   .premium-surface,
   .liquid-glass,
   .liquid-control,
-  .liquid-content-dock {
+  .liquid-content-dock,
+  .flashcard-panel,
+  .zen-glass-slab {
     background: var(--sf-surface);
+  }
+
+  .zen-glass-slab {
+    background: #081418;
   }
 
   .dark .premium-surface,
   .dark .liquid-glass,
   .dark .liquid-control,
-  .dark .liquid-content-dock {
+  .dark .liquid-content-dock,
+  .dark .flashcard-panel,
+  .dark .zen-glass-slab {
     background: var(--sf-surface);
   }
 }
@@ -621,16 +642,27 @@ html[data-save-data="true"]
   .premium-surface,
   .liquid-glass,
   .liquid-control,
-  .liquid-content-dock {
+  .liquid-content-dock,
+  .flashcard-panel,
+  .zen-glass-slab,
+  .dark .flashcard-panel,
+  .dark .zen-glass-slab {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     background: var(--sf-surface);
   }
 
+  .zen-glass-slab,
+  .dark .zen-glass-slab {
+    background: #081418;
+  }
+
   .dark .premium-surface,
   .dark .liquid-glass,
   .dark .liquid-control,
-  .dark .liquid-content-dock {
+  .dark .liquid-content-dock,
+  .dark .flashcard-panel,
+  .dark .zen-glass-slab {
     background: var(--sf-surface);
   }
 }

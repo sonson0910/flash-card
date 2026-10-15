@@ -13,6 +13,56 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:171
+msgctxt "weeklyRecap.action.share"
+msgid "Share"
+msgstr ""
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:148
+msgctxt "weeklyRecap.unavailable"
+msgid "Word of the week, words learned, recall rate, study time, and streak need a reliable weekly data source we don't have yet, so they are left out rather than guessed."
+msgstr ""
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:168
+msgctxt "weeklyRecap.export-error"
+msgid "Could not create the image. Please try again."
+msgstr ""
+
+#: src/components/stats/StatsCharts.tsx:119
+msgctxt "stats.review-activity-partial"
+msgid "Coverage begins {date}; this range is partial."
+msgstr ""
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:149
+msgctxt "weeklyRecap.reviews-unavailable"
+msgid "Reviews this week are unavailable until activity covers all seven days."
+msgstr ""
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:161
+msgctxt "weeklyRecap.caption.label"
+msgid "Caption"
+msgstr ""
+
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:150
+msgctxt "weeklyRecap.saved-warning"
+msgid "Showing saved recap. Recent reviews may not be included."
+msgstr ""
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:153
+msgctxt "weeklyRecap.selection.legend"
+msgid "Show on the card"
+msgstr ""
+
+#: src/components/stats/StatsCharts.tsx:119
+msgctxt "stats.review-range-30-days"
+msgid "30 days"
+msgstr ""
+
+#: src/components/stats/StatsCharts.tsx:119
+msgctxt "stats.review-range-26-weeks"
+msgid "26 weeks"
+msgstr ""
+
 #. js-lingui-explicit-id
 #: src/components/stats/AchievementsMatrix.tsx:74
 msgid "stats.achievements"
@@ -269,23 +319,8 @@ msgid "stats.recall-hard"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:119
-msgid "stats.review-activity-partial"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/components/stats/StatsCharts.tsx:49
 msgid "stats.review-activity-unavailable"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:119
-msgid "stats.review-range-26-weeks"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:119
-msgid "stats.review-range-30-days"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -401,21 +436,6 @@ msgid "stats.words"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:172
-msgid "weeklyRecap.action.download"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:171
-msgid "weeklyRecap.action.share"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:161
-msgid "weeklyRecap.caption.label"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/features/weeklyRecap/weeklyRecapSelection.ts:37
 msgid "weeklyRecap.caption.suggested-active"
 msgstr ""
@@ -454,11 +474,6 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/features/weeklyRecap/WeeklyRecapScreen.tsx:64
 msgid "weeklyRecap.empty"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:168
-msgid "weeklyRecap.export-error"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -523,21 +538,6 @@ msgid "weeklyRecap.privacy"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:149
-msgid "weeklyRecap.reviews-unavailable"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:150
-msgid "weeklyRecap.saved-warning"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:153
-msgid "weeklyRecap.selection.legend"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/features/weeklyRecap/WeeklyRecapScreen.tsx:46
 msgid "weeklyRecap.toggle.active-days"
 msgstr ""
@@ -567,7 +567,7 @@ msgstr ""
 msgid "weeklyRecap.toggle.total-xp"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:148
-msgid "weeklyRecap.unavailable"
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:172
+msgctxt "weeklyRecap.action.download"
+msgid "Download PNG"
 msgstr ""

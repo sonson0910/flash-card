@@ -100,6 +100,42 @@ describe('generateVocabulary callable', () => {
     vi.clearAllMocks();
   });
 
+  const nonCardRequests = [
+    { action: 'story', input: ['apple'] },
+    { action: 'story', input: { schemaVersion: 2, words: ['apple'] } },
+    { action: 'story', input: { words: ['안녕'], targetLanguage: 'ko', translationLanguage: 'en' } },
+    { action: 'translate', input: 'apple' },
+    { action: 'tutor', input: { word: 'apple', translation: 'táo', question: 'An example?' } },
+    { action: 'mnemonic', input: { word: 'apple', translation: 'táo' } },
+    { action: 'extract', input: 'An apple grows on a tree.' },
+    { action: 'dialogue', input: [{ word: 'apple', translation: 'táo' }] },
+    { action: 'conversation', input: {
+      sessionId: 'session-1', turn: 1, history: [], userMessage: 'One apple, please.',
+      mission: { schemaVersion: 1, id: 'market', title: 'Market', goal: 'Buy fruit',
+        cards: [{ id: 'apple', word: 'apple', translation: 'táo' }] },
+    } },
+  ];
+
+  it.each(nonCardRequests)('denies $action before model spend when the daily allowance is exhausted', async data => {
+    loadPilotConfig.mockResolvedValue({ ...PILOT_CONFIG_DEFAULTS, analyticsEnabled: false });
+    reserveNonCardAction.mockRejectedValue(new AiQuotaError('ai-daily-allowance', {}));
+    const { generateVocabulary } = await import('../src/index.js');
+    await expect(generateVocabulary.run({ auth: { uid: 'owner-1' }, data } as never))
+      .rejects.toMatchObject({ code: 'resource-exhausted' });
+    expect(reserveNonCardAction).toHaveBeenCalledTimes(1);
+    expect(runMeteredGemini).not.toHaveBeenCalled();
+    expect(generateContent).not.toHaveBeenCalled();
+  });
+
+  it.each(nonCardRequests)('meters $action and refunds its allowance when generation fails', async data => {
+    const failure = new Error('provider unavailable');
+    runMeteredGemini.mockRejectedValue(failure);
+    const { generateVocabulary } = await import('../src/index.js');
+    await expect(generateVocabulary.run({ auth: { uid: 'owner-1' }, data } as never)).rejects.toBe(failure);
+    expect(runMeteredGemini).toHaveBeenCalledWith(expect.objectContaining({ action: data.action, uid: 'owner-1' }));
+    expect(refundNonCardAction).toHaveBeenCalledWith(expect.anything(), 'owner-1', '2026-09-30');
+  });
+
   it('cancels only the authenticated owner operation with a validated ID', async () => {
     cancelWordOperation.mockResolvedValue(true);
     const { cancelCardGeneration } = await import('../src/index.js');

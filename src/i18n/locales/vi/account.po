@@ -13,10 +13,20 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:84
-msgid "account.data.delete.busy"
-msgstr "Đang xóa…"
+#: src/features/account/AccountDataSection.tsx:69
+msgctxt "account.data.title"
+msgid "Account data"
+msgstr "Dữ liệu tài khoản"
+
+#: src/features/account/AccountDataSection.tsx:79
+msgctxt "account.data.delete.warning"
+msgid "Cards, review schedule, and Pro access will be permanently deleted. The pilot does not charge money. You need to sign in with Google again to confirm."
+msgstr "Thẻ, lịch ôn và quyền Pro sẽ bị xóa vĩnh viễn. Pilot chưa thu tiền. Bạn cần đăng nhập Google lại để xác nhận."
+
+#: src/features/account/AccountDataSection.tsx:77
+msgctxt "account.data.delete.open"
+msgid "Delete my account"
+msgstr "Xóa tài khoản của tôi"
 
 #. js-lingui-explicit-id
 #: src/features/account/AccountDataSection.tsx:42
@@ -25,35 +35,10 @@ msgid "account.data.delete.cache-warning"
 msgstr "SonFlash không thể xóa dữ liệu tài khoản đã lưu khỏi thiết bị này. Hãy xóa dữ liệu trang web SonFlash trong trình duyệt của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:84
-msgid "account.data.delete.confirm"
-msgstr "Xác nhận xóa vĩnh viễn"
-
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:81
-msgid "account.data.delete.confirm-label"
-msgstr "Nhập <phrase>XÓA TÀI KHOẢN</phrase>"
-
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:77
-msgid "account.data.delete.open"
-msgstr "Xóa tài khoản của tôi"
-
-#. js-lingui-explicit-id
 #: src/features/account/AccountDataSection.tsx:39
 #: src/features/account/AccountDataSection.tsx:46
 msgid "account.data.delete.started"
 msgstr "Yêu cầu xóa tài khoản đã được ghi nhận và sẽ tự hoàn tất trên máy chủ. Bạn đã được đăng xuất khỏi thiết bị này."
-
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:79
-msgid "account.data.delete.warning"
-msgstr "Thẻ, lịch ôn và quyền Pro sẽ bị xóa vĩnh viễn. Pilot chưa thu tiền. Bạn cần đăng nhập Google lại để xác nhận."
-
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:70
-msgid "account.data.description"
-msgstr "Tải bản sao dữ liệu hoặc xóa tài khoản của bạn."
 
 #. js-lingui-explicit-id
 #: src/features/account/AccountDataSection.tsx:53
@@ -71,32 +56,47 @@ msgid "account.data.error.local-cleanup"
 msgstr "Tài khoản đã xóa trên máy chủ, nhưng chưa xóa hết dữ liệu trên thiết bị. Hãy xóa dữ liệu trang SonFlash trong trình duyệt."
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:75
-msgid "account.data.export.excel"
-msgstr "Tải thẻ dưới dạng Excel"
-
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:76
-msgid "account.data.export.json"
-msgstr "Tải dữ liệu tài khoản (JSON, không gồm thẻ)"
-
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:76
-msgid "account.data.export.json.busy"
-msgstr "Đang xuất…"
-
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:68
-msgid "account.data.kicker"
-msgstr "Quyền riêng tư"
-
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:69
-msgid "account.data.title"
-msgstr "Dữ liệu tài khoản"
-
-#. js-lingui-explicit-id
 #: src/features/account/AccountDataSection.tsx:72
 #: src/features/account/AccountDataSection.tsx:88
 msgid "account.dialog.close"
 msgstr "Đóng"
+
+#: src/features/account/AccountDataSection.tsx:81
+msgctxt "account.data.delete.confirm-label"
+msgid "Type <phrase>XÓA TÀI KHOẢN</phrase>"
+msgstr "Nhập <phrase>XÓA TÀI KHOẢN</phrase>"
+
+#: src/features/account/AccountDataSection.tsx:84
+msgctxt "account.data.delete.confirm"
+msgid "Confirm permanent deletion"
+msgstr "Xác nhận xóa vĩnh viễn"
+
+#: src/features/account/AccountDataSection.tsx:70
+msgctxt "account.data.description"
+msgid "Download a copy of your data or delete your account."
+msgstr "Tải bản sao dữ liệu hoặc xóa tài khoản của bạn."
+
+#: src/features/account/AccountDataSection.tsx:76
+msgctxt "account.data.export.json.busy"
+msgid "Exporting…"
+msgstr "Đang xuất…"
+
+#: src/features/account/AccountDataSection.tsx:84
+msgctxt "account.data.delete.busy"
+msgid "Deleting…"
+msgstr "Đang xóa…"
+
+#: src/features/account/AccountDataSection.tsx:76
+msgctxt "account.data.export.json"
+msgid "Download account data (JSON, excluding cards)"
+msgstr "Tải dữ liệu tài khoản (JSON, không gồm thẻ)"
+
+#: src/features/account/AccountDataSection.tsx:75
+msgctxt "account.data.export.excel"
+msgid "Download cards as Excel"
+msgstr "Tải thẻ dưới dạng Excel"
+
+#: src/features/account/AccountDataSection.tsx:68
+msgctxt "account.data.kicker"
+msgid "Privacy"
+msgstr "Quyền riêng tư"

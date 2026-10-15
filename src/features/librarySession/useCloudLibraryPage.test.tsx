@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
 import type { CardQueryState } from '../../lib/cardQuery';
 import type { CardData } from '../../types/card';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
+import type { CloudLibraryPageAdapter } from './cloudLibraryPageController';
 
 // available/loadStats are mutable per test so one suite can cover both the
 // paused-cloud fallback path (available: false, the pre-existing default)
@@ -16,14 +18,18 @@ const adapterState = vi.hoisted(() => ({
   loadDueStats: vi.fn(async () => ({ due: 0, dueAsOfDate: '2026-09-28' })),
   getTargetLanguage: undefined as (() => string | null) | undefined,
 }));
+const cloudMocks = vi.hoisted(() => ({
+  available: false,
+  subscribePage: vi.fn<CloudLibraryPageAdapter['subscribePage']>(() => vi.fn()),
+}));
 
 vi.mock('../../lib/firebase', () => ({ db: null, isFirebaseConfigured: false }));
 vi.mock('./cloudLibraryPageFirebaseAdapter', () => ({
   createCloudLibraryPageFirebaseAdapter: (options: { getTargetLanguage?: () => string | null }) => {
     adapterState.getTargetLanguage = options.getTargetLanguage;
     return {
-      available: adapterState.available,
-      subscribePage: vi.fn(() => vi.fn()),
+      available: adapterState.available || cloudMocks.available,
+      subscribePage: cloudMocks.subscribePage,
       countCards: vi.fn(async () => 0),
       loadStats: adapterState.loadStats,
       loadDueStats: adapterState.loadDueStats,
@@ -37,7 +43,7 @@ import { cloudPageCacheKey, cloudStatsCacheKey } from '../library/libraryStorage
 
 const query: CardQueryState = {
   category: null,
-  customDeck: null,
+    customDeck: ALL_PRACTICE_DECK_SCOPE,
   difficulty: null,
   partOfSpeech: null,
   bookmarkedOnly: false,
@@ -106,11 +112,56 @@ const writeCachedPage = (ownerId: string, queryKey: string, page: number, items:
 afterEach(() => {
   vi.unstubAllGlobals();
   adapterState.available = false;
+  cloudMocks.available = false;
+  cloudMocks.subscribePage.mockReset().mockImplementation(() => vi.fn());
+  vi.useRealTimers();
   adapterState.loadStats.mockReset();
   adapterState.loadStats.mockImplementation(async () => ({
     total: 0, reviewed: 0, easy: 0, good: 0, hard: 0,
     unrated: 0, bookmarked: 0, due: 0, dueAsOfDate: '2026-09-28', legacyUnindexed: 0,
   }));
+});
+
+it('retries a paused read without pending writes, respecting backoff and unmount', async () => {
+  vi.useFakeTimers();
+  const container = installMinimalReactDom();
+  const values = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+    removeItem: (key: string) => values.delete(key),
+  });
+  const fallback = vi.fn(async () => ({ items: [card('cached')], total: 1, hasNext: false }));
+  cloudMocks.available = true;
+  cloudMocks.subscribePage.mockReset();
+  cloudMocks.subscribePage.mockImplementation((_request, onPage, onError) => {
+    if (cloudMocks.subscribePage.mock.calls.length === 1) void onError({ code: 'unavailable' });
+    else void onPage({ items: [card('cloud')], hasNext: false, cursor: null,
+      fromCache: false, hasPendingWrites: false, changeTypes: [] });
+    return vi.fn();
+  });
+  let snapshot: ReturnType<typeof useCloudLibraryPage> | undefined;
+  const root = createRoot(container);
+  function Harness() {
+    snapshot = useCloudLibraryPage({ ownerId: 'user-a', query, queryKey: 'all', page: 1, pageSize: 9,
+      refreshKey: 0, statsOpen: false, progressEvidenceOpen: false, getPromotedCards: () => [] });
+    return null;
+  }
+  await act(async () => root.render(<Harness />));
+  expect(snapshot?.cloudUnavailable).toBe(true);
+  values.set('lingoflash_cloud_backoff_until_user-a', String(Date.now() + 60_000));
+  await act(async () => vi.advanceTimersByTimeAsync(30_000));
+  expect(cloudMocks.subscribePage).toHaveBeenCalledTimes(1);
+  await act(async () => vi.advanceTimersByTimeAsync(30_000));
+  expect(cloudMocks.subscribePage).toHaveBeenCalledTimes(2);
+  expect(snapshot?.cloudUnavailable).toBe(false);
+  expect(snapshot?.items.map(item => item.id)).toEqual(['cloud']);
+  await act(async () => vi.advanceTimersByTimeAsync(60_000));
+  expect(cloudMocks.subscribePage).toHaveBeenCalledTimes(2);
+  await act(async () => root.unmount());
+  const calls = fallback.mock.calls.length;
+  await vi.advanceTimersByTimeAsync(60_000);
+  expect(fallback).toHaveBeenCalledTimes(calls);
 });
 
 it('overlays a promoted duplicate onto a paused-cloud fallback without requiring reload', async () => {

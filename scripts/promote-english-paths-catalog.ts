@@ -12,7 +12,7 @@ import type {
   CatalogSourceBundleV1,
 } from '../src/features/catalogPipeline/catalogContracts';
 import { validateCatalogSourceBundle } from '../src/features/catalogPipeline/catalogValidation';
-import { loadCatalogSource } from './catalog-operator';
+import { loadCatalogSource, loadCatalogSourceAssetRegistry } from './catalog-operator';
 
 const DRAFT_MANIFEST = 'catalog/english-paths-draft/source/manifest.json';
 const APPROVED_SOURCE = 'catalog/english-paths-approved/source';
@@ -22,6 +22,9 @@ const REVIEWED_AT = '2026-09-29T02:33:10.000Z';
 const RIGHTS_EVIDENCE_ID = 'owner-approval-2026-09-29-english-paths';
 
 async function main(): Promise<void> {
+  const rightsPath = process.argv[2];
+  if (!rightsPath) throw new TypeError('Pass the approved source asset rights registry path.');
+  const trustedAssetRegistry = await loadCatalogSourceAssetRegistry(rightsPath);
   const draft = await loadCatalogSource(DRAFT_MANIFEST);
   if (await fingerprintCatalogSourceBundle(draft) !== DRAFT_DIGEST || draft.manifest.manifestVersion !== 2) {
     throw new TypeError('The approved English Paths draft changed; a new editorial approval is required.');
@@ -95,6 +98,7 @@ async function main(): Promise<void> {
     units: approved.unitDescriptors?.length,
     sourceDigest: await fingerprintCatalogSourceBundle(approved),
     releaseId: await deriveCatalogReleaseId(approved, {
+      trustedAssetRegistry,
       sequence: 1,
       previousReleaseId: null,
       reviewerAuthority: {

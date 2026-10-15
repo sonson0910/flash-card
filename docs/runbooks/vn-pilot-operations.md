@@ -143,6 +143,12 @@ Record only the pid and status, never the deleted UID or exported
 JSON. A real two-browser Google/Auth smoke and a production throwaway-account
 test remain G3 owner-gated actions.
 
+## Production operator credential source
+
+For an explicitly authorized production operator action, use refreshed Application Default Credentials with access to the sealed production project and named database. The operator pseudonym key is `ANALYTICS_PSEUDONYM_KEY` in that same project's Secret Manager. Load an enabled secret version directly into the operator process environment without logging or writing its value; do not substitute a staging key or create a replacement merely because a local environment variable is absent. The operator target checks still apply.
+
+Before a grant or revoke, export the affected plan, entitlements and usage to a private mode-0600 backup outside the repository. Use the existing audited `pilotOperator` grant/revoke command and independently read back status, limits and expiry. Database success does not prove the deployed backend supports the tier; verify the released Functions and application behavior as part of promotion.
+
 ## Rollback and incidents
 
 Before promotion, retain the last-known-good candidate revision, artifact digest, Hosting version, Functions compatibility decision and Rules digest. If a problem occurs: (1) roll back effective config-only changes first (`quotaEnforced`, caps, allowances, `analyticsEnabled`); (2) restore Hosting; (3) restore compatible Functions; (4) restore Rules last. `serverReviewXp` is inert while phase 09 is deferred, so changing it cannot roll back review XP. Never restore Functions or Rules that reject fields sent by the live Hosting client (`operationId`, `origin`). If compatible artifacts are unavailable, stop and mitigate forward; do not rebuild an old revision and call it an artifact rollback.
@@ -163,13 +169,13 @@ The final 10-23 decision records continue/fix/change ICP with the plan's metrics
 
 ## App Check provider switch (one-time)
 
-reCAPTCHA Enterprise bills each assessment beyond the free tier. reCAPTCHA v3 has no assessment fee. The web app picks the provider from `VITE_FIREBASE_APP_CHECK_PROVIDER`: `v3` uses `ReCaptchaV3Provider`, and any other value uses Enterprise.
+reCAPTCHA Enterprise bills each assessment beyond the free tier. reCAPTCHA v3 has no assessment fee. The sealed web target in `firebase-applet-config.json` binds `appCheckProvider` and `appCheckSiteKey` together. Both currently use Enterprise. A build environment override cannot change that pair.
 
 To switch a target:
 
 1. Create a reCAPTCHA v3 key restricted to that target's domains.
 2. Register it in Firebase Console → App Check → the Web app, with the reCAPTCHA provider.
-3. Build with `VITE_FIREBASE_APP_CHECK_PROVIDER=v3` and `VITE_FIREBASE_APP_CHECK_SITE_KEY` set to the v3 key.
+3. Update that sealed target’s `appCheckProvider` to `v3` and its `appCheckSiteKey` to the registered v3 key; build and validate the sealed target.
 4. Deploy, and run the smoke test (sign in, create a card, review) before removing the Enterprise registration.
 
 A provider/key mismatch fails every App Check token and protected calls stop working, so switch staging first.
@@ -184,3 +190,7 @@ Card creation now always writes an explicit `language` field so course-scoped qu
 - [Pilot plan](../../plans/260923-2000-vn-ielts-paid-pilot/plan.md)
 - [Production release and rollback](./phase-6-rollout.md)
 - [Staging decision log](../../plans/260923-2000-vn-ielts-paid-pilot/decision-log.md)
+
+### Offline typography
+
+The immutable offline shell retains its 4 MiB ceiling. CJK course web fonts load on demand and are excluded from eager shell caching; offline Japanese, Korean and Chinese text uses installed system glyphs. The collector retains all lesson code and translations; exceeding the ceiling fails the build.

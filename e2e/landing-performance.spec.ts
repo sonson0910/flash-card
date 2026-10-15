@@ -137,7 +137,6 @@ test('failed runtime import restores landing and retries with a fresh runtime en
   expect(initialRequestsBeforeRetry.length).toBeGreaterThan(0);
   expect(failedRuntimeRequests).toEqual(initialRequestsBeforeRetry);
 
-  blockRuntime = false;
   await page.getByRole('button', { name: 'Retry workspace', exact: true }).click();
   await expect(page).toHaveURL(/runtime-retry=\d+/);
   await expect(page.getByRole('button', { name: 'Start learning', exact: true }).first()).toBeVisible();

@@ -105,10 +105,10 @@ export function DeckCreationDialog({
         >
           <header className="library-dialog-header">
             <div>
-              <p className="library-dialog-kicker"><Trans id="library.deck.dialog-kicker" message="Deck studio" /></p>
-              <Dialog.Title className="library-dialog-title"><Trans id="library.deck.dialog-title" message="New deck" /></Dialog.Title>
+              <p className="library-dialog-kicker"><Trans {...msg({ context: 'library.deck.dialog-kicker', message: 'Deck studio' })} /></p>
+              <Dialog.Title className="library-dialog-title"><Trans {...msg({ context: 'library.deck.dialog-title', message: 'New deck' })} /></Dialog.Title>
               <Dialog.Description className="library-dialog-description">
-                <Trans id="library.deck.dialog-description" message="Group words by exam, trip, book — anything you like." />
+                <Trans {...msg({ context: 'library.deck.dialog-description', message: 'Group words by exam, trip, book — anything you like.' })} />
               </Dialog.Description>
             </div>
             <Dialog.Close
@@ -129,7 +129,7 @@ export function DeckCreationDialog({
             }}
           >
             <label className="library-dialog-field" htmlFor="library-deck-name">
-              <span><Trans id="library.deck.creation-name-label" message="Deck name" /></span>
+              <span><Trans {...msg({ context: 'library.deck.creation-name-label', message: 'Deck name' })} /></span>
               <input
                 ref={inputRef}
                 id="library-deck-name"
@@ -145,13 +145,13 @@ export function DeckCreationDialog({
               {status === 'failure' ? (
                 <span id="library-deck-create-error" className="library-dialog-error" role="alert">
                   <AlertTriangle size={15} aria-hidden="true" />
-                  {errorMessage ?? <Trans id="library.deck.create-error" message="Could not create this deck. Check your connection and try again." />}
+                  {errorMessage ?? <Trans {...msg({ id: 'library.deck.create-error', message: 'Could not create this deck. Check your connection and try again.' })} />}
                 </span>
               ) : null}
             </label>
 
             <fieldset className="library-deck-cover-picker" disabled={isWorking || isSuccess}>
-              <legend><Trans id="library.deck.cover-label" message="Cover" /></legend>
+              <legend><Trans {...msg({ context: 'library.deck.cover-label', message: 'Cover' })} /></legend>
               <div aria-label={i18n._(msg({ id: 'library.deck.cover-options', message: 'Deck cover' }))}>
                 {coverPresets.map(choice => (
                   <span key={choice}>
@@ -178,7 +178,7 @@ export function DeckCreationDialog({
             </fieldset>
 
             <div className="library-dialog-suggestions" aria-label={i18n._(msg({ id: 'library.deck.suggestions', message: 'Deck name suggestions' }))}>
-              <span><Trans id="library.deck.try" message="Try" /></span>
+              <span><Trans {...msg({ context: 'library.deck.try', message: 'Try' })} /></span>
               {deckSuggestions.map(suggestion => (
                 <button
                   key={suggestion.id}
@@ -195,12 +195,12 @@ export function DeckCreationDialog({
             {isWorking ? (
               <p className="library-dialog-status" role="status" aria-live="polite">
                 <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
-                <Trans id="library.deck.creating" message="Creating…" />
+                <Trans {...msg({ context: 'library.deck.creating', message: 'Creating…' })} />
               </p>
             ) : isSuccess ? (
               <p className="library-dialog-status library-dialog-status--success" role="status" aria-live="polite">
                 <Check size={16} aria-hidden="true" />
-                <Trans id="library.deck.created" message="Deck created. Your cards can be assigned to it from the library." />
+                <Trans {...msg({ context: 'library.deck.created', message: 'Deck created. Your cards can be assigned to it from the library.' })} />
               </p>
             ) : null}
           </form>
@@ -208,7 +208,7 @@ export function DeckCreationDialog({
           <footer className="library-dialog-footer">
             <Dialog.Close asChild>
               <button type="button" className="library-dialog-button library-dialog-button--secondary" disabled={isWorking}>
-                {isSuccess ? <Trans id="common.done" message="Done" /> : <Trans id="common.cancel" message="Cancel" />}
+                {isSuccess ? <Trans {...msg({ context: 'common.done', message: 'Done' })} /> : <Trans {...msg({ context: 'common.cancel', message: 'Cancel' })} />}
               </button>
             </Dialog.Close>
             {!isSuccess ? (
@@ -220,7 +220,7 @@ export function DeckCreationDialog({
                 aria-busy={isWorking}
               >
                 {isWorking ? <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}
-                {status === 'failure' ? <Trans id="library.deck.create-again" message="Try again" /> : <Trans id="library.deck.creation-submit" message="Create deck" />}
+                {status === 'failure' ? <Trans {...msg({ context: 'library.deck.create-again', message: 'Try again' })} /> : <Trans {...msg({ context: 'library.deck.creation-submit', message: 'Create deck' })} />}
               </button>
             ) : null}
           </footer>
@@ -261,9 +261,9 @@ export function LibraryClearDialog({
   const isSuccess = status === 'success';
   const canConfirm = confirmation.trim().toUpperCase() === confirmationToken.toUpperCase();
   const counts: Array<{ id: string; label: ReactNode; value: number }> = [];
-  if (typeof cardCount === 'number') counts.push({ id: 'cards', label: <Trans id="library.clear.cards" message="cards" />, value: cardCount });
-  if (typeof deckCount === 'number') counts.push({ id: 'decks', label: <Trans id="library.clear.decks" message="decks" />, value: deckCount });
-  if (typeof masteredCount === 'number') counts.push({ id: 'mastered', label: <Trans id="library.clear.mastered" message="mastered words" />, value: masteredCount });
+  if (typeof cardCount === 'number') counts.push({ id: 'cards', label: <Trans {...msg({ context: 'library.clear.cards', message: 'cards' })} />, value: cardCount });
+  if (typeof deckCount === 'number') counts.push({ id: 'decks', label: <Trans {...msg({ context: 'library.clear.decks', message: 'decks' })} />, value: deckCount });
+  if (typeof masteredCount === 'number') counts.push({ id: 'mastered', label: <Trans {...msg({ context: 'library.clear.mastered', message: 'mastered words' })} />, value: masteredCount });
 
   useEffect(() => {
     if (!open || isSuccess) setConfirmation('');
@@ -292,8 +292,8 @@ export function LibraryClearDialog({
             <div className="library-dialog-heading-with-icon">
               <span className="library-dialog-danger-icon" aria-hidden="true"><AlertTriangle size={22} /></span>
               <div>
-                <p className="library-dialog-kicker library-dialog-kicker--danger"><Trans id="library.clear.kicker" message="Danger zone" /></p>
-                <AlertDialog.Title className="library-dialog-title"><Trans id="library.clear.title" message="Clear the entire library?" /></AlertDialog.Title>
+                <p className="library-dialog-kicker library-dialog-kicker--danger"><Trans {...msg({ context: 'library.clear.kicker', message: 'Danger zone' })} /></p>
+                <AlertDialog.Title className="library-dialog-title"><Trans {...msg({ context: 'library.clear.title', message: 'Clear the entire library?' })} /></AlertDialog.Title>
               </div>
             </div>
             <AlertDialog.Cancel
@@ -307,7 +307,7 @@ export function LibraryClearDialog({
 
           <div className="library-dialog-body library-dialog-body--danger">
             <AlertDialog.Description className="library-dialog-description library-dialog-description--body">
-              <Trans id="library.clear.description" message="This permanently deletes every card, deck and review history on all your synced devices. It can’t be undone." />
+              <Trans {...msg({ context: 'library.clear.description', message: 'This permanently deletes every card, deck and review history on all your synced devices. It can’t be undone.' })} />
             </AlertDialog.Description>
 
             {counts.length > 0 ? (
@@ -318,10 +318,10 @@ export function LibraryClearDialog({
 
             {onExport ? (
               <div className="library-dialog-export-row">
-                <span><Trans id="library.clear.export-copy" message="Keep a copy first — export everything." /></span>
+                <span><Trans {...msg({ context: 'library.clear.export-copy', message: 'Keep a copy first — export everything.' })} /></span>
                 <button type="button" onClick={onExport} disabled={isWorking || isSuccess} className="library-dialog-button library-dialog-button--secondary">
                   <Download size={15} aria-hidden="true" />
-                  <Trans id="library.clear.export" message="Export" />
+                  <Trans {...msg({ context: 'library.clear.export', message: 'Export' })} />
                 </button>
               </div>
             ) : null}
@@ -329,11 +329,11 @@ export function LibraryClearDialog({
             {isSuccess ? (
               <p className="library-dialog-status library-dialog-status--success" role="status" aria-live="polite">
                 <Check size={16} aria-hidden="true" />
-                <Trans id="library.clear.success" message="Your library was cleared." />
+                <Trans {...msg({ context: 'library.clear.success', message: 'Your library was cleared.' })} />
               </p>
             ) : (
               <label className="library-dialog-field" htmlFor="library-clear-confirmation">
-                <span><Trans id="library.clear.confirm-label" message="Type {token} to confirm" values={{ token: confirmationToken }} /></span>
+                <span><Trans {...msg({ context: 'library.clear.confirm-label', message: 'Type {token} to confirm' })} values={{ token: confirmationToken }} /></span>
                 <input
                   id="library-clear-confirmation"
                   value={confirmation}
@@ -349,12 +349,12 @@ export function LibraryClearDialog({
             {isWorking ? (
               <p className="library-dialog-status" role="status" aria-live="polite">
                 <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
-                <Trans id="library.clear.working" message="Clearing your library…" />
+                <Trans {...msg({ context: 'library.clear.working', message: 'Clearing your library…' })} />
               </p>
             ) : status === 'failure' ? (
               <p className="library-dialog-error" role="alert">
                 <AlertTriangle size={15} aria-hidden="true" />
-                {errorMessage ?? <Trans id="library.clear.failure" message="Could not clear the library. Check your connection and try again." />}
+                {errorMessage ?? <Trans {...msg({ context: 'library.clear.failure', message: 'Could not clear the library. Check your connection and try again.' })} />}
               </p>
             ) : null}
           </div>
@@ -362,12 +362,12 @@ export function LibraryClearDialog({
           <footer className="library-dialog-footer">
             {isSuccess ? (
               <AlertDialog.Cancel asChild>
-                <button type="button" className="library-dialog-button library-dialog-button--primary"><Trans id="common.done" message="Done" /></button>
+                <button type="button" className="library-dialog-button library-dialog-button--primary"><Trans {...msg({ context: 'common.done', message: 'Done' })} /></button>
               </AlertDialog.Cancel>
             ) : (
               <>
                 <AlertDialog.Cancel className="library-dialog-button library-dialog-button--secondary" disabled={isWorking}>
-                  <Trans id="library.clear.keep" message="Keep library" />
+                  <Trans {...msg({ context: 'library.clear.keep', message: 'Keep library' })} />
                 </AlertDialog.Cancel>
                 <AlertDialog.Action
                   className="library-dialog-button library-dialog-button--danger"
@@ -379,7 +379,7 @@ export function LibraryClearDialog({
                   }}
                 >
                   {isWorking ? <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : null}
-                  {status === 'failure' ? <Trans id="library.clear.try-again" message="Try again" /> : <Trans id="library.clear.confirm" message="Delete everything" />}
+                  {status === 'failure' ? <Trans {...msg({ context: 'library.clear.try-again', message: 'Try again' })} /> : <Trans {...msg({ context: 'library.clear.confirm', message: 'Delete everything' })} />}
                 </AlertDialog.Action>
               </>
             )}
@@ -439,9 +439,9 @@ export function LibraryInsightsDialog({
         <Dialog.Content className="library-dialog-frame library-dialog-frame--insights" onCloseAutoFocus={event => restoreLibraryDialogFocus(event, restoreFocusRef)}>
           <header className="library-dialog-header">
             <div>
-              <p className="library-dialog-kicker"><Trans id="library.insights.kicker" message="Stats · last 30 days" /></p>
-              <Dialog.Title className="library-dialog-title"><Trans id="library.insights.title" message="Learning insights" /></Dialog.Title>
-              <Dialog.Description className="library-dialog-description"><Trans id="library.insights.description" message="A truthful view of your memory strength and review momentum." /></Dialog.Description>
+              <p className="library-dialog-kicker"><Trans {...msg({ context: 'library.insights.kicker', message: 'Stats · last 30 days' })} /></p>
+              <Dialog.Title className="library-dialog-title"><Trans {...msg({ context: 'library.insights.title', message: 'Learning insights' })} /></Dialog.Title>
+              <Dialog.Description className="library-dialog-description"><Trans {...msg({ context: 'library.insights.description', message: 'A truthful view of your memory strength and review momentum.' })} /></Dialog.Description>
             </div>
             <Dialog.Close className="library-dialog-icon-button" aria-label={i18n._(msg({ id: 'library.insights.close', message: 'Close learning insights' }))}>
               <X size={17} aria-hidden="true" />
@@ -453,39 +453,39 @@ export function LibraryInsightsDialog({
             {isLoading ? (
               <div className="library-dialog-loading" role="status" aria-live="polite">
                 <Loader2 size={24} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
-                <Trans id="library.insights.loading" message="Loading your learning data…" />
+                <Trans {...msg({ context: 'library.insights.loading', message: 'Loading your learning data…' })} />
               </div>
             ) : phase === 'failure' ? (
               <div className="library-dialog-empty" role="alert">
                 <AlertTriangle size={24} aria-hidden="true" />
-                <p>{errorMessage ?? <Trans id="library.insights.failure" message="Could not load learning insights. Try again." />}</p>
-                {onRetry ? <button type="button" onClick={onRetry} className="library-dialog-button library-dialog-button--secondary"><RotateCcw size={15} aria-hidden="true" /><Trans id="common.retry" message="Retry" /></button> : null}
+                <p>{errorMessage ?? <Trans {...msg({ context: 'library.insights.failure', message: 'Could not load learning insights. Try again.' })} />}</p>
+                {onRetry ? <button type="button" onClick={onRetry} className="library-dialog-button library-dialog-button--secondary"><RotateCcw size={15} aria-hidden="true" /><Trans {...msg({ context: 'common.retry', message: 'Retry' })} /></button> : null}
               </div>
             ) : !hasStats ? (
-              <div className="library-dialog-empty" role="status"><Trans id="library.insights.empty" message="There is not enough learning data to show insights yet." /></div>
+              <div className="library-dialog-empty" role="status"><Trans {...msg({ context: 'library.insights.empty', message: 'There is not enough learning data to show insights yet.' })} /></div>
             ) : (
               <>
                 <div className="library-dialog-stat-grid library-dialog-stat-grid--four">
-                  <InsightMetric label={<Trans id="library.insights.total" message="Total cards" />} value={stats.total} />
-                  <InsightMetric label={<Trans id="library.insights.mastered" message="Mastered" />} value={stats.learned} />
-                  <InsightMetric label={<Trans id="library.insights.learning" message="Learning" />} value={stats.learning} />
-                  <InsightMetric label={<Trans id="library.insights.due" message="Due today" />} value={stats.dueToday} accent />
+                  <InsightMetric label={<Trans {...msg({ context: 'library.insights.total', message: 'Total cards' })} />} value={stats.total} />
+                  <InsightMetric label={<Trans {...msg({ context: 'library.insights.mastered', message: 'Mastered' })} />} value={stats.learned} />
+                  <InsightMetric label={<Trans {...msg({ context: 'library.insights.learning', message: 'Learning' })} />} value={stats.learning} />
+                  <InsightMetric label={<Trans {...msg({ context: 'library.insights.due', message: 'Due today' })} />} value={stats.dueToday} accent />
                 </div>
 
                 <div className="library-insights-grid">
                   <section className="library-insights-panel" aria-labelledby="library-insights-category-title">
-                    <h3 id="library-insights-category-title"><Trans id="library.insights.category" message="By category" /></h3>
-                    {stats.categoryChart.length === 0 ? <p className="library-dialog-muted"><Trans id="library.insights.no-category" message="No category data yet." /></p> : (
+                    <h3 id="library-insights-category-title"><Trans {...msg({ context: 'library.insights.category', message: 'By category' })} /></h3>
+                    {stats.categoryChart.length === 0 ? <p className="library-dialog-muted"><Trans {...msg({ context: 'library.insights.no-category', message: 'No category data yet.' })} /></p> : (
                       <ul className="library-insights-bars">
                         {stats.categoryChart.map(item => <li key={item.name}><div><span>{item.name}</span><strong>{formatNumber(item.value)}</strong></div><span className="library-insights-track"><span style={{ width: `${Math.round((item.value / maxCategory) * 100)}%` }} /></span></li>)}
                       </ul>
                     )}
-                    {stats.categoryChartIsPartial ? <p className="library-dialog-note"><Trans id="library.insights.category-partial" message="Some cloud categories are still loading." /></p> : null}
+                    {stats.categoryChartIsPartial ? <p className="library-dialog-note"><Trans {...msg({ context: 'library.insights.category-partial', message: 'Some cloud categories are still loading.' })} /></p> : null}
                   </section>
 
                   <section className="library-insights-panel" aria-labelledby="library-insights-difficulty-title">
-                    <h3 id="library-insights-difficulty-title"><Trans id="library.insights.difficulty" message="Difficulty" /></h3>
-                    {stats.difficultyChart.length === 0 ? <p className="library-dialog-muted"><Trans id="library.insights.no-difficulty" message="No review ratings yet." /></p> : (
+                    <h3 id="library-insights-difficulty-title"><Trans {...msg({ context: 'library.insights.difficulty', message: 'Difficulty' })} /></h3>
+                    {stats.difficultyChart.length === 0 ? <p className="library-dialog-muted"><Trans {...msg({ context: 'library.insights.no-difficulty', message: 'No review ratings yet.' })} /></p> : (
                       <ul className="library-insights-bars">
                         {stats.difficultyChart.map(item => <li key={item.name}><div><span>{item.name}</span><strong>{formatNumber(item.value)}</strong></div><span className="library-insights-track library-insights-track--warm"><span style={{ width: `${Math.round((item.value / maxDifficulty) * 100)}%` }} /></span></li>)}
                       </ul>
@@ -494,8 +494,8 @@ export function LibraryInsightsDialog({
                 </div>
 
                 <section className="library-insights-panel" aria-labelledby="library-insights-xp-title">
-                  <div className="library-insights-panel-heading"><h3 id="library-insights-xp-title"><Trans id="library.insights.xp" message="XP · recent activity" /></h3><span><Trans id="library.insights.xp-total" message="{count, number} XP" values={{ count: stats.xpChartData.reduce((sum, point) => sum + point.XP, 0) }} /></span></div>
-                  {stats.xpChartData.length === 0 ? <p className="library-dialog-muted"><Trans id="library.insights.no-xp" message="Complete a review to start your activity chart." /></p> : (
+                  <div className="library-insights-panel-heading"><h3 id="library-insights-xp-title"><Trans {...msg({ context: 'library.insights.xp', message: 'XP · recent activity' })} /></h3><span><Trans {...msg({ context: 'library.insights.xp-total', message: '{count, number} XP' })} values={{ count: stats.xpChartData.reduce((sum, point) => sum + point.XP, 0) }} /></span></div>
+                  {stats.xpChartData.length === 0 ? <p className="library-dialog-muted"><Trans {...msg({ context: 'library.insights.no-xp', message: 'Complete a review to start your activity chart.' })} /></p> : (
                     <div className="library-insights-xp" role="img" aria-label={i18n._(msg({ id: 'library.insights.xp-chart', message: 'Recent XP activity' }))}>
                       {stats.xpChartData.map(point => <span key={point.date} title={i18n._(msg({ id: 'library.insights.xp-point', message: '{date}: {xp, number} XP' }).id, { date: point.date, xp: point.XP })} style={{ height: `${Math.max(8, Math.round((point.XP / maxXp) * 100))}%` }} />)}
                     </div>
@@ -506,9 +506,9 @@ export function LibraryInsightsDialog({
           </div>
 
           <footer className="library-dialog-footer">
-            {onOpenProgress ? <button type="button" onClick={onOpenProgress} className="library-dialog-link"><Trans id="library.insights.open-progress" message="Open full Progress →" /></button> : <span />}
+            {onOpenProgress ? <button type="button" onClick={onOpenProgress} className="library-dialog-link"><Trans {...msg({ context: 'library.insights.open-progress', message: 'Open full Progress →' })} /></button> : <span />}
             <Dialog.Close asChild>
-              <button type="button" className="library-dialog-button library-dialog-button--secondary"><Trans id="common.close" message="Close" /></button>
+              <button type="button" className="library-dialog-button library-dialog-button--secondary"><Trans {...msg({ id: 'common.close', message: 'Close' })} /></button>
             </Dialog.Close>
           </footer>
         </Dialog.Content>

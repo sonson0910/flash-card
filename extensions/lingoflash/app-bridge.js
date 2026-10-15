@@ -39,6 +39,7 @@
   const MAX_ENCODED_IMPORT_LENGTH = 2048;
   const IMPORT_NONCE_PATTERN = /^[A-Za-z0-9_-]{22,64}$/;
   const FALLBACK_GRACE_MS = 1_500;
+  const RUNTIME_STARTUP_TIMEOUT_MS = 15_000;
   const FALLBACK_FORM_TIMEOUT_MS = 8_000;
   // The app retries its 65s AI request once after 500ms. Keep the DOM
   // fallback alive for that full budget plus a response/render allowance.
@@ -173,6 +174,38 @@
       providerId = '';
       scheduleAppBridgeReconnect();
     }
+  };
+
+  let deckSession = null;
+  let deckMetadataTail = Promise.resolve();
+  const relayDeckMetadata = (type, payload) => {
+    deckMetadataTail = deckMetadataTail.catch(() => undefined).then(async () => {
+      if (typeof payload?.scope !== 'string' || !payload.scope.trim() || payload.scope.length > 128) return;
+      if (deckSession?.scope !== payload.scope || deckSession?.providerId !== providerId) {
+        const issued = await sendProviderMessage('GET_DECK_METADATA_GENERATION');
+        if (!issued.response?.ok || typeof issued.response.generation !== 'string') return;
+        deckSession = { scope: payload.scope, generation: issued.response.generation, providerId: issued.providerId };
+      }
+      const session = deckSession;
+      if (type === 'CLEAR_DECK_METADATA') {
+        const retry = async attemptsRemaining => {
+          try {
+            const { response } = await sendProviderMessage(type, { ...payload, generation: session.generation }, session.providerId);
+            if (response?.ok !== true) throw new Error('Deck metadata clear was not acknowledged.');
+            if (deckSession === session) deckSession = null;
+          } catch {
+            if (attemptsRemaining > 0) {
+              await new Promise(resolve => globalThis.setTimeout(resolve, DECK_METADATA_CLEAR_RETRY_MS));
+              await retry(attemptsRemaining - 1);
+            }
+          }
+        };
+        await retry(DECK_METADATA_CLEAR_RETRIES);
+        return;
+      }
+      if (payload.decks === undefined) return;
+      await sendProviderMessage(type, { ...payload, generation: session.generation }, session.providerId);
+    }).catch(() => undefined);
   };
 
   const sendResult = (intent, payload) => {
@@ -367,11 +400,17 @@
 
   const writeVerifiedIntent = intent => {
     try {
-      globalThis.sessionStorage?.setItem(IMPORT_STORAGE_KEY, JSON.stringify(intent));
-      globalThis.sessionStorage?.removeItem(UNVERIFIED_STORAGE_KEY);
+      const storage = globalThis.sessionStorage;
+      if (!storage) return false;
+      const serialized = JSON.stringify(intent);
+      storage.getItem(IMPORT_STORAGE_KEY); // Read access is a precondition, before commit.
+      try { storage.removeItem(UNVERIFIED_STORAGE_KEY); } catch { /* Draft cleanup is optional. */ }
+      // Web Storage setItem either throws before mutation or commits synchronously.
+      storage.setItem(IMPORT_STORAGE_KEY, serialized);
     } catch {
-      // The postMessage path below still works when storage is unavailable.
+      return false;
     }
+    return true;
   };
 
   const notifyApp = (type, payload) => {
@@ -407,7 +446,12 @@
       return;
     }
     verifiedIntent = intent;
-    writeVerifiedIntent(intent);
+    if (!writeVerifiedIntent(intent)) {
+      appBridgeResponded = true;
+      sendResult(intent, { v: 1, id: intent.id, status: 'error', word: intent.text,
+        message: 'App session storage is unavailable. Allow site storage and retry; nothing was saved.' });
+      return;
+    }
     notifyApp(IMPORT_READY_TYPE, intent);
     scheduleFallback(intent);
   };
@@ -440,12 +484,21 @@
   const querySubmitButton = form => form?.querySelector(SUBMIT_BUTTON_SELECTOR)
     ?? form?.querySelector(LEGACY_SUBMIT_BUTTON_SELECTOR);
 
+  const revokeVerifiedIntent = () => {
+    try {
+      const storage = globalThis.sessionStorage;
+      if (!storage) return false;
+      storage.removeItem(IMPORT_STORAGE_KEY);
+      return storage.getItem(IMPORT_STORAGE_KEY) === null;
+    } catch { return false; }
+  };
+
   const rejectStructuredCompatibilityFallback = intent => {
     // The legacy DOM form cannot carry or validate structured intent fields.
     // Remove the verified hand-off before reporting the failure so a late app
     // runtime cannot silently save a card without its verified metadata.
+    if (!revokeVerifiedIntent()) return;
     appBridgeResponded = true;
-    try { globalThis.sessionStorage?.removeItem(IMPORT_STORAGE_KEY); } catch { /* Storage may be unavailable. */ }
     const reason = intent.requestedDeck
       ? `Deck “${intent.requestedDeck}” requires the current LingoFlash app runtime.`
       : 'Sentence context requires the current LingoFlash app runtime.';
@@ -464,6 +517,17 @@
     await sleep(FALLBACK_GRACE_MS);
     if (appBridgeResponded || !isSameRoute()) return;
 
+    const capability = document.querySelector('meta[name="sonflash-import-runtime"]')?.getAttribute('content');
+    if (capability === String(IMPORT_PROTOCOL_VERSION)) {
+      // The HTML declares this runtime's capability before dynamic chunks finish loading.
+      await waitFor(() => appBridgeResponded, RUNTIME_STARTUP_TIMEOUT_MS - FALLBACK_GRACE_MS);
+      if (appBridgeResponded || !isSameRoute()) return;
+      if (!revokeVerifiedIntent()) return;
+      appBridgeResponded = true;
+      sendResult(intent, { v: 1, id: intent.id, status: 'error', word: intent.text,
+        message: 'The app runtime did not start in time. Open the app and retry.' });
+      return;
+    }
     if (intent.requestedDeck || intent.context || intent.sourceUrl || intent.pageTitle) {
       rejectStructuredCompatibilityFallback(intent);
       return;
@@ -528,11 +592,11 @@
     }
     if (message.source !== APP_SOURCE) return;
     if (message.type === DECK_METADATA_TYPE) {
-      void sendProviderMessage('SYNC_DECK_METADATA', message.payload).catch(() => undefined);
+      relayDeckMetadata('SYNC_DECK_METADATA', message.payload);
       return;
     }
     if (message.type === DECK_METADATA_CLEAR_TYPE) {
-      relayDeckMetadataClear(message.payload);
+      relayDeckMetadata('CLEAR_DECK_METADATA', message.payload);
       return;
     }
     if (message.type === DUE_COUNT_TYPE) {

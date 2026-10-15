@@ -111,7 +111,10 @@ test('library supports 320px reflow, 200% text and visible keyboard focus', asyn
   await expect(manage).toBeFocused();
 });
 
-test('landing presents one trustworthy, accessible product story', async ({ page }) => {
+test('Crystal landing presents one trustworthy, accessible product story', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'crystal');
+  });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/?view=landing');

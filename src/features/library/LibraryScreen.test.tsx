@@ -1,3 +1,4 @@
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -43,7 +44,7 @@ const model: LibraryScreenModel = {
   isAuthenticated: false,
   overview: { total: 1, due: 1, mastered: 0, streak: 2, level: 1, xp: 30, canStudy: true },
   grid: {
-    searchQuery: '', legacyCardsPending: 0, legacyIssue: null, isMigratingLegacy: false, activeCategory: 'All',
+    searchQuery: '', legacyCardsPending: 0, legacyIssue: null, isMigratingLegacy: false, activeCategory: 'All', activeCustomDeck: ALL_PRACTICE_DECK_SCOPE,
     filteredCards: [card], isSharing: false, currentPage: 1, paginatedCards: [card],
     isPageLoading: false, cloudReadUnavailable: false, importProgress: null,
     groupedCards: { Today: [card] }, customDecks: [], totalPages: 1,
@@ -54,7 +55,7 @@ const model: LibraryScreenModel = {
     generationAccess: { available: true },
     importProgress: null, importResult: null, libraryCount: 1, searchQuery: '',
     showStarredOnly: false, activeDifficulty: 'All', activePartOfSpeech: 'All', activeDate: 'All',
-    availableDates: ['All'], customDecks: [], newDeckInput: '', activeCustomDeck: 'All', cards: [card],
+    availableDates: ['All'], customDecks: [], newDeckInput: '', activeCustomDeck: ALL_PRACTICE_DECK_SCOPE, cards: [card],
     cloudFacetsComplete: true, sortedCategories: ['All', 'Study'], categoryCounts: { All: 1, Study: 1 },
     activeCategory: 'All',
   },

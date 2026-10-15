@@ -13,97 +13,97 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/features/rewards/AnimeReveal.tsx:31
+msgctxt "rewards.reveal.tier.new"
+msgid "New"
+msgstr "New"
+
+#: src/features/rewards/AnimeReveal.tsx:25
+msgctxt "rewards.reveal.streak.kicker"
+msgid "Streak milestone"
+msgstr "Streak milestone"
+
+#: src/features/rewards/AnimeReveal.tsx:24
+msgctxt "rewards.reveal.tierup.continue"
+msgid "Continue learning"
+msgstr "Continue learning"
+
+#: src/features/rewards/AnimeReveal.tsx:26
+msgctxt "rewards.reveal.levelup.description"
+msgid "You unlocked the Crimson Wing frame and Word Collector title. You can hold up to three hint tokens."
+msgstr "You unlocked the Crimson Wing frame and Word Collector title. You can hold up to three hint tokens."
+
+#: src/features/rewards/AnimeReveal.tsx:24
+msgctxt "rewards.reveal.tierup.description"
+msgid "This card is now mastered. Review it again when it is due."
+msgstr "This card is now mastered. Review it again when it is due."
+
+#: src/features/rewards/AnimeReveal.tsx:70
+msgctxt "rewards.reveal.later"
+msgid "Later"
+msgstr "Later"
+
+#: src/features/rewards/AnimeReveal.tsx:25
+msgctxt "rewards.reveal.streak.description"
+msgid "Your verified review streak earned the Web Wanderer badge."
+msgstr "Your verified review streak earned the Web Wanderer badge."
+
+#: src/features/rewards/AnimeReveal.tsx:24
+msgctxt "rewards.reveal.tierup.kicker"
+msgid "Tier up"
+msgstr "Tier up"
+
+#: src/features/rewards/AnimeReveal.tsx:35
+msgctxt "rewards.reveal.tier.mastered"
+msgid "Mastered"
+msgstr "Mastered"
+
+#: src/features/rewards/AnimeReveal.tsx:26
+msgctxt "rewards.reveal.levelup.kicker"
+msgid "Level up"
+msgstr "Level up"
+
+#: src/features/rewards/AnimeReveal.tsx:25
+msgctxt "rewards.reveal.streak.title"
+msgid "Streak reached"
+msgstr "Streak reached"
+
+#: src/features/rewards/AnimeReveal.tsx:25
+msgctxt "rewards.reveal.streak.continue"
+msgid "Continue learning"
+msgstr "Continue learning"
+
+#: src/features/rewards/AnimeReveal.tsx:24
+msgctxt "rewards.reveal.tierup.title"
+msgid "Mastered"
+msgstr "Mastered"
+
+#: src/features/rewards/AnimeReveal.tsx:26
+msgctxt "rewards.reveal.levelup.equip"
+msgid "Use frame"
+msgstr "Use frame"
+
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:65
 msgid "rewards.reveal.close"
 msgstr "Close reward"
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:69
-msgid "rewards.reveal.equip-error"
-msgstr "Could not use this reward. Try again."
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:70
-msgid "rewards.reveal.later"
-msgstr "Later"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:26
-msgid "rewards.reveal.levelup.description"
-msgstr "You unlocked the Crimson Wing frame and Word Collector title. You can hold up to three hint tokens."
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:26
-msgid "rewards.reveal.levelup.equip"
-msgstr "Use frame"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:26
-msgid "rewards.reveal.levelup.kicker"
-msgstr "Level up"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:26
-msgid "rewards.reveal.levelup.title"
-msgstr "Level up"
-
-#. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:68
 msgid "rewards.reveal.rewards-label"
 msgstr "Unlocked rewards"
 
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:25
-msgid "rewards.reveal.streak.continue"
-msgstr "Continue learning"
+#: src/features/rewards/AnimeReveal.tsx:26
+msgctxt "rewards.reveal.levelup.title"
+msgid "Level up"
+msgstr "Level up"
 
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:25
-msgid "rewards.reveal.streak.description"
-msgstr "Your verified review streak earned the Web Wanderer badge."
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:25
-msgid "rewards.reveal.streak.kicker"
-msgstr "Streak milestone"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:25
-msgid "rewards.reveal.streak.title"
-msgstr "Streak reached"
-
-#. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:33
-msgid "rewards.reveal.tier.learning"
+msgctxt "rewards.reveal.tier.learning"
+msgid "Learning"
 msgstr "Learning"
 
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:35
-msgid "rewards.reveal.tier.mastered"
-msgstr "Mastered"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:31
-msgid "rewards.reveal.tier.new"
-msgstr "New"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:24
-msgid "rewards.reveal.tierup.continue"
-msgstr "Continue learning"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:24
-msgid "rewards.reveal.tierup.description"
-msgstr "This card is now mastered. Review it again when it is due."
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:24
-msgid "rewards.reveal.tierup.kicker"
-msgstr "Tier up"
-
-#. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:24
-msgid "rewards.reveal.tierup.title"
-msgstr "Mastered"
+#: src/features/rewards/AnimeReveal.tsx:69
+msgctxt "rewards.reveal.equip-error"
+msgid "Could not use this reward. Try again."
+msgstr "Could not use this reward. Try again."

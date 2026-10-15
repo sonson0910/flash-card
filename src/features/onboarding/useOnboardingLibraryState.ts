@@ -38,7 +38,7 @@ export function useOnboardingLibraryState({ ownerId, cloud, needsOnboarding, can
     const countOwnerCards = () => {
       const currentRequest = ++request;
       void import('../../lib/cardRepository').then(({ countCards }) => countCards(database, ownerId, {
-        category: null, customDeck: null, difficulty: null, partOfSpeech: null,
+        category: null, customDeck: { kind: 'all' }, difficulty: null, partOfSpeech: null,
         bookmarkedOnly: false, createdDate: null, wordPrefix: '', targetLanguage: null,
       })).then(count => {
         if (active && currentRequest === request) setOwnerCount({ ownerId, count });

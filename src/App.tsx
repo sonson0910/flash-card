@@ -1,3 +1,4 @@
+import { msg } from '@lingui/core/macro';
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { AppRuntimeBoundary } from './app/AppRuntimeBoundary';
 import { useAppNavigation } from './features/navigation/useAppNavigation';
@@ -40,6 +41,10 @@ export default function App() {
   const [runtimeFailed, setRuntimeFailed] = useState(false);
 
   useEffect(() => {
+    if (navigation.viewMode === 'today') void import('./features/dailyLearning/DailyLearningWorkspace').catch(() => undefined);
+  }, [navigation.viewMode]);
+
+  useEffect(() => {
     if (navigation.viewMode !== 'landing') setRuntimeActivated(true);
   }, [navigation.viewMode]);
 
@@ -79,7 +84,7 @@ export default function App() {
   return (
     <>
       {navigation.viewMode === 'landing' && !runtimeFailed && (
-          <Suspense fallback={<div className="app-loading crystal-starfield font-bold text-[var(--sf-brand-text)]"><Trans id="shell.loading.app" message="Loading SonFlash…" /></div>}>
+          <Suspense fallback={<div className="app-loading crystal-starfield font-bold text-[var(--sf-brand-text)]"><Trans {...msg({ context: 'shell.loading.app', message: 'Loading SonFlash…' })} /></div>}>
             <LandingPage
               onEnterApp={enterApp}
               onOpenLibrary={openLibrary}

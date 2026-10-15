@@ -62,10 +62,10 @@ export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncS
           : _(msg({ id: 'shell.sync.device', message: 'On this device' }))
         : status.headerLabel;
   const navigation: NavigationItem[] = [
-    { view: 'today', classic: <Trans id="shell.nav.today" message="Today" />, crystal: <Trans id="shell.nav.today" message="Today" />, action: onOpenToday },
-    { view: 'catalog', classic: <Trans id="shell.nav.paths" message="Paths" />, crystal: <Trans id="shell.nav.paths" message="Paths" />, action: onOpenCatalog },
-    { view: 'library', classic: <Trans id="shell.nav.vocabulary" message="Vocabulary" />, crystal: <Trans id="shell.nav.collection" message="Collection" />, action: onOpenLibrary },
-    { view: 'progress', classic: <Trans id="shell.nav.progress" message="Progress" />, crystal: <Trans id="shell.nav.progress" message="Progress" />, action: onOpenProgress },
+    { view: 'today', classic: <Trans {...msg({ id: 'shell.nav.today', message: 'Today' })} />, crystal: <Trans {...msg({ id: 'shell.nav.today', message: 'Today' })} />, action: onOpenToday },
+    { view: 'catalog', classic: <Trans {...msg({ id: 'shell.nav.paths', message: 'Paths' })} />, crystal: <Trans {...msg({ id: 'shell.nav.paths', message: 'Paths' })} />, action: onOpenCatalog },
+    { view: 'library', classic: <Trans {...msg({ id: 'shell.nav.vocabulary', message: 'Vocabulary' })} />, crystal: <Trans {...msg({ context: 'shell.nav.collection', message: 'Collection' })} />, action: onOpenLibrary },
+    { view: 'progress', classic: <Trans {...msg({ id: 'shell.nav.progress', message: 'Progress' })} />, crystal: <Trans {...msg({ id: 'shell.nav.progress', message: 'Progress' })} />, action: onOpenProgress },
   ];
   const hasStreak = typeof streak === 'number' && Number.isFinite(streak) && streak >= 0;
   const hasLevel = typeof level === 'number' && Number.isFinite(level) && level >= 1;
@@ -78,7 +78,7 @@ export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncS
     <nav ref={navigationRef} aria-label={_(msg({ id: 'shell.navigation.primary', message: 'Primary navigation' }))} data-shell-layer="primary" className="app-navigation claude-topbar-nav flex h-full items-center">
     <div className="claude-topbar-inner mx-auto flex w-full max-w-[1440px] items-center">
       <button type="button" onClick={onOpenLanding ?? onOpenToday} data-gsap-brand aria-label="SonFlash" className="claude-brand shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2">
-        <span className="claude-brand-classic" aria-hidden="true"><Trans id="shell.brand.mark" message="S" /></span><CrystalStar />
+        <span className="claude-brand-classic" aria-hidden="true"><Trans {...msg({ context: 'shell.brand.mark', message: 'S' })} /></span><CrystalStar />
         <span className="claude-brand-name"><span>{family === 'crystal' ? 'SON' : 'Son'}</span><em>{family === 'crystal' ? 'FLASH' : 'Flash'}</em></span>
       </button>
       <div className="claude-nav-items hidden min-w-0 items-center lg:flex">{navigation.map(item => <button key={item.view} type="button" onClick={item.action} data-shell-active={viewMode === item.view ? 'true' : undefined} aria-current={viewMode === item.view ? 'page' : undefined} className="claude-nav-item"><span>{family === 'crystal' ? item.crystal : item.classic}</span></button>)}</div>
@@ -86,7 +86,7 @@ export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncS
       <div data-gsap-header-actions className="claude-shell-actions ml-auto flex items-center">
         <ThemeMenu onOpenSettings={onOpenSettings} />
         {hasStreak && <span className="claude-streak" aria-label={_(msg({ id: 'shell.streak', message: '{count} day streak' }).id, { count: streak })}><Flame size={15} fill="currentColor" aria-hidden="true" />{streak}</span>}
-        {hasLevel && <span className="claude-level" aria-label={hasXp ? _(msg({ id: 'shell.level', message: 'Level {level}, {xp} XP' }).id, { level, xp }) : _(msg({ id: 'shell.level.short', message: 'Lv {level}' }).id, { level })}><Trans id="shell.level.short" message="Lv {level}" values={{ level }} />{hasXp && <span className="claude-level-track" aria-hidden="true"><span style={{ width: `${levelProgress}%` }} /></span>}</span>}
+        {hasLevel && <span className="claude-level" aria-label={hasXp ? _(msg({ id: 'shell.level', message: 'Level {level}, {xp} XP' }).id, { level, xp }) : _(msg({ id: 'shell.level.short', message: 'Lv {level}' }).id, { level })}><Trans {...msg({ id: 'shell.level.short', message: 'Lv {level}' })} values={{ level }} />{hasXp && <span className="claude-level-track" aria-hidden="true"><span style={{ width: `${levelProgress}%` }} /></span>}</span>}
         <LanguageMenu />
         <LibraryManagementMenu
           equippedFrameId={equippedFrameId}

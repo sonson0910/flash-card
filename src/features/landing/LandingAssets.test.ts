@@ -25,6 +25,18 @@ describe('landing asset delivery contract', () => {
     }
   });
 
+  it('does not load hero video on compact or coarse-pointer devices', () => {
+    expect(landingSource).toContain("'(max-width: 767px), (pointer: coarse)'");
+    expect(landingSource).toContain('videoEnabled');
+    expect(landingSource).toContain("preload={index === activeVideo && videoEnabled ? 'metadata' : 'none'}");
+    expect(landingSource).toContain('if (video.readyState === HTMLMediaElement.HAVE_NOTHING) video.load()');
+  });
+
+  it('replaces disabled atmosphere controls with an accessible static-mode note', () => {
+    expect(landingSource).toContain('{videoEnabled ? (');
+    expect(landingSource).toContain('role="status"');
+  });
+
   it('keeps the mobile hero stable while browser chrome changes', () => {
     expect(landingSource).not.toContain('100dvh');
     expect(landingSource).toContain('100svh');
@@ -108,6 +120,8 @@ describe('landing asset delivery contract', () => {
     expect(landingSource).toContain('!user && accountDeletionCacheWarning');
     expect(landingSource).toContain('role="status"');
     expect(landingSource).toContain('We could not confirm whether account deletion finished. If you can still sign in later, contact support.');
-    expect(landingSource).toContain("SonFlash couldn't clear saved account data from this device. Clear SonFlash site data in your browser.");
+    expect(landingSource).toContain("id: 'account.data.delete.cache-warning'");
+    expect(landingSource).toContain(String.raw`SonFlash couldn\'t clear saved account data from this device. Clear SonFlash site data in your browser.`);
+    expect(landingSource).toMatch(/!user && accountDeletionCacheWarning && <p role="alert"/);
   });
 });

@@ -86,14 +86,14 @@ export function EmptyLibraryPanel({
 
   const generationHelpId = 'empty-library-generation-help';
   const importStatus = importProgress
-    ? <p className="empty-library__status" role="status" aria-live="polite"><Trans id="library.import.progress" message="Importing {current, number} of {total, number}" values={{ current: importProgress.current, total: importProgress.total }} /> · <Trans id="library.import.current-word" message="Current word: {word}" values={{ word: importProgress.word }} /></p>
+    ? <p className="empty-library__status" role="status" aria-live="polite"><Trans {...msg({ context: 'library.import.progress', message: 'Importing {current, number} of {total, number}' })} values={{ current: importProgress.current, total: importProgress.total }} /> · <Trans {...msg({ context: 'library.import.current-word', message: 'Current word: {word}' })} values={{ word: importProgress.word }} /></p>
     : importResult
       ? <p className="empty-library__status" role={importResult.status === 'failed' ? 'alert' : 'status'} aria-live={importResult.status === 'failed' ? 'assertive' : 'polite'}>{importResult.message}</p>
       : null;
 
   return (
     <section className={`empty-library${isCrystal ? ' empty-library--crystal' : ' empty-library--classic'}`} aria-labelledby="empty-library-caption" data-empty-library-panel="true">
-      <p id="empty-library-caption" className="empty-library__caption"><Trans id="library.empty.first-run-kicker" message="Empty library · first run" /></p>
+      <p id="empty-library-caption" className="empty-library__caption"><Trans {...msg({ context: 'library.empty.first-run-kicker', message: 'Empty library · first run' })} /></p>
       {isCrystal ? (
         <div className="empty-library__crystal-frame">
           <div className="empty-library__crystal-inner">
@@ -102,8 +102,8 @@ export function EmptyLibraryPanel({
                 {showLumi && <Lumi pose="sleepy" size={108} className="empty-library__lumi" />}
               </div>
               <div className="empty-library__title-wrap">
-                <p className="empty-library__link-label"><Trans id="library.empty.lumi-link" message="LUMI · LINK" /></p>
-                <h2 className="empty-library__title"><Trans id="library.empty.title-prefix" message="Start with your" /> <span><Trans id="library.empty.title-emphasis" message="first word." /></span></h2>
+                <p className="empty-library__link-label"><Trans {...msg({ context: 'library.empty.lumi-link', message: 'LUMI · LINK' })} /></p>
+                <h2 className="empty-library__title"><Trans {...msg({ context: 'library.empty.title-prefix', message: 'Start with your' })} /> <span><Trans {...msg({ context: 'library.empty.title-emphasis', message: 'first word.' })} /></span></h2>
               </div>
             </div>
             <EmptyLibraryActions
@@ -136,7 +136,7 @@ export function EmptyLibraryPanel({
             <span className="empty-library__card-outline empty-library__card-outline--front" />
             <span className="empty-library__mini-card">a</span>
           </div>
-          <h2 className="empty-library__title"><Trans id="library.empty.title-prefix" message="Start with your" /> <span><Trans id="library.empty.title-emphasis" message="first word." /></span></h2>
+          <h2 className="empty-library__title"><Trans {...msg({ context: 'library.empty.title-prefix', message: 'Start with your' })} /> <span><Trans {...msg({ context: 'library.empty.title-emphasis', message: 'first word.' })} /></span></h2>
           <EmptyLibraryActions
             fileInputRef={fileInputRef}
             wordInput={wordInput}
@@ -219,7 +219,7 @@ function EmptyLibraryActions({
   return (
     <>
       <form className="empty-library__form" onSubmit={submit} onKeyDown={onKeyDown}>
-        <label className="sr-only" htmlFor="empty-library-word"><Trans id="library.create.word-label" message="English word" /></label>
+        <label className="sr-only" htmlFor="empty-library-word"><Trans {...msg({ context: 'library.create.word-label', message: 'English word' })} /></label>
         <input
           id="empty-library-word"
           className="empty-library__word-input"
@@ -240,28 +240,28 @@ function EmptyLibraryActions({
         />
         <button className="empty-library__generate" type="submit" onPointerDown={onPointerSubmit} disabled={!canGenerate}>
           {isGenerating
-            ? <Trans id="library.create.creating" message="Creating card…" />
+            ? <Trans {...msg({ id: 'library.create.creating', message: 'Creating card…' })} />
             : isImporting
-              ? <Trans id="library.create.importing" message="Import in progress…" />
-              : <Trans id="library.empty.generate" message="Generate card" />}
+              ? <Trans {...msg({ id: 'library.create.importing', message: 'Import in progress…' })} />
+              : <Trans {...msg({ context: 'library.empty.generate', message: 'Generate card' })} />}
         </button>
       </form>
       <span id={generationHelpId} className={generationAccess.available ? 'sr-only' : 'empty-library__generation-help'}>
         {generationAccess.available
-          ? <Trans id="library.empty.generate-help" message="Add a word or phrase to generate a card." />
+          ? <Trans {...msg({ context: 'library.empty.generate-help', message: 'Add a word or phrase to generate a card.' })} />
           : generationAccess.message}
       </span>
-      {isGenerating && <p className="empty-library__status" role="status" aria-live="polite"><Trans id="library.create.analysing" message="AI is analysing" /> · <Trans id="library.create.building" message="Building your card" /></p>}
+      {isGenerating && <p className="empty-library__status" role="status" aria-live="polite"><Trans {...msg({ context: 'library.create.analysing', message: 'AI is analysing' })} /> · <Trans {...msg({ context: 'library.create.building', message: 'Building your card' })} /></p>}
       {importStatus}
       <div className="empty-library__links">
         <button type="button" onClick={() => setScanOpen(true)} ref={extractorRestoreRef} disabled={isBusy}>
-          <Trans id="library.empty.scan" message="Scan a text" />
+          <Trans {...msg({ context: 'library.empty.scan', message: 'Scan a text' })} />
         </button>
         <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isBusy}>
-          <Trans id="library.empty.import" message="Import CSV / Excel" />
+          <Trans {...msg({ context: 'library.empty.import', message: 'Import CSV / Excel' })} />
         </button>
         <button type="button" onClick={onOpenPaths}>
-          <Trans id="library.empty.paths" message="Browse paths" />
+          <Trans {...msg({ context: 'library.empty.paths', message: 'Browse paths' })} />
         </button>
         <input
           ref={fileInputRef}

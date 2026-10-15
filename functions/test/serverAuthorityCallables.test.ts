@@ -44,6 +44,7 @@ vi.mock('../src/reminderSettingsPersistence.js', async importOriginal => ({
 vi.mock('../src/rateLimiter.js', async importOriginal => ({
   ...await importOriginal<typeof import('../src/rateLimiter.js')>(),
   consumePersistentRateLimit: (...args: unknown[]) => consumePersistentRateLimit(...args),
+  consumePersistentRateLimits: vi.fn(async () => undefined),
 }));
 vi.mock('../src/accountData.js', async importOriginal => ({
   ...await importOriginal<typeof import('../src/accountData.js')>(),
@@ -72,7 +73,7 @@ afterAll(() => { process.env = { ...previousEnv }; });
 
 beforeEach(() => {
   createCardV2ForOwner.mockReset().mockResolvedValue({ created: true });
-  parseCreateCardV2Request.mockReset().mockReturnValue({ card: { id: 'card-1' }, opId: 'create-1', timeZone: 'UTC' });
+  parseCreateCardV2Request.mockReset().mockReturnValue({ expectedOwnerId: 'owner-1', card: { id: 'card-1' }, opId: 'create-1', timeZone: 'UTC' });
   startPracticeSessionV1ForOwner.mockReset().mockResolvedValue({ sessionId: 'practice-1' });
   parseStartPracticeSessionV1Request.mockReset().mockReturnValue({ opId: 'practice-1', game: 'quiz', cardIds: ['card-1'] });
   completePracticeSessionV1ForOwner.mockReset().mockResolvedValue({ sessionId: 'practice-1', awardedXp: 5 });

@@ -10,6 +10,24 @@ const deferred = <T,>() => {
 };
 
 describe('practice session lifecycle', () => {
+  it('separates saved, skipped, pending and failed reviews and clears them on a new session', () => {
+    const lifecycle = createPracticeSessionLifecycle('owner');
+    lifecycle.activate('study', lifecycle.currentToken());
+    lifecycle.skipReview('skipped');
+    lifecycle.claimReview('saved');
+    lifecycle.settleReview('saved', 'saved');
+    lifecycle.claimReview('failed');
+    lifecycle.settleReview('failed', 'retry');
+    lifecycle.claimReview('pending');
+    expect(lifecycle.reviewSummary(['saved', 'skipped', 'failed', 'pending', 'new'])).toEqual({ saved: 1, skipped: 1, failed: 1, pending: 1, remaining: 1 });
+    lifecycle.claimReview('failed');
+    lifecycle.settleReview('failed', 'saved');
+    expect(lifecycle.reviewSummary(['failed']).saved).toBe(1);
+    expect(lifecycle.reviewSummary(['failed']).failed).toBe(0);
+    lifecycle.activate('study', lifecycle.currentToken());
+    expect(lifecycle.reviewSummary(['saved']).remaining).toBe(1);
+  });
+
   it('uses monotonic generations to invalidate late A work across A -> B -> A', async () => {
     const lifecycle = createPracticeSessionLifecycle('owner-a');
     const ownerAPool = deferred<readonly string[]>();
@@ -138,7 +156,27 @@ describe('practice session lifecycle', () => {
     expect(lifecycle.isReviewed('card-1')).toBe(true);
   });
 
-  it('keeps public method identities stable', () => {
+  it('does not settle an old review into a reactivated study session', async () => {
+    const lifecycle = createPracticeSessionLifecycle('owner-a');
+    const first = await lifecycle.prepare('study', async () => ['card-1']);
+    if (first.status !== 'ready') throw new Error('Expected ready study preparation.');
+    lifecycle.activate('study', first.sessionToken);
+    const firstReviewToken = lifecycle.currentReviewToken();
+    expect(lifecycle.claimReview('card-1', firstReviewToken)).toBe(true);
+
+    lifecycle.clear('study');
+    const second = await lifecycle.prepare('study', async () => ['card-1']);
+    if (second.status !== 'ready') throw new Error('Expected ready study preparation.');
+    lifecycle.activate('study', second.sessionToken);
+    expect(lifecycle.currentReviewToken()).not.toBe(firstReviewToken);
+    expect(lifecycle.claimReview('card-1')).toBe(true);
+    expect(lifecycle.settleReview('card-1', 'saved', firstReviewToken)).toBe(false);
+    expect(lifecycle.isReviewed('card-1')).toBe(false);
+    expect(lifecycle.settleReview('card-1', 'saved')).toBe(true);
+    expect(lifecycle.isReviewed('card-1')).toBe(true);
+  });
+
+  it('keeps public method identities stable and React adapters free of parallel lifecycle stores', () => {
     const lifecycle = createPracticeSessionLifecycle('owner-a');
     const identities = {
       replaceOwner: lifecycle.replaceOwner,

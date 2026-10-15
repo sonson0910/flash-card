@@ -29,6 +29,7 @@ interface QuizViewProps {
   onNext: () => void;
   onRestart: () => void;
   onClose: () => void;
+  onLearnFirst?: () => void;
 }
 export function languageName(language: string, locale: string) {
   try {
@@ -53,6 +54,7 @@ export function QuizView({
   onNext,
   onRestart,
   onClose,
+  onLearnFirst,
 }: QuizViewProps) {
   const { i18n } = useLingui();
   const _ = (
@@ -89,8 +91,7 @@ export function QuizView({
   const questionPrompt =
     question?.type === "target-to-native" ? (
       <Trans
-        id="practice.quiz.target-to-native-question"
-        message="What does {word} mean in {nativeLanguageName}?"
+        {...msg({ id: 'practice.quiz.target-to-native-question', message: 'What does {word} mean in {nativeLanguageName}?' })}
         values={{
           word: <span lang={targetLanguage}>“{question.card.word}”</span>,
           nativeLanguageName,
@@ -98,8 +99,7 @@ export function QuizView({
       />
     ) : (
       <Trans
-        id="practice.quiz.native-to-target-question"
-        message="Which {targetLanguageName} word matches {translation}?"
+        {...msg({ id: 'practice.quiz.native-to-target-question', message: 'Which {targetLanguageName} word matches {translation}?' })}
         values={{
           targetLanguageName,
           translation: (
@@ -133,20 +133,18 @@ export function QuizView({
             tabIndex={-1}
             className="mb-2 text-balance text-3xl font-black tracking-tight focus-visible:outline-2"
           >
-            <Trans id="practice.quiz.complete" message="Quiz complete" />
+            <Trans {...msg({ context: 'practice.quiz.complete', message: 'Quiz complete' })} />
           </h2>
           <p className="mb-6 text-pretty text-sm font-medium text-[var(--sf-text-muted)]">
             <Trans
-              id="practice.quiz.results-subtitle"
-              message="Your vocabulary review results"
+              {...msg({ context: 'practice.quiz.results-subtitle', message: 'Your vocabulary review results' })}
             />
           </p>
           <div className="mx-auto mb-8 grid max-w-sm grid-cols-2 gap-4">
             <div className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4">
               <span className="block text-xs font-bold text-[var(--sf-text-muted)]">
                 <Trans
-                  id="practice.results.correct-answers"
-                  message="Correct answers"
+                  {...msg({ context: 'practice.results.correct-answers', message: 'Correct answers' })}
                 />
               </span>
               <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
@@ -155,7 +153,7 @@ export function QuizView({
             </div>
             <div className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4">
               <span className="block text-xs font-bold text-[var(--sf-text-muted)]">
-                <Trans id="practice.results.accuracy" message="Accuracy" />
+                <Trans {...msg({ context: 'practice.results.accuracy', message: 'Accuracy' })} />
               </span>
               <span className="text-3xl font-black text-[var(--sf-brand-text)]">
                 {accuracy}%
@@ -165,18 +163,15 @@ export function QuizView({
           <div className="mx-auto mb-8 max-w-md rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-sm font-medium text-[var(--sf-text-muted)]">
             {score === questions.length ? (
               <Trans
-                id="practice.results.perfect"
-                message="Perfect. You answered every question correctly."
+                {...msg({ context: 'practice.results.perfect', message: 'Perfect. You answered every question correctly.' })}
               />
             ) : score >= questions.length * 0.7 ? (
               <Trans
-                id="practice.results.good"
-                message="Great work. This vocabulary is becoming secure."
+                {...msg({ context: 'practice.results.good', message: 'Great work. This vocabulary is becoming secure.' })}
               />
             ) : (
               <Trans
-                id="practice.results.keep-practising"
-                message="Keep practising until the difficult words feel automatic."
+                {...msg({ context: 'practice.results.keep-practising', message: 'Keep practising until the difficult words feel automatic.' })}
               />
             )}
           </div>
@@ -187,7 +182,7 @@ export function QuizView({
               onClick={onRestart}
               className="brand-action crystal-chamfer min-h-12 rounded-xl bg-[var(--sf-brand)] px-6 py-3 font-bold text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 motion-reduce:transition-none"
             >
-              <Trans id="practice.actions.try-again" message="Try again" />
+              <Trans {...msg({ context: 'practice.actions.try-again', message: 'Try again' })} />
             </button>
             <button
               type="button"
@@ -195,8 +190,7 @@ export function QuizView({
               className="crystal-chamfer min-h-12 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-6 py-3 font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none"
             >
               <Trans
-                id="practice.actions.back-to-library"
-                message="Back to library"
+                {...msg({ context: 'practice.actions.back-to-library', message: 'Back to library' })}
               />
             </button>
           </div>
@@ -210,13 +204,12 @@ export function QuizView({
               className="flex min-h-11 items-center gap-2 rounded-xl px-2 py-2 text-sm font-bold text-[var(--sf-text-muted)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2"
             >
               <X size={18} aria-hidden="true" />
-              <Trans id="practice.actions.exit" message="Exit" />
+              <Trans {...msg({ context: 'practice.actions.exit', message: 'Exit' })} />
             </button>
-            {!focusModeEnabled && answeredCount >= 2 && <span data-practice-combo={answeredCount} className="rounded-full border border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] px-3 py-1.5 text-xs font-black text-[var(--sf-brand-text)]"><Trans id="study.combo" message="Combo ×{count}" values={{ count: answeredCount }} /></span>}
+            {!focusModeEnabled && answeredCount >= 2 && <span data-practice-combo={answeredCount} className="rounded-full border border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] px-3 py-1.5 text-xs font-black text-[var(--sf-brand-text)]"><Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: answeredCount }} /></span>}
             <div className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-1.5 text-xs font-bold text-[var(--sf-text)]">
               <Trans
-                id="practice.score"
-                message="Score: {score} / {total}"
+                {...msg({ context: 'practice.score', message: 'Score: {score} / {total}' })}
                 values={{ score, total: questions.length }}
               />
             </div>
@@ -261,8 +254,7 @@ export function QuizView({
             <div className="crystal-chamfer flex min-h-64 w-full flex-col justify-end rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-6 pt-24 shadow-[var(--sf-panel-shadow)] sm:min-h-80 sm:p-8 sm:pt-28">
               <span className="mb-2 block font-display text-xs font-bold uppercase tracking-[.12em] text-[var(--sf-text-muted)]">
                 <Trans
-                  id="practice.question-progress"
-                  message="Question {current} / {total}"
+                  {...msg({ context: 'practice.question-progress', message: 'Question {current} / {total}' })}
                   values={{
                     current: currentIndex + 1,
                     total: questions.length,
@@ -287,14 +279,12 @@ export function QuizView({
               {selectedAnswer !== null &&
                 (answeredCorrectly ? (
                   <Trans
-                    id="practice.feedback.correct"
-                    message="Correct answer."
+                    {...msg({ id: 'practice.feedback.correct', message: 'Correct answer.' })}
                   />
                 ) : (
                   <>
                     <Trans
-                      id="practice.feedback.incorrect-prefix"
-                      message="Incorrect. The correct answer is"
+                      {...msg({ context: 'practice.feedback.incorrect-prefix', message: 'Incorrect. The correct answer is' })}
                     />{" "}
                     <span lang={answerLanguage}>
                       “{question.correctAnswer}”.
@@ -302,11 +292,11 @@ export function QuizView({
                   </>
                 ))}
             </p>
+{onLearnFirst && <button type="button" onClick={onLearnFirst} className="my-4 min-h-11 rounded-xl border border-[var(--sf-border)] px-4 py-2 font-bold"><Trans {...msg({ context: 'practice.learn-first', message: 'I don\'t know this — learn first' })} /></button>}
             <fieldset className="min-w-0 w-full lg:self-center">
               <legend className="mb-3 font-display text-xs font-bold uppercase tracking-[.12em] text-[var(--sf-text-muted)]">
                 <Trans
-                  id="practice.quiz.choose-answer"
-                  message="Choose one answer"
+                  {...msg({ context: 'practice.quiz.choose-answer', message: 'Choose one answer' })}
                 />
               </legend>
               <div className="grid grid-cols-1 gap-3">
@@ -363,16 +353,14 @@ export function QuizView({
                     <span className="flex items-center gap-2 text-sm font-bold text-emerald-600 dark:text-emerald-400">
                       <CheckCircle2 size={17} />
                       <Trans
-                        id="practice.feedback.correct-short"
-                        message="Correct"
+                        {...msg({ context: 'practice.feedback.correct-short', message: 'Correct' })}
                       />
                     </span>
                   ) : (
                     <span className="flex items-center gap-2 text-sm font-bold text-rose-600 dark:text-rose-400">
                       <XCircle size={17} />
                       <Trans
-                        id="practice.feedback.correct-answer"
-                        message="The correct answer is"
+                        {...msg({ context: 'practice.feedback.correct-answer', message: 'The correct answer is' })}
                       />{" "}
                       <span
                         lang={answerLanguage}
@@ -393,14 +381,13 @@ export function QuizView({
                   className="brand-action crystal-chamfer flex min-h-11 items-center gap-1 rounded-xl bg-[var(--sf-brand)] px-6 py-2.5 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 motion-reduce:transition-none"
                 >
                   {savingResult ? (
-                    <Trans id="practice.actions.saving-result" message="Saving result…" />
+                    <Trans {...msg({ context: 'practice.actions.saving-result', message: 'Saving result…' })} />
                   ) : currentIndex === questions.length - 1 ? (
                     <Trans
-                      id="practice.actions.view-results"
-                      message="View results"
+                      {...msg({ context: 'practice.actions.view-results', message: 'View results' })}
                     />
                   ) : (
-                    <Trans id="practice.actions.next" message="Next" />
+                    <Trans {...msg({ context: 'practice.actions.next', message: 'Next' })} />
                   )}{" "}
                   <ChevronRight size={14} aria-hidden="true" />
                 </button>

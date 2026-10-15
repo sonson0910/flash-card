@@ -1,6 +1,11 @@
-import { validateProductionEnvironment } from './release-config.mjs';
+import fs from 'node:fs';
+import { validateFirebaseAppCheckTargets, validateProductionEnvironment } from './release-config.mjs';
 
-const errors = validateProductionEnvironment(process.env);
+const firebaseConfig = JSON.parse(fs.readFileSync('firebase-applet-config.json', 'utf8'));
+const errors = [
+  ...validateProductionEnvironment(process.env),
+  ...validateFirebaseAppCheckTargets(firebaseConfig),
+];
 if (errors.length > 0) {
   throw new Error(`Production release configuration is invalid:\n- ${errors.join('\n- ')}`);
 }

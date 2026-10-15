@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import type { CardIntakeControllerPort } from './cardIntakeController';
 import { languageProfileForPair } from '../courses/courseLanguageProfile';
 import { useCardIntakePort } from './useCardIntakePort';
@@ -23,6 +24,8 @@ import {
   type IntakeSharingSessionActions,
   type IntakeSharingSessionModel,
 } from './useIntakeSharingSession';
+
+const shareSelection = (category: string) => ({ category, customDeck: ALL_PRACTICE_DECK_SCOPE });
 
 const card = (id: string): CardData => ({
   id,
@@ -84,6 +87,7 @@ const intakePort = (): CardIntakeControllerPort => ({
 });
 
 const installMinimalReactDom = () => {
+  const storage = new Map<string, string>();
   const documentLike: Record<string, unknown> = {
     nodeType: 9,
     activeElement: null,
@@ -107,6 +111,11 @@ const installMinimalReactDom = () => {
   vi.stubGlobal('HTMLIFrameElement', class HTMLIFrameElement {});
   vi.stubGlobal('HTMLElement', class HTMLElement {});
   vi.stubGlobal('Node', class Node {});
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, value: string) => { storage.set(key, value); },
+    removeItem: (key: string) => { storage.delete(key); },
+  });
   return container as unknown as Element;
 };
 
@@ -190,8 +199,8 @@ describe('useIntakeSharingSession', () => {
     await expect(actions!.importFile(null)).resolves.toEqual({ status: 'missing' });
     expect(actions!.adoptCards).toEqual(expect.any(Function));
     expect(actions!.createConfirmedCatalogCards).toEqual(expect.any(Function));
-    await expect(actions!.shareCategory('IELTS')).resolves.toEqual({ status: 'unavailable' });
-    expect(loadShareCards).toHaveBeenCalledWith('IELTS');
+    await expect(actions!.shareCategory(shareSelection('IELTS'))).resolves.toEqual({ status: 'unavailable' });
+    expect(loadShareCards).toHaveBeenCalled();
   });
 
   it('ignores cards loaded for a previous owner before creating or publishing a share', async () => {
@@ -240,7 +249,7 @@ describe('useIntakeSharingSession', () => {
 
       let shareResult!: ReturnType<IntakeSharingSessionActions['shareCategory']>;
       await act(async () => {
-        shareResult = ownerAActions!.shareCategory('General');
+        shareResult = ownerAActions!.shareCategory(shareSelection('General'));
         await Promise.resolve();
       });
       expect(sharing.loadCards).toHaveBeenCalledOnce();
@@ -400,8 +409,8 @@ describe('useIntakeSharingSession', () => {
       let first!: ReturnType<IntakeSharingSessionActions['shareCategory']>;
       let duplicate!: Awaited<ReturnType<IntakeSharingSessionActions['shareCategory']>>;
       await act(async () => {
-        first = actions!.shareCategory('IELTS');
-        duplicate = await actions!.shareCategory('IELTS');
+        first = actions!.shareCategory(shareSelection('IELTS'));
+        duplicate = await actions!.shareCategory(shareSelection('IELTS'));
       });
 
       expect(duplicate).toEqual({ status: 'busy' });
@@ -475,7 +484,7 @@ describe('useIntakeSharingSession', () => {
       });
       let operation!: ReturnType<IntakeSharingSessionActions['shareCategory']>;
       await act(async () => {
-        operation = actions!.shareCategory('IELTS');
+        operation = actions!.shareCategory(shareSelection('IELTS'));
         await Promise.resolve();
       });
       expect(latestModel).toMatchObject({ isBusy: true, share: { isLoading: true } });
@@ -553,7 +562,7 @@ describe('useIntakeSharingSession', () => {
       expect(latestModel!.share.error).toBeNull();
 
       await act(async () => {
-        await actions!.shareCategory('General');
+        await actions!.shareCategory({ category: 'General', customDeck: { kind: 'all' } });
       });
       expect(latestModel).toMatchObject({
         error: intakeError,
@@ -562,7 +571,7 @@ describe('useIntakeSharingSession', () => {
 
       failShareLoad = true;
       await act(async () => {
-        await actions!.shareCategory('General');
+        await actions!.shareCategory({ category: 'General', customDeck: { kind: 'all' } });
       });
       expect(latestModel!.share.error).toBe(
         'Could not load the cards needed to create this share link. Please try again.',

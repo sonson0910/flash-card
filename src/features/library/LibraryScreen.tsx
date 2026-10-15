@@ -12,6 +12,8 @@ import type {
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { BulkCardFieldPatchRequest } from '../learning/learningPersistencePort';
 import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySessionController';
+import type { CardGenerationOptions } from '../intake/cardIntakeController';
+import type { PracticeDeckScope } from '../../lib/practiceScope';
 import { LibraryOverview } from './LibraryOverview';
 import { EmptyLibraryPanel } from './EmptyLibraryPanel';
 import type { AiGenerationAccess } from './aiGenerationAccess';
@@ -23,6 +25,7 @@ const LibraryTools = lazy(() => import('./LibraryTools').then(module => ({ defau
 
 export interface LibraryScreenModel {
   isAuthenticated: boolean;
+  ownerId?: string | null;
   overview: {
     total: number;
     due: number;
@@ -39,6 +42,7 @@ export interface LibraryScreenModel {
     isMigratingLegacy: boolean;
     libraryHeadingRef?: RefObject<HTMLHeadingElement | null>;
     activeCategory: string;
+    activeCustomDeck: PracticeDeckScope;
     filteredCards: CardData[];
     isSharing: boolean;
     currentPage: number;
@@ -74,7 +78,7 @@ export interface LibraryScreenModel {
     customDecks: string[];
     customDeckCoverPresets?: Record<string, CoverPreset>;
     newDeckInput: string;
-    activeCustomDeck: string;
+    activeCustomDeck: PracticeDeckScope;
     cards: CardData[];
     cloudFacetsComplete: boolean;
     sortedCategories: string[];
@@ -106,7 +110,7 @@ export interface LibraryScreenActions {
     openPaths: () => void;
     importCards: (event: ChangeEvent<HTMLInputElement>) => void;
     importFile: (file: File) => void;
-    generateCard: (event: FormEvent) => Promise<void>;
+    generateCard: (event: FormEvent, options?: CardGenerationOptions) => Promise<void>;
     changeWordInput: (value: string) => void;
     changeSearch: (value: string) => void;
     changeStarredOnly: (value: boolean) => void;
@@ -114,8 +118,8 @@ export interface LibraryScreenActions {
     changePartOfSpeech: (value: string) => void;
     changeDate: (value: string) => void;
     changeNewDeckInput: (value: string) => void;
-    createCustomDeck: (name: string, preset?: import('./customDecks').CoverPreset) => Promise<void>;
-    changeCustomDeck: (value: string) => void;
+    createCustomDeck: (name: string, preset?: CoverPreset) => Promise<void>;
+    changeCustomDeck: (value: PracticeDeckScope) => void;
     deleteCustomDeck: (name: string) => Promise<void>;
     changeCategory: (value: string) => void;
   };
@@ -261,7 +265,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
       )}
       <div data-library-region="collection">
         {!showFirstUsePanel && (
-          <Suspense fallback={<DeferredLibraryFallback label={<Trans id="library.loading.cards" message="Loading library cards" />} />}>
+          <Suspense fallback={<DeferredLibraryFallback label={<Trans {...msg({ context: 'library.loading.cards', message: 'Loading library cards' })} />} />}>
             <LibraryCardGrid
               isAuthenticated={model.isAuthenticated}
               searchQuery={model.grid.searchQuery}
@@ -283,7 +287,6 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               importProgress={model.grid.importProgress}
               groupedCards={model.grid.groupedCards}
               deleteCard={actions.grid.deleteCard}
-              ownerId={model.tools.ownerId}
               toggleBookmark={actions.grid.toggleBookmark}
               customDecks={model.grid.customDecks}
               assignDeck={actions.grid.assignDeck}
@@ -302,9 +305,9 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
         )}
       </div>
       {!showFirstUsePanel && <details className="library-canvas-tools" data-library-region="tools">
-        <summary><Trans id="library.tools.more" message="More library tools" /></summary>
+        <summary><Trans {...msg({ context: 'library.tools.more', message: 'More library tools' })} /></summary>
         <div>
-          <Suspense fallback={<DeferredLibraryFallback label={<Trans id="library.loading.tools" message="Loading library tools" />} />}>
+          <Suspense fallback={<DeferredLibraryFallback label={<Trans {...msg({ context: 'library.loading.tools', message: 'Loading library tools' })} />} />}>
             <LibraryTools
               fileInputRef={fileInputRef}
               onImport={actions.tools.importCards}
@@ -316,6 +319,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               isGenerating={model.tools.isGenerating}
               isImporting={model.tools.isImporting}
               generationAccess={model.tools.generationAccess}
+              ownerId={model.ownerId ?? null}
               importProgress={model.tools.importProgress}
               importResult={model.tools.importResult}
               libraryCount={model.tools.libraryCount}
@@ -346,7 +350,6 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               activeCategory={model.tools.activeCategory}
               setActiveCategory={actions.tools.changeCategory}
               languageProfile={model.tools.languageProfile ?? ENGLISH_TO_VIETNAMESE_PROFILE}
-              ownerId={model.tools.ownerId}
             />
           </Suspense>
         </div>
@@ -377,16 +380,16 @@ function LibraryCanvasRail({
   const filterMark = (mark: ReactNode) => <span className="library-filter-mark" aria-hidden="true">{mark}</span>;
   return <div className="library-canvas-rail">
     <div className="library-canvas-decks" role="tablist" aria-label={i18n._(msg({ id: 'library.decks.nav-label', message: 'Decks' }))}>
-      {deck('all-decks', <Trans id="library.decks.all" message="All decks" />, tools.activeCustomDeck === 'All', tools.libraryCount, () => actions.tools.changeCustomDeck('All'))}
-      {tools.customDecks.map(deckName => deck(deckName, deckName, tools.activeCustomDeck === deckName, tools.cards.filter(card => card.customDeck === deckName).length, () => actions.tools.changeCustomDeck(deckName)))}
+      {deck('all-decks', <Trans {...msg({ id: 'library.decks.all', message: 'All decks' })} />, tools.activeCustomDeck.kind === 'all', tools.libraryCount, () => actions.tools.changeCustomDeck({ kind: 'all' }))}
+      {tools.customDecks.map(deckName => deck(deckName, deckName, tools.activeCustomDeck.kind === 'deck' && tools.activeCustomDeck.name === deckName, tools.cards.filter(card => card.customDeck === deckName).length, () => actions.tools.changeCustomDeck({ kind: 'deck', name: deckName })))}
     </div>
     <div className="library-canvas-filters">
-      {filter('all', <>{filterMark('∗')}<Trans id="library.filters.all" message="All" /></>, activeFilter === 'all', () => onFilterChange('all'))}
-      {filter('due', <>{filterMark('!')}<Trans id="library.filters.due-short" message="Due" /></>, activeFilter === 'due', () => onFilterChange('due'))}
-      {filter('new', <>{filterMark(<Trans id="library.card.grade.new" message="Bud" />)}<Trans id="library.card.tier.new" message="New" /></>, activeFilter === 'new', () => onFilterChange('new'))}
-      {filter('learning', <>{filterMark(<Trans id="library.card.grade.learning" message="Bloom" />)}<Trans id="library.filters.learning" message="Learning" /></>, activeFilter === 'learning', () => onFilterChange('learning'))}
-      {filter('mastered', <>{filterMark(<Trans id="library.card.grade.mastered" message="Star" />)}<Trans id="library.filters.mastered" message="Mastered" /></>, activeFilter === 'mastered', () => onFilterChange('mastered'))}
-      {filter('starred', <><Bookmark size={13} fill="currentColor"/><Trans id="library.filters.starred" message="Starred" /></>, tools.showStarredOnly, () => actions.tools.changeStarredOnly(!tools.showStarredOnly))}
+      {filter('all', <>{filterMark('∗')}<Trans {...msg({ context: 'library.filters.all', message: 'All' })} /></>, activeFilter === 'all', () => onFilterChange('all'))}
+      {filter('due', <>{filterMark('!')}<Trans {...msg({ context: 'library.filters.due-short', message: 'Due' })} /></>, activeFilter === 'due', () => onFilterChange('due'))}
+      {filter('new', <>{filterMark(<Trans {...msg({ id: 'library.card.grade.new', message: 'Bud' })} />)}<Trans {...msg({ id: 'library.card.tier.new', message: 'New' })} /></>, activeFilter === 'new', () => onFilterChange('new'))}
+      {filter('learning', <>{filterMark(<Trans {...msg({ id: 'library.card.grade.learning', message: 'Bloom' })} />)}<Trans {...msg({ id: 'library.filters.learning', message: 'Learning' })} /></>, activeFilter === 'learning', () => onFilterChange('learning'))}
+      {filter('mastered', <>{filterMark(<Trans {...msg({ id: 'library.card.grade.mastered', message: 'Star' })} />)}<Trans {...msg({ id: 'library.filters.mastered', message: 'Mastered' })} /></>, activeFilter === 'mastered', () => onFilterChange('mastered'))}
+      {filter('starred', <><Bookmark size={13} fill="currentColor"/><Trans {...msg({ context: 'library.filters.starred', message: 'Starred' })} /></>, tools.showStarredOnly, () => actions.tools.changeStarredOnly(!tools.showStarredOnly))}
       <span aria-hidden="true" className="library-canvas-rail-divider" />
       <div className="library-canvas-view-toggle" role="group" aria-label={i18n._(msg({ id: 'library.view.label', message: 'View' }))}>
         <button type="button" aria-label={i18n._(msg({ id: 'library.view.grid', message: 'Grid view' }))} aria-pressed={viewMode === 'grid'} className={viewMode === 'grid' ? 'is-active' : ''} onClick={() => onViewModeChange('grid')}><LayoutGrid size={15} aria-hidden="true" /></button>

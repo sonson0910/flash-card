@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CardData } from '../../types/card';
 import { buildExercise } from './exerciseEngine';
-import { createLessonState, reduceLessonState } from './lessonReducer';
+import { createLessonState, reduceLessonState, type LessonStep } from './lessonReducer';
 
 const card = (id: string): CardData => ({
   id,
@@ -74,5 +74,56 @@ describe('lesson reducer', () => {
     state = reduceLessonState(state, { type: 'submit', answer: 'two' });
     const rejected = reduceLessonState(state, { type: 'rate', rating: 'good', operationId: 'same-operation' });
     expect(rejected).toBe(state);
+  });
+
+  it('teaches a new card before terminal independent recall without rating guided practice', () => {
+    const source = card('new-card');
+    const guided = buildExercise(source, [source], 'recognition');
+    const recall = buildExercise(source, [source], 'active-recall');
+    const steps: readonly LessonStep[] = [
+      { stage: 'introduction', card: source, exercise: guided },
+      { stage: 'guided', card: source, exercise: guided },
+      { stage: 'independent-recall', card: source, exercise: recall },
+    ];
+
+    let state = createLessonState(steps);
+    expect(state.phase).toBe('introduction');
+    state = reduceLessonState(state, { type: 'introduction-choice', choice: 'guided' });
+    expect(state).toMatchObject({ phase: 'answering', index: 1 });
+    expect(state.steps[state.index]?.stage).toBe('guided');
+    state = reduceLessonState(state, { type: 'continue-guided' });
+    expect(state).toMatchObject({ phase: 'answering', index: 2 });
+    expect(state.steps[state.index]?.stage).toBe('independent-recall');
+
+    state = reduceLessonState(state, { type: 'submit', answer: 'new-card' });
+    expect(state.phase).toBe('feedback');
+    expect(reduceLessonState(state, { type: 'continue-guided' })).toBe(state);
+    state = reduceLessonState(state, { type: 'rate', rating: 'good', operationId: 'new-review' });
+    expect(state.phase).toBe('persisting');
+  });
+
+  it('lets a learner who already knows a new card skip guidance without marking it learned', () => {
+    const source = card('known-new');
+    const guided = buildExercise(source, [source], 'active-recall');
+    const recall = buildExercise(source, [source], 'active-recall');
+    let state = createLessonState([
+      { stage: 'introduction', card: source, exercise: guided },
+      { stage: 'guided', card: source, exercise: guided },
+      { stage: 'independent-recall', card: source, exercise: recall },
+    ]);
+
+    state = reduceLessonState(state, { type: 'introduction-choice', choice: 'independent-recall' });
+    expect(state).toMatchObject({ phase: 'answering', index: 2 });
+    expect(state.completedOperationIds).toEqual([]);
+    expect(state.pendingReview).toBeNull();
+  });
+
+  it('rejects more than one review-bearing step for the same card', () => {
+    const source = card('once');
+    const exercise = buildExercise(source, [source], 'active-recall');
+    expect(() => createLessonState([
+      { stage: 'independent-recall', card: source, exercise },
+      { stage: 'review', card: source, exercise },
+    ])).toThrow(/duplicate card reviews/i);
   });
 });

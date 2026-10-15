@@ -48,7 +48,7 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
           {!focusModeEnabled && model.comboCount >= 2 && (
             <div className="session-bridge-stat" data-session-combo={model.comboCount}>
               <strong>×{model.comboCount}</strong>
-              <span><Trans id="session.bridge.combo" message="Combo" /></span>
+              <span><Trans {...msg({ context: 'session.bridge.combo', message: 'Combo' })} /></span>
             </div>
           )}
           {showLumi && <Lumi pose="happy" size={110} className="session-bridge-lumi" />}
@@ -66,18 +66,18 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
         </div>
 
         <div className="session-bridge-next">
-          <p className="session-bridge-eyebrow"><Trans id="session.bridge.up-next" message="Up next" /></p>
+          <p className="session-bridge-eyebrow"><Trans {...msg({ context: 'session.bridge.up-next', message: 'Up next' })} /></p>
           <h1 id="session-bridge-heading" ref={model.headingRef} tabIndex={-1}>{model.nextLabel}</h1>
           <p className="session-bridge-live" role="status" aria-live="polite">{model.liveMessage}</p>
           <p className="session-bridge-description">{model.nextDescription}</p>
           {model.skipReason && <p className="session-bridge-skip-reason" role="note">{model.skipReason}</p>}
           <div className="session-bridge-actions">
             <button type="button" onClick={actions.continue} className="session-bridge-primary">
-              <Trans id="session.bridge.continue" message="Continue" /> <ArrowRight size={18} aria-hidden="true" />
+              <Trans {...msg({ context: 'session.bridge.continue', message: 'Continue' })} /> <ArrowRight size={18} aria-hidden="true" />
             </button>
             {model.canSkipNextStage && (
               <button type="button" onClick={actions.skip} className="session-bridge-secondary">
-                <SkipForward size={17} aria-hidden="true" /> <Trans id="session.bridge.skip" message="Skip" />
+                <SkipForward size={17} aria-hidden="true" /> <Trans {...msg({ context: 'session.bridge.skip', message: 'Skip' })} />
               </button>
             )}
           </div>

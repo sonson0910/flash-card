@@ -4,6 +4,7 @@ const firestore = vi.hoisted(() => ({
   getDocs: vi.fn(),
   getDoc: vi.fn(),
   setDoc: vi.fn(() => Promise.resolve()),
+  writeBatch: vi.fn(),
   runTransaction: vi.fn(),
   serverTimestamp: vi.fn(() => ({ type: 'server-timestamp' })),
   transactionSet: vi.fn(),
@@ -44,10 +45,10 @@ vi.mock('firebase/firestore', () => ({
   runTransaction: firestore.runTransaction,
   serverTimestamp: firestore.serverTimestamp,
   setDoc: firestore.setDoc,
+  writeBatch: firestore.writeBatch,
   startAfter: vi.fn((...args: unknown[]) => ({ type: 'startAfter', args })),
   startAt: vi.fn((...args: unknown[]) => ({ type: 'startAt', args })),
   where: vi.fn((...args: unknown[]) => ({ type: 'where', args })),
-  writeBatch: vi.fn(),
 }));
 
 vi.mock('./firebase', () => firebaseRuntime);
@@ -61,6 +62,7 @@ import {
   CardMutationPreconditionError,
   createCardIfAbsent,
   createCardV2IfAbsent,
+  deleteAllCards,
   applyCardPatchIfCurrent,
   clearCustomDeckAssignments,
   deleteCardWithTombstone,
@@ -480,6 +482,20 @@ describe('findCardById', () => {
   });
 });
 
+describe('findCardById', () => {
+  it('reads the authoritative card document without a word query', async () => {
+    firestore.getDoc.mockResolvedValueOnce({
+      exists: () => true,
+      id: 'authoritative-card',
+      data: () => ({ word: 'focus', translation: 'tập trung', revision: 4, libraryEpoch: 2 }),
+    });
+
+    await expect(findCardById({} as never, 'user-1', 'authoritative-card')).resolves.toMatchObject({
+      id: 'authoritative-card', revision: 4, libraryEpoch: 2,
+    });
+  });
+});
+
 describe('streamAllCardsInBatches', () => {
   beforeEach(() => {
     firestore.getDocs.mockReset();
@@ -515,6 +531,16 @@ describe('streamAllCardsInBatches', () => {
 
     expect(batches).toEqual([100, 5]);
     expect(loaded).toBe(105);
+  });
+});
+
+describe('deleteAllCards', () => {
+  it('fails closed without a protected cloud runtime before reading or deleting cards', async () => {
+    firestore.getDocs.mockClear();
+    firestore.runTransaction.mockClear();
+    await expect(deleteAllCards({} as never, 'user-1', 2)).rejects.toMatchObject({ code: 'firebase-unconfigured' });
+    expect(firestore.getDocs).not.toHaveBeenCalled();
+    expect(firestore.runTransaction).not.toHaveBeenCalled();
   });
 });
 
@@ -765,6 +791,7 @@ describe('createCardIfAbsent', () => {
       'createCard',
     );
     expect(callable).toHaveBeenCalledWith({
+      expectedOwnerId: 'user-1',
       card: expect.objectContaining(candidate),
       libraryEpoch: 4,
       baseRevision: 2,
@@ -797,7 +824,7 @@ describe('createCardIfAbsent', () => {
       { region: 'asia-southeast1' }, 'createCardV2',
     );
     expect(callable).toHaveBeenCalledWith({
-      card: expect.objectContaining(candidate), libraryEpoch: 4,
+      card: expect.objectContaining(candidate), libraryEpoch: 4, expectedOwnerId: 'user-1',
       opId: 'create-quite-v2', timeZone: 'Asia/Ho_Chi_Minh',
     });
   });

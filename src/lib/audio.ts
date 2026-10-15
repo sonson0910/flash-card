@@ -1,5 +1,7 @@
 import { isSupportedAudioUrl as isSupportedAbsoluteAudioUrl } from './mediaUrlPolicy';
 
+export { playIncorrectSound, playSuccessSound as playCorrectSound } from './interactionSounds';
+
 /** Legacy display inputs may be protocol-relative; persisted URLs must use the leaf policy directly. */
 export function isSupportedAudioUrl(url: string | null | undefined): url is string {
   const normalized = url?.startsWith('//') ? `https:${url}` : url;
@@ -37,128 +39,159 @@ export async function fetchAudioUrl(word: string): Promise<string | null> {
   }
 }
 
-export function playCorrectSound() {
-  const AudioContextConstructor = window.AudioContext || (window as any).webkitAudioContext;
-  if (!AudioContextConstructor) return;
-  const ctx = new AudioContextConstructor();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-  osc.frequency.exponentialRampToValueAtTime(1046.50, ctx.currentTime + 0.1); // C6
-  gain.gain.setValueAtTime(0, ctx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.addEventListener('ended', () => void ctx.close(), { once: true });
-  osc.start();
-  osc.stop(ctx.currentTime + 0.4);
+let contentPlaybackStop: (() => void) | null = null;
+
+/** Ownership is shared by study content; feedback sounds have their own channel. */
+export function claimContentPlayback(stop: () => void): () => void {
+  const previous = contentPlaybackStop;
+  contentPlaybackStop = null;
+  previous?.();
+  contentPlaybackStop = stop;
+  return () => { if (contentPlaybackStop === stop) contentPlaybackStop = null; };
 }
 
-export function playIncorrectSound() {
-  const AudioContextConstructor = window.AudioContext || (window as any).webkitAudioContext;
-  if (!AudioContextConstructor) return;
-  const ctx = new AudioContextConstructor();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(300, ctx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.3);
-  gain.gain.setValueAtTime(0, ctx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.addEventListener('ended', () => void ctx.close(), { once: true });
-  osc.start();
-  osc.stop(ctx.currentTime + 0.3);
+const speechFailureMessage = 'Audio could not be played. Check this site’s audio permission and try again.';
+
+interface WordAudioOptions extends SpeechCallbacks {
+  speechLocale?: string;
+  voice?: SpeechSynthesisVoice;
+  audio?: HTMLAudioElement | null;
+  speed?: 1 | 0.75;
 }
 
-export interface WordAudioPlayback {
-  cancel(): void;
-}
-
-let currentSpeechPlayback: WordAudioPlayback | null = null;
+export type WordAudioPlayback = (() => void) & { cancel(): void };
 
 export function playWordAudio(
   word: string,
   audioUrl: string | null,
-  speechLocale = 'en-US',
+  optionsOrLocale: WordAudioOptions | string = {},
   voice?: SpeechSynthesisVoice,
 ): WordAudioPlayback {
-  if (isSupportedAudioUrl(audioUrl)) {
-    const audio = new Audio(audioUrl);
-    let cancelled = false;
-    let fallback: WordAudioPlayback | null = null;
-    audio.play().catch(err => {
-      if (cancelled) return;
-      console.warn('Audio URL failed, falling back to TTS', err);
-      fallback = speakFallback(word, speechLocale, voice);
-    });
-    return {
-      cancel() {
-        if (cancelled) return;
-        cancelled = true;
-        audio.pause();
-        audio.currentTime = 0;
-        fallback?.cancel();
-      },
-    };
-  } else {
-    return speakFallback(word, speechLocale, voice);
-  }
+  const options: WordAudioOptions = typeof optionsOrLocale === 'string'
+    ? { speechLocale: optionsOrLocale, voice }
+    : optionsOrLocale;
+  let active = true;
+  let audio: HTMLAudioElement | null = null;
+  let speaking = false;
+  const stop = (() => {
+    if (!active) return;
+    active = false;
+    if (audio) {
+      audio.pause();
+      audio.onended = null;
+      audio.onerror = null;
+      try { audio.currentTime = 0; } catch { /* An unloaded stream may not seek. */ }
+    }
+    if (speaking) cancelSpeech();
+    release();
+    options.onEnd?.();
+  }) as WordAudioPlayback;
+  stop.cancel = stop;
+  const release = claimContentPlayback(stop);
+  const fail = (message: string) => { if (active) { options.onError?.(message); stop(); } };
+  const fallback = () => {
+    if (!active || speaking) return;
+    audio?.pause();
+    speaking = true;
+    try {
+      if (!speakNow(word, {
+        onEnd: stop,
+        onError: () => fail(speechFailureMessage),
+      }, options.speed === 0.75 ? 0.65 : 0.9, options.speechLocale, options.voice)) fail('Audio playback is not supported by this browser.');
+    } catch { fail(speechFailureMessage); }
+  };
+  try {
+    audio = options.audio !== undefined ? options.audio : isSupportedAudioUrl(audioUrl)
+      ? new Audio(audioUrl.startsWith('//') ? `https:${audioUrl}` : audioUrl) : null;
+    if (audio) {
+      try { audio.currentTime = 0; audio.playbackRate = options.speed ?? 1; } catch { /* Safari may not seek yet. */ }
+      audio.onended = () => { if (!speaking) stop(); };
+      audio.onerror = fallback;
+      void Promise.resolve(audio.play()).catch(error => {
+        if (active && !speaking) console.warn('Audio play failed, using web speech fallback:', error);
+        fallback();
+      });
+    } else {
+      // Direct TTS stays in the original user gesture, including on Safari.
+      fallback();
+    }
+  } catch { fallback(); }
+  return stop;
 }
 
-function speakFallback(text: string, speechLocale: string, voice?: SpeechSynthesisVoice): WordAudioPlayback {
-  if (typeof window === 'undefined' || !window.speechSynthesis || typeof SpeechSynthesisUtterance === 'undefined') {
-    return { cancel() {} };
-  }
+let currentSpeechUtterance: SpeechSynthesisUtterance | null = null;
+let currentSpeechOwner: SpeechSynthesis | null = null;
 
-  currentSpeechPlayback?.cancel();
-  const speechSynthesis = window.speechSynthesis;
-  const utterance = new SpeechSynthesisUtterance(text);
-  let cancelled = false;
-  let active = false;
-  let queued = false;
-  const playback: WordAudioPlayback = {
-    cancel() {
-      if (cancelled) return;
-      cancelled = true;
-      utterance.volume = 0;
-      if (currentSpeechPlayback !== playback) return;
-      currentSpeechPlayback = null;
-      if (queued || active) speechSynthesis.cancel();
-    },
-  };
-  currentSpeechPlayback = playback;
-  utterance.lang = speechLocale;
+export function cancelSpeech() {
+  if (currentSpeechUtterance) currentSpeechUtterance.volume = 0;
+  const owner = currentSpeechOwner;
+  currentSpeechUtterance = null;
+  currentSpeechOwner = null;
+  if (owner && (typeof window === 'undefined' || owner !== window.speechSynthesis)) owner.cancel();
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+}
+
+export interface SpeechCallbacks {
+  onStart?: () => void;
+  onEnd?: () => void;
+  onError?: (error: string) => void;
+}
+
+const speakNow = (text: string, callbacks: SpeechCallbacks = {}, rate = 0.9, locale = 'en-US', voice?: SpeechSynthesisVoice): boolean => {
+  const normalized = text.trim();
+  if (!normalized || typeof window === 'undefined'
+    || !('speechSynthesis' in window)
+    || typeof SpeechSynthesisUtterance === 'undefined') return false;
+  if (currentSpeechUtterance || window.speechSynthesis.speaking || window.speechSynthesis.pending) cancelSpeech();
+  const utterance = new SpeechSynthesisUtterance(normalized);
+  currentSpeechUtterance = utterance;
+  currentSpeechOwner = window.speechSynthesis;
+  utterance.lang = locale;
   if (voice) utterance.voice = voice;
-  utterance.rate = 0.9;
-  utterance.onstart = () => {
-    if (cancelled) {
-      utterance.volume = 0;
-      return;
-    }
-    queued = false;
-    active = true;
-  };
+  utterance.rate = rate;
+  utterance.onstart = () => callbacks.onStart?.();
   utterance.onend = () => {
-    queued = false;
-    active = false;
-    if (currentSpeechPlayback === playback) currentSpeechPlayback = null;
-  };
-  if (!cancelled) {
-    queued = true;
-    try {
-      // Keep speech synthesis in the originating click call stack. Some
-      // browsers reject a delayed speak() as no longer user initiated.
-      speechSynthesis.speak(utterance);
-    } catch (error) {
-      queued = false;
-      if (currentSpeechPlayback === playback) currentSpeechPlayback = null;
-      console.warn('Speech synthesis failed', error);
+    if (currentSpeechUtterance === utterance) {
+      currentSpeechUtterance = null;
+      currentSpeechOwner = null;
     }
+    callbacks.onEnd?.();
+  };
+  utterance.onerror = event => callbacks.onError?.(event?.error ?? 'speech-failed');
+  window.speechSynthesis.resume?.();
+  window.speechSynthesis.speak(utterance);
+  return true;
+};
+
+export function speakText(text: string, callbacks?: SpeechCallbacks): boolean {
+  let active = true;
+  const stop = () => {
+    if (!active) return;
+    active = false;
+    cancelSpeech();
+    release();
+  };
+  const release = claimContentPlayback(stop);
+  cancelSpeech();
+  const started = speakNow(text, {
+    onStart: callbacks?.onStart,
+    onEnd: () => {
+      if (!active) return;
+      active = false;
+      release();
+      callbacks?.onEnd?.();
+    },
+    onError: error => {
+      if (!active) return;
+      active = false;
+      release();
+      callbacks?.onError?.(error);
+    },
+  });
+  if (!started) {
+    active = false;
+    release();
   }
-  return playback;
+  return started;
 }

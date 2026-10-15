@@ -89,7 +89,10 @@ describe('Flashcard mobile controls', () => {
 
   it('uses the active course voice for synchronous fallback speech', () => {
     expect(cardSurfaceSource).toContain('voiceForActiveCourseCard(data, courseModel.activeCourse)');
-    expect(cardSurfaceSource).toContain('if (voice) utterance.voice = voice;');
+    expect(cardSurfaceSource).toContain('speechLocaleFor(data)');
+    const playback = readFileSync(fileURLToPath(new URL('./flashcard/useFlashcardAudio.ts', import.meta.url)), 'utf8');
+    expect(playback).toContain('voice');
+    expect(playback).toContain('speechLocale');
   });
 
   it('keeps back-side meaning, bilingual context and compact learning CTAs visible', () => {

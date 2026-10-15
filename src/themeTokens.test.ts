@@ -29,6 +29,30 @@ const contrast = (foreground: string, background: string) => {
   return (values[0] + 0.05) / (values[1] + 0.05);
 };
 
+const cssBlock = (marker: string) => {
+  const start = stylesheet.indexOf(marker);
+  if (start < 0) throw new Error(`Missing ${marker} CSS block.`);
+  const open = stylesheet.indexOf('{', start);
+  let depth = 0;
+  for (let index = open; index < stylesheet.length; index += 1) {
+    if (stylesheet[index] === '{') depth += 1;
+    if (stylesheet[index] === '}' && --depth === 0) return stylesheet.slice(start, index + 1);
+  }
+  throw new Error(`Unclosed ${marker} CSS block.`);
+};
+
+const cssRule = (block: string, selector: string) => {
+  const start = block.indexOf(selector);
+  if (start < 0) throw new Error(`Missing ${selector} CSS rule.`);
+  const open = block.indexOf('{', start);
+  let depth = 0;
+  for (let index = open; index < block.length; index += 1) {
+    if (block[index] === '{') depth += 1;
+    if (block[index] === '}' && --depth === 0) return block.slice(start, index + 1);
+  }
+  throw new Error(`Unclosed ${selector} CSS rule.`);
+};
+
 describe('surface theme tokens', () => {
   it('defines the muted surface token for light and dark themes', () => {
     expect(themeDeclarations(':root[data-theme-family="classic"]')).toMatch(/--sf-surface-muted\s*:/);
@@ -71,5 +95,44 @@ describe('surface theme tokens', () => {
     expect(constrained).toContain('.zen-glass-slab');
     expect(constrained).toContain('backdrop-filter: none');
     expect(constrained).toContain('background: #081418');
+  });
+
+  it('includes flashcard glass surfaces in every compositing mitigation path', () => {
+    const mitigationPaths = [
+      {
+        marker: '@media (max-width: 1180px), (hover: none), (pointer: coarse)',
+        disablesBackdrop: true,
+        hasDarkRule: true,
+      },
+      { marker: 'html[data-save-data="true"] :is(', disablesBackdrop: true, hasDarkRule: false },
+      {
+        marker: '@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px)))',
+        disablesBackdrop: false,
+        hasDarkRule: true,
+      },
+      { marker: '@media (prefers-reduced-transparency: reduce)', disablesBackdrop: true, hasDarkRule: true },
+    ];
+
+    for (const { marker, disablesBackdrop, hasDarkRule } of mitigationPaths) {
+      const mitigation = cssBlock(marker);
+      for (const surface of ['.flashcard-panel', '.zen-glass-slab']) {
+        const lightRule = cssRule(mitigation, surface);
+        expect(lightRule).toContain('background: var(--sf-surface)');
+        if (disablesBackdrop) {
+          expect(lightRule).toContain('-webkit-backdrop-filter: none');
+          expect(lightRule).toMatch(/(?:^|[;\n])\s*backdrop-filter:\s*none(?:\s*;|\s*$)/m);
+        }
+        if (hasDarkRule) {
+          expect(cssRule(mitigation, `.dark ${surface}`)).toContain('background: var(--sf-surface)');
+        }
+      }
+    }
+  });
+
+  it('retains normal and dark flashcard glass theme selectors', () => {
+    expect(flashcardStylesheet).toMatch(/\.flashcard-panel\s*\{/);
+    expect(flashcardStylesheet).toMatch(/\.dark \.flashcard-panel\s*\{/);
+    expect(flashcardStylesheet).toMatch(/\.zen-glass-slab\s*\{/);
+    expect(flashcardStylesheet).toMatch(/\.dark \.zen-glass-slab\s*\{/);
   });
 });

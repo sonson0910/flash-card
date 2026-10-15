@@ -141,6 +141,17 @@ describe('StudyView final-card persistence', () => {
     expect(haptic).toHaveBeenCalledExactlyOnceWith('success');
   });
 
+  it('dismisses the locally opened recap after the final committed rating', async () => {
+    const committed = vi.fn(async () => ({ status: 'committed', xpAwarded: 2 } as const));
+    const onDismissRecap = vi.fn();
+    await render(committed, { onDismissRecap }).rate('good');
+    const completed = render(committed, { onDismissRecap });
+    expect(completed.recap?.open).toBe(true);
+    (completed.recap?.onClose as () => void)();
+    expect(render(committed, { onDismissRecap }).recap?.open).toBe(false);
+    expect(onDismissRecap).toHaveBeenCalledOnce();
+  });
+
   it('passes the owner-scoped delete result into the Study editor', () => {
     const onDeleteCard = vi.fn(async () => true);
     const view = render(vi.fn(async (): Promise<StudyRatingSettlement> => ({ status: 'committed', xpAwarded: 0 })), { onDeleteCard });
@@ -276,7 +287,13 @@ describe('StudyView final-card persistence', () => {
     await view.rate('again');
 
     expect(render(committed, { cards: [skippedCard, card], index: 1 }).recap)
-      .toMatchObject({ open: true, totalCards: 1, goodCount: 0, againCount: 1, xpEarned: 2 });
+      .toMatchObject({ open: true, totalCards: 2, goodCount: 0, againCount: 1, xpEarned: 2 });
+  });
+
+  it('does not celebrate completion when an earlier card was skipped', async () => {
+    const committed = vi.fn(async () => ({ status: 'committed', xpAwarded: 2 } as const));
+    await render(committed, { cards: [{ ...card, id: 'skipped' }, card], index: 1 }).rate('good');
+    expect(confetti).not.toHaveBeenCalled();
   });
 
   it('counts Again toward the combo and hides the banner in focus mode', async () => {

@@ -115,7 +115,7 @@ export function useBrowserExtensionImport(options: BrowserExtensionImportOptions
       deckScopeRef.current = null;
       courseLocaleScopeRef.current = null;
     }
-    if (!current.ownerId || !current.libraryReady) return;
+    if (!current.ownerId) return;
     if ((!current.courseNativeLanguage || !current.courseTargetLanguage)
       && deckScopeRef.current?.scope === courseLocaleScopeRef.current) {
       postExtensionBridgeMessage(DECK_METADATA_CLEAR_MESSAGE, { scope: deckScopeRef.current.scope });
@@ -128,7 +128,7 @@ export function useBrowserExtensionImport(options: BrowserExtensionImportOptions
     }
     postExtensionBridgeMessage(DECK_METADATA_MESSAGE, {
       scope: deckScopeRef.current.scope,
-      decks: normalizeDecksForExtension(current.customDecks),
+      ...(current.libraryReady ? { decks: normalizeDecksForExtension(current.customDecks) } : {}),
     });
     if (current.courseNativeLanguage && current.courseTargetLanguage) {
       postExtensionBridgeMessage(COURSE_LOCALE_MESSAGE, {

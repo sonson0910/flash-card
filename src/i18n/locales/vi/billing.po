@@ -13,37 +13,36 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/features/plan/PlanUsageMeter.tsx:29
+msgctxt "plan.usage.exhausted.pro-hint"
+msgid "Pro adds more generations."
+msgstr "Gói Pro có thêm lượt tạo thẻ."
+
+#: src/features/billing/UpgradeDialog.tsx:96
+msgctxt "billing.upgrade.offer.no-renew"
+msgid "No auto-renewal. Payment is not being collected or opened yet."
+msgstr "Không tự động gia hạn. Hiện chưa thu tiền hoặc mở thanh toán."
+
+#: src/features/plan/PlanUsageMeter.tsx:28
+msgctxt "plan.usage.exhausted"
+msgid "No AI card generations left. Resets {reset}. You can still review, add cards manually, and export your data."
+msgstr "Bạn đã dùng hết lượt tạo thẻ bằng AI. Hạn mức làm mới {reset}. Bạn vẫn có thể ôn tập, tự thêm thẻ và xuất dữ liệu."
+
+#: src/features/billing/UpgradeDialog.tsx:84
+msgctxt "billing.upgrade.kicker"
+msgid "SonFlash Pro"
+msgstr "SonFlash Pro"
+
+#: src/features/plan/PlanUsageMeter.tsx:22
+msgctxt "plan.usage.label"
+msgid "AI cards"
+msgstr "Thẻ AI"
+
 #. js-lingui-explicit-id
 #: src/features/billing/UpgradeDialog.tsx:88
-#: src/features/billing/UpgradeDialog.tsx:117
+#: src/features/billing/UpgradeDialog.tsx:116
 msgid "billing.dialog.close"
 msgstr "Đóng"
-
-#. js-lingui-explicit-id
-#: src/features/billing/UpgradeDialog.tsx:101
-msgid "billing.upgrade.already-pro"
-msgstr "Pro đã hoạt động trên tài khoản của bạn."
-
-#. js-lingui-explicit-id
-#: src/features/billing/UpgradeDialog.tsx:107
-msgid "billing.upgrade.consent"
-msgstr "Dành cho người từ 18 tuổi. Bằng cách đăng ký, bạn đồng ý với <terms>Điều khoản</terms> và <privacy>Chính sách riêng tư</privacy>."
-
-#. js-lingui-explicit-id
-#: src/features/billing/UpgradeDialog.tsx:86
-msgid "billing.upgrade.description"
-msgstr "Thẻ AI cùng chất lượng với gói Free, với nhiều lượt tạo hơn."
-
-#. js-lingui-explicit-id
-#: src/features/billing/UpgradeDialog.tsx:99
-#: src/features/billing/UpgradeDialog.tsx:100
-msgid "billing.upgrade.entitlement.error"
-msgstr "Không thể xác nhận gói hiện tại của bạn. Hãy thử lại sau."
-
-#. js-lingui-explicit-id
-#: src/features/billing/UpgradeDialog.tsx:98
-msgid "billing.upgrade.entitlement.loading"
-msgstr "Đang kiểm tra gói hiện tại của bạn…"
 
 #. js-lingui-explicit-id
 #: src/features/billing/UpgradeDialog.tsx:52
@@ -56,91 +55,92 @@ msgid "billing.upgrade.error.submit"
 msgstr "Chưa ghi nhận được yêu cầu. Hãy thử lại sau."
 
 #. js-lingui-explicit-id
-#: src/features/billing/UpgradeDialog.tsx:102
-msgid "billing.upgrade.intent.unavailable"
-msgstr "Việc đăng ký tạm thời chưa khả dụng. Hãy thử lại sau."
-
-#. js-lingui-explicit-id
-#: src/features/billing/UpgradeDialog.tsx:84
-msgid "billing.upgrade.kicker"
-msgstr "SonFlash Pro"
-
-#. js-lingui-explicit-id
-#: src/features/billing/UpgradeDialog.tsx:91
-msgid "billing.upgrade.loading"
-msgstr "Đang tải thông tin gói…"
-
-#. js-lingui-explicit-id
-#: src/features/billing/UpgradeDialog.tsx:95
-msgid "billing.upgrade.offer.cards"
-msgstr "{count, plural, one {# thẻ AI mỗi tháng} other {# thẻ AI mỗi tháng}}"
-
-#. js-lingui-explicit-id
 #: src/features/billing/UpgradeDialog.tsx:71
 msgid "billing.upgrade.offer.changed"
 msgstr "Chi tiết gói đã thay đổi. Hãy mở lại hộp thoại này để xem ưu đãi mới nhất."
 
-#. js-lingui-explicit-id
-#: src/features/billing/UpgradeDialog.tsx:93
-msgid "billing.upgrade.offer.duration"
-msgstr "Pro · {days, plural, one {# ngày} other {# ngày}}"
+#: src/features/billing/UpgradeDialog.tsx:91
+msgctxt "billing.upgrade.loading"
+msgid "Loading plan details…"
+msgstr "Đang tải thông tin gói…"
 
-#. js-lingui-explicit-id
-#: src/features/billing/UpgradeDialog.tsx:96
-msgid "billing.upgrade.offer.no-renew"
-msgstr "Không tự động gia hạn. Hiện chưa thu tiền hoặc mở thanh toán."
+#: src/features/billing/UpgradeDialog.tsx:99
+#: src/features/billing/UpgradeDialog.tsx:100
+msgctxt "billing.upgrade.entitlement.error"
+msgid "Couldn't confirm your current plan. Please try again later."
+msgstr "Không thể xác nhận gói hiện tại của bạn. Hãy thử lại sau."
 
-#. js-lingui-explicit-id
-#: src/features/billing/UpgradeDialog.tsx:103
-msgid "billing.upgrade.quota-exhausted"
-msgstr "Bạn đã dùng hết hạn mức thẻ AI hiện tại. Bạn vẫn có thể ôn tập, thêm thẻ thủ công và xuất dữ liệu."
-
-#. js-lingui-explicit-id
 #: src/features/billing/UpgradeDialog.tsx:104
-msgid "billing.upgrade.recorded"
+msgctxt "billing.upgrade.recorded"
+msgid "Your purchase interest is recorded. The founder will reach out when sales open."
 msgstr "Đã ghi nhận mong muốn mua. Người sáng lập sẽ liên hệ với bạn khi mở bán."
 
-#. js-lingui-explicit-id
-#: src/features/billing/UpgradeDialog.tsx:118
-msgid "billing.upgrade.submit.busy"
-msgstr "Đang ghi nhận…"
-
-#. js-lingui-explicit-id
-#: src/features/billing/UpgradeDialog.tsx:118
-msgid "billing.upgrade.submit.idle"
+#: src/features/billing/UpgradeDialog.tsx:117
+msgctxt "billing.upgrade.submit.idle"
+msgid "Register interest for launch"
 msgstr "Đăng ký mua khi mở bán"
 
-#. js-lingui-explicit-id
-#: src/features/billing/UpgradeDialog.tsx:85
-msgid "billing.upgrade.title"
-msgstr "Thêm nhịp cho việc học"
-
-#. js-lingui-explicit-id
-#: src/features/plan/PlanUsageMeter.tsx:27
-msgid "plan.usage.exhausted"
-msgstr "Bạn đã dùng hết lượt tạo thẻ bằng AI. Hạn mức làm mới {reset}. Bạn vẫn có thể ôn tập, tự thêm thẻ và xuất dữ liệu."
-
-#. js-lingui-explicit-id
-#: src/features/plan/PlanUsageMeter.tsx:28
-msgid "plan.usage.exhausted.pro-hint"
-msgstr "Gói Pro có thêm lượt tạo thẻ."
-
-#. js-lingui-explicit-id
-#: src/features/plan/PlanUsageMeter.tsx:21
-msgid "plan.usage.label"
-msgstr "Thẻ AI"
-
-#. js-lingui-explicit-id
-#: src/features/plan/PlanUsageMeter.tsx:25
-msgid "plan.usage.period.free"
+#: src/features/plan/PlanUsageMeter.tsx:26
+msgctxt "plan.usage.period.free"
+msgid "{used} / {limit} AI cards this month"
 msgstr "{used} / {limit} thẻ AI trong tháng này"
 
-#. js-lingui-explicit-id
-#: src/features/plan/PlanUsageMeter.tsx:24
-msgid "plan.usage.period.pro"
+#: src/features/billing/UpgradeDialog.tsx:103
+msgctxt "billing.upgrade.quota-exhausted"
+msgid "Your current AI card allowance is exhausted. You can still review, add cards manually, and export your data."
+msgstr "Bạn đã dùng hết hạn mức thẻ AI hiện tại. Bạn vẫn có thể ôn tập, thêm thẻ thủ công và xuất dữ liệu."
+
+#: src/features/billing/UpgradeDialog.tsx:101
+msgctxt "billing.upgrade.already-pro"
+msgid "Pro is already active on your account."
+msgstr "Pro đã hoạt động trên tài khoản của bạn."
+
+#: src/features/billing/UpgradeDialog.tsx:102
+msgctxt "billing.upgrade.intent.unavailable"
+msgid "Registration is temporarily unavailable. Please try again later."
+msgstr "Việc đăng ký tạm thời chưa khả dụng. Hãy thử lại sau."
+
+#: src/features/billing/UpgradeDialog.tsx:98
+msgctxt "billing.upgrade.entitlement.loading"
+msgid "Checking your current plan…"
+msgstr "Đang kiểm tra gói hiện tại của bạn…"
+
+#: src/features/billing/UpgradeDialog.tsx:117
+msgctxt "billing.upgrade.submit.busy"
+msgid "Recording…"
+msgstr "Đang ghi nhận…"
+
+#: src/features/billing/UpgradeDialog.tsx:86
+msgctxt "billing.upgrade.description"
+msgid "The same AI card quality as Free, with more generations."
+msgstr "Thẻ AI cùng chất lượng với gói Free, với nhiều lượt tạo hơn."
+
+#: src/features/billing/UpgradeDialog.tsx:108
+msgctxt "billing.upgrade.consent"
+msgid "For learners aged 18 and over. By registering, you agree to the <terms>Terms</terms> and the <privacy>Privacy Policy</privacy>."
+msgstr "Dành cho người từ 18 tuổi. Bằng cách đăng ký, bạn đồng ý với <terms>Điều khoản</terms> và <privacy>Chính sách riêng tư</privacy>."
+
+#: src/features/billing/UpgradeDialog.tsx:85
+msgctxt "billing.upgrade.title"
+msgid "Add momentum to your learning"
+msgstr "Thêm nhịp cho việc học"
+
+#: src/features/billing/UpgradeDialog.tsx:95
+msgctxt "billing.upgrade.offer.cards"
+msgid "{count, plural, one {# AI card} other {# AI cards}} per month"
+msgstr "{count, plural, one {# thẻ AI mỗi tháng} other {# thẻ AI mỗi tháng}}"
+
+#: src/features/billing/UpgradeDialog.tsx:93
+msgctxt "billing.upgrade.offer.duration"
+msgid "Pro · {days, plural, one {# day} other {# days}}"
+msgstr "Pro · {days, plural, one {# ngày} other {# ngày}}"
+
+#: src/features/plan/PlanUsageMeter.tsx:25
+msgctxt "plan.usage.period.pro"
+msgid "{used} / {limit} AI cards on the Pro plan"
 msgstr "{used} / {limit} thẻ AI của gói Pro"
 
-#. js-lingui-explicit-id
-#: src/features/plan/PlanUsageMeter.tsx:33
-msgid "plan.usage.view-pro"
+#: src/features/plan/PlanUsageMeter.tsx:34
+msgctxt "plan.usage.view-pro"
+msgid "See Pro plan"
 msgstr "Xem gói Pro"

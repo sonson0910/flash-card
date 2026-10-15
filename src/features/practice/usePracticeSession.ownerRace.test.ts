@@ -17,6 +17,7 @@ const hookRuntime = vi.hoisted(() => ({
   effectCursor: 0,
   effects: [] as EffectRecord[],
   pendingEffects: [] as PendingEffect[],
+  keydownListeners: [] as Array<(event: KeyboardEvent) => void>,
   refCursor: 0,
   refs: [] as Array<{ current: unknown }>,
   stateCursor: 0,
@@ -53,6 +54,29 @@ const practiceSessions = vi.hoisted(() => ({
     outcome: { xp: 20, level: 1, streak: 0, studyDay: '2026-09-27', events: ['levelup'] as const },
   })),
 }));
+
+const storyResult = {
+  title: 'A generated story',
+  segments: [
+    { english: 'A generated scene.', vietnamese: 'Một cảnh được tạo.' },
+    { english: 'The lesson continues.', vietnamese: 'Bài học tiếp tục.' },
+  ],
+  comprehension: {
+    question: 'What continues?',
+    options: ['The lesson', 'The rain', 'The train'],
+    correctIndex: 0 as const,
+    explanationVi: 'Bài học tiếp tục.',
+  },
+  grammar: {
+    label: 'Past simple',
+    explanationVi: 'Dùng thì quá khứ đơn.',
+    sourceSentence: 'The lesson continues.',
+    prompt: 'Rewrite in the past.',
+    acceptedAnswer: 'The lesson continued.',
+  },
+  retellPrompt: 'Retell the lesson briefly.',
+  targetPhrases: ['word-1'],
+};
 
 const dependenciesChanged = (
   previous: readonly unknown[] | undefined,
@@ -230,11 +254,14 @@ const expectEmptyPracticeState = (session: ReturnType<typeof usePracticeSession>
     index: 0,
     recallMode: 'adaptive',
     revealed: false,
+    needsIntroduction: false,
     reviewedCardId: null,
     isStarting: false,
     reviewStatus: 'idle',
     reviewError: null,
     isPaused: false,
+    goodCount: 0, againCount: 0, weakCards: [], showRecap: false, xpEarned: 0,
+    summary: { saved: 0, skipped: 0, failed: 0, pending: 0, remaining: 0 },
   });
   expect(session.quiz).toMatchObject({
     quizQuestions: [],
@@ -265,20 +292,20 @@ describe('usePracticeSession owner isolation', () => {
     hookRuntime.effectCursor = 0;
     hookRuntime.effects = [];
     hookRuntime.pendingEffects = [];
+    hookRuntime.keydownListeners = [];
     hookRuntime.refCursor = 0;
     hookRuntime.refs = [];
     hookRuntime.stateCursor = 0;
     hookRuntime.states = [];
     vi.clearAllMocks();
     vi.stubGlobal('window', {
-      addEventListener: vi.fn(),
+      addEventListener: vi.fn((eventName: string, listener: EventListener) => {
+        if (eventName === 'keydown') hookRuntime.keydownListeners.push(listener as (event: KeyboardEvent) => void);
+      }),
       removeEventListener: vi.fn(),
       setTimeout: globalThis.setTimeout.bind(globalThis),
     });
-    gemini.generateStoryContext.mockResolvedValue({
-      story: 'A generated story.',
-      translation: 'Một câu chuyện được tạo.',
-    });
+    gemini.generateStoryContext.mockResolvedValue(storyResult);
   });
 
   it('starts an ordered unit study without loading the practice pool', async () => {
@@ -442,7 +469,7 @@ describe('usePracticeSession owner isolation', () => {
 
     expect(gemini.generateStoryContext).toHaveBeenCalledWith(
       expect.arrayContaining(['word-1', 'word-2']),
-      { targetLanguage: 'ko', translationLanguage: 'vi' },
+      { targetLanguage: 'ko', translationLanguage: 'vi' }, 'owner-a',
     );
     expect(session.quiz.story).toMatchObject({ language: 'ko', translationLanguage: 'vi' });
   });
@@ -461,9 +488,7 @@ describe('usePracticeSession owner isolation', () => {
     flushEffects();
 
     const generation = session.commands.generateStory();
-    for (let attempt = 0; attempt < 10 && gemini.generateStoryContext.mock.calls.length === 0; attempt += 1) {
-      await Promise.resolve();
-    }
+    await vi.waitFor(() => expect(gemini.generateStoryContext).toHaveBeenCalledOnce());
     expect(gemini.generateStoryContext).toHaveBeenCalledOnce();
 
     render({ mode: 'story', languageProfile: koreanEn, languageDrillScopeKey: 'owner-a:ko:en' });
@@ -738,10 +763,15 @@ describe('usePracticeSession owner isolation', () => {
       spellingScore: 4,
       showSpellingResults: true,
       story: {
-        story: 'A generated story.',
-        translation: 'Một câu chuyện được tạo.',
+        title: 'A generated story',
+        segments: storyResult.segments,
+        comprehension: storyResult.comprehension,
+        grammar: storyResult.grammar,
+        retellPrompt: storyResult.retellPrompt,
+        targetPhrases: storyResult.targetPhrases,
       },
     });
+    expect(gemini.generateStoryContext).toHaveBeenCalledWith(expect.any(Array), 'owner-a');
 
     const firstNextOwnerRender = render({ ownerId: nextOwnerId });
     expectEmptyPracticeState(firstNextOwnerRender);
@@ -1055,7 +1085,7 @@ describe('usePracticeSession owner isolation', () => {
       status: 'committed', xpAwarded: 2, rating: 'good',
     });
     expect(learning.reviewCard).toHaveBeenCalledOnce();
-    expect(render({ mode: 'study' }).study.reviewStatus).toBe('saved');
+    expect(render({ mode: 'study' }).study).toMatchObject({ reviewStatus: 'saved', goodCount: 1, againCount: 0, xpEarned: 2, weakCards: [], showRecap: true });
   });
 
   it('retains a confirmed receipt through a partial pool omission', async () => {

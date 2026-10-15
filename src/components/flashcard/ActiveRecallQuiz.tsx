@@ -1,3 +1,4 @@
+import { msg } from '@lingui/core/macro';
 import { CheckCircle2, HelpCircle, Sparkles, XCircle } from 'lucide-react';
 import { Trans } from '@lingui/react';
 import React, { useMemo, useState } from 'react';
@@ -70,10 +71,10 @@ export const ActiveRecallQuiz = React.memo(function ActiveRecallQuiz({
         <div className="flex items-center gap-1.5 text-cyan-300">
           <HelpCircle size={14} className="text-cyan-400" />
           <span className="text-[10px] font-black uppercase tracking-[0.16em]">
-            <Trans id="flashcard.quiz.heading" message="Active Recall Quiz · Guess the Meaning" />
+            <Trans {...msg({ context: 'flashcard.quiz.heading', message: 'Active Recall Quiz · Guess the Meaning' })} />
           </span>
         </div>
-        <span className="text-[10px] font-bold text-slate-400"><Trans id="flashcard.quiz.select-option" message="Select 1 option" /></span>
+        <span className="text-[10px] font-bold text-slate-400"><Trans {...msg({ context: 'flashcard.quiz.select-option', message: 'Select 1 option' })} /></span>
       </div>
 
       <div className="grid grid-cols-1 gap-2">
@@ -114,7 +115,7 @@ export const ActiveRecallQuiz = React.memo(function ActiveRecallQuiz({
         <div className="mt-3 pt-2.5 border-t border-cyan-400/20 flex items-center justify-between gap-2 animate-in fade-in duration-300">
           <p className="text-[11px] font-bold text-cyan-300 flex items-center gap-1.5">
             <Sparkles size={13} className="text-cyan-400 shrink-0" />
-            <span>{selectedOption === card.translation.trim() ? <Trans id="flashcard.quiz.correct" message="Excellent! You recalled it accurately." /> : <Trans id="flashcard.quiz.incorrect" message="Nice try! Flip the card to review the definition." />}</span>
+            <span>{selectedOption === card.translation.trim() ? <Trans {...msg({ context: 'flashcard.quiz.correct', message: 'Excellent! You recalled it accurately.' })} /> : <Trans {...msg({ context: 'flashcard.quiz.incorrect', message: 'Nice try! Flip the card to review the definition.' })} />}</span>
           </p>
           <button
             type="button"
@@ -126,7 +127,7 @@ export const ActiveRecallQuiz = React.memo(function ActiveRecallQuiz({
             }}
             className="shrink-0 rounded-full bg-cyan-400 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-[#071014] shadow-md shadow-cyan-500/25 hover:bg-cyan-300 active:scale-95 transition-all cursor-pointer"
           >
-            <Trans id="flashcard.quiz.flip-now" message="Flip card now" />
+            <Trans {...msg({ context: 'flashcard.quiz.flip-now', message: 'Flip card now' })} />
           </button>
         </div>
       )}

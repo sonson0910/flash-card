@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ALL_PRACTICE_DECK_SCOPE } from '../lib/practiceScope';
 
 const mocks = vi.hoisted(() => {
   const readOwnerLibrary = vi.fn();
@@ -157,13 +158,16 @@ describe('app dependency composition', () => {
   it('exposes practice loading only through the bounded practice port', async () => {
     mocks.fetchPracticeCards.mockResolvedValue([{ id: 'practice' }]);
 
-    await expect(appDependencies.practice.pool?.load('owner-1', 25, { includeFuture: false }))
+    await expect(appDependencies.practice.pool?.load('owner-1', 25, {
+      includeFuture: false,
+      customDeck: { kind: 'deck', name: 'IELTS' },
+    }))
       .resolves.toEqual([{ id: 'practice' }]);
     expect(mocks.fetchPracticeCards).toHaveBeenCalledWith(
       mocks.database,
       'owner-1',
       25,
-      { includeFuture: false },
+      { includeFuture: false, customDeck: { kind: 'deck', name: 'IELTS' } },
     );
   });
 
@@ -224,7 +228,7 @@ describe('app dependency composition', () => {
     });
 
     const sharing = appDependencies.intake.forOwner('owner-2');
-    await expect(sharing.loadCards('IELTS')).resolves.toEqual({
+    await expect(sharing.loadCards({ category: 'IELTS', customDeck: { kind: 'deck', name: 'Reading' } })).resolves.toEqual({
       cards: [{ id: 'shared-card' }],
       total: 1,
       hasNext: false,
@@ -235,7 +239,7 @@ describe('app dependency composition', () => {
       userId: 'owner-2',
       filters: {
         category: 'IELTS',
-        customDeck: null,
+        customDeck: { kind: 'deck', name: 'Reading' },
         difficulty: null,
         partOfSpeech: null,
         bookmarkedOnly: false,
@@ -252,7 +256,7 @@ describe('app dependency composition', () => {
     mocks.fetchCardPage.mockResolvedValue({ items: cards, hasNext: true });
     mocks.countCards.mockResolvedValue(120);
 
-    await expect(appDependencies.intake.forOwner('owner-2').loadCards('IELTS'))
+    await expect(appDependencies.intake.forOwner('owner-2').loadCards({ category: 'IELTS', customDeck: { kind: 'deck', name: 'Reading' } }))
       .resolves.toEqual({ cards, total: 120, hasNext: true });
 
     expect(mocks.countCards).toHaveBeenCalledWith(
@@ -262,12 +266,28 @@ describe('app dependency composition', () => {
     );
   });
 
+  it('keeps a literal reserved deck distinct from null-unassigned sharing', async () => {
+    mocks.fetchCardPage.mockResolvedValue({ items: [{ id: 'literal' }], hasNext: false });
+
+    await expect(appDependencies.intake.forOwner('owner-2').loadCards({
+      category: 'Travel',
+      customDeck: { kind: 'deck', name: 'unassigned' },
+    })).resolves.toMatchObject({ cards: [{ id: 'literal' }] });
+
+    expect(mocks.fetchCardPage).toHaveBeenCalledWith(expect.objectContaining({
+      filters: expect.objectContaining({
+        category: 'Travel',
+        customDeck: { kind: 'deck', name: 'unassigned' },
+      }),
+    }));
+  });
+
   it('returns safe empty signals when cloud storage or an owner is unavailable', async () => {
     await expect(appDependencies.library.updateCategoryFacets(null, { IELTS: 1 }))
       .resolves.toBeNull();
     await expect(appDependencies.library.loadAllCards(null)).resolves.toBeNull();
     await expect(appDependencies.library.loadMultilingualCards(null)).resolves.toBeNull();
-    await expect(appDependencies.intake.forOwner(null).loadCards('All')).resolves.toEqual({
+    await expect(appDependencies.intake.forOwner(null).loadCards({ category: 'All', customDeck: ALL_PRACTICE_DECK_SCOPE })).resolves.toEqual({
       cards: [], total: 0, hasNext: false,
     });
     expect(mocks.applyCategoryDeltas).not.toHaveBeenCalled();

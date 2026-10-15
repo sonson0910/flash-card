@@ -97,7 +97,7 @@ test('switching courses isolates Library cards and spelling practice by language
     },
     ...koreanCards.map(([word, translation], index) => ({
       id: `course-pair-ko-${index}`, word, normalizedWord: word, translation,
-      language: 'ko', translationLanguage: 'vi', difficulty: 'unrated',
+      language: 'ko', translationLanguage: 'vi', difficulty: 'good', reviews: 1,
       createdAt: `2026-01-01T00:0${index}:00.000Z`,
     })),
   ]);

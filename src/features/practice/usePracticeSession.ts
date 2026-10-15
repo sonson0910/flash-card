@@ -4,10 +4,13 @@ import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
 import { cardLogicalKey, effectiveCardTargetLanguage, normalizeCardLanguage } from '../../lib/cardIdentity';
+import { triggerConfetti } from '../../lib/confetti';
 import { playRewardSound, playSuccessSound } from '../../lib/interactionSounds';
+import { hasReviewEvidence } from '../../lib/cardLearningStatus';
+import type { PracticeDeckScope } from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
 import { createPracticeSnapshot } from './practiceModel';
-import { createPracticeSessionLifecycle } from './practiceSessionLifecycle';
+import { createPracticeSessionLifecycle, type StudyReviewSummary } from './practiceSessionLifecycle';
 import { usePracticeGames } from './usePracticeGames';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 
@@ -25,6 +28,12 @@ export interface PracticeLearningActions {
   updateCard: (cardId: string, fields: Partial<CardData>) => void | Promise<LearningStateOutcome>;
 }
 
+export interface PracticeStudyStartOptions {
+  cards?: readonly CardData[];
+  introduce?: boolean;
+  customDeck?: PracticeDeckScope;
+}
+
 export interface PracticeSnapshotPort {
   findCard: (cardId: string) => CardData | undefined;
   getCards: () => readonly CardData[];
@@ -37,21 +46,29 @@ export interface PracticeSnapshotPort {
 
 export interface PracticeSessionController {
   mode: PracticeViewMode;
+  sessionKey: number;
   study: {
     sessionKey: number;
     cards: CardData[];
     index: number;
     recallMode: RecallMode;
     revealed: boolean;
+    needsIntroduction: boolean;
     reviewedCardId: string | null;
     isStarting: boolean;
-    reviewStatus: 'idle' | 'saving' | 'saved' | 'error';
+    reviewStatus: 'idle' | 'saving' | 'sync-pending' | 'saved' | 'error';
     reviewError: string | null;
     isPaused?: boolean;
+    goodCount: number;
+    againCount: number;
+    weakCards: CardData[];
+    showRecap: boolean;
+    summary: StudyReviewSummary;
+    xpEarned: number;
   };
   quiz: ReturnType<typeof usePracticeGames>;
   commands: {
-    startStudy: () => Promise<void>;
+    startStudy: (request?: PracticeStudyStartOptions) => Promise<void>;
     startStudyWithCards: (cards: readonly CardData[], isSourceCurrent?: () => boolean) => Promise<boolean>;
     startQuiz: () => Promise<void>;
     startSpelling: () => Promise<void>;
@@ -61,6 +78,9 @@ export interface PracticeSessionController {
     startShadowing: () => Promise<void>;
     generateStory: () => Promise<void>;
     close: () => void;
+    dismissStudyRecap: () => void;
+    beginStudyRecall: () => void;
+    requestStudyIntroduction: () => void;
     reveal: () => void;
     setRecallMode: (mode: RecallMode) => void;
     setStudyIndex: (index: number) => void;
@@ -222,7 +242,11 @@ interface UsePracticeSessionOptions {
   mode: PracticeViewMode;
   openView: (view: PracticeViewMode) => void;
   onSessionStarted?: () => void;
-  loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
+  loadPracticePool: (
+    maximum?: number,
+    includeFuture?: boolean,
+    customDeck?: PracticeDeckScope,
+  ) => Promise<CardData[]>;
   languageDrillCards: readonly CardData[];
   languageDrillScopeKey: string;
   learning: PracticeLearningActions;
@@ -274,9 +298,11 @@ export function usePracticeSession({
   const [studyIndex, setStudyIndex] = useState(0);
   const [recallMode, setRecallMode] = useState<RecallMode>('adaptive');
   const [revealed, setRevealed] = useState(false);
+  const [introducedStudyCardIds, setIntroducedStudyCardIds] = useState<ReadonlySet<string>>(() => new Set());
   const [reviewedCardId, setReviewedCardId] = useState<string | null>(null);
   const [isStartingStudy, setIsStartingStudy] = useState(false);
   const [savingReviewCardId, setSavingReviewCardId] = useState<string | null>(null);
+  const [syncPendingReviewCardId, setSyncPendingReviewCardId] = useState<string | null>(null);
   const [reviewFailure, setReviewFailure] = useState<{ cardId: string; message: string } | null>(null);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const studyReviewRecordsRef = useRef(new Map<string, StudyReviewRecord>());
@@ -348,6 +374,11 @@ export function usePracticeSession({
   const editorRef = useRef<{ ownerToken: number; cardId: string } | null>(null);
   if (editorRef.current?.ownerToken !== ownerSessionToken) editorRef.current = null;
   const isEditorOpen = () => editorRef.current?.ownerToken === ownerSessionToken;
+  const [goodCount, setGoodCount] = useState(0);
+  const [againCount, setAgainCount] = useState(0);
+  const [weakCards, setWeakCards] = useState<CardData[]>([]);
+  const [showRecap, setShowRecap] = useState(false);
+  const [xpEarned, setXpEarned] = useState(0);
 
   const openPracticeView = useCallback((view: Exclude<PracticeViewMode, 'library'>) => {
     onSessionStarted?.();
@@ -356,6 +387,8 @@ export function usePracticeSession({
 
   const quiz = usePracticeGames({
     lifecycle,
+    ownerId,
+    activeMode: mode,
     loadPracticePool,
     languageDrillCards,
     languageDrillScopeKey,
@@ -375,12 +408,19 @@ export function usePracticeSession({
     setStudyIndex(0);
     setRecallMode('adaptive');
     setRevealed(false);
+    setIntroducedStudyCardIds(new Set());
     setReviewedCardId(null);
     setIsStartingStudy(false);
     setSavingReviewCardId(null);
+    setSyncPendingReviewCardId(null);
     setReviewFailure(null);
     setEditingCardId(null);
     studyReviewRecordsRef.current.clear();
+    setGoodCount(0);
+    setXpEarned(0);
+    setAgainCount(0);
+    setWeakCards([]);
+    setShowRecap(false);
     quiz.reset();
     practiceStateSessionRef.current = ownerSessionToken;
   }, [ownerSessionToken]);
@@ -411,12 +451,13 @@ export function usePracticeSession({
     if (mode === 'quiz' || mode === 'spelling' || mode === 'story' || mode === 'match') openView('library');
   }, [mode, openView, practicePairScopeKey, quiz]);
 
-  const startStudy = useCallback(async () => {
+  const startStudy = useCallback(async (request: PracticeStudyStartOptions = {}) => {
+    const { cards: requestedCards, customDeck } = request;
     if (editorRef.current || studyScopeRef.current !== studyScopeKey) return;
     const result = await lifecycle.prepare(
       'study',
-      async () => createPracticeSnapshot(await withTimeout(
-        loadPracticePool(50, false),
+      async () => createPracticeSnapshot(requestedCards ?? await withTimeout(
+        loadPracticePool(50, false, customDeck),
         STUDY_PREPARATION_TIMEOUT_MS,
         'Preparing your review took too long. Check your connection and try again.',
       ), 50),
@@ -433,10 +474,17 @@ export function usePracticeSession({
         studyCardsScopeRef.current = studyScopeKey;
         setStudySessionKey(previous => previous + 1);
         setStudyCards(cards);
+        setIntroducedStudyCardIds(new Set(request.introduce ? [] : cards.filter(hasReviewEvidence).map(card => card.id)));
         setRevealed(false);
         setReviewedCardId(null);
         setSavingReviewCardId(null);
+        setSyncPendingReviewCardId(null);
         setReviewFailure(null);
+        setGoodCount(0);
+        setXpEarned(0);
+        setAgainCount(0);
+        setWeakCards([]);
+        setShowRecap(false);
         setStudyIndex(0);
         openPracticeView('study');
       }
@@ -467,6 +515,8 @@ export function usePracticeSession({
         studyCardsScopeRef.current = studyScopeKey;
         setStudySessionKey(previous => previous + 1);
         setStudyCards(result.value);
+        setIntroducedStudyCardIds(new Set(result.value.filter(hasReviewEvidence).map(card => card.id)));
+        setGoodCount(0); setAgainCount(0); setWeakCards([]); setShowRecap(false); setXpEarned(0);
         setRevealed(false);
         setReviewedCardId(null);
         setSavingReviewCardId(null);
@@ -482,7 +532,42 @@ export function usePracticeSession({
     return started;
   }, [languageProfile.source.code, lifecycle, openPracticeView, reportError, studyScopeKey]);
 
+  const activeCard = scopedStudyCards[studyIndex];
   const activeCardId = scopedStudyCards[studyIndex]?.id;
+  const navigateStudyIndex = useCallback((index: number) => {
+    if (!lifecycle.isCurrent(ownerSessionToken) || !lifecycle.isActive('study')) return;
+    const nextIndex = Math.max(0, Math.min(studyCardsRef.current.length - 1, index));
+    if (nextIndex !== studyIndex && activeCardId) lifecycle.skipReview(activeCardId);
+    setStudyIndex(nextIndex);
+  }, [activeCardId, lifecycle, ownerSessionToken, studyIndex]);
+  const needsIntroduction = Boolean(
+    activeCard
+    && !introducedStudyCardIds.has(activeCard.id),
+  );
+
+  const beginStudyRecall = useCallback(() => {
+    if (!lifecycle.isCurrent(ownerSessionToken) || !lifecycle.isActive('study')) return;
+    const card = studyCardsRef.current[studyIndex];
+    if (!card) return;
+    setIntroducedStudyCardIds(previous => new Set(previous).add(card.id));
+    setRevealed(false);
+  }, [lifecycle, ownerSessionToken, studyIndex]);
+
+  const requestStudyIntroduction = useCallback(() => {
+    if (!lifecycle.isCurrent(ownerSessionToken) || !lifecycle.isActive('study')) return;
+    const card = studyCardsRef.current[studyIndex];
+    if (!card) return;
+    const review = lifecycle.reviewSummary([card.id]);
+    if (review.saved || review.pending || review.failed) return;
+    setIntroducedStudyCardIds(previous => { const next = new Set(previous); next.delete(card.id); return next; });
+    setRevealed(false);
+  }, [lifecycle, ownerSessionToken, studyIndex]);
+
+  const reveal = useCallback(() => {
+    if (!lifecycle.isCurrent(ownerSessionToken) || !lifecycle.isActive('study') || needsIntroduction) return;
+    setRevealed(true);
+  }, [lifecycle, needsIntroduction, ownerSessionToken]);
+
   useEffect(() => {
     if (editorRef.current && editorRef.current.cardId !== activeCardId) {
       editorRef.current = null;
@@ -498,11 +583,27 @@ export function usePracticeSession({
     const operationSession = ownerSessionToken;
     if (!lifecycle.isCurrent(operationSession) || !lifecycle.isActive('study') || isEditorOpen()) return 'ignored' as const;
     const activeCard = studyCardsRef.current[studyIndex];
-    if (!activeCard || !revealed) return 'ignored' as const;
+    if (!activeCard || needsIntroduction || !revealed) return 'ignored' as const;
     const activationId = lifecycle.studyActivationId();
     if (activationId === null) return 'ignored' as const;
     const intentKey = studyReviewKey(activeCard.id);
     const record = studyReviewRecordsRef.current.get(intentKey);
+    const recordCommittedReview = ({ rating: persistedRating, xpAwarded }: StudyReviewReceipt) => {
+        setReviewedCardId(activeCard.id);
+        setXpEarned(previous => previous + xpAwarded);
+        if (persistedRating === 'good' || persistedRating === 'easy') setGoodCount(previous => previous + 1);
+        else {
+          setAgainCount(previous => previous + 1);
+          const persistedCard = studyCardsRef.current.find(card => card.id === activeCard.id) ?? activeCard;
+          setWeakCards(previous => [...previous.filter(card => card.id !== activeCard.id), persistedCard]);
+        }
+        if (lifecycle.reviewedCount() === studyCardsRef.current.length) {
+          if (persistedRating === 'good' || persistedRating === 'easy') triggerConfetti(0.5, 0.5);
+          setShowRecap(true);
+        }
+        if (persistedRating === 'easy') playRewardSound();
+        else if (persistedRating === 'good') playSuccessSound();
+    };
     if (record && 'confirmedAt' in record) {
       const confirmed = record;
       const expired = Date.now() - confirmed.confirmedAt > STUDY_REVIEW_RECEIPT_MAX_AGE_MS;
@@ -517,9 +618,7 @@ export function usePracticeSession({
         if (!lifecycle.claimReview(activeCard.id)) return 'ignored' as const;
         studyReviewRecordsRef.current.delete(intentKey);
         if (!lifecycle.settleReview(activeCard.id, 'saved', activationId)) return 'ignored' as const;
-        setReviewedCardId(activeCard.id);
-        if (confirmed.rating === 'easy') playRewardSound();
-        else if (confirmed.rating === 'good') playSuccessSound();
+        recordCommittedReview(confirmed);
         return {
           status: 'committed',
           xpAwarded: confirmed.xpAwarded,
@@ -603,9 +702,7 @@ export function usePracticeSession({
       const xpAwarded = committedReceipt.xpAwarded;
       if (lifecycle.settleReview(activeCard.id, 'saved', activationId)) {
         studyReviewRecordsRef.current.delete(intentKey);
-        setReviewedCardId(activeCard.id);
-        if (persistedRating === 'easy') playRewardSound();
-        else if (persistedRating === 'good') playSuccessSound();
+        recordCommittedReview(committedReceipt);
         return {
           status: 'committed',
           xpAwarded,
@@ -632,7 +729,7 @@ export function usePracticeSession({
         setSavingReviewCardId(current => current === activeCard.id ? null : current);
       }
     }
-  }, [learning, lifecycle, ownerSessionToken, reportError, revealed, studyIndex]);
+  }, [learning, lifecycle, needsIntroduction, openView, ownerSessionToken, reportError, revealed, studyIndex]);
 
   const close = useCallback(() => {
     if (editorRef.current) return;
@@ -640,28 +737,39 @@ export function usePracticeSession({
     if (mode === 'spelling') quiz.clearSpelling();
     if (mode === 'language-drill') quiz.clearLanguageDrill();
     if (mode === 'story') quiz.clearStory();
-    if (mode === 'study') {
-      lifecycle.clear(mode);
-    }
+    if (mode === 'study' || mode === 'match' || mode === 'shadowing') lifecycle.clear(mode);
     openView('library');
   }, [lifecycle, mode, openView, quiz]);
+  const dismissStudyRecap = useCallback(() => setShowRecap(false), []);
 
   const updateSnapshotCard = useCallback((
     cardId: string,
     update: Partial<CardData> | ((card: CardData) => CardData),
   ) => {
-    setStudyCards(previous => previous.map(card => card.id === cardId
+    const nextCards = studyCardsRef.current.map(card => card.id === cardId
       ? typeof update === 'function' ? update(card) : { ...card, ...update }
-      : card));
+      : card);
+    studyCardsRef.current = nextCards;
+    setStudyCards(nextCards);
   }, []);
   const updateSnapshotCards = useCallback((cardIds: ReadonlySet<string>, fields: Partial<CardData>) => {
-    setStudyCards(previous => previous.map(card => cardIds.has(card.id) ? { ...card, ...fields } : card));
+    const nextCards = studyCardsRef.current.map(card => cardIds.has(card.id) ? { ...card, ...fields } : card);
+    studyCardsRef.current = nextCards;
+    setStudyCards(nextCards);
   }, []);
   const removeSnapshotCard = useCallback((cardId: string) => {
-    setStudyCards(previous => previous.filter(card => card.id !== cardId));
+    const nextCards = studyCardsRef.current.filter(card => card.id !== cardId);
+    studyCardsRef.current = nextCards;
+    setStudyCards(nextCards);
   }, []);
   const restoreSnapshotCard = useCallback((card: CardData) => {
-    setStudyCards(previous => [card, ...previous.filter(candidate => candidate.id !== card.id)]);
+    const nextCards = [card, ...studyCardsRef.current.filter(candidate => candidate.id !== card.id)];
+    studyCardsRef.current = nextCards;
+    setStudyCards(nextCards);
+  }, []);
+  const clearSnapshot = useCallback(() => {
+    studyCardsRef.current = [];
+    setStudyCards([]);
   }, []);
   useEffect(() => {
     if (!lifecycle.isActive('study')) return;
@@ -675,7 +783,6 @@ export function usePracticeSession({
     }
     setStudyIndex(current => Math.min(current, studyCards.length - 1));
   }, [lifecycle, onEmptyStudy, openView, studyCards.length]);
-  const clearSnapshot = useCallback(() => setStudyCards([]), []);
   const snapshot = useMemo<PracticeSnapshotPort>(() => ({
     findCard: cardId => studyCardsRef.current.find(card => card.id === cardId),
     getCards: () => studyCardsRef.current,
@@ -691,6 +798,8 @@ export function usePracticeSession({
     ? 'idle' as const
     : savingReviewCardId === activeCardId
       ? 'saving' as const
+      : syncPendingReviewCardId === activeCardId
+        ? 'sync-pending' as const
       : lifecycle.isReviewed(activeCardId)
         ? 'saved' as const
         : reviewFailure?.cardId === activeCardId
@@ -702,6 +811,7 @@ export function usePracticeSession({
 
   return {
     mode,
+    sessionKey: ownerSessionToken,
     study: isPracticeStateCurrent && isStudyScopeCurrent
       ? {
           sessionKey: studySessionKey,
@@ -709,11 +819,18 @@ export function usePracticeSession({
           index: studyIndex,
           recallMode,
           revealed,
+          needsIntroduction,
           reviewedCardId,
           isStarting: isStartingStudy,
           reviewStatus: activeReviewStatus,
           reviewError: activeReviewError,
           isPaused: Boolean(editingCardId && editorRef.current?.cardId === editingCardId),
+          goodCount,
+          againCount,
+          weakCards,
+          showRecap,
+          summary: lifecycle.reviewSummary(scopedStudyCards.map(card => card.id)),
+          xpEarned,
         }
       : {
           sessionKey: studySessionKey,
@@ -721,11 +838,18 @@ export function usePracticeSession({
           index: 0,
           recallMode: 'adaptive',
           revealed: false,
+          needsIntroduction: false,
           reviewedCardId: null,
           isStarting: false,
           reviewStatus: 'idle',
           reviewError: null,
           isPaused: false,
+          goodCount: 0,
+          againCount: 0,
+          weakCards: [],
+          showRecap: false,
+          summary: { saved: 0, skipped: 0, failed: 0, pending: 0, remaining: 0 },
+          xpEarned: 0,
         },
     quiz: scopedQuiz,
     commands: {
@@ -739,9 +863,10 @@ export function usePracticeSession({
       startShadowing: quiz.startShadowing,
       generateStory: quiz.generateStory,
       close,
-      reveal: () => { if (!isEditorOpen()) setRevealed(true); },
+      dismissStudyRecap, beginStudyRecall, requestStudyIntroduction,
+      reveal: () => { if (!isEditorOpen()) reveal(); },
       setRecallMode: value => { if (!isEditorOpen()) setRecallMode(value); },
-      setStudyIndex: value => { if (!isEditorOpen()) setStudyIndex(value); },
+      setStudyIndex: value => { if (!isEditorOpen()) navigateStudyIndex(value); },
       setStudyEditorOpen: (cardId, open) => {
         if (!lifecycle.isCurrent(ownerSessionToken)) return;
         if (open) {

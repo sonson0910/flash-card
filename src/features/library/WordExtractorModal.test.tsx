@@ -1,13 +1,13 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as Dialog from '@radix-ui/react-dialog';
 import { i18n } from '@lingui/core';
 import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
-import { buildExtractorPrompt, extractionFailureMessage, extractorItemsForScope, extractorScopeKey, extractorSelectionForScope, getSelectableExtractedWords, selectedExtractedWords, useExtractorRequestGuard, WordExtractorContent, WordExtractorModal } from './WordExtractorModal';
+import { extractionFailureMessage, extractorItemsForScope, extractorScopeKey, extractorSelectionForScope, getSelectableExtractedWords, selectedExtractedWords, useExtractorRequestGuard, WordExtractorContent, WordExtractorModal } from './WordExtractorModal';
 import { languageProfileForPair } from '../courses/courseLanguageProfile';
 
 const installMinimalReactDom = () => {
@@ -74,8 +74,6 @@ describe('WordExtractorModal', () => {
       { word: 'valid', translation: 'hợp lệ', partOfSpeech: 'noun', cefrLevel: '', example: '' },
       { word: 'blank translation', translation: '  ', partOfSpeech: 'noun', cefrLevel: '', example: '' },
     ], [])).toEqual([expect.objectContaining({ word: 'valid' })]);
-    expect(buildExtractorPrompt(' 안녕하세요 ', koreanToVietnamese)).toContain('từ vựng Korean');
-    expect(buildExtractorPrompt(' 안녕하세요 ', koreanToVietnamese)).toContain('nghĩa Vietnamese ngắn gọn');
     expect(extractorScopeKey(koreanToVietnamese, 'owner-a'))
       .not.toBe(extractorScopeKey(languageProfileForPair('ja', 'vi'), 'owner-b'));
   });

@@ -1,3 +1,4 @@
+import { msg } from '@lingui/core/macro';
 import { lazy, Suspense, type ReactNode } from 'react';
 import { Trans } from '@lingui/react';
 import type { LibraryScreenProps } from '../features/library/LibraryScreen';
@@ -19,7 +20,7 @@ const CreateCardDialog = lazy(() => Promise.all([
 export function AppDeferredCreateCardDialog(props: CreateCardDialogProps) {
   if (!props.model.open) return null;
   return (
-    <Suspense fallback={<span className="sr-only" role="status"><Trans id="shell.opening-dialog" message="Opening dialog" /></span>}>
+    <Suspense fallback={<span className="sr-only" role="status"><Trans {...msg({ context: 'shell.opening-dialog', message: 'Opening dialog' })} /></span>}>
       <CreateCardDialog {...props} />
     </Suspense>
   );
@@ -31,7 +32,7 @@ export function AppViewFallback({ label }: { label: ReactNode }) {
 
 export function AppDeferredLibraryView({ model, actions }: LibraryScreenProps) {
   return (
-    <Suspense fallback={<AppViewFallback label={<Trans id="shell.loading.library" message="Loading library" />} />}>
+    <Suspense fallback={<AppViewFallback label={<Trans {...msg({ context: 'shell.loading.library', message: 'Loading library' })} />} />}>
       <div className="async-content-enter" data-async-content="library">
         <LibraryScreen model={model} actions={actions} />
       </div>
@@ -49,7 +50,7 @@ interface AppDeferredPracticeViewProps {
 
 export function AppDeferredPracticeView({ session, actions, customDecks, openWeeklyRecap, onDeleteCard }: AppDeferredPracticeViewProps) {
   return (
-    <Suspense fallback={<AppViewFallback label={<Trans id="shell.loading.practice" message="Loading practice" />} />}>
+    <Suspense fallback={<AppViewFallback label={<Trans {...msg({ context: 'shell.loading.practice', message: 'Loading practice' })} />} />}>
       <div className="async-content-enter" data-async-content="practice">
         <PracticeScreen session={session} actions={actions} customDecks={customDecks} openWeeklyRecap={openWeeklyRecap} onDeleteCard={onDeleteCard} />
       </div>

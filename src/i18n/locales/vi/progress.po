@@ -13,6 +13,56 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:171
+msgctxt "weeklyRecap.action.share"
+msgid "Share"
+msgstr "Chia sẻ"
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:148
+msgctxt "weeklyRecap.unavailable"
+msgid "Word of the week, words learned, recall rate, study time, and streak need a reliable weekly data source we don't have yet, so they are left out rather than guessed."
+msgstr "Từ của tuần, số từ đã học, tỷ lệ nhớ lại, thời gian học và chuỗi cần một nguồn dữ liệu theo tuần đáng tin cậy mà hiện chưa có, nên được bỏ qua thay vì đoán."
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:168
+msgctxt "weeklyRecap.export-error"
+msgid "Could not create the image. Please try again."
+msgstr "Không tạo được ảnh. Vui lòng thử lại."
+
+#: src/components/stats/StatsCharts.tsx:119
+msgctxt "stats.review-activity-partial"
+msgid "Coverage begins {date}; this range is partial."
+msgstr "Dữ liệu bắt đầu từ {date}; khoảng thời gian này chưa đầy đủ."
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:149
+msgctxt "weeklyRecap.reviews-unavailable"
+msgid "Reviews this week are unavailable until activity covers all seven days."
+msgstr "Chưa có lượt ôn trong tuần này cho đến khi hoạt động bao phủ đủ bảy ngày."
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:161
+msgctxt "weeklyRecap.caption.label"
+msgid "Caption"
+msgstr "Chú thích"
+
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:150
+msgctxt "weeklyRecap.saved-warning"
+msgid "Showing saved recap. Recent reviews may not be included."
+msgstr "Đang hiển thị bản tổng kết đã lưu. Các lượt ôn gần đây có thể chưa được tính."
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:153
+msgctxt "weeklyRecap.selection.legend"
+msgid "Show on the card"
+msgstr "Hiển thị trên thẻ"
+
+#: src/components/stats/StatsCharts.tsx:119
+msgctxt "stats.review-range-30-days"
+msgid "30 days"
+msgstr "30 ngày"
+
+#: src/components/stats/StatsCharts.tsx:119
+msgctxt "stats.review-range-26-weeks"
+msgid "26 weeks"
+msgstr "26 tuần"
+
 #. js-lingui-explicit-id
 #: src/components/stats/AchievementsMatrix.tsx:74
 msgid "stats.achievements"
@@ -269,24 +319,9 @@ msgid "stats.recall-hard"
 msgstr "Khó"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:119
-msgid "stats.review-activity-partial"
-msgstr "Dữ liệu bắt đầu từ {date}; khoảng thời gian này chưa đầy đủ."
-
-#. js-lingui-explicit-id
 #: src/components/stats/StatsCharts.tsx:49
 msgid "stats.review-activity-unavailable"
 msgstr "Chưa có dữ liệu ôn tập cho đến khi bắt đầu ghi nhận."
-
-#. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:119
-msgid "stats.review-range-26-weeks"
-msgstr "26 tuần"
-
-#. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:119
-msgid "stats.review-range-30-days"
-msgstr "30 ngày"
 
 #. js-lingui-explicit-id
 #: src/components/stats/AchievementsMatrix.tsx:65
@@ -401,21 +436,6 @@ msgid "stats.words"
 msgstr "từ"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:172
-msgid "weeklyRecap.action.download"
-msgstr "Tải ảnh PNG"
-
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:171
-msgid "weeklyRecap.action.share"
-msgstr "Chia sẻ"
-
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:161
-msgid "weeklyRecap.caption.label"
-msgstr "Chú thích"
-
-#. js-lingui-explicit-id
 #: src/features/weeklyRecap/weeklyRecapSelection.ts:37
 msgid "weeklyRecap.caption.suggested-active"
 msgstr "{xp, number} XP và {days} ngày học trong tuần này."
@@ -455,11 +475,6 @@ msgstr "Tổng kết tuần của bạn"
 #: src/features/weeklyRecap/WeeklyRecapScreen.tsx:64
 msgid "weeklyRecap.empty"
 msgstr "Tuần này chưa có hoạt động học nào. Hãy quay lại sau một lượt ôn để xem tổng kết."
-
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:168
-msgid "weeklyRecap.export-error"
-msgstr "Không tạo được ảnh. Vui lòng thử lại."
 
 #. js-lingui-explicit-id
 #: src/features/weeklyRecap/WeeklyRecapScreen.tsx:67
@@ -523,21 +538,6 @@ msgid "weeklyRecap.privacy"
 msgstr "Ảnh bao gồm các chỉ số đã chọn và chú thích của bạn. Các từ riêng tư không bao giờ được tự động thêm vào."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:149
-msgid "weeklyRecap.reviews-unavailable"
-msgstr "Chưa có lượt ôn trong tuần này cho đến khi hoạt động bao phủ đủ bảy ngày."
-
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:150
-msgid "weeklyRecap.saved-warning"
-msgstr "Đang hiển thị bản tổng kết đã lưu. Các lượt ôn gần đây có thể chưa được tính."
-
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:153
-msgid "weeklyRecap.selection.legend"
-msgstr "Hiển thị trên thẻ"
-
-#. js-lingui-explicit-id
 #: src/features/weeklyRecap/WeeklyRecapScreen.tsx:46
 msgid "weeklyRecap.toggle.active-days"
 msgstr "Ngày học"
@@ -567,7 +567,7 @@ msgstr "Lượt ôn trong tuần này"
 msgid "weeklyRecap.toggle.total-xp"
 msgstr "Tổng XP"
 
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:148
-msgid "weeklyRecap.unavailable"
-msgstr "Từ của tuần, số từ đã học, tỷ lệ nhớ lại, thời gian học và chuỗi cần một nguồn dữ liệu theo tuần đáng tin cậy mà hiện chưa có, nên được bỏ qua thay vì đoán."
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:172
+msgctxt "weeklyRecap.action.download"
+msgid "Download PNG"
+msgstr "Tải ảnh PNG"

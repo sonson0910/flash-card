@@ -3,8 +3,8 @@ import { inflateSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 
 const BRAND_ASSETS = [
-  '../../../public/brand/sonflash-logo-source.png',
-  '../../../public/brand/sonflash-logo.png',
+  '../../../docs/assets/sonflash-logo-source.png',
+  '../../../docs/assets/sonflash-logo.png',
   '../../../public/brand/sonflash-logo-320.png',
   '../../../public/brand/sonflash-logo-192.png',
   '../../../public/brand/sonflash-logo-180.png',

@@ -242,7 +242,7 @@ export function LibraryManagementMenu({
                 {syncIdentity.status === 'authenticated' && syncIdentity.email && syncIdentity.email !== identityLabel && (
                   <div className="account-menu-email" title={syncIdentity.email}>{syncIdentity.email}</div>
                 )}
-                {hasWordCollectorTitle && <div className="account-menu-title"><Sparkles size={12} aria-hidden="true" /><Trans id="rewards.title.word-collector" message="Word Collector" /></div>}
+                {hasWordCollectorTitle && <div className="account-menu-title"><Sparkles size={12} aria-hidden="true" /><Trans {...msg({ context: 'rewards.title.word-collector', message: 'Word Collector' })} /></div>}
               </div>
             </div>
 
@@ -284,7 +284,7 @@ export function LibraryManagementMenu({
                   onClick={() => { setIsOpen(false); void onRetrySync?.(); }}
                 >
                   {isRetryingSync || syncStatus.busy ? <Loader2 size={17} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <RefreshCw size={17} aria-hidden="true" />}
-                  <Trans id="shell.sync.now" message="Sync now" />
+                  <Trans {...msg({ context: 'shell.sync.now', message: 'Sync now' })} />
                 </button>
               )}
               {canSignIn && (
@@ -299,23 +299,23 @@ export function LibraryManagementMenu({
                     ? <Loader2 size={17} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
                     : <LogIn size={17} aria-hidden="true" />}
                   {sessionLost
-                    ? <Trans id="shell.feedback.sign-in-again" message="Sign in again" />
-                    : <Trans id="shell.sync.sign-in" message="Sign in & sync" />}
+                    ? <Trans {...msg({ id: 'shell.feedback.sign-in-again', message: 'Sign in again' })} />
+                    : <Trans {...msg({ id: 'shell.sync.sign-in', message: 'Sign in & sync' })} />}
                 </button>
               )}
               {canSignOut && (
                 <button type="button" role="menuitem" className={menuItemClass} onClick={() => { setIsOpen(false); void onSignOut?.(); }}>
                   <LogOut size={17} aria-hidden="true" />
-                  <Trans id="shell.account.sign-out" message="Sign out of cloud sync" />
+                  <Trans {...msg({ context: 'shell.account.sign-out', message: 'Sign out of cloud sync' })} />
                 </button>
               )}
               {(canSignIn || canSignOut) && <div className="account-menu-divider" aria-hidden="true" />}
-              <a role="menuitem" href="/privacy.html" className={menuItemClass}><Shield size={17} aria-hidden="true" /><Trans id="shell.menu.privacy" message="Privacy" /></a>
-              <a role="menuitem" href="/terms.html" className={menuItemClass}><Shield size={17} aria-hidden="true" /><Trans id="shell.menu.terms" message="Terms" /></a>
-              <a role="menuitem" href="/browser-extension-privacy.html" className={menuItemClass}><Shield size={17} aria-hidden="true" /><Trans id="shell.menu.extension-privacy" message="Extension privacy" /></a>
+              <a role="menuitem" href="/privacy.html" className={menuItemClass}><Shield size={17} aria-hidden="true" /><Trans {...msg({ context: 'shell.menu.privacy', message: 'Privacy' })} /></a>
+              <a role="menuitem" href="/terms.html" className={menuItemClass}><Shield size={17} aria-hidden="true" /><Trans {...msg({ context: 'shell.menu.terms', message: 'Terms' })} /></a>
+              <a role="menuitem" href="/browser-extension-privacy.html" className={menuItemClass}><Shield size={17} aria-hidden="true" /><Trans {...msg({ context: 'shell.menu.extension-privacy', message: 'Extension privacy' })} /></a>
               <div className="account-menu-divider" aria-hidden="true" />
-              <button type="button" role="menuitem" className={menuItemClass} onClick={() => { setIsOpen(false); setAccountDataOpen(true); }}><Settings2 size={17} aria-hidden="true" /><Trans id="shell.menu.account-data" message="Account data" /></button>
-              {onOpenSettings && <button type="button" role="menuitem" className={menuItemClass} onClick={() => { setIsOpen(false); onOpenSettings(); }}><Settings2 size={17} aria-hidden="true" /><Trans id="shell.menu.appearance-settings" message="Appearance settings" /></button>}
+              <button type="button" role="menuitem" className={menuItemClass} onClick={() => { setIsOpen(false); setAccountDataOpen(true); }}><Settings2 size={17} aria-hidden="true" /><Trans {...msg({ context: 'shell.menu.account-data', message: 'Account data' })} /></button>
+              {onOpenSettings && <button type="button" role="menuitem" className={menuItemClass} onClick={() => { setIsOpen(false); onOpenSettings(); }}><Settings2 size={17} aria-hidden="true" /><Trans {...msg({ context: 'shell.menu.appearance-settings', message: 'Appearance settings' })} /></button>}
               <button
                 type="button"
                 role="menuitem"
@@ -324,7 +324,7 @@ export function LibraryManagementMenu({
                 title={_(msg({ id: 'shell.library-menu.zen-toggle-description', message: 'Toggle between Standard Learning mode and Zen Minimalist Glass mode' }))}
               >
                 <Sparkles size={17} aria-hidden="true" className={isZenMode ? 'text-cyan-600 dark:text-cyan-400 shrink-0 animate-pulse' : 'text-slate-400 shrink-0'} />
-                <span className="truncate">{isZenMode ? <Trans id="shell.menu.card-style-zen" message="Card style: Zen Glass" /> : <Trans id="shell.menu.card-style-standard" message="Card style: Standard" />}</span>
+                <span className="truncate">{isZenMode ? <Trans {...msg({ context: 'shell.menu.card-style-zen', message: 'Card style: Zen Glass' })} /> : <Trans {...msg({ context: 'shell.menu.card-style-standard', message: 'Card style: Standard' })} />}</span>
               </button>
               {onOpenInsights && (
                 <button
@@ -339,7 +339,7 @@ export function LibraryManagementMenu({
                   className={menuItemClass}
                 >
                   <BarChart3 size={17} aria-hidden="true" className="shrink-0" />
-                  <span className="truncate"><Trans id="shell.menu.insights" message="Learning insights" /></span>
+                  <span className="truncate"><Trans {...msg({ context: 'shell.menu.insights', message: 'Learning insights' })} /></span>
                 </button>
               )}
               {onExportLibrary && (
@@ -351,7 +351,7 @@ export function LibraryManagementMenu({
                   className={menuItemClass}
                 >
                   {isExporting ? <Loader2 size={17} className="animate-spin text-cyan-600 shrink-0 motion-reduce:animate-none" aria-hidden="true" /> : <Download size={17} aria-hidden="true" className="shrink-0" />}
-                  <span className="truncate">{isExporting ? <Trans id="shell.menu.exporting" message="Exporting library…" /> : <Trans id="shell.menu.export" message="Export library to Excel" />}</span>
+                  <span className="truncate">{isExporting ? <Trans {...msg({ context: 'shell.menu.exporting', message: 'Exporting library…' })} /> : <Trans {...msg({ context: 'shell.menu.export', message: 'Export library to Excel' })} />}</span>
                 </button>
               )}
               {onClearLibrary && (
@@ -370,7 +370,7 @@ export function LibraryManagementMenu({
                     className={`${menuItemClass} account-menu-danger-action`}
                   >
                     <Trash2 size={17} aria-hidden="true" className="shrink-0" />
-                    <span className="truncate"><Trans id="shell.menu.clear-library" message="Clear the entire library" /></span>
+                    <span className="truncate"><Trans {...msg({ context: 'shell.menu.clear-library', message: 'Clear the entire library' })} /></span>
                   </button>
                 </>
               )}

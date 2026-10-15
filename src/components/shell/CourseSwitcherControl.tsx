@@ -34,8 +34,8 @@ function CourseRow({ course, isActive, onSwitch, onArchive, onReopen, onManageGo
         <span className="claude-course-language-mark" aria-hidden="true">{TARGET_LANGUAGE_FLAG[course.targetLanguage]}</span>
         <span className="min-w-0 flex-1"><span className="block truncate font-bold">{targetLabel} <span aria-hidden="true">←</span> {nativeLabel}</span>
           {goal && <span className="claude-course-goal-summary mt-0.5 truncate text-xs font-medium text-[var(--sf-text-muted)]">{goalLabel ? _(goalLabel) : goal.kind}{goal.level ? ` · ${goal.level}` : ''}</span>}</span>
-        {course.status === 'archived' && <span className="claude-course-archived-badge shrink-0 rounded-full border border-[var(--sf-border)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--sf-text-muted)]"><Trans id="course.status.archived" message="Archived" /></span>}
-        {isActive && <span className="sr-only"><Trans id="course.status.active" message="Active course" /></span>}
+        {course.status === 'archived' && <span className="claude-course-archived-badge shrink-0 rounded-full border border-[var(--sf-border)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.status.archived', message: 'Archived' })} /></span>}
+        {isActive && <span className="sr-only"><Trans {...msg({ context: 'course.status.active', message: 'Active course' })} /></span>}
       </button>
       {course.status === 'active' && <button type="button" disabled={pending} onClick={onManageGoals} className={iconButtonClass} aria-label={_(msg({ id: 'course.action.manage-goals', message: 'Manage goals' }))} title={_(msg({ id: 'course.action.manage-goals', message: 'Manage goals' }))}><Settings2 size={16} aria-hidden="true" /></button>}
       {course.status === 'active' && <button type="button" disabled={pending} onClick={onArchive} className={iconButtonClass} aria-label={_(msg({ id: 'course.action.archive', message: 'Archive course' }))} title={_(msg({ id: 'course.action.archive', message: 'Archive course' }))}><Archive size={16} aria-hidden="true" /></button>}
@@ -55,11 +55,11 @@ function CreateCourseForm({ availableTargets, pending, onCreate, onCancel }: {
     if (!target || !availableTargets.includes(target)) setTarget(availableTargets[0] ?? null);
   }, [availableTargets, target]);
   if (availableTargets.length === 0) {
-    return <p className="px-3 py-2 text-sm text-[var(--sf-text-muted)]"><Trans id="course.create.no-target-left" message="All supported languages already have a course. Archive one to add another." /></p>;
+    return <p className="px-3 py-2 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.create.no-target-left', message: 'All supported languages already have a course. Archive one to add another.' })} /></p>;
   }
   return <form className="claude-course-create-form space-y-3 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-3" onSubmit={event => { event.preventDefault(); if (target) onCreate(target, native); }}>
     <fieldset>
-      <legend className="text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="course.create.target-label" message="Learn" /></legend>
+      <legend className="text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.create.target-label', message: 'Learn' })} /></legend>
       <div className="course-target-grid mt-1.5">
         {availableTargets.map(code => <button key={code} type="button" disabled={pending} aria-pressed={target === code} onClick={() => setTarget(code)}
           className="course-target-card min-h-11 rounded-xl border px-3 py-2 text-left text-sm font-bold text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60">
@@ -67,14 +67,14 @@ function CreateCourseForm({ availableTargets, pending, onCreate, onCancel }: {
         </button>)}
       </div>
     </fieldset>
-    <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="course.create.native-label" message="Explain in" />
+    <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.create.native-label', message: 'Explain in' })} />
       <select className="mt-1 block w-full min-h-11 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-2 text-sm text-[var(--sf-text)]" value={native} onChange={event => setNative(event.target.value as CourseNativeLanguage)}>
         {COURSE_NATIVE_LANGUAGES.map(code => <option key={code} value={code}>{_(NATIVE_LANGUAGE_LABEL[code])}</option>)}
       </select>
     </label>
     <div className="flex gap-2 pt-1">
-      <button type="submit" disabled={pending || !target} className="min-h-11 flex-1 rounded-xl bg-[var(--sf-brand)] px-3 text-sm font-bold text-[var(--sf-on-brand)] disabled:opacity-60"><Trans id="course.create.submit" message="Create course" /></button>
-      <button type="button" onClick={onCancel} className="min-h-11 rounded-xl border border-[var(--sf-border)] px-3 text-sm font-semibold text-[var(--sf-text-muted)]"><Trans id="course.create.cancel" message="Cancel" /></button>
+      <button type="submit" disabled={pending || !target} className="min-h-11 flex-1 rounded-xl bg-[var(--sf-brand)] px-3 text-sm font-bold text-[var(--sf-on-brand)] disabled:opacity-60"><Trans {...msg({ context: 'course.create.submit', message: 'Create course' })} /></button>
+      <button type="button" onClick={onCancel} className="min-h-11 rounded-xl border border-[var(--sf-border)] px-3 text-sm font-semibold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.create.cancel', message: 'Cancel' })} /></button>
     </div>
   </form>;
 }
@@ -107,9 +107,9 @@ export function CourseSwitcherControl() {
   }, [open]);
 
   if (model.status === 'error') return <div className="flex min-w-0 items-center gap-2">
-    <p role="alert" className="text-xs font-semibold text-[var(--sf-danger)]"><Trans id="course.error.read" message="Courses could not be loaded." /></p>
+    <p role="alert" className="text-xs font-semibold text-[var(--sf-danger)]"><Trans {...msg({ context: 'course.error.read', message: 'Courses could not be loaded.' })} /></p>
     <button type="button" onClick={() => void actions.retry()} className="liquid-control min-h-11 shrink-0 rounded-xl border border-[var(--sf-border)] px-3 text-sm font-bold text-[var(--sf-text)]">
-      <Trans id="course.action.retry" message="Retry" />
+      <Trans {...msg({ context: 'course.action.retry', message: 'Retry' })} />
     </button>
   </div>;
   if (model.status !== 'ready' || !model.profile) return null;
@@ -129,22 +129,22 @@ export function CourseSwitcherControl() {
   };
 
   return <div ref={rootRef} className="claude-course-switcher relative flex min-w-0 items-center">
-    {switchedTo && <p role="status" className="sr-only"><Trans id="course.switcher.switched" message="Switched to {language}" values={{ language: _(TARGET_LANGUAGE_LABEL[switchedTo]) }} /></p>}
+    {switchedTo && <p role="status" className="sr-only"><Trans {...msg({ context: 'course.switcher.switched', message: 'Switched to {language}' })} values={{ language: _(TARGET_LANGUAGE_LABEL[switchedTo]) }} /></p>}
     <button ref={triggerRef} type="button" aria-haspopup="dialog" aria-expanded={open}
       onClick={() => setOpen(current => !current)}
       className="claude-course-switcher-trigger flex min-h-11 min-w-0 items-center gap-1.5 truncate rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 text-sm font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none">
       {activeCourse ? <><span aria-hidden="true">{TARGET_LANGUAGE_FLAG[activeCourse.targetLanguage]}</span><span className="truncate">{_(TARGET_LANGUAGE_LABEL[activeCourse.targetLanguage])}</span></>
-        : <Trans id="course.switcher.no-active" message="Choose a course" />}
+        : <Trans {...msg({ context: 'course.switcher.no-active', message: 'Choose a course' })} />}
       <ChevronDown size={16} aria-hidden="true" className={`shrink-0 transition-transform ${open ? 'rotate-180' : ''} motion-reduce:transition-none`} />
     </button>
     {open && <div role="dialog" aria-label={_(msg({ id: 'course.switcher.dialog-label', message: 'Courses' }))}
       className="claude-course-switcher-panel fixed inset-x-0 bottom-0 z-50 overflow-y-auto border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 shadow-xl crystal-chamfer">
       <div className="flex items-center justify-between px-1 pb-2">
-        <h2 className="text-sm font-black text-[var(--sf-text)]"><Trans id="course.switcher.title" message="Your courses" /></h2>
+        <h2 className="text-sm font-black text-[var(--sf-text)]"><Trans {...msg({ context: 'course.switcher.title', message: 'Your courses' })} /></h2>
         <button type="button" onClick={closeAndFocus} className={iconButtonClass} aria-label={_(msg({ id: 'course.switcher.close', message: 'Close' }))}><X size={18} aria-hidden="true" /></button>
       </div>
       {model.errorCode && <p role="alert" className="mb-2 rounded-lg border border-[var(--sf-danger)] bg-[color-mix(in_srgb,var(--sf-danger)_10%,var(--sf-surface))] px-3 py-2 text-sm font-semibold text-[var(--sf-danger)]">
-        <Trans id="course.error.generic" message="That course action did not go through. Please try again." /></p>}
+        <Trans {...msg({ context: 'course.error.generic', message: 'That course action did not go through. Please try again.' })} /></p>}
       {managedCourse
         ? <CourseGoalsPanel course={managedCourse} onClose={() => setManagingCourseId(null)} />
         : <>
@@ -160,7 +160,7 @@ export function CourseSwitcherControl() {
                 onCreate={(target, native) => { void actions.createCourse({ targetLanguage: target, nativeLanguage: native }).then(result => { if (result.ok) setCreating(false); }); }}
                 onCancel={() => setCreating(false)} /></div>
             : availableTargets.length > 0 && <button type="button" onClick={() => setCreating(true)} className={`${rowClass} mt-1 justify-center border border-dashed border-[var(--sf-border)] text-[var(--sf-brand-text)]`}>
-              <Plus size={16} aria-hidden="true" /><Trans id="course.switcher.add" message="Add a language" /></button>}
+              <Plus size={16} aria-hidden="true" /><Trans {...msg({ context: 'course.switcher.add', message: 'Add a language' })} /></button>}
         </>}
     </div>}
   </div>;

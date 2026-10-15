@@ -1,3 +1,4 @@
+import { i18n } from '@lingui/core';
 import { ChevronLeft, ChevronRight, Mic, MicOff, Sparkles, Volume2, X } from 'lucide-react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
@@ -11,6 +12,8 @@ import { speechLocaleFor } from '../../lib/speechLocale';
 import { scoreSpeechMatch, type SpeechMatchResult } from '../../lib/speechMatch';
 import type { CardData } from '../../types/card';
 import { useCourseSession } from '../courses/CourseGate';
+import { PronunciationVideo, mediaButtonClass } from '../../components/flashcard/PronunciationVideo';
+import { WordContextVideo, contextForWord } from '../../components/flashcard/WordContextVideo';
 
 interface ShadowingViewProps {
   cards: CardData[];
@@ -28,11 +31,15 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
   const [matchResult, setMatchResult] = useState<SpeechMatchResult | null>(null);
   const [speechError, setSpeechError] = useState<string | null>(null);
   const recognitionRef = useRef<{ stop: () => void; abort?: () => void } | null>(null);
-  const audioPlaybackRef = useRef<WordAudioPlayback | null>(null);
+  const [practiceWord, setPracticeWord] = useState(false);
+  const [practiceContext, setPracticeContext] = useState(false);
   const finalizedRecognitionRef = useRef<unknown>(null);
 
+  const audioPlaybackRef = useRef<WordAudioPlayback | null>(null);
   const card = cards[currentIndex];
-  const targetSentence = card?.exampleSentence || card?.word || '';
+  useEffect(() => () => { audioPlaybackRef.current?.cancel(); }, [card?.id]);
+  const contextCue = card && contextForWord(card.word);
+  const targetSentence = (practiceContext && contextCue?.text) || (!practiceWord && card?.exampleSentence) || card?.word || '';
   const position = currentIndex + 1;
 
   const stopListening = useCallback(() => {
@@ -110,6 +117,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
 
       recognition.onend = () => {
         if (recognitionRef.current !== recognition) return;
+        recognitionRef.current = null;
         setIsListening(false);
         recognitionRef.current = null;
       };
@@ -117,6 +125,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
       recognitionRef.current = recognition;
       recognition.start();
     } catch {
+      recognitionRef.current = null;
       setSpeechError(_(msg({ id: 'practice.shadowing.microphone-error', message: 'Unable to open the microphone. Please grant microphone access in your browser.' })));
       setIsListening(false);
     }
@@ -147,6 +156,8 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
     setMatchResult(null);
     setTranscript('');
     setCurrentIndex(nextIndex);
+    setSpeechError(null);
+    setPracticeContext(false);
   };
 
   if (!card) return null;
@@ -167,7 +178,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
           <X size={24} />
         </button>
         <span id="shadowing-title" className="min-w-0 truncate font-display text-xs font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]">
-          <Trans id="practice.shadowing.title" message="Shadowing · say it after me" /> · {position} / {cards.length}
+          <Trans {...msg({ context: 'practice.shadowing.title', message: 'Shadowing · say it after me' })} /> · {position} / {cards.length}
         </span>
         <div
           role="progressbar"
@@ -187,7 +198,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
       <section className="mx-auto w-full max-w-5xl text-center">
         <div className="relative">
           <p className="mb-3 font-display text-xs font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]">
-            <Trans id="practice.shadowing.focus-word" message="Focus word" />{' '}
+            <Trans {...msg({ context: 'practice.shadowing.focus-word', message: 'Focus word' })} />{' '}
             <span lang={targetLanguage} className="text-[var(--sf-brand-text)]">{card.word}</span>
           </p>
           <h2 lang={targetLanguage} className="mx-auto max-w-4xl text-balance font-serif text-3xl font-bold leading-tight tracking-tight text-[var(--sf-text)] sm:text-5xl">
@@ -199,7 +210,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
             className="mx-auto mt-4 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 text-sm font-bold text-[var(--sf-brand-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2"
             aria-label={_(msg({ id: 'practice.shadowing.play-pronunciation', message: 'Play pronunciation for {word}' }).id, { word: card.word })}
           >
-            <Volume2 size={16} aria-hidden="true" /> <Trans id="practice.shadowing.listen" message="Listen" />
+            <Volume2 size={16} aria-hidden="true" /> <Trans {...msg({ context: 'practice.shadowing.listen', message: 'Listen' })} />
           </button>
         </div>
 
@@ -209,6 +220,16 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
           </p>
         )}
 
+        <div className="mt-4 flex flex-wrap justify-center gap-2" role="group" aria-label={i18n._(msg({ id: "shadowing-view.practice-target", message: "Practice target" }))}>
+          {[true, false].map(wordOnly => <button key={String(wordOnly)} type="button" aria-pressed={!practiceContext && practiceWord === wordOnly}
+            disabled={!wordOnly && !card.exampleSentence}
+            className={mediaButtonClass}
+            onClick={() => { stopListening(); setTranscript(''); setMatchResult(null); setSpeechError(null); setPracticeContext(false); setPracticeWord(wordOnly); }}>
+            {wordOnly ? 'Practice target word' : 'Practice card sentence'}
+          </button>)}
+          {contextCue && <button type="button" aria-pressed={practiceContext} className={mediaButtonClass}
+            onClick={() => { stopListening(); setTranscript(''); setMatchResult(null); setSpeechError(null); setPracticeContext(true); }}><Trans {...msg({ context: 'shadowing-view.practice-clip-sentence', message: 'Practice clip sentence' })} /></button>}
+        </div>
         <div className="mt-8 border-y border-[var(--sf-border)] bg-[color-mix(in_srgb,var(--sf-surface-raised)_72%,transparent)] p-4 sm:mx-auto sm:max-w-3xl sm:rounded-2xl sm:border">
           <div lang={targetLanguage} className="flex flex-wrap items-center justify-center gap-1.5 text-base font-semibold leading-relaxed sm:text-lg">
             {targetWords.map((w, i) => {
@@ -222,7 +243,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
                       ? isMatched
                         ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 font-bold'
                         : 'bg-rose-500/20 text-rose-600 dark:text-rose-300'
-                      : 'text-[var(--sf-text)]'
+                      : cleanWord === card.word.toLowerCase() ? 'bg-amber-500/15 font-bold text-[var(--sf-text)]' : 'text-[var(--sf-text)]'
                   }`}
                 >
                   {w}
@@ -230,16 +251,19 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
               );
             })}
           </div>
-          {card.exampleTranslation && (
+          {!practiceWord && !practiceContext && card.exampleTranslation && (
             <p lang={nativeLanguage} className="mt-3 text-xs text-[var(--sf-text-muted)]">
               {card.exampleTranslation}
             </p>
           )}
         </div>
 
+        {targetLanguage === 'en' && <PronunciationVideo key={card.id} word={card.word} />}
+        {targetLanguage === 'en' && <WordContextVideo key={`context-${card.id}`} word={card.word} />}
+        {/* Live Transcript / Score Gauge */}
         {transcript && (
           <div lang={targetLanguage} className="mt-4 rounded-xl border border-[color-mix(in_srgb,var(--sf-brand)_30%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,var(--sf-surface))] p-3 text-xs text-[var(--sf-brand-text)]">
-            <span className="font-bold"><Trans id="practice.shadowing.you-said" message="You said:" /> </span>"{transcript}"
+            <span className="font-bold"><Trans {...msg({ context: 'practice.shadowing.you-said', message: 'You said:' })} /> </span>"{transcript}"
           </div>
         )}
 
@@ -247,15 +271,18 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
           <div className="mt-4 flex items-center justify-center gap-3">
             <div className="flex items-center gap-1.5 rounded-2xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-2 text-sm font-black text-emerald-600 dark:text-emerald-300">
               <Sparkles size={16} />
-              <span><Trans id="practice.shadowing.accuracy" message="Accuracy: {score}%" values={{ score: matchResult.score }} /></span>
+              <span><Trans {...msg({ context: 'practice.shadowing.accuracy', message: 'Accuracy: {score}%' })} values={{ score: matchResult.score }} /></span>
             </div>
             {matchResult.score >= 80 && (
               <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                <Trans id="practice.shadowing.success" message="Nice pronunciation" />
+                <Trans {...msg({ context: 'practice.shadowing.success', message: 'Nice pronunciation' })} />
               </span>
             )}
           </div>
         )}
+
+        <p className="mt-4 max-w-md text-[11px] font-medium leading-relaxed text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'shadowing-view.the-browser-checks-whether-the-intended-words-were-recognised-it-', message: 'The browser checks whether the intended words were recognised; it does not assess individual sounds, phonemes, or accent.' })} /></p>
+        <p className="mt-2 max-w-md text-[11px] font-medium leading-relaxed text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'shadowing-view.pronunciation-assessment-is-unavailable-in-this-build-browser-tra', message: 'Pronunciation assessment is unavailable in this build; browser transcript matching remains available.' })} /></p>
 
         {speechError && (
           <p className="mt-4 rounded-xl border border-rose-400/30 bg-rose-500/10 p-3 text-xs font-semibold text-rose-600 dark:text-rose-300">
@@ -278,7 +305,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
           </button>
         </div>
         <p className="mt-3 text-xs font-bold text-[var(--sf-text-muted)]">
-          {isListening ? <Trans id="practice.shadowing.listening" message="Listening…" /> : <Trans id="practice.shadowing.start-copy" message="Tap the microphone and read the sentence." />}
+          {isListening ? <Trans {...msg({ context: 'practice.shadowing.listening', message: 'Listening…' })} /> : <Trans {...msg({ context: 'practice.shadowing.start-copy', message: 'Tap the microphone and read the sentence.' })} />}
         </p>
       </section>
 

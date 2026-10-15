@@ -1,44 +1,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "entitlements",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "expiresAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "reminderState",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "channels.push", "order": "ASCENDING" },
-        { "fieldPath": "nextEligibleSendAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "reminderState",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "channels.emailDigest", "order": "ASCENDING" },
-        { "fieldPath": "nextWeeklyDigestAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "ai_operations",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "reservedAt",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "cards",
       "queryScope": "COLLECTION",
       "fields": [
@@ -61,7 +23,69 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "category",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "customDeck",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "cards",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "customDeck",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "cards",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "customDeck",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nextReviewDate",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "cards",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "customDeck",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "difficulty",
           "order": "ASCENDING"
         },
         {
@@ -143,6 +167,10 @@
         {
           "fieldPath": "schemaVersion",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
         }
       ]
     },
@@ -179,28 +207,6 @@
         {
           "fieldPath": "__name__",
           "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "cards",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "category",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "customDeck",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
         }
       ]
     },
@@ -285,28 +291,6 @@
         {
           "fieldPath": "__name__",
           "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "cards",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "customDeck",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "difficulty",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
         }
       ]
     },
@@ -1587,24 +1571,6 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "customDeck",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "nextReviewDate",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "cards",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
           "fieldPath": "category",
           "order": "ASCENDING"
         },
@@ -1898,6 +1864,80 @@
         },
         {
           "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "entitlements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "expiresAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "reminderState",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "channels.push",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nextEligibleSendAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "reminderState",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "channels.emailDigest",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nextWeeklyDigestAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "ai_operations",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "reservedAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "track_memberships",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "lexemeId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "editorialStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "schemaVersion",
           "order": "ASCENDING"
         }
       ]
@@ -4164,9 +4204,18 @@
       "collectionGroup": "cards",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "language", "order": "ASCENDING" },
-        { "fieldPath": "masteredAt", "order": "DESCENDING" },
-        { "fieldPath": "__name__", "order": "DESCENDING" }
+        {
+          "fieldPath": "language",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "masteredAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
       ]
     }
   ],

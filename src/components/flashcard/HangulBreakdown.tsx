@@ -1,3 +1,4 @@
+import { msg } from '@lingui/core/macro';
 import { decomposeHangulSyllables } from '../../features/languagePacks/hangulRomanization';
 import { Trans } from '@lingui/react';
 import './hangul-breakdown.css';
@@ -8,7 +9,7 @@ export function HangulBreakdown({ word }: { readonly word: string }) {
 
   return (
     <section data-hangul-breakdown aria-labelledby="hangul-breakdown-title" className="hangul-breakdown">
-      <p id="hangul-breakdown-title" className="hangul-breakdown__title"><Trans id="flashcard.hangul-breakdown" message="Hangul breakdown" /></p>
+      <p id="hangul-breakdown-title" className="hangul-breakdown__title"><Trans {...msg({ context: 'flashcard.hangul-breakdown', message: 'Hangul breakdown' })} /></p>
       <div className="hangul-breakdown__grid">
         {syllables.map(({ block, parts }, index) => (
           <div key={`${block}-${index}`} className="hangul-breakdown__row">

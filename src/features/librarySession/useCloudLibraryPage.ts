@@ -128,6 +128,24 @@ export function useCloudLibraryPage({
   }, [controller, ownerId, page, queryKey, refreshKey]);
 
   useEffect(() => {
+    if (!ownerId) return;
+    const retryRead = () => {
+      if (globalThis.navigator?.onLine === false || isCloudBackoffActive(ownerId)
+        || !controller.getSnapshot().cloudUnavailable
+        || !controller.getSnapshot().canRetryAutomatically) return;
+      controller.activate({ ownerId, query: queryRef.current, queryKey, page });
+    };
+    const timer = window.setInterval(retryRead, 15_000);
+    window.addEventListener('online', retryRead);
+    window.addEventListener('focus', retryRead);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('online', retryRead);
+      window.removeEventListener('focus', retryRead);
+    };
+  }, [controller, ownerId, page, queryKey]);
+
+  useEffect(() => {
     // Depending on targetLanguage (not the whole query) means an unrelated
     // catalog filter change never re-triggers a stats read; only opening the
     // panel or switching the active course does.

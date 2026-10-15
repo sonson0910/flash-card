@@ -3,6 +3,14 @@ name: Deploy production artifact
 on:
   workflow_dispatch:
     inputs:
+      operation:
+        description: Promotion requires staging evidence; rollback requires sealed LKG evidence
+        required: true
+        default: promotion
+        type: choice
+        options:
+          - promotion
+          - rollback
       revision:
         description: Full revision shown by a successful release-candidate run
         required: true
@@ -15,6 +23,46 @@ on:
         description: Candidate SHA-256 shown in that workflow summary
         required: true
         type: string
+      archive_verification_run_id:
+        description: Successful read-only WORM retrieval workflow run ID
+        required: true
+        type: string
+      archive_verification_receipt_sha256:
+        description: SHA-256 of the read-only WORM retrieval receipt
+        required: true
+        type: string
+      firestore_safety_run_id:
+        description: Successful Firestore backup, restore, and TTL verification run ID required by promotion
+        required: false
+        type: string
+      firestore_safety_receipt_sha256:
+        description: SHA-256 of the Firestore release-safety receipt required by promotion
+        required: false
+        type: string
+      approval_nonce:
+        description: One-time lowercase hex nonce from the protected approval record
+        required: true
+        type: string
+      approval_expires_at_epoch:
+        description: Protected approval expiry as a UTC Unix timestamp
+        required: true
+        type: string
+      staging_run_id:
+        description: Successful candidate-bound staging deployment workflow run ID
+        required: false
+        type: string
+      staging_receipt_sha256:
+        description: Staging receipt SHA-256 shown in that workflow summary
+        required: false
+        type: string
+      staging_smoke_sha256:
+        description: SHA-256 of the approved bounded staging smoke evidence
+        required: false
+        type: string
+      rollback_evidence_ref:
+        description: Required protected incident/LKG evidence reference for rollback
+        required: false
+        type: string
       promote_functions:
         description: Deploy approved Functions before the compatible Hosting artifact
         required: true
@@ -23,14 +71,6 @@ on:
       app_check_observation_ref:
         description: Required approval/evidence reference when promoting Functions
         required: false
-        type: string
-      firestore_safety_run_id:
-        description: Successful Firestore backup, restore, and TTL verification run ID required by promotion
-        required: true
-        type: string
-      firestore_safety_receipt_sha256:
-        description: SHA-256 of the Firestore release-safety receipt required by promotion
-        required: true
         type: string
 
 permissions:
@@ -43,13 +83,22 @@ concurrency:
 
 jobs:
   validate_candidate:
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment: production-approval
     steps:
       - name: Validate immutable candidate inputs
         shell: bash
         env:
+          APPROVAL_EXPIRES_AT_EPOCH: ${{ inputs.approval_expires_at_epoch }}
+          APPROVAL_NONCE: ${{ inputs.approval_nonce }}
           APP_CHECK_OBSERVATION_REF: ${{ inputs.app_check_observation_ref }}
+          ARCHIVE_VERIFICATION_RECEIPT_SHA256: ${{ inputs.archive_verification_receipt_sha256 }}
+          ARCHIVE_VERIFICATION_RUN_ID: ${{ inputs.archive_verification_run_id }}
           CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
           CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -57,6 +106,17 @@ jobs:
           FIRESTORE_SAFETY_RUN_ID: ${{ inputs.firestore_safety_run_id }}
           REVISION: ${{ inputs.revision }}
           PROMOTE_FUNCTIONS: ${{ inputs.promote_functions }}
+          OPERATION: ${{ inputs.operation }}
+          PROTECTED_PROMOTION_APPROVAL_SHA256: ${{ vars.PROMOTION_APPROVAL_SHA256 }}
+          PROTECTED_PROMOTION_APPROVAL_NONCE: ${{ vars.PROMOTION_APPROVAL_NONCE }}
+          PROTECTED_PROMOTION_APPROVAL_EXPIRES_AT_EPOCH: ${{ vars.PROMOTION_APPROVAL_EXPIRES_AT_EPOCH }}
+          PROTECTED_ROLLBACK_APPROVAL_SHA256: ${{ vars.ROLLBACK_APPROVAL_SHA256 }}
+          PROTECTED_ROLLBACK_APPROVAL_NONCE: ${{ vars.ROLLBACK_APPROVAL_NONCE }}
+          PROTECTED_ROLLBACK_APPROVAL_EXPIRES_AT_EPOCH: ${{ vars.ROLLBACK_APPROVAL_EXPIRES_AT_EPOCH }}
+          ROLLBACK_EVIDENCE_REF: ${{ inputs.rollback_evidence_ref }}
+          STAGING_RECEIPT_SHA256: ${{ inputs.staging_receipt_sha256 }}
+          STAGING_RUN_ID: ${{ inputs.staging_run_id }}
+          STAGING_SMOKE_SHA256: ${{ inputs.staging_smoke_sha256 }}
         run: |
           test -n "$DEFAULT_BRANCH"
           test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"
@@ -72,12 +132,33 @@ jobs:
             echo "candidate_sha256 must be a lowercase SHA-256 digest" >&2
             exit 1
           fi
-          if [[ ! "$FIRESTORE_SAFETY_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]; then
-            echo "firestore_safety_run_id must be a positive workflow run ID" >&2
-            exit 1
-          fi
-          if [[ ! "$FIRESTORE_SAFETY_RECEIPT_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
-            echo "firestore_safety_receipt_sha256 must be a lowercase SHA-256 digest" >&2
+          [[ "$ARCHIVE_VERIFICATION_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
+          [[ "$ARCHIVE_VERIFICATION_RECEIPT_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$APPROVAL_NONCE" =~ ^[0-9a-f]{32,64}$ ]]
+          [[ "$APPROVAL_EXPIRES_AT_EPOCH" =~ ^[1-9][0-9]{9}$ ]]
+          now_epoch="$(date -u +%s)"
+          (( APPROVAL_EXPIRES_AT_EPOCH >= now_epoch ))
+          (( APPROVAL_EXPIRES_AT_EPOCH <= now_epoch + 1800 ))
+          if [[ "$OPERATION" == "promotion" ]]; then
+            [[ "$STAGING_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
+            [[ "$STAGING_RECEIPT_SHA256" =~ ^[0-9a-f]{64}$ ]]
+            [[ "$STAGING_SMOKE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+            [[ "$FIRESTORE_SAFETY_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
+            [[ "$FIRESTORE_SAFETY_RECEIPT_SHA256" =~ ^[0-9a-f]{64}$ ]]
+            [[ "$PROTECTED_PROMOTION_APPROVAL_SHA256" =~ ^[0-9a-f]{64}$ ]]
+            test "$APPROVAL_NONCE" = "$PROTECTED_PROMOTION_APPROVAL_NONCE"
+            test "$APPROVAL_EXPIRES_AT_EPOCH" = "$PROTECTED_PROMOTION_APPROVAL_EXPIRES_AT_EPOCH"
+            promotion_approval_sha256="$(printf '%s\n' "promotion:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ARCHIVE_VERIFICATION_RUN_ID:$ARCHIVE_VERIFICATION_RECEIPT_SHA256:$STAGING_RUN_ID:$STAGING_RECEIPT_SHA256:$STAGING_SMOKE_SHA256:$FIRESTORE_SAFETY_RUN_ID:$FIRESTORE_SAFETY_RECEIPT_SHA256:$PROMOTE_FUNCTIONS:$APPROVAL_NONCE:$APPROVAL_EXPIRES_AT_EPOCH:$APP_CHECK_OBSERVATION_REF" | sha256sum | cut -d' ' -f1)"
+            test "$promotion_approval_sha256" = "$PROTECTED_PROMOTION_APPROVAL_SHA256"
+          elif [[ "$OPERATION" == "rollback" ]]; then
+            [[ "$ROLLBACK_EVIDENCE_REF" =~ ^[A-Za-z0-9._/-]{8,200}$ ]]
+            [[ "$PROTECTED_ROLLBACK_APPROVAL_SHA256" =~ ^[0-9a-f]{64}$ ]]
+            test "$APPROVAL_NONCE" = "$PROTECTED_ROLLBACK_APPROVAL_NONCE"
+            test "$APPROVAL_EXPIRES_AT_EPOCH" = "$PROTECTED_ROLLBACK_APPROVAL_EXPIRES_AT_EPOCH"
+            rollback_approval_sha256="$(printf '%s\n' "rollback:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ARCHIVE_VERIFICATION_RUN_ID:$ARCHIVE_VERIFICATION_RECEIPT_SHA256:$ROLLBACK_EVIDENCE_REF:$PROMOTE_FUNCTIONS:$APPROVAL_NONCE:$APPROVAL_EXPIRES_AT_EPOCH:$APP_CHECK_OBSERVATION_REF" | sha256sum | cut -d' ' -f1)"
+            test "$rollback_approval_sha256" = "$PROTECTED_ROLLBACK_APPROVAL_SHA256"
+          else
+            echo "operation must be promotion or rollback" >&2
             exit 1
           fi
           if [[ "$PROMOTE_FUNCTIONS" == "true" && ! "$APP_CHECK_OBSERVATION_REF" =~ ^[A-Za-z0-9._:/-]{8,200}$ ]]; then
@@ -99,7 +180,37 @@ jobs:
           run_path="$(jq -r '.path' <<<"$run_json")"
           test "$run_path" = ".github/workflows/release-candidate.yml"
 
+      - name: Verify read-only WORM retrieval provenance
+        shell: bash
+        env:
+          ARCHIVE_VERIFICATION_RUN_ID: ${{ inputs.archive_verification_run_id }}
+          REVISION: ${{ inputs.revision }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${ARCHIVE_VERIFICATION_RUN_ID}")"
+          test "$(jq -er '.conclusion' <<<"$run_json")" = "success"
+          test "$(jq -er '.event' <<<"$run_json")" = "workflow_dispatch"
+          test "$(jq -er '.path' <<<"$run_json")" = ".github/workflows/verify-release-archive.yml"
+          artifact_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${ARCHIVE_VERIFICATION_RUN_ID}/artifacts?name=release-archive-verification-${REVISION}-${ARCHIVE_VERIFICATION_RUN_ID}")"
+          test "$(jq -er '[.artifacts[] | select(.expired == false and .workflow_run.id == ($run | tonumber))] | length' --arg run "$ARCHIVE_VERIFICATION_RUN_ID" <<<"$artifact_json")" = "1"
+
+      - name: Verify staging workflow provenance and receipt identity
+        if: ${{ inputs.operation == 'promotion' }}
+        shell: bash
+        env:
+          REVISION: ${{ inputs.revision }}
+          STAGING_RUN_ID: ${{ inputs.staging_run_id }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${STAGING_RUN_ID}")"
+          test "$(jq -er '.conclusion' <<<"$run_json")" = "success"
+          test "$(jq -er '.event' <<<"$run_json")" = "workflow_dispatch"
+          test "$(jq -er '.path' <<<"$run_json")" = ".github/workflows/deploy-staging.yml"
+          artifact_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${STAGING_RUN_ID}/artifacts?name=release-staging-receipt-${REVISION}-${STAGING_RUN_ID}")"
+          test "$(jq -er '[.artifacts[] | select(.expired == false and .workflow_run.id == ($run | tonumber))] | length' --arg run "$STAGING_RUN_ID" <<<"$artifact_json")" = "1"
+
       - name: Verify Firestore release-safety provenance and receipt identity
+        if: ${{ inputs.operation == 'promotion' }}
         shell: bash
         env:
           FIRESTORE_SAFETY_RUN_ID: ${{ inputs.firestore_safety_run_id }}
@@ -133,16 +244,27 @@ jobs:
         with:
           node-version: 22
 
-      - name: Download the sealed candidate from its source run
+      - name: Download the exact candidate materialized by read-only WORM retrieval
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: lingoflash-${{ inputs.revision }}
+          name: retrieved-candidate-${{ inputs.revision }}-${{ inputs.archive_verification_run_id }}
           path: candidate
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
-          run-id: ${{ inputs.candidate_run_id }}
+          run-id: ${{ inputs.archive_verification_run_id }}
+
+      - name: Download the exact staging deployment receipt
+        if: ${{ inputs.operation == 'promotion' }}
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-staging-receipt-${{ inputs.revision }}-${{ inputs.staging_run_id }}
+          path: staging-receipt
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.staging_run_id }}
 
       - name: Download the exact Firestore release-safety receipt
+        if: ${{ inputs.operation == 'promotion' }}
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: firestore-release-safety-${{ inputs.revision }}-${{ inputs.firestore_safety_run_id }}
@@ -151,7 +273,52 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ inputs.firestore_safety_run_id }}
 
+      - name: Download the exact read-only WORM retrieval receipt
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-archive-verification-${{ inputs.revision }}-${{ inputs.archive_verification_run_id }}
+          path: archive-verification
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.archive_verification_run_id }}
+
+      - name: Verify the read-only WORM retrieval receipt
+        shell: bash
+        env:
+          ARCHIVE_VERIFICATION_RECEIPT_SHA256: ${{ inputs.archive_verification_receipt_sha256 }}
+          ARCHIVE_VERIFICATION_RUN_ID: ${{ inputs.archive_verification_run_id }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          receipt=archive-verification/release-archive-verification.json
+          test "$(sha256sum "$receipt" | cut -d' ' -f1)" = "$ARCHIVE_VERIFICATION_RECEIPT_SHA256"
+          jq -e \
+            --arg revision "$REVISION" \
+            --arg sourceRunId "$CANDIDATE_RUN_ID" \
+            --arg candidateSha256 "$CANDIDATE_SHA256" \
+            --arg verificationRunId "$ARCHIVE_VERIFICATION_RUN_ID" \
+            '([keys[]] | sort) == ["archiveBucket","archiveSha256","bucketRetentionPeriodSeconds","bucketRetentionPolicyLocked","candidateSha256","generation","objectRetentionExpirationTime","objectTimeCreated","revision","schemaVersion","sourceRunId","status","verificationRunId","verifiedAt"] and .schemaVersion == 2 and .status == "verified" and .revision == $revision and .sourceRunId == $sourceRunId and .candidateSha256 == $candidateSha256 and .verificationRunId == $verificationRunId and (.archiveSha256 | test("^[0-9a-f]{64}$")) and (.generation | test("^[1-9][0-9]*$")) and (.archiveBucket | test("^[a-z0-9][a-z0-9._-]{1,61}[a-z0-9]$")) and (.bucketRetentionPeriodSeconds | type == "number" and . >= 7776000) and .bucketRetentionPolicyLocked == true and (.objectTimeCreated | type == "string") and (.objectRetentionExpirationTime | type == "string") and (.verifiedAt | type == "string")' \
+            "$receipt"
+          object_time_created_epoch="$(date --date="$(jq -er '.objectTimeCreated' "$receipt")" +%s)"
+          object_retention_expiration_epoch="$(date --date="$(jq -er '.objectRetentionExpirationTime' "$receipt")" +%s)"
+          (( object_retention_expiration_epoch >= object_time_created_epoch + 7776000 ))
+
+      - name: Verify the staging receipt against the exact candidate
+        if: ${{ inputs.operation == 'promotion' }}
+        shell: bash
+        env:
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          REVISION: ${{ inputs.revision }}
+          STAGING_RECEIPT_SHA256: ${{ inputs.staging_receipt_sha256 }}
+          STAGING_RUN_ID: ${{ inputs.staging_run_id }}
+        run: |
+          test "$(sha256sum staging-receipt/staging-deployment-receipt.json | cut -d' ' -f1)" = "$STAGING_RECEIPT_SHA256"
+          node scripts/staging-deployment-receipt.mjs verify staging-receipt/staging-deployment-receipt.json
+
       - name: Verify the Firestore release-safety receipt
+        if: ${{ inputs.operation == 'promotion' }}
         shell: bash
         env:
           FIRESTORE_SAFETY_RECEIPT_SHA256: ${{ inputs.firestore_safety_receipt_sha256 }}
@@ -188,6 +355,41 @@ jobs:
       - name: Verify every sealed candidate byte
         run: node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}"
 
+      - id: approval_auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.APPROVAL_CONSUMER_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_lifetime: 600s
+
+      - name: Atomically consume the protected approval
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.approval_auth.outputs.access_token }}
+          APPROVAL_EXPIRES_AT_EPOCH: ${{ inputs.approval_expires_at_epoch }}
+          APPROVAL_NONCE: ${{ inputs.approval_nonce }}
+          OPERATION: ${{ inputs.operation }}
+          RELEASE_ARCHIVE_BUCKET: ${{ vars.RELEASE_ARCHIVE_BUCKET }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          (( APPROVAL_EXPIRES_AT_EPOCH >= $(date -u +%s) ))
+          object="approval-consumption/$OPERATION/$APPROVAL_NONCE"
+          encoded_object="$(jq -rn --arg value "$object" '$value|@uri')"
+          jq -n --arg operation "$OPERATION" --arg nonce "$APPROVAL_NONCE" --arg revision "$REVISION" --arg runId "$GITHUB_RUN_ID" \
+            '{schemaVersion:1,operation:$operation,nonce:$nonce,revision:$revision,runId:$runId}' > approval-consumption.json
+          curl --fail-with-body --silent --show-error --request POST \
+            --header "Authorization: Bearer $ACCESS_TOKEN" \
+            --header 'Content-Type: application/json' \
+            --data-binary @approval-consumption.json \
+            "https://storage.googleapis.com/upload/storage/v1/b/$RELEASE_ARCHIVE_BUCKET/o?uploadType=media&ifGenerationMatch=0&name=$encoded_object" \
+            --output approval-consumption-response.json
+          jq -e --arg bucket "$RELEASE_ARCHIVE_BUCKET" --arg object "$object" \
+            '.bucket == $bucket and .name == $object and (.generation | test("^[1-9][0-9]*$"))' \
+            approval-consumption-response.json
+
       - name: Retain the validated candidate for protected deployment jobs
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -196,9 +398,136 @@ jobs:
           if-no-files-found: error
           retention-days: 2
 
+  deploy_indexes:
+    needs: validate_candidate
+    if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && inputs.operation == 'promotion' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production-hosting
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.revision }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify exact Index checkout
+        shell: bash
+        env:
+          REVISION: ${{ inputs.revision }}
+        run: test "$(git rev-parse HEAD)" = "$REVISION"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: validated-candidate-${{ github.run_id }}
+          path: candidate
+
+      - name: Re-verify the protected index candidate and target
+        shell: bash
+        env:
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+        run: |
+          firebase_project_pattern='^[a-z][a-z0-9-]{4,28}[a-z0-9]$'
+          firestore_database_pattern='^(\(default\)|[a-z][a-z0-9-]{2,61}[a-z0-9])$'
+          if [[ ! "$FIREBASE_PROJECT_ID" =~ $firebase_project_pattern ]]; then
+            echo "Protected FIREBASE_PROJECT_ID is missing or invalid." >&2
+            exit 1
+          fi
+          if [[ ! "$FIRESTORE_DATABASE_ID" =~ $firestore_database_pattern ]]; then
+            echo "Protected FIRESTORE_DATABASE_ID is missing or invalid." >&2
+            exit 1
+          fi
+          node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
+          node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID"
+
+      - name: Install the sealed Firebase CLI dependency tree
+        working-directory: candidate
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Verify the sealed Firebase CLI version
+        working-directory: candidate
+        shell: bash
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.34.0"
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
+
+      - name: Deploy and verify candidate Firestore composite indexes
+        shell: bash
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          report=artifacts/firestore-index-readiness.json
+          mkdir -p artifacts/firestore-index-readiness
+          test -s candidate/firestore.indexes.json
+          test -s candidate/firebase.promoted.json
+          gcloud firestore operations list \
+            --project="$FIREBASE_PROJECT_ID" \
+            --database="$FIRESTORE_DATABASE_ID" \
+            --limit=1000 --format=json > artifacts/firestore-index-readiness/baseline-operations.json
+          (cd candidate && ./node_modules/.bin/firebase deploy --only firestore:indexes --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive)
+          gcloud firestore databases describe \
+            --project="$FIREBASE_PROJECT_ID" \
+            --database="$FIRESTORE_DATABASE_ID" \
+            --format=json > artifacts/firestore-index-readiness/database.json
+          for attempt in $(seq 1 120); do
+            gcloud firestore indexes composite list \
+              --project="$FIREBASE_PROJECT_ID" \
+              --database="$FIRESTORE_DATABASE_ID" \
+              --format=json > artifacts/firestore-index-readiness/active-composite.json
+            gcloud firestore indexes fields list \
+              --project="$FIREBASE_PROJECT_ID" \
+              --database="$FIRESTORE_DATABASE_ID" \
+              --limit=1000 --format=json > artifacts/firestore-index-readiness/active-fields.json
+            gcloud firestore operations list \
+              --project="$FIREBASE_PROJECT_ID" \
+              --database="$FIRESTORE_DATABASE_ID" \
+              --limit=1000 --format=json > artifacts/firestore-index-readiness/operations.json
+            if node scripts/verify-firestore-index-preparation.mjs \
+              --indexes candidate/firestore.indexes.json \
+              --composite artifacts/firestore-index-readiness/active-composite.json \
+              --active artifacts/firestore-index-readiness/active-fields.json \
+              --database-metadata artifacts/firestore-index-readiness/database.json \
+              --operations artifacts/firestore-index-readiness/operations.json \
+              --baseline-operations artifacts/firestore-index-readiness/baseline-operations.json \
+              --target "$FIREBASE_PROJECT_ID/$FIRESTORE_DATABASE_ID" \
+              --revision "$REVISION" \
+              --output "$report"; then
+              jq -e --arg target "$FIREBASE_PROJECT_ID/$FIRESTORE_DATABASE_ID" --arg revision "$REVISION" \
+                '.active == true and .target == $target and .revision == $revision and (.indexDigest | test("^[a-f0-9]{64}$"))' "$report"
+              {
+                echo "Firestore index readiness: target=$FIREBASE_PROJECT_ID/$FIRESTORE_DATABASE_ID revision=$REVISION digest=$(jq -r '.indexDigest' "$report")"
+                jq -e '.' "$report"
+              } | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            if (( attempt < 120 )); then sleep 10; fi
+          done
+          echo "Firestore composite index readiness did not converge before the 20-minute timeout." >&2
+          exit 1
+
+      - name: Upload immutable Firestore index readiness report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-production-index-readiness-${{ inputs.revision }}-${{ github.run_id }}
+          path: artifacts/firestore-index-readiness.json
+          if-no-files-found: error
+          retention-days: 90
+
   deploy_hosting:
-    needs: [validate_candidate, deploy_functions]
-    if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}
+    needs: [validate_candidate, deploy_indexes, deploy_functions]
+    if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && (needs.deploy_indexes.result == 'success' || (inputs.operation == 'rollback' && needs.deploy_indexes.result == 'skipped')) && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production-hosting
@@ -241,7 +570,7 @@ jobs:
             exit 1
           fi
           node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
-          node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json
+          node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID"
 
       - name: Install the sealed Firebase CLI dependency tree
         working-directory: candidate
@@ -250,7 +579,7 @@ jobs:
       - name: Verify the sealed Firebase CLI version
         working-directory: candidate
         shell: bash
-        run: test "$(./node_modules/.bin/firebase --version)" = "15.29.0"
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.34.0"
 
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
@@ -263,8 +592,8 @@ jobs:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
 
   deploy_functions:
-    if: ${{ inputs.promote_functions }}
-    needs: validate_candidate
+    if: ${{ !cancelled() && inputs.promote_functions && needs.validate_candidate.result == 'success' && (needs.deploy_indexes.result == 'success' || (inputs.operation == 'rollback' && needs.deploy_indexes.result == 'skipped')) }}
+    needs: [validate_candidate, deploy_indexes]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: production-functions
@@ -316,7 +645,7 @@ jobs:
       - name: Verify the sealed Firebase CLI version
         working-directory: candidate
         shell: bash
-        run: test "$(./node_modules/.bin/firebase --version)" = "15.29.0"
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.34.0"
 
       - name: Materialize sealed Functions runtime dependencies
         run: npm ci --prefix candidate/functions --omit=dev --ignore-scripts --no-audit --no-fund
@@ -324,6 +653,8 @@ jobs:
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
 
       - name: Verify Pro intent Firestore index is ready before Functions promotion
         shell: bash

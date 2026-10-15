@@ -3,7 +3,7 @@
   "default_locale": "vi",
   "name": "SonFlash — Translate & Save",
   "short_name": "SonFlash",
-  "version": "1.6.3",
+  "version": "1.6.4",
   "description": "Translate selected text inline, or create and save one SonFlash flashcard with one AI request.",
   "permissions": [
     "activeTab",

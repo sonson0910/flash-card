@@ -8,6 +8,9 @@ import './index.css';
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Missing #root');
 
+// Buffered performance entries preserve startup measurements without delaying the app.
+void import('./lib/performanceVitals').then(({ observeWebVitals }) => observeWebVitals()).catch(() => undefined);
+
 createRoot(rootElement).render(
   <AppErrorBoundary>
     <I18nProvider><ThemeProvider><App /></ThemeProvider></I18nProvider>

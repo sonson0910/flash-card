@@ -10,6 +10,7 @@ const runtime = vi.hoisted(() => ({
   initializeApp: vi.fn(),
   initializeAppCheck: vi.fn(),
   initializeFirestore: vi.fn(),
+  appCheckSiteKeys: [] as string[],
 }));
 
 const appCheckDebugRuntime = globalThis as typeof globalThis & {
@@ -24,7 +25,11 @@ vi.mock('firebase/app', () => ({
 
 vi.mock('firebase/app-check', () => ({
   initializeAppCheck: runtime.initializeAppCheck,
-  ReCaptchaEnterpriseProvider: class ReCaptchaEnterpriseProvider {},
+  ReCaptchaEnterpriseProvider: class ReCaptchaEnterpriseProvider {
+    constructor(siteKey: string) {
+      runtime.appCheckSiteKeys.push(siteKey);
+    }
+  },
 }));
 
 vi.mock('firebase/auth', () => ({
@@ -46,6 +51,8 @@ describe('Firebase protected-functions runtime composition', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    runtime.appCheckSiteKeys.length = 0;
+    vi.stubGlobal('document', {});
     delete appCheckDebugRuntime.FIREBASE_APPCHECK_DEBUG_TOKEN;
     runtime.initializeApp.mockReturnValue(runtime.app);
     runtime.initializeAppCheck.mockReturnValue(runtime.appCheck);
@@ -59,20 +66,7 @@ describe('Firebase protected-functions runtime composition', () => {
     vi.restoreAllMocks();
   });
 
-  it('fails closed when the App Check site key is missing', async () => {
-    vi.stubEnv('VITE_FIREBASE_APP_CHECK_SITE_KEY', '');
-
-    const firebase = await import('./firebase');
-
-    expect(firebase.protectedFunctionsCapability).toEqual({
-      available: false,
-      reason: 'app-check-unconfigured',
-    });
-    expect(runtime.initializeAppCheck).not.toHaveBeenCalled();
-  });
-
   it('fails closed when App Check initialization throws', async () => {
-    vi.stubEnv('VITE_FIREBASE_APP_CHECK_SITE_KEY', 'enterprise-site-key');
     runtime.initializeAppCheck.mockImplementation(() => {
       throw new Error('provider detail');
     });
@@ -86,8 +80,13 @@ describe('Firebase protected-functions runtime composition', () => {
     });
   });
 
+  it('keeps the sealed host provider when an environment override requests another provider', async () => {
+    vi.stubEnv('VITE_FIREBASE_APP_CHECK_PROVIDER', 'v3');
+    await import('./firebase');
+    expect(runtime.initializeAppCheck).toHaveBeenCalledOnce();
+  });
+
   it('enables protected functions only after App Check initializes', async () => {
-    vi.stubEnv('VITE_FIREBASE_APP_CHECK_SITE_KEY', 'enterprise-site-key');
 
     const firebase = await import('./firebase');
 
@@ -99,7 +98,6 @@ describe('Firebase protected-functions runtime composition', () => {
     'uses the registered App Check debug token before initialization on %s',
     async hostname => {
     vi.stubEnv('DEV', false);
-    vi.stubEnv('VITE_FIREBASE_APP_CHECK_SITE_KEY', 'enterprise-site-key');
     vi.stubEnv('VITE_FIREBASE_APP_CHECK_DEBUG', 'true');
       vi.stubGlobal('location', { hostname });
       runtime.initializeAppCheck.mockImplementation(() => {
@@ -115,7 +113,6 @@ describe('Firebase protected-functions runtime composition', () => {
 
   it('does not enable App Check debug mode on a non-loopback DEV host', async () => {
     vi.stubEnv('DEV', true);
-    vi.stubEnv('VITE_FIREBASE_APP_CHECK_SITE_KEY', 'enterprise-site-key');
     vi.stubEnv('VITE_FIREBASE_APP_CHECK_DEBUG', 'true');
     vi.stubGlobal('location', { hostname: '192.0.2.1' });
 
@@ -179,6 +176,15 @@ describe('Firebase protected-functions runtime composition', () => {
     );
   });
 
+  it('uses the isolated Firestore port only in an emulator build', async () => {
+    vi.stubEnv('VITE_SONFLASH_E2E_EMULATOR', 'true');
+    vi.stubEnv('VITE_SONFLASH_FIRESTORE_EMULATOR_PORT', '8185');
+    vi.stubGlobal('window', {});
+    await import('./firebase');
+    const { connectFirestoreEmulator } = await import('firebase/firestore');
+    expect(connectFirestoreEmulator).toHaveBeenCalledWith(runtime.database, '127.0.0.1', 8185);
+  });
+
   it('keeps the Firebase-registered auth domain for production OAuth redirects', async () => {
     vi.stubGlobal('location', {
       hostname: 'encoded-hangout-433912-h2.web.app',
@@ -189,5 +195,28 @@ describe('Firebase protected-functions runtime composition', () => {
     expect(runtime.initializeApp).toHaveBeenCalledWith(expect.objectContaining({
       authDomain: 'encoded-hangout-433912-h2.web.app',
     }));
+  });
+
+  it('selects the isolated Firebase project on the approved staging host', async () => {
+    vi.stubGlobal('location', {
+      hostname: 'sonflash-staging-20260906.web.app',
+    });
+
+    await import('./firebase');
+
+    expect(runtime.initializeApp).toHaveBeenCalledWith(expect.objectContaining({
+      projectId: 'sonflash-staging-20260906',
+      authDomain: 'sonflash-staging-20260906.firebaseapp.com',
+    }));
+    expect(runtime.appCheckSiteKeys).toEqual(['6LfU3qstAAAAAO7T8BCllqTgTkhd_nWRHlqXhNU6']);
+  });
+
+  it('fails closed on an unapproved deployed host', async () => {
+    vi.stubGlobal('location', { hostname: 'attacker.example' });
+
+    const firebase = await import('./firebase');
+
+    expect(firebase.isFirebaseConfigured).toBe(false);
+    expect(runtime.initializeApp).not.toHaveBeenCalled();
   });
 });

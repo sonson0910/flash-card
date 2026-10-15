@@ -9,6 +9,14 @@ export type LessonMode =
   | 'cloze'
   | 'sentence-building';
 
+export type DailySessionTarget = 5 | 10 | 15;
+
+export const shouldUseListenPilot = (
+  mode: LessonMode | 'placement' | 'session' | null,
+  allowListenPilot: boolean,
+  pilotAvailable: boolean,
+): boolean => mode === 'listening' && allowListenPilot && pilotAvailable;
+
 export type ReviewRating = 'again' | 'hard' | 'good' | 'easy';
 
 export interface DailyPlanPresentation {
@@ -51,6 +59,11 @@ export const evidencedStudyStreak = (
 export const reviewFeedbackCue = (outcome: 'correct' | 'incorrect'): { readonly playSound: boolean; readonly haptic: HapticStyle } => (
   outcome === 'correct' ? { playSound: true, haptic: 'success' } : { playSound: false, haptic: 'warning' }
 );
+export interface TodayRecommendationPresentation {
+  readonly activityId: string;
+  readonly mode: LessonMode;
+  readonly reason: string;
+}
 
 export interface TodayScreenModel {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
@@ -90,6 +103,9 @@ export interface TodayScreenModel {
       readonly cardCount: number;
     };
   };
+  readonly recommendation?: TodayRecommendationPresentation;
+  /** Release B pilot availability; absent keeps the existing plan-gated behavior in callers. */
+  readonly listenPilotAvailable?: boolean;
 }
 
 export interface TodayScreenActions {
@@ -98,7 +114,10 @@ export interface TodayScreenActions {
   readonly retry: () => void;
   /** Launches the sequenced review → new → match → recap session for today's plan. */
   readonly startSession: () => void;
+  readonly continueReview: () => void;
+  readonly startDailyPlan: (target: DailySessionTarget) => void;
   readonly startLesson: (mode: LessonMode) => void;
+  readonly startRecommended: () => void;
   readonly startPlacement: () => void;
   readonly openMorePractice: (opener: HTMLButtonElement) => void;
 }
@@ -143,20 +162,34 @@ export interface LessonFeedbackPresentation {
   readonly explanation?: string;
 }
 
+export interface LessonCardPresentation {
+  readonly language?: string;
+  readonly translationLanguage?: string;
+  readonly word: string;
+  readonly translation: string;
+  readonly explanation?: string;
+  readonly phonetic?: string;
+  readonly exampleSentence?: string;
+  readonly exampleTranslation?: string;
+  readonly audioUrl?: string | null;
+}
+
 export interface LessonScreenModel {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
-  readonly status: 'answering' | 'feedback' | 'rating-saving' | 'rating-error' | 'complete';
+  readonly status: 'introduction' | 'guided' | 'answering' | 'feedback' | 'rating-saving' | 'rating-sync-pending' | 'rating-error' | 'complete';
   readonly mode: LessonMode;
   readonly modeLabel: string;
   readonly progress: { readonly current: number; readonly total: number };
   readonly prompt: string;
   readonly promptLanguage?: string;
   readonly answer: LessonAnswerPresentation;
+  readonly card?: LessonCardPresentation;
   readonly canSubmit: boolean;
   readonly canPlayAudio?: boolean;
   readonly feedback?: LessonFeedbackPresentation;
   readonly errorMessage?: string;
   readonly audioErrorMessage?: string;
+  readonly syncPendingReviewCount?: number;
   readonly liveMessage: string;
 }
 
@@ -166,6 +199,9 @@ export interface LessonScreenActions {
   readonly toggleSentenceToken: (occurrenceId: string) => void;
   readonly playAudio: () => void;
   readonly submitAnswer: () => void;
+  readonly chooseIntroduction?: (choice: 'guided' | 'independent-recall') => void;
+  readonly continueGuided?: () => void;
+  readonly requestGuidance?: () => void;
   readonly rate: (rating: ReviewRating) => void;
   readonly retryRating: () => void;
   readonly exit: () => void;

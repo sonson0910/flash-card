@@ -49,7 +49,33 @@ describe('architecture analyzer', () => {
       file: 'src/presentation/C.ts',
       lineCount: 2,
       imports: ['./A'],
+      fanIn: 1,
     });
+  });
+
+  it('discovers explicit Functions and extension roots with fan-in and largest modules', () => {
+    const report = analyzeSourceModules({
+      sources: {
+        'functions/src/index.ts': "import { handler } from './handler.js';\nexport { handler };",
+        'functions/src/handler.ts': 'export const handler = 1;',
+        'extensions/lingoflash/background.js': "importScripts('shared.js');",
+        'extensions/lingoflash/shared.js': "importScripts('background.js');",
+      },
+    });
+
+    expect(report.cycles).toEqual([
+      [
+        'extensions/lingoflash/background.js',
+        'extensions/lingoflash/shared.js',
+        'extensions/lingoflash/background.js',
+      ],
+    ]);
+    expect(report.modules.find(module => module.file === 'functions/src/handler.ts'))
+      .toMatchObject({ file: 'functions/src/handler.ts', fanIn: 1 });
+    expect(report.largestModules.slice(0, 2).map(module => module.file)).toEqual([
+      'functions/src/index.ts',
+      'extensions/lingoflash/background.js',
+    ]);
   });
 
   it('resolves extensionless and index imports without treating packages as graph edges', () => {
@@ -119,5 +145,8 @@ describe('architecture analyzer', () => {
       includePaths: ['src'],
       maxLines: { 'src/App.tsx': 450 },
     });
+    expect(createCurrentRepoArchitectureConfig(rootDir, {
+      includePaths: ['functions/src', 'extensions/lingoflash'],
+    }).includePaths).toEqual(['functions/src', 'extensions/lingoflash']);
   });
 });

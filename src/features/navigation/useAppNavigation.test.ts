@@ -81,9 +81,9 @@ describe('useAppNavigation', () => {
 
     const navigation = render();
     expect(navigation.viewMode).toBe('landing');
-    expect(navigation.viewHeading).toBe('SonFlash — Smart Vocabulary Learning');
+    expect(APP_VIEW_HEADINGS[navigation.viewMode].message).toBe('SonFlash — Smart Vocabulary Learning');
     navigation.setViewMode('story');
-    expect(render().viewHeading).toBe('Context story');
+    expect(APP_VIEW_HEADINGS[render().viewMode].message).toBe('Context story');
   });
 
   it('routes locale landing paths and keeps their prefix through app navigation', () => {

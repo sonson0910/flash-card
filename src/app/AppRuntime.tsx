@@ -1,5 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type Dispatch, type KeyboardEvent as ReactKeyboardEvent, type RefObject, type SetStateAction } from 'react';
-import { playFlipSound, playRewardSound } from '../lib/interactionSounds';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import type { useAppNavigation } from '../features/navigation/useAppNavigation';
 import { AppFeedback } from '../components/shell/AppFeedback';
 import { AppFooter } from '../components/shell/AppFooter';
@@ -11,7 +10,7 @@ import { scheduleNoticeDismissal, useOverlayState } from '../features/overlays/u
 import { appDependencies } from './appDependencies';
 import { db, isFirebaseConfigured } from '../lib/firebase';
 import { AppDeferredCreateCardDialog, AppDeferredLibraryView, AppDeferredPracticeView } from './AppDeferredViews';
-import { AppViewStage } from './AppViewStage';
+import { AppViewStage, capListenPracticeCards, listenPracticeUnavailableMessage } from './AppViewStage';
 import { WorkspaceLoadingPanel } from '../components/WorkspaceLoadingPanel';
 import { useAppLibraryRuntime } from './useAppLibraryRuntime';
 import { useAppLearningCoordination } from './useAppLearningCoordination';
@@ -48,7 +47,6 @@ import {
   queueLearningCeremonies,
   shouldShowViewHeading,
   statsRefreshForTarget,
-  studyShortcut,
   syncIdentityForShell,
   type CeremonyQueueState,
   viewStageLearningProps,
@@ -70,13 +68,15 @@ export {
   type QueuedCeremony,
 } from './app-runtime-shared';
 import '../styles/shell.css';
+import { OfflineReadiness } from '../features/offlineApp/OfflineReadiness';
+import type { ListenPracticeHandoff, ListenPracticeScope } from './AppViewStage';
 
 const AppOverlays = lazy(() => import('../components/AppOverlays').then(module => ({ default: module.AppOverlays })));
 const WebWordsRouteHost = lazy(() => import('../features/webWords/WebWordsRouteHost').then(module => ({ default: module.WebWordsRouteHost })));
 const AnimeReveal = lazy(() => Promise.all([
   import('../features/rewards/AnimeReveal'), loadCatalog(getActiveUiLocale(), 'rewards'),
 ]).then(([module]) => ({ default: module.AnimeReveal })));
-const dialogFallback = <span className="sr-only" role="status"><Trans id="shell.opening-dialog" message="Opening dialog" /></span>;
+const dialogFallback = <span className="sr-only" role="status"><Trans {...msg({ context: 'shell.opening-dialog', message: 'Opening dialog' })} /></span>;
 
 /**
  * Surfaces the live `useCourseSession()` value up to AppRuntime as plain
@@ -93,6 +93,20 @@ function CourseSessionBridge({ onSnapshot }: { readonly onSnapshot: (value: Cour
   }, [courseSession, onSnapshot]);
   return null;
 }
+
+export const getSafeListenPracticeHandoff = (
+  handoff: ListenPracticeHandoff | null,
+  scope: ListenPracticeScope,
+  activeOwnerId: string | null,
+): ListenPracticeHandoff | null => (
+  handoff
+    && handoff.ownerId === activeOwnerId
+    && scope.ownerId === activeOwnerId
+    && handoff.clipId === scope.clipId
+    && handoff.generation === scope.generation
+    ? handoff
+    : null
+);
 
 export interface LandingUser {
   readonly displayName?: string | null;
@@ -148,6 +162,8 @@ export default function AppRuntime({
   const [storedError, setStoredError] = useState<string | null>(null);
   const [error, setError] = useOwnerScopedMessage(identityOwnerId, identityOwnerRef, storedError, setStoredError);
   const [isRetryingSync, setIsRetryingSync] = useState(false);
+  const [listenPracticeHandoff, setListenPracticeHandoff] = useState<ListenPracticeHandoff | null>(null);
+  const listenPracticeScopeRef = useRef<ListenPracticeScope>({ ownerId: null, clipId: null, generation: -1 });
   const clearError = useCallback((message: string) => {
     setError(current => current === message ? null : current);
   }, [setError]);
@@ -333,7 +349,7 @@ export default function AppRuntime({
     user,
     libraryEpochState,
     librarySession,
-    shellSyncStatus,
+    shellSyncStatus: librarySyncStatus,
     isBrowserOnline,
     isExporting,
     cloudStats,
@@ -346,6 +362,7 @@ export default function AppRuntime({
     setInsightsRefreshRequest(request => request?.ownerId === currentOwnerId && request.targetLanguage === targetLanguage && request.requestId <= settledRequestId ? null : request);
     setWeeklyRecapRequest(request => request?.ownerId === currentOwnerId && request.targetLanguage === targetLanguage && request.requestId < settledRequestId ? null : request);
   }, [cloud.ownerId, cloud.statsSettledRequestId, currentOwnerId, targetLanguage]);
+  const shellSyncStatus = librarySyncStatus;
   const onboardingLibrary = useOnboardingLibraryState({
     ownerId: currentOwnerId,
     cloud,
@@ -355,6 +372,7 @@ export default function AppRuntime({
   const {
     libraryScreen,
     practiceSession,
+
     customDecks,
     intakeSharing,
     isLibraryBusy,
@@ -366,33 +384,6 @@ export default function AppRuntime({
   const { intakeSharing: intakeActions, practice: practiceActions, deleteCard } = learning.actions;
   const { share } = intakeSharing;
   const isShareModalOpen = share.isShareDialogOpen || share.isLoading;
-  const handlePracticeStageKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (practiceSession.mode !== 'study' || practiceSession.study.isPaused || event.defaultPrevented || event.nativeEvent.isComposing) return;
-    const target = event.target as { closest?: (selectors: string) => Element | null } | null;
-    if (target?.closest?.('button, a, input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [data-radix-popper-content-wrapper]')) return;
-    const study = practiceSession.study;
-    const shortcut = studyShortcut(event);
-    if (shortcut === 'reveal') {
-      event.preventDefault();
-      playFlipSound();
-      practiceActions.reveal();
-    } else if (shortcut === 'next') {
-      event.preventDefault();
-      practiceActions.setStudyIndex(Math.min(study.cards.length - 1, study.index + 1));
-    } else if (shortcut === 'previous') {
-      event.preventDefault();
-      practiceActions.setStudyIndex(Math.max(0, study.index - 1));
-    } else if (shortcut && shortcut !== 'bookmark') {
-      event.preventDefault();
-      void practiceActions.submitStudyRating(shortcut);
-    } else if (shortcut === 'bookmark') {
-      const card = study.cards[study.index];
-      if (!card) return;
-      event.preventDefault();
-      if (!card.bookmarked) playRewardSound();
-      void practiceSession.learning.toggleBookmark(card.id);
-    }
-  }, [practiceActions, practiceSession]);
   const libraryReady = !!(
     courseScopeReady
     && user
@@ -447,6 +438,41 @@ export default function AppRuntime({
       setIsRetryingSync(false);
     }
   };
+  const handleListenScopeChange = useCallback((scope: ListenPracticeScope) => {
+    listenPracticeScopeRef.current = scope;
+    setListenPracticeHandoff(current => current
+      && (
+        current.ownerId !== scope.ownerId
+        || current.clipId !== scope.clipId
+        || current.generation !== scope.generation
+      ) ? null : current);
+  }, []);
+  const handlePracticePhrase = useCallback((handoff: ListenPracticeHandoff) => {
+    const activeOwnerId = user?.uid ?? null;
+    const unavailableMessage = listenPracticeUnavailableMessage(activeOwnerId, !isBrowserOnline);
+    if (unavailableMessage) {
+      setNotice(unavailableMessage);
+      return;
+    }
+    if (!getSafeListenPracticeHandoff(handoff, listenPracticeScopeRef.current, activeOwnerId)
+      || !handoff.clipId
+      || handoff.cards.length === 0) return;
+    rememberOpener(overlayPracticeOpenerRef, handoff.opener);
+    setIsPracticeMenuOpen(false);
+    setListenPracticeHandoff({
+      ...handoff,
+      ownerId: activeOwnerId,
+      cards: capListenPracticeCards(handoff.cards),
+    });
+  }, [isBrowserOnline, overlayPracticeOpenerRef, rememberOpener, setIsPracticeMenuOpen, setNotice, user?.uid]);
+  const dismissListenPractice = useCallback(() => {
+    setListenPracticeHandoff(null);
+  }, []);
+  const activeListenPracticeHandoff = getSafeListenPracticeHandoff(
+    listenPracticeHandoff,
+    listenPracticeScopeRef.current,
+    user?.uid ?? null,
+  );
 
   if (!visible) return null;
   if (identity.status !== 'loading' && !user && viewMode !== 'landing') return null;
@@ -522,17 +548,18 @@ export default function AppRuntime({
         aria-label={_(msg({ id: 'shell.learning-workspace', message: 'Learning workspace' }))}
         className="claude-workspace flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
       >
-        <div onKeyDown={handlePracticeStageKeyDown} className="claude-workspace-inner relative w-full max-w-[1440px] mx-auto px-5 pt-5 pb-28 sm:px-8 lg:px-11 lg:pt-3 lg:pb-8">
+        <div className="claude-workspace-inner relative w-full max-w-[1440px] mx-auto px-5 pt-5 pb-28 sm:px-8 lg:px-11 lg:pt-3 lg:pb-8">
+          {viewMode !== 'landing' && <OfflineReadiness />}
           {shouldShowViewHeading(viewMode) && (
             <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{_(APP_VIEW_HEADINGS[viewMode])}</h1>
           )}
           <div ref={viewStageRef} data-app-view-stage className="min-h-full">
             {!courseScopeReady && user ? (courseSession?.model.ownerId === user.uid && courseSession.model.status === 'error'
               ? <div role="alert" className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)]">
-                  <p><Trans id="course.error.read" message="Courses could not be loaded." /></p>
-                  <button type="button" onClick={() => void courseSession.actions.retry()} className="liquid-control mt-3 min-h-11 rounded-xl border border-[var(--sf-border)] px-4 font-bold"><Trans id="course.action.retry" message="Retry" /></button>
+                  <p><Trans {...msg({ context: 'course.error.read', message: 'Courses could not be loaded.' })} /></p>
+                  <button type="button" onClick={() => void courseSession.actions.retry()} className="liquid-control mt-3 min-h-11 rounded-xl border border-[var(--sf-border)] px-4 font-bold"><Trans {...msg({ context: 'course.action.retry', message: 'Retry' })} /></button>
                 </div>
-              : <WorkspaceLoadingPanel><Trans id="course.loading" message="Preparing your courses…" /></WorkspaceLoadingPanel>) : <AppViewStage
+              : <WorkspaceLoadingPanel><Trans {...msg({ context: 'course.loading', message: 'Preparing your courses…' })} /></WorkspaceLoadingPanel>) : <AppViewStage
               {...viewStageNavigationActions(setViewMode)}
               {...viewStageLearningProps(library, learning, setNotice)}
               {...viewStageStatsProps(stats, cloud, overview)}
@@ -547,6 +574,8 @@ export default function AppRuntime({
               headingRef={viewHeadingRef}
               focusIntent={viewFocusIntent}
               openMorePractice={openPractice}
+              onPracticePhrase={handlePracticePhrase}
+              onListenScopeChange={handleListenScopeChange}
               openWeeklyRecap={openWeeklyRecap}
               weeklyRecapRequestOwnerId={activeWeeklyRecapRequest?.ownerId ?? null}
               weeklyRecapRequestSettled={weeklyRecapRequestSettled(activeWeeklyRecapRequest, cloud, targetLanguage, cloudStats)}
@@ -601,6 +630,11 @@ export default function AppRuntime({
               showClearConfirm,
               setShowClearConfirm,
             )}
+            cards={library.model.cards}
+            ownerId={currentOwnerId}
+            isOffline={!isBrowserOnline}
+            listenPracticeHandoff={activeListenPracticeHandoff}
+            onDismissListenPractice={dismissListenPractice}
             shareDialogOpen={isShareModalOpen}
             onDismissShareError={() => {
               intakeActions.clearShareError();

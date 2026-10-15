@@ -4,6 +4,10 @@ import { useVerifiedGamificationState } from '../gamification/verifiedGamificati
 import { isCardReadyForPractice } from '../../lib/srs';
 import { withTimeout } from '../../lib/async';
 import { normalizeCardLanguage } from '../../lib/cardIdentity';
+import {
+  ALL_PRACTICE_DECK_SCOPE,
+  type PracticeDeckScope,
+} from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
 import { cardsForLanguagePair } from './practiceModel';
 import {
@@ -24,7 +28,7 @@ export interface PracticePoolSource {
   load: (
     ownerId: string,
     maximum: number,
-    options: { includeFuture: boolean; targetLanguage?: string },
+    options: { includeFuture: boolean; targetLanguage?: string; customDeck: PracticeDeckScope },
   ) => Promise<CardData[]>;
   classifyFailure?: (error: unknown) => PracticePoolFailure;
 }
@@ -44,6 +48,12 @@ const boundedPoolSize = (maximum: number | undefined) => {
   return Math.min(MAXIMUM_PRACTICE_POOL_SIZE, Math.max(1, Math.floor(maximum)));
 };
 
+const matchesDeckScope = (card: CardData, scope: PracticeDeckScope): boolean => {
+  if (scope.kind === 'all') return true;
+  if (scope.kind === 'unassigned') return card.customDeck === null || card.customDeck === undefined;
+  return card.customDeck === scope.name;
+};
+
 export function createPracticePoolLoader({
   ownerId,
   cloudBackoffActive,
@@ -52,12 +62,16 @@ export function createPracticePoolLoader({
   targetLanguage,
   reportError,
 }: PracticePoolLoaderOptions) {
-  return async (maximum?: number, includeFuture = true): Promise<CardData[]> => {
+  return async (
+    maximum?: number,
+    includeFuture = true,
+    customDeck: PracticeDeckScope = ALL_PRACTICE_DECK_SCOPE,
+  ): Promise<CardData[]> => {
     const limit = boundedPoolSize(maximum);
     if (ownerId && source && !cloudBackoffActive) {
       try {
         const loaded = await withTimeout(
-          source.load(ownerId, limit, { includeFuture, targetLanguage }),
+          source.load(ownerId, limit, { includeFuture, targetLanguage, customDeck }),
           CLOUD_PRACTICE_POOL_TIMEOUT_MS,
         );
         return loaded.slice(0, limit);
@@ -71,7 +85,8 @@ export function createPracticePoolLoader({
 
     const normalizedTargetLanguage = normalizeCardLanguage(targetLanguage);
     const languageCards = cards.filter(card => (normalizeCardLanguage(card.language) || 'en') === normalizedTargetLanguage);
-    const candidates = includeFuture ? languageCards : languageCards.filter(isCardReadyForPractice);
+    const scopedCards = languageCards.filter(card => matchesDeckScope(card, customDeck));
+    const candidates = includeFuture ? scopedCards : scopedCards.filter(isCardReadyForPractice);
     return candidates.slice(0, limit);
   };
 }
@@ -94,7 +109,7 @@ export interface PracticeWorkspaceOptions {
 
 export interface PracticeWorkspace {
   model: {
-    session: Pick<PracticeSessionController, 'mode' | 'study' | 'quiz' | 'learning'>;
+    session: Pick<PracticeSessionController, 'mode' | 'sessionKey' | 'study' | 'quiz' | 'learning'>;
     gamification: ReturnType<typeof useVerifiedGamificationState>;
   };
   actions: PracticeSessionController['commands'];
@@ -161,6 +176,7 @@ export function usePracticeWorkspace({
     model: {
       session: {
         mode: session.mode,
+        sessionKey: session.sessionKey,
         study: session.study,
         quiz: session.quiz,
         learning: session.learning,

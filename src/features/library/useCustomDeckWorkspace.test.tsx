@@ -2,7 +2,10 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import type { PracticeDeckScope } from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
+import { CUSTOM_DECK_RESERVED_NAME_ERROR } from './customDecks';
+
 import {
   readCachedDecksForIdentity,
   readCachedDeckProfileForIdentity,
@@ -64,7 +67,7 @@ const setup = () => {
     owner: { id: 'owner-1', remoteAvailable: true },
     remoteDecks: ['IELTS'],
     cards: [assignedCard],
-    activeDeck: 'IELTS',
+    activeDeck: { kind: 'deck', name: 'IELTS' } satisfies PracticeDeckScope,
     knownLibraryTotal: 1,
     mutations,
     cache,
@@ -160,6 +163,16 @@ describe('useCustomDeckWorkspace', () => {
     });
   });
 
+  it('rejects reserved deck names without mutating remote or local state', async () => {
+    const { actions, cache, mutations, ports } = setup();
+
+    await actions.createDeck('Unassigned');
+
+    expect(mutations.add).not.toHaveBeenCalled();
+    expect(cache.write).not.toHaveBeenCalled();
+    expect(ports.reportError).toHaveBeenCalledWith(CUSTOM_DECK_RESERVED_NAME_ERROR);
+  });
+
   it('rejects a failed remote creation without publishing a local success', async () => {
     const { actions, cache, mutations, ports } = setup();
     const remoteCreate = deferred<undefined>();
@@ -198,4 +211,5 @@ describe('useCustomDeckWorkspace', () => {
     expect(ports.reportError).toHaveBeenCalledWith(expect.stringContaining('could not be deleted'));
     expect(ports.recoverCloud).toHaveBeenCalledOnce();
   });
+
 });

@@ -15,6 +15,7 @@
   const SETTINGS_STORAGE_KEY = 'lingoflash_extension_settings';
   const RECENT_LOOKUPS_STORAGE_KEY = 'lingoflash_recent_lookups';
   const DECK_METADATA_STORAGE_KEY = 'lingoflash_extension_deck_metadata';
+  const DECK_METADATA_GENERATION_STORAGE_KEY = 'lingoflash_extension_deck_metadata_generation';
   const DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY = 'lingoflash_extension_deck_retired_scopes';
   // Due count follows the exact same session-only, scope-retirement pattern as
   // deck metadata: it is real study state synced from the signed-in app, never
@@ -500,13 +501,13 @@
   const normalizeRetiredDeckScopes = value => {
     if (!Array.isArray(value)) return [];
     const seen = new Set();
-    for (const entry of value) {
+    for (const entry of [...value].reverse()) {
       const scope = normalizeDeckScope(entry);
       if (!scope || seen.has(scope)) continue;
       seen.add(scope);
       if (seen.size >= 16) break;
     }
-    return [...seen];
+    return [...seen].reverse();
   };
 
   const normalizeDueCount = value => Number.isSafeInteger(value) && value >= 0
@@ -802,7 +803,7 @@
 
   const clearRecentLookups = () => withRecentLookupMutationLock(async () => {
     if (transientStorage) {
-      try { await apiCall(transientStorage, 'remove', RECENT_LOOKUPS_STORAGE_KEY); } catch {}
+      await apiCall(transientStorage, 'remove', RECENT_LOOKUPS_STORAGE_KEY);
     }
     return [];
   });
@@ -820,6 +821,7 @@
     MAX_PAGE_TITLE_LENGTH,
     SETTINGS_STORAGE_KEY,
     DECK_METADATA_STORAGE_KEY,
+    DECK_METADATA_GENERATION_STORAGE_KEY,
     DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY,
     DUE_COUNT_STORAGE_KEY,
     DUE_COUNT_RETIRED_SCOPES_STORAGE_KEY,

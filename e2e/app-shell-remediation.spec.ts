@@ -508,7 +508,7 @@ test('Today and Progress empty states expose concrete next actions without initi
   await seedCourseProfile();
   await signIn(page, '/?view=today');
   await expect.poll(() => page.evaluate(() => document.activeElement === document.body)).toBe(true);
-  await expect(page.getByRole('button', { name: 'Add vocabulary' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add vocabulary', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Explore learning paths' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Progress' }).last().click();
@@ -602,13 +602,14 @@ test('study shortcuts require modifiers for single-character commands and views 
   await page.getByRole('button', { name: 'Study now' }).click();
   const studyHeading = page.getByRole('heading', { level: 1, name: 'Study session' });
   await expect(studyHeading).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Reveal answer' })).toBeVisible();
 
   await page.keyboard.press('Space');
   await expect(page.getByText('How well did you remember this card?')).toBeVisible();
   await page.keyboard.press('1');
   await expect(page.getByText('How well did you remember this card?')).toBeVisible();
   await page.keyboard.press('Alt+1');
-  await expect(page.getByText('Review saved. Move to the next card.')).toBeVisible();
+  await expect(page.getByText('Review saved on this device and waiting to sync.')).toBeVisible();
 
   await page.getByRole('button', { name: 'Close study mode' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary library' })).toBeFocused();

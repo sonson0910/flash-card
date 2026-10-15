@@ -213,7 +213,7 @@ export async function applyReviewViaCallable(
     const { httpsCallable } = await import('firebase/functions');
     const app = firebaseApp;
     if (!app) throw new Error('Firebase is not initialized.');
-    const callable = httpsCallable<ReviewCommand, unknown>(
+    const callable = httpsCallable<ReviewCommand & { expectedOwnerId: string }, unknown>(
       await getSonFlashFunctions(app),
       'reviewCardV2',
     );
@@ -222,6 +222,7 @@ export async function applyReviewViaCallable(
       const response = await callable({
         ...command,
         ...(timeZone ? { timeZone } : {}),
+        expectedOwnerId: userId,
         fields: command.fields,
         fieldMask: [...command.fieldMask],
       });

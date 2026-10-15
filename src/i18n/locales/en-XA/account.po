@@ -13,9 +13,19 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:84
-msgid "account.data.delete.busy"
+#: src/features/account/AccountDataSection.tsx:69
+msgctxt "account.data.title"
+msgid "Account data"
+msgstr ""
+
+#: src/features/account/AccountDataSection.tsx:79
+msgctxt "account.data.delete.warning"
+msgid "Cards, review schedule, and Pro access will be permanently deleted. The pilot does not charge money. You need to sign in with Google again to confirm."
+msgstr ""
+
+#: src/features/account/AccountDataSection.tsx:77
+msgctxt "account.data.delete.open"
+msgid "Delete my account"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -25,34 +35,9 @@ msgid "account.data.delete.cache-warning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:84
-msgid "account.data.delete.confirm"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:81
-msgid "account.data.delete.confirm-label"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:77
-msgid "account.data.delete.open"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/features/account/AccountDataSection.tsx:39
 #: src/features/account/AccountDataSection.tsx:46
 msgid "account.data.delete.started"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:79
-msgid "account.data.delete.warning"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:70
-msgid "account.data.description"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -71,32 +56,47 @@ msgid "account.data.error.local-cleanup"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:75
-msgid "account.data.export.excel"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:76
-msgid "account.data.export.json"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:76
-msgid "account.data.export.json.busy"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:68
-msgid "account.data.kicker"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:69
-msgid "account.data.title"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/features/account/AccountDataSection.tsx:72
 #: src/features/account/AccountDataSection.tsx:88
 msgid "account.dialog.close"
+msgstr ""
+
+#: src/features/account/AccountDataSection.tsx:81
+msgctxt "account.data.delete.confirm-label"
+msgid "Type <phrase>XÓA TÀI KHOẢN</phrase>"
+msgstr ""
+
+#: src/features/account/AccountDataSection.tsx:84
+msgctxt "account.data.delete.confirm"
+msgid "Confirm permanent deletion"
+msgstr ""
+
+#: src/features/account/AccountDataSection.tsx:70
+msgctxt "account.data.description"
+msgid "Download a copy of your data or delete your account."
+msgstr ""
+
+#: src/features/account/AccountDataSection.tsx:76
+msgctxt "account.data.export.json.busy"
+msgid "Exporting…"
+msgstr ""
+
+#: src/features/account/AccountDataSection.tsx:84
+msgctxt "account.data.delete.busy"
+msgid "Deleting…"
+msgstr ""
+
+#: src/features/account/AccountDataSection.tsx:76
+msgctxt "account.data.export.json"
+msgid "Download account data (JSON, excluding cards)"
+msgstr ""
+
+#: src/features/account/AccountDataSection.tsx:75
+msgctxt "account.data.export.excel"
+msgid "Download cards as Excel"
+msgstr ""
+
+#: src/features/account/AccountDataSection.tsx:68
+msgctxt "account.data.kicker"
+msgid "Privacy"
 msgstr ""

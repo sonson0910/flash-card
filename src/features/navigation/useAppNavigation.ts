@@ -3,7 +3,6 @@ import { getReducedMotionScrollBehavior, motionDurations } from '../../lib/motio
 import { getEffectiveReducedMotion } from '../../lib/motionPreference';
 import { useTheme } from '../theme/ThemeProvider';
 import { ENABLED_UI_LOCALES } from '../../i18n/locales';
-import { APP_VIEW_HEADINGS } from './app-view-headings';
 
 export { applyLegacyThemePreference as applyThemePreference, resolveInitialDarkMode } from '../theme/themePreference';
 export { APP_VIEW_HEADINGS } from './app-view-headings';
@@ -181,7 +180,6 @@ export function useAppNavigation({
   return {
     viewMode,
     setViewMode,
-    viewHeading: APP_VIEW_HEADINGS[viewMode].message,
     viewHeadingRef,
     viewFocusIntent,
     isDarkMode,

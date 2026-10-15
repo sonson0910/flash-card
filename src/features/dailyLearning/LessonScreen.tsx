@@ -106,6 +106,57 @@ function Feedback({ model, actions }: LessonScreenProps) {
 
 const ProgressSegments = ({ total, current }: { readonly total: number; readonly current: number }) => <div className="lesson-sequence-track" aria-hidden="true">{Array.from({ length: total }, (_, index) => <span key={index} data-segment-state={index < current - 1 ? 'complete' : index === current - 1 ? 'current' : 'upcoming'} />)}</div>;
 
+function CardDetails({ model }: LessonScreenProps) {
+  const card = model.card;
+  if (!card) return null;
+  return (
+    <div className="mt-5 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-muted)] p-5">
+      <h2 className="text-3xl font-black tracking-tight">{card.word}</h2>
+      <p className="mt-2 text-xl font-semibold" lang={model.card?.translationLanguage || 'vi'}>{card.translation}</p>
+      {card.phonetic && <p className="mt-2 text-sm text-[var(--sf-text-muted)]">{card.phonetic}</p>}
+      {card.explanation && <p className="mt-4 leading-6 text-[var(--sf-text-muted)]">{card.explanation}</p>}
+      {card.exampleSentence && <p className="mt-4 font-semibold">“{card.exampleSentence}”</p>}
+      {card.exampleTranslation && <p className="mt-1 text-sm text-[var(--sf-text-muted)]" lang={model.card?.translationLanguage || 'vi'}>{card.exampleTranslation}</p>}
+    </div>
+  );
+}
+
+function Introduction({ model, actions }: LessonScreenProps) {
+  const { _ } = useLingui();
+  return (
+    <section aria-labelledby="daily-lesson-heading" className="mx-auto max-w-3xl py-6 sm:py-12" data-session-shell="lesson">
+      <header className="flex items-start justify-between gap-4">
+        <div><p className="premium-kicker uppercase tracking-[0.16em]">{_(msg({ id: 'daily.lesson.guidance.0', message: 'Introduction' }))}</p><h1 id="daily-lesson-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl">{_(msg({ id: 'daily.lesson.guidance.1', message: 'Meet this word' }))}</h1></div>
+        <button type="button" onClick={actions.exit} className={`${actionClass} shrink-0`}>{_(msg({ id: 'daily.lesson.guidance.2', message: 'Exit lesson' }))}</button>
+      </header>
+      <CardDetails model={model} actions={actions} />
+      {model.canPlayAudio && <button type="button" onClick={actions.playAudio} className={`${actionClass} mt-5`}>{_(msg({ id: 'daily.lesson.guidance.3', message: 'Play audio' }))}</button>}
+      {model.audioErrorMessage && <p className="mt-4 rounded-xl border border-rose-500/70 bg-rose-500/5 p-4" role="alert">{model.audioErrorMessage}</p>}
+      <p className="mt-5 text-sm text-[var(--sf-text-muted)]">{_(msg({ id: 'daily.lesson.guidance.4', message: 'Take a moment to connect the word with its meaning.' }))}</p>
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <button type="button" onClick={() => actions.chooseIntroduction?.('guided')} className={`${primaryClass} w-full`}>{_(msg({ id: 'daily.lesson.guidance.5', message: "I don't know this yet" }))}</button>
+        <button type="button" onClick={() => actions.chooseIntroduction?.('independent-recall')} className={`${actionClass} w-full`}>{_(msg({ id: 'daily.lesson.guidance.6', message: 'I already know it — test me' }))}</button>
+      </div>
+    </section>
+  );
+}
+
+function GuidedPractice({ model, actions }: LessonScreenProps) {
+  const { _ } = useLingui();
+  return (
+    <section aria-labelledby="daily-lesson-heading" className="mx-auto max-w-3xl py-6 sm:py-12" data-session-shell="lesson">
+      <header className="flex items-start justify-between gap-4">
+        <div><p className="premium-kicker uppercase tracking-[0.16em]">{_(msg({ id: 'daily.lesson.guidance.7', message: 'Guided practice' }))}</p><h1 id="daily-lesson-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl">{_(msg({ id: 'daily.lesson.guidance.8', message: 'See it in context' }))}</h1></div>
+        <button type="button" onClick={actions.exit} className={`${actionClass} shrink-0`}>{_(msg({ id: 'daily.lesson.guidance.2', message: 'Exit lesson' }))}</button>
+      </header>
+      <CardDetails model={model} actions={actions} />
+      {model.canPlayAudio && <button type="button" onClick={actions.playAudio} className={`${actionClass} mt-5`}>{_(msg({ id: 'daily.lesson.guidance.3', message: 'Play audio' }))}</button>}
+      {model.audioErrorMessage && <p className="mt-4 rounded-xl border border-rose-500/70 bg-rose-500/5 p-4" role="alert">{model.audioErrorMessage}</p>}
+      <button type="button" onClick={actions.continueGuided} className={`${primaryClass} mt-6 w-full sm:w-auto`}>{_(msg({ id: 'daily.lesson.guidance.9', message: 'Continue to independent recall' }))}</button>
+    </section>
+  );
+}
+
 export function LessonScreen({ model, actions }: LessonScreenProps) {
   const { _ } = useLingui();
   const { family } = useTheme();
@@ -134,6 +185,8 @@ export function LessonScreen({ model, actions }: LessonScreenProps) {
     if (imeSubmitGuard.shouldBlockSubmit(event.nativeEvent as Event & { isComposing?: boolean; keyCode?: number }, submittedByPointer)) return;
     if (model.canSubmit) actions.submitAnswer();
   };
+  if (model.status === 'introduction') return <Introduction model={model} actions={actions} />;
+  if (model.status === 'guided') return <GuidedPractice model={model} actions={actions} />;
   if (model.status === 'complete') return <section aria-labelledby="daily-lesson-heading" className="lesson-complete-canvas daily-canvas" data-learning-canvas="lesson-complete">
     <div className="lesson-complete-card crystal-chamfer relative overflow-hidden rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-7 shadow-[var(--sf-panel-shadow)] sm:p-10">
       {showLumi && <Lumi pose="proud" size={88} className="crystal-ornament mx-auto mb-2" />}
@@ -168,6 +221,7 @@ export function LessonScreen({ model, actions }: LessonScreenProps) {
           <h2 className="lesson-prompt mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl" lang={model.promptLanguage}>{model.prompt}</h2>
           {model.mode === 'listening' && model.canPlayAudio && <button type="button" onClick={actions.playAudio} className={`${actionClass} lesson-audio mt-5`}><Volume2 size={17} aria-hidden="true" /><span className="ml-1">{_(msg({ id: 'daily.lesson.play-audio', message: 'Play audio' }))}</span></button>}
           {model.audioErrorMessage && <p className="lesson-audio-error mt-4 rounded-2xl border border-[var(--sf-danger)] bg-[color-mix(in_srgb,var(--sf-danger)_10%,var(--sf-surface))] p-4" role="alert">{model.audioErrorMessage}</p>}
+          {model.card && actions.requestGuidance && (model.status === 'answering' || model.status === 'feedback') && <button type="button" onClick={actions.requestGuidance} className={`${actionClass} mt-4 w-full`}>{_(msg({ id: 'daily.lesson.learn-first', message: "I don't know this — learn first" }))}</button>}
           <AnswerControl model={model} actions={actions} />
           {model.status === 'answering' && <button type="submit" onPointerDown={() => { pointerSubmit.current = true; setTimeout(() => { pointerSubmit.current = false; }, 0); }} disabled={!model.canSubmit} className={`${primaryClass} lesson-submit mt-6 w-full sm:w-auto`}>{_(msg({ id: 'daily.lesson.submit', message: 'Submit answer' }))}</button>}
         </form>

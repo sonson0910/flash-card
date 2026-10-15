@@ -240,7 +240,7 @@ describe('CatalogWorkspace inlined interactions', () => {
 
   it('settles a successful optimistic library addition as added', async () => {
     const adoption = deferred<{
-      status: 'completed'; candidateCount: number; createdCount: number; reusedCount: number; cards: [];
+      status: 'completed'; candidateCount: number; createdCount: number; reusedCount: number; cards: []; resolvedCards: [];
     }>();
     const adoptCards = vi.fn(() => adoption.promise);
     seedCatalogPage();
@@ -250,7 +250,7 @@ describe('CatalogWorkspace inlined interactions', () => {
     workspace = render({ adoptCards });
     expect(workspace.model.cards[0]?.libraryState).toBe('adding');
 
-    adoption.resolve({ status: 'completed', candidateCount: 1, createdCount: 1, reusedCount: 0, cards: [] });
+    adoption.resolve({ status: 'completed', candidateCount: 1, createdCount: 1, reusedCount: 0, cards: [], resolvedCards: [] });
     await vi.waitFor(() => {
       workspace = render({ adoptCards });
       expect(workspace.model.cards[0]?.libraryState).toBe('added');
@@ -259,7 +259,7 @@ describe('CatalogWorkspace inlined interactions', () => {
 
   it('does not settle an optimistic addition into a replacement owner scope', async () => {
     const adoption = deferred<{
-      status: 'completed'; candidateCount: number; createdCount: number; reusedCount: number; cards: [];
+      status: 'completed'; candidateCount: number; createdCount: number; reusedCount: number; cards: []; resolvedCards: [];
     }>();
     const adoptCards = vi.fn(() => adoption.promise);
     const notify = vi.fn();
@@ -270,7 +270,7 @@ describe('CatalogWorkspace inlined interactions', () => {
     workspace = render({ ownerId: 'owner-2', adoptCards, notify });
     expect(workspace.model.cards[0]?.libraryState).toBe('available');
 
-    adoption.resolve({ status: 'completed', candidateCount: 1, createdCount: 1, reusedCount: 0, cards: [] });
+    adoption.resolve({ status: 'completed', candidateCount: 1, createdCount: 1, reusedCount: 0, cards: [], resolvedCards: [] });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledOnce());
     await Promise.resolve();
     workspace = render({ ownerId: 'owner-2', adoptCards, notify });

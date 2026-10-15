@@ -1,3 +1,4 @@
+import { msg } from '@lingui/core/macro';
 import React, { lazy, Suspense, type ErrorInfo, type ReactNode } from 'react';
 import { Trans } from '@lingui/react';
 
@@ -29,7 +30,7 @@ export class AppRuntimeBoundary extends React.Component<AppRuntimeBoundaryProps,
 
     return <Suspense fallback={
       <button type="button" className="app-runtime-retry" onClick={this.props.onRetry}>
-        <Trans id="shell.runtime-error.retry" message="Retry workspace" />
+        <Trans {...msg({ id: 'shell.runtime-error.retry', message: 'Retry workspace' })} />
       </button>
     }><AppRuntimeError onRetry={this.props.onRetry} /></Suspense>;
   }

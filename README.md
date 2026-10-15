@@ -1,7 +1,7 @@
 # SonFlash
 
 <p align="center">
-  <img src="./public/brand/sonflash-logo.png" alt="SonFlash logo" width="88" />
+  <img src="./docs/assets/sonflash-logo.png" alt="SonFlash logo" width="88" />
 </p>
 
 <p align="center">
@@ -21,7 +21,7 @@
   <img src="https://img.shields.io/badge/Firebase-12-FFCA28?logo=firebase&logoColor=1F2937" alt="Firebase 12" />
 </p>
 
-![A premium stack of tactile flashcards on a dark study desk](./public/brand/sonflash-readme-hero.webp)
+![A premium stack of tactile flashcards on a dark study desk](./docs/assets/sonflash-readme-hero.webp)
 
 ## Overview
 
@@ -33,8 +33,8 @@ learning paths, and progress insights.
 The application is designed around three principles:
 
 - **Memory first** — FSRS scheduling brings each card back when recall needs reinforcement.
-- **Offline by default** — local persistence, bounded mirrors, and durable owner-scoped queues
-  keep the learning flow available through unreliable connections.
+- **Offline persistence** — Firestore's persistent cache keeps previously loaded learner
+  data available; protected callable mutations require a connection.
 - **Secure AI at the boundary** — production AI and image-provider credentials remain in
   App Check-protected Firebase callable functions, never in the browser bundle.
 
@@ -46,7 +46,7 @@ The application is designed around three principles:
 | Adaptive review | FSRS-based scheduling, explicit recall ratings, review history, mastery signals, and due-card prioritization |
 | Daily learning | Focused sessions for recognition, active recall, spelling, listening, sentence work, and contextual practice |
 | Learning paths | Personal progress routes plus versioned, provenance-aware catalog releases with offline activation |
-| Offline ownership | Firestore persistent cache, IndexedDB-backed replicas, bounded pagination, per-user retry queues, and safe account switching |
+| Offline ownership | Firestore persistent cache, bounded pagination, owner-scoped projections, and safe account switching |
 | Library tools | Search, categories, import/export, duplicate handling, private sharing, and responsive card management |
 | Progress | XP, memory-strength, category, and learning-state views with accessible alternatives |
 
@@ -57,17 +57,17 @@ system light/dark setting, or change Lumi, reduced motion and study-sound prefer
 These preferences are saved on this device. Deleting a card offers Undo; restoring it
 keeps its learning history. Clearing the entire library requires confirmation and cancels
 any pending delete Undo. If a signed-in session expires, recover that session before
-queued changes can be published.
+protected writes can resume.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
     UI[React 19 + TypeScript] --> APP[Feature coordination]
-    APP --> LIB[Owner-scoped library replica]
+    APP --> LIB[Owner-scoped library session]
     APP --> LEARN[Daily learning + practice]
     APP --> CATALOG[Versioned catalog cache]
-    LIB --> LOCAL[IndexedDB + durable retry queue]
+    LIB --> LOCAL[Firestore persistent cache]
     LIB --> FIRESTORE[(Firestore)]
     LEARN --> FSRS[FSRS scheduler]
     APP --> CALLABLE[App Check-protected callable functions]
@@ -77,8 +77,8 @@ flowchart LR
 ```
 
 The client keeps learner-owned data separate from shared catalog content. Firestore is the
-source of truth for signed-in users, while the local replica coordinates pagination, mirrors,
-tombstones, optimistic writes, offline replay, and owner transitions behind a narrow API.
+source of truth for signed-in users. Owner-scoped sessions coordinate pagination, cached
+projections and owner transitions; protected writes go through authenticated server operations.
 Catalog releases are immutable and independently cached so shared content never inherits
 private library ownership rules.
 
@@ -116,7 +116,8 @@ Open [http://localhost:3000](http://localhost:3000).
 
 AI-assisted card, story, and translation generation uses the protected Firebase callable.
 It requires a signed-in Firebase user and client App Check, while Gemini credentials stay
-in the server-side Secret Manager. Local emulator setup is out of scope. Pexels and
+in the server-side Secret Manager. Automated browser tests use isolated emulators as
+described below. Pexels and
 Unsplash keys remain optional development fallbacks; production never reads provider
 secrets from `VITE_*` variables or ships them in the browser bundle.
 
@@ -126,16 +127,11 @@ secrets from `VITE_*` variables or ships them in the browser bundle.
 | --- | --- | --- |
 | `VITE_PEXELS_API_KEY` | Local development, optional | Enables direct Pexels image search |
 | `VITE_UNSPLASH_API_KEY` | Local development, optional | Enables the Unsplash fallback |
-| `VITE_FIREBASE_APP_CHECK_SITE_KEY` | Public client configuration | reCAPTCHA Enterprise site key; required for protected production calls |
 | `VITE_FIREBASE_APP_CHECK_DEBUG` | Local development only | Enables the Firebase App Check debug-token flow |
 | `ENFORCE_APP_CHECK` | Functions deployment | Controls callable App Check enforcement; defaults to enabled |
 
 When using App Check locally, set `VITE_FIREBASE_APP_CHECK_DEBUG=true`, start the app, and
 safelist the debug token printed in the browser console. Never commit that token.
-
-Development also exposes a machine-local shared-device store at
-`~/.lingoflash-device-sync/lingoflash-2-cards.json`. Production uses authenticated,
-owner-isolated Firestore persistence instead.
 
 ## Quality gates
 
@@ -149,7 +145,7 @@ npm test -- --run
 # Firestore Rules tests (requires Java 21)
 npm run test:rules
 
-# Production build and all three browser engines
+# Auth, Firestore and Functions emulator journeys in all three browser engines
 npm run test:e2e
 
 # Complete release verification
@@ -163,21 +159,45 @@ landing pages and sitemap for `https://sonflash.app` from the landing catalogs; 
 checks their canonical and reciprocal language links. For release-grade evidence, run it from a clean
 checkout and bind it to the exact 40- or 64-character source revision.
 
+Browser commands build into `.e2e-build` and run Auth, Firestore and Functions together,
+leaving the production `dist` artifact intact. The runner temporarily disables emulator
+App Check and uses invalid AI-provider keys; it restores any existing Functions local
+parameter file (or removes one it created) and refuses to replace an existing local secret
+file. Java 21 and Playwright browsers are required. If the default Firestore port is
+occupied, use a controlled Firebase emulator config through `SONFLASH_E2E_FIREBASE_CONFIG`
+and set `VITE_SONFLASH_FIRESTORE_EMULATOR_PORT` to its matching port for the build. Run
+root unit tests before browser tests: a release-contract test needs port 4173 itself.
+
+UI translations use Lingui `msg({ context, message })` descriptors for local copy; the
+semantic context stays readable while Lingui generates compact runtime IDs. Keep explicit
+`id` values for direct lookups and externally referenced messages. Pass descriptors to
+runtime `Trans` with `{...msg(...)}` so production builds remove duplicate defaults.
+Changing generated source text changes its ID: run `npm run i18n:extract`, review the en/vi
+translations, then run `npm run i18n:check`. Landing loads shell/landing catalogs first;
+workspace catalog imports remain lazy. Test fixtures do not contribute Tailwind utilities.
+
 ## Production releases
 
 Production deployment is workflow-only. Local production deploys are intentionally not part
 of the supported release path.
 
+Public Firebase and App Check configuration is sealed in `firebase-applet-config.json`.
+The browser selects a target only from an approved Hosting hostname; unknown deployed
+hosts fail closed.
+
 1. [`release-candidate.yml`](./.github/workflows/release-candidate.yml) builds once, verifies
    the exact artifact, and seals revision and digest evidence.
-2. [`deploy-production.yml`](./.github/workflows/deploy-production.yml) promotes the verified
+2. [`deploy-staging.yml`](./.github/workflows/deploy-staging.yml) verifies that exact artifact
+   against the protected staging target, deploys without rebuilding, and emits a target-bound receipt.
+3. [`deploy-production.yml`](./.github/workflows/deploy-production.yml) promotes the verified
    candidate through protected Hosting and Functions environments.
-3. [`deploy-firestore-rules.yml`](./.github/workflows/deploy-firestore-rules.yml) performs the
+4. [`deploy-firestore-rules.yml`](./.github/workflows/deploy-firestore-rules.yml) performs the
    separately approved Firestore Rules cutover with migration and rollback evidence.
 
-Environment-specific credentials belong in protected GitHub environments. Configure
-`GCP_SERVICE_ACCOUNT_JSON`, `FIREBASE_PROJECT_ID`, `FIRESTORE_DATABASE_ID`, and the public
-App Check site key there; never commit service-account material.
+Environment-specific deployment identity belongs in protected GitHub environments.
+Staging uses GitHub OIDC Workload Identity Federation through
+`GCP_WORKLOAD_IDENTITY_PROVIDER` and `GCP_SERVICE_ACCOUNT`; no long-lived staging key is
+stored. Keep target IDs and origins in protected environment variables.
 
 See the [production rollout runbook](./docs/runbooks/phase-6-rollout.md) for candidate
 provenance, App Check observation, smoke testing, promotion, and rollback procedures. The
@@ -223,6 +243,21 @@ Start with the [architecture decisions](./docs/architecture/) when changing pers
 catalog ownership, lesson coordination, releases, or sharing semantics.
 
 ## Security notes
+
+Development glob tooling pins the depth-guard derivative of `braces` through the exact
+`package.json` override and lockfile integrity. The upstream
+[stack-exhaustion advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) has no patched
+upstream release; this is a real guard backport, not an audit exception. The reviewed
+[source revision](https://github.com/dieub/braces-depth-guard/tree/305a2e4bfe324bb53c336c1b03387ee1251c926f)
+bounds parsed and AST nesting to 100 and rejects cyclic expansion parent chains. It does
+not bound expansion cardinality or arbitrary malformed objects. Keep the normal audit
+gate and `scripts/braces-depth-guard.test.mjs`; verify registry signatures/provenance with
+`npm audit signatures`. Re-evaluate the override when a compatible upstream fix ships.
+The client Firebase version stays pinned to the reviewed SDK baseline. Its exact
+app-compat override and the Admin SDK database-compat override keep compat services
+registered on the same application instance for Rules tests. Revisit these pins together
+when upgrading the client SDK, and retain the gRPC security override.
+
 
 - Provider secrets are server-side in production and scanned out of build artifacts.
 - Private cards, progress, queues, and share ownership are scoped to the authenticated UID.

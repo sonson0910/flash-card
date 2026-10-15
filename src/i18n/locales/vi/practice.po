@@ -13,40 +13,462 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/features/practice/rich-story-view.tsx:216
+msgctxt "rich-story-view.retell-in-your-own-words"
+msgid "Retell in your own words"
+msgstr "Kể lại bằng lời của bạn"
+
+#: src/features/practice/WordMatchView.tsx:330
+msgctxt "practice.match.verifying-reward"
+msgid "Verifying your result…"
+msgstr "Đang xác minh kết quả…"
+
+#: src/features/practice/WordMatchView.tsx:352
+msgctxt "practice.match.retry-verification"
+msgid "Retry verification"
+msgstr "Thử xác minh lại"
+
+#: src/features/practice/ShadowingView.tsx:266
+msgctxt "practice.shadowing.you-said"
+msgid "You said:"
+msgstr "Bạn đã nói:"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:179
+msgctxt "languagePractice.ko.title"
+msgid "Build the syllable blocks"
+msgstr "Ghép các khối âm tiết"
+
+#: src/features/practice/rich-story-view.tsx:219
+msgctxt "rich-story-view.this-draft-stays-on-this-screen-and-is-not-submitted"
+msgid "This draft stays on this screen and is not submitted."
+msgstr "Bản nháp chỉ nằm trên màn hình này và không được gửi đi."
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:301
+msgctxt "languagePractice.feedback.incorrect"
+msgid "Try this card again in the next round."
+msgstr "Hãy thử lại thẻ này ở lượt sau."
+
+#: src/features/practice/WordMatchView.tsx:358
+msgctxt "practice.match.no-reward"
+msgid "This round did not award XP."
+msgstr "Vòng này không cộng XP."
+
+#: src/features/practice/rich-story-view.tsx:184
+msgctxt "rich-story-view.check-understanding"
+msgid "Check understanding"
+msgstr "Kiểm tra khả năng hiểu"
+
+#: src/features/practice/QuizView.tsx:174
+msgctxt "practice.results.keep-practising"
+msgid "Keep practising until the difficult words feel automatic."
+msgstr "Hãy tiếp tục luyện đến khi các từ khó trở nên tự nhiên."
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:252
+msgctxt "languagePractice.zh.tones"
+msgid "Pinyin tones"
+msgstr "Thanh điệu pinyin"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:213
+msgctxt "languagePractice.ko.instruction"
+msgid "Build the Hangul word from its meaning."
+msgstr "Ghép từ Hangul theo nghĩa cho sẵn."
+
+#: src/features/practice/StoryView.tsx:118
+msgctxt "practice.story.creating-progress"
+msgid "Creating your story…"
+msgstr "Đang tạo câu chuyện của bạn…"
+
+#: src/features/practice/StudyView.tsx:383
+msgctxt "study.recall-mode"
+msgid "Recall mode"
+msgstr "Chế độ gợi nhớ"
+
+#: src/features/practice/SessionRecapModal.tsx:97
+msgctxt "recap.weekly"
+msgid "View weekly recap"
+msgstr "Xem tổng kết tuần"
+
+#: src/features/practice/SessionRecapModal.tsx:82
+msgctxt "recap.retained"
+msgid "Retained"
+msgstr "Ghi nhớ"
+
+#: src/features/practice/SessionRecapModal.tsx:87
+msgctxt "recap.mastered"
+msgid "Remembered"
+msgstr "Đã nhớ"
+
+#: src/features/practice/ShadowingView.tsx:284
+msgctxt "shadowing-view.the-browser-checks-whether-the-intended-words-were-recognised-it-"
+msgid "The browser checks whether the intended words were recognised; it does not assess individual sounds, phonemes, or accent."
+msgstr "Trình duyệt kiểm tra xem các từ cần nói có được nhận diện hay không; không đánh giá từng âm, âm vị hay giọng nói."
+
+#: src/features/practice/StudyView.tsx:399
+msgctxt "study.swipe.good"
+msgid "GOOD 👍"
+msgstr "TỐT 👍"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:218
+msgctxt "languagePractice.en.instruction"
+msgid "Type the vocabulary word for this meaning."
+msgstr "Nhập từ vựng ứng với nghĩa này."
+
+#: src/features/practice/rich-story-view.tsx:210
+msgctxt "rich-story-view.check-grammar"
+msgid "Check grammar"
+msgstr "Kiểm tra ngữ pháp"
+
+#: src/features/practice/PracticeScreen.tsx:177
+msgctxt "practice.loading.story"
+msgid "Loading story"
+msgstr "Đang tải câu chuyện"
+
+#: src/features/practice/WordMatchView.tsx:395
+#: src/features/practice/WordMatchView.tsx:425
+msgctxt "practice.match.back"
+msgid "Back"
+msgstr "Quay lại"
+
+#: src/features/practice/StudyView.tsx:386
+msgctxt "study.recall-mode.adaptive"
+msgid "Adaptive difficulty"
+msgstr "Độ khó thích ứng"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:177
+msgctxt "languagePractice.en.pack"
+msgid "English pack"
+msgstr "Gói tiếng Anh"
+
+#: src/features/practice/SessionRecapModal.tsx:74
+msgctxt "recap.description"
+msgid "Here is what you strengthened today."
+msgstr "Đây là những gì bạn đã củng cố hôm nay."
+
+#: src/features/practice/WordMatchView.tsx:371
+msgctxt "practice.match.retry-new-round"
+msgid "Retry new round"
+msgstr "Thử lại vòng mới"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:328
+msgctxt "languagePractice.results.score"
+msgid "{correct} of {total} correct"
+msgstr "Đúng {correct}/{total} câu"
+
+#: src/features/practice/WordMatchView.tsx:405
+msgctxt "practice.match.time-up"
+msgid "Time is up"
+msgstr "Hết giờ"
+
+#: src/features/practice/StoryView.tsx:174
+msgctxt "practice.story.vocabulary-subtitle"
+msgid "A story built from your own vocabulary"
+msgstr "Câu chuyện được tạo từ từ vựng của bạn"
+
+#: src/features/practice/QuizView.tsx:140
+msgctxt "practice.quiz.results-subtitle"
+msgid "Your vocabulary review results"
+msgstr "Kết quả ôn từ vựng của bạn"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:215
+msgctxt "languagePractice.ja.instruction"
+msgid "Read the word, then type it in Japanese."
+msgstr "Đọc từ, rồi nhập đáp án bằng tiếng Nhật."
+
+#: src/features/practice/StudyView.tsx:413
+msgctxt "study-view.meet-this-word"
+msgid "Meet this word"
+msgstr "Làm quen với từ này"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:180
+msgctxt "languagePractice.ja.title"
+msgid "Type the reading"
+msgstr "Gõ cách đọc"
+
+#: src/features/practice/QuizView.tsx:156
+#: src/features/practice/SpellingView.tsx:167
+msgctxt "practice.results.accuracy"
+msgid "Accuracy"
+msgstr "Độ chính xác"
+
+#: src/features/practice/StudyView.tsx:429
+msgctxt "study-view.i-ve-reviewed-it-start-recall"
+msgid "I’ve reviewed it — start recall"
+msgstr "Tôi đã xem từ — bắt đầu nhớ lại"
+
+#: src/features/practice/QuizView.tsx:212
+#: src/features/practice/SpellingView.tsx:208
+msgctxt "practice.score"
+msgid "Score: {score} / {total}"
+msgstr "Điểm: {score} / {total}"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:304
+msgctxt "languagePractice.action.next"
+msgid "Next"
+msgstr "Tiếp"
+
+#: src/features/practice/WordMatchView.tsx:345
+msgctxt "practice.match.verification-failed"
+msgid "We could not verify your result. Your completed pairs are still here."
+msgstr "Không thể xác minh kết quả. Các cặp bạn đã hoàn thành vẫn còn đây."
+
+#: src/features/practice/QuizView.tsx:287
+#: src/features/practice/SpellingView.tsx:271
+msgctxt "practice.feedback.incorrect-prefix"
+msgid "Incorrect. The correct answer is"
+msgstr "Chưa đúng. Đáp án đúng là"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:217
+msgctxt "languagePractice.zh.instruction"
+msgid "Choose the tone for every pinyin syllable."
+msgstr "Chọn thanh điệu cho từng âm tiết pinyin."
+
+#: src/features/practice/QuizView.tsx:390
+#: src/features/practice/SpellingView.tsx:355
+msgctxt "practice.actions.next"
+msgid "Next"
+msgstr "Tiếp"
+
+#: src/features/practice/WordMatchView.tsx:418
+msgctxt "practice.match.try-again"
+msgid "Try again"
+msgstr "Thử lại"
+
+#: src/features/practice/rich-story-view.tsx:119
+msgctxt "rich-story-view.context-story"
+msgid "Context story"
+msgstr "Câu chuyện theo ngữ cảnh"
+
+#: src/features/practice/SpellingView.tsx:147
+msgctxt "practice.spelling.complete"
+msgid "Complete"
+msgstr "Hoàn thành"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:288
+msgctxt "languagePractice.ko.physicalKeyboard"
+msgid "Physical keyboard: type the 2-set keys shown on each button."
+msgstr "Bàn phím vật lý: gõ các phím 2-set ghi trên từng nút."
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:250
+msgctxt "languagePractice.zh.missingTones"
+msgid "This card needs verified pinyin tone data before it can be practised."
+msgstr "Thẻ này cần dữ liệu thanh điệu pinyin đã được xác minh trước khi luyện."
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:330
+msgctxt "languagePractice.results.try-again"
+msgid "Try again"
+msgstr "Thử lại"
+
+#: src/features/practice/rich-story-view.tsx:153
+msgctxt "rich-story-view.read-the-scenes"
+msgid "Read the scenes"
+msgstr "Đọc các đoạn truyện"
+
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:322
+#: src/features/practice/StudyView.tsx:347
 msgid "flashcard.audio.check-pronunciation"
 msgstr "Kiểm tra phát âm"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:319
+#: src/features/practice/StudyView.tsx:344
 msgid "flashcard.audio.play-pronunciation"
 msgstr "Phát âm"
 
-#. js-lingui-explicit-id
+#: src/features/practice/SpellingView.tsx:151
+msgctxt "practice.spelling.results-subtitle"
+msgid "Your spelling practice results"
+msgstr "Kết quả luyện chính tả của bạn"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:175
+msgctxt "languagePractice.ja.pack"
+msgid "Japanese pack · 日本語"
+msgstr "Gói tiếng Nhật · 日本語"
+
+#: src/features/practice/PracticeScreen.tsx:87
+msgctxt "practice.loading.quiz"
+msgid "Loading quiz"
+msgstr "Đang tải bài kiểm tra"
+
+#: src/features/practice/WordMatchView.tsx:314
+msgctxt "practice.match.instruction"
+msgid "Choose a word in {targetLanguageName}, then its meaning in {nativeLanguageName}."
+msgstr "Chọn một từ {targetLanguageName}, rồi chọn nghĩa bằng {nativeLanguageName}."
+
+#: src/features/practice/StudyView.tsx:496
+msgctxt "study.shortcuts"
+msgid "Study shortcuts"
+msgstr "Phím tắt học tập"
+
+#: src/features/practice/WordMatchView.tsx:287
+#: src/features/practice/WordMatchView.tsx:298
+msgctxt "practice.match.title"
+msgid "Word match · 60 seconds"
+msgstr "Ghép từ · 60 giây"
+
+#: src/features/practice/PracticeScreen.tsx:47
+msgctxt "practice.loading.study"
+msgid "Loading study session"
+msgstr "Đang tải phiên học"
+
+#: src/features/practice/SessionRecapModal.tsx:87
+#: src/features/practice/SessionRecapModal.tsx:88
+msgctxt "recap.word-count"
+msgid "{count, plural, one {# word} other {# words}}"
+msgstr "{count, plural, other {# từ}}"
+
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:304
-msgid "languagePractice.action.check"
+msgctxt "languagePractice.action.check"
+msgid "Check"
 msgstr "Kiểm tra"
 
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:233
-msgid "languagePractice.action.exit"
-msgstr "Thoát"
+#: src/features/practice/StudyView.tsx:389
+msgctxt "study.recall-mode.listen-to-word"
+msgid "Listen → Word"
+msgstr "Nghe → Từ"
 
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:303
-msgid "languagePractice.action.hint"
-msgstr "Gợi ý"
+#: src/features/practice/rich-story-view.tsx:204
+msgctxt "rich-story-view.grammar-transformation"
+msgid "Grammar transformation:"
+msgstr "Chuyển đổi ngữ pháp:"
+
+#: src/features/practice/WordMatchView.tsx:325
+msgctxt "practice.match.complete-copy"
+msgid "You matched all {pairCount} pairs in {seconds} seconds."
+msgstr "Bạn đã ghép đủ {pairCount} cặp trong {seconds} giây."
+
+#: src/features/practice/SpellingView.tsx:322
+msgctxt "practice.spelling.correct"
+msgid "Correct"
+msgstr "Đúng"
+
+#: src/features/practice/ShadowingView.tsx:213
+msgctxt "practice.shadowing.listen"
+msgid "Listen"
+msgstr "Nghe"
+
+#: src/features/practice/StudyView.tsx:375
+msgctxt "study-view.summary"
+msgid "Summary"
+msgstr "Tổng kết"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:182
+msgctxt "languagePractice.en.title"
+msgid "Spell the word"
+msgstr "Viết từ vựng"
+
+#: src/features/practice/QuizView.tsx:185
+#: src/features/practice/SpellingView.tsx:181
+#: src/features/practice/StoryView.tsx:144
+msgctxt "practice.actions.try-again"
+msgid "Try again"
+msgstr "Thử lại"
+
+#: src/features/practice/PracticeScreen.tsx:130
+msgctxt "practice.loading.language-drill"
+msgid "Loading language drill"
+msgstr "Đang tải bài luyện ngôn ngữ"
+
+#: src/features/practice/SessionRecapModal.tsx:126
+msgctxt "recap.tomorrow-error"
+msgid "Count unavailable"
+msgstr "Không lấy được số thẻ"
+
+#: src/features/practice/WordMatchView.tsx:322
+msgctxt "practice.match.complete-title"
+msgid "Pairs complete"
+msgstr "Hoàn thành các cặp"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:250
+msgctxt "languagePractice.loadError"
+msgid "This language exercise could not load. Please try again."
+msgstr "Không thể tải bài luyện ngôn ngữ này. Hãy thử lại."
+
+#: src/features/practice/WordMatchView.tsx:386
+msgctxt "practice.match.new-round"
+msgid "New round"
+msgstr "Vòng mới"
+
+#: src/features/practice/SessionRecapModal.tsx:123
+msgctxt "recap.tomorrow"
+msgid "Tomorrow"
+msgstr "Ngày mai"
+
+#: src/features/practice/StoryView.tsx:197
+msgctxt "practice.story.translation-language"
+msgid "{languageName} translation"
+msgstr "Bản dịch {languageName}"
+
+#: src/features/practice/QuizView.tsx:257
+#: src/features/practice/SpellingView.tsx:229
+msgctxt "practice.question-progress"
+msgid "Question {current} / {total}"
+msgstr "Câu hỏi {current} / {total}"
+
+#: src/features/practice/StudyView.tsx:390
+msgctxt "study.recall-mode.cloze"
+msgid "Fill the sentence"
+msgstr "Điền vào câu"
+
+#: src/features/practice/QuizView.tsx:170
+msgctxt "practice.results.good"
+msgid "Great work. This vocabulary is becoming secure."
+msgstr "Làm tốt lắm. Bạn đang nhớ từ vựng chắc hơn."
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:301
+msgctxt "languagePractice.feedback.correct"
+msgid "Correct."
+msgstr "Chính xác."
+
+#: src/features/practice/SessionRecapModal.tsx:98
+msgctxt "recap.continue"
+msgid "Continue learning"
+msgstr "Tiếp tục học"
+
+#: src/features/practice/SessionRecapModal.tsx:73
+msgctxt "recap.title"
+msgid "Session complete"
+msgstr "Hoàn thành phiên học"
+
+#: src/features/practice/rich-story-view.tsx:222
+msgctxt "rich-story-view.create-another-story"
+msgid "Create another story"
+msgstr "Tạo câu chuyện khác"
+
+#: src/features/practice/WordMatchView.tsx:337
+msgctxt "practice.match.verified-xp"
+msgid "Verified +{awardedXp} XP"
+msgstr "Đã xác minh +{awardedXp} XP"
+
+#: src/features/practice/QuizView.tsx:299
+msgctxt "practice.quiz.choose-answer"
+msgid "Choose one answer"
+msgstr "Chọn một đáp án"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:236
+msgctxt "languagePractice.progress"
+msgid "Item {current} of {total}"
+msgstr "Câu {current} trên {total}"
+
+#: src/features/practice/QuizView.tsx:295
+#: src/features/practice/SpellingView.tsx:277
+#: src/features/practice/StudyView.tsx:408
+msgctxt "practice.learn-first"
+msgid "I don't know this — learn first"
+msgstr "Tôi chưa biết từ này — học trước"
+
+#: src/features/practice/PracticeScreen.tsx:166
+msgctxt "practice.loading.shadowing"
+msgid "Loading shadowing practice"
+msgstr "Đang tải luyện nhại theo"
+
+#: src/features/practice/rich-story-view.tsx:176
+msgctxt "rich-story-view.target-phrases"
+msgid "Target phrases"
+msgstr "Cụm từ cần luyện"
 
 #. js-lingui-explicit-id
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:240
 msgid "languagePractice.action.listen"
 msgstr "Phát âm"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:304
-msgid "languagePractice.action.next"
-msgstr "Tiếp"
 
 #. js-lingui-explicit-id
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:250
@@ -59,49 +481,9 @@ msgid "languagePractice.action.slow"
 msgstr "Bật hoặc tắt phát âm chậm"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:292
-msgid "languagePractice.answer.label"
-msgstr "Câu trả lời của bạn"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:218
-msgid "languagePractice.en.instruction"
-msgstr "Nhập từ vựng ứng với nghĩa này."
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:177
-msgid "languagePractice.en.pack"
-msgstr "Gói tiếng Anh"
-
-#. js-lingui-explicit-id
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:227
 msgid "languagePractice.en.placeholder"
 msgstr "Từ vựng"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:182
-msgid "languagePractice.en.title"
-msgstr "Viết từ vựng"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:301
-msgid "languagePractice.feedback.correct"
-msgstr "Chính xác."
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:301
-msgid "languagePractice.feedback.incorrect"
-msgstr "Hãy thử lại thẻ này ở lượt sau."
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:215
-msgid "languagePractice.ja.instruction"
-msgstr "Đọc từ, rồi nhập đáp án bằng tiếng Nhật."
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:175
-msgid "languagePractice.ja.pack"
-msgstr "Gói tiếng Nhật · 日本語"
 
 #. js-lingui-explicit-id
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:222
@@ -114,29 +496,9 @@ msgid "languagePractice.ja.sentence.choices"
 msgstr "Các lựa chọn điền vào câu"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:211
-msgid "languagePractice.ja.sentence.instruction"
-msgstr "Chọn từ còn thiếu."
-
-#. js-lingui-explicit-id
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:220
 msgid "languagePractice.ja.sentence.placeholder"
 msgstr "Nhập từ còn thiếu"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:178
-msgid "languagePractice.ja.sentence.title"
-msgstr "Hoàn thành câu"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:180
-msgid "languagePractice.ja.title"
-msgstr "Gõ cách đọc"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:286
-msgid "languagePractice.ko.backspace"
-msgstr "Xóa"
 
 #. js-lingui-explicit-id
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:268
@@ -144,406 +506,229 @@ msgid "languagePractice.ko.emptyBlocks"
 msgstr "Các ô Hangul trống"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:279
-msgid "languagePractice.ko.final-correction"
-msgstr "Phụ âm cuối {typed} tạo thành từ khác. Hãy xóa và chọn {expected}."
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:213
-msgid "languagePractice.ko.instruction"
-msgstr "Ghép từ Hangul theo nghĩa cho sẵn."
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:267
-msgid "languagePractice.ko.keyboard"
-msgstr "Bàn phím ghép âm Hangul"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:174
-msgid "languagePractice.ko.pack"
-msgstr "Gói tiếng Hàn · 한국어"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:288
-msgid "languagePractice.ko.physicalKeyboard"
-msgstr "Bàn phím vật lý: gõ các phím 2-set ghi trên từng nút."
-
-#. js-lingui-explicit-id
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:224
 msgid "languagePractice.ko.placeholder"
 msgstr "Đáp án Hangul"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:179
-msgid "languagePractice.ko.title"
-msgstr "Ghép các khối âm tiết"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:250
-msgid "languagePractice.loadError"
-msgstr "Không thể tải bài luyện ngôn ngữ này. Hãy thử lại."
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:250
-msgid "languagePractice.loading"
-msgstr "Đang tải bài luyện ngôn ngữ…"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:236
-msgid "languagePractice.progress"
-msgstr "Câu {current} trên {total}"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:331
-msgid "languagePractice.results.close"
-msgstr "Về thư viện"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:328
-msgid "languagePractice.results.score"
-msgstr "Đúng {correct}/{total} câu"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:327
-msgid "languagePractice.results.title"
-msgstr "Hoàn thành bài luyện"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:330
-msgid "languagePractice.results.try-again"
-msgstr "Thử lại"
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:217
-msgid "languagePractice.zh.instruction"
-msgstr "Chọn thanh điệu cho từng âm tiết pinyin."
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:250
-msgid "languagePractice.zh.missingTones"
-msgstr "Thẻ này cần dữ liệu thanh điệu pinyin đã được xác minh trước khi luyện."
-
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:176
-msgid "languagePractice.zh.pack"
-msgstr "Gói tiếng Trung · 中文"
 
 #. js-lingui-explicit-id
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:226
 msgid "languagePractice.zh.placeholder"
 msgstr "Đáp án Hán tự"
 
-#. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:181
-msgid "languagePractice.zh.title"
-msgstr "Nghe thanh điệu"
+#: src/features/practice/SpellingView.tsx:328
+msgctxt "practice.spelling.answer-is"
+msgid "The answer is"
+msgstr "Đáp án là"
+
+#: src/features/practice/StoryView.tsx:134
+msgctxt "practice.story.generation-stopped"
+msgid "Story generation stopped"
+msgstr "Đã dừng tạo câu chuyện"
+
+#: src/features/practice/ShadowingView.tsx:231
+msgctxt "shadowing-view.practice-clip-sentence"
+msgid "Practice clip sentence"
+msgstr "Luyện câu trong đoạn nghe"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:279
+msgctxt "languagePractice.ko.final-correction"
+msgid "Final consonant: {typed} makes a different word. Delete it and choose {expected}."
+msgstr "Phụ âm cuối {typed} tạo thành từ khác. Hãy xóa và chọn {expected}."
+
+#: src/features/practice/SessionRecapModal.tsx:96
+msgctxt "recap.retry-weak"
+msgid "Review {count, plural, one {# word} other {# words}}"
+msgstr "Ôn lại {count, plural, other {# từ}}"
+
+#: src/features/practice/WordMatchView.tsx:364
+msgctxt "practice.match.new-round-failed"
+msgid "We could not start a new verified round. Check your connection and try again."
+msgstr "Không thể bắt đầu vòng mới đã xác minh. Hãy kiểm tra kết nối và thử lại."
+
+#: src/features/practice/rich-story-view.tsx:148
+msgctxt "rich-story-view.an-ephemeral-ai-generated-lesson-from-your-vocabulary"
+msgid "An ephemeral AI-generated lesson from your vocabulary"
+msgstr "Bài học tạm thời do AI tạo từ vốn từ của bạn"
+
+#: src/features/practice/QuizView.tsx:209
+#: src/features/practice/SpellingView.tsx:205
+#: src/features/practice/StudyView.tsx:379
+#: src/features/practice/WordMatchView.tsx:289
+msgctxt "study.combo"
+msgid "Combo ×{count}"
+msgstr "Chuỗi ×{count}"
+
+#: src/features/practice/rich-story-view.tsx:137
+msgctxt "rich-story-view.story-generation-stopped"
+msgid "Story generation stopped"
+msgstr "Đã dừng tạo câu chuyện"
+
+#: src/features/practice/StudyView.tsx:385
+msgctxt "study.recall-mode.target-to-native"
+msgid "{targetLanguage} → {nativeLanguage}"
+msgstr "{targetLanguage} → {nativeLanguage}"
+
+#: src/features/practice/SessionRecapModal.tsx:125
+msgctxt "recap.tomorrow-loading"
+msgid "Checking cards due…"
+msgstr "Đang kiểm tra thẻ đến hạn…"
+
+#: src/features/practice/StudyView.tsx:388
+msgctxt "study.recall-mode.image-to-word"
+msgid "Image → Word"
+msgstr "Hình ảnh → Từ"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:286
+msgctxt "languagePractice.ko.backspace"
+msgid "Delete"
+msgstr "Xóa"
+
+#: src/features/practice/StudyView.tsx:367
+msgctxt "study.card-count"
+msgid "{current} / {total} saved"
+msgstr "Đã lưu {current} / {total}"
+
+#: src/features/practice/WordMatchView.tsx:308
+msgctxt "practice.match.seconds"
+msgid "{seconds}s"
+msgstr "{seconds} giây"
+
+#: src/features/practice/PracticeScreen.tsx:107
+msgctxt "practice.loading.spelling"
+msgid "Loading spelling practice"
+msgstr "Đang tải luyện chính tả"
+
+#: src/features/practice/SessionRecapModal.tsx:127
+msgctxt "recap.tomorrow-count"
+msgid "{count, plural, one {# card due} other {# cards due}}"
+msgstr "{count, plural, other {# thẻ đến hạn}}"
+
+#: src/features/practice/StudyView.tsx:387
+msgctxt "study.recall-mode.native-to-target"
+msgid "{nativeLanguage} → {targetLanguage}"
+msgstr "{nativeLanguage} → {targetLanguage}"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:174
+msgctxt "languagePractice.ko.pack"
+msgid "Korean pack · 한국어"
+msgstr "Gói tiếng Hàn · 한국어"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:331
+msgctxt "languagePractice.results.close"
+msgid "Back to library"
+msgstr "Về thư viện"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:252
-msgid "languagePractice.zh.tones"
-msgstr "Thanh điệu pinyin"
-
-#. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:197
-#: src/features/practice/SpellingView.tsx:187
-msgid "practice.actions.back-to-library"
-msgstr "Quay lại thư viện"
-
-#. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:213
-#: src/features/practice/SpellingView.tsx:203
-msgid "practice.actions.exit"
-msgstr "Thoát"
-
-#. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:403
-#: src/features/practice/SpellingView.tsx:360
-msgid "practice.actions.next"
-msgstr "Tiếp"
-
-#. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:396
-#: src/features/practice/SpellingView.tsx:353
-msgid "practice.actions.saving-result"
-msgstr "Đang lưu kết quả…"
-
-#. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:190
-#: src/features/practice/SpellingView.tsx:180
-#: src/features/practice/StoryView.tsx:143
-msgid "practice.actions.try-again"
-msgstr "Thử lại"
-
-#. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:398
-#: src/features/practice/SpellingView.tsx:355
-msgid "practice.actions.view-results"
-msgstr "Xem kết quả"
-
-#. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:98
+#: src/features/practice/usePracticeGames.ts:100
 msgid "practice.error.account-daily-spend"
 msgstr "Bạn đã dùng hết hạn mức chi phí AI hôm nay. Thử lại sau 00:00 (giờ Việt Nam)."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:99
+#: src/features/practice/usePracticeGames.ts:101
 msgid "practice.error.ai-card-quota"
 msgstr "Bạn đã dùng hết số thẻ AI kỳ này. Xem gói Pro hoặc đợi kỳ tiếp theo; ôn tập và thêm thẻ thủ công vẫn dùng được."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:100
+#: src/features/practice/usePracticeGames.ts:102
 msgid "practice.error.ai-daily-allowance"
 msgstr "Bạn đã dùng hết lượt AI phụ hôm nay. Thử lại sau 00:00 (giờ Việt Nam)."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:300
+#: src/features/practice/usePracticeGames.ts:308
 msgid "practice.error.complete"
 msgstr "Không lưu được kết quả luyện tập. Hãy kiểm tra kết nối và thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:105
+#: src/features/practice/usePracticeGames.ts:107
 msgid "practice.error.configuration"
 msgstr "Không thể tạo câu chuyện. Vui lòng thử lại sau."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:484
+#: src/features/practice/usePracticeGames.ts:490
 msgid "practice.error.language-drill-card-count"
 msgstr "Bạn cần ít nhất 1 thẻ để luyện ngôn ngữ."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:587
+#: src/features/practice/usePracticeGames.ts:592
 msgid "practice.error.match-card-count"
 msgstr "Bạn cần ít nhất 4 thẻ để chơi Ghép từ."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:106
+#: src/features/practice/usePracticeGames.ts:108
 msgid "practice.error.network"
 msgstr "Không thể kết nối dịch vụ tạo câu chuyện. Kiểm tra kết nối rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:101
+#: src/features/practice/usePracticeGames.ts:103
 msgid "practice.error.operation-in-flight"
 msgstr "Nội dung AI vẫn đang được tạo. Thử lại sau vài giây."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:104
+#: src/features/practice/usePracticeGames.ts:106
 msgid "practice.error.permission"
 msgstr "Dịch vụ đám mây được bảo vệ đã từ chối tạo câu chuyện. Hãy tải lại và đăng nhập lại; nếu vẫn tiếp diễn, hãy liên hệ quản trị viên để kiểm tra App Check hoặc quy tắc truy cập."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:259
+#: src/features/practice/usePracticeGames.ts:267
 msgid "practice.error.prepare"
 msgstr "Không thể chuẩn bị hoạt động này. Kiểm tra kết nối rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:338
+#: src/features/practice/usePracticeGames.ts:346
 msgid "practice.error.quiz-card-count"
-msgstr "Bạn cần ít nhất 4 thẻ để bắt đầu bài kiểm tra."
+msgstr "Bạn cần ít nhất 4 thẻ đã học để bắt đầu bài kiểm tra."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:102
+#: src/features/practice/usePracticeGames.ts:104
 msgid "practice.error.quota"
 msgstr "Đã đạt giới hạn sử dụng AI. Hãy thử lại khi hạn mức được đặt lại."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:97
+#: src/features/practice/usePracticeGames.ts:99
 msgid "practice.error.service-daily-cap"
 msgstr "AI tạm dừng vì hạn mức chung hôm nay đã hết. Thử lại sau 00:00 (giờ Việt Nam)."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:645
+#: src/features/practice/usePracticeGames.ts:650
 msgid "practice.error.shadowing-no-cards"
 msgstr "Bạn cần có thẻ trong thư viện để luyện phát âm nhại theo."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:103
+#: src/features/practice/usePracticeGames.ts:105
 msgid "practice.error.sign-in"
 msgstr "Hãy đăng nhập lại để tạo câu chuyện."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:417
+#: src/features/practice/usePracticeGames.ts:424
 msgid "practice.error.spelling-card-count"
-msgstr "Bạn cần ít nhất 4 thẻ để luyện chính tả."
+msgstr "Bạn cần ít nhất 4 thẻ đã học để luyện chính tả."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:109
+#: src/features/practice/usePracticeGames.ts:111
 msgid "practice.error.story"
 msgstr "Hiện không thể tạo câu chuyện. Vui lòng thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:544
+#: src/features/practice/usePracticeGames.ts:549
 msgid "practice.error.story-no-cards"
 msgstr "Chưa có thẻ phù hợp để tạo câu chuyện bằng AI. Hãy thêm hoặc đồng bộ thẻ rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:94
-#: src/features/practice/usePracticeGames.ts:258
+#: src/features/practice/usePracticeGames.ts:96
+#: src/features/practice/usePracticeGames.ts:266
 msgid "practice.error.timeout"
 msgstr "Chuẩn bị hoạt động này mất quá lâu. Kiểm tra kết nối rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:289
-#: src/features/practice/SpellingView.tsx:267
+#: src/features/practice/QuizView.tsx:282
+#: src/features/practice/SpellingView.tsx:266
 msgid "practice.feedback.correct"
 msgstr "Đúng rồi."
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:373
-msgid "practice.feedback.correct-answer"
-msgstr "Đáp án đúng là"
-
-#. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:365
-msgid "practice.feedback.correct-short"
-msgstr "Đúng"
-
-#. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:295
-#: src/features/practice/SpellingView.tsx:273
-msgid "practice.feedback.incorrect-prefix"
-msgstr "Chưa đúng. Đáp án đúng là"
-
-#. js-lingui-explicit-id
-#: src/features/practice/PracticeScreen.tsx:116
-msgid "practice.loading.language-drill"
-msgstr "Đang tải bài luyện ngôn ngữ"
-
-#. js-lingui-explicit-id
-#: src/features/practice/PracticeScreen.tsx:139
-msgid "practice.loading.match"
-msgstr "Đang tải ghép từ"
-
-#. js-lingui-explicit-id
-#: src/features/practice/PracticeScreen.tsx:75
-msgid "practice.loading.quiz"
-msgstr "Đang tải bài kiểm tra"
-
-#. js-lingui-explicit-id
-#: src/features/practice/PracticeScreen.tsx:151
-msgid "practice.loading.shadowing"
-msgstr "Đang tải luyện nhại theo"
-
-#. js-lingui-explicit-id
-#: src/features/practice/PracticeScreen.tsx:94
-msgid "practice.loading.spelling"
-msgstr "Đang tải luyện chính tả"
-
-#. js-lingui-explicit-id
-#: src/features/practice/PracticeScreen.tsx:161
-msgid "practice.loading.story"
-msgstr "Đang tải câu chuyện"
-
-#. js-lingui-explicit-id
-#: src/features/practice/PracticeScreen.tsx:46
-msgid "practice.loading.study"
-msgstr "Đang tải phiên học"
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:390
-#: src/features/practice/WordMatchView.tsx:420
-msgid "practice.match.back"
-msgstr "Quay lại"
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:276
+#: src/features/practice/WordMatchView.tsx:281
 msgid "practice.match.close"
 msgstr "Đóng ghép từ"
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:320
-msgid "practice.match.complete-copy"
-msgstr "Bạn đã ghép đủ {pairCount} cặp trong {seconds} giây."
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:317
-msgid "practice.match.complete-title"
-msgstr "Hoàn thành các cặp"
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:309
-msgid "practice.match.instruction"
-msgstr "Chọn một từ {targetLanguageName}, rồi chọn nghĩa bằng {nativeLanguageName}."
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:381
-msgid "practice.match.new-round"
-msgstr "Vòng mới"
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:359
-msgid "practice.match.new-round-failed"
-msgstr "Không thể bắt đầu vòng mới đã xác minh. Hãy kiểm tra kết nối và thử lại."
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:353
-msgid "practice.match.no-reward"
-msgstr "Vòng này không cộng XP."
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:304
-msgid "practice.match.pairs"
-msgstr "Cặp"
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:366
-msgid "practice.match.retry-new-round"
-msgstr "Thử lại vòng mới"
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:347
-msgid "practice.match.retry-verification"
-msgstr "Thử xác minh lại"
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:303
-msgid "practice.match.seconds"
-msgstr "{seconds} giây"
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:380
-msgid "practice.match.starting-new-round"
-msgstr "Đang bắt đầu vòng mới…"
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:400
-msgid "practice.match.time-up"
-msgstr "Hết giờ"
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:403
-msgid "practice.match.time-up-copy"
-msgstr "Bạn đã ghép {matchesCount} trên {pairCount} cặp."
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:282
-#: src/features/practice/WordMatchView.tsx:293
-msgid "practice.match.title"
-msgstr "Ghép từ · 60 giây"
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:413
-msgid "practice.match.try-again"
-msgstr "Thử lại"
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:340
-msgid "practice.match.verification-failed"
-msgstr "Không thể xác minh kết quả. Các cặp bạn đã hoàn thành vẫn còn đây."
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:333
-msgid "practice.match.verified-no-xp"
-msgstr "Đã xác minh kết quả"
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:332
-msgid "practice.match.verified-xp"
-msgstr "Đã xác minh +{awardedXp} XP"
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:325
-msgid "practice.match.verifying-reward"
-msgstr "Đang xác minh kết quả…"
 
 #. js-lingui-explicit-id
 #: src/features/practice/practiceModeRegistry.ts:56
@@ -651,455 +836,444 @@ msgid "practice.mode.story.unavailable"
 msgstr "Cần 5 thẻ · bạn có {count}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:263
-#: src/features/practice/SpellingView.tsx:229
-msgid "practice.question-progress"
-msgstr "Câu hỏi {current} / {total}"
-
-#. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:307
-msgid "practice.quiz.choose-answer"
-msgstr "Chọn một đáp án"
-
-#. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:136
-msgid "practice.quiz.complete"
-msgstr "Hoàn thành bài kiểm tra"
-
-#. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:242
+#: src/features/practice/QuizView.tsx:235
 msgid "practice.quiz.illustration-alt"
 msgstr "Minh họa cho {word}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:100
+#: src/features/practice/QuizView.tsx:102
 msgid "practice.quiz.native-to-target-question"
 msgstr "Từ {targetLanguageName} nào tương ứng với {translation}?"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:414
+#: src/features/practice/QuizView.tsx:401
 msgid "practice.quiz.progress"
 msgstr "Tiến độ bài kiểm tra"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:139
-msgid "practice.quiz.results-subtitle"
-msgstr "Kết quả ôn từ vựng của bạn"
-
-#. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:91
+#: src/features/practice/QuizView.tsx:94
 msgid "practice.quiz.target-to-native-question"
 msgstr "{word} có nghĩa là gì trong {nativeLanguageName}?"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:158
-#: src/features/practice/SpellingView.tsx:166
-msgid "practice.results.accuracy"
-msgstr "Độ chính xác"
+#: src/features/practice/rich-story-view.tsx:198
+#: src/features/practice/rich-story-view.tsx:212
+msgid "practice.rich-story.correct"
+msgstr "Chính xác."
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:147
-#: src/features/practice/SpellingView.tsx:155
-msgid "practice.results.correct-answers"
-msgstr "Câu trả lời đúng"
+#: src/features/practice/rich-story-view.tsx:110
+msgid "practice.rich-story.generating-story"
+msgstr "Đang tạo câu chuyện…"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:172
-msgid "practice.results.good"
-msgstr "Làm tốt lắm. Bạn đang nhớ từ vựng chắc hơn."
+#: src/features/practice/rich-story-view.tsx:212
+msgid "practice.rich-story.grammar-retry"
+msgstr "Thử lại nhé. Một đáp án phù hợp là “{answer}”."
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:177
-msgid "practice.results.keep-practising"
-msgstr "Hãy tiếp tục luyện đến khi các từ khó trở nên tự nhiên."
+#: src/features/practice/rich-story-view.tsx:198
+msgid "practice.rich-story.not-quite"
+msgstr "Chưa chính xác."
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:167
-msgid "practice.results.perfect"
-msgstr "Hoàn hảo. Bạn đã trả lời đúng mọi câu hỏi."
+#: src/features/practice/rich-story-view.tsx:91
+#: src/features/practice/rich-story-view.tsx:96
+msgid "practice.rich-story.speech-playback-is-unavailable-read-the-english-text-below"
+msgstr "Không thể phát giọng đọc. Hãy đọc phần tiếng Anh bên dưới."
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:217
-#: src/features/practice/SpellingView.tsx:207
-msgid "practice.score"
-msgstr "Điểm: {score} / {total}"
+#: src/features/practice/rich-story-view.tsx:110
+msgid "practice.rich-story.story-ready"
+msgstr "Câu chuyện đã sẵn sàng"
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:250
-msgid "practice.shadowing.accuracy"
-msgstr "Độ chính xác: {score}%"
-
-#. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:165
+#: src/features/practice/ShadowingView.tsx:176
 msgid "practice.shadowing.close"
 msgstr "Đóng luyện nhại theo"
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:106
+#: src/features/practice/ShadowingView.tsx:113
 msgid "practice.shadowing.error"
 msgstr "Lỗi nhận dạng giọng nói: {error}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:190
-msgid "practice.shadowing.focus-word"
-msgstr "Từ trọng tâm"
-
-#. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:202
-msgid "practice.shadowing.listen"
-msgstr "Nghe"
-
-#. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:281
-msgid "practice.shadowing.listening"
-msgstr "Đang nghe…"
-
-#. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:120
+#: src/features/practice/ShadowingView.tsx:129
 msgid "practice.shadowing.microphone-error"
 msgstr "Không thể mở micrô. Hãy cấp quyền dùng micrô trong trình duyệt."
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:303
+#: src/features/practice/ShadowingView.tsx:330
 msgid "practice.shadowing.next"
 msgstr "Từ tiếp theo"
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:200
+#: src/features/practice/ShadowingView.tsx:211
 msgid "practice.shadowing.play-pronunciation"
 msgstr "Phát cách phát âm của {word}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:291
+#: src/features/practice/ShadowingView.tsx:318
 msgid "practice.shadowing.previous"
 msgstr "Từ trước"
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:281
-msgid "practice.shadowing.start-copy"
-msgstr "Chạm vào micrô và đọc câu."
-
-#. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:275
+#: src/features/practice/ShadowingView.tsx:302
 msgid "practice.shadowing.start-reading"
 msgstr "Bắt đầu đọc"
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:275
+#: src/features/practice/ShadowingView.tsx:302
 msgid "practice.shadowing.stop-recording"
 msgstr "Dừng ghi âm"
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:254
-msgid "practice.shadowing.success"
-msgstr "Phát âm tốt lắm"
-
-#. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:170
-msgid "practice.shadowing.title"
-msgstr "Nhại theo · đọc theo tôi"
-
-#. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:63
+#: src/features/practice/ShadowingView.tsx:70
 msgid "practice.shadowing.unsupported"
 msgstr "Trình duyệt này không hỗ trợ nhận dạng giọng nói."
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:242
-msgid "practice.shadowing.you-said"
-msgstr "Bạn đã nói:"
-
-#. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:330
-msgid "practice.spelling.answer-is"
-msgstr "Đáp án là"
-
-#. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:306
+#: src/features/practice/SpellingView.tsx:303
 msgid "practice.spelling.answer-label"
 msgstr "Gõ từ {targetLanguage}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:299
+#: src/features/practice/SpellingView.tsx:296
 msgid "practice.spelling.answer-placeholder"
 msgstr "Gõ từ {targetLanguage}…"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:144
-msgid "practice.spelling.complete"
-msgstr "Hoàn thành"
-
-#. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:325
-msgid "practice.spelling.correct"
-msgstr "Đúng"
-
-#. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:240
+#: src/features/practice/SpellingView.tsx:238
 msgid "practice.spelling.play-pronunciation"
 msgstr "Phát cách phát âm của {word}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:371
+#: src/features/practice/SpellingView.tsx:366
 msgid "practice.spelling.progress"
 msgstr "Tiến độ luyện chính tả"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:147
-msgid "practice.spelling.results-subtitle"
-msgstr "Kết quả luyện chính tả của bạn"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:88
+#: src/features/practice/StoryView.tsx:91
 msgid "practice.story.close"
 msgstr "Đóng câu chuyện"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:94
-msgid "practice.story.context"
-msgstr "Câu chuyện ngữ cảnh"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:218
-msgid "practice.story.create-another"
-msgstr "Tạo câu chuyện khác"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:52
+#: src/features/practice/StoryView.tsx:55
 msgid "practice.story.creating"
 msgstr "Đang tạo câu chuyện của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:114
-msgid "practice.story.creating-progress"
-msgstr "Đang tạo câu chuyện của bạn…"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:131
-msgid "practice.story.generation-stopped"
-msgstr "Đã dừng tạo câu chuyện"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:167
-msgid "practice.story.reading-context"
-msgstr "Đọc trong ngữ cảnh"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:53
+#: src/features/practice/StoryView.tsx:56
 msgid "practice.story.ready"
 msgstr "Câu chuyện của bạn đã sẵn sàng."
 
-#. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:183
-msgid "practice.story.target-language"
-msgstr "{languageName}"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:198
-msgid "practice.story.translation-language"
-msgstr "Bản dịch {languageName}"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:173
-msgid "practice.story.vocabulary-subtitle"
-msgstr "Câu chuyện được tạo từ từ vựng của bạn"
-
-#. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:73
-msgid "recap.close"
-msgstr "Đóng phần tổng kết"
-
-#. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:94
-msgid "recap.continue"
-msgstr "Tiếp tục học"
-
-#. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:70
-msgid "recap.description"
-msgstr "Đây là những gì bạn đã củng cố hôm nay."
-
-#. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:83
-msgid "recap.mastered"
-msgstr "Đã nhớ"
-
-#. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:84
-msgid "recap.needs-review"
+#: src/features/practice/SessionRecapModal.tsx:88
+msgctxt "recap.needs-review"
+msgid "To revisit"
 msgstr "Cần xem lại"
 
-#. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:78
-msgid "recap.retained"
-msgstr "Ghi nhớ"
+#: src/features/practice/ShadowingView.tsx:278
+msgctxt "practice.shadowing.success"
+msgid "Nice pronunciation"
+msgstr "Phát âm tốt lắm"
 
-#. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:92
-msgid "recap.retry-weak"
-msgstr "Ôn lại {count, plural, other {# từ}}"
+#: src/features/practice/WordMatchView.tsx:338
+msgctxt "practice.match.verified-no-xp"
+msgid "Result verified"
+msgstr "Đã xác minh kết quả"
+
+#: src/features/practice/StoryView.tsx:97
+msgctxt "practice.story.context"
+msgid "Context story"
+msgstr "Câu chuyện ngữ cảnh"
+
+#: src/features/practice/QuizView.tsx:136
+msgctxt "practice.quiz.complete"
+msgid "Quiz complete"
+msgstr "Hoàn thành bài kiểm tra"
+
+#: src/features/practice/SessionRecapModal.tsx:73
+msgctxt "recap.summary-title"
+msgid "Session summary"
+msgstr "Tổng kết phiên học"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:250
+msgctxt "languagePractice.loading"
+msgid "Loading this language exercise…"
+msgstr "Đang tải bài luyện ngôn ngữ…"
 
 #. js-lingui-explicit-id
 #: src/features/practice/SessionRecapModal.tsx:77
-msgid "recap.reviewed"
-msgstr "Đã ôn"
+msgid "recap.close"
+msgstr "Đóng phần tổng kết"
+
+#: src/features/practice/QuizView.tsx:166
+msgctxt "practice.results.perfect"
+msgid "Perfect. You answered every question correctly."
+msgstr "Hoàn hảo. Bạn đã trả lời đúng mọi câu hỏi."
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:69
-msgid "recap.title"
-msgstr "Hoàn thành phiên học"
+#: src/features/practice/rich-story-view.tsx:116
+msgid "rich-story-view.close-story"
+msgstr "Đóng câu chuyện"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:119
-msgid "recap.tomorrow"
-msgstr "Ngày mai"
+#: src/features/practice/rich-story-view.tsx:164
+msgid "rich-story-view.read-scene"
+msgstr "Đọc cảnh {number} bằng tiếng Anh"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:123
-msgid "recap.tomorrow-count"
-msgstr "{count, plural, other {# thẻ đến hạn}}"
+#: src/features/practice/rich-story-view.tsx:177
+msgid "rich-story-view.target-phrases-from-your-vocabulary"
+msgstr "Cụm từ cần luyện từ vốn từ của bạn"
+
+#: src/features/practice/QuizView.tsx:147
+#: src/features/practice/SpellingView.tsx:158
+msgctxt "practice.results.correct-answers"
+msgid "Correct answers"
+msgstr "Câu trả lời đúng"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:211
+msgctxt "languagePractice.ja.sentence.instruction"
+msgid "Choose the missing word."
+msgstr "Chọn từ còn thiếu."
+
+#: src/features/practice/StudyView.tsx:414
+msgctxt "study-view.take-a-moment-to-review-the-card-before-recall-practice"
+msgid "Take a moment to review the card before recall practice."
+msgstr "Hãy xem thẻ trước khi luyện nhớ lại."
+
+#: src/features/practice/WordMatchView.tsx:408
+msgctxt "practice.match.time-up-copy"
+msgid "You matched {matchesCount} of {pairCount} pairs."
+msgstr "Bạn đã ghép {matchesCount} trên {pairCount} cặp."
+
+#: src/features/practice/StudyView.tsx:404
+msgctxt "study.swipe.again"
+msgid "AGAIN 👎"
+msgstr "LẠI 👎"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:327
+msgctxt "languagePractice.results.title"
+msgid "Drill complete"
+msgstr "Hoàn thành bài luyện"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:122
-msgid "recap.tomorrow-error"
-msgstr "Không lấy được số thẻ"
+#: src/features/practice/ShadowingView.tsx:223
+msgid "shadowing-view.practice-target"
+msgstr "Nội dung cần luyện"
+
+#: src/features/practice/QuizView.tsx:193
+#: src/features/practice/SpellingView.tsx:189
+msgctxt "practice.actions.back-to-library"
+msgid "Back to library"
+msgstr "Quay lại thư viện"
+
+#: src/features/practice/ShadowingView.tsx:285
+msgctxt "shadowing-view.pronunciation-assessment-is-unavailable-in-this-build-browser-tra"
+msgid "Pronunciation assessment is unavailable in this build; browser transcript matching remains available."
+msgstr "Bản này chưa hỗ trợ đánh giá phát âm; bạn vẫn có thể đối chiếu lời nói được trình duyệt nhận diện."
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:121
-msgid "recap.tomorrow-loading"
-msgstr "Đang kiểm tra thẻ đến hạn…"
-
-#. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:93
-msgid "recap.weekly"
-msgstr "Xem tổng kết tuần"
-
-#. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:83
-#: src/features/practice/SessionRecapModal.tsx:84
-msgid "recap.word-count"
-msgstr "{count, plural, other {# từ}}"
-
-#. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:87
-msgid "recap.words-to-reinforce"
-msgstr "Từ cần củng cố ({count})"
-
-#. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:79
-msgid "recap.xp-earned"
-msgstr "XP nhận được"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:341
-msgid "study.card-count"
-msgstr "Thẻ {current} / {total}"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:331
+#: src/features/practice/StudyView.tsx:357
 msgid "study.close"
 msgstr "Đóng chế độ học"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:215
-#: src/features/practice/SpellingView.tsx:205
-#: src/features/practice/StudyView.tsx:352
-#: src/features/practice/WordMatchView.tsx:284
-msgid "study.combo"
-msgstr "Chuỗi ×{count}"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:343
+#: src/features/practice/StudyView.tsx:369
 msgid "study.elapsed-time"
 msgstr "Thời gian học: {time}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:346
+#: src/features/practice/StudyView.tsx:372
 msgid "study.focus-mode"
 msgstr "Chế độ tập trung"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:427
+#: src/features/practice/StudyView.tsx:476
 msgid "study.next-card"
 msgstr "Thẻ tiếp theo"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:423
+#: src/features/practice/StudyView.tsx:472
 msgid "study.previous-card"
 msgstr "Thẻ trước"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:334
-#: src/features/practice/StudyView.tsx:335
+#: src/features/practice/StudyView.tsx:360
+#: src/features/practice/StudyView.tsx:361
 msgid "study.progress"
 msgstr "Tiến độ học"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:356
-msgid "study.recall-mode"
-msgstr "Chế độ gợi nhớ"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:359
-msgid "study.recall-mode.adaptive"
-msgstr "Độ khó thích ứng"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:363
-msgid "study.recall-mode.cloze"
-msgstr "Điền vào câu"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:361
-msgid "study.recall-mode.image-to-word"
-msgstr "Hình ảnh → Từ"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:362
-msgid "study.recall-mode.listen-to-word"
-msgstr "Nghe → Từ"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:360
-msgid "study.recall-mode.native-to-target"
-msgstr "{nativeLanguage} → {targetLanguage}"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:358
-msgid "study.recall-mode.target-to-native"
-msgstr "{targetLanguage} → {nativeLanguage}"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:447
+#: src/features/practice/StudyView.tsx:498
 msgid "study.shortcut.flip-card"
 msgstr "Lật thẻ"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:448
+#: src/features/practice/StudyView.tsx:499
 msgid "study.shortcut.previous-next"
 msgstr "Trước / tiếp"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:449
+#: src/features/practice/StudyView.tsx:500
 msgid "study.shortcut.rate-memory"
 msgstr "Đánh giá ghi nhớ"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:450
+#: src/features/practice/StudyView.tsx:501
 msgid "study.shortcut.star-play-speak"
 msgstr "Gắn sao / nghe / nói"
 
-#. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:445
-msgid "study.shortcuts"
-msgstr "Phím tắt học tập"
+#: src/features/practice/WordMatchView.tsx:385
+msgctxt "practice.match.starting-new-round"
+msgid "Starting new round…"
+msgstr "Đang bắt đầu vòng mới…"
 
-#. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:377
-msgid "study.swipe.again"
-msgstr "LẠI 👎"
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:176
+msgctxt "languagePractice.zh.pack"
+msgid "Chinese pack · 中文"
+msgstr "Gói tiếng Trung · 中文"
 
-#. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:372
-msgid "study.swipe.good"
-msgstr "TỐT 👍"
+#: src/features/practice/SessionRecapModal.tsx:81
+msgctxt "recap.reviewed"
+msgid "Reviewed"
+msgstr "Đã ôn"
+
+#: src/features/practice/PracticeScreen.tsx:153
+msgctxt "practice.loading.match"
+msgid "Loading word match"
+msgstr "Đang tải ghép từ"
+
+#: src/features/practice/StoryView.tsx:169
+msgctxt "practice.story.reading-context"
+msgid "Reading in context"
+msgstr "Đọc trong ngữ cảnh"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:181
+msgctxt "languagePractice.zh.title"
+msgid "Hear the tones"
+msgstr "Nghe thanh điệu"
+
+#: src/features/practice/WordMatchView.tsx:309
+msgctxt "practice.match.pairs"
+msgid "Pairs"
+msgstr "Cặp"
+
+#: src/features/practice/rich-story-view.tsx:163
+msgctxt "rich-story-view.scene"
+msgid "Scene"
+msgstr "Đoạn"
+
+#: src/features/practice/rich-story-view.tsx:165
+msgctxt "rich-story-view.read-aloud"
+msgid "Read aloud"
+msgstr "Đọc thành tiếng"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:178
+msgctxt "languagePractice.ja.sentence.title"
+msgid "Complete the sentence"
+msgstr "Hoàn thành câu"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:292
+msgctxt "languagePractice.answer.label"
+msgid "Your answer"
+msgstr "Câu trả lời của bạn"
+
+#: src/features/practice/StoryView.tsx:216
+msgctxt "practice.story.create-another"
+msgid "Create another story"
+msgstr "Tạo câu chuyện khác"
+
+#: src/features/practice/ShadowingView.tsx:308
+msgctxt "practice.shadowing.listening"
+msgid "Listening…"
+msgstr "Đang nghe…"
+
+#: src/features/practice/ShadowingView.tsx:201
+msgctxt "practice.shadowing.focus-word"
+msgid "Focus word"
+msgstr "Từ trọng tâm"
+
+#: src/features/practice/ShadowingView.tsx:181
+msgctxt "practice.shadowing.title"
+msgid "Shadowing · say it after me"
+msgstr "Nhại theo · đọc theo tôi"
+
+#: src/features/practice/rich-story-view.tsx:125
+msgctxt "rich-story-view.creating-your-story"
+msgid "Creating your story…"
+msgstr "Đang tạo câu chuyện của bạn…"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:267
+msgctxt "languagePractice.ko.keyboard"
+msgid "Hangul block keyboard"
+msgstr "Bàn phím ghép âm Hangul"
+
+#: src/features/practice/rich-story-view.tsx:140
+msgctxt "rich-story-view.try-again"
+msgid "Try again"
+msgstr "Thử lại"
+
+#: src/features/practice/ShadowingView.tsx:308
+msgctxt "practice.shadowing.start-copy"
+msgid "Tap the microphone and read the sentence."
+msgstr "Chạm vào micrô và đọc câu."
+
+#: src/features/practice/QuizView.tsx:384
+#: src/features/practice/SpellingView.tsx:349
+msgctxt "practice.actions.saving-result"
+msgid "Saving result…"
+msgstr "Đang lưu kết quả…"
+
+#: src/features/practice/StoryView.tsx:183
+msgctxt "practice.story.target-language"
+msgid "{languageName}"
+msgstr "{languageName}"
+
+#: src/features/practice/SessionRecapModal.tsx:83
+msgctxt "recap.xp-earned"
+msgid "XP earned"
+msgstr "XP nhận được"
+
+#: src/features/practice/QuizView.tsx:207
+#: src/features/practice/SpellingView.tsx:203
+msgctxt "practice.actions.exit"
+msgid "Exit"
+msgstr "Thoát"
+
+#: src/features/practice/QuizView.tsx:363
+msgctxt "practice.feedback.correct-answer"
+msgid "The correct answer is"
+msgstr "Đáp án đúng là"
+
+#: src/features/practice/QuizView.tsx:356
+msgctxt "practice.feedback.correct-short"
+msgid "Correct"
+msgstr "Đúng"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:233
+msgctxt "languagePractice.action.exit"
+msgid "Exit"
+msgstr "Thoát"
+
+#: src/features/practice/QuizView.tsx:387
+#: src/features/practice/SpellingView.tsx:352
+msgctxt "practice.actions.view-results"
+msgid "View results"
+msgstr "Xem kết quả"
+
+#: src/features/practice/ShadowingView.tsx:274
+msgctxt "practice.shadowing.accuracy"
+msgid "Accuracy: {score}%"
+msgstr "Độ chính xác: {score}%"
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:303
+msgctxt "languagePractice.action.hint"
+msgid "Hint"
+msgstr "Gợi ý"
+
+#: src/features/practice/SessionRecapModal.tsx:91
+msgctxt "recap.words-to-reinforce"
+msgid "Words to reinforce ({count})"
+msgstr "Từ cần củng cố ({count})"

@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardQueryState } from '../../lib/cardQuery';
 import type { CardData } from '../../types/card';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import {
   createCloudLibraryPageController,
   EMPTY_LIBRARY_STATS,
@@ -15,7 +16,7 @@ import {
 
 const filters: CardQueryState = {
   category: null,
-  customDeck: null,
+  customDeck: ALL_PRACTICE_DECK_SCOPE,
   difficulty: null,
   partOfSpeech: null,
   bookmarkedOnly: false,
@@ -361,6 +362,28 @@ describe('cloud library page controller', () => {
     expect(saved.get('ko')?.stats.total).toBe(2);
   });
 
+  it('connects facets after an initial cooldown without changing owner', async () => {
+    const { adapter, cache } = createFakes();
+    vi.mocked(cache.isBackoffActive).mockReturnValue(true);
+    const controller = createCloudLibraryPageController({ adapter, cache });
+    const request = { ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 };
+    controller.activate(request);
+    expect(adapter.subscribeFacets).not.toHaveBeenCalled();
+    vi.mocked(cache.isBackoffActive).mockReturnValue(false);
+    controller.activate(request);
+    expect(adapter.subscribeFacets).toHaveBeenCalledOnce();
+    controller.activate(request);
+    expect(adapter.subscribeFacets).toHaveBeenCalledOnce();
+    controller.stop();
+  });
+
+  it.each(['permission-denied', 'unauthenticated', 'failed-precondition'])('does not automatically retry %s', async code => {
+    const { adapter, cache, subscriptions } = createFakes();
+    const controller = createCloudLibraryPageController({ adapter, cache });
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    await subscriptions[0].error({ code });
+    expect(controller.getSnapshot()).toMatchObject({ cloudUnavailable: true, canRetryAutomatically: false });
+  });
   it('keeps controller and cursor contracts free of Firebase vendor types', () => {
     const controllerSource = readFileSync(fileURLToPath(new URL('./cloudLibraryPageController.ts', import.meta.url)), 'utf8');
     const adapterSource = readFileSync(fileURLToPath(new URL('./cloudLibraryPageFirebaseAdapter.ts', import.meta.url)), 'utf8');
@@ -501,6 +524,28 @@ describe('cloud library page controller', () => {
     expect(controller.getSnapshot()).toMatchObject({
       items: [], isLoading: false, cloudUnavailable: true,
     });
+  });
+
+  it('shows the Firestore cache snapshot while waiting for the server', async () => {
+    const { adapter, cache, subscriptions } = createFakes();
+    vi.mocked(cache.readPage).mockResolvedValue({
+      items: [card('cached')],
+      total: 1,
+      hasNext: false,
+    });
+    const controller = createCloudLibraryPageController({ adapter, cache });
+
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    await subscriptions[0].page({ items: [card('cached')], hasNext: false, cursor: null, changeTypes: [], fromCache: true, hasPendingWrites: false });
+    expect(controller.getSnapshot()).toMatchObject({ items: [card('cached')], isLoading: false, serverConfirmed: false });
+
+    expect(subscriptions).toHaveLength(1);
+    await subscriptions[0].page({
+      items: [card('fresh')], hasNext: false, cursor: null,
+      changeTypes: [], fromCache: false, hasPendingWrites: false,
+    });
+
+    expect(controller.getSnapshot().items).toEqual([card('fresh')]);
   });
 
   it('keeps the newest realtime page in cache when an older count resolves late', async () => {

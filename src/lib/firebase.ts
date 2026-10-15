@@ -27,24 +27,26 @@ import type { Functions } from 'firebase/functions';
 import productionFirebaseConfig from '../../firebase-applet-config.json';
 import { resolveProtectedFunctionsCapability } from './protectedFunctionsCapability';
 
-type SonFlashFirebaseConfig = FirebaseOptions & { firestoreDatabaseId?: string };
-// Build-time flag for the Playwright suite, so production bundles drop the emulator branch.
+// The sealed artifact serves both approved live hosts; emulator builds stay isolated.
 const isE2eEmulatorBuild = import.meta.env.VITE_SONFLASH_E2E_EMULATOR === 'true';
-const selectedFirebaseConfig = import.meta.env.VITE_SONFLASH_FIREBASE_CONFIG?.trim();
-const firebaseConfig = (isE2eEmulatorBuild
-  ? {
-    apiKey: 'demo-api-key',
-    authDomain: 'demo-lingoflash.firebaseapp.com',
-    projectId: 'demo-lingoflash',
-    appId: 'demo-app-id',
-    firestoreDatabaseId: productionFirebaseConfig.firestoreDatabaseId,
-  }
-  : selectedFirebaseConfig
-    ? JSON.parse(selectedFirebaseConfig)
-    : import.meta.env.MODE === 'test' ? productionFirebaseConfig : {}) as SonFlashFirebaseConfig;
-
-export const isFirebaseConfigured = !!(firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey.trim() !== "");
-const appCheckSiteKey = import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY?.trim() ?? '';
+const loopbackHosts = new Set(['localhost', '127.0.0.1', '[::1]']);
+const host = typeof location === 'undefined' ? '' : location.hostname;
+const configuredTargets = productionFirebaseConfig.targets;
+const fallbackTarget = import.meta.env.VITE_SONFLASH_BUILD_TARGET === 'staging'
+  ? configuredTargets.staging : configuredTargets.production;
+const selectedTarget = Object.values(configuredTargets).find(target => target.allowedHosts.includes(host))
+  ?? (host === '' || loopbackHosts.has(host) ? fallbackTarget : null);
+const { allowedHosts: _allowedHosts, ...selectedFirebaseConfig } = selectedTarget ?? {
+  allowedHosts: [], appCheckSiteKey: '', appCheckProvider: 'enterprise', apiKey: '', authDomain: '', projectId: '',
+  storageBucket: '', messagingSenderId: '', appId: '', measurementId: '', firestoreDatabaseId: '',
+};
+const firebaseConfig: FirebaseOptions & { firestoreDatabaseId?: string } = isE2eEmulatorBuild ? {
+  apiKey: 'demo-api-key', authDomain: 'demo-lingoflash.firebaseapp.com',
+  projectId: 'demo-lingoflash', appId: 'demo-app-id',
+  firestoreDatabaseId: configuredTargets.production.firestoreDatabaseId,
+} : selectedFirebaseConfig;
+export const isFirebaseConfigured = !!firebaseConfig.apiKey?.trim();
+const appCheckSiteKey = typeof document === 'undefined' ? '' : selectedFirebaseConfig.appCheckSiteKey.trim();
 
 let appInstance: FirebaseApp | null = null;
 let appCheckInstance: AppCheck | null = null;
@@ -72,9 +74,8 @@ if (isFirebaseConfigured) {
           (globalThis as typeof globalThis & { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
         }
         appCheckInstance = initializeAppCheck(appInstance, {
-          // reCAPTCHA v3 has no per-assessment fee; Enterprise stays selectable until
-          // the console key is switched, because a provider/key mismatch fails every token.
-          provider: import.meta.env.VITE_FIREBASE_APP_CHECK_PROVIDER === 'v3'
+          // Provider and site key travel together with the sealed host target.
+          provider: selectedFirebaseConfig.appCheckProvider === 'v3'
             ? new ReCaptchaV3Provider(appCheckSiteKey)
             : new ReCaptchaEnterpriseProvider(appCheckSiteKey),
           isTokenAutoRefreshEnabled: true,
@@ -113,7 +114,7 @@ if (isFirebaseConfigured) {
 
 function connectEmulatorsForTests(auth: Auth, db: Firestore) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  connectFirestoreEmulator(db, '127.0.0.1', Number(import.meta.env.VITE_SONFLASH_FIRESTORE_EMULATOR_PORT || 8080));
   (window as Window & { __SONFLASH_TEST__?: unknown }).__SONFLASH_TEST__ = {
     signInWithCustomToken: async (token: string) => {
       await signInWithCustomToken(auth, token);

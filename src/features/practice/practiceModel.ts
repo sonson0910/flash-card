@@ -25,21 +25,40 @@ export function cardsForLanguagePair(
   });
 }
 
+export function eligibleWordMatchCards(cards: readonly CardData[]): CardData[] {
+  const candidates = cards
+    .map(card => ({
+      card,
+      word: card.word.trim(),
+      translation: card.translation.trim(),
+    }))
+    .filter(candidate => candidate.word && candidate.translation)
+    .map(candidate => ({
+      ...candidate,
+      wordKey: normalizeCardWord(candidate.word),
+      translationKey: normalizeCardWord(candidate.translation),
+    }))
+    .filter(candidate => candidate.wordKey && candidate.translationKey && candidate.wordKey !== candidate.translationKey);
+  const wordCounts = new Map<string, number>();
+  const translationCounts = new Map<string, number>();
+  candidates.forEach(({ wordKey, translationKey }) => {
+    wordCounts.set(wordKey, (wordCounts.get(wordKey) ?? 0) + 1);
+    translationCounts.set(translationKey, (translationCounts.get(translationKey) ?? 0) + 1);
+  });
+  return candidates
+    .filter(
+      ({ wordKey, translationKey }) =>
+        wordCounts.get(wordKey) === 1 && translationCounts.get(translationKey) === 1,
+    )
+    .map(({ card, word, translation }) => ({ ...card, word, translation }));
+}
+
 export function createWordMatchRound(
   cards: readonly CardData[],
   maximum = 6,
   random: () => number = Math.random,
 ): CardData[] {
-  const pairs = new Set<string>();
-  const eligible = cards.flatMap(card => {
-    const word = card.word.trim();
-    const translation = card.translation.trim();
-    const pair = `${normalizeCardWord(word)}\u0000${normalizeCardWord(translation)}`;
-    if (!word || !translation || pairs.has(pair)) return [];
-    pairs.add(pair);
-    return [{ ...card, word, translation }];
-  });
-  return shuffled(eligible, random).slice(0, Math.max(0, maximum));
+  return shuffled(eligibleWordMatchCards(cards), random).slice(0, Math.max(0, maximum));
 }
 
 export const isQuizAnswerCorrect = (question: QuizQuestion, option: string): boolean =>

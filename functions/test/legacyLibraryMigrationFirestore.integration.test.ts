@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
 import { FieldValue, getFirestore, Timestamp, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -68,6 +69,45 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
     expect((await owner.collection('card_reservations').get()).empty).toBe(true);
     expect((await owner.collection('card_tombstones').get()).empty).toBe(true);
     expect((await owner.collection('cards').get()).size).toBe(3);
+  });
+
+  it('applies and rolls back same-word lexemes without collapsing their identities', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const lexeme = (senseKey: string) => {
+      const bytes = Buffer.from(JSON.stringify(['en', 'lead', 'noun', senseKey])).toString('hex');
+      const value = `\u0000${bytes}`;
+      const slug = value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 90);
+      return {
+        word: 'lead', normalizedWord: 'lead', language: 'en', normalizedLemma: 'lead',
+        partOfSpeech: 'noun', senseKey,
+        lexemeId: `lexeme-${slug}-${createHash('sha256').update(value).digest('hex').slice(0, 24)}`,
+      };
+    };
+    const metal = lexeme('metal');
+    const guide = lexeme('guide');
+    await Promise.all([
+      owner.collection('cards').doc('lead-metal').set({ id: 'lead-metal', ...metal }),
+      owner.collection('cards').doc('lead-guide').set({ id: 'lead-guide', ...guide }),
+    ]);
+    const store = createFirestoreLegacyLibraryDiscoveryStore(database);
+    let discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId: 'lexeme-apply-v3', batchSize: 100 });
+    while (discovery.phase === 'discover') {
+      discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId: 'lexeme-apply-v3', batchSize: 100 });
+    }
+    const sourceRevision = String((await owner.collection('admin_library_migration_jobs').doc('lexeme-apply-v3').get()).data()?.sourceRevision ?? '');
+    await applyLegacyLibraryMigration(database, OWNER_ID, { jobId: 'lexeme-apply-v3', sourceRevision });
+    expect((await owner.collection('cards').doc(metal.lexemeId).get()).data()).toMatchObject(metal);
+    expect((await owner.collection('cards').doc(guide.lexemeId).get()).data()).toMatchObject(guide);
+    const reservationIds = (await owner.collection('card_reservations').get()).docs.map(document => document.id);
+    expect(reservationIds).toContain(createHash('sha256').update(`lexeme:${metal.lexemeId}`).digest('hex'));
+    expect(reservationIds).toContain(createHash('sha256').update(`lexeme:${guide.lexemeId}`).digest('hex'));
+    expect(reservationIds).not.toContain(createHash('sha256').update(metal.lexemeId).digest('hex'));
+
+    await rollbackLegacyLibraryMigration(database, OWNER_ID, 'lexeme-apply-v3', sourceRevision);
+    expect((await owner.collection('cards').orderBy('__name__').get()).docs.map(document => document.id))
+      .toContain('lead-metal');
+    expect((await owner.collection('cards').orderBy('__name__').get()).docs.map(document => document.id))
+      .toContain('lead-guide');
   });
 
   it('replays a terminal discovery byte-for-byte without reopening writes', async () => {
@@ -167,6 +207,9 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
       owner.collection('profile').doc('query_migration').set(previousProgress),
       owner.collection('profile').doc('library_facets').set(previousFacets),
       owner.collection('profile').doc('resource_usage').set(previousResourceUsage),
+      owner.collection('card_reservations').doc(createHash('sha256').update('migrate').digest('hex')).set({
+        schemaVersion: 1, cardId: 'legacy-capital', normalizedWord: 'migrate',
+      }),
     ]);
     const store = createFirestoreLegacyLibraryDiscoveryStore(database);
     let discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, {
@@ -187,6 +230,10 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
     expect((await owner.collection('profile').doc('resource_usage').get()).data())
       .toMatchObject({ schemaVersion: 1, cardCount: 2 });
     expect((await owner.collection('card_reservations').get()).size).toBe(2);
+    expect((await owner.collection('card_reservations').doc(createHash('sha256').update('migrate').digest('hex')).get()).data())
+      .toEqual({ schemaVersion: 1, cardId: 'word-migrate', normalizedWord: 'migrate' });
+    expect((await owner.collection('card_reservations').doc(createHash('sha256').update('word:migrate').digest('hex')).get()).exists)
+      .toBe(false);
     expect((await owner.collection('profile').doc('library_facets').get()).data())
       .toMatchObject({ complete: true, categories: { Other: 2 } });
     await expect(applyLegacyLibraryMigration(database, OWNER_ID, {
@@ -199,6 +246,40 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
     expect((await owner.collection('profile').doc('query_migration').get()).data()).toEqual(previousProgress);
     expect((await owner.collection('profile').doc('library_facets').get()).data()).toEqual(previousFacets);
     expect((await owner.collection('profile').doc('resource_usage').get()).data()).toEqual(previousResourceUsage);
+    expect((await owner.collection('card_reservations').doc(createHash('sha256').update('migrate').digest('hex')).get()).data())
+      .toEqual({ schemaVersion: 1, cardId: 'legacy-capital', normalizedWord: 'migrate' });
+  });
+
+  it('resumes legacy identity-less groups and plans, including a 256-character word', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const word = 'a'.repeat(256);
+    await owner.collection('cards').doc('long-word').set({ id: 'long-word', word, translation: 'dài' });
+    const store = createFirestoreLegacyLibraryDiscoveryStore(database);
+    let discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, {
+      jobId: 'legacy-identityless-v3', batchSize: 100,
+    });
+    while (discovery.phase === 'discover') {
+      discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, {
+        jobId: 'legacy-identityless-v3', batchSize: 100,
+      });
+    }
+    const jobReference = owner.collection('admin_library_migration_jobs').doc('legacy-identityless-v3');
+    const groups = await jobReference.collection('groups').get();
+    await Promise.all(groups.docs.map(group => group.ref.set({ identity: FieldValue.delete() }, { merge: true })));
+    const sourceRevision = String((await jobReference.get()).data()?.sourceRevision ?? '');
+    expect(sourceRevision).toMatch(/^[a-f0-9]{64}$/);
+
+    await applyLegacyLibraryMigration(database, OWNER_ID, { jobId: 'legacy-identityless-v3', sourceRevision });
+    const canonical = (await owner.collection('cards').where('normalizedWord', '==', word).get()).docs[0];
+    expect(canonical?.exists).toBe(true);
+    expect((await owner.collection('card_reservations').doc(createHash('sha256').update(word).digest('hex')).get()).data())
+      .toEqual({ schemaVersion: 1, cardId: canonical?.id, normalizedWord: word });
+
+    const plans = await owner.collection('admin_library_migration_backups').doc('legacy-identityless-v3')
+      .collection('plans').get();
+    await Promise.all(plans.docs.map(plan => plan.ref.set({ identity: FieldValue.delete() }, { merge: true })));
+    await rollbackLegacyLibraryMigration(database, OWNER_ID, 'legacy-identityless-v3', sourceRevision);
+    expect((await owner.collection('cards').doc('long-word').get()).data()).toMatchObject({ word });
   });
 
   it('rolls back applied groups when final sealing was interrupted', async () => {

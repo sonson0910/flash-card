@@ -6,6 +6,7 @@ import {
   reduceLessonState,
   type LessonState,
   type PendingLessonReview,
+  type LessonStep,
 } from './lessonReducer';
 
 export type DailySessionPersistenceResult =
@@ -16,7 +17,10 @@ export type DailySessionPersistenceResult =
 export interface DailySessionController {
   getSnapshot(): LessonState | null;
   subscribe(listener: (snapshot: LessonState | null) => void): () => void;
-  start(exercises: readonly Exercise[]): void;
+  start(exercises: readonly (Exercise | LessonStep)[]): void;
+  chooseIntroduction(choice: 'guided' | 'independent-recall'): boolean;
+  continueGuided(): boolean;
+  requestGuidance(): boolean;
   append(exercises: readonly Exercise[]): void;
   submit(answer: ExerciseAnswer): boolean;
   rate(rating: ReviewRatingValue): Promise<DailySessionPersistenceResult>;
@@ -129,8 +133,30 @@ export function createDailySessionController({
       publish({
         ...snapshot,
         exercises: [...snapshot.exercises.slice(0, insertionIndex), ...additions, ...snapshot.exercises.slice(insertionIndex)],
+        steps: [...snapshot.steps.slice(0, insertionIndex), ...additions.map(exercise => ({ stage: 'review' as const, exercise })), ...snapshot.steps.slice(insertionIndex)],
         ...(snapshot.phase === 'completed' ? { phase: 'answering', feedback: null, pendingReview: null, error: null } : {}),
       });
+    },
+    chooseIntroduction(choice) {
+      if (!snapshot || snapshot.phase !== 'introduction') return false;
+      const next = reduceLessonState(snapshot, { type: 'introduction-choice', choice });
+      if (next === snapshot) return false;
+      publish(next);
+      return true;
+    },
+    requestGuidance() {
+      if (!snapshot) return false;
+      const next = reduceLessonState(snapshot, { type: 'request-guidance' });
+      if (next === snapshot) return false;
+      publish(next);
+      return true;
+    },
+    continueGuided() {
+      if (!snapshot) return false;
+      const next = reduceLessonState(snapshot, { type: 'continue-guided' });
+      if (next === snapshot) return false;
+      publish(next);
+      return true;
     },
     submit(answer) {
       if (!snapshot || snapshot.phase !== 'answering') return false;

@@ -1,7 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import * as Dialog from '@radix-ui/react-dialog';
 import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
+import { messages as enLibrary } from '../../i18n/locales/en/library.po';
+i18n.load('en', enLibrary); i18n.activate('en');
 import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import { AiDialogueContent, AiDialogueModal, dialogueFailureMessage } from './AiDialogueModal';
 
@@ -15,14 +20,14 @@ const sampleCards: CardData[] = [
 describe('AiDialogueModal', () => {
   it('renders dialogue generator content', () => {
     const html = renderToStaticMarkup(
-      <Dialog.Root open>
+      <I18nProvider i18n={i18n}><Dialog.Root open>
         <Dialog.Content>
           <AiDialogueContent
             cards={sampleCards}
             onClose={vi.fn()}
           />
         </Dialog.Content>
-      </Dialog.Root>
+      </Dialog.Root></I18nProvider>
     );
 
     expect(html).toContain('Practice in context');
@@ -84,7 +89,7 @@ describe('AiDialogueModal', () => {
         },
       };
     });
-    vi.doMock('../../lib/gemini', () => ({ translateText: vi.fn(() => Promise.reject(failure)) }));
+    vi.doMock('../../lib/gemini', () => ({ generateDialogue: vi.fn(() => Promise.reject(failure)) }));
     const { AiDialogueContent: IsolatedContent } = await import('./AiDialogueModal');
     const { ProtectedFunctionError: IsolatedError } = await import('../../lib/protectedFunctionsCapability');
     failure = new IsolatedError({
@@ -111,8 +116,15 @@ describe('AiDialogueModal', () => {
     i18n.activate('vi');
     const alert = walk(render(), element => element.props?.role === 'alert');
     expect(alert?.props?.children).toBe('Đã hết hạn mức dùng chung.');
-    expect(state[3]).toBe(failure);
+    expect(state).toContain(failure);
     vi.doUnmock('react');
     vi.doUnmock('../../lib/gemini');
+  });
+  it('uses the typed dialogue operation and never parses model JSON in the component', () => {
+    const source = readFileSync(fileURLToPath(new URL('./AiDialogueModal.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('generateDialogue');
+    expect(source).not.toContain('translateText');
+    expect(source).not.toContain('JSON.parse');
   });
 });

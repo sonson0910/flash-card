@@ -1,14 +1,18 @@
 import { Volume2 } from 'lucide-react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import React, { useMemo } from 'react';
-import { parseSyllables, type SyllablePart } from '../../lib/syllableParser';
-import { triggerHaptic } from '../../lib/haptics';
+
+
+
 import { voiceForActiveCourseCard } from '../../lib/courseVoicePreference';
 import { speechLocaleFor } from '../../lib/speechLocale';
 import { resolveLanguagePackId } from '../../features/languagePacks/registry';
 import { useCourseSession } from '../../features/courses/CourseGate';
 import type { CardData } from '../../types/card';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { parseSyllables, type SyllablePart } from '../../lib/syllableParser';
+import { triggerHaptic } from '../../lib/haptics';
+import { playWordAudio, type WordAudioPlayback } from '../../lib/audio';
 
 interface SyllableStressBadgeProps {
   card: CardData;
@@ -30,6 +34,9 @@ export const SyllableStressBadge = React.memo(function SyllableStressBadge({
   // toggle (romanization/furigana/pinyin) instead, rendered by CardHeadword.
   const isEnglishPack = resolveLanguagePackId(card.language) === 'en';
   const analysis = useMemo(() => parseSyllables(word, phonetic), [word, phonetic]);
+  const playbackRef = useRef<WordAudioPlayback | null>(null);
+
+  useEffect(() => () => playbackRef.current?.cancel(), [word]);
 
   if (!isEnglishPack || !analysis.hasMultipleSyllables || analysis.syllables.length <= 1) {
     return null;
@@ -39,15 +46,11 @@ export const SyllableStressBadge = React.memo(function SyllableStressBadge({
     e.stopPropagation();
     triggerHaptic('light');
 
-    if ('speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined') {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(syllable.text);
-      utterance.lang = speechLocaleFor(card);
-      const voice = voiceForActiveCourseCard(card, courseModel.activeCourse);
-      if (voice) utterance.voice = voice;
-      utterance.rate = 0.75;
-      window.speechSynthesis.speak(utterance);
-    }
+    playbackRef.current?.cancel();
+    playbackRef.current = playWordAudio(syllable.text, null, {
+      speed: 0.75, speechLocale: speechLocaleFor(card),
+      voice: voiceForActiveCourseCard(card, courseModel.activeCourse),
+    });
   };
 
   return (
@@ -57,7 +60,7 @@ export const SyllableStressBadge = React.memo(function SyllableStressBadge({
       title={_(msg({ id: 'flashcard.syllables.help', message: 'Syllables & Stress. Tap a syllable to hear its pronunciation.' }))}
     >
       <span className={`text-[10px] font-black uppercase tracking-[0.14em] mr-0.5 ${onDarkSurface ? 'text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}>
-        <Trans id="flashcard.syllables" message="Syllables:" />
+        <Trans {...msg({ context: 'flashcard.syllables', message: 'Syllables:' })} />
       </span>
       <div className="flex flex-wrap items-center gap-1.5">
         {analysis.syllables.map((syl, idx) => {

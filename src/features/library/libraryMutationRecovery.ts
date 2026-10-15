@@ -4,14 +4,20 @@ export async function runEpochProtectedLibraryClear({
   incrementEpoch,
   onEpochAdvanced,
   deleteCards,
+  assertActive = () => undefined,
 }: {
   incrementEpoch: () => Promise<number>;
   onEpochAdvanced: (epoch: number) => void;
   deleteCards: (epoch: number) => Promise<void>;
+  assertActive?: () => void;
 }): Promise<number> {
+  assertActive();
   const nextEpoch = await incrementEpoch();
+  assertActive();
   onEpochAdvanced(nextEpoch);
+  assertActive();
   await deleteCards(nextEpoch);
+  assertActive();
   return nextEpoch;
 }
 

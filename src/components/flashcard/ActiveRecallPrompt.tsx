@@ -106,10 +106,10 @@ export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable }:
           <h2 lang={resolvedMode === 'native-to-target' ? translationLanguage : targetLanguage} className="text-balance text-4xl font-black text-[var(--sf-text)] sm:text-5xl">{prompt.promptText}</h2>
         )}
 
-        <p className="text-sm text-[var(--sf-text-muted)]"><Trans id="flashcard.recall.instructions" message="Recall first, then type your answer to check it." /></p>
+        <p className="text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'flashcard.recall.instructions', message: 'Recall first, then type your answer to check it.' })} /></p>
 
         <form onSubmit={checkAnswer} className="w-full max-w-sm flex gap-2" aria-label={_(msg({ id: 'flashcard.recall.check-answer', message: 'Check recalled answer' }))}>
-          <label htmlFor={`recall-answer-${card.id}`} className="sr-only"><Trans id="flashcard.recall.answer" message="Your answer" /></label>
+          <label htmlFor={`recall-answer-${card.id}`} className="sr-only"><Trans {...msg({ context: 'flashcard.recall.answer', message: 'Your answer' })} /></label>
           <input
             id={`recall-answer-${card.id}`}
             lang={resolvedMode === 'target-to-native' ? translationLanguage : targetLanguage}
@@ -128,12 +128,12 @@ export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable }:
             disabled={!answerInput.trim()}
             className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 text-xs font-black uppercase tracking-wider text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <Trans id="flashcard.recall.check" message="Check" />
+            <Trans {...msg({ context: 'flashcard.recall.check', message: 'Check' })} />
           </button>
         </form>
 
         <p className={`min-h-5 text-sm font-bold ${answerCorrect === true ? 'text-emerald-700 dark:text-emerald-300' : answerCorrect === false ? 'text-rose-700 dark:text-rose-300' : 'text-[var(--sf-text-muted)]'}`} aria-live="polite">
-          {answerCorrect === true ? <Trans id="flashcard.recall.correct" message="Correct. Reveal the answer to compare." /> : answerCorrect === false ? <Trans id="flashcard.recall.incorrect" message="Not quite. Try again or reveal the answer to check." /> : ''}
+          {answerCorrect === true ? <Trans {...msg({ context: 'flashcard.recall.correct', message: 'Correct. Reveal the answer to compare.' })} /> : answerCorrect === false ? <Trans {...msg({ context: 'flashcard.recall.incorrect', message: 'Not quite. Try again or reveal the answer to check.' })} /> : ''}
         </p>
       </div>
 
@@ -142,7 +142,7 @@ export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable }:
         onClick={onReveal}
         className="flex h-16 flex-shrink-0 items-center justify-center gap-2 bg-[var(--sf-brand)] text-xs font-black uppercase tracking-[0.15em] text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--sf-on-brand)]"
       >
-        <Eye size={16} /> <Trans id="flashcard.recall.reveal" message="Reveal answer" />
+        <Eye size={16} /> <Trans {...msg({ context: 'flashcard.recall.reveal', message: 'Reveal answer' })} />
       </button>
     </section>
   );

@@ -20,6 +20,7 @@ import type {
 } from './learningPersistencePort';
 
 export type LearningWorkspaceStats = LearningPersistenceStats;
+export type LearningReviewResult = LearningStateOutcome;
 
 export interface LearningWorkspaceLibraryPort {
   knownTotal: number;

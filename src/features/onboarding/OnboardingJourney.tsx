@@ -175,12 +175,12 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
         <div className="mx-auto flex items-center gap-3" role="progressbar" aria-valuemin={1} aria-valuemax={6} aria-valuenow={stepIndex} aria-valuetext={`${stepIndex} / 6`}>
           <div className="flex gap-1.5" aria-hidden="true">{Array.from({ length: 6 }, (_, index) => <span key={index} className={`h-1.5 w-5 rounded-full ${index < stepIndex ? 'bg-[var(--sf-brand)]' : 'bg-[var(--sf-border)]'}`} />)}</div>
         </div>
-        <button type="button" disabled={reminderSaveLocked} className="min-h-11 whitespace-nowrap rounded-xl px-4 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] disabled:opacity-60" onClick={() => setDismissedForSession(true)}><Trans id="onboarding.aha.skip" message="Skip for now" /></button>
+        <button type="button" disabled={reminderSaveLocked} className="min-h-11 whitespace-nowrap rounded-xl px-4 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] disabled:opacity-60" onClick={() => setDismissedForSession(true)}><Trans {...msg({ context: 'onboarding.aha.skip', message: 'Skip for now' })} /></button>
       </header>
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center py-10">
       {step === 'language' && <>
-        <div className="max-w-3xl"><h2 className={stepTitleClass}><Trans id="onboarding.language.title" message="Choose your language" /></h2>
-        <p className={stepSubtitleClass}><Trans id="onboarding.language.subtitle" message="This sets the app's interface and the language your explanations will be written in." /></p></div>
+        <div className="max-w-3xl"><h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.language.title', message: 'Choose your language' })} /></h2>
+        <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.language.subtitle', message: 'This sets the app\'s interface and the language your explanations will be written in.' })} /></p></div>
         <div className="mt-8 grid max-w-4xl gap-3 sm:grid-cols-2">
           {(['vi', 'en'] as const).map(locale => <button key={locale} type="button" aria-pressed={nativeLanguage === locale} className={optionButtonClass(nativeLanguage === locale)}
             onClick={() => { setNativeLanguage(locale); void setUiLocale(locale); }}>
@@ -189,11 +189,11 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
             {nativeLanguage === locale && <Check aria-hidden="true" size={18} className={selectionCheckClass} />}
           </button>)}
         </div>
-        <div className="mt-10 flex justify-end"><button type="button" className={responsivePrimaryButtonClass} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button></div>
+        <div className="mt-10 flex justify-end"><button type="button" className={responsivePrimaryButtonClass} onClick={goNext}><Trans {...msg({ context: 'onboarding.continue', message: 'Continue' })} /></button></div>
       </>}
 
       {step === 'target' && <>
-        <h2 className={stepTitleClass}><Trans id="onboarding.target.title" message="What are you learning?" /></h2>
+        <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.target.title', message: 'What are you learning?' })} /></h2>
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
           {targetOptions.map(language => <button key={language} type="button" aria-pressed={targetLanguage === language} className={optionButtonClass(targetLanguage === language)} onClick={() => {
             if (language !== targetLanguage) {
@@ -209,18 +209,18 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
           </button>)}
         </div>
         <div className={footerClass}>
-          <button type="button" className={responsiveSecondaryButtonClass} onClick={goBack}><Trans id="onboarding.back" message="Back" /></button>
-          <button type="button" className={responsivePrimaryButtonClass} disabled={!targetLanguage} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button>
+          <button type="button" className={responsiveSecondaryButtonClass} onClick={goBack}><Trans {...msg({ context: 'onboarding.back', message: 'Back' })} /></button>
+          <button type="button" className={responsivePrimaryButtonClass} disabled={!targetLanguage} onClick={goNext}><Trans {...msg({ context: 'onboarding.continue', message: 'Continue' })} /></button>
         </div>
       </>}
 
       {step === 'goal' && <>
-        <h2 className={stepTitleClass}><Trans id="onboarding.goal.title" message="Have an exam or goal in mind?" /></h2>
-        <p className={stepSubtitleClass}><Trans id="onboarding.goal.subtitle" message="Optional. You can add or change this later in the course switcher." /></p>
+        <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.goal.title', message: 'Have an exam or goal in mind?' })} /></h2>
+        <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.goal.subtitle', message: 'Optional. You can add or change this later in the course switcher.' })} /></p>
         <div className="onboarding-journey__goal-grid" data-goal-count={goalOptions.length + 1}>
           <button type="button" aria-pressed={goalKind === null} className={goalCardClass} onClick={() => setGoalKind(null)}>
             <span className={goalIconClass}><NoSpecificGoalIcon aria-hidden="true" size={22} /></span>
-            <span className={goalCardTextClass}><span className={goalCardTitleClass}><Trans id="onboarding.goal.none" message="No specific goal yet" /></span><span className={goalCardDescriptionClass}><Trans id="onboarding.goal.subtitle" message="Optional. You can add or change this later in the course switcher." /></span></span>
+            <span className={goalCardTextClass}><span className={goalCardTitleClass}><Trans {...msg({ context: 'onboarding.goal.none', message: 'No specific goal yet' })} /></span><span className={goalCardDescriptionClass}><Trans {...msg({ context: 'onboarding.goal.subtitle', message: 'Optional. You can add or change this later in the course switcher.' })} /></span></span>
             {goalKind === null && <span className={selectedGoalMarkerClass}><Check aria-hidden="true" size={14} /></span>}
           </button>
           {goalOptions.map(option => {
@@ -233,60 +233,60 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
           })}
         </div>
         {selectedGoal && <div className="mt-4 grid max-w-2xl gap-3 sm:grid-cols-2">
-          <label className={goalLabelClass}><Trans id="course.goal.add.level-label" message="Level or target (optional)" />
+          <label className={goalLabelClass}><Trans {...msg({ context: 'course.goal.add.level-label', message: 'Level or target (optional)' })} />
             <input className={goalFieldClass} value={goalLevel} onChange={event => setGoalLevel(event.target.value)} placeholder={_(selectedGoal.levelHint)} maxLength={32} />
           </label>
-          <label className={goalLabelClass}><Trans id="course.goal.add.date-label" message="Exam or target date (optional)" />
+          <label className={goalLabelClass}><Trans {...msg({ context: 'course.goal.add.date-label', message: 'Exam or target date (optional)' })} />
             <input type="date" className={goalFieldClass} value={goalTargetDate} onChange={event => setGoalTargetDate(event.target.value)} />
           </label>
         </div>}
-        {targetLanguage === 'zh' && <label className="mt-4 block max-w-2xl text-sm font-bold text-[var(--sf-text)]"><Trans id="settings.course.script" message="Chinese script" />
+        {targetLanguage === 'zh' && <label className="mt-4 block max-w-2xl text-sm font-bold text-[var(--sf-text)]"><Trans {...msg({ context: 'settings.course.script', message: 'Chinese script' })} />
           <select className={goalFieldClass} value={zhScript ?? 'hans'} onChange={event => setZhScript(event.target.value as 'hans' | 'hant')}>
-            <option value="hans"><Trans id="settings.course.script.simplified" message="Simplified" /></option>
-            <option value="hant"><Trans id="settings.course.script.traditional" message="Traditional" /></option>
+            <option value="hans"><Trans {...msg({ context: 'settings.course.script.simplified', message: 'Simplified' })} /></option>
+            <option value="hant"><Trans {...msg({ context: 'settings.course.script.traditional', message: 'Traditional' })} /></option>
           </select>
         </label>}
         <div className={goalFooterClass}>
-          <button type="button" className={responsiveSecondaryButtonClass} onClick={goBack}><Trans id="onboarding.back" message="Back" /></button>
-          <button type="button" className={responsivePrimaryButtonClass} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button>
+          <button type="button" className={responsiveSecondaryButtonClass} onClick={goBack}><Trans {...msg({ context: 'onboarding.back', message: 'Back' })} /></button>
+          <button type="button" className={responsivePrimaryButtonClass} onClick={goNext}><Trans {...msg({ context: 'onboarding.continue', message: 'Continue' })} /></button>
         </div>
       </>}
 
       {step === 'pace' && <>
         <div className="flex flex-1 flex-col">
           <div className="mx-auto my-auto w-full max-w-5xl text-center">
-            <h2 className={stepTitleClass}><Trans id="onboarding.pace.title" message="How many cards a day?" /></h2>
+            <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.pace.title', message: 'How many cards a day?' })} /></h2>
             <div className="onboarding-pace-grid mt-8 grid gap-4 sm:grid-cols-4">
               {DAILY_PACE_OPTIONS.map(option => <button key={option} type="button" aria-pressed={pace === option} className={optionButtonClass(pace === option)} style={{ minHeight: 'clamp(5rem, 12vw, 11rem)' }} onClick={() => setPace(option)}>
                 <span className="font-serif-hero text-2xl font-bold">{option}</span>
-                <span className="mt-1 text-xs font-medium opacity-75"><Trans id="onboarding.pace.option" message="{count} cards / day" values={{ count: option }} /></span>
+                <span className="mt-1 text-xs font-medium opacity-75"><Trans {...msg({ context: 'onboarding.pace.option', message: '{count} cards / day' })} values={{ count: option }} /></span>
                 {pace === option && <Check aria-hidden="true" size={18} className={selectionCheckClass} />}
               </button>)}
             </div>
           </div>
           <div className={paceFooterClass} style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
-            <button type="button" className={responsiveSecondaryButtonClass} onClick={goBack}><Trans id="onboarding.back" message="Back" /></button>
-            <button type="button" className={responsivePrimaryButtonClass} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button>
+            <button type="button" className={responsiveSecondaryButtonClass} onClick={goBack}><Trans {...msg({ context: 'onboarding.back', message: 'Back' })} /></button>
+            <button type="button" className={responsivePrimaryButtonClass} onClick={goNext}><Trans {...msg({ context: 'onboarding.continue', message: 'Continue' })} /></button>
           </div>
         </div>
       </>}
 
       {step === 'aha' && <>
-        <h2 className={stepTitleClass}><Trans id="onboarding.aha.title" message="Let's add your first cards" /></h2>
+        <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.aha.title', message: 'Let\'s add your first cards' })} /></h2>
         {ahaOutcome === null && <>
-          <p className={stepSubtitleClass}><Trans id="onboarding.aha.subtitle" message="Five common words to get you started." /></p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row"><button type="button" className={responsivePrimaryButtonClass} onClick={() => void startAha()}><Trans id="onboarding.aha.create" message="Add 5 starter cards" /></button>
-          <button type="button" className={responsiveSecondaryButtonClass} onClick={goNext}><Trans id="onboarding.aha.skip" message="Skip for now" /></button></div>
+          <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.aha.subtitle', message: 'Five common words to get you started.' })} /></p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row"><button type="button" className={responsivePrimaryButtonClass} onClick={() => void startAha()}><Trans {...msg({ context: 'onboarding.aha.create', message: 'Add 5 starter cards' })} /></button>
+          <button type="button" className={responsiveSecondaryButtonClass} onClick={goNext}><Trans {...msg({ context: 'onboarding.aha.skip', message: 'Skip for now' })} /></button></div>
         </>}
-        {ahaOutcome === 'pending' && <p className={ahaNeutralMessageClass}><Trans id="onboarding.aha.pending" message="Adding your cards…" /></p>}
+        {ahaOutcome === 'pending' && <p className={ahaNeutralMessageClass}><Trans {...msg({ context: 'onboarding.aha.pending', message: 'Adding your cards…' })} /></p>}
         {ahaOutcome === 'error' && <>
-          <p className="mt-8 text-base font-semibold text-[var(--sf-danger)]"><Trans id="onboarding.aha.error" message="Something went wrong adding cards. You can add them later from the library." /></p>
-          <button type="button" className={`${primaryButtonClass} mt-6`} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button>
+          <p className="mt-8 text-base font-semibold text-[var(--sf-danger)]"><Trans {...msg({ context: 'onboarding.aha.error', message: 'Something went wrong adding cards. You can add them later from the library.' })} /></p>
+          <button type="button" className={`${primaryButtonClass} mt-6`} onClick={goNext}><Trans {...msg({ context: 'onboarding.continue', message: 'Continue' })} /></button>
         </>}
         {ahaOutcome !== null && ahaOutcome !== 'pending' && ahaOutcome !== 'error' && <>
           {ahaOutcome.created.length > 0
-            ? <p className="mt-8 text-base font-semibold text-[var(--sf-success)]"><Trans id="onboarding.aha.success" message="Added {count} cards to your library." values={{ count: ahaOutcome.created.length }} /></p>
-            : <p className={ahaNeutralMessageClass}><Trans id="onboarding.aha.none-added" message="No cards were added." /></p>}
+            ? <p className="mt-8 text-base font-semibold text-[var(--sf-success)]"><Trans {...msg({ context: 'onboarding.aha.success', message: 'Added {count} cards to your library.' })} values={{ count: ahaOutcome.created.length }} /></p>
+            : <p className={ahaNeutralMessageClass}><Trans {...msg({ context: 'onboarding.aha.none-added', message: 'No cards were added.' })} /></p>}
           {ahaOutcome.created.length > 0 && <ul className="onboarding-created-starter-cards mt-4 grid max-w-4xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {ahaOutcome.created.map(card => <li key={card.id} className="rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 text-left">
               <span lang={card.language || undefined} className="block font-serif-hero text-lg font-bold text-[var(--sf-text)]">{card.word}</span>
@@ -294,18 +294,18 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
               <span className="mt-2 block text-sm text-[var(--sf-brand-text)]">{card.translation}</span>
             </li>)}
           </ul>}
-          {ahaOutcome.skippedForQuota > 0 && <p className="mt-3 max-w-2xl text-sm text-[var(--sf-text-muted)]"><Trans id="onboarding.aha.quota-note" message="Your monthly Free card allowance is almost used up, so {count} card(s) were not added." values={{ count: ahaOutcome.skippedForQuota }} /></p>}
-          <button type="button" className={`${primaryButtonClass} mt-6`} onClick={goNext}><Trans id="onboarding.continue" message="Continue" /></button>
+          {ahaOutcome.skippedForQuota > 0 && <p className="mt-3 max-w-2xl text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'onboarding.aha.quota-note', message: 'Your monthly Free card allowance is almost used up, so {count} card(s) were not added.' })} values={{ count: ahaOutcome.skippedForQuota }} /></p>}
+          <button type="button" className={`${primaryButtonClass} mt-6`} onClick={goNext}><Trans {...msg({ context: 'onboarding.continue', message: 'Continue' })} /></button>
         </>}
       </>}
 
       {step === 'reminder' && <>
-        <h2 className={stepTitleClass}><Trans id="onboarding.reminder.title" message="Daily reminders" /></h2>
-        <p className={stepSubtitleClass}><Trans id="onboarding.reminder.description" message="Choose when SonFlash can remind you to review." /></p>
+        <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.reminder.title', message: 'Daily reminders' })} /></h2>
+        <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.reminder.description', message: 'Choose when SonFlash can remind you to review.' })} /></p>
         <div className="mt-6 max-w-3xl"><ReminderSettingsSection initialOwnerId={ownerId} embedded onSaveStateChange={onReminderSaveStateChange} onSkip={skipFailedSave} /></div>
         {error && <p className="mt-6 text-sm font-semibold text-[var(--sf-danger)]">{error}</p>}
-        <div className={footerClass}><button type="button" disabled={reminderSaveLocked} className={`${secondaryButtonClass} w-full sm:w-auto disabled:opacity-60`} onClick={goBack}><Trans id="onboarding.back" message="Back" /></button>
-        <button type="button" className={responsivePrimaryButtonClass} disabled={model.pending || reminderSaveLocked} onClick={() => void finish()}><Trans id="onboarding.finish" message="Start learning" /></button></div>
+        <div className={footerClass}><button type="button" disabled={reminderSaveLocked} className={`${secondaryButtonClass} w-full sm:w-auto disabled:opacity-60`} onClick={goBack}><Trans {...msg({ context: 'onboarding.back', message: 'Back' })} /></button>
+        <button type="button" className={responsivePrimaryButtonClass} disabled={model.pending || reminderSaveLocked} onClick={() => void finish()}><Trans {...msg({ context: 'onboarding.finish', message: 'Start learning' })} /></button></div>
       </>}
       </main>
     </div>

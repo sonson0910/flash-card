@@ -87,7 +87,7 @@ function AvailabilityPanel({ status, actions, hasPersonalLibrary = true }: { sta
     return (
       <section className="flex items-start gap-3 rounded-2xl border border-cyan-300 bg-cyan-50 p-5 text-cyan-950 dark:border-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-100" aria-labelledby="personal-path-status-title" aria-live="polite">
         <BookOpen className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-        <div><h2 id="personal-path-status-title" className="font-black"><Trans id="catalog.personal.status-title" message="Personal learning mode" /></h2><p className="mt-1 text-sm">{status.message}</p>{!hasPersonalLibrary && <button type="button" onClick={actions.openVocabulary} className="mt-3 min-h-11 rounded-xl border border-current px-4 py-2 font-bold"><Trans id="catalog.action.open-vocabulary" message="Open vocabulary" /></button>}</div>
+        <div><h2 id="personal-path-status-title" className="font-black"><Trans {...msg({ context: 'catalog.personal.status-title', message: 'Personal learning mode' })} /></h2><p className="mt-1 text-sm">{status.message}</p>{!hasPersonalLibrary && <button type="button" onClick={actions.openVocabulary} className="mt-3 min-h-11 rounded-xl border border-current px-4 py-2 font-bold"><Trans {...msg({ context: 'catalog.action.open-vocabulary', message: 'Open vocabulary' })} /></button>}</div>
       </section>
     );
   }
@@ -107,14 +107,14 @@ function AvailabilityPanel({ status, actions, hasPersonalLibrary = true }: { sta
       <section className="rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100" aria-labelledby="catalog-unavailable-title" aria-live="polite">
         <div className="flex items-start gap-3">
           <WifiOff className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-          <div><h2 id="catalog-unavailable-title" className="font-black"><Trans id="catalog.status.unavailable-title" message="Catalog unavailable" /></h2><p className="mt-1 text-sm">{status.message}</p><p className="mt-2 text-sm font-semibold"><Trans id="catalog.status.no-drafts" message="Draft vocabulary is never shown here." /></p></div>
+          <div><h2 id="catalog-unavailable-title" className="font-black"><Trans {...msg({ context: 'catalog.status.unavailable-title', message: 'Catalog unavailable' })} /></h2><p className="mt-1 text-sm">{status.message}</p><p className="mt-2 text-sm font-semibold"><Trans {...msg({ context: 'catalog.status.no-drafts', message: 'Draft vocabulary is never shown here.' })} /></p></div>
         </div>
         {status.canDownload && status.isOnline ? (
-          <button type="button" onClick={actions.download} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 motion-reduce:transition-none"><Download className="size-4" aria-hidden="true" /><Trans id="catalog.status.check-reviewed" message="Check for reviewed catalog" /></button>
+          <button type="button" onClick={actions.download} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 motion-reduce:transition-none"><Download className="size-4" aria-hidden="true" /><Trans {...msg({ context: 'catalog.status.check-reviewed', message: 'Check for reviewed catalog' })} /></button>
         ) : status.canDownload ? (
-          <p className="mt-4 text-sm font-semibold"><Trans id="catalog.status.connect-first-download" message="Connect to the internet for the first verified download." /></p>
+          <p className="mt-4 text-sm font-semibold"><Trans {...msg({ context: 'catalog.status.connect-first-download', message: 'Connect to the internet for the first verified download.' })} /></p>
         ) : (
-          <p className="mt-4 text-sm font-semibold"><Trans id="catalog.status.release-pending" message="A download will appear after a reviewed release is published." /></p>
+          <p className="mt-4 text-sm font-semibold"><Trans {...msg({ context: 'catalog.status.release-pending', message: 'A download will appear after a reviewed release is published.' })} /></p>
         )}
       </section>
     );
@@ -122,12 +122,12 @@ function AvailabilityPanel({ status, actions, hasPersonalLibrary = true }: { sta
 
   return (
     <section className="rounded-2xl border border-rose-300 bg-rose-50 p-5 text-rose-950 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-100" aria-labelledby="catalog-error-title" aria-live="assertive" role="alert">
-      <h2 id="catalog-error-title" className="font-black"><Trans id="catalog.status.error-title" message="Catalog needs attention" /></h2>
+      <h2 id="catalog-error-title" className="font-black"><Trans {...msg({ context: 'catalog.status.error-title', message: 'Catalog needs attention' })} /></h2>
       <p className="mt-1 text-sm">{status.message}</p>
       {status.detail && (
         <details className="group mt-3 text-sm">
           <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 py-2 font-semibold [&::-webkit-details-marker]:hidden">
-            <span><Trans id="catalog.status.technical-detail" message="Technical detail" /></span>
+            <span><Trans {...msg({ context: 'catalog.status.technical-detail', message: 'Technical detail' })} /></span>
             <ChevronDown size={14} className="transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
           </summary>
           <p className="mt-1 break-words rounded-xl bg-white/60 p-3 font-mono text-xs text-rose-900 dark:bg-black/30 dark:text-rose-200">
@@ -135,7 +135,7 @@ function AvailabilityPanel({ status, actions, hasPersonalLibrary = true }: { sta
           </p>
         </details>
       )}
-      <button type="button" onClick={actions.retry} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-rose-700 px-4 py-2 font-bold text-white transition-colors hover:bg-rose-800 focus-visible:outline-2 motion-reduce:transition-none"><RefreshCw className="size-4" aria-hidden="true" /><Trans id="catalog.action.retry" message="Try again" /></button>
+      <button type="button" onClick={actions.retry} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-rose-700 px-4 py-2 font-bold text-white transition-colors hover:bg-rose-800 focus-visible:outline-2 motion-reduce:transition-none"><RefreshCw className="size-4" aria-hidden="true" /><Trans {...msg({ context: 'catalog.action.retry', message: 'Try again' })} /></button>
     </section>
   );
 }
@@ -155,10 +155,10 @@ function PersonalLibraryPaths({
   return (
     <section aria-labelledby="personal-paths-heading" className="catalog-personal-paths overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
       <div className="grid gap-5 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-        <div className="min-w-0"><p className={heroKickerClass}><Trans id="catalog.personal.kicker" message="Built from your library" /></p><h2 id="personal-paths-heading" className="mt-2 text-balance text-2xl font-black tracking-tight sm:text-3xl"><Trans id="catalog.personal.title" message="Your personal paths" /></h2><p className="mt-2 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]"><Trans id="catalog.personal.description" message="Use your {count} saved cards now. No draft catalog vocabulary is mixed into these paths." values={{ count: formatNumber(library.total) }} /></p></div>
+        <div className="min-w-0"><p className={heroKickerClass}><Trans {...msg({ context: 'catalog.personal.kicker', message: 'Built from your library' })} /></p><h2 id="personal-paths-heading" className="mt-2 text-balance text-2xl font-black tracking-tight sm:text-3xl"><Trans {...msg({ context: 'catalog.personal.title', message: 'Your personal paths' })} /></h2><p className="mt-2 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'catalog.personal.description', message: 'Use your {count} saved cards now. No draft catalog vocabulary is mixed into these paths.' })} values={{ count: formatNumber(library.total) }} /></p></div>
         <div className="flex flex-wrap gap-3 lg:justify-end">
-          {library.total > 0 && <button type="button" onClick={actions.continueReview} className="brand-action min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-2.5 text-sm font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.03] hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none cursor-pointer"><Trans id="catalog.action.continue-review" message="Continue review" /></button>}
-          <button type="button" onClick={actions.openVocabulary} className="min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 text-sm font-bold text-slate-800 dark:text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none cursor-pointer"><Trans id="catalog.action.open-vocabulary" message="Open vocabulary" /></button>
+          {library.total > 0 && <button type="button" onClick={actions.continueReview} className="brand-action min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-2.5 text-sm font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.03] hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none cursor-pointer"><Trans {...msg({ context: 'catalog.action.continue-review', message: 'Continue review' })} /></button>}
+          <button type="button" onClick={actions.openVocabulary} className="min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 text-sm font-bold text-slate-800 dark:text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none cursor-pointer"><Trans {...msg({ context: 'catalog.action.open-vocabulary', message: 'Open vocabulary' })} /></button>
         </div>
       </div>
       <div className="relative">
@@ -177,10 +177,10 @@ function TrackCard({ track, selected, progressAvailable, onSelect }: { track: Ca
   return (
     <button type="button" onClick={onSelect} aria-pressed={selected} className={`catalog-track-card group relative min-h-52 overflow-hidden rounded-[22px] border p-5 text-left shadow-[0_18px_48px_-38px_var(--sf-shadow)] transition-all hover:-translate-y-1 hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transform-none motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm ${selected ? 'border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] ring-1 ring-[var(--sf-brand)]/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
       <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-2 ${selected ? 'bg-[var(--sf-brand)]' : 'bg-[var(--sf-border)] group-hover:bg-[var(--sf-brand)]'}`} />
-      <span className="relative flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2"><span className="min-w-0 break-words text-xl font-black tracking-tight">{i18n._(copy.label)}</span>{selected && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--sf-brand)]/30 bg-[var(--sf-brand)]/10 px-2 py-1 text-[11px] font-black text-[var(--sf-brand-text)]"><Check aria-hidden="true" className="size-3.5" /><Trans id="paths.selected" message="Selected" /></span>}</span>
+      <span className="relative flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2"><span className="min-w-0 break-words text-xl font-black tracking-tight">{i18n._(copy.label)}</span>{selected && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--sf-brand)]/30 bg-[var(--sf-brand)]/10 px-2 py-1 text-[11px] font-black text-[var(--sf-brand-text)]"><Check aria-hidden="true" className="size-3.5" /><Trans {...msg({ context: 'paths.selected', message: 'Selected' })} /></span>}</span>
       <span className="relative mt-2 block text-sm leading-6 text-[var(--sf-text-muted)]">{i18n._(copy.description)}</span>
       <span className="relative mt-5 block h-1.5 overflow-hidden rounded-full bg-[var(--sf-border)]"><span className="block h-full rounded-full bg-[var(--sf-brand)] transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${progress}%` }} /></span>
-      <span className="relative mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--sf-text-muted)]"><Metric value={track.total} label={i18n._(msg({ id: 'paths.metric.words', message: 'words' }))} />{progressAvailable ? <><Metric value={track.started} label={i18n._(msg({ id: 'paths.metric.started', message: 'started' }))} /><Metric value={track.mastered} label={i18n._(msg({ id: 'paths.metric.mastered', message: 'mastered' }))} /></> : <span><Trans id="paths.unit.status.unavailable" message="Progress unavailable" /></span>}</span>
+      <span className="relative mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--sf-text-muted)]"><Metric value={track.total} label={i18n._(msg({ id: 'paths.metric.words', message: 'words' }))} />{progressAvailable ? <><Metric value={track.started} label={i18n._(msg({ id: 'paths.metric.started', message: 'started' }))} /><Metric value={track.mastered} label={i18n._(msg({ id: 'paths.metric.mastered', message: 'mastered' }))} /></> : <span><Trans {...msg({ id: 'paths.unit.status.unavailable', message: 'Progress unavailable' })} /></span>}</span>
     </button>
   );
 }
@@ -192,10 +192,10 @@ function TierStep({ tier, selected, progressAvailable, onSelect }: { tier: Catal
   return (
     <li className="min-w-0 flex-1">
       <button type="button" onClick={onSelect} disabled={isLocked} aria-pressed={selected} className={`catalog-tier-step h-full min-h-12 w-full rounded-2xl border p-4 text-left transition-all hover:border-cyan-400 focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-70 ${selected ? 'border-cyan-400 bg-cyan-50 shadow-[inset_4px_0_0_#0891B2] dark:bg-cyan-950/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
-        <span className="flex items-center gap-2 text-sm font-bold"><Icon className="size-4 shrink-0" aria-hidden="true" />{progressAvailable ? i18n._(stateLabel) : <Trans id="paths.unit.status.unavailable" message="Progress unavailable" />}</span>
-        <span className="mt-2 block text-lg font-black">{i18n._(copy.label)}{tier.cefrRange && ` · ${tier.cefrRange}`}{selected && <> · <Trans id="paths.selected" message="Selected" /></>}</span>
+        <span className="flex items-center gap-2 text-sm font-bold"><Icon className="size-4 shrink-0" aria-hidden="true" />{progressAvailable ? i18n._(stateLabel) : <Trans {...msg({ id: 'paths.unit.status.unavailable', message: 'Progress unavailable' })} />}</span>
+        <span className="mt-2 block text-lg font-black">{i18n._(copy.label)}{tier.cefrRange && ` · ${tier.cefrRange}`}{selected && <> · <Trans {...msg({ context: 'paths.selected', message: 'Selected' })} /></>}</span>
         <span className="mt-1 block text-sm text-[var(--sf-text-muted)]">{i18n._(copy.description)}</span>
-        {progressAvailable && <span className="mt-3 block text-xs text-[var(--sf-text-muted)]"><Trans id="paths.tier.progress" message="{mastered} of {total} mastered · {started} started" values={{ mastered: formatNumber(tier.mastered), total: formatNumber(tier.total), started: formatNumber(tier.started) }} /></span>}
+        {progressAvailable && <span className="mt-3 block text-xs text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'paths.tier.progress', message: '{mastered} of {total} mastered · {started} started' })} values={{ mastered: formatNumber(tier.mastered), total: formatNumber(tier.total), started: formatNumber(tier.started) }} /></span>}
       </button>
     </li>
   );
@@ -230,37 +230,37 @@ function PathUnitShelf({
       : msg({ id: 'paths.unit.status.not-started', message: 'Not started' });
   return (
     <section aria-labelledby="catalog-units-heading" className={shelfClass}>
-      <div className="mb-4"><p className={kickerClass}><Trans id="paths.units.kicker" message="Catalog units" /></p><h2 id="catalog-units-heading" className="mt-1 text-xl font-black tracking-tight"><Trans id="paths.units.title" message="Choose a unit" /></h2></div>
+      <div className="mb-4"><p className={kickerClass}><Trans {...msg({ context: 'paths.units.kicker', message: 'Catalog units' })} /></p><h2 id="catalog-units-heading" className="mt-1 text-xl font-black tracking-tight"><Trans {...msg({ context: 'paths.units.title', message: 'Choose a unit' })} /></h2></div>
       <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label={i18n._(msg({ id: 'paths.units.list-label', message: 'Catalog units' }))}>
         {units.map(progress => {
           const unit = progress.unit;
           const isSelected = progress === selected;
           return <li key={`${unit.trackId}:${unit.unitId}`}><button type="button" onClick={() => actions.selectPathUnit(unit.trackId, unit.unitId)} aria-pressed={isSelected} className={`min-h-11 w-full rounded-2xl border p-4 text-left transition-colors focus-visible:outline-2 motion-reduce:transition-none ${isSelected ? 'border-[var(--sf-brand)] bg-[var(--sf-surface)]' : 'border-[var(--sf-border)] bg-[var(--sf-surface)] hover:border-[var(--sf-brand)]'}`}>
-            <span className="flex flex-col gap-1"><span className="font-black"><Trans id="paths.unit.ordinal" message="Unit {ordinal}" values={{ ordinal: unit.ordinal }} /> · {pathUnitTitle(unit, language)}</span><span className="text-xs font-bold text-[var(--sf-text-muted)]">{i18n._(status(progress))}</span></span>
-            <span className="mt-2 block text-sm text-[var(--sf-text-muted)]"><Trans id="paths.unit.count" message="{count} words" values={{ count: formatNumber(unit.total) }} /></span>
+            <span className="flex flex-col gap-1"><span className="font-black"><Trans {...msg({ context: 'paths.unit.ordinal', message: 'Unit {ordinal}' })} values={{ ordinal: unit.ordinal }} /> · {pathUnitTitle(unit, language)}</span><span className="text-xs font-bold text-[var(--sf-text-muted)]">{i18n._(status(progress))}</span></span>
+            <span className="mt-2 block text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'paths.unit.count', message: '{count} words' })} values={{ count: formatNumber(unit.total) }} /></span>
           </button></li>;
         })}
       </ol>
       <aside id="catalog-unit-preview" tabIndex={-1} className="mt-4 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 focus-visible:outline-2" aria-live="polite">
-        <h3 className="font-black"><Trans id="paths.unit.preview" message="Preview: {title}" values={{ title: pathUnitTitle(selected.unit, language) }} /></h3>
+        <h3 className="font-black"><Trans {...msg({ context: 'paths.unit.preview', message: 'Preview: {title}' })} values={{ title: pathUnitTitle(selected.unit, language) }} /></h3>
         {selected.introduced === null || selected.mastered === null
-          ? <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans id="paths.unit.progress-unavailable" message="Progress is unavailable until your library can be verified." /></p>
-          : <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans id="paths.unit.progress" message="{introduced} introduced · {mastered} mastered" values={{ introduced: formatNumber(selected.introduced), mastered: formatNumber(selected.mastered) }} /></p>}
+          ? <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'paths.unit.progress-unavailable', message: 'Progress is unavailable until your library can be verified.' })} /></p>
+          : <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'paths.unit.progress', message: '{introduced} introduced · {mastered} mastered' })} values={{ introduced: formatNumber(selected.introduced), mastered: formatNumber(selected.mastered) }} /></p>}
         <ol className="mt-3 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
           {selected.unit.preview.map((lexeme, index) => <li key={`${lexeme.lexemeId}:${index}`} lang={language} className="rounded-lg bg-[var(--sf-surface)] px-3 py-2 font-semibold">{lexeme.lemma}</li>)}
         </ol>
-        {continueState?.etaDays !== null && continueState?.etaDays !== undefined && <p className="mt-3 text-sm font-semibold text-[var(--sf-text-muted)]"><Trans id="paths.unit.eta" message="Estimated {days, plural, one {# day} other {# days}} left at your pace." values={{ days: continueState.etaDays }} /></p>}
+        {continueState?.etaDays !== null && continueState?.etaDays !== undefined && <p className="mt-3 text-sm font-semibold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'paths.unit.eta', message: 'Estimated {days, plural, one {# day} other {# days}} left at your pace.' })} values={{ days: continueState.etaDays }} /></p>}
         {continueState && (selected.status === 'unavailable'
-          ? <p className={compactStatusClass}><Trans id="paths.unit.continue-unavailable" message="Continue is unavailable until progress can be verified." /></p>
+          ? <p className={compactStatusClass}><Trans {...msg({ context: 'paths.unit.continue-unavailable', message: 'Continue is unavailable until progress can be verified.' })} /></p>
           : selected.status === 'complete'
-            ? <p className={compactStatusClass}><Trans id="paths.unit.complete-message" message="This unit is complete." /></p>
+            ? <p className={compactStatusClass}><Trans {...msg({ context: 'paths.unit.complete-message', message: 'This unit is complete.' })} /></p>
           : continueState?.allComplete
-            ? <p className={compactStatusClass}><Trans id="paths.unit.all-complete" message="All units in this path are complete." /></p>
+            ? <p className={compactStatusClass}><Trans {...msg({ context: 'paths.unit.all-complete', message: 'All units in this path are complete.' })} /></p>
             : <div className="mt-4">
-              {confirmationArmed && <p className="text-sm text-[var(--sf-text-muted)]"><Trans id="paths.unit.confirm-disclosure" message="Any missing unit words will be added to your Library before study." /></p>}
+              {confirmationArmed && <p className="text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'paths.unit.confirm-disclosure', message: 'Any missing unit words will be added to your Library before study.' })} /></p>}
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <button type="button" onClick={confirmationArmed ? actions.confirmSelectedUnit : actions.prepareSelectedUnit} disabled={continueState?.busy} className="brand-action min-h-11 rounded-full bg-[var(--sf-brand)] px-5 py-2.5 text-sm font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.03] hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-65 cursor-pointer">
-                  {continueState?.busy ? <Trans id="paths.unit.continuing" message="Starting unit…" /> : confirmationArmed ? hasUnintroducedWords ? <Trans id="paths.unit.add-and-study" message="Add missing words and study" /> : <Trans id="paths.unit.study" message="Study this unit" /> : <Trans id="paths.unit.prepare-continue" message="Continue with this unit" />}
+                  {continueState?.busy ? <Trans {...msg({ context: 'paths.unit.continuing', message: 'Starting unit…' })} /> : confirmationArmed ? hasUnintroducedWords ? <Trans {...msg({ context: 'paths.unit.add-and-study', message: 'Add missing words and study' })} /> : <Trans {...msg({ context: 'paths.unit.study', message: 'Study this unit' })} /> : <Trans {...msg({ context: 'paths.unit.prepare-continue', message: 'Continue with this unit' })} />}
                 </button>
                 {continueState?.error && <p className="text-sm font-semibold text-rose-700 dark:text-rose-200" role="alert">{continueState.error}</p>}
               </div>
@@ -275,7 +275,7 @@ function SelectFilter({ id, label, value, options, onChange }: { id: string; lab
     <label htmlFor={id} className="min-w-0 text-sm font-bold text-[var(--sf-text)]">
       {label}
       <select id={id} name={id} value={value} onChange={event => onChange(event.target.value)} className="glass-field mt-2 min-h-11 w-full rounded-xl px-3 text-sm font-medium focus-visible:outline-2">
-        <option value=""><Trans id="catalog.filter.all" message="All" /></option>
+        <option value=""><Trans {...msg({ context: 'catalog.filter.all', message: 'All' })} /></option>
         {options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>
     </label>
@@ -301,19 +301,19 @@ function VocabularyCard({ card, onAdd }: { card: CatalogVocabularyPresentation; 
     >
       <header className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0"><h3 id={`catalog-word-${card.id}`} lang={card.language} className="break-words text-2xl font-black">{card.lemma}</h3>{card.phonetic && <p className="mt-1 text-sm text-[var(--sf-text-muted)]">{card.phonetic}</p>}</div>
-        <div className="flex flex-wrap gap-2 text-xs font-bold"><span className="rounded-full bg-cyan-100 px-2.5 py-1 text-cyan-950 dark:bg-cyan-900 dark:text-cyan-50"><Trans id="catalog.card.cefr" message="CEFR {level}" values={{ level: card.cefr }} /></span><span className={metadataBadgeClass}>{card.tier}</span><span className={metadataBadgeClass}>{card.partOfSpeech}</span></div>
+        <div className="flex flex-wrap gap-2 text-xs font-bold"><span className="rounded-full bg-cyan-100 px-2.5 py-1 text-cyan-950 dark:bg-cyan-900 dark:text-cyan-50"><Trans {...msg({ context: 'catalog.card.cefr', message: 'CEFR {level}' })} values={{ level: card.cefr }} /></span><span className={metadataBadgeClass}>{card.tier}</span><span className={metadataBadgeClass}>{card.partOfSpeech}</span></div>
       </header>
       <div className="mt-5 space-y-4 text-sm leading-relaxed">
-        <section aria-label={i18n._(msg({ id: 'catalog.card.meaning', message: 'Meaning' }))}><h4 className="text-xs font-black uppercase tracking-wide text-[var(--sf-text-muted)]"><Trans id="catalog.card.meaning" message="Meaning" /></h4><p lang={card.meaningLanguage} className="mt-1 font-semibold">{card.meaning}</p>{card.translation && <p lang={card.translationLanguage} className="mt-1 text-[var(--sf-text-muted)]">{card.translation}</p>}</section>
-        {card.example && <section aria-label={i18n._(msg({ id: 'catalog.card.example', message: 'Example' }))}><h4 className="text-xs font-black uppercase tracking-wide text-[var(--sf-text-muted)]"><Trans id="catalog.card.example" message="Example" /></h4><p lang={card.language} className="mt-1">{card.example}</p>{card.exampleTranslation && <p lang={card.translationLanguage} className="mt-1 text-[var(--sf-text-muted)]">{card.exampleTranslation}</p>}</section>}
-        {card.collocations.length > 0 && <section aria-label={i18n._(msg({ id: 'catalog.card.collocations', message: 'Collocations' }))}><h4 className="text-xs font-black uppercase tracking-wide text-[var(--sf-text-muted)]"><Trans id="catalog.card.collocations" message="Collocations" /></h4><ul className="mt-2 flex flex-wrap gap-2">{card.collocations.map(collocation => <li key={collocation} className="rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 py-1">{collocation}</li>)}</ul></section>}
+        <section aria-label={i18n._(msg({ id: 'catalog.card.meaning', message: 'Meaning' }))}><h4 className="text-xs font-black uppercase tracking-wide text-[var(--sf-text-muted)]"><Trans {...msg({ id: 'catalog.card.meaning', message: 'Meaning' })} /></h4><p lang={card.meaningLanguage} className="mt-1 font-semibold">{card.meaning}</p>{card.translation && <p lang={card.translationLanguage} className="mt-1 text-[var(--sf-text-muted)]">{card.translation}</p>}</section>
+        {card.example && <section aria-label={i18n._(msg({ id: 'catalog.card.example', message: 'Example' }))}><h4 className="text-xs font-black uppercase tracking-wide text-[var(--sf-text-muted)]"><Trans {...msg({ id: 'catalog.card.example', message: 'Example' })} /></h4><p lang={card.language} className="mt-1">{card.example}</p>{card.exampleTranslation && <p lang={card.translationLanguage} className="mt-1 text-[var(--sf-text-muted)]">{card.exampleTranslation}</p>}</section>}
+        {card.collocations.length > 0 && <section aria-label={i18n._(msg({ id: 'catalog.card.collocations', message: 'Collocations' }))}><h4 className="text-xs font-black uppercase tracking-wide text-[var(--sf-text-muted)]"><Trans {...msg({ id: 'catalog.card.collocations', message: 'Collocations' })} /></h4><ul className="mt-2 flex flex-wrap gap-2">{card.collocations.map(collocation => <li key={collocation} className="rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 py-1">{collocation}</li>)}</ul></section>}
       </div>
       <footer className="mt-5 break-words border-t border-[var(--sf-border)] pt-4 text-xs text-[var(--sf-text-muted)]">
-        <p className="flex items-start gap-2"><ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" /><span><strong className="text-[var(--sf-text)]"><Trans id="catalog.card.source" message="Source:" /></strong> {evidenceLabel(card.provenance.sourceLabel, i18n._(msg({ id: 'catalog.card.source-missing', message: 'Source not provided' })))}</span></p>
-        <p className="mt-2"><strong className="text-[var(--sf-text)]"><Trans id="catalog.card.license" message="License:" /></strong> {evidenceLabel(card.provenance.licenseLabel, i18n._(msg({ id: 'catalog.card.license-missing', message: 'License not provided' })))}</p>
-        <p className="mt-2"><strong className="text-[var(--sf-text)]"><Trans id="catalog.card.review" message="Review:" /></strong> {evidenceLabel(card.provenance.reviewerLabel, i18n._(msg({ id: 'catalog.card.review-missing', message: 'Human review not recorded' })))}</p>
-        {(card.topics.length > 0 || card.skills.length > 0) && <p className="mt-2"><strong className="text-[var(--sf-text)]"><Trans id="catalog.card.learning-context" message="Learning context:" /></strong> {[...card.topics, ...card.skills].join(' · ')}</p>}
-        {addFailed && <p id={addErrorId} className="mt-4 rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm font-semibold text-rose-800 dark:border-rose-800 dark:bg-rose-950/35 dark:text-rose-200" role="alert"><Trans id="catalog.card.add-failed" message="Could not add “{lemma}” to your library. Check your connection or sign in, then try again." values={{ lemma: card.lemma }} /></p>}
+        <p className="flex items-start gap-2"><ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" /><span><strong className="text-[var(--sf-text)]"><Trans {...msg({ context: 'catalog.card.source', message: 'Source:' })} /></strong> {evidenceLabel(card.provenance.sourceLabel, i18n._(msg({ id: 'catalog.card.source-missing', message: 'Source not provided' })))}</span></p>
+        <p className="mt-2"><strong className="text-[var(--sf-text)]"><Trans {...msg({ context: 'catalog.card.license', message: 'License:' })} /></strong> {evidenceLabel(card.provenance.licenseLabel, i18n._(msg({ id: 'catalog.card.license-missing', message: 'License not provided' })))}</p>
+        <p className="mt-2"><strong className="text-[var(--sf-text)]"><Trans {...msg({ context: 'catalog.card.review', message: 'Review:' })} /></strong> {evidenceLabel(card.provenance.reviewerLabel, i18n._(msg({ id: 'catalog.card.review-missing', message: 'Human review not recorded' })))}</p>
+        {(card.topics.length > 0 || card.skills.length > 0) && <p className="mt-2"><strong className="text-[var(--sf-text)]"><Trans {...msg({ context: 'catalog.card.learning-context', message: 'Learning context:' })} /></strong> {[...card.topics, ...card.skills].join(' · ')}</p>}
+        {addFailed && <p id={addErrorId} className="mt-4 rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm font-semibold text-rose-800 dark:border-rose-800 dark:bg-rose-950/35 dark:text-rose-200" role="alert"><Trans {...msg({ context: 'catalog.card.add-failed', message: 'Could not add “{lemma}” to your library. Check your connection or sign in, then try again.' })} values={{ lemma: card.lemma }} /></p>}
         <button type="button" onClick={onAdd} disabled={libraryState === 'adding' || libraryState === 'added'} aria-describedby={addFailed ? addErrorId : undefined} className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-[#071014] shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:scale-[1.02] hover:bg-cyan-300 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-default disabled:opacity-65 motion-reduce:transition-none" aria-label={i18n._(msg({ id: 'catalog.card.add-action', message: '{action} {lemma}' }).id, { action: addLabel, lemma: card.lemma })}>
           {libraryState === 'adding' ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : libraryState === 'added' ? <Check className="size-4" aria-hidden="true" /> : addFailed ? <RefreshCw className="size-4" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
           {addLabel}
@@ -349,14 +349,14 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
     <section className="catalog-canvas mx-auto w-full min-w-0 max-w-7xl space-y-6 sm:space-y-8" aria-labelledby="catalog-heading">
       <header className="catalog-heading grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.32fr)] lg:items-end">
         <div><p className={heroKickerClass}>{kicker}</p>
-        <h1 id="catalog-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 break-words text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl"><Trans id="paths.title" message="Paths" /></h1>
+        <h1 id="catalog-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 break-words text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl"><Trans {...msg({ context: 'paths.title', message: 'Paths' })} /></h1>
         <p className="mt-3 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)] sm:text-base">{description}</p></div>
         <div className="flex flex-col gap-3">
           <div data-catalog-mode-switch role="group" aria-label={i18n._(msg({ id: 'paths.source.label', message: 'Path source' }))} className="flex flex-wrap gap-2">
-            <button type="button" aria-pressed={selectedMode === 'personal'} onClick={() => actions.selectMode('personal')} className={`${modeButtonClass} ${selectedMode === 'personal' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'bg-[var(--sf-surface)] text-[var(--sf-text)]'}`}><Trans id="paths.source.personal" message="My vocabulary" /></button>
-            <button type="button" aria-pressed={selectedMode === 'reviewed'} onClick={() => actions.selectMode('reviewed')} className={`${modeButtonClass} ${selectedMode === 'reviewed' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'bg-[var(--sf-surface)] text-[var(--sf-text)]'}`}><Trans id="paths.source.reviewed" message="Reviewed catalog" /></button>
+            <button type="button" aria-pressed={selectedMode === 'personal'} onClick={() => actions.selectMode('personal')} className={`${modeButtonClass} ${selectedMode === 'personal' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'bg-[var(--sf-surface)] text-[var(--sf-text)]'}`}><Trans {...msg({ context: 'paths.source.personal', message: 'My vocabulary' })} /></button>
+            <button type="button" aria-pressed={selectedMode === 'reviewed'} onClick={() => actions.selectMode('reviewed')} className={`${modeButtonClass} ${selectedMode === 'reviewed' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'bg-[var(--sf-surface)] text-[var(--sf-text)]'}`}><Trans {...msg({ context: 'paths.source.reviewed', message: 'Reviewed catalog' })} /></button>
           </div>
-          {!isPersonal && <label htmlFor="catalog-language" className="block text-sm font-bold"><Trans id="paths.language.label" message="Language" />
+          {!isPersonal && <label htmlFor="catalog-language" className="block text-sm font-bold"><Trans {...msg({ context: 'paths.language.label', message: 'Language' })} />
             <select id="catalog-language" name="catalog-language" value={model.selectedLanguage} onChange={event => actions.selectLanguage(event.target.value)} className="glass-field mt-2 min-h-12 w-full rounded-xl px-3 font-semibold focus-visible:outline-2">
               {model.languages.map(language => <option key={language.code} value={language.code} disabled={!language.isAvailable}>{languageOptionLabel(language.label, language.nativeLabel, language.isAvailable)}</option>)}
             </select>
@@ -374,7 +374,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
           {isCrystal && <span aria-hidden="true" className="crystal-starfield pointer-events-none absolute inset-0 opacity-70 motion-reduce:animate-none" />}
           <div className="catalog-current-path-content relative">
             <div className="min-w-0">
-              <p className={heroKickerClass}><Trans id="paths.current.kicker" message="Your current path" /></p>
+              <p className={heroKickerClass}><Trans {...msg({ context: 'paths.current.kicker', message: 'Your current path' })} /></p>
               <h2 id="catalog-current-path-heading" className="mt-3 text-balance text-3xl font-black tracking-tight sm:text-5xl">{i18n._(activeTrackCopy.label)}</h2>
               <p className="mt-3 max-w-xl text-pretty leading-7 text-[var(--sf-text-muted)]">{i18n._(activeTrackCopy.description)}</p>
               {featuredUnit && <ul className="catalog-feature-words">
@@ -383,18 +383,18 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
             </div>
             <div className="catalog-feature-progress">
               {pathUnits && pathUnits.length > 0 && <>
-                <p className="catalog-feature-unit"><Trans id="paths.current.unit-of" message="Unit {current} of {total}" values={{ current: featuredUnit?.unit.ordinal ?? 1, total: pathUnits.length }} />{featuredUnit && <> · {pathUnitTitle(featuredUnit.unit, model.uiLocale ?? model.selectedLanguage)}</>}</p>
+                <p className="catalog-feature-unit"><Trans {...msg({ context: 'paths.current.unit-of', message: 'Unit {current} of {total}' })} values={{ current: featuredUnit?.unit.ordinal ?? 1, total: pathUnits.length }} />{featuredUnit && <> · {pathUnitTitle(featuredUnit.unit, model.uiLocale ?? model.selectedLanguage)}</>}</p>
                 <ol className="catalog-feature-segments" aria-label={i18n._(msg({ id: 'paths.current.roadmap-label', message: 'Current path roadmap' }))}>
                   {pathUnits.map(unit => <li key={pathUnitKey(unit.unit)} className={unit.status === 'complete' ? 'complete' : unit === featuredUnit ? 'current' : ''} />)}
                 </ol>
               </>}
-              {progressAvailable ? <p className="catalog-feature-count"><Trans id="paths.current.progress" message="{started} started · {mastered} mastered" values={{ started: formatNumber(activeTrack.started), mastered: formatNumber(activeTrack.mastered) }} />{pathUnitContinue?.etaDays !== null && pathUnitContinue?.etaDays !== undefined && <span><Trans id="paths.unit.eta" message="Estimated {days, plural, one {# day} other {# days}} left at your pace." values={{ days: pathUnitContinue.etaDays }} /></span>}</p> : <p className="catalog-feature-count"><Trans id="paths.unit.status.unavailable" message="Progress unavailable" /></p>}
-              {pathUnits && pathUnits.length > 0 && (allUnitsComplete ? <p className="mt-5 text-sm font-bold"><Trans id="paths.unit.all-complete" message="All units in this path are complete." /></p> : <button type="button" onClick={actions.openNextUnitPreview} disabled={continueDisabled} className="catalog-feature-continue brand-action min-h-11 font-extrabold focus-visible:outline-2 disabled:cursor-not-allowed disabled:opacity-65"><Trans id="paths.action.continue" message="Continue" /></button>)}
+              {progressAvailable ? <p className="catalog-feature-count"><Trans {...msg({ context: 'paths.current.progress', message: '{started} started · {mastered} mastered' })} values={{ started: formatNumber(activeTrack.started), mastered: formatNumber(activeTrack.mastered) }} />{pathUnitContinue?.etaDays !== null && pathUnitContinue?.etaDays !== undefined && <span><Trans {...msg({ context: 'paths.unit.eta', message: 'Estimated {days, plural, one {# day} other {# days}} left at your pace.' })} values={{ days: pathUnitContinue.etaDays }} /></span>}</p> : <p className="catalog-feature-count"><Trans {...msg({ id: 'paths.unit.status.unavailable', message: 'Progress unavailable' })} /></p>}
+              {pathUnits && pathUnits.length > 0 && (allUnitsComplete ? <p className="mt-5 text-sm font-bold"><Trans {...msg({ context: 'paths.unit.all-complete', message: 'All units in this path are complete.' })} /></p> : <button type="button" onClick={actions.openNextUnitPreview} disabled={continueDisabled} className="catalog-feature-continue brand-action min-h-11 font-extrabold focus-visible:outline-2 disabled:cursor-not-allowed disabled:opacity-65"><Trans {...msg({ context: 'paths.action.continue', message: 'Continue' })} /></button>)}
             </div>
           </div>
         </section>}
         <section aria-labelledby="catalog-tracks-heading" className={shelfClass}>
-          <div className="mb-4"><p className={kickerClass}><Trans id="paths.goal.kicker" message="Choose your goal" /></p><h2 id="catalog-tracks-heading" className="mt-1 text-xl font-black tracking-tight"><Trans id="paths.shelf.title" message="Your shelf" /></h2></div>
+          <div className="mb-4"><p className={kickerClass}><Trans {...msg({ context: 'paths.goal.kicker', message: 'Choose your goal' })} /></p><h2 id="catalog-tracks-heading" className="mt-1 text-xl font-black tracking-tight"><Trans {...msg({ context: 'paths.shelf.title', message: 'Your shelf' })} /></h2></div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">{model.tracks.map(track => <TrackCard key={track.id} track={track} selected={track.id === model.selectedTrack} progressAvailable={progressAvailable} onSelect={() => actions.selectTrack(track.id)} />)}</div>
         </section>
         </div>
@@ -402,29 +402,29 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
         {pathUnits && pathUnits.length > 0 && <PathUnitShelf units={pathUnits} selectedUnitId={pathUnitContinue?.selectedUnitId ?? model.selectedPathUnitId} language={model.uiLocale ?? model.selectedLanguage} continueState={pathUnitContinue} actions={actions} />}
 
         <section aria-labelledby="catalog-roadmap-heading" className="catalog-roadmap">
-          <div className="mb-4"><p className={kickerClass}><Trans id="paths.roadmap.kicker" message="Your roadmap" /></p><h2 id="catalog-roadmap-heading" className="mt-1 text-2xl font-black tracking-tight"><Trans id="paths.roadmap.title" message="Your learning level" /></h2></div>
+          <div className="mb-4"><p className={kickerClass}><Trans {...msg({ context: 'paths.roadmap.kicker', message: 'Your roadmap' })} /></p><h2 id="catalog-roadmap-heading" className="mt-1 text-2xl font-black tracking-tight"><Trans {...msg({ context: 'paths.roadmap.title', message: 'Your learning level' })} /></h2></div>
           <ol className={model.tiers.length > 1 ? 'grid grid-cols-1 gap-3 md:grid-cols-3' : 'grid grid-cols-1 gap-3'}>{model.tiers.map(tier => <TierStep key={tier.id} tier={tier} selected={tier.id === model.selectedTier} progressAvailable={progressAvailable} onSelect={() => actions.selectTier(tier.id)} />)}</ol>
         </section>
 
         <section aria-labelledby="catalog-vocabulary-heading" className="catalog-explorer" aria-busy={model.isLoadingPage || model.isLoadingMore}>
           <div className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-5">
-            <div className="flex items-center gap-2"><Layers3 className="size-5" aria-hidden="true" /><h2 id="catalog-vocabulary-heading" className="text-xl font-black tracking-tight"><Trans id="catalog.explorer.title" message="Vocabulary explorer" /></h2></div>
+            <div className="flex items-center gap-2"><Layers3 className="size-5" aria-hidden="true" /><h2 id="catalog-vocabulary-heading" className="text-xl font-black tracking-tight"><Trans {...msg({ context: 'catalog.explorer.title', message: 'Vocabulary explorer' })} /></h2></div>
             <details className="group mt-3" open>
               <summary className="flex min-h-11 cursor-pointer list-none items-center font-bold text-[var(--sf-brand-text)] focus-visible:outline-2 [&::-webkit-details-marker]:hidden">
-                <span><Trans id="catalog.filters.title" message="Filters" /></span>
+                <span><Trans {...msg({ context: 'catalog.filters.title', message: 'Filters' })} /></span>
                 <span className="ml-2 flex size-6 items-center justify-center rounded-full bg-[var(--sf-surface-muted)] text-[var(--sf-brand-text)] transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true">
                   <ChevronDown size={14} />
                 </span>
               </summary>
             <form className="mt-3" onSubmit={event => event.preventDefault()} role="search">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                <label htmlFor="catalog-term" className="min-w-0 text-sm font-bold"><Trans id="catalog.filters.search" message="Search vocabulary" /><div className="glass-field mt-2 flex min-h-11 items-center rounded-xl px-3"><Search className="mr-2 size-4 shrink-0 text-[var(--sf-text-muted)]" aria-hidden="true" /><input id="catalog-term" name="catalog-term" type="search" autoComplete="off" value={model.filters.term} onChange={event => actions.changeTerm(event.target.value)} className="min-h-11 min-w-0 flex-1 bg-transparent py-2" placeholder={i18n._(msg({ id: 'catalog.filters.search-placeholder', message: 'e.g. analysis…' }))} /></div></label>
+                <label htmlFor="catalog-term" className="min-w-0 text-sm font-bold"><Trans {...msg({ context: 'catalog.filters.search', message: 'Search vocabulary' })} /><div className="glass-field mt-2 flex min-h-11 items-center rounded-xl px-3"><Search className="mr-2 size-4 shrink-0 text-[var(--sf-text-muted)]" aria-hidden="true" /><input id="catalog-term" name="catalog-term" type="search" autoComplete="off" value={model.filters.term} onChange={event => actions.changeTerm(event.target.value)} className="min-h-11 min-w-0 flex-1 bg-transparent py-2" placeholder={i18n._(msg({ id: 'catalog.filters.search-placeholder', message: 'e.g. analysis…' }))} /></div></label>
                 <SelectFilter id="catalog-cefr" label={i18n._(msg({ id: 'catalog.filters.cefr', message: 'CEFR level' }))} value={model.filters.cefr} options={model.filters.cefrOptions} onChange={actions.changeCefr} />
                 <SelectFilter id="catalog-topic" label={i18n._(msg({ id: 'catalog.filters.topic', message: 'Topic' }))} value={model.filters.topic} options={model.filters.topicOptions} onChange={actions.changeTopic} />
                 <SelectFilter id="catalog-pos" label={i18n._(msg({ id: 'catalog.filters.part-of-speech', message: 'Part of speech' }))} value={model.filters.partOfSpeech} options={model.filters.partOfSpeechOptions} onChange={actions.changePartOfSpeech} />
                 <SelectFilter id="catalog-skill" label={i18n._(msg({ id: 'catalog.filters.skill', message: 'Skill' }))} value={model.filters.skill} options={model.filters.skillOptions} onChange={actions.changeSkill} />
               </div>
-              {model.filters.hasActiveFilters && <button type="button" onClick={actions.resetFilters} className="mt-4 min-h-11 rounded-xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none"><Trans id="catalog.filters.clear" message="Clear all filters" /></button>}
+              {model.filters.hasActiveFilters && <button type="button" onClick={actions.resetFilters} className="mt-4 min-h-11 rounded-xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none"><Trans {...msg({ context: 'catalog.filters.clear', message: 'Clear all filters' })} /></button>}
             </form>
             </details>
           </div>
@@ -434,15 +434,15 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
           {model.isLoadingPage && model.cards.length === 0 ? (
             <div className="skeleton-sheen mt-4 flex min-h-40 items-center justify-center gap-3 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-8 font-semibold text-[var(--sf-text-muted)]" role="status">
               <LoaderCircle className="size-5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-              <Trans id="catalog.loading.matches" message="Loading matching vocabulary…" />
+              <Trans {...msg({ context: 'catalog.loading.matches', message: 'Loading matching vocabulary…' })} />
             </div>
           ) : isEmpty ? (
-            <div className="mt-4 rounded-2xl border border-dashed border-[var(--sf-border)] bg-[var(--sf-surface)] p-8 text-center"><Search className="mx-auto size-8 text-[var(--sf-text-muted)]" aria-hidden="true" /><h3 className="mt-3 text-lg font-black"><Trans id="catalog.empty.title" message="No vocabulary found" /></h3><p className="mt-2 text-sm text-[var(--sf-text-muted)]">{model.filters.hasActiveFilters ? <Trans id="catalog.empty.filtered" message="Try fewer filters or clear them to see this path again." /> : <Trans id="catalog.empty.path" message="This reviewed catalog does not contain words for the selected path yet." />}</p>{model.filters.hasActiveFilters && <button type="button" onClick={actions.resetFilters} className="mt-4 min-h-11 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] focus-visible:outline-2"><Trans id="catalog.filters.clear" message="Clear all filters" /></button>}</div>
+            <div className="mt-4 rounded-2xl border border-dashed border-[var(--sf-border)] bg-[var(--sf-surface)] p-8 text-center"><Search className="mx-auto size-8 text-[var(--sf-text-muted)]" aria-hidden="true" /><h3 className="mt-3 text-lg font-black"><Trans {...msg({ context: 'catalog.empty.title', message: 'No vocabulary found' })} /></h3><p className="mt-2 text-sm text-[var(--sf-text-muted)]">{model.filters.hasActiveFilters ? <Trans {...msg({ context: 'catalog.empty.filtered', message: 'Try fewer filters or clear them to see this path again.' })} /> : <Trans {...msg({ context: 'catalog.empty.path', message: 'This reviewed catalog does not contain words for the selected path yet.' })} />}</p>{model.filters.hasActiveFilters && <button type="button" onClick={actions.resetFilters} className="mt-4 min-h-11 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] focus-visible:outline-2"><Trans {...msg({ context: 'catalog.filters.clear', message: 'Clear all filters' })} /></button>}</div>
           ) : (
             <div className={`mt-4 grid min-w-0 grid-cols-1 gap-4 transition-opacity motion-reduce:transition-none xl:grid-cols-2 ${model.isLoadingPage ? 'opacity-60' : ''}`}>{model.cards.map(card => <VocabularyCard key={card.id} card={card} onAdd={() => actions.addToLibrary(card.id)} />)}</div>
           )}
 
-          {model.hasMore && !model.isLoadingPage && <div className="mt-6 text-center"><button type="button" onClick={actions.loadMore} disabled={model.isLoadingMore} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-5 py-2 font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-wait disabled:opacity-70">{model.isLoadingMore && <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}{model.isLoadingMore ? <Trans id="catalog.loading.more" message="Loading more words…" /> : <Trans id="catalog.action.load-more" message="Load more words" />}</button>{model.isLoadingMore && <span className="sr-only" role="status" aria-live="polite"><Trans id="catalog.loading.next-page" message="Loading the next vocabulary page." /></span>}</div>}
+          {model.hasMore && !model.isLoadingPage && <div className="mt-6 text-center"><button type="button" onClick={actions.loadMore} disabled={model.isLoadingMore} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-5 py-2 font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-wait disabled:opacity-70">{model.isLoadingMore && <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}{model.isLoadingMore ? <Trans {...msg({ context: 'catalog.loading.more', message: 'Loading more words…' })} /> : <Trans {...msg({ context: 'catalog.action.load-more', message: 'Load more words' })} />}</button>{model.isLoadingMore && <span className="sr-only" role="status" aria-live="polite"><Trans {...msg({ context: 'catalog.loading.next-page', message: 'Loading the next vocabulary page.' })} /></span>}</div>}
         </section>
       </>}
     </section>

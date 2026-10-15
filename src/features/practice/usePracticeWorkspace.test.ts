@@ -40,18 +40,63 @@ describe('createPracticePoolLoader', () => {
     const cloudCards = Array.from({ length: 60 }, (_, index) => card(`cloud-${index}`));
     const source = { load: vi.fn(async () => cloudCards) };
     const load = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: 'owner-1',
       cloudBackoffActive: false,
       cards: [],
       source,
-      targetLanguage: 'en',
       reportError: vi.fn(),
     });
 
     const result = await load(500, true);
 
-    expect(source.load).toHaveBeenCalledWith('owner-1', 50, { includeFuture: true, targetLanguage: 'en' });
+    expect(source.load).toHaveBeenCalledWith('owner-1', 50, { includeFuture: true, targetLanguage: 'en', customDeck: { kind: 'all' } });
     expect(result).toHaveLength(50);
+  });
+
+  it('forwards a typed custom deck scope to cloud loading', async () => {
+    const source = { load: vi.fn(async () => [card('cloud')]) };
+    const load = createPracticePoolLoader({
+      targetLanguage: 'en',
+      ownerId: 'owner-1',
+      cloudBackoffActive: false,
+      cards: [],
+      source,
+      reportError: vi.fn(),
+    });
+
+    await expect(load(10, false, { kind: 'deck', name: 'IELTS' })).resolves.toEqual([card('cloud')]);
+    expect(source.load).toHaveBeenCalledWith('owner-1', 10, {
+      includeFuture: false,
+      targetLanguage: 'en',
+      customDeck: { kind: 'deck', name: 'IELTS' },
+    });
+  });
+
+  it('keeps an unscoped Today load global after a Library deck selection', async () => {
+    const source = { load: vi.fn(async () => [card('cloud')]) };
+    const load = createPracticePoolLoader({
+      targetLanguage: 'en',
+      ownerId: 'owner-1',
+      cloudBackoffActive: false,
+      cards: [],
+      source,
+      reportError: vi.fn(),
+    });
+
+    await load(1, true, { kind: 'deck', name: 'IELTS' });
+    await load(1, true);
+
+    expect(source.load).toHaveBeenNthCalledWith(1, 'owner-1', 1, {
+      includeFuture: true,
+      targetLanguage: 'en',
+      customDeck: { kind: 'deck', name: 'IELTS' },
+    });
+    expect(source.load).toHaveBeenNthCalledWith(2, 'owner-1', 1, {
+      includeFuture: true,
+      targetLanguage: 'en',
+      customDeck: { kind: 'all' },
+    });
   });
 
   it('falls back to a bounded due-only local queue when cloud loading fails', async () => {
@@ -63,11 +108,11 @@ describe('createPracticePoolLoader', () => {
       classifyFailure: vi.fn(() => 'quota' as const),
     };
     const load = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: 'owner-1',
       cloudBackoffActive: false,
       cards: [due, future],
       source,
-      targetLanguage: 'en',
       reportError,
     });
 
@@ -88,11 +133,11 @@ describe('createPracticePoolLoader', () => {
       load: vi.fn(() => new Promise<CardData[]>(resolve => { resolveCloud = resolve; })),
     };
     const load = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: 'owner-1',
       cloudBackoffActive: false,
       cards: [local],
       source,
-      targetLanguage: 'en',
       reportError,
     });
 
@@ -114,19 +159,19 @@ describe('createPracticePoolLoader', () => {
     const source = { load: vi.fn(async () => [card('cloud')]) };
     const local = card('local');
     const anonymousLoad = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: null,
       cloudBackoffActive: false,
       cards: [local],
       source,
-      targetLanguage: 'en',
       reportError: vi.fn(),
     });
     const backedOffLoad = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: 'owner-1',
       cloudBackoffActive: true,
       cards: [local],
       source,
-      targetLanguage: 'en',
       reportError: vi.fn(),
     });
 
@@ -140,15 +185,77 @@ describe('createPracticePoolLoader', () => {
     const legacy = { ...card('legacy'), difficulty: 'good' as const };
     const future = { ...card('future', '2999-01-01T00:00:00.000Z'), difficulty: 'good' as const };
     const load = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: null,
       cloudBackoffActive: false,
       cards: [newCard, legacy, future],
       source: null,
-      targetLanguage: 'en',
       reportError: vi.fn(),
     });
 
     await expect(load(50, false)).resolves.toEqual([newCard, legacy]);
+  });
+
+  it('filters the local fallback by custom deck before readiness and slicing', async () => {
+    const unrelatedDue = { ...card('unrelated-due', '2020-01-01T00:00:00.000Z'), customDeck: 'Other', difficulty: 'good' as const };
+    const targetDue = { ...card('target-due', '2020-01-01T00:00:00.000Z'), customDeck: 'IELTS', difficulty: 'good' as const };
+    const targetFuture = { ...card('target-future', '2999-01-01T00:00:00.000Z'), customDeck: 'IELTS', difficulty: 'good' as const };
+    const load = createPracticePoolLoader({
+      targetLanguage: 'en',
+      ownerId: null,
+      cloudBackoffActive: false,
+      cards: [unrelatedDue, targetDue, targetFuture],
+      source: null,
+      reportError: vi.fn(),
+    });
+
+    await expect(load(2, false, { kind: 'deck', name: 'IELTS' })).resolves.toEqual([targetDue]);
+    await expect(load(2, true, { kind: 'deck', name: 'IELTS' })).resolves.toEqual([targetDue, targetFuture]);
+  });
+
+  it('treats unassigned as cards without a custom deck', async () => {
+    const unassigned = { ...card('unassigned'), customDeck: null };
+    const assigned = { ...card('assigned'), customDeck: 'IELTS' };
+    const load = createPracticePoolLoader({
+      targetLanguage: 'en',
+      ownerId: null,
+      cloudBackoffActive: false,
+      cards: [assigned, unassigned],
+      source: null,
+      reportError: vi.fn(),
+    });
+
+    await expect(load(undefined, true, { kind: 'unassigned' })).resolves.toEqual([unassigned]);
+  });
+
+  it('keeps a literal unassigned deck distinct from the unassigned scope', async () => {
+    const literalDeck = { ...card('literal-deck'), customDeck: 'unassigned' };
+    const unassigned = { ...card('unassigned'), customDeck: null };
+    const load = createPracticePoolLoader({
+      targetLanguage: 'en',
+      ownerId: null,
+      cloudBackoffActive: false,
+      cards: [literalDeck, unassigned],
+      source: null,
+      reportError: vi.fn(),
+    });
+
+    await expect(load(undefined, true, { kind: 'deck', name: 'unassigned' })).resolves.toEqual([literalDeck]);
+  });
+
+  it('keeps assigned and unassigned cards in the all-decks local fallback', async () => {
+    const assigned = { ...card('assigned'), customDeck: 'IELTS' };
+    const unassigned = { ...card('unassigned'), customDeck: null };
+    const load = createPracticePoolLoader({
+      targetLanguage: 'en',
+      ownerId: null,
+      cloudBackoffActive: false,
+      cards: [assigned, unassigned],
+      source: null,
+      reportError: vi.fn(),
+    });
+
+    await expect(load(2, false)).resolves.toEqual([assigned, unassigned]);
   });
 });
 
@@ -186,7 +293,7 @@ describe('usePracticeWorkspace', () => {
   it('exposes one compact model/action contract and keeps controller internals private', () => {
     const commands = { startStudy: vi.fn() };
     const snapshot = { getCards: vi.fn(() => []) };
-    const session = { mode: 'library', commands, snapshot };
+    const session = { mode: 'library', sessionKey: null, commands, snapshot };
     const gamification = { streak: 2, xp: 320, xpHistory: {}, level: 2, acceptAuthoritativeOutcome: vi.fn(), equipFrame: vi.fn() };
     doubles.session.mockReturnValue(session);
     doubles.gamification.mockReturnValue(gamification);
@@ -221,6 +328,7 @@ describe('usePracticeWorkspace', () => {
       model: {
         session: {
           mode: session.mode,
+          sessionKey: session.sessionKey,
           study: undefined,
           quiz: undefined,
           learning: undefined,
@@ -263,5 +371,6 @@ describe('usePracticeWorkspace', () => {
     expect(source).toContain('practiceWorkspace.actions');
     expect(source).not.toContain('practiceWorkspace.model.session.commands');
     expect(source).not.toContain('practiceSession.commands');
+    expect(source).not.toContain('practiceDeckScope');
   });
 });

@@ -11,6 +11,7 @@ test-results/
 blob-report/
 artifacts/
 functions/lib/
+__pycache__/
 .DS_Store
 *.log
 .env*

@@ -4,7 +4,7 @@ import { msg } from '@lingui/core/macro';
 import { Check, Loader2, Plus, Sparkles, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { normalizeCardWord } from '../../lib/cardIdentity';
-import { translateText } from '../../lib/gemini';
+import { extractVocabulary } from '../../lib/gemini';
 import { getProtectedFunctionUserMessage, ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import type { CardData } from '../../types/card';
 import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
@@ -64,20 +64,6 @@ export function useExtractorRequestGuard() {
     return { isCurrent: () => activeRef.current && generationRef.current === generation };
   }, []);
 }
-
-export const buildExtractorPrompt = (inputText: string, languageProfile: LanguageProfile) => `Bạn là chuyên gia trích xuất từ vựng ${languageProfile.source.displayName}. Hãy đọc đoạn văn bản sau và chọn lọc ra 5-10 từ vựng hoặc cụm từ học thuật/thực tế hay nhất (trình độ B1-C2):
-"${inputText.trim().slice(0, 2000)}"
-
-Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (không thêm markdown ngoài):
-[
-  {
-    "word": "từ vựng ${languageProfile.source.displayName}",
-    "translation": "nghĩa ${languageProfile.target.displayName} ngắn gọn",
-    "partOfSpeech": "noun/verb/adj...",
-    "cefrLevel": "B1/B2/C1/C2",
-    "example": "câu ví dụ ngắn trích từ bài hoặc tự đặt"
-  }
-]`;
 
 interface WordExtractorModalProps {
   open: boolean;
@@ -156,18 +142,10 @@ export function WordExtractorContent({
     setSelectedWords(new Set());
 
     try {
-      const prompt = buildExtractorPrompt(inputText, languageProfile);
-
-      const rawResult = await translateText(prompt);
+      const parsed = await extractVocabulary(inputText, {
+        targetLanguage: languageProfile.source.code, translationLanguage: languageProfile.target.code,
+      }, ownerId);
       if (!request.isCurrent()) return;
-      if (!rawResult) throw new Error('No response from AI');
-
-      const jsonStart = rawResult.indexOf('[');
-      const jsonEnd = rawResult.lastIndexOf(']');
-      if (jsonStart === -1 || jsonEnd === -1) throw new Error('Invalid JSON format');
-
-      const parsed: unknown = JSON.parse(rawResult.slice(jsonStart, jsonEnd + 1));
-      if (!Array.isArray(parsed)) throw new Error('Invalid JSON structure');
       const seen = new Set<string>();
       const validWords = parsed.flatMap(value => {
         if (!value || typeof value !== 'object') return [];

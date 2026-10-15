@@ -42,6 +42,7 @@ const createWorkerContext = async ({
   fetchImpl = null,
   storageEntries = [],
   storageGetError = '',
+  storageGetFailures = null,
   storageSetError = '',
   storageSetErrorAfter = null,
   storageRemoveGate = null,
@@ -77,7 +78,7 @@ const createWorkerContext = async ({
   const grantedOrigins = new Set(permissionOrigins);
   const storage = {
     get(key, callback) {
-      if (storageGetError) {
+      if (storageGetError && (storageGetFailures === null || storageGetFailures-- > 0)) {
         chrome.runtime.lastError = { message: storageGetError };
         callback({});
         chrome.runtime.lastError = null;
@@ -352,14 +353,15 @@ const createWorkerContext = async ({
     providerId: appPort.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER')?.providerId ?? '',
     appPort,
     connectProvider,
+    failStorageReads(count) { storageGetError = 'storage unavailable'; storageGetFailures = count; },
   };
 };
 
-const sendRuntimeMessage = (worker, message, sender = {}) => new Promise(resolve => {
+const sendRuntimeMessageRaw = (worker, message, sender = {}) => new Promise(resolve => {
   const [listener] = worker.events.messages.listeners;
   assert.ok(listener, 'background worker did not register a runtime message listener');
   const metadataMessageTypes = new Set([
-    'SYNC_DECK_METADATA', 'CLEAR_DECK_METADATA',
+    'GET_DECK_METADATA_GENERATION', 'SYNC_DECK_METADATA', 'CLEAR_DECK_METADATA',
     'SYNC_DUE_COUNT', 'CLEAR_DUE_COUNT',
     'SYNC_COURSE_LOCALE', 'CLEAR_COURSE_LOCALE',
   ]);
@@ -371,6 +373,29 @@ const sendRuntimeMessage = (worker, message, sender = {}) => new Promise(resolve
     : sender;
   assert.equal(listener(messageForWorker, senderForWorker, resolve), true);
 });
+
+const deckSessions = new WeakMap();
+const sendRuntimeMessage = async (worker, message, sender = {}) => {
+  if (['SYNC_DECK_METADATA', 'CLEAR_DECK_METADATA'].includes(message?.type)
+    && message.payload?.generation === undefined) {
+    const providerId = message.providerId ?? worker.providerId;
+    const sessions = deckSessions.get(worker) ?? new Map();
+    deckSessions.set(worker, sessions);
+    let session = sessions.get(providerId);
+    if (session?.scope !== message.payload.scope) {
+      const issued = await sendRuntimeMessageRaw(worker, { type: 'GET_DECK_METADATA_GENERATION', providerId }, sender);
+      if (!issued.ok) return issued;
+      session = { scope: message.payload.scope, generation: issued.generation };
+      sessions.set(providerId, session);
+    }
+    const response = await sendRuntimeMessageRaw(worker, {
+      ...message, payload: { ...message.payload, generation: session.generation },
+    }, sender);
+    if (message.type === 'CLEAR_DECK_METADATA' && response.ok) sessions.delete(providerId);
+    return response;
+  }
+  return sendRuntimeMessageRaw(worker, message, sender);
+};
 
 const startQuickAdd = worker => sendRuntimeMessage(worker, {
   type: 'ADD_SELECTION',
@@ -474,6 +499,13 @@ const appSender = (worker, tabId = 99, overrides = {}) => ({
   ...overrides,
 });
 
+const issueDeckGeneration = (worker, sender) => sendRuntimeMessage(worker, {
+  type: 'GET_DECK_METADATA_GENERATION',
+}, sender).then(response => {
+  assert.equal(response.ok, true);
+  return response.generation;
+});
+
 const appResultPayload = (worker, id, payload) => ({
   id,
   nonce: worker.storageValues.get(`lingoflash_quick_add_job_${id}`)?.nonce
@@ -490,7 +522,6 @@ test('verifies a silent import only for its origin, worker tab and exact job pay
     tab: { id: 99 },
     frameId: 0,
   };
-
   const forged = await verifyIntent(worker, {
     ...intent,
     nonce: 'forged_nonce_1234567890123456',
@@ -660,12 +691,14 @@ test('syncs bounded deck metadata only from the production app origin', async ()
     url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
     tab: { id: 7 },
   };
+  const generation = await issueDeckGeneration(worker, sender);
   const longDeck = `  ${'Reading '.repeat(30)}  `;
   const response = await sendRuntimeMessage(worker, {
     type: 'SYNC_DECK_METADATA',
     payload: {
       scope: 'opaque_scope_a_123456',
       decks: ['Reading', 'Reading', longDeck, ...Array.from({ length: 120 }, (_, i) => `Deck ${i}`)],
+      generation,
     },
   }, sender);
 
@@ -680,11 +713,63 @@ test('syncs bounded deck metadata only from the production app origin', async ()
 
   const wrongOrigin = await sendRuntimeMessage(worker, {
     type: 'SYNC_DECK_METADATA',
-    payload: { scope: 'attacker_scope_123456', decks: ['Injected'] },
+    payload: { scope: 'attacker_scope_123456', decks: ['Injected'], generation },
   }, { ...sender, url: 'https://example.com/?view=library' });
   assert.equal(wrongOrigin.ok, false);
   assert.match(wrongOrigin.error, /Nguồn metadata deck/);
   assert.equal(worker.storageValues.get('lingoflash_extension_deck_metadata').scope, 'opaque_scope_a_123456');
+});
+
+test('binds persisted deck generations to the live app document and rejects missing proof', async () => {
+  const worker = await createWorkerContext();
+  const sender = appSender(worker, 7);
+  const generation = await issueDeckGeneration(worker, sender);
+  assert.equal(worker.storageValues.get('lingoflash_extension_deck_metadata_generation'), generation);
+  const forged = await sendRuntimeMessage(worker, { type: 'GET_DECK_METADATA_GENERATION' }, {
+    ...sender, url: 'https://example.com/',
+  });
+  assert.equal(forged.ok, false);
+  const missing = await sendRuntimeMessageRaw(worker, {
+    type: 'SYNC_DECK_METADATA', payload: { scope: 'opaque_scope_generation_123456', decks: ['Reading'] },
+  }, sender);
+  assert.equal(missing.ok, false);
+  const secondSender = appSender(worker, 8);
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DECK_METADATA_GENERATION' }, secondSender)).ok, false);
+  const secondPort = worker.connectProvider(secondSender);
+  const providerId = secondPort.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER').providerId;
+  const issued = await sendRuntimeMessage(worker, { type: 'GET_DECK_METADATA_GENERATION', providerId }, secondSender);
+  assert.equal(issued.ok, true);
+  assert.equal((await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA', providerId,
+    payload: { scope: 'opaque_scope_generation_123456', decks: ['Writing'], generation: issued.generation },
+  }, secondSender)).ok, true);
+  assert.equal((await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA', payload: { scope: 'opaque_scope_generation_123456', decks: ['Stale'], generation },
+  }, sender)).ok, false);
+});
+
+test('does not let an evicted retired scope revive through a stale deck publisher generation', async () => {
+  const worker = await createWorkerContext();
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  const staleGeneration = await issueDeckGeneration(worker, sender);
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA', payload: { scope: 'opaque_scope_0_123456', decks: ['Owner 0'], generation: staleGeneration },
+  }, sender);
+  await sendRuntimeMessage(worker, {
+    type: 'CLEAR_DECK_METADATA', payload: { scope: 'opaque_scope_0_123456', generation: staleGeneration },
+  }, sender);
+  const currentGeneration = await issueDeckGeneration(worker, sender);
+  for (let index = 1; index <= 17; index += 1) {
+    const response = await sendRuntimeMessage(worker, {
+      type: 'SYNC_DECK_METADATA', payload: { scope: `opaque_scope_${index}_123456`, decks: [`Owner ${index}`], generation: currentGeneration },
+    }, sender);
+    assert.equal(response.ok, true);
+  }
+  const stale = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA', payload: { scope: 'opaque_scope_0_123456', decks: ['Stale owner'], generation: staleGeneration },
+  }, sender);
+  assert.equal(stale.ok, false);
+  assert.match(stale.error, /hết hiệu lực/);
 });
 
 test('keeps deck metadata in memory when session storage is unavailable', async () => {
@@ -693,10 +778,11 @@ test('keeps deck metadata in memory when session storage is unavailable', async 
     url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
     tab: { id: 7 },
   };
+  const generation = await issueDeckGeneration(worker, sender);
 
   const synced = await sendRuntimeMessage(worker, {
     type: 'SYNC_DECK_METADATA',
-    payload: { scope: 'opaque_memory_scope_123456', decks: ['Reading'] },
+    payload: { scope: 'opaque_memory_scope_123456', decks: ['Reading'], generation },
   }, sender);
 
   assert.equal(synced.ok, true);
@@ -725,17 +811,18 @@ test('replaces stale owner-scoped deck metadata and clears it on sign-out', asyn
     url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
     tab: { id: 7 },
   };
+  const generation = await issueDeckGeneration(worker, sender);
   await sendRuntimeMessage(worker, {
     type: 'SYNC_DECK_METADATA',
-    payload: { scope: 'opaque_scope_a_123456', decks: ['Owner A'] },
+    payload: { scope: 'opaque_scope_a_123456', decks: ['Owner A'], generation },
   }, sender);
   await sendRuntimeMessage(worker, {
     type: 'SYNC_DECK_METADATA',
-    payload: { scope: 'opaque_scope_b_123456', decks: ['Owner B'] },
+    payload: { scope: 'opaque_scope_b_123456', decks: ['Owner B'], generation },
   }, sender);
   const delayedOldOwner = await sendRuntimeMessage(worker, {
     type: 'SYNC_DECK_METADATA',
-    payload: { scope: 'opaque_scope_a_123456', decks: ['Stale owner A'] },
+    payload: { scope: 'opaque_scope_a_123456', decks: ['Stale owner A'], generation },
   }, sender);
   assert.equal(delayedOldOwner.ok, false);
   const listed = await sendRuntimeMessage(worker, { type: 'GET_DECKS' });
@@ -743,13 +830,13 @@ test('replaces stale owner-scoped deck metadata and clears it on sign-out', asyn
 
   const cleared = await sendRuntimeMessage(worker, {
     type: 'CLEAR_DECK_METADATA',
-    payload: { scope: 'opaque_scope_b_123456' },
+    payload: { scope: 'opaque_scope_b_123456', generation },
   }, sender);
   assert.equal(cleared.ok, true);
   assert.equal(worker.storageValues.has('lingoflash_extension_deck_metadata'), false);
   const delayedAfterSignOut = await sendRuntimeMessage(worker, {
     type: 'SYNC_DECK_METADATA',
-    payload: { scope: 'opaque_scope_b_123456', decks: ['Stale after sign-out'] },
+    payload: { scope: 'opaque_scope_b_123456', decks: ['Stale after sign-out'], generation },
   }, sender);
   assert.equal(delayedAfterSignOut.ok, false);
   assert.equal(worker.storageValues.has('lingoflash_extension_deck_metadata'), false);
@@ -1820,7 +1907,7 @@ test('does not let an alarm report an error while a successful result cleanup is
   assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), false);
 });
 
-test('does not report a worker error when successful cleanup cannot remove its job', async () => {
+test('retires the worker resources when successful cleanup cannot remove its job', async () => {
   const worker = await createWorkerContext({
     storageRemoveError: 'storage unavailable',
     emitTabRemovalOnRemove: true,
@@ -1836,9 +1923,9 @@ test('does not report a worker error when successful cleanup cannot remove its j
 
   assert.equal(result.ignored, false);
   assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), true);
-  assert.equal(worker.calls.some(call => call.type === 'tabs.remove' && call.id === 99), false);
+  assert.equal(worker.calls.some(call => call.type === 'tabs.remove' && call.id === 99), true);
   assert.equal(worker.calls.some(call => call.type === 'alarms.clear'
-    && call.name === `lingoflash_quick_add_timeout_${started.id}`), false);
+    && call.name === `lingoflash_quick_add_timeout_${started.id}`), true);
   assert.equal(worker.calls.some(call => call.type === 'scripting.executeScript'
     && call.details.args?.[0]?.status === 'error'), false);
   assert.equal(worker.calls.some(call => call.type === 'runtime.sendMessage'
@@ -2246,11 +2333,15 @@ test('reports one terminal error when tab-close cleanup cannot remove a persiste
   for (const [closedTabId, label] of [[7, 'source'], [99, 'worker']]) {
     const worker = await createWorkerContext({ storageRemoveError: 'storage unavailable' });
     const started = await startQuickAdd(worker);
+    const intent = readStartedIntent(worker, started.id);
     const alarmName = `lingoflash_quick_add_timeout_${started.id}`;
 
     for (const listener of worker.events.tabsRemoved.listeners) listener(closedTabId);
     await flushMicrotasks();
     await flushMicrotasks();
+
+    const lateVerification = await verifyIntent(worker, intent, appSender(worker));
+    assert.equal(lateVerification.verified, false, 'a terminal claim must suppress a late import verification');
 
     if (closedTabId === 7) {
       const lateResult = await sendRuntimeMessage(worker, {
@@ -2270,6 +2361,23 @@ test('reports one terminal error when tab-close cleanup cannot remove a persiste
     assert.equal(terminalErrors.length, 1, `${label} close must have one terminal error`);
     assert.equal(Boolean(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`).errorClaimedAt), true);
   }
+});
+
+test('retries an alarm cleanup after its first job read fails', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  const job = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  job.createdAt = Date.now() - 200_000;
+  const name = `lingoflash_quick_add_timeout_${started.id}`;
+  worker.failStorageReads(1);
+  for (const listener of worker.events.alarms.listeners) listener({ name });
+  await flushMicrotasks();
+  assert.ok(worker.calls.some(call => call.type === 'alarms.create' && call.name === name));
+  for (const listener of worker.events.alarms.listeners) listener({ name });
+  await flushMicrotasks();
+  await flushMicrotasks();
+  assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), false);
+  assert.ok(worker.calls.some(call => call.type === 'tabs.remove' && call.id === 99));
 });
 
 test('defers a terminal notice until its persisted claim can be written', async () => {

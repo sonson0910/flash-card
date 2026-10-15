@@ -1,3 +1,6 @@
+import { i18n } from '@lingui/core';
+import { messages as enPractice } from '../../i18n/locales/en/practice.po';
+i18n.load('en', enPractice); i18n.activate('en');
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { act } from "react";
@@ -9,6 +12,7 @@ import type { CardData } from "../../types/card";
 import { languageName, QuizView } from "./QuizView";
 import { SpellingView } from "./SpellingView";
 import { StudyView, resolveStudyRecallMode } from "./StudyView";
+import { isComprehensionAnswerCorrect, isGrammarAnswerCorrect, normalizeGrammarAnswer } from "./StoryView";
 import { StoryView } from "./StoryView";
 import { ReviewControls } from "../../components/study/ReviewControls";
 import { ActiveRecallPrompt } from "../../components/flashcard/ActiveRecallPrompt";
@@ -246,6 +250,39 @@ describe("practice view accessibility contracts", () => {
     expect(rating).toBeGreaterThan(card);
     expect(studyHtml).toContain('role="progressbar"');
     expect(studyHtml).toContain('aria-label="Study progress"');
+    expect(studyHtml).toContain('aria-valuenow="0"');
+    expect(studyHtml).toContain('0 / 1 saved');
+  });
+
+  it('introduces an unreviewed card before recall and rating', () => {
+    const studyHtml = renderToStaticMarkup(
+      <StudyView
+        cards={[quizQuestion.card]}
+        index={0}
+        recallMode="target-to-native"
+        revealed={false}
+        needsIntroduction
+        reviewedCardId={null}
+        customDecks={[]}
+        onClose={vi.fn()}
+        onRecallMode={vi.fn()}
+        onReveal={vi.fn()}
+        onBeginStudyRecall={vi.fn()}
+        onBookmark={vi.fn()}
+        onAssignDeck={vi.fn()}
+        onUpdateCard={vi.fn()}
+        onRate={vi.fn()}
+        onIndex={vi.fn()}
+      />,
+    );
+
+    expect(studyHtml).toContain('Meet this word');
+    expect(studyHtml).toContain('I’ve reviewed it — start recall');
+    expect(studyHtml).toContain('data-card-side="back"');
+    expect(studyHtml).toContain('xin chào');
+    expect(studyHtml).toContain('hello');
+    expect(studyHtml).not.toContain('Reveal answer');
+    expect(studyHtml).not.toContain('Rate memory strength');
   });
 
   it("keeps focus visible and avoids transition-all across practice screens", () => {
@@ -492,7 +529,7 @@ describe("practice view accessibility contracts", () => {
     );
     const storyHtml = renderToStaticMarkup(
       <StoryView
-        story={{ story: "Hello there.", translation: "Xin chào." }}
+        story={{ title: 'A greeting', segments: [{ english: 'Hello there.', vietnamese: 'Xin chào.' }, { english: 'A chance appeared.', vietnamese: 'Một cơ hội đã đến.' }], targetPhrases: ['Hello'], comprehension: { question: 'What appeared?', options: ['A chance', 'A car', 'A bird'], correctIndex: 0, explanationVi: 'Một cơ hội.' }, grammar: { label: 'Past simple', explanationVi: 'Thì quá khứ đơn.', sourceSentence: 'A chance appears.', prompt: 'Use the past simple.', acceptedAnswer: 'A chance appeared.' }, retellPrompt: 'Retell the greeting.' }}
         loading={false}
         onGenerate={vi.fn()}
         onClose={vi.fn()}
@@ -502,8 +539,20 @@ describe("practice view accessibility contracts", () => {
     expect(loadingHtml).toContain('aria-busy="true"');
     expect(loadingHtml).toContain("Creating your story");
     expect(storyHtml).toContain('aria-labelledby="story-heading"');
-    expect(storyHtml).toContain("Your story is ready.");
+    expect(storyHtml).toContain("Story ready");
     expect(storyHtml).toMatch(/<p[^>]*lang="vi"[^>]*>Xin chào\.<\/p>/);
+    expect(storyHtml).toContain('Read scene 1 in English');
+    expect(storyHtml).toContain('Check understanding');
+    expect(storyHtml).toContain('Grammar transformation:');
+    expect(storyHtml).toContain('This draft stays on this screen and is not submitted.');
+  });
+
+  it('checks comprehension and grammar answers locally with simple normalization', () => {
+    expect(isComprehensionAnswerCorrect(0, 0)).toBe(true);
+    expect(isComprehensionAnswerCorrect(1, 0)).toBe(false);
+    expect(normalizeGrammarAnswer('  A   CHANCE appeared. ')).toBe('a chance appeared.');
+    expect(isGrammarAnswerCorrect('  A   CHANCE appeared. ', 'A chance appeared.')).toBe(true);
+    expect(isGrammarAnswerCorrect('A chance appears.', 'A chance appeared.')).toBe(false);
   });
 
   it("renders story failures as retryable errors rather than completed reading content", () => {

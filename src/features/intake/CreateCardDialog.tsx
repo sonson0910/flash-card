@@ -297,8 +297,8 @@ function CardPreview({
       </div>
       <div className="create-card-dialog__preview-content">
         <div className="create-card-dialog__preview-heading">
-          <span className="create-card-dialog__ai-badge"><Sparkles size={13} aria-hidden="true" />{isManual ? <Trans id="library.create-card.preview.manual-draft" message="Manual draft" /> : <Trans id="library.create-card.preview.ai-draft" message="AI draft" />}</span>
-          <span className="create-card-dialog__edit-note">{isManual ? <Trans id="library.create-card.preview.edit-manual" message="Edit your card details below" /> : <Trans id="library.create-card.preview.edit-generated" message="Edit the generated details below" />}</span>
+          <span className="create-card-dialog__ai-badge"><Sparkles size={13} aria-hidden="true" />{isManual ? <Trans {...msg({ id: 'library.create-card.preview.manual-draft', message: 'Manual draft' })} /> : <Trans {...msg({ id: 'library.create-card.preview.ai-draft', message: 'AI draft' })} />}</span>
+          <span className="create-card-dialog__edit-note">{isManual ? <Trans {...msg({ id: 'library.create-card.preview.edit-manual', message: 'Edit your card details below' })} /> : <Trans {...msg({ id: 'library.create-card.preview.edit-generated', message: 'Edit the generated details below' })} />}</span>
         </div>
         <div className="create-card-dialog__headword-row">
           <h3 id="create-card-preview-title" lang={card.language || 'en'}>{card.word || '—'}</h3>
@@ -306,7 +306,7 @@ function CardPreview({
         </div>
         <div className="create-card-dialog__meta">
           <label>
-            <span className="sr-only"><Trans id="library.create-card.pronunciation" message="Pronunciation" /></span>
+            <span className="sr-only"><Trans {...msg({ id: 'library.create-card.pronunciation', message: 'Pronunciation' })} /></span>
             <input
               aria-label={translate(CREATE_CARD_MESSAGES.pronunciation)}
               lang={card.language || 'en'}
@@ -318,7 +318,7 @@ function CardPreview({
           </label>
           {card.partOfSpeech && <span>{card.partOfSpeech}</span>}
           <label>
-            <span className="sr-only"><Trans id="library.create-card.cefr" message="CEFR level" /></span>
+            <span className="sr-only"><Trans {...msg({ id: 'library.create-card.cefr', message: 'CEFR level' })} /></span>
             <input
               className="create-card-dialog__cefr-input"
               aria-label={translate(CREATE_CARD_MESSAGES.cefr)}
@@ -330,7 +330,7 @@ function CardPreview({
           </label>
         </div>
         <label className="create-card-dialog__preview-meaning">
-          <span className="sr-only"><Trans id="library.create-card.meaning" message="Meaning" /></span>
+          <span className="sr-only"><Trans {...msg({ id: 'library.create-card.meaning', message: 'Meaning' })} /></span>
           <input
             aria-label={translate(CREATE_CARD_MESSAGES.meaning)}
             lang={card.translationLanguage || 'vi'}
@@ -342,7 +342,7 @@ function CardPreview({
           />
         </label>
         <label className="create-card-dialog__preview-explanation">
-          <span className="sr-only"><Trans id="library.create-card.definition" message="Definition" /></span>
+          <span className="sr-only"><Trans {...msg({ id: 'library.create-card.definition', message: 'Definition' })} /></span>
           <textarea
             aria-label={translate(CREATE_CARD_MESSAGES.definition)}
             lang={card.language || 'en'}
@@ -356,7 +356,7 @@ function CardPreview({
         </label>
         <div className="create-card-dialog__examples">
           <label>
-            <span><Trans id="library.create-card.example" message="Example" /></span>
+            <span><Trans {...msg({ id: 'library.create-card.example', message: 'Example' })} /></span>
             <textarea
               aria-label={translate(CREATE_CARD_MESSAGES.exampleSentence)}
               lang={card.language || 'en'}
@@ -369,7 +369,7 @@ function CardPreview({
             />
           </label>
           <label>
-            <span><Trans id="library.create-card.translation" message="Translation" /></span>
+            <span><Trans {...msg({ id: 'library.create-card.translation', message: 'Translation' })} /></span>
             <textarea
               aria-label={translate(CREATE_CARD_MESSAGES.exampleTranslation)}
               lang={card.translationLanguage || 'vi'}
@@ -383,7 +383,7 @@ function CardPreview({
           </label>
         </div>
         {family && <fieldset className="create-card-dialog__family">
-          <legend><Trans id="library.create-card.word-family" message="Word family" /></legend>
+          <legend><Trans {...msg({ id: 'library.create-card.word-family', message: 'Word family' })} /></legend>
           <div className="create-card-dialog__family-fields">
             {(['noun', 'verb', 'adj', 'adv'] as const).filter(key => card.wordFamily?.[key]).map(key => <label key={key}>
               <span>{translate(WORD_FAMILY_MESSAGES[key])}</span>
@@ -631,10 +631,10 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
           <span className="create-card-dialog__ornament create-card-dialog__ornament--bottom" aria-hidden="true" />
           <header className="create-card-dialog__header">
             <div className="create-card-dialog__heading">
-              <p className="create-card-dialog__kicker"><span aria-hidden="true">◆</span>{manualMode ? <Trans id="library.create-card.kicker.manual" message="MANUAL CARD" /> : <Trans id="library.create-card.kicker.ai" message="NEW CARD" />}</p>
-              <Dialog.Title className="create-card-dialog__title"><Trans id="library.create-card.title" message="Add a word" /></Dialog.Title>
+              <p className="create-card-dialog__kicker"><span aria-hidden="true">◆</span>{manualMode ? <Trans {...msg({ id: 'library.create-card.kicker.manual', message: 'MANUAL CARD' })} /> : <Trans {...msg({ id: 'library.create-card.kicker.ai', message: 'NEW CARD' })} />}</p>
+              <Dialog.Title className="create-card-dialog__title"><Trans {...msg({ id: 'library.create-card.title', message: 'Add a word' })} /></Dialog.Title>
               <Dialog.Description id="create-card-dialog-description" className="create-card-dialog__description">
-                {manualMode ? <Trans id="library.create-card.description.manual" message="Add the details you already know, then save the card." /> : <Trans id="library.create-card.description.ai" message="SonFlash drafts the card — you decide what stays." />}
+                {manualMode ? <Trans {...msg({ id: 'library.create-card.description.manual', message: 'Add the details you already know, then save the card.' })} /> : <Trans {...msg({ id: 'library.create-card.description.ai', message: 'SonFlash drafts the card — you decide what stays.' })} />}
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
@@ -676,7 +676,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
               </div>
 
               <fieldset className="create-card-dialog__pos">
-                <legend><Trans id="library.create-card.part-of-speech" message="Part of speech" /></legend>
+                <legend><Trans {...msg({ id: 'library.create-card.part-of-speech', message: 'Part of speech' })} /></legend>
                 <div role="radiogroup" aria-label={translate(CREATE_CARD_MESSAGES.partOfSpeech)}>
                   {POS_OPTIONS.map(option => {
                     const selected = model.draft.partOfSpeech === option.value;
@@ -715,7 +715,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
                     <span>{translate(generationStatus)}</span>
                   </div>}
                   {!manualMode && <div className="create-card-dialog__regeneration" aria-label={translate(CREATE_CARD_MESSAGES.regenerateGroup)}>
-                    <div className="create-card-dialog__regeneration-heading"><span><Trans id="library.create-card.regenerate-selected" message="Regenerate selected details" /></span><small><Trans id="library.create-card.regenerate-hint" message="Each completed generation uses one AI request" /></small></div>
+                    <div className="create-card-dialog__regeneration-heading"><span><Trans {...msg({ id: 'library.create-card.regenerate-selected', message: 'Regenerate selected details' })} /></span><small><Trans {...msg({ id: 'library.create-card.regenerate-hint', message: 'Each completed generation uses one AI request' })} /></small></div>
                     <div className="create-card-dialog__regeneration-options">
                       {REGENERABLE_FIELDS.map(field => <button
                         key={field.value}
@@ -731,8 +731,8 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
               ) : manualMode ? (
                 <section className="create-card-dialog__manual" aria-labelledby="manual-card-heading">
                   <div className="create-card-dialog__section-heading">
-                    <div><p className="create-card-dialog__section-kicker"><Trans id="library.create-card.manual-details" message="MANUAL DETAILS" /></p><h3 id="manual-card-heading"><Trans id="library.create-card.your-card" message="Your card" /></h3></div>
-                    <button type="button" className="create-card-dialog__text-button" disabled={isBusy} onClick={() => { setManualMode(false); setLocalError(null); }}><Trans id="library.create-card.use-ai-draft" message="Use AI draft" /></button>
+                    <div><p className="create-card-dialog__section-kicker"><Trans {...msg({ id: 'library.create-card.manual-details', message: 'MANUAL DETAILS' })} /></p><h3 id="manual-card-heading"><Trans {...msg({ id: 'library.create-card.your-card', message: 'Your card' })} /></h3></div>
+                    <button type="button" className="create-card-dialog__text-button" disabled={isBusy} onClick={() => { setManualMode(false); setLocalError(null); }}><Trans {...msg({ id: 'library.create-card.use-ai-draft', message: 'Use AI draft' })} /></button>
                   </div>
                   <div className="create-card-dialog__manual-grid">
                     <label><FieldLabel descriptor={CREATE_CARD_MESSAGES.meaning} /><input dir="auto" value={manualDraft.translation} onChange={event => updateManual('translation', event.target.value)} required disabled={isBusy} /></label>
@@ -745,7 +745,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
               ) : (
                 <div className="create-card-dialog__empty-preview" role="status">
                   <Sparkles size={18} aria-hidden="true" />
-                  <span>{isBusy ? translate(generationStatus) : <Trans id="library.create-card.empty-preview" message="Your generated card preview will appear here." />}</span>
+                  <span>{isBusy ? translate(generationStatus) : <Trans {...msg({ id: 'library.create-card.empty-preview', message: 'Your generated card preview will appear here.' })} />}</span>
                 </div>
               )}
 
@@ -758,7 +758,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
                     </option>)}
                   </select>
                 </label>
-                {!manualMode && hasPreview && <p><Trans id="library.create-card.ready-after-saving" message="Ready after saving" /></p>}
+                {!manualMode && hasPreview && <p><Trans {...msg({ id: 'library.create-card.ready-after-saving', message: 'Ready after saving' })} /></p>}
               </div>
 
               {model.duplicate && <div className="create-card-dialog__notice create-card-dialog__notice--duplicate" role="alert">
@@ -767,16 +767,16 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
               </div>}
               {error && <div className={`create-card-dialog__notice ${quotaError ? 'create-card-dialog__notice--quota' : 'create-card-dialog__notice--error'}`} role="alert">
                 <AlertCircle size={17} aria-hidden="true" />
-                <span>{error}{quotaError && !manualMode && <button type="button" onClick={enterManualMode}><Trans id="library.create-card.add-manually" message="Add manually" /></button>}</span>
+                <span>{error}{quotaError && !manualMode && <button type="button" onClick={enterManualMode}><Trans {...msg({ id: 'library.create-card.add-manually', message: 'Add manually' })} /></button>}</span>
               </div>}
             </div>
 
             <footer className="create-card-dialog__footer">
-              <span className="create-card-dialog__request-count"><Sparkles size={14} aria-hidden="true" /><Trans id="library.create-card.request-count" message="{count, plural, one {# AI request completed} other {# AI requests completed}}" values={{ count: model.completedAiRequests }} /></span>
-              {!manualMode && !hasPreview && <button type="button" className="create-card-dialog__manual-link" onClick={enterManualMode}><Trans id="library.create-card.add-manually" message="Add manually" /></button>}
-              {!manualMode && hasPreview && <button type="button" className="create-card-dialog__secondary" onClick={regenerate} disabled={isBusy || selectedFields.size === 0}><RefreshCw size={15} aria-hidden="true" />{model.stage === 'generating' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.regenerating} /> : <Trans id="library.create-card.regenerate" message="Regenerate" />}</button>}
+              <span className="create-card-dialog__request-count"><Sparkles size={14} aria-hidden="true" /><Trans {...msg({ id: 'library.create-card.request-count', message: '{count, plural, one {# AI request completed} other {# AI requests completed}}' })} values={{ count: model.completedAiRequests }} /></span>
+              {!manualMode && !hasPreview && <button type="button" className="create-card-dialog__manual-link" onClick={enterManualMode}><Trans {...msg({ id: 'library.create-card.add-manually', message: 'Add manually' })} /></button>}
+              {!manualMode && hasPreview && <button type="button" className="create-card-dialog__secondary" onClick={regenerate} disabled={isBusy || selectedFields.size === 0}><RefreshCw size={15} aria-hidden="true" />{model.stage === 'generating' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.regenerating} /> : <Trans {...msg({ id: 'library.create-card.regenerate', message: 'Regenerate' })} />}</button>}
               <button type="submit" className="create-card-dialog__primary" disabled={isBusy || saveBlocked || Boolean(model.duplicate) || (!manualMode && !model.draft.word.trim()) || !deckIsAllowed}>
-                {model.stage === 'generating' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.generating} /> : model.stage === 'saving' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.saving} /> : manualMode ? <Trans id="library.create-card.save" message="Save card" /> : hasPreview ? <Trans id="library.create-card.save" message="Save card" /> : <Trans id="library.create-card.generate-preview" message="Generate preview" />}
+                {model.stage === 'generating' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.generating} /> : model.stage === 'saving' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.saving} /> : manualMode ? <Trans {...msg({ id: 'library.create-card.save', message: 'Save card' })} /> : hasPreview ? <Trans {...msg({ id: 'library.create-card.save', message: 'Save card' })} /> : <Trans {...msg({ id: 'library.create-card.generate-preview', message: 'Generate preview' })} />}
               </button>
             </footer>
           </form>

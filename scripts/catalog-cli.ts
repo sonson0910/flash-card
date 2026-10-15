@@ -61,13 +61,16 @@ const protectedReviewerAuthority = (): CatalogReviewerAuthorityV1 => {
 
 const run = async (mode: Mode, args: readonly string[]) => {
   if (mode === 'validate') {
-    assertExactOptions(args, ['--input']);
-    return validateCatalogFiles(option(args, '--input'));
+    assertExactOptions(args, ['--input', '--rights']);
+    return validateCatalogFiles(
+      option(args, '--input'),
+      args.includes('--rights') ? option(args, '--rights') : undefined,
+    );
   }
   if (mode === 'build') {
-    assertExactOptions(args, ['--input', '--out', '--previous-manifest'], ['--initial-release']);
+    assertExactOptions(args, ['--input', '--out', '--previous-manifest', '--rights'], ['--initial-release']);
     return buildCatalogFiles(
-      option(args, '--input'), option(args, '--out'), protectedReviewerAuthority(),
+      option(args, '--input'), option(args, '--out'), option(args, '--rights'), protectedReviewerAuthority(),
       optionalOption(args, '--previous-manifest'),
       args.includes('--initial-release'),
     );

@@ -31,6 +31,8 @@ import { PART_OF_SPEECH_OPTIONS } from '../../lib/cardQuery';
 import { formatNumber } from '../../lib/format';
 import { createImeSubmitGuard } from '../../lib/imeSubmitGuard';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
+import { ALL_PRACTICE_DECK_SCOPE, type PracticeDeckScope } from '../../lib/practiceScope';
+import type { CardGenerationOptions } from '../intake/cardIntakeController';
 import type {
   SpreadsheetImportProgress,
   SpreadsheetImportResult,
@@ -40,6 +42,11 @@ import {
   downloadSpreadsheetImportErrorReport,
 } from '../importExport/SpreadsheetImportDialog';
 import { dateLabelToQueryDate, displayCardDate } from './libraryPresentation';
+import {
+  CUSTOM_DECK_RESERVED_NAME_ERROR,
+  isReservedCustomDeckName,
+  normalizeCustomDeckName,
+} from './customDecks';
 import type { AiGenerationAccess } from './aiGenerationAccess';
 import { AiDialogueModal } from './AiDialogueModal';
 import { DeckCreationDialog, type LibraryDialogPhase } from './LibraryDialogOverlays';
@@ -56,7 +63,7 @@ interface LibraryToolsProps {
   fileInputRef: RefObject<HTMLInputElement | null>;
   onImport: (event: ChangeEvent<HTMLInputElement>) => void;
   importFile: (file: File) => void;
-  onGenerate: (event: FormEvent) => Promise<void>;
+  onGenerate: (event: FormEvent, options?: CardGenerationOptions) => Promise<void>;
   wordInput: string;
   setWordInput: (value: string) => void;
   isLoading: boolean;
@@ -85,8 +92,8 @@ interface LibraryToolsProps {
   newDeckInput: string;
   setNewDeckInput: (value: string) => void;
   createCustomDeck: (name: string, preset?: CoverPreset) => Promise<void>;
-  activeCustomDeck: string;
-  setActiveCustomDeck: (value: string) => void;
+  activeCustomDeck: PracticeDeckScope;
+  setActiveCustomDeck: (value: PracticeDeckScope) => void;
   cards: CardData[];
   deleteCustomDeck: (name: string) => Promise<void>;
   cloudFacetsComplete: boolean;
@@ -121,6 +128,20 @@ const assistantButtonClass = 'flex min-h-11 items-center justify-center gap-2 ro
 const filterLabelClass = 'mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--sf-text-muted)]';
 const filterSelectClass = 'min-h-11 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]';
 
+type DeckDeletionOwnerId = string | null | undefined;
+type DeckDeletionIntent = { name: string; ownerId: DeckDeletionOwnerId };
+
+export function getDeckCreationValidationError(input: string): string | null {
+  return isReservedCustomDeckName(normalizeCustomDeckName(input))
+    ? CUSTOM_DECK_RESERVED_NAME_ERROR
+    : null;
+}
+
+export function getGenerationDeckSelection(activeCustomDeck: PracticeDeckScope, customDecks: readonly string[]): string {
+  if (activeCustomDeck.kind !== 'deck') return '';
+  return customDecks.includes(activeCustomDeck.name) ? activeCustomDeck.name : '';
+}
+
 export function SpreadsheetImportStatus({
   progress,
   result,
@@ -131,8 +152,8 @@ export function SpreadsheetImportStatus({
   if (progress) {
     return (
       <div role="status" aria-live="polite" className="mt-3 rounded-xl border border-cyan-300/50 bg-cyan-50/80 px-3 py-2 text-xs font-semibold text-cyan-900 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-100">
-        <span className="block font-black"><Trans id="library.import.progress" message="Importing {current, number} of {total, number}" values={{ current: progress.current, total: progress.total }} /></span>
-        <span className="mt-0.5 block truncate text-[11px] opacity-80"><Trans id="library.import.current-word" message="Current word: {word}" values={{ word: progress.word }} /></span>
+        <span className="block font-black"><Trans {...msg({ context: 'library.import.progress', message: 'Importing {current, number} of {total, number}' })} values={{ current: progress.current, total: progress.total }} /></span>
+        <span className="mt-0.5 block truncate text-[11px] opacity-80"><Trans {...msg({ context: 'library.import.current-word', message: 'Current word: {word}' })} values={{ word: progress.word }} /></span>
         <progress className="mt-2 h-1.5 w-full overflow-hidden rounded-full accent-[var(--sf-brand)]" value={progress.current} max={progress.total}>
           {progress.current} / {progress.total}
         </progress>
@@ -153,27 +174,27 @@ export function SpreadsheetImportStatus({
           : 'border-emerald-300/60 bg-emerald-50/85 text-emerald-950 dark:border-emerald-300/20 dark:bg-emerald-300/10 dark:text-emerald-100'
       }`}
     >
-      <span className="block font-black">{result.status === 'completed' ? <Trans id="library.import.complete" message="Import complete" /> : result.status === 'partial' ? <Trans id="library.import.partial" message="Import partly complete" /> : <Trans id="library.import.failed" message="Import failed" />}</span>
+      <span className="block font-black">{result.status === 'completed' ? <Trans {...msg({ context: 'library.import.complete', message: 'Import complete' })} /> : result.status === 'partial' ? <Trans {...msg({ context: 'library.import.partial', message: 'Import partly complete' })} /> : <Trans {...msg({ context: 'library.import.failed', message: 'Import failed' })} />}</span>
       <span className="mt-1 block text-[11px] leading-relaxed">
-        <Trans id="library.import.summary" message="{created, plural, one {# created} other {# created}} · {reused, plural, one {# already present} other {# already present}} · {failed, plural, one {# failed} other {# failed}} · {skipped, plural, one {# skipped} other {# skipped}}" values={{ created: summary.created, reused: summary.reused, failed: summary.failed, skipped: summary.skipped }} />
+        <Trans {...msg({ context: 'library.import.summary', message: '{created, plural, one {# created} other {# created}} · {reused, plural, one {# already present} other {# already present}} · {failed, plural, one {# failed} other {# failed}} · {skipped, plural, one {# skipped} other {# skipped}}' })} values={{ created: summary.created, reused: summary.reused, failed: summary.failed, skipped: summary.skipped }} />
       </span>
       <span className="mt-1 block text-[11px] leading-relaxed opacity-85">
         {result.status === 'completed' ? (
-          <Trans id="library.import.completed-guidance" message="Your new and existing cards are ready in the library." />
+          <Trans {...msg({ context: 'library.import.completed-guidance', message: 'Your new and existing cards are ready in the library.' })} />
         ) : result.status === 'partial' ? (
-          <Trans id="library.import.partial-guidance" message="Retry the failed or skipped words later." />
+          <Trans {...msg({ id: 'library.import.partial-guidance', message: 'Retry the failed or skipped words later.' })} />
         ) : result.reason === 'size' ? (
-          <Trans id="library.import.failure-size" message="Choose a smaller spreadsheet, then try again." />
+          <Trans {...msg({ context: 'library.import.failure-size', message: 'Choose a smaller spreadsheet, then try again.' })} />
         ) : result.reason === 'read' ? (
-          <Trans id="library.import.failure-read" message="Check that the spreadsheet can be opened, then try again." />
+          <Trans {...msg({ context: 'library.import.failure-read', message: 'Check that the spreadsheet can be opened, then try again.' })} />
         ) : result.reason === 'parse' ? (
-          <Trans id="library.import.failure-parse" message="Check the spreadsheet columns and format, then try again." />
+          <Trans {...msg({ context: 'library.import.failure-parse', message: 'Check the spreadsheet columns and format, then try again.' })} />
         ) : result.reason === 'empty' ? (
-          <Trans id="library.import.failure-empty" message="Add at least one word to the spreadsheet, then try again." />
+          <Trans {...msg({ context: 'library.import.failure-empty', message: 'Add at least one word to the spreadsheet, then try again.' })} />
         ) : result.reason === 'items' ? (
-          <Trans id="library.import.failure-items" message="Check your sign-in and connection, then try again." />
+          <Trans {...msg({ context: 'library.import.failure-items', message: 'Check your sign-in and connection, then try again.' })} />
         ) : (
-          <Trans id="library.import.failure-save" message="Check your connection, then try again." />
+          <Trans {...msg({ context: 'library.import.failure-save', message: 'Check your connection, then try again.' })} />
         )}
       </span>
     </div>
@@ -190,12 +211,61 @@ export async function createDeckThenClearInput(
 }
 
 export async function deleteDeckThenCloseDialog(
-  name: string,
+  intent: DeckDeletionIntent,
+  currentOwnerId: DeckDeletionOwnerId,
   deleteDeck: (name: string) => Promise<void>,
   closeDialog: () => void,
 ) {
-  await deleteDeck(name);
+  if (intent.ownerId !== currentOwnerId) return false;
+  await deleteDeck(intent.name);
   closeDialog();
+  return true;
+}
+
+export function DeckCreationForm({
+  value,
+  onChange,
+  onSubmit,
+  isCreating,
+  error,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  isCreating: boolean;
+  error: string | null;
+}) {
+  return (
+    <div className="mb-3">
+      <form
+        onSubmit={event => {
+          event.preventDefault();
+          onSubmit();
+        }}
+        className="flex gap-2"
+      >
+        <input
+          type="text"
+          aria-label={i18n._(msg({ id: "library-tools.new-deck-name", message: "New deck name" }))}
+          value={value}
+          onChange={event => onChange(event.target.value)}
+          placeholder={i18n._(msg({ id: "library-tools.ielts-travel", message: "IELTS, Travel…" }))}
+          disabled={isCreating}
+          className="min-h-11 min-w-0 flex-1 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none disabled:cursor-wait disabled:opacity-70"
+        />
+        <button
+          type="submit"
+          disabled={isCreating || !value.trim()}
+          className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--sf-brand)] px-3 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={isCreating ? 'Creating deck' : 'Create deck'}
+        >
+          {isCreating ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <Plus size={15} aria-hidden="true" />}
+          <span>{isCreating ? 'Creating…' : 'Create'}</span>
+        </button>
+      </form>
+      {error ? <p role="alert" className="mt-2 text-xs font-semibold leading-relaxed text-rose-700 dark:text-rose-300">{error}</p> : null}
+    </div>
+  );
 }
 
 export function restoreDeckDeletionFocus(
@@ -221,7 +291,7 @@ export function DeckDeletionDialogContent({
   isDeleting?: boolean;
   error?: boolean;
 }) {
-  const assignmentMessage = <Trans id="library.deck.delete-assignment" message="{count, plural, one {# card will become unassigned.} other {# cards will become unassigned.}}" values={{ count: assignedCardCount }} />;
+  const assignmentMessage = <Trans {...msg({ context: 'library.deck.delete-assignment', message: '{count, plural, one {# card will become unassigned.} other {# cards will become unassigned.}}' })} values={{ count: assignedCardCount }} />;
   return (
     <>
       <AlertDialog.Overlay className="fixed inset-0 z-50 bg-slate-950/72 backdrop-blur-xs" />
@@ -235,19 +305,19 @@ export function DeckDeletionDialogContent({
         <div className="flex items-start gap-3">
           <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-rose-400/35 bg-rose-500/10 text-rose-700 dark:text-rose-200" aria-hidden="true"><Trash2 size={20} /></span>
           <div>
-            <AlertDialog.Title className="text-balance font-display text-2xl font-black tracking-tight"><Trans id="library.deck.delete-title" message="Delete “{deckName}” deck?" values={{ deckName }} /></AlertDialog.Title>
+            <AlertDialog.Title className="text-balance font-display text-2xl font-black tracking-tight"><Trans {...msg({ context: 'library.deck.delete-title', message: 'Delete “{deckName}” deck?' })} values={{ deckName }} /></AlertDialog.Title>
             <AlertDialog.Description className="mt-2 text-pretty text-sm leading-relaxed text-[var(--sf-text-muted)]">
-              {assignmentMessage} <Trans id="library.deck.delete-description" message="The cards stay in your library, but the deck itself will be permanently removed." />
+              {assignmentMessage} <Trans {...msg({ context: 'library.deck.delete-description', message: 'The cards stay in your library, but the deck itself will be permanently removed.' })} />
             </AlertDialog.Description>
           </div>
         </div>
         <div className="mt-5 grid grid-cols-2 gap-3 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 text-xs">
-          <div><span className="block text-[var(--sf-text-muted)]"><Trans id="library.deck.removed" message="Deck removed" /></span><strong className="mt-1 block font-display text-xl text-[var(--sf-text)]">{deckName}</strong></div>
-          <div><span className="block text-[var(--sf-text-muted)]"><Trans id="library.deck.unassigned" message="Unassigned" /></span><strong className="mt-1 block font-display text-xl text-[var(--sf-text)]"><Trans id="library.deck.cards-kept" message="{count, plural, one {# card kept} other {# cards kept}}" values={{ count: assignedCardCount }} /></strong></div>
+          <div><span className="block text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'library.deck.removed', message: 'Deck removed' })} /></span><strong className="mt-1 block font-display text-xl text-[var(--sf-text)]">{deckName}</strong></div>
+          <div><span className="block text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'library.deck.unassigned', message: 'Unassigned' })} /></span><strong className="mt-1 block font-display text-xl text-[var(--sf-text)]"><Trans {...msg({ context: 'library.deck.cards-kept', message: '{count, plural, one {# card kept} other {# cards kept}}' })} values={{ count: assignedCardCount }} /></strong></div>
         </div>
-        {error ? <p role="alert" className="mt-4 rounded-xl border border-rose-300/70 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-800 dark:border-rose-300/25 dark:bg-rose-300/10 dark:text-rose-200"><Trans id="library.deck.delete-error" message="Could not finish deleting this deck. Refreshing the latest cloud state; try again." /></p> : null}
+        {error ? <p role="alert" className="mt-4 rounded-xl border border-rose-300/70 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-800 dark:border-rose-300/25 dark:bg-rose-300/10 dark:text-rose-200"><Trans {...msg({ id: 'library.deck.delete-error', message: 'Could not finish deleting this deck. Refreshing the latest cloud state; try again.' })} /></p> : null}
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <AlertDialog.Cancel disabled={isDeleting} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-2 text-sm font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-50"><Trans id="library.deck.keep" message="Keep deck" /></AlertDialog.Cancel>
+          <AlertDialog.Cancel disabled={isDeleting} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-2 text-sm font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-50"><Trans {...msg({ context: 'library.deck.keep', message: 'Keep deck' })} /></AlertDialog.Cancel>
           <AlertDialog.Action
             disabled={isDeleting}
             onClick={event => {
@@ -257,7 +327,7 @@ export function DeckDeletionDialogContent({
             className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-rose-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-rose-800 disabled:cursor-wait disabled:opacity-70"
           >
             {isDeleting ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : null}
-            {isDeleting ? <Trans id="library.deck.deleting" message="Deleting…" /> : error ? <Trans id="library.deck.delete-again" message="Try deleting again" /> : <Trans id="library.deck.delete" message="Delete deck" />}
+            {isDeleting ? <Trans {...msg({ context: 'library.deck.deleting', message: 'Deleting…' })} /> : error ? <Trans {...msg({ context: 'library.deck.delete-again', message: 'Try deleting again' })} /> : <Trans {...msg({ context: 'library.deck.delete', message: 'Delete deck' })} />}
           </AlertDialog.Action>
         </div>
       </AlertDialog.Content>
@@ -346,7 +416,9 @@ export function LibraryTools({
 }: LibraryToolsProps) {
   const { i18n: catalog } = useLingui();
   const authenticated = isAuthenticated ?? Boolean(user);
-  const [deckPendingDeletion, setDeckPendingDeletion] = useState<string | null>(null);
+  const ownerIdRef = useRef<DeckDeletionOwnerId>(ownerId);
+  ownerIdRef.current = ownerId;
+  const [deckPendingDeletion, setDeckPendingDeletion] = useState<DeckDeletionIntent | null>(null);
   const [isCreatingDeck, setIsCreatingDeck] = useState(false);
   const [deckCreationError, setDeckCreationError] = useState(false);
   const [deckCreationPhase, setDeckCreationPhase] = useState<LibraryDialogPhase>('idle');
@@ -368,8 +440,11 @@ export function LibraryTools({
   const deckCreatorRestoreRef = useRef<HTMLButtonElement | null>(null);
   const importRestoreRef = useRef<HTMLButtonElement | null>(null);
   const extractorRestoreRef = useRef<HTMLButtonElement | null>(null);
-  const pendingDeckCardCount = deckPendingDeletion
-    ? cards.filter(card => card.customDeck === deckPendingDeletion).length
+  const [generationDeck, setGenerationDeck] = useState(() => getGenerationDeckSelection(activeCustomDeck, customDecks));
+
+  const currentPendingDeletion = deckPendingDeletion?.ownerId === ownerIdRef.current ? deckPendingDeletion : null;
+  const pendingDeckCardCount = currentPendingDeletion
+    ? cards.filter(card => card.customDeck === currentPendingDeletion.name).length
     : 0;
   const canSubmitWord = Boolean(wordInput.trim()) && !isLoading;
 
@@ -389,6 +464,11 @@ export function LibraryTools({
 
   const handleCreateDeck = async () => {
     if (!newDeckInput.trim() || isCreatingDeck) return;
+    const validationError = getDeckCreationValidationError(newDeckInput);
+    if (validationError) {
+      setDeckCreationError(true);
+      return;
+    }
     setIsCreatingDeck(true);
     setDeckCreationError(false);
     setDeckCreationPhase('working');
@@ -410,17 +490,26 @@ export function LibraryTools({
   };
 
   const handleDeleteDeck = async () => {
-    if (!deckPendingDeletion || isDeletingDeck) return;
+    const pendingDeletion = deckPendingDeletion;
+    if (!pendingDeletion || isDeletingDeck) return;
+    if (pendingDeletion.ownerId !== ownerIdRef.current) {
+      setDeckPendingDeletion(null);
+      setDeckDeletionError(false);
+      return;
+    }
     setIsDeletingDeck(true);
     setDeckDeletionError(false);
     try {
       await deleteDeckThenCloseDialog(
-        deckPendingDeletion,
+        pendingDeletion,
+        ownerIdRef.current,
         deleteCustomDeck,
-        () => setDeckPendingDeletion(null),
+        () => setDeckPendingDeletion(current => (
+          current?.name === pendingDeletion.name && current.ownerId === pendingDeletion.ownerId ? null : current
+        )),
       );
     } catch {
-      setDeckDeletionError(true);
+      if (pendingDeletion.ownerId === ownerIdRef.current) setDeckDeletionError(true);
     } finally {
       setIsDeletingDeck(false);
     }
@@ -439,6 +528,17 @@ export function LibraryTools({
     if (isImporting) setImportDialogOpen(true);
   }, [isImporting]);
 
+  useEffect(() => {
+    setGenerationDeck(getGenerationDeckSelection(activeCustomDeck, customDecks));
+  }, [activeCustomDeck, customDecks]);
+
+  useEffect(() => {
+    setDeckPendingDeletion(current => current?.ownerId === ownerIdRef.current ? current : null);
+    setDeckDeletionError(false);
+  }, [ownerId]);
+
+  const validGenerationDeck = customDecks.includes(generationDeck) ? generationDeck : '';
+
   const clearAllFilters = () => {
     setSearchQuery('');
     setShowStarredOnly(false);
@@ -446,7 +546,7 @@ export function LibraryTools({
     setActiveDifficulty('All');
     setActiveDate('All');
     setActiveCategory('All');
-    setActiveCustomDeck('All');
+    setActiveCustomDeck(ALL_PRACTICE_DECK_SCOPE);
   };
 
   const hasAnyFilterActive =
@@ -456,7 +556,7 @@ export function LibraryTools({
     activeDifficulty !== 'All' ||
     activeDate !== 'All' ||
     activeCategory !== 'All' ||
-    activeCustomDeck !== 'All';
+    activeCustomDeck.kind !== 'all';
   const generationHelp = generationAccess.available
     ? null
     : catalog._(msg({ id: 'library.create.sign-in-help', message: 'Sign in to generate smart cards.' }));
@@ -472,7 +572,7 @@ export function LibraryTools({
             </span>
             <div>
               <h2 id="create-card-heading" className="text-base font-black tracking-tight text-[var(--sf-text)]">
-                <Trans id="library.create.title" message="Create a card" />
+                <Trans {...msg({ context: 'library.create.title', message: 'Create a card' })} />
               </h2>
             </div>
           </div>
@@ -510,14 +610,14 @@ export function LibraryTools({
               event.preventDefault();
               return;
             }
-            void onGenerate(event);
+            void onGenerate(event, validGenerationDeck ? { requestedDeck: validGenerationDeck, requestedDeckAvailable: deck => customDecks.includes(deck) } : undefined);
           }}
           className="mt-3 space-y-3"
         >
           {authenticated && <Suspense fallback={null}><PlanUsageMeter /></Suspense>}
           <div>
             <label htmlFor="new-word" className="sr-only">
-              <Trans id="library.create.word-label" message="English word" />
+              <Trans {...msg({ context: 'library.create.word-label', message: 'English word' })} />
             </label>
             <div className="relative">
               <input
@@ -547,10 +647,24 @@ export function LibraryTools({
                 aria-live="polite"
                 className="mt-2 flex items-center justify-between px-1 text-[10px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-300"
               >
-                <span><Trans id="library.create.analysing" message="AI is analysing" /></span>
-                <span><Trans id="library.create.building" message="Building your card" /></span>
+                <span><Trans {...msg({ context: 'library.create.analysing', message: 'AI is analysing' })} /></span>
+                <span><Trans {...msg({ context: 'library.create.building', message: 'Building your card' })} /></span>
               </div>
             )}
+          </div>
+
+          <div>
+            <label htmlFor="new-card-deck" className="mb-1.5 block text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'library-tools.deck-space', message: 'Deck space' })} /></label>
+            <select
+              id="new-card-deck"
+              value={validGenerationDeck}
+              onChange={event => setGenerationDeck(event.target.value)}
+              disabled={isLoading}
+              className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-sm font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-70"
+            >
+              <option value=""><Trans {...msg({ context: 'library-tools.unassigned', message: 'Unassigned' })} /></option>
+              {customDecks.map(deck => <option key={deck} value={deck}>{deck}</option>)}
+            </select>
           </div>
 
           <button
@@ -559,8 +673,7 @@ export function LibraryTools({
             data-color-role="primary"
             disabled={!canSubmitWord}
             aria-describedby="smart-card-generation-help"
-            title={generationHelp ?? undefined}
-            className="shimmer-sweep brand-action flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--sf-brand)] py-3 text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
+              className="shimmer-sweep brand-action flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--sf-brand)] py-3 text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
           >
             {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
             <span>
@@ -584,7 +697,7 @@ export function LibraryTools({
               className={assistantButtonClass}
             >
               <MessageSquare size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" />
-              <span><Trans id="library.tools.dialogue" message="AI Dialogue" /></span>
+              <span><Trans {...msg({ context: 'library.tools.dialogue', message: 'AI Dialogue' })} /></span>
             </button>
             <button
               type="button"
@@ -594,13 +707,13 @@ export function LibraryTools({
               className={assistantButtonClass}
             >
               <ScanText size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" />
-              <span><Trans id="library.tools.scan" message="Scan Text" /></span>
+              <span><Trans {...msg({ context: 'library.tools.scan', message: 'Scan Text' })} /></span>
             </button>
           </div>
 
           <p id="smart-card-generation-help" className="text-center text-[10px] font-medium leading-relaxed text-[var(--sf-text-muted)]">
             {generationAccess.available
-              ? <Trans id="library.create.help" message="Definitions, phonetic audio, usage examples, and smart visuals auto-generated." />
+              ? <Trans {...msg({ context: 'library.create.help', message: 'Definitions, phonetic audio, usage examples, and smart visuals auto-generated.' })} />
               : generationHelp}
           </p>
         </form>
@@ -609,10 +722,13 @@ export function LibraryTools({
           cards={cards}
           open={showDialogueModal}
           onOpenChange={setShowDialogueModal}
+          ownerId={ownerId}
         />
 
         <WordExtractorModal
+          key={`extractor-${ownerId ?? 'anonymous'}`}
           open={showExtractorModal}
+          ownerId={ownerId}
           onOpenChange={setShowExtractorModal}
           cards={cards}
           restoreFocusRef={extractorRestoreRef}
@@ -624,19 +740,18 @@ export function LibraryTools({
             }
           }}
           languageProfile={languageProfile}
-          ownerId={ownerId}
         />
       </section>
 
       {/* 2. Modern Library Filter Hub */}
       {libraryCount > 0 && (
-        <section data-library-tool="filters" data-tool-priority="secondary" className="rounded-[20px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-5" aria-labelledby="library-filters-heading">
+        <section data-library-tool="deck-spaces" data-tool-priority="primary" className="rounded-[20px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-5" aria-labelledby="library-deck-spaces-heading">
           {/* Header & Reset */}
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Filter size={16} className="text-[var(--sf-brand-text)]" />
               <h2 id="library-filters-heading" className="text-base font-black text-[var(--sf-text)]">
-                <Trans id="library.filters.title" message="Filters" />
+                <Trans {...msg({ context: 'library.filters.title', message: 'Filters' })} />
               </h2>
             </div>
             {hasAnyFilterActive && (
@@ -646,16 +761,16 @@ export function LibraryTools({
                 className="flex min-h-11 items-center gap-1 text-[11px] font-bold text-[var(--sf-brand-text)] hover:underline"
               >
                 <RotateCcw size={12} />
-                <span><Trans id="library.filters.reset" message="Reset all" /></span>
+                <span><Trans {...msg({ context: 'library.filters.reset', message: 'Reset all' })} /></span>
               </button>
             )}
           </div>
 
-          <div className="space-y-4">
+          <div data-library-tool="filters" data-tool-priority="secondary" className="space-y-4">
             {/* Search Input */}
             <div className="relative hidden lg:block">
               <label htmlFor="library-search" className="sr-only">
-                <Trans id="library.filters.search-label" message="Search English words" />
+                <Trans {...msg({ context: 'library.filters.search-label', message: 'Search English words' })} />
               </label>
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[var(--sf-text-muted)]">
                 <Search size={15} />
@@ -697,7 +812,7 @@ export function LibraryTools({
                 aria-label={i18n._(msg({ id: 'library.filters.starred-label', message: 'Show starred cards only' }))}
               >
                 <Star size={13} className={showStarredOnly ? 'fill-amber-400 text-amber-400' : ''} />
-                <span><Trans id="library.filters.starred" message="Starred" /></span>
+                <span><Trans {...msg({ context: 'library.filters.starred', message: 'Starred' })} /></span>
               </button>
 
               <button
@@ -711,7 +826,7 @@ export function LibraryTools({
                 aria-expanded={showAdvancedFilters}
               >
                 <SlidersHorizontal size={13} />
-                <span><Trans id="library.filters.more" message="More" /></span>
+                <span><Trans {...msg({ context: 'library.filters.more', message: 'More' })} /></span>
                 {activeAdvancedFilterCount > 0 && (
                   <span className="flex size-4 items-center justify-center rounded-full bg-cyan-400 text-[9px] font-black text-[#071014]">
                     {activeAdvancedFilterCount}
@@ -728,7 +843,7 @@ export function LibraryTools({
                 <div>
                   <label className={filterLabelClass}>
                     <Tags size={12} />
-                    <span><Trans id="library.filters.part-of-speech" message="Part of speech" /></span>
+                    <span><Trans {...msg({ context: 'library.filters.part-of-speech', message: 'Part of speech' })} /></span>
                   </label>
                   <select
                     aria-label={i18n._(msg({ id: 'library.filters.part-of-speech-label', message: 'Filter by part of speech' }))}
@@ -749,7 +864,7 @@ export function LibraryTools({
                 <div>
                   <label className={filterLabelClass}>
                     <Award size={12} />
-                    <span><Trans id="library.filters.memory-status" message="Memory status" /></span>
+                    <span><Trans {...msg({ context: 'library.filters.memory-status', message: 'Memory status' })} /></span>
                   </label>
                   <select
                     aria-label={i18n._(msg({ id: 'library.filters.memory-status-label', message: 'Filter by memory status' }))}
@@ -770,7 +885,7 @@ export function LibraryTools({
                 <div>
                   <label className={filterLabelClass}>
                     <Calendar size={12} />
-                    <span><Trans id="library.filters.date-created" message="Date created" /></span>
+                    <span><Trans {...msg({ context: 'library.filters.date-created', message: 'Date created' })} /></span>
                   </label>
                   {authenticated ? (
                     <div className="flex gap-1.5">
@@ -814,7 +929,7 @@ export function LibraryTools({
               <div className="mb-2 flex items-center justify-between">
                 <h3 className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--sf-text-muted)]">
                   <BookOpen size={13} />
-                  <span><Trans id="library.decks.title" message="Decks ({count, number})" values={{ count: customDecks.length }} /></span>
+                  <span><Trans {...msg({ context: 'library.decks.title', message: 'Decks ({count, number})' })} values={{ count: customDecks.length }} /></span>
                 </h3>
                 <button
                   type="button"
@@ -827,19 +942,19 @@ export function LibraryTools({
                   className="flex min-h-11 items-center gap-1 text-[11px] font-bold text-[var(--sf-brand-text)] hover:underline"
                 >
                   <Plus size={13} />
-                  <span>{showDeckCreator ? <Trans id="library.deck.cancel" message="Cancel" /> : <Trans id="library.deck.new" message="New deck" />}</span>
+                  <span>{showDeckCreator ? <Trans {...msg({ context: 'library.deck.cancel', message: 'Cancel' })} /> : <Trans {...msg({ context: 'library.deck.new', message: 'New deck' })} />}</span>
                 </button>
               </div>
 
               <div className="flex max-h-[140px] flex-wrap gap-1.5 overflow-y-auto pr-1 scrollbar-none">
-                <DeckButton active={activeCustomDeck === 'All'} onClick={() => setActiveCustomDeck('All')} icon={<Layers3 size={13} />} label={i18n._(msg({ id: 'library.decks.all', message: 'All decks' }))} buttonRef={deckDeletionRestoreRef} />
+                <DeckButton active={activeCustomDeck.kind === 'all'} onClick={() => setActiveCustomDeck(ALL_PRACTICE_DECK_SCOPE)} icon={<Layers3 size={13} />} label={i18n._(msg({ id: 'library.decks.all', message: 'All decks' }))} buttonRef={deckDeletionRestoreRef} />
                 <DeckButton
-                  active={activeCustomDeck === 'Unassigned'}
-                  onClick={() => setActiveCustomDeck('Unassigned')}
+                  active={activeCustomDeck.kind === 'unassigned'}
+                  onClick={() => setActiveCustomDeck({ kind: 'unassigned' })}
                   icon={<Folder size={13} />}
                   label={i18n._(msg({ id: 'library.decks.unassigned', message: 'Unassigned' }))}
                   count={
-                    !authenticated || activeCustomDeck === 'Unassigned'
+                    !authenticated || activeCustomDeck.kind === 'unassigned'
                       ? `${formatNumber(cards.filter(card => !card.customDeck).length)}${authenticated ? '+' : ''}`
                       : undefined
                   }
@@ -848,20 +963,20 @@ export function LibraryTools({
                   <div
                     key={deck}
                     className={`flex min-h-11 items-center rounded-xl border pl-2.5 pr-1 text-xs font-bold transition-all ${
-                      activeCustomDeck === deck
+                      activeCustomDeck.kind === 'deck' && activeCustomDeck.name === deck
                         ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-xs'
                         : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
                     }`}
                   >
                     <button
                       type="button"
-                      aria-pressed={activeCustomDeck === deck}
-                      onClick={() => setActiveCustomDeck(deck)}
+                      aria-pressed={activeCustomDeck.kind === 'deck' && activeCustomDeck.name === deck}
+                      onClick={() => setActiveCustomDeck({ kind: 'deck', name: deck })}
                       className="flex min-h-11 min-w-11 items-center gap-1.5 py-1"
                     >
                       <span className={`grid size-5 place-items-center rounded-md text-[10px] text-white library-deck-cover--${normalizeCoverPreset(customDeckCoverPresets[customDeckCoverKey(deck)])}`} aria-hidden="true">{deckMonogram(deck)}</span>
                       <span className="max-w-28 truncate">{deck}</span>
-                      {(!authenticated || activeCustomDeck === deck) && (
+                      {(!authenticated || (activeCustomDeck.kind === 'deck' && activeCustomDeck.name === deck)) && (
                         <span className="text-[10px] opacity-70">
                           {formatNumber(cards.filter(card => card.customDeck === deck).length)}
                           {authenticated ? '+' : ''}
@@ -872,7 +987,7 @@ export function LibraryTools({
                       type="button"
                       onClick={() => {
                         setDeckDeletionError(false);
-                        setDeckPendingDeletion(deck);
+                        setDeckPendingDeletion({ name: deck, ownerId: ownerIdRef.current });
                       }}
                       className="ml-1 flex size-11 items-center justify-center rounded-md text-inherit opacity-60 hover:bg-rose-600 hover:text-white hover:opacity-100"
                       title={i18n._(msg({ id: 'library.deck.delete-this', message: 'Delete this deck' }))}
@@ -889,7 +1004,7 @@ export function LibraryTools({
             <div>
               <h3 className="mb-2 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--sf-text-muted)]">
                 <Tags size={13} />
-                  <span><Trans id="library.categories.title" message="Categories" /></span>
+                  <span><Trans {...msg({ context: 'library.categories.title', message: 'Categories' })} /></span>
               </h3>
               <div className="flex max-h-[160px] flex-wrap gap-1.5 overflow-y-auto pr-1 scrollbar-none">
                 {sortedCategories.map(category => (
@@ -904,7 +1019,7 @@ export function LibraryTools({
                         : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-cyan-400/40 hover:text-[var(--sf-text)]'
                     }`}
                   >
-                    <span>{category === 'All' ? <Trans id="library.categories.all" message="All" /> : category}</span>
+                    <span>{category === 'All' ? <Trans {...msg({ id: 'library.categories.all', message: 'All' })} /> : category}</span>
                     <span className="text-[10px] opacity-70">
                       {authenticated && category !== 'All' && !cloudFacetsComplete
                         ? `${formatNumber(categoryCounts[category] || 0)}+`
@@ -920,9 +1035,9 @@ export function LibraryTools({
 
       {/* Deletion confirmation dialog */}
       <DeckDeletionDialog
-        deckName={deckPendingDeletion ?? ''}
+        deckName={currentPendingDeletion?.name ?? ''}
         assignedCardCount={pendingDeckCardCount}
-        open={deckPendingDeletion !== null}
+        open={currentPendingDeletion !== null}
         onOpenChange={open => {
           if (!open && !isDeletingDeck) {
             setDeckPendingDeletion(null);

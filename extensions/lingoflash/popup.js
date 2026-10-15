@@ -263,7 +263,7 @@ const updateInputState = () => {
   characterCount.textContent = `${selectionInput.value.length}/${MAX_TEXT_LENGTH}`;
   const enabled = !isBusy && validation.ok;
   translateButton.disabled = !enabled;
-  addButton.disabled = !enabled || !decksReady;
+  addButton.disabled = !enabled || (!decksReady && Boolean(requestedDeckSelect?.value));
   speakSelectionButton.disabled = !enabled || !speechSupported();
   if (speechSupportStatus) {
     const unsupported = !speechSupported();
@@ -763,7 +763,7 @@ const loadDecks = async () => {
 
 const runMode = async type => {
   if (isBusy) return;
-  if (type === 'ADD_SELECTION' && !decksReady) {
+  if (type === 'ADD_SELECTION' && !decksReady && requestedDeckSelect?.value) {
     setStatus(t('statusDeckNotSynced', undefined, 'Chưa đồng bộ được deck; hãy mở SonFlash một lần.'), 'error');
     return;
   }

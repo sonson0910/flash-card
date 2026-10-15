@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   deleteAllCards: vi.fn(),
   clearLibraryFacets: vi.fn(),
   deleteCardWithTombstone: vi.fn(),
+  findCardById: vi.fn(),
   getLibraryEpoch: vi.fn(),
   incrementLibraryEpoch: vi.fn(),
   applyReviewViaCallable: vi.fn(),

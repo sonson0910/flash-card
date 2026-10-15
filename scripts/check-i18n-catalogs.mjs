@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
+import { formatter } from '@lingui/format-po';
 
 const root = path.resolve('src/i18n/locales');
 const run = script => {
@@ -16,22 +17,10 @@ const catalogSnapshot = async () => {
   ])));
 };
 
-const parseCatalog = (source) => {
-  const messages = new Map();
-  let id = '';
-  let translation = '';
-  let field = null;
-  const save = () => { if (id) messages.set(id, translation); id = ''; translation = ''; field = null; };
-  for (const line of source.split(/\r?\n/)) {
-    if (!line) { save(); continue; }
-    if (line.startsWith('msgid ')) { id = JSON.parse(line.slice(6)); field = 'id'; }
-    else if (line.startsWith('msgstr ')) { translation = JSON.parse(line.slice(7)); field = 'translation'; }
-    else if (line.startsWith('"') && field === 'id') id += JSON.parse(line);
-    else if (line.startsWith('"') && field === 'translation') translation += JSON.parse(line);
-  }
-  save();
-  return messages;
-};
+const poFormatter = formatter();
+const parseCatalog = source => new Map(
+  Object.entries(poFormatter.parse(source)).map(([id, entry]) => [id, entry.translation]),
+);
 
 const before = await catalogSnapshot();
 run('i18n:extract');
@@ -52,8 +41,16 @@ for (const area of areas) {
 // Extraction only scans the folders listed in lingui.config.ts, so a message
 // in an unlisted folder is silently dropped and renders as its raw id.
 const englishMessages = new Map();
+const catalogContexts = new Set();
 for (const area of areas) {
-  for (const [id, message] of parseCatalog(await readFile(path.join(root, 'en', area), 'utf8'))) englishMessages.set(id, message);
+  const source = await readFile(path.join(root, 'en', area), 'utf8');
+  for (const [id, entry] of Object.entries(poFormatter.parse(source))) {
+    englishMessages.set(id, entry.translation);
+    if (entry.context) catalogContexts.add(entry.context);
+    if (entry.message && entry.translation !== entry.message) {
+      throw new Error(`${area}: English translation differs from generated message ${id}.`);
+    }
+  }
 }
 const catalogIds = new Set(englishMessages.keys());
 const sourceFiles = (await readdir('src', { recursive: true }))
@@ -67,6 +64,9 @@ for (const file of sourceFiles) {
   for (const match of source.matchAll(/(?:msg\(\{\s*id:\s*'([^']+)'|<Trans\s+id="([^"]+)")/g)) {
     const id = match[1] ?? match[2];
     if (!catalogIds.has(id)) orphaned.push(`${file}: ${id}`);
+  }
+  for (const match of source.matchAll(/msg\(\{\s*context:\s*'([^']+)'/g)) {
+    if (!catalogContexts.has(match[1])) orphaned.push(`${file}: ${match[1]}`);
   }
   const defaults = [
     ...[...source.matchAll(/msg\(\{\s*id:\s*'([^']+)',\s*message:\s*'((?:[^'\\]|\\.)*)'/g)]

@@ -74,6 +74,8 @@ for (const theme of themes) for (const locale of locales) for (const viewport of
     }
     await expectAccessibleAndContained(page, name);
     await expectReducedMotion(page, name);
+    await expect(page.locator('.landing-atmospheres')).toHaveCount(0);
+    await expect(page.locator('video[data-hero-video]')).toHaveCount(0);
     await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true, animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
     if (theme.family === 'classic' && viewport.name === 'desktop') {
       const screenshot = testInfo.outputPath(`${name}-actual.png`);
@@ -269,4 +271,27 @@ test('Crystal Lumi only enters the hero where it preserves the headline and card
   const screenshot = testInfo.outputPath('landing-crystal-dark-1440.png');
   await page.screenshot({ path: screenshot });
   await testInfo.attach('landing-crystal-dark-1440', { path: screenshot, contentType: 'image/png' });
+});
+
+
+test('desktop dark landing retains every atmosphere when motion is enabled', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'no-preference' });
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'classic');
+    localStorage.setItem('lingoflash_theme', 'dark');
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+    localStorage.setItem('sonflash_reduced_motion', 'false');
+  });
+  await page.goto('/');
+  const controls = page.locator('.landing-atmospheres button');
+  const videos = page.locator('video[data-hero-video]');
+  await expect(controls).toHaveCount(4);
+  await expect(videos).toHaveCount(4);
+  for (let index = 0; index < 4; index += 1) {
+    await controls.nth(index).click();
+    await expect(controls.nth(index)).toHaveAttribute('aria-pressed', 'true');
+    await expect(videos.nth(index)).toHaveJSProperty('autoplay', true);
+    await expect(videos.nth(index).locator('source')).toHaveCount(2);
+  }
 });

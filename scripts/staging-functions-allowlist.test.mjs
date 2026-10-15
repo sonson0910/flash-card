@@ -26,7 +26,7 @@ describe('staging Functions deployment', () => {
     const existing = selectedFunctions('staging:deploy:functions:existing');
     const pilot = selectedFunctions('staging:deploy:functions:pilot');
     assert.deepEqual(existing, [
-      'generateVocabulary', 'createCard', 'createCardV2', 'findVocabularyImage',
+      'assessPronunciation', 'generateVocabulary', 'createCard', 'createCardV2', 'findVocabularyImage',
       'reviewCard', 'reviewCardV2', 'startPracticeSessionV1', 'completePracticeSessionV1',
       'equipOwnedFrame', 'saveGamification', 'updateLibraryFacets',
       'createSharedDeck', 'createSharedDeckV2', 'revokeSharedDeck',

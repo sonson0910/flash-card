@@ -306,12 +306,12 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
             <div className="w-[min(400px,34vw)] overflow-hidden rounded-[var(--sf-card-radius)] border border-[color-mix(in_srgb,var(--sf-brand)_55%,var(--sf-border))] bg-[var(--sf-card-bg)] shadow-[0_30px_70px_-30px_var(--sf-shadow)] [html[data-theme-family=crystal]_&]:crystal-chamfer">
               {previewCard.imageUrl ? <img src={previewCard.imageUrl} alt="" className="h-48 w-full object-cover [html[data-theme-family=crystal]_&]:crystal-chamfer-sm" /> : <div className="flex h-48 items-center justify-center bg-[var(--sf-surface-raised)] text-6xl font-black text-[var(--sf-brand-text)]">{previewCard.word.slice(0, 1).toUpperCase()}</div>}
               <div className="p-6">
-                <p className="text-[10px] font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]">{previewCard.partOfSpeech || 'Card preview'} <Trans id="library.edit-card.editing-badge" message="· editing" /></p>
+                <p className="text-[10px] font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]">{previewCard.partOfSpeech || 'Card preview'} <Trans {...msg({ context: 'library.edit-card.editing-badge', message: '· editing' })} /></p>
                 <p className="mt-2 font-serif text-5xl font-bold leading-none text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:font-black [html[data-theme-family=crystal]_&]:italic">{previewCard.word}</p>
                 <p className="mt-2 font-mono text-sm text-[var(--sf-text-muted)]">{previewCard.phonetic || '—'}</p>
                 <div className="mt-16 flex items-center gap-2 border-t border-[var(--sf-border)] pt-3">
                   <p className="min-w-0 truncate font-serif text-2xl font-semibold text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:font-black [html[data-theme-family=crystal]_&]:italic">{previewCard.translation || '—'}</p>
-                  {dirty && <span className={dirtyBadgeClass}><Trans id="library.edit-card.unsaved-badge" message="Unsaved" /></span>}
+                  {dirty && <span className={dirtyBadgeClass}><Trans {...msg({ context: 'library.edit-card.unsaved-badge', message: 'Unsaved' })} /></span>}
                 </div>
               </div>
             </div>
@@ -329,13 +329,13 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
             <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--sf-border)] px-5 pb-4 pt-4 sm:px-7 sm:pt-5 md:px-[26px]">
               <div className="min-w-0">
                 <p className="font-display text-[11px] font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]">
-                  {context ? <Trans id="library.edit-card.review-kicker" message="Card {current} of {total}" values={{ current: context.current, total: context.total }} /> : <Trans id="library.edit-card.kicker" message="Card editor" />}
+                  {context ? <Trans {...msg({ id: 'library.edit-card.review-kicker', message: 'Card {current} of {total}' })} values={{ current: context.current, total: context.total }} /> : <Trans {...msg({ context: 'library.edit-card.kicker', message: 'Card editor' })} />}
                 </p>
                 <Dialog.Title className="mt-1 font-serif text-3xl font-bold tracking-tight text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:font-black [html[data-theme-family=crystal]_&]:italic">
-                  <Trans id="library.edit-card.title" message="Edit card" />
+                  <Trans {...msg({ context: 'library.edit-card.title', message: 'Edit card' })} />
                 </Dialog.Title>
                 <Dialog.Description className="mt-2 max-w-[34rem] text-sm leading-6 text-[var(--sf-text-muted)]">
-                  {context ? <Trans id="library.edit-card.review-description" message="This review stays paused while you edit. Your review history stays intact." /> : <Trans id="library.edit-card.description" message="Changes update this card while its review history stays intact." />}
+                  {context ? <Trans {...msg({ id: 'library.edit-card.review-description', message: 'This review stays paused while you edit. Your review history stays intact.' })} /> : <Trans {...msg({ context: 'library.edit-card.description', message: 'Changes update this card while its review history stays intact.' })} />}
                 </Dialog.Description>
               </div>
               <button
@@ -360,7 +360,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <p className="truncate text-[10px] font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]">{previewCard.partOfSpeech || 'Card preview'}</p>
-                      {dirty && <span data-edit-dirty className={dirtyBadgeClass}><Trans id="library.edit-card.unsaved-badge" message="Unsaved" /></span>}
+                      {dirty && <span data-edit-dirty className={dirtyBadgeClass}><Trans {...msg({ context: 'library.edit-card.unsaved-badge', message: 'Unsaved' })} /></span>}
                     </div>
                     <h3 data-preview-word lang={targetLanguage} className="mt-1 truncate font-serif text-2xl font-bold leading-none text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:font-black [html[data-theme-family=crystal]_&]:italic">{previewCard.word}</h3>
                     <p data-preview-phonetic lang={targetLanguage} className="mt-1 truncate font-mono text-xs text-[var(--sf-text-muted)]">{previewCard.phonetic || '—'}</p>
@@ -379,7 +379,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
               <section className="mt-4 grid gap-3" aria-label={_(msg({ id: 'library.edit-card.card-fields', message: 'Card fields' }))}>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="min-w-0">
-                    <span className={fieldLabelClass}><Trans id="library.edit-card.word" message="Word" /></span>
+                    <span className={fieldLabelClass}><Trans {...msg({ id: 'library.edit-card.word', message: 'Word' })} /></span>
                     {canRenameWord ? (
                       <div className="mt-1.5 flex min-w-0 gap-1.5">
                         <input
@@ -418,7 +418,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                     {wordErrorMessage && <p role="alert" className="mt-1.5 text-xs font-semibold text-[var(--sf-danger)]">{wordErrorMessage}</p>}
                   </div>
                   <div className="min-w-0">
-                    <span className={fieldLabelClass}><Trans id="library.edit-card.part-of-speech" message="Part of speech" /></span>
+                    <span className={fieldLabelClass}><Trans {...msg({ id: 'library.edit-card.part-of-speech', message: 'Part of speech' })} /></span>
                     {canEditPartOfSpeech(openedCard) ? (
                       <input
                         data-edit-partofspeech-input
@@ -434,7 +434,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                     ) : (
                       <>
                         <span aria-disabled="true" className="mt-1.5 flex min-h-11 items-center rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 text-sm text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">{openedCard.partOfSpeech || '—'}</span>
-                        <p className="mt-1 text-[11px] text-[var(--sf-text-muted)]"><Trans id="library.edit-card.part-of-speech-locked" message="Locked to this card's published sense." /></p>
+                        <p className="mt-1 text-[11px] text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'library.edit-card.part-of-speech-locked', message: 'Locked to this card\'s published sense.' })} /></p>
                       </>
                     )}
                   </div>
@@ -442,7 +442,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="block min-w-0 sm:col-span-2">
-                    <span className={fieldLabelClass}><Trans id="library.edit-card.category" message="Category" /></span>
+                    <span className={fieldLabelClass}><Trans {...msg({ context: 'library.edit-card.category', message: 'Category' })} /></span>
                     <input
                       data-edit-category-input
                       value={draft.category}
@@ -455,7 +455,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                     />
                   </label>
                   <div className="min-w-0 sm:col-span-2">
-                    <span className={fieldLabelClass}><Trans id="library.edit-card.image" message="Image" /></span>
+                    <span className={fieldLabelClass}><Trans {...msg({ context: 'library.edit-card.image', message: 'Image' })} /></span>
                     <div className="mt-1.5 flex min-w-0 items-center gap-2">
                       {draft.imageUrl ? (
                         <img src={getDisplayImageUrl(draft.imageUrl)} alt="" className="size-11 shrink-0 rounded-[calc(var(--sf-card-radius)*.65)] object-cover [html[data-theme-family=crystal]_&]:crystal-chamfer-sm" />
@@ -470,7 +470,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                         className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
                       >
                         {imageSearching && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
-                        <Trans id="library.edit-card.find-another-photo" message="Find another photo" />
+                        <Trans {...msg({ context: 'library.edit-card.find-another-photo', message: 'Find another photo' })} />
                       </button>
                       {draft.imageUrl && (
                         <button
@@ -514,11 +514,11 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                 </div>
 
                 <p data-edit-contract-note className={noteClass}>
-                  <Trans id="library.edit-card.contract-note" message="A published sense's part of speech, deck, bookmark, tags and difficulty stay unchanged in this sheet until their data contracts are available." />
+                  <Trans {...msg({ context: 'library.edit-card.contract-note', message: 'A published sense\'s part of speech, deck, bookmark, tags and difficulty stay unchanged in this sheet until their data contracts are available.' })} />
                 </p>
                 {openedCard.source && (openedCard.source.url || openedCard.source.title) && (
                   <p data-edit-source-note className={noteClass}>
-                    <span className="font-black uppercase tracking-[.12em]"><Trans id="library.edit-card.source-label" message="Captured from" /></span>{' '}
+                    <span className="font-black uppercase tracking-[.12em]"><Trans {...msg({ context: 'library.edit-card.source-label', message: 'Captured from' })} /></span>{' '}
                     {isDisplayableSourceUrl(openedCard.source.url) ? (
                       <a
                         href={openedCard.source.url}
@@ -535,21 +535,21 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                 )}
                 <p className="flex gap-2 rounded-[var(--sf-card-radius)] border border-[color-mix(in_srgb,var(--sf-success)_45%,var(--sf-border))] bg-[color-mix(in_srgb,var(--sf-success)_10%,var(--sf-surface))] px-4 py-3 text-sm leading-6 text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
                   <Check size={16} className="mt-1 shrink-0 text-[var(--sf-success)]" aria-hidden="true" />
-                  <span><Trans id="library.edit-card.history-note" message="Your review history is kept. Changes appear on this card right away." /></span>
+                  <span><Trans {...msg({ context: 'library.edit-card.history-note', message: 'Your review history is kept. Changes appear on this card right away.' })} /></span>
                 </p>
                 {errorMessage && <p role="alert" className="rounded-[var(--sf-card-radius)] border border-[var(--sf-danger)] bg-[color-mix(in_srgb,var(--sf-danger)_10%,var(--sf-surface))] px-4 py-3 text-sm font-semibold text-[var(--sf-danger)]">{errorMessage}</p>}
               </section>
               </fieldset>
 
               <footer className="sticky bottom-[-1rem] z-10 mt-5 flex flex-col-reverse gap-2 border-t border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] py-4 sm:flex-row sm:items-center sm:justify-end md:bottom-[-1rem]">
-                {onDelete && <button type="button" data-edit-delete onClick={() => { setDeleteStatus('idle'); setConfirmation('delete'); }} disabled={writing} className="mr-auto flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold text-[var(--sf-danger)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60"><Trash2 size={16} aria-hidden="true" /><Trans id="library.card.delete" message="Delete card" /></button>}
-                <span className="mr-auto hidden text-xs text-[var(--sf-text-muted)] sm:block"><kbd className="rounded border border-[var(--sf-border)] px-1.5 py-0.5 font-mono text-[10px]"><Trans id="library.edit-card.esc-key" message="Esc" /></kbd> <Trans id="library.edit-card.back-to-card" message="back to card" /></span>
+                {onDelete && <button type="button" data-edit-delete onClick={() => { setDeleteStatus('idle'); setConfirmation('delete'); }} disabled={writing} className="mr-auto flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold text-[var(--sf-danger)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60"><Trash2 size={16} aria-hidden="true" /><Trans {...msg({ id: 'library.card.delete', message: 'Delete card' })} /></button>}
+                <span className="mr-auto hidden text-xs text-[var(--sf-text-muted)] sm:block"><kbd className="rounded border border-[var(--sf-border)] px-1.5 py-0.5 font-mono text-[10px]"><Trans {...msg({ context: 'library.edit-card.esc-key', message: 'Esc' })} /></kbd> <Trans {...msg({ context: 'library.edit-card.back-to-card', message: 'back to card' })} /></span>
                 <button type="button" onClick={() => closeSheet()} disabled={writing} className={secondaryButtonClass}>
-                  <span>{dirty ? 'Discard' : <Trans id="library.edit-card.cancel" message="Cancel" />}</span>
+                  <span>{dirty ? 'Discard' : <Trans {...msg({ context: 'library.edit-card.cancel', message: 'Cancel' })} />}</span>
                 </button>
                 <button type="submit" disabled={writing} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-5 text-sm font-bold text-[var(--sf-on-brand)] shadow-md transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
                   {saving && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
-                  <span>{saving ? <Trans id="library.edit-card.saving" message="Saving changes…" /> : error === 'save-failed' ? 'Retry save' : context ? <Trans id="library.edit-card.save-resume" message="Save & resume" /> : <Trans id="library.edit-card.save" message="Save changes" />}</span>
+                  <span>{saving ? <Trans {...msg({ context: 'library.edit-card.saving', message: 'Saving changes…' })} /> : error === 'save-failed' ? 'Retry save' : context ? <Trans {...msg({ id: 'library.edit-card.save-resume', message: 'Save & resume' })} /> : <Trans {...msg({ context: 'library.edit-card.save', message: 'Save changes' })} />}</span>
                   {!saving && <kbd className="hidden rounded bg-black/15 px-1.5 py-0.5 font-mono text-[10px] sm:inline">⌘↵</kbd>}
                 </button>
               </footer>
@@ -562,18 +562,18 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
         <AlertDialog.Portal>
           <AlertDialog.Overlay className="fixed inset-0 z-[110] bg-slate-950/55 backdrop-blur-sm" />
           <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[111] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] p-6 text-[var(--sf-text)] shadow-2xl outline-none [html[data-theme-family=crystal]_&]:crystal-chamfer">
-            <AlertDialog.Title className="font-serif text-2xl font-bold [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:italic">{confirmation === 'delete' ? <Trans id="library.delete.title" message="Delete card?" /> : <Trans id="library.edit-card.discard-title" message="Discard unsaved changes?" />}</AlertDialog.Title>
+            <AlertDialog.Title className="font-serif text-2xl font-bold [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:italic">{confirmation === 'delete' ? <Trans {...msg({ context: 'library.delete.title', message: 'Delete card?' })} /> : <Trans {...msg({ context: 'library.edit-card.discard-title', message: 'Discard unsaved changes?' })} />}</AlertDialog.Title>
             <AlertDialog.Description className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]">
-              {confirmation === 'delete' ? <><Trans id="library.delete.description" message="This will permanently remove {word} from your library." values={{ word: openedCard.word }} /> {dirty && <Trans id="library.edit-card.discard-description" message="Your remaining draft will be removed." />}</> : <Trans id="library.edit-card.discard-description" message="Your remaining draft will be removed." />}
+              {confirmation === 'delete' ? <><Trans {...msg({ context: 'library.delete.description', message: 'This will permanently remove {word} from your library.' })} values={{ word: openedCard.word }} /> {dirty && <Trans {...msg({ context: 'library.edit-card.discard-description', message: 'Your remaining draft will be removed.' })} />}</> : <Trans {...msg({ context: 'library.edit-card.discard-description', message: 'Your remaining draft will be removed.' })} />}
             </AlertDialog.Description>
-            {confirmation === 'delete' && deleteStatus === 'failure' && <p role="alert" className="mt-3 text-sm font-semibold text-[var(--sf-danger)]"><Trans id="library.edit-card.delete-failed" message="This card could not be deleted. Try again." /></p>}
+            {confirmation === 'delete' && deleteStatus === 'failure' && <p role="alert" className="mt-3 text-sm font-semibold text-[var(--sf-danger)]"><Trans {...msg({ context: 'library.edit-card.delete-failed', message: 'This card could not be deleted. Try again.' })} /></p>}
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <AlertDialog.Cancel asChild>
-                <button type="button" disabled={deleting} className={secondaryButtonClass}>{confirmation === 'delete' ? <Trans id="common.cancel" message="Cancel" /> : <Trans id="library.edit-card.keep-editing" message="Keep editing" />}</button>
+                <button type="button" disabled={deleting} className={secondaryButtonClass}>{confirmation === 'delete' ? <Trans {...msg({ context: 'common.cancel', message: 'Cancel' })} /> : <Trans {...msg({ context: 'library.edit-card.keep-editing', message: 'Keep editing' })} />}</button>
               </AlertDialog.Cancel>
               <button type="button" data-edit-delete-confirm={confirmation === 'delete' || undefined} onClick={confirmation === 'delete' ? deleteCard : () => closeSheet(true)} disabled={deleting} className={dangerButtonClass}>
                 {deleting && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
-                <span>{confirmation === 'delete' ? deleting ? <Trans id="library.edit-card.deleting" message="Deleting card…" /> : deleteStatus === 'failure' ? <Trans id="library.edit-card.retry-delete" message="Retry delete" /> : <Trans id="library.delete.confirm" message="Delete card" /> : <Trans id="library.edit-card.discard-confirm" message="Discard changes" />}</span>
+                <span>{confirmation === 'delete' ? deleting ? <Trans {...msg({ context: 'library.edit-card.deleting', message: 'Deleting card…' })} /> : deleteStatus === 'failure' ? <Trans {...msg({ context: 'library.edit-card.retry-delete', message: 'Retry delete' })} /> : <Trans {...msg({ context: 'library.delete.confirm', message: 'Delete card' })} /> : <Trans {...msg({ context: 'library.edit-card.discard-confirm', message: 'Discard changes' })} />}</span>
               </button>
             </div>
           </AlertDialog.Content>

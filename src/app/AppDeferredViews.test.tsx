@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { PassThrough } from 'node:stream';
 import { renderToPipeableStream, renderToStaticMarkup } from 'react-dom/server';
 import { i18n } from '@lingui/core';
@@ -89,5 +90,12 @@ describe('AppDeferredViews', () => {
     expect(html).toContain('aria-busy="true"');
     expect(html).toContain('class="workspace-loading-label"');
     expect(html.replace(/<[^>]+>/g, '')).toBe('Loading library');
+  });
+
+  it('keeps offline preparation inside the non-landing runtime workspace', () => {
+    const runtimeSource = readFileSync(new URL('./AppRuntime.tsx', import.meta.url), 'utf8');
+
+    expect(runtimeSource).toContain("import { OfflineReadiness } from '../features/offlineApp/OfflineReadiness';");
+    expect(runtimeSource).toContain("{viewMode !== 'landing' && <OfflineReadiness />}");
   });
 });

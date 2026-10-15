@@ -1,121 +1,101 @@
 #!/usr/bin/env node
-// Runs the Playwright e2e suite against the Firestore, Auth and Functions
-// emulators together, so specs exercise the real Cloud Functions callables
-// (createCard, reviewCardV2, bulkMutateCards, ...) instead of a
-// firestore+auth-only harness that silently skipped every protected call.
-//
-// Two local-only overrides are required for that to work, both scoped
-// strictly to this run and restored/removed afterward:
-//
-// 1. App Check. firebase-functions' onCall enforces App Check the same way
-//    inside the emulator as in production (verified by reading
-//    firebase-functions/lib/common/providers/https.js: a missing
-//    X-Firebase-AppCheck header throws 'unauthenticated' whenever
-//    `enforceAppCheck` resolves true — there is no emulator-specific
-//    bypass), and the e2e build has no App Check site key to attach a token
-//    with. functions/.env.local is the Firebase CLI's emulator-only
-//    parameter override file (loaded only when `isEmulator` is true, never
-//    for a real deploy), so this script flips its committed
-//    `ENFORCE_APP_CHECK=true` to `false` for the duration of the run only,
-//    then restores the original bytes.
-// 2. Secrets. Every authenticated callable calls `requireUser`, which hashes
-//    the uid with ANALYTICS_PSEUDONYM_KEY; an empty/short key throws before
-//    the callable's own logic ever runs. Without functions/.secret.local the
-//    emulator tries to fetch each defineSecret() from real Google Secret
-//    Manager on first use — a real cloud call this project must not make in
-//    e2e. This script writes a throwaway functions/.secret.local (a random
-//    pseudonym key long enough to pass validation, and an obviously-invalid
-//    placeholder for GEMINI_API_KEY/PEXELS_API_KEY/UNSPLASH_API_KEY) so the
-//    emulator never attempts that fetch, then deletes the file afterward.
-//    GEMINI_API_KEY is deliberately never a working key. The callable rejects
-//    this exact sentinel before constructing a model client, including when
-//    an e2e spec invokes a real AI callable through the Functions emulator.
+// Signed-in browser tests use a separate emulator build and throwaway local
+// parameters/secrets. Preserve existing local configuration; never fetch live keys.
 import { randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, lstat, open, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const envLocalPath = path.join(rootDir, 'functions', '.env.local');
-const secretLocalPath = path.join(rootDir, 'functions', '.secret.local');
-const firebaseBin = path.join(rootDir, 'node_modules', '.bin', 'firebase');
-
-const extraArgs = process.argv.slice(2);
-// emulators:exec runs its command through a shell, so every argument is
-// single-quoted to keep values like `-g "two words"` as one argv entry.
+const projectRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const shellQuote = value => `'${String(value).replaceAll("'", `'\\''`)}'`;
-// All workers share one Functions emulator; with two, the rate limiter's
-// Firestore budget read misses its deadline and callables stall past the
-// specs' visibility waits. Pass --workers to override.
-const workerArgs = extraArgs.some(arg => arg.startsWith('--workers') || arg === '-j') ? [] : ['--workers=1'];
-const playwrightCommand = ['npx', 'playwright', 'test', ...workerArgs, ...extraArgs].map(shellQuote).join(' ');
 
-/** Restores or removes a file to its exact prior state, once, regardless of how it is called. */
-function once(fn) {
-  let done = false;
-  return async (...args) => {
-    if (done) return;
-    done = true;
-    await fn(...args);
-  };
-}
-
-async function withEmulatorOnlyOverrides(run) {
-  if (!existsSync(envLocalPath)) {
-    throw new Error(`Expected ${envLocalPath} to exist (the emulator-only ENFORCE_APP_CHECK override).`);
+export async function runE2eFunctionsEmulator({ rootDir = projectRoot, extraArgs = [] } = {}) {
+  const envLocalPath = path.join(rootDir, 'functions', '.env.local');
+  const secretLocalPath = path.join(rootDir, 'functions', '.secret.local');
+  const firebaseBin = path.join(rootDir, 'node_modules', '.bin', 'firebase');
+  let originalEnv = null;
+  try {
+    const metadata = await lstat(envLocalPath);
+    if (!metadata.isFile()) throw new Error('Emulator parameter override must be a regular file.');
+    originalEnv = { bytes: await readFile(envLocalPath), mode: metadata.mode & 0o777 };
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
   }
-  if (existsSync(secretLocalPath)) {
-    // A run killed before cleanup leaves this script's own throwaway file
-    // behind; anything else is a real local secret file and stays untouched.
-    const leftover = await readFile(secretLocalPath, 'utf8');
-    if (!leftover.includes('GEMINI_API_KEY=disabled-in-e2e-emulator')) {
-      throw new Error(`Refusing to overwrite an existing ${secretLocalPath}; remove it manually and retry.`);
+
+  let secretCreated = false;
+  let envTouched = false;
+  let child;
+  let interrupted;
+  let restorePromise;
+  let exitCode = 1;
+  const restore = () => restorePromise ??= (async () => {
+    try {
+      if (envTouched) {
+        if (originalEnv) {
+          await writeFile(envLocalPath, originalEnv.bytes);
+          await chmod(envLocalPath, originalEnv.mode);
+        } else await rm(envLocalPath);
+      }
+    } finally {
+      if (secretCreated) await rm(secretLocalPath);
     }
-    await rm(secretLocalPath, { force: true });
-  }
-  const originalEnvLocal = await readFile(envLocalPath, 'utf8');
-  const pseudonymKey = randomBytes(32).toString('hex');
-  const secretLocalContent = [
-    `ANALYTICS_PSEUDONYM_KEY=${pseudonymKey}`,
-    'GEMINI_API_KEY=disabled-in-e2e-emulator',
-    'PEXELS_API_KEY=disabled-in-e2e-emulator',
-    'UNSPLASH_API_KEY=disabled-in-e2e-emulator',
-    '',
-  ].join('\n');
-
-  const restore = once(async () => {
-    await writeFile(envLocalPath, originalEnvLocal);
-    await rm(secretLocalPath, { force: true });
-  });
-  const onSignal = () => { void restore().finally(() => process.exit(1)); };
-  process.once('SIGINT', onSignal);
-  process.once('SIGTERM', onSignal);
+  })();
+  const onSignal = signal => {
+    if (interrupted) return;
+    interrupted = signal;
+    if (child && child.exitCode === null && child.signalCode === null) {
+      console.error('Waiting for Firebase emulator shutdown before restoring local configuration.');
+      child.kill(signal);
+    }
+  };
+  const onInterrupt = () => onSignal('SIGINT');
+  const onTerminate = () => onSignal('SIGTERM');
+  process.on('SIGINT', onInterrupt);
+  process.on('SIGTERM', onTerminate);
 
   try {
-    await writeFile(envLocalPath, 'ENFORCE_APP_CHECK=false\n');
-    await writeFile(secretLocalPath, secretLocalContent);
-    return await run();
+    // Exclusive creation also rejects stale sentinel files and symlinks; neither
+    // proves this run owns the file or is allowed to replace it.
+    const secret = await open(secretLocalPath, 'wx', 0o600);
+    secretCreated = true;
+    try {
+      await secret.writeFile([
+        `ANALYTICS_PSEUDONYM_KEY=${randomBytes(32).toString('hex')}`,
+        'GEMINI_API_KEY=disabled-in-e2e-emulator',
+        'PEXELS_API_KEY=disabled-in-e2e-emulator',
+        'UNSPLASH_API_KEY=disabled-in-e2e-emulator', '',
+      ].join('\n'));
+    } finally { await secret.close(); }
+    const parameters = await open(envLocalPath, originalEnv ? 'w' : 'wx', 0o600);
+    envTouched = true;
+    try {
+      await parameters.chmod(0o600);
+      await parameters.writeFile('ENFORCE_APP_CHECK=false\n');
+    } finally { await parameters.close(); }
+    if (!interrupted) {
+      // Serial workers avoid contention in the shared callable rate-limit budgets.
+      const workerArgs = extraArgs.some(arg => arg.startsWith('--workers') || arg === '-j') ? [] : ['--workers=1'];
+      const command = ['npx', 'playwright', 'test', ...workerArgs, ...extraArgs].map(shellQuote).join(' ');
+      const config = process.env.SONFLASH_E2E_FIREBASE_CONFIG;
+      exitCode = await new Promise((resolve, reject) => {
+        child = spawn(firebaseBin, [
+          'emulators:exec', ...(config ? ['--config', config] : []),
+          '--only', 'firestore,auth,functions', '--project', 'demo-lingoflash', command,
+        ], { stdio: 'inherit', cwd: rootDir, detached: process.platform !== 'win32' });
+        child.once('error', reject);
+        child.once('exit', code => resolve(code ?? 1));
+      });
+    }
   } finally {
-    await restore();
-    process.removeListener('SIGINT', onSignal);
-    process.removeListener('SIGTERM', onSignal);
+    try { await restore(); } finally {
+      process.removeListener('SIGINT', onInterrupt);
+      process.removeListener('SIGTERM', onTerminate);
+    }
   }
+  return interrupted ? 1 : exitCode;
 }
 
-function runEmulatorExec() {
-  return new Promise((resolve, reject) => {
-    const child = spawn(firebaseBin, [
-      'emulators:exec',
-      '--only', 'firestore,auth,functions',
-      '--project', 'demo-lingoflash',
-      playwrightCommand,
-    ], { stdio: 'inherit', cwd: rootDir });
-    child.on('error', reject);
-    child.on('exit', code => resolve(code ?? 1));
-  });
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  process.exitCode = await runE2eFunctionsEmulator({ extraArgs: process.argv.slice(2) });
 }
-
-const exitCode = await withEmulatorOnlyOverrides(runEmulatorExec);
-process.exit(exitCode);

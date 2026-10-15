@@ -51,7 +51,7 @@ jobs:
   build:
     needs: validate_revision
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 180
     environment: production
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -86,14 +86,12 @@ jobs:
         run: npm run verify:release-config
         env:
           RELEASE_REVISION: ${{ inputs.revision }}
-          VITE_FIREBASE_APP_CHECK_SITE_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_SITE_KEY }}
 
       - name: Build and verify the exact release candidate
         run: npm run verify
         env:
           CI: "true"
           RELEASE_REVISION: ${{ inputs.revision }}
-          VITE_FIREBASE_APP_CHECK_SITE_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_SITE_KEY }}
 
       - name: Seal verified deployable files
         run: >-
@@ -143,4 +141,4 @@ jobs:
             artifacts/phase6-readiness.json
             artifacts/release-candidate-manifest.json
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 90

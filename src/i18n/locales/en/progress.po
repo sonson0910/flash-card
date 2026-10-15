@@ -13,6 +13,56 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:171
+msgctxt "weeklyRecap.action.share"
+msgid "Share"
+msgstr "Share"
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:148
+msgctxt "weeklyRecap.unavailable"
+msgid "Word of the week, words learned, recall rate, study time, and streak need a reliable weekly data source we don't have yet, so they are left out rather than guessed."
+msgstr "Word of the week, words learned, recall rate, study time, and streak need a reliable weekly data source we don't have yet, so they are left out rather than guessed."
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:168
+msgctxt "weeklyRecap.export-error"
+msgid "Could not create the image. Please try again."
+msgstr "Could not create the image. Please try again."
+
+#: src/components/stats/StatsCharts.tsx:119
+msgctxt "stats.review-activity-partial"
+msgid "Coverage begins {date}; this range is partial."
+msgstr "Coverage begins {date}; this range is partial."
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:149
+msgctxt "weeklyRecap.reviews-unavailable"
+msgid "Reviews this week are unavailable until activity covers all seven days."
+msgstr "Reviews this week are unavailable until activity covers all seven days."
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:161
+msgctxt "weeklyRecap.caption.label"
+msgid "Caption"
+msgstr "Caption"
+
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:150
+msgctxt "weeklyRecap.saved-warning"
+msgid "Showing saved recap. Recent reviews may not be included."
+msgstr "Showing saved recap. Recent reviews may not be included."
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:153
+msgctxt "weeklyRecap.selection.legend"
+msgid "Show on the card"
+msgstr "Show on the card"
+
+#: src/components/stats/StatsCharts.tsx:119
+msgctxt "stats.review-range-30-days"
+msgid "30 days"
+msgstr "30 days"
+
+#: src/components/stats/StatsCharts.tsx:119
+msgctxt "stats.review-range-26-weeks"
+msgid "26 weeks"
+msgstr "26 weeks"
+
 #. js-lingui-explicit-id
 #: src/components/stats/AchievementsMatrix.tsx:74
 msgid "stats.achievements"
@@ -269,24 +319,9 @@ msgid "stats.recall-hard"
 msgstr "Hard"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:119
-msgid "stats.review-activity-partial"
-msgstr "Coverage begins {date}; this range is partial."
-
-#. js-lingui-explicit-id
 #: src/components/stats/StatsCharts.tsx:49
 msgid "stats.review-activity-unavailable"
 msgstr "Review activity is unavailable until coverage begins."
-
-#. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:119
-msgid "stats.review-range-26-weeks"
-msgstr "26 weeks"
-
-#. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:119
-msgid "stats.review-range-30-days"
-msgstr "30 days"
 
 #. js-lingui-explicit-id
 #: src/components/stats/AchievementsMatrix.tsx:65
@@ -401,21 +436,6 @@ msgid "stats.words"
 msgstr "words"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:172
-msgid "weeklyRecap.action.download"
-msgstr "Download PNG"
-
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:171
-msgid "weeklyRecap.action.share"
-msgstr "Share"
-
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:161
-msgid "weeklyRecap.caption.label"
-msgstr "Caption"
-
-#. js-lingui-explicit-id
 #: src/features/weeklyRecap/weeklyRecapSelection.ts:37
 msgid "weeklyRecap.caption.suggested-active"
 msgstr "{xp, number} XP and {days, plural, one {# active day} other {# active days}} this week."
@@ -455,11 +475,6 @@ msgstr "Your weekly recap"
 #: src/features/weeklyRecap/WeeklyRecapScreen.tsx:64
 msgid "weeklyRecap.empty"
 msgstr "No study activity yet this week. Come back after a review to see your recap."
-
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:168
-msgid "weeklyRecap.export-error"
-msgstr "Could not create the image. Please try again."
 
 #. js-lingui-explicit-id
 #: src/features/weeklyRecap/WeeklyRecapScreen.tsx:67
@@ -523,21 +538,6 @@ msgid "weeklyRecap.privacy"
 msgstr "The image includes the selected metrics and your caption. Private words are never added automatically."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:149
-msgid "weeklyRecap.reviews-unavailable"
-msgstr "Reviews this week are unavailable until activity covers all seven days."
-
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:150
-msgid "weeklyRecap.saved-warning"
-msgstr "Showing saved recap. Recent reviews may not be included."
-
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:153
-msgid "weeklyRecap.selection.legend"
-msgstr "Show on the card"
-
-#. js-lingui-explicit-id
 #: src/features/weeklyRecap/WeeklyRecapScreen.tsx:46
 msgid "weeklyRecap.toggle.active-days"
 msgstr "Active days"
@@ -567,7 +567,7 @@ msgstr "Reviews this week"
 msgid "weeklyRecap.toggle.total-xp"
 msgstr "Total XP"
 
-#. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:148
-msgid "weeklyRecap.unavailable"
-msgstr "Word of the week, words learned, recall rate, study time, and streak need a reliable weekly data source we don't have yet, so they are left out rather than guessed."
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:172
+msgctxt "weeklyRecap.action.download"
+msgid "Download PNG"
+msgstr "Download PNG"

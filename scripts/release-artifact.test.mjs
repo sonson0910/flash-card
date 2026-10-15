@@ -59,14 +59,26 @@ const createCandidate = (revision = 'a'.repeat(40)) => {
   }));
   fs.writeFileSync(path.join(root, 'functions/package.json'), '{"main":"lib/index.js"}\n');
   fs.writeFileSync(path.join(root, 'functions/package-lock.json'), '{"lockfileVersion":3}\n');
-    fs.writeFileSync(path.join(root, 'package.json'), '{"devDependencies":{"firebase-tools":"15.29.0"}}\n');
+    fs.writeFileSync(path.join(root, 'package.json'), '{"devDependencies":{"firebase-tools":"15.34.0"}}\n');
   fs.writeFileSync(path.join(root, 'package-lock.json'), '{"lockfileVersion":3}\n');
   fs.writeFileSync(path.join(root, 'firestore.rules'), 'rules_version = "2";');
   fs.writeFileSync(path.join(root, 'firestore.indexes.json'), '{"indexes":[]}\n');
   fs.writeFileSync(path.join(root, 'firebase.json'), `${JSON.stringify(firebaseConfig())}\n`);
   fs.writeFileSync(path.join(root, 'firebase-applet-config.json'), JSON.stringify({
-    projectId: 'project-production',
-    firestoreDatabaseId: 'database-production',
+    targets: {
+      production: {
+        allowedHosts: ['project-production.web.app'],
+        appCheckSiteKey: '6Lc_production-app-check-site-key',
+        projectId: 'project-production',
+        firestoreDatabaseId: 'database-production',
+      },
+      staging: {
+        allowedHosts: ['project-staging.web.app'],
+        appCheckSiteKey: '6Lc_staging-app-check-site-key',
+        projectId: 'project-staging',
+        firestoreDatabaseId: 'database-production',
+      },
+    },
   }));
   fs.writeFileSync(path.join(root, 'artifacts/phase6-readiness.json'), JSON.stringify({
     revision, releaseEligible: true,
@@ -82,7 +94,13 @@ afterEach(() => {
 
 describe('sealed release artifact', () => {
   it('accepts the sealed staging project, database, app and Functions runtime target', () => {
-    expect(validateStagingReleaseTarget(path.resolve('.'))).toMatchObject({
+    const root = createCandidate();
+    fs.mkdirSync(path.join(root, 'firebase-targets'), { recursive: true });
+    for (const file of ['firebase.json', 'firebase-targets/staging.json']) {
+      fs.copyFileSync(path.resolve(file), path.join(root, file));
+    }
+    fs.copyFileSync(path.resolve('functions/src/runtime-target.json'), path.join(root, 'functions/lib/runtime-target.json'));
+    expect(validateStagingReleaseTarget(root)).toMatchObject({
       projectId: 'sonflash-staging-20260906',
       databaseId: 'ai-studio-945b4052-4462-4668-8936-277f09f07a37',
       appId: '1:890120640842:web:f8a858029dc582fc7e49b3',
@@ -126,10 +144,17 @@ describe('sealed release artifact', () => {
     temporaryDirectories.push(first, second);
     for (const [root, contents] of [[first, 'first'], [second, 'second']]) {
       fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
+      fs.writeFileSync(path.join(root, 'dist/index.html'), '<main>release</main>');
       fs.writeFileSync(path.join(root, 'dist/app.js'), contents);
       execFileSync(process.execPath, [path.resolve('scripts/generate-build-metadata.mjs')], {
         cwd: root,
-        env: { ...process.env, BUILD_TIMESTAMP: '2026-09-21T00:00:00.000Z' },
+        env: {
+          ...process.env,
+          BUILD_TIMESTAMP: '2026-09-21T00:00:00.000Z',
+          RELEASE_REVISION: '',
+          GITHUB_SHA: '',
+          SOURCE_VERSION: '',
+        },
       });
     }
     const firstHealth = JSON.parse(fs.readFileSync(path.join(first, 'dist/health.json'), 'utf8'));

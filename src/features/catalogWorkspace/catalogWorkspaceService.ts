@@ -68,6 +68,7 @@ export interface CatalogManifestFetchOptions {
   readonly fetcher?: Fetcher;
   readonly maximumBytes?: number;
   readonly timeoutMilliseconds?: number;
+  readonly signal?: AbortSignal;
 }
 
 export interface CatalogWorkspaceRuntimePort {
@@ -80,6 +81,7 @@ export interface CatalogWorkspaceRuntimePort {
     manifest: unknown,
     baseUrl: string,
     reportProgress?: (progress: CatalogDownloadProgress) => void,
+    signal?: AbortSignal,
   ): Promise<CatalogReleaseInstallResult>;
   readPage(input: CatalogCacheQuery): Promise<CatalogCachePageResult>;
   readUnit(input: CatalogCacheUnitQuery): Promise<CatalogCacheUnitResult | null>;
@@ -285,7 +287,7 @@ export async function fetchCatalogReleaseManifest(
     'timeoutMilliseconds',
   );
   const fetcher = options.fetcher ?? globalThis.fetch.bind(globalThis);
-  const bytes = await fetchBytes(url, fetcher, maximumBytes, timeoutMilliseconds, true);
+  const bytes = await fetchBytes(url, fetcher, maximumBytes, timeoutMilliseconds, true, options.signal);
   return parseCatalogReleaseManifest(decodeJson(bytes, 'Catalog manifest'));
 }
 
@@ -335,7 +337,7 @@ const defaultRuntimePort = (
 ): CatalogWorkspaceRuntimePort => ({
   inspect: getActiveCatalogRelease,
   summarize: summarizeActiveCatalog,
-  install: (manifestInput, baseUrl, reportProgress) => {
+  install: (manifestInput, baseUrl, reportProgress, signal) => {
     const manifest = parseCatalogReleaseManifest(manifestInput);
     return installCatalogRelease(
       manifest,
@@ -345,7 +347,7 @@ const defaultRuntimePort = (
         timeoutMilliseconds,
         manifest.counts.encodedBytes,
         reportProgress,
-      ),
+      ), undefined, signal,
     );
   },
   readPage: readCatalogCachePage,
@@ -365,6 +367,7 @@ export function createCatalogWorkspaceService(
   );
   const ports = options.ports ?? defaultRuntimePort(fetcher, timeoutMilliseconds);
   const guard = createCatalogWorkspaceRequestGuard();
+  let downloadController: AbortController | undefined;
 
   const runLatest = async <T>(
     channel: CatalogWorkspaceRequestChannel,
@@ -387,6 +390,9 @@ export function createCatalogWorkspaceService(
       () => ports.summarize(catalogId, statuses),
     ),
     async download(manifestUrl, expectedRelease, reportProgress) {
+      downloadController?.abort(new Error('Catalog download was replaced.'));
+      const controller = new AbortController();
+      downloadController = controller;
       const token = guard.begin('download');
       const reportIfCurrent = (progress: CatalogDownloadProgress): void => {
         if (guard.isCurrent(token)) reportProgress?.(progress);
@@ -399,6 +405,7 @@ export function createCatalogWorkspaceService(
           fetcher,
           maximumBytes: options.manifestMaximumBytes,
           timeoutMilliseconds,
+          signal: controller.signal,
         });
         if (!guard.isCurrent(token)) return { status: 'stale' };
         if (manifest.catalogId !== expectedRelease.catalogId
@@ -411,8 +418,8 @@ export function createCatalogWorkspaceService(
         });
         const releaseBaseUrl = new URL('.', requestUrl(manifestUrl, origin, 'Catalog manifest URL')).href;
         const value = reportProgress
-          ? await ports.install(manifest, releaseBaseUrl, reportIfCurrent)
-          : await ports.install(manifest, releaseBaseUrl);
+          ? await ports.install(manifest, releaseBaseUrl, reportIfCurrent, controller.signal)
+          : await ports.install(manifest, releaseBaseUrl, undefined, controller.signal);
         reportIfCurrent({
           phase: 'complete', receivedBytes: manifest.counts.encodedBytes,
           totalBytes: manifest.counts.encodedBytes, progressPercent: 100,
@@ -430,6 +437,9 @@ export function createCatalogWorkspaceService(
       return runLatest('page', () => ports.readPage(input));
     },
     readUnit: input => runLatest('unit', () => ports.readUnit(input)),
-    invalidate: () => guard.invalidate(),
+    invalidate: () => {
+      downloadController?.abort(new Error('Catalog workspace was invalidated.'));
+      guard.invalidate();
+    },
   };
 }

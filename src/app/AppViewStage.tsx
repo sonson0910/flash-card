@@ -1,3 +1,4 @@
+import { msg } from '@lingui/core/macro';
 import { lazy, Suspense, type ReactNode, type RefObject } from 'react';
 import type { Firestore } from 'firebase/firestore';
 import type { CardData, ReviewRatingValue } from '../types/card';
@@ -7,11 +8,33 @@ import type { LanguageProfile } from '../features/language/languageProfile';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { createDailyLearningLocation, readDailyLearningUrlState, type DailyLessonMode } from '../features/dailyLearning/dailyLearningUrl';
 import type { IntakeSharingSessionActions } from '../features/intake/useIntakeSharingSession';
-import type { LearningStateOutcome } from '../features/learning/learningStateController';
 import type { PracticeGamificationOutcome } from '../features/practice/practiceSessionService';
 import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
 import { Trans } from '@lingui/react';
 import { WorkspaceLoadingPanel } from '../components/WorkspaceLoadingPanel';
+import type { DailyLearningWorkspaceProps } from '../features/dailyLearning/DailyLearningWorkspace';
+import { TEXT_CONVERSATION_LIMITS } from '../features/conversation/textConversationModel';
+import type { LearningStateOutcome } from '../features/learning/learningStateController';
+
+export type ListenPracticeHandoff = NonNullable<DailyLearningWorkspaceProps['onPracticePhrase']> extends (
+  handoff: infer Handoff,
+) => void ? Handoff : never;
+export type ListenPracticeScope = {
+  readonly ownerId: string | null;
+  readonly clipId: string | null;
+  readonly generation: number;
+};
+
+export const capListenPracticeCards = (cards: readonly CardData[]): readonly CardData[] => (
+  cards.slice(0, TEXT_CONVERSATION_LIMITS.maximumCards)
+);
+
+export const listenPracticeUnavailableMessage = (
+  ownerId: string | null,
+  isOffline: boolean,
+): string | null => !ownerId
+  ? 'Sign in to practise this phrase.'
+  : isOffline ? 'Reconnect to practise this phrase.' : null;
 
 const CatalogWorkspace = lazy(() => Promise.all([
   import('../features/catalogWorkspace/CatalogWorkspace'), loadCatalog(getActiveUiLocale(), 'catalog'),
@@ -61,6 +84,8 @@ interface AppViewStageProps {
   readonly weeklyRecapRequestOwnerId: string | null;
   readonly weeklyRecapRequestSettled: boolean;
   readonly onWeeklyRecapRequestConsumed: () => void;
+  readonly onPracticePhrase?: (handoff: ListenPracticeHandoff) => void;
+  readonly onListenScopeChange?: (scope: ListenPracticeScope) => void;
   readonly libraryContent: ReactNode;
   readonly practiceContent: ReactNode;
 }
@@ -70,9 +95,9 @@ const fallback = (message: ReactNode) => <WorkspaceLoadingPanel>{message}</Works
 export function AppViewStage({
   viewMode, ownerId, database, verifiedLibraryEpoch, languageProfile, isOffline, isDarkMode, headingRef, focusIntent, stats, cloudStats, cloudStatsTargetLanguage, streak, isStatsLoading, statsError, rewardTimeZone, loadPracticePool, reviewCard,
   catalogCards, adoptCatalogCards, notifyCatalog,
-  openVocabulary, openPaths, continueReview, continueCatalogUnit, openMorePractice, openWeeklyRecap, onVerifiedPracticeOutcome, weeklyRecapRequestOwnerId, weeklyRecapRequestSettled, onWeeklyRecapRequestConsumed, libraryContent, practiceContent,
+  openVocabulary, openPaths, continueReview, continueCatalogUnit, openMorePractice, openWeeklyRecap, onVerifiedPracticeOutcome, weeklyRecapRequestOwnerId, weeklyRecapRequestSettled, onWeeklyRecapRequestConsumed, onPracticePhrase, onListenScopeChange, libraryContent, practiceContent,
 }: AppViewStageProps) {
-  if (viewMode === 'catalog') return <Suspense fallback={fallback(<Trans id="shell.loading.paths" message="Preparing learning paths…" />)}><div className="async-content-enter" data-async-content="catalog"><CatalogWorkspace ownerId={ownerId} targetLanguage={languageProfile.source.code} database={database} verifiedLibraryEpoch={verifiedLibraryEpoch} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} cloudStats={cloudStats} cloudStatsTargetLanguage={cloudStatsTargetLanguage} openVocabulary={openVocabulary} continueReview={continueReview} continueCatalogUnit={continueCatalogUnit} /></div></Suspense>;
+  if (viewMode === 'catalog') return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.paths', message: 'Preparing learning paths…' })} />)}><div className="async-content-enter" data-async-content="catalog"><CatalogWorkspace ownerId={ownerId} targetLanguage={languageProfile.source.code} database={database} verifiedLibraryEpoch={verifiedLibraryEpoch} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} cloudStats={cloudStats} cloudStatsTargetLanguage={cloudStatsTargetLanguage} openVocabulary={openVocabulary} continueReview={continueReview} continueCatalogUnit={continueCatalogUnit} /></div></Suspense>;
   if (viewMode === 'today') {
     const route = readDailyLearningUrlState(window.location.href);
     const openLesson = (lesson: DailyLessonMode | null) => {
@@ -80,14 +105,15 @@ export function AppViewStage({
       if (lesson) window.history.pushState({}, '', location);
       else window.history.replaceState({}, '', location);
     };
-    return <Suspense fallback={fallback(<Trans id="shell.loading.today" message="Preparing today’s learning plan…" />)}><div className="async-content-enter" data-async-content="today"><DailyLearningWorkspace
+    return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.today', message: 'Preparing today’s learning plan…' })} />)}><div className="async-content-enter" data-async-content="today"><DailyLearningWorkspace
       ownerId={ownerId} languageProfile={languageProfile} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson} streak={streak} studyXpHistory={stats.xpChartData} rewardTimeZone={rewardTimeZone}
       loadPracticePool={loadPracticePool} reviewCard={(cardId, rating, operationId, source) => reviewCard(cardId, rating, operationId, source)}
       openLesson={openLesson} openVocabulary={openVocabulary} openPaths={openPaths} continueReview={continueReview} openMorePractice={openMorePractice} openWeeklyRecap={openWeeklyRecap} onVerifiedPracticeOutcome={onVerifiedPracticeOutcome}
+      adoptCatalogCards={adoptCatalogCards} onPracticePhrase={onPracticePhrase} onListenScopeChange={onListenScopeChange}
     /></div></Suspense>;
   }
-  if (viewMode === 'progress') return <Suspense fallback={fallback(<Trans id="shell.loading.progress" message="Preparing learning progress…" />)}><div className="async-content-enter" data-async-content="progress"><ProgressWorkspace key={ownerId ?? 'signed-out'} ownerId={ownerId} targetLanguage={languageProfile.source.code} darkMode={isDarkMode} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} stats={stats} isStatsLoading={isStatsLoading} statsError={statsError} continueReview={continueReview} openVocabulary={openVocabulary} weeklyRecapRequestOwnerId={weeklyRecapRequestOwnerId} weeklyRecapRequestSettled={weeklyRecapRequestSettled} onWeeklyRecapRequestConsumed={onWeeklyRecapRequestConsumed} /></div></Suspense>;
-  if (viewMode === 'settings') return <Suspense fallback={fallback(<Trans id="shell.loading.settings" message="Preparing appearance settings…" />)}><div className="async-content-enter" data-async-content="settings"><SettingsScreen headingRef={headingRef} focusIntent={focusIntent} /></div></Suspense>;
+  if (viewMode === 'progress') return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.progress', message: 'Preparing learning progress…' })} />)}><div className="async-content-enter" data-async-content="progress"><ProgressWorkspace key={ownerId ?? 'signed-out'} ownerId={ownerId} targetLanguage={languageProfile.source.code} darkMode={isDarkMode} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} stats={stats} isStatsLoading={isStatsLoading} statsError={statsError} continueReview={continueReview} openVocabulary={openVocabulary} weeklyRecapRequestOwnerId={weeklyRecapRequestOwnerId} weeklyRecapRequestSettled={weeklyRecapRequestSettled} onWeeklyRecapRequestConsumed={onWeeklyRecapRequestConsumed} /></div></Suspense>;
+  if (viewMode === 'settings') return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.settings', message: 'Preparing appearance settings…' })} />)}><div className="async-content-enter" data-async-content="settings"><SettingsScreen headingRef={headingRef} focusIntent={focusIntent} /></div></Suspense>;
   if (viewMode === 'library') return libraryContent;
   return practiceContent;
 }

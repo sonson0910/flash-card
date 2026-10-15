@@ -135,7 +135,7 @@ export function WeeklyRecapScreen({
 
       {selection.heatmap && hasXp && <div className="weekly-recap-card__heatmap"><MiniHeatmap days={data.days} /></div>}
       {visibleCaption && <p className="weekly-recap-card__range">{visibleCaption}</p>}
-      {selection.milestones && <p className="weekly-recap-card__milestones"><span className="weekly-recap-card__garden" aria-hidden="true"><i /><i /><i /></span><Award size={16} aria-hidden="true" /><Trans id="weeklyRecap.milestones" message="{unlocked} of {total} milestones unlocked (all-time)" values={{ unlocked: milestones.unlocked, total: milestones.total }} /></p>}
+      {selection.milestones && <p className="weekly-recap-card__milestones"><span className="weekly-recap-card__garden" aria-hidden="true"><i /><i /><i /></span><Award size={16} aria-hidden="true" /><Trans {...msg({ id: 'weeklyRecap.milestones', message: '{unlocked} of {total} milestones unlocked (all-time)' })} values={{ unlocked: milestones.unlocked, total: milestones.total }} /></p>}
     </section>
 
     <section className="weekly-recap-controls">
@@ -145,12 +145,12 @@ export function WeeklyRecapScreen({
         <p className="weekly-recap-controls__date">{dateRangeLabel}</p>
       </header>
       <div className="weekly-recap-controls__unavailable">
-        <Trans id="weeklyRecap.unavailable" message="Word of the week, words learned, recall rate, study time, and streak need a reliable weekly data source we don't have yet, so they are left out rather than guessed." />
-        {reviewedCount === null && <p><Trans id="weeklyRecap.reviews-unavailable" message="Reviews this week are unavailable until activity covers all seven days." /></p>}
+        <Trans {...msg({ context: 'weeklyRecap.unavailable', message: 'Word of the week, words learned, recall rate, study time, and streak need a reliable weekly data source we don\'t have yet, so they are left out rather than guessed.' })} />
+        {reviewedCount === null && <p><Trans {...msg({ context: 'weeklyRecap.reviews-unavailable', message: 'Reviews this week are unavailable until activity covers all seven days.' })} /></p>}
       </div>
 
       <fieldset className="weekly-recap-controls__selection">
-        <legend><Trans id="weeklyRecap.selection.legend" message="Show on the card" /></legend>
+        <legend><Trans {...msg({ context: 'weeklyRecap.selection.legend', message: 'Show on the card' })} /></legend>
         <div>{selectionKeys.map(key => <label key={key} className={selection[key] ? 'is-selected' : undefined}>
           <input type="checkbox" checked={selection[key]} onChange={() => actions.toggleSelection(key)} data-selection-key={key} />
           {_(selectionCopy[key])}
@@ -158,18 +158,18 @@ export function WeeklyRecapScreen({
       </fieldset>
 
       <label className="weekly-recap-controls__caption" htmlFor="weekly-recap-caption">
-        <Trans id="weeklyRecap.caption.label" message="Caption" />
+        <Trans {...msg({ context: 'weeklyRecap.caption.label', message: 'Caption' })} />
         <textarea id="weekly-recap-caption" value={caption} maxLength={WEEKLY_RECAP_CAPTION_MAX_LENGTH} onChange={event => actions.setCaption(event.target.value)} rows={3} className="glass-field" />
         <span>{caption.length} / {WEEKLY_RECAP_CAPTION_MAX_LENGTH}</span>
       </label>
 
       <p className="weekly-recap-controls__privacy">{_(weeklyRecapCopy.privacy)}</p>
       {lastOutcome && !exportError && <p role="status" aria-live="polite" className="weekly-recap-controls__outcome">{_(outcomeCopy[lastOutcome])}</p>}
-      {exportError && <p role="alert" className="weekly-recap-controls__error"><Trans id="weeklyRecap.export-error" message="Could not create the image. Please try again." /></p>}
+      {exportError && <p role="alert" className="weekly-recap-controls__error"><Trans {...msg({ context: 'weeklyRecap.export-error', message: 'Could not create the image. Please try again.' })} /></p>}
 
       <div className="weekly-recap-controls__actions">
-        <button type="button" onClick={actions.share} disabled={isBusy} className="brand-action"><Share2 size={16} aria-hidden="true" /><Trans id="weeklyRecap.action.share" message="Share" /></button>
-        <button type="button" onClick={actions.download} disabled={isBusy}><Download size={16} aria-hidden="true" /><Trans id="weeklyRecap.action.download" message="Download PNG" /></button>
+        <button type="button" onClick={actions.share} disabled={isBusy} className="brand-action"><Share2 size={16} aria-hidden="true" /><Trans {...msg({ context: 'weeklyRecap.action.share', message: 'Share' })} /></button>
+        <button type="button" onClick={actions.download} disabled={isBusy}><Download size={16} aria-hidden="true" /><Trans {...msg({ context: 'weeklyRecap.action.download', message: 'Download PNG' })} /></button>
       </div>
     </section>
   </div>;

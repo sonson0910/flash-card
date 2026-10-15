@@ -15,12 +15,13 @@ export interface UseGamificationOptions {
   ownerId: string | null;
   cloudBackoffActive: boolean;
   store: GamificationStore | null;
-  storage?: GamificationStorage;
+  storage?: GamificationStorage | null;
   now?: () => Date;
   saveDelayMs?: number;
 }
 
 export interface GamificationState {
+  sync: { pendingCount: number; error: string | null; retry(): void };
   streak: number;
   xp: number;
   xpHistory: Record<string, number>;
@@ -31,8 +32,16 @@ export interface GamificationState {
 const MAX_GAMIFICATION_SAVE_ATTEMPTS = 3;
 const MAX_GAMIFICATION_SAVE_RETRY_DELAY_MS = 60_000;
 
+const resolveGamificationStorage = (): GamificationStorage | null => {
+  try {
+    return globalThis.localStorage ?? null;
+  } catch {
+    return null;
+  }
+};
+
 const calculateStoredSnapshot = (
-  storage: GamificationStorage,
+  storage: GamificationStorage | null,
   ownerId: string | null,
   now: Date,
 ): StoredGamificationSnapshot => {
@@ -84,10 +93,11 @@ export function useGamificationState({
   ownerId,
   cloudBackoffActive,
   store,
-  storage = globalThis.localStorage,
+  storage: suppliedStorage,
   now = () => new Date(),
   saveDelayMs = 5000,
 }: UseGamificationOptions): GamificationState {
+  const storage = suppliedStorage === undefined ? resolveGamificationStorage() : suppliedStorage;
   const nowRef = useRef(now);
   nowRef.current = now;
   const activeOwnerRef = useRef(ownerId);
@@ -99,6 +109,9 @@ export function useGamificationState({
   }
   const initialSnapshot = initialSnapshotRef.current;
   const [snapshot, setSnapshot] = useState(initialSnapshot);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const retrySaveRef = useRef<() => void>(() => {});
+  const retrySync = useCallback(() => retrySaveRef.current(), []);
   const snapshotRef = useRef(snapshot);
   const snapshotScopeRef = useRef(scopeKey);
   const scopedSnapshot = snapshotScopeRef.current === scopeKey
@@ -129,6 +142,7 @@ export function useGamificationState({
   useEffect(() => {
     let cancelled = false;
     setHydratedScope(null);
+    setSyncError(null);
 
     const applySnapshot = (snapshot: StoredGamificationSnapshot) => {
       if (cancelled) return;
@@ -166,6 +180,7 @@ export function useGamificationState({
     let cancelled = false;
     let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
     let snapshotToSave: StoredGamificationSnapshot | null = null;
+    let exhausted = false;
 
     function scheduleSave(attempt: number, delayMs: number) {
       timeoutId = globalThis.setTimeout(() => {
@@ -191,6 +206,7 @@ export function useGamificationState({
           || activeOwnerRef.current !== ownerToSave
           || snapshotScopeRef.current !== scopeKey
         ) return;
+        setSyncError(null);
         const current = snapshotRef.current;
         const acknowledged = acknowledgeStoredGamificationSave(
           storage,
@@ -219,12 +235,26 @@ export function useGamificationState({
           );
           return;
         }
-        console.warn('Gamification sync is queued for the next session.', error);
+        exhausted = true;
+        setSyncError('XP saved here. Retry when connected.');
+        console.warn('XP sync paused.', error);
       }
     }
 
+    const retry = () => {
+      if (!exhausted || cancelled || !snapshotRef.current.pendingOperations?.length) return;
+      exhausted = false;
+      setSyncError(null);
+      scheduleSave(0, 0);
+    };
+    retrySaveRef.current = retry;
+    globalThis.addEventListener?.('online', retry);
+    globalThis.addEventListener?.('focus', retry);
     scheduleSave(0, saveDelayMs);
     return () => {
+      if (retrySaveRef.current === retry) retrySaveRef.current = () => {};
+      globalThis.removeEventListener?.('online', retry);
+      globalThis.removeEventListener?.('focus', retry);
       cancelled = true;
       if (timeoutId !== null) globalThis.clearTimeout(timeoutId);
     };
@@ -242,7 +272,11 @@ export function useGamificationState({
     xpHistory,
   ]);
 
-  return { streak, xp, xpHistory, level, addXp };
+  return { streak, xp, xpHistory, level, addXp, sync: {
+    pendingCount: scopedSnapshot.pendingOperations?.length ?? 0,
+    error: syncError,
+    retry: retrySync,
+  } };
 }
 
 export interface GamificationIdentity {

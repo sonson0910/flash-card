@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { PracticeDeckScope } from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
 import {
   defaultCoverPreset,
@@ -6,6 +7,7 @@ import {
   normalizeCustomDeckProfile,
   planCustomDeckCreation,
   type CoverPreset,
+  CUSTOM_DECK_RESERVED_NAME_ERROR,
 } from './customDecks';
 import { planDeckDeletionFailureRecovery } from './libraryMutationRecovery';
 import {
@@ -33,7 +35,7 @@ export interface CustomDeckWorkspaceOptions {
   remoteDecks: readonly string[] | null;
   remoteCoverPresets?: Record<string, CoverPreset> | null;
   cards: readonly CardData[];
-  activeDeck: string;
+  activeDeck: PracticeDeckScope;
   knownLibraryTotal: number;
   mutations: CustomDeckMutationPort;
   cache?: CustomDeckCachePort;
@@ -215,6 +217,10 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
       const current = latestRef.current;
       const plan = planCustomDeckCreation(decks, name);
       if (plan.status === 'empty' || plan.status === 'duplicate') return;
+      if (plan.status === 'reserved') {
+        current.ports.reportError(CUSTOM_DECK_RESERVED_NAME_ERROR);
+        return;
+      }
       if (plan.status === 'limit') {
         current.ports.reportError('You can create up to 100 custom decks. Delete an existing deck before adding another.');
         return;
@@ -273,7 +279,9 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
         cacheRef.current.write(current.owner.id, updated, nextCoverPresets);
         current.ports.publishCards(changedIds, { customDeck: null });
         current.ports.publishPractice(changedIds, { customDeck: null });
-        if (current.activeDeck === deckName) current.ports.chooseAllDecks();
+        if (current.activeDeck.kind === 'deck' && current.activeDeck.name === deckName) {
+          current.ports.chooseAllDecks();
+        }
       };
 
       let assignmentsCleared = false;

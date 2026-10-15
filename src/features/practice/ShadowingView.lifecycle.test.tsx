@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import { i18n } from '@lingui/core';
+i18n.load('en', {}); i18n.activate('en');
 
 const runtime = vi.hoisted(() => ({
   cursor: 0,

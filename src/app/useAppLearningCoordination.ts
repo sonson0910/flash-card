@@ -1,10 +1,12 @@
+import { ALL_PRACTICE_DECK_SCOPE } from '../lib/practiceScope';
+import { isPracticeView } from '../components/shell/shellTypes';
 import { useCallback, useMemo, useRef, type RefObject, type SetStateAction } from 'react';
 import { cardWordKey } from '../lib/cardIdentity';
 import { db } from '../lib/firebase';
 import { retainCardsForSession } from '../lib/sessionCards';
 import type { CardData } from '../types/card';
 import type { UndoToastItem } from '../components/ui/UndoToast';
-import { useIntakeSharingSession } from '../features/intake/useIntakeSharingSession';
+import { useIntakeSharingSession, type ShareCategorySelection } from '../features/intake/useIntakeSharingSession';
 import type { LanguageProfile } from '../features/language/languageProfile';
 import type { SharedDeckCoursePort } from '../features/sharing/shareCourseMatching';
 import { useCustomDeckWorkspace } from '../features/library/useCustomDeckWorkspace';
@@ -20,6 +22,7 @@ import {
   removeLocalValue,
 } from '../features/library/libraryStorage';
 import { useLearningWorkspace, type LearningWorkspaceActions } from '../features/learning/useLearningWorkspace';
+import type { LearningStateOutcome } from '../features/learning/learningStateController';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { usePracticeWorkspace } from '../features/practice/usePracticeWorkspace';
 import type { PracticeGamificationOutcome } from '../features/practice/practiceSessionService';
@@ -75,15 +78,13 @@ export function useAppLearningCoordination({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const learningActionsRef = useRef<LearningWorkspaceActions | null>(null);
   const practiceLearning = useMemo(() => ({
-    reviewCard: (...args: Parameters<LearningWorkspaceActions['reviewCard']>) => learningActionsRef.current?.reviewCard(...args) ?? Promise.resolve({ status: 'no-active-owner' as const }),
+    reviewCard: async (...args: Parameters<LearningWorkspaceActions['reviewCard']>): Promise<LearningStateOutcome> => await learningActionsRef.current?.reviewCard(...args) ?? { status: 'no-active-owner' },
     toggleBookmark: (...args: Parameters<LearningWorkspaceActions['toggleBookmark']>) => learningActionsRef.current?.toggleBookmark(...args),
     assignDeck: (...args: Parameters<LearningWorkspaceActions['assignDeck']>) => learningActionsRef.current?.assignDeck(...args),
     updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields) ?? Promise.resolve({ status: 'no-active-owner' as const }),
   }), []);
   const practiceWorkspace = usePracticeWorkspace({
-    mode: viewMode === 'study' || viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'language-drill' || viewMode === 'story' || viewMode === 'match' || viewMode === 'shadowing'
-      ? viewMode
-      : 'library',
+    mode: viewMode === 'language-drill' || viewMode === 'study' || isPracticeView(viewMode) ? viewMode : 'library',
     openView: nextView => setViewMode(nextView),
     onSessionStarted: () => setPracticeMenuOpen(false),
     ownerId: user?.uid ?? null,
@@ -175,7 +176,7 @@ export function useAppLearningCoordination({
       publishCards: (cardIds, fields) => ports.setCards(previous => previous.map(card =>
         cardIds.has(card.id) ? { ...card, ...fields } : card)),
       publishPractice: (cardIds, fields) => practiceWorkspace.snapshotRef.current.updateCards(cardIds, fields),
-      chooseAllDecks: () => catalogActions.chooseDeck('All'),
+      chooseAllDecks: () => catalogActions.chooseDeckScope(ALL_PRACTICE_DECK_SCOPE),
       recoverCloud: (ownerId, message) => {
         removeLocalValue(cloudPageCacheKey(ownerId));
         removeCloudStatsCaches(ownerId);
@@ -253,9 +254,9 @@ export function useAppLearningCoordination({
     startStudy: practiceWorkspace.actions.startStudyWithCards,
   });
   const isLibraryBusy = intakeSharing.model.isBusy;
-  const shareCategory = async (category: string) => {
+  const shareCategory = async (selection: ShareCategorySelection) => {
     rememberOpener(shareOpenerRef);
-    return intakeSharing.actions.shareCategory(category);
+    return intakeSharing.actions.shareCategory(selection);
   };
   const { deleteCard, clearAll, clearStatus, clearError, resetClearFeedback } = useLibraryMutationFeedback({
     ownerId: user?.uid ?? null, activeOwnerIdRef: ports.activeOwnerIdRef,

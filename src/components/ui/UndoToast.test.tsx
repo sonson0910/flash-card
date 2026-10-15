@@ -42,6 +42,17 @@ describe('UndoToast timeout', () => {
   });
 });
 
+describe('UndoToast dismissal timer', () => {
+  it('resets pause tracking after the active toast is removed', () => {
+    const source = readFileSync(new URL('./UndoToast.tsx', import.meta.url), 'utf8');
+
+    expect(source).toContain('hoveredRef.current = false');
+    expect(source).toContain('focusedRef.current = false');
+    expect(source).toContain('setPaused(false)');
+  });
+
+});
+
 describe('UndoToast keyboard recovery', () => {
   it('accepts the platform undo shortcut outside editable controls', () => {
     expect(isUndoKeyboardShortcut({ key: 'z', metaKey: true, ctrlKey: false, altKey: false, shiftKey: false, target: null })).toBe(true);
