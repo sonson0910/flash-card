@@ -1,5 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react';
-import type { ReviewRating } from '../lib/reviewScheduler';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type Dispatch, type KeyboardEvent as ReactKeyboardEvent, type RefObject, type SetStateAction } from 'react';
 import { playFlipSound, playRewardSound } from '../lib/interactionSounds';
 import type { useAppNavigation } from '../features/navigation/useAppNavigation';
 import { AppFeedback } from '../components/shell/AppFeedback';
@@ -8,14 +7,16 @@ import { DesktopNavigation } from '../components/shell/DesktopNavigation';
 import { FloatingMobileNav } from '../components/shell/FloatingMobileNav';
 import { UndoToast, type UndoToastItem } from '../components/ui/UndoToast';
 import { LEARNING_WORKSPACE_ID, SkipToContentLink } from '../components/shell/SkipToContentLink';
-import { useOverlayState } from '../features/overlays/useOverlayState';
+import { scheduleNoticeDismissal, useOverlayState } from '../features/overlays/useOverlayState';
 import { appDependencies } from './appDependencies';
 import { db, isFirebaseConfigured } from '../lib/firebase';
 import { AppDeferredCreateCardDialog, AppDeferredLibraryView, AppDeferredPracticeView } from './AppDeferredViews';
 import { AppViewStage } from './AppViewStage';
+import { WorkspaceLoadingPanel } from '../components/WorkspaceLoadingPanel';
 import { useAppLibraryRuntime } from './useAppLibraryRuntime';
 import { useAppLearningCoordination } from './useAppLearningCoordination';
 import { consumeLandingSignInRequest } from './landingSignInRequest';
+import { accountDeletionNoticePath, withoutAccountDeletionNotices } from '../features/account/account-deletion-notice';
 import { AppShellMotion } from '../components/motion/AppShellMotion';
 import { useBrowserExtensionImport } from '../features/browserExtension/useBrowserExtensionImport';
 import { useExtensionDueCountBridge } from '../features/extensionBridge/useExtensionDueCountBridge';
@@ -23,16 +24,51 @@ import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { APP_VIEW_HEADINGS } from '../features/navigation/app-view-headings';
 import { evidencedStudyStreak } from '../features/dailyLearning/dailyLearningPresentation';
-import { CourseProvider, useCourseSession, type CourseGateValue } from '../features/courses/CourseGate';
+import { CourseProvider, readyCourseSessionForOwner, useCourseSession, type CourseGateValue } from '../features/courses/CourseGate';
 import { activeCourseNativeLanguage, activeCourseTargetLanguage, languageProfileForCourse } from '../features/courses/courseLanguageProfile';
-import type { CourseNativeLanguage, CourseTargetLanguage } from '../features/courses/courseModel';
+import type { CourseTargetLanguage } from '../features/courses/courseModel';
 import { createSharedDeckCoursePort, resolveShareCourseAction } from '../features/sharing/shareCourseMatching';
-import type { SharedDeckIncomingPreview } from '../features/sharing/sharedDeckSessionController';
 import { OnboardingGate } from '../features/onboarding/OnboardingGate';
+import { useOnboardingLibraryState } from '../features/onboarding/useOnboardingLibraryState';
 import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
-import type { AnimeRevealEventKind, AnimeRevealSourcePayload } from '../features/rewards/AnimeReveal';
 import type { LearningCeremony } from './useAppLearningCoordination';
-import { getLibraryCardTier } from '../features/library/libraryViewModel';
+import {
+  createCeremonyQueueState,
+  desktopCourseProps,
+  desktopNavigationActions,
+  dismissQueuedCeremony,
+  equipCeremonyFrame,
+  extensionCapturePreview,
+  latestStatsRefresh,
+  libraryInsightsPhase,
+  overlayLearningProps,
+  overlayShareProps,
+  overlayUiProps,
+  queueCeremonies,
+  queueLearningCeremonies,
+  shouldShowViewHeading,
+  statsRefreshForTarget,
+  studyShortcut,
+  syncIdentityForShell,
+  type CeremonyQueueState,
+  viewStageLearningProps,
+  viewStageNavigationActions,
+  viewStageStatsProps,
+  weeklyRecapRequestSettled,
+} from './app-runtime-shared';
+export {
+  createCeremonyQueueState,
+  dismissQueuedCeremony,
+  equipCeremonyFrame,
+  latestStatsRefresh,
+  libraryInsightsPhase,
+  orderCeremonyEvents,
+  queueCeremonies,
+  statsRefreshForTarget,
+  streakCeremonyRewardLabels,
+  type CeremonyQueueState,
+  type QueuedCeremony,
+} from './app-runtime-shared';
 import '../styles/shell.css';
 
 const AppOverlays = lazy(() => import('../components/AppOverlays').then(module => ({ default: module.AppOverlays })));
@@ -40,57 +76,7 @@ const WebWordsRouteHost = lazy(() => import('../features/webWords/WebWordsRouteH
 const AnimeReveal = lazy(() => Promise.all([
   import('../features/rewards/AnimeReveal'), loadCatalog(getActiveUiLocale(), 'rewards'),
 ]).then(([module]) => ({ default: module.AnimeReveal })));
-
-export interface QueuedCeremony {
-  readonly ownerId: string;
-  readonly operationId: string;
-  readonly event: AnimeRevealEventKind;
-  readonly payload: AnimeRevealSourcePayload;
-  readonly focusReturnTarget: HTMLElement | null;
-}
-
-export interface CeremonyQueueState {
-  readonly keys: ReadonlySet<string>;
-  readonly queue: readonly QueuedCeremony[];
-}
-
-export const createCeremonyQueueState = (): CeremonyQueueState => ({ keys: new Set(), queue: [] });
-
-export const queueCeremonies = (
-  current: CeremonyQueueState,
-  ceremonies: readonly QueuedCeremony[],
-): CeremonyQueueState => {
-  const keys = new Set(current.keys);
-  const queued = ceremonies.filter(ceremony => {
-    const key = `${ceremony.ownerId}:${ceremony.operationId}:${ceremony.event}`;
-    if (keys.has(key)) return false;
-    keys.add(key);
-    return true;
-  });
-  return queued.length ? { keys, queue: [...current.queue, ...queued] } : current;
-};
-
-export const dismissQueuedCeremony = (current: CeremonyQueueState): {
-  readonly state: CeremonyQueueState;
-  readonly focusReturnTarget: HTMLElement | null;
-} => {
-  const [active, ...remaining] = current.queue;
-  return {
-    state: { ...current, queue: remaining },
-    focusReturnTarget: active && remaining.length === 0 ? active.focusReturnTarget : null,
-  };
-};
-
-export const orderCeremonyEvents = (events: readonly AnimeRevealEventKind[]): readonly AnimeRevealEventKind[] =>
-  (['tierup', 'streak', 'levelup'] as const).filter(event => events.includes(event));
-
-export const equipCeremonyFrame = async (
-  equipFrame: (frameId: string) => Promise<void>,
-  dismissCeremony: () => void,
-): Promise<void> => {
-  await equipFrame('crimson-wing');
-  dismissCeremony();
-};
+const dialogFallback = <span className="sr-only" role="status"><Trans id="shell.opening-dialog" message="Opening dialog" /></span>;
 
 /**
  * Surfaces the live `useCourseSession()` value up to AppRuntime as plain
@@ -108,24 +94,6 @@ function CourseSessionBridge({ onSnapshot }: { readonly onSnapshot: (value: Cour
   return null;
 }
 
-// A capture carries the target language the extension had synced from the
-// active course when it was saved ('en' for older extensions). Reusing
-// `resolveShareCourseAction` against that pair detects a course switch made
-// between capture and import.
-const extensionCapturePreview = (
-  targetLanguage: CourseTargetLanguage,
-  translationLanguage: CourseNativeLanguage,
-): SharedDeckIncomingPreview => ({
-  shareId: '',
-  category: '',
-  cardCount: 0,
-  sampleWords: [],
-  languagePairs: [{ targetLanguage, translationLanguage }],
-  createdAt: null,
-  expiresAt: null,
-  containsAiGeneratedCards: false,
-});
-
 export interface LandingUser {
   readonly displayName?: string | null;
   readonly email?: string | null;
@@ -141,6 +109,29 @@ export interface AppRuntimeProps {
   readonly onLandingUserChange: (user: LandingUser | null) => void;
 }
 
+export function useOwnerScopedMessage(
+  ownerId: string | null,
+  activeOwnerRef: RefObject<string | null>,
+  storedMessage: string | null,
+  setStoredMessage: Dispatch<SetStateAction<string | null>>,
+): readonly [string | null, Dispatch<SetStateAction<string | null>>] {
+  const [publishedGeneration, setPublishedGeneration] = useState<number | null>(null);
+  const scopeRef = useRef({ ownerId, generation: 0, published: false });
+  if (scopeRef.current.ownerId !== ownerId) {
+    scopeRef.current = { ownerId, generation: scopeRef.current.generation + 1, published: false };
+  }
+  const generation = scopeRef.current.generation;
+  const message = publishedGeneration === generation ? storedMessage : null;
+  const setMessage = useCallback<Dispatch<SetStateAction<string | null>>>(value => {
+    if (activeOwnerRef.current !== ownerId || scopeRef.current.generation !== generation) return;
+    const sameOwner = scopeRef.current.published;
+    scopeRef.current.published = true;
+    setStoredMessage(previous => typeof value === 'function' ? value(sameOwner ? previous : null) : value);
+    setPublishedGeneration(generation);
+  }, [activeOwnerRef, generation, ownerId, setStoredMessage]);
+  return [message, setMessage];
+}
+
 export default function AppRuntime({
   navigation,
   practiceOpenerRef,
@@ -150,14 +141,19 @@ export default function AppRuntime({
   onLandingUserChange,
 }: AppRuntimeProps) {
   const { _ } = useLingui();
-  const [error, setError] = useState<string | null>(null);
+  const identitySession = appDependencies.sessions.libraryHooks.useIdentitySession();
+  const identityOwnerId = identitySession.owner?.id ?? null;
+  const identityOwnerRef = useRef(identityOwnerId);
+  identityOwnerRef.current = identityOwnerId;
+  const [storedError, setStoredError] = useState<string | null>(null);
+  const [error, setError] = useOwnerScopedMessage(identityOwnerId, identityOwnerRef, storedError, setStoredError);
   const [isRetryingSync, setIsRetryingSync] = useState(false);
   const clearError = useCallback((message: string) => {
     setError(current => current === message ? null : current);
-  }, []);
+  }, [setError]);
   const {
-    notice,
-    setNotice,
+    notice: storedNotice,
+    setNotice: setStoredNotice,
     isPracticeMenuOpen,
     setIsPracticeMenuOpen,
     isStatsOpen,
@@ -175,7 +171,9 @@ export default function AppRuntime({
     openClearConfirm: openClearOverlay,
     undoToast,
     setUndoToast,
-  } = useOverlayState({ practiceOpenerRef });
+  } = useOverlayState({ ownerId: identityOwnerId, practiceOpenerRef, autoDismissNotice: false });
+  const [notice, setNotice] = useOwnerScopedMessage(identityOwnerId, identityOwnerRef, storedNotice, setStoredNotice);
+  useEffect(() => scheduleNoticeDismissal(notice, () => setNotice(null)), [notice, setNotice]);
   const appShellRef = useRef<HTMLDivElement | null>(null);
   const navigationRef = useRef<HTMLElement | null>(null);
   const viewStageRef = useRef<HTMLDivElement | null>(null);
@@ -186,27 +184,57 @@ export default function AppRuntime({
     viewFocusIntent,
     isDarkMode,
   } = navigation;
-  const preSignInLocationRef = useRef<string | null>(null);
+  const preSignInLocationRef = useRef<{ href: string; ownerId: string | null } | null>(null);
+  const lastAuthenticatedOwnerIdRef = useRef(identityOwnerId);
+  useLayoutEffect(() => {
+    const previousOwnerId = lastAuthenticatedOwnerIdRef.current;
+    if (identityOwnerId) {
+      lastAuthenticatedOwnerIdRef.current = identityOwnerId;
+      if (previousOwnerId && previousOwnerId !== identityOwnerId) {
+        preSignInLocationRef.current = null;
+        window.history.replaceState(window.history.state, '', accountDeletionNoticePath(window.location.href));
+        return;
+      }
+      const returnLocation = preSignInLocationRef.current;
+      if (!returnLocation) return;
+      preSignInLocationRef.current = null;
+      if (returnLocation.ownerId && returnLocation.ownerId !== identityOwnerId) return;
+      // Replay only this owner's saved location after the signed-out bounce.
+      window.history.pushState(window.history.state, '', returnLocation.href);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      return;
+    }
+    if (identitySession.status === 'loading') return;
+    if (viewMode === 'landing') {
+      lastAuthenticatedOwnerIdRef.current = null;
+      return;
+    }
+    preSignInLocationRef.current = { href: withoutAccountDeletionNotices(window.location.href), ownerId: previousOwnerId };
+    lastAuthenticatedOwnerIdRef.current = null;
+    if (previousOwnerId) window.history.replaceState(window.history.state, '', accountDeletionNoticePath(window.location.href));
+    setViewMode('landing');
+  }, [identityOwnerId, identitySession.status, setViewMode, viewMode]);
   // null until CourseSessionBridge reports the live CourseProvider value;
   // languageProfileForCourse(null) already matches the no-active-course
   // default, so the very first render before that report lands is correct.
   const [courseSession, setCourseSession] = useState<CourseGateValue | null>(null);
-  const handleCourseSessionSnapshot = useCallback((value: CourseGateValue) => {
-    setCourseSession(value);
-  }, []);
-  const languageProfile = languageProfileForCourse(courseSession?.model.activeCourse ?? null);
+  const currentCourseSession = readyCourseSessionForOwner(courseSession, identityOwnerId);
+  const courseScopeReady = identitySession.status === 'anonymous' || !!(identityOwnerId && currentCourseSession);
+  const activeCourse = currentCourseSession?.model.activeCourse ?? null;
+  const languageProfile = languageProfileForCourse(activeCourse);
+  const targetLanguage = languageProfile.source.code;
   const coursePort = useMemo(
-    () => courseSession ? createSharedDeckCoursePort(courseSession) : null,
-    [courseSession],
+    () => currentCourseSession ? createSharedDeckCoursePort(currentCourseSession) : null,
+    [currentCourseSession],
   );
   // Gate for the extension's silent (one-click, no-review) capture path
   // only: manual captures already open the library view, where the real
   // course switcher is visible before the user generates anything, so no
   // extra gate is needed there. Cancelling here leaves nothing generated.
   const ensureExtensionCaptureCourse = useCallback(async (targetLanguage: CourseTargetLanguage): Promise<'proceed' | 'cancel'> => {
-    if (!courseSession || !coursePort) return 'proceed';
-    const preview = extensionCapturePreview(targetLanguage, activeCourseNativeLanguage(courseSession.model.activeCourse));
-    const decision = resolveShareCourseAction(preview, courseSession.model.profile);
+    if (!identityOwnerId || !currentCourseSession || !coursePort) return 'cancel';
+    const preview = extensionCapturePreview(targetLanguage, activeCourseNativeLanguage(currentCourseSession.model.activeCourse));
+    const decision = resolveShareCourseAction(preview, currentCourseSession.model.profile);
     if (!decision || decision.action === 'none') return 'proceed';
     const confirmed = globalThis.confirm?.(_(msg({
       id: 'extension.import.course-mismatch-confirm',
@@ -214,18 +242,40 @@ export default function AppRuntime({
     }))) ?? true;
     if (!confirmed) return 'cancel';
     await coursePort.ensureCourseForIncomingShare(preview);
-    return 'proceed';
-  }, [courseSession, coursePort, _]);
+    return identityOwnerRef.current === identityOwnerId ? 'proceed' : 'cancel';
+  }, [identityOwnerId, currentCourseSession, coursePort, _]);
+  const [weeklyRecapRequest, setWeeklyRecapRequest] = useState<{ ownerId: string; requestId: number; targetLanguage: string } | null>(null);
+  const [insightsRefreshRequest, setInsightsRefreshRequest] = useState<{ ownerId: string; requestId: number; targetLanguage: string } | null>(null);
+  const nextStatsRefreshRequestId = useRef(0);
+  const activeWeeklyRecapRequest = statsRefreshForTarget(weeklyRecapRequest, targetLanguage);
+  const activeInsightsRefreshRequest = statsRefreshForTarget(insightsRefreshRequest, targetLanguage);
+  const statsRefreshRequest = latestStatsRefresh(activeInsightsRefreshRequest, activeWeeklyRecapRequest);
   const library = useAppLibraryRuntime({
+    identity: identitySession,
+    courseScopeReady,
     viewMode,
     isStatsOpen,
-    targetLanguage: languageProfile.source.code,
+    statsRefreshRequest,
+    targetLanguage,
     reportError: setError,
     clearError,
     notify: setNotice,
   });
   const undoOwnerRef = useRef<string | null | undefined>(undefined);
   const currentOwnerId = library.model.user?.uid ?? null;
+  const openWeeklyRecap = useCallback(() => {
+    if (!currentOwnerId) return;
+    setWeeklyRecapRequest({ ownerId: currentOwnerId, requestId: ++nextStatsRefreshRequestId.current, targetLanguage });
+    setViewMode('progress');
+  }, [currentOwnerId, targetLanguage, setViewMode]);
+  const retryInsights = useCallback(() => {
+    if (!currentOwnerId) return;
+    setInsightsRefreshRequest({ ownerId: currentOwnerId, requestId: ++nextStatsRefreshRequestId.current, targetLanguage });
+  }, [currentOwnerId, targetLanguage]);
+  useEffect(() => {
+    setWeeklyRecapRequest(request => request && (request.ownerId !== currentOwnerId || request.targetLanguage !== targetLanguage) ? null : request);
+    setInsightsRefreshRequest(request => request && (request.ownerId !== currentOwnerId || request.targetLanguage !== targetLanguage) ? null : request);
+  }, [currentOwnerId, targetLanguage]);
   const currentOwnerRef = useRef(currentOwnerId);
   currentOwnerRef.current = currentOwnerId;
   const [ceremonyState, setCeremonyState] = useState<CeremonyQueueState>(createCeremonyQueueState);
@@ -234,37 +284,7 @@ export default function AppRuntime({
     const focusReturnTarget = globalThis.document?.activeElement instanceof HTMLElement
       ? globalThis.document.activeElement
       : null;
-    const payloadFor = (event: AnimeRevealEventKind): AnimeRevealSourcePayload => {
-      if (event === 'tierup') {
-        const previousTier = ceremony.card ? getLibraryCardTier(ceremony.card) : undefined;
-        return {
-          headword: ceremony.card?.word,
-          translation: ceremony.card?.translation,
-          imageUrl: ceremony.card?.imageUrl ?? undefined,
-          previousValue: previousTier,
-          currentValue: 'mastered',
-        };
-      }
-      if (event === 'streak') return {
-        currentValue: ceremony.gamification ? String(ceremony.gamification.streak) : undefined,
-        rewardLabels: [
-          _(msg({ id: 'rewards.reveal.streak.badge', message: 'Web Wanderer' })),
-          _(msg({ id: 'rewards.reveal.streak.freeze', message: 'Streak freeze · limit 1' })),
-        ],
-      };
-      return {
-        previousValue: ceremony.gamification?.level === 13 ? '12' : undefined,
-        currentValue: ceremony.gamification ? String(ceremony.gamification.level) : undefined,
-        rewardLabels: [
-          _(msg({ id: 'rewards.reveal.level.frame', message: 'Crimson Wing frame' })),
-          _(msg({ id: 'rewards.reveal.level.title', message: 'Word Collector title' })),
-          _(msg({ id: 'rewards.reveal.level.hint', message: 'Hint tokens · limit 3' })),
-        ],
-      };
-    };
-    const queued = orderCeremonyEvents(ceremony.events).map(event => ({
-      ownerId: ceremony.ownerId, operationId: ceremony.operationId, event, payload: payloadFor(event), focusReturnTarget,
-    }));
+    const queued = queueLearningCeremonies(ceremony, focusReturnTarget, _);
     if (queued.length) setCeremonyState(current => queueCeremonies(current, queued));
   }, [_]);
   const dismissCeremony = useCallback(() => {
@@ -296,12 +316,12 @@ export default function AppRuntime({
   }, [currentOwnerId]);
   const learning = useAppLearningCoordination({
     library,
+    courseScopeReady,
     viewMode,
     languageProfile,
     coursePort,
     setViewMode,
     setPracticeMenuOpen: setIsPracticeMenuOpen,
-    setClearConfirm: setShowClearConfirm,
     rememberOpener,
     shareOpenerRef,
     reportError: setError,
@@ -310,15 +330,28 @@ export default function AppRuntime({
     onCeremony: enqueueCeremony,
   });
   const {
-    cards,
     user,
+    libraryEpochState,
     librarySession,
     shellSyncStatus,
     isBrowserOnline,
     isExporting,
     cloudStats,
-    knownLibraryTotal,
   } = library.model;
+  const libraryActions = library.actions;
+  const { cloud, identity, owner: libraryOwner } = librarySession;
+  useEffect(() => {
+    if (cloud.ownerId !== currentOwnerId || cloud.statsSettledRequestId == null) return;
+    const settledRequestId = cloud.statsSettledRequestId;
+    setInsightsRefreshRequest(request => request?.ownerId === currentOwnerId && request.targetLanguage === targetLanguage && request.requestId <= settledRequestId ? null : request);
+    setWeeklyRecapRequest(request => request?.ownerId === currentOwnerId && request.targetLanguage === targetLanguage && request.requestId < settledRequestId ? null : request);
+  }, [cloud.ownerId, cloud.statsSettledRequestId, currentOwnerId, targetLanguage]);
+  const onboardingLibrary = useOnboardingLibraryState({
+    ownerId: currentOwnerId,
+    cloud,
+    needsOnboarding: currentCourseSession?.model.source === 'absent',
+    canClassify: courseScopeReady && visible && viewMode !== 'landing' && !shellSyncStatus.isCheckingCloud,
+  });
   const {
     libraryScreen,
     practiceSession,
@@ -330,45 +363,44 @@ export default function AppRuntime({
     equippedFrameId,
     ownedTitleIds,
   } = learning.model;
-  const practiceActions = learning.actions.practice;
-  const intakeActions = learning.actions.intakeSharing;
-  const identity = librarySession.identity;
-  const isShareModalOpen = intakeSharing.share.isShareDialogOpen || intakeSharing.share.isLoading;
+  const { intakeSharing: intakeActions, practice: practiceActions, deleteCard } = learning.actions;
+  const { share } = intakeSharing;
+  const isShareModalOpen = share.isShareDialogOpen || share.isLoading;
   const handlePracticeStageKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (practiceSession.mode !== 'study' || practiceSession.study.isPaused || event.defaultPrevented || event.nativeEvent.isComposing) return;
     const target = event.target as { closest?: (selectors: string) => Element | null } | null;
     if (target?.closest?.('button, a, input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [data-radix-popper-content-wrapper]')) return;
-    const noModifiers = !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
-    const altShortcut = event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
-    if (noModifiers && (event.key === ' ' || event.key === 'Space' || event.key === 'Spacebar' || event.key === 'Enter')) {
+    const study = practiceSession.study;
+    const shortcut = studyShortcut(event);
+    if (shortcut === 'reveal') {
       event.preventDefault();
       playFlipSound();
       practiceActions.reveal();
-    } else if (noModifiers && event.key === 'ArrowRight') {
+    } else if (shortcut === 'next') {
       event.preventDefault();
-      practiceActions.setStudyIndex(Math.min(practiceSession.study.cards.length - 1, practiceSession.study.index + 1));
-    } else if (noModifiers && event.key === 'ArrowLeft') {
+      practiceActions.setStudyIndex(Math.min(study.cards.length - 1, study.index + 1));
+    } else if (shortcut === 'previous') {
       event.preventDefault();
-      practiceActions.setStudyIndex(Math.max(0, practiceSession.study.index - 1));
-    } else if (altShortcut && ['1', '2', '3', '4'].includes(event.key)) {
+      practiceActions.setStudyIndex(Math.max(0, study.index - 1));
+    } else if (shortcut && shortcut !== 'bookmark') {
       event.preventDefault();
-      const ratings: Record<string, ReviewRating> = { '1': 'again', '2': 'hard', '3': 'good', '4': 'easy' };
-      void practiceActions.submitStudyRating(ratings[event.key]);
-    } else if (altShortcut && event.key.toLocaleLowerCase() === 's') {
-      const card = practiceSession.study.cards[practiceSession.study.index];
+      void practiceActions.submitStudyRating(shortcut);
+    } else if (shortcut === 'bookmark') {
+      const card = study.cards[study.index];
       if (!card) return;
       event.preventDefault();
       if (!card.bookmarked) playRewardSound();
       void practiceSession.learning.toggleBookmark(card.id);
     }
   }, [practiceActions, practiceSession]);
-  const libraryReady = Boolean(
-    user
-    && librarySession.owner.ownerId === user.uid
-    && librarySession.owner.status === 'ready'
+  const libraryReady = !!(
+    courseScopeReady
+    && user
+    && libraryOwner.ownerId === user.uid
+    && libraryOwner.status === 'ready'
   );
   useBrowserExtensionImport({
-    ownerId: user?.uid ?? null,
+    ownerId: currentOwnerId,
     identityLoading: identity.status === 'loading',
     customDecks,
     libraryReady,
@@ -376,13 +408,13 @@ export default function AppRuntime({
     changeDraft: intakeActions.changeDraft,
     generate: intakeActions.generate,
     openLibrary: () => setViewMode('library'),
-    notify: message => setNotice(message),
-    reportError: message => setError(message),
+    notify: setNotice,
+    reportError: setError,
     ensureCaptureCourse: ensureExtensionCaptureCourse,
-    courseNativeLanguage: courseSession?.model.activeCourse ? activeCourseNativeLanguage(courseSession.model.activeCourse) : null,
-    courseTargetLanguage: courseSession?.model.activeCourse ? activeCourseTargetLanguage(courseSession.model.activeCourse) : null,
+    courseNativeLanguage: activeCourse ? activeCourseNativeLanguage(activeCourse) : null,
+    courseTargetLanguage: activeCourse ? activeCourseTargetLanguage(activeCourse) : null,
   });
-  useExtensionDueCountBridge({ ownerId: user?.uid ?? null, ready: libraryReady, dueCount: cloudStats.due });
+  useExtensionDueCountBridge({ ownerId: currentOwnerId, ready: libraryReady, dueCount: cloudStats.due });
   const handledSignInRequestRef = useRef(0);
   useEffect(() => {
     onLandingUserChange(user ? {
@@ -396,37 +428,19 @@ export default function AppRuntime({
       signInRequest,
       handledSignInRequestRef,
       onSignInRequestHandled,
-      library.actions.signIn,
+      libraryActions.signIn,
     );
-  }, [library.actions.signIn, onSignInRequestHandled, signInRequest]);
-  useEffect(() => {
-    // The workspace only renders for an authenticated owner. Once identity
-    // resolves to signed-out, bounce back to the landing page and its
-    // sign-in, but remember the pre-bounce location so a deep link (or an
-    // extension import intent tied to that URL) survives the round trip.
-    if (identity.status === 'loading' || user || viewMode === 'landing') return;
-    preSignInLocationRef.current = window.location.href;
-    setViewMode('landing');
-  }, [identity.status, setViewMode, user, viewMode]);
-  useEffect(() => {
-    if (!user || !preSignInLocationRef.current) return;
-    // Restore the captured URL verbatim, then let every URL-driven listener
-    // (view mode, lesson, catalog, web words) re-read it through popstate.
-    // setViewMode would normalize the URL and drop deep-link params.
-    window.history.pushState(window.history.state, '', preSignInLocationRef.current);
-    preSignInLocationRef.current = null;
-    window.dispatchEvent(new PopStateEvent('popstate'));
-  }, [user]);
+  }, [libraryActions.signIn, onSignInRequestHandled, signInRequest]);
   const openClearConfirm = (focusReturnTarget: HTMLButtonElement) =>
     openClearOverlay(focusReturnTarget, canClearLibrary);
-  const handleSignIn = async () => { await library.actions.signIn(); };
-  const handleSignOut = async () => { await library.actions.signOut(); };
+  const handleSignIn = async () => { await libraryActions.signIn(); };
+  const handleSignOut = async () => { await libraryActions.signOut(); };
   const handleRetrySync = async () => {
     if (isRetryingSync) return;
     setIsRetryingSync(true);
-    setError(current => current === librarySession.cloud.error ? null : current);
+    setError(current => current === cloud.error ? null : current);
     try {
-      await library.actions.retrySync();
+      await libraryActions.retrySync();
     } catch {
       setError(_(msg({ id: 'shell.sync.retry-failed', message: 'Sync could not finish. Your changes remain on this device. Try again.' })));
     } finally {
@@ -438,56 +452,51 @@ export default function AppRuntime({
   if (identity.status !== 'loading' && !user && viewMode !== 'landing') return null;
   const shellViewMode = viewMode === 'language-drill' ? 'spelling' : viewMode;
   const activeCeremony = ceremonyState.queue[0];
+  const stats = libraryScreen.overlays.stats;
+  const insightsPhase = currentOwnerId ? libraryInsightsPhase({
+    ownerMatches: cloud.ownerId === currentOwnerId,
+    isLoading: cloud.isStatsLoading,
+    statsTargetMatches: cloud.statsTargetLanguage === targetLanguage,
+    error: cloud.error,
+  }) : 'ready';
+  const overview = libraryScreen.model.overview;
+  const libraryNavigation = libraryScreen.navigation;
+  const libraryCountLabel = courseScopeReady ? libraryNavigation.libraryCountLabel : '';
 
   return (
-    <CourseProvider ownerId={user?.uid ?? null}>
-    <CourseSessionBridge onSnapshot={handleCourseSessionSnapshot} />
+    <CourseProvider ownerId={currentOwnerId}>
+    <CourseSessionBridge onSnapshot={setCourseSession} />
     <div ref={appShellRef} data-view={viewMode} className={`app-canvas claude-app-shell min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
       <SkipToContentLink />
-      <OnboardingGate ownerId={user?.uid ?? null} suppress={viewMode === 'landing' || shellSyncStatus.isCheckingCloud} hasCards={knownLibraryTotal > 0} />
+      <OnboardingGate ownerId={currentOwnerId} suppress={!courseScopeReady || viewMode === 'landing' || shellSyncStatus.isCheckingCloud}
+        {...onboardingLibrary} />
 
       <DesktopNavigation
+        {...desktopNavigationActions(setViewMode)}
+        {...desktopCourseProps(
+          courseScopeReady,
+          libraryCountLabel,
+          overview,
+          evidencedStudyStreak(overview.streak, stats.xpChartData, undefined, stats.rewardTimeZone),
+          equippedFrameId,
+          ownedTitleIds,
+        )}
         navigationRef={navigationRef}
         viewMode={shellViewMode}
-        syncIdentity={identity.status === 'loading'
-          ? { status: 'loading' }
-          : user
-            ? {
-                status: 'authenticated',
-                displayName: user.displayName,
-                email: user.email,
-                photoUrl: user.photoURL,
-              }
-            : {
-                status: 'signed-out',
-                isConfigured: appDependencies.configuration.cloudConfigured,
-                isSigningIn: identity.isSigningIn,
-              }}
+        syncIdentity={syncIdentityForShell(identity, user, appDependencies.configuration.cloudConfigured)}
         syncStatus={shellSyncStatus}
         isDarkMode={isDarkMode}
         isExporting={isExporting}
         isLibraryMutationPending={isLibraryBusy}
-        libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
-        streak={evidencedStudyStreak(libraryScreen.model.overview.streak, libraryScreen.overlays.stats.xpChartData)}
-        level={libraryScreen.model.overview.level}
-        xp={libraryScreen.model.overview.xp}
-        equippedFrameId={equippedFrameId}
-        ownedTitleIds={ownedTitleIds}
-        onOpenLanding={() => setViewMode('landing')}
-        onOpenToday={() => setViewMode('today')}
-        onOpenLibrary={() => setViewMode('library')}
-        onOpenCatalog={() => setViewMode('catalog')}
-        onOpenProgress={() => setViewMode('progress')}
-        onOpenSettings={() => setViewMode('settings')}
         onSignIn={handleSignIn}
         onSignOut={handleSignOut}
         onRetrySync={handleRetrySync}
         isRetryingSync={isRetryingSync}
-        sessionLost={Boolean(identity.authenticationRecovery)}
-        canSyncNow={identity.status === 'authenticated' && !identity.authenticationRecovery && isBrowserOnline && Boolean(user)}
-        onExportLibrary={library.actions.exportLibrary}
-        onClearLibrary={openClearConfirm}
-        onOpenInsights={openStats}
+        sessionLost={!!identity.authenticationRecovery}
+        canSyncNow={identity.status === 'authenticated' && !identity.authenticationRecovery && isBrowserOnline && !!user}
+        onExportLibrary={courseScopeReady ? libraryActions.exportLibrary : undefined}
+        onClearLibrary={courseScopeReady ? openClearConfirm : undefined}
+        onOpenInsights={courseScopeReady ? openStats : undefined}
       />
 
       <AppFeedback
@@ -495,10 +504,10 @@ export default function AppRuntime({
         sessionLost={identity.authenticationRecovery === 'session-lost'}
         isRetryingAuth={identity.isSigningIn}
         onRetryAuth={handleSignIn}
-        error={isShareModalOpen && error === intakeSharing.share.error ? null : error}
+        error={isShareModalOpen && error === share.error ? null : error}
         notice={notice}
         syncStatus={shellSyncStatus}
-        onDismissAuthError={library.actions.clearAuthError}
+        onDismissAuthError={libraryActions.clearAuthError}
         onDismissError={() => setError(null)}
         onDismissNotice={() => setNotice(null)}
         onRetrySync={handleRetrySync}
@@ -514,57 +523,55 @@ export default function AppRuntime({
         className="claude-workspace flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
       >
         <div onKeyDown={handlePracticeStageKeyDown} className="claude-workspace-inner relative w-full max-w-[1440px] mx-auto px-5 pt-5 pb-28 sm:px-8 lg:px-11 lg:pt-3 lg:pb-8">
-          {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && viewMode !== 'settings' && (
+          {shouldShowViewHeading(viewMode) && (
             <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{_(APP_VIEW_HEADINGS[viewMode])}</h1>
           )}
           <div ref={viewStageRef} data-app-view-stage className="min-h-full">
-            <AppViewStage
+            {!courseScopeReady && user ? (courseSession?.model.ownerId === user.uid && courseSession.model.status === 'error'
+              ? <div role="alert" className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)]">
+                  <p><Trans id="course.error.read" message="Courses could not be loaded." /></p>
+                  <button type="button" onClick={() => void courseSession.actions.retry()} className="liquid-control mt-3 min-h-11 rounded-xl border border-[var(--sf-border)] px-4 font-bold"><Trans id="course.action.retry" message="Retry" /></button>
+                </div>
+              : <WorkspaceLoadingPanel><Trans id="course.loading" message="Preparing your courses…" /></WorkspaceLoadingPanel>) : <AppViewStage
+              {...viewStageNavigationActions(setViewMode)}
+              {...viewStageLearningProps(library, learning, setNotice)}
+              {...viewStageStatsProps(stats, cloud, overview)}
+              rewardTimeZone={stats.rewardTimeZone}
               viewMode={viewMode}
-              ownerId={user?.uid ?? null}
+              ownerId={currentOwnerId}
               database={isFirebaseConfigured ? db : null}
-              verifiedLibraryEpoch={user && library.model.libraryEpochState?.userId === user.uid ? library.model.libraryEpochState.value : null}
+              verifiedLibraryEpoch={user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : null}
               languageProfile={languageProfile}
               isOffline={!isBrowserOnline}
               isDarkMode={isDarkMode}
               headingRef={viewHeadingRef}
               focusIntent={viewFocusIntent}
-              stats={libraryScreen.overlays.stats}
-              cloudStats={librarySession.cloud.stats}
-              cloudStatsTargetLanguage={librarySession.cloud.statsTargetLanguage}
-              streak={libraryScreen.model.overview.streak}
-              isStatsLoading={librarySession.cloud.isStatsLoading}
-              statsError={librarySession.cloud.error}
-              loadPracticePool={learning.actions.loadPracticePool}
-              reviewCard={learning.actions.reviewCard}
-              catalogCards={cards}
-              adoptCatalogCards={intakeActions.adoptCards}
-              notifyCatalog={setNotice}
-              openVocabulary={() => setViewMode('library')}
-              openPaths={() => setViewMode('catalog')}
-              continueReview={practiceActions.startStudy}
-              continueCatalogUnit={learning.actions.continueCatalogUnit}
               openMorePractice={openPractice}
+              openWeeklyRecap={openWeeklyRecap}
+              weeklyRecapRequestOwnerId={activeWeeklyRecapRequest?.ownerId ?? null}
+              weeklyRecapRequestSettled={weeklyRecapRequestSettled(activeWeeklyRecapRequest, cloud, targetLanguage, cloudStats)}
+              onWeeklyRecapRequestConsumed={() => setWeeklyRecapRequest(null)}
               libraryContent={<AppDeferredLibraryView model={libraryScreen.model} actions={libraryScreen.actions} />}
-              practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} />}
-            />
+              practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} openWeeklyRecap={openWeeklyRecap} onDeleteCard={deleteCard} />}
+            />}
           </div>
         </div>
       </main>
 
       <AppFooter
         viewMode={shellViewMode}
-        libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
+        libraryCountLabel={libraryCountLabel}
         syncStatus={shellSyncStatus}
       />
 
-      <AppDeferredCreateCardDialog
+      {courseScopeReady && <AppDeferredCreateCardDialog
         model={intakeSharing.cardCreator}
         actions={intakeActions.cardCreator}
         deckOptions={customDecks}
-      />
+      />}
 
       {activeCeremony?.ownerId === currentOwnerId && (
-        <Suspense fallback={<span className="sr-only" role="status"><Trans id="shell.opening-dialog" message="Opening dialog" /></span>}>
+        <Suspense fallback={dialogFallback}>
           <AnimeReveal
             open
             event={activeCeremony.event}
@@ -576,58 +583,45 @@ export default function AppRuntime({
         </Suspense>
       )}
 
-      {(hasMountedOverlays || isShareModalOpen || Boolean(intakeSharing.share.activeShareId)) && (
-        <Suspense fallback={<span className="sr-only" role="status"><Trans id="shell.opening-dialog" message="Opening dialog" /></span>}>
+      {courseScopeReady && (hasMountedOverlays || isShareModalOpen || !!share.activeShareId) && (
+        <Suspense fallback={dialogFallback}>
           <AppOverlays
+            {...overlayLearningProps(learning)}
+            {...overlayShareProps(learning)}
+            {...overlayUiProps(
+              isPracticeMenuOpen,
+              setIsPracticeMenuOpen,
+              isStatsOpen,
+              setIsStatsOpen,
+              stats,
+              insightsPhase,
+              cloud.error,
+              retryInsights,
+              isDarkMode,
+              showClearConfirm,
+              setShowClearConfirm,
+            )}
             shareDialogOpen={isShareModalOpen}
-            shareLink={intakeSharing.share.shareLink}
-            shareWarning={intakeSharing.share.shareWarning}
-            shareExpiresAt={intakeSharing.share.expiresAt}
-            shareError={intakeSharing.share.error}
             onDismissShareError={() => {
               intakeActions.clearShareError();
-              setError(current => current === intakeSharing.share.error ? null : current);
+              setError(current => current === share.error ? null : current);
             }}
-            outgoingSharePreview={intakeSharing.share.outgoingPreview}
-            incomingSharePreview={intakeSharing.share.incomingPreview}
-            dismissShareDialog={intakeActions.dismissShareLink}
-            showShareDialog={intakeActions.showShareDialog}
             acceptSharedDeck={async () => { await intakeActions.acceptShared(); }}
-            cancelSharedDeck={intakeActions.cancelShared}
-            canRevokeShare={Boolean(intakeSharing.share.activeShareId)}
+            canRevokeShare={!!share.activeShareId}
             revokeShare={async () => { await intakeActions.revokeShare(); }}
-            isSharing={intakeSharing.share.isLoading}
-            isPracticeMenuOpen={isPracticeMenuOpen}
-            setIsPracticeMenuOpen={setIsPracticeMenuOpen}
-            startQuiz={practiceActions.startQuiz}
-            startSpelling={practiceActions.startSpelling}
-            startLanguageDrill={practiceActions.startLanguageDrill}
-            startMatch={practiceActions.startMatch}
-            startShadowing={practiceActions.startShadowing}
-            practiceCards={libraryScreen.model.grid.filteredCards}
-            visibleLibraryCount={libraryScreen.navigation.practiceLibraryCount}
-            generateStory={practiceActions.generateStory}
-            isStatsOpen={isStatsOpen}
-            setIsStatsOpen={setIsStatsOpen}
-            statsData={libraryScreen.overlays.stats}
-            isDarkMode={isDarkMode}
-            showClearConfirm={showClearConfirm}
-            setShowClearConfirm={setShowClearConfirm}
-            clearAll={learning.actions.clearAll}
-            isLoading={isLibraryBusy}
             shareOpenerRef={shareOpenerRef}
             practiceOpenerRef={overlayPracticeOpenerRef}
             statsOpenerRef={statsOpenerRef}
             clearOpenerRef={clearOpenerRef}
-            onExportLibrary={library.actions.exportLibrary}
+            onExportLibrary={libraryActions.exportLibrary}
             onOpenProgress={() => setViewMode('progress')}
           />
         </Suspense>
       )}
 
-      {user && viewMode !== 'landing' && (
+      {courseScopeReady && user && viewMode !== 'landing' && (
         <Suspense fallback={null}>
-          <WebWordsRouteHost ownerId={user.uid} targetLanguage={languageProfile.source.code} />
+          <WebWordsRouteHost ownerId={user.uid} targetLanguage={targetLanguage} translationLanguage={languageProfile.target.code} />
         </Suspense>
       )}
 

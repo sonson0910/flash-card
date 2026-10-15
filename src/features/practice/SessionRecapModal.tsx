@@ -1,7 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { CheckCircle2, RotateCcw, Sparkles, Trophy, X } from 'lucide-react';
+import { CalendarDays, CheckCircle2, RotateCcw, Sparkles, Trophy, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Lumi } from '../../components/lumi/Lumi';
 import { CountUp } from '../../components/motion/CountUp';
@@ -17,6 +17,7 @@ import './practice-board.css';
 interface SessionRecapModalProps {
   open: boolean;
   onClose: () => void;
+  onViewWeeklyRecap?: () => void;
   onRetryWeak?: () => void;
   totalCards: number;
   goodCount: number;
@@ -26,7 +27,7 @@ interface SessionRecapModalProps {
   targetLanguage?: string;
 }
 
-export function SessionRecapModal({ open, onClose, onRetryWeak, totalCards, goodCount, againCount, xpEarned, weakCards, targetLanguage }: SessionRecapModalProps) {
+export function SessionRecapModal({ open, onClose, onViewWeeklyRecap, onRetryWeak, totalCards, goodCount, againCount, xpEarned, weakCards, targetLanguage }: SessionRecapModalProps) {
   const { _ } = useLingui();
   const accuracy = totalCards > 0 ? Math.round((goodCount / totalCards) * 100) : 100;
   const isCrystal = globalThis.document?.documentElement.dataset.themeFamily === 'crystal';
@@ -89,6 +90,7 @@ export function SessionRecapModal({ open, onClose, onRetryWeak, totalCards, good
 
           <div className="relative mt-6 flex flex-col gap-2.5 sm:flex-row">
             {weakCards.length > 0 && onRetryWeak && <button type="button" onClick={onRetryWeak} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 text-sm font-bold text-rose-700 transition-all hover:bg-rose-500/20 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-rose-200 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><RotateCcw size={16} aria-hidden="true" /><Trans id="recap.retry-weak" message="Review {count, plural, one {# word} other {# words}}" values={{ count: weakCards.length }} /></button>}
+            {onViewWeeklyRecap && <button type="button" onClick={onViewWeeklyRecap} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 text-sm font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><CalendarDays size={16} aria-hidden="true" /><Trans id="recap.weekly" message="View weekly recap" /></button>}
             <button type="button" onClick={onClose} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 text-sm font-bold text-[var(--sf-on-brand)] shadow-md transition-all hover:bg-[var(--sf-brand-hover)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><Sparkles size={16} aria-hidden="true" /><Trans id="recap.continue" message="Continue learning" /></button>
           </div>
         </GsapEntrance>

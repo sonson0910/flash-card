@@ -7,11 +7,8 @@ import { useBrowserCapabilities } from '../features/browser/useBrowserCapabiliti
 import { useLibraryCatalogQuery } from '../features/catalog/useLibraryCatalogQuery';
 import { useLibraryExport } from '../features/importExport/useLibraryExport';
 import { useLibraryCloudProjection } from '../features/librarySession/useLibraryCloudProjection';
-import { useLibrarySession } from '../features/librarySession/useLibrarySession';
-import {
-  useLibrarySessionPorts,
-  type LibrarySessionPortStats,
-} from '../features/librarySession/useLibrarySessionPorts';
+import { useLibrarySession, type IdentitySessionBinding } from '../features/librarySession/useLibrarySession';
+import { useLibrarySessionPorts, type LibrarySessionPortStats } from '../features/librarySession/useLibrarySessionPorts';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { appDependencies } from './appDependencies';
 
@@ -40,8 +37,11 @@ const EMPTY_CLOUD_STATS: LibrarySessionPortStats = {
 };
 
 interface UseAppLibraryRuntimeOptions {
+  identity: IdentitySessionBinding;
+  courseScopeReady: boolean;
   viewMode: AppViewMode;
   isStatsOpen: boolean;
+  statsRefreshRequest: { ownerId: string; requestId: number } | null;
   /** Active course's target language; scopes the library query so cards from another course never leak in. */
   targetLanguage: string;
   reportError(message: string | null): void;
@@ -50,8 +50,11 @@ interface UseAppLibraryRuntimeOptions {
 }
 
 export function useAppLibraryRuntime({
+  identity,
+  courseScopeReady,
   viewMode,
   isStatsOpen,
+  statsRefreshRequest,
   targetLanguage,
   reportError,
   clearError,
@@ -147,6 +150,8 @@ export function useAppLibraryRuntime({
       // authenticated visitor sees an all-zero summary even with data in the
       // library.
       statsOpen: isStatsOpen || viewMode === 'progress' || viewMode === 'catalog',
+      courseScopeReady,
+      statsRefreshRequest,
       progressEvidenceOpen: viewMode === 'progress' && Math.max(cloudTotal, cloudStats.total, cards.length) > 0,
     },
     library: {
@@ -155,7 +160,7 @@ export function useAppLibraryRuntime({
       cloudStatsTotal: cloudStats.total,
     },
     ports: sessionPorts.ports.session,
-  }, appDependencies.sessions.libraryHooks);
+  }, { ...appDependencies.sessions.libraryHooks, useIdentitySession: () => identity });
   const identitySession = librarySession.model.identity;
   const user = useMemo(() => identitySession.owner ? {
     uid: identitySession.owner.id,
@@ -228,9 +233,22 @@ export function useAppLibraryRuntime({
     return result;
   };
   const signOut = async () => {
-    const result = await librarySession.actions.identity.signOut();
-    if (result.status !== 'completed') return;
-    setCards([]);
+    let finishReminderSignOut: (() => void) | undefined;
+    try {
+      const reminders = await import('../features/reminders/reminderService');
+      finishReminderSignOut = reminders.finishReminderSignOut;
+      const { revokeCurrentOwnerPushToken } = reminders;
+      await revokeCurrentOwnerPushToken();
+    } catch (error) {
+      finishReminderSignOut?.();
+      reportError('Could not stop browser reminders. Try signing out again.');
+      return { status: 'failed' as const, error };
+    }
+    try {
+      const result = await librarySession.actions.identity.signOut();
+      if (result.status !== 'completed') return;
+      setCards([]);
+    } finally { finishReminderSignOut?.(); }
   };
 
   return {

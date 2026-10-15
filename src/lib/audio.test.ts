@@ -19,12 +19,13 @@ describe('isSupportedAudioUrl', () => {
 
 describe('playWordAudio', () => {
   it('uses the card speech locale for synthesized pronunciation', () => {
-    vi.useFakeTimers();
     const speak = vi.fn();
-    const utterances: Array<{ lang: string }> = [];
+    const utterances: Array<{ lang: string; voice?: SpeechSynthesisVoice }> = [];
+    const selectedVoice = { lang: 'ko-KR', name: 'Korean voice', voiceURI: 'korean', localService: true } as SpeechSynthesisVoice;
     class FakeUtterance {
       lang = '';
       rate = 1;
+      voice?: SpeechSynthesisVoice;
       constructor() { utterances.push(this); }
     }
     vi.stubGlobal('window', {
@@ -34,9 +35,9 @@ describe('playWordAudio', () => {
     });
     vi.stubGlobal('SpeechSynthesisUtterance', FakeUtterance);
 
-    const playback = playWordAudio('안녕', null, 'ko-KR');
-    vi.advanceTimersByTime(50);
+    const playback = playWordAudio('안녕', null, 'ko-KR', selectedVoice);
     expect(utterances[0].lang).toBe('ko-KR');
+    expect(utterances[0].voice).toBe(selectedVoice);
     expect(speak).toHaveBeenCalledOnce();
     playback.cancel();
   });
@@ -77,8 +78,7 @@ describe('playWordAudio', () => {
     expect(speak).not.toHaveBeenCalled();
   });
 
-  it('cancels queued fallback speech before its utterance can start', () => {
-    vi.useFakeTimers();
+  it('cancels fallback speech that is already queued', () => {
     const speak = vi.fn();
     const cancel = vi.fn();
     let utterance: { volume: number; onstart: (() => void) | null } | null = null;
@@ -97,17 +97,15 @@ describe('playWordAudio', () => {
     vi.stubGlobal('SpeechSynthesisUtterance', FakeUtterance);
 
     const playback = playWordAudio('word', null);
+    expect(speak).toHaveBeenCalledOnce();
     playback.cancel();
     utterance!.onstart?.();
-    vi.advanceTimersByTime(50);
 
     expect(utterance!.volume).toBe(0);
-    expect(speak).not.toHaveBeenCalled();
-    expect(cancel).not.toHaveBeenCalled();
+    expect(cancel).toHaveBeenCalledOnce();
   });
 
   it('cancels only its active speech before another surface starts', () => {
-    vi.useFakeTimers();
     const speak = vi.fn();
     const cancel = vi.fn();
     const utterances: Array<{ onstart: (() => void) | null }> = [];
@@ -127,13 +125,11 @@ describe('playWordAudio', () => {
     vi.stubGlobal('SpeechSynthesisUtterance', FakeUtterance);
 
     const first = playWordAudio('first', null);
-    vi.advanceTimersByTime(50);
     utterances[0].onstart?.();
     first.cancel();
     expect(cancel).toHaveBeenCalledOnce();
 
     const second = playWordAudio('second', null);
-    vi.advanceTimersByTime(50);
     utterances[1].onstart?.();
     first.cancel();
 
@@ -144,7 +140,6 @@ describe('playWordAudio', () => {
   });
 
   it('cancels a current utterance after speak queues it but before onstart', () => {
-    vi.useFakeTimers();
     const speak = vi.fn();
     const cancel = vi.fn();
     const utterances: Array<{ onstart: (() => void) | null }> = [];
@@ -163,13 +158,11 @@ describe('playWordAudio', () => {
     vi.stubGlobal('SpeechSynthesisUtterance', FakeUtterance);
 
     const first = playWordAudio('first', null);
-    vi.advanceTimersByTime(50);
     expect(speak).toHaveBeenCalledOnce();
     first.cancel();
     expect(cancel).toHaveBeenCalledOnce();
 
     playWordAudio('second', null);
-    vi.advanceTimersByTime(50);
     utterances[1].onstart?.();
     first.cancel();
 

@@ -85,11 +85,29 @@ describe('landing asset delivery contract', () => {
     expect(landingSource.indexOf('id="how-it-works"')).toBeLessThan(landingSource.indexOf('id="pricing"'));
   });
 
+  it('does not publish a Pro price before sales open', () => {
+    expect(landingSource).not.toContain('79,000 ₫');
+    expect(landingSource).not.toContain('US$7.99');
+  });
+
   it('makes footer and consent legal links keyboard-focus visible', () => {
     const legalLinkBlocks = landingSource.match(/<a[^>]*href="\/(privacy|terms)\.html"[^>]*>/g) ?? [];
     expect(legalLinkBlocks.length).toBeGreaterThan(0);
     for (const block of legalLinkBlocks) {
       expect(block).toContain('focus-visible:outline-2');
     }
+  });
+
+  it('consumes one-shot deletion notices and hides them after sign-in', () => {
+    expect(landingSource).toContain('consumeAccountDeletionStartedNotice');
+    expect(landingSource).toContain('consumeAccountDeletionCacheNotice');
+    expect(landingSource).toContain('if (user) {');
+    expect(landingSource).toContain('setAccountDeletionCacheWarning(false);');
+    expect(landingSource).toContain('setAccountDeletionStarted(consumeAccountDeletionStartedNotice());');
+    expect(landingSource).toContain('!user && accountDeletionStarted');
+    expect(landingSource).toContain('!user && accountDeletionCacheWarning');
+    expect(landingSource).toContain('role="status"');
+    expect(landingSource).toContain('We could not confirm whether account deletion finished. If you can still sign in later, contact support.');
+    expect(landingSource).toContain("SonFlash couldn't clear saved account data from this device. Clear SonFlash site data in your browser.");
   });
 });

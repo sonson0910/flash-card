@@ -9,13 +9,15 @@ import {
 } from './lessonReducer';
 
 export type DailySessionPersistenceResult =
-  | { readonly status: 'advanced' | 'completed' | 'stale-session' | 'not-ready' }
+  | { readonly status: 'advanced' | 'completed'; readonly xpAwarded: number }
+  | { readonly status: 'stale-session' | 'not-ready' }
   | { readonly status: 'failed'; readonly error: string };
 
 export interface DailySessionController {
   getSnapshot(): LessonState | null;
   subscribe(listener: (snapshot: LessonState | null) => void): () => void;
   start(exercises: readonly Exercise[]): void;
+  append(exercises: readonly Exercise[]): void;
   submit(answer: ExerciseAnswer): boolean;
   rate(rating: ReviewRatingValue): Promise<DailySessionPersistenceResult>;
   retry(): Promise<DailySessionPersistenceResult>;
@@ -71,13 +73,16 @@ export function createDailySessionController({
           throw new Error(`The review was not saved (${outcome?.status ?? 'missing outcome'}).`);
         }
         if (generation !== sessionGeneration || !snapshot) return { status: 'stale-session' };
+        if (typeof outcome.result.xpAwarded !== 'number') {
+          throw new Error('The review was saved without an authoritative XP award.');
+        }
         const next = reduceLessonState(snapshot, {
           type: 'persisted',
           operationId: review.operationId,
         });
         if (next === snapshot) return { status: 'stale-session' };
         publish(next);
-        return { status: next.phase === 'completed' ? 'completed' : 'advanced' };
+        return { status: next.phase === 'completed' ? 'completed' : 'advanced', xpAwarded: outcome.result.xpAwarded };
       } catch (error) {
         if (generation !== sessionGeneration || !snapshot) return { status: 'stale-session' };
         const message = errorMessage(error);
@@ -105,6 +110,27 @@ export function createDailySessionController({
       sessionGeneration += 1;
       pending.clear();
       publish(createLessonState(exercises));
+    },
+    append(exercises) {
+      if (!snapshot || exercises.length === 0) return;
+      const existingIds = new Set(snapshot.exercises.map(exercise => exercise.cardId));
+      const additions: Exercise[] = [];
+      for (const exercise of exercises) {
+        if (!existingIds.has(exercise.cardId)) {
+          existingIds.add(exercise.cardId);
+          additions.push(exercise);
+        }
+      }
+      if (additions.length === 0) return;
+      if (snapshot.exercises.length + additions.length > 15) {
+        throw new TypeError('A lesson cannot contain more than 15 exercises.');
+      }
+      const insertionIndex = snapshot.phase === 'completed' ? snapshot.exercises.length : snapshot.index + 1;
+      publish({
+        ...snapshot,
+        exercises: [...snapshot.exercises.slice(0, insertionIndex), ...additions, ...snapshot.exercises.slice(insertionIndex)],
+        ...(snapshot.phase === 'completed' ? { phase: 'answering', feedback: null, pendingReview: null, error: null } : {}),
+      });
     },
     submit(answer) {
       if (!snapshot || snapshot.phase !== 'answering') return false;

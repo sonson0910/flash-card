@@ -5,8 +5,10 @@ import {
   equipCeremonyFrame,
   orderCeremonyEvents,
   queueCeremonies,
+  streakCeremonyRewardLabels,
   type QueuedCeremony,
 } from './AppRuntime';
+import { i18n } from '@lingui/core';
 
 const ceremony = (
   event: QueuedCeremony['event'],
@@ -15,6 +17,13 @@ const ceremony = (
 ): QueuedCeremony => ({ ownerId, operationId, event, payload: {}, focusReturnTarget: null });
 
 describe('AppRuntime ceremony behavior', () => {
+  it('shows only the verified streak badge reward', () => {
+    i18n.load('en', {});
+    i18n.activate('en');
+
+    expect(streakCeremonyRewardLabels(i18n._.bind(i18n))).toEqual(['Web Wanderer']);
+  });
+
   it('orders a shared outcome with streak before levelup and dedupes by owner, operation, and event', () => {
     const ordered = orderCeremonyEvents(['levelup', 'streak']);
     expect(ordered).toEqual(['streak', 'levelup']);

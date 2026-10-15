@@ -5,6 +5,7 @@ const runtime = vi.hoisted(() => ({
   appCheck: { kind: 'app-check' },
   database: { kind: 'firestore' },
   memoryCache: { kind: 'memory-cache' },
+  persistentCache: { kind: 'persistent-cache' },
   auth: { kind: 'auth' },
   initializeApp: vi.fn(),
   initializeAppCheck: vi.fn(),
@@ -28,6 +29,7 @@ vi.mock('firebase/app-check', () => ({
 
 vi.mock('firebase/auth', () => ({
   getAuth: vi.fn(() => runtime.auth),
+  connectAuthEmulator: vi.fn(),
   GoogleAuthProvider: class GoogleAuthProvider {},
 }));
 
@@ -35,8 +37,9 @@ vi.mock('firebase/firestore', () => ({
   getFirestore: vi.fn(() => runtime.database),
   initializeFirestore: runtime.initializeFirestore,
   memoryLocalCache: vi.fn(() => runtime.memoryCache),
-  persistentLocalCache: vi.fn(() => ({ kind: 'cache' })),
+  persistentLocalCache: vi.fn(() => runtime.persistentCache),
   persistentMultipleTabManager: vi.fn(() => ({ kind: 'tabs' })),
+  connectFirestoreEmulator: vi.fn(),
 }));
 
 describe('Firebase protected-functions runtime composition', () => {
@@ -132,6 +135,45 @@ describe('Firebase protected-functions runtime composition', () => {
       runtime.app,
       expect.objectContaining({
         localCache: runtime.memoryCache,
+      }),
+      expect.any(String),
+    );
+  });
+
+  it.each([
+    {
+      name: 'emulator Firefox',
+      emulator: true,
+      userAgent: 'Mozilla/5.0 Firefox/128.0',
+      cache: 'memory',
+      forceLongPolling: false,
+    },
+    {
+      name: 'emulator Safari',
+      emulator: true,
+      userAgent: 'Mozilla/5.0 AppleWebKit/605.1.15 Version/18.6 Safari/605.1.15',
+      cache: 'memory',
+      forceLongPolling: true,
+    },
+    {
+      name: 'production Firefox',
+      emulator: false,
+      userAgent: 'Mozilla/5.0 Firefox/128.0',
+      cache: 'persistent',
+      forceLongPolling: false,
+    },
+  ])('configures Firestore transport for $name', async ({ emulator, userAgent, cache, forceLongPolling }) => {
+    vi.stubEnv('VITE_SONFLASH_E2E_EMULATOR', String(emulator));
+    vi.stubGlobal('navigator', { userAgent });
+    if (emulator) vi.stubGlobal('window', {});
+
+    await import('./firebase');
+
+    expect(runtime.initializeFirestore).toHaveBeenCalledWith(
+      runtime.app,
+      expect.objectContaining({
+        localCache: cache === 'memory' ? runtime.memoryCache : runtime.persistentCache,
+        experimentalForceLongPolling: forceLongPolling,
       }),
       expect.any(String),
     );

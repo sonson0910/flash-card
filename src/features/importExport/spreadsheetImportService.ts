@@ -3,6 +3,7 @@ import type { CardData } from '../../types/card';
 import {
   classifyFlatWords,
   classifyStructuredCardRows,
+  structuredCardLogicalKey,
   type FlatWordClassification,
 } from './spreadsheetModel';
 import { planStructuredImportMutation, type SortableCardData } from './spreadsheetMutation';
@@ -296,13 +297,13 @@ export function createSpreadsheetImportService({
         }
         phase = 'save';
         if (accepted.length > 0) {
-          const existingCards = await awaitStage(() => cards.findExisting(accepted.map(item => item.row.lexemeId ? item.row : item.row.word)));
+          const existingCards = await awaitStage(() => cards.findExisting(accepted.map(item => item.row)));
           const plan: StructuredIntakePlan = { creates: [], patches: [] };
           const candidates: number[] = [];
           const patches: number[] = [];
           for (const item of accepted) {
             const row = item.row;
-            const logicalKey = row.lexemeId ? `lexeme:${row.lexemeId}` : row.word;
+            const logicalKey = structuredCardLogicalKey(row);
             const existing = Array.from(existingCards.values()).find(card => cardLogicalKey(card) === logicalKey) ?? null;
             const mutation = planStructuredImportMutation(row, existing, now());
             const id = track({ sourceRow: item.sourceRow, word: row.word });

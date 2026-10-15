@@ -20,12 +20,23 @@ export interface DailyPlanPresentation {
 }
 
 /** The stored counter advances on read; show it only after actual XP activity today. */
+const isoDayInTimeZone = (date: Date, timeZone?: string): string => {
+  const format = (zone: string) => new Intl.DateTimeFormat('en-US', {
+    timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(date);
+  let parts: Intl.DateTimeFormatPart[];
+  try { parts = format(timeZone || 'UTC'); } catch { parts = format('UTC'); }
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find(part => part.type === type)?.value;
+  return `${value('year')}-${value('month')}-${value('day')}`;
+};
+
 export const evidencedStudyStreak = (
   streak: number,
   xpHistory: readonly { readonly date: string; readonly XP: number }[],
   now = new Date(),
+  rewardTimeZone?: string,
 ): number => {
-  const day = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const day = isoDayInTimeZone(now, rewardTimeZone);
   return xpHistory.some(entry => entry.date === day && entry.XP > 0) ? streak : 0;
 };
 
@@ -51,6 +62,22 @@ export interface TodayScreenModel {
   /** Consecutive study days, when the existing learning overview has one. */
   readonly streak?: number;
   readonly plan: DailyPlanPresentation | null;
+  /** The first card in today's actual plan, used for a grounded preview. */
+  readonly previewCard?: {
+    readonly word: string;
+    readonly translation: string;
+    readonly phonetic?: string;
+    readonly category?: string;
+    readonly imageUrl?: string | null;
+    readonly language?: string;
+    readonly translationLanguage?: string;
+  };
+  /** The planned session rail. A skipped stage has no eligible content. */
+  readonly sessionStages?: readonly {
+    readonly id: 'review' | 'new' | 'match' | 'recap';
+    readonly count: number;
+    readonly skipped: boolean;
+  }[];
   readonly placementAvailable: boolean;
   /**
    * Present when the loaded pool has cards but none are due, weak or new; the
@@ -160,6 +187,7 @@ export interface SessionBridgeModel {
   readonly nextLabel: string;
   readonly nextDescription: string;
   readonly stats: readonly SessionBridgeStat[];
+  readonly comboCount: number;
   readonly stages: readonly { id: SessionBridgeStageId; label: string; completed: boolean; current: boolean }[];
   readonly previewCard?: { word: string; translation: string; phonetic: string; category: string; language: string };
   /** Set when the upcoming stage has no eligible content and will be skipped automatically. */
@@ -237,7 +265,7 @@ export interface ProgressScreenModel {
   readonly message: string;
   readonly reviewed: number;
   readonly mastered: number;
-  readonly dueToday: number;
+  readonly dueToday: number | null;
   readonly isOffline: boolean;
   readonly hasVocabulary: boolean;
 }

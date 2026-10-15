@@ -3,10 +3,11 @@ import type { CourseSessionActions, CourseSessionController, CourseSessionSnapsh
 import { resolveCoursePort } from './resolveCoursePort';
 
 const idleSnapshot: CourseSessionSnapshot = {
-  status: 'idle', source: null, profile: null, activeCourse: null, pending: false, errorCode: null,
+  ownerId: null, status: 'idle', source: null, profile: null, activeCourse: null, pending: false, errorCode: null,
 };
 const notMounted = async () => ({ ok: false as const, error: new Error('CourseProvider is not mounted yet.') });
 const noopActions = {
+  retry: async () => {},
   createCourse: notMounted, updateCourse: notMounted, archiveCourse: notMounted, reopenCourse: notMounted,
   switchCourse: notMounted, addGoal: notMounted, updateGoal: notMounted, removeGoal: notMounted,
   clearError: () => {},
@@ -14,10 +15,14 @@ const noopActions = {
 
 export interface CourseGateValue { readonly model: CourseSessionSnapshot; readonly actions: CourseSessionActions }
 /** Exported so tests can supply a fixed snapshot without waiting on the real async controller. */
-export const CourseContext = createContext<CourseGateValue>({ model: idleSnapshot, actions: noopActions });
+const unavailableValue: CourseGateValue = { model: idleSnapshot, actions: noopActions };
+export const CourseContext = createContext<CourseGateValue>(unavailableValue);
 
 /** Any consumer works before the controller chunk resolves: it just reads the idle snapshot until then. */
 export const useCourseSession = (): CourseGateValue => useContext(CourseContext);
+
+export const readyCourseSessionForOwner = (session: CourseGateValue | null, ownerId: string | null): CourseGateValue | null =>
+  ownerId && session?.model.ownerId === ownerId && session.model.status === 'ready' ? session : null;
 
 /** Onboarding only ever starts for an owner whose course profile document does not exist yet. */
 export const useNeedsOnboarding = (): boolean => {
@@ -64,5 +69,5 @@ export function CourseProvider({ ownerId, children }: { readonly ownerId: string
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ownerId]);
 
-  return <CourseContext.Provider value={value}>{children}</CourseContext.Provider>;
+  return <CourseContext.Provider value={value.model.ownerId === ownerId ? value : unavailableValue}>{children}</CourseContext.Provider>;
 }

@@ -11,8 +11,9 @@ const adapterState = vi.hoisted(() => ({
   available: false,
   loadStats: vi.fn(async () => ({
     total: 0, reviewed: 0, easy: 0, good: 0, hard: 0,
-    unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0,
+    unrated: 0, bookmarked: 0, due: 0, dueAsOfDate: '2026-09-28', legacyUnindexed: 0,
   })),
+  loadDueStats: vi.fn(async () => ({ due: 0, dueAsOfDate: '2026-09-28' })),
   getTargetLanguage: undefined as (() => string | null) | undefined,
 }));
 
@@ -25,6 +26,7 @@ vi.mock('./cloudLibraryPageFirebaseAdapter', () => ({
       subscribePage: vi.fn(() => vi.fn()),
       countCards: vi.fn(async () => 0),
       loadStats: adapterState.loadStats,
+      loadDueStats: adapterState.loadDueStats,
       subscribeFacets: vi.fn(() => vi.fn()),
     };
   },
@@ -107,7 +109,7 @@ afterEach(() => {
   adapterState.loadStats.mockReset();
   adapterState.loadStats.mockImplementation(async () => ({
     total: 0, reviewed: 0, easy: 0, good: 0, hard: 0,
-    unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0,
+    unrated: 0, bookmarked: 0, due: 0, dueAsOfDate: '2026-09-28', legacyUnindexed: 0,
   }));
 });
 
@@ -188,7 +190,7 @@ it('scopes the stats cache to the active course and refetches only when its lang
   installLocalStorage();
   adapterState.available = true;
   adapterState.loadStats.mockImplementation(async () => ({
-    total: 7, reviewed: 0, easy: 0, good: 0, hard: 0, unrated: 7, bookmarked: 0, due: 0, legacyUnindexed: 0,
+    total: 7, reviewed: 0, easy: 0, good: 0, hard: 0, unrated: 7, bookmarked: 0, due: 0, dueAsOfDate: '2026-09-28', legacyUnindexed: 0,
   }));
   const captured: { current: ReturnType<typeof useCloudLibraryPage> | null } = { current: null };
   const container = installMinimalReactDom();
@@ -217,7 +219,7 @@ it('scopes the stats cache to the active course and refetches only when its lang
   expect(localStorageValues.has(cloudStatsCacheKey('user-a', 'en'))).toBe(true);
 
   adapterState.loadStats.mockImplementation(async () => ({
-    total: 2, reviewed: 0, easy: 0, good: 0, hard: 0, unrated: 2, bookmarked: 0, due: 0, legacyUnindexed: 0,
+    total: 2, reviewed: 0, easy: 0, good: 0, hard: 0, unrated: 2, bookmarked: 0, due: 0, dueAsOfDate: '2026-09-28', legacyUnindexed: 0,
   }));
 
   // Switching the active course must refetch instead of reusing course A's cached stats.
@@ -234,6 +236,49 @@ it('scopes the stats cache to the active course and refetches only when its lang
 
   expect(adapterState.loadStats).toHaveBeenCalledTimes(2);
   expect(captured.current?.stats.total).toBe(7);
+
+  await act(async () => root.unmount());
+});
+
+it('refreshes recap stats after the intent arrives without treating the initial idle snapshot as ready', async () => {
+  installLocalStorage();
+  adapterState.available = true;
+  const now = new Date();
+  const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+  let finishRefresh!: (value: Awaited<ReturnType<typeof adapterState.loadStats>>) => void;
+  adapterState.loadStats.mockResolvedValueOnce({
+    total: 1, reviewed: 1, easy: 0, good: 1, hard: 0, unrated: 0,
+    bookmarked: 0, due: 0, dueAsOfDate: today, legacyUnindexed: 0,
+  }).mockImplementationOnce(() => new Promise(resolve => { finishRefresh = resolve; }));
+  const captured: { current: ReturnType<typeof useCloudLibraryPage> | null } = { current: null };
+  const root = createRoot(installMinimalReactDom());
+
+  function Harness({ requestId }: { requestId: number | null }) {
+    captured.current = useCloudLibraryPage({
+      ownerId: 'user-a', query: { ...query, targetLanguage: 'en' }, queryKey: 'all-en', page: 1,
+      pageSize: 9, refreshKey: 0, statsOpen: true,
+      statsRefreshRequest: requestId === null ? null : { ownerId: 'user-a', requestId },
+      progressEvidenceOpen: false, getPromotedCards: () => [],
+    });
+    return null;
+  }
+
+  await act(async () => { root.render(<Harness requestId={null} />); });
+  expect(captured.current?.stats.reviewed).toBe(1);
+  expect(captured.current?.isStatsLoading).toBe(false);
+  expect(captured.current?.statsSettledRequestId).toBeNull();
+
+  await act(async () => { root.render(<Harness requestId={7} />); });
+  expect(adapterState.loadStats).toHaveBeenCalledTimes(2);
+  expect(captured.current?.isStatsLoading).toBe(true);
+  expect(captured.current?.statsSettledRequestId).toBeNull();
+
+  await act(async () => {
+    finishRefresh({ total: 1, reviewed: 2, easy: 0, good: 1, hard: 0, unrated: 0,
+      bookmarked: 0, due: 0, dueAsOfDate: today, legacyUnindexed: 0 });
+    await Promise.resolve();
+  });
+  expect(captured.current).toMatchObject({ stats: { reviewed: 2 }, isStatsLoading: false, statsSettledRequestId: 7 });
 
   await act(async () => root.unmount());
 });

@@ -31,33 +31,33 @@ afterEach(() => {
   mocks.fetchWebWordsPage.mockReset();
 });
 
-it('uses the active owner and course language, ignoring a retired request result', async () => {
-  let resolveFirst: (value: { items: readonly unknown[] }) => void = () => undefined;
-  let resolveSecond: (value: { items: readonly unknown[] }) => void = () => undefined;
-  const first = new Promise<{ items: readonly unknown[] }>(resolve => { resolveFirst = resolve; });
-  const second = new Promise<{ items: readonly unknown[] }>(resolve => { resolveSecond = resolve; });
+it('uses the active owner and course language pair, ignoring a retired request result', async () => {
+  let resolveFirst: (value: { items: readonly unknown[]; scannedCount: number }) => void = () => undefined;
+  let resolveSecond: (value: { items: readonly unknown[]; scannedCount: number }) => void = () => undefined;
+  const first = new Promise<{ items: readonly unknown[]; scannedCount: number }>(resolve => { resolveFirst = resolve; });
+  const second = new Promise<{ items: readonly unknown[]; scannedCount: number }>(resolve => { resolveSecond = resolve; });
   mocks.fetchWebWordsPage.mockReturnValueOnce(first).mockReturnValueOnce(second);
 
-  const captured: { current: number | null } = { current: null };
+  const captured: { current: ReturnType<typeof useWebWordsPreviewCount> | null } = { current: null };
   const root = createRoot(installMinimalReactDom());
-  function Harness({ ownerId, targetLanguage }: { ownerId: string | null; targetLanguage: string | null }) {
-    captured.current = useWebWordsPreviewCount(ownerId, targetLanguage);
+  function Harness({ ownerId, targetLanguage, translationLanguage }: { ownerId: string | null; targetLanguage: string | null; translationLanguage: string | null }) {
+    captured.current = useWebWordsPreviewCount(ownerId, targetLanguage, translationLanguage);
     return null;
   }
 
-  await act(async () => { root.render(<Harness ownerId="owner-a" targetLanguage="en" />); });
-  await act(async () => { root.render(<Harness ownerId="owner-b" targetLanguage="ko" />); });
-  await act(async () => { resolveFirst({ items: [{ id: 'english-card' }] }); await Promise.resolve(); });
+  await act(async () => { root.render(<Harness ownerId="owner-a" targetLanguage="en" translationLanguage="vi" />); });
+  await act(async () => { root.render(<Harness ownerId="owner-a" targetLanguage="en" translationLanguage="en" />); });
+  await act(async () => { resolveFirst({ items: [{ id: 'english-card' }], scannedCount: 1 }); await Promise.resolve(); });
 
   expect(mocks.fetchWebWordsPage).toHaveBeenNthCalledWith(1, expect.objectContaining({
-    ownerId: 'owner-a', targetLanguage: 'en', pageSize: STRIP_PREVIEW_COUNT, detectHasNext: false,
+    ownerId: 'owner-a', targetLanguage: 'en', translationLanguage: 'vi', pageSize: STRIP_PREVIEW_COUNT, detectHasNext: false,
   }));
   expect(mocks.fetchWebWordsPage).toHaveBeenNthCalledWith(2, expect.objectContaining({
-    ownerId: 'owner-b', targetLanguage: 'ko', pageSize: STRIP_PREVIEW_COUNT, detectHasNext: false,
+    ownerId: 'owner-a', targetLanguage: 'en', translationLanguage: 'en', pageSize: STRIP_PREVIEW_COUNT, detectHasNext: false,
   }));
-  expect(captured.current).toBe(0);
+  expect(captured.current).toEqual({ count: 0, isAtCap: false });
 
-  await act(async () => { resolveSecond({ items: [{ id: 'korean-card' }] }); await Promise.resolve(); });
-  await act(async () => { await vi.waitFor(() => expect(captured.current).toBe(1)); });
+  await act(async () => { resolveSecond({ items: [{ id: 'korean-card' }], scannedCount: STRIP_PREVIEW_COUNT }); await Promise.resolve(); });
+  await act(async () => { await vi.waitFor(() => expect(captured.current).toEqual({ count: 1, isAtCap: true })); });
   await act(async () => root.unmount());
 });

@@ -1,4 +1,4 @@
-import { doc, getDoc, type Firestore } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, onSnapshotsInSync, type Firestore } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -324,39 +324,91 @@ export function useVerifiedGamificationState({ ownerId, database }: UseVerifiedG
   const stateOwnerRef = useRef(ownerId);
   const deferredOutcomesRef = useRef<VerifiedGamificationOutcome[]>([]);
   const hydrationPendingRef = useRef(false);
+  const pendingOutcomeXpRef = useRef<number | null>(null);
   ownerRef.current = ownerId;
   const scopedState = stateOwnerRef.current === ownerId ? state : zeroState();
 
   useEffect(() => {
     let cancelled = false;
+    let failed = false;
+    let hydrated = false;
+    const received = { stats: false, xpHistory: false, rewards: false };
+    let statsValue: unknown;
+    let xpHistoryValue: unknown;
+    let rewardsValue: unknown;
     stateOwnerRef.current = ownerId;
     deferredOutcomesRef.current = [];
     hydrationPendingRef.current = Boolean(ownerId && database);
+    pendingOutcomeXpRef.current = null;
     setState(zeroState());
     if (!ownerId || !database) return () => { cancelled = true; };
-    void hydrateVerifiedGamification(database, ownerId).then(next => {
-      if (!cancelled && ownerRef.current === ownerId) {
+    const profile = ['users', ownerId, 'profile'] as const;
+    const subscriptions: Array<() => void> = [];
+    let stopped = false;
+    const stopAll = () => {
+      if (stopped) return;
+      stopped = true;
+      subscriptions.forEach(stop => stop());
+    };
+    const addSubscription = (stop: () => void) => {
+      if (stopped) stop();
+      else subscriptions.push(stop);
+    };
+
+    const apply = () => {
+      if (cancelled || failed || ownerRef.current !== ownerId
+        || !received.stats || !received.xpHistory || !received.rewards) return;
+      const next = verifiedGamificationFromDocuments(statsValue, xpHistoryValue, rewardsValue);
+      if (!hydrated) {
+        hydrated = true;
         const deferredOutcomes = deferredOutcomesRef.current;
         deferredOutcomesRef.current = [];
         hydrationPendingRef.current = false;
-        setState(replayAuthoritativeGamificationOutcomes(next, deferredOutcomes));
+        const replayed = replayAuthoritativeGamificationOutcomes(next, deferredOutcomes);
+        pendingOutcomeXpRef.current = replayed.xp > next.xp ? replayed.xp : null;
+        setState(replayed);
+      } else {
+        const pendingXp = pendingOutcomeXpRef.current;
+        if (pendingXp !== null && next.xp >= pendingXp) pendingOutcomeXpRef.current = null;
+        setState(current => pendingXp !== null && next.xp < pendingXp ? current : next);
       }
-    }).catch(error => {
-      if (!cancelled && ownerRef.current === ownerId) {
-        deferredOutcomesRef.current = [];
-        hydrationPendingRef.current = false;
-        console.error('Failed to hydrate verified gamification.', error);
-      }
-    });
-    return () => {
-      cancelled = true;
+    };
+    const fail = (error: Error) => {
+      if (cancelled || failed || ownerRef.current !== ownerId) return;
+      failed = true;
       deferredOutcomesRef.current = [];
       hydrationPendingRef.current = false;
+      console.error('Failed to hydrate verified gamification.', error);
+      stopAll();
+    };
+    addSubscription(onSnapshot(doc(database, ...profile, 'stats'), snapshot => {
+      statsValue = snapshot.exists() ? snapshot.data() : undefined;
+      received.stats = true;
+      if (!hydrated) apply();
+    }, fail));
+    addSubscription(onSnapshot(doc(database, ...profile, 'xp_history'), snapshot => {
+      xpHistoryValue = snapshot.exists() ? snapshot.data() : undefined;
+      received.xpHistory = true;
+      if (!hydrated) apply();
+    }, fail));
+    addSubscription(onSnapshot(doc(database, ...profile, 'rewards'), snapshot => {
+      rewardsValue = snapshot.exists() ? snapshot.data() : undefined;
+      received.rewards = true;
+      if (!hydrated) apply();
+    }, fail));
+    addSubscription(onSnapshotsInSync(database, apply));
+    return () => {
+      cancelled = true;
+      stopAll();
+      deferredOutcomesRef.current = [];
+      hydrationPendingRef.current = false;
+      pendingOutcomeXpRef.current = null;
     };
   }, [database, ownerId]);
 
   const acceptAuthoritativeOutcome = useCallback((outcome: VerifiedGamificationOutcome) => {
-    if (outcome.level !== levelForXp(counter(outcome.xp))) return;
+    if (!ownerId || ownerRef.current !== ownerId || outcome.level !== levelForXp(counter(outcome.xp))) return;
+    pendingOutcomeXpRef.current = Math.max(pendingOutcomeXpRef.current ?? 0, counter(outcome.xp));
     if (hydrationPendingRef.current) {
       deferredOutcomesRef.current = normalizeDeferredGamificationOutcomes([
         ...deferredOutcomesRef.current,
@@ -364,7 +416,7 @@ export function useVerifiedGamificationState({ ownerId, database }: UseVerifiedG
       ]);
     }
     setState(current => acceptAuthoritativeGamificationOutcome(current, outcome));
-  }, []);
+  }, [ownerId]);
   const equipFrame = useCallback(async (frameId = 'crimson-wing') => {
     if (!ownerId) throw new ProtectedFunctionError({
       message: 'Reward frame needs a current sign-in.', kind: 'authentication', code: 'unauthenticated', retryable: false,

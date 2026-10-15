@@ -26,10 +26,10 @@
 .catalog-feature-grid > .catalog-shelf > div:first-child { margin: 0 0 18px; }
 .catalog-feature-grid > .catalog-shelf .premium-kicker { display: none; }
 .catalog-feature-grid > .catalog-shelf h2 { font-size: 1.625rem !important; }
-.catalog-feature-grid > .catalog-shelf > div:last-child { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px !important; }
+.catalog-feature-grid > .catalog-shelf > div:last-child { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px !important; }
 .catalog-track-card { --book-bg: #9c3d17; display: flex; min-height: 272px !important; flex-direction: column; padding: 20px 18px 16px 26px !important; border: 0 !important; border-radius: 6px 16px 16px 6px !important; background: radial-gradient(ellipse 80% 60% at 90% 0%, rgb(255 255 255 / .12), transparent 60%), var(--book-bg) !important; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .15), 0 24px 34px -22px rgb(60 40 20 / .6) !important; color: #f4e2b0; }
 .catalog-track-card:nth-child(2) { --book-bg: #4a3d5e; }
-.catalog-track-card:nth-child(3) { --book-bg: #2f5a3a; grid-column: span 2; }
+.catalog-track-card:nth-child(3) { --book-bg: #2f5a3a; }
 .catalog-track-card > span:first-child { width: 10px !important; background: linear-gradient(90deg, rgb(0 0 0 / .25), rgb(255 255 255 / .08), rgb(0 0 0 / .15)) !important; }
 .catalog-track-card > span:nth-child(2) > span:first-child { color: #f4e2b0; font-family: var(--sf-font-display, Fraunces, Georgia, serif); font-size: 1.875rem; line-height: 1.05; }
 .catalog-track-card > span:nth-child(2) > span:last-child:not(:first-child) { border-color: rgb(239 232 218 / .3); background: rgb(255 255 255 / .14); color: #efe8da; }

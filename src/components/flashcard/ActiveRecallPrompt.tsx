@@ -7,7 +7,9 @@ import { buildRecallPrompt, isRecallAnswerCorrect, resolveRecallMode, type Recal
 import { isSupportedImageUrl } from '../../lib/images';
 import { CardImage } from './CardImage';
 import { playWordAudio, type WordAudioPlayback } from '../../lib/audio';
+import { voiceForActiveCourseCard } from '../../lib/courseVoicePreference';
 import { speechLocaleFor } from '../../lib/speechLocale';
+import { useCourseSession } from '../../features/courses/CourseGate';
 
 interface ActiveRecallPromptProps {
   card: CardData;
@@ -18,6 +20,7 @@ interface ActiveRecallPromptProps {
 
 export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable }: ActiveRecallPromptProps) {
   const { _, i18n } = useLingui();
+  const { model: courseModel } = useCourseSession();
   const resolvedMode = resolveRecallMode(card, mode);
   const targetLanguage = card.language || 'en';
   const translationLanguage = card.translationLanguage || 'vi';
@@ -49,7 +52,8 @@ export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable }:
 
   const playPrompt = () => {
     audioPlaybackRef.current?.cancel();
-    audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl, speechLocaleFor(card));
+    const voice = voiceForActiveCourseCard(card, courseModel.activeCourse);
+    audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl, speechLocaleFor(card), voice);
   };
 
   const checkAnswer = (event: FormEvent) => {

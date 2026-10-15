@@ -115,6 +115,41 @@ describe('useExtensionDueCountBridge', () => {
     }
   });
 
+  it('retires the scope when the same owner loses readiness and creates a fresh one on recovery', async () => {
+    const posted: unknown[] = [];
+    vi.stubGlobal('location', { origin: 'https://app.example.test' });
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    const root = createRoot(installMinimalReactDom());
+
+    try {
+      await act(async () => {
+        root.render(<Harness options={optionsFor({ dueCount: 7 })} />);
+      });
+      const firstSync = posted[0] as { type: string; payload: { scope: string; count: number } };
+
+      await act(async () => {
+        root.render(<Harness options={optionsFor({ ready: false, dueCount: 0 })} />);
+      });
+      expect(posted).toContainEqual({
+        source: 'lingoflash-web-app',
+        type: 'LINGOFLASH_EXTENSION_DUE_COUNT_CLEAR',
+        payload: { scope: firstSync.payload.scope },
+      });
+
+      await act(async () => {
+        root.render(<Harness options={optionsFor({ ready: true, dueCount: 12 })} />);
+      });
+      const recoveredSync = posted[2] as { type: string; payload: { scope: string; count: number } };
+      expect(recoveredSync).toMatchObject({
+        type: 'LINGOFLASH_EXTENSION_DUE_COUNT',
+        payload: { count: 12 },
+      });
+      expect(recoveredSync.payload.scope).not.toBe(firstSync.payload.scope);
+    } finally {
+      act(() => root.unmount());
+    }
+  });
+
   it('never posts a fabricated count: invalid or out-of-range values are dropped, not clamped to zero or sent anyway', async () => {
     const posted: unknown[] = [];
     vi.stubGlobal('location', { origin: 'https://app.example.test' });
@@ -140,6 +175,87 @@ describe('useExtensionDueCountBridge', () => {
       expect(synced.payload.count).toBe(9_999);
     } finally {
       act(() => root.unmount());
+    }
+  });
+
+  it('clears the live scope when the bridge component unmounts', async () => {
+    const posted: unknown[] = [];
+    vi.stubGlobal('location', { origin: 'https://app.example.test' });
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    const root = createRoot(installMinimalReactDom());
+
+    await act(async () => {
+      root.render(<Harness options={optionsFor({ dueCount: 5 })} />);
+    });
+    const sync = posted.find((message): message is { type: string; payload: { scope: string } } => (
+      Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_DUE_COUNT')
+    ));
+    expect(sync).toBeDefined();
+
+    act(() => root.unmount());
+    expect(posted).toContainEqual({
+      source: 'lingoflash-web-app',
+      type: 'LINGOFLASH_EXTENSION_DUE_COUNT_CLEAR',
+      payload: { scope: sync!.payload.scope },
+    });
+  });
+
+  it('publishes the current ready owner again after a replacement provider handshake', async () => {
+    const posted: unknown[] = [];
+    const listeners = new Set<(event: MessageEvent) => void>();
+    vi.stubGlobal('location', { origin: 'https://app.example.test' });
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    vi.stubGlobal('addEventListener', (type: string, listener: (event: MessageEvent) => void) => {
+      if (type === 'message') listeners.add(listener);
+    });
+    vi.stubGlobal('removeEventListener', (type: string, listener: (event: MessageEvent) => void) => {
+      if (type === 'message') listeners.delete(listener);
+    });
+    const dispatchProviderReady = () => {
+      const event = {
+        source: globalThis,
+        origin: 'https://app.example.test',
+        data: {
+          source: 'lingoflash-extension-bridge',
+          type: 'LINGOFLASH_EXTENSION_PROVIDER_READY',
+        },
+      } as unknown as MessageEvent;
+      for (const listener of listeners) listener(event);
+    };
+    const root = createRoot(installMinimalReactDom());
+
+    try {
+      await act(async () => {
+        root.render(<Harness options={optionsFor({ dueCount: 7 })} />);
+      });
+      const first = posted.find((message): message is { type: string; payload: { scope: string } } => (
+        Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_DUE_COUNT')
+      ));
+      expect(first).toBeDefined();
+
+      dispatchProviderReady();
+      const republished = [...posted].reverse().find((message): message is { type: string; payload: { scope: string; count: number } } => (
+        Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_DUE_COUNT')
+      ));
+      expect(republished).toMatchObject({ type: 'LINGOFLASH_EXTENSION_DUE_COUNT', payload: { scope: first!.payload.scope, count: 7 } });
+
+      await act(async () => {
+        root.render(<Harness options={optionsFor({ ownerId: 'owner-b', dueCount: 41 })} />);
+      });
+      const second = [...posted].reverse().find((message): message is { type: string; payload: { scope: string; count: number } } => (
+        Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_DUE_COUNT')
+      ));
+      expect(second?.payload.count).toBe(41);
+      expect(second?.payload.scope).not.toBe(first!.payload.scope);
+      dispatchProviderReady();
+      const afterHandshake = [...posted].reverse().find((message): message is { type: string; payload: { scope: string; count: number } } => (
+        Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_DUE_COUNT')
+      ));
+      expect(afterHandshake?.payload.count).toBe(41);
+      expect(afterHandshake?.payload.scope).toBe(second?.payload.scope);
+    } finally {
+      act(() => root.unmount());
+      vi.unstubAllGlobals();
     }
   });
 });

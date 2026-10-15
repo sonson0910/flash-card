@@ -1,9 +1,10 @@
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { Archive, BookOpen, Gauge, Keyboard, RotateCcw, Volume2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSetUiLocale, useUiLocale } from '../../i18n/I18nProvider';
 import { ENABLED_UI_LOCALES, UI_LOCALES, type UiLocale } from '../../i18n/locales';
+import { courseVoicePreferenceKey, readSpeechSynthesisVoices, voicesForTargetLanguage } from '../../lib/courseVoicePreference';
 import { useCourseSession } from '../courses/CourseGate';
 import { goalKindLabel } from '../courses/courseGoalCatalog';
 import { NATIVE_LANGUAGE_LABEL, TARGET_LANGUAGE_FLAG, TARGET_LANGUAGE_LABEL } from '../courses/courseLanguageLabels';
@@ -13,7 +14,6 @@ import { DAILY_PACE_OPTIONS, readDailyPace, writeDailyPace, type DailyPace } fro
 const rowClass = 'flex min-h-14 flex-wrap items-center gap-3 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-3';
 const selectClass = 'min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 text-sm font-semibold text-[var(--sf-text)]';
 const infoRowClass = 'flex min-h-14 items-start gap-3 rounded-2xl border border-dashed border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-3 text-sm text-[var(--sf-text-muted)]';
-
 /**
  * Reading/voice/script preferences are exactly `CoursePreferences`
  * (`showRomanization`, `pronunciationVariant`, `zhScript`) on the active
@@ -26,18 +26,78 @@ export function CourseSettingsSection() {
   const setUiLocale = useSetUiLocale();
   const { model, actions } = useCourseSession();
   const [pace, setPace] = useState<DailyPace>(readDailyPace);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[] | null | false>(null);
+  const [saveError, setSaveError] = useState<'course' | 'pace' | null>(null);
+  const savingRef = useRef(false);
+  const attemptRef = useRef(0);
+
+  useEffect(() => {
+    savingRef.current = false;
+    attemptRef.current += 1;
+    setSaveError(null);
+  }, [model.ownerId, model.activeCourse?.id]);
+
+  useEffect(() => {
+    const synthesis = typeof window === 'undefined' ? undefined : window.speechSynthesis;
+    if (!synthesis || typeof synthesis.getVoices !== 'function') {
+      setVoices(false);
+      return;
+    }
+    let disposed = false;
+    const refreshVoices = () => {
+      if (disposed) return;
+      setVoices(readSpeechSynthesisVoices());
+    };
+    refreshVoices();
+    synthesis.addEventListener?.('voiceschanged', refreshVoices);
+    return () => {
+      disposed = true;
+      synthesis.removeEventListener?.('voiceschanged', refreshVoices);
+    };
+  }, [model.ownerId, model.activeCourse?.id, model.activeCourse?.targetLanguage]);
 
   if (model.status !== 'ready' || !model.profile) return null;
   const activeCourse = model.activeCourse;
   const activeGoal = activeCourse?.goals.find(goal => goal.status === 'active');
   const activeGoalLabel = activeGoal && activeCourse ? goalKindLabel(activeCourse.targetLanguage, activeGoal.kind) : null;
   const archivedCourses = model.profile.courses.filter(course => course.status === 'archived');
+  const targetVoices = activeCourse && Array.isArray(voices) ? voicesForTargetLanguage(voices, activeCourse.targetLanguage) : [];
+  const savedVoiceKey = activeCourse?.preferences.pronunciationVariant ?? null;
+  const savedVoiceAvailable = Boolean(savedVoiceKey && targetVoices.some(voice => courseVoicePreferenceKey(voice) === savedVoiceKey));
+  const savedVoiceUnavailable = Boolean(savedVoiceKey && voices !== null && !savedVoiceAvailable);
+  const voiceLabel = _(msg({ id: 'settings.voice.label', message: 'Voice' }));
+  const voiceStatus = voices === false
+    ? _(msg({ id: 'settings.voice.unsupported', message: 'Device voices unavailable.' }))
+    : savedVoiceUnavailable
+      ? _(msg({ id: 'settings.voice.missing', message: 'Saved voice unavailable. Using automatic selection.' }))
+      : Array.isArray(voices) && targetVoices.length === 0
+        ? _(msg({ id: 'settings.voice.empty', message: 'No installed {language} voices. Automatic selection is available.' }).id, { language: _(TARGET_LANGUAGE_LABEL[activeCourse?.targetLanguage ?? 'en']) })
+        : null;
 
-  const updatePreferences = (patch: Partial<{ showRomanization: boolean; pronunciationVariant: string | null; zhScript: 'hans' | 'hant' | null }>) => {
-    if (!activeCourse) return;
-    void actions.updateCourse(activeCourse.id, { preferences: { ...activeCourse.preferences, ...patch } });
+  const runCourseAction = async (action: () => Promise<{ ok: boolean }>) => {
+    if (savingRef.current || model.pending) return;
+    savingRef.current = true;
+    const attempt = ++attemptRef.current;
+    setSaveError(null);
+    let failed = false;
+    try { failed = !(await action()).ok; } catch { failed = true; }
+    if (attempt === attemptRef.current) {
+      if (failed) setSaveError('course');
+      savingRef.current = false;
+    }
   };
-  const changePace = (next: DailyPace) => { setPace(next); writeDailyPace(next); };
+  const updateCourse = (input: Parameters<typeof actions.updateCourse>[1]) => {
+    if (!activeCourse) return;
+    runCourseAction(() => actions.updateCourse(activeCourse.id, input));
+  };
+  const updatePreferences = (patch: Partial<{ showRomanization: boolean; pronunciationVariant: string | null; zhScript: 'hans' | 'hant' | null }>) => {
+    updateCourse({ preferences: patch });
+  };
+  const changePace = (next: DailyPace) => {
+    const saved = writeDailyPace(next);
+    setPace(saved ? next : readDailyPace());
+    setSaveError(saved ? null : 'pace');
+  };
 
   return <section aria-labelledby="settings-course" className="settings-panel rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-4 shadow-[0_22px_56px_-38px_var(--sf-shadow)] sm:p-6">
     <div className="flex items-start gap-3">
@@ -67,11 +127,17 @@ export function CourseSettingsSection() {
 
         {activeCourse && <label className={rowClass}>
           <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.meaning-language" message="Meaning language" /><span className="block text-xs font-normal text-[var(--sf-text-muted)]"><Trans id="settings.course.meaning-language.scope" message="Applies to new cards. Existing card meanings do not change." /></span></span>
-          <select className={selectClass} value={activeCourse.nativeLanguage} onChange={event => void actions.updateCourse(activeCourse.id, { nativeLanguage: event.target.value as CourseNativeLanguage })}>
+          <select className={selectClass} disabled={model.pending} value={activeCourse.nativeLanguage} onChange={event => updateCourse({ nativeLanguage: event.target.value as CourseNativeLanguage })}>
             {COURSE_NATIVE_LANGUAGES.map(language => <option key={language} value={language}>{_(NATIVE_LANGUAGE_LABEL[language])}</option>)}
           </select>
         </label>}
       </div>
+
+      {saveError && <p role="alert" className="rounded-lg border border-[var(--sf-danger)] bg-[color-mix(in_srgb,var(--sf-danger)_10%,var(--sf-surface))] px-3 py-2 text-sm font-semibold text-[var(--sf-danger)]">
+        {saveError === 'course'
+          ? <Trans id="course.error.generic" message="That course action did not go through. Please try again." />
+          : <Trans id="settings.course.pace.error" message="Daily pace could not be saved. Please try again." />}
+      </p>}
 
       {activeCourse && <div data-settings-course-preferences className="grid gap-3 border-t border-[var(--sf-border)] pt-5">
         <div className={rowClass}>
@@ -85,13 +151,40 @@ export function CourseSettingsSection() {
         <label className={rowClass}>
           <Volume2 size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
           <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.romanization" message="Show romanization" /></span>
-          <input type="checkbox" role="switch" checked={activeCourse.preferences.showRomanization} onChange={event => updatePreferences({ showRomanization: event.target.checked })} className="h-6 w-11 shrink-0 accent-[var(--sf-brand)]" />
+          <input type="checkbox" role="switch" disabled={model.pending} checked={activeCourse.preferences.showRomanization} onChange={event => updatePreferences({ showRomanization: event.target.checked })} className="h-6 w-11 shrink-0 accent-[var(--sf-brand)]" />
         </label>
+
+        <label data-settings-course-voice className={rowClass}>
+          <Volume2 size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold text-[var(--sf-text)]"><Trans id="settings.voice" message="Voice" /></span>
+          </span>
+          <select
+            className={selectClass}
+            aria-label={voiceLabel}
+            disabled={model.pending || voices === false || targetVoices.length === 0}
+            value={savedVoiceKey ?? ''}
+            onChange={event => updatePreferences({ pronunciationVariant: event.target.value || null })}
+          >
+            <option value=""><Trans id="settings.voice.automatic" message="Automatic" /></option>
+            {savedVoiceKey && savedVoiceUnavailable && <option value={savedVoiceKey} disabled><Trans id="settings.voice.unavailable" message="Saved voice unavailable · Automatic" /></option>}
+            {targetVoices.map(voice => <option key={courseVoicePreferenceKey(voice)} value={courseVoicePreferenceKey(voice)}>{voice.name} · {voice.lang}</option>)}
+          </select>
+        </label>
+        {voiceStatus && <p data-settings-voice-status role="status" className="text-xs text-[var(--sf-text-muted)]">{voiceStatus}</p>}
+
+        {activeCourse.targetLanguage === 'ko' && <div className={rowClass}>
+          <Keyboard size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold text-[var(--sf-text)]"><Trans id="settings.course.keyboard" message="Keyboard" /> · <span lang="ko">두벌식</span></span>
+            <span className="block text-xs text-[var(--sf-text-muted)]"><Trans id="settings.course.keyboard.ko-help" message="Korean 2-set (두벌식): add Korean in your device keyboard settings, or use the on-screen keys in Korean practice." /></span>
+          </span>
+        </div>}
 
         {activeCourse.targetLanguage === 'zh' && <div className={rowClass}>
           <Keyboard size={18} aria-hidden="true" className="shrink-0 text-[var(--sf-text-muted)]" />
           <span className="min-w-0 flex-1 font-bold text-[var(--sf-text)]"><Trans id="settings.course.script" message="Chinese script" /></span>
-          <select className={selectClass} value={activeCourse.preferences.zhScript ?? 'hans'} onChange={event => updatePreferences({ zhScript: event.target.value as 'hans' | 'hant' })}>
+          <select className={selectClass} disabled={model.pending} value={activeCourse.preferences.zhScript ?? 'hans'} onChange={event => updatePreferences({ zhScript: event.target.value as 'hans' | 'hant' })}>
             <option value="hans"><Trans id="settings.course.script.simplified" message="Simplified" /></option>
             <option value="hant"><Trans id="settings.course.script.traditional" message="Traditional" /></option>
           </select>
@@ -103,7 +196,7 @@ export function CourseSettingsSection() {
         <span className="min-w-0 flex-1">
           <span className="block font-bold text-[var(--sf-text)]"><Trans id="settings.course.archived" message="Archived courses" /></span>
           <span className="mt-1 flex flex-wrap gap-2">
-            {archivedCourses.map(course => <button key={course.id} type="button" disabled={model.pending} onClick={() => void actions.reopenCourse(course.id)}
+            {archivedCourses.map(course => <button key={course.id} type="button" disabled={model.pending} onClick={() => runCourseAction(() => actions.reopenCourse(course.id))}
               className="flex min-h-9 items-center gap-1.5 rounded-lg border border-[var(--sf-border)] px-2.5 text-xs font-bold text-[var(--sf-text)]">
               {TARGET_LANGUAGE_FLAG[course.targetLanguage]} {_(TARGET_LANGUAGE_LABEL[course.targetLanguage])} <RotateCcw size={12} aria-hidden="true" />
             </button>)}
@@ -113,9 +206,6 @@ export function CourseSettingsSection() {
 
       <div data-settings-grid-wide className={infoRowClass}>
         <Trans id="settings.course.extension-badge" message="If you have the browser extension installed, its badge shows how many cards are due — this is read-only information, there is nothing to turn on or off here." />
-      </div>
-      <div data-settings-grid-wide className={infoRowClass}>
-        <Trans id="settings.course.reminder-not-ready" message="Daily reminders aren't turned on yet. When they are, you'll be able to choose the days and quiet hours here." />
       </div>
       <div data-settings-grid-wide className="text-sm text-[var(--sf-text-muted)]">
         <Trans id="settings.course.account-plan-hint" message="Account and plan settings are available from your profile menu." />

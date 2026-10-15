@@ -1,5 +1,5 @@
 import type { FirebaseApp } from 'firebase/app';
-import { doc, getDoc, type Firestore } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, type Firestore } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { getSonFlashFunctions } from '../../lib/firebase';
 import {
@@ -145,9 +145,45 @@ export function createFirebaseCourseAdapter({
     }
   };
 
+  const subscribe = (
+    ownerId: string | null,
+    onProfile: (read: CourseProfileRead) => void,
+    onError: (error: CourseError) => void,
+  ): (() => void) => {
+    const owner = requireOwner(ownerId);
+    const databaseInstance = requireDatabase();
+    assertCurrentOwner(owner);
+    return onSnapshot(
+      doc(databaseInstance, 'users', owner, 'profile', 'courses'),
+      snapshot => {
+        try {
+          assertCurrentOwner(owner);
+          onProfile(snapshot.exists()
+            ? { source: 'cloud', profile: parseCourseProfile(snapshot.data()) }
+            : { source: 'absent', profile: createLegacyCourseProfile() });
+        } catch (error) {
+          onError(error instanceof CourseError
+            ? error
+            : new CourseError('profile-invalid', 'The cloud course profile is invalid.', {}, error));
+        }
+      },
+      error => {
+        try {
+          assertCurrentOwner(owner);
+          onError(new CourseError('cloud-read-failed', 'The cloud course profile could not be read.', {}, error));
+        } catch (ownerError) {
+          onError(ownerError instanceof CourseError
+            ? ownerError
+            : new CourseError('cloud-read-failed', 'The cloud course profile could not be read.', {}, ownerError));
+        }
+      },
+    );
+  };
+
   return {
     available,
     load,
+    subscribe,
     createCourse: async (ownerId, input) => {
       const normalized = normalizeCreateCourseInput(input);
       return invokeMutation(ownerId, 'createCourse', {

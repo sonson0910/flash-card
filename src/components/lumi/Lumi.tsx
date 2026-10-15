@@ -60,7 +60,7 @@ export function Lumi(props: LumiProps) {
       loading={eager ? 'eager' : 'lazy'}
       data-lumi-pose={pose}
       data-lumi-motion={reducedMotion ? 'reduced' : 'full'}
-      style={{ ...style, width: size, height: size, ...(reducedMotion ? { animation: 'none' } : {}) }}
+      style={{ objectFit: 'contain', ...style, width: size, height: size, ...(reducedMotion ? { animation: 'none' } : {}) }}
     />
   );
 }

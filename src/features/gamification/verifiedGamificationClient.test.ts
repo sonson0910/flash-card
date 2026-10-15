@@ -1,15 +1,196 @@
-import { describe, expect, it } from 'vitest';
+import { act, createElement } from 'react';
+import { createRoot } from 'react-dom/client';
+import { describe, expect, it, vi } from 'vitest';
+
+const firestore = vi.hoisted(() => ({
+  doc: vi.fn((_database: unknown, ...segments: string[]) => ({ path: segments.join('/') })),
+  getDoc: vi.fn(),
+  onSnapshot: vi.fn(),
+  onSnapshotsInSync: vi.fn(),
+}));
+
+vi.mock('firebase/firestore', () => firestore);
+vi.mock('firebase/functions', () => ({ httpsCallable: vi.fn() }));
+vi.mock('../../lib/firebase', () => ({
+  app: null,
+  auth: null,
+  getSonFlashFunctions: vi.fn(),
+  protectedFunctionsCapability: { available: false },
+}));
+
 import {
   EQUIP_OWNED_FRAME_CALLABLE,
   acceptAuthoritativeGamificationOutcome,
   normalizeDeferredGamificationOutcomes,
   replayAuthoritativeGamificationOutcomes,
+  useVerifiedGamificationState,
   verifiedGamificationFromDocuments,
 } from './verifiedGamificationClient';
+
+const installMinimalReactDom = () => {
+  const documentLike: Record<string, unknown> = {
+    nodeType: 9,
+    activeElement: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    defaultView: globalThis,
+  };
+  const container = {
+    nodeType: 1,
+    ownerDocument: documentLike,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    nodeName: 'DIV',
+    tagName: 'DIV',
+    namespaceURI: 'http://www.w3.org/1999/xhtml',
+  };
+  documentLike.documentElement = container;
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  vi.stubGlobal('window', globalThis);
+  vi.stubGlobal('self', globalThis);
+  vi.stubGlobal('top', globalThis);
+  vi.stubGlobal('document', documentLike);
+  vi.stubGlobal('HTMLIFrameElement', class HTMLIFrameElement {});
+  vi.stubGlobal('HTMLElement', class HTMLElement {});
+  vi.stubGlobal('Node', class Node {});
+  return container as unknown as Element;
+};
+
+const snapshot = (value: unknown) => ({ exists: () => value !== undefined, data: () => value });
 
 describe('verified gamification client', () => {
   it('uses the exported reward-frame callable contract', () => {
     expect(EQUIP_OWNED_FRAME_CALLABLE).toBe('equipOwnedFrame');
+  });
+
+  it('refreshes all verified profile documents and ignores stale listeners', async () => {
+    const callbacks = new Map<string, (value: ReturnType<typeof snapshot>) => void>();
+    const errors = new Map<string, (error: Error) => void>();
+    let sync: (() => void) | undefined;
+    const stops: ReturnType<typeof vi.fn>[] = [];
+    firestore.onSnapshot.mockImplementation((reference: { path: string }, callback: (value: ReturnType<typeof snapshot>) => void, error: (error: Error) => void) => {
+      callbacks.set(reference.path, callback);
+      errors.set(reference.path, error);
+      const stop = vi.fn();
+      stops.push(stop);
+      return stop;
+    });
+    firestore.onSnapshotsInSync.mockImplementation((_database: unknown, callback: () => void) => {
+      sync = callback;
+      const stop = vi.fn();
+      stops.push(stop);
+      return stop;
+    });
+    const captured: { current: ReturnType<typeof useVerifiedGamificationState> | null } = { current: null };
+    const database = {} as never;
+    function Harness({ ownerId }: { ownerId: string }) {
+      captured.current = useVerifiedGamificationState({ ownerId, database });
+      return null;
+    }
+    const publish = (ownerId: string, xp: number, frameId: string) => {
+      callbacks.get(`users/${ownerId}/profile/stats`)?.(snapshot({ verifiedXp: xp, verifiedStreak: xp / 10 }));
+      callbacks.get(`users/${ownerId}/profile/xp_history`)?.(snapshot({ verifiedByDayV1: { '2026-10-01': xp } }));
+      callbacks.get(`users/${ownerId}/profile/rewards`)?.(snapshot({ ownedFrameIds: [frameId], equippedFrameId: frameId }));
+      sync?.();
+    };
+    const root = createRoot(installMinimalReactDom());
+
+    try {
+      await act(async () => { root.render(createElement(Harness, { ownerId: 'owner-a' })); });
+      await act(async () => { publish('owner-a', 20, 'crimson-wing'); });
+      expect(captured.current).toMatchObject({ xp: 20, streak: 2, xpHistory: { '2026-10-01': 20 } });
+      expect(captured.current?.rewards.equippedFrameId).toBe('crimson-wing');
+      await act(async () => {
+        captured.current?.acceptAuthoritativeOutcome({ xp: 30, level: 1, streak: 3, studyDay: '2026-10-01' });
+      });
+      await act(async () => {
+        callbacks.get('users/owner-a/profile/stats')?.(snapshot({ verifiedXp: 20, verifiedStreak: 2 }));
+        sync?.();
+      });
+      expect(captured.current).toMatchObject({ xp: 30, streak: 3 });
+      await act(async () => {
+        callbacks.get('users/owner-a/profile/stats')?.(snapshot({ verifiedXp: 30, verifiedStreak: 3 }));
+        expect(captured.current?.xpHistory).toEqual({ '2026-10-01': 30 });
+        callbacks.get('users/owner-a/profile/xp_history')?.(snapshot({ verifiedByDayV1: { '2026-10-01': 30 } }));
+        callbacks.get('users/owner-a/profile/rewards')?.(snapshot({ ownedFrameIds: ['crimson-wing'], equippedFrameId: 'crimson-wing' }));
+        sync?.();
+      });
+      expect(captured.current).toMatchObject({ xp: 30, xpHistory: { '2026-10-01': 30 } });
+      await act(async () => { publish('owner-a', 25, 'crimson-wing'); });
+      expect(captured.current).toMatchObject({ xp: 25, xpHistory: { '2026-10-01': 25 } });
+      await act(async () => {
+        callbacks.get('users/owner-a/profile/stats')?.(snapshot({ verifiedXp: 45, verifiedStreak: 4 }));
+      });
+      expect(captured.current?.xp).toBe(25);
+      await act(async () => {
+        callbacks.get('users/owner-a/profile/xp_history')?.(snapshot({ verifiedByDayV1: { '2026-10-01': 45 } }));
+        callbacks.get('users/owner-a/profile/rewards')?.(snapshot({ ownedFrameIds: ['crimson-wing'], equippedFrameId: 'crimson-wing' }));
+        sync?.();
+      });
+      expect(captured.current).toMatchObject({ xp: 45, xpHistory: { '2026-10-01': 45 } });
+
+      await act(async () => { root.render(createElement(Harness, { ownerId: 'owner-b' })); });
+      expect(stops).toHaveLength(8);
+      expect(stops.slice(0, 4).every(stop => stop.mock.calls.length === 1)).toBe(true);
+      expect(stops.slice(4).every(stop => stop.mock.calls.length === 0)).toBe(true);
+      await act(async () => { publish('owner-b', 30, 'aurora-frame'); });
+      await act(async () => { publish('owner-a', 999, 'stale-frame'); });
+      expect(captured.current).toMatchObject({ xp: 30, streak: 3, xpHistory: { '2026-10-01': 30 } });
+      expect(captured.current?.rewards.equippedFrameId).toBe('aurora-frame');
+      const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      try {
+        await act(async () => { errors.get('users/owner-b/profile/stats')?.(new Error('permission denied')); });
+        expect(stops.slice(4).every(stop => stop.mock.calls.length === 1)).toBe(true);
+        await act(async () => { publish('owner-b', 999, 'stale-frame'); });
+        expect(captured.current?.xp).toBe(30);
+      } finally {
+        log.mockRestore();
+      }
+    } finally {
+      act(() => root.unmount());
+      expect(stops).toHaveLength(8);
+      expect(stops.every(stop => stop.mock.calls.length === 1)).toBe(true);
+      const stateAfterUnmount = captured.current;
+      await act(async () => { publish('owner-b', 999, 'unmounted-frame'); });
+      expect(captured.current).toBe(stateAfterUnmount);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('hydrates after the last initial snapshot when the sync event arrives early', async () => {
+    const callbacks = new Map<string, (value: ReturnType<typeof snapshot>) => void>();
+    let sync: (() => void) | undefined;
+    firestore.onSnapshot.mockImplementation((reference: { path: string }, callback: (value: ReturnType<typeof snapshot>) => void) => {
+      callbacks.set(reference.path, callback);
+      return vi.fn();
+    });
+    firestore.onSnapshotsInSync.mockImplementation((_database: unknown, callback: () => void) => {
+      sync = callback;
+      return vi.fn();
+    });
+    const captured: { current: ReturnType<typeof useVerifiedGamificationState> | null } = { current: null };
+    const database = {} as never;
+    function Harness() {
+      captured.current = useVerifiedGamificationState({ ownerId: 'owner-a', database });
+      return null;
+    }
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => { root.render(createElement(Harness)); });
+      await act(async () => {
+        callbacks.get('users/owner-a/profile/stats')?.(snapshot({ verifiedXp: 30, verifiedStreak: 3 }));
+        sync?.();
+        callbacks.get('users/owner-a/profile/xp_history')?.(snapshot({ verifiedByDayV1: { '2026-10-03': 30 } }));
+      });
+      expect(captured.current?.xp).toBe(0);
+      await act(async () => {
+        callbacks.get('users/owner-a/profile/rewards')?.(snapshot({ ownedFrameIds: [] }));
+      });
+      expect(captured.current).toMatchObject({ xp: 30, streak: 3, xpHistory: { '2026-10-03': 30 } });
+    } finally {
+      act(() => root.unmount());
+      vi.unstubAllGlobals();
+    }
   });
 
   it('shows verified progress from zero while retaining legacy progress as labeled history', () => {

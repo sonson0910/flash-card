@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ACCOUNT_DELETION_CACHE_NOTICE_STORAGE_KEY, ACCOUNT_DELETION_STARTED_NOTICE_STORAGE_KEY, consumeAccountDeletionCacheNotice, consumeAccountDeletionStartedNotice } from './account-deletion-notice';
 
 const hooks = vi.hoisted(() => ({ cursor: 0, states: [] as unknown[] }));
 
@@ -17,6 +18,11 @@ vi.mock('react', async importOriginal => {
           ? (value as (current: T) => T)(current)
           : value;
       }] as const;
+    },
+    useRef: <T,>(initial: T) => {
+      const index = hooks.cursor++;
+      if (!(index in hooks.states)) hooks.states[index] = { current: initial };
+      return hooks.states[index] as { current: T };
     },
   };
 });
@@ -45,7 +51,6 @@ vi.mock('./accountDataService', () => ({
   isAccountSignedIn: accountService.isAccountSignedIn,
 }));
 
-import { LocalAccountCleanupError } from './accountDataService';
 import { AccountDataSection } from './AccountDataSection';
 
 type Tree = { type?: unknown; props?: Record<string, unknown> };
@@ -68,6 +73,20 @@ const findRole = (node: unknown, role: string): Tree | undefined => {
   let match: Tree | undefined;
   walk(node, element => { if (!match && element.props?.role === role) match = element; });
   return match;
+};
+
+const findByProp = (node: unknown, prop: string): Tree | undefined => {
+  let match: Tree | undefined;
+  walk(node, element => { if (!match && prop in (element.props ?? {})) match = element; });
+  return match;
+};
+
+const findDisabledDialogCloses = (node: unknown): Tree[] => {
+  const out: Tree[] = [];
+  walk(node, element => {
+    if (element.type !== 'button' && element.props?.disabled === true) out.push(element);
+  });
+  return out;
 };
 
 const flush = () => new Promise(resolve => { setTimeout(resolve, 0); });
@@ -98,6 +117,8 @@ describe('AccountDataSection', () => {
     vi.clearAllMocks();
     accountService.isAccountSignedIn.mockReturnValue(true);
   });
+
+  afterEach(() => vi.unstubAllGlobals());
 
   it('shows a busy export button while the download request is in flight, then re-enables it on success', async () => {
     let resolveExport: () => void = () => {};
@@ -131,8 +152,18 @@ describe('AccountDataSection', () => {
     expect(view.alert?.props?.children).toBe("Couldn't download account data. Please try again later.");
   });
 
+  it('distinguishes the card Excel export from JSON account data', () => {
+    const tree = AccountDataSection({ open: true, onOpenChange: vi.fn(), onExportLibrary: vi.fn() });
+    const buttons = findAllByType(tree, 'button');
+
+    expect(JSON.stringify(buttons[0]?.props?.children)).toContain('Download cards as Excel');
+    expect(JSON.stringify(buttons[1]?.props?.children)).toContain('JSON, excluding cards');
+  });
+
   it('keeps the confirm button disabled until the exact phrase is typed, then completes deletion', async () => {
-    accountService.deleteAccount.mockResolvedValue('completed');
+    accountService.deleteAccount.mockResolvedValue({ status: 'completed', restartRequired: false, cacheCleared: true });
+    const reload = vi.fn();
+    vi.stubGlobal('location', { reload });
     const onOpenChange = vi.fn();
 
     let view = render({ open: true, onOpenChange });
@@ -150,6 +181,7 @@ describe('AccountDataSection', () => {
 
     expect(accountService.deleteAccount).toHaveBeenCalledWith('XÓA TÀI KHOẢN');
     expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(reload).not.toHaveBeenCalled();
   });
 
   it('accepts an NFD-normalized confirmation phrase typed in a different Unicode form', () => {
@@ -166,8 +198,8 @@ describe('AccountDataSection', () => {
     expect(view.confirmButton?.props?.disabled).toBe(false);
   });
 
-  it('reports a started deletion (server-side timeout) without closing the dialog', async () => {
-    accountService.deleteAccount.mockResolvedValue('started');
+  it('reports an unconfirmed deletion without claiming the switched account was signed out or deleted', async () => {
+    accountService.deleteAccount.mockResolvedValue({ status: 'started', restartRequired: false, cacheCleared: true });
     const onOpenChange = vi.fn();
 
     let view = render({ open: true, onOpenChange });
@@ -181,12 +213,130 @@ describe('AccountDataSection', () => {
 
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
     expect(view.status?.props?.children).toBe(
-      'The account deletion request is recorded and will finish on the server. You have been signed out of this device.',
+      'We could not confirm whether account deletion finished. If you can still sign in later, contact support.',
     );
   });
 
-  it('distinguishes a local-cleanup failure from a full delete failure, both surfacing without closing the dialog', async () => {
-    accountService.deleteAccount.mockRejectedValue(new LocalAccountCleanupError('storage unavailable'));
+  it('keeps deletion notices visible until the request settles', async () => {
+    let resolveDelete: (result: { status: 'started'; restartRequired: false; cacheCleared: true }) => void = () => {};
+    accountService.deleteAccount.mockReturnValue(new Promise<{ status: 'started'; restartRequired: false; cacheCleared: true }>(resolve => { resolveDelete = resolve; }));
+    const onOpenChange = vi.fn();
+
+    let view = render({ open: true, onOpenChange });
+    (view.deleteOpenButton!.props!.onClick as () => void)();
+    view = render({ open: true, onOpenChange });
+    (view.inputs[0]!.props!.onChange as (event: { target: { value: string } }) => void)({ target: { value: 'XÓA TÀI KHOẢN' } });
+    view = render({ open: true, onOpenChange });
+    (view.confirmButton!.props!.onClick as () => void)();
+    (view.confirmButton!.props!.onClick as () => void)();
+    view = render({ open: true, onOpenChange });
+
+    expect(accountService.deleteAccount).toHaveBeenCalledOnce();
+    expect(findByProp(view.tree, 'onOpenChange')?.props?.onOpenChange).toBeTypeOf('function');
+    (findByProp(view.tree, 'onOpenChange')!.props!.onOpenChange as (open: boolean) => void)(false);
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+    expect(findDisabledDialogCloses(view.tree)).toHaveLength(2);
+
+    resolveDelete({ status: 'started', restartRequired: false, cacheCleared: true });
+    await flush();
+    view = render({ open: true, onOpenChange });
+
+    expect(view.status?.props?.children).toBe(
+      'We could not confirm whether account deletion finished. If you can still sign in later, contact support.',
+    );
+    (findByProp(view.tree, 'onOpenChange')!.props!.onOpenChange as (open: boolean) => void)(false);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('reloads only after the same-owner Firestore cache lifecycle was attempted', async () => {
+    const reload = vi.fn();
+    vi.stubGlobal('location', { reload });
+    accountService.deleteAccount.mockResolvedValue({ status: 'completed', restartRequired: true, cacheCleared: true });
+    const onOpenChange = vi.fn();
+
+    let view = render({ open: true, onOpenChange });
+    (view.deleteOpenButton!.props!.onClick as () => void)();
+    view = render({ open: true, onOpenChange });
+    (view.inputs[0]!.props!.onChange as (event: { target: { value: string } }) => void)({ target: { value: 'XÓA TÀI KHOẢN' } });
+    view = render({ open: true, onOpenChange });
+    (view.confirmButton!.props!.onClick as () => void)();
+    await flush();
+
+    expect(reload).toHaveBeenCalledOnce();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+  });
+
+  it('preserves a started-deletion notice for the signed-out landing before reloading', async () => {
+    const values = new Map<string, string>();
+    vi.stubGlobal('sessionStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+      removeItem: (key: string) => { values.delete(key); },
+    });
+    vi.stubGlobal('location', { reload: vi.fn() });
+    accountService.deleteAccount.mockResolvedValue({ status: 'started', restartRequired: true, cacheCleared: true });
+
+    let view = render({ open: true, onOpenChange: vi.fn() });
+    (view.deleteOpenButton!.props!.onClick as () => void)();
+    view = render({ open: true, onOpenChange: vi.fn() });
+    (view.inputs[0]!.props!.onChange as (event: { target: { value: string } }) => void)({ target: { value: 'XÓA TÀI KHOẢN' } });
+    view = render({ open: true, onOpenChange: vi.fn() });
+    (view.confirmButton!.props!.onClick as () => void)();
+    await flush();
+
+    expect(values.get(ACCOUNT_DELETION_STARTED_NOTICE_STORAGE_KEY)).toBe('1');
+    expect(consumeAccountDeletionStartedNotice()).toBe(true);
+    expect(consumeAccountDeletionStartedNotice()).toBe(false);
+  });
+
+  it('shows a persistent site-data warning after cache clearing fails', async () => {
+    const values = new Map<string, string>();
+    vi.stubGlobal('sessionStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+      removeItem: (key: string) => { values.delete(key); },
+    });
+    const reload = vi.fn();
+    vi.stubGlobal('location', { reload });
+    accountService.deleteAccount.mockResolvedValue({ status: 'completed', restartRequired: true, cacheCleared: false });
+
+    let view = render({ open: true, onOpenChange: vi.fn() });
+    (view.deleteOpenButton!.props!.onClick as () => void)();
+    view = render({ open: true, onOpenChange: vi.fn() });
+    (view.inputs[0]!.props!.onChange as (event: { target: { value: string } }) => void)({ target: { value: 'XÓA TÀI KHOẢN' } });
+    view = render({ open: true, onOpenChange: vi.fn() });
+    (view.confirmButton!.props!.onClick as () => void)();
+    await flush();
+
+    expect(values.get(ACCOUNT_DELETION_CACHE_NOTICE_STORAGE_KEY)).toBe('1');
+    expect(consumeAccountDeletionCacheNotice()).toBe(true);
+    expect(consumeAccountDeletionCacheNotice()).toBe(false);
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it('shows warnings before reload when neither storage nor URL history is writable', async () => {
+    vi.stubGlobal('sessionStorage', { setItem: () => { throw new Error('storage blocked'); } });
+    vi.stubGlobal('location', { href: 'https://sonflash.app/', reload: vi.fn() });
+    vi.stubGlobal('history', { state: null, replaceState: () => { throw new Error('history blocked'); } });
+    const alert = vi.fn();
+    vi.stubGlobal('alert', alert);
+    accountService.deleteAccount.mockResolvedValue({ status: 'started', restartRequired: true, cacheCleared: false });
+
+    let view = render({ open: true, onOpenChange: vi.fn() });
+    (view.deleteOpenButton!.props!.onClick as () => void)();
+    view = render({ open: true, onOpenChange: vi.fn() });
+    (view.inputs[0]!.props!.onChange as (event: { target: { value: string } }) => void)({ target: { value: 'XÓA TÀI KHOẢN' } });
+    view = render({ open: true, onOpenChange: vi.fn() });
+    (view.confirmButton!.props!.onClick as () => void)();
+    await flush();
+
+    expect(alert).toHaveBeenCalledWith('We could not confirm whether account deletion finished. If you can still sign in later, contact support.');
+    expect(alert).toHaveBeenCalledWith("SonFlash couldn't clear saved account data from this device. Clear SonFlash site data in your browser.");
+    expect(globalThis.location.reload).toHaveBeenCalledOnce();
+  });
+
+  it('shows incomplete device cleanup when the original owner changed during deletion', async () => {
+    accountService.deleteAccount.mockResolvedValue({ status: 'completed', restartRequired: false, cacheCleared: false });
     const onOpenChange = vi.fn();
 
     let view = render({ open: true, onOpenChange });
@@ -200,7 +350,7 @@ describe('AccountDataSection', () => {
 
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
     expect(view.alert?.props?.children).toBe(
-      "The account was deleted on the server, but device data wasn't fully cleared. Clear SonFlash site data in your browser.",
+      "SonFlash couldn't clear saved account data from this device. Clear SonFlash site data in your browser.",
     );
   });
 

@@ -1,5 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { getCachedLanguagePack, loadLanguagePack, resolveLanguagePackId, speechLocaleForPack } from './registry';
+
+const zhLoadFailure = vi.hoisted(() => ({ remaining: 1 }));
+
+vi.mock('./packs/zh', async importOriginal => {
+  const actual = await importOriginal<typeof import('./packs/zh')>();
+  return {
+    get zhLanguagePack() {
+      if (zhLoadFailure.remaining > 0) {
+        zhLoadFailure.remaining -= 1;
+        throw new Error('temporary language pack load failure');
+      }
+      return actual.zhLanguagePack;
+    },
+  };
+});
 
 describe('resolveLanguagePackId', () => {
   it('maps bare and subtagged language codes to their pack', () => {
@@ -28,6 +43,19 @@ describe('speechLocaleForPack', () => {
 });
 
 describe('loadLanguagePack', () => {
+  it('evicts a failed load so the next attempt can succeed and cache', async () => {
+    const failedAttempt = loadLanguagePack('zh');
+    await expect(failedAttempt).rejects.toThrow('temporary language pack load failure');
+
+    const successfulAttempt = loadLanguagePack('zh');
+    expect(successfulAttempt).not.toBe(failedAttempt);
+    const pack = await successfulAttempt;
+
+    expect(pack.id).toBe('zh');
+    expect(loadLanguagePack('zh')).toBe(successfulAttempt);
+    expect(getCachedLanguagePack('zh')).toBe(pack);
+  });
+
   it('lazily loads, caches, and exposes each pack synchronously once resolved', async () => {
     expect(getCachedLanguagePack('ko')).toBeUndefined();
     const pack = await loadLanguagePack('ko');

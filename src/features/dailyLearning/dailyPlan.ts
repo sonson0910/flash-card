@@ -19,6 +19,7 @@ export interface DailyPlanOptions {
   readonly now: Date;
   readonly maximum?: number;
   readonly targetMinimum?: number;
+  readonly freshPriorityLogicalIds?: readonly string[];
 }
 
 const DEFAULT_MAXIMUM = 15;
@@ -106,7 +107,15 @@ export function buildDailyPlan(cards: readonly CardData[], options: DailyPlanOpt
     const reason = reasonFor(card, now);
     if (reason) buckets[reason].push({ card, logicalId, reason });
   }
-  for (const bucket of Object.values(buckets)) bucket.sort(compareItems);
+  buckets.due.sort(compareItems);
+  buckets.weak.sort(compareItems);
+  const freshPriority = options.freshPriorityLogicalIds ?? [];
+  buckets.new.sort((left, right) => {
+    const leftIndex = freshPriority.indexOf(left.logicalId);
+    const rightIndex = freshPriority.indexOf(right.logicalId);
+    return (leftIndex === -1 ? freshPriority.length : leftIndex) - (rightIndex === -1 ? freshPriority.length : rightIndex)
+      || compareItems(left, right);
+  });
 
   const items = [...buckets.due, ...buckets.weak, ...buckets.new].slice(0, maximum);
   const counts = {

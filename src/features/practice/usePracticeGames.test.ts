@@ -71,6 +71,10 @@ vi.mock('react', () => ({
   },
 }));
 
+vi.mock('../courses/CourseGate', () => ({
+  useCourseSession: () => ({ model: { activeCourse: null } }),
+}));
+
 vi.mock('../../lib/audio', () => ({
   playCorrectSound: audio.correct,
   playIncorrectSound: audio.incorrect,
@@ -98,16 +102,24 @@ const card = (index: number, difficulty: CardData['difficulty'] = 'good'): CardD
 
 const deferred = <T,>() => {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>(settle => { resolve = settle; });
-  return { promise, resolve };
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((settle, fail) => { resolve = settle; reject = fail; });
+  return { promise, resolve, reject };
 };
 
-const renderPracticeGames = (pool: CardData[]) => {
+const renderPracticeGames = (
+  pool: CardData[],
+  storyLanguagePair: { targetLanguage: string; translationLanguage: string } = {
+    targetLanguage: 'en', translationLanguage: 'vi',
+  },
+) => {
   const dependencies = {
     lifecycle: createPracticeSessionLifecycle('owner-a'),
     loadPracticePool: vi.fn(async () => pool),
     languageDrillCards: pool,
     languageDrillScopeKey: 'owner-a:en',
+    storyLanguagePair,
+    practicePairScopeKey: `${storyLanguagePair.targetLanguage}:${storyLanguagePair.translationLanguage}`,
     practiceSessionService: {
       start: vi.fn(async (request: { opId: string; game: 'quiz' | 'spelling' | 'match'; cardIds: string[] }) => ({
         sessionId: request.opId,
@@ -223,6 +235,175 @@ describe('usePracticeGames', () => {
     expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards to play Word Match.');
   });
 
+  it('builds Quiz, Spelling, and Word Match sessions from the active language pair only', async () => {
+    const pool = [
+      ...[1, 2, 3, 4].map(index => ({ ...card(index), language: 'ko', translationLanguage: 'vi' })),
+      { ...card(5), language: 'ko', translationLanguage: 'en' },
+      { ...card(6), language: 'en', translationLanguage: 'vi' },
+    ];
+    const { dependencies, render } = renderPracticeGames(pool, { targetLanguage: 'ko', translationLanguage: 'vi' });
+
+    await render().startQuiz();
+    await render().startSpelling();
+    await render().startMatch();
+
+    expect(dependencies.practiceSessionService.start.mock.calls.map(([request]) => request.cardIds.sort())).toEqual([
+      ['card-1', 'card-2', 'card-3', 'card-4'],
+      ['card-1', 'card-2', 'card-3', 'card-4'],
+      ['card-1', 'card-2', 'card-3', 'card-4'],
+    ]);
+  });
+
+  it.each(['startQuiz', 'startSpelling', 'startMatch'] as const)('does not open %s after its pair changes during preparation', async command => {
+    const pending = deferred<CardData[]>();
+    const { dependencies, render } = renderPracticeGames([]);
+    dependencies.loadPracticePool.mockImplementation(() => pending.promise);
+    const staleStart = render()[command];
+
+    const starting = staleStart();
+    dependencies.practicePairScopeKey = 'ko:en';
+    render().clearPairGames();
+    pending.resolve([card(1), card(2), card(3), card(4)]);
+    await starting;
+
+    expect(dependencies.openView).not.toHaveBeenCalled();
+    expect(dependencies.practiceSessionService.start).not.toHaveBeenCalled();
+    expect(render().isStartingQuiz).toBe(false);
+    expect(render().isStartingSpelling).toBe(false);
+  });
+
+  it.each(['startQuiz', 'startSpelling', 'startMatch'] as const)('does not report a stale %s pool failure', async command => {
+    const pending = deferred<CardData[]>();
+    const { dependencies, render } = renderPracticeGames([]);
+    dependencies.loadPracticePool.mockImplementation(() => pending.promise);
+
+    const starting = render()[command]();
+    dependencies.practicePairScopeKey = 'ko:en';
+    render().clearPairGames();
+    pending.reject(new Error('offline'));
+    await starting;
+
+    expect(dependencies.reportError).not.toHaveBeenCalled();
+  });
+
+  it('releases a stale Spelling preparation before its old pool settles', async () => {
+    const pending = deferred<CardData[]>();
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    dependencies.loadPracticePool.mockImplementationOnce(() => pending.promise);
+
+    const oldSpelling = render().startSpelling();
+    await render().startSpelling();
+    dependencies.practicePairScopeKey = 'ko:en';
+    render().clearPairGames();
+    await render().startQuiz();
+    await render().startSpelling();
+
+    expect(dependencies.practiceSessionService.start.mock.calls.map(([request]) => request.game)).toEqual(['quiz', 'spelling']);
+    pending.resolve([card(1), card(2), card(3), card(4)]);
+    await oldSpelling;
+  });
+
+  it.each([
+    ['Quiz', 'startQuiz', 'target language', 'ko:vi'],
+    ['Spelling', 'startSpelling', 'meaning language', 'en:en'],
+  ] as const)('does not open %s after the %s changes during session creation', async (_game, command, _kind, nextPairScope) => {
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    const pending = deferred<Awaited<ReturnType<typeof dependencies.practiceSessionService.start>>>();
+    dependencies.practiceSessionService.start.mockReturnValueOnce(pending.promise);
+    const starting = render()[command]();
+    for (let attempt = 0; attempt < 10 && dependencies.practiceSessionService.start.mock.calls.length === 0; attempt += 1) {
+      await Promise.resolve();
+    }
+    const request = dependencies.practiceSessionService.start.mock.calls[0][0];
+
+    dependencies.practicePairScopeKey = nextPairScope;
+    render().clearPairGames();
+    pending.resolve({
+      sessionId: request.opId,
+      game: request.game,
+      expiresAt: '2026-09-27T00:00:00.000Z',
+      challenge: request.game === 'quiz'
+        ? { kind: 'quiz', questions: request.cardIds.map(cardId => ({ cardId, prompt: cardId, options: [cardId] })) }
+        : { kind: 'spelling', prompts: request.cardIds.map(cardId => ({ cardId, prompt: cardId, word: cardId })) },
+    });
+    await starting;
+
+    expect(dependencies.openView).not.toHaveBeenCalled();
+    expect(dependencies.reportError).not.toHaveBeenCalled();
+    expect(render().quizQuestions).toEqual([]);
+    expect(render().spellingCards).toEqual([]);
+    expect(render().isStartingQuiz).toBe(false);
+    expect(render().isStartingSpelling).toBe(false);
+  });
+
+  it.each(['startQuiz', 'startSpelling', 'startMatch'] as const)('does not report a stale %s session-start failure', async command => {
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    const pending = deferred<Awaited<ReturnType<typeof dependencies.practiceSessionService.start>>>();
+    dependencies.practiceSessionService.start.mockReturnValueOnce(pending.promise);
+    const starting = render()[command]();
+    for (let attempt = 0; attempt < 10 && dependencies.practiceSessionService.start.mock.calls.length === 0; attempt += 1) {
+      await Promise.resolve();
+    }
+
+    dependencies.practicePairScopeKey = 'ko:en';
+    render().clearPairGames();
+    pending.reject(new Error('offline'));
+    await starting;
+
+    expect(dependencies.reportError).not.toHaveBeenCalled();
+  });
+
+  it.each(['failure', 'malformed challenge'] as const)('ignores a stale Quiz session-start %s after the lifecycle owner changes', async outcome => {
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    const pending = deferred<Awaited<ReturnType<typeof dependencies.practiceSessionService.start>>>();
+    dependencies.practiceSessionService.start.mockReturnValueOnce(pending.promise);
+    const starting = render().startQuiz();
+    for (let attempt = 0; attempt < 10 && dependencies.practiceSessionService.start.mock.calls.length === 0; attempt += 1) {
+      await Promise.resolve();
+    }
+    const request = dependencies.practiceSessionService.start.mock.calls[0][0];
+
+    dependencies.lifecycle.replaceOwner('owner-b');
+    if (outcome === 'failure') {
+      pending.reject(new Error('offline'));
+    } else {
+      pending.resolve({
+        sessionId: request.opId,
+        game: request.game,
+        expiresAt: '2026-09-27T00:00:00.000Z',
+        challenge: { kind: 'spelling', prompts: [] },
+      });
+    }
+    await starting;
+
+    expect(dependencies.reportError).not.toHaveBeenCalled();
+    expect(dependencies.openView).not.toHaveBeenCalled();
+  });
+
+  it.each(['quiz', 'spelling', 'match'] as const)('does not submit an active %s game after its pair changes', async game => {
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    if (game === 'quiz') await render().startQuiz();
+    else if (game === 'spelling') await render().startSpelling();
+    else await render().startMatch();
+    const staleGames = render();
+    const pairs = staleGames.spellingCards.map(({ id: cardId, word, translation }) => ({ cardId, word, translation }));
+
+    dependencies.practicePairScopeKey = 'ko:en';
+    render();
+    if (game === 'quiz') {
+      staleGames.selectQuizAnswer(staleGames.quizQuestions[0].correctAnswer);
+      staleGames.nextQuizQuestion();
+    } else if (game === 'spelling') {
+      staleGames.setSpellingInput(staleGames.spellingCards[0].word);
+      staleGames.checkSpelling({ preventDefault: vi.fn() } as never);
+      staleGames.nextSpelling();
+    } else {
+      await staleGames.completeMatch(pairs);
+    }
+
+    expect(dependencies.practiceSessionService.complete).not.toHaveBeenCalled();
+  });
+
   it('keeps quiz preparation single-flight and exposes a settling busy state', async () => {
     const pool = deferred<CardData[]>();
     const { dependencies, render } = renderPracticeGames([]);
@@ -319,7 +500,7 @@ describe('usePracticeGames', () => {
     expect(dependencies.loadPracticePool).toHaveBeenCalledTimes(1);
   });
 
-  it('records a quiz answer once when the same answer is submitted twice before rendering', async () => {
+  it('records a quiz answer and advances once on repeated clicks before rendering', async () => {
     const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
     await render().startQuiz();
     const games = render();
@@ -327,12 +508,15 @@ describe('usePracticeGames', () => {
 
     games.selectQuizAnswer(correctAnswer);
     games.selectQuizAnswer(correctAnswer);
+    games.nextQuizQuestion();
+    games.nextQuizQuestion();
 
     expect(dependencies.practiceSessionService.complete).not.toHaveBeenCalled();
     expect(render().quizScore).toBe(1);
+    expect(render().currentQuizIndex).toBe(1);
   });
 
-  it('records a spelling answer once when the same answer is submitted twice before rendering', async () => {
+  it('records a spelling answer and advances once on repeated clicks before rendering', async () => {
     const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
     await render().startSpelling();
     let games = render();
@@ -342,27 +526,117 @@ describe('usePracticeGames', () => {
 
     games.checkSpelling(event);
     games.checkSpelling(event);
+    games.nextSpelling();
+    games.nextSpelling();
 
     expect(dependencies.practiceSessionService.complete).not.toHaveBeenCalled();
     expect(render().spellingScore).toBe(1);
+    expect(render().currentSpellingIndex).toBe(1);
   });
 
   it('forwards the stable completion ID with the server outcome', async () => {
     const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
     await render().startQuiz();
     let games = render();
-    while (!games.showQuizResults) {
+    for (let index = 0; index < games.quizQuestions.length; index += 1) {
       games.selectQuizAnswer(games.quizQuestions[games.currentQuizIndex].correctAnswer);
       games = render();
       games.nextQuizQuestion();
       games = render();
     }
     await Promise.resolve();
+    await Promise.resolve();
+    expect(render().showQuizResults).toBe(true);
 
     const completionId = dependencies.practiceSessionService.complete.mock.calls[0][0].completionId;
     expect(dependencies.onAuthoritativeOutcome).toHaveBeenCalledWith(
       { xp: 0, level: 1, streak: 0, studyDay: '2026-09-27', events: [] }, completionId, 0,
     );
+  });
+
+  it('keeps quiz completion pending until the server confirms it', async () => {
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    const pending = deferred<Awaited<ReturnType<typeof dependencies.practiceSessionService.complete>>>();
+    dependencies.practiceSessionService.complete.mockReturnValueOnce(pending.promise);
+    await render().startQuiz();
+    let games = render();
+    for (let index = 0; index < games.quizQuestions.length; index += 1) {
+      games.selectQuizAnswer(games.quizQuestions[games.currentQuizIndex].correctAnswer);
+      games = render();
+      games.nextQuizQuestion();
+      games = render();
+    }
+
+    expect(games.showQuizResults).toBe(false);
+    expect(games.quizCompletionSaving).toBe(true);
+    games.nextQuizQuestion();
+    expect(dependencies.practiceSessionService.complete).toHaveBeenCalledTimes(1);
+    pending.resolve({
+      sessionId: 'quiz-a', correct: 4, total: 4, awardedXp: 20,
+      outcome: { xp: 20, level: 1, streak: 0, studyDay: '2026-09-27', events: [] },
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(render().showQuizResults).toBe(true);
+    expect(render().quizCompletionSaving).toBe(false);
+    expect(dependencies.onAuthoritativeOutcome).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not show a failed completion from a previous account', async () => {
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    const pending = deferred<Awaited<ReturnType<typeof dependencies.practiceSessionService.complete>>>();
+    dependencies.practiceSessionService.complete.mockReturnValueOnce(pending.promise);
+    await render().startQuiz();
+    let games = render();
+    for (let index = 0; index < games.quizQuestions.length; index += 1) {
+      games.selectQuizAnswer(games.quizQuestions[games.currentQuizIndex].correctAnswer);
+      games = render();
+      games.nextQuizQuestion();
+      games = render();
+    }
+
+    dependencies.lifecycle.replaceOwner('owner-b');
+    pending.reject(new Error('offline'));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(dependencies.reportError).not.toHaveBeenCalled();
+    expect(dependencies.onAuthoritativeOutcome).not.toHaveBeenCalled();
+    expect(render().showQuizResults).toBe(false);
+  });
+
+  it('keeps the final spelling answer open after a failed save and retries the same completion', async () => {
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+      dependencies.practiceSessionService.complete.mockRejectedValueOnce(new Error('offline'));
+      await render().startSpelling();
+      let games = render();
+      for (let index = 0; index < games.spellingCards.length; index += 1) {
+        games.setSpellingInput(games.spellingCards[games.currentSpellingIndex].word);
+        games = render();
+        games.checkSpelling({ preventDefault: vi.fn() } as never);
+        games = render();
+        games.nextSpelling();
+        games = render();
+      }
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(render().showSpellingResults).toBe(false);
+      expect(render().spellingCompletionSaving).toBe(false);
+      expect(dependencies.reportError).toHaveBeenCalledWith('Could not save this practice result. Check your connection and try again.');
+
+      render().nextSpelling();
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(render().showSpellingResults).toBe(true);
+      const [first, second] = dependencies.practiceSessionService.complete.mock.calls.map(([request]) => request);
+      expect(second).toMatchObject({ sessionId: first.sessionId, completionId: first.completionId, answers: first.answers });
+      expect(dependencies.onAuthoritativeOutcome).toHaveBeenCalledTimes(1);
+    } finally {
+      consoleWarn.mockRestore();
+    }
   });
 
   it('drops a late Word Match completion result after the lifecycle owner changes', async () => {
@@ -397,7 +671,7 @@ describe('usePracticeGames', () => {
     expect(audio.word).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(1);
-    expect(audio.word).toHaveBeenCalledWith(question.card.word, question.card.audioUrl, 'en-US');
+    expect(audio.word).toHaveBeenCalledWith(question.card.word, question.card.audioUrl, 'en-US', undefined);
   });
 
   it('cancels owned playback when navigating away after delayed audio starts', async () => {
@@ -484,17 +758,18 @@ describe('usePracticeGames', () => {
 
     await render().startQuiz();
     let games = render();
-    while (!games.showQuizResults) {
+    for (let index = 0; index < games.quizQuestions.length; index += 1) {
       games.selectQuizAnswer(games.quizQuestions[games.currentQuizIndex].correctAnswer);
       games = render();
       games.nextQuizQuestion();
       games = render();
     }
+    await Promise.resolve();
 
     games.reset();
     await render().startSpelling();
     games = render();
-    while (!games.showSpellingResults) {
+    for (let index = 0; index < games.spellingCards.length; index += 1) {
       games.setSpellingInput(games.spellingCards[games.currentSpellingIndex].word);
       games = render();
       games.checkSpelling({ preventDefault: vi.fn() } as never);
@@ -502,6 +777,7 @@ describe('usePracticeGames', () => {
       games.nextSpelling();
       games = render();
     }
+    await Promise.resolve();
 
     expect(legacyStorage.setItem).not.toHaveBeenCalledWith(
       'lingoflash_last_active',
@@ -526,10 +802,32 @@ describe('usePracticeGames', () => {
     const pool = [card(1), card(2), card(3), card(4)].map(item => ({
       ...item, language: 'ko', translationLanguage: 'vi',
     }));
-    const { render } = renderPracticeGames(pool);
+    const { render } = renderPracticeGames(pool, { targetLanguage: 'ko', translationLanguage: 'vi' });
 
     await render().generateStory();
 
+    expect(render().story).toMatchObject({ language: 'ko', translationLanguage: 'vi' });
+    expect(gemini.generateStoryContext).toHaveBeenCalledWith(
+      expect.arrayContaining(['word-1', 'word-2', 'word-3', 'word-4']),
+      { targetLanguage: 'ko', translationLanguage: 'vi' },
+    );
+  });
+
+  it('uses all active-target cards despite stale translation metadata', async () => {
+    gemini.generateStoryContext.mockResolvedValue({ story: 'Story', translation: 'Translation' });
+    const pool = [
+      { ...card(1), language: 'ko', translationLanguage: 'en' },
+      { ...card(2), language: 'ko', translationLanguage: 'vi' },
+      { ...card(3), language: 'ko', translationLanguage: 'en' },
+      { ...card(4), language: 'en', translationLanguage: 'vi' },
+    ];
+    const { render } = renderPracticeGames(pool, { targetLanguage: 'ko', translationLanguage: 'vi' });
+
+    await render().generateStory();
+
+    const [words, pair] = gemini.generateStoryContext.mock.calls[0];
+    expect((words as string[]).sort()).toEqual(['word-1', 'word-2', 'word-3']);
+    expect(pair).toEqual({ targetLanguage: 'ko', translationLanguage: 'vi' });
     expect(render().story).toMatchObject({ language: 'ko', translationLanguage: 'vi' });
   });
 

@@ -1,5 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { isBrowserExtensionImportTopFrame } from '../browserExtension/browserExtensionImport';
+import {
+  BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE,
+  isBrowserExtensionImportTopFrame,
+} from '../browserExtension/browserExtensionImport';
 import {
   createOpaqueExtensionDueCountScope,
   EXTENSION_DUE_COUNT_CLEAR_MESSAGE,
@@ -8,6 +11,8 @@ import {
   postExtensionDueCountMessage,
   type ExtensionDueCountScope,
 } from './extensionDueCountBridge';
+
+const EXTENSION_PROVIDER_READY_MESSAGE = 'LINGOFLASH_EXTENSION_PROVIDER_READY';
 
 export interface ExtensionDueCountBridgeOptions {
   // The signed-in owner. Anything falsy (signed out) posts a clear for the
@@ -33,24 +38,51 @@ export interface ExtensionDueCountBridgeOptions {
  */
 export function useExtensionDueCountBridge({ ownerId, ready, dueCount }: ExtensionDueCountBridgeOptions): void {
   const scopeRef = useRef<ExtensionDueCountScope | null>(null);
+  const optionsRef = useRef({ ownerId, ready, dueCount });
+  optionsRef.current = { ownerId, ready, dueCount };
 
-  useEffect(() => {
+  const publishCurrentScope = (): void => {
     if (!isBrowserExtensionImportTopFrame()) return;
+    const current = optionsRef.current;
     const previous = scopeRef.current;
-    if (previous && previous.ownerId !== ownerId) {
+    if (previous && (previous.ownerId !== current.ownerId || !current.ready)) {
       postExtensionDueCountMessage(EXTENSION_DUE_COUNT_CLEAR_MESSAGE, { scope: previous.scope });
       scopeRef.current = null;
     }
-    if (!ownerId) return;
+    if (!current.ownerId || !current.ready) return;
     if (!scopeRef.current) {
-      scopeRef.current = { ownerId, scope: createOpaqueExtensionDueCountScope() };
+      scopeRef.current = { ownerId: current.ownerId, scope: createOpaqueExtensionDueCountScope() };
     }
-    if (!ready) return;
-    const normalized = normalizeExtensionDueCount(dueCount);
+    const normalized = normalizeExtensionDueCount(current.dueCount);
     if (normalized === null) return;
     postExtensionDueCountMessage(EXTENSION_DUE_COUNT_MESSAGE, {
       scope: scopeRef.current.scope,
       count: normalized,
     });
+  };
+
+  useEffect(() => {
+    publishCurrentScope();
   }, [dueCount, ownerId, ready]);
+
+  useEffect(() => {
+    if (!isBrowserExtensionImportTopFrame()) return;
+    const handleBridgeMessage = (event: MessageEvent): void => {
+      if (event.source !== (globalThis as unknown as Window)
+        || event.origin !== globalThis.location?.origin) return;
+      const message = event.data;
+      if (!message || typeof message !== 'object' || Array.isArray(message)
+        || message.source !== BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE
+        || message.type !== EXTENSION_PROVIDER_READY_MESSAGE) return;
+      publishCurrentScope();
+    };
+    globalThis.addEventListener?.('message', handleBridgeMessage);
+    return () => {
+      globalThis.removeEventListener?.('message', handleBridgeMessage);
+      const previous = scopeRef.current;
+      if (!previous) return;
+      scopeRef.current = null;
+      postExtensionDueCountMessage(EXTENSION_DUE_COUNT_CLEAR_MESSAGE, { scope: previous.scope });
+    };
+  }, []);
 }

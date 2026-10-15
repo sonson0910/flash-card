@@ -1,8 +1,11 @@
 import { COURSE_NATIVE_LANGUAGES, COURSE_TARGET_LANGUAGES, type CourseNativeLanguage, type CourseTargetLanguage } from '../courses/courseModel';
 import type { CourseSessionActions, CourseSessionSnapshot } from '../courses/courseSessionController';
-import type { SharedDeckIncomingPreview } from './sharedDeckSessionController';
 
-export type ShareCourseAction = 'none' | 'switch' | 'reopen' | 'create';
+import type { SharedDeckIncomingPreview } from './sharedDeckSessionController';
+import { SharedDeckCourseNativeLanguageMismatchError } from './shared-deck-course-error';
+export { SharedDeckCourseNativeLanguageMismatchError } from './shared-deck-course-error';
+
+export type ShareCourseAction = 'none' | 'switch' | 'reopen' | 'create' | 'native-mismatch';
 
 export interface ShareCourseDecision {
   readonly action: ShareCourseAction;
@@ -34,6 +37,9 @@ export function resolveShareCourseAction(
   if (!profile) return { action: 'create', targetLanguage, nativeLanguage };
   const matching = profile.courses.find(course => course.targetLanguage === targetLanguage);
   if (!matching) return { action: 'create', targetLanguage, nativeLanguage };
+  if (matching.nativeLanguage !== nativeLanguage) {
+    return { action: 'native-mismatch', targetLanguage, nativeLanguage };
+  }
   if (matching.status === 'archived') return { action: 'reopen', targetLanguage, nativeLanguage };
   if (profile.activeCourseId !== matching.id) return { action: 'switch', targetLanguage, nativeLanguage };
   return { action: 'none', targetLanguage, nativeLanguage };
@@ -46,10 +52,9 @@ export interface SharedDeckCoursePort {
 
 /**
  * Wraps the real `useCourseSession()` value into the small port
- * `sharedDeckSessionController` depends on. Never throws: a course-matching
- * failure must not block the deck's cards from being imported, since the
- * cards themselves are already language-tagged and remain correct even if
- * the course they'd naturally belong to isn't ready yet.
+ * `sharedDeckSessionController` depends on. A required course mutation
+ * rejects so the caller can leave the share preview available for retry
+ * without importing it into the wrong active course.
  */
 export function createSharedDeckCoursePort(courseSession: {
   readonly model: CourseSessionSnapshot;
@@ -59,23 +64,26 @@ export function createSharedDeckCoursePort(courseSession: {
     async ensureCourseForIncomingShare(preview) {
       const decision = resolveShareCourseAction(preview, courseSession.model.profile);
       if (!decision || decision.action === 'none') return;
-      try {
-        if (decision.action === 'create') {
-          await courseSession.actions.createCourse({
-            targetLanguage: decision.targetLanguage,
-            nativeLanguage: decision.nativeLanguage,
-            activateOnCreate: true,
-          });
-          return;
-        }
-        const matching = courseSession.model.profile?.courses.find(
-          course => course.targetLanguage === decision.targetLanguage,
-        );
-        if (!matching) return;
-        if (decision.action === 'reopen') await courseSession.actions.reopenCourse(matching.id);
-        else if (decision.action === 'switch') await courseSession.actions.switchCourse(matching.id);
-      } catch {
-        // Best-effort: the shared cards still import under whatever course is active.
+      if (decision.action === 'native-mismatch') throw new SharedDeckCourseNativeLanguageMismatchError();
+      if (decision.action === 'create') {
+        const result = await courseSession.actions.createCourse({
+          targetLanguage: decision.targetLanguage,
+          nativeLanguage: decision.nativeLanguage,
+          activateOnCreate: true,
+        });
+        if (!result.ok) throw result.error;
+        return;
+      }
+      const matching = courseSession.model.profile?.courses.find(
+        course => course.targetLanguage === decision.targetLanguage,
+      );
+      if (!matching) return;
+      if (decision.action === 'reopen') {
+        const result = await courseSession.actions.reopenCourse(matching.id);
+        if (!result.ok) throw result.error;
+      } else if (decision.action === 'switch') {
+        const result = await courseSession.actions.switchCourse(matching.id);
+        if (!result.ok) throw result.error;
       }
     },
   };

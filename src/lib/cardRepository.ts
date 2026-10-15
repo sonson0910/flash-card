@@ -797,12 +797,13 @@ export async function fetchLibraryStats(
   db: Firestore,
   userId: string,
   targetLanguage?: CardLanguageCode | null,
-): Promise<LibraryStats> {
+): Promise<LibraryStats & { dueAsOfDate: string }> {
   // Course-scoped, matching the `where('language', '==', ...)` convention
   // filterConstraints already applies to every other card query; an absent
   // targetLanguage (no active course resolved yet) keeps the unscoped count.
   const courseFilters: Pick<CardQueryState, 'targetLanguage'> = targetLanguage ? { targetLanguage } : {};
   const languageConstraints: QueryConstraint[] = targetLanguage ? [where('language', '==', targetLanguage)] : [];
+  const dueAsOfDate = localDateKey(new Date());
   const [total, reviewedSnapshot, easy, good, hard, explicitlyUnrated, bookmarked, due] = await Promise.all([
     countCards(db, userId, { ...EMPTY_FILTERS, ...courseFilters }),
     getCount(query(cardsCollection(db, userId), ...languageConstraints, where('reviews', '>', 0))),
@@ -815,7 +816,24 @@ export async function fetchLibraryStats(
   ]);
   const legacyUnindexed = Math.max(0, total - easy - good - hard - explicitlyUnrated);
   const unrated = explicitlyUnrated + legacyUnindexed;
-  return { total, reviewed: reviewedSnapshot.data().count, easy, good, hard, unrated, bookmarked, due, legacyUnindexed };
+  return { total, reviewed: reviewedSnapshot.data().count, easy, good, hard, unrated, bookmarked, due, dueAsOfDate, legacyUnindexed };
+}
+
+/** One aggregate read used when only the local-day due count has expired. */
+export async function fetchLibraryDueCount(
+  db: Firestore,
+  userId: string,
+  targetLanguage?: CardLanguageCode | null,
+): Promise<{ due: number; dueAsOfDate: string }> {
+  const dueAsOfDate = localDateKey(new Date());
+  return {
+    due: await countCards(db, userId, {
+      ...EMPTY_FILTERS,
+      ...(targetLanguage ? { targetLanguage } : {}),
+      difficulty: 'due',
+    }),
+    dueAsOfDate,
+  };
 }
 
 export async function fetchPracticeCards(

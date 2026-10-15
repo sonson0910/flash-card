@@ -3,6 +3,7 @@ import { Bookmark, LayoutGrid, List } from 'lucide-react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import type { CardData } from '../../types/card';
+import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
 import type { CoverPreset } from './customDecks';
 import type {
   SpreadsheetImportProgress,
@@ -79,6 +80,8 @@ export interface LibraryScreenModel {
     sortedCategories: string[];
     categoryCounts: Record<string, number>;
     activeCategory: string;
+    languageProfile?: LanguageProfile;
+    ownerId?: string | null;
   };
 }
 
@@ -89,7 +92,7 @@ export interface LibraryScreenActions {
     changeSearch: (value: string) => void;
     migrateLegacyCards: () => Promise<void>;
     shareCategory: () => Promise<void>;
-    deleteCard: (cardId: string) => Promise<void>;
+    deleteCard: (cardId: string) => Promise<boolean | void>;
     toggleBookmark: (cardId: string) => Promise<void>;
     assignDeck: (cardId: string, deckName: string | null) => Promise<void>;
     bulkPatchCards: (patches: readonly BulkCardFieldPatchRequest[]) => Promise<void>;
@@ -234,6 +237,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
           onWordInputChange={actions.tools.changeWordInput}
           onGenerate={actions.tools.generateCard}
           onImport={actions.tools.importCards}
+          importFile={actions.tools.importFile}
           onOpenPaths={actions.tools.openPaths}
           isLoading={model.tools.isLoading}
           isGenerating={model.tools.isGenerating}
@@ -241,6 +245,9 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
           generationAccess={model.tools.generationAccess}
           importProgress={model.tools.importProgress}
           importResult={model.tools.importResult}
+          cards={model.tools.cards}
+          languageProfile={model.tools.languageProfile ?? ENGLISH_TO_VIETNAMESE_PROFILE}
+          ownerId={model.tools.ownerId}
         />
       ) : (
         <LibraryCanvasRail
@@ -276,6 +283,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               importProgress={model.grid.importProgress}
               groupedCards={model.grid.groupedCards}
               deleteCard={actions.grid.deleteCard}
+              ownerId={model.tools.ownerId}
               toggleBookmark={actions.grid.toggleBookmark}
               customDecks={model.grid.customDecks}
               assignDeck={actions.grid.assignDeck}
@@ -337,6 +345,8 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               categoryCounts={model.tools.categoryCounts}
               activeCategory={model.tools.activeCategory}
               setActiveCategory={actions.tools.changeCategory}
+              languageProfile={model.tools.languageProfile ?? ENGLISH_TO_VIETNAMESE_PROFILE}
+              ownerId={model.tools.ownerId}
             />
           </Suspense>
         </div>

@@ -58,6 +58,9 @@ export function loadLanguagePack(id: LanguagePackId): Promise<LanguagePack> {
     return pack;
   });
   packPromiseCache.set(id, promise);
+  void promise.catch(() => {
+    if (packPromiseCache.get(id) === promise) packPromiseCache.delete(id);
+  });
   return promise;
 }
 

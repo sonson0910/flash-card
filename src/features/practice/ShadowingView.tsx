@@ -3,20 +3,25 @@ import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { playWordAudio, type WordAudioPlayback } from '../../lib/audio';
+import { voiceForActiveCourseCard } from '../../lib/courseVoicePreference';
 import { triggerConfetti } from '../../lib/confetti';
 import { triggerHaptic } from '../../lib/haptics';
 import { playRewardSound } from '../../lib/interactionSounds';
 import { speechLocaleFor } from '../../lib/speechLocale';
 import { scoreSpeechMatch, type SpeechMatchResult } from '../../lib/speechMatch';
 import type { CardData } from '../../types/card';
+import { useCourseSession } from '../courses/CourseGate';
 
 interface ShadowingViewProps {
   cards: CardData[];
   onClose: () => void;
 }
 
+const navigationButtonClass = 'flex size-12 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50';
+
 export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
   const { _ } = useLingui();
+  const { model: courseModel } = useCourseSession();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -28,6 +33,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
 
   const card = cards[currentIndex];
   const targetSentence = card?.exampleSentence || card?.word || '';
+  const position = currentIndex + 1;
 
   const stopListening = useCallback(() => {
     const recognition = recognitionRef.current;
@@ -125,7 +131,8 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
 
   const playPronunciation = () => {
     audioPlaybackRef.current?.cancel();
-    audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl, speechLocaleFor(card));
+    const voice = voiceForActiveCourseCard(card, courseModel.activeCourse);
+    audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl, speechLocaleFor(card), voice);
   };
 
   const close = () => {
@@ -150,18 +157,30 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
 
   return (
     <div className="practice-board practice-board--shadowing mx-auto flex h-full max-w-6xl flex-col px-1 py-3 sm:px-4 sm:py-6">
-      <div className="mb-7 flex w-full items-center justify-between gap-3">
+      <div data-shadowing-header className="mb-7 flex w-full items-center justify-between gap-3">
         <button
           type="button"
           onClick={close}
-          className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2"
           aria-label={_(msg({ id: 'practice.shadowing.close', message: 'Close shadowing practice' }))}
         >
           <X size={24} />
         </button>
-        <span className="min-w-0 flex-1 truncate text-center font-display text-xs font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]">
-          <Trans id="practice.shadowing.title" message="Shadowing · say it after me" /> · {currentIndex + 1} / {cards.length}
+        <span id="shadowing-title" className="min-w-0 truncate font-display text-xs font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]">
+          <Trans id="practice.shadowing.title" message="Shadowing · say it after me" /> · {position} / {cards.length}
         </span>
+        <div
+          role="progressbar"
+          aria-labelledby="shadowing-title"
+          aria-valuemin={0}
+          aria-valuemax={cards.length}
+          aria-valuenow={position}
+          data-shadowing-progress
+        >
+          {cards.map((item, index) => (
+            <i key={item.id} data-complete={index <= currentIndex || undefined} />
+          ))}
+        </div>
         <div className="size-11" />
       </div>
 
@@ -177,7 +196,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
           <button
             type="button"
             onClick={playPronunciation}
-            className="mx-auto mt-4 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 text-sm font-bold text-[var(--sf-brand-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+            className="mx-auto mt-4 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 text-sm font-bold text-[var(--sf-brand-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2"
             aria-label={_(msg({ id: 'practice.shadowing.play-pronunciation', message: 'Play pronunciation for {word}' }).id, { word: card.word })}
           >
             <Volume2 size={16} aria-hidden="true" /> <Trans id="practice.shadowing.listen" message="Listen" />
@@ -198,7 +217,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
               return (
                 <span
                   key={i}
-                  className={`rounded-md px-1.5 py-0.5 transition-colors motion-reduce:transition-none ${
+                  className={`rounded-md px-1.5 py-0.5 transition-colors ${
                     matchResult
                       ? isMatched
                         ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 font-bold'
@@ -248,7 +267,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
           <button
             type="button"
             onClick={isListening ? stopListening : startListening}
-            className={`group relative flex size-20 items-center justify-center rounded-full text-white shadow-2xl transition-[background-color,box-shadow,transform] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none ${
+            className={`group relative flex size-20 items-center justify-center rounded-full text-white shadow-2xl transition-[background-color,box-shadow,transform] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-4 ${
               isListening
                 ? 'bg-rose-600 ring-8 ring-rose-500/30 motion-safe:animate-pulse'
                 : 'bg-[var(--sf-brand)] hover:scale-105 shadow-[var(--sf-shadow)]'
@@ -268,19 +287,19 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
           type="button"
           onClick={() => move(Math.max(0, currentIndex - 1))}
           disabled={currentIndex === 0}
-          className="flex size-12 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 motion-reduce:transition-none"
+          className={navigationButtonClass}
           aria-label={_(msg({ id: 'practice.shadowing.previous', message: 'Previous word' }))}
         >
           <ChevronLeft size={20} />
         </button>
         <span className="font-mono text-xs font-bold tabular-nums text-[var(--sf-text-muted)]">
-          {currentIndex + 1} / {cards.length}
+          {position} / {cards.length}
         </span>
         <button
           type="button"
           onClick={() => move(Math.min(cards.length - 1, currentIndex + 1))}
           disabled={currentIndex === cards.length - 1}
-          className="flex size-12 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 motion-reduce:transition-none"
+          className={navigationButtonClass}
           aria-label={_(msg({ id: 'practice.shadowing.next', message: 'Next word' }))}
         >
           <ChevronRight size={20} />

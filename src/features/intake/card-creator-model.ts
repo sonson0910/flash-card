@@ -2,6 +2,7 @@ import type { CardData } from '../../types/card';
 
 export type CardCreatorStage = 'input' | 'generating' | 'preview' | 'saving' | 'error';
 export type CardCreatorMode = 'ai' | 'manual';
+export type CardCreatorGenerationStage = 'reserving' | 'drafting' | null;
 
 export interface CardCreatorDraft {
   word: string;
@@ -54,6 +55,7 @@ export interface CardCreatorModel {
   open: boolean;
   stage: CardCreatorStage;
   mode: CardCreatorMode;
+  generationStage: CardCreatorGenerationStage;
   draft: CardCreatorDraft;
   preview: CardData | null;
   completedAiRequests: number;
@@ -106,6 +108,7 @@ export const createInitialCardCreatorModel = (): CardCreatorModel => ({
   open: false,
   stage: 'input',
   mode: 'ai',
+  generationStage: null,
   draft: createEmptyCardCreatorDraft(),
   preview: null,
   completedAiRequests: 0,

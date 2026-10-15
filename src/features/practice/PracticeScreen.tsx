@@ -29,10 +29,14 @@ export function PracticeScreen({
   session,
   actions,
   customDecks,
+  openWeeklyRecap,
+  onDeleteCard,
 }: {
   session: PracticeWorkspace['model']['session'];
   actions: PracticeWorkspace['actions'];
   customDecks: string[];
+  openWeeklyRecap: () => void;
+  onDeleteCard?: (cardId: string) => Promise<boolean>;
 }) {
   const { mode, study, quiz, learning } = session;
   const commands = actions;
@@ -41,6 +45,7 @@ export function PracticeScreen({
     return (
       <Suspense fallback={<PracticeFallback label={<Trans id="practice.loading.study" message="Loading study session" />} wide />}>
         <StudyView
+          key={study.sessionKey}
           cards={study.cards}
           index={study.index}
           recallMode={study.recallMode}
@@ -51,11 +56,13 @@ export function PracticeScreen({
           paused={study.isPaused}
           customDecks={customDecks}
           onClose={commands.close}
+          onViewWeeklyRecap={() => { commands.close(); openWeeklyRecap(); }}
           onRecallMode={commands.setRecallMode}
           onReveal={commands.reveal}
           onBookmark={learning.toggleBookmark}
           onAssignDeck={learning.assignDeck}
           onUpdateCard={learning.updateCard}
+          onDeleteCard={onDeleteCard}
           onRate={commands.submitStudyRating}
           onIndex={commands.setStudyIndex}
           onEditorOpenChange={commands.setStudyEditorOpen}
@@ -73,6 +80,7 @@ export function PracticeScreen({
           answeredCorrectly={quiz.answeredCorrectly}
           score={quiz.quizScore}
           showResults={quiz.showQuizResults}
+          savingResult={quiz.quizCompletionSaving}
           onSelect={quiz.selectQuizAnswer}
           onNext={quiz.nextQuizQuestion}
           onRestart={commands.startQuiz}
@@ -92,6 +100,7 @@ export function PracticeScreen({
           correct={quiz.spellingCorrect}
           score={quiz.spellingScore}
           showResults={quiz.showSpellingResults}
+          savingResult={quiz.spellingCompletionSaving}
           onInput={quiz.setSpellingInput}
           onCheck={quiz.checkSpelling}
           onNext={quiz.nextSpelling}

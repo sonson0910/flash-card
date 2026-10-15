@@ -62,6 +62,7 @@ export function computeAchievementBadgeStats(stats: LibraryStatsViewModel): Achi
 const text = {
   bud: msg({ id: 'stats.tier-bud', message: 'Bud' }), bloom: msg({ id: 'stats.tier-bloom', message: 'Bloom' }), star: msg({ id: 'stats.tier-star', message: 'Star' }),
   days: msg({ id: 'stats.days', message: 'days' }), words: msg({ id: 'stats.words', message: 'words' }), unlocked: msg({ id: 'stats.unlocked', message: 'unlocked' }), progress: msg({ id: 'stats.progress', message: 'Progress' }),
+  cards: msg({ id: 'stats.summary-cards', message: 'Cards' }), reviewed: msg({ id: 'stats.reviewed', message: 'Reviewed' }), learned: msg({ id: 'stats.learned', message: 'Learned' }),
   inProgress: msg({ id: 'stats.badge-state.in-progress', message: 'In progress' }), locked: msg({ id: 'stats.badge-state.locked', message: 'Not started yet' }), legendLabel: msg({ id: 'stats.legend.label', message: 'Badge status legend' }),
   budRoutine: msg({ id: 'stats.bud-routine', message: 'Bud routine' }), budRoutineDescription: msg({ id: 'stats.bud-routine-description', message: 'Give your study habit three active days.' }),
   bloomingRecall: msg({ id: 'stats.blooming-recall', message: 'Blooming recall' }), bloomingRecallDescription: msg({ id: 'stats.blooming-recall-description', message: 'Help ten words settle into memory.' }),
@@ -109,10 +110,9 @@ export function AchievementsMatrix({ stats, onBackToProgress }: AchievementsMatr
       state: resolveAchievementBadgeState(stat),
     };
   });
-  const tierGroups = (['bud', 'bloom', 'star'] as const)
-    .map(tierKey => ({ tierKey, label: _(text[tierKey]), badges: badges.filter(badge => badge.tierKey === tierKey) }))
-    .filter(group => group.badges.length > 0);
   const unlockedIds = new Set(badges.filter(badge => badge.unlocked).map(badge => badge.id));
+  const featuredBadge = badges.find(badge => badge.state === 'in-progress') ?? badges[0];
+  const FeaturedIcon = featuredBadge.icon;
   const unlockedSignature = [...unlockedIds].join('|');
   const previousUnlockedRef = useRef<Set<string> | null>(null);
   const [celebratingIds, setCelebratingIds] = useState<Set<string>>(() => new Set());
@@ -128,20 +128,28 @@ export function AchievementsMatrix({ stats, onBackToProgress }: AchievementsMatr
     return () => globalThis.clearTimeout(timeout);
   }, [unlockedSignature]);
   const celebrationMessage = badges.filter(badge => celebratingIds.has(badge.id)).map(badge => `${badge.title} ${_(text.unlocked)}`).join('. ');
-  return <section className="achievements-canvas liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 text-[var(--sf-text)] sm:p-7 shadow-[0_28px_70px_-52px_var(--sf-shadow)]" aria-labelledby="achievements-heading">
+  return <section className="achievements-canvas liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 text-[var(--sf-text)] shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7" aria-labelledby="achievements-heading">
     <span className="sr-only" aria-live="polite">{celebrationMessage}</span>
-    <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div>{onBackToProgress && <button type="button" onClick={onBackToProgress} className="mb-5 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"><ArrowLeft size={16} aria-hidden="true" />{_(text.backToProgress)}</button>}<p className="premium-kicker uppercase tracking-[0.14em]">{onBackToProgress ? _(text.achievements) : _(text.studyMilestones)}</p><h2 id="achievements-heading" className="mt-2 text-balance text-2xl font-black tracking-tight">{_(text.wordGarden)}</h2><p className="mt-1 max-w-2xl text-sm text-[var(--sf-text-muted)]">{_(text.wordGardenDescription)}</p></div><div className="inline-flex items-center gap-2 self-start rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-1.5 text-xs font-bold text-[var(--sf-text)] sm:self-auto"><Star size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" /><span>{formatNumber(unlockedIds.size)} / {formatNumber(badges.length)} {_(text.unlocked)}</span></div></div>
-    <ul className="mb-5 flex flex-wrap items-center gap-4 text-[11px] font-bold text-[var(--sf-text-muted)]" aria-label={_(text.legendLabel)}>
-      <li className="flex items-center gap-1.5"><span aria-hidden="true" className="size-2 rounded-full bg-[var(--sf-brand)]" />{_(text.unlocked)}</li>
-      <li className="flex items-center gap-1.5"><span aria-hidden="true" className="size-2 rounded-full border border-current" />{_(text.inProgress)}</li>
-      <li className="flex items-center gap-1.5"><span aria-hidden="true">🔒</span>{_(text.locked)}</li>
-    </ul>
-    <div className="space-y-6">{tierGroups.map(group => <div key={group.tierKey}>
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="text-xs font-black uppercase tracking-wider text-[var(--sf-text-muted)]">{group.label}</h3>
-        <span className="text-[11px] font-bold tabular-nums text-[var(--sf-text-muted)]">{formatNumber(group.badges.filter(badge => badge.unlocked).length)} / {formatNumber(group.badges.length)} {_(text.unlocked)}</span>
-      </div>
-      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">{group.badges.map(badge => {
+    <div className="mb-7 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <div>{onBackToProgress && <button type="button" onClick={onBackToProgress} className="mb-5 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"><ArrowLeft size={16} aria-hidden="true" />{_(text.backToProgress)}</button>}<p className="premium-kicker uppercase tracking-[0.14em]">{onBackToProgress ? _(text.achievements) : _(text.studyMilestones)} · {formatNumber(unlockedIds.size)} / {formatNumber(badges.length)} {_(text.unlocked)}</p><h2 id="achievements-heading" className="mt-2 text-balance text-3xl font-black tracking-tight sm:text-4xl">{_(text.wordGarden)}</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--sf-text-muted)]">{_(text.wordGardenDescription)}</p></div>
+      <ul className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-bold text-[var(--sf-text-muted)]" aria-label={_(text.legendLabel)}>
+        <li className="flex items-center gap-1.5"><span aria-hidden="true" className="size-2 rounded-full bg-[var(--sf-brand)]" />{_(text.unlocked)}</li>
+        <li className="flex items-center gap-1.5"><span aria-hidden="true" className="size-2 rounded-full border border-current" />{_(text.inProgress)}</li>
+        <li className="flex items-center gap-1.5"><span aria-hidden="true">🔒</span>{_(text.locked)}</li>
+      </ul>
+    </div>
+    <div className="flex items-center justify-between gap-3 border-b border-[var(--sf-border)] pb-3"><h3 className="text-xl font-black tracking-tight">{_(text.achievements)}</h3><span className="inline-flex items-center gap-2 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--sf-text)]"><Star size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" />{formatNumber(unlockedIds.size)} / {formatNumber(badges.length)}</span></div>
+    <div data-achievements-board className="mt-4">
+      <aside data-achievement-summary className="crystal-chamfer hidden min-h-72 flex-col gap-3 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4">
+        <p className="text-xs font-black uppercase tracking-wider text-[var(--sf-brand-text)]">{_(text.achievements)}</p>
+        {[[_(text.cards), stats.total], [_(text.reviewed), stats.reviewed], [_(text.learned), stats.learned]].map(([label, value]) => <div key={label as string} className="border-b border-[var(--sf-border)] pb-3"><p className="text-xs text-[var(--sf-text-muted)]">{label}</p><strong className="mt-1 block text-2xl font-black tabular-nums">{formatNumber(value as number)}</strong></div>)}
+        <p className="mt-auto text-xs leading-relaxed text-[var(--sf-text-muted)]">{formatNumber(unlockedIds.size)} / {formatNumber(badges.length)} {_(text.unlocked)}</p>
+      </aside>
+      <article data-featured-achievement data-badge-id={featuredBadge.id} className="crystal-chamfer hidden min-h-72 flex-col overflow-hidden rounded-2xl border border-[var(--sf-brand)]/50 bg-[var(--sf-surface-raised)] p-5 text-center shadow-sm">
+        <span className="self-start text-xs font-black uppercase tracking-wider text-[var(--sf-brand-text)]">{featuredBadge.tier}</span><div className="crystal-chamfer-sm mx-auto mt-6 flex size-20 items-center justify-center rounded-full border border-[var(--sf-brand)]/40 bg-[var(--sf-brand)]/15 text-[var(--sf-brand-text)]"><FeaturedIcon size={34} aria-hidden="true" /></div><h4 className="mt-4 text-xl font-black">{featuredBadge.title}</h4><p className="mt-2 text-sm leading-relaxed text-[var(--sf-text-muted)]">{featuredBadge.description}</p>
+        <div className="mt-auto pt-6"><div className="flex justify-between text-xs font-bold text-[var(--sf-text-muted)]"><span>{_(text.progress)}</span><span>{formatNumber(featuredBadge.current)} / {formatNumber(featuredBadge.target)} {featuredBadge.unit}</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--sf-surface-muted)]"><div className="h-full rounded-full bg-[var(--sf-brand)]" style={{ width: `${featuredBadge.progress}%` }} /></div></div>
+      </article>
+      <div data-achievement-grid className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{badges.map(badge => {
         const Icon = badge.icon;
         const isNewlyUnlocked = celebratingIds.has(badge.id);
         const cardStateClass = badge.state === 'earned'
@@ -149,19 +157,14 @@ export function AchievementsMatrix({ stats, onBackToProgress }: AchievementsMatr
           : badge.state === 'locked'
             ? 'border-[var(--sf-border)] bg-[var(--sf-surface)] opacity-70'
             : 'border-[var(--sf-border)] bg-[var(--sf-surface)]';
-        return <article key={badge.id} data-newly-unlocked={isNewlyUnlocked || undefined} data-badge-state={badge.state} className={`relative overflow-hidden rounded-2xl border p-4 transition-[border-color,background-color,box-shadow] duration-200 ${isNewlyUnlocked ? 'achievement-newly-unlocked' : ''} ${cardStateClass}`}>
-          <div className="flex items-start gap-3.5">
-            <div className={`flex size-12 shrink-0 items-center justify-center rounded-2xl border ${badge.unlocked ? 'border-[var(--sf-brand)]/40 bg-[var(--sf-brand)]/15 text-[var(--sf-brand-text)]' : 'border-[var(--sf-border)] bg-[var(--sf-surface-muted)] text-[var(--sf-text-muted)]'}`}><Icon size={23} aria-hidden="true" /></div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2"><h4 className="text-sm font-black text-[var(--sf-text)]">{badge.title}</h4><span className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[var(--sf-text-muted)]">{badge.tier}</span></div>
-              <p className="mt-1 text-xs leading-relaxed text-[var(--sf-text-muted)]">{badge.description}</p>
-            </div>
-          </div>
-          <div className="mt-4 space-y-1.5">
+        return <article key={badge.id} data-badge-id={badge.id} data-newly-unlocked={isNewlyUnlocked || undefined} data-badge-state={badge.state} data-badge-tier={badge.tierKey} className={`crystal-chamfer-sm relative flex flex-col overflow-hidden rounded-2xl border p-4 text-center transition-[border-color,background-color,box-shadow] duration-200 ${isNewlyUnlocked ? 'achievement-newly-unlocked' : ''} ${cardStateClass}`}>
+          <div className={`crystal-chamfer-sm mx-auto flex size-14 shrink-0 items-center justify-center rounded-full border ${badge.unlocked ? 'border-[var(--sf-brand)]/40 bg-[var(--sf-brand)]/15 text-[var(--sf-brand-text)]' : 'border-dashed border-[var(--sf-border)] bg-[var(--sf-surface-muted)] text-[var(--sf-text-muted)]'}`}><Icon size={24} aria-hidden="true" /></div>
+          <div className="mt-3 min-w-0"><h4 className="truncate text-sm font-black text-[var(--sf-text)]">{badge.title}</h4><span className="mt-1 inline-block text-[10px] font-black uppercase tracking-wide text-[var(--sf-brand-text)]">{badge.tier}</span><p className="mt-2 text-xs leading-relaxed text-[var(--sf-text-muted)]">{badge.description}</p></div>
+          <div className="mt-auto pt-4">
             {badge.state === 'earned'
-              ? <p className="flex items-center gap-1.5 text-xs font-bold text-[var(--sf-brand-text)]"><span aria-hidden="true">✓</span>{_(text.unlocked)}</p>
+              ? <p className="flex justify-center gap-1.5 text-xs font-bold text-[var(--sf-brand-text)]"><span aria-hidden="true">✓</span>{_(text.unlocked)}</p>
               : badge.state === 'locked'
-                ? <p className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--sf-text-muted)]"><span aria-hidden="true">🔒</span>{_(text.locked)}</p>
+                ? <p className="flex justify-center gap-1.5 text-[11px] font-bold text-[var(--sf-text-muted)]"><span aria-hidden="true">🔒</span>{_(text.locked)}</p>
                 : <>
                     <div className="flex justify-between gap-3 text-[10px] font-bold text-[var(--sf-text-muted)]"><span>{_(text.progress)}</span><span className="tabular-nums">{formatNumber(badge.current)} / {formatNumber(badge.target)} {badge.unit}</span></div>
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--sf-surface-muted)]"><div className="h-full rounded-full bg-[var(--sf-brand)] transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${badge.progress}%` }} /></div>
@@ -169,6 +172,6 @@ export function AchievementsMatrix({ stats, onBackToProgress }: AchievementsMatr
           </div>
         </article>;
       })}</div>
-    </div>)}</div>
+    </div>
   </section>;
 }

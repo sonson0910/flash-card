@@ -1,18 +1,20 @@
 import { lazy, Suspense, useRef } from 'react';
+import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import { useNeedsOnboarding } from '../courses/CourseGate';
+import { hasOnboardingInProgress } from './onboardingModel';
 
-const OnboardingJourney = lazy(() => import('./OnboardingJourney').then(module => ({ default: module.OnboardingJourney })));
+const OnboardingJourney = lazy(() => Promise.all([
+  import('./OnboardingJourney'), loadCatalog(getActiveUiLocale(), 'settings'),
+]).then(([module]) => ({ default: module.OnboardingJourney })));
 
 export interface OnboardingGateProps {
   readonly ownerId: string | null;
   /**
-   * True whenever the overlay must stay hidden even though the course
-   * profile document is absent: the owner's existing library data has not
-   * resolved yet (no flash while unknown), or the current view is the
-   * landing page. The caller derives this and `hasCards` from data it
-   * already loaded, so checking them here costs no extra Firestore read.
+   * True when navigation or identity state requires the overlay to stay hidden.
    */
   readonly suppress: boolean;
+  /** True once the current owner's library has resolved, including an empty library. */
+  readonly libraryReady: boolean;
   /**
    * Whether the owner's library currently holds any card. Once true for an
    * owner it stays latched for the session, so deleting the last card never
@@ -27,10 +29,12 @@ export interface OnboardingGateProps {
  * card catalog only load once a signed-in owner with no course profile yet,
  * and no existing library, actually needs them.
  */
-export function OnboardingGate({ ownerId, suppress, hasCards }: OnboardingGateProps) {
+export function OnboardingGate({ ownerId, suppress, libraryReady, hasCards }: OnboardingGateProps) {
   const needsOnboarding = useNeedsOnboarding();
-  const ownerWithCards = useRef<string | null>(null);
-  if (hasCards) ownerWithCards.current = ownerId;
-  if (!ownerId || suppress || ownerWithCards.current === ownerId || !needsOnboarding) return null;
-  return <Suspense fallback={null}><OnboardingJourney ownerId={ownerId} /></Suspense>;
+  const ownerState = useRef(new Map<string, 'legacy' | 'started'>());
+  if (ownerId && !suppress && libraryReady && needsOnboarding && !ownerState.current.has(ownerId)) {
+    ownerState.current.set(ownerId, hasCards && !hasOnboardingInProgress(ownerId) ? 'legacy' : 'started');
+  }
+  if (!ownerId || suppress || !needsOnboarding || ownerState.current.get(ownerId) !== 'started') return null;
+  return <Suspense fallback={null}><OnboardingJourney key={ownerId} ownerId={ownerId} /></Suspense>;
 }

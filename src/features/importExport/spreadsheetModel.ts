@@ -1,7 +1,8 @@
 import { isSupportedAudioUrl } from '../../lib/audio';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import { isSupportedImageUrl } from '../../lib/images';
-import { normalizeCardWord } from '../../lib/cardIdentity';
+import { cardLogicalKey, normalizeCardLanguage, normalizeCardWord } from '../../lib/cardIdentity';
+import { isSupportedCardTranslationLanguage } from '../../lib/cardNormalization';
 import type { CardData } from '../../types/card';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
 import type { SpreadsheetFlatSourceCell, SpreadsheetStructuredSourceRow } from './spreadsheetWorkbook';
@@ -16,8 +17,11 @@ export interface StructuredCardRow {
   emoji: string;
   audioUrl: string | null;
   imageUrl: string | null;
+  cefrLevel?: string;
+  exampleSentence?: string;
   lexemeId?: string;
   language?: string;
+  translationLanguage?: string;
   senseKey?: string;
   normalizedLemma?: string;
 }
@@ -41,6 +45,10 @@ const getColumn = (row: unknown, ...keys: string[]) => {
   return match ? sanitize(source[match], 4096) : '';
 };
 
+export const structuredCardLogicalKey = (row: Pick<StructuredCardRow,
+  'word' | 'lexemeId' | 'language' | 'senseKey' | 'partOfSpeech' | 'normalizedLemma'>,
+) => cardLogicalKey({ id: '', normalizedWord: row.word, ...row });
+
 export const classifyStructuredCardRows = (
   sourceRows: SpreadsheetStructuredSourceRow[],
 ): StructuredCardRowClassification[] => {
@@ -49,16 +57,28 @@ export const classifyStructuredCardRows = (
     const word = normalizeCardWord(sanitize(getColumn(row, 'word', 'từ vựng'), 80));
     const translation = sanitize(getColumn(row, 'translation', 'nghĩa', 'ý nghĩa'), 256);
     const lexemeId = sanitize(getColumn(row, 'lexeme id', 'lexemeid'), 128);
-    const language = sanitize(getColumn(row, 'language'), 64);
+    const suppliedLanguage = sanitize(getColumn(row, 'language'), 64);
+    const language = normalizeCardLanguage(suppliedLanguage);
+    const suppliedTranslationLanguage = sanitize(getColumn(row, 'translation language', 'translationlanguage'), 64);
+    const translationLanguage = normalizeCardLanguage(suppliedTranslationLanguage);
     const senseKey = sanitize(getColumn(row, 'sense key', 'sensekey'), 128);
-    const normalizedLemma = sanitize(getColumn(row, 'normalized lemma', 'normalizedlemma'), 256) || word;
+    const suppliedNormalizedLemma = sanitize(getColumn(row, 'normalized lemma', 'normalizedlemma'), 256);
+    const normalizedLemma = suppliedNormalizedLemma || word;
     const partOfSpeech = normalizePartOfSpeech(getColumn(row, 'part of speech', 'partofspeech', 'word type', 'từ loại'));
-    const hasCanonicalIdentity = Boolean(lexemeId || language || senseKey);
-    if (hasCanonicalIdentity && (!lexemeId || !language || !senseKey || !partOfSpeech
-      || createLexemeId({ language, normalizedLemma, partOfSpeech, senseKey }) !== lexemeId)) {
+    const hasCanonicalIdentity = Boolean(lexemeId || senseKey || suppliedNormalizedLemma);
+    const invalidLanguage = Boolean(suppliedLanguage && !language);
+    const invalidTranslationLanguage = Boolean(
+      suppliedTranslationLanguage && (!translationLanguage || !isSupportedCardTranslationLanguage(translationLanguage)),
+    );
+    const invalidCanonicalIdentity = hasCanonicalIdentity && (!lexemeId || !language || !senseKey || !partOfSpeech
+      || createLexemeId({ language, normalizedLemma, partOfSpeech, senseKey }) !== lexemeId);
+    if (invalidLanguage || invalidTranslationLanguage || invalidCanonicalIdentity) {
       return { kind: 'invalid', sourceRow, ...(word ? { word } : {}) };
     }
-    const identity = lexemeId ? `lexeme:${lexemeId}` : word;
+    const identity = structuredCardLogicalKey({
+      word, lexemeId: lexemeId || undefined, language: language || undefined,
+      senseKey: senseKey || undefined, partOfSpeech, normalizedLemma,
+    });
     if (!word || !translation) return { kind: 'invalid', sourceRow, ...(word ? { word } : {}) };
     if (seen.has(identity)) return { kind: 'duplicate', sourceRow, word };
     seen.add(identity);
@@ -77,12 +97,20 @@ export const classifyStructuredCardRows = (
         emoji: sanitize(getColumn(row, 'emoji', 'biểu tượng'), 64) || '📝',
         audioUrl: isSupportedAudioUrl(audio) ? audio : null,
         imageUrl: isSupportedImageUrl(image) ? image : null,
+        ...(sanitize(getColumn(row, 'cefr level', 'cefrlevel', 'cefr'), 8) ? {
+          cefrLevel: sanitize(getColumn(row, 'cefr level', 'cefrlevel', 'cefr'), 8).toUpperCase(),
+        } : {}),
+        ...(sanitize(getColumn(row, 'example sentence', 'examplesentence', 'example'), 2048) ? {
+          exampleSentence: sanitize(getColumn(row, 'example sentence', 'examplesentence', 'example'), 2048),
+        } : {}),
         ...(lexemeId ? {
           lexemeId,
           language,
           senseKey,
           normalizedLemma,
         } : {}),
+        ...(!lexemeId && language ? { language } : {}),
+        ...(translationLanguage ? { translationLanguage } : {}),
       },
     };
   });
@@ -132,6 +160,7 @@ export const extractFlatWords = (rows: unknown[][], maximum = 200) => {
 export const cardsToSpreadsheetRows = (cards: CardData[]) => cards.map(card => ({
   'Lexeme ID': card.lexemeId || '',
   Language: card.language || '',
+  'Translation Language': card.translationLanguage || '',
   'Sense Key': card.senseKey || '',
   'Normalized Lemma': card.normalizedLemma || '',
   Word: card.word,

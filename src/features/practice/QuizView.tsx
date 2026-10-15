@@ -12,6 +12,7 @@ import { useEffect, useRef } from "react";
 import { GsapEntrance } from "../../components/motion/GsapEntrance";
 import { Lumi } from "../../components/lumi/Lumi";
 import { readLumiEnabled } from "../settings/lumi-preference";
+import { useFocusModePreference } from "../settings/focus-mode-preference";
 import { useTheme } from "../theme/ThemeProvider";
 import { isSupportedImageUrl } from "../../lib/images";
 import { isQuizAnswerCorrect, type QuizQuestion } from "./practiceModel";
@@ -23,6 +24,7 @@ interface QuizViewProps {
   answeredCorrectly: boolean | null;
   score: number;
   showResults: boolean;
+  savingResult?: boolean;
   onSelect: (answer: string) => void;
   onNext: () => void;
   onRestart: () => void;
@@ -46,6 +48,7 @@ export function QuizView({
   answeredCorrectly,
   score,
   showResults,
+  savingResult = false,
   onSelect,
   onNext,
   onRestart,
@@ -57,6 +60,8 @@ export function QuizView({
     values?: Record<string, unknown>,
   ) => i18n._(descriptor.id, values);
   const showLumi = useTheme().family === "crystal" && readLumiEnabled();
+  const { focusModeEnabled } = useFocusModePreference();
+  const answeredCount = currentIndex + (selectedAnswer === null ? 0 : 1);
   const question = questions[currentIndex];
   const questionHeadingRef = useRef<HTMLHeadingElement>(null);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
@@ -207,6 +212,7 @@ export function QuizView({
               <X size={18} aria-hidden="true" />
               <Trans id="practice.actions.exit" message="Exit" />
             </button>
+            {!focusModeEnabled && answeredCount >= 2 && <span data-practice-combo={answeredCount} className="rounded-full border border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] px-3 py-1.5 text-xs font-black text-[var(--sf-brand-text)]"><Trans id="study.combo" message="Combo ×{count}" values={{ count: answeredCount }} /></span>}
             <div className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-1.5 text-xs font-bold text-[var(--sf-text)]">
               <Trans
                 id="practice.score"
@@ -382,9 +388,13 @@ export function QuizView({
                   ref={nextButtonRef}
                   type="button"
                   onClick={onNext}
+                  disabled={savingResult}
+                  aria-busy={savingResult}
                   className="brand-action crystal-chamfer flex min-h-11 items-center gap-1 rounded-xl bg-[var(--sf-brand)] px-6 py-2.5 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 motion-reduce:transition-none"
                 >
-                  {currentIndex === questions.length - 1 ? (
+                  {savingResult ? (
+                    <Trans id="practice.actions.saving-result" message="Saving result…" />
+                  ) : currentIndex === questions.length - 1 ? (
                     <Trans
                       id="practice.actions.view-results"
                       message="View results"

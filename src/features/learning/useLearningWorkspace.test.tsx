@@ -31,6 +31,7 @@ const sourceCard: CardData = {
 function createPersistenceStub() {
   const persistCalls: LearningStateMutation[] = [];
   let restoreOverride: ((mutation: LearningStateMutation) => Promise<LearningStateMutationResult>) | null = null;
+  let clearOverride: ((mutation: LearningStateMutation) => Promise<LearningStateMutationResult>) | null = null;
   let bulkPatchOverride: ((patches: readonly BulkCardFieldPatchRequest[]) => Promise<BulkCardFieldPatchOutcome[]>) | null = null;
   let capturedOptions: Parameters<LearningPersistenceHook>[0] | undefined;
   const usePersistence: LearningPersistenceHook = options => {
@@ -60,6 +61,7 @@ function createPersistenceStub() {
             restoreFinality: 'restored',
           };
         }
+        if (mutation.operation === 'clear' && clearOverride) return clearOverride(mutation);
         if (mutation.operation === 'delete') {
           return {
             ownerKey: mutation.ownerKey,
@@ -74,7 +76,10 @@ function createPersistenceStub() {
             },
           };
         }
-        return { ownerKey: mutation.ownerKey, operationId: mutation.operationId, publication: mutation.publication };
+        return {
+          ownerKey: mutation.ownerKey, operationId: mutation.operationId, publication: mutation.publication,
+          ...(mutation.operation === 'review' ? { reviewFinality: 'committed' as const, xpAwarded: 0 } : {}),
+        };
       },
     };
   };
@@ -83,6 +88,9 @@ function createPersistenceStub() {
     persistCalls,
     setRestoreOverride(handler: (mutation: LearningStateMutation) => Promise<LearningStateMutationResult>) {
       restoreOverride = handler;
+    },
+    setClearOverride(handler: (mutation: LearningStateMutation) => Promise<LearningStateMutationResult>) {
+      clearOverride = handler;
     },
     setBulkPatchOverride(handler: (patches: readonly BulkCardFieldPatchRequest[]) => Promise<BulkCardFieldPatchOutcome[]>) {
       bulkPatchOverride = handler;
@@ -221,6 +229,25 @@ describe('useLearningWorkspace', () => {
     expect(setup.removeLibraryCard).toHaveBeenCalledWith(sourceCard.id);
     expect(setup.removePracticeCard).toHaveBeenCalledWith(sourceCard.id);
     expect(deleted).toMatchObject({ status: 'published', result: { undoToken: { card: sourceCard } } });
+  });
+
+  it('rejects a clear command that does not publish', async () => {
+    const setup = options();
+    const stub = createPersistenceStub();
+    stub.setClearOverride(async mutation => ({
+      ownerKey: mutation.ownerKey,
+      operationId: mutation.operationId,
+      publication: mutation.publication,
+      reviewFinality: 'conflict',
+    }));
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness() {
+      actions = useLearningWorkspace(setup.value, { usePersistence: stub.usePersistence }).actions;
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+
+    await expect(actions!.clearLibrary()).rejects.toThrow('The library could not be cleared. Please try again.');
   });
 
   it('restores a deleted card with one stable explicit-epoch operation', async () => {

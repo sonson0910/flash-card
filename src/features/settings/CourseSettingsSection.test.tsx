@@ -21,6 +21,7 @@ const value: CourseGateValue = {
     profile: { activeCourseId: activeCourse.id, courses: [activeCourse, archivedCourse] }, activeCourse,
   },
   actions: {
+    retry: vi.fn(),
     createCourse: vi.fn(), updateCourse: vi.fn(), archiveCourse: vi.fn(), reopenCourse: vi.fn(), switchCourse: vi.fn(),
     addGoal: vi.fn(), updateGoal: vi.fn(), removeGoal: vi.fn(), clearError: vi.fn(),
   } as CourseGateValue['actions'],
@@ -47,7 +48,7 @@ describe('CourseSettingsSection', () => {
     expect(html).toContain('Japanese');
   });
 
-  it('keeps app settings, archived-course recovery, and the honest reminder fallback when no course is active', () => {
+  it('keeps app settings and archived-course recovery when no course is active', () => {
     const noActiveCourse: CourseGateValue = {
       ...value,
       model: {
@@ -62,10 +63,28 @@ describe('CourseSettingsSection', () => {
     expect(html).not.toContain('data-settings-active-course');
     expect(html).toContain('Archived courses');
     expect(html).toContain('Japanese');
-    expect(html).toContain('Daily reminders aren');
     expect(html).not.toContain('Meaning language');
     expect(html).not.toContain('Daily pace');
     expect(html).not.toContain('Show romanization');
     expect(html).not.toContain('Chinese script');
+  });
+
+  it('shows Korean keyboard guidance only for an active Korean course', () => {
+    const koreanCourse = { ...activeCourse, id: 'course-ko', targetLanguage: 'ko' as const, goals: [], preferences: { ...activeCourse.preferences, zhScript: null } };
+    const koreanValue: CourseGateValue = {
+      ...value,
+      model: {
+        ...value.model,
+        profile: { activeCourseId: koreanCourse.id, courses: [koreanCourse] },
+        activeCourse: koreanCourse,
+      },
+    };
+    const koreanHtml = renderToStaticMarkup(<I18nProvider i18n={i18n}><CourseContext.Provider value={koreanValue}><CourseSettingsSection /></CourseContext.Provider></I18nProvider>);
+    const chineseHtml = renderToStaticMarkup(<I18nProvider i18n={i18n}><CourseContext.Provider value={value}><CourseSettingsSection /></CourseContext.Provider></I18nProvider>);
+
+    expect(koreanHtml).toContain('Korean 2-set (두벌식)');
+    expect(koreanHtml).toContain('device keyboard settings');
+    expect(koreanHtml).toContain('on-screen keys');
+    expect(chineseHtml).not.toContain('Korean 2-set (두벌식)');
   });
 });

@@ -26,8 +26,10 @@ import {
   X,
 } from 'lucide-react';
 import type { CardData } from '../../types/card';
+import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
 import { PART_OF_SPEECH_OPTIONS } from '../../lib/cardQuery';
 import { formatNumber } from '../../lib/format';
+import { createImeSubmitGuard } from '../../lib/imeSubmitGuard';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import type {
   SpreadsheetImportProgress,
@@ -43,9 +45,12 @@ import { AiDialogueModal } from './AiDialogueModal';
 import { DeckCreationDialog, type LibraryDialogPhase } from './LibraryDialogOverlays';
 import { customDeckCoverKey, deckMonogram, defaultCoverPreset, normalizeCoverPreset, type CoverPreset } from './customDecks';
 import { WordExtractorModal } from './WordExtractorModal';
+import { createExtractedWordsCsv } from './extractedWordsImport';
 const PlanUsageMeter = lazy(() => Promise.all([
   import('../plan/PlanUsageMeter'), loadCatalog(getActiveUiLocale(), 'billing'),
 ]).then(([module]) => ({ default: module.PlanUsageMeter })));
+
+export { createExtractedWordsCsv } from './extractedWordsImport';
 
 interface LibraryToolsProps {
   fileInputRef: RefObject<HTMLInputElement | null>;
@@ -89,10 +94,9 @@ interface LibraryToolsProps {
   categoryCounts: Record<string, number>;
   activeCategory: string;
   setActiveCategory: (value: string) => void;
+  languageProfile?: LanguageProfile;
+  ownerId?: string | null;
 }
-
-export const shouldBlockImeSubmit = (isComposing: boolean, nativeIsComposing = false): boolean =>
-  isComposing || nativeIsComposing;
 
 const partOfSpeechMessages = {
   noun: msg({ id: 'library.part-of-speech.noun', message: 'Noun' }),
@@ -112,6 +116,10 @@ const partOfSpeechMessages = {
   idiom: msg({ id: 'library.part-of-speech.idiom', message: 'Idiom' }),
   phrase: msg({ id: 'library.part-of-speech.phrase', message: 'Phrase' }),
 } satisfies Record<(typeof PART_OF_SPEECH_OPTIONS)[number]['value'], ReturnType<typeof msg>>;
+
+const assistantButtonClass = 'flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/90 dark:border-white/10 dark:bg-white/5 px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:bg-slate-200 dark:hover:bg-white/10 hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer';
+const filterLabelClass = 'mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--sf-text-muted)]';
+const filterSelectClass = 'min-h-11 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]';
 
 export function SpreadsheetImportStatus({
   progress,
@@ -220,6 +228,9 @@ export function DeckDeletionDialogContent({
       <AlertDialog.Content
         className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl outline-none"
         onCloseAutoFocus={event => restoreDeckDeletionFocus(event, restoreFocusRef)}
+        onEscapeKeyDown={event => {
+          if (isDeleting) event.preventDefault();
+        }}
       >
         <div className="flex items-start gap-3">
           <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-rose-400/35 bg-rose-500/10 text-rose-700 dark:text-rose-200" aria-hidden="true"><Trash2 size={20} /></span>
@@ -330,6 +341,8 @@ export function LibraryTools({
   categoryCounts,
   activeCategory,
   setActiveCategory,
+  languageProfile = ENGLISH_TO_VIETNAMESE_PROFILE,
+  ownerId,
 }: LibraryToolsProps) {
   const { i18n: catalog } = useLingui();
   const authenticated = isAuthenticated ?? Boolean(user);
@@ -348,7 +361,8 @@ export function LibraryTools({
   const [importFileName, setImportFileName] = useState<string | null>(null);
   const [showDialogueModal, setShowDialogueModal] = useState(false);
   const [showExtractorModal, setShowExtractorModal] = useState(false);
-  const isComposingWordRef = useRef(false);
+  const imeSubmitGuard = useRef(createImeSubmitGuard()).current;
+  const pointerSubmit = useRef(false);
 
   const deckDeletionRestoreRef = useRef<HTMLButtonElement | null>(null);
   const deckCreatorRestoreRef = useRef<HTMLButtonElement | null>(null);
@@ -490,7 +504,9 @@ export function LibraryTools({
 
         <form
           onSubmit={event => {
-            if (shouldBlockImeSubmit(isComposingWordRef.current, (event.nativeEvent as SubmitEvent & { isComposing?: boolean }).isComposing)) {
+            const submittedByPointer = pointerSubmit.current;
+            pointerSubmit.current = false;
+            if (imeSubmitGuard.shouldBlockSubmit(event.nativeEvent as SubmitEvent & { isComposing?: boolean; keyCode?: number }, submittedByPointer)) {
               event.preventDefault();
               return;
             }
@@ -509,10 +525,15 @@ export function LibraryTools({
                 type="text"
                 value={wordInput}
                 onChange={event => setWordInput(event.target.value)}
-                onCompositionStart={() => { isComposingWordRef.current = true; }}
-                onCompositionEnd={() => { isComposingWordRef.current = false; }}
+                onCompositionStart={imeSubmitGuard.onCompositionStart}
+                onCompositionEnd={imeSubmitGuard.onCompositionEnd}
+                onKeyDown={event => { if (imeSubmitGuard.shouldBlockKeyDown(event.nativeEvent)) event.preventDefault(); }}
                 lang="en"
                 inputMode="text"
+                autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
                 placeholder={i18n._(msg({ id: 'library.create.word-placeholder', message: 'Type an English word (e.g. serendipity)…' }))}
                 disabled={isLoading}
                 className={`min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2.5 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none disabled:cursor-wait ${
@@ -534,6 +555,7 @@ export function LibraryTools({
 
           <button
             type="submit"
+            onPointerDown={() => { pointerSubmit.current = true; setTimeout(() => { pointerSubmit.current = false; }, 0); }}
             data-color-role="primary"
             disabled={!canSubmitWord}
             aria-describedby="smart-card-generation-help"
@@ -559,7 +581,7 @@ export function LibraryTools({
               type="button"
               data-color-role="secondary"
               onClick={() => setShowDialogueModal(true)}
-              className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/90 dark:border-white/10 dark:bg-white/5 px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:bg-slate-200 dark:hover:bg-white/10 hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className={assistantButtonClass}
             >
               <MessageSquare size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" />
               <span><Trans id="library.tools.dialogue" message="AI Dialogue" /></span>
@@ -569,7 +591,7 @@ export function LibraryTools({
               data-color-role="secondary"
               onClick={() => setShowExtractorModal(true)}
               ref={extractorRestoreRef}
-              className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/90 dark:border-white/10 dark:bg-white/5 px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:bg-slate-200 dark:hover:bg-white/10 hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className={assistantButtonClass}
             >
               <ScanText size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" />
               <span><Trans id="library.tools.scan" message="Scan Text" /></span>
@@ -594,13 +616,15 @@ export function LibraryTools({
           onOpenChange={setShowExtractorModal}
           cards={cards}
           restoreFocusRef={extractorRestoreRef}
-          onImportWords={words => {
-            if (words.length > 0) {
-              const csvContent = 'word\n' + words.map(w => `"${w.replace(/"/g, '""')}"`).join('\n');
+          onImportItems={items => {
+            if (items.length > 0) {
+              const csvContent = createExtractedWordsCsv(items, languageProfile);
               const file = new File([csvContent], 'extracted_words.csv', { type: 'text/csv' });
               handleImportFile(file);
             }
           }}
+          languageProfile={languageProfile}
+          ownerId={ownerId}
         />
       </section>
 
@@ -702,7 +726,7 @@ export function LibraryTools({
               <div className="space-y-3.5 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-3 text-xs">
                 {/* Part of Speech */}
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">
+                  <label className={filterLabelClass}>
                     <Tags size={12} />
                     <span><Trans id="library.filters.part-of-speech" message="Part of speech" /></span>
                   </label>
@@ -710,7 +734,7 @@ export function LibraryTools({
                     aria-label={i18n._(msg({ id: 'library.filters.part-of-speech-label', message: 'Filter by part of speech' }))}
                     value={activePartOfSpeech}
                     onChange={event => setActivePartOfSpeech(event.target.value)}
-                    className="min-h-11 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]"
+                    className={filterSelectClass}
                   >
                     <option value="All">{i18n._(msg({ id: 'library.filters.all-word-types', message: 'All word types' }))}</option>
                     {PART_OF_SPEECH_OPTIONS.map(option => (
@@ -723,7 +747,7 @@ export function LibraryTools({
 
                 {/* Memory status */}
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">
+                  <label className={filterLabelClass}>
                     <Award size={12} />
                     <span><Trans id="library.filters.memory-status" message="Memory status" /></span>
                   </label>
@@ -731,7 +755,7 @@ export function LibraryTools({
                     aria-label={i18n._(msg({ id: 'library.filters.memory-status-label', message: 'Filter by memory status' }))}
                     value={activeDifficulty}
                     onChange={event => setActiveDifficulty(event.target.value)}
-                    className="min-h-11 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]"
+                    className={filterSelectClass}
                   >
                     <option value="All">{i18n._(msg({ id: 'library.filters.all-statuses', message: 'All statuses' }))}</option>
                     <option value="due">{i18n._(msg({ id: 'library.filters.due', message: 'Due for review' }))}</option>
@@ -744,7 +768,7 @@ export function LibraryTools({
 
                 {/* Date created */}
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">
+                  <label className={filterLabelClass}>
                     <Calendar size={12} />
                     <span><Trans id="library.filters.date-created" message="Date created" /></span>
                   </label>
@@ -772,7 +796,7 @@ export function LibraryTools({
                       aria-label={i18n._(msg({ id: 'library.filters.date-label', message: 'Filter cards by date created' }))}
                       value={activeDate}
                       onChange={event => setActiveDate(event.target.value)}
-                      className="min-h-11 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]"
+                      className={filterSelectClass}
                     >
                       {availableDates.map(date => (
                         <option key={date} value={date}>

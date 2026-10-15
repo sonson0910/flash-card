@@ -61,7 +61,7 @@ msgstr "Tiếp tục học"
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:25
 msgid "rewards.reveal.streak.description"
-msgstr "Chuỗi ngày ôn tập đã xác minh giúp bạn mở khóa huy hiệu Web Wanderer. Bạn có thể giữ một lượt bảo vệ chuỗi."
+msgstr "Chuỗi ngày ôn tập đã xác minh giúp bạn nhận huy hiệu Web Wanderer."
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:25

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Lumi } from '../../components/lumi/Lumi';
 import type { CardData } from '../../types/card';
+import { writeFocusModeEnabled } from '../settings/focus-mode-preference';
 
 const hooks = vi.hoisted(() => ({
   cursor: 0,
@@ -8,6 +9,9 @@ const hooks = vi.hoisted(() => ({
   states: [] as unknown[],
 }));
 const confetti = vi.hoisted(() => vi.fn());
+const haptic = vi.hoisted(() => vi.fn());
+const flipSound = vi.hoisted(() => vi.fn());
+const rewardSound = vi.hoisted(() => vi.fn());
 
 vi.mock('react', async importOriginal => {
   const actual = await importOriginal<typeof import('react')>();
@@ -36,12 +40,15 @@ vi.mock('react', async importOriginal => {
 });
 
 vi.mock('../../lib/confetti', () => ({ triggerConfetti: confetti }));
+vi.mock('../../lib/haptics', () => ({ triggerHaptic: haptic }));
+vi.mock('../../lib/interactionSounds', () => ({ playFlipSound: flipSound, playRewardSound: rewardSound }));
 vi.mock('@lingui/react', async importOriginal => ({
   ...await importOriginal<typeof import('@lingui/react')>(),
   useLingui: () => ({ _: (message: { message: string }) => message.message }),
 }));
 
 import { ReviewControls } from '../../components/study/ReviewControls';
+import { Flashcard } from '../../components/Flashcard';
 import { SessionRecapModal } from './SessionRecapModal';
 import { StudyView } from './StudyView';
 import type { StudyRatingSettlement } from './usePracticeSession';
@@ -87,6 +94,10 @@ describe('StudyView final-card persistence', () => {
     hooks.refs = [];
     hooks.states = [];
     confetti.mockReset();
+    haptic.mockReset();
+    flipSound.mockReset();
+    rewardSound.mockReset();
+    writeFocusModeEnabled(false);
   });
 
   afterEach(() => vi.unstubAllGlobals());
@@ -119,13 +130,44 @@ describe('StudyView final-card persistence', () => {
 
     expect(render(onRate).recap).toMatchObject({ open: false, goodCount: 0, againCount: 0, xpEarned: 0 });
     expect(confetti).not.toHaveBeenCalled();
+    expect(haptic).not.toHaveBeenCalled();
     expect(onRate).toHaveBeenCalledOnce();
 
-    settlement.resolve('committed');
+    settlement.resolve({ status: 'committed', xpAwarded: 0 });
     await Promise.all([pending, duplicate]);
 
-    expect(render(onRate).recap).toMatchObject({ open: true, goodCount: 1, againCount: 0, xpEarned: 2 });
+    expect(render(onRate).recap).toMatchObject({ open: true, goodCount: 1, againCount: 0, xpEarned: 0 });
     expect(confetti).toHaveBeenCalledOnce();
+    expect(haptic).toHaveBeenCalledExactlyOnceWith('success');
+  });
+
+  it('passes the owner-scoped delete result into the Study editor', () => {
+    const onDeleteCard = vi.fn(async () => true);
+    const view = render(vi.fn(async (): Promise<StudyRatingSettlement> => ({ status: 'committed', xpAwarded: 0 })), { onDeleteCard });
+
+    expect(find(view.tree, Flashcard)?.props.onEditDelete).toBeTypeOf('function');
+  });
+
+  it('returns focus to the Study surface only after a successful editor deletion', async () => {
+    const focus = vi.fn();
+    const requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+      callback(0);
+      return 1;
+    });
+    vi.stubGlobal('requestAnimationFrame', requestAnimationFrame);
+    const onDeleteCard = vi.fn(async () => true);
+    const view = render(vi.fn(async (): Promise<StudyRatingSettlement> => ({ status: 'committed', xpAwarded: 0 })), { onDeleteCard });
+    const surface = findByProp(view.tree, 'data-study-session')!.props.ref as { current: { focus: typeof focus } | null };
+    surface.current = { focus };
+    const onEditDelete = find(view.tree, Flashcard)!.props.onEditDelete as (cardId: string) => Promise<boolean>;
+
+    await expect(onEditDelete(card.id)).resolves.toBe(true);
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    expect(requestAnimationFrame).toHaveBeenCalledOnce();
+
+    onDeleteCard.mockResolvedValueOnce(false);
+    await expect(onEditDelete(card.id)).resolves.toBe(false);
+    expect(requestAnimationFrame).toHaveBeenCalledOnce();
   });
 
   it.each([
@@ -139,10 +181,20 @@ describe('StudyView final-card persistence', () => {
 
     expect(render(onRate).recap).toMatchObject({ open: false, goodCount: 0, againCount: 0, xpEarned: 0 });
     expect(confetti).not.toHaveBeenCalled();
+    expect(haptic).not.toHaveBeenCalled();
+  });
+
+  it('uses the persisted rating for recap polarity when a retry changes the requested rating', async () => {
+    const onRate = vi.fn(async () => ({ status: 'committed', xpAwarded: 2, rating: 'again' } as const));
+    const view = render(onRate);
+
+    await view.rate('good');
+
+    expect(render(onRate).recap).toMatchObject({ goodCount: 0, againCount: 1, xpEarned: 2 });
   });
 
   it('owns shortcuts inside the study surface and preserves interactive, composing, and unsupported modifier keys', async () => {
-    const onRate = vi.fn(async () => 'committed' as const);
+    const onRate = vi.fn(async () => ({ status: 'committed', xpAwarded: 2 } as const));
     const onReveal = vi.fn();
     const onIndex = vi.fn();
     const onBookmark = vi.fn();
@@ -173,6 +225,7 @@ describe('StudyView final-card persistence', () => {
 
     expect(dispatch(' ')).toHaveBeenCalledOnce();
     expect(onReveal).toHaveBeenCalledOnce();
+    expect(flipSound).toHaveBeenCalledOnce();
     expect(dispatch('ArrowRight')).toHaveBeenCalledOnce();
     expect(onIndex).toHaveBeenCalledWith(0);
     expect(dispatch('p', { altKey: true })).toHaveBeenCalledOnce();
@@ -187,10 +240,25 @@ describe('StudyView final-card persistence', () => {
     expect(onBookmark).not.toHaveBeenCalled();
   });
 
+  it('lets the revealed Flashcard own the keyboard flip sound', () => {
+    const clicked = vi.fn(() => flipSound());
+    const view = render(vi.fn(async () => ({ status: 'committed', xpAwarded: 2 } as const)));
+    const surface = view.surface?.onKeyDown as (event: unknown) => void;
+    surface({
+      key: 'Enter', altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+      defaultPrevented: false, nativeEvent: { isComposing: false },
+      preventDefault: vi.fn(), target: { closest: () => null },
+      currentTarget: { querySelector: () => ({ click: clicked }) },
+    });
+
+    expect(clicked).toHaveBeenCalledOnce();
+    expect(flipSound).toHaveBeenCalledOnce();
+  });
+
   it('advances a committed non-final review only after recording final session effects', async () => {
     const nextCard = { ...card, id: 'next-card' };
     const onIndex = vi.fn();
-    const committed = vi.fn(async () => 'committed' as const);
+    const committed = vi.fn(async () => ({ status: 'committed', xpAwarded: 2 } as const));
     const view = render(committed, { cards: [card, nextCard], index: 0, onIndex });
 
     await view.rate('good');
@@ -200,9 +268,78 @@ describe('StudyView final-card persistence', () => {
       .toMatchObject({ open: false, goodCount: 1, againCount: 0, xpEarned: 2 });
   });
 
+  it('counts only committed answers when the learner skips cards before the recap', async () => {
+    const skippedCard = { ...card, id: 'skipped-card' };
+    const committed = vi.fn(async () => ({ status: 'committed', xpAwarded: 2 } as const));
+    const view = render(committed, { cards: [skippedCard, card], index: 1 });
+
+    await view.rate('again');
+
+    expect(render(committed, { cards: [skippedCard, card], index: 1 }).recap)
+      .toMatchObject({ open: true, totalCards: 1, goodCount: 0, againCount: 1, xpEarned: 2 });
+  });
+
+  it('counts Again toward the combo and hides the banner in focus mode', async () => {
+    const nextCard = { ...card, id: 'next-card' };
+    const cards = [card, nextCard];
+    const committed = vi.fn(async () => ({ status: 'committed', xpAwarded: 2 } as const));
+
+    await render(committed, { cards, index: 0 }).rate('good');
+    expect(findByProp(render(committed, { cards, index: 1 }).tree, 'data-study-combo')).toBeNull();
+    await render(committed, { cards, index: 1 }).rate('again');
+
+    const withCombo = render(committed, { cards, index: 1 });
+    expect(findByProp(withCombo.tree, 'data-study-combo')?.props['data-study-combo']).toBe(2);
+    (findByProp(withCombo.tree, 'data-study-focus-mode')?.props.onClick as () => void)();
+
+    const focused = render(committed, { cards, index: 1 });
+    expect(findByProp(focused.tree, 'data-study-combo')).toBeNull();
+    expect(findByProp(focused.tree, 'data-study-focus-mode')?.props['aria-pressed']).toBe(true);
+    expect(focused.recap).toMatchObject({ totalCards: 2, xpEarned: 4 });
+  });
+
+  it('plays one combo cue on the third committed answer, including Again, and silences it in focus mode', async () => {
+    const cards = [card, { ...card, id: 'second' }, { ...card, id: 'third' }];
+    const committed = vi.fn(async () => ({ status: 'committed', xpAwarded: 2 } as const));
+    await render(committed, { cards, index: 0 }).rate('good');
+    await render(committed, { cards, index: 1 }).rate('again');
+    expect(rewardSound).not.toHaveBeenCalled();
+    await render(committed, { cards, index: 2 }).rate('again');
+    expect(rewardSound).toHaveBeenCalledOnce();
+    expect(haptic).toHaveBeenLastCalledWith('heavy');
+
+    hooks.refs = [];
+    hooks.states = [];
+    rewardSound.mockReset();
+    haptic.mockReset();
+    writeFocusModeEnabled(true);
+    await render(committed, { cards, index: 0 }).rate('good');
+    await render(committed, { cards, index: 1 }).rate('again');
+    await render(committed, { cards, index: 2 }).rate('again');
+    expect(rewardSound).not.toHaveBeenCalled();
+    expect(haptic).not.toHaveBeenCalledWith('heavy');
+  });
+
+  it('suppresses a pending combo cue when focus mode is enabled before the review commits', async () => {
+    const cards = [card, { ...card, id: 'second' }, { ...card, id: 'third' }];
+    const committed = vi.fn(async () => ({ status: 'committed', xpAwarded: 2 } as const));
+    await render(committed, { cards, index: 0 }).rate('good');
+    await render(committed, { cards, index: 1 }).rate('again');
+
+    const settlement = deferred<StudyRatingSettlement>();
+    const third = render(() => settlement.promise, { cards, index: 2 });
+    const pending = third.rate('again');
+    (findByProp(third.tree, 'data-study-focus-mode')?.props.onClick as () => void)();
+    settlement.resolve({ status: 'committed', xpAwarded: 2 });
+    await pending;
+
+    expect(rewardSound).not.toHaveBeenCalled();
+    expect(haptic).toHaveBeenLastCalledWith('medium');
+  });
+
   it('shows the Crystal Lumi reaction only after a committed review', async () => {
     vi.stubGlobal('document', { documentElement: { dataset: { themeFamily: 'crystal' } } });
-    const committed = vi.fn(async () => 'committed' as const);
+    const committed = vi.fn(async () => ({ status: 'committed', xpAwarded: 2 } as const));
     const view = render(committed);
 
     await view.rate('good');

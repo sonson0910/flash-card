@@ -5,7 +5,7 @@ import type { OwnerLibrarySessionAdapter } from './ownerLibrarySessionController
 import { useCloudLibraryPage } from './useCloudLibraryPage';
 import { useOwnerLibrarySession } from './useOwnerLibrarySession';
 
-type IdentitySessionBinding = ReturnType<typeof useIdentitySession>;
+export type IdentitySessionBinding = ReturnType<typeof useIdentitySession>;
 type OwnerLibraryBinding = ReturnType<typeof useOwnerLibrarySession>;
 type CloudPageBinding = ReturnType<typeof useCloudLibraryPage>;
 
@@ -32,6 +32,8 @@ export interface LibrarySessionCatalogInput {
   pageSize: number;
   refreshKey: number;
   statsOpen: boolean;
+  courseScopeReady?: boolean;
+  statsRefreshRequest?: { ownerId: string; requestId: number } | null;
   progressEvidenceOpen: boolean;
 }
 
@@ -98,13 +100,14 @@ export function useLibrarySession(
   });
 
   const cloud = hooks.useCloudLibraryPage({
-    ownerId,
+    ownerId: catalog.courseScopeReady === false ? null : ownerId,
     query: catalog.query,
     queryKey: catalog.queryKey,
     page: catalog.page,
     pageSize: catalog.pageSize,
     refreshKey: catalog.refreshKey,
     statsOpen: catalog.statsOpen,
+    statsRefreshRequest: catalog.statsRefreshRequest,
     progressEvidenceOpen: catalog.progressEvidenceOpen,
     getPromotedCards: ports.getPromotedCards,
   });

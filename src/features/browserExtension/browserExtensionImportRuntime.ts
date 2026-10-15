@@ -8,9 +8,12 @@ import {
   clearPendingBrowserExtensionImport,
   getBrowserExtensionImportBrowser,
   parseBrowserExtensionImportValue,
+  readPendingBrowserExtensionImportOwner,
   readPendingBrowserExtensionImport,
+  writePendingBrowserExtensionImportOwner,
   type BrowserExtensionImportBrowser,
   type BrowserExtensionImportIntent,
+  type BrowserExtensionImportStorage,
 } from './browserExtensionImport';
 
 export interface BrowserExtensionImportOptions {
@@ -132,6 +135,10 @@ export const startBrowserExtensionImportRuntime = (
   }
   let options = initialOptions;
   let pendingIntent: BrowserExtensionImportIntent | null = null;
+  // A verified capture belongs to the owner that was signed in when it was
+  // claimed. When startup begins anonymously, the first resolved owner claims
+  // it. A later owner must never inherit that capture.
+  let pendingOwnerId: string | null = initialOptions.ownerId;
   const intentKey = (intent: BrowserExtensionImportIntent): string =>
     `${intent.id}:${intent.nonce ?? ''}`;
   let preparedIntentKey: string | null = null;
@@ -139,21 +146,81 @@ export const startBrowserExtensionImportRuntime = (
   let signedOutNoticeKey: string | null = null;
   let retryTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
   let disposed = false;
+  let generationEpoch = 0;
+  const terminalIntentKeys = new Set<string>();
+
+  const publishTerminalError = (intent: BrowserExtensionImportIntent, message: string) => {
+    const key = intentKey(intent);
+    if (terminalIntentKeys.has(key)) return;
+    terminalIntentKeys.add(key);
+    publishSilentResult(intent, { status: 'error', message });
+  };
+
+  const clearRetry = () => {
+    if (retryTimer !== null) globalThis.clearTimeout(retryTimer);
+    retryTimer = null;
+  };
+
+  const invalidatePendingIntent = (ownerChanged = false) => {
+    const intent = pendingIntent;
+    generationEpoch += 1;
+    clearRetry();
+    pendingIntent = null;
+    pendingOwnerId = null;
+    preparedIntentKey = null;
+    activeIntentKey = null;
+    if (intent) {
+      clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
+      if (ownerChanged) {
+        publishTerminalError(intent, 'Import cancelled because the signed-in account changed. Capture the word again.');
+      }
+    }
+  };
+
+  const rejectBeforeClaim = (
+    intent: BrowserExtensionImportIntent,
+    storage: BrowserExtensionImportStorage | null,
+    message: string,
+  ) => {
+    clearPendingBrowserExtensionImport(storage, intent.id, intent.nonce);
+    publishTerminalError(intent, message);
+  };
 
   const finishIntent = (intent: BrowserExtensionImportIntent) => {
     const key = intentKey(intent);
-    if (pendingIntent && intentKey(pendingIntent) === key) pendingIntent = null;
+    if (pendingIntent && intentKey(pendingIntent) === key) {
+      pendingIntent = null;
+      pendingOwnerId = null;
+    }
     if (activeIntentKey === key) activeIntentKey = null;
   };
 
   const claimVerifiedIntent = (candidate: unknown) => {
     const intent = parseBrowserExtensionImportValue(candidate);
     if (!intent || intent.mode !== 'silent') return;
+    let storage;
+    try { storage = browser.getSessionStorage(); } catch {
+      publishTerminalError(intent, 'Could not securely verify this import. Capture the word again.');
+      return;
+    }
+    const storedOwnerId = readPendingBrowserExtensionImportOwner(storage, intent);
+    if (storedOwnerId && options.ownerId && storedOwnerId !== options.ownerId) {
+      rejectBeforeClaim(intent, storage, 'Import cancelled because the signed-in account changed. Capture the word again.');
+      return;
+    }
     const key = intentKey(intent);
     if ((pendingIntent && intentKey(pendingIntent) === key)
       || activeIntentKey === key
       || preparedIntentKey === key) return;
     pendingIntent = intent;
+    pendingOwnerId = storedOwnerId ?? options.ownerId;
+    if (!storedOwnerId && pendingOwnerId
+      && !writePendingBrowserExtensionImportOwner(storage, intent, pendingOwnerId)) {
+      rejectBeforeClaim(intent, storage, 'Could not securely prepare this import. Capture the word again.');
+      pendingIntent = null;
+      pendingOwnerId = null;
+      return;
+    }
     browser.postMessage({
       source: BROWSER_EXTENSION_IMPORT_APP_SOURCE,
       type: BROWSER_EXTENSION_IMPORT_CLAIMED_MESSAGE,
@@ -175,7 +242,8 @@ export const startBrowserExtensionImportRuntime = (
       && (pending.context ?? '') === (intent.context ?? '')
       && (pending.requestedDeck ?? '') === (intent.requestedDeck ?? '')
       && (pending.sourceUrl ?? '') === (intent.sourceUrl ?? '')
-      && (pending.pageTitle ?? '') === (intent.pageTitle ?? '');
+      && (pending.pageTitle ?? '') === (intent.pageTitle ?? '')
+      && (pending.sourceLanguage ?? '') === (intent.sourceLanguage ?? '');
   };
 
   const processPending = () => {
@@ -183,10 +251,16 @@ export const startBrowserExtensionImportRuntime = (
     const intent = pendingIntent;
 
     const key = intentKey(intent);
-    if (preparedIntentKey !== key) {
-      preparedIntentKey = key;
-      if (intent.mode !== 'silent') options.openLibrary();
-      options.changeDraft(intent.text);
+    if (pendingOwnerId && options.ownerId && pendingOwnerId !== options.ownerId) {
+      invalidatePendingIntent(true);
+      return;
+    }
+    if (!pendingOwnerId && options.ownerId) {
+      pendingOwnerId = options.ownerId;
+      if (!writePendingBrowserExtensionImportOwner(browser.getSessionStorage(), intent, pendingOwnerId)) {
+        invalidatePendingIntent();
+        return;
+      }
     }
 
     if (options.identityLoading) return;
@@ -206,6 +280,13 @@ export const startBrowserExtensionImportRuntime = (
       }
       return;
     }
+
+    if (preparedIntentKey !== key) {
+      preparedIntentKey = key;
+      if (intent.mode !== 'silent') options.openLibrary();
+      options.changeDraft(intent.text);
+    }
+
     if (!options.libraryReady) return;
     const requestedDeck = intent.requestedDeck?.trim() ?? '';
     if (requestedDeck && !options.customDecks.includes(requestedDeck)) {
@@ -220,8 +301,16 @@ export const startBrowserExtensionImportRuntime = (
     if (options.isBusy || activeIntentKey === key) return;
 
     activeIntentKey = key;
+    const ownerId = pendingOwnerId;
+    const epoch = generationEpoch;
+    const isCurrent = () => !disposed
+      && pendingIntent === intent
+      && pendingOwnerId === ownerId
+      && options.ownerId === ownerId
+      && generationEpoch === epoch;
 
     const runGeneration = () => {
+      if (!isCurrent()) return;
       clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
 
       void options.generate({
@@ -236,10 +325,14 @@ export const startBrowserExtensionImportRuntime = (
           requestedDeckAvailable: (deck: string) => options.customDecks.includes(deck),
         } : {}),
       }).then(result => {
-        if (disposed) return;
+        if (!isCurrent()) return;
         if (result.status === 'busy') {
           if (activeIntentKey === key) activeIntentKey = null;
-          retryTimer = globalThis.setTimeout(processPending, 250);
+          clearRetry();
+          retryTimer = globalThis.setTimeout(() => {
+            retryTimer = null;
+            if (isCurrent()) processPending();
+          }, 250);
           return;
         }
 
@@ -269,7 +362,7 @@ export const startBrowserExtensionImportRuntime = (
           });
         }
       }).catch(error => {
-        if (disposed) return;
+        if (!isCurrent()) return;
         finishIntent(intent);
         publishSilentResult(intent, {
           status: 'error',
@@ -287,7 +380,7 @@ export const startBrowserExtensionImportRuntime = (
       return;
     }
     void ensureCaptureCourse(intent.sourceLanguage ?? 'en').then(decision => {
-      if (disposed) return;
+      if (!isCurrent()) return;
       if (decision === 'cancel') {
         // No half-done side effects: nothing was generated, the pending
         // storage entry is dropped so a reload can't resurrect it, and the
@@ -302,10 +395,13 @@ export const startBrowserExtensionImportRuntime = (
       }
       runGeneration();
     }).catch(() => {
-      if (disposed) return;
-      // Best-effort, mirroring createSharedDeckCoursePort: a course-matching
-      // hiccup must never block a capture that would otherwise succeed.
-      runGeneration();
+      if (!isCurrent()) return;
+      clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
+      finishIntent(intent);
+      publishSilentResult(intent, {
+        status: 'error',
+        message: 'Could not prepare the matching course. The word was not saved.',
+      });
     });
   };
 
@@ -321,17 +417,29 @@ export const startBrowserExtensionImportRuntime = (
     if (candidate.source !== BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE
       || candidate.type !== BROWSER_EXTENSION_IMPORT_READY_MESSAGE) return;
     const intent = parseBrowserExtensionImportValue(candidate.payload);
-    if (intent?.mode === 'silent' && isBackedByVerifiedStorage(intent)) claimVerifiedIntent(intent);
+    if (intent?.mode === 'silent') {
+      if (isBackedByVerifiedStorage(intent)) claimVerifiedIntent(intent);
+      else publishTerminalError(intent, 'Could not securely verify this import. Capture the word again.');
+    }
   });
   capturePending();
 
   return {
     update(nextOptions) {
+      const priorOwnerId = options.ownerId;
       options = nextOptions;
+      if (pendingIntent && pendingOwnerId && nextOptions.ownerId && pendingOwnerId !== nextOptions.ownerId) {
+        invalidatePendingIntent(true);
+        return;
+      }
+      if (pendingIntent && !pendingOwnerId && !priorOwnerId && nextOptions.ownerId) {
+        pendingOwnerId = nextOptions.ownerId;
+      }
       processPending();
     },
     acceptVerifiedIntent(intent) {
       if (isBackedByVerifiedStorage(intent)) claimVerifiedIntent(intent);
+      else publishTerminalError(intent, 'Could not securely verify this import. Capture the word again.');
     },
     acceptUnverifiedIntent(candidate) {
       const intent = parseBrowserExtensionImportValue(candidate);
@@ -342,7 +450,7 @@ export const startBrowserExtensionImportRuntime = (
     dispose() {
       disposed = true;
       stopMessageListener();
-      if (retryTimer !== null) globalThis.clearTimeout(retryTimer);
+      clearRetry();
     },
   };
 };

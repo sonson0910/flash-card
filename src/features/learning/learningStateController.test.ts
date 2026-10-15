@@ -32,6 +32,7 @@ const resultFor = (mutation: LearningStateMutation): LearningStateMutationResult
   ownerKey: mutation.ownerKey,
   operationId: mutation.operationId,
   publication: mutation.publication,
+  ...(mutation.operation === 'review' ? { xpAwarded: 0 } : {}),
 });
 
 const createFake = () => {
@@ -138,6 +139,106 @@ describe('learning state controller', () => {
     expect(persisted[1].publication).toEqual({ kind: 'patch', cardId: card.id, fields: { customDeck: 'IELTS' } });
     expect(persisted[2].publication).toMatchObject({ kind: 'patch', cardId: card.id, fields: { difficulty: 'good' } });
     expect(persisted[3].publication).toEqual({ kind: 'patch', cardId: card.id, fields: { translation: 'sự tập trung' } });
+  });
+
+  it('publishes the authoritative review XP unchanged', async () => {
+    const { controller, port } = createFake();
+    port.persist = async mutation => ({ ...resultFor(mutation), xpAwarded: 2 });
+
+    await expect(controller.review(card.id, 'good', 'review-xp')).resolves.toMatchObject({
+      status: 'published', result: { xpAwarded: 2 },
+    });
+  });
+
+  it('retries a review with the original scheduled payload after persistence fails', async () => {
+    let now = new Date('2026-08-03T00:00:00.000Z');
+    let attempts = 0;
+    const persisted: LearningStateMutation[] = [];
+    const port: LearningStatePort = {
+      activeOwner: () => 'user:a',
+      findCard: cardId => cardId === card.id ? card : undefined,
+      persist: async mutation => {
+        persisted.push(mutation);
+        attempts += 1;
+        if (attempts === 1) throw new Error('lost response');
+        return resultFor(mutation);
+      },
+    };
+    const controller = createLearningStateController({
+      port,
+      snapshots: { library: { apply: () => undefined }, practice: { apply: () => undefined } },
+      now: () => now,
+    });
+
+    await expect(controller.review(card.id, 'good', 'review-stable')).rejects.toThrow('lost response');
+    now = new Date('2026-08-04T00:00:00.000Z');
+    await expect(controller.review(card.id, 'good', 'review-stable')).resolves.toMatchObject({ status: 'published' });
+
+    expect(persisted).toHaveLength(2);
+    expect(persisted[1]).toEqual(persisted[0]);
+  });
+
+  it('retires a terminal review conflict so a later retry can build a fresh plan', async () => {
+    let terminal = true;
+    const persisted: LearningStateMutation[] = [];
+    const port: LearningStatePort = {
+      activeOwner: () => 'user:a',
+      findCard: cardId => cardId === card.id ? card : undefined,
+      persist: async mutation => {
+        persisted.push(mutation);
+        return terminal
+          ? (terminal = false, {
+              ...resultFor(mutation),
+              reviewFinality: 'conflict' as const,
+              reviewConflictTerminal: true,
+            })
+          : resultFor(mutation);
+      },
+    };
+    const controller = createLearningStateController({
+      port,
+      snapshots: { library: { apply: () => undefined }, practice: { apply: () => undefined } },
+      now: () => new Date('2026-08-03T00:00:00.000Z'),
+    });
+
+    await expect(controller.review(card.id, 'good', 'review-terminal')).resolves.toMatchObject({
+      status: 'review-conflict',
+    });
+    await expect(controller.review(card.id, 'good', 'review-terminal')).resolves.toMatchObject({
+      status: 'published',
+    });
+    expect(persisted).toHaveLength(2);
+  });
+
+  it('fails closed instead of evicting an unresolved review plan', async () => {
+    let shouldFail = true;
+    const persisted: LearningStateMutation[] = [];
+    const port: LearningStatePort = {
+      activeOwner: () => 'user:a',
+      findCard: cardId => cardId === card.id ? card : undefined,
+      persist: async mutation => {
+        persisted.push(mutation);
+        if (mutation.operationId === 'review-1' && shouldFail) {
+          shouldFail = false;
+          throw new Error('lost response');
+        }
+        return resultFor(mutation);
+      },
+    };
+    const controller = createLearningStateController({
+      port,
+      snapshots: { library: { apply: () => undefined }, practice: { apply: () => undefined } },
+      completedOperationLimit: 1,
+      now: () => new Date('2026-08-03T00:00:00.000Z'),
+    });
+
+    await expect(controller.review(card.id, 'good', 'review-1')).rejects.toThrow('lost response');
+    await expect(controller.review(card.id, 'easy', 'review-2')).rejects.toThrow('retry capacity is full');
+    expect(persisted).toHaveLength(1);
+
+    await expect(controller.review(card.id, 'again', 'review-1')).resolves.toMatchObject({ status: 'published' });
+    expect(persisted).toHaveLength(2);
+    expect(persisted[1]).toEqual(persisted[0]);
   });
 
   it('drops a successful result when the active owner changes while persistence is in flight', async () => {

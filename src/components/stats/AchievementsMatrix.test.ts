@@ -64,5 +64,15 @@ describe('dedicated achievements presentation', () => {
     expect(html).toContain('Back to Progress');
     expect(html).toContain('1 / 6 unlocked');
     expect(html).not.toContain('of 12 earned');
+    expect(html.match(/data-badge-state=/g)).toHaveLength(6);
+    expect(html).toContain('data-badge-state="earned"');
+    expect(html).toContain('data-badge-state="in-progress"');
+    expect(html).toContain('data-badge-state="locked"');
+    expect(html).toContain('data-badge-tier="bud"');
+    expect(html).toContain('data-badge-tier="bloom"');
+    expect(html).toContain('data-badge-tier="star"');
+    expect(html).toContain('data-achievement-summary');
+    expect(html).toContain('data-featured-achievement');
+    expect(html).toContain('data-badge-id="streak_3"');
   });
 });

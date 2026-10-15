@@ -1,11 +1,13 @@
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { flushSync } from 'react-dom';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import type { CardData, ReviewRatingValue } from '../../types/card';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { LanguageProfile } from '../language/languageProfile';
 import { triggerHaptic } from '../../lib/haptics';
-import { REVIEW_XP } from '../../lib/review-xp';
+import { firebasePracticeSessionService, practiceTimeZone, type PracticeGamificationOutcome, type PracticeSessionChallenge } from '../practice/practiceSessionService';
+import { cardsForLanguagePair } from '../practice/practiceModel';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import { buildDailyPlan, logicalIdentity, type DailyPlan, type DailyPlanItem } from './dailyPlan';
 import { createDailyPracticePoolRuntime } from './dailyPracticePoolRuntime';
@@ -20,11 +22,11 @@ import {
 } from './exerciseEngine';
 import { buildPlacementCheck, evaluatePlacement, type PlacementCheck, type PlacementResult } from './placementEngine';
 import { inferScriptScoringPolicy } from './scriptScoring';
-import { TodayScreen } from './TodayScreen';
+import { sessionStageContent, TodayScreen } from './TodayScreen';
 import {
   buildSessionStagePlan,
   clearDailySessionPointer,
-  clearPendingFreshPriority,
+  consumeScheduledFreshPriority,
   emptyDailySessionStats,
   applyRatingToStats,
   firstOutstandingStage,
@@ -33,8 +35,13 @@ import {
   outstandingItems,
   readDailySessionPointer,
   readPendingFreshPriority,
+  restoredSessionMatchStage,
+  preparePendingMatchCompletion,
+  sessionStageItemCount,
   SESSION_STAGE_ORDER,
+  skippedUnavailableMatchStage,
   writeDailySessionPointer,
+  type DailySessionPointer,
   type DailySessionStats,
   type SessionStageId,
   type SessionStagePlan,
@@ -49,6 +56,7 @@ import type {
   TodayScreenModel,
 } from './dailyLearningPresentation';
 import { evidencedStudyStreak } from './dailyLearningPresentation';
+import { subscribeToActiveSessionNewStagePromotions } from './webWordsSessionPriority';
 
 const LessonScreen = lazy(() => import('./LessonScreen').then(module => ({ default: module.LessonScreen })));
 const PlacementScreen = lazy(() => import('./PlacementScreen').then(module => ({ default: module.PlacementScreen })));
@@ -66,12 +74,65 @@ type MultiStagePhase =
   | { readonly kind: 'match' }
   | { readonly kind: 'recap' };
 
+type MatchStatus = 'idle' | 'starting' | 'ready' | 'start-error' | 'completing' | 'complete-error';
+
 interface MultiStageState {
+  readonly ownerId: string | null;
+  readonly targetLanguage: string;
+  readonly translationLanguage: string;
   readonly stagePlan: SessionStagePlan;
   readonly phase: MultiStagePhase;
   readonly stats: DailySessionStats;
   readonly startedAt: string;
+  readonly matchStartOpId: string | null;
+  readonly matchCompletionId: string | null;
+  readonly matchTimeZone?: string;
+  readonly matchCompletionPending: boolean;
+  readonly matchStatus: MatchStatus;
 }
+
+const phaseForStage = (stage: SessionStageId): MultiStagePhase => stage === 'review' || stage === 'new'
+  ? { kind: 'lesson', stage }
+  : { kind: stage };
+
+const dailyMatchOperationId = (kind: 'start' | 'complete') => {
+  const random = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `daily-match-${kind}-${random}`;
+};
+
+const frozenMatchCards = (
+  challenge: PracticeSessionChallenge,
+  expectedIds: readonly string[],
+  targetLanguage: string,
+  translationLanguage: string,
+): CardData[] => {
+  if (challenge.kind !== 'match' || challenge.cards.length !== expectedIds.length
+    || challenge.cards.some((card, index) => card.cardId !== expectedIds[index])) {
+    throw new Error('The practice session returned the wrong Word Match challenge.');
+  }
+  return challenge.cards.map(card => ({
+    id: card.cardId, word: card.word, translation: card.translation, language: targetLanguage, translationLanguage,
+  } as CardData));
+};
+
+const pointerForSession = (state: MultiStageState): DailySessionPointer | null => state.ownerId ? {
+  ownerId: state.ownerId,
+  targetLanguage: state.targetLanguage,
+  translationLanguage: state.translationLanguage,
+  stage: state.phase.kind === 'lesson' ? state.phase.stage
+    : state.phase.kind === 'bridge' ? state.phase.completedStage : state.phase.kind,
+  ...(state.phase.kind === 'bridge' ? { bridgeCompletedStage: state.phase.completedStage } : {}),
+  reviewLogicalIds: logicalIdsOf(state.stagePlan.review),
+  freshLogicalIds: logicalIdsOf(state.stagePlan.fresh),
+  matchCardIds: state.stagePlan.match.cards.map(card => card.id),
+  matchSkipReason: state.stagePlan.match.skipReason,
+  matchStartOpId: state.matchStartOpId,
+  matchCompletionId: state.matchCompletionId,
+  ...(state.matchTimeZone ? { matchTimeZone: state.matchTimeZone } : {}),
+  matchCompletionPending: state.matchCompletionPending,
+  stats: state.stats,
+  startedAt: state.startedAt,
+} : null;
 
 const exercisesFor = (items: readonly DailyPlanItem[], pool: readonly CardData[]): Exercise[] => items.map(({ card }) => (
   buildExercise(card, pool, 'recognition', inferScriptScoringPolicy(card.word))
@@ -93,6 +154,37 @@ const withFreshPriority = (stagePlan: SessionStagePlan, pendingLogicalIds: reado
   return { ...stagePlan, fresh: [...prioritized, ...stagePlan.fresh.filter(item => !prioritizedIds.has(item.logicalId))] };
 };
 
+/** Restores the frozen new-stage snapshot without letting today's review cap evict an already-queued word. */
+export const freshItemsForResume = (
+  freshLogicalIds: readonly string[],
+  pool: readonly CardData[],
+  now: Date,
+): readonly DailyPlanItem[] => {
+  const seen = new Set<string>();
+  return freshLogicalIds.flatMap(logicalId => {
+    if (seen.has(logicalId)) return [];
+    seen.add(logicalId);
+    const item = buildDailyPlan(pool.filter(card => logicalIdentity(card) === logicalId), { now })
+      .items.find(candidate => candidate.reason === 'new');
+    return item ? [item] : [];
+  });
+};
+
+/** A Word Match round can be today's only eligible session stage. */
+export function hasMatchOnlySession(
+  plan: DailyPlan | null,
+  pool: readonly CardData[],
+  targetLanguage: string,
+  translationLanguage: string,
+): boolean {
+  return Boolean(plan && plan.items.length === 0 && buildSessionStagePlan(
+    plan,
+    pool,
+    () => 0,
+    { targetLanguage, translationLanguage },
+  ).match.cards.length > 0);
+}
+
 export interface DailyLearningWorkspaceProps {
   readonly ownerId: string | null;
   /** Active course's language pair; defaults to English-Vietnamese for legacy users with no active course. */
@@ -103,6 +195,7 @@ export interface DailyLearningWorkspaceProps {
   readonly initialLesson: DailyLessonMode | null;
   readonly streak: number;
   readonly studyXpHistory: readonly { readonly date: string; readonly XP: number }[];
+  readonly rewardTimeZone?: string;
   readonly loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
   readonly reviewCard: (cardId: string, rating: ReviewRatingValue, operationId: string, source?: CardData) => Promise<LearningStateOutcome>;
   readonly openLesson: (mode: DailyLessonMode | null) => void;
@@ -110,12 +203,42 @@ export interface DailyLearningWorkspaceProps {
   readonly openPaths: () => void;
   readonly continueReview: () => void | Promise<void>;
   readonly openMorePractice: (opener: HTMLButtonElement) => void;
+  readonly openWeeklyRecap: () => void;
+  readonly onVerifiedPracticeOutcome: (outcome: PracticeGamificationOutcome, operationId: string, ownerId: string) => void;
 }
 
 type PoolState =
   | { status: 'loading'; ownerId: string | null; cards: readonly CardData[]; error: null }
   | { status: 'ready'; ownerId: string | null; cards: readonly CardData[]; error: null }
   | { status: 'error'; ownerId: string | null; cards: readonly CardData[]; error: string };
+
+export interface DailyPracticePoolScope {
+  readonly ownerId: string | null;
+  readonly targetLanguage: string;
+}
+
+export const didDailyPracticePoolScopeChange = (
+  previous: DailyPracticePoolScope | null,
+  next: DailyPracticePoolScope,
+): boolean => !previous || previous.ownerId !== next.ownerId || previous.targetLanguage !== next.targetLanguage;
+
+export const isCaughtUpDailyPlan = (plan: DailyPlan | null, hasPoolCards: boolean, matchOnlySession: boolean): boolean => (
+  plan?.items.length === 0 && hasPoolCards && !matchOnlySession
+);
+
+export const dailyTodayStatus = (
+  poolStatus: PoolState['status'],
+  plan: DailyPlan | null,
+  hasPoolCards: boolean,
+  matchOnlySession: boolean,
+  isOffline: boolean,
+): TodayScreenModel['status'] => {
+  if (poolStatus === 'loading') return 'loading';
+  if (poolStatus === 'error') return 'error';
+  if (isCaughtUpDailyPlan(plan, hasPoolCards, matchOnlySession)) return 'caught-up';
+  if (!plan?.items.length && !matchOnlySession) return 'empty';
+  return isOffline ? 'offline' : 'ready';
+};
 
 const errorMessage = (error: unknown, fallback: string) => error instanceof Error && error.message.trim()
   ? error.message
@@ -174,6 +297,7 @@ export default function DailyLearningWorkspace({
   initialLesson,
   streak,
   studyXpHistory,
+  rewardTimeZone,
   loadPracticePool,
   reviewCard,
   openLesson,
@@ -181,6 +305,8 @@ export default function DailyLearningWorkspace({
   openPaths,
   continueReview,
   openMorePractice,
+  openWeeklyRecap,
+  onVerifiedPracticeOutcome,
 }: DailyLearningWorkspaceProps) {
   const { _, i18n } = useLingui();
   const courseLanguageNames = new Intl.DisplayNames([i18n.locale], { type: 'language' });
@@ -213,15 +339,23 @@ export default function DailyLearningWorkspace({
     return exercise.prompt;
   };
   const targetLanguage = languageProfile.source.code;
+  const translationLanguage = languageProfile.target.code;
   const ownerRef = useRef(ownerId);
   ownerRef.current = ownerId;
+  const targetLanguageRef = useRef(targetLanguage);
+  targetLanguageRef.current = targetLanguage;
+  const translationLanguageRef = useRef(translationLanguage);
+  translationLanguageRef.current = translationLanguage;
   const poolLoadRef = useRef(loadPracticePool);
   poolLoadRef.current = loadPracticePool;
   const lastPoolLoaderRef = useRef(loadPracticePool);
   const reviewRef = useRef(reviewCard);
   reviewRef.current = reviewCard;
   const dailyCardsRef = useRef<readonly CardData[]>([]);
-  const lessonOwnerRef = useRef(ownerId);
+  const lessonScopeRef = useRef({ ownerId, targetLanguage, translationLanguage });
+  const previousSessionScopeRef = useRef({ ownerId, targetLanguage, translationLanguage });
+  const previousPoolScopeRef = useRef<DailyPracticePoolScope | null>(null);
+  const lastPoolLoaderScopeRef = useRef({ ownerId, targetLanguage, translationLanguage });
   const poolRuntime = useMemo(() => createDailyPracticePoolRuntime({
     activeOwner: () => ownerRef.current,
     loadPracticePool: (maximum, includeFuture) => poolLoadRef.current(maximum, includeFuture),
@@ -239,8 +373,36 @@ export default function DailyLearningWorkspace({
   const [routeLesson, setRouteLesson] = useState<DailyLessonMode | null>(initialLesson);
   const [multiStage, setMultiStage] = useState<MultiStageState | null>(null);
   const multiStageRef = useRef(multiStage);
-  multiStageRef.current = multiStage;
-  const matchXpRef = useRef(0);
+  useLayoutEffect(() => {
+    multiStageRef.current = multiStage;
+  }, [multiStage]);
+  const isCurrentSession = useCallback((state: MultiStageState | null): state is MultiStageState => Boolean(
+    state
+    && targetLanguageRef.current === targetLanguage
+    && translationLanguageRef.current === translationLanguage
+    && state.ownerId === ownerRef.current
+    && state.targetLanguage === targetLanguage
+    && state.translationLanguage === translationLanguage
+  ), [targetLanguage, translationLanguage]);
+  const isCurrentMatch = useCallback((
+    state: MultiStageState | null,
+    status?: MatchStatus,
+    startId?: string,
+    completionId?: string,
+  ): state is MultiStageState => (
+    isCurrentSession(state)
+    && state.phase.kind === 'match'
+    && (!status || state.matchStatus === status)
+    && (!startId || state.matchStartOpId === startId)
+    && (!completionId || state.matchCompletionId === completionId)
+  ), [isCurrentSession]);
+  const updateCurrentMatch = useCallback((
+    update: (current: MultiStageState) => MultiStageState,
+    status?: MatchStatus,
+    startId?: string,
+    completionId?: string,
+  ) => setMultiStage(current => isCurrentMatch(current, status, startId, completionId) ? update(current) : current), [isCurrentMatch]);
+  const recordedReviewOperationIdsRef = useRef(new Set<string>());
   const [answer, setAnswer] = useState('');
   const [tokenIds, setTokenIds] = useState<readonly string[]>([]);
   const [placementCheck, setPlacementCheck] = useState<PlacementCheck | null>(null);
@@ -279,8 +441,9 @@ export default function DailyLearningWorkspace({
       if (!next) {
         session.close();
         if (multiStageRef.current) {
+          const pendingMatch = multiStageRef.current.matchCompletionPending;
           setMultiStage(null);
-          if (ownerRef.current) clearDailySessionPointer(ownerRef.current);
+          if (!pendingMatch && ownerRef.current) clearDailySessionPointer(ownerRef.current);
         }
       }
     };
@@ -288,51 +451,90 @@ export default function DailyLearningWorkspace({
     return () => window.removeEventListener('popstate', handlePopState);
   }, [session]);
   useEffect(() => {
-    poolRuntime.ownerChanged();
+    const previousScope = previousSessionScopeRef.current;
+    if (previousScope.ownerId !== ownerId || previousScope.targetLanguage !== targetLanguage || previousScope.translationLanguage !== translationLanguage) {
+      if (previousScope.ownerId) clearDailySessionPointer(previousScope.ownerId);
+      previousSessionScopeRef.current = { ownerId, targetLanguage, translationLanguage };
+    }
     session.close();
-    dailyCardsRef.current = [];
-    setPool({ status: 'loading', ownerId, cards: [], error: null });
     setPlacementCheck(null);
     setPlacementIndex(-1);
     setPlacementChoice(null);
     setPlacementAnswers({});
     setPlacementResult(null);
     setMultiStage(null);
-    void load();
-    // Runs on a course switch too (targetLanguage in deps): a stale pool or
-    // multi-stage session from another course's target language must never
-    // survive into the newly active one.
-  }, [load, ownerId, poolRuntime, session, targetLanguage]);
+  }, [ownerId, session, targetLanguage, translationLanguage]);
   useEffect(() => {
-    if (lastPoolLoaderRef.current === loadPracticePool) return;
+    const nextPoolScope = { ownerId, targetLanguage };
+    if (!didDailyPracticePoolScopeChange(previousPoolScopeRef.current, nextPoolScope)) return;
+    previousPoolScopeRef.current = nextPoolScope;
+    poolRuntime.ownerChanged();
+    dailyCardsRef.current = [];
+    setPool({ status: 'loading', ownerId, cards: [], error: null });
+    void load();
+  }, [load, ownerId, poolRuntime, targetLanguage]);
+  useEffect(() => {
+    const loaderChanged = lastPoolLoaderRef.current !== loadPracticePool;
+    const previousScope = lastPoolLoaderScopeRef.current;
     lastPoolLoaderRef.current = loadPracticePool;
+    lastPoolLoaderScopeRef.current = { ownerId, targetLanguage, translationLanguage };
+    if (!loaderChanged) return;
+    if (previousScope.ownerId !== ownerId || previousScope.targetLanguage !== targetLanguage || previousScope.translationLanguage !== translationLanguage) return;
     if (!session.getSnapshot()) void load();
-  }, [load, loadPracticePool, session]);
+  }, [load, loadPracticePool, ownerId, session, targetLanguage, translationLanguage]);
   useEffect(() => { setAnswer(''); setTokenIds([]); setAudioError(null); }, [lesson?.index]);
   useEffect(() => {
-    if (!multiStage || !ownerRef.current) return;
-    writeDailySessionPointer({
-      ownerId: ownerRef.current,
-      targetLanguage,
-      stage: multiStage.phase.kind === 'lesson' ? multiStage.phase.stage
-        : multiStage.phase.kind === 'bridge' ? multiStage.phase.nextStage
-          : multiStage.phase.kind === 'match' ? 'match' : 'recap',
-      reviewLogicalIds: logicalIdsOf(multiStage.stagePlan.review),
-      freshLogicalIds: logicalIdsOf(multiStage.stagePlan.fresh),
-      matchCardIds: multiStage.stagePlan.match.cards.map(card => card.id),
-      matchSkipReason: multiStage.stagePlan.match.skipReason,
-      stats: multiStage.stats,
-      startedAt: multiStage.startedAt,
-    });
-  }, [multiStage, targetLanguage]);
-
+    if (!isCurrentSession(multiStage)) return;
+    const pointer = pointerForSession(multiStage);
+    if (pointer) writeDailySessionPointer(pointer);
+  }, [isCurrentSession, multiStage]);
   const activePool: PoolState = pool.ownerId === ownerId ? pool : { status: 'loading', ownerId, cards: [], error: null };
+  const currentPairCards = useMemo(
+    () => cardsForLanguagePair(activePool.cards, targetLanguage, translationLanguage),
+    [activePool.cards, targetLanguage, translationLanguage],
+  );
+  useEffect(() => subscribeToActiveSessionNewStagePromotions(promotion => {
+    let admitted: readonly DailyPlanItem[] = [];
+    flushSync(() => {
+      setMultiStage(state => {
+        if (!isCurrentSession(state)
+          || state.ownerId !== promotion.ownerId
+          || state.targetLanguage !== promotion.languagePair.targetLanguage
+          || state.translationLanguage !== promotion.languagePair.translationLanguage) return state;
+        const currentLogicalIds = new Set(logicalIdsOf(state.stagePlan.fresh));
+        admitted = freshItemsForResume(promotion.logicalIds, dailyCardsRef.current, new Date())
+          .filter(item => !currentLogicalIds.has(item.logicalId));
+        return admitted.length > 0
+          ? {
+            ...state,
+            stagePlan: { ...state.stagePlan, fresh: [...admitted, ...state.stagePlan.fresh] },
+            ...(state.phase.kind === 'bridge' ? { phase: { ...state.phase, nextStage: 'new' as const } } : {}),
+          }
+          : state;
+      });
+    });
+    const committed = multiStageRef.current;
+    if (!isCurrentSession(committed)
+      || admitted.length === 0
+      || admitted.some(item => !logicalIdsOf(committed.stagePlan.fresh).includes(item.logicalId))) return [];
+    const pointer = pointerForSession(committed);
+    if (pointer) writeDailySessionPointer(pointer);
+    if (committed.phase.kind === 'lesson' && committed.phase.stage === 'new') {
+      session.append(exercisesFor(admitted, currentPairCards));
+    }
+    return admitted.map(item => item.logicalId);
+  }), [currentPairCards, isCurrentSession, session]);
   const plan: DailyPlan | null = useMemo(() => activePool.status === 'ready'
-    ? buildDailyPlan(activePool.cards, { now: new Date() })
-    : null, [activePool]);
-  const placementCandidates = useMemo(() => activePool.cards.filter(card => (
-    getEligibleExerciseModes(card, activePool.cards).includes('recognition')
-  )), [activePool.cards]);
+    ? buildDailyPlan(currentPairCards, { now: new Date() })
+    : null, [activePool.status, currentPairCards]);
+  const matchOnlySession = useMemo(
+    () => hasMatchOnlySession(plan, activePool.cards, targetLanguage, translationLanguage),
+    [activePool.cards, plan, targetLanguage, translationLanguage],
+  );
+  const caughtUp = isCaughtUpDailyPlan(plan, currentPairCards.length > 0, matchOnlySession);
+  const placementCandidates = useMemo(() => currentPairCards.filter(card => (
+    getEligibleExerciseModes(card, currentPairCards).includes('recognition')
+  )), [currentPairCards]);
   const availablePlacement = useMemo(() => buildPlacementCheck(placementCandidates), [placementCandidates]);
   const navigateLesson = useCallback((mode: DailyLessonMode | null, focusDestination = true) => {
     setRouteLesson(mode);
@@ -343,18 +545,18 @@ export default function DailyLearningWorkspace({
   const startLesson = useCallback((mode: LessonMode, focusDestination = true) => {
     if (!plan?.items.length) return;
     const exercises = plan.items.map(({ card }) => buildExercise(
-      card,
-      activePool.cards, mode, inferScriptScoringPolicy(card.word),
+      card, currentPairCards, mode, inferScriptScoringPolicy(card.word),
     ));
-    lessonOwnerRef.current = ownerRef.current;
+    lessonScopeRef.current = { ownerId: ownerRef.current, targetLanguage, translationLanguage };
     session.start(exercises);
     navigateLesson(mode, focusDestination);
-  }, [activePool.cards, navigateLesson, plan, session]);
+  }, [currentPairCards, navigateLesson, plan, session, targetLanguage, translationLanguage]);
 
   const startStageExercises = useCallback((items: readonly DailyPlanItem[]) => {
-    lessonOwnerRef.current = ownerRef.current;
-    session.start(exercisesFor(items, activePool.cards));
-  }, [activePool.cards, session]);
+    lessonScopeRef.current = { ownerId: ownerRef.current, targetLanguage, translationLanguage };
+    recordedReviewOperationIdsRef.current.clear();
+    session.start(exercisesFor(items, currentPairCards));
+  }, [currentPairCards, session, targetLanguage, translationLanguage]);
 
   const clearOwnerPointer = useCallback(() => {
     if (ownerRef.current) clearDailySessionPointer(ownerRef.current);
@@ -367,32 +569,56 @@ export default function DailyLearningWorkspace({
     navigateLesson(null);
   }, [session, clearOwnerPointer, navigateLesson]);
 
-  const finishMultiStageSession = useCallback(() => {
+  const finishMultiStageSession = useCallback((reload = true) => {
     setMultiStage(null);
     clearOwnerPointer();
     navigateLesson(null);
-    void load();
+    if (reload) void load();
   }, [clearOwnerPointer, navigateLesson, load]);
 
   const beginMultiStageSession = useCallback(() => {
-    if (!plan?.items.length) { void continueReview(); return; }
+    if (isOffline) return;
     const owner = ownerRef.current;
-    const pendingFreshPriority = owner ? readPendingFreshPriority(owner) : [];
-    const stagePlan = withFreshPriority(buildSessionStagePlan(plan, activePool.cards), pendingFreshPriority);
-    if (owner && pendingFreshPriority.length > 0) clearPendingFreshPriority(owner);
+    const pendingPointer = owner ? readDailySessionPointer(owner) : null;
+    if (pendingPointer?.matchCompletionPending
+      && pendingPointer.targetLanguage === targetLanguage
+      && pendingPointer.translationLanguage === translationLanguage) {
+      navigateLesson('session');
+      return;
+    }
+    if (!plan) { void continueReview(); return; }
+    const languagePair = { targetLanguage, translationLanguage };
+    const pendingFreshPriority = owner ? readPendingFreshPriority(owner, languagePair) : [];
+    const sessionPlan = pendingFreshPriority.length > 0
+      ? buildDailyPlan(currentPairCards, { now: new Date(), freshPriorityLogicalIds: pendingFreshPriority })
+      : plan;
+    const stagePlan = withFreshPriority(buildSessionStagePlan(sessionPlan, activePool.cards, Math.random, {
+      targetLanguage,
+      translationLanguage,
+    }), pendingFreshPriority);
     const first = firstOutstandingStage(stagePlan);
     if (first === 'recap') { void continueReview(); return; }
     const state: MultiStageState = {
+      ownerId: owner,
+      targetLanguage,
+      translationLanguage,
       stagePlan,
       stats: emptyDailySessionStats,
       startedAt: new Date().toISOString(),
-      phase: first === 'match' ? { kind: 'match' } : { kind: 'lesson', stage: first },
+      matchStartOpId: null,
+      matchCompletionId: null,
+      matchCompletionPending: false,
+      matchStatus: 'idle',
+      phase: phaseForStage(first),
     };
     if (state.phase.kind === 'lesson') startStageExercises(itemsForStage(stagePlan, state.phase.stage));
     setMultiStage(state);
     navigateLesson('session');
+    if (owner && pendingFreshPriority.length > 0) consumeScheduledFreshPriority(owner, languagePair, [
+      ...logicalIdsOf(stagePlan.review), ...logicalIdsOf(stagePlan.fresh),
+    ]);
     triggerHaptic('light'); // Today → review/new: a light cue for the session starting, not a fanfare.
-  }, [plan, activePool.cards, continueReview, startStageExercises, navigateLesson]);
+  }, [plan, activePool.cards, continueReview, currentPairCards, isOffline, startStageExercises, navigateLesson, targetLanguage, translationLanguage]);
 
   const advanceMultiStage = useCallback((completedStage: SessionStageId) => {
     setMultiStage(current => {
@@ -408,34 +634,38 @@ export default function DailyLearningWorkspace({
 
   const continueToNextStage = useCallback(() => {
     const current = multiStageRef.current;
-    if (!current || current.phase.kind !== 'bridge') return;
+    if (!isCurrentSession(current) || current.phase.kind !== 'bridge') return;
     const { nextStage } = current.phase;
     if (nextStage === 'review' || nextStage === 'new') startStageExercises(itemsForStage(current.stagePlan, nextStage));
     setMultiStage({
       ...current,
-      phase: nextStage === 'review' || nextStage === 'new' ? { kind: 'lesson', stage: nextStage }
-        : nextStage === 'match' ? { kind: 'match' } : { kind: 'recap' },
+      phase: phaseForStage(nextStage),
     });
     triggerHaptic('light'); // bridge → next stage/recap: forward navigation cue.
-  }, [startStageExercises]);
+  }, [isCurrentSession, startStageExercises]);
 
   const skipUpcomingStage = useCallback(() => {
-    setMultiStage(current => (current && current.phase.kind === 'bridge' ? { ...current, phase: { kind: 'recap' } } : current));
+    setMultiStage(current => (isCurrentSession(current) && current.phase.kind === 'bridge'
+      ? { ...current, phase: { kind: 'recap' } }
+      : current));
     triggerHaptic('light'); // bridge → recap (skip): same forward-navigation cue as Continue.
-  }, []);
+  }, [isCurrentSession]);
 
   const finishMatchStage = useCallback(() => {
-    const awarded = matchXpRef.current;
-    matchXpRef.current = 0;
-    setMultiStage(current => (current
-      ? { ...current, stats: { ...current.stats, matchXp: current.stats.matchXp + awarded }, phase: { kind: 'recap' } }
+    const current = multiStageRef.current;
+    if (current?.phase.kind === 'match' && current.matchCompletionPending) {
+      if (current.matchStatus !== 'completing') { setMultiStage(null); navigateLesson(null); }
+      return;
+    }
+    setMultiStage(current => (isCurrentSession(current)
+      ? { ...current, phase: { kind: 'recap' } }
       : current));
     triggerHaptic('light'); // match → recap: WordMatchView already celebrated a win itself.
-  }, []);
+  }, [isCurrentSession, navigateLesson]);
 
   const retryWeakCards = useCallback(() => {
     const current = multiStageRef.current;
-    if (!current) return;
+    if (!isCurrentSession(current)) return;
     const weakIds = new Set(current.stats.weakCardIds);
     const items: DailyPlanItem[] = dailyCardsRef.current
       .filter(card => weakIds.has(card.id))
@@ -448,7 +678,7 @@ export default function DailyLearningWorkspace({
       stats: { ...current.stats, weakCardIds: [] },
       phase: { kind: 'lesson', stage: 'review' },
     });
-  }, [startStageExercises, finishMultiStageSession]);
+  }, [finishMultiStageSession, isCurrentSession, startStageExercises]);
 
   useEffect(() => {
     if (!routeLesson || routeLesson === 'placement' || routeLesson === 'session' || lesson || !plan?.items.length) return;
@@ -461,70 +691,119 @@ export default function DailyLearningWorkspace({
     // A pointer from another course's target language must never resume:
     // its reviewLogicalIds/freshLogicalIds/matchCardIds were computed
     // against that other course's cards.
-    if (!pointer || pointer.targetLanguage !== targetLanguage) { navigateLesson(null); return; }
-    const freshPlan = plan ?? buildDailyPlan(activePool.cards, { now: new Date() });
+    if (!pointer || pointer.targetLanguage !== targetLanguage || pointer.translationLanguage !== translationLanguage) { navigateLesson(null); return; }
+    const now = new Date();
+    const freshPlan = buildDailyPlan(currentPairCards, { now, freshPriorityLogicalIds: pointer.freshLogicalIds });
     const stagePlan: SessionStagePlan = {
       review: outstandingItems(pointer.reviewLogicalIds, freshPlan.items.filter(item => item.reason === 'due' || item.reason === 'weak')),
-      fresh: outstandingItems(pointer.freshLogicalIds, freshPlan.items.filter(item => item.reason === 'new')),
-      match: {
-        cards: activePool.cards.filter(card => pointer.matchCardIds.includes(card.id)),
-        skipReason: pointer.matchSkipReason,
-      },
+      fresh: freshItemsForResume(pointer.freshLogicalIds, currentPairCards, now),
+      match: restoredSessionMatchStage(activePool.cards, pointer.matchCardIds, { targetLanguage, translationLanguage }, Boolean(pointer.matchStartOpId)),
     };
-    const resumeStage: SessionStageId = pointer.stage === 'review' && stagePlan.review.length === 0
-      ? nextOutstandingStage(stagePlan, 'review')
-      : pointer.stage === 'new' && stagePlan.fresh.length === 0
-        ? nextOutstandingStage(stagePlan, 'new')
-        : pointer.stage;
-    const phase: MultiStagePhase = resumeStage === 'match' ? { kind: 'match' }
-      : resumeStage === 'recap' ? { kind: 'recap' }
-        : { kind: 'lesson', stage: resumeStage };
+    const resumeStage = pointer.bridgeCompletedStage || sessionStageItemCount(stagePlan, pointer.stage) === 0
+      ? nextOutstandingStage(stagePlan, pointer.bridgeCompletedStage ?? pointer.stage)
+      : pointer.stage;
+    const phase: MultiStagePhase = pointer.bridgeCompletedStage
+      ? { kind: 'bridge', completedStage: pointer.bridgeCompletedStage, nextStage: resumeStage }
+      : phaseForStage(resumeStage);
     if (phase.kind === 'lesson') startStageExercises(itemsForStage(stagePlan, phase.stage));
-    setMultiStage({ stagePlan, stats: pointer.stats, startedAt: pointer.startedAt, phase });
-  }, [routeLesson, multiStage, lesson, activePool, plan, navigateLesson, startStageExercises, targetLanguage]);
+    setMultiStage({
+      ownerId: ownerRef.current, targetLanguage, translationLanguage, stagePlan, stats: pointer.stats, startedAt: pointer.startedAt, phase,
+      matchStartOpId: pointer.matchStartOpId ?? null, matchCompletionId: pointer.matchCompletionId ?? null,
+      ...(pointer.matchTimeZone ? { matchTimeZone: pointer.matchTimeZone } : {}),
+      matchCompletionPending: pointer.matchCompletionPending ?? false, matchStatus: 'idle',
+    });
+  }, [routeLesson, multiStage, lesson, activePool, currentPairCards, navigateLesson, startStageExercises, targetLanguage, translationLanguage]);
 
-  const activeLesson = lessonOwnerRef.current === ownerId ? lesson : null;
+  const activeMultiStage = isCurrentSession(multiStage) ? multiStage : null;
+
+  useEffect(() => {
+    if (!activeMultiStage || activeMultiStage.phase.kind !== 'match' || activeMultiStage.matchStatus !== 'idle') return;
+    if (isOffline) {
+      updateCurrentMatch(current => ({ ...current, matchStatus: 'start-error' }), 'idle');
+      return;
+    }
+    const matchStartOpId = activeMultiStage.matchStartOpId ?? dailyMatchOperationId('start');
+    const matchCompletionId = activeMultiStage.matchCompletionId ?? dailyMatchOperationId('complete');
+    const matchTimeZone = activeMultiStage.matchTimeZone ?? practiceTimeZone();
+    const cardIds = activeMultiStage.stagePlan.match.cards.map(card => card.id);
+    if (cardIds.length < 4 || cardIds.length > 6) { finishMatchStage(); return; }
+    updateCurrentMatch(current => ({ ...current, matchStartOpId, matchCompletionId, ...(matchTimeZone ? { matchTimeZone } : {}), matchStatus: 'starting' }), 'idle');
+    void firebasePracticeSessionService.start({ opId: matchStartOpId, game: 'match', cardIds }).then(started => {
+      const cards = frozenMatchCards(started.challenge, cardIds, targetLanguage, translationLanguage);
+      updateCurrentMatch(current => ({
+        ...current, stagePlan: { ...current.stagePlan, match: { cards, skipReason: null } }, matchStatus: 'ready',
+      }), undefined, matchStartOpId);
+    }).catch(() => {
+      updateCurrentMatch(current => ({ ...current, matchStatus: 'start-error' }), undefined, matchStartOpId);
+    });
+  }, [activeMultiStage, finishMatchStage, isOffline, targetLanguage, translationLanguage, updateCurrentMatch]);
+
+  const completeDailyMatch = useCallback(async (pairs: Array<{ cardId: string; word: string; translation: string }>) => {
+    const current = multiStageRef.current;
+    if (!isCurrentMatch(current, 'ready') || !current.matchStartOpId || !current.matchCompletionId) return null;
+    const { matchStartOpId, matchCompletionId, matchTimeZone } = current;
+    const pendingCompletion = preparePendingMatchCompletion(current.stagePlan.match.cards, pairs, isOffline);
+    if (!pendingCompletion) return null;
+    const completing: MultiStageState = { ...current, matchCompletionPending: true, matchStatus: pendingCompletion.matchStatus };
+    const pointer = pointerForSession(completing);
+    if (pointer) writeDailySessionPointer(pointer);
+    updateCurrentMatch(() => completing, 'ready', matchStartOpId, matchCompletionId);
+    if (isOffline) return null;
+    try {
+      const result = await firebasePracticeSessionService.complete({
+        sessionId: matchStartOpId, completionId: matchCompletionId, answers: { pairs: pendingCompletion.pairs }, ...(matchTimeZone ? { timeZone: matchTimeZone } : {}),
+      });
+      const latest = multiStageRef.current;
+      if (!isCurrentMatch(latest, undefined, matchStartOpId, matchCompletionId)) return null;
+      if (latest.ownerId) onVerifiedPracticeOutcome(result.outcome, matchCompletionId, latest.ownerId);
+      updateCurrentMatch(state => ({
+        ...state, stats: { ...state.stats, matchXp: state.stats.matchXp + result.awardedXp }, phase: { kind: 'recap' }, matchCompletionPending: false, matchStatus: 'ready',
+      }), 'completing', matchStartOpId, matchCompletionId);
+      return { awardedXp: result.awardedXp };
+    } catch {
+      updateCurrentMatch(state => ({ ...state, matchStatus: 'complete-error' }), 'completing', matchStartOpId, matchCompletionId);
+      return null;
+    }
+  }, [isCurrentMatch, isOffline, onVerifiedPracticeOutcome, updateCurrentMatch]);
+
+  useEffect(() => {
+    if (activeMultiStage?.phase.kind === 'match' && activeMultiStage.matchStatus === 'ready' && activeMultiStage.matchCompletionPending) {
+      const cards = activeMultiStage.stagePlan.match.cards;
+      void completeDailyMatch(cards.map(card => ({ cardId: card.id, word: card.word, translation: card.translation })));
+    }
+  }, [activeMultiStage, completeDailyMatch]);
+
+  const lessonScope = lessonScopeRef.current;
+  const activeLesson = lessonScope.ownerId === ownerId && lessonScope.targetLanguage === targetLanguage && lessonScope.translationLanguage === translationLanguage && (!multiStage || activeMultiStage) ? lesson : null;
   const currentExercise = activeLesson?.exercises[activeLesson.index]
     ?? (activeLesson?.phase === 'completed' ? activeLesson.exercises.at(-1) : undefined);
   const currentCard = currentExercise && dailyCardsRef.current.find(card => card.id === currentExercise.cardId);
+  const committedReviewCount = activeMultiStage ? activeMultiStage.stats.goodCount + activeMultiStage.stats.againCount : 0;
 
-  if (multiStage?.phase.kind === 'bridge') {
-    const { completedStage, nextStage } = multiStage.phase;
-    const stageLabels: Readonly<Record<SessionStageId, string>> = {
-      review: _(msg({ id: 'session.stage.review', message: 'Review' })),
-      new: _(msg({ id: 'session.stage.new', message: 'New words' })),
-      match: _(msg({ id: 'session.stage.match', message: 'Word match' })),
-      recap: _(msg({ id: 'session.stage.recap', message: 'Recap' })),
-    };
-    const stageDescriptions: Readonly<Record<SessionStageId, string>> = {
-      review: _(msg({ id: 'session.stage.review.description', message: 'Review the words that are due or need another pass.' })),
-      new: _(msg({ id: 'session.stage.new.description', message: 'Meet a few new words for the first time.' })),
-      match: _(msg({ id: 'session.stage.match.description', message: 'Match target words to their meanings for a quick bonus round.' })),
-      recap: _(msg({ id: 'session.stage.recap.description', message: 'See what you strengthened today.' })),
-    };
-    const countFor = (stage: SessionStageId): number => stage === 'review' ? multiStage.stagePlan.review.length
-      : stage === 'new' ? multiStage.stagePlan.fresh.length
-        : stage === 'match' ? multiStage.stagePlan.match.cards.length : 0;
-    const completedCount = countFor(completedStage);
-    const nextCount = countFor(nextStage);
-    const stats: SessionBridgeStat[] = completedCount > 0
-      ? [{ label: _(msg({ id: 'session.bridge.stat.completed', message: 'Completed' })), value: String(completedCount) }]
+  if (activeMultiStage?.phase.kind === 'bridge') {
+    const { completedStage, nextStage } = activeMultiStage.phase;
+    const stageLabel = (id: SessionStageId) => _(sessionStageContent[id].label);
+    const nextCount = sessionStageItemCount(activeMultiStage.stagePlan, nextStage);
+    const stats: SessionBridgeStat[] = committedReviewCount > 0
+      ? [{ label: _(msg({ id: 'session.bridge.stat.reviewed', message: 'Reviewed' })), value: String(committedReviewCount) }]
       : [];
-    const preview = nextStage === 'new' ? multiStage.stagePlan.fresh[0]?.card
-      : nextStage === 'match' ? multiStage.stagePlan.match.cards[0] : undefined;
-    const skipReason = nextStage === 'match' && multiStage.stagePlan.match.skipReason
+    const preview = nextStage === 'new' ? activeMultiStage.stagePlan.fresh[0]?.card
+      : nextStage === 'match' ? activeMultiStage.stagePlan.match.cards[0] : undefined;
+    const skipReason = (nextStage === 'match' || skippedUnavailableMatchStage(activeMultiStage.stagePlan, completedStage, nextStage))
+      && activeMultiStage.stagePlan.match.skipReason
       ? _(msg({ id: 'session.stage.match.skip-reason', message: 'Not enough distinct word pairs are available today, so Word Match is skipped.' }))
       : undefined;
     const model: SessionBridgeModel = {
       headingRef,
       completedStage,
       nextStage,
-      completedLabel: i18n._(msg({ id: 'session.bridge.completed', message: '{stage} done' }).id, { stage: stageLabels[completedStage] }),
-      nextLabel: stageLabels[nextStage],
-      nextDescription: stageDescriptions[nextStage],
+      completedLabel: i18n._(msg({ id: 'session.bridge.completed', message: '{stage} done' }).id, { stage: stageLabel(completedStage) }),
+      nextLabel: stageLabel(nextStage),
+      nextDescription: _(sessionStageContent[nextStage].description),
       stats,
+      comboCount: committedReviewCount,
       stages: SESSION_STAGE_ORDER.map(id => ({
-        id, label: stageLabels[id],
+        id, label: stageLabel(id),
         completed: SESSION_STAGE_ORDER.indexOf(id) <= SESSION_STAGE_ORDER.indexOf(completedStage),
         current: id === nextStage,
       })),
@@ -540,19 +819,41 @@ export default function DailyLearningWorkspace({
     }} /></Suspense>;
   }
 
-  if (multiStage?.phase.kind === 'match') {
-    return <Suspense fallback={interactionFallback}><WordMatchView
-      cards={[...multiStage.stagePlan.match.cards]}
-      onAddXp={amount => { matchXpRef.current += amount; }}
+  if (activeMultiStage?.phase.kind === 'match' && activeMultiStage.matchStatus === 'ready' && !activeMultiStage.matchCompletionPending) {
+    return <div data-active-daily-match="true"><Suspense fallback={interactionFallback}><WordMatchView
+      cards={[...activeMultiStage.stagePlan.match.cards]}
+      onComplete={completeDailyMatch}
       onClose={finishMatchStage}
-    /></Suspense>;
+    /></Suspense></div>;
+  }
+
+  if (activeMultiStage?.phase.kind === 'match') {
+    const retryMatchStart = () => updateCurrentMatch(current => ({ ...current, matchStatus: 'idle' }), 'start-error');
+    const retryMatchCompletion = () => updateCurrentMatch(current => ({ ...current, matchStatus: 'ready' }), 'complete-error');
+    const completionFailed = activeMultiStage.matchStatus === 'complete-error';
+    const matchFailed = activeMultiStage.matchStatus === 'start-error' || completionFailed;
+    const hasRetainedCompletion = completionFailed || activeMultiStage.matchCompletionPending;
+    return <div data-active-daily-match="true" role="status" className="rounded-2xl border border-[var(--sf-border)] p-5">
+      {matchFailed ? <>
+        <p>{isOffline
+          ? <Trans id="today.offline" message="You're offline. Reconnect to start today's session." />
+          : completionFailed
+            ? <Trans id="today.match.verification-failed" message="We could not verify your result. Your completed pairs are still here." />
+            : <Trans id="today.match.start-failed" message="Word Match could not start. Your completed reviews are saved." />}</p>
+        <button type="button" onClick={completionFailed ? retryMatchCompletion : retryMatchStart}>{completionFailed
+          ? <Trans id="today.match.retry-verification" message="Retry verification" />
+          : <Trans id="daily.placement.retry" message="Try again" />}</button>
+        <button type="button" onClick={hasRetainedCompletion ? finishMatchStage : exitMultiStageSession}><Trans id="daily.lesson.back-to-today" message="Back to Today" /></button>
+        {hasRetainedCompletion && <button type="button" onClick={exitMultiStageSession}><Trans id="today.match.abandon" message="Abandon round and start over" /></button>}
+      </> : <Trans id="today.activity.preparing" message="Preparing activity…" />}
+    </div>;
   }
 
   if (routeLesson === 'placement') {
     const check = placementCheck ?? availablePlacement;
     const readyCheck = check.status === 'ready' ? check : null;
     const item = readyCheck?.items[placementIndex];
-    const question = item ? buildExercise(item.card, activePool.cards, 'recognition') : null;
+    const question = item ? buildExercise(item.card, currentPairCards, 'recognition') : null;
     let model: PlacementScreenModel;
     if (activePool.status === 'loading') model = { headingRef, status: 'loading', message: _(msg({ id: 'today.placement.preparing', message: 'Preparing placement evidence…' })) };
     else if (activePool.status === 'error') model = { headingRef, status: 'error', message: activePool.error };
@@ -596,6 +897,17 @@ export default function DailyLearningWorkspace({
   }
 
   if (activeLesson && currentExercise) {
+    const isCurrentLessonScope = () => lessonScopeRef.current === lessonScope
+      && lessonScope.ownerId === ownerRef.current
+      && lessonScope.targetLanguage === targetLanguageRef.current
+      && lessonScope.translationLanguage === translationLanguageRef.current;
+    const recordReview = (result: Awaited<ReturnType<typeof session.rate>>, operationId: string | undefined, cardId: string, rating: ReviewRatingValue) => {
+      if (!operationId || recordedReviewOperationIdsRef.current.has(operationId) || !isCurrentLessonScope() || (result.status !== 'advanced' && result.status !== 'completed')) return;
+      recordedReviewOperationIdsRef.current.add(operationId);
+      setMultiStage(current => (isCurrentSession(current)
+        ? { ...current, stats: applyRatingToStats(current.stats, cardId, rating, result.xpAwarded) }
+        : current));
+    };
     const feedback = activeLesson.feedback;
     const model: LessonScreenModel = {
       headingRef,
@@ -637,13 +949,18 @@ export default function DailyLearningWorkspace({
       },
       submitAnswer: () => { session.submit(answerFor(currentExercise, answer, tokenIds)); },
       rate: rating => {
+        if (!isCurrentLessonScope()) return;
         const cardId = currentExercise.cardId;
-        void session.rate(rating).then(result => {
-          if (result.status !== 'advanced' && result.status !== 'completed') return;
-          setMultiStage(current => (current ? { ...current, stats: applyRatingToStats(current.stats, cardId, rating) } : current));
-        });
+        const rate = session.rate(rating);
+        const operationId = session.getSnapshot()?.pendingReview?.operationId;
+        void rate.then(result => recordReview(result, operationId, cardId, rating));
       },
-      retryRating: () => { void session.retry(); },
+      retryRating: () => {
+        if (!isCurrentLessonScope()) return;
+        const pending = session.getSnapshot()?.pendingReview;
+        if (!pending) return;
+        void session.retry().then(result => recordReview(result, pending.operationId, pending.itemId, pending.rating));
+      },
       exit: () => {
         session.close();
         if (multiStage) { exitMultiStageSession(); return; }
@@ -658,51 +975,68 @@ export default function DailyLearningWorkspace({
     }} /></Suspense>;
   }
 
-  const weakCards: CardData[] = multiStage
-    ? multiStage.stats.weakCardIds.flatMap(id => {
+  const weakCards: CardData[] = activeMultiStage
+    ? activeMultiStage.stats.weakCardIds.flatMap(id => {
         const card = dailyCardsRef.current.find(candidate => candidate.id === id);
         return card ? [card] : [];
       })
     : [];
-  const sessionTotalCards = multiStage ? multiStage.stagePlan.review.length + multiStage.stagePlan.fresh.length : 0;
-  const sessionXpEarned = multiStage
-    ? (multiStage.stats.goodCount + multiStage.stats.againCount) * REVIEW_XP + multiStage.stats.matchXp
+  const sessionTotalCards = committedReviewCount;
+  const sessionXpEarned = activeMultiStage
+    ? (activeMultiStage.stats.reviewXp ?? 0) + activeMultiStage.stats.matchXp
     : 0;
+  const todayStagePlan = plan
+    ? buildSessionStagePlan(plan, activePool.cards, () => 0, { targetLanguage, translationLanguage })
+    : null;
+  const todayPreviewCard = plan?.items[0]?.card ?? (matchOnlySession ? todayStagePlan?.match.cards[0] : undefined);
 
   const todayModel: TodayScreenModel = {
     headingRef,
-    streak: evidencedStudyStreak(streak, studyXpHistory),
+    streak: evidencedStudyStreak(streak, studyXpHistory, undefined, rewardTimeZone),
     courseLabel: `${courseLanguageNames.of(languageProfile.source.code) || languageProfile.source.displayName} ← ${courseLanguageNames.of(languageProfile.target.code) || languageProfile.target.displayName}`,
-    status: activePool.status === 'loading' ? 'loading'
-      : activePool.status === 'error' ? 'error'
-        : plan?.items.length === 0 && activePool.cards.length > 0 ? 'caught-up'
-          : !plan?.items.length ? 'empty' : isOffline ? 'offline' : 'ready',
+    status: dailyTodayStatus(activePool.status, plan, currentPairCards.length > 0, matchOnlySession, isOffline),
     isOffline,
     message: activePool.status === 'loading' ? _(msg({ id: 'today.plan.preparing', message: 'Preparing a bounded daily plan…' }))
       : activePool.status === 'error' ? activePool.error
-        : plan?.items.length === 0 && activePool.cards.length > 0 ? _(msg({ id: 'today.plan.caught-up', message: 'No due or new cards are available in this daily plan.' }))
-          : !plan?.items.length ? _(msg({ id: 'today.plan.empty', message: 'Add vocabulary or return when a reviewed card is due.' }))
-            : plan.isShort ? _(msg({ id: 'today.plan.short', message: 'A shorter plan is ready.' })) : _(msg({ id: 'today.plan.ready', message: 'Your plan is ready.' })),
+        : caughtUp ? _(msg({ id: 'today.plan.caught-up', message: 'No due or new cards are available in this daily plan.' }))
+          : !plan?.items.length && !matchOnlySession ? _(msg({ id: 'today.plan.empty', message: 'Add vocabulary or return when a reviewed card is due.' }))
+            : plan?.isShort ? _(msg({ id: 'today.plan.short', message: 'A shorter plan is ready.' })) : _(msg({ id: 'today.plan.ready', message: 'Your plan is ready.' })),
     plan: plan ? { total: plan.counts.total, due: plan.counts.due, weak: plan.counts.weak, fresh: plan.counts.new, isShort: plan.isShort } : null,
+    ...(todayPreviewCard ? { previewCard: {
+      word: todayPreviewCard.word,
+      translation: todayPreviewCard.translation,
+      ...(todayPreviewCard.phonetic ? { phonetic: todayPreviewCard.phonetic } : {}),
+      ...(todayPreviewCard.category ? { category: todayPreviewCard.category } : {}),
+      imageUrl: todayPreviewCard.imageUrl ?? null,
+      ...(todayPreviewCard.language ? { language: todayPreviewCard.language } : {}),
+      ...(todayPreviewCard.translationLanguage ? { translationLanguage: todayPreviewCard.translationLanguage } : {}),
+    } } : {}),
+    ...(todayStagePlan ? { sessionStages: [
+      { id: 'review' as const, count: todayStagePlan.review.length, skipped: todayStagePlan.review.length === 0 },
+      { id: 'new' as const, count: todayStagePlan.fresh.length, skipped: todayStagePlan.fresh.length === 0 },
+      { id: 'match' as const, count: todayStagePlan.match.cards.length, skipped: todayStagePlan.match.skipReason !== null },
+      { id: 'recap' as const, count: 0, skipped: false },
+    ] } : {}),
     placementAvailable: availablePlacement.status === 'ready',
-    ...(plan?.items.length === 0 && activePool.cards.length > 0
+    ...(caughtUp
       ? { caughtUp: {} }
       : {}),
   };
   return <>
-    <TodayScreen model={todayModel} ownerId={ownerId} targetLanguage={targetLanguage} actions={{
+    <TodayScreen model={todayModel} ownerId={ownerId} targetLanguage={targetLanguage} translationLanguage={translationLanguage} actions={{
       openVocabulary, openPaths, retry: () => void load(), startSession: beginMultiStageSession, startLesson,
       startPlacement: () => navigateLesson('placement'), openMorePractice,
     }} />
-    {multiStage?.phase.kind === 'recap' && (
+    {activeMultiStage?.phase.kind === 'recap' && (
       <Suspense fallback={null}>
         <SessionRecapModal
           open
           onClose={finishMultiStageSession}
+          onViewWeeklyRecap={() => { finishMultiStageSession(false); openWeeklyRecap(); }}
           {...(weakCards.length > 0 ? { onRetryWeak: retryWeakCards } : {})}
           totalCards={sessionTotalCards}
-          goodCount={multiStage.stats.goodCount}
-          againCount={multiStage.stats.againCount}
+          goodCount={activeMultiStage.stats.goodCount}
+          againCount={activeMultiStage.stats.againCount}
           xpEarned={sessionXpEarned}
           weakCards={weakCards}
           targetLanguage={targetLanguage}

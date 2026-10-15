@@ -1,20 +1,25 @@
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { Pause, Play, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { Pause, Pencil, Play, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useCourseSession } from './CourseGate';
 import type { Course, CourseGoal } from './courseModel';
 import { goalKindLabel, goalKindsFor } from './courseGoalCatalog';
 
 const rowClass = 'flex min-h-11 w-full items-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm';
 const iconButtonClass = 'grid size-11 shrink-0 place-items-center rounded-lg text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2';
+const goalFieldClass = 'mt-1 block w-full min-h-11 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-2 text-sm text-[var(--sf-text)]';
 
 function GoalRow({ course, goal, pending }: { readonly course: Course; readonly goal: CourseGoal; readonly pending: boolean }) {
   const { _ } = useLingui();
   const { actions } = useCourseSession();
   const label = goalKindLabel(course.targetLanguage, goal.kind);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [level, setLevel] = useState(goal.level ?? '');
+  const [targetDate, setTargetDate] = useState(goal.targetDate ?? '');
   const togglePause = () => void actions.updateGoal(course.id, goal.id, { status: goal.status === 'paused' ? 'active' : 'paused' });
-  return <li className={rowClass}>
+  return <li className={`${rowClass} flex-wrap`}>
     <span className="min-w-0 flex-1">
       <span className="block font-bold text-[var(--sf-text)]">{label ? _(label) : goal.kind}</span>
       <span className="mt-0.5 block text-xs text-[var(--sf-text-muted)]">
@@ -26,12 +31,35 @@ function GoalRow({ course, goal, pending }: { readonly course: Course; readonly 
         {goal.status === 'completed' && <span className="ml-1 font-semibold"><Trans id="course.goal.completed" message="(completed)" /></span>}
       </span>
     </span>
-    {goal.status !== 'completed' && <button type="button" disabled={pending} onClick={togglePause} className={iconButtonClass}
+    {!editing && <button type="button" disabled={pending} onClick={() => { setLevel(goal.level ?? ''); setTargetDate(goal.targetDate ?? ''); setEditing(true); }} className={iconButtonClass}
+      aria-label={_(msg({ id: 'course.goal.edit', message: 'Edit goal' }))}><Pencil size={16} aria-hidden="true" /></button>}
+    {goal.status !== 'completed' && <button type="button" disabled={pending || saving || editing} onClick={togglePause} className={iconButtonClass}
       aria-label={_(goal.status === 'paused' ? msg({ id: 'course.goal.resume', message: 'Resume goal' }) : msg({ id: 'course.goal.pause', message: 'Pause goal' }))}>
       {goal.status === 'paused' ? <Play size={16} aria-hidden="true" /> : <Pause size={16} aria-hidden="true" />}
     </button>}
-    <button type="button" disabled={pending} onClick={() => void actions.removeGoal(course.id, goal.id)} className={iconButtonClass}
+    <button type="button" disabled={pending || saving || editing} onClick={() => void actions.removeGoal(course.id, goal.id)} className={iconButtonClass}
       aria-label={_(msg({ id: 'course.goal.remove', message: 'Remove goal' }))}><Trash2 size={16} aria-hidden="true" /></button>
+    {editing && <form className="w-full space-y-2 pt-2" onSubmit={event => {
+      event.preventDefault();
+      if (pending || saving) return;
+      setSaving(true);
+      void actions.updateGoal(course.id, goal.id, { level: level.trim() || null, targetDate: targetDate || null }).then(result => {
+        if (result.ok) setEditing(false);
+      }).finally(() => setSaving(false));
+    }}>
+      <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="course.goal.add.level-label" message="Level or target (optional)" />
+        <input className={goalFieldClass}
+          value={level} onChange={event => setLevel(event.target.value)} disabled={pending || saving} maxLength={32} />
+      </label>
+      <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="course.goal.add.date-label" message="Exam or target date (optional)" />
+        <input type="date" className={goalFieldClass}
+          value={targetDate} onChange={event => setTargetDate(event.target.value)} disabled={pending || saving} />
+      </label>
+      <div className="flex gap-2">
+        <button type="button" disabled={pending || saving} onClick={() => setEditing(false)} className="min-h-11 flex-1 rounded-xl border border-[var(--sf-border)] px-3 text-sm font-bold text-[var(--sf-text)] disabled:opacity-60"><Trans id="course.goal.edit.cancel" message="Cancel" /></button>
+        <button type="submit" disabled={pending || saving} className="min-h-11 flex-1 rounded-xl bg-[var(--sf-brand)] px-3 text-sm font-bold text-[var(--sf-on-brand)] disabled:opacity-60"><Trans id="course.goal.edit.save" message="Save goal" /></button>
+      </div>
+    </form>}
   </li>;
 }
 
@@ -42,28 +70,35 @@ function AddGoalForm({ course, pending }: { readonly course: Course; readonly pe
   const [kind, setKind] = useState(options[0]?.kind ?? '');
   const [level, setLevel] = useState('');
   const [targetDate, setTargetDate] = useState('');
+  const [saving, setSaving] = useState(false);
+  const optionKinds = options.map(option => option.kind).join(',');
+  useEffect(() => {
+    setKind(current => options.some(option => option.kind === current) ? current : options[0]?.kind ?? '');
+  }, [optionKinds]);
   if (options.length === 0) return null;
   const selected = options.find(option => option.kind === kind) ?? options[0];
   return <form className="mt-2 space-y-2 rounded-xl border border-dashed border-[var(--sf-border)] p-3" onSubmit={event => {
     event.preventDefault();
+    if (pending || saving) return;
+    setSaving(true);
     void actions.addGoal(course.id, { kind, level: level.trim() || null, targetDate: targetDate || null }).then(result => {
       if (result.ok) { setLevel(''); setTargetDate(''); }
-    });
+    }).finally(() => setSaving(false));
   }}>
     <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="course.goal.add.kind-label" message="Goal" />
-      <select className="mt-1 block w-full min-h-11 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-2 text-sm text-[var(--sf-text)]" value={kind} onChange={event => setKind(event.target.value)}>
+      <select disabled={pending || saving} className={goalFieldClass} value={kind} onChange={event => setKind(event.target.value)}>
         {options.map(option => <option key={option.kind} value={option.kind}>{_(option.label)}</option>)}
       </select>
     </label>
     <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="course.goal.add.level-label" message="Level or target (optional)" />
-      <input className="mt-1 block w-full min-h-11 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-2 text-sm text-[var(--sf-text)]"
-        value={level} onChange={event => setLevel(event.target.value)} placeholder={selected ? _(selected.levelHint) : ''} maxLength={32} />
+      <input className={goalFieldClass}
+        value={level} onChange={event => setLevel(event.target.value)} disabled={pending || saving} placeholder={selected ? _(selected.levelHint) : ''} maxLength={32} />
     </label>
     <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="course.goal.add.date-label" message="Exam or target date (optional)" />
-      <input type="date" className="mt-1 block w-full min-h-11 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-2 text-sm text-[var(--sf-text)]"
-        value={targetDate} onChange={event => setTargetDate(event.target.value)} />
+      <input type="date" className={goalFieldClass}
+        value={targetDate} onChange={event => setTargetDate(event.target.value)} disabled={pending || saving} />
     </label>
-    <button type="submit" disabled={pending} className="min-h-11 w-full rounded-xl bg-[var(--sf-brand)] px-3 text-sm font-bold text-[var(--sf-on-brand)] disabled:opacity-60">
+    <button type="submit" disabled={pending || saving} className="min-h-11 w-full rounded-xl bg-[var(--sf-brand)] px-3 text-sm font-bold text-[var(--sf-on-brand)] disabled:opacity-60">
       <Plus size={16} aria-hidden="true" className="mr-1 inline" /><Trans id="course.goal.add.submit" message="Add goal" />
     </button>
   </form>;

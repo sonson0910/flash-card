@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { CardQueryState } from '../../lib/cardQuery';
 import type { CardData } from '../../types/card';
 import { overlayRecentlyPromotedCards } from '../library/libraryPresentation';
@@ -12,6 +12,11 @@ import { createCloudLibraryPageController, type CloudLibraryCachePort } from './
 import { createCloudLibraryPageFirebaseAdapter } from './cloudLibraryPageFirebaseAdapter';
 import { db, isFirebaseConfigured } from '../../lib/firebase';
 
+const localDateKey = () => {
+  const now = new Date();
+  return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+};
+
 export function useCloudLibraryPage({
   ownerId,
   query,
@@ -20,6 +25,7 @@ export function useCloudLibraryPage({
   pageSize,
   refreshKey,
   statsOpen,
+  statsRefreshRequest,
   progressEvidenceOpen,
   getPromotedCards,
 }: {
@@ -30,13 +36,31 @@ export function useCloudLibraryPage({
   pageSize: number;
   refreshKey: number;
   statsOpen: boolean;
+  statsRefreshRequest?: { ownerId: string; requestId: number } | null;
   progressEvidenceOpen: boolean;
   getPromotedCards: () => readonly CardData[];
 }) {
   const promotedRef = useRef(getPromotedCards);
   const queryRef = useRef(query);
+  const [localDay, setLocalDay] = useState(localDateKey);
   promotedRef.current = getPromotedCards;
   queryRef.current = query;
+
+  useEffect(() => {
+    if ((!statsOpen && !progressEvidenceOpen) || !ownerId) return;
+    const checkDay = () => setLocalDay(localDateKey());
+    const now = new Date();
+    const nextDay = new Date(now);
+    nextDay.setHours(24, 0, 0, 0);
+    const timer = window.setTimeout(checkDay, nextDay.getTime() - now.getTime() + 50);
+    window.addEventListener('focus', checkDay);
+    document.addEventListener('visibilitychange', checkDay);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('focus', checkDay);
+      document.removeEventListener('visibilitychange', checkDay);
+    };
+  }, [ownerId, statsOpen, progressEvidenceOpen, localDay]);
 
   const transformPage = useCallback(async (request: { query: CardQueryState; page: number; pageSize: number }, items: CardData[]) =>
     overlayRecentlyPromotedCards({
@@ -107,12 +131,18 @@ export function useCloudLibraryPage({
     // Depending on targetLanguage (not the whole query) means an unrelated
     // catalog filter change never re-triggers a stats read; only opening the
     // panel or switching the active course does.
-    if (statsOpen && ownerId) void controller.requestStats(query.targetLanguage ?? null);
-  }, [controller, ownerId, statsOpen, query.targetLanguage]);
+    if (statsOpen && ownerId && statsRefreshRequest?.ownerId !== ownerId) void controller.requestStats(query.targetLanguage ?? null);
+  }, [controller, ownerId, statsOpen, statsRefreshRequest?.ownerId, query.targetLanguage, localDay]);
+
+  useEffect(() => {
+    if (ownerId && statsRefreshRequest?.ownerId === ownerId) {
+      void controller.requestStats(query.targetLanguage ?? null, { requestId: statsRefreshRequest.requestId });
+    }
+  }, [controller, ownerId, statsRefreshRequest?.ownerId, statsRefreshRequest?.requestId, query.targetLanguage]);
 
   useEffect(() => {
     if (progressEvidenceOpen && ownerId) void controller.requestProgressEvidence(query.targetLanguage ?? null);
-  }, [controller, ownerId, progressEvidenceOpen, query.targetLanguage]);
+  }, [controller, ownerId, progressEvidenceOpen, query.targetLanguage, localDay]);
 
   useEffect(() => () => controller.stop(), [controller]);
   return snapshot;

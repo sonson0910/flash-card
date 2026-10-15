@@ -11,6 +11,8 @@ import { GsapEntrance } from './motion/GsapEntrance';
 import { RecoverableActionFeedback } from './RecoverableActionFeedback';
 import { scheduleOverlayFocusRestore } from '../features/overlays/useOverlayState';
 import { getPracticeModes, resolvePracticeModeAction, type PracticeModeId } from '../features/practice/practiceModeRegistry';
+import type { LibraryDialogPhase } from '../features/library/LibraryDialogOverlays';
+import type { LibraryInsightsPhase } from '../features/library/LibraryDialogOverlays';
 import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
 import type { CardData } from '../types/card';
 import './share-dialog.css';
@@ -63,10 +65,16 @@ interface AppOverlaysProps {
   isStatsOpen: boolean;
   setIsStatsOpen: (value: boolean) => void;
   statsData: StatsData;
+  insightsPhase?: LibraryInsightsPhase;
+  insightsError?: string | null;
+  onRetryInsights?: () => void;
   isDarkMode: boolean;
   showClearConfirm: boolean;
   setShowClearConfirm: (value: boolean) => void;
   clearAll: () => Promise<void>;
+  clearStatus: LibraryDialogPhase;
+  clearError: string | null;
+  resetClearFeedback: () => void;
   isLoading: boolean;
   shareOpenerRef: RefObject<HTMLElement | null>;
   practiceOpenerRef: RefObject<HTMLElement | null>;
@@ -136,7 +144,8 @@ export function AppOverlays({
   canRevokeShare, revokeShare, isSharing,
   isPracticeMenuOpen, setIsPracticeMenuOpen, startQuiz,
   startSpelling, startLanguageDrill, startMatch, startShadowing, practiceCards, visibleLibraryCount, generateStory, isStatsOpen, setIsStatsOpen,
-  statsData, isDarkMode, showClearConfirm, setShowClearConfirm, clearAll, isLoading,
+  statsData, insightsPhase, insightsError, onRetryInsights, isDarkMode, showClearConfirm, setShowClearConfirm, clearAll, isLoading,
+  clearStatus, clearError, resetClearFeedback,
   shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef, onExportLibrary, onOpenProgress,
 }: AppOverlaysProps) {
   const { _, i18n } = useLingui();
@@ -326,6 +335,9 @@ export function AppOverlays({
             open
             onOpenChange={setIsStatsOpen}
             stats={statsData.total > 0 ? statsData : null}
+            phase={insightsPhase}
+            errorMessage={insightsError}
+            onRetry={onRetryInsights}
             restoreFocusRef={statsOpenerRef}
             onOpenProgress={onOpenProgress ? () => { setIsStatsOpen(false); onOpenProgress(); } : undefined}
           />
@@ -336,9 +348,13 @@ export function AppOverlays({
         <Suspense fallback={null}>
           <LibraryClearDialog
             open
-            onOpenChange={setShowClearConfirm}
+            onOpenChange={open => {
+              setShowClearConfirm(open);
+              if (!open) resetClearFeedback();
+            }}
             onConfirm={() => { if (!isLoading) void clearAll(); }}
-            status="idle"
+            status={clearStatus}
+            errorMessage={clearError}
             restoreFocusRef={clearOpenerRef}
             cardCount={statsData.total > 0 ? statsData.total : undefined}
             masteredCount={statsData.total > 0 ? statsData.learned : undefined}

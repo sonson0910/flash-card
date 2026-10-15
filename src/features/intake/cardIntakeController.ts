@@ -4,6 +4,7 @@ import { createLexemeId } from '../multilingual/lexemeIdentity';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import { isSupportedImageUrl } from '../../lib/images';
 import { captureFailureMessage } from '../../lib/captureFailureMessage';
+import type { WordGenerationProgress } from '../../lib/gemini';
 import type { CardData } from '../../types/card';
 import {
   createSpreadsheetImportService,
@@ -53,6 +54,8 @@ export interface CardGenerationRequest extends CardGenerationOptions {
   term: string;
   language: LanguageProfile;
   operationId?: string;
+  onProgress?: (progress: WordGenerationProgress) => void;
+  signal?: AbortSignal;
 }
 
 export class RequestedDeckUnavailableError extends Error {
@@ -66,6 +69,7 @@ export class RequestedDeckUnavailableError extends Error {
 
 export interface CardIntakeControllerPort extends SpreadsheetCardIntakePort {
   captureSession?(): () => boolean;
+  cancelGeneration?(operationId: string): Promise<void>;
   generateCard(request: CardGenerationRequest): Promise<{
     card: CardData;
     mediaPromise: Promise<CardMediaPatch>;
@@ -142,6 +146,11 @@ export interface CardIntakeSnapshot {
   importResult: SpreadsheetImportResult | null;
   error: string | null;
   cardCreator: CardCreatorModel;
+}
+
+export interface CardIntakeLanguagePair {
+  targetLanguage: string;
+  nativeLanguage: string;
 }
 
 type GenerateResult =
@@ -359,10 +368,11 @@ const manualCardFromDraft = (
   draft: ManualCardDraft,
   language: LanguageProfile,
   createdAt: string,
+  allowEmptyTranslation = false,
 ): CardData | null => {
   const word = language.normalize(draft.word).slice(0, 80);
   const translation = boundedText(draft.translation, 256);
-  if (!word || !translation) return null;
+  if (!word || (!translation && !allowEmptyTranslation)) return null;
   const deck = boundedText(draft.deck, 128);
   const partOfSpeech = normalizePartOfSpeech(draft.partOfSpeech);
   const card: CardData = {
@@ -430,6 +440,8 @@ export function createCardIntakeController({
     partOfSpeech: string;
   } | null = null;
   let creatorMediaPromise: Promise<CardMediaPatch | null> | null = null;
+  let creatorGenerationAbort: AbortController | null = null;
+  const creatorEditedFields = new Set<keyof CardData>();
   let creatorInvocation = 0;
   let activeOperationToken = 0;
   let spreadsheetLifecycle: number | null = null;
@@ -646,12 +658,21 @@ export function createCardIntakeController({
 
   const clearCreatorOperation = (keepMedia = false) => {
     creatorOperation = null;
+    creatorEditedFields.clear();
     if (!keepMedia) creatorMediaPromise = null;
     draftOperation = null;
     try { draftPort?.clearOperation?.(); } catch { /* storage is optional */ }
   };
 
+  const cancelCreatorGeneration = () => {
+    const cancellingId = snapshot.cardCreator.stage === 'generating' ? creatorOperation?.id : null;
+    creatorGenerationAbort?.abort();
+    creatorGenerationAbort = null;
+    if (cancellingId) void port.cancelGeneration?.(cancellingId).catch(() => undefined);
+  };
+
   const closeCardCreator = () => {
+    cancelCreatorGeneration();
     creatorLifecycle += 1;
     creatorInvocation += 1;
     if (activeOperation === 'creator-generate' || activeOperation === 'creator-save') {
@@ -696,6 +717,7 @@ export function createCardIntakeController({
     if (requestChanged && (creatorOperation
       || activeOperation === 'creator-generate'
       || activeOperation === 'creator-save')) {
+      cancelCreatorGeneration();
       creatorLifecycle += 1;
       creatorInvocation += 1;
       if (activeOperation === 'creator-generate' || activeOperation === 'creator-save') {
@@ -775,6 +797,9 @@ export function createCardIntakeController({
     const current = snapshot.cardCreator;
     if (!current.preview) return;
     const nextPatch = creatorPatch(patch);
+    if (current.stage === 'generating') Object.keys(nextPatch).forEach(field => {
+      creatorEditedFields.add(field as keyof CardData);
+    });
     const nextPreview: CardData = { ...current.preview, ...nextPatch };
     const nextDraft = patch.customDeck === undefined
       ? current.draft
@@ -833,6 +858,7 @@ export function createCardIntakeController({
     if (isRegeneration) {
       clearCreatorOperation(true);
     }
+    creatorEditedFields.clear();
     const invocation = ++creatorInvocation;
     const lifecycle = creatorLifecycle;
     const controllerGeneration = controllerLifecycle;
@@ -843,6 +869,7 @@ export function createCardIntakeController({
       cardCreator: {
         ...snapshot.cardCreator,
         stage: 'generating',
+        generationStage: null,
         draft,
         duplicate: null,
         error: null,
@@ -910,6 +937,17 @@ export function createCardIntakeController({
       try { draftPort?.writeOperation?.(draftOperation); } catch { /* storage is optional */ }
     }
 
+    const initialPreview = isRegeneration ? current.preview : manualCardFromDraft({
+      word: normalizedWord, translation: '', deck: requestedDeck, partOfSpeech: partOfSpeechHint,
+    }, language, now(), true);
+    if (initialPreview && !isRegeneration) publishCardCreator({ preview: {
+      ...initialPreview, origin: 'ai',
+      category: '', emoji: '',
+    } });
+    const generationPreview = snapshot.cardCreator.preview;
+    const generationAbort = new AbortController();
+    creatorGenerationAbort = generationAbort;
+
     try {
       const generated = await port.generateCard({
         term: normalizedWord,
@@ -918,6 +956,24 @@ export function createCardIntakeController({
         ...(context ? { context } : {}),
         ...(partOfSpeechHint ? { partOfSpeechHint } : {}),
         ...(requestedDeck ? { requestedDeck } : {}),
+        onProgress: progress => {
+          if (progress.operationId !== creatorOperation?.id
+            || !isCreatorInvocationCurrent(invocation, lifecycle, controllerGeneration)
+            || snapshot.cardCreator.stage !== 'generating') return;
+          if (progress.stage === 'reserving' || progress.stage === 'drafting') {
+            publishCardCreator({ generationStage: progress.stage });
+            return;
+          }
+          if (progress.stage !== 'field' || !progress.field
+            || !creatorPreviewFields.includes(progress.field as typeof creatorPreviewFields[number])
+            || creatorEditedFields.has(progress.field as keyof CardData)) return;
+          const value = progress.value;
+          const valid = typeof value === 'string' || (Array.isArray(value) && value.every(item => typeof item === 'string'))
+            || (progress.field === 'wordFamily' && value !== null && typeof value === 'object' && !Array.isArray(value));
+          if (!valid || !snapshot.cardCreator.preview) return;
+          publishCardCreator({ preview: { ...snapshot.cardCreator.preview, [progress.field]: value } });
+        },
+        signal: generationAbort.signal,
       });
       if (!isCreatorInvocationCurrent(invocation, lifecycle, controllerGeneration)) {
         void generated.mediaPromise.catch(() => undefined);
@@ -944,9 +1000,16 @@ export function createCardIntakeController({
       const preview = isRegeneration
         ? mergeRegeneratedFields(snapshot.cardCreator.preview!, generatedCard, selectedFields)
         : generatedCard;
+      for (const field of creatorEditedFields) {
+        if (snapshot.cardCreator.preview && field in snapshot.cardCreator.preview) {
+          (preview as unknown as Record<string, unknown>)[field] = snapshot.cardCreator.preview[field];
+        }
+      }
+      creatorEditedFields.clear();
       const nextOperationId = creatorOperation!.id;
       publishCardCreator({
         stage: 'preview',
+        generationStage: null,
         preview,
         completedAiRequests: snapshot.cardCreator.completedAiRequests + 1,
         duplicate: null,
@@ -963,9 +1026,17 @@ export function createCardIntakeController({
         error,
       );
       diagnostics.generationFailed?.(error);
-      publishCardCreator({ stage: 'error', error: createError });
+      publishCardCreator({
+        stage: 'error',
+        generationStage: null,
+        preview: snapshot.cardCreator.preview === generationPreview
+          ? current.preview
+          : snapshot.cardCreator.preview,
+        error: createError,
+      });
       return { status: 'failed', error: createError };
     } finally {
+      if (creatorGenerationAbort === generationAbort) creatorGenerationAbort = null;
       if (activeOperation === 'creator-generate' && activeOperationToken === invocation) {
         activeOperation = null;
         publish({ isSubmitting: false });
@@ -985,8 +1056,8 @@ export function createCardIntakeController({
   const saveCardCreator = async (): Promise<CardCreateResult> => {
     const current = snapshot.cardCreator;
     if (activeOperation) return { status: 'busy' };
-    if (!current.open || !current.preview) {
-      const error = createCardCreatorError('invalid', 'Complete the card fields before saving.');
+    if (!current.open || !current.preview || (current.mode === 'ai' && current.stage !== 'preview')) {
+      const error = createCardCreatorError('invalid', 'Wait for a complete AI preview before saving.');
       publishCardCreator({ stage: 'error', error });
       return { status: 'failed', error };
     }
@@ -1093,12 +1164,28 @@ export function createCardIntakeController({
     }
   };
 
-  const adoptSharedDeck = async ({ cards }: { cards: readonly unknown[] }): Promise<
+  const adoptSharedDeck = async ({ cards, expectedPair }: {
+    cards: readonly unknown[];
+    expectedPair?: CardIntakeLanguagePair;
+  }): Promise<
     | { status: 'busy' }
+    | { status: 'pair-mismatch' }
+    | { status: 'stale' }
     | { status: 'failed'; error: unknown }
     | { status: 'completed'; candidateCount: number; createdCount: number; reusedCount: number; cards: CardData[] }
   > => {
+    const hasExpectedPair = !!expectedPair
+      && typeof expectedPair.targetLanguage === 'string'
+      && expectedPair.targetLanguage.length > 0
+      && typeof expectedPair.nativeLanguage === 'string'
+      && expectedPair.nativeLanguage.length > 0;
+    if (expectedPair !== undefined && (!hasExpectedPair
+      || language.source.code !== expectedPair.targetLanguage
+      || language.target.code !== expectedPair.nativeLanguage)) {
+      return { status: 'pair-mismatch' };
+    }
     if (activeOperation) return { status: 'busy' };
+    const intakeLifecycle = controllerLifecycle;
     activeOperation = 'shared';
     publishError(null, null, { isAdoptingSharedDeck: true });
     try {
@@ -1111,13 +1198,20 @@ export function createCardIntakeController({
         seen.add(identity);
         return [candidate];
       });
+      if (controllerLifecycle !== intakeLifecycle) return { status: 'stale' };
       const words = candidates.map(candidate => candidate.normalizedWord || candidate.word);
       const existingCards = words.length > 0 ? await port.findExisting(words) : new Map<string, CardData>();
+      if (controllerLifecycle !== intakeLifecycle) return { status: 'stale' };
+      if (expectedPair && (language.source.code !== expectedPair.targetLanguage
+        || language.target.code !== expectedPair.nativeLanguage)) {
+        return { status: 'pair-mismatch' };
+      }
       const newCards = candidates.filter(candidate =>
         !existingCardFor(existingCards, candidate.normalizedWord || candidate.word, language, candidate));
       const persisted = newCards.length > 0
         ? await port.persistCards(newCards, 'shared')
         : [];
+      if (controllerLifecycle !== intakeLifecycle) return { status: 'stale' };
       const createdCards = persisted.flatMap(result => result.created ? [result.card] : []);
       return {
         status: 'completed',
@@ -1164,6 +1258,7 @@ export function createCardIntakeController({
   };
 
   const dispose = () => {
+    cancelCreatorGeneration();
     controllerLifecycle += 1;
     creatorLifecycle += 1;
     creatorInvocation += 1;

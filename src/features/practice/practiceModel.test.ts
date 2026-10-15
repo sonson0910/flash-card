@@ -6,6 +6,7 @@ import {
   createQuizQuestions,
   createSpellingQueue,
   createWordMatchRound,
+  cardsForLanguagePair,
 } from './practiceModel';
 
 const cards = ['one', 'two', 'three', 'four', 'five'].map((word, index) => ({
@@ -66,6 +67,17 @@ describe('practice model', () => {
     expect(round).toHaveLength(5);
     expect(round.map(card => [card.word, card.translation])).toContainEqual(['one', 'vi-one']);
     expect(round.every(card => card.word === card.word.trim() && card.translation === card.translation.trim())).toBe(true);
+  });
+
+  it('keeps only cards in the active pair and treats omitted translation metadata as Vietnamese', () => {
+    const eligible = cardsForLanguagePair([
+      { ...cards[0], id: 'ko-vi', language: 'ko', translationLanguage: 'vi' },
+      { ...cards[1], id: 'ko-en', language: 'ko', translationLanguage: 'en' },
+      { ...cards[2], id: 'ko-legacy-native', language: 'ko' },
+      { ...cards[3], id: 'en-vi', language: 'en', translationLanguage: 'vi' },
+    ], 'ko', 'vi');
+
+    expect(eligible.map(card => card.id)).toEqual(['ko-vi', 'ko-legacy-native']);
   });
 
 });

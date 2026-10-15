@@ -98,7 +98,7 @@ describe('StudyView swipe handlers', () => {
     const tree = StudyView({
       cards: [card], index: 0, recallMode: 'target-to-native', revealed: true, reviewedCardId: null,
       customDecks: [], onClose: vi.fn(), onRecallMode: vi.fn(), onReveal: vi.fn(), onBookmark: vi.fn(),
-      onAssignDeck: vi.fn(), onUpdateCard: vi.fn(), onRate: vi.fn(async () => 'committed' as const), onIndex: vi.fn(),
+      onAssignDeck: vi.fn(), onUpdateCard: vi.fn(), onRate: vi.fn(async () => ({ status: 'committed', xpAwarded: 2 } as const)), onIndex: vi.fn(),
     });
     const studyCard = findByProp(tree, 'onTouchStart')?.props;
     const onTouchStart = studyCard?.onTouchStart as (event: unknown) => void;

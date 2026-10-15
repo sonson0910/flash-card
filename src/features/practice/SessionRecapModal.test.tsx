@@ -6,7 +6,7 @@ const source = readFileSync(new URL('./SessionRecapModal.tsx', import.meta.url),
 describe('SessionRecapModal', () => {
   it('keeps its close and action controls at least 44px', () => {
     expect(source).toContain('flex size-11 shrink-0 items-center justify-center rounded-xl');
-    expect(source.match(/flex min-h-11 flex-1 items-center justify-center gap-2/g)).toHaveLength(2);
+    expect(source.match(/flex min-h-11 flex-1 items-center justify-center gap-2/g)).toHaveLength(3);
   });
 
   it('uses localized plural copy and locale-aware animated summary formats', () => {
@@ -37,4 +37,5 @@ describe('SessionRecapModal', () => {
     expect(source).toContain('<GsapEntrance');
     expect(source).toContain('variant="result"');
   });
+
 });

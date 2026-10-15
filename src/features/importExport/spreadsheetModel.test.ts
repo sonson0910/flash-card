@@ -78,6 +78,35 @@ describe('spreadsheet import/export model', () => {
     expect(rows).toHaveLength(2);
   });
 
+  it('round-trips an ordinary explicit language pair without treating it as canonical identity', () => {
+    const [exported] = cardsToSpreadsheetRows([{
+      id: 'hello', word: '안녕', translation: 'xin chào', explanation: '', phonetic: '', emoji: '📝',
+      category: 'General', partOfSpeech: 'interjection', audioUrl: null, imageUrl: null,
+      language: 'ko', translationLanguage: 'vi',
+      source: { url: 'https://private.example/path', title: 'Private source' },
+    }]);
+    expect(exported).not.toHaveProperty('Source');
+    const [row] = parseStructuredCardRows([exported]);
+    expect(row).toMatchObject({ word: '안녕', language: 'ko', translationLanguage: 'vi' });
+  });
+
+  it('accepts language metadata alone but rejects unsafe values and partial canonical tuples', () => {
+    const classifications = classifyStructuredCardRows([
+      { row: { Word: 'hello', Translation: 'xin chào', Language: 'ko' }, sourceRow: 2 },
+      { row: { Word: 'unsafe', Translation: 'không an toàn', Language: 'javascript:alert(1)' }, sourceRow: 3 },
+      { row: { Word: 'partial', Translation: 'một phần', Language: 'ko', 'Sense Key': 'greeting' }, sourceRow: 4 },
+      { row: { Word: 'native', Translation: 'meaning', 'Translation Language': 'de' }, sourceRow: 5 },
+      { row: { Word: 'lemma', Translation: 'bổ đề', 'Normalized Lemma': 'lemma' }, sourceRow: 6 },
+    ]);
+    expect(classifications).toEqual([
+      expect.objectContaining({ kind: 'accepted', row: expect.objectContaining({ language: 'ko' }) }),
+      { kind: 'invalid', word: 'unsafe', sourceRow: 3 },
+      { kind: 'invalid', word: 'partial', sourceRow: 4 },
+      { kind: 'invalid', word: 'native', sourceRow: 5 },
+      { kind: 'invalid', word: 'lemma', sourceRow: 6 },
+    ]);
+  });
+
   it('round-trips exported cards under Vietnamese UI with stable spreadsheet headers', () => {
     const previousLocale = getActiveUiLocale();
     setActiveUiLocale('vi');
@@ -87,7 +116,7 @@ describe('spreadsheet import/export model', () => {
         category: 'Food', partOfSpeech: 'noun', audioUrl: null, imageUrl: null,
       }]);
       expect(Object.keys(exported[0])).toEqual([
-        'Lexeme ID', 'Language', 'Sense Key', 'Normalized Lemma', 'Word', 'Translation',
+        'Lexeme ID', 'Language', 'Translation Language', 'Sense Key', 'Normalized Lemma', 'Word', 'Translation',
         'Explanation', 'Phonetic', 'Part of Speech', 'Category', 'Emoji', 'Date Added',
       ]);
       expect(parseStructuredCardRows(exported)).toEqual([

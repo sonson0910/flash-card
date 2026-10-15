@@ -10,8 +10,10 @@ export { APP_VIEW_HEADINGS } from './app-view-headings';
 
 export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'settings' | 'study' | 'quiz' | 'story' | 'spelling' | 'language-drill' | 'match' | 'shadowing';
 const ROUTED_VIEW = /^(landing|today|catalog|library|progress|settings)$/;
-const isLocaleLandingPath = (pathname: string): boolean => pathname === '/'
-  || ENABLED_UI_LOCALES.filter(locale => locale !== 'en').some(locale => pathname.toLowerCase() === `/${locale.toLowerCase()}/` || pathname.toLowerCase() === `/${locale.toLowerCase()}`);
+const isLocaleLandingPath = (pathname: string): boolean => {
+  const lower = pathname.replace(/\/$/, '').toLowerCase();
+  return !lower || ENABLED_UI_LOCALES.some(locale => locale !== 'en' && lower === `/${locale.toLowerCase()}`);
+};
 
 export const readAppViewMode = (location: string): AppViewMode => {
   const url = new URL(location, 'https://sonflash.invalid');
@@ -19,7 +21,7 @@ export const readAppViewMode = (location: string): AppViewMode => {
   if (/^\/landing\/?$/.test(url.pathname)) return 'landing';
   const view = url.searchParams.get('view');
   if (view) return ROUTED_VIEW.test(view) ? view as AppViewMode : 'today';
-  return isLocaleLandingPath(url.pathname) ? 'landing' : 'today';
+  return isLocaleLandingPath(url.pathname) && !url.searchParams.get('lesson') ? 'landing' : 'today';
 };
 
 export const createAppViewLocation = (

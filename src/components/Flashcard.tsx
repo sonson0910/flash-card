@@ -12,6 +12,7 @@ import { isSupportedImageUrl } from '../lib/images';
 import { playFlipSound, playRewardSound } from '../lib/interactionSounds';
 import { triggerHaptic } from '../lib/haptics';
 import { scoreSpeechMatch } from '../lib/speechMatch';
+import { voiceForActiveCourseCard } from '../lib/courseVoicePreference';
 import { speechLocaleFor } from '../lib/speechLocale';
 import { getFlashcardFlipMotion } from '../lib/motion';
 import { useReducedMotion } from '../lib/motionPreference';
@@ -28,18 +29,27 @@ import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
 import type { LearningStateOutcome } from '../features/learning/learningStateController';
 import type { EditCardDialogContext } from '../features/cardEdit/EditCardDialog';
 import type { CardData } from '../types/card';
+import { useCourseSession } from '../features/courses/CourseGate';
 
 const ReportCardDialog = lazy(() => import('../features/cardReport/ReportCardDialog').then(module => ({ default: module.ReportCardDialog })));
 const EditCardDialog = lazy(() => Promise.all([
   import('../features/cardEdit/EditCardDialog'), loadCatalog(getActiveUiLocale(), 'library'),
 ]).then(([module]) => ({ default: module.EditCardDialog })));
 const HangulBreakdown = lazy(() => import('./flashcard/HangulBreakdown').then(module => ({ default: module.HangulBreakdown })));
+const detailsWidePanelClass = 'flex w-full flex-col items-start rounded-[24px] border border-slate-200 bg-white/90 p-4 text-left shadow-sm backdrop-blur-2xl dark:border-white/12 dark:bg-slate-950/20';
+const detailsSplitPanelClass = 'flex flex-col items-start rounded-[24px] border border-slate-200 bg-white/90 p-4 text-left shadow-sm backdrop-blur-2xl dark:border-white/12 dark:bg-slate-950/20';
+const detailsSectionHeaderClass = 'mb-2.5 flex w-full items-center gap-2 border-b border-slate-200/80 pb-2.5 dark:border-white/10';
+const detailsSectionIconClass = 'flex size-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/10 dark:bg-white/10 dark:text-cyan-300';
+const detailsSectionTitleClass = 'text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200';
+const detailsChipListClass = 'flex flex-wrap gap-1.5';
 
 gsap.registerPlugin(useGSAP);
 
 export interface FlashcardProps {
   data: CardData;
   onDelete?: (id: string) => void | Promise<void>;
+  /** Deletion from the editor needs an explicit result so its confirmation can retry on failure. */
+  onEditDelete?: (id: string) => Promise<boolean>;
   onToggleBookmark?: (id: string) => void;
   customDecks?: string[];
   onAssignDeck?: (cardId: string, deckName: string | null) => void;
@@ -50,8 +60,9 @@ export interface FlashcardProps {
   imagePriority?: boolean;
 }
 
-export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggleBookmark, customDecks = [], onAssignDeck, onUpdateCard, onEditOpenChange, editorContext, initialSide = 'front', imagePriority = false }: FlashcardProps) {
+export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditDelete, onToggleBookmark, customDecks = [], onAssignDeck, onUpdateCard, onEditOpenChange, editorContext, initialSide = 'front', imagePriority = false }: FlashcardProps) {
   const { _, i18n } = useLingui();
+  const { model: courseModel } = useCourseSession();
   const translationFailureMessage = _(msg({ id: 'flashcard.translation.failed', message: 'The explanation could not be translated. Check your connection and try again.' }));
   const supportedImageUrl = isSupportedImageUrl(data.imageUrl) ? data.imageUrl : null;
   const targetLanguage = data.language || 'en';
@@ -69,6 +80,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const deleteConfirmedRef = useRef(false);
   const deckButtonRef = useRef<HTMLButtonElement | null>(null);
   const learningDetailsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const aiTutorButtonRef = useRef<HTMLButtonElement | null>(null);
   const focusAfterFlipRef = useRef<'front' | 'back' | null>(null);
   const gestureRef = useRef({ x: 0, y: 0, moved: false, startedOnControl: false });
   const shellRef = useRef<HTMLDivElement | null>(null);
@@ -260,6 +272,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = speechLocaleFor(data);
+    const voice = voiceForActiveCourseCard(data, courseModel.activeCourse);
+    if (voice) utterance.voice = voice;
     utterance.rate = audioSpeed === 0.75 ? 0.65 : 0.9;
     utteranceRef.current = utterance;
     utterance.onend = () => {
@@ -531,13 +545,13 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
             <div className="mt-4 space-y-3.5 text-sm">
               {/* Example in Context */}
               {data.exampleSentence && (
-                <div className="flex w-full flex-col items-start rounded-[24px] border border-slate-200 bg-white/90 p-4 text-left shadow-sm backdrop-blur-2xl dark:border-white/12 dark:bg-slate-950/20">
-                  <div className="mb-2.5 flex w-full items-center gap-2 border-b border-slate-200/80 pb-2.5 dark:border-white/10">
-                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/10 dark:bg-white/10 dark:text-cyan-300">
+                <div className={detailsWidePanelClass}>
+                  <div className={detailsSectionHeaderClass}>
+                    <span className={detailsSectionIconClass}>
                       <BookOpen size={13} />
                     </span>
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200">
+                      <p className={detailsSectionTitleClass}>
                         <Trans id="flashcard.details.example" message="Example in Context" />
                       </p>
                     </div>
@@ -555,13 +569,13 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
 
               {/* Collocations */}
               {data.collocations && data.collocations.length > 0 && (
-                <div className="flex w-full flex-col items-start rounded-[24px] border border-slate-200 bg-white/90 p-4 text-left shadow-sm backdrop-blur-2xl dark:border-white/12 dark:bg-slate-950/20">
-                  <div className="mb-2.5 flex w-full items-center gap-2 border-b border-slate-200/80 pb-2.5 dark:border-white/10">
-                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/10 dark:bg-white/10 dark:text-cyan-300">
+                <div className={detailsWidePanelClass}>
+                  <div className={detailsSectionHeaderClass}>
+                    <span className={detailsSectionIconClass}>
                       <Sparkles size={13} />
                     </span>
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200">
+                      <p className={detailsSectionTitleClass}>
                           <Trans id="flashcard.details.collocations" message="Common Collocations" />
                       </p>
                     </div>
@@ -584,16 +598,16 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               {((data.synonyms && data.synonyms.length > 0) || (data.antonyms && data.antonyms.length > 0)) && (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {data.synonyms && data.synonyms.length > 0 && (
-                    <div className="flex flex-col items-start rounded-[24px] border border-slate-200 bg-white/90 p-4 text-left shadow-sm backdrop-blur-2xl dark:border-white/12 dark:bg-slate-950/20">
-                      <div className="mb-2.5 flex w-full items-center gap-2 border-b border-slate-200/80 pb-2.5 dark:border-white/10">
+                    <div className={detailsSplitPanelClass}>
+                      <div className={detailsSectionHeaderClass}>
                         <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-cyan-300 bg-cyan-50 text-xs font-black text-cyan-700 dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-300">
                           ≈
                         </span>
-                        <p className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200">
+                        <p className={detailsSectionTitleClass}>
                           <Trans id="flashcard.details.synonyms" message="Synonyms" />
                         </p>
                       </div>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className={detailsChipListClass}>
                         {data.synonyms.map(syn => (
                           <span
                             key={syn}
@@ -607,16 +621,16 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                     </div>
                   )}
                   {data.antonyms && data.antonyms.length > 0 && (
-                    <div className="flex flex-col items-start rounded-[24px] border border-slate-200 bg-white/90 p-4 text-left shadow-sm backdrop-blur-2xl dark:border-white/12 dark:bg-slate-950/20">
-                      <div className="mb-2.5 flex w-full items-center gap-2 border-b border-slate-200/80 pb-2.5 dark:border-white/10">
+                    <div className={detailsSplitPanelClass}>
+                      <div className={detailsSectionHeaderClass}>
                         <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-xs font-black text-slate-700 dark:border-white/10 dark:bg-white/10 dark:text-slate-300">
                           ≠
                         </span>
-                        <p className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200">
+                        <p className={detailsSectionTitleClass}>
                           <Trans id="flashcard.details.antonyms" message="Antonyms" />
                         </p>
                       </div>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className={detailsChipListClass}>
                         {data.antonyms.map(ant => (
                           <span
                             key={ant}
@@ -657,6 +671,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
         card={data}
         open={showAiModal}
         onOpenChange={setShowAiModal}
+        restoreFocusRef={aiTutorButtonRef}
       />
       {showReportDialog && (
         <Suspense fallback={null}>
@@ -670,7 +685,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       )}
       {showEditDialog && onUpdateCard && (
         <Suspense fallback={null}>
-          <EditCardDialog card={data} open={showEditDialog} onOpenChange={setEditDialogOpen} onSave={onUpdateCard} context={editorContext} />
+          <EditCardDialog card={data} open={showEditDialog} onOpenChange={setEditDialogOpen} onSave={onUpdateCard} onDelete={onEditDelete} context={editorContext} />
         </Suspense>
       )}
       {onDelete && (
@@ -685,7 +700,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           <Trash2 size={15} />
         </button>
       )}
-      {onDelete && onUpdateCard && !isFlipped && (
+      {onEditDelete && onUpdateCard && !isFlipped && (
         <button type="button" data-card-control onPointerDown={event => event.stopPropagation()}
           onClick={event => { event.stopPropagation(); setEditDialogOpen(true); }}
           className="absolute left-16 top-4 z-[45] flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/35 bg-slate-950/48 text-white shadow-lg backdrop-blur-2xl"
@@ -826,6 +841,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           learningDetailsButtonRef={learningDetailsButtonRef}
           setShowLearningDetails={setShowLearningDetails}
           setShowAiModal={setShowAiModal}
+          aiTutorButtonRef={aiTutorButtonRef}
           backFlipRef={backFlipRef}
           focusAfterFlipRef={focusAfterFlipRef}
           showCardSide={showCardSide}

@@ -77,6 +77,10 @@ export interface LearningStateMutationResult {
   operationId: string;
   publication: LearningStatePublication;
   reviewFinality?: 'committed' | 'conflict';
+  reviewConflictTerminal?: boolean;
+  xpAwarded?: number;
+  reviewRating?: ReviewRating;
+  reviewedAt?: string;
   deleteReceipt?: {
     finality: 'committed';
     ownerId: string | null;
@@ -119,6 +123,9 @@ export type LearningStateOutcome =
 type TerminalOutcome = Exclude<LearningStateOutcome, { status: 'published' }>;
 type MutationPlan = LearningStateMutation | TerminalOutcome;
 
+const isTerminalReviewError = (error: unknown): boolean =>
+  Boolean(error && typeof error === 'object' && (error as { reviewConflictTerminal?: unknown }).reviewConflictTerminal === true);
+
 interface LearningStateControllerOptions {
   port: LearningStatePort;
   snapshots: LearningStateSnapshotsPort;
@@ -150,6 +157,8 @@ export function createLearningStateController({
 }: LearningStateControllerOptions): LearningStateController {
   const inFlight = new Map<string, Promise<LearningStateOutcome>>();
   const completed = new Map<string, LearningStateOutcome>();
+  const reviewPlans = new Map<string, Extract<LearningStateMutation, { operation: 'review' }>>();
+  const reviewPlanLimit = Math.max(1, completedOperationLimit);
   const latestDeleteLifecycle = new Map<string, string>();
   let clearGeneration = 0;
   let lifecycleSequence = 0;
@@ -205,8 +214,21 @@ export function createLearningStateController({
     if (pending) return pending;
 
     const run = async (): Promise<LearningStateOutcome> => {
-      const built = build(ownerKey, normalizedOperationId);
-      const plan = built instanceof Promise ? await built : built;
+      const cachedReviewPlan = reviewPlans.get(operationKey);
+      let plan: MutationPlan;
+      if (cachedReviewPlan) {
+        plan = cachedReviewPlan;
+      } else {
+        const built = build(ownerKey, normalizedOperationId);
+        const resolved = built instanceof Promise ? await built : built;
+        plan = resolved;
+        if ('operation' in plan && plan.operation === 'review') {
+          if (reviewPlans.size >= reviewPlanLimit) {
+            throw new Error('Review retry capacity is full. Try again after an existing review settles.');
+          }
+          reviewPlans.set(operationKey, plan as Extract<LearningStateMutation, { operation: 'review' }>);
+        }
+      }
       if (!('operation' in plan)) return plan;
       if (port.activeOwner() !== ownerKey) return { status: 'stale-owner' };
 
@@ -271,12 +293,19 @@ export function createLearningStateController({
         latestDeleteLifecycle.clear();
       }
 
-      if (result.reviewFinality === 'conflict') return { status: 'review-conflict', result };
+      if (result.reviewFinality === 'conflict') {
+        if (result.reviewConflictTerminal && plan.operation === 'review') reviewPlans.delete(operationKey);
+        return { status: 'review-conflict', result };
+      }
       if (result.restoreFinality === 'conflict') {
         if (plan.operation === 'restore') {
           latestDeleteLifecycle.delete(lifecycleKey(ownerKey, plan.undoToken.card.id));
         }
         return { status: 'undo-conflict', result };
+      }
+
+      if (plan.operation === 'review' && result.xpAwarded !== 0 && result.xpAwarded !== 2) {
+        throw new Error('Review persistence did not return an authoritative XP award.');
       }
 
       if (plan.operation === 'restore') {
@@ -300,17 +329,19 @@ export function createLearningStateController({
 
       snapshots.library.apply(result.publication);
       snapshots.practice.apply(result.publication);
+      if (plan.operation === 'review') reviewPlans.delete(operationKey);
       return { status: 'published', result };
     };
 
     const promise = run()
       .then(outcome => {
         inFlight.delete(operationKey);
-        if (outcome.status !== 'stale-owner') remember(operationKey, outcome);
+        if (outcome.status !== 'stale-owner' && outcome.status !== 'review-conflict') remember(operationKey, outcome);
         return outcome;
       })
       .catch(error => {
         inFlight.delete(operationKey);
+        if (isTerminalReviewError(error)) reviewPlans.delete(operationKey);
         throw error;
       });
     inFlight.set(operationKey, promise);
@@ -449,6 +480,7 @@ export function createLearningStateController({
     invalidateUndoTokens: () => {
       clearGeneration += 1;
       latestDeleteLifecycle.clear();
+      reviewPlans.clear();
     },
   };
 }

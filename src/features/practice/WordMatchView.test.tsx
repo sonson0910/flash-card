@@ -31,6 +31,7 @@ describe('WordMatchView', () => {
     expect(html).toContain('60s');
     expect(html).toContain('lang="en"');
     expect(html).toContain('lang="vi"');
+    expect(html).not.toContain('data-practice-combo');
   });
 
   it('renders empty when no cards match', () => {
@@ -48,5 +49,20 @@ describe('WordMatchView', () => {
   it('does not expose a client XP callback', () => {
     expect(WordMatchView.toString()).not.toContain('onAddXp');
     expect(WordMatchView.toString()).not.toContain('+20 XP');
+  });
+
+  it('celebrates only after the server confirms the completion', () => {
+    const source = WordMatchView.toString();
+    const completion = source.slice(source.indexOf('const submitCompletion'), source.indexOf('const handleTileClick'));
+    const localVictory = source.slice(
+      source.indexOf('if (nextMatched.size === tiles.length)'),
+      source.indexOf('} else {', source.indexOf('if (nextMatched.size === tiles.length)')),
+    );
+
+    expect(completion).toMatch(/setCompletionStatus\(["']confirmed["']\)/);
+    expect(completion).toContain('playRewardSound');
+    expect(completion).toContain('triggerConfetti');
+    expect(localVictory).not.toContain('playRewardSound');
+    expect(localVictory).not.toContain('triggerConfetti');
   });
 });

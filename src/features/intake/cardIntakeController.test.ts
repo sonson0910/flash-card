@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
 import { classifyProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
+import { languageProfileForPair } from '../courses/courseLanguageProfile';
 import {
   createCardIntakeController,
   settleMediaBestEffort,
@@ -130,6 +131,190 @@ describe('card intake controller', () => {
     expect(intake.getSnapshot().cardCreator.open).toBe(false);
   });
 
+  it('shows complete AI fields during generation and preserves a learner edit', async () => {
+    const { port } = createFakePort();
+    const generation = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();
+    vi.mocked(port.generateCard).mockReturnValue(generation.promise);
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'apple' });
+    const pending = intake.cardCreator.generatePreview();
+    await vi.waitFor(() => expect(port.generateCard).toHaveBeenCalledOnce());
+    const request = vi.mocked(port.generateCard).mock.calls[0][0];
+    request.onProgress?.({ operationId: request.operationId!, stage: 'field', field: 'translation', value: 'táo' });
+    expect(intake.getSnapshot().cardCreator).toMatchObject({
+      stage: 'generating', preview: { translation: 'táo' },
+    });
+    intake.cardCreator.updatePreview({ translation: 'quả táo do tôi sửa' });
+    request.onProgress?.({ operationId: request.operationId!, stage: 'field', field: 'translation', value: 'táo mới' });
+    generation.resolve({
+      card: { ...card('apple'), translation: 'táo mới', explanation: 'A fruit.' },
+      mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }),
+    });
+    await expect(pending).resolves.toMatchObject({ status: 'preview' });
+    expect(intake.getSnapshot().cardCreator.preview).toMatchObject({
+      translation: 'quả táo do tôi sửa', explanation: 'A fruit.',
+    });
+    expect(port.persistCards).not.toHaveBeenCalled();
+  });
+
+  it('publishes only current-operation AI stages and ignores them after close', async () => {
+    const { port } = createFakePort();
+    const generation = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();
+    vi.mocked(port.generateCard).mockReturnValue(generation.promise);
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'apple' });
+    const pending = intake.cardCreator.generatePreview();
+    await vi.waitFor(() => expect(port.generateCard).toHaveBeenCalledOnce());
+    const request = vi.mocked(port.generateCard).mock.calls[0][0];
+
+    request.onProgress?.({ operationId: request.operationId!, stage: 'reserving' });
+    expect(intake.getSnapshot().cardCreator.generationStage).toBe('reserving');
+    request.onProgress?.({ operationId: 'wrong-operation', stage: 'drafting' });
+    expect(intake.getSnapshot().cardCreator.generationStage).toBe('reserving');
+
+    intake.cardCreator.cancel();
+    request.onProgress?.({ operationId: request.operationId!, stage: 'drafting' });
+    expect(intake.getSnapshot().cardCreator.generationStage).toBeNull();
+    generation.resolve({ card: card('apple'), mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }) });
+    await expect(pending).resolves.toEqual({ status: 'cancelled' });
+  });
+
+  it('clears the current AI stage when generation settles or fails', async () => {
+    const { port } = createFakePort();
+    const first = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();
+    vi.mocked(port.generateCard)
+      .mockReturnValueOnce(first.promise)
+      .mockRejectedValueOnce(new Error('generation failed'));
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'apple' });
+
+    const preview = intake.cardCreator.generatePreview();
+    await vi.waitFor(() => expect(port.generateCard).toHaveBeenCalledOnce());
+    const firstRequest = vi.mocked(port.generateCard).mock.calls[0][0];
+    firstRequest.onProgress?.({ operationId: firstRequest.operationId!, stage: 'drafting' });
+    first.resolve({ card: card('apple'), mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }) });
+    await expect(preview).resolves.toMatchObject({ status: 'preview' });
+    expect(intake.getSnapshot().cardCreator.generationStage).toBeNull();
+
+    const retry = intake.cardCreator.regenerate(['meaning']);
+    await vi.waitFor(() => expect(port.generateCard).toHaveBeenCalledTimes(2));
+    const retryRequest = vi.mocked(port.generateCard).mock.calls[1][0];
+    retryRequest.onProgress?.({ operationId: retryRequest.operationId!, stage: 'drafting' });
+    await expect(retry).resolves.toMatchObject({ status: 'failed' });
+    expect(intake.getSnapshot().cardCreator).toMatchObject({ stage: 'error', generationStage: null });
+  });
+
+  it('keeps learner preview edits when initial generation or regeneration fails', async () => {
+    const { port } = createFakePort();
+    const initial = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();
+    const regeneration = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();
+    vi.mocked(port.generateCard)
+      .mockReturnValueOnce(initial.promise)
+      .mockReturnValueOnce(regeneration.promise);
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'apple' });
+
+    const firstAttempt = intake.cardCreator.generatePreview();
+    await vi.waitFor(() => expect(port.generateCard).toHaveBeenCalledOnce());
+    const firstRequest = vi.mocked(port.generateCard).mock.calls[0][0];
+    firstRequest.onProgress?.({ operationId: firstRequest.operationId!, stage: 'field', field: 'translation', value: 'táo' });
+    intake.cardCreator.updatePreview({ translation: 'quả táo do tôi sửa' });
+    initial.reject(new Error('generation failed'));
+    await expect(firstAttempt).resolves.toMatchObject({ status: 'failed' });
+    expect(intake.getSnapshot().cardCreator.preview).toMatchObject({ translation: 'quả táo do tôi sửa' });
+    await expect(intake.cardCreator.save()).resolves.toMatchObject({ status: 'failed', error: { code: 'invalid' } });
+    expect(port.persistCards).not.toHaveBeenCalled();
+
+    const retry = intake.cardCreator.regenerate(['meaning']);
+    await vi.waitFor(() => expect(port.generateCard).toHaveBeenCalledTimes(2));
+    intake.cardCreator.updatePreview({ translation: 'quả táo do tôi sửa lần nữa' });
+    regeneration.reject(new Error('generation failed'));
+    await expect(retry).resolves.toMatchObject({ status: 'failed' });
+    expect(intake.getSnapshot().cardCreator.preview).toMatchObject({ translation: 'quả táo do tôi sửa lần nữa' });
+  });
+
+  it('aborts the live stream and requests quota cancellation when the dialog closes', async () => {
+    const { port } = createFakePort();
+    const generation = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();
+    vi.mocked(port.generateCard).mockReturnValue(generation.promise);
+    port.cancelGeneration = vi.fn(async () => undefined);
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'apple' });
+    const pending = intake.cardCreator.generatePreview();
+    await vi.waitFor(() => expect(port.generateCard).toHaveBeenCalledOnce());
+    const request = vi.mocked(port.generateCard).mock.calls[0][0];
+    intake.cardCreator.cancel();
+    expect(request.signal?.aborted).toBe(true);
+    expect(port.cancelGeneration).toHaveBeenCalledWith(request.operationId);
+    generation.resolve({ card: card('apple'), mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }) });
+    await expect(pending).resolves.toEqual({ status: 'cancelled' });
+  });
+
+  it.each([
+    ['word', { word: 'pear' }],
+    ['context', { context: 'A green apple.' }],
+    ['part of speech', { partOfSpeech: 'noun' }],
+  ])('aborts and cancels a live generation when its %s changes', async (_field, patch) => {
+    const { port } = createFakePort();
+    const generation = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();
+    vi.mocked(port.generateCard).mockReturnValue(generation.promise);
+    port.cancelGeneration = vi.fn(async () => undefined);
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'apple', context: 'A red apple.', partOfSpeech: 'adjective' });
+    const pending = intake.cardCreator.generatePreview();
+    await vi.waitFor(() => expect(port.generateCard).toHaveBeenCalledOnce());
+    const request = vi.mocked(port.generateCard).mock.calls[0][0];
+
+    intake.cardCreator.updateDraft(patch);
+
+    expect(request.signal?.aborted).toBe(true);
+    expect(port.cancelGeneration).toHaveBeenCalledTimes(1);
+    expect(port.cancelGeneration).toHaveBeenCalledWith(request.operationId);
+    generation.resolve({ card: card('apple'), mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }) });
+    await expect(pending).resolves.toEqual({ status: 'cancelled' });
+  });
+
+  it('aborts and refunds an in-flight generation when the controller is disposed', async () => {
+    const { port } = createFakePort();
+    const generation = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();
+    vi.mocked(port.generateCard).mockReturnValue(generation.promise);
+    port.cancelGeneration = vi.fn(async () => undefined);
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'apple' });
+    const pending = intake.cardCreator.generatePreview();
+    await vi.waitFor(() => expect(port.generateCard).toHaveBeenCalledOnce());
+    const request = vi.mocked(port.generateCard).mock.calls[0][0];
+
+    intake.dispose();
+    intake.dispose();
+
+    expect(request.signal?.aborted).toBe(true);
+    expect(port.cancelGeneration).toHaveBeenCalledTimes(1);
+    expect(port.cancelGeneration).toHaveBeenCalledWith(request.operationId);
+    generation.resolve({ card: card('apple'), mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }) });
+    await expect(pending).resolves.toEqual({ status: 'cancelled' });
+  });
+
+  it('does not refund a completed generation when the controller is disposed', async () => {
+    const { port } = createFakePort();
+    port.cancelGeneration = vi.fn(async () => undefined);
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'apple' });
+
+    await expect(intake.cardCreator.generatePreview()).resolves.toMatchObject({ status: 'preview' });
+    intake.dispose();
+
+    expect(port.cancelGeneration).not.toHaveBeenCalled();
+  });
+
   it('reuses one AI operation ID for transport retry and refreshes it for deliberate regeneration', async () => {
     const { port } = createFakePort();
     vi.mocked(port.generateCard)
@@ -151,6 +336,7 @@ describe('card intake controller', () => {
     intake.cardCreator.updateDraft({ word: 'apple' });
 
     await expect(intake.cardCreator.generatePreview()).resolves.toMatchObject({ status: 'failed' });
+    expect(intake.getSnapshot().cardCreator.preview).toBeNull();
     await expect(intake.cardCreator.generatePreview()).resolves.toMatchObject({ status: 'preview' });
     const firstOperationId = vi.mocked(port.generateCard).mock.calls[0][0].operationId;
     const retryOperationId = vi.mocked(port.generateCard).mock.calls[1][0].operationId;
@@ -422,6 +608,32 @@ describe('card intake controller', () => {
     });
     expect(result).toMatchObject({ status: 'completed', candidateCount: 2, createdCount: 1, reusedCount: 1 });
     expect(existing.createdAt).toBe('2024-02-02T00:00:00.000Z');
+  });
+
+  it('rejects shared adoption before lookup until the bound language pair matches', async () => {
+    const { port, persistCards } = createFakePort();
+    const shared = {
+      cards: [{ word: '사과', translation: 'quả táo' }],
+      expectedPair: { targetLanguage: 'ko', nativeLanguage: 'vi' },
+    };
+    const oldIntake = createCardIntakeController({
+      port,
+      language: ENGLISH_TO_VIETNAMESE_PROFILE,
+    });
+
+    await expect(oldIntake.adoptSharedDeck(shared)).resolves.toEqual({ status: 'pair-mismatch' });
+    expect(port.findExisting).not.toHaveBeenCalled();
+    expect(persistCards).not.toHaveBeenCalled();
+
+    const currentIntake = createCardIntakeController({
+      port,
+      language: languageProfileForPair('ko', 'vi'),
+    });
+    await expect(currentIntake.adoptSharedDeck(shared)).resolves.toMatchObject({
+      status: 'completed', candidateCount: 1, createdCount: 1,
+    });
+    expect(port.findExisting).toHaveBeenCalledWith(['사과']);
+    expect(persistCards).toHaveBeenCalledOnce();
   });
 
   it('retries only missing shared cards after a partial save', async () => {

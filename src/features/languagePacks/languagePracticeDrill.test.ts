@@ -1,12 +1,26 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { CardData } from '../../types/card';
-import { LanguagePracticeDrill } from './LanguagePracticeDrill';
+import { LanguagePracticeDrill, resolveOnScreenHangulKey } from './LanguagePracticeDrill';
 import { composeHangulBlocks, createLanguagePracticeDrill, evaluateJapaneseSentenceCloze, evaluateToneLanguagePracticeDrill, evaluateTypedLanguagePracticeDrill, findHangulFinalCorrection, languagePracticeDrillSurfaceState, shouldRevealLanguagePracticeReading, shouldStartJapaneseSentenceCloze } from './languagePracticeDrill';
 import { jaLanguagePack } from './packs/ja';
+
+type TestElement = { readonly type: unknown; readonly props: Record<string, unknown> };
+
+const findElement = (element: unknown, matches: (element: TestElement) => boolean): TestElement | undefined => {
+  if (typeof element !== 'object' || element === null || !('props' in element)) return undefined;
+  const testElement = element as TestElement;
+  if (matches(testElement)) return testElement;
+  const children = testElement.props.children;
+  for (const child of Array.isArray(children) ? children : [children]) {
+    const found = findElement(child, matches);
+    if (found) return found;
+  }
+  return undefined;
+};
 
 const card = (language: string, word: string): CardData => ({
   id: `${language}-card`, language, word, translation: 'meaning', explanation: '', phonetic: '', emoji: '', category: '', audioUrl: null, imageUrl: null,
@@ -98,6 +112,12 @@ describe('language practice drill model', () => {
     expect(evaluateTypedLanguagePracticeDrill(model, composeHangulBlocks('ㅎㅏㄴㄱㅡㄹ')).correct).toBe(true);
   });
 
+  it('offers all shifted two-set jamo through the on-screen keyboard', () => {
+    expect(['ㅂ', 'ㅈ', 'ㄷ', 'ㄱ', 'ㅅ', 'ㅐ', 'ㅔ'].map(key => resolveOnScreenHangulKey(key as 'ㅂ' | 'ㅈ' | 'ㄷ' | 'ㄱ' | 'ㅅ' | 'ㅐ' | 'ㅔ', true))).toEqual(['ㅃ', 'ㅉ', 'ㄸ', 'ㄲ', 'ㅆ', 'ㅒ', 'ㅖ']);
+    expect(composeHangulBlocks(`${resolveOnScreenHangulKey('ㅂ', true)}ㅏ`)).toBe('빠');
+    expect(resolveOnScreenHangulKey('ㅂ', false)).toBe('ㅂ');
+  });
+
   it('identifies only a single final-consonant correction', () => {
     expect(findHangulFinalCorrection('결십', '결심')).toEqual({ typed: 'ㅂ', expected: 'ㅁ' });
     expect(findHangulFinalCorrection('결심', '결심')).toBeNull();
@@ -132,4 +152,71 @@ describe('language practice drill model', () => {
     expect(html).toContain('Loading this language exercise');
     expect(html).not.toContain('type="text"');
   });
+
+  it('retries the same language pack after a rejected load', async () => {
+    const state: unknown[] = [];
+    const effects: Array<() => void | (() => void)> = [];
+    let cursor = 0;
+    const loadLanguagePack = vi.fn()
+      .mockRejectedValueOnce(new Error('temporary language pack load failure'))
+      .mockResolvedValue(jaLanguagePack);
+
+    vi.resetModules();
+    vi.doMock('react', async importOriginal => ({
+      ...(await importOriginal<typeof import('react')>()),
+      useEffect: (effect: () => void | (() => void)) => { effects.push(effect); },
+      useMemo: <T,>(factory: () => T) => factory(),
+      useRef: <T,>(initial: T) => ({ current: initial }),
+      useState: <T,>(initial: T) => {
+        const index = cursor++;
+        if (!(index in state)) state[index] = initial;
+        return [state[index] as T, (next: T | ((current: T) => T)) => { state[index] = typeof next === 'function' ? (next as (current: T) => T)(state[index] as T) : next; }];
+      },
+    }));
+    vi.doMock('@lingui/react', () => ({
+      Trans: () => null,
+      useLingui: () => ({ i18n: { _: (descriptor: { message: string }) => descriptor.message } }),
+    }));
+    vi.doMock('../courses/CourseGate', () => ({ useCourseSession: () => ({ model: { activeCourse: null } }) }));
+    vi.doMock('./registry', async importOriginal => ({
+      ...(await importOriginal<typeof import('./registry')>()),
+      loadLanguagePack,
+    }));
+
+    try {
+      const { LanguagePracticeDrill: ClientLanguagePracticeDrill } = await import('./LanguagePracticeDrill');
+      const render = () => {
+        cursor = 0;
+        effects.length = 0;
+        return ClientLanguagePracticeDrill({ card: card('ja', 'かな'), cards: [], onClose: () => {}, onNext: () => {} });
+      };
+
+      render();
+      effects.at(-1)?.();
+      await Promise.resolve();
+      await Promise.resolve();
+      let view = render();
+      const retry = findElement(view, element => element.type === 'button'
+        && (element.props.children as TestElement | undefined)?.props?.id === 'languagePractice.action.retry');
+      expect(retry).toBeDefined();
+
+      (retry?.props.onClick as () => void)();
+      render();
+      effects.at(-1)?.();
+      await Promise.resolve();
+      view = render();
+
+      expect(loadLanguagePack).toHaveBeenCalledTimes(2);
+      expect(findElement(view, element => element.type === 'input')).toBeDefined();
+      expect(findElement(view, element => element.type === 'button'
+        && (element.props.children as TestElement | undefined)?.props?.id === 'languagePractice.action.retry')).toBeUndefined();
+    } finally {
+      vi.doUnmock('react');
+      vi.doUnmock('@lingui/react');
+      vi.doUnmock('../courses/CourseGate');
+      vi.doUnmock('./registry');
+      vi.resetModules();
+    }
+  });
+
 });

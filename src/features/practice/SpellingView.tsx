@@ -12,10 +12,14 @@ import {
 import { GsapEntrance } from "../../components/motion/GsapEntrance";
 import { Lumi } from "../../components/lumi/Lumi";
 import { readLumiEnabled } from "../settings/lumi-preference";
+import { useFocusModePreference } from "../settings/focus-mode-preference";
 import { useTheme } from "../theme/ThemeProvider";
 import { playWordAudio, type WordAudioPlayback } from "../../lib/audio";
+import { voiceForActiveCourseCard } from "../../lib/courseVoicePreference";
+import { createImeSubmitGuard } from "../../lib/imeSubmitGuard";
 import { speechLocaleFor } from "../../lib/speechLocale";
 import type { CardData } from "../../types/card";
+import { useCourseSession } from "../courses/CourseGate";
 
 interface SpellingViewProps {
   cards: CardData[];
@@ -25,6 +29,7 @@ interface SpellingViewProps {
   correct: boolean;
   score: number;
   showResults: boolean;
+  savingResult?: boolean;
   onInput: (value: string) => void;
   onCheck: (event: FormEvent) => void;
   onNext: () => void;
@@ -40,6 +45,7 @@ export function SpellingView({
   correct,
   score,
   showResults,
+  savingResult = false,
   onInput,
   onCheck,
   onNext,
@@ -47,18 +53,21 @@ export function SpellingView({
   onClose,
 }: SpellingViewProps) {
   const { i18n } = useLingui();
+  const { model: courseModel } = useCourseSession();
   const _ = (
     descriptor: ReturnType<typeof msg>,
     values?: Record<string, unknown>,
   ) => i18n._(descriptor.id, values);
   const showLumi = useTheme().family === "crystal" && readLumiEnabled();
+  const { focusModeEnabled } = useFocusModePreference();
+  const answeredCount = currentIndex + (checked ? 1 : 0);
   const card = cards[currentIndex];
   const questionHeadingRef = useRef<HTMLHeadingElement>(null);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
   const previousShowResultsRef = useRef(showResults);
   const audioPlaybackRef = useRef<WordAudioPlayback | null>(null);
-  const isComposingRef = useRef(false);
+  const imeSubmitGuard = useRef(createImeSubmitGuard()).current;
 
   useEffect(() => () => audioPlaybackRef.current?.cancel(), []);
 
@@ -69,11 +78,8 @@ export function SpellingView({
 
   const playPronunciation = () => {
     audioPlaybackRef.current?.cancel();
-    audioPlaybackRef.current = playWordAudio(
-      card.word,
-      card.audioUrl,
-      speechLocaleFor(card),
-    );
+    const voice = voiceForActiveCourseCard(card, courseModel.activeCourse);
+    audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl, speechLocaleFor(card), voice);
   };
 
   const close = () => {
@@ -81,7 +87,7 @@ export function SpellingView({
     onClose();
   };
   const check = (event: FormEvent) => {
-    if (isComposingRef.current) {
+    if (imeSubmitGuard.shouldBlockSubmit(event.nativeEvent as Event & { isComposing?: boolean; keyCode?: number })) {
       event.preventDefault();
       return;
     }
@@ -196,6 +202,7 @@ export function SpellingView({
               <X size={18} aria-hidden="true" />{" "}
               <Trans id="practice.actions.exit" message="Exit" />
             </button>
+            {!focusModeEnabled && answeredCount >= 2 && <span data-practice-combo={answeredCount} className="rounded-full border border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] px-3 py-1.5 text-xs font-black text-[var(--sf-brand-text)]"><Trans id="study.combo" message="Combo ×{count}" values={{ count: answeredCount }} /></span>}
             <div className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-1.5 text-xs font-bold text-[var(--sf-text)]">
               <Trans
                 id="practice.score"
@@ -279,13 +286,14 @@ export function SpellingView({
                 disabled={checked}
                 value={input}
                 onChange={(event) => onInput(event.target.value)}
-                onCompositionStart={() => {
-                  isComposingRef.current = true;
-                }}
-                onCompositionEnd={() => {
-                  isComposingRef.current = false;
+                onCompositionStart={imeSubmitGuard.onCompositionStart}
+                onCompositionEnd={imeSubmitGuard.onCompositionEnd}
+                onKeyDown={(event) => {
+                  if (imeSubmitGuard.shouldBlockKeyDown(event.nativeEvent)) event.preventDefault();
                 }}
                 autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
                 spellCheck={false}
                 placeholder={_(
                   msg({
@@ -337,9 +345,13 @@ export function SpellingView({
                   ref={nextButtonRef}
                   type="button"
                   onClick={onNext}
+                  disabled={savingResult}
+                  aria-busy={savingResult}
                   className="flex min-h-11 items-center gap-1 rounded-xl bg-[var(--sf-brand)] px-6 py-2.5 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 motion-reduce:transition-none"
                 >
-                  {currentIndex === cards.length - 1 ? (
+                  {savingResult ? (
+                    <Trans id="practice.actions.saving-result" message="Saving result…" />
+                  ) : currentIndex === cards.length - 1 ? (
                     <Trans
                       id="practice.actions.view-results"
                       message="View results"

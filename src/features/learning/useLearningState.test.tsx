@@ -21,6 +21,7 @@ const resultFor = (mutation: LearningStateMutation): LearningStateMutationResult
   ownerKey: mutation.ownerKey,
   operationId: mutation.operationId,
   publication: mutation.publication,
+  ...(mutation.operation === 'review' ? { reviewFinality: 'committed' as const, xpAwarded: 0 } : {}),
 });
 
 describe('useLearningState binding', () => {

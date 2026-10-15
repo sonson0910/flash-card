@@ -66,9 +66,7 @@ export async function shareWeeklyRecapPng(
     }
   }
 
-  const triggerDownload = deps.triggerDownload ?? defaultTriggerDownload;
-  triggerDownload(blob, filename);
-  return 'downloaded';
+  return downloadWeeklyRecapPng(blob, filename, deps);
 }
 
 /** Always a plain download, bypassing Web Share/clipboard — the explicit "Download PNG" action. */

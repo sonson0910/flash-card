@@ -5,6 +5,9 @@ import { Trans } from '@lingui/react';
 import { AlertCircle, Check, Loader2, RefreshCw, Sparkles, Volume2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { playWordAudio, type WordAudioPlayback } from '../../lib/audio';
+import { voiceForActiveCourseCard } from '../../lib/courseVoicePreference';
+import { speechLocaleFor } from '../../lib/speechLocale';
+import { useCourseSession } from '../courses/CourseGate';
 import type { CardData } from '../../types/card';
 import type {
   CardCreatorActions,
@@ -75,6 +78,8 @@ const CREATE_CARD_MESSAGES = {
   regenerateSelected: msg({ id: 'library.create-card.regenerate-selected', message: 'Regenerate selected details' }),
   regenerateHint: msg({ id: 'library.create-card.regenerate-hint', message: 'Each completed generation uses one AI request' }),
   preparing: msg({ id: 'library.create-card.preparing', message: 'SonFlash is preparing your card…' }),
+  reserving: msg({ id: 'library.create-card.reserving', message: 'Reserving your AI request…' }),
+  drafting: msg({ id: 'library.create-card.drafting', message: 'Drafting your card with AI…' }),
   emptyPreview: msg({ id: 'library.create-card.empty-preview', message: 'Your generated card preview will appear here.' }),
   saveTo: msg({ id: 'library.create-card.save-to', message: 'Save to' }),
   unassigned: msg({ id: 'library.create-card.unassigned', message: 'Unassigned' }),
@@ -399,6 +404,7 @@ function CardPreview({
 }
 
 export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned = true }: CreateCardDialogProps) {
+  const { model: courseModel } = useCourseSession();
   const wordInputRef = useRef<HTMLInputElement | null>(null);
   const audioPlaybackRef = useRef<WordAudioPlayback | null>(null);
   const previousOpenRef = useRef(model.open);
@@ -423,7 +429,13 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
   const selectedDeck = decks.find(option => option.value === model.draft.deck);
   const deckIsAllowed = model.draft.deck ? isAllowedDeck(selectedDeck) : allowUnassigned;
   const isBusy = model.stage === 'generating' || model.stage === 'saving';
+  const generationStatus = model.generationStage === 'reserving'
+    ? CREATE_CARD_MESSAGES.reserving
+    : model.generationStage === 'drafting'
+      ? CREATE_CARD_MESSAGES.drafting
+      : CREATE_CARD_MESSAGES.preparing;
   const hasPreview = model.preview !== null && model.stage !== 'input';
+  const saveBlocked = hasPreview && !manualMode && model.stage !== 'preview';
   const error = localError ?? (model.error ? cardCreatorErrorMessage(model.error) : null);
   const quotaError = isQuotaError(model.error)
     || isQuotaError(localError)
@@ -687,13 +699,21 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
                 <>
                   <CardPreview
                     card={model.preview}
-                    disabled={isBusy}
+                    disabled={model.stage === 'saving'}
                     onUpdate={patch => actions.updatePreview(patch)}
                     onPlay={() => {
                       audioPlaybackRef.current?.cancel();
-                      audioPlaybackRef.current = playWordAudio(model.preview?.word ?? '', model.preview?.audioUrl ?? null, model.preview?.language === 'vi' ? 'vi-VN' : 'en-US');
+                      const preview = model.preview;
+                      if (!preview) return;
+                      const locale = preview.language === 'vi' ? 'vi-VN' : speechLocaleFor(preview);
+                      const voice = voiceForActiveCourseCard(preview, courseModel.activeCourse);
+                      audioPlaybackRef.current = playWordAudio(preview.word, preview.audioUrl, locale, voice);
                     }}
                   />
+                  {model.stage === 'generating' && <div className="create-card-dialog__empty-preview" role="status">
+                    <Sparkles size={18} aria-hidden="true" />
+                    <span>{translate(generationStatus)}</span>
+                  </div>}
                   {!manualMode && <div className="create-card-dialog__regeneration" aria-label={translate(CREATE_CARD_MESSAGES.regenerateGroup)}>
                     <div className="create-card-dialog__regeneration-heading"><span><Trans id="library.create-card.regenerate-selected" message="Regenerate selected details" /></span><small><Trans id="library.create-card.regenerate-hint" message="Each completed generation uses one AI request" /></small></div>
                     <div className="create-card-dialog__regeneration-options">
@@ -725,7 +745,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
               ) : (
                 <div className="create-card-dialog__empty-preview" role="status">
                   <Sparkles size={18} aria-hidden="true" />
-                  <span>{isBusy ? <Trans id="library.create-card.preparing" message="SonFlash is preparing your card…" /> : <Trans id="library.create-card.empty-preview" message="Your generated card preview will appear here." />}</span>
+                  <span>{isBusy ? translate(generationStatus) : <Trans id="library.create-card.empty-preview" message="Your generated card preview will appear here." />}</span>
                 </div>
               )}
 
@@ -755,8 +775,8 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
               <span className="create-card-dialog__request-count"><Sparkles size={14} aria-hidden="true" /><Trans id="library.create-card.request-count" message="{count, plural, one {# AI request completed} other {# AI requests completed}}" values={{ count: model.completedAiRequests }} /></span>
               {!manualMode && !hasPreview && <button type="button" className="create-card-dialog__manual-link" onClick={enterManualMode}><Trans id="library.create-card.add-manually" message="Add manually" /></button>}
               {!manualMode && hasPreview && <button type="button" className="create-card-dialog__secondary" onClick={regenerate} disabled={isBusy || selectedFields.size === 0}><RefreshCw size={15} aria-hidden="true" />{model.stage === 'generating' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.regenerating} /> : <Trans id="library.create-card.regenerate" message="Regenerate" />}</button>}
-              <button type="submit" className="create-card-dialog__primary" disabled={isBusy || Boolean(model.duplicate) || (!manualMode && !model.draft.word.trim()) || !deckIsAllowed}>
-                {model.stage === 'generating' && !hasPreview ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.generating} /> : model.stage === 'saving' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.saving} /> : manualMode ? <Trans id="library.create-card.save" message="Save card" /> : hasPreview ? <Trans id="library.create-card.save" message="Save card" /> : <Trans id="library.create-card.generate-preview" message="Generate preview" />}
+              <button type="submit" className="create-card-dialog__primary" disabled={isBusy || saveBlocked || Boolean(model.duplicate) || (!manualMode && !model.draft.word.trim()) || !deckIsAllowed}>
+                {model.stage === 'generating' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.generating} /> : model.stage === 'saving' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.saving} /> : manualMode ? <Trans id="library.create-card.save" message="Save card" /> : hasPreview ? <Trans id="library.create-card.save" message="Save card" /> : <Trans id="library.create-card.generate-preview" message="Generate preview" />}
               </button>
             </footer>
           </form>

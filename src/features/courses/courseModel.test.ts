@@ -102,6 +102,15 @@ describe('bounded course profile contract', () => {
     })).toThrow(/duplicate goal/);
   });
 
+  it('replays a create operation only when it has the original operation ID', () => {
+    const input = { targetLanguage: 'ko' as const, nativeLanguage: 'vi' as const, operationId: 'course-create-ko-1' };
+    const created = createCourseInProfile(profile, input, ids, () => '2026-09-25T00:00:00.000Z');
+    expect(createCourseInProfile(created, input, ids, () => '2026-09-25T00:00:00.000Z')).toEqual(created);
+    expect(() => createCourseInProfile(created, {
+      ...input, operationId: 'course-create-ko-2',
+    }, ids, () => '2026-09-25T00:00:00.000Z')).toThrow(/already exists/);
+  });
+
   it('rejects a duplicate target even when the existing course is archived', () => {
     const archived = archiveCourseInProfile(profile, 'legacy-en-vi');
     expect(() => createCourseInProfile(

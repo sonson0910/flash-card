@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Keyboard, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Focus, Keyboard, X } from 'lucide-react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -12,8 +12,8 @@ import { triggerConfetti } from '../../lib/confetti';
 import { triggerHaptic } from '../../lib/haptics';
 import { getReducedMotionScrollBehavior } from '../../lib/motion';
 import { playFlipSound, playRewardSound } from '../../lib/interactionSounds';
-import { REVIEW_XP } from '../../lib/review-xp';
 import { readLumiEnabled } from '../settings/lumi-preference';
+import { readFocusModeEnabled, useFocusModePreference } from '../settings/focus-mode-preference';
 import { SessionRecapModal } from './SessionRecapModal';
 import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
@@ -31,11 +31,13 @@ interface StudyViewProps {
   paused?: boolean;
   customDecks: string[];
   onClose: () => void;
+  onViewWeeklyRecap?: () => void;
   onRecallMode: (mode: RecallMode) => void;
   onReveal: () => void;
   onBookmark: (cardId: string) => void;
   onAssignDeck: (cardId: string, deckName: string | null) => void;
   onUpdateCard: (cardId: string, fields: Partial<CardData>) => void;
+  onDeleteCard?: (cardId: string) => Promise<boolean>;
   onRate: (rating: ReviewRating) => Promise<StudyRatingSettlement>;
   onIndex: (index: number) => void;
   onEditorOpenChange?: (cardId: string, open: boolean) => void;
@@ -96,16 +98,19 @@ export function StudyView({
   paused = false,
   customDecks,
   onClose,
+  onViewWeeklyRecap,
   onRecallMode,
   onReveal,
   onBookmark,
   onAssignDeck,
   onUpdateCard,
+  onDeleteCard,
   onRate,
   onIndex,
   onEditorOpenChange,
 }: StudyViewProps) {
   const { _, i18n } = useLingui();
+  const { focusModeEnabled, setFocusModeEnabled } = useFocusModePreference();
   const previousIndexRef = useRef(index);
   const elapsedTimeRef = useRef(0);
   const elapsedStartedAtRef = useRef<number | null>(null);
@@ -145,6 +150,11 @@ export function StudyView({
   const imageRecallAvailable = Boolean(imageKey && !imageUnavailable);
   const ratingRef = useRef<HTMLDivElement | null>(null);
   const studySurfaceRef = useRef<HTMLDivElement | null>(null);
+  const handleDeleteCard = useCallback(async (cardId: string) => {
+    const deleted = await onDeleteCard?.(cardId) ?? false;
+    if (deleted) globalThis.requestAnimationFrame?.(() => studySurfaceRef.current?.focus({ preventScroll: true }));
+    return deleted;
+  }, [onDeleteCard]);
   const handleImageUnavailable = useCallback(() => {
     if (imageKey) setFailedImageKey(imageKey);
   }, [imageKey]);
@@ -171,6 +181,8 @@ export function StudyView({
   const [swipeBadge, setSwipeBadge] = useState<'good' | 'again' | null>(null);
   const [sessionGoodCount, setSessionGoodCount] = useState(0);
   const [sessionAgainCount, setSessionAgainCount] = useState(0);
+  const [sessionXpEarned, setSessionXpEarned] = useState(0);
+  const answeredCount = sessionGoodCount + sessionAgainCount;
   const [weakCards, setWeakCards] = useState<CardData[]>([]);
   const [showRecap, setShowRecap] = useState(false);
   const [lumiReaction, setLumiReaction] = useState<LumiPose | null>(null);
@@ -228,11 +240,9 @@ export function StudyView({
     resetTouch();
     if (revealed && deltaX > 120) {
       // Swiped Right -> Good
-      triggerHaptic('success');
       void handleRating('good');
     } else if (revealed && deltaX < -120) {
       // Swiped Left -> Again
-      triggerHaptic('medium');
       void handleRating('again');
     }
   };
@@ -242,16 +252,24 @@ export function StudyView({
     ratingInFlightRef.current = true;
     try {
       const settlement = await onRate(rating);
-      if (settlement !== 'committed') return;
+      if (settlement === 'retryable-error' || settlement === 'ignored') return;
+      const effectiveRating = settlement.rating ?? rating;
+      if (!readFocusModeEnabled() && (answeredCount + 1) % 3 === 0) {
+        playRewardSound();
+        triggerHaptic('heavy');
+      } else {
+        triggerHaptic(effectiveRating === 'again' || effectiveRating === 'hard' ? 'medium' : 'success');
+      }
 
       if (
         globalThis.document?.documentElement.dataset.themeFamily === 'crystal'
         && readLumiEnabled()
       ) {
-        setLumiReaction(rating === 'again' || rating === 'hard' ? 'oops' : 'happy');
+        setLumiReaction(effectiveRating === 'again' || effectiveRating === 'hard' ? 'oops' : 'happy');
       }
 
-      const isPositive = rating === 'good' || rating === 'easy';
+      const isPositive = effectiveRating === 'good' || effectiveRating === 'easy';
+      setSessionXpEarned(previous => previous + settlement.xpAwarded);
       if (isPositive) {
         setSessionGoodCount(prev => prev + 1);
       } else {
@@ -278,9 +296,10 @@ export function StudyView({
     const altShortcut = event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
     if (noModifiers && (event.key === ' ' || event.key === 'Space' || event.key === 'Spacebar' || event.key === 'Enter')) {
       event.preventDefault();
-      playFlipSound();
-      if (!revealed) onReveal();
-      else surface.querySelector<HTMLButtonElement>('[data-study-card] [data-flip-card]')?.click();
+      if (!revealed) {
+        playFlipSound();
+        onReveal();
+      } else surface.querySelector<HTMLButtonElement>('[data-study-card] [data-flip-card]')?.click();
     } else if (noModifiers && event.key === 'ArrowRight') {
       event.preventDefault();
       onIndex(Math.min(cards.length - 1, index + 1));
@@ -324,6 +343,13 @@ export function StudyView({
         <span data-study-timer aria-label={_(msg({ id: 'study.elapsed-time', message: 'Elapsed study time: {time}' }).id, { time: elapsedTime })} className="min-w-12 font-mono text-xs font-bold tabular-nums text-[var(--sf-text-muted)]">
           {elapsedTime}
         </span>
+        <button type="button" data-study-focus-mode aria-label={_(msg({ id: 'study.focus-mode', message: 'Focus mode' }))} aria-pressed={focusModeEnabled} onClick={() => setFocusModeEnabled(!focusModeEnabled)} className={`grid min-h-11 min-w-11 place-items-center rounded-xl border bg-[var(--sf-surface-control)] focus-visible:outline-2 focus-visible:outline-offset-2 ${focusModeEnabled ? 'border-[var(--sf-brand)] text-[var(--sf-brand-text)]' : 'border-[var(--sf-border)] text-[var(--sf-text-muted)]'}`}>
+          <Focus size={18} aria-hidden="true" />
+        </button>
+      </div>
+
+      <div className="mb-2 flex min-h-7 w-full justify-end" aria-live="polite">
+        {!focusModeEnabled && answeredCount >= 2 && <span data-study-combo={answeredCount} className="rounded-xl border border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] px-3 py-1 font-display text-xs font-black uppercase tracking-wider text-[var(--sf-brand-text)]"><Trans id="study.combo" message="Combo ×{count}" values={{ count: answeredCount }} /></span>}
       </div>
 
       <label data-study-recall-mode className="mb-4 flex flex-wrap items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest text-[var(--sf-text-muted)]">
@@ -362,6 +388,7 @@ export function StudyView({
               customDecks={customDecks}
               onAssignDeck={onAssignDeck}
               onUpdateCard={onUpdateCard}
+              onEditDelete={handleDeleteCard}
               onEditOpenChange={open => onEditorOpenChange?.(card.id, open)}
               editorContext={{ kind: 'review', current: index + 1, total: cards.length }}
             />
@@ -404,11 +431,12 @@ export function StudyView({
 
       <SessionRecapModal
         open={showRecap}
-        onClose={() => setShowRecap(false)}
-        totalCards={cards.length}
+        onClose={onClose}
+        onViewWeeklyRecap={onViewWeeklyRecap}
+        totalCards={answeredCount}
         goodCount={sessionGoodCount}
         againCount={sessionAgainCount}
-        xpEarned={(sessionGoodCount + sessionAgainCount) * REVIEW_XP}
+        xpEarned={sessionXpEarned}
         weakCards={weakCards}
         targetLanguage={cards[0]?.language ?? 'en'}
       />

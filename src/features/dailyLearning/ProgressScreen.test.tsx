@@ -24,4 +24,15 @@ describe('ProgressScreen', () => {
 
     expect(html.indexOf('data-testid="progress-insights"')).toBeLessThan(html.indexOf('progress-summary-heading'));
   });
+
+  it.each([
+    [{ ...model, dueToday: 3, isOffline: true }, 'Review 3 due words'],
+    [{ ...model, status: 'empty' as const, isOffline: true }, 'Start your first review'],
+  ])('disables the offline review action: %s', (offlineModel, label) => {
+    const html = renderToStaticMarkup(<I18nProvider i18n={i18n}><ProgressScreen model={offlineModel} actions={{ startReview: () => undefined, openVocabulary: () => undefined }} /></I18nProvider>);
+
+    expect(html).toContain(label);
+    expect(html).toContain('disabled=""');
+    expect(html).toContain('You’re offline. Reconnect to review and save your progress.');
+  });
 });

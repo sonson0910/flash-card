@@ -9,6 +9,7 @@ import {
   SpreadsheetUnsupportedFormatError,
   type CardIntakePort,
   type SpreadsheetImportFeedbackPort,
+  type StructuredIntakePlan,
 } from './spreadsheetImportService';
 
 const existingCard = (word: string): CardData => ({
@@ -42,7 +43,7 @@ const createFakePorts = () => {
   };
   const cards: CardIntakePort = {
     findExisting: async words => {
-      events.push(`find:${words.join(',')}`);
+      events.push(`find:${words.map(word => typeof word === 'string' ? word : word.word).join(',')}`);
       return new Map();
     },
     persistStructured: async plan => {
@@ -70,7 +71,7 @@ describe('spreadsheet import service', () => {
       ...existingCard('lead'), id: lexemeId, lexemeId, language: 'en', senseKey, partOfSpeech: 'noun', normalizedLemma: 'lead',
     }));
     cards.findExisting = async () => new Map(existing.map(card => [`lexeme:${card.lexemeId}`, card]));
-    const persist = vi.fn(async plan => ({ createdCount: plan.creates.length }));
+    const persist = vi.fn(async (plan: StructuredIntakePlan) => ({ createdCount: plan.creates.length }));
     cards.persistStructured = persist;
     const importer = createSpreadsheetImportService({ cards, feedback });
     const result = await importer.import({ sizeBytes: 1, loadWorkbook: async () => ({
@@ -81,6 +82,48 @@ describe('spreadsheet import service', () => {
     expect(persist).toHaveBeenCalledWith(expect.objectContaining({ creates: expect.any(Array), patches: expect.any(Array) }), expect.any(Function));
     expect(persist.mock.calls[0][0].creates).toHaveLength(2);
     expect(persist.mock.calls[0][0].patches).toHaveLength(2);
+  });
+
+  it('keeps ordinary same-spelling cards separate by target language', async () => {
+    const { feedback, cards } = createFakePorts();
+    const persist = vi.fn(async (plan: StructuredIntakePlan) => ({ createdCount: plan.creates.length }));
+    cards.persistStructured = persist;
+    const importer = createSpreadsheetImportService({ cards, feedback });
+
+    const result = await importer.import({ sizeBytes: 1, loadWorkbook: async () => ({
+      structuredRows: [
+        { Word: 'bank', Translation: 'ngân hàng', Language: 'ko', 'Translation Language': 'vi' },
+        { Word: 'bank', Translation: 'ngân hàng', Language: 'ja', 'Translation Language': 'vi' },
+      ],
+      flatRows: [],
+    }) });
+
+    expect(result.summary).toMatchObject({ created: 2, reused: 0 });
+    expect(persist.mock.calls[0][0].creates).toMatchObject([
+      { language: 'ko', translationLanguage: 'vi' },
+      { language: 'ja', translationLanguage: 'vi' },
+    ]);
+    expect(persist.mock.calls[0][0].creates.map(card => card.id)).not.toEqual([
+      persist.mock.calls[0][0].creates[0].id,
+      persist.mock.calls[0][0].creates[0].id,
+    ]);
+  });
+
+  it('does not patch a same-spelling card from another target language', async () => {
+    const { feedback, cards } = createFakePorts();
+    const japanese = { ...existingCard('bank'), id: 'word-ja-bank', language: 'ja', translationLanguage: 'vi' };
+    const persist = vi.fn(async plan => ({ createdCount: plan.creates.length }));
+    cards.findExisting = vi.fn(async () => new Map([['target:ja:bank', japanese]]));
+    cards.persistStructured = persist;
+    const importer = createSpreadsheetImportService({ cards, feedback });
+
+    const result = await importer.import({ sizeBytes: 1, loadWorkbook: async () => ({
+      structuredRows: [{ Word: 'bank', Translation: 'ngân hàng', Language: 'ko', 'Translation Language': 'vi' }],
+      flatRows: [],
+    }) });
+
+    expect(result.summary).toMatchObject({ created: 1, reused: 0 });
+    expect(persist.mock.calls[0][0]).toMatchObject({ creates: [{ language: 'ko' }], patches: [] });
   });
 
   it('keeps the core contract independent from React and Firebase vendor types', () => {

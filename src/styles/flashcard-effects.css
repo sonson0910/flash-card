@@ -230,7 +230,8 @@
   :root[data-theme-family="classic"].dark .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab) {
     border-color: transparent;
   }
-  :root[data-theme-family="crystal"] .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back) {
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back, .flashcard-tier-rim) {
+    border-radius: 0;
     clip-path: var(--nk-chamfer);
   }
   :root[data-theme-family="crystal"] .flashcard-shell [data-card-tier-label] {

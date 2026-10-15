@@ -22,9 +22,14 @@ describe('daily pace preference', () => {
 
   it('round-trips a saved pace', () => {
     const storage = new FakeStorage();
-    writeDailyPace(20, storage);
+    expect(writeDailyPace(20, storage)).toBe(true);
     expect(readDailyPace(storage)).toBe(20);
     expect(readDailyPaceForEta(storage)).toBe(20);
+  });
+
+  it('reports a failed persistence attempt', () => {
+    const storage = { setItem: () => { throw new Error('quota exceeded'); } };
+    expect(writeDailyPace(20, storage)).toBe(false);
   });
 
   it('falls back to the default when the stored value is not one of the allowed options', () => {

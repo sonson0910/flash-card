@@ -14,211 +14,382 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:55
-msgid "course.status.active"
-msgstr "[Âctïvë cøursë]"
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:94
-msgid "settings.appearance.description"
+#: src/features/reminders/ReminderSettingsSection.tsx:116
+msgid "common.retry"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:94
-msgid "settings.appearance.title"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:121
-msgid "settings.course.account-plan-hint"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:104
-msgid "settings.course.archived"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:47
-msgid "settings.course.description"
+#: src/features/settings/CourseSettingsSection.tsx:138
+msgid "course.error.generic"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/settings/CourseSettingsSection.tsx:115
+msgid "course.status.active"
+msgstr "[Âctïvë cøursë]"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:98
+msgid "settings.appearance.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:98
+msgid "settings.appearance.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:211
+msgid "settings.course.account-plan-hint"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:197
+msgid "settings.course.archived"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:107
+msgid "settings.course.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:208
 msgid "settings.course.extension-badge"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:69
+#: src/features/settings/CourseSettingsSection.tsx:179
+msgid "settings.course.keyboard"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:180
+msgid "settings.course.keyboard.ko-help"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:129
 msgid "settings.course.meaning-language"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:69
+#: src/features/settings/CourseSettingsSection.tsx:129
 msgid "settings.course.meaning-language.scope"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:79
+#: src/features/settings/CourseSettingsSection.tsx:145
 msgid "settings.course.pace"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:81
+#: src/features/settings/CourseSettingsSection.tsx:139
+msgid "settings.course.pace.error"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:147
 msgid "settings.course.pace.option"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:118
-msgid "settings.course.reminder-not-ready"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:87
+#: src/features/settings/CourseSettingsSection.tsx:153
 msgid "settings.course.romanization"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:93
+#: src/features/settings/CourseSettingsSection.tsx:186
 msgid "settings.course.script"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:95
+#: src/features/settings/CourseSettingsSection.tsx:188
 msgid "settings.course.script.simplified"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:96
+#: src/features/settings/CourseSettingsSection.tsx:189
 msgid "settings.course.script.traditional"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:46
+#: src/features/settings/CourseSettingsSection.tsx:106
 msgid "settings.course.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:62
+#: src/features/settings/CourseSettingsSection.tsx:122
 msgid "settings.course.ui-language"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:100
+#: src/features/settings/settings-screen.tsx:104
 msgid "settings.crystal-mode.day"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:100
+#: src/features/settings/settings-screen.tsx:104
 msgid "settings.crystal-mode.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:100
+#: src/features/settings/settings-screen.tsx:104
 msgid "settings.crystal-mode.night"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:88
+#: src/features/settings/settings-screen.tsx:91
 msgid "settings.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:101
+#: src/features/settings/settings-screen.tsx:105
+msgid "settings.focus-mode.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:105
+msgid "settings.focus-mode.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:105
 msgid "settings.follow-system.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:101
+#: src/features/settings/settings-screen.tsx:105
 msgid "settings.follow-system.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:101
+#: src/features/settings/settings-screen.tsx:105
 msgid "settings.haptics.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:101
+#: src/features/settings/settings-screen.tsx:105
 msgid "settings.haptics.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:86
+#: src/features/settings/settings-screen.tsx:89
 msgid "settings.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:101
+#: src/features/settings/settings-screen.tsx:105
 msgid "settings.lumi.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:101
+#: src/features/settings/settings-screen.tsx:105
 msgid "settings.lumi.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:102
+#: src/features/settings/settings-screen.tsx:106
 msgid "settings.preview.note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:101
+#: src/features/settings/settings-screen.tsx:105
 msgid "settings.reduced-motion.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:101
+#: src/features/settings/settings-screen.tsx:105
 msgid "settings.reduced-motion.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:101
+#: src/features/reminders/ReminderSettingsSection.tsx:125
+msgid "settings.reminders.badge"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:118
+msgid "settings.reminders.days"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:113
+msgid "settings.reminders.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:124
+msgid "settings.reminders.email"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:124
+msgid "settings.reminders.email-unavailable"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:115
+msgid "settings.reminders.loading"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:122
+msgid "settings.reminders.only-if-not-studied"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:123
+msgid "settings.reminders.push"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:123
+msgid "settings.reminders.push-denied"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:123
+msgid "settings.reminders.push-unavailable"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:120
+msgid "settings.reminders.quiet"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:121
+msgid "settings.reminders.quiet-end"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:121
+msgid "settings.reminders.quiet-start"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:128
+msgid "settings.reminders.save"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:127
+msgid "settings.reminders.saved"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:114
+msgid "settings.reminders.sign-in"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:129
+msgid "settings.reminders.skip"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:119
+msgid "settings.reminders.time"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:119
+msgid "settings.reminders.timezone"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:112
+#: src/features/reminders/ReminderSettingsSection.tsx:113
+msgid "settings.reminders.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:116
+msgid "settings.reminders.unavailable"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:105
 msgid "settings.sound.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:101
+#: src/features/settings/settings-screen.tsx:105
 msgid "settings.sound.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:98
+#: src/features/settings/settings-screen.tsx:102
 msgid "settings.theme.crystal"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:98
+#: src/features/settings/settings-screen.tsx:102
 msgid "settings.theme.crystal.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:95
+#: src/features/settings/settings-screen.tsx:99
 msgid "settings.theme.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:96
+#: src/features/settings/settings-screen.tsx:100
 msgid "settings.theme.midnight"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:96
+#: src/features/settings/settings-screen.tsx:100
 msgid "settings.theme.midnight.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:97
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.theme.paper"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:97
+#: src/features/settings/settings-screen.tsx:101
 msgid "settings.theme.paper.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:87
+#: src/features/settings/settings-screen.tsx:90
 msgid "settings.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:160
+msgid "settings.voice"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:169
+msgid "settings.voice.automatic"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:74
+msgid "settings.voice.empty"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:68
+msgid "settings.voice.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:72
+msgid "settings.voice.missing"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:170
+msgid "settings.voice.unavailable"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:70
+msgid "settings.voice.unsupported"
 msgstr ""

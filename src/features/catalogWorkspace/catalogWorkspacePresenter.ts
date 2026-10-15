@@ -112,11 +112,11 @@ export function catalogTiersFromSummary(
 }
 
 export function catalogFiltersFromSummary(
-  summary: CatalogWorkspaceSummary,
+  summary: CatalogWorkspaceSummary | null,
   trackId: string,
   query?: CatalogWorkspaceQuery,
 ): CatalogFilterPresentation {
-  const facets = trackSummary(summary, trackId)?.facets;
+  const facets = summary ? trackSummary(summary, trackId)?.facets : undefined;
   return {
     term: query?.term ?? '',
     cefr: query?.cefrLevel ?? '',

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ONBOARDING_STEPS, clearOnboardingResumeStep, firstOnboardingStep, isOnboardingStepId,
+  ONBOARDING_STEPS, clearOnboardingInProgress, clearOnboardingResumeStep, firstOnboardingStep,
+  hasOnboardingInProgress, isOnboardingStepId, markOnboardingInProgress,
   nextOnboardingStep, previousOnboardingStep, readOnboardingResumeStep, writeOnboardingResumeStep,
 } from './onboardingModel';
 
@@ -46,6 +47,7 @@ describe('onboarding resume position', () => {
     writeOnboardingResumeStep('owner-1', 'pace', storage);
     expect(readOnboardingResumeStep('owner-1', storage)).toBe('pace');
     expect(readOnboardingResumeStep('owner-2', storage)).toBe('language');
+    expect(hasOnboardingInProgress('owner-1', storage)).toBe(false);
   });
 
   it('clears back to the first step', () => {
@@ -53,5 +55,16 @@ describe('onboarding resume position', () => {
     writeOnboardingResumeStep('owner-1', 'aha', storage);
     clearOnboardingResumeStep('owner-1', storage);
     expect(readOnboardingResumeStep('owner-1', storage)).toBe('language');
+  });
+
+  it('marks an in-progress owner separately from a saved step', () => {
+    const storage = new FakeStorage();
+    writeOnboardingResumeStep('owner-1', 'reminder', storage);
+    expect(hasOnboardingInProgress('owner-1', storage)).toBe(false);
+    markOnboardingInProgress('owner-1', storage);
+    expect(hasOnboardingInProgress('owner-1', storage)).toBe(true);
+    expect(hasOnboardingInProgress('owner-2', storage)).toBe(false);
+    clearOnboardingInProgress('owner-1', storage);
+    expect(hasOnboardingInProgress('owner-1', storage)).toBe(false);
   });
 });

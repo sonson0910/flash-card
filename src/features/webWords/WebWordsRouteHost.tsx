@@ -16,14 +16,15 @@ const WebWordsPage = lazy(() => Promise.all([
 export interface WebWordsRouteHostProps {
   readonly ownerId: string | null;
   readonly targetLanguage: string | null;
+  readonly translationLanguage: string | null;
 }
 
-export function WebWordsRouteHost({ ownerId, targetLanguage }: WebWordsRouteHostProps) {
+export function WebWordsRouteHost({ ownerId, targetLanguage, translationLanguage }: WebWordsRouteHostProps) {
   const route = useWebWordsRoute();
   if (!route.isOpen) return null;
   return createPortal(
     <Suspense fallback={null}>
-      <WebWordsPage ownerId={ownerId} targetLanguage={targetLanguage} onClose={route.close} />
+      <WebWordsPage ownerId={ownerId} targetLanguage={targetLanguage} translationLanguage={translationLanguage} onClose={route.close} />
     </Suspense>,
     document.body,
   );

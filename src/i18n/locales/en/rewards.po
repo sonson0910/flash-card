@@ -61,7 +61,7 @@ msgstr "Continue learning"
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:25
 msgid "rewards.reveal.streak.description"
-msgstr "Your verified review streak unlocked Web Wanderer. You can hold one streak freeze."
+msgstr "Your verified review streak earned the Web Wanderer badge."
 
 #. js-lingui-explicit-id
 #: src/features/rewards/AnimeReveal.tsx:25

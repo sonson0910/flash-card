@@ -2,6 +2,7 @@ import { COURSE_TARGET_LANGUAGES, type CourseTargetLanguage } from '../../../fun
 
 export const BROWSER_EXTENSION_IMPORT_HASH_KEY = 'lf-import';
 export const BROWSER_EXTENSION_IMPORT_STORAGE_KEY = 'lingoflash_browser_extension_import';
+export const BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY = 'lingoflash_browser_extension_import_owner';
 export const BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY = 'lingoflash_browser_extension_draft_import';
 export const BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION = 3;
 export const BROWSER_EXTENSION_IMPORT_LEGACY_DRAFT_PROTOCOL_VERSION = 2;
@@ -47,6 +48,12 @@ export interface BrowserExtensionImportStorage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
   removeItem(key: string): void;
+}
+
+interface BrowserExtensionImportOwnerBinding {
+  id: string;
+  nonce: string;
+  ownerId: string;
 }
 
 export interface BrowserExtensionImportBrowser {
@@ -258,6 +265,50 @@ export const readPendingBrowserExtensionImport = (
   }
 };
 
+const readOwnerBinding = (storage: BrowserExtensionImportStorage | null): BrowserExtensionImportOwnerBinding | null => {
+  try {
+    const rawValue = storage?.getItem(BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY);
+    if (!rawValue) return null;
+    const value: unknown = JSON.parse(rawValue);
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const binding = value as Partial<BrowserExtensionImportOwnerBinding>;
+    if (typeof binding.id !== 'string'
+      || typeof binding.nonce !== 'string'
+      || typeof binding.ownerId !== 'string'
+      || !binding.ownerId
+      || binding.ownerId.length > 128) return null;
+    return { id: binding.id, nonce: binding.nonce, ownerId: binding.ownerId };
+  } catch {
+    return null;
+  }
+};
+
+export const readPendingBrowserExtensionImportOwner = (
+  storage: BrowserExtensionImportStorage | null,
+  intent: Pick<BrowserExtensionImportIntent, 'id' | 'nonce'>,
+): string | null => {
+  const binding = readOwnerBinding(storage);
+  return binding?.id === intent.id && binding.nonce === intent.nonce ? binding.ownerId : null;
+};
+
+export const writePendingBrowserExtensionImportOwner = (
+  storage: BrowserExtensionImportStorage | null,
+  intent: Pick<BrowserExtensionImportIntent, 'id' | 'nonce'>,
+  ownerId: string,
+): boolean => {
+  if (!intent.nonce || !ownerId || ownerId.length > 128) return false;
+  try {
+    storage?.setItem(BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY, JSON.stringify({
+      id: intent.id,
+      nonce: intent.nonce,
+      ownerId,
+    }));
+    return readPendingBrowserExtensionImportOwner(storage, intent) === ownerId;
+  } catch {
+    return false;
+  }
+};
+
 export const clearPendingBrowserExtensionImport = (
   storage: BrowserExtensionImportStorage | null,
   expectedId?: string,
@@ -283,6 +334,11 @@ export const clearPendingBrowserExtensionImport = (
       if (currentId !== expectedId || (expectedNonce !== undefined && currentNonce !== expectedNonce)) return;
     }
     storage?.removeItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY);
+    const binding = readOwnerBinding(storage);
+    if (!expectedId || (binding?.id === expectedId
+      && (expectedNonce === undefined || binding.nonce === expectedNonce))) {
+      storage?.removeItem(BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY);
+    }
   } catch {
     // Storage is optional.
   }

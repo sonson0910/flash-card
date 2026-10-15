@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CardData } from '../../types/card';
-import { buildDailyPlan } from './dailyPlan';
+import { buildDailyPlan, logicalIdentity } from './dailyPlan';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
 
 const card = (id: string, overrides: Partial<CardData> = {}): CardData => ({
@@ -64,6 +64,20 @@ describe('buildDailyPlan', () => {
     expect(first.items.map(item => item.card.id)).toEqual(second.items.map(item => item.card.id));
     expect(new Set(first.items.map(item => item.logicalId)).size).toBe(15);
     expect(first.isShort).toBe(false);
+  });
+
+  it('admits a queued new word before the fifteen-card cap without displacing due reviews', () => {
+    const fresh = Array.from({ length: 17 }, (_, index) => card(`word-${String(index).padStart(2, '0')}`));
+    const due = card('due', { reviews: 2, difficulty: 'good', nextReviewDate: '2026-08-01T00:00:00.000Z' });
+    const plan = buildDailyPlan([due, ...fresh], {
+      now: new Date('2026-08-04T08:00:00.000Z'),
+      freshPriorityLogicalIds: [logicalIdentity(fresh[16])],
+    });
+
+    expect(plan.items).toHaveLength(15);
+    expect(plan.items[0].card.id).toBe('due');
+    expect(plan.items[1].card.id).toBe('word-16');
+    expect(plan.counts).toEqual({ due: 1, weak: 0, new: 14, total: 15 });
   });
 
   it('uses stable due-date and identity tie-breaks and rejects invalid bounds', () => {

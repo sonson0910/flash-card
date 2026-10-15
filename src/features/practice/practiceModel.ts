@@ -1,4 +1,5 @@
 import { normalizeCardWord } from '../../lib/cardIdentity';
+import { effectiveCardLanguagePair } from '../../lib/cardNormalization';
 import type { CardData } from '../../types/card';
 
 export interface QuizQuestion {
@@ -6,6 +7,22 @@ export interface QuizQuestion {
   type: 'target-to-native' | 'native-to-target';
   options: string[];
   correctAnswer: string;
+}
+
+/** Keeps challenge candidates within the active course's target/meaning pair. */
+export function cardsForLanguagePair(
+  cards: readonly CardData[],
+  targetLanguage: string,
+  translationLanguage: string,
+): CardData[] {
+  return cards.filter(card => {
+    try {
+      const pair = effectiveCardLanguagePair(card);
+      return pair.language === targetLanguage && pair.translationLanguage === translationLanguage;
+    } catch {
+      return false;
+    }
+  });
 }
 
 export function createWordMatchRound(

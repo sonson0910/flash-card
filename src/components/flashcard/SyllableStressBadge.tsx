@@ -4,8 +4,10 @@ import { Trans, useLingui } from '@lingui/react';
 import React, { useMemo } from 'react';
 import { parseSyllables, type SyllablePart } from '../../lib/syllableParser';
 import { triggerHaptic } from '../../lib/haptics';
+import { voiceForActiveCourseCard } from '../../lib/courseVoicePreference';
 import { speechLocaleFor } from '../../lib/speechLocale';
 import { resolveLanguagePackId } from '../../features/languagePacks/registry';
+import { useCourseSession } from '../../features/courses/CourseGate';
 import type { CardData } from '../../types/card';
 
 interface SyllableStressBadgeProps {
@@ -20,6 +22,7 @@ export const SyllableStressBadge = React.memo(function SyllableStressBadge({
   onDarkSurface = false,
 }: SyllableStressBadgeProps) {
   const { _, i18n } = useLingui();
+  const { model: courseModel } = useCourseSession();
   const { word, phonetic } = card;
   const targetLanguage = card.language || 'en';
   // English-only: the vowel-cluster heuristic and IPA stress markers below
@@ -40,6 +43,8 @@ export const SyllableStressBadge = React.memo(function SyllableStressBadge({
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(syllable.text);
       utterance.lang = speechLocaleFor(card);
+      const voice = voiceForActiveCourseCard(card, courseModel.activeCourse);
+      if (voice) utterance.voice = voice;
       utterance.rate = 0.75;
       window.speechSynthesis.speak(utterance);
     }

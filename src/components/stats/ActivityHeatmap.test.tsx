@@ -46,6 +46,16 @@ describe('ActivityHeatmap', () => {
     expect(html).toContain('Outside selected range');
   });
 
+  it('makes only covered days selectable for the inspected-day detail', () => {
+    const html = renderToStaticMarkup(<ActivityHeatmap entries={[]} rangeDays={30} todayKey="2026-09-28" selectedDate="2026-09-28" onDaySelect={vi.fn()} reviewActivity={{ coverageStartedOn: '2026-09-20', days: { '2026-09-28': { reviewed: 2, again: 1, hard: 0, good: 1, easy: 0 } } }} />);
+
+    expect(html).toContain('<button type="button" aria-pressed="true" aria-label="Sep 28, 2026: 2 reviews"');
+    expect(html).toContain('<button type="button" disabled="" aria-label="Sep 19, 2026: Activity unavailable before coverage began"');
+    expect(html).toContain('<button type="button" disabled="" aria-label="Sep 29, 2026: Outside selected range"');
+    expect(html).toContain('class="flex size-6 shrink-0 items-center justify-center focus-visible:outline-2');
+    expect(html).toContain('<span class="size-3.5 rounded-[4px] border border-[var(--sf-border)] transition-transform hover:scale-125"');
+  });
+
   it('defaults review activity to 30 days and keeps XP totals account-wide', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-09-28T12:00:00+07:00'));

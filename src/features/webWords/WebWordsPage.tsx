@@ -11,6 +11,7 @@ import type { WebWordsArticleGroup } from './webWordsGrouping';
 export interface WebWordsPageProps {
   readonly ownerId: string | null;
   readonly targetLanguage: string | null;
+  readonly translationLanguage: string | null;
   readonly onClose: () => void;
 }
 
@@ -95,8 +96,8 @@ function ArticleGroupCard({
   );
 }
 
-export function WebWordsPage({ ownerId, targetLanguage, onClose }: WebWordsPageProps) {
-  const { state, actions } = useWebWordsPage({ ownerId, targetLanguage });
+export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onClose }: WebWordsPageProps) {
+  const { state, actions } = useWebWordsPage({ ownerId, targetLanguage, translationLanguage });
   const { _ } = useLingui();
   const openerRef = useRef<HTMLElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -205,6 +206,11 @@ export function WebWordsPage({ ownerId, targetLanguage, onClose }: WebWordsPageP
             )}
             {state.status === 'ready' && (
               <>
+                {state.groups.length === 0 && state.hasNext && (
+                  <p role="status" className="py-10 text-center text-sm font-semibold text-[var(--sf-text-muted)]">
+                    <Trans id="webWords.status.empty-batch" message="No web words for this course are in this batch. Load more to keep looking." />
+                  </p>
+                )}
                 <ul className="grid gap-4 xl:grid-cols-2">
                   {state.groups.map(group => (
                     <ArticleGroupCard key={group.key} group={group} selectedCardIds={state.selectedCardIds} onToggleSelected={actions.toggleSelected} />
@@ -245,8 +251,10 @@ export function WebWordsPage({ ownerId, targetLanguage, onClose }: WebWordsPageP
       {state.addToTodayStatus !== 'idle' && (
         <p role="status" aria-live="polite" className="shrink-0 border-t border-[var(--sf-border)] px-5 py-3 text-sm font-semibold text-[var(--sf-brand-text)] sm:px-8 lg:px-14">
               {state.addToTodayStatus === 'added' && <Trans id="webWords.feedback.added" message="Added to today's new words." />}
-              {state.addToTodayStatus === 'added-session-not-started' && <Trans id="webWords.feedback.added-session-not-started" message="Saved — these words will appear once you start today's session." />}
-              {state.addToTodayStatus === 'added-after-new-stage' && <Trans id="webWords.feedback.added-after-new-stage" message="Saved — you already finished today's new words, so they'll appear in tomorrow's plan." />}
+              {state.addToTodayStatus === 'added-partial' && <Trans id="webWords.feedback.added-partial" message="Added the words that fit today; the rest are queued for a later session." />}
+              {['added-capped', 'added-unloaded', 'added-session-not-started', 'added-after-new-stage'].includes(state.addToTodayStatus) && <Trans id="webWords.feedback.not-added" message="These cards were not added to today's new-word stage. You can study them elsewhere or try again later." />}
+              {state.addToTodayStatus === 'scheduled-normal-review' && <Trans id="webWords.feedback.scheduled-normal-review" message="These cards already follow their normal review schedule." />}
+              {state.addToTodayHasNormallyScheduledCards && state.addToTodayStatus !== 'scheduled-normal-review' && <span className="ml-1"><Trans id="webWords.feedback.some-scheduled-normal-review" message="Other selected cards follow their normal review schedule." /></span>}
         </p>
       )}
     </section>

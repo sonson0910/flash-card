@@ -78,6 +78,7 @@ html[data-theme-family="crystal"] .landing-card > div:last-child { clip-path: po
 .crystal-ribbon { position: absolute; right: -5%; bottom: 14px; left: -5%; display: flex; justify-content: center; gap: clamp(20px, 5vw, 76px); height: 58px; padding: 0 36px; overflow: hidden; transform: skewY(-1.5deg); background: var(--sf-brand); box-shadow: 0 0 32px color-mix(in srgb, var(--sf-brand) 65%, transparent); color: var(--sf-on-brand); font-family: var(--sf-font-display, Geist, sans-serif); font-size: .9rem; font-style: italic; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; align-items: center; white-space: nowrap; }
 html[data-theme-family="crystal"] .landing-atmospheres { display: none; }
 html[data-theme-family="crystal"] .landing-header { transform: translateY(-20px); }
+@media (min-width: 1280px) and (max-width: 1439px) { html[data-theme-family="crystal"] .landing-header { gap: 6px; padding-inline: 0; } html[data-theme-family="crystal"] .landing-header nav :is(a, button) { padding-inline: 6px; font-size: .78rem; } html[data-theme-family="crystal"] .landing-header .brand-action { padding-inline: 10px; font-size: .78rem; } }
 /* Below 1440px the hero grid has too little width for Lumi to sit beside the
    headline/demo card without overlapping either — hide it rather than
    shrinking it further. This wins over any width/height rule for

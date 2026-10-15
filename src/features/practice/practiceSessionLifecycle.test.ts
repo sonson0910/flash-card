@@ -118,6 +118,26 @@ describe('practice session lifecycle', () => {
     expect(lifecycle.isReviewed('card-1')).toBe(false);
   });
 
+  it('fences a late review when the same owner closes and reopens Study', () => {
+    const lifecycle = createPracticeSessionLifecycle('owner-a');
+    expect(lifecycle.activate('study', lifecycle.currentToken())).toBe(true);
+    const oldActivation = lifecycle.studyActivationId();
+    expect(oldActivation).not.toBeNull();
+    expect(lifecycle.claimReview('card-1')).toBe(true);
+
+    lifecycle.clear('study');
+    expect(lifecycle.studyActivationId()).toBeNull();
+    expect(lifecycle.activate('study', lifecycle.currentToken())).toBe(true);
+    const newActivation = lifecycle.studyActivationId();
+    expect(newActivation).not.toBe(oldActivation);
+    expect(lifecycle.claimReview('card-1')).toBe(true);
+
+    expect(lifecycle.settleReview('card-1', 'saved', oldActivation!)).toBe(false);
+    expect(lifecycle.isReviewClaimCurrent('card-1', newActivation!)).toBe(true);
+    expect(lifecycle.settleReview('card-1', 'saved', newActivation!)).toBe(true);
+    expect(lifecycle.isReviewed('card-1')).toBe(true);
+  });
+
   it('keeps public method identities stable', () => {
     const lifecycle = createPracticeSessionLifecycle('owner-a');
     const identities = {

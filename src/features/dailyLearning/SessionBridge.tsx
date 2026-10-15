@@ -5,6 +5,7 @@ import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { Lumi } from '../../components/lumi/Lumi';
 import { useTheme } from '../theme/ThemeProvider';
 import { readLumiEnabled } from '../settings/lumi-preference';
+import { useFocusModePreference } from '../settings/focus-mode-preference';
 import type { SessionBridgeActions, SessionBridgeModel } from './dailyLearningPresentation';
 
 interface SessionBridgeProps {
@@ -16,6 +17,7 @@ interface SessionBridgeProps {
 export function SessionBridge({ model, actions }: SessionBridgeProps) {
   const { _ } = useLingui();
   const { family } = useTheme();
+  const { focusModeEnabled } = useFocusModePreference();
   const showLumi = family === 'crystal' && readLumiEnabled();
 
   return (
@@ -43,6 +45,12 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
               <span>{stat.label}</span>
             </div>
           ))}
+          {!focusModeEnabled && model.comboCount >= 2 && (
+            <div className="session-bridge-stat" data-session-combo={model.comboCount}>
+              <strong>×{model.comboCount}</strong>
+              <span><Trans id="session.bridge.combo" message="Combo" /></span>
+            </div>
+          )}
           {showLumi && <Lumi pose="happy" size={110} className="session-bridge-lumi" />}
         </div>
 

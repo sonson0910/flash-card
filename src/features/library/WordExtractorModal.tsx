@@ -2,11 +2,12 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { i18n, type MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { Check, Loader2, Plus, Sparkles, X } from 'lucide-react';
-import { useState, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { normalizeCardWord } from '../../lib/cardIdentity';
 import { translateText } from '../../lib/gemini';
 import { getProtectedFunctionUserMessage, ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import type { CardData } from '../../types/card';
+import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
 
 export interface ExtractedWordItem {
   word: string;
@@ -21,15 +22,72 @@ export function getSelectableExtractedWords(
   cards: readonly Pick<CardData, 'word' | 'normalizedWord'>[],
 ): ExtractedWordItem[] {
   const existingWordKeys = new Set(cards.map(card => normalizeCardWord(card.normalizedWord || card.word)));
-  return words.filter(item => !existingWordKeys.has(normalizeCardWord(item.word)));
+  return words.filter(item => Boolean(item.word.trim()) && Boolean(item.translation.trim())
+    && !existingWordKeys.has(normalizeCardWord(item.word)));
 }
+
+export const selectedExtractedWords = (
+  words: readonly ExtractedWordItem[],
+  selectedWords: ReadonlySet<string>,
+) => words.filter(item => selectedWords.has(item.word) && Boolean(item.word.trim()) && Boolean(item.translation.trim()));
+
+const importableSelectedExtractedWords = (
+  words: readonly ExtractedWordItem[],
+  selectedWords: ReadonlySet<string>,
+  cards: readonly Pick<CardData, 'word' | 'normalizedWord'>[],
+) => getSelectableExtractedWords(selectedExtractedWords(words, selectedWords), cards);
+
+export const extractorItemsForScope = (
+  items: readonly ExtractedWordItem[],
+  itemsScope: string,
+  currentScope: string,
+) => itemsScope === currentScope ? items : [];
+
+export const extractorSelectionForScope = (
+  selectedWords: ReadonlySet<string>,
+  itemsScope: string,
+  currentScope: string,
+) => itemsScope === currentScope ? selectedWords : new Set<string>();
+
+export const extractorScopeKey = (languageProfile: LanguageProfile, ownerId?: string | null) =>
+  `${ownerId ?? ''}:${languageProfile.id}`;
+
+export function useExtractorRequestGuard() {
+  const activeRef = useRef(true);
+  const generationRef = useRef(0);
+  useEffect(() => () => {
+    activeRef.current = false;
+    generationRef.current += 1;
+  }, []);
+  return useCallback(() => {
+    const generation = ++generationRef.current;
+    return { isCurrent: () => activeRef.current && generationRef.current === generation };
+  }, []);
+}
+
+export const buildExtractorPrompt = (inputText: string, languageProfile: LanguageProfile) => `Bạn là chuyên gia trích xuất từ vựng ${languageProfile.source.displayName}. Hãy đọc đoạn văn bản sau và chọn lọc ra 5-10 từ vựng hoặc cụm từ học thuật/thực tế hay nhất (trình độ B1-C2):
+"${inputText.trim().slice(0, 2000)}"
+
+Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (không thêm markdown ngoài):
+[
+  {
+    "word": "từ vựng ${languageProfile.source.displayName}",
+    "translation": "nghĩa ${languageProfile.target.displayName} ngắn gọn",
+    "partOfSpeech": "noun/verb/adj...",
+    "cefrLevel": "B1/B2/C1/C2",
+    "example": "câu ví dụ ngắn trích từ bài hoặc tự đặt"
+  }
+]`;
 
 interface WordExtractorModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onImportWords: (words: string[]) => void;
+  onImportWords?: (words: string[]) => void;
+  onImportItems?: (items: ExtractedWordItem[]) => void;
   cards?: readonly Pick<CardData, 'word' | 'normalizedWord'>[];
   restoreFocusRef?: RefObject<HTMLElement | null>;
+  languageProfile?: LanguageProfile;
+  ownerId?: string | null;
 }
 
 const translate = (descriptor: MessageDescriptor, values?: Record<string, unknown>) =>
@@ -51,44 +109,57 @@ export function extractionFailureMessage(error: unknown): string {
 export function WordExtractorContent({
   onClose,
   onImportWords,
+  onImportItems,
   cards = [],
+  languageProfile = ENGLISH_TO_VIETNAMESE_PROFILE,
+  ownerId,
 }: {
   onClose: () => void;
-  onImportWords: (words: string[]) => void;
+  onImportWords?: (words: string[]) => void;
+  onImportItems?: (items: ExtractedWordItem[]) => void;
   cards?: readonly Pick<CardData, 'word' | 'normalizedWord'>[];
+  languageProfile?: LanguageProfile;
+  ownerId?: string | null;
 }) {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [extractedWords, setExtractedWords] = useState<ExtractedWordItem[]>([]);
   const [selectedWords, setSelectedWords] = useState<Set<string>>(new Set());
   const [error, setError] = useState<unknown>(null);
+  const scopeKey = extractorScopeKey(languageProfile, ownerId);
+  const [itemsScope, setItemsScope] = useState(scopeKey);
+  const beginRequest = useExtractorRequestGuard();
+  const scopedExtractedWords = extractorItemsForScope(extractedWords, itemsScope, scopeKey);
+  const scopedSelectedWords = extractorSelectionForScope(selectedWords, itemsScope, scopeKey);
+  const isScopeCurrent = itemsScope === scopeKey;
   const existingWordKeys = new Set(cards.map(card => normalizeCardWord(card.normalizedWord || card.word)));
-  const selectableWords = getSelectableExtractedWords(extractedWords, cards);
+  const selectableWords = getSelectableExtractedWords(scopedExtractedWords, cards);
+  const importableSelectedWords = importableSelectedExtractedWords(scopedExtractedWords, scopedSelectedWords, cards);
+  const allSelectableWordsSelected = selectableWords.length > 0 && importableSelectedWords.length === selectableWords.length;
+
+  useEffect(() => {
+    setIsLoading(false);
+    setExtractedWords([]);
+    setSelectedWords(new Set());
+    setError(null);
+  }, [scopeKey]);
 
   const handleExtract = async () => {
     if (!inputText.trim()) return;
 
+    const request = beginRequest();
+
     setIsLoading(true);
+    setItemsScope(scopeKey);
     setError(null);
     setExtractedWords([]);
     setSelectedWords(new Set());
 
     try {
-      const prompt = `Bạn là chuyên gia trích xuất từ vựng tiếng Anh. Hãy đọc đoạn văn bản sau và chọn lọc ra 5-10 từ vựng hoặc cụm từ học thuật/thực tế hay nhất (trình độ B1-C2):
-"${inputText.trim().slice(0, 2000)}"
-
-Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (không thêm markdown ngoài):
-[
-  {
-    "word": "từ vựng tiếng Anh",
-    "translation": "nghĩa tiếng Việt ngắn gọn",
-    "partOfSpeech": "noun/verb/adj...",
-    "cefrLevel": "B1/B2/C1/C2",
-    "example": "câu ví dụ ngắn trích từ bài hoặc tự đặt"
-  }
-]`;
+      const prompt = buildExtractorPrompt(inputText, languageProfile);
 
       const rawResult = await translateText(prompt);
+      if (!request.isCurrent()) return;
       if (!rawResult) throw new Error('No response from AI');
 
       const jsonStart = rawResult.indexOf('[');
@@ -102,39 +173,42 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (
         if (!value || typeof value !== 'object') return [];
         const item = value as Partial<ExtractedWordItem>;
         const word = typeof item.word === 'string' ? item.word.trim() : '';
+        const translation = typeof item.translation === 'string' ? item.translation.trim() : '';
         const key = normalizeCardWord(word);
-        if (!key || seen.has(key)) return [];
+        if (!key || !translation || seen.has(key)) return [];
         seen.add(key);
         return [{
           word,
-          translation: typeof item.translation === 'string' ? item.translation.trim() : '',
+          translation,
           partOfSpeech: typeof item.partOfSpeech === 'string' ? item.partOfSpeech.trim() : '',
           cefrLevel: typeof item.cefrLevel === 'string' ? item.cefrLevel.trim() : '',
           example: typeof item.example === 'string' ? item.example.trim() : '',
         }];
       });
       if (validWords.length === 0) throw new Error('No vocabulary found');
+      setItemsScope(scopeKey);
       setExtractedWords(validWords);
       setSelectedWords(new Set(getSelectableExtractedWords(validWords, cards).map(item => item.word)));
     } catch (error) {
-      setError(error);
+      if (request.isCurrent()) setError(error);
     } finally {
-      setIsLoading(false);
+      if (request.isCurrent()) setIsLoading(false);
     }
   };
 
   const toggleSelect = (word: string) => {
-    if (existingWordKeys.has(normalizeCardWord(word))) return;
-    const next = new Set(selectedWords);
+    if (existingWordKeys.has(normalizeCardWord(word)) || !scopedExtractedWords.some(item => item.word === word && item.translation.trim())) return;
+    const next = new Set(scopedSelectedWords);
     if (next.has(word)) next.delete(word);
     else next.add(word);
     setSelectedWords(next);
   };
 
   const handleAddAllSelected = () => {
-    const list = Array.from(selectedWords);
-    if (list.length > 0) {
-      onImportWords(list);
+    const items = importableSelectedExtractedWords(scopedExtractedWords, scopedSelectedWords, cards);
+    if (items.length > 0) {
+      if (onImportItems) onImportItems(items);
+      else onImportWords?.(items.map(item => item.word));
       onClose();
       setInputText('');
       setExtractedWords([]);
@@ -177,7 +251,7 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (
           </label>
           <textarea
             id="extractor-input"
-            lang="en"
+            lang={languageProfile.source.code}
             value={inputText}
             onChange={e => setInputText(e.target.value)}
             placeholder={translate(msg({ id: 'library.extract.input-placeholder', message: 'Paste a paragraph, email, reading passage or book page here…' }))}
@@ -186,7 +260,7 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (
           />
         </div>
 
-        {error !== null && (
+        {isScopeCurrent && error !== null && (
           <p role="alert" className="rounded-[14px] border border-rose-400/30 bg-rose-500/10 p-3 text-sm font-medium text-rose-700 dark:text-rose-200">
             {extractionFailureMessage(error)}
           </p>
@@ -212,33 +286,34 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (
         </button>
 
         {/* Extracted Words Result List */}
-        {extractedWords.length > 0 && (
+        {scopedExtractedWords.length > 0 && (
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-[var(--sf-text)]">
-                {translate(msg({ id: 'library.extract.found', message: 'Found {count, plural, one {# word} other {# words}}' }), { count: extractedWords.length })}
-                {existingWordKeys.size > 0 && extractedWords.some(item => existingWordKeys.has(normalizeCardWord(item.word)))
-                  ? <span className="ml-2 text-xs font-normal text-[var(--sf-text-muted)]">{translate(msg({ id: 'library.extract.already-owned', message: '{count, plural, one {# already in your library} other {# already in your library}}' }), { count: extractedWords.filter(item => existingWordKeys.has(normalizeCardWord(item.word))).length })}</span>
+                {translate(msg({ id: 'library.extract.found', message: 'Found {count, plural, one {# word} other {# words}}' }), { count: scopedExtractedWords.length })}
+                {existingWordKeys.size > 0 && scopedExtractedWords.some(item => existingWordKeys.has(normalizeCardWord(item.word)))
+                  ? <span className="ml-2 text-xs font-normal text-[var(--sf-text-muted)]">{translate(msg({ id: 'library.extract.already-owned', message: '{count, plural, one {# already in your library} other {# already in your library}}' }), { count: scopedExtractedWords.filter(item => existingWordKeys.has(normalizeCardWord(item.word))).length })}</span>
                   : null}
               </span>
               <button
                 type="button"
                 onClick={() => {
-                  if (selectedWords.size === selectableWords.length) setSelectedWords(new Set());
+                  if (allSelectableWordsSelected) setSelectedWords(new Set());
                   else setSelectedWords(new Set(selectableWords.map(w => w.word)));
                 }}
+                disabled={selectableWords.length === 0}
                 className="text-xs font-semibold text-[var(--sf-brand-text)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
               >
-                {selectedWords.size === selectableWords.length
+                {allSelectableWordsSelected
                   ? translate(msg({ id: 'library.extract.deselect-all', message: 'Clear selection' }))
                   : translate(msg({ id: 'library.extract.select-all', message: 'Select all' }))}
               </button>
             </div>
 
             <div className="grid max-h-64 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
-              {extractedWords.map((item, i) => {
-                const isSelected = selectedWords.has(item.word);
+              {scopedExtractedWords.map((item, i) => {
                 const isExisting = existingWordKeys.has(normalizeCardWord(item.word));
+                const isSelected = importableSelectedWords.includes(item);
                 return (
                   <button
                     key={i}
@@ -264,12 +339,12 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span lang="en" className="font-display text-base font-semibold text-[var(--sf-text)]">{item.word}</span>
+                        <span lang={languageProfile.source.code} className="font-display text-base font-semibold text-[var(--sf-text)]">{item.word}</span>
                         {item.cefrLevel
                           ? <span className="rounded-md bg-[var(--sf-surface-muted)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--sf-text-muted)]">{item.cefrLevel}</span>
-                          : <span lang="en" className="rounded-md bg-[var(--sf-surface-muted)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--sf-text-muted)]">{isExisting ? translate(msg({ id: 'library.extract.in-library', message: 'In library' })) : item.partOfSpeech}</span>}
+                          : <span lang={languageProfile.source.code} className="rounded-md bg-[var(--sf-surface-muted)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--sf-text-muted)]">{isExisting ? translate(msg({ id: 'library.extract.in-library', message: 'In library' })) : item.partOfSpeech}</span>}
                       </div>
-                      <p lang="vi" className="text-xs text-[var(--sf-text-muted)] mt-0.5">{item.translation}</p>
+                      <p lang={languageProfile.target.code} className="text-xs text-[var(--sf-text-muted)] mt-0.5">{item.translation}</p>
                     </div>
                   </button>
                 );
@@ -279,11 +354,11 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (
             <button
               type="button"
               onClick={handleAddAllSelected}
-              disabled={selectedWords.size === 0}
+              disabled={importableSelectedWords.length === 0}
               className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 text-sm font-semibold text-[var(--sf-on-brand)] shadow-[var(--sf-shadow)] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:opacity-50"
             >
               <Plus size={16} />
-              <span>{translate(msg({ id: 'library.extract.create-selected', message: 'Create {count, plural, one {# flashcard} other {# flashcards}}' }), { count: selectedWords.size })}</span>
+              <span>{translate(msg({ id: 'library.extract.create-selected', message: 'Create {count, plural, one {# flashcard} other {# flashcards}}' }), { count: importableSelectedWords.length })}</span>
             </button>
           </div>
         )}
@@ -292,8 +367,9 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (
   );
 }
 
-export function WordExtractorModal({ open, onOpenChange, onImportWords, cards = [], restoreFocusRef }: WordExtractorModalProps) {
+export function WordExtractorModal({ open, onOpenChange, onImportWords, onImportItems, cards = [], restoreFocusRef, languageProfile, ownerId }: WordExtractorModalProps) {
   if (!open) return null;
+  const activeLanguageProfile = languageProfile ?? ENGLISH_TO_VIETNAMESE_PROFILE;
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -308,9 +384,13 @@ export function WordExtractorModal({ open, onOpenChange, onImportWords, cards = 
           }}
         >
           <WordExtractorContent
+            key={extractorScopeKey(activeLanguageProfile, ownerId)}
             onClose={() => onOpenChange(false)}
             onImportWords={onImportWords}
+            onImportItems={onImportItems}
             cards={cards}
+            languageProfile={activeLanguageProfile}
+            ownerId={ownerId}
           />
         </Dialog.Content>
       </Dialog.Portal>

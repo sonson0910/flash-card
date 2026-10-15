@@ -12,7 +12,21 @@ const protectedOperationLabel = {
   translate: 'Translation',
 } as const;
 
-const callProductionAI = async <T,>(action: 'word' | 'story' | 'translate', input: unknown, operationId?: string): Promise<T> => {
+export type WordGenerationProgress = {
+  operationId: string;
+  stage: 'reserving' | 'drafting' | 'field' | 'done' | 'error';
+  field?: string;
+  value?: unknown;
+  errorReason?: string;
+  result?: unknown;
+};
+
+const callProductionAI = async <T,>(
+  action: 'word' | 'story' | 'translate', input: unknown, expectedOwnerId: string | null,
+  operationId?: string,
+  onProgress?: (progress: WordGenerationProgress) => void,
+  signal?: AbortSignal,
+): Promise<T> => {
   const operation = protectedOperationLabel[action];
   return runProtectedFunction(protectedFunctionsCapability, operation, async () => {
     const { httpsCallable } = await import('firebase/functions');
@@ -21,24 +35,43 @@ const callProductionAI = async <T,>(action: 'word' | 'story' | 'translate', inpu
         code: 'failed-precondition',
       });
     }
-    if (!auth?.currentUser) {
+    if (!expectedOwnerId || auth?.currentUser?.uid !== expectedOwnerId) {
       throw Object.assign(new Error('Authentication is unavailable.'), {
         code: 'unauthenticated',
       });
     }
     const functions = await getSonFlashFunctions(app);
-    const callable = httpsCallable<{ action: string; input: unknown; operationId?: string }, { result: T }>(functions, 'generateVocabulary');
-    const response = await callable({ action, input, ...(operationId ? { operationId } : {}) });
-    return response.data.result;
+    if (auth?.currentUser?.uid !== expectedOwnerId) {
+      throw Object.assign(new Error('The AI account changed.'), { code: 'unauthenticated' });
+    }
+    const callable = httpsCallable<{
+      action: string; input: unknown; expectedOwnerId: string; operationId?: string;
+    }, { result: T }>(functions, 'generateVocabulary');
+    const request = { action, input, expectedOwnerId, ...(operationId ? { operationId } : {}) };
+    if (onProgress && operationId) {
+      const { stream, data } = await (signal
+        ? callable.stream(request, { signal }) : callable.stream(request));
+      for await (const chunk of stream) {
+        if (chunk && typeof chunk === 'object' && 'operationId' in chunk
+          && chunk.operationId === operationId && 'stage' in chunk
+          && (chunk.stage === 'reserving' || chunk.stage === 'drafting' || chunk.stage === 'field'
+            || chunk.stage === 'done' || chunk.stage === 'error')) {
+          onProgress(chunk as WordGenerationProgress);
+        }
+      }
+      return (await data).result;
+    }
+    return (await callable(request)).data.result;
   });
 };
 
-export const withNetworkRetry = async <T>(operation: () => Promise<T>): Promise<T> => {
+export const withNetworkRetry = async <T>(operation: () => Promise<T>, signal?: AbortSignal): Promise<T> => {
+  if (signal?.aborted) throw new DOMException('AI generation cancelled.', 'AbortError');
   let expired = false;
   const retry = async (): Promise<T> => {
     let lastError: unknown;
     let ordinaryRetries = 0;
-    for (let attempt = 0; attempt < 12 && !expired; attempt += 1) {
+    for (let attempt = 0; attempt < 12 && !expired && !signal?.aborted; attempt += 1) {
       try {
         return await withTimeout(
           operation(),
@@ -47,6 +80,7 @@ export const withNetworkRetry = async <T>(operation: () => Promise<T>): Promise<
         );
       } catch (error) {
         lastError = error;
+        if (signal?.aborted) break;
         const status = typeof error === 'object' && error !== null && 'status' in error
           ? Number((error as { status?: unknown }).status)
           : 0;
@@ -76,10 +110,13 @@ export type PartOfSpeechHint = typeof PART_OF_SPEECH_HINTS[number];
 
 export interface WordGenerationOptions {
   operationId?: string;
+  expectedOwnerId?: string;
   context?: string;
   sourceLanguage?: string;
   targetLanguage?: string;
   partOfSpeech?: PartOfSpeechHint;
+  onProgress?: (progress: WordGenerationProgress) => void;
+  signal?: AbortSignal;
 }
 
 const languageCode = (value: unknown, fallback: string): string => {
@@ -88,6 +125,7 @@ const languageCode = (value: unknown, fallback: string): string => {
 };
 
 export async function generateWordInfo(word: string, options: WordGenerationOptions = {}): Promise<WordInfo> {
+  const expectedOwnerId = options.expectedOwnerId ?? auth?.currentUser?.uid ?? null;
   const operationId = options.operationId ?? globalThis.crypto.randomUUID();
   const safeWord = word.trim().slice(0, 80);
   const context = typeof options.context === 'string'
@@ -105,16 +143,62 @@ export async function generateWordInfo(word: string, options: WordGenerationOpti
     ...(context ? { context } : {}),
     ...(options.partOfSpeech ? { partOfSpeech: options.partOfSpeech } : {}),
   } : safeWord;
-  return parseWordInfo(await withNetworkRetry(() => callProductionAI<unknown>('word', input, operationId)));
+  return parseWordInfo(await withNetworkRetry(() => callProductionAI<unknown>(
+    'word', input, expectedOwnerId, operationId, options.onProgress, options.signal,
+  ), options.signal));
 }
 
-export async function generateStoryContext(words: string[]): Promise<StoryInfo> {
+export async function cancelWordInfoGeneration(operationId: string, expectedOwnerId: string): Promise<boolean> {
+  return runProtectedFunction(protectedFunctionsCapability, 'AI generation', async () => {
+    if (!app || auth?.currentUser?.uid !== expectedOwnerId) throw new Error('The AI account changed.');
+    const { httpsCallable } = await import('firebase/functions');
+    const functions = await getSonFlashFunctions(app);
+    if (auth?.currentUser?.uid !== expectedOwnerId) throw new Error('The AI account changed.');
+    const cancel = httpsCallable<{ operationId: string; expectedOwnerId: string }, { cancelled: boolean }>(functions, 'cancelCardGeneration');
+    return (await cancel({ operationId, expectedOwnerId })).data.cancelled;
+  });
+}
+
+export interface CardTutorTurn { question: string; answer: string }
+
+export async function askCardTutor(
+  cardId: string,
+  question: string,
+  history: CardTutorTurn[],
+  signal?: AbortSignal,
+): Promise<string> {
+  const expectedOwnerId = auth?.currentUser?.uid ?? null;
+  return runProtectedFunction(protectedFunctionsCapability, 'AI tutor', async () => {
+    if (!app || !auth?.currentUser || !expectedOwnerId) throw new Error('Sign in to use AI tutor.');
+    const { httpsCallable } = await import('firebase/functions');
+    const functions = await getSonFlashFunctions(app);
+    const callable = httpsCallable<
+      { cardId: string; question: string; history: CardTutorTurn[]; expectedOwnerId: string },
+      { answer: string }
+    >(functions, 'askCardTutor');
+    const request = { cardId, question, history: history.slice(-3), expectedOwnerId };
+    const { data } = await (signal ? callable.stream(request, { signal }) : callable.stream(request));
+    const answer = (await data)?.answer;
+    if (typeof answer !== 'string' || !answer.trim()) throw new Error('AI tutor returned an empty answer.');
+    return answer.trim();
+  });
+}
+
+export interface StoryGenerationOptions {
+  targetLanguage: 'en' | 'ko' | 'ja' | 'zh';
+  translationLanguage: 'vi' | 'en';
+}
+
+export async function generateStoryContext(words: string[], options?: StoryGenerationOptions): Promise<StoryInfo> {
+  const expectedOwnerId = auth?.currentUser?.uid ?? null;
   const safeWords = words.slice(0, 5).map(word => word.trim().slice(0, 80)).filter(Boolean);
-  return parseStoryInfo(await withNetworkRetry(() => callProductionAI<unknown>('story', safeWords)));
+  const input = options ? { words: safeWords, ...options } : safeWords;
+  return parseStoryInfo(await withNetworkRetry(() => callProductionAI<unknown>('story', input, expectedOwnerId)));
 }
 
 export async function translateText(text: string): Promise<string> {
+  const expectedOwnerId = auth?.currentUser?.uid ?? null;
   const safeText = text.trim().slice(0, 2048);
-  const translated = await withNetworkRetry(() => callProductionAI<unknown>('translate', safeText));
+  const translated = await withNetworkRetry(() => callProductionAI<unknown>('translate', safeText, expectedOwnerId));
   return typeof translated === 'string' ? translated.trim().slice(0, 2048) : '';
 }

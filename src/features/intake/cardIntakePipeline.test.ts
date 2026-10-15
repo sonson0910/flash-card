@@ -8,6 +8,7 @@ import { OperationTimeoutError } from '../../lib/async';
 
 const generationRuntime = vi.hoisted(() => ({
   generateWordInfo: vi.fn(),
+  cancelWordInfoGeneration: vi.fn(),
 }));
 
 const repositoryRuntime = vi.hoisted(() => ({
@@ -15,6 +16,8 @@ const repositoryRuntime = vi.hoisted(() => ({
     card: args[2] as { id: string }, created: true,
     gamification: null as null | { xp: number; level: number; streak: number; studyDay: string; events: readonly ('streak' | 'levelup')[] },
   })),
+  findCardByNormalizedWord: vi.fn<(...args: unknown[]) => Promise<unknown>>(async () => null),
+  findCardsByNormalizedWords: vi.fn(async () => new Map()),
 }));
 
 const createOperationIdAt = (call: readonly unknown[]) => (call[3] as { opId: string }).opId;
@@ -22,20 +25,27 @@ const createOperationIdAt = (call: readonly unknown[]) => (call[3] as { opId: st
 vi.mock('../../lib/firebase', () => ({ db: {}, isFirebaseConfigured: true }));
 vi.mock('../../lib/audio', () => ({ fetchAudioUrl: vi.fn(async () => null) }));
 vi.mock('../../lib/images', () => ({ fetchImageUrl: vi.fn(async () => null) }));
-vi.mock('../../lib/gemini', () => ({ generateWordInfo: generationRuntime.generateWordInfo }));
+vi.mock('../../lib/gemini', () => ({
+  generateWordInfo: generationRuntime.generateWordInfo,
+  cancelWordInfoGeneration: generationRuntime.cancelWordInfoGeneration,
+  PART_OF_SPEECH_HINTS: ['noun', 'verb', 'adjective', 'adverb'],
+}));
 vi.mock('../../lib/cardRepository', () => ({
   createCardV2IfAbsent: repositoryRuntime.createCardV2IfAbsent,
   createLibraryFacetOperationId: () => 'facet-op',
   deriveLibraryFacetOperationId: (id: string, suffix: string) => `${id}:${suffix}`,
-  findCardByNormalizedWord: vi.fn(async () => null),
-  findCardsByNormalizedWords: vi.fn(async () => new Map()),
+  findCardByNormalizedWord: repositoryRuntime.findCardByNormalizedWord,
+  findCardsByNormalizedWords: repositoryRuntime.findCardsByNormalizedWords,
 }));
 
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.useRealTimers();
   generationRuntime.generateWordInfo.mockClear();
+  generationRuntime.cancelWordInfoGeneration.mockClear();
   repositoryRuntime.createCardV2IfAbsent.mockClear();
+  repositoryRuntime.findCardByNormalizedWord.mockClear();
+  repositoryRuntime.findCardsByNormalizedWords.mockClear();
 });
 
 const card = (id: string) => ({
@@ -132,6 +142,31 @@ describe('Card Intake Pipeline contract', () => {
     expect(pipeline).toMatchObject(methods);
   });
 
+  it('looks up ordinary explicit target-language cards by their target-aware identity', async () => {
+    const context = createContext();
+    const korean = { ...card('bank'), id: 'word-ko-bank', language: 'ko', translationLanguage: 'vi' };
+    repositoryRuntime.findCardByNormalizedWord.mockResolvedValueOnce(korean);
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await expect(pipeline.findExisting([{
+      word: 'bank', normalizedWord: 'bank', language: 'ko',
+    }])).resolves.toEqual(new Map([['target:ko:bank', korean]]));
+
+    expect(repositoryRuntime.findCardByNormalizedWord).toHaveBeenCalledWith(
+      {}, 'owner-a', expect.objectContaining({ word: 'bank', language: 'ko' }), 3,
+    );
+  });
+
+  it('keeps legacy default-English lookups on the bulk word path', async () => {
+    const context = createContext();
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await expect(pipeline.findExisting(['bank'])).resolves.toEqual(new Map());
+
+    expect(repositoryRuntime.findCardsByNormalizedWords).toHaveBeenCalledWith({}, 'owner-a', ['bank'], 3);
+    expect(repositoryRuntime.findCardByNormalizedWord).not.toHaveBeenCalled();
+  });
+
   it('publishes a shared card optimistically but waits for cloud confirmation', async () => {
     const context = createContext();
     const candidate = card('queued-card');
@@ -221,10 +256,10 @@ describe('Card Intake Pipeline contract', () => {
     const pipeline = createCardIntakePipeline({ getContext: () => context });
 
     const creation = pipeline.createConfirmedCatalogCards([first, second]);
-    expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalledTimes(2);
+    expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalledTimes(1);
     expect(context.publishCards).not.toHaveBeenCalled();
     firstResult.resolve({ card: { ...first, translation: 'authoritative first' }, created: true, gamification: null });
-    await Promise.resolve();
+    await vi.waitFor(() => expect(repositoryRuntime.createCardV2IfAbsent).toHaveBeenCalledTimes(2));
     expect(context.publishCards).not.toHaveBeenCalled();
     secondResult.resolve({ card: { ...second, translation: 'authoritative second' }, created: false, gamification: null });
 
@@ -537,13 +572,16 @@ describe('Card Intake Pipeline contract', () => {
       operationId: '123e4567-e89b-42d3-a456-426614174000',
       language: ENGLISH_TO_VIETNAMESE_PROFILE,
       context: 'The lead actor arrived.',
+      partOfSpeechHint: 'verb',
       requestedDeck: 'Reading',
       requestedDeckAvailable: deck => deck === 'Reading',
     });
 
     expect(generationRuntime.generateWordInfo).toHaveBeenCalledWith('lead', {
       context: 'The lead actor arrived.',
+      partOfSpeech: 'verb',
       operationId: '123e4567-e89b-42d3-a456-426614174000',
+      expectedOwnerId: 'owner-a',
       sourceLanguage: 'en',
       targetLanguage: 'vi',
     });
@@ -593,6 +631,51 @@ describe('Card Intake Pipeline contract', () => {
     const generated = await pipeline.generateCard({ term: 'lead', language: ENGLISH_TO_VIETNAMESE_PROFILE });
 
     expect(generated.card.source).toBeUndefined();
+  });
+
+  it('fences a delayed generation import when the owner changes before it starts', async () => {
+    let context = createContext();
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    const pending = pipeline.generateCard({
+      term: 'lead', operationId: '123e4567-e89b-42d3-a456-426614174000',
+      language: ENGLISH_TO_VIETNAMESE_PROFILE,
+    });
+    context = { ...context, ownerId: 'owner-b', libraryEpoch: 4 };
+    pipeline.replaceOwner('owner-b');
+
+    await expect(pending).rejects.toThrow('The intake session changed before this operation completed.');
+    expect(generationRuntime.generateWordInfo).not.toHaveBeenCalled();
+  });
+
+  it('cancels a started generation with its captured owner after an owner switch', async () => {
+    const wordInfo = deferred<{
+      translation: string; explanation: string; explanationTranslation: string; phonetic: string;
+      emoji: string; category: string; partOfSpeech: string; cefrLevel: string;
+      exampleSentence: string; exampleTranslation: string; collocations: string[]; synonyms: string[];
+      antonyms: string[]; register: string; commonMistake: string; imageSearchQuery: string;
+    }>();
+    generationRuntime.generateWordInfo.mockReturnValueOnce(wordInfo.promise);
+    generationRuntime.cancelWordInfoGeneration.mockResolvedValueOnce(true);
+    const ownerA = createContext();
+    let context: CardIntakePortOptions = ownerA;
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    const pending = pipeline.generateCard({ term: 'lead', operationId, language: ENGLISH_TO_VIETNAMESE_PROFILE });
+    await vi.waitFor(() => expect(generationRuntime.generateWordInfo).toHaveBeenCalledOnce());
+
+    context = { ...ownerA, ownerId: 'owner-b', libraryEpoch: 4 };
+    pipeline.replaceOwner('owner-b');
+    await pipeline.cancelGeneration?.(operationId);
+
+    expect(generationRuntime.cancelWordInfoGeneration).toHaveBeenCalledWith(operationId, 'owner-a');
+    wordInfo.resolve({
+      translation: 'dẫn đầu', explanation: '', explanationTranslation: '', phonetic: '/liːd/',
+      emoji: '🎭', category: 'General', partOfSpeech: 'verb', cefrLevel: 'B1',
+      exampleSentence: '', exampleTranslation: '', collocations: [], synonyms: [], antonyms: [],
+      register: '', commonMistake: '', imageSearchQuery: 'lead actor',
+    });
+    await expect(pending).rejects.toThrow('The intake session changed before this operation completed.');
   });
 
   it('does not touch the new owner state when a stale cloud settlement fails after an owner switch', async () => {

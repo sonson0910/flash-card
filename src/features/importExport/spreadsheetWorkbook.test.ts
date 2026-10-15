@@ -386,7 +386,7 @@ describe('spreadsheet workbook loader', () => {
       audioUrl: null, imageUrl: null,
     }]);
     const headers = [
-      'Lexeme ID', 'Language', 'Sense Key', 'Normalized Lemma', 'Word', 'Translation',
+      'Lexeme ID', 'Language', 'Translation Language', 'Sense Key', 'Normalized Lemma', 'Word', 'Translation',
       'Explanation', 'Phonetic', 'Part of Speech', 'Category', 'Emoji', 'Date Added',
     ];
     expect(Object.keys(rows[0])).toEqual(headers);

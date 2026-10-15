@@ -40,7 +40,7 @@ const renderDeferredPractice = async (mode: 'match' | 'shadowing', cards: CardDa
   const actions = { close: vi.fn() } as unknown as PracticeWorkspace['actions'];
   const output = await new Promise<string>((resolve, reject) => {
     const { pipe } = renderToPipeableStream(
-      <I18nProvider i18n={i18n}><AppDeferredPracticeView session={session} actions={actions} customDecks={[]} /></I18nProvider>,
+      <I18nProvider i18n={i18n}><AppDeferredPracticeView session={session} actions={actions} customDecks={[]} openWeeklyRecap={vi.fn()} /></I18nProvider>,
       {
         onAllReady() {
           const stream = new PassThrough();

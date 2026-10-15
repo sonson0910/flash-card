@@ -87,12 +87,16 @@ if (isFirebaseConfigured) {
       ? firebaseConfig.firestoreDatabaseId
       : undefined;
     try {
+      const safari = isSafariBrowser();
       dbInstance = initializeFirestore(appInstance, {
         // Safari can leave Firestore's persistent multi-tab queue wedged after
-        // rapid local dev reloads, so it falls back to the memory cache there.
-        localCache: isSafariBrowser()
+        // rapid local dev reloads. The Firefox emulator suite also reloads
+        // quickly enough to stall that queue; production Firefox keeps persistence.
+        localCache: safari || (isE2eEmulatorBuild && typeof navigator !== 'undefined' && /Firefox\//.test(navigator.userAgent))
           ? memoryLocalCache()
           : persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+        // The WebKit emulator's WebChannel can buffer query results indefinitely.
+        experimentalForceLongPolling: isE2eEmulatorBuild && safari,
       }, dbId);
     } catch {
       dbInstance = dbId ? getFirestore(appInstance, dbId) : getFirestore(appInstance);

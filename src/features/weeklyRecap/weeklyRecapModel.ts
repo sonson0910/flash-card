@@ -2,19 +2,16 @@
  * Weekly recap data model.
  *
  * Read budget: this module performs zero Firestore reads of its own. It only
- * transforms `LibraryStatsViewModel.xpChartData`, the per-day gamification XP
- * history that the app already loads once per session for the streak/XP
- * badges shown elsewhere (Today, Progress, Achievements). Opening the recap
- * never scans a card's `reviewHistory`, and never issues a new query — see
- * the phase report for the full accounting.
+ * transforms `LibraryStatsViewModel.xpChartData` and the already hydrated
+ * `reviewActivityV1` projection. Opening the recap never scans a card's
+ * `reviewHistory` or issues a new query — see the phase report for accounting.
  *
- * Because the only bounded source available here is per-day XP totals, this
- * model deliberately does not compute "words reviewed", "words learned" or a
- * recall rate for the week: XP is not a fixed, invertible function of review
- * count (bonuses and rating differ), so backing into a review count from XP
- * would be an invented metric. Those fields are surfaced as unavailable by
- * the caller instead of being guessed here.
+ * XP cannot yield "words learned" or a recall rate. The review projection
+ * supplies a count only after it covers all seven days; no approved formula
+ * currently turns its rating buckets into a recall percentage.
  */
+
+import type { ReviewActivity } from '../gamification/verifiedGamificationClient';
 
 export interface WeeklyRecapDay {
   /** Local calendar day, `YYYY-MM-DD`. */
@@ -36,14 +33,31 @@ export interface WeeklyRecapData {
   readonly totalXp: number;
   readonly activeDays: number;
   readonly bestDay: WeeklyRecapDay | null;
+  /** Null until the authoritative activity projection covers the full week. */
+  readonly reviewedCount?: number | null;
   readonly hasActivity: boolean;
 }
 
 export const WEEKLY_RECAP_WINDOW_DAYS = 7;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 const dateKeyFromDate = (date: Date): string =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+const dateKeyInTimeZone = (date: Date, timeZone: string): string | null => {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date);
+    const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+  } catch {
+    return null;
+  }
+};
+
+const sevenDaysEndingOn = (todayKey: string): WeeklyRecapDay[] => Array.from({ length: WEEKLY_RECAP_WINDOW_DAYS }, (_, index) => {
+  const date = new Date(`${todayKey}T12:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() - (WEEKLY_RECAP_WINDOW_DAYS - 1 - index));
+  return { dateKey: date.toISOString().slice(0, 10), xp: 0 };
+});
 
 /**
  * The stored gamification history keys days by `Date#toDateString()` (legacy
@@ -57,33 +71,41 @@ const normalizeHistoryDateKey = (value: string): string => {
   return Number.isNaN(parsed.getTime()) ? value : dateKeyFromDate(parsed);
 };
 
-export function computeWeeklyRecap(xpChartData: readonly WeeklyRecapXpChartEntry[], now: Date): WeeklyRecapData {
+export function computeWeeklyRecap(
+  xpChartData: readonly WeeklyRecapXpChartEntry[],
+  now: Date,
+  reviewActivity?: ReviewActivity,
+  rewardTimeZone?: string,
+): WeeklyRecapData {
   const xpByDate = new Map<string, number>();
   for (const entry of xpChartData) {
     if (!Number.isFinite(entry.XP) || entry.XP <= 0) continue;
     const dateKey = normalizeHistoryDateKey(entry.date);
     xpByDate.set(dateKey, (xpByDate.get(dateKey) ?? 0) + entry.XP);
   }
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const days: WeeklyRecapDay[] = [];
-  for (let offset = WEEKLY_RECAP_WINDOW_DAYS - 1; offset >= 0; offset -= 1) {
-    const date = new Date(today.getTime() - offset * DAY_MS);
-    const dateKey = dateKeyFromDate(date);
-    days.push({ dateKey, xp: xpByDate.get(dateKey) ?? 0 });
+  const zonedTodayKey = rewardTimeZone ? dateKeyInTimeZone(now, rewardTimeZone) : null;
+  const days = sevenDaysEndingOn(zonedTodayKey ?? dateKeyFromDate(now)).map(day => ({ ...day, xp: xpByDate.get(day.dateKey) ?? 0 }));
+  let totalXp = 0;
+  let activeDays = 0;
+  let bestDay: WeeklyRecapDay | null = null;
+  for (const day of days) {
+    totalXp += day.xp;
+    if (day.xp <= 0) continue;
+    activeDays += 1;
+    if (!bestDay || day.xp > bestDay.xp) bestDay = day;
   }
-  const totalXp = days.reduce((sum, day) => sum + day.xp, 0);
-  const activeDays = days.filter(day => day.xp > 0).length;
-  const bestDay = days.reduce<WeeklyRecapDay | null>(
-    (best, day) => (day.xp > 0 && (!best || day.xp > best.xp) ? day : best),
-    null,
-  );
+  const rangeStart = days[0].dateKey;
+  const reviewedCount = reviewActivity && zonedTodayKey && reviewActivity.coverageStartedOn <= rangeStart
+    ? days.reduce((sum, day) => sum + (reviewActivity.days[day.dateKey]?.reviewed ?? 0), 0)
+    : null;
   return {
-    rangeStart: days[0].dateKey,
+    rangeStart,
     rangeEnd: days[days.length - 1].dateKey,
     days,
     totalXp,
     activeDays,
     bestDay,
-    hasActivity: totalXp > 0,
+    reviewedCount,
+    hasActivity: totalXp > 0 || (reviewedCount ?? 0) > 0,
   };
 }

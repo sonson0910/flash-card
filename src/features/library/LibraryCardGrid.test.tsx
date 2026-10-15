@@ -183,7 +183,8 @@ describe('compact card detail access', () => {
     expect(source).toContain('onAssignDeck={(id, deck) => void assignDeck(id, deck)}');
     expect(source).toContain('onUpdateCard={updateCard}');
     expect(source).toContain('onToggleBookmark={id => void toggleBookmark(id)}');
-    expect(source).toContain('onDelete={async id => { await afterDelete(id); setDetailCardId(null); }}');
+    expect(source).toContain('onDelete={async id => { if (await afterDelete(id)) setDetailCardId(null); }}');
+    expect(source).toContain('onEditDelete={afterDelete}');
   });
 });
 
@@ -209,5 +210,24 @@ describe('card detail dialog follows the live card, not just its id', () => {
 
     expect(source).toContain('if (trigger && trigger.isConnected) trigger.focus();');
     expect(source).toContain('else libraryHeadingRef.current?.focus({ preventScroll: true });');
+  });
+});
+
+describe('library edit deletion', () => {
+  it('gates a rendered editor and in-flight deletion cleanup by its captured owner', () => {
+    const source = readFileSync(fileURLToPath(new URL('./LibraryCardGrid.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('onDelete={afterDelete}');
+    expect(source).toContain('const activeEditingCard = editingCard?.ownerId === ownerId ? editingCard.card : null;');
+    expect(source).toContain('const activeDeletingCard = deletingCard?.ownerId === ownerId ? deletingCard.card : null;');
+    expect(source).toContain('setEditingCard({ card, ownerId });');
+    expect(source).toContain('setDeletingCard({ card, ownerId });');
+    expect(source).toContain('{activeEditingCard && <Suspense');
+    expect(source).toContain('open={Boolean(activeDeletingCard)}');
+    expect(source).toContain('const requestOwnerId = activeOwnerRef.current;');
+    expect(source).toContain('deleted && activeOwnerRef.current === requestOwnerId');
+    expect(source).toContain('const deleted = (await deleteCard(id)) === true;');
+    expect(source).toContain('setDetailCardId(current => current === id ? null : current);');
+    expect(source).toContain('setSelectedIds(new Set());');
   });
 });

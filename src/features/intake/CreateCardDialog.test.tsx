@@ -156,6 +156,32 @@ describe('CreateCardDialog', () => {
     expect(duplicate).toMatch(/class="create-card-dialog__primary"[^>]*disabled/);
   });
 
+  it('shows the current AI operation stage in the existing status region', () => {
+    const html = renderDialog(createModel({
+      open: true,
+      stage: 'generating',
+      generationStage: 'drafting',
+      preview: card,
+    }));
+
+    expect(html).toContain('Drafting your card with AI…');
+    expect(html).not.toContain('SonFlash is preparing your card');
+    expect(html).toContain('role="status"');
+  });
+
+  it('keeps a failed partial preview visible but disables saving it', () => {
+    const html = renderDialog(createModel({
+      open: true,
+      stage: 'error',
+      preview: card,
+      draft: { word: 'resilient', context: '', partOfSpeech: '', deck: '' },
+      error: { code: 'generation', message: 'Generation failed.' },
+    }));
+
+    expect(html).toContain('AI draft');
+    expect(html).toMatch(/class="create-card-dialog__primary"[^>]*disabled/);
+  });
+
   it('offers a real manual card path without exposing unsupported upload controls', () => {
     const html = renderDialog(createModel({ open: true, mode: 'manual' }));
 

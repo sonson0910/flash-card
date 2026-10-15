@@ -1,15 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
-import { readCatalogWorkspaceQuery } from './catalogWorkspaceQuery';
-import {
-  inspectInstalledCatalog,
-  navigateCatalogWorkspaceQuery,
-  synchronizeCatalogHistoryInspection,
-} from './catalogWorkspaceOrchestration';
-import {
-  createCatalogWorkspaceRequestGuard,
-  type CatalogWorkspaceService,
-} from './catalogWorkspaceService';
+import { inspectInstalledCatalog } from './catalogWorkspaceOrchestration';
+import type { CatalogWorkspaceService } from './catalogWorkspaceService';
 
 const service = (overrides: Partial<CatalogWorkspaceService> = {}): CatalogWorkspaceService => ({
   inspect: vi.fn(async () => ({ status: 'current' as const, value: null })),
@@ -45,26 +37,6 @@ describe('catalog workspace orchestration', () => {
     expect(order).toEqual(['inspect', 'progress', 'summarize:0']);
   });
 
-  it('invalidates every in-flight browse channel before changing URL state', () => {
-    const order: string[] = [];
-    const current = readCatalogWorkspaceQuery('/?view=catalog&utm=kept');
-    const ports = service({ invalidate: () => { order.push('invalidate'); } });
-
-    const next = navigateCatalogWorkspaceQuery({
-      service: ports,
-      current,
-      patch: { term: 'learn' },
-      currentLocation: '/?view=catalog&utm=kept#paths',
-      navigate: location => { order.push(`navigate:${location}`); },
-    });
-
-    expect(order[0]).toBe('invalidate');
-    expect(order[1]).toContain('utm=kept');
-    expect(order[1]).toContain('term=learn');
-    expect(order[1]).toContain('#paths');
-    expect(next.term).toBe('learn');
-  });
-
   it('does not start a summary when a language switch supersedes deferred progress', async () => {
     let resolveProgress!: (value: ReadonlyMap<string, 'started' | 'mastered'>) => void;
     const progress = new Promise<ReadonlyMap<string, 'started' | 'mastered'>>(resolve => { resolveProgress = resolve; });
@@ -90,37 +62,6 @@ describe('catalog workspace orchestration', () => {
 
     await expect(pending).resolves.toEqual({ status: 'stale' });
     expect(summarize).not.toHaveBeenCalled();
-  });
-
-  it('keeps a deferred same-release inspection current during filter-only history restoration', async () => {
-    let resolveInspection!: () => void;
-    const inspectionFinished = new Promise<void>(resolve => { resolveInspection = resolve; });
-    const guard = createCatalogWorkspaceRequestGuard();
-    const token = guard.begin('inspect');
-    const pendingInspection = inspectionFinished.then(() => (
-      guard.isCurrent(token) ? 'ready' : 'stale'
-    ));
-    const ports = service({ invalidate: () => guard.invalidate() });
-    const current = {
-      ...readCatalogWorkspaceQuery('/?view=catalog&term=before'),
-      catalogId: 'english-core',
-      releaseId: 'release-1',
-    };
-    const restored = {
-      ...readCatalogWorkspaceQuery('/?view=catalog&term=after'),
-      catalogId: 'english-core',
-      releaseId: 'release-1',
-    };
-
-    const invalidated = synchronizeCatalogHistoryInspection({
-      service: ports,
-      current,
-      restored,
-    });
-    resolveInspection();
-
-    expect(invalidated).toBe(false);
-    await expect(pendingInspection).resolves.toBe('ready');
   });
 
   it('does not open an installed release that differs from the registry-approved release', async () => {

@@ -2,7 +2,7 @@ import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import { renderToStaticMarkup as renderReactToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import StatsCharts from './StatsCharts';
+import StatsCharts, { reviewDayInRange } from './StatsCharts';
 
 const renderToStaticMarkup = (node: React.ReactNode) => renderReactToStaticMarkup(<I18nProvider i18n={i18n}>{node}</I18nProvider>);
 
@@ -58,6 +58,59 @@ describe('StatsCharts accessible data equivalents', () => {
 
     expect(html).toContain('No XP history yet');
     expect(html).not.toMatch(/>0 XP</);
+  });
+
+  it('renders review activity and memory strength as the primary section', () => {
+    const html = renderToStaticMarkup(<StatsCharts darkMode={false} section="primary" data={{
+      xpChartData: [{ date: '2026-09-28', XP: 12 }],
+      difficultyChart: [{ name: 'Mastered', value: 3 }],
+      categoryChart: [{ name: 'Travel', value: 4 }],
+      categoryChartIsPartial: false,
+      rewardTimeZone: 'Asia/Ho_Chi_Minh',
+      reviewActivity: { coverageStartedOn: '2026-09-20', days: { '2026-09-28': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 } } },
+    }} />);
+
+    expect(html).toContain('stats-canvas--primary');
+    expect(html).toContain('Review activity');
+    expect(html).toContain('Memory strength');
+    expect(html.match(/<h2[^>]*>Review activity<\/h2>/g)).toHaveLength(1);
+    expect(html).not.toMatch(/<p[^>]*>Review activity<\/p>/);
+    expect(html).not.toContain('Account-wide XP and consistency');
+    expect(html).not.toContain('Category distribution');
+    expect(html).toContain('30 days');
+    expect(html).toContain('Inspect a day');
+    expect(html).toMatch(/type="date"[^>]*min="2026-09-20"/);
+    expect(html).toContain('<caption>Memory strength data</caption>');
+  });
+
+  it('shows only covered selected days, including genuine zero-review days', () => {
+    const activity = { coverageStartedOn: '2026-09-20', days: {
+      '2026-09-28': { reviewed: 4, again: 1, hard: 1, good: 2, easy: 0 },
+    } };
+
+    expect(reviewDayInRange(activity, '2026-09-28', '2026-09-01', '2026-09-30')).toEqual(activity.days['2026-09-28']);
+    expect(reviewDayInRange(activity, '2026-09-21', '2026-09-01', '2026-09-30')).toEqual({ reviewed: 0, again: 0, hard: 0, good: 0, easy: 0 });
+    expect(reviewDayInRange(activity, '2026-09-19', '2026-09-01', '2026-09-30')).toBeNull();
+    expect(reviewDayInRange(activity, '2026-09-28', '2026-09-29', '2026-09-30')).toBeNull();
+    expect(reviewDayInRange(activity, '2026-09-31', '2026-09-01', '2026-10-01')).toBeNull();
+    expect(reviewDayInRange(activity, '2026-10-01', '2026-09-01', '2026-09-30')).toBeNull();
+  });
+
+  it('renders account-wide XP and category distribution as the secondary section', () => {
+    const html = renderToStaticMarkup(<StatsCharts darkMode={false} section="secondary" data={{
+      xpChartData: [{ date: '2026-09-28', XP: 12 }],
+      difficultyChart: [{ name: 'Mastered', value: 3 }],
+      categoryChart: [{ name: 'Travel', value: 4 }],
+      categoryChartIsPartial: false,
+    }} />);
+
+    expect(html).not.toContain('stats-canvas--primary');
+    expect(html).toContain('Account-wide XP and consistency');
+    expect(html).toContain('Category distribution');
+    expect(html).not.toContain('<caption>Memory strength data</caption>');
+    expect(html).not.toContain('Review activity is unavailable until coverage begins.');
+    expect(html).toContain('<caption>Daily XP data</caption>');
+    expect(html).toContain('<caption>Category distribution data</caption>');
   });
 
   it('keeps account-wide XP distinct from selected course review activity and shows recall buckets', () => {

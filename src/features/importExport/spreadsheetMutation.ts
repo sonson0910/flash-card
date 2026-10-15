@@ -1,4 +1,4 @@
-import { createWordCardId } from '../../lib/cardIdentity';
+import { createTargetAwareCardId, createWordCardId } from '../../lib/cardIdentity';
 import type { CardData } from '../../types/card';
 import type { StructuredCardRow } from './spreadsheetModel';
 
@@ -35,7 +35,9 @@ export function planStructuredImportMutation(
   }
 
   const card: SortableCardData = {
-    id: imported.lexemeId || createWordCardId(imported.word),
+    id: imported.lexemeId || (imported.language
+      ? createTargetAwareCardId(imported.word, imported.language)
+      : createWordCardId(imported.word)),
     ...imported,
     origin: 'manual',
     normalizedWord: imported.word,

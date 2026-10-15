@@ -136,6 +136,26 @@ export function classifyProtectedFunctionError(
       retryable: false,
     });
   }
+  const failureDetails = error && typeof error === 'object' && 'details' in error
+    ? (error as { details?: { reason?: unknown } }).details : undefined;
+  if (code === 'failed-precondition' && failureDetails?.reason === 'already-pro') {
+    return new ProtectedFunctionError({
+      message: 'Pro is already active on your account.',
+      kind: 'permission', code, retryable: false, reason: 'already-pro',
+    });
+  }
+  if (code === 'failed-precondition' && failureDetails?.reason === 'intent-unavailable') {
+    return new ProtectedFunctionError({
+      message: 'Purchase registration is temporarily unavailable.',
+      kind: 'configuration', code, retryable: false, reason: 'intent-unavailable',
+    });
+  }
+  if (code === 'failed-precondition' && failureDetails?.reason === 'offer-changed') {
+    return new ProtectedFunctionError({
+      message: 'The Pro offer changed. Review the latest terms before registering interest.',
+      kind: 'configuration', code, retryable: false, reason: 'offer-changed',
+    });
+  }
   if (code === 'failed-precondition' || code === 'not-found') {
     return new ProtectedFunctionError({
       message: `${operation} cannot run because this app and its cloud deployment are out of sync. Update the deployment configuration before retrying.`,

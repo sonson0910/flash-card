@@ -2,8 +2,10 @@ import { useCallback, useRef } from 'react';
 import type { LanguageProfile } from '../language/languageProfile';
 import { useVerifiedGamificationState } from '../gamification/verifiedGamificationClient';
 import { isCardReadyForPractice } from '../../lib/srs';
+import { withTimeout } from '../../lib/async';
 import { normalizeCardLanguage } from '../../lib/cardIdentity';
 import type { CardData } from '../../types/card';
+import { cardsForLanguagePair } from './practiceModel';
 import {
   usePracticeSession,
   type PracticeLearningActions,
@@ -14,6 +16,7 @@ import {
 
 const DEFAULT_PRACTICE_POOL_SIZE = 50;
 export const MAXIMUM_PRACTICE_POOL_SIZE = 50;
+const CLOUD_PRACTICE_POOL_TIMEOUT_MS = 10_000;
 
 export type PracticePoolFailure = 'quota' | 'unavailable';
 
@@ -53,7 +56,10 @@ export function createPracticePoolLoader({
     const limit = boundedPoolSize(maximum);
     if (ownerId && source && !cloudBackoffActive) {
       try {
-        const loaded = await source.load(ownerId, limit, { includeFuture, targetLanguage });
+        const loaded = await withTimeout(
+          source.load(ownerId, limit, { includeFuture, targetLanguage }),
+          CLOUD_PRACTICE_POOL_TIMEOUT_MS,
+        );
         return loaded.slice(0, limit);
       } catch (error) {
         const failure = source.classifyFailure?.(error) ?? 'unavailable';
@@ -80,6 +86,7 @@ export interface PracticeWorkspaceOptions {
   poolSource: PracticePoolSource | null;
   gamificationDatabase: Parameters<typeof useVerifiedGamificationState>[0]['database'];
   onCeremony?: Parameters<typeof usePracticeSession>[0]['onAuthoritativeOutcome'];
+  onEmptyStudy?: () => void;
   learning: PracticeLearningActions;
   languageProfile: LanguageProfile;
   reportError: (message: string) => void;
@@ -107,6 +114,7 @@ export function usePracticeWorkspace({
   poolSource,
   gamificationDatabase,
   onCeremony,
+  onEmptyStudy,
   learning,
   languageProfile,
   reportError,
@@ -118,7 +126,8 @@ export function usePracticeWorkspace({
   }
   const targetLanguage = languageProfile.source.code;
   const normalizedTargetLanguage = normalizeCardLanguage(targetLanguage);
-  const languageDrillCards = cards.filter(card => (normalizeCardLanguage(card.language) || 'en') === normalizedTargetLanguage);
+  const nativeLanguage = normalizeCardLanguage(languageProfile.target.code);
+  const languageDrillCards = cardsForLanguagePair(cards, normalizedTargetLanguage, nativeLanguage);
   const loadPracticePool = useCallback(createPracticePoolLoader({
     ownerId,
     cloudBackoffActive,
@@ -134,7 +143,7 @@ export function usePracticeWorkspace({
     onSessionStarted,
     loadPracticePool,
     languageDrillCards,
-    languageDrillScopeKey: `${ownerId ?? ''}:${normalizedTargetLanguage}`,
+    languageDrillScopeKey: `${ownerId ?? ''}:${normalizedTargetLanguage}:${nativeLanguage}`,
     learning,
     languageProfile,
     onAuthoritativeOutcome: (outcome, operationId, sessionToken) => {
@@ -142,6 +151,7 @@ export function usePracticeWorkspace({
       gamification.acceptAuthoritativeOutcome(outcome);
       onCeremony?.(outcome, operationId, sessionToken);
     },
+    onEmptyStudy,
     reportError,
   });
   const snapshotRef = useRef<PracticeSnapshotPort>(session.snapshot);

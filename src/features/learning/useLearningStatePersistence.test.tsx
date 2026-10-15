@@ -213,7 +213,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
       command: ReviewCommand,
       apply: (value: ReviewCommand) => Promise<ReviewApplyResult>,
     ) => apply(command));
-    mocks.applyReviewViaCallable.mockResolvedValue({ applied: true, duplicate: false, card: authoritative });
+    mocks.applyReviewViaCallable.mockResolvedValue({ applied: true, duplicate: false, xpAwarded: 2, card: authoritative });
     const harness = createHarness();
     const mutation: LearningStateMutation = {
       ...reviewMutation,
@@ -232,6 +232,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     );
     expect(harness.onReviewOutcome).not.toHaveBeenCalled();
     expect(result.reviewFinality).toBe('committed');
+    expect(result.xpAwarded).toBe(2);
   });
 
   it('forwards the pre-review card with the authoritative outcome for a tier transition', async () => {
@@ -243,7 +244,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
       apply: (value: ReviewCommand) => Promise<ReviewApplyResult>,
     ) => apply(command));
     mocks.applyReviewViaCallable.mockResolvedValue({
-      applied: true, duplicate: true, card: authoritative,
+      applied: true, duplicate: true, xpAwarded: 0, card: authoritative,
       gamification: { xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: [] },
       ceremonyEvents: ['tierup'],
     });
@@ -261,6 +262,276 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     }, mutation.operationId, card);
   });
 
+  it('returns the original award when retry finds the same committed review receipt', async () => {
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(card, 'good', reviewedAt);
+    const authoritative = { ...card, ...fields, revision: 4, libraryEpoch: 2 };
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (
+      command: ReviewCommand,
+      apply: (value: ReviewCommand) => Promise<ReviewApplyResult>,
+    ) => apply(command));
+    mocks.applyReviewViaCallable.mockResolvedValue({ applied: true, duplicate: true, xpAwarded: 2, card: authoritative });
+    const harness = createHarness();
+    const mutation: LearningStateMutation = {
+      ...reviewMutation, operation: 'review', fields,
+      fieldMask: Object.keys(fields) as CardMutableField[], publication: { kind: 'patch', cardId: card.id, fields },
+    };
+
+    const result = await harness.persistence.persist(mutation);
+    expect(result).toMatchObject({ reviewFinality: 'committed', xpAwarded: 2 });
+  });
+
+  it('reports the pinned command rating when a duplicate receipt returns a later card state', async () => {
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(card, 'good', reviewedAt);
+    const authoritative = { ...card, ...fields, revision: 4, libraryEpoch: 2 };
+    const laterReview = {
+      elapsedDays: 1,
+      rating: 'again' as const,
+      reviewedAt: '2026-08-25T00:00:00.000Z',
+      scheduledDays: 0,
+    };
+    const cardAfterLaterReview = {
+      ...authoritative,
+      reviewHistory: [...(authoritative.reviewHistory ?? []), laterReview],
+    };
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (
+      command: ReviewCommand,
+      apply: (value: ReviewCommand) => Promise<ReviewApplyResult>,
+    ) => apply(command));
+    mocks.applyReviewViaCallable.mockResolvedValue({
+      applied: true, duplicate: true, xpAwarded: 2, card: cardAfterLaterReview,
+    });
+    const harness = createHarness();
+    const mutation: LearningStateMutation = {
+      ...reviewMutation, operation: 'review', fields,
+      fieldMask: Object.keys(fields) as CardMutableField[], publication: { kind: 'patch', cardId: card.id, fields },
+    };
+
+    await expect(harness.persistence.persist(mutation)).resolves.toMatchObject({
+      reviewFinality: 'committed', xpAwarded: 2, reviewRating: 'good',
+    });
+  });
+
+  it('does not publish an older duplicate card over a newer local review', async () => {
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(card, 'good', reviewedAt);
+    const authoritative = { ...card, ...fields, revision: 4, libraryEpoch: 2 };
+    const newerFields = scheduleReview(authoritative, 'again', new Date('2026-08-25T00:00:00.000Z'));
+    const newerLocalCard = { ...authoritative, ...newerFields, revision: 5, libraryEpoch: 2 };
+    let firstAttempt = true;
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (
+      command: ReviewCommand,
+      apply: (value: ReviewCommand) => Promise<ReviewApplyResult>,
+    ) => {
+      const result = await apply(command);
+      if (firstAttempt) {
+        firstAttempt = false;
+        throw new Error('lost response');
+      }
+      return result;
+    });
+    mocks.applyReviewViaCallable.mockResolvedValue({
+      applied: true, duplicate: true, xpAwarded: 2, card: authoritative,
+    });
+    const harness = createHarness();
+    const mutation: LearningStateMutation = {
+      ...reviewMutation, operation: 'review', fields,
+      fieldMask: Object.keys(fields) as CardMutableField[], publication: { kind: 'patch', cardId: card.id, fields },
+    };
+
+    await expect(harness.persistence.persist(mutation)).rejects.toThrow('lost response');
+    harness.options.findCard = () => newerLocalCard;
+    const result = await harness.persistence.persist(mutation);
+
+    expect(result).toMatchObject({ reviewFinality: 'committed', xpAwarded: 2, reviewRating: 'good' });
+    expect(result.publication).toMatchObject({
+      kind: 'patch',
+      cardId: card.id,
+      fields: {
+        reviews: newerLocalCard.reviews,
+        revision: newerLocalCard.revision,
+        libraryEpoch: newerLocalCard.libraryEpoch,
+        reviewHistory: newerLocalCard.reviewHistory,
+      },
+    });
+    expect(harness.updateCloudStats).not.toHaveBeenCalled();
+  });
+
+  it('replays the rebased review payload after its response is lost', async () => {
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(card, 'good', reviewedAt);
+    const authoritative = { ...card, ...fields, revision: 5, libraryEpoch: 2 };
+    const rebased: ReviewCommand = {
+      cardId: card.id,
+      opId: reviewMutation.operationId,
+      baseRevision: 4,
+      libraryEpoch: 2,
+      rating: 'good',
+      reviewedAt: reviewedAt.toISOString(),
+      fields,
+      fieldMask: Object.keys(fields) as CardMutableField[],
+      timeZone: 'Asia/Saigon',
+    };
+    let invocation = 0;
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (
+      command: ReviewCommand,
+      apply: (value: ReviewCommand) => Promise<ReviewApplyResult>,
+    ) => {
+      invocation += 1;
+      if (invocation === 1) {
+        await apply(rebased);
+        throw new Error('lost rebased response');
+      }
+      return apply(command);
+    });
+    mocks.applyReviewViaCallable.mockResolvedValue({ applied: true, duplicate: true, xpAwarded: 2, card: authoritative });
+    const harness = createHarness();
+    const mutation: LearningStateMutation = {
+      ...reviewMutation, operation: 'review', fields,
+      fieldMask: Object.keys(fields) as CardMutableField[], publication: { kind: 'patch', cardId: card.id, fields },
+    };
+
+    await expect(harness.persistence.persist(mutation)).rejects.toThrow('lost rebased response');
+    await expect(harness.persistence.persist(mutation)).resolves.toMatchObject({ reviewFinality: 'committed', xpAwarded: 2 });
+
+    expect(mocks.applyReviewWithConflictRecovery.mock.calls[1][0]).toEqual(rebased);
+  });
+
+  it('retains an unresolved rebased command while resolved commands are evicted', async () => {
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(card, 'good', reviewedAt);
+    const rebased: ReviewCommand = {
+      cardId: card.id,
+      opId: reviewMutation.operationId,
+      baseRevision: 4,
+      libraryEpoch: 2,
+      rating: 'good',
+      reviewedAt: reviewedAt.toISOString(),
+      fields: scheduleReview({ ...card, revision: 4 }, 'good', reviewedAt),
+      fieldMask: Object.keys(fields) as CardMutableField[],
+      timeZone: 'Asia/Saigon',
+    };
+    let firstAttempt = true;
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (
+      command: ReviewCommand,
+      apply: (value: ReviewCommand) => Promise<ReviewApplyResult>,
+    ) => {
+      if (command.opId === reviewMutation.operationId && firstAttempt) {
+        firstAttempt = false;
+        await apply(rebased);
+        throw new Error('lost rebased response');
+      }
+      return apply(command);
+    });
+    mocks.applyReviewViaCallable.mockResolvedValue({
+      applied: true,
+      duplicate: true,
+      xpAwarded: 2,
+      card: { ...card, ...rebased.fields, revision: 5, libraryEpoch: 2 },
+    });
+    const harness = createHarness();
+    const firstMutation: LearningStateMutation = {
+      ...reviewMutation,
+      operation: 'review',
+      fields,
+      fieldMask: Object.keys(fields) as CardMutableField[],
+      publication: { kind: 'patch', cardId: card.id, fields },
+    };
+
+    await expect(harness.persistence.persist(firstMutation)).rejects.toThrow('lost rebased response');
+    for (let index = 0; index < 500; index += 1) {
+      await harness.persistence.persist({
+        ...firstMutation,
+        operationId: `filler-${index}`,
+      });
+    }
+    await harness.persistence.persist(firstMutation);
+
+    expect(mocks.applyReviewViaCallable.mock.calls.at(-1)?.[2]).toEqual(rebased);
+  });
+
+  it('replays a retained receipt after the card disappears from the local snapshot', async () => {
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(card, 'good', reviewedAt);
+    const authoritative = { ...card, ...fields, revision: 4, libraryEpoch: 2 };
+    let firstAttempt = true;
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (
+      command: ReviewCommand,
+      apply: (value: ReviewCommand) => Promise<ReviewApplyResult>,
+    ) => {
+      const result = await apply(command);
+      if (firstAttempt) {
+        firstAttempt = false;
+        throw new Error('lost response after commit');
+      }
+      return result;
+    });
+    mocks.applyReviewViaCallable.mockResolvedValue({ applied: true, duplicate: true, xpAwarded: 2, card: authoritative });
+    const harness = createHarness();
+    const mutation: LearningStateMutation = {
+      ...reviewMutation,
+      operation: 'review',
+      fields,
+      fieldMask: Object.keys(fields) as CardMutableField[],
+      publication: { kind: 'patch', cardId: card.id, fields },
+    };
+
+    await expect(harness.persistence.persist(mutation)).rejects.toThrow('lost response after commit');
+    harness.options.findCard = () => undefined;
+
+    await expect(harness.persistence.persist(mutation)).resolves.toMatchObject({
+      reviewFinality: 'committed', xpAwarded: 2, reviewRating: 'good',
+    });
+    expect(mocks.applyReviewViaCallable.mock.calls[1][2]).toEqual(mocks.applyReviewViaCallable.mock.calls[0][2]);
+    expect(harness.updateCloudStats).not.toHaveBeenCalled();
+  });
+
+  it('evicts a resolved missing-card command instead of counting it as unresolved', async () => {
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(card, 'good', reviewedAt);
+    const authoritative = { ...card, ...fields, revision: 4, libraryEpoch: 2 };
+    let firstAttempt = true;
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (
+      command: ReviewCommand,
+      apply: (value: ReviewCommand) => Promise<ReviewApplyResult>,
+    ) => {
+      const result = await apply(command);
+      if (firstAttempt) {
+        firstAttempt = false;
+        throw new Error('lost response after commit');
+      }
+      return result;
+    });
+    mocks.applyReviewViaCallable.mockResolvedValue({ applied: true, duplicate: true, xpAwarded: 2, card: authoritative });
+    const harness = createHarness();
+    const mutation: LearningStateMutation = {
+      ...reviewMutation,
+      operation: 'review',
+      fields,
+      fieldMask: Object.keys(fields) as CardMutableField[],
+      publication: { kind: 'patch', cardId: card.id, fields },
+    };
+
+    await expect(harness.persistence.persist(mutation)).rejects.toThrow('lost response after commit');
+    harness.options.findCard = () => undefined;
+    await harness.persistence.persist(mutation);
+
+    mocks.applyReviewWithConflictRecovery.mockRejectedValue(new Error('still unresolved'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      for (let index = 0; index < 500; index += 1) {
+        await expect(harness.persistence.persist({
+          ...mutation,
+          operationId: `filler-${index}`,
+        })).rejects.toThrow('still unresolved');
+      }
+    } finally {
+      warn.mockRestore();
+    }
+    expect(mocks.applyReviewWithConflictRecovery).toHaveBeenCalledTimes(502);
+  });
+
   it('fails closed when an immediate review has no valid final history entry', async () => {
     const harness = createHarness();
 
@@ -270,7 +541,9 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(mocks.applyReviewWithConflictRecovery).not.toHaveBeenCalled();
     expect(mocks.applyCardPatchIfCurrent).not.toHaveBeenCalled();
     expect(result.reviewFinality).toBe('conflict');
+    expect(result.reviewConflictTerminal).toBe(true);
     expect(harness.reportError).toHaveBeenCalled();
+    expect(harness.updateCloudStats).not.toHaveBeenCalled();
   });
 
   it('refreshes from the cloud and rethrows on a permanently rejected review', async () => {
@@ -287,8 +560,45 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     };
 
     await expect(harness.persistence.persist(mutation)).rejects.toBe(permanent);
+    expect(harness.options.refreshCloud).toHaveBeenCalledOnce();
     expect(harness.updateCloudStats).not.toHaveBeenCalled();
     expect(harness.onReviewOutcome).not.toHaveBeenCalled();
+  });
+
+  it('releases a permanently rejected command from unresolved retry capacity', async () => {
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(card, 'good', reviewedAt);
+    const permanent = new ProtectedFunctionError({
+      message: 'Review rejected.', kind: 'permission', code: 'permission-denied', retryable: false,
+    });
+    mocks.applyReviewWithConflictRecovery.mockRejectedValueOnce(permanent);
+    const harness = createHarness();
+    const mutation: LearningStateMutation = {
+      ...reviewMutation, operation: 'review', fields,
+      fieldMask: Object.keys(fields) as CardMutableField[], publication: { kind: 'patch', cardId: card.id, fields },
+    };
+
+    await expect(harness.persistence.persist(mutation)).rejects.toBe(permanent);
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (
+      command: ReviewCommand,
+    ) => {
+      if (command.opId !== 'after-permanent') throw new Error('still unresolved');
+      return { applied: true, duplicate: true, xpAwarded: 2, card: { ...card, ...fields, revision: 4 } };
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      for (let index = 0; index < 499; index += 1) {
+        await expect(harness.persistence.persist({
+          ...mutation,
+          operationId: `unresolved-${index}`,
+        })).rejects.toThrow('still unresolved');
+      }
+    } finally {
+      warn.mockRestore();
+    }
+
+    await expect(harness.persistence.persist({ ...mutation, operationId: 'after-permanent' }))
+      .resolves.toMatchObject({ reviewFinality: 'committed', xpAwarded: 2 });
   });
 
   it('marks the cloud unavailable and rethrows on a retryable network failure', async () => {
@@ -481,7 +791,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(harness.options.resetCloudState).toHaveBeenCalledWith(true);
   });
 
-  it('softly recovers a clear when metadata cleanup fails after cards were deleted', async () => {
+  it('propagates a partial clear when metadata cleanup fails after cards were deleted', async () => {
     const clearMutation: LearningStateMutation = {
       ownerKey: 'user-a',
       operationId: 'clear-operation',
@@ -494,11 +804,11 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     mocks.clearLibraryFacets.mockRejectedValue(new Error('facet reset unavailable'));
     const harness = createHarness();
 
-    await expect(harness.persistence.persist(clearMutation)).resolves.toMatchObject({
-      ownerKey: 'user-a', operationId: 'clear-operation',
-    });
+    await expect(harness.persistence.persist(clearMutation)).rejects.toThrow(
+      'Cards were deleted, but library metadata could not be fully reset. Refreshing the cloud view now.',
+    );
     expect(harness.options.resetCloudState).toHaveBeenCalledWith(false);
-    expect(harness.reportError).toHaveBeenCalled();
+    expect(harness.reportError).not.toHaveBeenCalled();
   });
 
   it('throws when a clear fails before any card is deleted', async () => {

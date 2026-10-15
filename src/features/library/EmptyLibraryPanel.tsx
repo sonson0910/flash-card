@@ -1,11 +1,16 @@
-import { lazy, Suspense, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode, type RefObject } from 'react';
+import { lazy, Suspense, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { Lumi } from '../../components/lumi/Lumi';
+import { createImeSubmitGuard } from '../../lib/imeSubmitGuard';
+import type { CardData } from '../../types/card';
+import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
 import { useTheme } from '../theme/ThemeProvider';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import type { SpreadsheetImportProgress, SpreadsheetImportResult } from '../importExport/spreadsheetImportService';
 import type { AiGenerationAccess } from './aiGenerationAccess';
+import type { ExtractedWordItem } from './WordExtractorModal';
+import { createExtractedWordsCsv } from './extractedWordsImport';
 import './empty-library-panel.css';
 
 const WordExtractorModal = lazy(() => import('./WordExtractorModal').then(module => ({ default: module.WordExtractorModal })));
@@ -16,6 +21,7 @@ interface EmptyLibraryPanelProps {
   onWordInputChange: (value: string) => void;
   onGenerate: (event: FormEvent) => Promise<void>;
   onImport: (event: ChangeEvent<HTMLInputElement>) => void;
+  importFile: (file: File) => void;
   onOpenPaths: () => void;
   isLoading: boolean;
   isGenerating: boolean;
@@ -23,6 +29,9 @@ interface EmptyLibraryPanelProps {
   generationAccess: AiGenerationAccess;
   importProgress: SpreadsheetImportProgress | null;
   importResult: SpreadsheetImportResult | null;
+  cards: readonly Pick<CardData, 'word' | 'normalizedWord'>[];
+  languageProfile?: LanguageProfile;
+  ownerId?: string | null;
 }
 
 export function EmptyLibraryPanel({
@@ -31,6 +40,7 @@ export function EmptyLibraryPanel({
   onWordInputChange,
   onGenerate,
   onImport,
+  importFile,
   onOpenPaths,
   isLoading,
   isGenerating,
@@ -38,11 +48,15 @@ export function EmptyLibraryPanel({
   generationAccess,
   importProgress,
   importResult,
+  cards,
+  languageProfile = ENGLISH_TO_VIETNAMESE_PROFILE,
+  ownerId,
 }: EmptyLibraryPanelProps) {
   const isCrystal = useTheme().family === 'crystal';
   const showLumi = isCrystal && readLumiEnabled();
   const [scanOpen, setScanOpen] = useState(false);
-  const isComposing = useRef(false);
+  const imeSubmitGuard = useRef(createImeSubmitGuard()).current;
+  const pointerSubmit = useRef(false);
   const extractorRestoreRef = useRef<HTMLButtonElement | null>(null);
   const canGenerate = Boolean(wordInput.trim())
     && generationAccess.available
@@ -51,8 +65,9 @@ export function EmptyLibraryPanel({
     && !isImporting;
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
-    const nativeEvent = event.nativeEvent as SubmitEvent & { isComposing?: boolean };
-    if (isComposing.current || nativeEvent.isComposing) {
+    const submittedByPointer = pointerSubmit.current;
+    pointerSubmit.current = false;
+    if (imeSubmitGuard.shouldBlockSubmit(event.nativeEvent as SubmitEvent & { isComposing?: boolean; keyCode?: number }, submittedByPointer)) {
       event.preventDefault();
       return;
     }
@@ -63,9 +78,10 @@ export function EmptyLibraryPanel({
     void onGenerate(event);
   };
 
-  const setDraftFromScan = (words: string[]) => {
-    const selectedWords = words.map(word => word.trim()).filter(Boolean);
-    if (selectedWords.length > 0) onWordInputChange(selectedWords.join(', '));
+  const importExtractedItems = (items: ExtractedWordItem[]) => {
+    if (items.length > 0) {
+      importFile(new File([createExtractedWordsCsv(items, languageProfile)], 'extracted_words.csv', { type: 'text/csv' }));
+    }
   };
 
   const generationHelpId = 'empty-library-generation-help';
@@ -103,8 +119,10 @@ export function EmptyLibraryPanel({
               generationHelpId={generationHelpId}
               canGenerate={canGenerate}
               submit={submit}
-              onCompositionStart={() => { isComposing.current = true; }}
-              onCompositionEnd={() => { isComposing.current = false; }}
+              onCompositionStart={imeSubmitGuard.onCompositionStart}
+              onCompositionEnd={imeSubmitGuard.onCompositionEnd}
+              onKeyDown={event => { if (imeSubmitGuard.shouldBlockKeyDown(event.nativeEvent)) event.preventDefault(); }}
+              onPointerSubmit={() => { pointerSubmit.current = true; setTimeout(() => { pointerSubmit.current = false; }, 0); }}
               setScanOpen={setScanOpen}
               extractorRestoreRef={extractorRestoreRef}
               importStatus={importStatus}
@@ -132,8 +150,10 @@ export function EmptyLibraryPanel({
             generationHelpId={generationHelpId}
             canGenerate={canGenerate}
             submit={submit}
-            onCompositionStart={() => { isComposing.current = true; }}
-            onCompositionEnd={() => { isComposing.current = false; }}
+            onCompositionStart={imeSubmitGuard.onCompositionStart}
+            onCompositionEnd={imeSubmitGuard.onCompositionEnd}
+            onKeyDown={event => { if (imeSubmitGuard.shouldBlockKeyDown(event.nativeEvent)) event.preventDefault(); }}
+            onPointerSubmit={() => { pointerSubmit.current = true; setTimeout(() => { pointerSubmit.current = false; }, 0); }}
             setScanOpen={setScanOpen}
             extractorRestoreRef={extractorRestoreRef}
             importStatus={importStatus}
@@ -145,8 +165,11 @@ export function EmptyLibraryPanel({
           <WordExtractorModal
             open
             onOpenChange={setScanOpen}
-            onImportWords={setDraftFromScan}
+            onImportItems={importExtractedItems}
+            cards={cards}
             restoreFocusRef={extractorRestoreRef}
+            languageProfile={languageProfile}
+            ownerId={ownerId}
           />
         </Suspense>
       )}
@@ -162,6 +185,8 @@ type ActionProps = Pick<EmptyLibraryPanelProps,
     submit: (event: FormEvent<HTMLFormElement>) => void;
     onCompositionStart: () => void;
     onCompositionEnd: () => void;
+    onKeyDown: (event: KeyboardEvent<HTMLFormElement>) => void;
+    onPointerSubmit: () => void;
     setScanOpen: (open: boolean) => void;
     extractorRestoreRef: RefObject<HTMLButtonElement | null>;
     importStatus: ReactNode;
@@ -182,6 +207,8 @@ function EmptyLibraryActions({
   submit,
   onCompositionStart,
   onCompositionEnd,
+  onKeyDown,
+  onPointerSubmit,
   setScanOpen,
   extractorRestoreRef,
   importStatus,
@@ -191,7 +218,7 @@ function EmptyLibraryActions({
 
   return (
     <>
-      <form className="empty-library__form" onSubmit={submit}>
+      <form className="empty-library__form" onSubmit={submit} onKeyDown={onKeyDown}>
         <label className="sr-only" htmlFor="empty-library-word"><Trans id="library.create.word-label" message="English word" /></label>
         <input
           id="empty-library-word"
@@ -200,6 +227,9 @@ function EmptyLibraryActions({
           lang="en"
           inputMode="text"
           autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
           placeholder={i18n._(msg({ id: 'library.empty.word-placeholder', message: 'Type a word or phrase…' }))}
           value={wordInput}
           disabled={isLoading}
@@ -208,7 +238,7 @@ function EmptyLibraryActions({
           onCompositionStart={onCompositionStart}
           onCompositionEnd={onCompositionEnd}
         />
-        <button className="empty-library__generate" type="submit" disabled={!canGenerate}>
+        <button className="empty-library__generate" type="submit" onPointerDown={onPointerSubmit} disabled={!canGenerate}>
           {isGenerating
             ? <Trans id="library.create.creating" message="Creating card…" />
             : isImporting

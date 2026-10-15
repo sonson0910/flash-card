@@ -1,6 +1,7 @@
 import { doc, onSnapshot, type Firestore, type QueryDocumentSnapshot } from 'firebase/firestore';
 import {
   countCards,
+  fetchLibraryDueCount,
   fetchProgressEvidence,
   fetchLibraryStats,
   subscribeCardPage,
@@ -51,6 +52,7 @@ export function createCloudLibraryPageFirebaseAdapter({
     }, onError),
     countCards: (ownerId, query) => countCards(requireDatabase(), ownerId, query),
     loadStats: (ownerId, targetLanguage) => fetchLibraryStats(requireDatabase(), ownerId, targetLanguage),
+    loadDueStats: (ownerId, targetLanguage) => fetchLibraryDueCount(requireDatabase(), ownerId, targetLanguage),
     loadProgressEvidence: (ownerId, targetLanguage) => fetchProgressEvidence(requireDatabase(), ownerId, targetLanguage),
     subscribeFacets: (ownerId, onFacets, onError) => onSnapshot(
       doc(requireDatabase(), 'users', ownerId, 'profile', 'library_facets'),

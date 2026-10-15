@@ -39,6 +39,7 @@ interface CardBackProps {
   learningDetailsButtonRef: RefObject<HTMLButtonElement | null>;
   setShowLearningDetails: Dispatch<SetStateAction<boolean>>;
   setShowAiModal: Dispatch<SetStateAction<boolean>>;
+  aiTutorButtonRef: RefObject<HTMLButtonElement | null>;
   backFlipRef: RefObject<HTMLButtonElement | null>;
   focusAfterFlipRef: RefObject<'front' | 'back' | null>;
   showCardSide: (side: 'front' | 'back') => void;
@@ -49,7 +50,7 @@ export function CardBack({
   setShowReportDialog, setShowEditDialog, audioSpeed, toggleAudioSpeed, playAudio, isPlayingAudio,
   startPronunciationCheck, isRecording, pronunciationError, isTranslating, translationError,
   translateExplanation, setTranslationError, learningDetailsButtonRef, setShowLearningDetails,
-  setShowAiModal, backFlipRef, focusAfterFlipRef, showCardSide,
+  setShowAiModal, aiTutorButtonRef, backFlipRef, focusAfterFlipRef, showCardSide,
 }: CardBackProps) {
   const { _, i18n } = useLingui();
   if (isZenMode) return <ZenCardBack
@@ -171,6 +172,7 @@ export function CardBack({
                 <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
               </section>
               <button
+                ref={aiTutorButtonRef}
                 type="button"
                 data-card-control
                 onPointerDown={event => event.stopPropagation()}

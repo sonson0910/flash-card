@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
@@ -14,8 +14,14 @@ import {
   createDeckThenClearInput,
   deleteDeckThenCloseDialog,
   restoreDeckDeletionFocus,
-  shouldBlockImeSubmit,
 } from './LibraryTools';
+import { createExtractedWordsCsv } from './extractedWordsImport';
+import { createImeSubmitGuard } from '../../lib/imeSubmitGuard';
+import { classifyStructuredCardRows } from '../importExport/spreadsheetModel';
+import { createSpreadsheetImportService } from '../importExport/spreadsheetImportService';
+import { loadSpreadsheetWorkbook } from '../importExport/spreadsheetWorkbook';
+import { selectedExtractedWords } from './WordExtractorModal';
+import { languageProfileForPair } from '../courses/courseLanguageProfile';
 
 i18n.load('en', {});
 i18n.activate('en');
@@ -113,11 +119,87 @@ describe('smart-card generation access', () => {
   });
 });
 
+describe('extractor structured import', () => {
+  it('keeps selected extractor details through quoted CSV and structured classification', async () => {
+    const languageProfile = languageProfileForPair('ko', 'vi');
+    const csv = createExtractedWordsCsv(selectedExtractedWords([
+      { word: 'skip', translation: 'bỏ qua', partOfSpeech: 'verb', example: '', cefrLevel: '' },
+      {
+        word: 'well, "said"', translation: 'nói, hay', partOfSpeech: 'adjective',
+        example: 'She said, "well done".', cefrLevel: 'b2',
+      },
+    ], new Set(['well, "said"'])), languageProfile);
+
+    const workbook = await loadSpreadsheetWorkbook(new File([csv], 'extracted_words.csv', { type: 'text/csv' }));
+    expect(workbook.hasStructuredHeader).toBe(true);
+    expect(workbook.flatRows[0]).toEqual(['Word', 'Translation', 'Part of Speech', 'Example Sentence', 'CEFR Level', 'Language', 'Translation Language']);
+    expect(classifyStructuredCardRows(workbook.structuredSourceRows ?? [])).toEqual([
+      expect.objectContaining({
+        kind: 'accepted',
+        row: expect.objectContaining({
+          word: 'well, "said"',
+          translation: 'nói, hay',
+          partOfSpeech: 'adjective',
+          exampleSentence: 'She said, "well done".',
+          cefrLevel: 'B2',
+          language: 'ko',
+          translationLanguage: 'vi',
+        }),
+      }),
+    ]);
+
+    const generate = vi.fn(async () => ({ created: true }));
+    const persistStructured = vi.fn(async (plan: { creates: unknown[] }) => ({ createdCount: plan.creates.length }));
+    const importer = createSpreadsheetImportService({
+      cards: {
+        findExisting: async () => new Map(),
+        persistStructured,
+        touchExisting: async () => undefined,
+        generate,
+        completeFlat: async () => undefined,
+      },
+      feedback: {
+        start: vi.fn(), clearError: vi.fn(), progress: vi.fn(), error: vi.fn(), finish: vi.fn(), resetSource: vi.fn(),
+      },
+    });
+    const result = await importer.import({
+      sizeBytes: csv.length,
+      loadWorkbook: () => loadSpreadsheetWorkbook(new File([csv], 'extracted_words.csv', { type: 'text/csv' })),
+    });
+
+    expect(result.summary).toMatchObject({ created: 1, failed: 0 });
+    expect(generate).not.toHaveBeenCalled();
+    expect(persistStructured).toHaveBeenCalledWith(expect.objectContaining({
+      creates: [expect.objectContaining({ exampleSentence: 'She said, "well done".', cefrLevel: 'B2', language: 'ko', translationLanguage: 'vi' })],
+    }), expect.any(Function));
+  });
+});
+
 describe('smart-card IME submission', () => {
-  it('blocks Enter while Korean composition is active and accepts it after composition ends', () => {
-    expect(shouldBlockImeSubmit(true)).toBe(true);
-    expect(shouldBlockImeSubmit(false, true)).toBe(true);
-    expect(shouldBlockImeSubmit(false)).toBe(false);
+  it('keeps a queued Safari Enter from generating a card while allowing the button click', () => {
+    vi.useFakeTimers();
+    try {
+      const guard = createImeSubmitGuard();
+      guard.onCompositionStart();
+      expect(guard.shouldBlockSubmit({ keyCode: 13 })).toBe(true);
+      expect(guard.shouldBlockSubmit({}, true)).toBe(true);
+
+      guard.onCompositionEnd();
+      expect(guard.shouldBlockSubmit({ keyCode: 13 })).toBe(true);
+      expect(guard.shouldBlockSubmit({ keyCode: 13 }, true)).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('uses the shared guard for the smart-card form events', () => {
+    const source = readFileSync(fileURLToPath(new URL('./LibraryTools.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain("import { createImeSubmitGuard } from '../../lib/imeSubmitGuard'");
+    expect(source).toContain('shouldBlockSubmit(event.nativeEvent');
+    expect(source).toContain('onCompositionEnd={imeSubmitGuard.onCompositionEnd}');
+    expect(source).toContain('shouldBlockKeyDown(event.nativeEvent)');
+    expect(source).toContain('onPointerDown={() => { pointerSubmit.current = true;');
   });
 });
 
@@ -302,6 +384,23 @@ describe('custom deck mutation feedback', () => {
 });
 
 describe('DeckDeletionDialog', () => {
+  it('keeps Escape from dismissing the confirmation while deletion is pending', () => {
+    const escapeHandler = (isDeleting: boolean) => {
+      const tree = DeckDeletionDialogContent({
+        deckName: 'IELTS', assignedCardCount: 2, onConfirm: vi.fn(), isDeleting,
+      });
+      const content = (tree.props.children as ReactElement<{ onEscapeKeyDown: (event: { preventDefault(): void }) => void }>[])[1];
+      return content.props.onEscapeKeyDown;
+    };
+    const pendingEvent = { preventDefault: vi.fn() };
+    escapeHandler(true)(pendingEvent);
+    expect(pendingEvent.preventDefault).toHaveBeenCalledOnce();
+
+    const idleEvent = { preventDefault: vi.fn() };
+    escapeHandler(false)(idleEvent);
+    expect(idleEvent.preventDefault).not.toHaveBeenCalled();
+  });
+
   it('describes the destructive effect and provides explicit cancel and confirm actions', () => {
     const html = renderMarkup(
       <AlertDialog.Root open>

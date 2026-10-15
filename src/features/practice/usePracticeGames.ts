@@ -6,12 +6,16 @@ import { triggerConfetti } from '../../lib/confetti';
 import { playRewardSound } from '../../lib/interactionSounds';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
 import { getProtectedFunctionUserMessage, ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
+import { voiceForActiveCourseCard } from '../../lib/courseVoicePreference';
 import { speechLocaleFor } from '../../lib/speechLocale';
+import { normalizeCardLanguage } from '../../lib/cardIdentity';
 import type { CardData } from '../../types/card';
+import { useCourseSession } from '../courses/CourseGate';
 import {
   createQuizQuestions,
   createSpellingQueue,
   createWordMatchRound,
+  cardsForLanguagePair,
   isQuizAnswerCorrect,
   type QuizQuestion,
 } from './practiceModel';
@@ -35,6 +39,14 @@ const practiceOperationId = (game: 'quiz' | 'spelling' | 'match') => {
   const random = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return `practice-${game}-${random}`;
 };
+
+const storyTargetLanguage = (value: unknown): 'en' | 'ko' | 'ja' | 'zh' => {
+  const language = normalizeCardLanguage(value).split('-')[0];
+  return language === 'ko' || language === 'ja' || language === 'zh' ? language : 'en';
+};
+
+const storyTranslationLanguage = (value: unknown): 'vi' | 'en' =>
+  normalizeCardLanguage(value).split('-')[0] === 'en' ? 'en' : 'vi';
 
 export const shuffleQuizOptions = (options: readonly string[], random: () => number = Math.random): string[] => {
   const shuffled = [...options];
@@ -102,6 +114,8 @@ export function usePracticeGames({
   loadPracticePool,
   languageDrillCards: availableLanguageDrillCards,
   languageDrillScopeKey,
+  storyLanguagePair,
+  practicePairScopeKey = 'en:vi',
   openView,
   reportError,
   practiceSessionService = firebasePracticeSessionService,
@@ -112,6 +126,8 @@ export function usePracticeGames({
   loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
   languageDrillCards: readonly CardData[];
   languageDrillScopeKey: string;
+  storyLanguagePair?: { targetLanguage: string; translationLanguage: string };
+  practicePairScopeKey?: string;
   addXp?: (amount: number) => void;
   openView: (view: PracticeView) => void;
   reportError: (message: string) => void;
@@ -119,12 +135,14 @@ export function usePracticeGames({
   onAuthoritativeOutcome?: (outcome: PracticeGamificationOutcome, operationId: string, sessionToken: number) => void;
   normalizeAnswer?: (value: unknown) => string;
 }) {
+  const { model: courseModel } = useCourseSession();
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [answeredCorrectly, setAnsweredCorrectly] = useState<boolean | null>(null);
   const [quizScore, setQuizScore] = useState(0);
   const [showQuizResults, setShowQuizResults] = useState(false);
+  const [quizCompletionSaving, setQuizCompletionSaving] = useState(false);
   const [spellingCards, setSpellingCards] = useState<CardData[]>([]);
   const [currentSpellingIndex, setCurrentSpellingIndex] = useState(0);
   const [spellingInput, setSpellingInput] = useState('');
@@ -132,6 +150,7 @@ export function usePracticeGames({
   const [spellingCorrect, setSpellingCorrect] = useState(false);
   const [spellingScore, setSpellingScore] = useState(0);
   const [showSpellingResults, setShowSpellingResults] = useState(false);
+  const [spellingCompletionSaving, setSpellingCompletionSaving] = useState(false);
   const [languageDrillCards, setLanguageDrillCards] = useState<CardData[]>([]);
   const [currentLanguageDrillIndex, setCurrentLanguageDrillIndex] = useState(0);
   const [languageDrillCorrect, setLanguageDrillCorrect] = useState(0);
@@ -141,15 +160,43 @@ export function usePracticeGames({
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
   const [isStartingQuiz, setIsStartingQuiz] = useState(false);
   const [isStartingSpelling, setIsStartingSpelling] = useState(false);
+  const resetQuizState = (questions: QuizQuestion[] = []) => {
+    setQuizQuestions(questions);
+    setCurrentQuizIndex(0);
+    setSelectedAnswer(null);
+    setAnsweredCorrectly(null);
+    setQuizScore(0);
+    setShowQuizResults(false);
+    setQuizCompletionSaving(false);
+  };
+  const resetSpellingState = (cards: CardData[] = []) => {
+    setSpellingCards(cards);
+    setCurrentSpellingIndex(0);
+    setSpellingInput('');
+    setSpellingChecked(false);
+    setSpellingCorrect(false);
+    setSpellingScore(0);
+    setShowSpellingResults(false);
+    setSpellingCompletionSaving(false);
+  };
   const quizAnswerLockedRef = useRef(false);
   const spellingAnswerLockedRef = useRef(false);
   const languageDrillAnswerLockedRef = useRef(false);
   const quizAudioTimersRef = useRef<Set<number>>(new Set());
   const spellingAudioTimersRef = useRef<Set<number>>(new Set());
   const audioPlaybackRef = useRef<WordAudioPlayback | null>(null);
-  const quizSessionRef = useRef<{ sessionId: string; completionId: string; sessionToken: number; responses: Record<string, string>; completing: boolean } | null>(null);
-  const spellingSessionRef = useRef<{ sessionId: string; completionId: string; sessionToken: number; responses: Record<string, string>; completing: boolean } | null>(null);
-  const matchSessionRef = useRef<{ sessionId: string; completionId: string; sessionToken: number; completing: boolean } | null>(null);
+  const quizSessionRef = useRef<{ sessionId: string; completionId: string; sessionToken: number; pairGeneration: number; responses: Record<string, string>; completing: boolean } | null>(null);
+  const spellingSessionRef = useRef<{ sessionId: string; completionId: string; sessionToken: number; pairGeneration: number; responses: Record<string, string>; completing: boolean } | null>(null);
+  const spellingPreparationRef = useRef<symbol | null>(null);
+  const matchSessionRef = useRef<{ sessionId: string; completionId: string; sessionToken: number; pairGeneration: number; completing: boolean } | null>(null);
+  const practicePairScopeRef = useRef(practicePairScopeKey);
+  const practicePairGenerationRef = useRef(0);
+  if (practicePairScopeRef.current !== practicePairScopeKey) {
+    practicePairScopeRef.current = practicePairScopeKey;
+    practicePairGenerationRef.current += 1;
+  }
+  const practicePairGeneration = practicePairGenerationRef.current;
+  const isCurrentPracticePair = () => practicePairGenerationRef.current === practicePairGeneration;
 
   const cancelDelayedAudio = (timers: Set<number>) => {
     timers.forEach(timerId => globalThis.clearTimeout(timerId));
@@ -177,7 +224,8 @@ export function usePracticeGames({
       timers.delete(timerId);
       if (lifecycle.isCurrent(answerSession) && lifecycle.isActive(activity)) {
         audioPlaybackRef.current?.cancel();
-        audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl, speechLocaleFor(card));
+        const voice = voiceForActiveCourseCard(card, courseModel.activeCourse);
+        audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl, speechLocaleFor(card), voice);
       }
     }, 400);
     timers.add(timerId);
@@ -198,6 +246,12 @@ export function usePracticeGames({
     practicePoolTimeoutMessage,
   );
 
+  const cardsForPracticePair = (cards: readonly CardData[]) => cardsForLanguagePair(
+    cards,
+    storyLanguagePair?.targetLanguage ?? 'en',
+    storyLanguagePair?.translationLanguage ?? 'vi',
+  );
+
   const reportPreparationFailure = (activity: string, error: unknown) => {
     console.warn(`Could not prepare ${activity}.`, error);
     reportError(error instanceof OperationTimeoutError
@@ -205,28 +259,71 @@ export function usePracticeGames({
       : translate(msg({ id: 'practice.error.prepare', message: 'Could not prepare this activity. Check your connection and try again.' })));
   };
 
+  const startRemoteGame = async <T,>(
+    game: 'quiz' | 'spelling' | 'match',
+    cards: readonly CardData[],
+    cardIds: string[],
+    readChallenge: (cards: readonly CardData[], challenge: PracticeSessionChallenge) => T,
+    sessionToken: number,
+    activity: string,
+  ) => {
+    const isCurrent = () => lifecycle.isCurrent(sessionToken) && isCurrentPracticePair();
+    try {
+      const session = await practiceSessionService.start({
+        opId: practiceOperationId(game), game, cardIds,
+      });
+      if (!isCurrent()) return null;
+      return { session, value: readChallenge(cards, session.challenge) };
+    } catch (error) {
+      if (isCurrent()) reportPreparationFailure(activity, error);
+      return null;
+    }
+  };
+
   const completeSession = async (
-    session: { sessionId: string; completionId: string; sessionToken: number; completing: boolean },
+    session: { sessionId: string; completionId: string; sessionToken: number; pairGeneration: number; completing: boolean },
     answers: { responses: Record<string, string> } | { pairs: Array<{ cardId: string; word: string; translation: string }> },
   ) => {
-    if (session.completing) return null;
+    if (session.completing || practicePairGenerationRef.current !== session.pairGeneration) return null;
     session.completing = true;
     try {
       const result = await practiceSessionService.complete({
         sessionId: session.sessionId, completionId: session.completionId, answers, timeZone: practiceTimeZone(),
       });
-      if (!lifecycle.isCurrent(session.sessionToken)) return null;
+      if (!lifecycle.isCurrent(session.sessionToken) || practicePairGenerationRef.current !== session.pairGeneration) return null;
       onAuthoritativeOutcome?.(result.outcome, session.completionId, session.sessionToken);
       return result;
     } catch (error) {
       session.completing = false;
+      if (!lifecycle.isCurrent(session.sessionToken) || practicePairGenerationRef.current !== session.pairGeneration) return null;
       console.warn('Could not complete practice session.', error);
       reportError(translate(msg({ id: 'practice.error.complete', message: 'Could not save this practice result. Check your connection and try again.' })));
       return null;
     }
   };
 
+  const completeAnswerGame = (
+    activity: 'quiz' | 'spelling',
+    session: NonNullable<typeof quizSessionRef.current>,
+  ) => {
+    if (session.completing) return;
+    const quiz = activity === 'quiz';
+    const currentSession = quiz ? quizSessionRef : spellingSessionRef;
+    const setSaving = quiz ? setQuizCompletionSaving : setSpellingCompletionSaving;
+    const showResults = quiz ? setShowQuizResults : setShowSpellingResults;
+    setSaving(true);
+    void completeSession(session, { responses: session.responses }).then(result => {
+      if (!isCurrentPracticePair() || !lifecycle.isActive(activity) || currentSession.current !== session) return;
+      setSaving(false);
+      if (!result) return;
+      showResults(true);
+      triggerConfetti(0.5, 0.4);
+      playRewardSound();
+    });
+  };
+
   const startQuiz = async () => {
+    if (!isCurrentPracticePair()) return;
     const result = await lifecycle.prepare(
       'quiz',
       () => loadPoolForPreparation(),
@@ -235,51 +332,36 @@ export function usePracticeGames({
         setIsStartingQuiz(true);
       },
     );
-    if (result.status === 'ready') {
-      const cards = result.value;
+    if (result.status === 'ready' && isCurrentPracticePair()) {
+      const cards = cardsForPracticePair(result.value);
       if (cards.length < 4) {
         reportError(translate(msg({ id: 'practice.error.quiz-card-count', message: 'You need at least 4 cards to start a quiz.' })));
       } else {
         const questions = createQuizQuestions(cards, 10, Math.random, normalizeAnswer);
-        let session;
-        try {
-          session = await practiceSessionService.start({
-            opId: practiceOperationId('quiz'), game: 'quiz', cardIds: questions.map(question => question.card.id),
-          });
-        } catch (error) {
-          reportPreparationFailure('the quiz', error);
-          if (lifecycle.isCurrent(result.sessionToken)) setIsStartingQuiz(false);
+        const started = await startRemoteGame(
+          'quiz', cards, questions.map(question => question.card.id), quizQuestionsFromChallenge, result.sessionToken, 'the quiz',
+        );
+        if (!started) {
+          if (lifecycle.isCurrent(result.sessionToken) && isCurrentPracticePair()) setIsStartingQuiz(false);
           return;
         }
-        let serverQuestions: QuizQuestion[];
-        try {
-          serverQuestions = quizQuestionsFromChallenge(cards, session.challenge);
-        } catch (error) {
-          reportPreparationFailure('the quiz', error);
-          if (lifecycle.isCurrent(result.sessionToken)) setIsStartingQuiz(false);
-          return;
-        }
-        if (lifecycle.activate('quiz', result.sessionToken)) {
-        quizSessionRef.current = { sessionId: session.sessionId, completionId: practiceOperationId('quiz'), sessionToken: result.sessionToken, responses: {}, completing: false };
-        setQuizQuestions(serverQuestions);
-        setCurrentQuizIndex(0);
-        setSelectedAnswer(null);
-        setAnsweredCorrectly(null);
-        setQuizScore(0);
-        setShowQuizResults(false);
+        const { session, value: serverQuestions } = started;
+        if (isCurrentPracticePair() && lifecycle.activate('quiz', result.sessionToken)) {
+        quizSessionRef.current = { sessionId: session.sessionId, completionId: practiceOperationId('quiz'), sessionToken: result.sessionToken, pairGeneration: practicePairGeneration, responses: {}, completing: false };
+        resetQuizState(serverQuestions);
         quizAnswerLockedRef.current = false;
         openView('quiz');
         }
       }
-      if (lifecycle.isCurrent(result.sessionToken)) setIsStartingQuiz(false);
+      if (lifecycle.isCurrent(result.sessionToken) && isCurrentPracticePair()) setIsStartingQuiz(false);
     } else if (result.status === 'failed') {
-      reportPreparationFailure('the quiz', result.error);
+      if (isCurrentPracticePair()) reportPreparationFailure('the quiz', result.error);
       if (lifecycle.isCurrent(result.sessionToken)) setIsStartingQuiz(false);
     }
   };
 
   const selectQuizAnswer = (option: string) => {
-    if (!lifecycle.isActive('quiz')) return;
+    if (!isCurrentPracticePair() || !lifecycle.isActive('quiz')) return;
     if (selectedAnswer !== null || quizAnswerLockedRef.current) return;
     const question = quizQuestions[currentQuizIndex];
     if (!question) return;
@@ -303,7 +385,7 @@ export function usePracticeGames({
   };
 
   const nextQuizQuestion = () => {
-    if (!lifecycle.isActive('quiz')) return;
+    if (!isCurrentPracticePair() || !lifecycle.isActive('quiz') || !quizAnswerLockedRef.current) return;
     cancelPracticeAudio();
     if (currentQuizIndex < quizQuestions.length - 1) {
       setCurrentQuizIndex(previous => previous + 1);
@@ -312,69 +394,54 @@ export function usePracticeGames({
       quizAnswerLockedRef.current = false;
       return;
     }
-    setShowQuizResults(true);
-    triggerConfetti(0.5, 0.4);
-    playRewardSound();
     const session = quizSessionRef.current;
-    if (session) void completeSession(session, { responses: session.responses });
+    if (session) completeAnswerGame('quiz', session);
   };
 
   const startSpelling = async () => {
+    if (!isCurrentPracticePair()) return;
+    const preparationId = Symbol('spelling');
     const result = await lifecycle.prepare(
       'spelling',
       () => loadPoolForPreparation(),
       () => {
         cancelPracticeAudio();
         setIsStartingSpelling(true);
+        spellingPreparationRef.current = preparationId;
       },
     );
-    if (result.status === 'ready') {
-      const cards = result.value;
+    if (spellingPreparationRef.current === preparationId) spellingPreparationRef.current = null;
+    if (result.status === 'ready' && isCurrentPracticePair()) {
+      const cards = cardsForPracticePair(result.value);
       if (cards.length < 4) {
         reportError(translate(msg({ id: 'practice.error.spelling-card-count', message: 'You need at least 4 cards for spelling practice.' })));
       } else {
         const queue = createSpellingQueue(cards);
-        let session;
-        try {
-          session = await practiceSessionService.start({
-            opId: practiceOperationId('spelling'), game: 'spelling', cardIds: queue.map(card => card.id),
-          });
-        } catch (error) {
-          reportPreparationFailure('spelling practice', error);
-          if (lifecycle.isCurrent(result.sessionToken)) setIsStartingSpelling(false);
+        const started = await startRemoteGame(
+          'spelling', cards, queue.map(card => card.id), spellingCardsFromChallenge, result.sessionToken, 'spelling practice',
+        );
+        if (!started) {
+          if (lifecycle.isCurrent(result.sessionToken) && isCurrentPracticePair()) setIsStartingSpelling(false);
           return;
         }
-        let serverCards: CardData[];
-        try {
-          serverCards = spellingCardsFromChallenge(cards, session.challenge);
-        } catch (error) {
-          reportPreparationFailure('spelling practice', error);
-          if (lifecycle.isCurrent(result.sessionToken)) setIsStartingSpelling(false);
-          return;
-        }
-        if (lifecycle.activate('spelling', result.sessionToken)) {
-        spellingSessionRef.current = { sessionId: session.sessionId, completionId: practiceOperationId('spelling'), sessionToken: result.sessionToken, responses: {}, completing: false };
-        setSpellingCards(serverCards);
-        setCurrentSpellingIndex(0);
-        setSpellingInput('');
-        setSpellingChecked(false);
-        setSpellingCorrect(false);
-        setSpellingScore(0);
-        setShowSpellingResults(false);
+        const { session, value: serverCards } = started;
+        if (isCurrentPracticePair() && lifecycle.activate('spelling', result.sessionToken)) {
+        spellingSessionRef.current = { sessionId: session.sessionId, completionId: practiceOperationId('spelling'), sessionToken: result.sessionToken, pairGeneration: practicePairGeneration, responses: {}, completing: false };
+        resetSpellingState(serverCards);
         spellingAnswerLockedRef.current = false;
         openView('spelling');
         }
       }
-      if (lifecycle.isCurrent(result.sessionToken)) setIsStartingSpelling(false);
+      if (lifecycle.isCurrent(result.sessionToken) && isCurrentPracticePair()) setIsStartingSpelling(false);
     } else if (result.status === 'failed') {
-      reportPreparationFailure('spelling practice', result.error);
+      if (isCurrentPracticePair()) reportPreparationFailure('spelling practice', result.error);
       if (lifecycle.isCurrent(result.sessionToken)) setIsStartingSpelling(false);
     }
   };
 
   const checkSpelling = (event: FormEvent) => {
     event.preventDefault();
-    if (!lifecycle.isActive('spelling')) return;
+    if (!isCurrentPracticePair() || !lifecycle.isActive('spelling')) return;
     if (spellingChecked || spellingAnswerLockedRef.current || !spellingInput.trim()) return;
     const card = spellingCards[currentSpellingIndex];
     if (!card) return;
@@ -398,7 +465,7 @@ export function usePracticeGames({
   };
 
   const nextSpelling = () => {
-    if (!lifecycle.isActive('spelling')) return;
+    if (!isCurrentPracticePair() || !lifecycle.isActive('spelling') || !spellingAnswerLockedRef.current) return;
     cancelPracticeAudio();
     if (currentSpellingIndex < spellingCards.length - 1) {
       setCurrentSpellingIndex(previous => previous + 1);
@@ -407,11 +474,8 @@ export function usePracticeGames({
       spellingAnswerLockedRef.current = false;
       return;
     }
-    setShowSpellingResults(true);
-    triggerConfetti(0.5, 0.4);
-    playRewardSound();
     const session = spellingSessionRef.current;
-    if (session) void completeSession(session, { responses: session.responses });
+    if (session) completeAnswerGame('spelling', session);
   };
 
   const startLanguageDrill = async () => {
@@ -446,18 +510,24 @@ export function usePracticeGames({
       'story',
       async scope => {
         const cards = await loadPoolForPreparation();
-        if (!scope.isCurrent()) return null;
-        if (cards.length === 0) return null;
+        if (!scope.isCurrent() || !isCurrentPracticePair()) return null;
+        const targetLanguage = storyTargetLanguage(storyLanguagePair?.targetLanguage);
+        const translationLanguage = storyTranslationLanguage(storyLanguagePair?.translationLanguage);
+        const activeCourseCards = cards.filter(card => storyTargetLanguage(card.language) === targetLanguage);
+        if (activeCourseCards.length === 0) return null;
         const { generateStoryContext } = await import('../../lib/gemini');
-        if (!scope.isCurrent()) return null;
-        const learningCards = cards.filter(card => card.difficulty !== 'easy');
-        const pool = learningCards.length >= 3 ? learningCards : cards;
+        if (!scope.isCurrent() || !isCurrentPracticePair()) return null;
+        const learningCards = activeCourseCards.filter(card => card.difficulty !== 'easy');
+        const pool = learningCards.length >= 3 ? learningCards : activeCourseCards;
         const selected = createSpellingQueue(pool, 5);
-        const generated = await generateStoryContext(selected.map(card => card.word));
+        const generated = await generateStoryContext(selected.map(card => card.word), {
+          targetLanguage,
+          translationLanguage,
+        });
         return {
           ...generated,
-          language: selected[0].language || 'en',
-          translationLanguage: selected[0].translationLanguage || 'vi',
+          language: targetLanguage,
+          translationLanguage,
         };
       },
       () => {
@@ -469,14 +539,14 @@ export function usePracticeGames({
         openView('story');
       },
     );
-    if (result.status === 'ready') {
+    if (result.status === 'ready' && isCurrentPracticePair()) {
       if (result.value === null) {
         setStoryError(translate(msg({ id: 'practice.error.story-no-cards', message: 'There are no suitable cards for an AI story yet. Add or sync some cards, then try again.' })));
       } else if (lifecycle.isActive('story')) {
         setStory(result.value);
       }
       if (lifecycle.isCurrent(result.sessionToken)) setIsGeneratingStory(false);
-    } else if (result.status === 'failed') {
+    } else if (result.status === 'failed' && isCurrentPracticePair()) {
       console.error('Story generation failed.', result.error);
       setStoryError(storyFailureMessage(result.error));
       if (lifecycle.isCurrent(result.sessionToken)) setIsGeneratingStory(false);
@@ -487,24 +557,15 @@ export function usePracticeGames({
     cancelPracticeAudio();
     quizAnswerLockedRef.current = false;
     lifecycle.clear('quiz');
-    setQuizQuestions([]);
-    setCurrentQuizIndex(0);
-    setSelectedAnswer(null);
-    setAnsweredCorrectly(null);
-    setQuizScore(0);
-    setShowQuizResults(false);
+    resetQuizState();
+    setIsStartingQuiz(false);
   };
   const clearSpelling = () => {
     cancelPracticeAudio();
     spellingAnswerLockedRef.current = false;
     lifecycle.clear('spelling');
-    setSpellingCards([]);
-    setCurrentSpellingIndex(0);
-    setSpellingInput('');
-    setSpellingChecked(false);
-    setSpellingCorrect(false);
-    setSpellingScore(0);
-    setShowSpellingResults(false);
+    resetSpellingState();
+    setIsStartingSpelling(false);
   };
   const clearLanguageDrill = () => {
     lifecycle.clear('spelling');
@@ -521,34 +582,25 @@ export function usePracticeGames({
     setIsGeneratingStory(false);
   };
   const openMatchSession = async (cards: CardData[], sessionToken: number) => {
+    if (!isCurrentPracticePair()) return false;
     if (cards.length < 4) {
       reportError(translate(msg({ id: 'practice.error.match-card-count', message: 'You need at least 4 cards to play Word Match.' })));
       return false;
     }
-    let session;
-    try {
-      session = await practiceSessionService.start({
-        opId: practiceOperationId('match'), game: 'match', cardIds: cards.map(card => card.id),
-      });
-    } catch (error) {
-      reportPreparationFailure('word match', error);
-      return false;
-    }
-    let serverCards: CardData[];
-    try {
-      serverCards = matchCardsFromChallenge(cards, session.challenge);
-    } catch (error) {
-      reportPreparationFailure('word match', error);
-      return false;
-    }
-    if (!lifecycle.activate('match', sessionToken)) return false;
-    matchSessionRef.current = { sessionId: session.sessionId, completionId: practiceOperationId('match'), sessionToken, completing: false };
+    const started = await startRemoteGame(
+      'match', cards, cards.map(card => card.id), matchCardsFromChallenge, sessionToken, 'word match',
+    );
+    if (!started) return false;
+    const { session, value: serverCards } = started;
+    if (!isCurrentPracticePair() || !lifecycle.activate('match', sessionToken)) return false;
+    matchSessionRef.current = { sessionId: session.sessionId, completionId: practiceOperationId('match'), sessionToken, pairGeneration: practicePairGeneration, completing: false };
     setSpellingCards(serverCards);
     openView('match');
     return true;
   };
 
   const prepareMatch = async (loadCards: () => Promise<CardData[]>) => {
+    if (!isCurrentPracticePair()) return false;
     const result = await lifecycle.prepare(
       'match',
       loadCards,
@@ -556,10 +608,10 @@ export function usePracticeGames({
         cancelPracticeAudio();
       },
     );
-    if (result.status === 'ready') {
-      return openMatchSession(createWordMatchRound(result.value), result.sessionToken);
+    if (result.status === 'ready' && isCurrentPracticePair()) {
+      return openMatchSession(createWordMatchRound(cardsForPracticePair(result.value)), result.sessionToken);
     } else if (result.status === 'failed') {
-      reportPreparationFailure('word match', result.error);
+      if (isCurrentPracticePair()) reportPreparationFailure('word match', result.error);
     }
     return false;
   };
@@ -567,12 +619,14 @@ export function usePracticeGames({
   const startMatch = async () => { await prepareMatch(() => loadPoolForPreparation()); };
 
   const completeMatch = async (pairs: Array<{ cardId: string; word: string; translation: string }>) => {
+    if (!isCurrentPracticePair()) return null;
     const session = matchSessionRef.current;
     const result = session ? await completeSession(session, { pairs }) : null;
     return result ? { awardedXp: result.awardedXp } : null;
   };
 
   const restartMatch = async () => {
+    if (!isCurrentPracticePair()) return false;
     matchSessionRef.current = null;
     return prepareMatch(async () => spellingCards);
   };
@@ -608,14 +662,30 @@ export function usePracticeGames({
     setIsStartingQuiz(false);
     setIsStartingSpelling(false);
   };
+  const clearPairGames = () => {
+    cancelPracticeAudio();
+    lifecycle.clear('quiz');
+    if (spellingSessionRef.current || spellingPreparationRef.current !== null) lifecycle.clear('spelling');
+    lifecycle.clear('match');
+    quizSessionRef.current = null;
+    spellingSessionRef.current = null;
+    spellingPreparationRef.current = null;
+    matchSessionRef.current = null;
+    quizAnswerLockedRef.current = false;
+    spellingAnswerLockedRef.current = false;
+    resetQuizState();
+    resetSpellingState();
+    setIsStartingQuiz(false);
+    setIsStartingSpelling(false);
+  };
 
   return {
-    quizQuestions, currentQuizIndex, selectedAnswer, answeredCorrectly, quizScore, showQuizResults,
+    quizQuestions, currentQuizIndex, selectedAnswer, answeredCorrectly, quizScore, showQuizResults, quizCompletionSaving,
     spellingCards, currentSpellingIndex, spellingInput, setSpellingInput, spellingChecked, spellingCorrect,
-    spellingScore, showSpellingResults, story, storyError, isGeneratingStory,
+    spellingScore, showSpellingResults, spellingCompletionSaving, story, storyError, isGeneratingStory,
     languageDrillCards, currentLanguageDrillIndex, languageDrillCorrect, showLanguageDrillResults,
     isStartingQuiz, isStartingSpelling,
-    startQuiz, selectQuizAnswer, nextQuizQuestion, startSpelling, checkSpelling, nextSpelling, startLanguageDrill, completeLanguageDrill, generateStory, startMatch, restartMatch, completeMatch, startShadowing,
+    startQuiz, selectQuizAnswer, nextQuizQuestion, startSpelling, checkSpelling, nextSpelling, startLanguageDrill, completeLanguageDrill, generateStory, startMatch, restartMatch, completeMatch, startShadowing, clearPairGames,
     clearQuiz, clearSpelling, clearLanguageDrill, clearStory, reset,
   };
 }

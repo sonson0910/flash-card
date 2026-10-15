@@ -79,6 +79,37 @@ describe('createPracticePoolLoader', () => {
     );
   });
 
+  it('falls back when cloud loading stalls and ignores a late cloud response', async () => {
+    vi.useFakeTimers();
+    const reportError = vi.fn();
+    const local = { ...card('local'), language: 'en', difficulty: 'unrated' as const };
+    let resolveCloud: (cards: CardData[]) => void = () => undefined;
+    const source = {
+      load: vi.fn(() => new Promise<CardData[]>(resolve => { resolveCloud = resolve; })),
+    };
+    const load = createPracticePoolLoader({
+      ownerId: 'owner-1',
+      cloudBackoffActive: false,
+      cards: [local],
+      source,
+      targetLanguage: 'en',
+      reportError,
+    });
+
+    const result = load(1, false);
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    await expect(result).resolves.toEqual([local]);
+    expect(source.load).toHaveBeenCalledTimes(1);
+    expect(reportError).toHaveBeenCalledWith(
+      'Could not load the cloud queue. Practice is using cards cached on this device.',
+    );
+
+    resolveCloud([card('late-cloud')]);
+    await Promise.resolve();
+    await expect(result).resolves.toEqual([local]);
+  });
+
   it('uses local cards without contacting cloud for anonymous or backed-off sessions', async () => {
     const source = { load: vi.fn(async () => [card('cloud')]) };
     const local = card('local');
@@ -124,6 +155,32 @@ describe('createPracticePoolLoader', () => {
 describe('usePracticeWorkspace', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('keeps language drill cards and session scope within the active course pair', () => {
+    doubles.session.mockReturnValue({ mode: 'library', commands: {}, snapshot: {} });
+    doubles.gamification.mockReturnValue({ acceptAuthoritativeOutcome: vi.fn() });
+    const japaneseEnglish = { ...card('ja-en'), language: 'ja', translationLanguage: 'en' };
+    const japaneseVietnamese = { ...card('ja-vi'), language: 'ja' };
+    const chineseEnglish = { ...card('zh-en'), language: 'zh', translationLanguage: 'en' };
+
+    usePracticeWorkspace({
+      mode: 'library', openView: vi.fn(), ownerId: 'owner-1', cloudBackoffActive: false,
+      cards: [japaneseEnglish, japaneseVietnamese, chineseEnglish], poolSource: null,
+      gamificationDatabase: null,
+      learning: { reviewCard: vi.fn(), toggleBookmark: vi.fn(), assignDeck: vi.fn(), updateCard: vi.fn() },
+      languageProfile: {
+        id: 'ja-en', source: { code: 'ja', displayName: 'Japanese' },
+        target: { code: 'en', displayName: 'English' }, speechLocale: 'ja-JP',
+        normalize: (value: unknown) => String(value),
+      },
+      reportError: vi.fn(),
+    });
+
+    expect(doubles.session).toHaveBeenCalledWith(expect.objectContaining({
+      languageDrillCards: [japaneseEnglish],
+      languageDrillScopeKey: 'owner-1:ja:en',
+    }));
   });
 
   it('exposes one compact model/action contract and keeps controller internals private', () => {

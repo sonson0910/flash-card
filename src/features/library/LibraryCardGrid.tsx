@@ -34,6 +34,7 @@ export type LibraryViewMode = 'grid' | 'list';
 interface LibraryCardGridProps {
   user?: unknown;
   isAuthenticated?: boolean;
+  ownerId?: string | null;
   searchQuery: string;
   setSearchQuery: (value: string) => void;
   legacyCardsPending: number;
@@ -52,7 +53,7 @@ interface LibraryCardGridProps {
   cloudReadUnavailable: boolean;
   importProgress: { current: number; total: number; word: string } | null;
   groupedCards: Record<string, CardData[]>;
-  deleteCard: (cardId: string) => Promise<void>;
+  deleteCard: (cardId: string) => Promise<boolean | void>;
   toggleBookmark: (cardId: string) => Promise<void>;
   customDecks: string[];
   assignDeck: (cardId: string, deckName: string | null) => Promise<void>;
@@ -67,6 +68,11 @@ interface LibraryCardGridProps {
   isGenerating?: boolean;
   viewMode?: LibraryViewMode;
   onViewModeChange?: (value: LibraryViewMode) => void;
+}
+
+interface EditingCard {
+  card: CardData;
+  ownerId: string | null;
 }
 
 /** One patch per selected card, all targeting the same deck (or unassigned). */
@@ -113,6 +119,7 @@ export function getLegacyUpgradePresentation({ pending, migrating, issue }: { pe
 export function LibraryCardGrid({
   user,
   isAuthenticated,
+  ownerId = null,
   filteredCards,
   shareCategory,
   isSharing,
@@ -150,14 +157,22 @@ export function LibraryCardGrid({
   const [bulkDeck, setBulkDeck] = useState('');
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkError, setBulkError] = useState(false);
-  const [editingCard, setEditingCard] = useState<CardData | null>(null);
-  const [deletingCard, setDeletingCard] = useState<CardData | null>(null);
+  const [editingCard, setEditingCard] = useState<EditingCard | null>(null);
+  const [deletingCard, setDeletingCard] = useState<EditingCard | null>(null);
   const [detailCardId, setDetailCardId] = useState<string | null>(null);
   const detailTriggerRef = useRef<HTMLElement | null>(null);
+  const editTriggerRef = useRef<HTMLElement | null>(null);
+  const activeOwnerRef = useRef(ownerId);
+  const resetOwnerRef = useRef(ownerId);
   const deleteTriggerRef = useRef<HTMLElement | null>(null);
   const deleteConfirmedRef = useRef(false);
   const startingRef = useRef(false);
   const [starting, setStarting] = useState(false);
+  // Update synchronously during render so an editor captured for account A is
+  // never rendered with account B's cards while the owner-reset effect waits.
+  if (activeOwnerRef.current !== ownerId) activeOwnerRef.current = ownerId;
+  const activeEditingCard = editingCard?.ownerId === ownerId ? editingCard.card : null;
+  const activeDeletingCard = deletingCard?.ownerId === ownerId ? deletingCard.card : null;
   const loadingLabel = getLibraryGridLoadingLabel({ currentPage, isPageLoading, importProgress });
   const loadingStatus = importProgress
     ? <Trans id="library.grid.import-progress" message="Creating {current} of {total}" values={{ current: formatNumber(importProgress.current), total: formatNumber(importProgress.total) }} />
@@ -183,8 +198,19 @@ export function LibraryCardGrid({
   };
 
   const afterDelete = useCallback(async (id: string) => {
-    await deleteCard(id);
-    globalThis.requestAnimationFrame?.(() => libraryHeadingRef.current?.focus({ preventScroll: true }));
+    const requestOwnerId = activeOwnerRef.current;
+    const deleted = (await deleteCard(id)) === true;
+    if (deleted && activeOwnerRef.current === requestOwnerId) {
+      setDetailCardId(current => current === id ? null : current);
+      setSelectedIds(current => {
+        if (!current.has(id)) return current;
+        const next = new Set(current);
+        next.delete(id);
+        return next;
+      });
+      globalThis.requestAnimationFrame?.(() => libraryHeadingRef.current?.focus({ preventScroll: true }));
+    }
+    return deleted && activeOwnerRef.current === requestOwnerId;
   }, [deleteCard, libraryHeadingRef]);
 
   const openCard = (card: CardData, trigger: HTMLElement) => {
@@ -196,6 +222,15 @@ export function LibraryCardGrid({
   // edit made from the detail dialog is reflected immediately instead of
   // requiring the dialog to be closed and reopened to see its own effect.
   const detailCard = detailCardId ? cards.find(card => card.id === detailCardId) ?? null : null;
+
+  useEffect(() => {
+    if (resetOwnerRef.current === ownerId) return;
+    resetOwnerRef.current = ownerId;
+    setEditingCard(null);
+    setDeletingCard(null);
+    setDetailCardId(null);
+    setSelectedIds(new Set());
+  }, [ownerId]);
 
   // The opened card can drop out of `cards` while the dialog is still open
   // (unbookmarking under the Starred filter, a page change, or a live query
@@ -341,9 +376,9 @@ export function LibraryCardGrid({
             </div>
             <div className="library-word-controls" onClick={event => event.stopPropagation()}>
               <label className="library-word-select"><input type="checkbox" checked={selectedIds.has(card.id)} onChange={() => toggleSelected(card.id)} aria-label={catalog._(msg({ id: 'library.card.select', message: 'Select card' }))}/><span className="sr-only"><Trans id="library.card.select" message="Select card" /></span></label>
-              <button type="button" aria-label={catalog._(msg({ id: 'flashcard.edit', message: 'Edit card' }))} onClick={() => setEditingCard(card)}><Edit3 size={14} aria-hidden="true"/></button>
-              <button type="button" aria-label={catalog._(msg({ id: 'library.card.bookmark', message: 'Bookmark card' }))} onClick={() => void toggleBookmark(card.id)}><Star size={14} fill={card.bookmarked ? 'currentColor' : 'none'} aria-hidden="true"/></button>
-              <button type="button" aria-label={catalog._(msg({ id: 'library.card.delete', message: 'Delete card' }))} onClick={event => { deleteConfirmedRef.current = false; deleteTriggerRef.current = event.currentTarget; setDeletingCard(card); }}><Trash2 size={14} aria-hidden="true"/></button>
+              <button type="button" aria-label={catalog._(msg({ id: 'flashcard.edit', message: 'Edit card' }))} onClick={event => { editTriggerRef.current = event.currentTarget; setEditingCard({ card, ownerId }); }}><Edit3 size={14} aria-hidden="true"/></button>
+              <button type="button" aria-label={catalog._(msg({ id: 'library.card.bookmark', message: 'Bookmark card' }))} aria-pressed={card.bookmarked} onClick={() => void toggleBookmark(card.id)}><Star size={14} fill={card.bookmarked ? 'currentColor' : 'none'} aria-hidden="true"/></button>
+              <button type="button" aria-label={catalog._(msg({ id: 'library.card.delete', message: 'Delete card' }))} onClick={event => { deleteConfirmedRef.current = false; deleteTriggerRef.current = event.currentTarget; setDeletingCard({ card, ownerId }); }}><Trash2 size={14} aria-hidden="true"/></button>
             </div>
           </article>;
         })}
@@ -351,9 +386,17 @@ export function LibraryCardGrid({
       <p className="sr-only" aria-live="polite"><Trans id="library.grid.page-loaded" message="Page {page} loaded with {count, plural, one {# card} other {# cards}}." values={{ page: formatNumber(currentPage), count: cards.length }} /></p>
       {totalPages > 1 && <nav className="library-canvas-pages" aria-label={catalog._(msg({ id: 'library.grid.pages-nav', message: 'Library pages' }))}><button type="button" onClick={() => changePage(Math.max(1, currentPage - 1))} disabled={currentPage === 1 || isPageLoading} aria-label={catalog._(msg({ id: 'library.grid.previous-page', message: 'Previous library page' }))}><ChevronLeft size={18} aria-hidden="true" /></button><span><Trans id="library.grid.page" message="Page {current} / {total}" values={{ current: formatNumber(currentPage), total: formatNumber(totalPages) }}/></span><button type="button" onClick={() => changePage(Math.min(totalPages, currentPage + 1))} disabled={isPageLoading || (authenticated ? !hasNextCloudPage : currentPage === totalPages)} aria-label={catalog._(msg({ id: 'library.grid.next-page', message: 'Next library page' }))}><ChevronRight size={18} aria-hidden="true" /></button></nav>}
 
-      {editingCard && <Suspense fallback={null}><EditCardDialog card={editingCard} open onOpenChange={open => !open && setEditingCard(null)} onSave={updateCard}/></Suspense>}
-      <Dialog.Root open={Boolean(detailCard)} onOpenChange={open => { if (!open) { setDetailCardId(null); globalThis.requestAnimationFrame?.(() => detailTriggerRef.current?.focus()); } }}><Dialog.Portal><Dialog.Overlay className="library-card-detail-overlay"/><Dialog.Content className="library-card-detail-dialog"><Dialog.Title className="sr-only"><Trans id="library.card.detail-title" message="Card details" /></Dialog.Title>{detailCard && <Suspense fallback={<div className="library-canvas-loading" role="status"><Trans id="library.loading.cards" message="Loading library cards" /></div>}><Flashcard data={detailCard} onDelete={async id => { await afterDelete(id); setDetailCardId(null); }} onToggleBookmark={id => void toggleBookmark(id)} customDecks={customDecks} onAssignDeck={(id, deck) => void assignDeck(id, deck)} onUpdateCard={updateCard}/></Suspense>}<Dialog.Close className="library-card-detail-close" aria-label={catalog._(msg({ id: 'common.close', message: 'Close' }))}>×</Dialog.Close></Dialog.Content></Dialog.Portal></Dialog.Root>
-      <AlertDialog.Root open={Boolean(deletingCard)} onOpenChange={open => {
+      {activeEditingCard && <Suspense fallback={null}><EditCardDialog card={activeEditingCard} open onOpenChange={open => {
+        if (open) return;
+        setEditingCard(null);
+        globalThis.requestAnimationFrame?.(() => {
+          const trigger = editTriggerRef.current;
+          if (trigger?.isConnected) trigger.focus();
+          else libraryHeadingRef.current?.focus({ preventScroll: true });
+        });
+      }} onSave={updateCard} onDelete={afterDelete}/></Suspense>}
+      <Dialog.Root open={Boolean(detailCard)} onOpenChange={open => { if (!open) { setDetailCardId(null); globalThis.requestAnimationFrame?.(() => detailTriggerRef.current?.focus()); } }}><Dialog.Portal><Dialog.Overlay className="library-card-detail-overlay"/><Dialog.Content className="library-card-detail-dialog"><Dialog.Title className="sr-only"><Trans id="library.card.detail-title" message="Card details" /></Dialog.Title>{detailCard && <Suspense fallback={<div className="library-canvas-loading" role="status"><Trans id="library.loading.cards" message="Loading library cards" /></div>}><Flashcard data={detailCard} onDelete={async id => { if (await afterDelete(id)) setDetailCardId(null); }} onEditDelete={afterDelete} onToggleBookmark={id => void toggleBookmark(id)} customDecks={customDecks} onAssignDeck={(id, deck) => void assignDeck(id, deck)} onUpdateCard={updateCard}/></Suspense>}<Dialog.Close className="library-card-detail-close" aria-label={catalog._(msg({ id: 'common.close', message: 'Close' }))}>×</Dialog.Close></Dialog.Content></Dialog.Portal></Dialog.Root>
+      <AlertDialog.Root open={Boolean(activeDeletingCard)} onOpenChange={open => {
         if (open) return;
         setDeletingCard(null);
         // Cancelling should return focus to the row's own delete trigger;
@@ -361,7 +404,7 @@ export function LibraryCardGrid({
         // heading) win instead, matching Flashcard.tsx's equivalent dialog.
         if (!deleteConfirmedRef.current) globalThis.requestAnimationFrame?.(() => deleteTriggerRef.current?.focus());
         deleteConfirmedRef.current = false;
-      }}><AlertDialog.Portal><AlertDialog.Overlay className="library-delete-overlay"/><AlertDialog.Content className="library-delete-dialog"><AlertDialog.Title><Trans id="library.delete.title" message="Delete card?" /></AlertDialog.Title><AlertDialog.Description><Trans id="library.delete.description" message="This will permanently remove {word} from your library." values={{ word: deletingCard?.word ?? '' }} /></AlertDialog.Description><div><AlertDialog.Cancel><Trans id="common.cancel" message="Cancel" /></AlertDialog.Cancel><AlertDialog.Action onClick={() => { deleteConfirmedRef.current = true; if (deletingCard) void afterDelete(deletingCard.id); setDeletingCard(null); }}><Trans id="library.delete.confirm" message="Delete card" /></AlertDialog.Action></div></AlertDialog.Content></AlertDialog.Portal></AlertDialog.Root>
+      }}><AlertDialog.Portal><AlertDialog.Overlay className="library-delete-overlay"/><AlertDialog.Content className="library-delete-dialog"><AlertDialog.Title><Trans id="library.delete.title" message="Delete card?" /></AlertDialog.Title><AlertDialog.Description><Trans id="library.delete.description" message="This will permanently remove {word} from your library." values={{ word: activeDeletingCard?.word ?? '' }} /></AlertDialog.Description><div><AlertDialog.Cancel><Trans id="common.cancel" message="Cancel" /></AlertDialog.Cancel><AlertDialog.Action onClick={() => { if (!activeDeletingCard) return; deleteConfirmedRef.current = true; void afterDelete(activeDeletingCard.id); setDeletingCard(null); }}><Trans id="library.delete.confirm" message="Delete card" /></AlertDialog.Action></div></AlertDialog.Content></AlertDialog.Portal></AlertDialog.Root>
     </section>
   );
 }

@@ -65,10 +65,11 @@ describe('review conflict recovery', () => {
     mocks.callable.mockResolvedValue({ data: {
       applied: true,
       duplicate: false,
+      xpAwarded: 2,
       card: { ...card, schemaVersion: 2 },
     } });
 
-    await expect(applyReviewViaCallable({} as never, 'owner-a', command)).resolves.toMatchObject({ applied: true });
+    await expect(applyReviewViaCallable({} as never, 'owner-a', command)).resolves.toMatchObject({ applied: true, xpAwarded: 2 });
 
     expect(mocks.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'reviewCardV2');
     expect(mocks.callable).toHaveBeenCalledWith(expect.objectContaining({ timeZone: expect.any(String) }));
@@ -79,6 +80,7 @@ describe('review conflict recovery', () => {
     mocks.callable.mockResolvedValue({ data: {
       applied: true,
       duplicate: true,
+      xpAwarded: 0,
       card: { ...card, schemaVersion: 2 },
       gamification: {
         xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: ['streak'], rewardTimeZone: 'Asia/Saigon',
@@ -93,6 +95,7 @@ describe('review conflict recovery', () => {
     await expect(applyReviewViaCallable({} as never, 'owner-a', command)).resolves.toMatchObject({
       applied: true,
       duplicate: true,
+      xpAwarded: 0,
       gamification: {
         xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: ['streak'], rewardTimeZone: 'Asia/Saigon',
         reviewActivity: {
@@ -116,6 +119,7 @@ describe('review conflict recovery', () => {
     mocks.callable.mockResolvedValue({ data: {
       applied: true,
       duplicate: false,
+      xpAwarded: 2,
       card: { ...card, schemaVersion: 2 },
       gamification: { xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: [], reviewActivity },
     } });
@@ -132,7 +136,7 @@ describe('review conflict recovery', () => {
     };
     const apply = vi.fn<(_: ReviewCommand) => Promise<ReviewApplyResult>>()
       .mockResolvedValueOnce(first)
-      .mockResolvedValueOnce({ applied: true, duplicate: false, card: { ...first.card, revision: 5 } });
+      .mockResolvedValueOnce({ applied: true, duplicate: false, xpAwarded: 2, card: { ...first.card, revision: 5 } });
 
     const result = await applyReviewWithConflictRecovery(command, apply);
 
@@ -153,6 +157,18 @@ describe('review conflict recovery', () => {
       vi.fn(async (): Promise<ReviewApplyResult> => ({ applied: false, reason: 'missing' })),
     );
     expect(result).toEqual({ applied: false, reason: 'missing' });
+  });
+
+  it.each([undefined, 1, -1, 3])('rejects an invalid top-level XP award: %o', async xpAwarded => {
+    mocks.httpsCallable.mockReturnValue(mocks.callable);
+    mocks.callable.mockResolvedValue({ data: {
+      applied: true,
+      duplicate: false,
+      xpAwarded,
+      card: { ...card, schemaVersion: 2 },
+    } });
+
+    await expect(applyReviewViaCallable({} as never, 'owner-a', command)).rejects.toThrow('Invalid review response.');
   });
 
   it('does not retry a timestamp that is equal to the authoritative review', async () => {

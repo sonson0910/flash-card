@@ -24,8 +24,11 @@ export interface PracticeSessionLifecycle {
   isActive(activity: PracticeActivity): boolean;
   clear(activity?: PracticeActivity): void;
   reset(): void;
+  studyActivationId(): number | null;
+  isStudyActivationCurrent(activationId: number): boolean;
+  isReviewClaimCurrent(cardId: string, activationId: number): boolean;
   claimReview(cardId: string): boolean;
-  settleReview(cardId: string, outcome: 'saved' | 'retry'): boolean;
+  settleReview(cardId: string, outcome: 'saved' | 'retry', activationId?: number): boolean;
   isReviewed(cardId: string): boolean;
 }
 
@@ -35,18 +38,30 @@ interface Preparation {
   sessionToken: number;
 }
 
+interface ActivePractice {
+  activity: PracticeActivity;
+  sessionToken: number;
+  studyActivationId?: number;
+}
+
 export function createPracticeSessionLifecycle(
   initialOwnerId: string | null,
 ): PracticeSessionLifecycle {
   let ownerId = initialOwnerId;
   let generation = 0;
   let preparation: Preparation | null = null;
-  let active: { activity: PracticeActivity; sessionToken: number } | null = null;
-  const pendingReviewIds = new Set<string>();
-  const reviewedCardIds = new Set<string>();
+  let active: ActivePractice | null = null;
+  let studyActivationSequence = 0;
+  const pendingReviewIds = new Map<string, number>();
+  const reviewedCardIds = new Map<string, number>();
 
   const currentToken = () => generation;
   const isCurrent = (sessionToken: number) => sessionToken === generation;
+
+  const currentStudyActivationId = () => active?.activity === 'study'
+    && isCurrent(active.sessionToken)
+    ? active.studyActivationId ?? null
+    : null;
 
   const resetReviewAuthority = () => {
     pendingReviewIds.clear();
@@ -103,7 +118,11 @@ export function createPracticeSessionLifecycle(
 
   const activate = (activity: PracticeActivity, sessionToken: number) => {
     if (!isCurrent(sessionToken)) return false;
-    active = { activity, sessionToken };
+    active = {
+      activity,
+      sessionToken,
+      ...(activity === 'study' ? { studyActivationId: ++studyActivationSequence } : {}),
+    };
     if (activity === 'study') resetReviewAuthority();
     return true;
   };
@@ -124,20 +143,32 @@ export function createPracticeSessionLifecycle(
   };
 
   const claimReview = (cardId: string) => {
-    if (!isActive('study')) return false;
+    const activationId = currentStudyActivationId();
+    if (activationId === null) return false;
     if (pendingReviewIds.has(cardId) || reviewedCardIds.has(cardId)) return false;
-    pendingReviewIds.add(cardId);
+    pendingReviewIds.set(cardId, activationId);
     return true;
   };
 
-  const settleReview = (cardId: string, outcome: 'saved' | 'retry') => {
-    const wasPending = pendingReviewIds.delete(cardId);
-    if (!isActive('study') || !wasPending) return false;
-    if (outcome === 'saved') reviewedCardIds.add(cardId);
+  const isStudyActivationCurrent = (activationId: number) => currentStudyActivationId() === activationId;
+
+  const isReviewClaimCurrent = (cardId: string, activationId: number) => {
+    if (!isStudyActivationCurrent(activationId)) return false;
+    return pendingReviewIds.get(cardId) === activationId || reviewedCardIds.get(cardId) === activationId;
+  };
+
+  const settleReview = (cardId: string, outcome: 'saved' | 'retry', activationId = currentStudyActivationId()) => {
+    if (activationId === null || !isStudyActivationCurrent(activationId)) return false;
+    if (pendingReviewIds.get(cardId) !== activationId) return false;
+    pendingReviewIds.delete(cardId);
+    if (outcome === 'saved') reviewedCardIds.set(cardId, activationId);
     return true;
   };
 
-  const isReviewed = (cardId: string) => isActive('study') && reviewedCardIds.has(cardId);
+  const isReviewed = (cardId: string) => {
+    const activationId = currentStudyActivationId();
+    return activationId !== null && reviewedCardIds.get(cardId) === activationId;
+  };
 
   return {
     currentToken,
@@ -148,6 +179,9 @@ export function createPracticeSessionLifecycle(
     isActive,
     clear,
     reset,
+    studyActivationId: currentStudyActivationId,
+    isStudyActivationCurrent,
+    isReviewClaimCurrent,
     claimReview,
     settleReview,
     isReviewed,

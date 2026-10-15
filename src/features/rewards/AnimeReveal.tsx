@@ -22,7 +22,7 @@ export interface AnimeRevealProps {
 }
 const copy = {
   tierup: { kicker: <Trans id="rewards.reveal.tierup.kicker" message="Tier up" />, title: <Trans id="rewards.reveal.tierup.title" message="Mastered" />, description: <Trans id="rewards.reveal.tierup.description" message="This card is now mastered. Review it again when it is due." />, action: <Trans id="rewards.reveal.tierup.continue" message="Continue learning" /> },
-  streak: { kicker: <Trans id="rewards.reveal.streak.kicker" message="Streak milestone" />, title: <Trans id="rewards.reveal.streak.title" message="Streak reached" />, description: <Trans id="rewards.reveal.streak.description" message="Your verified review streak unlocked Web Wanderer. You can hold one streak freeze." />, action: <Trans id="rewards.reveal.streak.continue" message="Continue learning" /> },
+  streak: { kicker: <Trans id="rewards.reveal.streak.kicker" message="Streak milestone" />, title: <Trans id="rewards.reveal.streak.title" message="Streak reached" />, description: <Trans id="rewards.reveal.streak.description" message="Your verified review streak earned the Web Wanderer badge." />, action: <Trans id="rewards.reveal.streak.continue" message="Continue learning" /> },
   levelup: { kicker: <Trans id="rewards.reveal.levelup.kicker" message="Level up" />, title: <Trans id="rewards.reveal.levelup.title" message="Level up" />, description: <Trans id="rewards.reveal.levelup.description" message="You unlocked the Crimson Wing frame and Word Collector title. You can hold up to three hint tokens." />, action: <Trans id="rewards.reveal.levelup.equip" message="Use frame" /> },
 } as const;
 

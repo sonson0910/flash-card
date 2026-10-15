@@ -19,6 +19,7 @@ import { useReducedMotion } from "../../lib/motionPreference";
 import { useTheme } from "../theme/ThemeProvider";
 import { Lumi } from "../../components/lumi/Lumi";
 import { readLumiEnabled } from "../settings/lumi-preference";
+import { consumeAccountDeletionCacheNotice, consumeAccountDeletionStartedNotice } from "../account/account-deletion-notice";
 import { useSetUiLocale } from "../../i18n/I18nProvider";
 import { UI_LOCALE_STORAGE_KEY, type UiLocale } from "../../i18n/locales";
 import deepWoodsAv1 from "../../assets/landing/deep-woods.av1.mp4";
@@ -63,6 +64,17 @@ export const landingMeta = {
 
 const sampleHeadword = 'immediate';
 const samplePronunciation = '/ɪˈmiːdiət/';
+const desktopNavItemClass = "inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2";
+const mobileNavItemClass = "rounded-xl px-4 py-3 font-bold hover:bg-[var(--sf-surface-muted)] focus-visible:outline-2";
+const mobileNavButtonClass = "rounded-xl px-4 py-3 text-left font-bold hover:bg-[var(--sf-surface-muted)] focus-visible:outline-2";
+const iconTileClass = "flex size-12 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--sf-brand)_12%,transparent)] text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm";
+const utilityLinkClass = "rounded px-2 py-1 underline-offset-4 hover:underline focus-visible:outline-2";
+const sectionLeadClass = "mt-2 text-sm leading-6 text-[var(--sf-text-muted)]";
+const detailCopyClass = "mt-1 text-sm leading-6 text-[var(--sf-text-muted)]";
+const landingBandClass = "border-t border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-16 sm:px-8 lg:px-12";
+const brandTextClass = "text-sm font-bold text-[var(--sf-brand-text)]";
+const brandCalloutClass = "mt-6 text-sm font-bold text-[var(--sf-brand-text)]";
+const sectionTitleClass = "mt-3 text-3xl font-black tracking-tight sm:text-4xl";
 
 const videos = [
   {
@@ -254,7 +266,7 @@ function LocaleLinks({ compact = false }: { readonly compact?: boolean }) {
         lang="en"
         hrefLang="en"
         onClick={() => selectLocale("en")}
-        className="rounded px-2 py-1 underline-offset-4 hover:underline focus-visible:outline-2"
+        className={utilityLinkClass}
       >
         English
       </a>
@@ -264,7 +276,7 @@ function LocaleLinks({ compact = false }: { readonly compact?: boolean }) {
         lang="vi"
         hrefLang="vi"
         onClick={() => selectLocale("vi")}
-        className="rounded px-2 py-1 underline-offset-4 hover:underline focus-visible:outline-2"
+        className={utilityLinkClass}
       >
         Tiếng Việt
       </a>
@@ -450,7 +462,7 @@ function ClassicLandingHero({
                     message="happening or done without delay"
                   />
                 </p>
-                <p className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]">
+                <p className={sectionLeadClass}>
                   <Trans
                     id="landing.demo.example"
                     message="The new policy takes immediate effect."
@@ -484,6 +496,8 @@ export function LandingPage({
   const prefersReducedMotion = useReducedMotion();
   const [saveData, setSaveData] = useState(false);
   const [afterFirstPaint, setAfterFirstPaint] = useState(false);
+  const [accountDeletionStarted, setAccountDeletionStarted] = useState(false);
+  const [accountDeletionCacheWarning, setAccountDeletionCacheWarning] = useState(false);
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
   const mobileNavRef = useRef<HTMLDetailsElement | null>(null);
   useEffect(() => {
@@ -496,6 +510,15 @@ export function LandingPage({
     const frame = requestAnimationFrame(() => setAfterFirstPaint(true));
     return () => cancelAnimationFrame(frame);
   }, []);
+  useEffect(() => {
+    if (user) {
+      setAccountDeletionStarted(false);
+      setAccountDeletionCacheWarning(false);
+      return;
+    }
+    setAccountDeletionStarted(consumeAccountDeletionStartedNotice());
+    setAccountDeletionCacheWarning(consumeAccountDeletionCacheNotice());
+  }, [user]);
   useEffect(() => {
     videoRefs.current.forEach((video, index) => {
       if (!video) return;
@@ -518,6 +541,8 @@ export function LandingPage({
   return (
     <div className="landing-canvas min-h-[100svh] overflow-x-clip bg-[var(--sf-canvas)] text-[var(--sf-text)] selection:bg-[var(--sf-brand)] selection:text-[var(--sf-on-brand)]">
       <main>
+        {!user && accountDeletionStarted && <p role="status" className="mx-auto max-w-[92rem] px-5 pt-5 text-sm text-emerald-700 dark:text-emerald-300 sm:px-8 lg:px-12"><Trans id="account.data.delete.started" message="We could not confirm whether account deletion finished. If you can still sign in later, contact support." /></p>}
+        {!user && accountDeletionCacheWarning && <p role="alert" className="mx-auto max-w-[92rem] px-5 pt-5 text-sm text-[var(--sf-danger)] sm:px-8 lg:px-12"><Trans id="account.data.delete.cache-warning" message="SonFlash couldn't clear saved account data from this device. Clear SonFlash site data in your browser." /></p>}
         <section
           id="top"
           className="relative min-h-[100svh] overflow-hidden border-b border-[var(--sf-border)]"
@@ -610,25 +635,25 @@ export function LandingPage({
                     message: "Landing navigation",
                   }),
                 )}
-                className="hidden items-center gap-1 lg:flex"
+                className="hidden items-center gap-1 xl:flex"
               >
                 <a
                   href="#how-it-works"
-                  className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                  className={desktopNavItemClass}
                 >
                   <Trans id="landing.nav.how-it-works" message="How it works" />
                 </a>
                 {family === "classic" ? <>
                   <a
                     href="#extension"
-                    className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                    className={desktopNavItemClass}
                   >
                     <Trans id="landing.nav.chrome-extension" message="Chrome extension" />
                   </a>
                   <button
                     type="button"
                     onClick={onOpenCatalog ?? onEnterApp}
-                    className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                    className={desktopNavItemClass}
                   >
                     <Trans id="landing.nav.paths" message="Paths" />
                   </button>
@@ -636,32 +661,32 @@ export function LandingPage({
                   <button
                     type="button"
                     onClick={onOpenCatalog ?? onEnterApp}
-                    className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                    className={desktopNavItemClass}
                   >
                     <Trans id="landing.nav.curriculum" message="Curriculum" />
                   </button>
                   <button
                     type="button"
                     onClick={onOpenLibrary ?? onEnterApp}
-                    className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                    className={desktopNavItemClass}
                   >
                     <Trans id="landing.nav.vocabulary" message="Vocabulary" />
                   </button>
                   <a
                     href="#extension"
-                    className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                    className={desktopNavItemClass}
                   >
                     <Trans id="landing.nav.extension" message="Extension" />
                   </a>
                   <a
                     href="#languages"
-                    className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                    className={desktopNavItemClass}
                   >
                     <Trans id="landing.nav.languages" message="Languages" />
                   </a>
                   <a
                     href="#pricing"
-                    className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2"
+                    className={desktopNavItemClass}
                   >
                     <Trans id="landing.nav.pricing" message="Pricing & access" />
                   </a>
@@ -689,7 +714,7 @@ export function LandingPage({
               </div>
               <details
                 ref={mobileNavRef}
-                className="group relative md:hidden"
+                className="group relative xl:hidden"
                 onKeyDown={(event) => {
                   if (event.key === "Escape" && event.currentTarget.open) {
                     event.preventDefault();
@@ -730,57 +755,77 @@ export function LandingPage({
                   <a
                     href="#how-it-works"
                     onClick={closeMobileNav}
-                    className="rounded-xl px-4 py-3 font-bold hover:bg-[var(--sf-surface-muted)] focus-visible:outline-2"
+                    className={mobileNavItemClass}
                   >
                     <Trans
                       id="landing.nav.how-it-works"
                       message="How it works"
                     />
                   </a>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      closeMobileNav();
-                      (onOpenCatalog ?? onEnterApp)();
-                    }}
-                    className="rounded-xl px-4 py-3 text-left font-bold hover:bg-[var(--sf-surface-muted)] focus-visible:outline-2"
-                  >
-                    <Trans id="landing.nav.curriculum" message="Curriculum" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      closeMobileNav();
-                      (onOpenLibrary ?? onEnterApp)();
-                    }}
-                    className="rounded-xl px-4 py-3 text-left font-bold hover:bg-[var(--sf-surface-muted)] focus-visible:outline-2"
-                  >
-                    <Trans id="landing.nav.vocabulary" message="Vocabulary" />
-                  </button>
-                  <a
-                    href="#extension"
-                    onClick={closeMobileNav}
-                    className="rounded-xl px-4 py-3 font-bold hover:bg-[var(--sf-surface-muted)] focus-visible:outline-2"
-                  >
-                    <Trans id="landing.nav.extension" message="Extension" />
-                  </a>
-                  <a
-                    href="#languages"
-                    onClick={closeMobileNav}
-                    className="rounded-xl px-4 py-3 font-bold hover:bg-[var(--sf-surface-muted)] focus-visible:outline-2"
-                  >
-                    <Trans id="landing.nav.languages" message="Languages" />
-                  </a>
-                  <a
-                    href="#pricing"
-                    onClick={closeMobileNav}
-                    className="rounded-xl px-4 py-3 font-bold hover:bg-[var(--sf-surface-muted)] focus-visible:outline-2"
-                  >
-                    <Trans
-                      id="landing.nav.pricing"
-                      message="Pricing & access"
-                    />
-                  </a>
+                  {family === "classic" ? <>
+                    <a
+                      href="#extension"
+                      onClick={closeMobileNav}
+                      className={mobileNavItemClass}
+                    >
+                      <Trans id="landing.nav.chrome-extension" message="Chrome extension" />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeMobileNav();
+                        (onOpenCatalog ?? onEnterApp)();
+                      }}
+                      className={mobileNavButtonClass}
+                    >
+                      <Trans id="landing.nav.paths" message="Paths" />
+                    </button>
+                  </> : <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeMobileNav();
+                        (onOpenCatalog ?? onEnterApp)();
+                      }}
+                      className={mobileNavButtonClass}
+                    >
+                      <Trans id="landing.nav.curriculum" message="Curriculum" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeMobileNav();
+                        (onOpenLibrary ?? onEnterApp)();
+                      }}
+                      className={mobileNavButtonClass}
+                    >
+                      <Trans id="landing.nav.vocabulary" message="Vocabulary" />
+                    </button>
+                    <a
+                      href="#extension"
+                      onClick={closeMobileNav}
+                      className={mobileNavItemClass}
+                    >
+                      <Trans id="landing.nav.extension" message="Extension" />
+                    </a>
+                    <a
+                      href="#languages"
+                      onClick={closeMobileNav}
+                      className={mobileNavItemClass}
+                    >
+                      <Trans id="landing.nav.languages" message="Languages" />
+                    </a>
+                    <a
+                      href="#pricing"
+                      onClick={closeMobileNav}
+                      className={mobileNavItemClass}
+                    >
+                      <Trans
+                        id="landing.nav.pricing"
+                        message="Pricing & access"
+                      />
+                    </a>
+                  </>}
                   <div className="px-2 py-2">
                     <LocaleLinks />
                   </div>
@@ -828,7 +873,7 @@ export function LandingPage({
                 <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-xl text-[var(--sf-brand-text)]">{index + 1}</span>
                 <div>
                   <h3 className="text-xl font-semibold">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]">{item.description}</p>
+                  <p className={sectionLeadClass}>{item.description}</p>
                 </div>
               </li>
             ))}
@@ -842,12 +887,12 @@ export function LandingPage({
           <div className="grid gap-12 lg:grid-cols-[minmax(15rem,.7fr)_minmax(0,1.3fr)] lg:gap-24">
             <header>
               <div
-                className="flex size-12 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--sf-brand)_12%,transparent)] text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                className={iconTileClass}
                 aria-hidden="true"
               >
                 <Puzzle size={21} />
               </div>
-              <p className="mt-6 text-sm font-bold text-[var(--sf-brand-text)]">
+              <p className={brandCalloutClass}>
                 <Trans id="landing.extension.eyebrow" message="Save from anywhere" />
               </p>
               <h2
@@ -891,21 +936,21 @@ export function LandingPage({
         <section
           id="languages"
           aria-labelledby="languages-heading"
-          className="border-t border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-16 sm:px-8 lg:px-12"
+          className={landingBandClass}
         >
           <div className="mx-auto max-w-3xl">
             <div
-              className="flex size-12 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--sf-brand)_12%,transparent)] text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+              className={iconTileClass}
               aria-hidden="true"
             >
               <LanguagesIcon size={21} />
             </div>
-            <p className="mt-6 text-sm font-bold text-[var(--sf-brand-text)]">
+            <p className={brandCalloutClass}>
               <Trans id="landing.languages.eyebrow" message="Where SonFlash is headed" />
             </p>
             <h2
               id="languages-heading"
-              className="mt-3 text-3xl font-black tracking-tight sm:text-4xl"
+              className={sectionTitleClass}
             >
               <Trans id="landing.languages.title" message="English today. More languages on the way." />
             </h2>
@@ -946,7 +991,7 @@ export function LandingPage({
           <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[minmax(0,.85fr)_minmax(20rem,1.15fr)]">
             <div>
               <div
-                className="flex size-12 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--sf-brand)_12%,transparent)] text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                className={iconTileClass}
                 aria-hidden="true"
               >
                 <Brain size={21} />
@@ -974,7 +1019,7 @@ export function LandingPage({
                       message="See the meaning in context"
                     />
                   </dt>
-                  <dd className="mt-1 text-sm leading-6 text-[var(--sf-text-muted)]">
+                  <dd className={detailCopyClass}>
                     <Trans
                       id="landing.methods.context.description"
                       message="A clear card gives each word room to make sense."
@@ -988,7 +1033,7 @@ export function LandingPage({
                       message="Judge your recall honestly"
                     />
                   </dt>
-                  <dd className="mt-1 text-sm leading-6 text-[var(--sf-text-muted)]">
+                  <dd className={detailCopyClass}>
                     <Trans
                       id="landing.methods.recall.description"
                       message="Four familiar ratings keep the choice quick."
@@ -998,7 +1043,7 @@ export function LandingPage({
               </dl>
             </div>
             <div className="crystal-chamfer rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-7 shadow-[var(--sf-panel-shadow)]">
-              <p className="text-sm font-bold text-[var(--sf-brand-text)]">
+              <p className={brandTextClass}>
                 <Trans
                   id="landing.methods.preview.caption"
                   message="Built for the words you actually meet."
@@ -1027,15 +1072,15 @@ export function LandingPage({
         <section
           id="pricing"
           aria-labelledby="pricing-heading"
-          className="border-t border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-16 sm:px-8 lg:px-12"
+          className={landingBandClass}
         >
           <div className="mx-auto max-w-5xl">
-            <p className="text-sm font-bold text-[var(--sf-brand-text)]">
+            <p className={brandTextClass}>
               <Trans id="landing.pricing.eyebrow" message="Free to start, Pro when you want more" />
             </p>
             <h2
               id="pricing-heading"
-              className="mt-3 text-3xl font-black tracking-tight sm:text-4xl"
+              className={sectionTitleClass}
             >
               <Trans id="landing.pricing.title" message="Pricing & access" />
             </h2>
@@ -1054,9 +1099,9 @@ export function LandingPage({
                   </div>
                 ))}
                 <p className="mt-5 font-serif-hero text-2xl">
-                  <Trans id="landing.pricing.price" message="Pro is 79,000 ₫ (about US$7.99)." />
+                  <Trans id="landing.pricing.price" message="The final Pro price will be confirmed before sales open." />
                 </p>
-                <p className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]">
+                <p className={sectionLeadClass}>
                   <Trans
                     id="landing.pricing.purchase-note"
                     message="Registering your interest does not charge you. Purchases are not open yet — we will follow up by email when they are."
@@ -1069,7 +1114,7 @@ export function LandingPage({
                   {pricingFaq.map(item => (
                     <div key={item.id}>
                       <dt className="font-bold">{item.question}</dt>
-                      <dd className="mt-1 text-sm leading-6 text-[var(--sf-text-muted)]">{item.answer}</dd>
+                      <dd className={detailCopyClass}>{item.answer}</dd>
                     </div>
                   ))}
                 </dl>
@@ -1081,7 +1126,7 @@ export function LandingPage({
           aria-labelledby="closing-heading"
           className="mx-auto max-w-5xl px-5 py-20 text-center sm:px-8 sm:py-28"
         >
-          <p className="text-sm font-bold text-[var(--sf-brand-text)]">
+          <p className={brandTextClass}>
             <Trans
               id="landing.closing.eyebrow"
               message="Your next word is waiting"

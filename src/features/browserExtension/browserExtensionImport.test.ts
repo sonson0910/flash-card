@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BROWSER_EXTENSION_IMPORT_HASH_KEY,
+  BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY,
   BROWSER_EXTENSION_IMPORT_STORAGE_KEY,
   BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY,
   BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
@@ -12,6 +13,8 @@ import {
   parseBrowserExtensionImport,
   parseBrowserExtensionImportValue,
   readPendingBrowserExtensionImport,
+  readPendingBrowserExtensionImportOwner,
+  writePendingBrowserExtensionImportOwner,
   type BrowserExtensionImportBrowser,
   type BrowserExtensionImportStorage,
 } from './browserExtensionImport';
@@ -360,6 +363,27 @@ describe('browser extension import protocol', () => {
 
     expect(readPendingBrowserExtensionImport(storage, now)?.nonce)
       .toBe('nonce_B_123456789012345678');
+  });
+
+  it('keeps an owner binding scoped to its exact pending intent', () => {
+    const now = Date.now();
+    const storage = new MemoryStorage();
+    const intent = {
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_owner_123',
+      nonce: 'nonce_A_123456789012345678',
+      text: 'owner',
+      createdAt: now,
+      mode: 'silent' as const,
+    };
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify(intent));
+    writePendingBrowserExtensionImportOwner(storage, intent, 'owner-a');
+
+    expect(readPendingBrowserExtensionImportOwner(storage, intent)).toBe('owner-a');
+    clearPendingBrowserExtensionImport(storage, intent.id, 'nonce_B_123456789012345678');
+    expect(storage.getItem(BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY)).not.toBeNull();
+    clearPendingBrowserExtensionImport(storage, intent.id, intent.nonce);
+    expect(storage.getItem(BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY)).toBeNull();
   });
 
   it('does not clear the matching intent merely because its timestamp is stale', () => {

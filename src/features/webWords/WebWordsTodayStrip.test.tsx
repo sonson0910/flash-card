@@ -7,8 +7,8 @@ import { STRIP_PREVIEW_COUNT, WebWordsTodayStripView } from './WebWordsTodayStri
 i18n.load('en', {});
 i18n.activate('en');
 
-const render = (previewCount: number) =>
-  renderToStaticMarkup(<I18nProvider i18n={i18n}><WebWordsTodayStripView previewCount={previewCount} /></I18nProvider>);
+const render = (previewCount: number, isAtCap = false) =>
+  renderToStaticMarkup(<I18nProvider i18n={i18n}><WebWordsTodayStripView previewCount={previewCount} isAtCap={isAtCap} /></I18nProvider>);
 
 describe('WebWordsTodayStripView', () => {
   it('renders nothing when there is nothing to show, adding no layout at all', () => {
@@ -26,8 +26,13 @@ describe('WebWordsTodayStripView', () => {
   });
 
   it('shows a "N+" count instead of an exact number once the bounded page is full, since a fuller count was never fetched', () => {
-    const html = render(STRIP_PREVIEW_COUNT);
+    const html = render(STRIP_PREVIEW_COUNT, true);
     expect(html).toContain(`${STRIP_PREVIEW_COUNT}+ words saved from the web`);
     expect(html).not.toContain(`${STRIP_PREVIEW_COUNT} words saved`);
+  });
+
+  it('uses the bounded wording when pair filtering leaves fewer matches than the raw request cap', () => {
+    expect(render(2, true)).toContain('2+ words saved from the web');
+    expect(render(2, true)).not.toContain('2 words saved from the web');
   });
 });

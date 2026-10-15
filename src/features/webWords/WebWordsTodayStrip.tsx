@@ -6,11 +6,8 @@ import { STRIP_PREVIEW_COUNT, useWebWordsPreviewCount } from './useWebWordsPrevi
 export { STRIP_PREVIEW_COUNT };
 
 /** Pure rendering half, split out from the data-fetching wrapper below purely so it is testable with `renderToStaticMarkup` (no live effect needed to exercise it). */
-export function WebWordsTodayStripView({ previewCount }: { readonly previewCount: number }) {
+export function WebWordsTodayStripView({ previewCount, isAtCap }: { readonly previewCount: number; readonly isAtCap: boolean }) {
   if (previewCount === 0) return null;
-  // The strip requests at most STRIP_PREVIEW_COUNT documents (no lookahead read), so hitting that
-  // exact number never proves there are no more; say "N+" instead of implying an exact total.
-  const isAtCap = previewCount >= STRIP_PREVIEW_COUNT;
 
   return (
     <aside className="liquid-control crystal-chamfer-sm flex min-h-11 flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--sf-border)] px-4 py-3">
@@ -38,12 +35,12 @@ export function WebWordsTodayStripView({ previewCount }: { readonly previewCount
 }
 
 /**
- * The workspace supplies the active owner and target language. It is lazy-loaded
+ * The workspace supplies the active owner and language pair. It is lazy-loaded
  * and asks for a bounded 5-card page with `detectHasNext: false` (no lookahead
  * document), so it never pages beyond that first read.
  */
-export function WebWordsTodayStrip({ ownerId, targetLanguage }: { readonly ownerId: string | null; readonly targetLanguage: string | null }) {
-  const previewCount = useWebWordsPreviewCount(ownerId, targetLanguage);
+export function WebWordsTodayStrip({ ownerId, targetLanguage, translationLanguage }: { readonly ownerId: string | null; readonly targetLanguage: string | null; readonly translationLanguage: string | null }) {
+  const { count: previewCount, isAtCap } = useWebWordsPreviewCount(ownerId, targetLanguage, translationLanguage);
 
-  return <WebWordsTodayStripView previewCount={previewCount} />;
+  return <WebWordsTodayStripView previewCount={previewCount} isAtCap={isAtCap} />;
 }

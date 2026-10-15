@@ -32,6 +32,12 @@ msgid "course.action.reopen"
 msgstr "Reopen course"
 
 #. js-lingui-explicit-id
+#: src/app/AppRuntime.tsx:533
+#: src/components/shell/CourseSwitcherControl.tsx:112
+msgid "course.action.retry"
+msgstr "Retry"
+
+#. js-lingui-explicit-id
 #: src/components/shell/CourseSwitcherControl.tsx:77
 msgid "course.create.cancel"
 msgstr "Cancel"
@@ -57,36 +63,59 @@ msgid "course.create.target-label"
 msgstr "Learn"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:141
+#: src/components/shell/CourseSwitcherControl.tsx:147
 msgid "course.error.generic"
 msgstr "That course action did not go through. Please try again."
 
 #. js-lingui-explicit-id
-#: src/features/courses/CourseGoalsPanel.tsx:62
-#: src/features/onboarding/OnboardingJourney.tsx:175
+#: src/app/AppRuntime.tsx:532
+#: src/components/shell/CourseSwitcherControl.tsx:110
+msgid "course.error.read"
+msgstr "Courses could not be loaded."
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:54
+#: src/features/courses/CourseGoalsPanel.tsx:97
+#: src/features/onboarding/OnboardingJourney.tsx:239
 msgid "course.goal.add.date-label"
 msgstr "Exam or target date (optional)"
 
 #. js-lingui-explicit-id
-#: src/features/courses/CourseGoalsPanel.tsx:53
+#: src/features/courses/CourseGoalsPanel.tsx:88
 msgid "course.goal.add.kind-label"
 msgstr "Goal"
 
 #. js-lingui-explicit-id
-#: src/features/courses/CourseGoalsPanel.tsx:58
-#: src/features/onboarding/OnboardingJourney.tsx:172
+#: src/features/courses/CourseGoalsPanel.tsx:50
+#: src/features/courses/CourseGoalsPanel.tsx:93
+#: src/features/onboarding/OnboardingJourney.tsx:236
 msgid "course.goal.add.level-label"
 msgstr "Level or target (optional)"
 
 #. js-lingui-explicit-id
-#: src/features/courses/CourseGoalsPanel.tsx:67
+#: src/features/courses/CourseGoalsPanel.tsx:102
 msgid "course.goal.add.submit"
 msgstr "Add goal"
 
 #. js-lingui-explicit-id
-#: src/features/courses/CourseGoalsPanel.tsx:26
+#: src/features/courses/CourseGoalsPanel.tsx:31
 msgid "course.goal.completed"
 msgstr "(completed)"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:35
+msgid "course.goal.edit"
+msgstr "Edit goal"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:59
+msgid "course.goal.edit.cancel"
+msgstr "Cancel"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:60
+msgid "course.goal.edit.save"
+msgstr "Save goal"
 
 #. js-lingui-explicit-id
 #: src/features/courses/courseGoalCatalog.ts:16
@@ -195,37 +224,37 @@ msgid "course.goal.level-hint.topik"
 msgstr "Target level, e.g. TOPIK II"
 
 #. js-lingui-explicit-id
-#: src/features/courses/CourseGoalsPanel.tsx:24
+#: src/features/courses/CourseGoalsPanel.tsx:29
 msgid "course.goal.no-detail"
 msgstr "No level or date set"
 
 #. js-lingui-explicit-id
-#: src/features/courses/CourseGoalsPanel.tsx:30
+#: src/features/courses/CourseGoalsPanel.tsx:37
 msgid "course.goal.pause"
 msgstr "Pause goal"
 
 #. js-lingui-explicit-id
-#: src/features/courses/CourseGoalsPanel.tsx:25
+#: src/features/courses/CourseGoalsPanel.tsx:30
 msgid "course.goal.paused"
 msgstr "(paused)"
 
 #. js-lingui-explicit-id
-#: src/features/courses/CourseGoalsPanel.tsx:34
+#: src/features/courses/CourseGoalsPanel.tsx:41
 msgid "course.goal.remove"
 msgstr "Remove goal"
 
 #. js-lingui-explicit-id
-#: src/features/courses/CourseGoalsPanel.tsx:30
+#: src/features/courses/CourseGoalsPanel.tsx:37
 msgid "course.goal.resume"
 msgstr "Resume goal"
 
 #. js-lingui-explicit-id
-#: src/features/courses/CourseGoalsPanel.tsx:76
+#: src/features/courses/CourseGoalsPanel.tsx:111
 msgid "course.goals.back"
 msgstr "Back to courses"
 
 #. js-lingui-explicit-id
-#: src/features/courses/CourseGoalsPanel.tsx:78
+#: src/features/courses/CourseGoalsPanel.tsx:113
 msgid "course.goals.empty"
 msgstr "No goals yet. Studying without one is fine too."
 
@@ -256,6 +285,11 @@ msgid "course.language.zh"
 msgstr "Chinese"
 
 #. js-lingui-explicit-id
+#: src/app/AppRuntime.tsx:535
+msgid "course.loading"
+msgstr "Preparing your courses…"
+
+#. js-lingui-explicit-id
 #: src/components/shell/CourseSwitcherControl.tsx:38
 msgid "course.status.active"
 msgstr "Active course"
@@ -266,195 +300,191 @@ msgid "course.status.archived"
 msgstr "Archived"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:157
+#: src/components/shell/CourseSwitcherControl.tsx:163
 msgid "course.switcher.add"
 msgstr "Add a language"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:138
+#: src/components/shell/CourseSwitcherControl.tsx:144
 msgid "course.switcher.close"
 msgstr "Close"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:134
+#: src/components/shell/CourseSwitcherControl.tsx:140
 msgid "course.switcher.dialog-label"
 msgstr "Courses"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:131
+#: src/components/shell/CourseSwitcherControl.tsx:137
 msgid "course.switcher.no-active"
 msgstr "Choose a course"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:126
+#: src/components/shell/CourseSwitcherControl.tsx:132
 msgid "course.switcher.switched"
 msgstr "Switched to {language}"
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherControl.tsx:137
+#: src/components/shell/CourseSwitcherControl.tsx:143
 msgid "course.switcher.title"
 msgstr "Your courses"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:211
+#: src/app/AppRuntime.tsx:239
 msgid "extension.import.course-mismatch-confirm"
 msgstr "This word was saved for a different language than your active course. Switch to (or create) the matching course to save it?"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:389
-#: src/components/AppOverlays.tsx:406
-#: src/components/AppOverlays.tsx:532
+#: src/components/AppOverlays.tsx:405
+#: src/components/AppOverlays.tsx:422
+#: src/components/AppOverlays.tsx:548
 msgid "flashcard.ai-disclosure"
 msgstr "AI-generated content may be incorrect. Please check the meaning."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:214
+#: src/features/onboarding/OnboardingJourney.tsx:278
 msgid "onboarding.aha.create"
 msgstr "Add 5 starter cards"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:219
+#: src/features/onboarding/OnboardingJourney.tsx:283
 msgid "onboarding.aha.error"
 msgstr "Something went wrong adding cards. You can add them later from the library."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:225
+#: src/features/onboarding/OnboardingJourney.tsx:289
 msgid "onboarding.aha.none-added"
 msgstr "No cards were added."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:217
+#: src/features/onboarding/OnboardingJourney.tsx:281
 msgid "onboarding.aha.pending"
 msgstr "Adding your cards…"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:233
+#: src/features/onboarding/OnboardingJourney.tsx:297
 msgid "onboarding.aha.quota-note"
 msgstr "Your monthly Free card allowance is almost used up, so {count} card(s) were not added."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:125
-#: src/features/onboarding/OnboardingJourney.tsx:215
+#: src/features/onboarding/OnboardingJourney.tsx:178
+#: src/features/onboarding/OnboardingJourney.tsx:279
 msgid "onboarding.aha.skip"
 msgstr "Skip for now"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:213
+#: src/features/onboarding/OnboardingJourney.tsx:277
 msgid "onboarding.aha.subtitle"
 msgstr "Five common words to get you started."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:224
+#: src/features/onboarding/OnboardingJourney.tsx:288
 msgid "onboarding.aha.success"
 msgstr "Added {count} cards to your library."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:211
+#: src/features/onboarding/OnboardingJourney.tsx:275
 msgid "onboarding.aha.title"
 msgstr "Let's add your first cards"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:159
-#: src/features/onboarding/OnboardingJourney.tsx:186
-#: src/features/onboarding/OnboardingJourney.tsx:204
-#: src/features/onboarding/OnboardingJourney.tsx:242
+#: src/features/onboarding/OnboardingJourney.tsx:212
+#: src/features/onboarding/OnboardingJourney.tsx:250
+#: src/features/onboarding/OnboardingJourney.tsx:268
+#: src/features/onboarding/OnboardingJourney.tsx:307
 msgid "onboarding.back"
 msgstr "Back"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:139
-#: src/features/onboarding/OnboardingJourney.tsx:160
-#: src/features/onboarding/OnboardingJourney.tsx:187
-#: src/features/onboarding/OnboardingJourney.tsx:205
-#: src/features/onboarding/OnboardingJourney.tsx:220
-#: src/features/onboarding/OnboardingJourney.tsx:234
+#: src/features/onboarding/OnboardingJourney.tsx:192
+#: src/features/onboarding/OnboardingJourney.tsx:213
+#: src/features/onboarding/OnboardingJourney.tsx:251
+#: src/features/onboarding/OnboardingJourney.tsx:269
+#: src/features/onboarding/OnboardingJourney.tsx:284
+#: src/features/onboarding/OnboardingJourney.tsx:298
 msgid "onboarding.continue"
 msgstr "Continue"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:243
+#: src/features/onboarding/OnboardingJourney.tsx:308
 msgid "onboarding.finish"
 msgstr "Start learning"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:168
+#: src/features/onboarding/OnboardingJourney.tsx:223
 msgid "onboarding.goal.none"
 msgstr "No specific goal yet"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:166
+#: src/features/onboarding/OnboardingJourney.tsx:219
+#: src/features/onboarding/OnboardingJourney.tsx:223
 msgid "onboarding.goal.subtitle"
 msgstr "Optional. You can add or change this later in the course switcher."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:165
+#: src/features/onboarding/OnboardingJourney.tsx:218
 msgid "onboarding.goal.title"
 msgstr "Have an exam or goal in mind?"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:130
+#: src/features/onboarding/OnboardingJourney.tsx:183
 msgid "onboarding.language.subtitle"
 msgstr "This sets the app's interface and the language your explanations will be written in."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:129
+#: src/features/onboarding/OnboardingJourney.tsx:182
 msgid "onboarding.language.title"
 msgstr "Choose your language"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:198
+#: src/features/onboarding/OnboardingJourney.tsx:262
 msgid "onboarding.pace.option"
 msgstr "{count} cards / day"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:194
+#: src/features/onboarding/OnboardingJourney.tsx:258
 msgid "onboarding.pace.title"
 msgstr "How many cards a day?"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:240
-msgid "onboarding.reminder.not-ready"
-msgstr "Reminders aren't turned on yet. When they are, you'll be able to choose the days and time here and in Settings."
+#: src/features/onboarding/OnboardingJourney.tsx:304
+msgid "onboarding.reminder.description"
+msgstr "Choose when SonFlash can remind you to review."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:239
+#: src/features/onboarding/OnboardingJourney.tsx:303
 msgid "onboarding.reminder.title"
 msgstr "Daily reminders"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:143
+#: src/features/onboarding/OnboardingJourney.tsx:196
 msgid "onboarding.target.title"
 msgstr "What are you learning?"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:119
+#: src/features/onboarding/OnboardingJourney.tsx:172
 msgid "onboarding.title"
 msgstr "Set up your course"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:259
+#: src/app/app-runtime-shared.ts:81
 msgid "rewards.reveal.level.frame"
 msgstr "Crimson Wing frame"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:261
+#: src/app/app-runtime-shared.ts:83
 msgid "rewards.reveal.level.hint"
 msgstr "Hint tokens · limit 3"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:260
+#: src/app/app-runtime-shared.ts:82
 msgid "rewards.reveal.level.title"
 msgstr "Word Collector title"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:251
+#: src/app/app-runtime-shared.ts:56
 msgid "rewards.reveal.streak.badge"
 msgstr "Web Wanderer"
-
-#. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:252
-msgid "rewards.reveal.streak.freeze"
-msgstr "Streak freeze · limit 1"
 
 #. js-lingui-explicit-id
 #: src/components/shell/LibraryManagementMenu.tsx:245
@@ -462,17 +492,17 @@ msgid "rewards.title.word-collector"
 msgstr "Word Collector"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:179
+#: src/features/onboarding/OnboardingJourney.tsx:243
 msgid "settings.course.script"
 msgstr "Chinese script"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:181
+#: src/features/onboarding/OnboardingJourney.tsx:245
 msgid "settings.course.script.simplified"
 msgstr "Simplified"
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:182
+#: src/features/onboarding/OnboardingJourney.tsx:246
 msgid "settings.course.script.traditional"
 msgstr "Traditional"
 
@@ -487,7 +517,8 @@ msgid "shell.brand.mark"
 msgstr "S"
 
 #. js-lingui-explicit-id
-#: src/app/use-library-mutation-feedback.ts:47
+#: src/app/use-library-mutation-feedback.ts:62
+#: src/app/use-library-mutation-feedback.ts:96
 msgid "shell.card.delete-failed"
 msgstr "The card could not be deleted. Please try again."
 
@@ -685,7 +716,7 @@ msgid "shell.language.open"
 msgstr "Choose language"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:513
+#: src/app/AppRuntime.tsx:522
 msgid "shell.learning-workspace"
 msgstr "Learning workspace"
 
@@ -701,17 +732,17 @@ msgid "shell.level.short"
 msgstr "Lv {level}"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:118
+#: src/features/library/libraryViewModel.ts:119
 msgid "shell.library-count.cached-cloud"
 msgstr "{cached, number} cached / {cloud, number} cloud"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:121
+#: src/features/library/libraryViewModel.ts:122
 msgid "shell.library-count.cards"
 msgstr "{count, plural, one {# card} other {# cards}}"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:119
+#: src/features/library/libraryViewModel.ts:120
 msgid "shell.library-count.cloud-paused"
 msgstr "Cloud paused"
 
@@ -742,27 +773,27 @@ msgid "shell.loading.library"
 msgstr "Loading library"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:65
+#: src/app/AppViewStage.tsx:75
 msgid "shell.loading.paths"
 msgstr "Preparing learning paths…"
 
 #. js-lingui-explicit-id
-#: src/app/AppDeferredViews.tsx:50
+#: src/app/AppDeferredViews.tsx:52
 msgid "shell.loading.practice"
 msgstr "Loading practice"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:79
+#: src/app/AppViewStage.tsx:89
 msgid "shell.loading.progress"
 msgstr "Preparing learning progress…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:80
+#: src/app/AppViewStage.tsx:90
 msgid "shell.loading.settings"
 msgstr "Preparing appearance settings…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:73
+#: src/app/AppViewStage.tsx:83
 msgid "shell.loading.today"
 msgstr "Preparing today’s learning plan…"
 
@@ -823,42 +854,39 @@ msgstr "Terms"
 
 #. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:67
-#: src/components/shell/FloatingMobileNav.tsx:18
+#: src/components/shell/FloatingMobileNav.tsx:15
 msgid "shell.nav.collection"
 msgstr "Collection"
 
 #. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:66
 #: src/components/shell/DesktopNavigation.tsx:66
-#: src/components/shell/FloatingMobileNav.tsx:17
-#: src/components/shell/FloatingMobileNav.tsx:23
+#: src/components/shell/FloatingMobileNav.tsx:19
 msgid "shell.nav.paths"
 msgstr "Paths"
 
 #. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:68
 #: src/components/shell/DesktopNavigation.tsx:68
-#: src/components/shell/FloatingMobileNav.tsx:19
-#: src/components/shell/FloatingMobileNav.tsx:25
+#: src/components/shell/FloatingMobileNav.tsx:21
 msgid "shell.nav.progress"
 msgstr "Progress"
 
 #. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:65
 #: src/components/shell/DesktopNavigation.tsx:65
-#: src/components/shell/FloatingMobileNav.tsx:16
-#: src/components/shell/FloatingMobileNav.tsx:22
+#: src/components/shell/FloatingMobileNav.tsx:18
 msgid "shell.nav.today"
 msgstr "Today"
 
 #. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:67
-#: src/components/shell/FloatingMobileNav.tsx:24
+#: src/components/shell/FloatingMobileNav.tsx:16
 msgid "shell.nav.vocabulary"
 msgstr "Vocabulary"
 
 #. js-lingui-explicit-id
-#: src/components/shell/FloatingMobileNav.tsx:27
+#: src/components/shell/FloatingMobileNav.tsx:23
 msgid "shell.navigation.mobile"
 msgstr "Mobile navigation"
 
@@ -869,33 +897,32 @@ msgstr "Primary navigation"
 
 #. js-lingui-explicit-id
 #: src/app/AppDeferredViews.tsx:22
-#: src/app/AppRuntime.tsx:565
-#: src/app/AppRuntime.tsx:578
+#: src/app/AppRuntime.tsx:79
 msgid "shell.opening-dialog"
 msgstr "Opening dialog"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:311
+#: src/components/AppOverlays.tsx:320
 msgid "shell.practice-menu.close"
 msgstr "Close practice menu"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:309
+#: src/components/AppOverlays.tsx:318
 msgid "shell.practice-menu.description"
 msgstr "Choose a different way to practice with words from your library."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:307
+#: src/components/AppOverlays.tsx:316
 msgid "shell.practice-menu.kicker"
 msgstr "Practice"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:597
+#: src/components/AppOverlays.tsx:613
 msgid "shell.practice-menu.preparing"
 msgstr "Preparing…"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:308
+#: src/components/AppOverlays.tsx:317
 msgid "shell.practice-menu.title"
 msgstr "Choose a practice mode"
 
@@ -911,280 +938,280 @@ msgid "shell.runtime-error.retry"
 msgstr "Retry workspace"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:430
+#: src/components/AppOverlays.tsx:446
 msgid "shell.share.add-count"
 msgstr "Add {count} cards"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:430
+#: src/components/AppOverlays.tsx:446
 msgid "shell.share.add-none"
 msgstr "No cards to add"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:430
+#: src/components/AppOverlays.tsx:446
 msgid "shell.share.adding"
 msgstr "Adding…"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:237
-#: src/components/AppOverlays.tsx:238
-#: src/components/AppOverlays.tsx:371
-#: src/components/AppOverlays.tsx:482
+#: src/components/AppOverlays.tsx:246
+#: src/components/AppOverlays.tsx:247
+#: src/components/AppOverlays.tsx:387
+#: src/components/AppOverlays.tsx:498
 msgid "shell.share.all-library"
 msgstr "All library cards"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:520
+#: src/components/AppOverlays.tsx:536
 msgid "shell.share.behavior"
 msgstr "Sharing behavior"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:427
+#: src/components/AppOverlays.tsx:443
 msgid "shell.share.cancel"
 msgstr "Cancel"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:370
-#: src/components/AppOverlays.tsx:491
+#: src/components/AppOverlays.tsx:386
+#: src/components/AppOverlays.tsx:507
 msgid "shell.share.cards"
 msgstr "Cards"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:377
+#: src/components/AppOverlays.tsx:393
 msgid "shell.share.cards-count"
 msgstr "{count, plural, one {# card} other {# cards}}"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:371
+#: src/components/AppOverlays.tsx:387
 msgid "shell.share.category"
 msgstr "Category"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:246
+#: src/components/AppOverlays.tsx:255
 msgid "shell.share.close"
 msgstr "Close share dialog"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:507
+#: src/components/AppOverlays.tsx:523
 msgid "shell.share.copied"
 msgstr "Copied"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:372
+#: src/components/AppOverlays.tsx:388
 msgid "shell.share.copy"
 msgstr "Your copy"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:372
+#: src/components/AppOverlays.tsx:388
 msgid "shell.share.copy-detail"
 msgstr "New library deck"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:513
+#: src/components/AppOverlays.tsx:529
 msgid "shell.share.copy-failed"
 msgstr "The link could not be copied. Copy it manually or try the copy button again."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:506
+#: src/components/AppOverlays.tsx:522
 msgid "shell.share.copy-link"
 msgstr "Copy share link"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:533
+#: src/components/AppOverlays.tsx:549
 msgid "shell.share.copy-private"
 msgstr "This link opens a preview. The recipient decides whether to add a separate copy."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:507
+#: src/components/AppOverlays.tsx:523
 msgid "shell.share.copy-short"
 msgstr "Copy"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:514
+#: src/components/AppOverlays.tsx:530
 msgid "shell.share.dismiss-copy-error"
 msgstr "Dismiss copy error"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:254
-#: src/components/AppOverlays.tsx:368
+#: src/components/AppOverlays.tsx:263
+#: src/components/AppOverlays.tsx:384
 msgid "shell.share.dismiss-error"
 msgstr "Dismiss share error"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:284
+#: src/components/AppOverlays.tsx:293
 msgid "shell.share.done"
 msgstr "Done"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:128
+#: src/components/AppOverlays.tsx:136
 msgid "shell.share.empty-description"
 msgstr "Close this dialog and try opening the share link again."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:128
+#: src/components/AppOverlays.tsx:136
 msgid "shell.share.empty-title"
 msgstr "No shared deck to show"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:407
-#: src/components/AppOverlays.tsx:527
+#: src/components/AppOverlays.tsx:423
+#: src/components/AppOverlays.tsx:543
 msgid "shell.share.expires-on"
 msgstr "Link expires on {date}"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:523
+#: src/components/AppOverlays.tsx:539
 msgid "shell.share.fact-edits"
 msgstr "Edits you make later are not pushed to copies already taken."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:522
+#: src/components/AppOverlays.tsx:538
 msgid "shell.share.fact-private"
 msgstr "Recipients get their own copy; your progress and review history stay private."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:524
+#: src/components/AppOverlays.tsx:540
 msgid "shell.share.fact-revoke"
 msgstr "You can revoke this link at any time."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:367
+#: src/components/AppOverlays.tsx:383
 msgid "shell.share.importing"
 msgstr "Adding {count} cards to your new deck…"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:119
+#: src/components/AppOverlays.tsx:127
 msgid "shell.share.incoming-created"
 msgstr "Shared on {date}"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:120
+#: src/components/AppOverlays.tsx:128
 msgid "shell.share.incoming-description"
 msgstr "Review this shared deck before deciding whether to add it."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:233
+#: src/components/AppOverlays.tsx:242
 msgid "shell.share.incoming-kicker"
 msgstr "Shared with you"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:404
+#: src/components/AppOverlays.tsx:420
 msgid "shell.share.incoming-safeguard"
 msgstr "Cards go into a new deck with the same name. Your existing cards and progress stay untouched."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:233
-#: src/components/AppOverlays.tsx:238
-#: src/components/AppOverlays.tsx:250
+#: src/components/AppOverlays.tsx:242
+#: src/components/AppOverlays.tsx:247
+#: src/components/AppOverlays.tsx:259
 msgid "shell.share.kicker"
 msgstr "Share deck"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:451
+#: src/components/AppOverlays.tsx:467
 msgid "shell.share.language-pair"
 msgstr "{target} → {native}"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:449
+#: src/components/AppOverlays.tsx:465
 msgid "shell.share.languages"
 msgstr "Languages"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:518
+#: src/components/AppOverlays.tsx:534
 msgid "shell.share.link-copied"
 msgstr "Link copied"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:505
+#: src/components/AppOverlays.tsx:521
 msgid "shell.share.link-input"
 msgstr "Vocabulary deck share link"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:502
+#: src/components/AppOverlays.tsx:518
 msgid "shell.share.link-label"
 msgstr "Share link"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:124
+#: src/components/AppOverlays.tsx:132
 msgid "shell.share.loading"
 msgstr "Preparing the shared deck…"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:555
+#: src/components/AppOverlays.tsx:571
 msgid "shell.share.manage"
 msgstr "Manage shared link"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:377
+#: src/components/AppOverlays.tsx:393
 msgid "shell.share.more-cards"
 msgstr "+{count} more"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:399
+#: src/components/AppOverlays.tsx:415
 msgid "shell.share.no-cards"
 msgstr "This shared deck has no cards to add."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:399
+#: src/components/AppOverlays.tsx:415
 msgid "shell.share.no-sample-preview"
 msgstr "A card preview is not available for this shared deck."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:388
+#: src/components/AppOverlays.tsx:404
 msgid "shell.share.no-translation"
 msgstr "Translation not available"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:243
+#: src/components/AppOverlays.tsx:252
 msgid "shell.share.outgoing-description"
 msgstr "Anyone with the link can preview this deck and copy it into their own library."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:238
+#: src/components/AppOverlays.tsx:247
 msgid "shell.share.outgoing-title"
 msgstr "Share “{title}”"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:530
+#: src/components/AppOverlays.tsx:546
 msgid "shell.share.privacy-warning"
 msgstr "Shared cards may include memory hooks and personal notes. Review them for private information before sharing."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:283
+#: src/components/AppOverlays.tsx:292
 msgid "shell.share.revoke"
 msgstr "Revoke link"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:283
+#: src/components/AppOverlays.tsx:292
 msgid "shell.share.revoking"
 msgstr "Revoking…"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:380
+#: src/components/AppOverlays.tsx:396
 msgid "shell.share.sample-vocabulary"
 msgstr "Sample vocabulary"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:451
+#: src/components/AppOverlays.tsx:467
 msgid "shell.share.target-unspecified"
 msgstr "Target language unspecified"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:451
+#: src/components/AppOverlays.tsx:467
 msgid "shell.share.translation-unspecified"
 msgstr "Translation language unspecified"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:498
+#: src/components/AppOverlays.tsx:514
 msgid "shell.share.truncation"
 msgstr "This link includes {shared} of {total} cards. Create smaller decks to share the rest."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:486
+#: src/components/AppOverlays.tsx:502
 msgid "shell.share.updating"
 msgstr "Updating this share link…"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:376
+#: src/components/AppOverlays.tsx:392
 msgid "shell.share.words-inside"
 msgstr "A few words inside"
 
@@ -1256,7 +1283,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Live cloud updates are unavailable. Retry when your connection improves."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:431
+#: src/app/AppRuntime.tsx:445
 msgid "shell.sync.retry-failed"
 msgstr "Sync could not finish. Your changes remain on this device. Try again."
 
@@ -1322,7 +1349,7 @@ msgid "shell.undo.action"
 msgstr "Undo"
 
 #. js-lingui-explicit-id
-#: src/app/use-library-mutation-feedback.ts:31
+#: src/app/use-library-mutation-feedback.ts:78
 msgid "shell.undo.card-deleted"
 msgstr "Card deleted."
 
@@ -1332,8 +1359,8 @@ msgid "shell.undo.dismiss"
 msgstr "Dismiss notification"
 
 #. js-lingui-explicit-id
-#: src/app/use-library-mutation-feedback.ts:36
-#: src/app/use-library-mutation-feedback.ts:40
+#: src/app/use-library-mutation-feedback.ts:83
+#: src/app/use-library-mutation-feedback.ts:87
 msgid "shell.undo.restore-failed"
 msgstr "This card could not be restored. Please check your library and try again."
 

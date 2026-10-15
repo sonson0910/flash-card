@@ -7,6 +7,7 @@ import { triggerConfetti } from '../../lib/confetti';
 import { triggerHaptic } from '../../lib/haptics';
 import { playRewardSound } from '../../lib/interactionSounds';
 import type { CardData } from '../../types/card';
+import { useFocusModePreference } from '../settings/focus-mode-preference';
 import { createWordMatchRound } from './practiceModel';
 
 interface WordMatchViewProps {
@@ -31,6 +32,8 @@ interface MatchTile {
 
 const GAME_DURATION_SECONDS = 60;
 const PAIRS_PER_ROUND = 6;
+const retryActionClass = 'mt-3 min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
+const secondaryActionClass = 'flex min-h-12 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-6 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
 
 function shuffleArray<T>(items: T[]): T[] {
   const arr = [...items];
@@ -43,6 +46,7 @@ function shuffleArray<T>(items: T[]): T[] {
 
 export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMatchViewProps) {
   const { _, i18n } = useLingui();
+  const { focusModeEnabled } = useFocusModePreference();
   const [roundKey, setRoundKey] = useState(0);
   const [selectedTile, setSelectedTile] = useState<MatchTile | null>(null);
   const [matchedIds, setMatchedIds] = useState<Set<string>>(new Set());
@@ -123,6 +127,8 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
       if (completion) {
         setAwardedXp(completion.awardedXp);
         setCompletionStatus('confirmed');
+        playRewardSound();
+        triggerConfetti(0.5, 0.5);
       } else {
         setCompletionStatus('failed');
       }
@@ -178,8 +184,6 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
         // Check Victory
         if (nextMatched.size === tiles.length) {
           setIsVictory(true);
-          playRewardSound();
-          triggerConfetti(0.5, 0.5);
           if (!completionReportedRef.current) {
             completionReportedRef.current = true;
             const pairs = [...matchedCardIdsRef.current].flatMap(cardId => {
@@ -267,6 +271,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
         <button
           type="button"
           onClick={onClose}
+          disabled={completionStatus === 'verifying'}
           className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
           aria-label={_(msg({ id: 'practice.match.close', message: 'Close word match' }))}
         >
@@ -276,6 +281,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
         <p className="hidden min-w-0 flex-1 truncate font-display text-xs font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)] sm:block">
           <Trans id="practice.match.title" message="Word match · 60 seconds" />
         </p>
+        {!focusModeEnabled && matchesCount >= 2 && <span data-practice-combo={matchesCount} className="rounded-full border border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] px-3 py-1.5 text-xs font-black text-[var(--sf-brand-text)]"><Trans id="study.combo" message="Combo ×{count}" values={{ count: matchesCount }} /></span>}
         <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--sf-brand)_28%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,var(--sf-surface))] px-3 py-2 text-xs font-black text-[var(--sf-brand-text)]">
           <Flame size={15} className="text-amber-500" />
           <span>{matchesCount} / {pairCount}</span>
@@ -336,7 +342,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
               <button
                 type="button"
                 onClick={() => void submitCompletion(completionPairsRef.current)}
-                className="mt-3 min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+                className={retryActionClass}
               >
                 <Trans id="practice.match.retry-verification" message="Retry verification" />
               </button>
@@ -355,7 +361,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
               <button
                 type="button"
                 onClick={() => void restartGame()}
-                className="mt-3 min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+                className={retryActionClass}
               >
                 <Trans id="practice.match.retry-new-round" message="Retry new round" />
               </button>
@@ -366,7 +372,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
             <button
               type="button"
               onClick={() => void restartGame()}
-              disabled={isStartingNewRound}
+              disabled={isStartingNewRound || completionStatus === 'verifying'}
               className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-6 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] disabled:cursor-wait disabled:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
             >
               <RotateCcw size={16} />
@@ -378,7 +384,8 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
             <button
               type="button"
               onClick={onClose}
-              className="flex min-h-12 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-6 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+              disabled={completionStatus === 'verifying'}
+              className={secondaryActionClass}
             >
               <span><Trans id="practice.match.back" message="Back" /></span>
             </button>
@@ -408,7 +415,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
             <button
               type="button"
               onClick={onClose}
-              className="flex min-h-12 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-6 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+              className={secondaryActionClass}
             >
               <span><Trans id="practice.match.back" message="Back" /></span>
             </button>

@@ -156,6 +156,8 @@ describe('CatalogScreen', () => {
     expect(html).toContain('In progress');
     expect(html).toContain('Locked');
     expect(html).toContain('Foundation · A1–A2 · Selected');
+    expect(html).toContain('relative flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2');
+    expect(html).toContain('min-w-0 break-words text-xl font-black tracking-tight');
     expect(html).toContain('a careful study of something');
     expect(html).toContain('Báo cáo cung cấp phân tích');
     expect(html).toContain('detailed analysis');
@@ -201,6 +203,22 @@ describe('CatalogScreen', () => {
     expect(continueButton).toBeDefined();
     (continueButton.props?.onClick as () => void)();
     expect(actions.openNextUnitPreview).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the hero Continue CTA visible when descriptor units are ready without controller state', () => {
+    const html = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel,
+      pathUnits: [{
+        unit: { unitId: 'unit-1', trackId: 'ielts', tier: 'advanced', ordinal: 1, titles: [{ language: 'en', text: 'Start here' }], total: 2, started: 0, mastered: 0, preview: [],
+      },
+      introduced: 0,
+      mastered: 0,
+      status: 'not-started',
+      }],
+    }} actions={actions} />);
+
+    expect(html).toContain('class="catalog-feature-continue');
+    expect(html).toContain('>Continue</button>');
   });
 
   it('requires an armed confirmation before the selected unit can continue', () => {

@@ -3,7 +3,9 @@ import { applyCardPatchWithConflictRecovery, deleteCardWithConflictRecovery } fr
 import {
   applyReviewViaCallable,
   applyReviewWithConflictRecovery,
+  stableReviewCommand,
   type ReviewApplyResult,
+  type ReviewCommand,
 } from '../../lib/cardReviewRepository';
 import { applySuccessfulPatchMetadata } from '../../lib/cardCreation';
 import { selectMutableCardPatch } from '../../lib/cardMutationProtocol';
@@ -46,6 +48,7 @@ import type {
 } from './learningPersistencePort';
 import type { LearningStatePersistencePort } from './useLearningState';
 import type { CardData } from '../../types/card';
+import type { ReviewRating } from '../../lib/reviewScheduler';
 
 const BULK_PATCHABLE_FIELDS = ['customDeck', 'bookmarked'] as const;
 
@@ -53,7 +56,7 @@ const resultFor = (
   mutation: LearningStateMutation,
   publication: LearningStatePublication = mutation.publication,
   reviewFinality?: LearningStateMutationResult['reviewFinality'],
-  extras: Pick<LearningStateMutationResult, 'deleteReceipt' | 'restoreFinality' | 'restoreConflictReason'> = {},
+  extras: Pick<LearningStateMutationResult, 'deleteReceipt' | 'restoreFinality' | 'restoreConflictReason' | 'reviewConflictTerminal' | 'xpAwarded' | 'reviewRating' | 'reviewedAt'> = {},
 ): LearningStateMutationResult => ({
   ownerKey: mutation.ownerKey,
   operationId: mutation.operationId,
@@ -63,6 +66,7 @@ const resultFor = (
 });
 
 const MAX_RETAINED_RESTORE_STATS_OPERATIONS = 500;
+const MAX_RETAINED_REVIEW_COMMANDS = 500;
 
 function cacheCloudBackoff(ownerId: string): void {
   writeLocalValue(cloudBackoffCacheKey(ownerId), String(Date.now() + 5 * 60 * 1000));
@@ -100,6 +104,38 @@ const isValidReviewEntry = (value: unknown): value is NonNullable<CardData['revi
 const reviewFieldsFromCard = (card: Extract<ReviewApplyResult, { applied: true }>['card']) =>
   Object.fromEntries(REVIEW_FIELDS.map(field => [field, card[field]]));
 
+const cardReviewCount = (card: CardData): number => Math.max(
+  card.reviews ?? 0,
+  card.reviewHistory?.length ?? 0,
+);
+
+const cardLastReviewAt = (card: CardData): string | undefined => {
+  const historyReview = card.reviewHistory?.at(-1)?.reviewedAt;
+  const fsrsReview = card.fsrs?.lastReview;
+  if (!historyReview) return fsrsReview;
+  if (!fsrsReview) return historyReview;
+  return Date.parse(fsrsReview) > Date.parse(historyReview) ? fsrsReview : historyReview;
+};
+
+const duplicateReceiptIsOlderThanSource = (
+  source: CardData | undefined,
+  receiptCard: CardData,
+): boolean => {
+  if (!source) return false;
+  if (source.libraryEpoch !== undefined && receiptCard.libraryEpoch !== undefined
+    && source.libraryEpoch !== receiptCard.libraryEpoch) return source.libraryEpoch > receiptCard.libraryEpoch;
+  if (source.revision !== undefined && receiptCard.revision !== undefined
+    && source.libraryEpoch === receiptCard.libraryEpoch
+    && source.revision > receiptCard.revision) return true;
+  if (cardReviewCount(source) > cardReviewCount(receiptCard)) return true;
+  const sourceReviewAt = cardLastReviewAt(source);
+  const receiptReviewAt = cardLastReviewAt(receiptCard);
+  if (!sourceReviewAt || !receiptReviewAt) return false;
+  const sourceTime = Date.parse(sourceReviewAt);
+  const receiptTime = Date.parse(receiptReviewAt);
+  return Number.isFinite(sourceTime) && Number.isFinite(receiptTime) && sourceTime > receiptTime;
+};
+
 const restoreConflictReasonFor = (reason: CardMutationPreconditionError['reason']): LearningRestoreConflictReason => {
   if (reason === 'deleted') return 'deleted-again';
   if (reason === 'identity-conflict') return 'unsafe-existing';
@@ -110,7 +146,30 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
   const latestRef = useRef(options);
   latestRef.current = options;
   const restoreStatsOperationsRef = useRef(new Set<string>());
+  const reviewCommandsRef = useRef(new Map<string, ReviewCommand>());
+  const unresolvedReviewCommandKeysRef = useRef(new Set<string>());
+  const reviewCommandOwnerRef = useRef(options.ownerId);
+  if (reviewCommandOwnerRef.current !== options.ownerId) {
+    reviewCommandsRef.current.clear();
+    unresolvedReviewCommandKeysRef.current.clear();
+    reviewCommandOwnerRef.current = options.ownerId;
+  }
   const persistenceRef = useRef<LearningStatePersistencePort | null>(null);
+
+  const rememberReviewCommand = (key: string, command: ReviewCommand): ReviewCommand => {
+    const stored = stableReviewCommand(command);
+    if (!reviewCommandsRef.current.has(key) && reviewCommandsRef.current.size >= MAX_RETAINED_REVIEW_COMMANDS) {
+      const evictableKey = [...reviewCommandsRef.current.keys()]
+        .find(candidate => !unresolvedReviewCommandKeysRef.current.has(candidate));
+      if (!evictableKey) {
+        throw new Error('Review retry capacity is full. Try again after an existing review settles.');
+      }
+      reviewCommandsRef.current.delete(evictableKey);
+    }
+    reviewCommandsRef.current.set(key, stored);
+    unresolvedReviewCommandKeysRef.current.add(key);
+    return stored;
+  };
 
   if (!persistenceRef.current) persistenceRef.current = {
     ownerId: () => latestRef.current.ownerId,
@@ -121,13 +180,22 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
       const source = 'cardId' in mutation ? current.findCard(mutation.cardId) : undefined;
 
       if (mutation.operation === 'patch' || mutation.operation === 'review') {
-        if (!source) throw new Error('The card is no longer available for this update.');
+        if (mutation.operation === 'patch' && !source) {
+          throw new Error('The card is no longer available for this update.');
+        }
         if (!ownerId || current.verifiedEpoch === null || !db || !isFirebaseConfigured) {
           throw new Error('Cloud library storage is not ready yet. Try again in a moment.');
         }
         const database = db;
         let publication: LearningStatePublication = mutation.publication;
         let reviewFinality: LearningStateMutationResult['reviewFinality'];
+        let xpAwarded: number | undefined;
+        let reviewRating: ReviewRating | undefined;
+        let reviewedAt: string | undefined;
+        let requestedReviewRating: ReviewRating | undefined;
+        let reviewCommandKey: string | undefined;
+        let reviewConflictTerminal = false;
+        let staleDuplicatePublication = false;
 
         try {
           let result: ReviewApplyResult | Awaited<ReturnType<typeof applyCardPatchIfCurrent>>;
@@ -136,9 +204,13 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
             const lastReview = isValidReviewEntry(lastReviewCandidate) ? lastReviewCandidate : undefined;
             if (!lastReview) {
               current.reportError('The review could not be saved because its history entry was invalid.');
-              return resultFor(mutation, { kind: 'patch', cardId: mutation.cardId, fields: {} }, 'conflict');
+              return resultFor(mutation, { kind: 'patch', cardId: mutation.cardId, fields: {} }, 'conflict', {
+                reviewConflictTerminal: true,
+              });
             }
-            result = await applyReviewWithConflictRecovery({
+            const commandKey = `${ownerId}\u0000${mutation.operationId}`;
+            reviewCommandKey = commandKey;
+            const initialCommand: ReviewCommand = {
               cardId: mutation.cardId,
               opId: mutation.operationId,
               baseRevision: mutation.baseRevision,
@@ -147,7 +219,17 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               reviewedAt: lastReview.reviewedAt,
               fields: mutation.fields,
               fieldMask: mutation.fieldMask,
-            }, command => applyReviewViaCallable(database, ownerId, command));
+            };
+            const command = reviewCommandsRef.current.get(commandKey)
+              ?? rememberReviewCommand(commandKey, initialCommand);
+            requestedReviewRating = command.rating;
+            reviewedAt = command.reviewedAt;
+            unresolvedReviewCommandKeysRef.current.add(commandKey);
+            result = await applyReviewWithConflictRecovery(command, nextCommand => applyReviewViaCallable(
+              database,
+              ownerId,
+              rememberReviewCommand(commandKey, nextCommand),
+            ));
           } else {
             result = await applyCardPatchWithConflictRecovery({
               cardId: mutation.cardId,
@@ -161,55 +243,97 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           if (result.applied) {
             const reviewResult = 'card' in result ? result : null;
             const patchResult = 'revision' in result ? result : null;
+            const publicationSource = latestRef.current.findCard(mutation.cardId) ?? source;
+            const staleDuplicate = Boolean(
+              reviewResult?.duplicate
+              && duplicateReceiptIsOlderThanSource(publicationSource, reviewResult.card),
+            );
+            staleDuplicatePublication = staleDuplicate;
+            const publicationCard = staleDuplicate ? publicationSource : reviewResult?.card;
             const authoritativeFields = reviewResult
-              ? reviewFieldsFromCard(reviewResult.card)
+              ? reviewFieldsFromCard(publicationCard ?? reviewResult.card)
               : selectMutableCardPatch(mutation.fields, mutation.fieldMask);
             const metadata = {
-              revision: reviewResult?.card.revision ?? patchResult?.revision ?? 0,
-              libraryEpoch: mutation.libraryEpoch,
-              updatedAt: reviewResult?.card.updatedAt ?? new Date().toISOString(),
+              revision: publicationCard?.revision ?? patchResult?.revision ?? 0,
+              libraryEpoch: publicationCard?.libraryEpoch ?? mutation.libraryEpoch,
+              updatedAt: publicationCard?.updatedAt ?? new Date().toISOString(),
             };
             const advanced = reviewResult
-              ? { ...source, ...authoritativeFields, ...metadata, schemaVersion: 2 as const, id: source.id }
-              : applySuccessfulPatchMetadata(source, mutation.fields, metadata, mutation.fieldMask);
+              ? {
+                  ...(publicationSource ?? reviewResult.card),
+                  ...authoritativeFields,
+                  ...metadata,
+                  schemaVersion: 2 as const,
+                  id: mutation.cardId,
+                }
+              : applySuccessfulPatchMetadata(source!, mutation.fields, metadata, mutation.fieldMask);
             if (mutation.operation === 'review' && reviewResult
               && (reviewResult.gamification || reviewResult.ceremonyEvents)
               && latestRef.current.ownerId === ownerId) {
               current.onReviewOutcome?.({
                 ...(reviewResult.gamification ? { gamification: reviewResult.gamification } : {}),
                 ...(reviewResult.ceremonyEvents ? { ceremonyEvents: reviewResult.ceremonyEvents } : {}),
-              }, mutation.operationId, source);
+              }, mutation.operationId, source ?? reviewResult.card);
             }
             publication = {
               kind: 'patch',
               cardId: mutation.cardId,
               fields: {
                 ...authoritativeFields,
-                ...(reviewResult ? { appliedReviewOperationIds: reviewResult.card.appliedReviewOperationIds } : {}),
+                ...(publicationCard?.appliedReviewOperationIds === undefined
+                  ? {}
+                  : { appliedReviewOperationIds: publicationCard.appliedReviewOperationIds }),
                 schemaVersion: advanced.schemaVersion,
                 revision: advanced.revision,
                 libraryEpoch: advanced.libraryEpoch,
                 updatedAt: advanced.updatedAt,
               },
             };
-            if (mutation.operation === 'review') reviewFinality = reviewResult?.duplicate ? 'conflict' : 'committed';
+            if (mutation.operation === 'review') {
+              // A duplicate is the same operation's committed server receipt.
+              reviewFinality = 'committed';
+              if (reviewResult) {
+                xpAwarded = reviewResult.xpAwarded;
+                // A duplicate receipt may return the card after later reviews.
+                // The command rating is the receipt's immutable operation intent.
+                reviewRating = requestedReviewRating;
+              }
+            }
           } else if (result.reason === 'stale-library-epoch' || result.reason === 'missing') {
             publication = { kind: 'delete', cardId: mutation.cardId };
-            if (mutation.operation === 'review') reviewFinality = 'conflict';
+            if (mutation.operation === 'review') {
+              reviewFinality = 'conflict';
+              reviewConflictTerminal = true;
+            }
             if (result.reason === 'stale-library-epoch') {
               const activeEpoch = await getLibraryEpoch(database, ownerId);
               current.acceptVerifiedEpoch(ownerId, activeEpoch);
             }
             current.reportError('This card is no longer available in your library.');
           } else {
-            if (mutation.operation === 'review') reviewFinality = 'conflict';
+            if (mutation.operation === 'review' && result.reason !== 'revision-conflict') {
+              reviewFinality = 'conflict';
+              reviewConflictTerminal = true;
+            }
             current.reportError(result.reason === 'future-library-epoch'
               ? 'Cloud library generation changed. Try again in a moment.'
               : 'The card changed again just now. Try again.');
-            throw new Error(`Card mutation rejected: ${result.reason}.`);
+            const rejection = new Error(`Card mutation rejected: ${result.reason}.`);
+            if (reviewConflictTerminal) {
+              (rejection as Error & { reviewConflictTerminal?: boolean }).reviewConflictTerminal = true;
+            }
+            throw rejection;
           }
         } catch (cause) {
+          if (mutation.operation === 'review' && reviewConflictTerminal) {
+            if (reviewCommandKey) unresolvedReviewCommandKeysRef.current.delete(reviewCommandKey);
+            if (cause && typeof cause === 'object') {
+              (cause as Error & { reviewConflictTerminal?: boolean }).reviewConflictTerminal = true;
+            }
+          }
           if (mutation.operation === 'review' && cause instanceof ProtectedFunctionError && !cause.retryable) {
+            if (reviewCommandKey) unresolvedReviewCommandKeysRef.current.delete(reviewCommandKey);
+            (cause as ProtectedFunctionError & { reviewConflictTerminal?: boolean }).reviewConflictTerminal = true;
             current.reportError('This review could not be saved. Refreshing from the cloud.');
             current.refreshCloud();
             throw cause;
@@ -231,26 +355,34 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
             bookmarked: Math.max(0, stats.bookmarked + (mutation.fields.bookmarked ? 1 : -1)),
           }));
         }
-        if (mutation.intent === 'review' && reviewFinality === 'committed') {
-          const previousDifficulty = source.difficulty && source.difficulty !== 'unrated'
-            ? source.difficulty
-            : 'unrated';
-          const difficulty = mutation.fields.difficulty ?? 'hard';
-          current.updateCloudStats(stats => previousDifficulty === difficulty
-            ? {
-                ...stats,
-                reviewed: (source.reviews ?? 0) > 0 ? stats.reviewed : stats.reviewed + 1,
-                due: source.nextReviewDate && isCardDue(source) ? Math.max(0, stats.due - 1) : stats.due,
-              }
-            : {
-                ...stats,
-                reviewed: (source.reviews ?? 0) > 0 ? stats.reviewed : stats.reviewed + 1,
-                [previousDifficulty]: Math.max(0, stats[previousDifficulty] - 1),
-                [difficulty]: stats[difficulty] + 1,
-                due: source.nextReviewDate && isCardDue(source) ? Math.max(0, stats.due - 1) : stats.due,
-              });
+        if (mutation.intent === 'review' && (reviewFinality === 'committed' || reviewConflictTerminal)) {
+          if (reviewCommandKey) unresolvedReviewCommandKeysRef.current.delete(reviewCommandKey);
+          if (reviewFinality === 'committed' && !staleDuplicatePublication && source) {
+            const previousDifficulty = source.difficulty && source.difficulty !== 'unrated'
+              ? source.difficulty
+              : 'unrated';
+            const difficulty = mutation.fields.difficulty ?? 'hard';
+            current.updateCloudStats(stats => previousDifficulty === difficulty
+              ? {
+                  ...stats,
+                  reviewed: (source.reviews ?? 0) > 0 ? stats.reviewed : stats.reviewed + 1,
+                  due: source.nextReviewDate && isCardDue(source) ? Math.max(0, stats.due - 1) : stats.due,
+                }
+              : {
+                  ...stats,
+                  reviewed: (source.reviews ?? 0) > 0 ? stats.reviewed : stats.reviewed + 1,
+                  [previousDifficulty]: Math.max(0, stats[previousDifficulty] - 1),
+                  [difficulty]: stats[difficulty] + 1,
+                  due: source.nextReviewDate && isCardDue(source) ? Math.max(0, stats.due - 1) : stats.due,
+                });
+          }
         }
-        return resultFor(mutation, publication, reviewFinality);
+        return resultFor(mutation, publication, reviewFinality, {
+          ...(reviewConflictTerminal ? { reviewConflictTerminal: true } : {}),
+          ...(xpAwarded === undefined ? {} : { xpAwarded }),
+          ...(reviewRating === undefined ? {} : { reviewRating }),
+          ...(reviewFinality === 'committed' && reviewedAt ? { reviewedAt } : {}),
+        });
       }
 
       if (mutation.operation === 'delete') {
@@ -423,11 +555,9 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           if (latestRef.current.ownerId === ownerId) {
             current.resetCloudPage();
             current.refreshCloud();
-            current.reportError(recovery.message);
           }
-          if (!recovery.clearLocalView) throw new Error(recovery.message, { cause });
-          if (latestRef.current.ownerId === ownerId) current.resetCloudState(false);
-          return resultFor(mutation);
+          if (recovery.clearLocalView && latestRef.current.ownerId === ownerId) current.resetCloudState(false);
+          throw new Error(recovery.message, { cause });
         } finally {
           current.setMutationPending(false);
         }

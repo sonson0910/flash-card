@@ -14,128 +14,127 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:73
+#: src/components/stats/AchievementsMatrix.tsx:74
 msgid "stats.achievements"
 msgstr "Achievements"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:126
+#: src/components/stats/ActivityHeatmap.tsx:129
 msgid "stats.active-days"
 msgstr "active days"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.activity-description"
 msgstr "XP from completed learning activity across your account."
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:146
-#: src/components/stats/ActivityHeatmap.tsx:146
+#: src/components/stats/ActivityHeatmap.tsx:150
 msgid "stats.activity-unavailable"
 msgstr "Activity unavailable before coverage began"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:73
+#: src/components/stats/AchievementsMatrix.tsx:74
 msgid "stats.back-to-progress"
 msgstr "Back to Progress"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:65
+#: src/components/stats/AchievementsMatrix.tsx:66
 msgid "stats.badge-state.in-progress"
 msgstr "In progress"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:65
+#: src/components/stats/AchievementsMatrix.tsx:66
 msgid "stats.badge-state.locked"
 msgstr "Not started yet"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:69
+#: src/components/stats/AchievementsMatrix.tsx:70
 msgid "stats.bloom-day"
 msgstr "Bright study day"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:69
+#: src/components/stats/AchievementsMatrix.tsx:70
 msgid "stats.bloom-day-description"
 msgstr "Gather 100 XP in one day of practice."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:67
+#: src/components/stats/AchievementsMatrix.tsx:68
 msgid "stats.blooming-recall"
 msgstr "Blooming recall"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:67
+#: src/components/stats/AchievementsMatrix.tsx:68
 msgid "stats.blooming-recall-description"
 msgstr "Help ten words settle into memory."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:71
+#: src/components/stats/AchievementsMatrix.tsx:72
 msgid "stats.bud-night-study"
 msgstr "Gentle night study"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:71
+#: src/components/stats/AchievementsMatrix.tsx:72
 msgid "stats.bud-night-study-description"
 msgstr "Return for five active study days."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:66
+#: src/components/stats/AchievementsMatrix.tsx:67
 msgid "stats.bud-routine"
 msgstr "Bud routine"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:66
+#: src/components/stats/AchievementsMatrix.tsx:67
 msgid "stats.bud-routine-description"
 msgstr "Give your study habit three active days."
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.cards"
 msgstr "cards"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.category"
 msgstr "Category"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.category-chart"
 msgstr "Category distribution chart"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.category-data"
 msgstr "Category distribution data"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.category-distribution"
 msgstr "Category distribution"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.current-state"
 msgstr "Current state"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.daily-xp"
 msgstr "Account-wide XP and consistency"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.daily-xp-chart"
 msgstr "Daily XP chart"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.daily-xp-data"
 msgstr "Daily XP data"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.date"
 msgstr "Date"
 
@@ -145,93 +144,102 @@ msgid "stats.days"
 msgstr "days"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:129
+#: src/components/stats/ActivityHeatmap.tsx:132
 msgid "stats.heatmap-legend"
 msgstr "Less to more study activity"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.heatmap-title"
 msgstr "Review activity"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:34
+#: src/components/stats/StatsCharts.tsx:51
+msgid "stats.inspect-day"
+msgstr "Inspect a day"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:65
+msgid "stats.learned"
+msgstr "Learned"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:50
 msgid "stats.learning"
 msgstr "Learning"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.learning-activity"
 msgstr "Learning activity"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:65
+#: src/components/stats/AchievementsMatrix.tsx:66
 msgid "stats.legend.label"
 msgstr "Badge status legend"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:130
+#: src/components/stats/ActivityHeatmap.tsx:133
 msgid "stats.less"
 msgstr "Less"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.library-breakdown"
 msgstr "Library breakdown"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:34
+#: src/components/stats/StatsCharts.tsx:50
 msgid "stats.mastered"
 msgstr "Mastered"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.memory-chart"
 msgstr "Memory strength chart"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.memory-data"
 msgstr "Memory strength data"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.memory-status"
 msgstr "Memory status"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.memory-strength"
 msgstr "Memory strength"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:132
+#: src/components/stats/ActivityHeatmap.tsx:135
 msgid "stats.more"
 msgstr "More"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:32
+#: src/components/stats/StatsCharts.tsx:48
 msgid "stats.no-data"
 msgstr "No data yet"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:32
+#: src/components/stats/StatsCharts.tsx:48
 msgid "stats.no-xp-history"
 msgstr "No XP history yet"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:34
+#: src/components/stats/StatsCharts.tsx:50
 msgid "stats.not-reviewed"
 msgstr "Not reviewed"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:146
-#: src/components/stats/ActivityHeatmap.tsx:146
+#: src/components/stats/ActivityHeatmap.tsx:150
 msgid "stats.outside-selected-range"
 msgstr "Outside selected range"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.partial-categories"
 msgstr "Current-page data only; the full library is not scanned."
 
@@ -241,91 +249,106 @@ msgid "stats.progress"
 msgstr "Progress"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.recall-again"
 msgstr "Again"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.recall-easy"
 msgstr "Easy"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.recall-good"
 msgstr "Good"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.recall-hard"
 msgstr "Hard"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:97
+#: src/components/stats/StatsCharts.tsx:119
 msgid "stats.review-activity-partial"
 msgstr "Coverage begins {date}; this range is partial."
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.review-activity-unavailable"
 msgstr "Review activity is unavailable until coverage begins."
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:97
+#: src/components/stats/StatsCharts.tsx:119
 msgid "stats.review-range-26-weeks"
 msgstr "26 weeks"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:97
+#: src/components/stats/StatsCharts.tsx:119
 msgid "stats.review-range-30-days"
 msgstr "30 days"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:146
-#: src/components/stats/ActivityHeatmap.tsx:146
+#: src/components/stats/AchievementsMatrix.tsx:65
+msgid "stats.reviewed"
+msgstr "Reviewed"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:150
+#: src/components/stats/StatsCharts.tsx:51
 msgid "stats.reviews"
 msgstr "reviews"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.show-all-categories"
 msgstr "Show all categories"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:51
+msgid "stats.show-range-totals"
+msgstr "Show range totals"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.show-top-categories"
 msgstr "Show top 5 categories"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:70
+#: src/components/stats/AchievementsMatrix.tsx:71
 msgid "stats.star-collection"
 msgstr "Growing collection"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:70
+#: src/components/stats/AchievementsMatrix.tsx:71
 msgid "stats.star-collection-description"
 msgstr "Collect 500 XP from your study sessions."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:68
+#: src/components/stats/AchievementsMatrix.tsx:69
 msgid "stats.star-keeper"
 msgstr "Star keeper"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:68
+#: src/components/stats/AchievementsMatrix.tsx:69
 msgid "stats.star-keeper-description"
 msgstr "Help fifty words shine as mastered."
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:135
-#: src/components/stats/ActivityHeatmap.tsx:136
+#: src/components/stats/ActivityHeatmap.tsx:138
+#: src/components/stats/ActivityHeatmap.tsx:139
 msgid "stats.study-activity"
 msgstr "Study activity"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:72
+#: src/components/stats/AchievementsMatrix.tsx:73
 msgid "stats.study-milestones"
 msgstr "Study milestones"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:65
+msgid "stats.summary-cards"
+msgstr "Cards"
 
 #. js-lingui-explicit-id
 #: src/components/stats/AchievementsMatrix.tsx:63
@@ -343,12 +366,12 @@ msgid "stats.tier-star"
 msgstr "Star"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:127
+#: src/components/stats/ActivityHeatmap.tsx:130
 msgid "stats.total-reviews"
 msgstr "reviews"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:127
+#: src/components/stats/ActivityHeatmap.tsx:130
 msgid "stats.total-xp"
 msgstr "total XP"
 
@@ -358,17 +381,17 @@ msgid "stats.unlocked"
 msgstr "unlocked"
 
 #. js-lingui-explicit-id
-#: src/components/stats/StatsCharts.tsx:33
+#: src/components/stats/StatsCharts.tsx:49
 msgid "stats.value"
 msgstr "Value"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:72
+#: src/components/stats/AchievementsMatrix.tsx:73
 msgid "stats.word-garden"
 msgstr "Your word garden"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:72
+#: src/components/stats/AchievementsMatrix.tsx:73
 msgid "stats.word-garden-description"
 msgstr "Small study sessions grow into lasting memory."
 
@@ -378,17 +401,17 @@ msgid "stats.words"
 msgstr "words"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:117
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:172
 msgid "weeklyRecap.action.download"
 msgstr "Download PNG"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:116
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:171
 msgid "weeklyRecap.action.share"
 msgstr "Share"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:106
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:161
 msgid "weeklyRecap.caption.label"
 msgstr "Caption"
 
@@ -398,116 +421,153 @@ msgid "weeklyRecap.caption.suggested-active"
 msgstr "{xp, number} XP and {days, plural, one {# active day} other {# active days}} this week."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/weeklyRecapSelection.ts:41
+#: src/features/weeklyRecap/weeklyRecapSelection.ts:42
+msgid "weeklyRecap.caption.suggested-days"
+msgstr "{days, plural, one {# active day} other {# active days}} this week."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapSelection.ts:44
 msgid "weeklyRecap.caption.suggested-quiet"
 msgstr "A quiet week — back to it tomorrow."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:98
+#: src/features/weeklyRecap/weeklyRecapSelection.ts:43
+msgid "weeklyRecap.caption.suggested-reviewed"
+msgstr "{reviews, plural, one {# review} other {# reviews}} this week."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapSelection.ts:41
+msgid "weeklyRecap.caption.suggested-xp"
+msgstr "{xp, number} XP this week."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:147
 msgid "weeklyRecap.dialog.close"
 msgstr "Close"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:97
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:146
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:61
 msgid "weeklyRecap.dialog.title"
 msgstr "Your weekly recap"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:78
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:64
 msgid "weeklyRecap.empty"
 msgstr "No study activity yet this week. Come back after a review to see your recap."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:113
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:168
 msgid "weeklyRecap.export-error"
 msgstr "Could not create the image. Please try again."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:56
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:67
 msgid "weeklyRecap.heatmap.label"
 msgstr "Daily XP for the last 7 days"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:72
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:60
 msgid "weeklyRecap.kicker"
 msgstr "Weekly recap"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:83
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:65
 msgid "weeklyRecap.metric.active-days"
 msgstr "Active days"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:84
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:66
 msgid "weeklyRecap.metric.best-day"
 msgstr "Best day"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:82
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:63
+msgid "weeklyRecap.metric.reviews"
+msgstr "Reviews this week"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:62
 msgid "weeklyRecap.metric.total-xp"
 msgstr "XP this week"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:89
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:68
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:138
 msgid "weeklyRecap.milestones"
 msgstr "{unlocked} of {total} milestones unlocked (all-time)"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:49
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:54
 msgid "weeklyRecap.outcome.copied"
 msgstr "Copied to your clipboard."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:50
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:55
 msgid "weeklyRecap.outcome.downloaded"
 msgstr "Downloaded."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:51
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:56
 msgid "weeklyRecap.outcome.failed"
 msgstr "Sharing was cancelled."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:48
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:53
 msgid "weeklyRecap.outcome.shared"
 msgstr "Shared."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:111
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:69
 msgid "weeklyRecap.privacy"
-msgstr "Only what's toggled above appears in the shared image. Private words are never included automatically."
+msgstr "The image includes the selected metrics and your caption. Private words are never added automatically."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:98
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:149
+msgid "weeklyRecap.reviews-unavailable"
+msgstr "Reviews this week are unavailable until activity covers all seven days."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:150
+msgid "weeklyRecap.saved-warning"
+msgstr "Showing saved recap. Recent reviews may not be included."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:153
 msgid "weeklyRecap.selection.legend"
 msgstr "Show on the card"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:41
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:46
 msgid "weeklyRecap.toggle.active-days"
 msgstr "Active days"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:42
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:47
 msgid "weeklyRecap.toggle.best-day"
 msgstr "Best day"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:43
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:48
 msgid "weeklyRecap.toggle.heatmap"
 msgstr "Day-by-day heatmap"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:44
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:49
 msgid "weeklyRecap.toggle.milestones"
 msgstr "Milestones unlocked"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:40
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:45
+msgid "weeklyRecap.toggle.reviews"
+msgstr "Reviews this week"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:44
 msgid "weeklyRecap.toggle.total-xp"
 msgstr "Total XP"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:94
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:148
 msgid "weeklyRecap.unavailable"
-msgstr "Word of the week and recall rate need a reliable weekly data source we don't have yet, so they are left out rather than guessed."
+msgstr "Word of the week, words learned, recall rate, study time, and streak need a reliable weekly data source we don't have yet, so they are left out rather than guessed."

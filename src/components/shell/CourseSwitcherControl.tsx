@@ -106,6 +106,12 @@ export function CourseSwitcherControl() {
     return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', closeOnEscape); };
   }, [open]);
 
+  if (model.status === 'error') return <div className="flex min-w-0 items-center gap-2">
+    <p role="alert" className="text-xs font-semibold text-[var(--sf-danger)]"><Trans id="course.error.read" message="Courses could not be loaded." /></p>
+    <button type="button" onClick={() => void actions.retry()} className="liquid-control min-h-11 shrink-0 rounded-xl border border-[var(--sf-border)] px-3 text-sm font-bold text-[var(--sf-text)]">
+      <Trans id="course.action.retry" message="Retry" />
+    </button>
+  </div>;
   if (model.status !== 'ready' || !model.profile) return null;
   const { profile } = model;
   const activeCourse = model.activeCourse;

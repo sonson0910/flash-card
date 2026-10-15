@@ -1,6 +1,7 @@
 import { useRef, type RefObject } from 'react';
 import { useLingui } from '@lingui/react';
 import type { CardData } from '../../types/card';
+import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
 import type {
   LibraryCatalogActions,
   LibraryCatalogModel,
@@ -33,7 +34,7 @@ export interface LibraryScreenWorkspaceInput {
   intake: { model: IntakeSharingSessionModel; actions: IntakeSharingSessionActions };
   learning: {
     actions: Pick<LearningWorkspaceActions, 'toggleBookmark' | 'assignDeck' | 'updateCard' | 'bulkPatchCards'> & {
-      deleteCard(cardId: string): Promise<void>;
+      deleteCard(cardId: string): Promise<boolean | void>;
     };
   };
 }
@@ -63,6 +64,7 @@ export interface LibraryScreenUiInput {
   aiGenerationRuntime?: AiGenerationRuntime;
   libraryHeadingRef?: RefObject<HTMLHeadingElement | null>;
   fileInputRef?: RefObject<HTMLInputElement | null>;
+  languageProfile?: LanguageProfile;
 }
 
 export interface LibraryScreenCommandInput {
@@ -205,6 +207,8 @@ export function buildLibraryScreenContract({
       sortedCategories: view.sortedCategories,
       categoryCounts: view.categoryCounts,
       activeCategory: query.category,
+      languageProfile: ui.languageProfile ?? ENGLISH_TO_VIETNAMESE_PROFILE,
+      ownerId,
     },
   };
 

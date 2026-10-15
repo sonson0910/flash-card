@@ -35,6 +35,7 @@ const session = (course: Course = english): CourseGateValue => ({
     profile: { activeCourseId: course.id, courses: [course] }, activeCourse: course,
   },
   actions: {
+    retry: vi.fn(),
     createCourse: vi.fn(), updateCourse: vi.fn(), archiveCourse: vi.fn(), reopenCourse: vi.fn(), switchCourse: vi.fn(),
     addGoal: vi.fn(), updateGoal: vi.fn(), removeGoal: vi.fn(), clearError: vi.fn(),
   } as CourseGateValue['actions'],
@@ -73,6 +74,19 @@ describe('course render surfaces', () => {
     expect(html).not.toContain('Reopen course');
   });
 
+  it('shows a retry action when the course-profile listener fails', () => {
+    const ready = session();
+    const html = render(<CourseSwitcherControl />, {
+      ...ready,
+      model: { ...ready.model, status: 'error', errorCode: 'cloud-read-failed' },
+    });
+
+    expect(html).toContain('Courses could not be loaded.');
+    expect(html).toContain('Retry');
+    expect(html).toContain('role="alert"');
+    expect(html).not.toContain('Archive course');
+  });
+
   it('renders each goal state with only the actions that remain valid', () => {
     const html = render(<CourseGoalsPanel course={english} onClose={vi.fn()} />);
 
@@ -83,6 +97,7 @@ describe('course render surfaces', () => {
     expect(html).toContain('(completed)');
     expect(html).toContain('Pause goal');
     expect(html).toContain('Resume goal');
+    expect(html.match(/Edit goal/g)).toHaveLength(3);
     expect(html.match(/Remove goal/g)).toHaveLength(3);
     expect(html.match(/Add goal/g)).toHaveLength(1);
   });

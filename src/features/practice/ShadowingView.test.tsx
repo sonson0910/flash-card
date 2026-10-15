@@ -18,6 +18,8 @@ const sampleCards: CardData[] = [
   } as CardData,
 ];
 
+const progressCards = Array.from({ length: 8 }, (_, index) => ({ ...sampleCards[0], id: `${index}` }));
+
 describe('ShadowingView', () => {
   i18n.load('en', {});
   i18n.activate('en');
@@ -34,5 +36,17 @@ describe('ShadowingView', () => {
     expect(html).toContain('Cô ấy vẫn kiên cường trước mọi nghịch cảnh.');
     expect(html).toContain('lang="en"');
     expect(html).toContain('lang="vi"');
+  });
+
+  it('renders one accessible progress segment for each card', () => {
+    const html = renderToStaticMarkup(
+      <I18nProvider i18n={i18n}><ShadowingView cards={progressCards} onClose={vi.fn()} /></I18nProvider>
+    );
+
+    expect(html).toContain('role="progressbar"');
+    expect(html).toContain('aria-valuemax="8"');
+    expect(html).toContain('aria-valuenow="1"');
+    expect(html.match(/<i(?=[ >])/g)).toHaveLength(8);
+    expect(html).toContain('data-complete="true"');
   });
 });

@@ -21,18 +21,18 @@ const callableErrorCode = (error: unknown): string => {
 };
 
 // The server rejects these before it touches account data, so the request never started deleting anything.
-const ACCOUNT_DELETION_VALIDATION_CODES = new Set(['invalid-argument', 'failed-precondition', 'unauthenticated']);
+const ACCOUNT_DELETION_VALIDATION_CODES = new Set(['invalid-argument', 'failed-precondition', 'permission-denied', 'unauthenticated']);
 const isAccountDeletionValidationError = (error: unknown): boolean =>
   ACCOUNT_DELETION_VALIDATION_CODES.has(callableErrorCode(error));
 
 export function removeOwnerLocalKeys(storage: Pick<Storage, 'getItem' | 'removeItem' | 'length' | 'key'>,
-  session: Pick<Storage, 'removeItem'>, uid: string): void {
+  session: Pick<Storage, 'removeItem'>, uid: string, clearSharedState: boolean = true): void {
   const keys = [
     ...Object.values(gamificationStorageKeys(uid)),
     cloudPageCacheKey(uid), cloudStatsCacheKey(uid), cloudFacetsCacheKey(uid), cloudBackoffCacheKey(uid),
     `lingoflash_library_epoch_${encodeURIComponent(uid)}`,
-    'lingoflash_shared_deck_operation_v1',
   ];
+  if (clearSharedState) keys.push('lingoflash_shared_deck_operation_v1');
   for (const key of keys) storage.removeItem(key);
   for (let index = storage.length - 1; index >= 0; index--) {
     const key = storage.key(index);
@@ -40,22 +40,30 @@ export function removeOwnerLocalKeys(storage: Pick<Storage, 'getItem' | 'removeI
       || key?.startsWith(`lingoflash_no_image_v1_${encodeURIComponent(uid)}_`)
       || key?.startsWith(`${cloudStatsCacheKey(uid)}_`)) storage.removeItem(key);
   }
-  session.removeItem('lingoflash_word_draft');
-  session.removeItem('lingoflash_word_operation');
-  session.removeItem('lingoflash_browser_extension_import');
-  session.removeItem('lingoflash_browser_extension_draft_import');
+  if (clearSharedState) {
+    session.removeItem('lingoflash_word_draft');
+    session.removeItem('lingoflash_word_operation');
+    session.removeItem('lingoflash_browser_extension_import');
+    session.removeItem('lingoflash_browser_extension_draft_import');
+  }
 }
 
-export async function clearLocalAccountData(uid: string): Promise<void> {
+export async function clearLocalAccountData(uid: string, clearSharedState: boolean = true): Promise<void> {
   try {
-    removeOwnerLocalKeys(localStorage, sessionStorage, uid);
+    removeOwnerLocalKeys(localStorage, sessionStorage, uid, clearSharedState);
   } catch (error) {
     throw new LocalAccountCleanupError('Account was deleted, but local cleanup failed.', { cause: error });
   }
 }
 
 export async function downloadAccountData(): Promise<void> {
+  if (!auth?.currentUser) throw new Error('Sign in is required.');
+  const user = auth.currentUser;
+  const uid = user.uid;
   const data = await callable<Record<string, never>, unknown>('exportMyData', {});
+  if (auth.currentUser !== user || auth.currentUser?.uid !== uid) {
+    throw new Error('Account changed while exporting data. Please try again.');
+  }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -71,38 +79,65 @@ export async function downloadAccountData(): Promise<void> {
 // learner does not re-download their whole library. `terminate` must run before `clearIndexedDbPersistence`
 // per the Firestore SDK contract, and any failure here must never block the deletion result, since the
 // account is already gone (or already on its way out) on the server by the time this runs.
-export async function clearFirestorePersistentCache(): Promise<void> {
-  if (!db) return;
+export async function clearFirestorePersistentCache(): Promise<boolean> {
+  if (!db) return true;
   try {
     const { terminate, clearIndexedDbPersistence } = await import('firebase/firestore');
     await terminate(db);
     await clearIndexedDbPersistence(db);
+    return true;
   } catch (error) {
     console.warn('Could not clear the local Firestore cache after account deletion.', error);
+    return false;
   }
 }
 
-export type DeleteAccountResult = 'completed' | 'started';
+export interface DeleteAccountResult {
+  status: 'completed' | 'started';
+  restartRequired: boolean;
+  cacheCleared: boolean;
+}
 
 export async function deleteAccount(confirmation: string): Promise<DeleteAccountResult> {
   if (!auth?.currentUser) throw new Error('Sign in is required.');
-  const uid = auth.currentUser.uid;
+  const user = auth.currentUser;
+  const uid = user.uid;
   const { GoogleAuthProvider, reauthenticateWithPopup, signOut } = await import('firebase/auth');
-  await reauthenticateWithPopup(auth.currentUser, new GoogleAuthProvider());
-  await auth.currentUser.getIdToken(true);
+  await reauthenticateWithPopup(user, new GoogleAuthProvider());
+  if (auth.currentUser !== user || auth.currentUser?.uid !== uid) {
+    throw new Error('Account changed while reauthenticating. Please try again.');
+  }
+  await user.getIdToken(true);
+  if (auth.currentUser !== user || auth.currentUser?.uid !== uid) {
+    throw new Error('Account changed while refreshing credentials. Please try again.');
+  }
   const normalizedConfirmation = confirmation.normalize('NFC').trim();
-  let result: DeleteAccountResult = 'completed';
+  let status: DeleteAccountResult['status'] = 'completed';
   try {
     // The server allows up to 300 s; the SDK default of 70 s is shorter than the job can legitimately take.
-    await callable('deleteMyAccount', { confirmation: normalizedConfirmation }, { timeout: 300_000 });
+    await callable('deleteMyAccount', { confirmation: normalizedConfirmation, expectedUid: uid }, { timeout: 300_000 });
   } catch (error) {
     if (isAccountDeletionValidationError(error)) throw error;
     // Any other error (timeout, internal, disconnect) can still mean the server already started deleting the
     // account, since the timeout only bounds the client's wait. Treat it as started rather than failed.
-    result = 'started';
+    status = 'started';
   }
-  try { await clearLocalAccountData(uid); }
-  finally { await signOut(auth); }
-  await clearFirestorePersistentCache();
-  return result;
+  let localCleanupCompleted = false;
+  let signedOut = false;
+  const sameUser = () => auth?.currentUser === user && auth.currentUser.uid === uid;
+  try {
+    await clearLocalAccountData(uid, sameUser());
+    localCleanupCompleted = true;
+  } catch (error) {
+    if (!(error instanceof LocalAccountCleanupError)) throw error;
+  }
+  finally {
+    if (sameUser()) {
+      await signOut(auth);
+      signedOut = true;
+    }
+  }
+  const firestoreCacheCleared = signedOut ? await clearFirestorePersistentCache() : true;
+  const cacheCleared = localCleanupCompleted && firestoreCacheCleared;
+  return { status, restartRequired: signedOut, cacheCleared };
 }

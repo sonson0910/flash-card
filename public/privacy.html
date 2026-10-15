@@ -3,41 +3,69 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Quyền riêng tư — SonFlash</title>
+  <title>Quyền riêng tư / Privacy — SonFlash</title>
   <style>
     :root { color-scheme: light dark; font-family: system-ui, sans-serif; line-height: 1.65; }
     body { margin: 0; background: #f7f8fa; color: #17202b; }
     main { max-width: 760px; margin: auto; padding: 32px 20px 64px; }
     h1, h2 { line-height: 1.25; }
     a { color: #075d72; }
+    nav { margin: 1rem 0 2rem; }
     @media (prefers-color-scheme: dark) { body { background: #101923; color: #e9f0f5; } a { color: #75dbea; } }
   </style>
 </head>
 <body>
   <main>
-    <p><a href="/">SonFlash</a> · Cập nhật: 24/09/2026</p>
-    <h1>Quyền riêng tư</h1>
-    <p>SonFlash giúp người từ 18 tuổi học từ vựng bằng flashcard. Trang này giải thích dữ liệu cần để vận hành tài khoản, tạo thẻ và đo chất lượng pilot.</p>
+    <p><a href="/">SonFlash</a> · Cập nhật: 01/10/2026 · Updated: 01/10/2026</p>
+    <nav aria-label="Chọn ngôn ngữ / Language">
+      <a href="#tieng-viet" hreflang="vi">Tiếng Việt</a> · <a href="#english" hreflang="en">English</a>
+    </nav>
 
-    <h2>Dữ liệu được xử lý</h2>
-    <p>Khi đăng nhập bằng Google, chúng tôi nhận mã tài khoản, tên, địa chỉ email và ảnh đại diện từ Firebase Authentication. SonFlash lưu thẻ bạn tạo, từ, nghĩa, câu ngữ cảnh bạn gửi, nội dung do AI tạo, bộ thẻ, lịch ôn, tiến độ và cài đặt học tập trong Firestore. Một phần dữ liệu học tập cũng nằm trên thiết bị để dùng ngoại tuyến.</p>
-    <p>Khi bạn dùng tính năng AI, nội dung bạn nhập được gửi tới Google Gemini để tạo thẻ, dịch hoặc hỗ trợ học. Hệ thống lưu số token, chi phí ước tính, hạn mức và trạng thái thao tác để kiểm soát chi phí. Báo cáo thẻ sai lưu lý do, ghi chú tùy chọn và bản sao nội dung thẻ để người phụ trách kiểm tra; không sao chép lịch ôn vào báo cáo.</p>
+    <section id="tieng-viet" lang="vi" aria-labelledby="privacy-vi">
+      <h1 id="privacy-vi">Quyền riêng tư</h1>
+      <p>SonFlash giúp người từ 18 tuổi học từ vựng bằng flashcard. Trang này giải thích dữ liệu cần để vận hành tài khoản, tạo thẻ và đo chất lượng pilot.</p>
 
-    <h2>Nhà cung cấp và nơi xử lý</h2>
-    <p>Firebase Authentication, Firestore và Cloud Functions của Google vận hành tài khoản và dữ liệu ứng dụng; Firestore của pilot được đặt tại <code>asia-southeast1</code>. Google Gemini xử lý yêu cầu AI. Tính năng hình ảnh hoặc từ điển có thể lấy dữ liệu từ Pexels, Unsplash, Wikipedia và dictionaryapi.dev; phát âm hoặc nhận diện giọng nói có thể dùng chức năng của trình duyệt. Extension có thể gửi đoạn văn bản được chọn đến Google Translate; xem thêm <a href="/browser-extension-privacy.html">chính sách extension</a>. Dữ liệu gửi tới nhà cung cấp có thể được xử lý ở khu vực khác theo dịch vụ của họ.</p>
+      <h2>Dữ liệu được xử lý</h2>
+      <p>Khi đăng nhập bằng Google, chúng tôi nhận mã tài khoản, tên, địa chỉ email và ảnh đại diện từ Firebase Authentication. SonFlash lưu thẻ bạn tạo, từ, nghĩa, câu ngữ cảnh bạn gửi, nội dung do AI tạo, bộ thẻ, lịch ôn, tiến độ và cài đặt học tập trong Firestore. Một phần dữ liệu học tập cũng nằm trên thiết bị để dùng ngoại tuyến.</p>
+      <p>Khi bạn dùng tính năng AI, nội dung bạn nhập được gửi tới Google Gemini để tạo thẻ, dịch hoặc hỗ trợ học. Hệ thống lưu số token, chi phí ước tính, hạn mức và trạng thái thao tác để kiểm soát chi phí. Báo cáo thẻ sai lưu lý do, ghi chú tùy chọn và bản sao nội dung thẻ để người phụ trách kiểm tra; không sao chép lịch ôn vào báo cáo.</p>
 
-    <h2>Đo chất lượng pilot</h2>
-    <p>Chúng tôi ghi sự kiện ở mức giới hạn như tạo thẻ, ôn tập, gặp hạn mức, xem lời mời Pro và báo lỗi. Sự kiện dùng mã người học được tạo bằng khóa riêng, không chứa câu học, nội dung thẻ, URL trang, prompt, email hay mã tài khoản thô. Chúng tôi dùng số liệu tổng hợp để đánh giá pilot, không bán dữ liệu học tập.</p>
+      <h2>Nhà cung cấp và nơi xử lý</h2>
+      <p>Firebase Authentication, Firestore và Cloud Functions của Google vận hành tài khoản và dữ liệu ứng dụng; Firestore của pilot được đặt tại <code>asia-southeast1</code>. Google Gemini xử lý yêu cầu AI. Tính năng hình ảnh hoặc từ điển có thể lấy dữ liệu từ Pexels, Unsplash, Wikipedia và dictionaryapi.dev; phát âm hoặc nhận diện giọng nói có thể dùng chức năng của trình duyệt. Extension có thể gửi đoạn văn bản được chọn đến Google Translate; xem thêm <a href="/browser-extension-privacy.html">chính sách extension</a>. Dữ liệu gửi tới nhà cung cấp có thể được xử lý ở khu vực khác theo dịch vụ của họ.</p>
 
-    <h2>Lưu giữ và quyền của bạn</h2>
-    <p>Thẻ và tiến độ được giữ khi tài khoản còn hoạt động. Sự kiện phân tích và báo cáo thẻ sai được giữ tối đa 180 ngày theo lịch xóa dữ liệu. Nhật ký chi phí và thao tác AI có thời hạn riêng để kiểm tra hạn mức và sự cố. Trong menu thư viện, mục Dữ liệu tài khoản cho phép tải thẻ dưới dạng Excel, tải dữ liệu tài khoản dạng JSON và yêu cầu xóa tài khoản. Xóa tài khoản cần nhập câu xác nhận và đăng nhập Google lại; thao tác này cũng chấm dứt quyền Pro và không thể hoàn tác. Hệ thống xóa dữ liệu ngay, sau đó quét lại sau ít nhất 65 phút để loại bỏ dữ liệu thiết bị khác có thể ghi bằng phiên cũ. Bản ghi xử lý giữ mã tài khoản trong thời gian quét lại; sau đó chỉ giữ mã định danh giả và được đặt lịch xóa sau 30 ngày. Nếu cần hỗ trợ xuất hoặc xóa dữ liệu, hãy gửi email từ địa chỉ đăng nhập tới <a href="mailto:sonlearn155@gmail.com">sonlearn155@gmail.com</a>.</p>
+      <h2>Đo chất lượng pilot</h2>
+      <p>Chúng tôi ghi sự kiện ở mức giới hạn như tạo thẻ, ôn tập, gặp hạn mức, xem lời mời Pro và báo lỗi. Sự kiện dùng mã người học được tạo bằng khóa riêng, không chứa câu học, nội dung thẻ, URL trang, prompt, email hay mã tài khoản thô. Chúng tôi dùng số liệu tổng hợp để đánh giá pilot, không bán dữ liệu học tập.</p>
 
-    <h2>Liên hệ</h2>
-    <p>Hỏi về dữ liệu, yêu cầu xuất hoặc xóa, hoặc báo vấn đề quyền riêng tư: <a href="mailto:sonlearn155@gmail.com">sonlearn155@gmail.com</a>.</p>
-    <p><a href="/terms.html">Điều khoản sử dụng</a> · <a href="/browser-extension-privacy.html">Quyền riêng tư của extension</a></p>
+      <h2>Lưu giữ và quyền của bạn</h2>
+      <p>Thẻ và tiến độ được giữ khi tài khoản còn hoạt động. Sự kiện phân tích và báo cáo thẻ sai được giữ tối đa 180 ngày theo lịch xóa dữ liệu. Nhật ký chi phí và thao tác AI có thời hạn riêng để kiểm tra hạn mức và sự cố. Trong menu thư viện, mục Dữ liệu tài khoản cho phép tải thẻ dưới dạng Excel; tệp JSON dữ liệu tài khoản không bao gồm thẻ. Mục này cũng cho phép yêu cầu xóa tài khoản. Xóa tài khoản cần nhập câu xác nhận và đăng nhập Google lại; thao tác này cũng chấm dứt quyền Pro và không thể hoàn tác. Hệ thống xóa dữ liệu ngay, sau đó quét lại sau ít nhất 65 phút để loại bỏ dữ liệu thiết bị khác có thể ghi bằng phiên cũ. Bản ghi xử lý giữ mã tài khoản trong thời gian quét lại; sau đó chỉ giữ mã định danh giả và được đặt lịch xóa sau 30 ngày. Nếu cần hỗ trợ xuất hoặc xóa dữ liệu, hãy gửi email từ địa chỉ đăng nhập tới <a href="mailto:sonlearn155@gmail.com">sonlearn155@gmail.com</a>.</p>
+
+      <h2>Liên hệ</h2>
+      <p>Hỏi về dữ liệu, yêu cầu xuất hoặc xóa, hoặc báo vấn đề quyền riêng tư: <a href="mailto:sonlearn155@gmail.com">sonlearn155@gmail.com</a>.</p>
+      <p><a href="/terms.html">Điều khoản sử dụng</a> · <a href="/browser-extension-privacy.html">Quyền riêng tư của extension</a></p>
+    </section>
 
     <hr>
-    <p lang="en"><strong>English summary:</strong> SonFlash uses Google sign-in, stores your cards and review progress, sends requested AI content to Gemini, and keeps limited pilot analytics without sentences or URLs. Reports and analytics are retained for up to 180 days. Export or delete your account in the library menu; deletion requires a fresh Google sign-in and a confirmation phrase. A pseudonymous deletion job expires after 30 days. Contact <a href="mailto:sonlearn155@gmail.com">sonlearn155@gmail.com</a> for help.</p>
+
+    <section id="english" lang="en" aria-labelledby="privacy-en">
+      <h1 id="privacy-en">Privacy</h1>
+      <p>SonFlash helps people aged 18 or older learn vocabulary with flashcards. This page explains the data needed to run accounts, create cards, and measure the pilot’s quality.</p>
+
+      <h2>Data processed</h2>
+      <p>When you sign in with Google, we receive your account identifier, name, email address, and profile picture through Firebase Authentication. SonFlash stores the cards you create, words, definitions, context sentences you submit, AI-generated content, decks, review schedules, progress, and learning settings in Firestore. Some learning data also remains on your device for offline use.</p>
+      <p>When you use AI features, the content you enter is sent to Google Gemini to create cards, translate, or support learning. The system stores token counts, estimated cost, limits, and operation status to control costs. Incorrect-card reports store the reason, optional note, and a copy of card content for operator review; they do not copy the review schedule into the report.</p>
+
+      <h2>Providers and processing locations</h2>
+      <p>Google’s Firebase Authentication, Firestore, and Cloud Functions run accounts and application data; the pilot’s Firestore is located in <code>asia-southeast1</code>. Google Gemini processes AI requests. Image or dictionary features may obtain data from Pexels, Unsplash, Wikipedia, and dictionaryapi.dev; pronunciation or speech recognition may use browser capabilities. The extension may send selected text to Google Translate; see the <a href="/browser-extension-privacy.html">extension privacy policy</a>. Data sent to providers may be processed in other regions according to their services.</p>
+
+      <h2>Measuring pilot quality</h2>
+      <p>We record limited events such as creating cards, reviewing, reaching a limit, viewing a Pro invitation, and errors. Events use a learner identifier created with a private key and do not contain learning sentences, card content, page URLs, prompts, email addresses, or raw account identifiers. We use aggregated measures to evaluate the pilot and do not sell learning data.</p>
+
+      <h2>Retention and your rights</h2>
+      <p>Cards and progress are retained while your account is active. Analytics events and incorrect-card reports are retained for up to 180 days under the data deletion schedule. Cost logs and AI operation logs have their own retention periods for checking limits and incidents. In the library menu, Account data lets you download cards as Excel; its JSON account-data export excludes cards. It also lets you request account deletion. Deletion requires a confirmation phrase and a fresh Google sign-in; it also ends Pro access and cannot be undone. The system deletes data immediately, then scans again after at least 65 minutes to remove data another device may have written with an old session. The processing record retains the account identifier during the rescan; afterward it retains only a pseudonymous identifier scheduled for deletion after 30 days. For help exporting or deleting data, email <a href="mailto:sonlearn155@gmail.com">sonlearn155@gmail.com</a> from your sign-in address.</p>
+
+      <h2>Contact</h2>
+      <p>For data questions, export or deletion requests, or to report a privacy issue, contact <a href="mailto:sonlearn155@gmail.com">sonlearn155@gmail.com</a>.</p>
+      <p><a href="/terms.html">Terms of Use</a> · <a href="/browser-extension-privacy.html">Extension privacy policy</a></p>
+    </section>
   </main>
 </body>
 </html>

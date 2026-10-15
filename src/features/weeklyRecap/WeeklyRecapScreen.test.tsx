@@ -4,7 +4,7 @@ import { I18nProvider } from '@lingui/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { WeeklyRecapData } from './weeklyRecapModel';
-import { defaultWeeklyRecapSelection, toggleWeeklyRecapSelection } from './weeklyRecapSelection';
+import { buildSuggestedWeeklyRecapCaption, defaultWeeklyRecapSelection, toggleWeeklyRecapSelection } from './weeklyRecapSelection';
 import { WeeklyRecapScreen, type WeeklyRecapScreenProps } from './WeeklyRecapScreen';
 
 i18n.load('en', {});
@@ -19,6 +19,7 @@ const data = (overrides: Partial<WeeklyRecapData> = {}): WeeklyRecapData => ({
   totalXp: 90,
   activeDays: 1,
   bestDay: { dateKey: '2026-09-23', xp: 90 },
+  reviewedCount: null,
   hasActivity: true,
   ...overrides,
 });
@@ -56,9 +57,61 @@ describe('WeeklyRecapScreen', () => {
     expect(html).toContain("don&#x27;t have yet");
   });
 
+  it('shows the reviewed count only when authoritative activity covers the full week', () => {
+    const available = render(<WeeklyRecapScreen {...baseProps({ data: data({ reviewedCount: 14 }) })} />);
+    expect(available).toContain('Reviews this week');
+    expect(available).toContain('14');
+    expect(available).toContain('data-selection-key="reviewed"');
+
+    const hidden = render(<WeeklyRecapScreen {...baseProps({
+      data: data({ reviewedCount: 14 }),
+      selection: toggleWeeklyRecapSelection(defaultWeeklyRecapSelection(), 'reviewed'),
+    })} />);
+    expect(hidden.match(/Reviews this week/g)).toHaveLength(1); // The toggle remains; the card metric is gone.
+    expect(hidden).not.toContain('<dd>14</dd>');
+
+    const unavailable = render(<WeeklyRecapScreen {...baseProps()} />);
+    expect(unavailable).toContain('Reviews this week are unavailable until activity covers all seven days.');
+    expect(unavailable).not.toContain('data-selection-key="reviewed"');
+  });
+
+  it('shows reviews without presenting zero XP days as zero study days', () => {
+    const html = render(<WeeklyRecapScreen {...baseProps({ data: data({ totalXp: 0, activeDays: 0, bestDay: null, reviewedCount: 9 }) })} />);
+    const [card] = html.split('<section class="weekly-recap-controls"');
+    expect(card).toContain('<dd>9</dd>');
+    expect(card).not.toContain('XP this week');
+    expect(card).not.toContain('Active days');
+    expect(html).not.toContain('data-selection-key="activeDays"');
+    expect(html).not.toContain('data-selection-key="heatmap"');
+  });
+
+  it('does not keep an automatic review count in the preview after that metric is unchecked', () => {
+    const reviewOnly = data({ totalXp: 0, activeDays: 0, bestDay: null, reviewedCount: 9 });
+    const selection = toggleWeeklyRecapSelection(defaultWeeklyRecapSelection(), 'reviewed');
+    const html = render(<WeeklyRecapScreen {...baseProps({
+      data: reviewOnly, selection, caption: buildSuggestedWeeklyRecapCaption(reviewOnly, selection),
+    })} />);
+    const [card] = html.split('<section class="weekly-recap-controls"');
+    expect(card).not.toContain('9 reviews');
+    expect(card).not.toContain('<dd>9</dd>');
+  });
+
   it('shows the caption character budget', () => {
     const html = render(<WeeklyRecapScreen {...baseProps({ caption: 'hi' })} />);
     expect(html).toContain('2 / 220');
+  });
+
+  it('shows the trimmed caption in the recap card and omits whitespace-only captions', () => {
+    const withCaption = render(<WeeklyRecapScreen {...baseProps({ caption: '  Great week!  ' })} />);
+    const [cardWithCaption] = withCaption.split('<section class="weekly-recap-controls"');
+    expect(cardWithCaption).toContain('Great week!');
+    expect(cardWithCaption).not.toContain('  Great week!  ');
+    expect(cardWithCaption.match(/weekly-recap-card__range/g)).toHaveLength(2);
+
+    const withoutCaption = render(<WeeklyRecapScreen {...baseProps({ caption: '   ' })} />);
+    const [cardWithoutCaption] = withoutCaption.split('<section class="weekly-recap-controls"');
+    expect(cardWithoutCaption).not.toContain('Great week!');
+    expect(cardWithoutCaption.match(/weekly-recap-card__range/g)).toHaveLength(1);
   });
 
   it('disables both share actions while an export is in flight', () => {

@@ -74,15 +74,19 @@ const browserFallbackHeading = (): HTMLElement | null =>
   globalThis.document?.querySelector<HTMLElement>('main h1') ?? null;
 
 export function useOverlayState({
+  ownerId = null,
   getActiveElement = browserActiveElement,
   getFallbackHeading = browserFallbackHeading,
   practiceOpenerRef: suppliedPracticeOpenerRef,
   scheduler = browserOverlayScheduler,
+  autoDismissNotice = true,
 }: {
+  ownerId?: string | null;
   getActiveElement?: () => HTMLElement | null;
   getFallbackHeading?: () => HTMLElement | null;
   practiceOpenerRef?: RefObject<HTMLElement | null>;
   scheduler?: OverlayScheduler;
+  autoDismissNotice?: boolean;
 } = {}) {
   const [notice, setNotice] = useState<string | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
@@ -96,10 +100,20 @@ export function useOverlayState({
   const statsOpenerRef = useRef<HTMLElement | null>(null);
   const clearOpenerRef = useRef<HTMLElement | null>(null);
   const [undoToast, setUndoToast] = useState<UndoToastItem | null>(null);
+  const previousOwnerIdRef = useRef(ownerId);
+  const ownerChanged = previousOwnerIdRef.current !== ownerId;
+  if (ownerChanged) clearOpenerRef.current = null;
+
+  useEffect(() => {
+    if (!ownerChanged) return;
+    previousOwnerIdRef.current = ownerId;
+    setShowClearConfirm(false);
+    clearOpenerRef.current = null;
+  }, [ownerChanged, ownerId]);
 
   useEffect(
-    () => scheduleNoticeDismissal(notice, () => setNotice(null), scheduler),
-    [notice, scheduler],
+    () => autoDismissNotice ? scheduleNoticeDismissal(notice, () => setNotice(null), scheduler) : undefined,
+    [autoDismissNotice, notice, scheduler],
   );
 
   const rememberOpener = useCallback((
@@ -156,7 +170,7 @@ export function useOverlayState({
     setIsPracticeMenuOpen,
     isStatsOpen,
     setIsStatsOpen,
-    showClearConfirm,
+    showClearConfirm: ownerChanged ? false : showClearConfirm,
     setShowClearConfirm,
     hasMountedOverlays,
     shareOpenerRef,

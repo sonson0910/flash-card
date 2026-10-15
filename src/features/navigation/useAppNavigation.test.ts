@@ -89,6 +89,7 @@ describe('useAppNavigation', () => {
   it('routes locale landing paths and keeps their prefix through app navigation', () => {
     expect(readAppViewMode('/')).toBe('landing');
     expect(readAppViewMode('/vi/')).toBe('landing');
+    expect(readAppViewMode('/?lesson=session')).toBe('today');
     expect(readAppViewMode('/vi/?view=today')).toBe('today');
     expect(readAppViewMode('?utm_source=phase4&view=catalog')).toBe('catalog');
     expect(readAppViewMode('?view=progress')).toBe('progress');

@@ -34,7 +34,7 @@ vi.mock('./firebase', () => ({
 }));
 
 import { query, where } from 'firebase/firestore';
-import { fetchLibraryStats } from './cardRepository';
+import { fetchLibraryDueCount, fetchLibraryStats } from './cardRepository';
 
 const countSnapshot = (count: number) => ({ data: () => ({ count }) });
 
@@ -76,9 +76,10 @@ describe('fetchLibraryStats course scoping', () => {
 
     expect(mocks.getCountFromServer).toHaveBeenCalledTimes(8);
     expect(languageWhereCalls()).toHaveLength(0);
-    expect(stats).toEqual({
+    expect(stats).toMatchObject({
       total: 10, reviewed: 4, easy: 1, good: 2, hard: 1, unrated: 6, bookmarked: 2, due: 5, legacyUnindexed: 3,
     });
+    expect(stats.dueAsOfDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
   it('scopes every underlying count to the active course language, including the raw reviewed-count query', async () => {
@@ -113,5 +114,16 @@ describe('fetchLibraryStats course scoping', () => {
     await fetchLibraryStats({} as never, 'user-1', '');
 
     expect(languageWhereCalls()).toHaveLength(0);
+  });
+
+  it('refreshes only the due count for a new local day', async () => {
+    mocks.getCountFromServer.mockResolvedValueOnce(countSnapshot(4));
+
+    const due = await fetchLibraryDueCount({} as never, 'user-1', 'ko');
+
+    expect(mocks.getCountFromServer).toHaveBeenCalledOnce();
+    expect(languageWhereCalls()).toEqual([['language', '==', 'ko']]);
+    expect(due).toMatchObject({ due: 4 });
+    expect(due.dueAsOfDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });

@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { gamificationStorageKeys } from '../gamification/gamificationStorage';
-import { deleteAccount, LocalAccountCleanupError, removeOwnerLocalKeys } from './accountDataService';
+import { deleteAccount, downloadAccountData, removeOwnerLocalKeys } from './accountDataService';
 
 const firestoreClient = vi.hoisted(() => ({
-  db: {} as Record<string, never>,
+  db: {} as Record<string, never> | null,
   terminate: vi.fn(),
   clearIndexedDbPersistence: vi.fn(),
 }));
@@ -79,7 +79,7 @@ vi.mock('firebase/auth', () => ({
 vi.mock('../../lib/firebase', () => ({
   auth: authentication.auth,
   app: {},
-  db: firestoreClient.db,
+  get db() { return firestoreClient.db; },
   getSonFlashFunctions: (app: unknown, region: string = 'asia-southeast1') => functions.getFunctions(app, region),
 }));
 
@@ -94,6 +94,16 @@ const fakeStorage = () => {
   };
 };
 
+const deferred = <T>() => {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+};
+
 describe('deleteAccount', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -104,6 +114,7 @@ describe('deleteAccount', () => {
     authentication.signOut.mockResolvedValue(undefined);
     functions.getFunctions.mockReturnValue({ region: 'asia-southeast1' });
     functions.httpsCallable.mockReturnValue(functions.callable);
+    firestoreClient.db = {};
     firestoreClient.terminate.mockResolvedValue(undefined);
     firestoreClient.clearIndexedDbPersistence.mockResolvedValue(undefined);
   });
@@ -114,32 +125,142 @@ describe('deleteAccount', () => {
     const nfdPhrase = 'XÓA TÀI KHOẢN'.normalize('NFD');
     const result = await deleteAccount(nfdPhrase);
 
-    expect(result).toBe('completed');
+    expect(result).toEqual({ status: 'completed', restartRequired: true, cacheCleared: true });
     expect(functions.httpsCallable).toHaveBeenCalledWith(
       { region: 'asia-southeast1' }, 'deleteMyAccount', { timeout: 300_000 },
     );
-    expect(functions.callable).toHaveBeenCalledWith({ confirmation: 'XÓA TÀI KHOẢN'.normalize('NFC') });
+    expect(functions.callable).toHaveBeenCalledWith({
+      confirmation: 'XÓA TÀI KHOẢN'.normalize('NFC'), expectedUid: 'user-1',
+    });
     expect(authentication.signOut).toHaveBeenCalledOnce();
     expect(firestoreClient.terminate).toHaveBeenCalledWith(firestoreClient.db);
     expect(firestoreClient.clearIndexedDbPersistence).toHaveBeenCalledWith(firestoreClient.db);
   });
 
-  it('rethrows a validation error without clearing local data, signing out, or clearing the Firestore cache', async () => {
-    functions.callable.mockRejectedValue(Object.assign(new Error('bad phrase'), { code: 'functions/invalid-argument' }));
+  it('does not delete or clear either account when the owner changes during reauthentication', async () => {
+    const originalUser = authentication.auth.currentUser!;
+    const replacementUser = { uid: 'user-2', getIdToken: vi.fn(async () => 'fresh-token') };
+    localStorage.setItem(gamificationStorageKeys(originalUser.uid).snapshot, 'original-owner-cache');
+    sessionStorage.setItem('lingoflash_word_draft', 'original-owner-draft');
+    authentication.reauthenticateWithPopup.mockImplementation(async () => {
+      authentication.auth.currentUser = replacementUser;
+    });
 
-    await expect(deleteAccount('wrong phrase')).rejects.toThrow('bad phrase');
+    await expect(deleteAccount('XÓA TÀI KHOẢN')).rejects.toThrow('Account changed while reauthenticating.');
 
+    expect(originalUser.getIdToken).not.toHaveBeenCalled();
+    expect(replacementUser.getIdToken).not.toHaveBeenCalled();
+    expect(functions.httpsCallable).not.toHaveBeenCalled();
+    expect(functions.callable).not.toHaveBeenCalled();
+    expect(localStorage.getItem(gamificationStorageKeys(originalUser.uid).snapshot)).toBe('original-owner-cache');
+    expect(sessionStorage.getItem('lingoflash_word_draft')).toBe('original-owner-draft');
     expect(authentication.signOut).not.toHaveBeenCalled();
     expect(firestoreClient.terminate).not.toHaveBeenCalled();
   });
 
-  it('clears the Firestore persistent cache without blocking the result when clearing fails', async () => {
+  it('does not dispatch deletion when the owner changes while refreshing credentials', async () => {
+    const token = deferred<string>();
+    const originalUser = authentication.auth.currentUser!;
+    const replacementUser = { uid: 'user-2', getIdToken: vi.fn(async () => 'fresh-token') };
+    originalUser.getIdToken.mockImplementation(() => token.promise);
+    localStorage.setItem(gamificationStorageKeys(originalUser.uid).snapshot, 'original-owner-cache');
+    sessionStorage.setItem('lingoflash_word_draft', 'original-owner-draft');
+
+    const deletion = deleteAccount('XÓA TÀI KHOẢN');
+    await vi.waitFor(() => expect(originalUser.getIdToken).toHaveBeenCalledOnce());
+    authentication.auth.currentUser = replacementUser;
+    token.resolve('fresh-token');
+
+    await expect(deletion).rejects.toThrow('Account changed while refreshing credentials.');
+
+    expect(functions.httpsCallable).not.toHaveBeenCalled();
+    expect(functions.callable).not.toHaveBeenCalled();
+    expect(localStorage.getItem(gamificationStorageKeys(originalUser.uid).snapshot)).toBe('original-owner-cache');
+    expect(sessionStorage.getItem('lingoflash_word_draft')).toBe('original-owner-draft');
+    expect(authentication.signOut).not.toHaveBeenCalled();
+    expect(firestoreClient.terminate).not.toHaveBeenCalled();
+  });
+
+  it('preserves the replacement account shared state when deletion resolves after an owner switch', async () => {
+    const callable = deferred<{ data: { status: string } }>();
+    const originalUser = authentication.auth.currentUser!;
+    const replacementUser = { uid: 'user-2', getIdToken: vi.fn(async () => 'fresh-token') };
+    functions.callable.mockImplementation(() => callable.promise);
+    localStorage.setItem(gamificationStorageKeys(originalUser.uid).snapshot, 'original-owner-cache');
+    localStorage.setItem(gamificationStorageKeys(replacementUser.uid).snapshot, 'replacement-owner-cache');
+    localStorage.setItem('lingoflash_shared_deck_operation_v1', 'replacement-operation');
+    sessionStorage.setItem('lingoflash_word_draft', 'replacement-draft');
+
+    const deletion = deleteAccount('XÓA TÀI KHOẢN');
+    await vi.waitFor(() => expect(functions.callable).toHaveBeenCalledOnce());
+    authentication.auth.currentUser = replacementUser;
+    callable.resolve({ data: { status: 'deleted' } });
+
+    await expect(deletion).resolves.toEqual({ status: 'completed', restartRequired: false, cacheCleared: true });
+
+    expect(localStorage.getItem(gamificationStorageKeys(originalUser.uid).snapshot)).toBeNull();
+    expect(localStorage.getItem(gamificationStorageKeys(replacementUser.uid).snapshot)).toBe('replacement-owner-cache');
+    expect(localStorage.getItem('lingoflash_shared_deck_operation_v1')).toBe('replacement-operation');
+    expect(sessionStorage.getItem('lingoflash_word_draft')).toBe('replacement-draft');
+    expect(authentication.signOut).not.toHaveBeenCalled();
+    expect(firestoreClient.terminate).not.toHaveBeenCalled();
+  });
+
+  it('preserves the replacement account shared state when deletion times out after an owner switch', async () => {
+    const callable = deferred<never>();
+    const originalUser = authentication.auth.currentUser!;
+    const replacementUser = { uid: 'user-2', getIdToken: vi.fn(async () => 'fresh-token') };
+    functions.callable.mockImplementation(() => callable.promise);
+    localStorage.setItem(gamificationStorageKeys(originalUser.uid).snapshot, 'original-owner-cache');
+    localStorage.setItem(gamificationStorageKeys(replacementUser.uid).snapshot, 'replacement-owner-cache');
+    localStorage.setItem('lingoflash_shared_deck_operation_v1', 'replacement-operation');
+    sessionStorage.setItem('lingoflash_word_draft', 'replacement-draft');
+
+    const deletion = deleteAccount('XÓA TÀI KHOẢN');
+    await vi.waitFor(() => expect(functions.callable).toHaveBeenCalledOnce());
+    authentication.auth.currentUser = replacementUser;
+    callable.reject(Object.assign(new Error('deadline exceeded'), { code: 'functions/deadline-exceeded' }));
+
+    await expect(deletion).resolves.toEqual({ status: 'started', restartRequired: false, cacheCleared: true });
+
+    expect(localStorage.getItem(gamificationStorageKeys(originalUser.uid).snapshot)).toBeNull();
+    expect(localStorage.getItem(gamificationStorageKeys(replacementUser.uid).snapshot)).toBe('replacement-owner-cache');
+    expect(localStorage.getItem('lingoflash_shared_deck_operation_v1')).toBe('replacement-operation');
+    expect(sessionStorage.getItem('lingoflash_word_draft')).toBe('replacement-draft');
+    expect(authentication.signOut).not.toHaveBeenCalled();
+    expect(firestoreClient.terminate).not.toHaveBeenCalled();
+  });
+
+  it.each(['functions/invalid-argument', 'functions/permission-denied'])(
+    'rethrows %s without clearing local data, signing out, or clearing the Firestore cache', async code => {
+    functions.callable.mockRejectedValue(Object.assign(new Error('deletion was rejected'), { code }));
+
+    await expect(deleteAccount('wrong phrase')).rejects.toThrow('deletion was rejected');
+
+    expect(authentication.signOut).not.toHaveBeenCalled();
+    expect(firestoreClient.terminate).not.toHaveBeenCalled();
+    },
+  );
+
+  it('reports the cache lifecycle attempt when persistence clearing fails after termination', async () => {
     functions.callable.mockResolvedValue({ data: { status: 'deleted' } });
-    firestoreClient.terminate.mockRejectedValue(new Error('already terminated'));
+    firestoreClient.clearIndexedDbPersistence.mockRejectedValue(new Error('persistence unavailable'));
 
     const result = await deleteAccount('XÓA TÀI KHOẢN');
 
-    expect(result).toBe('completed');
+    expect(result).toEqual({ status: 'completed', restartRequired: true, cacheCleared: false });
+    expect(firestoreClient.terminate).toHaveBeenCalledWith(firestoreClient.db);
+    expect(firestoreClient.clearIndexedDbPersistence).toHaveBeenCalledWith(firestoreClient.db);
+  });
+
+  it('does not report a cache lifecycle attempt when Firestore is unavailable', async () => {
+    functions.callable.mockResolvedValue({ data: { status: 'deleted' } });
+    firestoreClient.db = null;
+
+    await expect(deleteAccount('XÓA TÀI KHOẢN')).resolves.toEqual({
+      status: 'completed', restartRequired: true, cacheCleared: true,
+    });
+    expect(firestoreClient.terminate).not.toHaveBeenCalled();
     expect(firestoreClient.clearIndexedDbPersistence).not.toHaveBeenCalled();
   });
 
@@ -148,22 +269,58 @@ describe('deleteAccount', () => {
 
     const result = await deleteAccount('XÓA TÀI KHOẢN');
 
-    expect(result).toBe('started');
+    expect(result).toEqual({ status: 'started', restartRequired: true, cacheCleared: true });
     expect(authentication.signOut).toHaveBeenCalledOnce();
     expect(firestoreClient.terminate).toHaveBeenCalledWith(firestoreClient.db);
     expect(firestoreClient.clearIndexedDbPersistence).toHaveBeenCalledWith(firestoreClient.db);
   });
 
-  it('signs out even when local cleanup fails after a started deletion, without clearing the Firestore cache', async () => {
+  it('reports incomplete device cleanup after sign-out when local storage removal fails', async () => {
     functions.callable.mockRejectedValue(Object.assign(new Error('internal'), { code: 'functions/internal' }));
     vi.stubGlobal('localStorage', {
       ...fakeStorage(),
       removeItem: () => { throw new Error('storage unavailable'); },
     });
 
-    await expect(deleteAccount('XÓA TÀI KHOẢN')).rejects.toBeInstanceOf(LocalAccountCleanupError);
+    await expect(deleteAccount('XÓA TÀI KHOẢN')).resolves.toEqual({
+      status: 'started', restartRequired: true, cacheCleared: false,
+    });
 
     expect(authentication.signOut).toHaveBeenCalledOnce();
-    expect(firestoreClient.terminate).not.toHaveBeenCalled();
+    expect(firestoreClient.terminate).toHaveBeenCalledWith(firestoreClient.db);
+    expect(firestoreClient.clearIndexedDbPersistence).toHaveBeenCalledWith(firestoreClient.db);
+  });
+});
+
+describe('downloadAccountData', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    authentication.auth.currentUser = { uid: 'user-1', getIdToken: vi.fn(async () => 'fresh-token') };
+    functions.getFunctions.mockReturnValue({ region: 'asia-southeast1' });
+    functions.httpsCallable.mockReturnValue(functions.callable);
+  });
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('does not download an export after the owner switches while the callable is pending', async () => {
+    const response = deferred<{ data: { cards: string[] } }>();
+    const link = { click: vi.fn() };
+    const createObjectURL = vi.fn();
+    functions.callable.mockImplementation(() => response.promise);
+    vi.stubGlobal('URL', { createObjectURL, revokeObjectURL: vi.fn() });
+    vi.stubGlobal('document', {
+      body: { append: vi.fn() },
+      createElement: vi.fn(() => link),
+    });
+
+    const download = downloadAccountData();
+    await vi.waitFor(() => expect(functions.callable).toHaveBeenCalledOnce());
+    authentication.auth.currentUser = { uid: 'user-2', getIdToken: vi.fn(async () => 'fresh-token') };
+    response.resolve({ data: { cards: ['private'] } });
+
+    await expect(download).rejects.toThrow('Account changed while exporting data.');
+    expect(createObjectURL).not.toHaveBeenCalled();
+    expect(document.createElement).not.toHaveBeenCalled();
+    expect(link.click).not.toHaveBeenCalled();
   });
 });

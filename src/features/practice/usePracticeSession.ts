@@ -13,10 +13,13 @@ import type { LearningStateOutcome } from '../learning/learningStateController';
 
 export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'language-drill' | 'story' | 'match' | 'shadowing';
 export type PracticeViewMode = 'library' | PracticeMode;
-export type StudyRatingSettlement = 'committed' | 'retryable-error' | 'ignored';
+export type StudyRatingSettlement =
+  | { readonly status: 'committed'; readonly xpAwarded: 0 | 2; readonly rating?: ReviewRating }
+  | 'retryable-error'
+  | 'ignored';
 
 export interface PracticeLearningActions {
-  reviewCard: (cardId: string, rating: ReviewRating) => Promise<LearningStateOutcome>;
+  reviewCard: (cardId: string, rating: ReviewRating, operationId?: string) => Promise<LearningStateOutcome>;
   toggleBookmark: (cardId: string) => void | Promise<void>;
   assignDeck: (cardId: string, deckName: string | null) => void | Promise<void>;
   updateCard: (cardId: string, fields: Partial<CardData>) => void | Promise<LearningStateOutcome>;
@@ -35,6 +38,7 @@ export interface PracticeSnapshotPort {
 export interface PracticeSessionController {
   mode: PracticeViewMode;
   study: {
+    sessionKey: number;
     cards: CardData[];
     index: number;
     recallMode: RecallMode;
@@ -71,6 +75,66 @@ type PracticeGamesController = ReturnType<typeof usePracticeGames>;
 
 const STUDY_PREPARATION_TIMEOUT_MS = 15_000;
 export const MAXIMUM_UNIT_STUDY_LEXEMES = 20;
+const MAX_RETAINED_STUDY_REVIEW_RECORDS = 100;
+const STUDY_REVIEW_RECEIPT_MAX_AGE_MS = 10 * 60 * 1000;
+let fallbackStudyReviewOperationSequence = 0;
+
+type StudyReviewIntent = {
+  operationId: string;
+  rating: ReviewRating;
+  libraryEpoch?: number;
+  preReviewCount: number;
+  preReviewAt?: string;
+  adoptedActivationId?: number;
+};
+
+type StudyReviewReceipt = StudyReviewIntent & {
+  xpAwarded: 0 | 2;
+  confirmedAt: number;
+};
+
+type StudyReviewRecord = StudyReviewIntent | StudyReviewReceipt;
+
+const createStudyReviewOperationId = (): string => {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  fallbackStudyReviewOperationSequence += 1;
+  return `study-review-${Date.now()}-${fallbackStudyReviewOperationSequence}`;
+};
+
+const cardReviewCount = (card: CardData): number => Math.max(
+  card.reviews ?? 0,
+  card.reviewHistory?.length ?? 0,
+);
+
+const cardLastReviewAt = (card: CardData): string | undefined => {
+  const historyReview = card.reviewHistory?.at(-1)?.reviewedAt;
+  const fsrsReview = card.fsrs?.lastReview;
+  if (!historyReview) return fsrsReview;
+  if (!fsrsReview) return historyReview;
+  return Date.parse(fsrsReview) > Date.parse(historyReview) ? fsrsReview : historyReview;
+};
+
+const cardMatchesReviewSnapshot = (
+  card: CardData,
+  reviewCount: number,
+  lastReviewAt?: string,
+): boolean => {
+  if (cardReviewCount(card) !== reviewCount) return false;
+  const currentLastReviewAt = cardLastReviewAt(card);
+  if (currentLastReviewAt === lastReviewAt) return true;
+  if (!currentLastReviewAt || !lastReviewAt) return false;
+  const currentTime = Date.parse(currentLastReviewAt);
+  const expectedTime = Date.parse(lastReviewAt);
+  return Number.isFinite(currentTime) && Number.isFinite(expectedTime) && currentTime === expectedTime;
+};
+
+const cardHasReviewOperation = (card: CardData, operationId: string): boolean =>
+  card.appliedReviewOperationIds?.includes(operationId) ?? false;
+
+const isTerminalReviewError = (error: unknown): boolean => Boolean(
+  error && typeof error === 'object'
+    && (error as { reviewConflictTerminal?: unknown }).reviewConflictTerminal === true,
+);
 
 const unitStudyCardsAreValid = (cards: readonly CardData[], targetLanguage: string): boolean => {
   if (cards.length === 0 || cards.length > MAXIMUM_UNIT_STUDY_LEXEMES) return false;
@@ -87,8 +151,36 @@ const scopePracticeGames = (
   games: PracticeGamesController,
   isStateCurrent: boolean,
   isLanguageDrillCurrent: boolean,
+  isPracticePairCurrent: boolean,
 ): PracticeGamesController => {
-  if (isStateCurrent && isLanguageDrillCurrent) return games;
+  if (isStateCurrent && isLanguageDrillCurrent && isPracticePairCurrent) return games;
+  if (isStateCurrent && !isPracticePairCurrent) return {
+    ...games,
+    quizQuestions: [],
+    currentQuizIndex: 0,
+    selectedAnswer: null,
+    answeredCorrectly: null,
+    quizScore: 0,
+    showQuizResults: false,
+    spellingCards: [],
+    currentSpellingIndex: 0,
+    spellingInput: '',
+    spellingChecked: false,
+    spellingCorrect: false,
+    spellingScore: 0,
+    showSpellingResults: false,
+    languageDrillCards: [],
+    currentLanguageDrillIndex: 0,
+    languageDrillCorrect: 0,
+    showLanguageDrillResults: false,
+    story: null,
+    storyError: null,
+    isGeneratingStory: false,
+    isStartingQuiz: false,
+    isStartingSpelling: false,
+    quizCompletionSaving: false,
+    spellingCompletionSaving: false,
+  };
   if (isStateCurrent) return {
     ...games,
     languageDrillCards: [],
@@ -120,6 +212,8 @@ const scopePracticeGames = (
   isGeneratingStory: false,
   isStartingQuiz: false,
   isStartingSpelling: false,
+  quizCompletionSaving: false,
+  spellingCompletionSaving: false,
   };
 };
 
@@ -134,6 +228,7 @@ interface UsePracticeSessionOptions {
   learning: PracticeLearningActions;
   languageProfile: LanguageProfile;
   onAuthoritativeOutcome?: Parameters<typeof usePracticeGames>[0]['onAuthoritativeOutcome'];
+  onEmptyStudy?: () => void;
   reportError: (message: string) => void;
 }
 
@@ -148,6 +243,7 @@ export function usePracticeSession({
   learning,
   languageProfile,
   onAuthoritativeOutcome,
+  onEmptyStudy,
   reportError,
 }: UsePracticeSessionOptions): PracticeSessionController {
   const lifecycleRef = useRef<ReturnType<typeof createPracticeSessionLifecycle> | null>(null);
@@ -159,6 +255,9 @@ export function usePracticeSession({
   const isPracticeStateCurrent = practiceStateSessionRef.current === ownerSessionToken;
   const languageDrillScopeRef = useRef(languageDrillScopeKey);
   const isLanguageDrillCurrent = languageDrillScopeRef.current === languageDrillScopeKey;
+  const practicePairScopeKey = `${normalizeCardLanguage(languageProfile.source.code)}:${normalizeCardLanguage(languageProfile.target.code)}`;
+  const practicePairScopeRef = useRef(practicePairScopeKey);
+  const isPracticePairCurrent = practicePairScopeRef.current === practicePairScopeKey;
   const studyScopeKey = `${ownerId ?? ''}:${normalizeCardLanguage(languageProfile.source.code)}`;
   const studyScopeRef = useRef(studyScopeKey);
   if (studyScopeRef.current !== studyScopeKey) {
@@ -168,6 +267,7 @@ export function usePracticeSession({
   const studyCardsScopeRef = useRef(studyScopeKey);
   const isStudyScopeCurrent = studyCardsScopeRef.current === studyScopeKey;
   const [studyCards, setStudyCards] = useState<CardData[]>([]);
+  const [studySessionKey, setStudySessionKey] = useState(0);
   const studyCardsRef = useRef(studyCards);
   const scopedStudyCards = isPracticeStateCurrent && isStudyScopeCurrent ? studyCards : [];
   studyCardsRef.current = scopedStudyCards;
@@ -179,6 +279,72 @@ export function usePracticeSession({
   const [savingReviewCardId, setSavingReviewCardId] = useState<string | null>(null);
   const [reviewFailure, setReviewFailure] = useState<{ cardId: string; message: string } | null>(null);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const studyReviewRecordsRef = useRef(new Map<string, StudyReviewRecord>());
+  const studyReviewIntentOwnerRef = useRef(ownerId);
+  if (studyReviewIntentOwnerRef.current !== ownerId) {
+    studyReviewRecordsRef.current.clear();
+    studyReviewIntentOwnerRef.current = ownerId;
+  }
+  const studyReviewKey = (cardId: string) => `${ownerId ?? ''}\u0000${cardId}`;
+  const studyReviewRecordCount = (confirmed: boolean) => {
+    let count = 0;
+    for (const record of studyReviewRecordsRef.current.values()) {
+      if (('confirmedAt' in record) === confirmed) count += 1;
+    }
+    return count;
+  };
+  const pruneStudyReviewRecords = (cards: readonly CardData[]) => {
+    const availableCards = new Map(cards.map(card => [card.id, card]));
+    const ownerPrefix = `${ownerId ?? ''}\u0000`;
+    const now = Date.now();
+    for (const [key, receipt] of studyReviewRecordsRef.current) {
+      if (!key.startsWith(ownerPrefix)) continue;
+      if (!('confirmedAt' in receipt)) continue;
+      const card = availableCards.get(key.slice(ownerPrefix.length));
+      if (now - receipt.confirmedAt > STUDY_REVIEW_RECEIPT_MAX_AGE_MS
+        || (card && receipt.libraryEpoch !== undefined && card.libraryEpoch !== undefined
+          && receipt.libraryEpoch !== card.libraryEpoch)
+        || (card && !cardMatchesReviewSnapshot(card, receipt.preReviewCount, receipt.preReviewAt))) {
+        studyReviewRecordsRef.current.delete(key);
+      }
+    }
+  };
+  const adoptStudyReviewIntents = (cards: readonly CardData[], activationId: number) => {
+    const availableCards = new Map(cards.map(card => [card.id, card]));
+    const ownerPrefix = `${ownerId ?? ''}\u0000`;
+    for (const [key, intent] of studyReviewRecordsRef.current) {
+      if (!key.startsWith(ownerPrefix)) continue;
+      if ('confirmedAt' in intent) continue;
+      const card = availableCards.get(key.slice(ownerPrefix.length));
+      if (!card) continue;
+      intent.adoptedActivationId = activationId;
+    }
+  };
+  const rememberConfirmedStudyReview = (key: string, receipt: StudyReviewReceipt) => {
+    const currentActivationId = lifecycle.studyActivationId();
+    const currentCardId = studyCardsRef.current[studyIndex]?.id;
+    const protectedKey = receipt.adoptedActivationId !== undefined
+      && receipt.adoptedActivationId === currentActivationId
+      ? key
+      : currentActivationId !== null && currentCardId
+        && lifecycle.isReviewClaimCurrent(currentCardId, currentActivationId)
+        ? studyReviewKey(currentCardId)
+        : null;
+    const existingRecord = studyReviewRecordsRef.current.get(key);
+    if ((!existingRecord || !('confirmedAt' in existingRecord))
+      && studyReviewRecordCount(true) >= MAX_RETAINED_STUDY_REVIEW_RECORDS) {
+      let evicted = false;
+      for (const [candidate, record] of studyReviewRecordsRef.current) {
+        if (candidate !== protectedKey && 'confirmedAt' in record) {
+          studyReviewRecordsRef.current.delete(candidate);
+          evicted = true;
+          break;
+        }
+      }
+      if (!evicted) return;
+    }
+    studyReviewRecordsRef.current.set(key, receipt);
+  };
   const editorRef = useRef<{ ownerToken: number; cardId: string } | null>(null);
   if (editorRef.current?.ownerToken !== ownerSessionToken) editorRef.current = null;
   const isEditorOpen = () => editorRef.current?.ownerToken === ownerSessionToken;
@@ -193,6 +359,11 @@ export function usePracticeSession({
     loadPracticePool,
     languageDrillCards,
     languageDrillScopeKey,
+    storyLanguagePair: {
+      targetLanguage: languageProfile.source.code,
+      translationLanguage: languageProfile.target.code,
+    },
+    practicePairScopeKey,
     onAuthoritativeOutcome,
     openView: openPracticeView,
     reportError,
@@ -209,6 +380,7 @@ export function usePracticeSession({
     setSavingReviewCardId(null);
     setReviewFailure(null);
     setEditingCardId(null);
+    studyReviewRecordsRef.current.clear();
     quiz.reset();
     practiceStateSessionRef.current = ownerSessionToken;
   }, [ownerSessionToken]);
@@ -229,7 +401,15 @@ export function usePracticeSession({
     if (languageDrillScopeRef.current === languageDrillScopeKey) return;
     quiz.clearLanguageDrill();
     languageDrillScopeRef.current = languageDrillScopeKey;
-  }, [languageDrillScopeKey, quiz]);
+    if (mode === 'language-drill') openView('library');
+  }, [languageDrillScopeKey, mode, openView, quiz]);
+  useEffect(() => {
+    if (practicePairScopeRef.current === practicePairScopeKey) return;
+    quiz.clearPairGames();
+    quiz.clearStory();
+    practicePairScopeRef.current = practicePairScopeKey;
+    if (mode === 'quiz' || mode === 'spelling' || mode === 'story' || mode === 'match') openView('library');
+  }, [mode, openView, practicePairScopeKey, quiz]);
 
   const startStudy = useCallback(async () => {
     if (editorRef.current || studyScopeRef.current !== studyScopeKey) return;
@@ -244,10 +424,14 @@ export function usePracticeSession({
     );
     if (result.status === 'ready') {
       const cards = result.value;
+      pruneStudyReviewRecords(cards);
       if (cards.length === 0) {
         reportError('There are no new or due cards to review right now.');
       } else if (studyScopeRef.current === studyScopeKey && lifecycle.activate('study', result.sessionToken)) {
+        const activationId = lifecycle.studyActivationId();
+        if (activationId !== null) adoptStudyReviewIntents(cards, activationId);
         studyCardsScopeRef.current = studyScopeKey;
+        setStudySessionKey(previous => previous + 1);
         setStudyCards(cards);
         setRevealed(false);
         setReviewedCardId(null);
@@ -276,8 +460,12 @@ export function usePracticeSession({
     const result = await lifecycle.prepare('study', async () => [...cards], () => setIsStartingStudy(true));
     let started = false;
     if (result.status === 'ready') {
+      pruneStudyReviewRecords(result.value);
       if (studyScopeRef.current === studyScopeKey && isSourceCurrent() && lifecycle.activate('study', result.sessionToken)) {
+        const activationId = lifecycle.studyActivationId();
+        if (activationId !== null) adoptStudyReviewIntents(result.value, activationId);
         studyCardsScopeRef.current = studyScopeKey;
+        setStudySessionKey(previous => previous + 1);
         setStudyCards(result.value);
         setRevealed(false);
         setReviewedCardId(null);
@@ -311,31 +499,136 @@ export function usePracticeSession({
     if (!lifecycle.isCurrent(operationSession) || !lifecycle.isActive('study') || isEditorOpen()) return 'ignored' as const;
     const activeCard = studyCardsRef.current[studyIndex];
     if (!activeCard || !revealed) return 'ignored' as const;
+    const activationId = lifecycle.studyActivationId();
+    if (activationId === null) return 'ignored' as const;
+    const intentKey = studyReviewKey(activeCard.id);
+    const record = studyReviewRecordsRef.current.get(intentKey);
+    if (record && 'confirmedAt' in record) {
+      const confirmed = record;
+      const expired = Date.now() - confirmed.confirmedAt > STUDY_REVIEW_RECEIPT_MAX_AGE_MS;
+      const stillPreReview = cardMatchesReviewSnapshot(activeCard, confirmed.preReviewCount, confirmed.preReviewAt);
+      const adoptedInCurrentActivation = confirmed.adoptedActivationId === activationId;
+      const epochChanged = confirmed.libraryEpoch !== undefined
+        && activeCard.libraryEpoch !== undefined
+        && confirmed.libraryEpoch !== activeCard.libraryEpoch;
+      if (expired || (!stillPreReview && !adoptedInCurrentActivation) || epochChanged) {
+        studyReviewRecordsRef.current.delete(intentKey);
+      } else {
+        if (!lifecycle.claimReview(activeCard.id)) return 'ignored' as const;
+        studyReviewRecordsRef.current.delete(intentKey);
+        if (!lifecycle.settleReview(activeCard.id, 'saved', activationId)) return 'ignored' as const;
+        setReviewedCardId(activeCard.id);
+        if (confirmed.rating === 'easy') playRewardSound();
+        else if (confirmed.rating === 'good') playSuccessSound();
+        return {
+          status: 'committed',
+          xpAwarded: confirmed.xpAwarded,
+          ...(confirmed.rating === rating ? {} : { rating: confirmed.rating }),
+        } as const;
+      }
+    }
+    let intent = record && !('confirmedAt' in record) ? record : undefined;
+    if (intent) {
+      const epochChanged = intent.libraryEpoch !== undefined
+        && activeCard.libraryEpoch !== undefined
+        && intent.libraryEpoch !== activeCard.libraryEpoch;
+      const reviewSnapshotChanged = !cardMatchesReviewSnapshot(activeCard, intent.preReviewCount, intent.preReviewAt);
+      if (epochChanged || reviewSnapshotChanged) {
+        if (cardHasReviewOperation(activeCard, intent.operationId)) intent.adoptedActivationId = activationId;
+      }
+    }
+    if (!intent && studyReviewRecordCount(false) >= MAX_RETAINED_STUDY_REVIEW_RECORDS) {
+      const message = 'Could not save this review. Try again in a moment.';
+      setReviewFailure({ cardId: activeCard.id, message });
+      reportError(message);
+      return 'retryable-error' as const;
+    }
     if (!lifecycle.claimReview(activeCard.id)) return 'ignored' as const;
+    if (!intent) {
+      intent = {
+        operationId: createStudyReviewOperationId(),
+        rating,
+        libraryEpoch: activeCard.libraryEpoch,
+        preReviewCount: cardReviewCount(activeCard),
+        preReviewAt: cardLastReviewAt(activeCard),
+        adoptedActivationId: activationId,
+      };
+      studyReviewRecordsRef.current.set(intentKey, intent);
+    }
     setSavingReviewCardId(activeCard.id);
     setReviewFailure(current => current?.cardId === activeCard.id ? null : current);
     try {
-      if (rating === 'easy') playRewardSound();
-      else if (rating === 'good') playSuccessSound();
-      const outcome = await learning.reviewCard(activeCard.id, rating);
-      if (outcome?.status === 'review-conflict') throw new Error('This card was reviewed on another device.');
-      if (!lifecycle.isCurrent(operationSession)) return 'ignored' as const;
-      if (outcome?.status !== 'published') throw new Error('Review persistence did not confirm this review.');
-      if (lifecycle.settleReview(activeCard.id, 'saved')) {
+      const outcome = await learning.reviewCard(activeCard.id, intent.rating, intent.operationId);
+      if (outcome?.status === 'review-conflict') {
+        if (outcome.result.reviewConflictTerminal) {
+          const retainedIntent = studyReviewRecordsRef.current.get(intentKey);
+          if (retainedIntent?.operationId === intent.operationId) studyReviewRecordsRef.current.delete(intentKey);
+        }
+        throw new Error('This card was reviewed on another device.');
+      }
+      let committedReceipt: StudyReviewReceipt | undefined;
+      if (outcome?.status === 'published') {
+        const xpAwarded = outcome.result.xpAwarded;
+        if (xpAwarded !== 0 && xpAwarded !== 2) {
+          throw new Error('Review persistence did not return an authoritative XP award.');
+        }
+        const persistedRating = outcome.result.reviewRating ?? intent.rating;
+        const publication = outcome.result.publication;
+        const fields = publication?.kind === 'patch' ? publication.fields : undefined;
+        committedReceipt = {
+          operationId: intent.operationId,
+          rating: persistedRating,
+          xpAwarded,
+          libraryEpoch: typeof fields?.libraryEpoch === 'number' ? fields.libraryEpoch : intent.libraryEpoch,
+          preReviewCount: intent.preReviewCount,
+          preReviewAt: intent.preReviewAt,
+          adoptedActivationId: intent.adoptedActivationId,
+          confirmedAt: Date.now(),
+        };
+        const retainedIntent = studyReviewRecordsRef.current.get(intentKey);
+        if (lifecycle.isCurrent(operationSession) && retainedIntent?.operationId === intent.operationId) {
+          rememberConfirmedStudyReview(intentKey, committedReceipt);
+        }
+      } else {
+        throw new Error('Review persistence did not confirm this review.');
+      }
+      const cardStillInStudySnapshot = studyCardsRef.current.some(card => card.id === activeCard.id);
+      if (!lifecycle.isCurrent(operationSession)
+        || !lifecycle.isReviewClaimCurrent(activeCard.id, activationId)
+        || !cardStillInStudySnapshot) {
+        return 'ignored' as const;
+      }
+      if (!committedReceipt) return 'ignored' as const;
+      const persistedRating = committedReceipt.rating;
+      const xpAwarded = committedReceipt.xpAwarded;
+      if (lifecycle.settleReview(activeCard.id, 'saved', activationId)) {
+        studyReviewRecordsRef.current.delete(intentKey);
         setReviewedCardId(activeCard.id);
-        return 'committed' as const;
+        if (persistedRating === 'easy') playRewardSound();
+        else if (persistedRating === 'good') playSuccessSound();
+        return {
+          status: 'committed',
+          xpAwarded,
+          ...(persistedRating === rating ? {} : { rating: persistedRating }),
+        } as const;
       }
       return 'ignored' as const;
     } catch (error) {
-      if (!lifecycle.isCurrent(operationSession)) return 'ignored' as const;
-      if (!lifecycle.settleReview(activeCard.id, 'retry')) return 'ignored' as const;
+      if (isTerminalReviewError(error)) {
+        const retainedIntent = studyReviewRecordsRef.current.get(intentKey);
+        if (retainedIntent?.operationId === intent.operationId) studyReviewRecordsRef.current.delete(intentKey);
+      }
+      if (!lifecycle.isCurrent(operationSession)
+        || !lifecycle.isReviewClaimCurrent(activeCard.id, activationId)
+        || !studyCardsRef.current.some(card => card.id === activeCard.id)) return 'ignored' as const;
+      if (!lifecycle.settleReview(activeCard.id, 'retry', activationId)) return 'ignored' as const;
       const message = 'Could not save this review. Choose a rating to try again.';
       setReviewFailure({ cardId: activeCard.id, message });
       reportError(message);
       console.warn('Could not save the review result.', error);
       return 'retryable-error' as const;
     } finally {
-      if (lifecycle.isCurrent(operationSession)) {
+      if (lifecycle.isCurrent(operationSession) && lifecycle.isStudyActivationCurrent(activationId)) {
         setSavingReviewCardId(current => current === activeCard.id ? null : current);
       }
     }
@@ -347,7 +640,9 @@ export function usePracticeSession({
     if (mode === 'spelling') quiz.clearSpelling();
     if (mode === 'language-drill') quiz.clearLanguageDrill();
     if (mode === 'story') quiz.clearStory();
-    if (mode === 'study') lifecycle.clear(mode);
+    if (mode === 'study') {
+      lifecycle.clear(mode);
+    }
     openView('library');
   }, [lifecycle, mode, openView, quiz]);
 
@@ -368,6 +663,18 @@ export function usePracticeSession({
   const restoreSnapshotCard = useCallback((card: CardData) => {
     setStudyCards(previous => [card, ...previous.filter(candidate => candidate.id !== card.id)]);
   }, []);
+  useEffect(() => {
+    if (!lifecycle.isActive('study')) return;
+    if (studyCards.length === 0) {
+      editorRef.current = null;
+      setEditingCardId(null);
+      lifecycle.clear('study');
+      openView('library');
+      onEmptyStudy?.();
+      return;
+    }
+    setStudyIndex(current => Math.min(current, studyCards.length - 1));
+  }, [lifecycle, onEmptyStudy, openView, studyCards.length]);
   const clearSnapshot = useCallback(() => setStudyCards([]), []);
   const snapshot = useMemo<PracticeSnapshotPort>(() => ({
     findCard: cardId => studyCardsRef.current.find(card => card.id === cardId),
@@ -379,7 +686,7 @@ export function usePracticeSession({
     clear: clearSnapshot,
   }), [clearSnapshot, removeSnapshotCard, restoreSnapshotCard, updateSnapshotCard, updateSnapshotCards]);
 
-  const scopedQuiz = scopePracticeGames(quiz, isPracticeStateCurrent, isLanguageDrillCurrent);
+  const scopedQuiz = scopePracticeGames(quiz, isPracticeStateCurrent, isLanguageDrillCurrent, isPracticePairCurrent);
   const activeReviewStatus = !activeCardId
     ? 'idle' as const
     : savingReviewCardId === activeCardId
@@ -397,6 +704,7 @@ export function usePracticeSession({
     mode,
     study: isPracticeStateCurrent && isStudyScopeCurrent
       ? {
+          sessionKey: studySessionKey,
           cards: scopedStudyCards,
           index: studyIndex,
           recallMode,
@@ -408,6 +716,7 @@ export function usePracticeSession({
           isPaused: Boolean(editingCardId && editorRef.current?.cardId === editingCardId),
         }
       : {
+          sessionKey: studySessionKey,
           cards: [],
           index: 0,
           recallMode: 'adaptive',

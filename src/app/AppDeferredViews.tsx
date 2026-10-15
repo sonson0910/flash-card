@@ -43,13 +43,15 @@ interface AppDeferredPracticeViewProps {
   session: PracticeWorkspace['model']['session'];
   actions: PracticeWorkspace['actions'];
   customDecks: string[];
+  openWeeklyRecap: () => void;
+  onDeleteCard?: (cardId: string) => Promise<boolean>;
 }
 
-export function AppDeferredPracticeView({ session, actions, customDecks }: AppDeferredPracticeViewProps) {
+export function AppDeferredPracticeView({ session, actions, customDecks, openWeeklyRecap, onDeleteCard }: AppDeferredPracticeViewProps) {
   return (
     <Suspense fallback={<AppViewFallback label={<Trans id="shell.loading.practice" message="Loading practice" />} />}>
       <div className="async-content-enter" data-async-content="practice">
-        <PracticeScreen session={session} actions={actions} customDecks={customDecks} />
+        <PracticeScreen session={session} actions={actions} customDecks={customDecks} openWeeklyRecap={openWeeklyRecap} onDeleteCard={onDeleteCard} />
       </div>
     </Suspense>
   );

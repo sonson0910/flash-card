@@ -21,6 +21,7 @@ describe('Lumi', () => {
 
     expect(html).toContain('alt="A smiling study companion"');
     expect(html).not.toContain('aria-hidden');
+    expect(html).toContain('object-fit:contain');
     expect(html).toContain('width:72px;height:72px');
   });
 });

@@ -56,4 +56,30 @@ describe('computeWeeklyRecap', () => {
     expect(recap.totalXp).toBe(0);
     expect(recap.hasActivity).toBe(false);
   });
+
+  it('sums authoritative reviews for the full seven-day window in the persisted reward time zone', () => {
+    const recap = computeWeeklyRecap([], new Date('2026-09-27T00:30:00.000Z'), {
+      coverageStartedOn: '2026-09-20',
+      days: {
+        '2026-09-20': { reviewed: 2, again: 0, hard: 0, good: 2, easy: 0 },
+        '2026-09-21': { reviewed: 4, again: 1, hard: 0, good: 2, easy: 1 },
+        '2026-09-26': { reviewed: 3, again: 0, hard: 1, good: 2, easy: 0 },
+      },
+    }, 'America/Los_Angeles');
+
+    expect(recap.rangeStart).toBe('2026-09-20');
+    expect(recap.rangeEnd).toBe('2026-09-26');
+    expect(recap.reviewedCount).toBe(9);
+    expect(recap.hasActivity).toBe(true);
+  });
+
+  it('leaves reviews unavailable when coverage starts inside the week or the persisted zone is invalid', () => {
+    const activity = {
+      coverageStartedOn: '2026-09-22',
+      days: { '2026-09-22': { reviewed: 3, again: 0, hard: 0, good: 3, easy: 0 } },
+    };
+
+    expect(computeWeeklyRecap([], NOW, activity, 'Asia/Ho_Chi_Minh').reviewedCount).toBeNull();
+    expect(computeWeeklyRecap([], NOW, { ...activity, coverageStartedOn: '2026-09-01' }, 'Invalid/Zone').reviewedCount).toBeNull();
+  });
 });

@@ -14,82 +14,89 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:67
+#: src/features/account/AccountDataSection.tsx:84
 msgid "account.data.delete.busy"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:67
+#: src/features/account/AccountDataSection.tsx:42
+#: src/features/account/AccountDataSection.tsx:47
+msgid "account.data.delete.cache-warning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/account/AccountDataSection.tsx:84
 msgid "account.data.delete.confirm"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:64
+#: src/features/account/AccountDataSection.tsx:81
 msgid "account.data.delete.confirm-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:60
+#: src/features/account/AccountDataSection.tsx:77
 msgid "account.data.delete.open"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:35
+#: src/features/account/AccountDataSection.tsx:39
+#: src/features/account/AccountDataSection.tsx:46
 msgid "account.data.delete.started"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:62
+#: src/features/account/AccountDataSection.tsx:79
 msgid "account.data.delete.warning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:53
+#: src/features/account/AccountDataSection.tsx:70
 msgid "account.data.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:42
+#: src/features/account/AccountDataSection.tsx:53
 msgid "account.data.error.delete"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:26
+#: src/features/account/AccountDataSection.tsx:28
 msgid "account.data.error.export"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:41
+#: src/features/account/AccountDataSection.tsx:52
 msgid "account.data.error.local-cleanup"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:58
+#: src/features/account/AccountDataSection.tsx:75
 msgid "account.data.export.excel"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:59
+#: src/features/account/AccountDataSection.tsx:76
 msgid "account.data.export.json"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:59
+#: src/features/account/AccountDataSection.tsx:76
 msgid "account.data.export.json.busy"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:51
+#: src/features/account/AccountDataSection.tsx:68
 msgid "account.data.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:52
+#: src/features/account/AccountDataSection.tsx:69
 msgid "account.data.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/account/AccountDataSection.tsx:55
-#: src/features/account/AccountDataSection.tsx:71
+#: src/features/account/AccountDataSection.tsx:72
+#: src/features/account/AccountDataSection.tsx:88
 msgid "account.dialog.close"
 msgstr ""

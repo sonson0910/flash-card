@@ -81,7 +81,12 @@ export interface WordAudioPlayback {
 
 let currentSpeechPlayback: WordAudioPlayback | null = null;
 
-export function playWordAudio(word: string, audioUrl: string | null, speechLocale = 'en-US'): WordAudioPlayback {
+export function playWordAudio(
+  word: string,
+  audioUrl: string | null,
+  speechLocale = 'en-US',
+  voice?: SpeechSynthesisVoice,
+): WordAudioPlayback {
   if (isSupportedAudioUrl(audioUrl)) {
     const audio = new Audio(audioUrl);
     let cancelled = false;
@@ -89,7 +94,7 @@ export function playWordAudio(word: string, audioUrl: string | null, speechLocal
     audio.play().catch(err => {
       if (cancelled) return;
       console.warn('Audio URL failed, falling back to TTS', err);
-      fallback = speakFallback(word, speechLocale);
+      fallback = speakFallback(word, speechLocale, voice);
     });
     return {
       cancel() {
@@ -101,12 +106,12 @@ export function playWordAudio(word: string, audioUrl: string | null, speechLocal
       },
     };
   } else {
-    return speakFallback(word, speechLocale);
+    return speakFallback(word, speechLocale, voice);
   }
 }
 
-function speakFallback(text: string, speechLocale: string): WordAudioPlayback {
-  if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+function speakFallback(text: string, speechLocale: string, voice?: SpeechSynthesisVoice): WordAudioPlayback {
+  if (typeof window === 'undefined' || !window.speechSynthesis || typeof SpeechSynthesisUtterance === 'undefined') {
     return { cancel() {} };
   }
 
@@ -116,12 +121,10 @@ function speakFallback(text: string, speechLocale: string): WordAudioPlayback {
   let cancelled = false;
   let active = false;
   let queued = false;
-  let timeoutId: number | null = null;
   const playback: WordAudioPlayback = {
     cancel() {
       if (cancelled) return;
       cancelled = true;
-      if (timeoutId !== null) window.clearTimeout(timeoutId);
       utterance.volume = 0;
       if (currentSpeechPlayback !== playback) return;
       currentSpeechPlayback = null;
@@ -130,6 +133,7 @@ function speakFallback(text: string, speechLocale: string): WordAudioPlayback {
   };
   currentSpeechPlayback = playback;
   utterance.lang = speechLocale;
+  if (voice) utterance.voice = voice;
   utterance.rate = 0.9;
   utterance.onstart = () => {
     if (cancelled) {
@@ -144,12 +148,17 @@ function speakFallback(text: string, speechLocale: string): WordAudioPlayback {
     active = false;
     if (currentSpeechPlayback === playback) currentSpeechPlayback = null;
   };
-  timeoutId = window.setTimeout(() => {
-    timeoutId = null;
-    if (!cancelled) {
-      queued = true;
+  if (!cancelled) {
+    queued = true;
+    try {
+      // Keep speech synthesis in the originating click call stack. Some
+      // browsers reject a delayed speak() as no longer user initiated.
       speechSynthesis.speak(utterance);
+    } catch (error) {
+      queued = false;
+      if (currentSpeechPlayback === playback) currentSpeechPlayback = null;
+      console.warn('Speech synthesis failed', error);
     }
-  }, 50);
+  }
   return playback;
 }

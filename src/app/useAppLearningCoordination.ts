@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, type RefObject } from 'react';
+import { useCallback, useMemo, useRef, type RefObject, type SetStateAction } from 'react';
 import { cardWordKey } from '../lib/cardIdentity';
 import { db } from '../lib/firebase';
 import { retainCardsForSession } from '../lib/sessionCards';
@@ -22,6 +22,7 @@ import {
 import { useLearningWorkspace, type LearningWorkspaceActions } from '../features/learning/useLearningWorkspace';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { usePracticeWorkspace } from '../features/practice/usePracticeWorkspace';
+import type { PracticeGamificationOutcome } from '../features/practice/practiceSessionService';
 import type { CeremonyEvent, VerifiedGamificationOutcome } from '../features/gamification/verifiedGamificationClient';
 import { appDependencies } from './appDependencies';
 import type { AppLibraryRuntime } from './useAppLibraryRuntime';
@@ -34,6 +35,7 @@ export interface LearningCeremony {
 }
 interface UseAppLearningCoordinationOptions {
   library: AppLibraryRuntime;
+  courseScopeReady: boolean;
   viewMode: AppViewMode;
   /** Active course's language pair; defaults to English-Vietnamese for legacy users with no active course. */
   languageProfile: LanguageProfile;
@@ -41,22 +43,21 @@ interface UseAppLearningCoordinationOptions {
   coursePort: SharedDeckCoursePort | null;
   setViewMode(view: AppViewMode): void;
   setPracticeMenuOpen(open: boolean): void;
-  setClearConfirm(open: boolean): void;
   rememberOpener(openerRef: RefObject<HTMLElement | null>): void;
   shareOpenerRef: RefObject<HTMLElement | null>;
-  reportError(message: string | null): void;
+  reportError(message: SetStateAction<string | null>): void;
   notify(message: string | null): void;
   offerUndo(ownerId: string | null, toast: UndoToastItem | null): void;
   onCeremony?(ceremony: LearningCeremony): void;
 }
 export function useAppLearningCoordination({
   library,
+  courseScopeReady,
   viewMode,
   languageProfile,
   coursePort,
   setViewMode,
   setPracticeMenuOpen,
-  setClearConfirm,
   rememberOpener,
   shareOpenerRef,
   reportError,
@@ -65,7 +66,8 @@ export function useAppLearningCoordination({
   onCeremony,
 }: UseAppLearningCoordinationOptions) {
   const { model, actions, ports } = library;
-  const { cards, user, cloudStats, knownLibraryTotal, libraryEpochState, ownerLibrary, librarySession, externalLibraryBusy, cardsPerPage, catalog } = model;
+  const { cards, user: identityUser, cloudStats, knownLibraryTotal, libraryEpochState, ownerLibrary, librarySession, externalLibraryBusy, cardsPerPage, catalog } = model;
+  const user = courseScopeReady ? identityUser : null;
   const offerCeremony = (operationId: string, events: readonly CeremonyEvent[] | undefined, card?: LearningCeremony['card'], gamification?: VerifiedGamificationOutcome) => {
     if (user?.uid && events?.length) onCeremony?.({ ownerId: user.uid, operationId, events, card, gamification });
   };
@@ -92,6 +94,7 @@ export function useAppLearningCoordination({
     onCeremony: (outcome, operationId) => offerCeremony(operationId, outcome.events, undefined, outcome),
     learning: practiceLearning,
     languageProfile,
+    onEmptyStudy: ports.browser.actions.requestLibraryFocus,
     reportError,
   });
   ports.practicePublicationRef.current = practiceWorkspace.snapshotRef.current;
@@ -254,9 +257,9 @@ export function useAppLearningCoordination({
     rememberOpener(shareOpenerRef);
     return intakeSharing.actions.shareCategory(category);
   };
-  const { deleteCard, clearAll } = useLibraryMutationFeedback({
+  const { deleteCard, clearAll, clearStatus, clearError, resetClearFeedback } = useLibraryMutationFeedback({
     ownerId: user?.uid ?? null, activeOwnerIdRef: ports.activeOwnerIdRef,
-    commands: learningCommands, isLibraryBusy, setClearConfirm, reportError, offerUndo,
+    commands: learningCommands, isLibraryBusy, reportError, offerUndo,
   });
   const libraryScreen = useLibraryScreenContract({
     workspace: {
@@ -285,6 +288,7 @@ export function useAppLearningCoordination({
       newDeckInput: deckWorkspace.model.newDeckInput,
       libraryHeadingRef: ports.browser.refs.libraryHeading,
       fileInputRef,
+      languageProfile,
     },
     commands: {
       startStudy: practiceWorkspace.actions.startStudy,
@@ -306,6 +310,8 @@ export function useAppLearningCoordination({
       customDecks: deckWorkspace.model.decks,
       intakeSharing: intakeSharing.model,
       isLibraryBusy,
+      clearStatus,
+      clearError,
       canClearLibrary: canStartLibraryClear(isLibraryBusy),
     },
     actions: {
@@ -314,7 +320,14 @@ export function useAppLearningCoordination({
       loadPracticePool: practiceWorkspace.ports.loadPracticePool,
       continueCatalogUnit,
       reviewCard: practiceLearning.reviewCard,
+      acceptPracticeOutcome: (outcome: PracticeGamificationOutcome, operationId: string, expectedOwnerId: string) => {
+        if (user?.uid !== expectedOwnerId || ports.activeOwnerIdRef.current !== expectedOwnerId) return;
+        acceptAuthoritativeOutcome(outcome);
+        offerCeremony(operationId, outcome.events, undefined, outcome);
+      },
       clearAll,
+      deleteCard,
+      resetClearFeedback,
     },
   };
 }

@@ -2,7 +2,7 @@ import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { Check, ImageOff, Loader2, X } from 'lucide-react';
+import { Check, ImageOff, Loader2, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
@@ -33,6 +33,7 @@ export interface EditCardDialogProps {
   open: boolean;
   onOpenChange(open: boolean): void;
   onSave(cardId: string, fields: Partial<CardData>): void | Promise<LearningStateOutcome>;
+  onDelete?(cardId: string): Promise<boolean>;
   context?: EditCardDialogContext;
 }
 
@@ -44,27 +45,18 @@ export interface EditCardDialogContext {
 
 type EditCardError = 'invalid-content' | 'save-failed';
 
-const fieldLabel = (key: EditableCardField) => {
-  switch (key) {
-    case 'translation':
-      return <Trans id="library.edit-card.translation" message="Translation" />;
-    case 'explanation':
-      return <Trans id="library.edit-card.explanation" message="Definition" />;
-    case 'explanationTranslation':
-      return <Trans id="library.edit-card.explanation-translation" message="Definition translation" />;
-    case 'exampleSentence':
-      return <Trans id="library.edit-card.example" message="Example" />;
-    case 'exampleTranslation':
-      return <Trans id="library.edit-card.example-translation" message="Example translation" />;
-    case 'phonetic':
-      return 'IPA';
-    case 'mnemonic':
-      return <Trans id="flashcard.memory-hook" message="Memory hook" />;
-  }
-};
+const fieldLabels = {
+  translation: msg({ id: 'library.edit-card.translation', message: 'Translation' }),
+  explanation: msg({ id: 'library.edit-card.explanation', message: 'Definition' }),
+  explanationTranslation: msg({ id: 'library.edit-card.explanation-translation', message: 'Definition translation' }),
+  exampleSentence: msg({ id: 'library.edit-card.example', message: 'Example' }),
+  exampleTranslation: msg({ id: 'library.edit-card.example-translation', message: 'Example translation' }),
+  phonetic: null,
+  mnemonic: msg({ id: 'flashcard.memory-hook', message: 'Memory hook' }),
+} satisfies Record<EditableCardField, ReturnType<typeof msg> | null>;
 
 const isNativeField = (key: EditableCardField) =>
-  key === 'translation' || key === 'explanationTranslation' || key === 'exampleTranslation' || key === 'mnemonic';
+  key !== 'explanation' && key !== 'exampleSentence' && key !== 'phonetic';
 
 // Mirrors the server's and the client normalizer's http/https-only rule: even
 // though `source.url` was already sanitized before persistence, this display
@@ -86,17 +78,17 @@ const fieldRows = (key: EditableCardField) => {
   return 3;
 };
 
-const fieldClasses = (key: EditableCardField) => [
-  'mt-1.5 min-h-12 w-full resize-y rounded-[var(--sf-card-radius)] border border-[var(--sf-border)]',
-  'bg-[var(--sf-surface-control)] px-4 py-3 text-sm leading-6 text-[var(--sf-text)]',
-  'shadow-[var(--sf-panel-shadow)] outline-none placeholder:text-[var(--sf-text-muted)]',
-  'focus-visible:border-[var(--sf-brand)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--sf-brand)_24%,transparent)]',
-  '[html[data-theme-family=crystal]_&]:crystal-chamfer-sm',
-  key === 'phonetic' ? 'font-mono' : '',
-  key === 'mnemonic' ? 'border-[color-mix(in_srgb,var(--sf-reward)_45%,var(--sf-border))] bg-[color-mix(in_srgb,var(--sf-reward)_9%,var(--sf-surface-control))]' : '',
-].filter(Boolean).join(' ');
+const textareaClass = 'mt-1.5 min-h-12 w-full resize-y rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 py-3 text-sm leading-6 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] outline-none placeholder:text-[var(--sf-text-muted)] focus-visible:border-[var(--sf-brand)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--sf-brand)_24%,transparent)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
+const fieldClasses = (key: EditableCardField) => `${textareaClass}${key === 'phonetic' ? ' font-mono' : ''}${key === 'mnemonic' ? ' border-[color-mix(in_srgb,var(--sf-reward)_45%,var(--sf-border))] bg-[color-mix(in_srgb,var(--sf-reward)_9%,var(--sf-surface-control))]' : ''}`;
 
-export function EditCardDialog({ card, open, onOpenChange, onSave, context }: EditCardDialogProps) {
+const secondaryButtonClass = 'flex min-h-11 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 text-sm font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
+const dangerButtonClass = 'flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--sf-danger)] px-5 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
+const textInputClass = 'mt-1.5 min-h-11 w-full rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 text-sm text-[var(--sf-text)] outline-none focus-visible:border-[var(--sf-brand)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--sf-brand)_24%,transparent)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
+const dirtyBadgeClass = 'shrink-0 rounded-md border border-[color-mix(in_srgb,var(--sf-reward)_60%,var(--sf-border))] bg-[color-mix(in_srgb,var(--sf-reward)_14%,var(--sf-surface))] px-1.5 py-0.5 text-[10px] font-black uppercase tracking-[.08em] text-[var(--sf-reward)]';
+const fieldLabelClass = 'block text-xs font-black uppercase tracking-[.12em] text-[var(--sf-text-muted)]';
+const noteClass = 'rounded-[var(--sf-card-radius)] border border-dashed border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 text-xs leading-5 text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
+
+export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, context }: EditCardDialogProps) {
   const { _ } = useLingui();
   // The snapshot is intentionally stable while the sheet is open. A remote
   // update to a field the learner never touched therefore stays out of the
@@ -105,7 +97,8 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
   const [draft, setDraft] = useState<EditCardDraft>(() => createEditCardDraft(card));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<EditCardError | null>(null);
-  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
+  const [confirmation, setConfirmation] = useState<'discard' | 'delete' | null>(null);
+  const [deleteStatus, setDeleteStatus] = useState<'idle' | 'working' | 'failure'>('idle');
   // The headword commits through its own action (see `saveWord`), independently
   // from the draft above, because Rules lock `word`/`normalizedWord` on any card
   // that already has an identity: a rename always goes through the dedicated
@@ -126,7 +119,8 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
       setOpenedCard(card);
       setDraft(createEditCardDraft(card));
       setError(null);
-      setDiscardConfirmOpen(false);
+      setConfirmation(null);
+      setDeleteStatus('idle');
       setWordDraft(card.word);
       setRenamingWord(false);
       setWordError(null);
@@ -145,34 +139,30 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
 
   const targetLanguage = openedCard.language || 'en';
   const nativeLanguage = openedCard.translationLanguage || 'vi';
-  const dirty = isEditCardDraftDirty(openedCard, draft);
+  const deleting = deleteStatus === 'working';
+  const writing = saving || renamingWord || deleting;
+  const wordDirty = wordDraft.trim() !== openedCard.word;
+  const dirty = wordDirty || isEditCardDraftDirty(openedCard, draft);
   const previewCard = previewEditCard(openedCard, draft);
-  const saveFailedMessage = _(msg({ id: 'library.edit-card.save-failed', message: 'Your changes could not be saved. This card may have changed elsewhere. Try again.' }));
-  const invalidContentMessage = _(msg({ id: 'library.edit-card.invalid-content', message: 'Check the card content and try again.' }));
-  const errorMessage = error === 'save-failed' ? saveFailedMessage : error === 'invalid-content' ? invalidContentMessage : null;
-
-  const wordTooLongMessage = _(msg({ id: 'library.edit-card.word-too-long', message: 'Word is too long.' }));
-  const wordDuplicateMessage = _(msg({ id: 'library.edit-card.word-duplicate', message: 'Another card already uses this word.' }));
-  const wordConflictMessage = _(msg({ id: 'library.edit-card.word-conflict', message: 'This card changed elsewhere. Reload and try again.' }));
-  const wordSaveFailedMessage = _(msg({ id: 'library.edit-card.word-save-failed', message: 'The word could not be saved. Try again.' }));
-  const wordErrorMessage = wordError === 'invalid'
-    ? wordTooLongMessage
+  const errorMessage = error && _(error === 'save-failed'
+    ? msg({ id: 'library.edit-card.save-failed', message: 'Your changes could not be saved. This card may have changed elsewhere. Try again.' })
+    : msg({ id: 'library.edit-card.invalid-content', message: 'Check the card content and try again.' }));
+  const wordErrorMessage = wordError && _(wordError === 'invalid'
+    ? msg({ id: 'library.edit-card.word-too-long', message: 'Word is too long.' })
     : wordError === 'duplicate'
-      ? wordDuplicateMessage
+      ? msg({ id: 'library.edit-card.word-duplicate', message: 'Another card already uses this word.' })
       : wordError === 'conflict'
-        ? wordConflictMessage
-        : wordError === 'failed'
-          ? wordSaveFailedMessage
-          : null;
+        ? msg({ id: 'library.edit-card.word-conflict', message: 'This card changed elsewhere. Reload and try again.' })
+        : msg({ id: 'library.edit-card.word-save-failed', message: 'The word could not be saved. Try again.' }));
   const imageSearchFailedMessage = _(msg({ id: 'library.edit-card.image-search-failed', message: 'No new photo was found. Try again in a moment.' }));
 
   const closeSheet = (force = false) => {
-    if (saving && !force) return;
+    if (writing) return;
     if (!force && dirty) {
-      setDiscardConfirmOpen(true);
+      setConfirmation('discard');
       return;
     }
-    setDiscardConfirmOpen(false);
+    setConfirmation(null);
     onOpenChange(false);
   };
 
@@ -188,16 +178,16 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
   // the server via the trusted callable — kept independent from the main
   // form's patch so the two write paths (Admin-SDK callable vs. client
   // Firestore update) never have to reconcile a single combined save.
-  const saveWord = async () => {
-    if (renamingWord) return;
+  const saveWord = async (fromSubmit = false): Promise<CardData | null> => {
+    if (renamingWord || (saving && !fromSubmit)) return null;
     const nextWord = wordDraft.trim();
     if (nextWord === openedCard.word) {
       setWordError(null);
-      return;
+      return openedCard;
     }
     if (!nextWord || nextWord.length > MAX_HEADWORD_LENGTH) {
       setWordError('invalid');
-      return;
+      return null;
     }
     setRenamingWord(true);
     setWordError(null);
@@ -205,12 +195,14 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
       const renamed = await renameOwnCardHeadword(openedCard, nextWord);
       setOpenedCard(renamed);
       setWordDraft(renamed.word);
+      return renamed;
     } catch (renameError) {
       if (renameError instanceof CardHeadwordRenameError) {
         setWordError(renameError.reason === 'duplicate-word' ? 'duplicate' : 'conflict');
       } else {
         setWordError('failed');
       }
+      return null;
     } finally {
       setRenamingWord(false);
     }
@@ -220,7 +212,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
   // learner's current draft context rather than the live card, so a photo
   // found right after editing the meaning matches what is about to be saved.
   const findAnotherPhoto = async () => {
-    if (imageSearching) return;
+    if (imageSearching || writing) return;
     setImageSearching(true);
     setImageSearchFailed(false);
     try {
@@ -245,13 +237,14 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
   };
 
   const removeImage = () => {
+    if (writing) return;
     setDraft(previous => ({ ...previous, imageUrl: '', imageSearchQuery: '' }));
     setImageSearchFailed(false);
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (saving) return;
+    if (writing) return;
     let patch: Partial<CardData>;
     try {
       patch = editCardPatch(openedCard, draft);
@@ -259,30 +252,50 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
       setError('invalid-content');
       return;
     }
-    if (Object.keys(patch).length === 0) {
+    if (Object.keys(patch).length === 0 && !wordDirty) {
       closeSheet();
       return;
     }
     setSaving(true);
     setError(null);
     try {
-      const outcome = await onSave(openedCard.id, patch);
+      let cardToSave = openedCard;
+      if (wordDirty) {
+        const renamed = await saveWord(true);
+        if (!renamed) return;
+        cardToSave = renamed;
+        patch = editCardPatch(cardToSave, draft);
+      }
+      if (Object.keys(patch).length === 0) {
+        closeSheet(true);
+        return;
+      }
+      const outcome = await onSave(cardToSave.id, patch);
       if (!isSuccessfulEditCardSave(outcome)) {
         setError('save-failed');
         return;
       }
       // The facets mirror must never gate the save the learner is waiting on.
       if (Object.prototype.hasOwnProperty.call(patch, 'category')) {
-        mirrorCardCategoryEdit(openedCard, patch.category as string);
+        mirrorCardCategoryEdit(cardToSave, patch.category as string);
       }
-      // A successful save is already committed, so it must bypass the dirty
-      // exit guard and return focus through Radix to the launch control.
       closeSheet(true);
     } catch {
       setError('save-failed');
     } finally {
       setSaving(false);
     }
+  };
+
+  const deleteCard = async () => {
+    if (!onDelete || deleting) return;
+    setDeleteStatus('working');
+    if (await onDelete(openedCard.id).catch(() => false)) {
+      setConfirmation(null);
+      onOpenChange(false);
+      return;
+    }
+    setDeleteStatus('failure');
   };
 
   return (
@@ -298,7 +311,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
                 <p className="mt-2 font-mono text-sm text-[var(--sf-text-muted)]">{previewCard.phonetic || '—'}</p>
                 <div className="mt-16 flex items-center gap-2 border-t border-[var(--sf-border)] pt-3">
                   <p className="min-w-0 truncate font-serif text-2xl font-semibold text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:font-black [html[data-theme-family=crystal]_&]:italic">{previewCard.translation || '—'}</p>
-                  {dirty && <span className="shrink-0 rounded-md border border-[color-mix(in_srgb,var(--sf-reward)_60%,var(--sf-border))] bg-[color-mix(in_srgb,var(--sf-reward)_14%,var(--sf-surface))] px-1.5 py-0.5 text-[10px] font-black uppercase tracking-[.08em] text-[var(--sf-reward)]"><Trans id="library.edit-card.unsaved-badge" message="Unsaved" /></span>}
+                  {dirty && <span className={dirtyBadgeClass}><Trans id="library.edit-card.unsaved-badge" message="Unsaved" /></span>}
                 </div>
               </div>
             </div>
@@ -335,7 +348,8 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
               </button>
             </header>
 
-            <form id="edit-card-form" onSubmit={submit} aria-busy={saving} className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-7 md:px-[26px]">
+              <form id="edit-card-form" onSubmit={submit} aria-busy={writing} className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-7 md:px-[26px]">
+              <fieldset disabled={writing} className="contents">
               <section data-edit-preview aria-label={_(msg({ id: 'library.edit-card.draft-preview', message: 'Draft preview' }))} className="rounded-[var(--sf-card-radius)] border border-[color-mix(in_srgb,var(--sf-brand)_35%,var(--sf-border))] bg-[var(--sf-card-bg)] p-3 shadow-[var(--sf-panel-shadow)] md:hidden [html[data-theme-family=crystal]_&]:crystal-chamfer">
                 <div className="flex min-w-0 gap-3">
                   {previewCard.imageUrl ? (
@@ -346,7 +360,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <p className="truncate text-[10px] font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]">{previewCard.partOfSpeech || 'Card preview'}</p>
-                      {dirty && <span data-edit-dirty className="shrink-0 rounded-md border border-[color-mix(in_srgb,var(--sf-reward)_60%,var(--sf-border))] bg-[color-mix(in_srgb,var(--sf-reward)_14%,var(--sf-surface))] px-1.5 py-0.5 text-[10px] font-black uppercase tracking-[.08em] text-[var(--sf-reward)]"><Trans id="library.edit-card.unsaved-badge" message="Unsaved" /></span>}
+                      {dirty && <span data-edit-dirty className={dirtyBadgeClass}><Trans id="library.edit-card.unsaved-badge" message="Unsaved" /></span>}
                     </div>
                     <h3 data-preview-word lang={targetLanguage} className="mt-1 truncate font-serif text-2xl font-bold leading-none text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:font-black [html[data-theme-family=crystal]_&]:italic">{previewCard.word}</h3>
                     <p data-preview-phonetic lang={targetLanguage} className="mt-1 truncate font-mono text-xs text-[var(--sf-text-muted)]">{previewCard.phonetic || '—'}</p>
@@ -365,7 +379,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
               <section className="mt-4 grid gap-3" aria-label={_(msg({ id: 'library.edit-card.card-fields', message: 'Card fields' }))}>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="min-w-0">
-                    <span className="block text-xs font-black uppercase tracking-[.12em] text-[var(--sf-text-muted)]"><Trans id="library.edit-card.word" message="Word" /></span>
+                    <span className={fieldLabelClass}><Trans id="library.edit-card.word" message="Word" /></span>
                     {canRenameWord ? (
                       <div className="mt-1.5 flex min-w-0 gap-1.5">
                         <input
@@ -375,7 +389,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
                           lang={targetLanguage}
                           dir="auto"
                           maxLength={MAX_HEADWORD_LENGTH}
-                          disabled={renamingWord}
+                          disabled={writing}
                           onChange={event => {
                             setWordDraft(event.target.value);
                             setWordError(null);
@@ -391,8 +405,8 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
                           type="button"
                           data-edit-word-save
                           aria-label={_(msg({ id: 'library.edit-card.save-word', message: 'Save word' }))}
-                          disabled={renamingWord || !wordDraft.trim() || wordDraft.trim() === openedCard.word}
-                          onClick={saveWord}
+                          disabled={writing || !wordDraft.trim() || wordDraft.trim() === openedCard.word}
+                          onClick={() => saveWord()}
                           className="flex size-11 shrink-0 items-center justify-center rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
                         >
                           {renamingWord ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Check size={16} aria-hidden="true" />}
@@ -404,7 +418,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
                     {wordErrorMessage && <p role="alert" className="mt-1.5 text-xs font-semibold text-[var(--sf-danger)]">{wordErrorMessage}</p>}
                   </div>
                   <div className="min-w-0">
-                    <span className="block text-xs font-black uppercase tracking-[.12em] text-[var(--sf-text-muted)]"><Trans id="library.edit-card.part-of-speech" message="Part of speech" /></span>
+                    <span className={fieldLabelClass}><Trans id="library.edit-card.part-of-speech" message="Part of speech" /></span>
                     {canEditPartOfSpeech(openedCard) ? (
                       <input
                         data-edit-partofspeech-input
@@ -415,7 +429,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
                           setDraft(previous => ({ ...previous, partOfSpeech: event.target.value }));
                           setError(null);
                         }}
-                        className="mt-1.5 min-h-11 w-full rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 text-sm text-[var(--sf-text)] outline-none focus-visible:border-[var(--sf-brand)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--sf-brand)_24%,transparent)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                        className={textInputClass}
                       />
                     ) : (
                       <>
@@ -428,7 +442,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="block min-w-0 sm:col-span-2">
-                    <span className="block text-xs font-black uppercase tracking-[.12em] text-[var(--sf-text-muted)]"><Trans id="library.edit-card.category" message="Category" /></span>
+                    <span className={fieldLabelClass}><Trans id="library.edit-card.category" message="Category" /></span>
                     <input
                       data-edit-category-input
                       value={draft.category}
@@ -437,11 +451,11 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
                         setDraft(previous => ({ ...previous, category: event.target.value }));
                         setError(null);
                       }}
-                      className="mt-1.5 min-h-11 w-full rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 text-sm text-[var(--sf-text)] outline-none focus-visible:border-[var(--sf-brand)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--sf-brand)_24%,transparent)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                      className={textInputClass}
                     />
                   </label>
                   <div className="min-w-0 sm:col-span-2">
-                    <span className="block text-xs font-black uppercase tracking-[.12em] text-[var(--sf-text-muted)]"><Trans id="library.edit-card.image" message="Image" /></span>
+                    <span className={fieldLabelClass}><Trans id="library.edit-card.image" message="Image" /></span>
                     <div className="mt-1.5 flex min-w-0 items-center gap-2">
                       {draft.imageUrl ? (
                         <img src={getDisplayImageUrl(draft.imageUrl)} alt="" className="size-11 shrink-0 rounded-[calc(var(--sf-card-radius)*.65)] object-cover [html[data-theme-family=crystal]_&]:crystal-chamfer-sm" />
@@ -476,11 +490,11 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   {EDIT_CARD_FIELDS.map(({ key, maxLength }) => {
-                    const isFullWidth = key === 'translation' || key === 'explanation' || key === 'explanationTranslation' || key === 'exampleSentence' || key === 'exampleTranslation' || key === 'mnemonic';
+                    const isFullWidth = key !== 'phonetic';
                     const fieldLanguage = isNativeField(key) ? nativeLanguage : targetLanguage;
                     return (
                       <label key={key} className={`block min-w-0 ${isFullWidth ? 'sm:col-span-2' : ''}`}>
-                        <span className={`block text-xs font-black uppercase tracking-[.12em] ${key === 'mnemonic' ? 'text-[var(--sf-reward)]' : 'text-[var(--sf-text-muted)]'}`}>{fieldLabel(key)}</span>
+                        <span className={`block text-xs font-black uppercase tracking-[.12em] ${key === 'mnemonic' ? 'text-[var(--sf-reward)]' : 'text-[var(--sf-text-muted)]'}`}>{fieldLabels[key] ? _(fieldLabels[key]) : 'IPA'}</span>
                         <textarea
                           ref={key === 'translation' ? firstFieldRef : undefined}
                           value={draft[key]}
@@ -499,11 +513,11 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
                   })}
                 </div>
 
-                <p data-edit-contract-note className="rounded-[var(--sf-card-radius)] border border-dashed border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 text-xs leading-5 text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+                <p data-edit-contract-note className={noteClass}>
                   <Trans id="library.edit-card.contract-note" message="A published sense's part of speech, deck, bookmark, tags and difficulty stay unchanged in this sheet until their data contracts are available." />
                 </p>
                 {openedCard.source && (openedCard.source.url || openedCard.source.title) && (
-                  <p data-edit-source-note className="rounded-[var(--sf-card-radius)] border border-dashed border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 text-xs leading-5 text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+                  <p data-edit-source-note className={noteClass}>
                     <span className="font-black uppercase tracking-[.12em]"><Trans id="library.edit-card.source-label" message="Captured from" /></span>{' '}
                     {isDisplayableSourceUrl(openedCard.source.url) ? (
                       <a
@@ -525,13 +539,15 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
                 </p>
                 {errorMessage && <p role="alert" className="rounded-[var(--sf-card-radius)] border border-[var(--sf-danger)] bg-[color-mix(in_srgb,var(--sf-danger)_10%,var(--sf-surface))] px-4 py-3 text-sm font-semibold text-[var(--sf-danger)]">{errorMessage}</p>}
               </section>
+              </fieldset>
 
               <footer className="sticky bottom-[-1rem] z-10 mt-5 flex flex-col-reverse gap-2 border-t border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] py-4 sm:flex-row sm:items-center sm:justify-end md:bottom-[-1rem]">
+                {onDelete && <button type="button" data-edit-delete onClick={() => { setDeleteStatus('idle'); setConfirmation('delete'); }} disabled={writing} className="mr-auto flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold text-[var(--sf-danger)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60"><Trash2 size={16} aria-hidden="true" /><Trans id="library.card.delete" message="Delete card" /></button>}
                 <span className="mr-auto hidden text-xs text-[var(--sf-text-muted)] sm:block"><kbd className="rounded border border-[var(--sf-border)] px-1.5 py-0.5 font-mono text-[10px]"><Trans id="library.edit-card.esc-key" message="Esc" /></kbd> <Trans id="library.edit-card.back-to-card" message="back to card" /></span>
-                <button type="button" onClick={() => closeSheet()} disabled={saving} className="flex min-h-11 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 text-sm font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+                <button type="button" onClick={() => closeSheet()} disabled={writing} className={secondaryButtonClass}>
                   <span>{dirty ? 'Discard' : <Trans id="library.edit-card.cancel" message="Cancel" />}</span>
                 </button>
-                <button type="submit" disabled={saving} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-5 text-sm font-bold text-[var(--sf-on-brand)] shadow-md transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+                <button type="submit" disabled={writing} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-5 text-sm font-bold text-[var(--sf-on-brand)] shadow-md transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
                   {saving && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
                   <span>{saving ? <Trans id="library.edit-card.saving" message="Saving changes…" /> : error === 'save-failed' ? 'Retry save' : context ? <Trans id="library.edit-card.save-resume" message="Save & resume" /> : <Trans id="library.edit-card.save" message="Save changes" />}</span>
                   {!saving && <kbd className="hidden rounded bg-black/15 px-1.5 py-0.5 font-mono text-[10px] sm:inline">⌘↵</kbd>}
@@ -542,19 +558,23 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, context }: Ed
         </Dialog.Portal>
       </Dialog.Root>
 
-      <AlertDialog.Root open={discardConfirmOpen} onOpenChange={setDiscardConfirmOpen}>
+      <AlertDialog.Root open={confirmation !== null} onOpenChange={nextOpen => { if (!nextOpen && !deleting) setConfirmation(null); }}>
         <AlertDialog.Portal>
           <AlertDialog.Overlay className="fixed inset-0 z-[110] bg-slate-950/55 backdrop-blur-sm" />
           <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[111] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] p-6 text-[var(--sf-text)] shadow-2xl outline-none [html[data-theme-family=crystal]_&]:crystal-chamfer">
-            <AlertDialog.Title className="font-serif text-2xl font-bold [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:italic"><Trans id="library.edit-card.discard-title" message="Discard unsaved changes?" /></AlertDialog.Title>
-            <AlertDialog.Description className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]"><Trans id="library.edit-card.discard-description" message="Your draft will be removed and the card will stay unchanged." /></AlertDialog.Description>
+            <AlertDialog.Title className="font-serif text-2xl font-bold [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:italic">{confirmation === 'delete' ? <Trans id="library.delete.title" message="Delete card?" /> : <Trans id="library.edit-card.discard-title" message="Discard unsaved changes?" />}</AlertDialog.Title>
+            <AlertDialog.Description className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]">
+              {confirmation === 'delete' ? <><Trans id="library.delete.description" message="This will permanently remove {word} from your library." values={{ word: openedCard.word }} /> {dirty && <Trans id="library.edit-card.discard-description" message="Your remaining draft will be removed." />}</> : <Trans id="library.edit-card.discard-description" message="Your remaining draft will be removed." />}
+            </AlertDialog.Description>
+            {confirmation === 'delete' && deleteStatus === 'failure' && <p role="alert" className="mt-3 text-sm font-semibold text-[var(--sf-danger)]"><Trans id="library.edit-card.delete-failed" message="This card could not be deleted. Try again." /></p>}
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <AlertDialog.Cancel asChild>
-                <button type="button" className="flex min-h-11 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 text-sm font-bold text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><Trans id="library.edit-card.keep-editing" message="Keep editing" /></button>
+                <button type="button" disabled={deleting} className={secondaryButtonClass}>{confirmation === 'delete' ? <Trans id="common.cancel" message="Cancel" /> : <Trans id="library.edit-card.keep-editing" message="Keep editing" />}</button>
               </AlertDialog.Cancel>
-              <AlertDialog.Action asChild>
-                <button type="button" onClick={() => closeSheet(true)} className="flex min-h-11 items-center justify-center rounded-xl bg-[var(--sf-danger)] px-5 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><Trans id="library.edit-card.discard-confirm" message="Discard changes" /></button>
-              </AlertDialog.Action>
+              <button type="button" data-edit-delete-confirm={confirmation === 'delete' || undefined} onClick={confirmation === 'delete' ? deleteCard : () => closeSheet(true)} disabled={deleting} className={dangerButtonClass}>
+                {deleting && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
+                <span>{confirmation === 'delete' ? deleting ? <Trans id="library.edit-card.deleting" message="Deleting card…" /> : deleteStatus === 'failure' ? <Trans id="library.edit-card.retry-delete" message="Retry delete" /> : <Trans id="library.delete.confirm" message="Delete card" /> : <Trans id="library.edit-card.discard-confirm" message="Discard changes" />}</span>
+              </button>
             </div>
           </AlertDialog.Content>
         </AlertDialog.Portal>

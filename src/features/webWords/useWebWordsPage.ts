@@ -3,12 +3,14 @@ import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import type { CardData } from '../../types/card';
 import { getLibraryCardTier, type LibraryCardTier } from '../library/libraryViewModel';
+import { cardsForLanguagePair } from '../practice/practiceModel';
+import { buildDailyPlan } from '../dailyLearning/dailyPlan';
 import { promoteCardsToActiveSessionNewStage } from '../dailyLearning/webWordsSessionPriority';
 import { fetchWebWordsPage } from './webWordsQuery';
 import { groupWebWordsByArticle, webWordsDayFromCard, webWordsSiteFromUrl, type WebWordsArticleGroup } from './webWordsGrouping';
 
 export type WebWordsPageStatus = 'loading' | 'ready' | 'empty' | 'signed-out' | 'error';
-export type AddToTodayStatus = 'idle' | 'added' | 'added-session-not-started' | 'added-after-new-stage';
+export type AddToTodayStatus = 'idle' | 'added' | 'added-partial' | 'added-capped' | 'added-unloaded' | 'added-session-not-started' | 'added-after-new-stage' | 'scheduled-normal-review';
 
 export interface WebWordsFilters {
   readonly site: string | null;
@@ -28,6 +30,7 @@ export interface WebWordsPageState {
   readonly isLoadingMore: boolean;
   readonly selectedCardIds: ReadonlySet<string>;
   readonly addToTodayStatus: AddToTodayStatus;
+  readonly addToTodayHasNormallyScheduledCards: boolean;
 }
 
 export interface WebWordsPageActions {
@@ -45,10 +48,11 @@ export interface WebWordsPageActions {
 export interface UseWebWordsPageOptions {
   readonly ownerId: string | null;
   readonly targetLanguage: string | null;
+  readonly translationLanguage: string | null;
 }
 
-export function useWebWordsPage({ ownerId, targetLanguage }: UseWebWordsPageOptions): { readonly state: WebWordsPageState; readonly actions: WebWordsPageActions } {
-  const scopeKey = `${ownerId ?? ''}\u0000${targetLanguage ?? ''}`;
+export function useWebWordsPage({ ownerId, targetLanguage, translationLanguage }: UseWebWordsPageOptions): { readonly state: WebWordsPageState; readonly actions: WebWordsPageActions } {
+  const scopeKey = `${ownerId ?? ''}\u0000${targetLanguage ?? ''}\u0000${translationLanguage ?? ''}`;
   const activeScopeRef = useRef(scopeKey);
   activeScopeRef.current = scopeKey;
   const [items, setItems] = useState<readonly CardData[]>([]);
@@ -59,6 +63,7 @@ export function useWebWordsPage({ ownerId, targetLanguage }: UseWebWordsPageOpti
   const [filters, setFilters] = useState<WebWordsFilters>(emptyFilters);
   const [selectedCardIds, setSelectedCardIds] = useState<ReadonlySet<string>>(new Set());
   const [addToTodayStatus, setAddToTodayStatus] = useState<AddToTodayStatus>('idle');
+  const [addToTodayHasNormallyScheduledCards, setAddToTodayHasNormallyScheduledCards] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
@@ -69,23 +74,25 @@ export function useWebWordsPage({ ownerId, targetLanguage }: UseWebWordsPageOpti
     setFilters(emptyFilters);
     setSelectedCardIds(new Set());
     setAddToTodayStatus('idle');
+    setAddToTodayHasNormallyScheduledCards(false);
     if (ownerId === null) {
       setStatus('signed-out');
       return;
     }
-    if (!targetLanguage || !db) {
+    if (!targetLanguage || !translationLanguage || !db) {
       setStatus('error');
       return;
     }
     let cancelled = false;
     setStatus('loading');
-    fetchWebWordsPage({ db, ownerId, targetLanguage })
+    const scope = scopeKey;
+    fetchWebWordsPage({ db, ownerId, targetLanguage, translationLanguage })
       .then(page => {
-        if (cancelled) return;
+        if (cancelled || scope !== activeScopeRef.current) return;
         setItems(page.items);
         setCursor(page.cursor);
         setHasNext(page.hasNext);
-        setStatus(page.items.length > 0 ? 'ready' : 'empty');
+        setStatus(page.items.length > 0 || page.hasNext ? 'ready' : 'empty');
       })
       .catch(() => {
         if (cancelled) return;
@@ -94,18 +101,19 @@ export function useWebWordsPage({ ownerId, targetLanguage }: UseWebWordsPageOpti
     return () => {
       cancelled = true;
     };
-  }, [ownerId, targetLanguage, reloadToken]);
+  }, [ownerId, targetLanguage, translationLanguage, reloadToken]);
 
   const loadMore = useCallback(() => {
-    if (!ownerId || !targetLanguage || !db || !hasNext || isLoadingMore) return;
+    if (!ownerId || !targetLanguage || !translationLanguage || !db || !hasNext || isLoadingMore) return;
     setIsLoadingMore(true);
     const scope = scopeKey;
-    fetchWebWordsPage({ db, ownerId, targetLanguage, cursor })
+    fetchWebWordsPage({ db, ownerId, targetLanguage, translationLanguage, cursor })
       .then(page => {
         if (scope !== activeScopeRef.current) return;
         setItems(previous => [...previous, ...page.items]);
         setCursor(page.cursor);
         setHasNext(page.hasNext);
+        if (items.length === 0 && page.items.length === 0 && !page.hasNext) setStatus('empty');
       })
       .catch(() => {
         /* Leave the already-loaded page visible; hasNext/isLoadingMore reset below lets the learner retry. */
@@ -113,7 +121,7 @@ export function useWebWordsPage({ ownerId, targetLanguage }: UseWebWordsPageOpti
       .finally(() => {
         if (scope === activeScopeRef.current) setIsLoadingMore(false);
       });
-  }, [ownerId, targetLanguage, scopeKey, cursor, hasNext, isLoadingMore]);
+  }, [ownerId, targetLanguage, translationLanguage, scopeKey, cursor, hasNext, isLoadingMore, items.length]);
 
   const retry = useCallback(() => setReloadToken(token => token + 1), []);
 
@@ -155,15 +163,29 @@ export function useWebWordsPage({ ownerId, targetLanguage }: UseWebWordsPageOpti
   const clearSelection = useCallback(() => setSelectedCardIds(new Set()), []);
 
   const addCardsToToday = useCallback((cards: readonly CardData[]) => {
-    if (!ownerId || cards.length === 0) return;
-    const outcome = promoteCardsToActiveSessionNewStage(ownerId, cards);
+    if (!ownerId || !targetLanguage || !translationLanguage || cards.length === 0) return;
+    const currentPairCards = cardsForLanguagePair(cards, targetLanguage, translationLanguage);
+    if (currentPairCards.length === 0) return;
+    const now = new Date();
+    const newCards = currentPairCards.filter(card => buildDailyPlan([card], { now }).items.some(item => item.reason === 'new'));
+    const hasNormallyScheduledCards = newCards.length !== currentPairCards.length;
+    setAddToTodayHasNormallyScheduledCards(hasNormallyScheduledCards);
+    if (newCards.length === 0) {
+      setAddToTodayStatus('scheduled-normal-review');
+      clearSelection();
+      return;
+    }
+    const outcome = promoteCardsToActiveSessionNewStage(ownerId, newCards, { targetLanguage, translationLanguage });
     setAddToTodayStatus(
       outcome === 'no-active-session' ? 'added-session-not-started'
         : outcome === 'new-stage-already-passed' ? 'added-after-new-stage'
+          : outcome === 'promoted-partial' ? 'added-partial'
+            : outcome === 'deferred-capped' ? 'added-capped'
+              : outcome === 'deferred-unloaded' ? 'added-unloaded'
           : 'added',
     );
-    clearSelection();
-  }, [ownerId, clearSelection]);
+    if (outcome !== 'deferred-capped' && outcome !== 'deferred-unloaded') clearSelection();
+  }, [ownerId, targetLanguage, translationLanguage, clearSelection]);
 
   const addSelectedToToday = useCallback(() => {
     addCardsToToday(items.filter(card => selectedCardIds.has(card.id)));
@@ -174,7 +196,7 @@ export function useWebWordsPage({ ownerId, targetLanguage }: UseWebWordsPageOpti
   }, [addCardsToToday, filteredItems]);
 
   return {
-    state: { status, groups, filters, availableSites, availableDays, hasNext, isLoadingMore, selectedCardIds, addToTodayStatus },
+    state: { status, groups, filters, availableSites, availableDays, hasNext, isLoadingMore, selectedCardIds, addToTodayStatus, addToTodayHasNormallyScheduledCards },
     actions: {
       setSiteFilter: site => setFilters(previous => ({ ...previous, site })),
       setDayFilter: day => setFilters(previous => ({ ...previous, day })),

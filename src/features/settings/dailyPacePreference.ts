@@ -42,6 +42,11 @@ export const readDailyPaceForEta = (
   }
 };
 
-export const writeDailyPace = (pace: DailyPace, storage: Pick<PaceStorage, 'setItem'> | null = getStorage()): void => {
-  try { storage?.setItem(DAILY_PACE_STORAGE_KEY, String(pace)); } catch { /* the in-memory choice still applies for this view */ }
+export const writeDailyPace = (pace: DailyPace, storage: Pick<PaceStorage, 'setItem'> | null = getStorage()): boolean => {
+  try {
+    storage?.setItem(DAILY_PACE_STORAGE_KEY, String(pace));
+    return storage !== null;
+  } catch {
+    return false;
+  }
 };

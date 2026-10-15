@@ -1,7 +1,10 @@
+import { i18n } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
 import type { CardData } from '../../types/card';
 import { withTimeout } from '../../lib/async';
 import { getProtectedFunctionUserMessage } from '../../lib/protectedFunctionsCapability';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
+import { SharedDeckCourseNativeLanguageMismatchError } from './shared-deck-course-error';
 
 const MAX_SHARED_CARDS = 100;
 const MAX_SHARE_ID_LENGTH = 128;
@@ -10,6 +13,8 @@ const SHARED_DECK_OPERATION_TIMEOUT_MS = 20_000;
 // Shared intake confirms one write at a time against the owner's rate-limit budget.
 const SHARED_DECK_INTAKE_BATCH_SIZE = 1;
 const SHARED_DECK_INTAKE_WRITE_TIMEOUT_MS = 8_000;
+const SHARED_DECK_PAIR_HANDOFF_TIMEOUT_MS = 5_000;
+const SHARED_DECK_PAIR_HANDOFF_POLL_MS = 25;
 const SHARED_DECK_OPERATION_STORAGE_KEY = 'lingoflash_shared_deck_operation_v1';
 const SHARED_DECK_OPERATION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1_000;
 const MAX_PENDING_SHARED_DECK_OPERATIONS = 20;
@@ -35,6 +40,8 @@ export interface SharedDeckAdapter {
 
 type SharedDeckAdoptionResult =
   | { status: 'busy' }
+  | { status: 'pair-mismatch' }
+  | { status: 'stale' }
   | { status: 'failed'; error: unknown }
   | {
     status: 'completed';
@@ -44,7 +51,10 @@ type SharedDeckAdoptionResult =
   };
 
 export interface SharedDeckIntakePort {
-  adoptShared(request: { cards: readonly unknown[] }): Promise<SharedDeckAdoptionResult>;
+  adoptShared(request: {
+    cards: readonly unknown[];
+    expectedPair?: SharedDeckExpectedLanguagePair;
+  }): Promise<SharedDeckAdoptionResult>;
 }
 
 export interface SharedDeckBrowser {
@@ -80,6 +90,11 @@ export interface SharedDeckSampleWord {
 export interface SharedDeckLanguagePair {
   targetLanguage: string | null;
   translationLanguage: string | null;
+}
+
+export interface SharedDeckExpectedLanguagePair {
+  targetLanguage: string;
+  nativeLanguage: string;
 }
 
 export interface SharedDeckOutgoingPreview {
@@ -125,6 +140,8 @@ export interface SharedDeckSessionActions {
 /** The optional dependency `shareCourseMatching.ts` implements. Kept as a structural type here to avoid a cyclic import. */
 export interface SharedDeckCoursePort {
   ensureCourseForIncomingShare(preview: SharedDeckIncomingPreview): Promise<void>;
+  /** Legacy callers omit this hook and keep their original import behavior. */
+  shouldValidateIncomingPair?(): boolean;
 }
 
 interface SharedDeckSessionOptions {
@@ -133,10 +150,9 @@ interface SharedDeckSessionOptions {
   browser: SharedDeckBrowser;
   storage?: SharedDeckOperationStorage | null;
   /**
-   * Optional and additive: omitting it (every existing caller and test does)
-   * keeps `acceptShared()` byte-for-byte identical to before this field
-   * existed. When supplied, it only ever runs before the import call and
-   * never blocks it, so a course-matching failure cannot turn into a
+   * Optional and additive: omitting it keeps existing callers on the original
+   * import path. When supplied, it completes before the import call and
+   * a failure leaves the preview retryable instead of producing a
    * half-imported deck.
    */
   coursePort?: SharedDeckCoursePort | null;
@@ -216,6 +232,17 @@ const incomingLanguagePairs = (
     pairs.set(`${language ?? ''}\u0000`, pair);
   }
   return [...pairs.values()];
+};
+
+const expectedPairFromPreview = (
+  preview: SharedDeckIncomingPreview,
+): SharedDeckExpectedLanguagePair | null => {
+  const pairs = preview.languagePairs ?? [];
+  if (pairs.length !== 1) return null;
+  const [pair] = pairs;
+  return pair.targetLanguage && pair.translationLanguage
+    ? { targetLanguage: pair.targetLanguage, nativeLanguage: pair.translationLanguage }
+    : null;
 };
 
 const canonicalCardLanguage = (card: Record<string, unknown>): string | null => {
@@ -471,6 +498,7 @@ export function createSharedDeckSessionController({
     lifecycle: number;
     owner: string | null;
     cards: readonly unknown[];
+    expectedPair: SharedDeckExpectedLanguagePair | null;
   } | null = null;
   let disposed = false;
   let pendingCreates: PendingSharedDeckOperation[] = [];
@@ -597,6 +625,10 @@ export function createSharedDeckSessionController({
         lifecycle: operationLifecycle,
         owner,
         cards: loaded.cards,
+        expectedPair: coursePort
+          && (coursePort.shouldValidateIncomingPair?.() ?? true)
+          ? expectedPairFromPreview(loaded.preview)
+          : null,
       };
       publish({
         incomingPreview: loaded.preview,
@@ -725,11 +757,24 @@ export function createSharedDeckSessionController({
           await coursePort.ensureCourseForIncomingShare(snapshot.incomingPreview);
           if (!isCurrent(operationLifecycle, owner) || pendingSharedDeck !== pending) return { status: 'stale' };
         }
-        const adoption = await withTimeout(
-          intake.adoptShared({ cards: pending.cards }),
-          SHARED_DECK_OPERATION_TIMEOUT_MS
-            + Math.ceil(pending.cards.length / SHARED_DECK_INTAKE_BATCH_SIZE) * SHARED_DECK_INTAKE_WRITE_TIMEOUT_MS,
+        const adoptionTimeout = SHARED_DECK_OPERATION_TIMEOUT_MS
+          + Math.ceil(pending.cards.length / SHARED_DECK_INTAKE_BATCH_SIZE) * SHARED_DECK_INTAKE_WRITE_TIMEOUT_MS;
+        const adopt = () => withTimeout(
+          intake.adoptShared({
+            cards: pending.cards,
+            ...(pending.expectedPair ? { expectedPair: pending.expectedPair } : {}),
+          }),
+          adoptionTimeout,
         );
+        let adoption = await adopt();
+        if (adoption.status === 'pair-mismatch' && pending.expectedPair) {
+          const deadline = Date.now() + SHARED_DECK_PAIR_HANDOFF_TIMEOUT_MS;
+          while (adoption.status === 'pair-mismatch' && Date.now() < deadline) {
+            await new Promise<void>(resolve => setTimeout(resolve, SHARED_DECK_PAIR_HANDOFF_POLL_MS));
+            if (!isCurrent(operationLifecycle, owner) || pendingSharedDeck !== pending) return { status: 'stale' };
+            adoption = await adopt();
+          }
+        }
         if (!isCurrent(operationLifecycle, owner) || pendingSharedDeck !== pending) {
           return { status: 'stale' };
         }
@@ -738,6 +783,11 @@ export function createSharedDeckSessionController({
             error: 'Another card operation is already running. Please try the shared link again.',
           });
           return { status: 'busy' };
+        }
+        if (adoption.status === 'stale') return { status: 'stale' };
+        if (adoption.status === 'pair-mismatch') {
+          publish({ error: 'Could not add this shared deck safely. Please try again.' });
+          return { status: 'failed' };
         }
         if (adoption.status === 'failed') throw adoption.error;
         if (!Number.isSafeInteger(adoption.candidateCount) || adoption.candidateCount <= 0) {
@@ -758,7 +808,12 @@ export function createSharedDeckSessionController({
           return { status: 'stale' };
         }
         publish({
-          error: getProtectedFunctionUserMessage(error)
+          error: error instanceof SharedDeckCourseNativeLanguageMismatchError
+            ? i18n._(msg({
+              id: 'library.share.meaning-language-mismatch',
+              message: "This shared deck uses a different meaning language from your existing course. Change the course's Meaning language in Settings, then try again.",
+            }))
+            : getProtectedFunctionUserMessage(error)
             ?? 'Could not add this shared deck safely. Please try again.',
         });
         return { status: 'failed' };

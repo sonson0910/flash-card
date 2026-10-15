@@ -1,15 +1,21 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { i18n } from '@lingui/core';
 import { describe, expect, it, vi } from 'vitest';
 import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
+import { CourseError } from '../courses/courseModel';
 import type { CardData } from '../../types/card';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
+import { createSharedDeckCoursePort } from './shareCourseMatching';
 import {
   createSharedDeckSessionController,
   type SharedDeckAdapter,
   type SharedDeckBrowser,
   type SharedDeckIntakePort,
 } from './sharedDeckSessionController';
+
+i18n.load('en', {});
+i18n.activate('en');
 
 const card = (word: string): CardData => ({
   id: `word-${word}`,
@@ -78,7 +84,11 @@ class MemoryStorage {
   removeItem(key: string): void { this.values.delete(key); }
 }
 
-const setup = (url = 'https://sonflash.test/library', storage?: MemoryStorage) => {
+const setup = (
+  url = 'https://sonflash.test/library',
+  storage?: MemoryStorage,
+  coursePort?: { ensureCourseForIncomingShare(preview: unknown): Promise<void> },
+) => {
   const browser = new FakeBrowser(url);
   const adapter: SharedDeckAdapter = {
     load: vi.fn(async () => ({ category: 'IELTS', cards: [card('apple')] })),
@@ -93,7 +103,7 @@ const setup = (url = 'https://sonflash.test/library', storage?: MemoryStorage) =
       reusedCount: 0,
     })),
   };
-  const controller = createSharedDeckSessionController({ adapter, intake, browser, storage });
+  const controller = createSharedDeckSessionController({ adapter, intake, browser, storage, coursePort });
   return { browser, adapter, intake, controller };
 };
 
@@ -155,6 +165,247 @@ describe('shared deck session controller', () => {
       notice: 'Added 80 new cards from the shared link; reused 19 already in your library.',
       error: null,
     });
+  });
+
+  it('keeps the legacy import path when no course port is supplied', async () => {
+    const { controller, adapter, intake } = setup('https://sonflash.test/library?share=legacy-pair');
+    const shared = canonicalCard('사과', 'ko', 'vi');
+    vi.mocked(adapter.load).mockResolvedValue({
+      category: 'Korean', targetLanguage: 'ko', nativeLanguage: 'vi', cards: [shared],
+    });
+
+    await controller.activate('owner-1');
+    await expect(controller.actions.acceptShared()).resolves.toEqual({ status: 'accepted' });
+
+    expect(intake.adoptShared).toHaveBeenCalledWith({ cards: [shared] });
+  });
+
+  it('does not poll a legacy adopter after a pair mismatch', async () => {
+    vi.useFakeTimers();
+    try {
+      const { controller, adapter, intake, browser } = setup('https://sonflash.test/library?share=legacy-mismatch');
+      const shared = canonicalCard('사과', 'ko', 'vi');
+      vi.mocked(adapter.load).mockResolvedValue({
+        category: 'Korean', targetLanguage: 'ko', nativeLanguage: 'vi', cards: [shared],
+      });
+      vi.mocked(intake.adoptShared).mockResolvedValue({ status: 'pair-mismatch' });
+
+      await controller.activate('owner-1');
+      const acceptance = controller.actions.acceptShared();
+      await expect(acceptance).resolves.toEqual({ status: 'failed' });
+
+      expect(intake.adoptShared).toHaveBeenCalledOnce();
+      expect(browser.url).toContain('share=legacy-mismatch');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps the incoming preview and share link when course matching fails before adoption', async () => {
+    const actions = {
+      createCourse: vi.fn().mockResolvedValue({
+        ok: false,
+        error: new CourseError('cloud-write-failed', 'course mutation failed'),
+      }),
+      reopenCourse: vi.fn(), switchCourse: vi.fn(), updateCourse: vi.fn(), archiveCourse: vi.fn(),
+      addGoal: vi.fn(), updateGoal: vi.fn(), removeGoal: vi.fn(), clearError: vi.fn(),
+    };
+    const coursePort = createSharedDeckCoursePort({
+      model: { status: 'ready', source: 'cloud', profile: null, activeCourse: null, pending: false, errorCode: null },
+      actions: actions as never,
+    });
+    const { controller, adapter, intake, browser } = setup(
+      'https://sonflash.test/library?share=deck-course-failure',
+      undefined,
+      coursePort,
+    );
+    vi.mocked(adapter.load).mockResolvedValue({
+      category: 'Shared',
+      targetLanguage: 'ko',
+      nativeLanguage: 'vi',
+      cards: [canonicalCard('resilience', 'ko', 'vi')],
+    });
+    await controller.activate('owner-1');
+
+    await expect(controller.actions.acceptShared()).resolves.toEqual({ status: 'failed' });
+
+    expect(actions.createCourse).toHaveBeenCalledWith({
+      targetLanguage: 'ko', nativeLanguage: 'vi', activateOnCreate: true,
+    });
+    expect(intake.adoptShared).not.toHaveBeenCalled();
+    expect(controller.getSnapshot()).toMatchObject({
+      isShareDialogOpen: true,
+      incomingPreview: expect.objectContaining({ shareId: 'deck-course-failure' }),
+      error: 'Could not add this shared deck safely. Please try again.',
+    });
+    expect(browser.url).toContain('?share=deck-course-failure');
+    expect(browser.replacements).toEqual([]);
+  });
+
+  it('keeps a native-language-mismatched deck retryable without importing it', async () => {
+    const actions = {
+      createCourse: vi.fn(), reopenCourse: vi.fn(), switchCourse: vi.fn(), updateCourse: vi.fn(), archiveCourse: vi.fn(),
+      addGoal: vi.fn(), updateGoal: vi.fn(), removeGoal: vi.fn(), clearError: vi.fn(),
+    };
+    const course = {
+      id: 'course-ko', targetLanguage: 'ko', nativeLanguage: 'en', status: 'active', goals: [],
+      preferences: { pronunciationVariant: null, showRomanization: false, zhScript: null },
+      createdAt: '2026-01-01T00:00:00.000Z',
+    } as const;
+    const coursePort = createSharedDeckCoursePort({
+      model: {
+        status: 'ready', source: 'cloud', profile: { activeCourseId: course.id, courses: [course] },
+        activeCourse: course, pending: false, errorCode: null,
+      },
+      actions: actions as never,
+    });
+    const { controller, adapter, intake, browser } = setup(
+      'https://sonflash.test/library?share=deck-native-mismatch',
+      undefined,
+      coursePort,
+    );
+    vi.mocked(adapter.load).mockResolvedValue({
+      category: 'Shared', targetLanguage: 'ko', nativeLanguage: 'vi',
+      cards: [canonicalCard('resilience', 'ko', 'vi')],
+    });
+    await controller.activate('owner-1');
+
+    await expect(controller.actions.acceptShared()).resolves.toEqual({ status: 'failed' });
+
+    expect(intake.adoptShared).not.toHaveBeenCalled();
+    expect(actions.createCourse).not.toHaveBeenCalled();
+    expect(actions.reopenCourse).not.toHaveBeenCalled();
+    expect(actions.switchCourse).not.toHaveBeenCalled();
+    expect(controller.getSnapshot()).toMatchObject({
+      isShareDialogOpen: true,
+      incomingPreview: expect.objectContaining({ shareId: 'deck-native-mismatch' }),
+      error: "This shared deck uses a different meaning language from your existing course. Change the course's Meaning language in Settings, then try again.",
+    });
+    expect(browser.url).toContain('?share=deck-native-mismatch');
+    expect(browser.replacements).toEqual([]);
+  });
+
+  it('retries one accepted share after the intake pair converges', async () => {
+    vi.useFakeTimers();
+    try {
+      const coursePort = { ensureCourseForIncomingShare: vi.fn(async () => undefined) };
+      const { controller, adapter, intake, browser } = setup(
+        'https://sonflash.test/library?share=deck-pair', undefined, coursePort,
+      );
+      vi.mocked(adapter.load).mockResolvedValue({
+        category: 'Korean',
+        targetLanguage: 'ko',
+        nativeLanguage: 'vi',
+        cards: [canonicalCard('사과', 'ko', 'vi')],
+      });
+      vi.mocked(intake.adoptShared)
+        .mockResolvedValueOnce({ status: 'pair-mismatch' })
+        .mockResolvedValueOnce({ status: 'completed', candidateCount: 1, createdCount: 1, reusedCount: 0 });
+
+      await controller.activate('owner-1');
+      const acceptance = controller.actions.acceptShared();
+      await Promise.resolve();
+      expect(intake.adoptShared).toHaveBeenCalledWith(expect.objectContaining({
+        expectedPair: { targetLanguage: 'ko', nativeLanguage: 'vi' },
+      }));
+
+      await vi.advanceTimersByTimeAsync(25);
+      await expect(acceptance).resolves.toEqual({ status: 'accepted' });
+      expect(intake.adoptShared).toHaveBeenCalledTimes(2);
+      expect(browser.url).not.toContain('share=deck-pair');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps a pair handoff retryable when the listener never converges', async () => {
+    vi.useFakeTimers();
+    try {
+      const coursePort = { ensureCourseForIncomingShare: vi.fn(async () => undefined) };
+      const { controller, adapter, intake, browser } = setup(
+        'https://sonflash.test/library?share=deck-timeout', undefined, coursePort,
+      );
+      vi.mocked(adapter.load).mockResolvedValue({
+        category: 'Korean',
+        targetLanguage: 'ko',
+        nativeLanguage: 'vi',
+        cards: [canonicalCard('사과', 'ko', 'vi')],
+      });
+      vi.mocked(intake.adoptShared).mockResolvedValue({ status: 'pair-mismatch' });
+
+      await controller.activate('owner-1');
+      const acceptance = controller.actions.acceptShared();
+      await vi.advanceTimersByTimeAsync(5_000);
+
+      await expect(acceptance).resolves.toEqual({ status: 'failed' });
+      expect(intake.adoptShared).toHaveBeenCalled();
+      expect(vi.mocked(intake.adoptShared).mock.calls.every(([request]) => request.expectedPair)).toBe(true);
+      expect(browser.url).toContain('share=deck-timeout');
+      expect(controller.getSnapshot()).toMatchObject({
+        isShareDialogOpen: true,
+        incomingPreview: expect.objectContaining({ shareId: 'deck-timeout' }),
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('aborts a pair handoff when the owner changes', async () => {
+    vi.useFakeTimers();
+    try {
+      const coursePort = { ensureCourseForIncomingShare: vi.fn(async () => undefined) };
+      const { controller, adapter, intake, browser } = setup(
+        'https://sonflash.test/library?share=deck-owner-change', undefined, coursePort,
+      );
+      vi.mocked(adapter.load).mockResolvedValue({
+        category: 'Korean',
+        targetLanguage: 'ko',
+        nativeLanguage: 'vi',
+        cards: [canonicalCard('사과', 'ko', 'vi')],
+      });
+      vi.mocked(intake.adoptShared).mockResolvedValue({ status: 'pair-mismatch' });
+
+      await controller.activate('owner-1');
+      const acceptance = controller.actions.acceptShared();
+      await Promise.resolve();
+      await controller.activate('owner-2');
+      await vi.advanceTimersByTimeAsync(25);
+
+      await expect(acceptance).resolves.toEqual({ status: 'stale' });
+      expect(intake.adoptShared).toHaveBeenCalledOnce();
+      expect(browser.url).toContain('share=deck-owner-change');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('aborts a pair handoff when the controller is disposed', async () => {
+    vi.useFakeTimers();
+    try {
+      const coursePort = { ensureCourseForIncomingShare: vi.fn(async () => undefined) };
+      const { controller, adapter, intake, browser } = setup(
+        'https://sonflash.test/library?share=deck-disposed', undefined, coursePort,
+      );
+      vi.mocked(adapter.load).mockResolvedValue({
+        category: 'Korean',
+        targetLanguage: 'ko',
+        nativeLanguage: 'vi',
+        cards: [canonicalCard('사과', 'ko', 'vi')],
+      });
+      vi.mocked(intake.adoptShared).mockResolvedValue({ status: 'pair-mismatch' });
+
+      await controller.activate('owner-1');
+      const acceptance = controller.actions.acceptShared();
+      await Promise.resolve();
+      controller.dispose();
+      await vi.advanceTimersByTimeAsync(25);
+
+      await expect(acceptance).resolves.toEqual({ status: 'stale' });
+      expect(intake.adoptShared).toHaveBeenCalledOnce();
+      expect(browser.url).toContain('share=deck-disposed');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('allows a full shared deck time to confirm its bounded cloud writes', async () => {

@@ -249,8 +249,156 @@ describe('EditCardDialog', () => {
     view = render({ card, open: true, onOpenChange, onSave: vi.fn() });
     const discardButton = findAllByText(view.tree, 'Discard changes')[0];
     expect(discardButton).toBeDefined();
+    expect(JSON.stringify(view.tree)).toContain('Your remaining draft will be removed.');
     (discardButton!.props!.onClick as () => void)();
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('keeps a dirty draft safe until the delete confirmation succeeds', async () => {
+    const onOpenChange = vi.fn();
+    const remove = vi.fn(async () => true);
+    let view = render({ card, open: true, onOpenChange, onSave: vi.fn(), onDelete: remove });
+    (view.textareas[translationFieldIndex]!.props!.onChange as (event: { target: { value: string } }) => void)({ target: { value: 'dẫn đầu' } });
+    view = render({ card, open: true, onOpenChange, onSave: vi.fn(), onDelete: remove });
+
+    (findByProp(view.tree, 'data-edit-delete')!.props.onClick as () => void)();
+    view = render({ card, open: true, onOpenChange, onSave: vi.fn(), onDelete: remove });
+    expect(JSON.stringify(view.tree)).toContain('Your remaining draft will be removed.');
+    expect(remove).not.toHaveBeenCalled();
+
+    await (findByProp(view.tree, 'data-edit-delete-confirm')!.props.onClick as () => Promise<void>)();
+    expect(remove).toHaveBeenCalledWith('card-1');
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('keeps the editor and confirmation open while deletion is pending, then shows a retry on failure', async () => {
+    const onOpenChange = vi.fn();
+    let resolveDelete: (deleted: boolean) => void = () => {};
+    const remove = vi.fn(() => new Promise<boolean>(resolve => { resolveDelete = resolve; }));
+    let view = render({ card, open: true, onOpenChange, onSave: vi.fn(), onDelete: remove });
+    (findByProp(view.tree, 'data-edit-delete')!.props.onClick as () => void)();
+    view = render({ card, open: true, onOpenChange, onSave: vi.fn(), onDelete: remove });
+
+    const pending = (findByProp(view.tree, 'data-edit-delete-confirm')!.props.onClick as () => Promise<void>)();
+    view = render({ card, open: true, onOpenChange, onSave: vi.fn(), onDelete: remove });
+    expect(findByProp(view.tree, 'data-edit-delete-confirm')!.props.disabled).toBe(true);
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+
+    resolveDelete(false);
+    await pending;
+    view = render({ card, open: true, onOpenChange, onSave: vi.fn(), onDelete: remove });
+    expect(JSON.stringify(view.tree)).toContain('This card could not be deleted. Try again.');
+    expect(JSON.stringify(view.tree)).toContain('Retry delete');
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+  });
+
+  it('treats an unsaved headword as dirty when Escape requests a close', () => {
+    const onOpenChange = vi.fn();
+    let view = render({ card, open: true, onOpenChange, onSave: vi.fn() });
+    (findByProp(view.tree, 'data-edit-word-input')!.props.onChange as (event: { target: { value: string } }) => void)(
+      { target: { value: 'guide' } },
+    );
+    view = render({ card, open: true, onOpenChange, onSave: vi.fn() });
+
+    (findByProp(view.tree, 'onOpenChange')!.props.onOpenChange as (open: boolean) => void)(false);
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+
+    view = render({ card, open: true, onOpenChange, onSave: vi.fn() });
+    const discardButton = findAllByText(view.tree, 'Discard changes')[0];
+    expect(discardButton).toBeDefined();
+    (discardButton!.props!.onClick as () => void)();
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('keeps the sheet open while a headword rename is pending', async () => {
+    const onOpenChange = vi.fn();
+    let resolveRename: (renamed: CardData) => void = () => {};
+    cardRepositoryMocks.renameCardHeadword.mockReturnValueOnce(new Promise<CardData>(resolve => { resolveRename = resolve; }));
+    let view = render({ card, open: true, onOpenChange, onSave: vi.fn() });
+    (findByProp(view.tree, 'data-edit-word-input')!.props.onChange as (event: { target: { value: string } }) => void)(
+      { target: { value: 'guide' } },
+    );
+    view = render({ card, open: true, onOpenChange, onSave: vi.fn() });
+
+    const pendingRename = findByProp(view.tree, 'data-edit-word-save')!.props.onClick as () => Promise<void>;
+    const renaming = pendingRename();
+    view = render({ card, open: true, onOpenChange, onSave: vi.fn() });
+    (findByProp(view.tree, 'onOpenChange')!.props.onOpenChange as (open: boolean) => void)(false);
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+
+    resolveRename({ ...card, word: 'guide', normalizedWord: 'guide' });
+    await renaming;
+    view = render({ card, open: true, onOpenChange, onSave: vi.fn() });
+    (findByProp(view.tree, 'onOpenChange')!.props.onOpenChange as (open: boolean) => void)(false);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('saves an unsaved headword and ordinary fields in one submit', async () => {
+    const onOpenChange = vi.fn();
+    const onSave = vi.fn(async (): Promise<LearningStateOutcome> =>
+      ({ status: 'published', result: { ownerKey: 'o', operationId: 'op', publication: { kind: 'patch', cardId: card.id, fields: {} } } }));
+    const renamed = { ...card, word: 'guide', normalizedWord: 'guide', revision: 1 };
+    cardRepositoryMocks.renameCardHeadword.mockResolvedValueOnce(renamed);
+    let view = render({ card, open: true, onOpenChange, onSave });
+    (findByProp(view.tree, 'data-edit-word-input')!.props.onChange as (event: { target: { value: string } }) => void)(
+      { target: { value: 'guide' } },
+    );
+    (view.textareas[translationFieldIndex]!.props!.onChange as (event: { target: { value: string } }) => void)(
+      { target: { value: 'dẫn đầu' } },
+    );
+    view = render({ card, open: true, onOpenChange, onSave });
+
+    await view.submit({ preventDefault: vi.fn() });
+
+    expect(cardRepositoryMocks.renameCardHeadword).toHaveBeenCalledWith('user-1', 'card-1', 'guide', 0, 0);
+    expect(onSave).toHaveBeenCalledWith('card-1', { translation: 'dẫn đầu' });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('keeps the ordinary draft for retry after the rename succeeds but the patch fails', async () => {
+    const onSave = vi.fn(async (): Promise<LearningStateOutcome> => ({ status: 'missing-card' }));
+    const renamed = { ...card, word: 'guide', normalizedWord: 'guide', revision: 1 };
+    cardRepositoryMocks.renameCardHeadword.mockResolvedValueOnce(renamed);
+    let view = render({ card, open: true, onOpenChange: vi.fn(), onSave });
+    (findByProp(view.tree, 'data-edit-word-input')!.props.onChange as (event: { target: { value: string } }) => void)(
+      { target: { value: 'guide' } },
+    );
+    (view.textareas[translationFieldIndex]!.props!.onChange as (event: { target: { value: string } }) => void)(
+      { target: { value: 'dẫn đầu' } },
+    );
+    view = render({ card, open: true, onOpenChange: vi.fn(), onSave });
+
+    await view.submit({ preventDefault: vi.fn() });
+    view = render({ card, open: true, onOpenChange: vi.fn(), onSave });
+
+    expect(findByProp(view.tree, 'data-edit-word-input')!.props.value).toBe('guide');
+    expect(view.textareas[translationFieldIndex]!.props!.value).toBe('dẫn đầu');
+    expect(findAllByText(view.tree, 'Retry save')).toHaveLength(1);
+
+    await view.submit({ preventDefault: vi.fn() });
+    expect(cardRepositoryMocks.renameCardHeadword).toHaveBeenCalledTimes(1);
+    expect(onSave).toHaveBeenCalledTimes(2);
+  });
+
+  it('locks the headword controls while an ordinary save is pending', async () => {
+    let resolveSave: (outcome: LearningStateOutcome) => void = () => {};
+    const onSave = vi.fn(() => new Promise<LearningStateOutcome>(resolve => { resolveSave = resolve; }));
+    let view = render({ card, open: true, onOpenChange: vi.fn(), onSave });
+    (view.textareas[translationFieldIndex]!.props!.onChange as (event: { target: { value: string } }) => void)(
+      { target: { value: 'dẫn đầu' } },
+    );
+    view = render({ card, open: true, onOpenChange: vi.fn(), onSave });
+
+    const pendingSubmit = view.submit({ preventDefault: vi.fn() });
+    view = render({ card, open: true, onOpenChange: vi.fn(), onSave });
+    expect(findByProp(view.tree, 'data-edit-word-input')!.props.disabled).toBe(true);
+    expect(findByProp(view.tree, 'data-edit-word-save')!.props.disabled).toBe(true);
+
+    await (findByProp(view.tree, 'data-edit-word-save')!.props.onClick as () => Promise<void>)();
+    expect(cardRepositoryMocks.renameCardHeadword).not.toHaveBeenCalled();
+
+    resolveSave({ status: 'published', result: { ownerKey: 'o', operationId: 'op', publication: { kind: 'patch', cardId: card.id, fields: {} } } });
+    await pendingSubmit;
   });
 
   it('keeps save pending, exposes retry after a failure, and closes after the retry succeeds', async () => {
@@ -386,7 +534,10 @@ describe('EditCardDialog', () => {
     });
 
     it('surfaces a generic failure message when the callable throws an unrecognized error', async () => {
-      cardRepositoryMocks.renameCardHeadword.mockRejectedValueOnce(new Error('network down'));
+      const renamed = { ...card, word: 'guide', normalizedWord: 'guide' };
+      cardRepositoryMocks.renameCardHeadword
+        .mockRejectedValueOnce(new Error('network down'))
+        .mockResolvedValueOnce(renamed);
       let view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
       (findByProp(view.tree, 'data-edit-word-input')!.props.onChange as (event: { target: { value: string } }) => void)(
         { target: { value: 'guide' } },
@@ -398,6 +549,12 @@ describe('EditCardDialog', () => {
       view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
       const alert = findByProp(view.tree, 'role');
       expect(alert?.props.children).toMatch(/could not be saved/);
+
+      await (findByProp(view.tree, 'data-edit-word-save')!.props.onClick as () => Promise<void>)();
+      view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      expect(cardRepositoryMocks.renameCardHeadword).toHaveBeenCalledTimes(2);
+      expect(findByProp(view.tree, 'data-edit-word-input')!.props.value).toBe('guide');
+      expect(findByProp(view.tree, 'role')).toBeNull();
     });
 
     it('never calls the callable when the draft word matches the live word', async () => {

@@ -9,6 +9,8 @@ interface ActivityHeatmapProps {
   reviewActivity?: ReviewActivity;
   rangeDays?: 30 | 182;
   todayKey?: string;
+  selectedDate?: string;
+  onDaySelect?: (date: string) => void;
 }
 interface DayCell { dateStr: string; xp: number; available: boolean; outsideRange: boolean; level: 0 | 1 | 2 | 3 | 4; }
 
@@ -59,7 +61,7 @@ export const dayInTimeZone = (now: Date, timeZone: string): string => {
   return `${value.year}-${value.month}-${value.day}`;
 };
 
-export function ActivityHeatmap({ entries, reviewActivity, rangeDays, todayKey }: ActivityHeatmapProps) {
+export function ActivityHeatmap({ entries, reviewActivity, rangeDays, todayKey, selectedDate, onDaySelect }: ActivityHeatmapProps) {
   const { _, i18n } = useLingui();
   const locale = i18n.locale || 'en';
   const labels = useMemo(() => weekdayLabels(locale), [locale]);
@@ -119,6 +121,7 @@ export function ActivityHeatmap({ entries, reviewActivity, rangeDays, todayKey }
     return { weeks: generatedWeeks, total, activeDaysCount: activeDays, monthLabels: months };
   }, [entries, locale, rangeDays, reviewActivity, todayKey]);
   const isReviewActivity = Boolean(reviewActivity);
+  const interactive = Boolean(onDaySelect);
 
   return <div className="w-full space-y-4">
     <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -135,15 +138,18 @@ export function ActivityHeatmap({ entries, reviewActivity, rangeDays, todayKey }
     <div className="w-full overflow-x-auto pb-2 scrollbar-none" tabIndex={0} aria-label={_(msg({ id: 'stats.study-activity', message: 'Study activity' }))}>
       <section className="grid min-w-max grid-cols-[auto_1fr] gap-2" aria-label={_(msg({ id: 'stats.study-activity', message: 'Study activity' }))}>
         <div className="mt-5 flex flex-col gap-1.5 pr-1 text-right text-[10px] font-semibold text-[var(--sf-text-muted)]">
-          {labels.map(label => <span key={label} className="flex h-3.5 items-center justify-end">{label}</span>)}
+          {labels.map(label => <span key={label} className={`flex items-center justify-end ${interactive ? 'h-6' : 'h-3.5'}`}>{label}</span>)}
         </div>
         <div>
           <div className="mb-1 flex gap-1.5 text-[10px] font-semibold text-[var(--sf-text-muted)]">
-            {monthLabels.map((label, index) => <span key={`${label}-${index}`} className="w-3.5 shrink-0 overflow-visible whitespace-nowrap">{label}</span>)}
+            {monthLabels.map((label, index) => <span key={`${label}-${index}`} className="w-3.5 shrink-0 overflow-visible whitespace-nowrap" style={interactive ? { width: 24 } : undefined}>{label}</span>)}
           </div>
           <div className="flex gap-1.5">
             {weeks.map((week, weekIndex) => <div key={weekIndex} className="flex flex-col gap-1.5">
-              {week.map(day => <div key={day.dateStr} className="size-3.5 rounded-[4px] border border-[var(--sf-border)] transition-transform hover:scale-125" style={{ backgroundColor: day.available ? heatColor(day.level) : 'var(--sf-surface-muted)' }} title={day.available ? `${formatHeatmapDate(day.dateStr, locale)}: ${formatNumber(day.xp)} ${isReviewActivity ? _(msg({ id: 'stats.reviews', message: 'reviews' })) : 'XP'}` : `${formatHeatmapDate(day.dateStr, locale)}: ${day.outsideRange ? _(msg({ id: 'stats.outside-selected-range', message: 'Outside selected range' })) : _(msg({ id: 'stats.activity-unavailable', message: 'Activity unavailable before coverage began' }))}`}><span className="sr-only">{day.available ? `${formatHeatmapDate(day.dateStr, locale)}: ${formatNumber(day.xp)} ${isReviewActivity ? _(msg({ id: 'stats.reviews', message: 'reviews' })) : `${formatNumber(day.xp)} XP`}` : `${formatHeatmapDate(day.dateStr, locale)}: ${day.outsideRange ? _(msg({ id: 'stats.outside-selected-range', message: 'Outside selected range' })) : _(msg({ id: 'stats.activity-unavailable', message: 'Activity unavailable before coverage began' }))}`}</span></div>)}
+              {week.map(day => {
+                const description = day.available ? `${formatHeatmapDate(day.dateStr, locale)}: ${formatNumber(day.xp)} ${isReviewActivity ? _(msg({ id: 'stats.reviews', message: 'reviews' })) : 'XP'}` : `${formatHeatmapDate(day.dateStr, locale)}: ${day.outsideRange ? _(msg({ id: 'stats.outside-selected-range', message: 'Outside selected range' })) : _(msg({ id: 'stats.activity-unavailable', message: 'Activity unavailable before coverage began' }))}`;
+                return onDaySelect ? <button key={day.dateStr} type="button" disabled={!day.available} aria-pressed={day.available ? selectedDate === day.dateStr : undefined} aria-label={description} className="flex size-6 shrink-0 items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]" title={description} onClick={() => onDaySelect(day.dateStr)}><span className="size-3.5 rounded-[4px] border border-[var(--sf-border)] transition-transform hover:scale-125" style={{ backgroundColor: day.available ? heatColor(day.level) : 'var(--sf-surface-muted)' }} /></button> : <div key={day.dateStr} className="size-3.5 rounded-[4px] border border-[var(--sf-border)] transition-transform hover:scale-125" style={{ backgroundColor: day.available ? heatColor(day.level) : 'var(--sf-surface-muted)' }} title={description}><span className="sr-only">{description}</span></div>;
+              })}
             </div>)}
           </div>
         </div>

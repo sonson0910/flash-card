@@ -4,6 +4,7 @@ import { CourseError, type CourseProfile } from './courseModel';
 const firestore = vi.hoisted(() => ({
   doc: vi.fn((_database: unknown, ...segments: string[]) => ({ path: segments.join('/') })),
   getDoc: vi.fn(),
+  onSnapshot: vi.fn(),
 }));
 
 const functions = vi.hoisted(() => ({
@@ -144,6 +145,35 @@ describe('Firebase course adapter', () => {
         activateOnCreate: true,
       },
     });
+    await adapter.createCourse('owner-a', {
+      targetLanguage: 'ko', nativeLanguage: 'vi', operationId: 'course-create-ko-1',
+    });
+    expect(call).toHaveBeenLastCalledWith('createCourse', {
+      ownerId: 'owner-a',
+      input: {
+        targetLanguage: 'ko', nativeLanguage: 'vi', goals: [],
+        preferences: { pronunciationVariant: null, showRomanization: false, zhScript: null },
+        operationId: 'course-create-ko-1',
+      },
+    });
+  });
+
+  it('publishes cloud profile changes from another device and cleans up the listener', () => {
+    const stop = vi.fn();
+    firestore.onSnapshot.mockImplementation((_reference: unknown, onProfile: (value: unknown) => void) => {
+      onProfile(snapshot(profile));
+      return stop;
+    });
+    const adapter = createFirebaseCourseAdapter({
+      app: {} as never, database: {} as never, configured: true, getCurrentOwner: () => 'owner-a',
+    });
+    const received = vi.fn();
+
+    const unsubscribe = adapter.subscribe?.('owner-a', received, vi.fn());
+
+    expect(received).toHaveBeenCalledWith({ source: 'cloud', profile });
+    unsubscribe?.();
+    expect(stop).toHaveBeenCalledOnce();
   });
 
   it('never hides callable failures behind a local profile', async () => {

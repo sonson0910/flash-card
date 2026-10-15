@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { Course, CourseProfile } from '../courses/courseModel';
+import { CourseError, type Course, type CourseProfile } from '../courses/courseModel';
 import { createSharedDeckCoursePort, resolveShareCourseAction } from './shareCourseMatching';
 import type { SharedDeckIncomingPreview } from './sharedDeckSessionController';
 
@@ -58,12 +58,23 @@ describe('resolveShareCourseAction', () => {
     const profile: CourseProfile = { activeCourseId: 'course-en', courses: [makeCourse('course-en')] };
     expect(resolveShareCourseAction(previewWithPair('en', 'vi'), profile)?.action).toBe('none');
   });
+
+  it.each([
+    ['active', 'course-ko', [makeCourse('course-ko', { targetLanguage: 'ko', nativeLanguage: 'en' })]],
+    ['other active', 'course-en', [makeCourse('course-en'), makeCourse('course-ko', { targetLanguage: 'ko', nativeLanguage: 'en' })]],
+    ['archived', 'course-en', [makeCourse('course-en'), makeCourse('course-ko', { targetLanguage: 'ko', nativeLanguage: 'en', status: 'archived' })]],
+  ] as const)('blocks a %s same-target course with a different native language', (_state, activeCourseId, courses) => {
+    expect(resolveShareCourseAction(previewWithPair('ko', 'vi'), { activeCourseId, courses })?.action).toBe('native-mismatch');
+  });
 });
 
 describe('createSharedDeckCoursePort', () => {
-  it('never throws when the underlying action rejects, so the deck can still import', async () => {
+  it('rejects when creating the matching course fails', async () => {
     const actions = {
-      createCourse: vi.fn().mockRejectedValue(new Error('network down')),
+      createCourse: vi.fn().mockResolvedValue({
+        ok: false,
+        error: new CourseError('cloud-write-failed', 'network down'),
+      }),
       reopenCourse: vi.fn(), switchCourse: vi.fn(), updateCourse: vi.fn(), archiveCourse: vi.fn(),
       addGoal: vi.fn(), updateGoal: vi.fn(), removeGoal: vi.fn(), clearError: vi.fn(),
     };
@@ -71,8 +82,30 @@ describe('createSharedDeckCoursePort', () => {
       model: { status: 'ready', source: 'cloud', profile: null, activeCourse: null, pending: false, errorCode: null },
       actions: actions as never,
     });
-    await expect(port.ensureCourseForIncomingShare(previewWithPair('ko', 'vi'))).resolves.toBeUndefined();
+    await expect(port.ensureCourseForIncomingShare(previewWithPair('ko', 'vi'))).rejects.toThrow('network down');
     expect(actions.createCourse).toHaveBeenCalledWith({ targetLanguage: 'ko', nativeLanguage: 'vi', activateOnCreate: true });
+  });
+
+  it.each([
+    ['switch', makeCourse('course-ko', { targetLanguage: 'ko' }), 'switchCourse'],
+    ['reopen', makeCourse('course-ko', { targetLanguage: 'ko', status: 'archived' }), 'reopenCourse'],
+  ] as const)('rejects when the matching course %s mutation fails', async (_action, matching, action) => {
+    const actions = {
+      createCourse: vi.fn(), reopenCourse: vi.fn(), switchCourse: vi.fn(), updateCourse: vi.fn(),
+      archiveCourse: vi.fn(), addGoal: vi.fn(), updateGoal: vi.fn(), removeGoal: vi.fn(), clearError: vi.fn(),
+    };
+    actions[action].mockResolvedValue({
+      ok: false,
+      error: new CourseError('cloud-write-failed', 'network down'),
+    });
+    const profile: CourseProfile = { activeCourseId: 'course-en', courses: [makeCourse('course-en'), matching] };
+    const port = createSharedDeckCoursePort({
+      model: { status: 'ready', source: 'cloud', profile, activeCourse: makeCourse('course-en'), pending: false, errorCode: null },
+      actions: actions as never,
+    });
+
+    await expect(port.ensureCourseForIncomingShare(previewWithPair('ko', 'vi'))).rejects.toThrow('network down');
+    expect(actions[action]).toHaveBeenCalledWith('course-ko');
   });
 
   it('does nothing when the deck already matches the active course', async () => {
@@ -87,6 +120,28 @@ describe('createSharedDeckCoursePort', () => {
     });
     await port.ensureCourseForIncomingShare(previewWithPair('en', 'vi'));
     expect(actions.createCourse).not.toHaveBeenCalled();
+    expect(actions.switchCourse).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['active', 'course-ko', [makeCourse('course-ko', { targetLanguage: 'ko', nativeLanguage: 'en' })]],
+    ['other active', 'course-en', [makeCourse('course-en'), makeCourse('course-ko', { targetLanguage: 'ko', nativeLanguage: 'en' })]],
+    ['archived', 'course-en', [makeCourse('course-en'), makeCourse('course-ko', { targetLanguage: 'ko', nativeLanguage: 'en', status: 'archived' })]],
+  ] as const)('rejects a %s same-target native-language mismatch without mutating courses', async (_state, activeCourseId, courses) => {
+    const actions = {
+      createCourse: vi.fn(), reopenCourse: vi.fn(), switchCourse: vi.fn(), updateCourse: vi.fn(),
+      archiveCourse: vi.fn(), addGoal: vi.fn(), updateGoal: vi.fn(), removeGoal: vi.fn(), clearError: vi.fn(),
+    };
+    const profile: CourseProfile = { activeCourseId, courses };
+    const port = createSharedDeckCoursePort({
+      model: { status: 'ready', source: 'cloud', profile, activeCourse: profile.courses[0], pending: false, errorCode: null },
+      actions: actions as never,
+    });
+
+    await expect(port.ensureCourseForIncomingShare(previewWithPair('ko', 'vi')))
+      .rejects.toThrow("Change the course's Meaning language in Settings");
+    expect(actions.createCourse).not.toHaveBeenCalled();
+    expect(actions.reopenCourse).not.toHaveBeenCalled();
     expect(actions.switchCourse).not.toHaveBeenCalled();
   });
 });

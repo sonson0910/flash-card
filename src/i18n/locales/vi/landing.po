@@ -14,607 +14,619 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:82
+#: src/features/landing/LandingPage.tsx:545
+msgid "account.data.delete.cache-warning"
+msgstr "SonFlash không thể xóa dữ liệu tài khoản đã lưu khỏi thiết bị này. Hãy xóa dữ liệu trang web SonFlash trong trình duyệt của bạn."
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:544
+msgid "account.data.delete.started"
+msgstr "Chúng tôi không thể xác nhận việc xóa tài khoản đã hoàn tất. Nếu sau đó bạn vẫn có thể đăng nhập, hãy liên hệ bộ phận hỗ trợ."
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:94
 msgid "landing.atmosphere.deep-woods"
 msgstr "Rừng sâu"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:70
+#: src/features/landing/LandingPage.tsx:82
 msgid "landing.atmosphere.golden-hour"
 msgstr "Hoàng hôn vàng"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:88
+#: src/features/landing/LandingPage.tsx:100
 msgid "landing.atmosphere.quiet-dawn"
 msgstr "Bình minh yên tĩnh"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:76
+#: src/features/landing/LandingPage.tsx:88
 msgid "landing.atmosphere.still-water"
 msgstr "Mặt nước lặng"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:604
+#: src/features/landing/LandingPage.tsx:629
 msgid "landing.brand.crystal-wordmark"
 msgstr "SON<0>FLASH</0>"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:602
-#: src/features/landing/LandingPage.tsx:1140
+#: src/features/landing/LandingPage.tsx:627
+#: src/features/landing/LandingPage.tsx:1185
 msgid "landing.brand.plain"
 msgstr "SonFlash"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:362
+#: src/features/landing/LandingPage.tsx:374
 msgid "landing.classic-hero.extension"
 msgstr "Khám phá tiện ích Chrome"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:357
+#: src/features/landing/LandingPage.tsx:369
 msgid "landing.classic-hero.start"
 msgstr "Bắt đầu học miễn phí"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:339
+#: src/features/landing/LandingPage.tsx:351
 msgid "landing.classic-hero.title"
 msgstr "Học từ<0/><1>nhớ lâu.</1>"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1125
+#: src/features/landing/LandingPage.tsx:1170
 msgid "landing.closing.consent"
 msgstr "SonFlash dành cho người học từ 18 tuổi trở lên. Khi đăng nhập, bạn đồng ý với <terms>Điều khoản</terms> và đã đọc <privacy>Chính sách quyền riêng tư</privacy>."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1100
+#: src/features/landing/LandingPage.tsx:1145
 msgid "landing.closing.description"
 msgstr "Bắt đầu với các thẻ cần ôn hôm nay, rồi giúp mỗi từ mới dễ tìm lại hơn."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1085
+#: src/features/landing/LandingPage.tsx:1130
 msgid "landing.closing.eyebrow"
 msgstr "Từ tiếp theo đang chờ bạn"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1094
+#: src/features/landing/LandingPage.tsx:1139
 msgid "landing.closing.title"
 msgstr "Xây dựng vốn từ bạn có thể dùng ngay khi cần."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:460
+#: src/features/landing/LandingPage.tsx:472
 msgid "landing.demo.caption"
 msgstr "Một thẻ rõ ràng, sẵn sàng cho lần ôn tiếp theo."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:294
+#: src/features/landing/LandingPage.tsx:306
 msgid "landing.demo.cards.label"
 msgstr "Mẫu thẻ từ vựng tiếng Anh"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:454
+#: src/features/landing/LandingPage.tsx:466
 msgid "landing.demo.example"
 msgstr "Chính sách mới có hiệu lực ngay lập tức."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:324
+#: src/features/landing/LandingPage.tsx:336
 msgid "landing.demo.flip.hide"
 msgstr "Hiện lại từ"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:297
+#: src/features/landing/LandingPage.tsx:309
 msgid "landing.demo.grade.bloom"
 msgstr "Nở"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:296
+#: src/features/landing/LandingPage.tsx:308
 msgid "landing.demo.grade.bud"
 msgstr "Nụ"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:298
+#: src/features/landing/LandingPage.tsx:310
 msgid "landing.demo.grade.star"
 msgstr "Sao"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:369
+#: src/features/landing/LandingPage.tsx:381
 msgid "landing.demo.label"
 msgstr "Thẻ từ vựng tiếng Anh mẫu"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:448
+#: src/features/landing/LandingPage.tsx:460
 msgid "landing.demo.meaning"
 msgstr "xảy ra hoặc được thực hiện ngay, không chậm trễ"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:297
+#: src/features/landing/LandingPage.tsx:309
 msgid "landing.demo.meaning.immediate"
 msgstr "Tức thời"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:298
+#: src/features/landing/LandingPage.tsx:310
 msgid "landing.demo.meaning.instant"
 msgstr "Khoảnh khắc"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:296
+#: src/features/landing/LandingPage.tsx:308
 msgid "landing.demo.meaning.spelling"
 msgstr "chính tả"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:420
+#: src/features/landing/LandingPage.tsx:432
 msgid "landing.demo.part-of-speech"
 msgstr "Tính từ"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:325
-#: src/features/landing/LandingPage.tsx:432
+#: src/features/landing/LandingPage.tsx:337
+#: src/features/landing/LandingPage.tsx:444
 msgid "landing.demo.reveal-prompt"
 msgstr "Chạm để xem nghĩa"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:297
+#: src/features/landing/LandingPage.tsx:309
 msgid "landing.demo.tier.learning"
 msgstr "Đang học"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:298
+#: src/features/landing/LandingPage.tsx:310
 msgid "landing.demo.tier.mastered"
 msgstr "Thành thạo"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:296
+#: src/features/landing/LandingPage.tsx:308
 msgid "landing.demo.tier.new"
 msgstr "Mới"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:860
+#: src/features/landing/LandingPage.tsx:905
 msgid "landing.extension.description"
 msgstr "Tiện ích Chrome của SonFlash biến bất kỳ từ hay đoạn văn nào bạn bôi đen thành thẻ ghi nhớ mà không cần rời trang."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:851
+#: src/features/landing/LandingPage.tsx:896
 msgid "landing.extension.eyebrow"
 msgstr "Lưu từ ở bất cứ đâu"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:155
+#: src/features/landing/LandingPage.tsx:167
 msgid "landing.extension.feature.optin.description"
 msgstr "Chỉ bật biểu tượng lưu nhanh trên trang cho những website bạn chọn."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:153
+#: src/features/landing/LandingPage.tsx:165
 msgid "landing.extension.feature.optin.title"
 msgstr "Bạn quyết định cho từng trang"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:144
+#: src/features/landing/LandingPage.tsx:156
 msgid "landing.extension.feature.popup.description"
 msgstr "Mở biểu tượng tiện ích để xem có bao nhiêu thẻ đến hạn ôn, rồi quay lại buổi học hôm nay."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:142
+#: src/features/landing/LandingPage.tsx:154
 msgid "landing.extension.feature.popup.title"
 msgstr "Xem nhanh từ thanh công cụ"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:133
+#: src/features/landing/LandingPage.tsx:145
 msgid "landing.extension.feature.save.description"
 msgstr "Bôi đen chữ trên bất kỳ website nào, rồi lưu thẳng vào thư viện thành thẻ ghi nhớ kèm ngữ cảnh."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:131
+#: src/features/landing/LandingPage.tsx:143
 msgid "landing.extension.feature.save.title"
 msgstr "Nhấp chuột phải để lưu"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:857
+#: src/features/landing/LandingPage.tsx:902
 msgid "landing.extension.title"
 msgstr "Học ngay trên trang bạn đang đọc."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:823
+#: src/features/landing/LandingPage.tsx:868
 msgid "landing.features.title"
 msgstr "Giữ lại những từ bạn gặp."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:99
+#: src/features/landing/LandingPage.tsx:111
 msgid "landing.flow.capture.description"
 msgstr "Biến một từ hoặc đoạn văn thành thẻ kèm nghĩa, cách phát âm và ví dụ."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:97
+#: src/features/landing/LandingPage.tsx:109
 msgid "landing.flow.capture.title"
 msgstr "Giữ ngữ cảnh"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:119
+#: src/features/landing/LandingPage.tsx:131
 msgid "landing.flow.practice.description"
 msgstr "Ôn, nghe, đánh vần hoặc nói khi đó là bước tiếp theo hữu ích."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:117
+#: src/features/landing/LandingPage.tsx:129
 msgid "landing.flow.practice.title"
 msgstr "Luyện nhớ lại"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:109
+#: src/features/landing/LandingPage.tsx:121
 msgid "landing.flow.read.description"
 msgstr "Xem từ bằng lời giải thích dễ hiểu trước khi tự nhớ lại."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:107
+#: src/features/landing/LandingPage.tsx:119
 msgid "landing.flow.read.title"
 msgstr "Đọc rõ nghĩa"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1159
+#: src/features/landing/LandingPage.tsx:1204
 msgid "landing.footer.copyright"
 msgstr "© {year} SonFlash"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1142
+#: src/features/landing/LandingPage.tsx:1187
 msgid "landing.footer.description"
 msgstr "dành cho việc học từ vựng có chủ đích."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1156
+#: src/features/landing/LandingPage.tsx:1201
 msgid "landing.footer.extension"
 msgstr "Tiện ích mở rộng"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1150
+#: src/features/landing/LandingPage.tsx:1195
 msgid "landing.footer.privacy"
 msgstr "Chính sách quyền riêng tư"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1153
+#: src/features/landing/LandingPage.tsx:1198
 msgid "landing.footer.terms"
 msgstr "Điều khoản"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:795
+#: src/features/landing/LandingPage.tsx:840
 msgid "landing.hero.atmosphere"
 msgstr "Chọn không gian học"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:285
+#: src/features/landing/LandingPage.tsx:297
 msgid "landing.hero.crystal-badge"
 msgstr "Crystal Star"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:288
-#: src/features/landing/LandingPage.tsx:346
+#: src/features/landing/LandingPage.tsx:300
+#: src/features/landing/LandingPage.tsx:358
 msgid "landing.hero.description"
 msgstr "Xây dựng vốn từ tiếng Anh có thể dùng khi cần với ngữ cảnh, ôn ngắt quãng và ghi nhớ chủ động."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:330
+#: src/features/landing/LandingPage.tsx:342
 msgid "landing.hero.eyebrow"
 msgstr "Tiếng Anh cho người Việt"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:291
-#: src/features/landing/LandingPage.tsx:1120
+#: src/features/landing/LandingPage.tsx:303
+#: src/features/landing/LandingPage.tsx:1165
 msgid "landing.hero.sign-in"
 msgstr "Đăng nhập để đồng bộ"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:290
-#: src/features/landing/LandingPage.tsx:687
-#: src/features/landing/LandingPage.tsx:1111
+#: src/features/landing/LandingPage.tsx:302
+#: src/features/landing/LandingPage.tsx:712
+#: src/features/landing/LandingPage.tsx:1156
 msgid "landing.hero.start"
 msgstr "Bắt đầu học"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:287
+#: src/features/landing/LandingPage.tsx:299
 msgid "landing.hero.title"
 msgstr "Nhớ từ.<0/>Dùng khi cần."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:247
+#: src/features/landing/LandingPage.tsx:259
 msgid "landing.language.label"
 msgstr "Ngôn ngữ giao diện"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:913
+#: src/features/landing/LandingPage.tsx:958
 msgid "landing.languages.description"
 msgstr "Hiện SonFlash dạy từ vựng tiếng Anh, với nghĩa hiển thị bằng tiếng Anh hoặc tiếng Việt. Các gói từ vựng dưới đây đang được phát triển và chưa thể chuyển sang."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:904
+#: src/features/landing/LandingPage.tsx:949
 msgid "landing.languages.eyebrow"
 msgstr "Hướng đi của SonFlash"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:928
+#: src/features/landing/LandingPage.tsx:973
 msgid "landing.languages.pack.chinese"
 msgstr "中文 · Tiếng Trung"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:925
+#: src/features/landing/LandingPage.tsx:970
 msgid "landing.languages.pack.english"
 msgstr "Tiếng Anh"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:927
+#: src/features/landing/LandingPage.tsx:972
 msgid "landing.languages.pack.japanese"
 msgstr "日本語 · Tiếng Nhật"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:926
+#: src/features/landing/LandingPage.tsx:971
 msgid "landing.languages.pack.korean"
 msgstr "한국어 · Tiếng Hàn"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:934
+#: src/features/landing/LandingPage.tsx:979
 msgid "landing.languages.status.available"
 msgstr "Đã có"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:935
+#: src/features/landing/LandingPage.tsx:980
 msgid "landing.languages.status.in-progress"
 msgstr "Đang phát triển"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:910
+#: src/features/landing/LandingPage.tsx:955
 msgid "landing.languages.title"
 msgstr "Hôm nay là tiếng Anh. Sắp có thêm ngôn ngữ khác."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:57
+#: src/features/landing/LandingPage.tsx:58
 msgid "landing.meta.description"
 msgstr "Xây dựng vốn từ tiếng Anh bạn có thể dùng khi cần với ngữ cảnh, ôn ngắt quãng và ghi nhớ chủ động."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:53
+#: src/features/landing/LandingPage.tsx:54
 msgid "landing.meta.title"
 msgstr "SonFlash — Nhớ từ. Dùng khi cần."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:978
+#: src/features/landing/LandingPage.tsx:1023
 msgid "landing.methods.context.description"
 msgstr "Một thẻ rõ ràng giúp mỗi từ có đủ chỗ để trở nên dễ hiểu."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:972
+#: src/features/landing/LandingPage.tsx:1017
 msgid "landing.methods.context.title"
 msgstr "Hiểu nghĩa trong ngữ cảnh"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:964
+#: src/features/landing/LandingPage.tsx:1009
 msgid "landing.methods.description"
 msgstr "Phản hồi của bạn giúp lên kế hoạch cho lần ôn tiếp theo hữu ích với lịch FSRS."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1018
+#: src/features/landing/LandingPage.tsx:1063
 msgid "landing.methods.open-library"
 msgstr "Mở thư viện"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1002
+#: src/features/landing/LandingPage.tsx:1047
 msgid "landing.methods.preview.caption"
 msgstr "Dành cho những từ bạn thực sự gặp."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1008
+#: src/features/landing/LandingPage.tsx:1053
 msgid "landing.methods.preview.quote"
 msgstr "Vốn từ chỉ hữu ích khi bạn có thể dùng đến."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:992
+#: src/features/landing/LandingPage.tsx:1037
 msgid "landing.methods.recall.description"
 msgstr "Bốn mức đánh giá quen thuộc giúp bạn chọn nhanh."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:986
+#: src/features/landing/LandingPage.tsx:1031
 msgid "landing.methods.recall.title"
 msgstr "Tự đánh giá mức độ nhớ"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:958
+#: src/features/landing/LandingPage.tsx:1003
 msgid "landing.methods.title"
 msgstr "Ôn những từ đã sẵn sàng."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:703
+#: src/features/landing/LandingPage.tsx:728
 msgid "landing.mobile-menu.open"
 msgstr "Mở menu điều hướng"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:723
+#: src/features/landing/LandingPage.tsx:748
 msgid "landing.mobile-nav.label"
 msgstr "Điều hướng trên điện thoại"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:626
+#: src/features/landing/LandingPage.tsx:651
+#: src/features/landing/LandingPage.tsx:771
 msgid "landing.nav.chrome-extension"
 msgstr "Tiện ích Chrome"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:641
-#: src/features/landing/LandingPage.tsx:748
+#: src/features/landing/LandingPage.tsx:666
+#: src/features/landing/LandingPage.tsx:792
 msgid "landing.nav.curriculum"
 msgstr "Lộ trình"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:654
-#: src/features/landing/LandingPage.tsx:765
+#: src/features/landing/LandingPage.tsx:679
+#: src/features/landing/LandingPage.tsx:809
 msgid "landing.nav.extension"
 msgstr "Tiện ích"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:619
-#: src/features/landing/LandingPage.tsx:735
+#: src/features/landing/LandingPage.tsx:644
+#: src/features/landing/LandingPage.tsx:760
 msgid "landing.nav.how-it-works"
 msgstr "Cách hoạt động"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:608
+#: src/features/landing/LandingPage.tsx:633
 msgid "landing.nav.label"
 msgstr "Điều hướng trang giới thiệu"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:660
-#: src/features/landing/LandingPage.tsx:772
+#: src/features/landing/LandingPage.tsx:685
+#: src/features/landing/LandingPage.tsx:816
 msgid "landing.nav.languages"
 msgstr "Ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:633
+#: src/features/landing/LandingPage.tsx:658
+#: src/features/landing/LandingPage.tsx:781
 msgid "landing.nav.paths"
 msgstr "Lộ trình"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:666
-#: src/features/landing/LandingPage.tsx:779
+#: src/features/landing/LandingPage.tsx:691
+#: src/features/landing/LandingPage.tsx:823
 msgid "landing.nav.pricing"
 msgstr "Giá và quyền truy cập"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:679
+#: src/features/landing/LandingPage.tsx:704
 msgid "landing.nav.sign-in"
 msgstr "Đăng nhập"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:648
-#: src/features/landing/LandingPage.tsx:758
+#: src/features/landing/LandingPage.tsx:673
+#: src/features/landing/LandingPage.tsx:802
 msgid "landing.nav.vocabulary"
 msgstr "Từ vựng"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1034
+#: src/features/landing/LandingPage.tsx:1079
 msgid "landing.pricing.eyebrow"
 msgstr "Bắt đầu miễn phí, nâng cấp Pro khi bạn cần thêm"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:225
+#: src/features/landing/LandingPage.tsx:237
 msgid "landing.pricing.faq.checkout.answer"
 msgstr "Chưa. Hãy đăng nhập và mở Pro từ menu tài khoản để đăng ký quan tâm — bạn không bị tính phí trong giai đoạn thử nghiệm."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:223
+#: src/features/landing/LandingPage.tsx:235
 msgid "landing.pricing.faq.checkout.question"
 msgstr "Tôi có thể mua Pro ngay bây giờ không?"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:215
+#: src/features/landing/LandingPage.tsx:227
 msgid "landing.pricing.faq.exhausted.answer"
 msgstr "Bạn vẫn có thể ôn tập và tự thêm thẻ. Tính năng tạo thẻ bằng AI sẽ mở lại vào tháng sau, hoặc ngay lập tức với gói Pro."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:213
+#: src/features/landing/LandingPage.tsx:225
 msgid "landing.pricing.faq.exhausted.question"
 msgstr "Chuyện gì xảy ra nếu tôi dùng hết 30 thẻ AI?"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:205
+#: src/features/landing/LandingPage.tsx:217
 msgid "landing.pricing.faq.free.answer"
 msgstr "Đúng vậy. Ôn tập, thẻ tự tạo và tiện ích Chrome đều miễn phí, không giới hạn thời gian. Gói Free có 30 thẻ tạo bằng AI mỗi tháng."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:203
+#: src/features/landing/LandingPage.tsx:215
 msgid "landing.pricing.faq.free.question"
 msgstr "Gói Free có thật sự miễn phí không?"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1067
+#: src/features/landing/LandingPage.tsx:1112
 msgid "landing.pricing.faq.title"
 msgstr "Câu hỏi thường gặp"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1046
+#: src/features/landing/LandingPage.tsx:1091
 msgid "landing.pricing.free-vs-pro.free"
 msgstr "Free"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1047
+#: src/features/landing/LandingPage.tsx:1092
 msgid "landing.pricing.free-vs-pro.pro"
 msgstr "Pro"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1045
+#: src/features/landing/LandingPage.tsx:1090
 msgid "landing.pricing.free-vs-pro.title"
 msgstr "Free và Pro"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1057
+#: src/features/landing/LandingPage.tsx:1102
 msgid "landing.pricing.price"
-msgstr "Gói Pro giá 79.000 ₫ (khoảng 7,99 USD)."
+msgstr "Giá Pro cuối cùng sẽ được xác nhận trước khi mở bán."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1060
+#: src/features/landing/LandingPage.tsx:1105
 msgid "landing.pricing.purchase-note"
 msgstr "Đăng ký quan tâm không mất phí. Hiện chưa mở bán — chúng tôi sẽ báo qua email khi mở."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:188
+#: src/features/landing/LandingPage.tsx:200
 msgid "landing.pricing.row.ai-cards"
 msgstr "Thẻ tạo bằng AI"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:194
+#: src/features/landing/LandingPage.tsx:206
 msgid "landing.pricing.row.extension"
 msgstr "Tiện ích Chrome"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:182
+#: src/features/landing/LandingPage.tsx:194
 msgid "landing.pricing.row.manual-cards"
 msgstr "Thẻ tự tạo"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:176
+#: src/features/landing/LandingPage.tsx:188
 msgid "landing.pricing.row.reviews"
 msgstr "Ôn tập & lịch lặp lại ngắt quãng"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:1040
+#: src/features/landing/LandingPage.tsx:1085
 msgid "landing.pricing.title"
 msgstr "Giá và quyền truy cập"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:189
+#: src/features/landing/LandingPage.tsx:201
 msgid "landing.pricing.value.ai-free"
 msgstr "30 / tháng"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:190
+#: src/features/landing/LandingPage.tsx:202
 msgid "landing.pricing.value.ai-pro"
 msgstr "Nhiều hơn mỗi tháng"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:195
-#: src/features/landing/LandingPage.tsx:196
+#: src/features/landing/LandingPage.tsx:207
+#: src/features/landing/LandingPage.tsx:208
 msgid "landing.pricing.value.included"
 msgstr "Có sẵn"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:177
-#: src/features/landing/LandingPage.tsx:178
-#: src/features/landing/LandingPage.tsx:183
-#: src/features/landing/LandingPage.tsx:184
+#: src/features/landing/LandingPage.tsx:189
+#: src/features/landing/LandingPage.tsx:190
+#: src/features/landing/LandingPage.tsx:195
+#: src/features/landing/LandingPage.tsx:196
 msgid "landing.pricing.value.unlimited"
 msgstr "Không giới hạn"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:301
+#: src/features/landing/LandingPage.tsx:313
 msgid "landing.ribbon.chrome-extension"
 msgstr "Tiện ích Chrome"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:301
+#: src/features/landing/LandingPage.tsx:313
 msgid "landing.ribbon.context-first"
 msgstr "Ưu tiên ngữ cảnh"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:301
+#: src/features/landing/LandingPage.tsx:313
 msgid "landing.ribbon.learn-at-your-pace"
 msgstr "Học theo nhịp của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:301
+#: src/features/landing/LandingPage.tsx:313
 msgid "landing.ribbon.spaced-review"
 msgstr "Ôn cách quãng"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:671
+#: src/features/landing/LandingPage.tsx:696
 msgid "shell.theme.quick-toggle"
 msgstr "Chuyển giữa chế độ sáng và tối"

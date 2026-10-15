@@ -15,6 +15,7 @@ import {
   type CatalogAvailabilityStatus,
   type CatalogScreenActions,
   type CatalogScreenModel,
+  type CatalogVocabularyPresentation,
 } from './catalogPresentation';
 import {
   catalogCacheQueryFromWorkspaceQuery,
@@ -25,6 +26,8 @@ import {
   presentHydratedCatalogEntry,
 } from './catalogWorkspacePresenter';
 import {
+  createCatalogWorkspaceLocation,
+  patchCatalogWorkspaceQuery,
   readCatalogWorkspaceQuery,
   type CatalogWorkspaceQuery,
   type CatalogWorkspaceQueryPatch,
@@ -32,21 +35,16 @@ import {
 import { createCatalogWorkspaceService } from './catalogWorkspaceService';
 import { projectCatalogPathUnits, readCatalogProgressProjection, type CatalogPathUnitProgress } from './catalogProgressProjectionService';
 import { catalogReleaseManifestPath, type CatalogTierId } from './catalogWorkspaceRegistry';
-import {
-  inspectInstalledCatalog,
-  navigateCatalogWorkspaceQuery,
-  synchronizeCatalogHistoryInspection,
-} from './catalogWorkspaceOrchestration';
+import { inspectInstalledCatalog } from './catalogWorkspaceOrchestration';
 import {
   beginCatalogLibraryAdd,
+  catalogEntryIsInLibrary,
   createCatalogOptimisticLibraryState,
+  createCatalogLibraryIdentityIndex,
   scopeCatalogOptimisticLibraryState,
   settleCatalogLibraryAdd,
   catalogEntryToLibraryCard,
 } from './catalogLearningFlow';
-import { createCatalogPagingGuard } from './catalogPagingGuard';
-import { createCatalogSearchDebouncer } from './catalogSearchDebouncer';
-import { useCatalogLibraryActions } from './useCatalogLibraryActions';
 import {
   createPersonalLibraryPathPresentation,
   type PersonalLibraryPathInput,
@@ -126,26 +124,41 @@ const copy = {
   resultSummary: msg({ id: 'catalog.workspace.result-summary', message: 'Showing {count, number}{more} {track} {tier} {count, plural, one {word} other {words}}.' }),
 };
 
+type WithoutMessage<T> = T extends { message: string } ? Omit<T, 'message'> : never;
 type WorkspaceStatus = CatalogAvailabilityStatus & {
   messageKey?: keyof typeof copy;
   messageValues?: Record<string, string | number>;
 };
+type WorkspaceStatusState = WithoutMessage<CatalogAvailabilityStatus> & {
+  messageKey: keyof typeof copy;
+  messageValues?: Record<string, string | number>;
+};
+
+const localizeStatus = (status: WorkspaceStatusState): WorkspaceStatus => ({
+  ...status,
+  message: i18n._(copy[status.messageKey].id, status.messageValues),
+} as WorkspaceStatus);
 
 const errorDetail = (error: unknown): string => (
   error instanceof Error ? error.message : i18n._(msg({ id: 'catalog.workspace.unknown-error', message: 'Unknown catalog error.' }))
 );
 
+const catalogErrorState = (
+  error: unknown,
+  isOnline: boolean,
+  fallbackKey: 'catalogOpenError' | 'vocabularyReadError' | 'installError',
+): WorkspaceStatusState => error instanceof CatalogCacheOpenError
+  ? {
+      kind: 'error', isOnline,
+      messageKey: error.reason === 'blocked' ? 'storageBlocked' : 'storageTimeout',
+    }
+  : { kind: 'error', isOnline, messageKey: fallbackKey, detail: errorDetail(error) };
+
 export const catalogErrorStatus = (
   error: unknown,
   isOnline: boolean,
   fallbackKey: 'catalogOpenError' | 'vocabularyReadError' | 'installError',
-): WorkspaceStatus => error instanceof CatalogCacheOpenError
-  ? {
-      kind: 'error', isOnline,
-      message: i18n._(error.reason === 'blocked' ? copy.storageBlocked : copy.storageTimeout),
-      messageKey: error.reason === 'blocked' ? 'storageBlocked' : 'storageTimeout',
-    }
-  : { kind: 'error', isOnline, message: i18n._(copy[fallbackKey]), messageKey: fallbackKey, detail: errorDetail(error) };
+): WorkspaceStatus => localizeStatus(catalogErrorState(error, isOnline, fallbackKey));
 
 export default function CatalogWorkspace({
   ownerId,
@@ -165,7 +178,20 @@ export default function CatalogWorkspace({
   continueCatalogUnit,
 }: CatalogWorkspaceProps) {
   const uiLocale = useUiLocale();
-  const libraryActions = useCatalogLibraryActions({ cards: libraryCards, adoptCards, notify });
+  const libraryIdentityIndex = useMemo(() => createCatalogLibraryIdentityIndex(libraryCards), [libraryCards]);
+  const isInLibrary = useCallback((entry: CatalogVocabularyPresentation) => (
+    catalogEntryIsInLibrary(libraryIdentityIndex, entry)
+  ), [libraryIdentityIndex]);
+  const addToLibrary = useCallback(async (entry: CatalogVocabularyPresentation) => {
+    if (!adoptCards) return 'failed' as const;
+    const result = await adoptCards([catalogEntryToLibraryCard(entry)]);
+    if (result.status !== 'completed') return 'failed' as const;
+    const created = result.createdCount > 0;
+    notify(created
+      ? `“${entry.lemma}” was added to your library and today’s plan.`
+      : `“${entry.lemma}” is already in your library.`);
+    return created ? 'created' as const : 'existing' as const;
+  }, [adoptCards, notify]);
   const service = useMemo(() => createCatalogWorkspaceService({
     origin: globalThis.location?.origin ?? 'https://sonflash.invalid',
   }), []);
@@ -183,7 +209,17 @@ export default function CatalogWorkspace({
   const [isContinuingUnit, setIsContinuingUnit] = useState(false);
   const [continueError, setContinueError] = useState<string | null>(null);
   const continueGeneration = useRef(0);
-  const continuingUnitRef = useRef(false);
+  const continuingGeneration = useRef<number | null>(null);
+  const invalidateContinue = () => {
+    continueGeneration.current += 1;
+    continuingGeneration.current = null;
+  };
+  const resetContinue = () => {
+    invalidateContinue();
+    setConfirmationUnitId(null);
+    setContinueError(null);
+    setIsContinuingUnit(false);
+  };
   const progressQueries = useRef(createCatalogProgressQueryCache());
   const ownerScope = useRef({ ownerId, version: 0 });
   if (ownerScope.current.ownerId !== ownerId) {
@@ -192,18 +228,26 @@ export default function CatalogWorkspace({
   }
   const ownerVersion = ownerScope.current.version;
   const continuationScope = useRef({ ownerId, libraryEpoch: verifiedLibraryEpoch, query });
+  if (continuationScope.current.ownerId !== ownerId
+    || continuationScope.current.libraryEpoch !== verifiedLibraryEpoch) {
+    invalidateContinue();
+  }
   continuationScope.current = { ownerId, libraryEpoch: verifiedLibraryEpoch, query };
   const [optimisticLibrary, setOptimisticLibrary] = useState(() => (
     createCatalogOptimisticLibraryState(ownerId, ownerVersion)
   ));
   const [isOnline, setIsOnline] = useState(browserOnline);
-  const [status, setStatus] = useState<WorkspaceStatus>({
-    kind: 'checking', message: i18n._(copy.checking), messageKey: 'checking',
-  });
+  const [status, setStatus] = useState<WorkspaceStatusState>({ kind: 'checking', messageKey: 'checking' });
   const mounted = useRef(true);
   const workflowGeneration = useRef(0);
-  const pagingGuard = useRef<ReturnType<typeof createCatalogPagingGuard> | null>(null);
-  if (!pagingGuard.current) pagingGuard.current = createCatalogPagingGuard();
+  const pageGeneration = useRef(0);
+  const resetPaging = () => {
+    pageGeneration.current += 1;
+    setIsLoadingPage(true);
+    setNextCursor(null);
+    setHasMore(false);
+    setIsLoadingMore(false);
+  };
   const personalLibrary = useMemo(() => ownerId && cloudStats && cloudStatsTargetLanguage !== targetLanguage
     ? null
     : createPersonalLibraryPathPresentation(
@@ -220,16 +264,19 @@ export default function CatalogWorkspace({
     },
   ), [cloudStats, cloudStatsTargetLanguage, libraryCards.length, libraryStats, ownerId, targetLanguage]);
 
-  const readyStatus = useCallback((releaseId: string): WorkspaceStatus => ({
+  const personalTotal = query.mode === 'personal'
+    ? (personalLibrary === null ? null : personalLibrary.total)
+    : null;
+
+  const readyStatus = useCallback((releaseId: string): WorkspaceStatusState => ({
     kind: 'ready',
     isOnline,
-    message: i18n._(copy.ready.id, { releaseId }),
     messageKey: 'ready', messageValues: { releaseId },
   }), [isOnline]);
 
   const inspect = useCallback(async () => {
     const generation = ++workflowGeneration.current;
-    setStatus({ kind: 'checking', message: i18n._(copy.checking), messageKey: 'checking' });
+    setStatus({ kind: 'checking', messageKey: 'checking' });
     try {
       if (!query.catalogId || !query.releaseId) {
         setSummary(null);
@@ -240,19 +287,13 @@ export default function CatalogWorkspace({
         setStatus(query.mode === 'personal'
           ? {
               kind: 'personal',
-              message: personalLibrary === null
-                ? i18n._(copy.personalUnavailable)
-                : personalLibrary.total > 0
-                ? i18n._(copy.personalWithCards.id, { count: personalLibrary.total })
-                : i18n._(copy.personalEmpty),
-              messageKey: personalLibrary === null ? 'personalUnavailable' : personalLibrary.total > 0 ? 'personalWithCards' : 'personalEmpty',
-              messageValues: { count: personalLibrary?.total ?? 0 },
+              messageKey: personalTotal === null ? 'personalUnavailable' : personalTotal > 0 ? 'personalWithCards' : 'personalEmpty',
+              messageValues: { count: personalTotal ?? 0 },
             }
           : {
               kind: 'unavailable',
               isOnline,
               canDownload: false,
-              message: i18n._(copy.languageUnavailable),
               messageKey: 'languageUnavailable',
             });
         return;
@@ -262,7 +303,7 @@ export default function CatalogWorkspace({
       const progressOwner = ownerId;
       const progressDatabase = database;
       const progressEpoch = verifiedLibraryEpoch;
-      const loadProgress = progressOwner && progressDatabase && progressEpoch !== null && progressEpoch !== undefined
+      const loadProgress = progressOwner && progressDatabase && progressEpoch !== null
         ? () => progressQueries.current.read({
             ownerId: progressOwner, catalogId, releaseId,
             targetLanguage: query.languageCode, libraryEpoch: progressEpoch,
@@ -283,7 +324,6 @@ export default function CatalogWorkspace({
         setIsLoadingPage(false);
         setStatus({
           kind: 'unavailable', isOnline, canDownload: true,
-          message: isOnline ? i18n._(copy.releaseMissingOnline) : i18n._(copy.releaseMissingOffline),
           messageKey: isOnline ? 'releaseMissingOnline' : 'releaseMissingOffline',
         });
         return;
@@ -297,13 +337,13 @@ export default function CatalogWorkspace({
     } catch (error) {
       if (!mounted.current) return;
       setIsLoadingPage(false);
-      setStatus(catalogErrorStatus(error, isOnline, 'catalogOpenError'));
+      setStatus(catalogErrorState(error, isOnline, 'catalogOpenError'));
     }
-  }, [database, isOnline, ownerId, personalLibrary, query.catalogId, query.languageCode, query.mode, query.releaseId, readyStatus, service, targetLanguage, verifiedLibraryEpoch]);
+  }, [database, isOnline, ownerId, personalTotal, query.catalogId, query.languageCode, query.mode, query.releaseId, readyStatus, service, targetLanguage, verifiedLibraryEpoch]);
 
   const loadPage = useCallback(async (cursor: string | null, append: boolean) => {
     if (!query.catalogId || !query.trackId || !summary) return;
-    const pageToken = pagingGuard.current!.capture();
+    const pageToken = pageGeneration.current;
     if (append) setIsLoadingMore(true);
     else setIsLoadingPage(true);
     try {
@@ -311,17 +351,17 @@ export default function CatalogWorkspace({
       if (
         page.status === 'stale'
         || !mounted.current
-        || !pagingGuard.current!.isCurrent(pageToken)
+        || pageGeneration.current !== pageToken
       ) return;
       setHydrated(previous => append ? [...previous, ...page.value.items] : page.value.items);
       setNextCursor(page.value.nextCursor);
       setHasMore(page.value.hasMore);
       setStatus(readyStatus(summary.release.releaseId));
     } catch (error) {
-      if (!mounted.current || !pagingGuard.current!.isCurrent(pageToken)) return;
-      setStatus(catalogErrorStatus(error, isOnline, 'vocabularyReadError'));
+      if (!mounted.current || pageGeneration.current !== pageToken) return;
+      setStatus(catalogErrorState(error, isOnline, 'vocabularyReadError'));
     } finally {
-      if (mounted.current && pagingGuard.current!.isCurrent(pageToken)) {
+      if (mounted.current && pageGeneration.current === pageToken) {
         if (append) setIsLoadingMore(false);
         else setIsLoadingPage(false);
       }
@@ -330,36 +370,37 @@ export default function CatalogWorkspace({
 
   const updateQuery = useCallback((patch: CatalogWorkspaceQueryPatch, replace = false) => {
     workflowGeneration.current += 1;
-    continueGeneration.current += 1;
-    setConfirmationUnitId(null);
-    setContinueError(null);
-    setIsContinuingUnit(false);
-    pagingGuard.current!.invalidate();
-    setIsLoadingPage(true);
-    setNextCursor(null);
-    setHasMore(false);
-    setIsLoadingMore(false);
-    setQuery(current => navigateCatalogWorkspaceQuery({
-      service,
-      current,
-      patch,
-      currentLocation: browserLocation(),
-      navigate: nextLocation => {
-        if (replace) globalThis.history?.replaceState(globalThis.history.state, '', nextLocation);
-        else globalThis.history?.pushState(globalThis.history.state, '', nextLocation);
-      },
-    }));
+    resetContinue();
+    resetPaging();
+    setQuery(current => {
+      service.invalidate();
+      const next = patchCatalogWorkspaceQuery(current, patch);
+      const nextLocation = createCatalogWorkspaceLocation(browserLocation(), next);
+      if (replace) globalThis.history?.replaceState(globalThis.history.state, '', nextLocation);
+      else globalThis.history?.pushState(globalThis.history.state, '', nextLocation);
+      return next;
+    });
   }, [service]);
-  const searchDebouncer = useMemo(() => createCatalogSearchDebouncer(
-    term => updateQuery({ term }, true),
-  ), [updateQuery]);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const cancelSearch = () => {
+    if (searchTimer.current === undefined) return;
+    globalThis.clearTimeout(searchTimer.current);
+    searchTimer.current = undefined;
+  };
+  const scheduleSearch = (term: string) => {
+    cancelSearch();
+    searchTimer.current = globalThis.setTimeout(() => {
+      searchTimer.current = undefined;
+      updateQuery({ term }, true);
+    }, 250);
+  };
 
   useEffect(() => {
     if (query.mode !== 'personal' || query.languageCode === targetLanguage) return;
-    searchDebouncer.cancel();
+    cancelSearch();
     setTermDraft('');
     updateQuery({ languageCode: targetLanguage, mode: 'personal', term: '' }, true);
-  }, [query.languageCode, query.mode, searchDebouncer, targetLanguage, updateQuery]);
+  }, [query.languageCode, query.mode, targetLanguage, updateQuery]);
 
   useLayoutEffect(() => {
     if (focusIntent > 0) headingRef?.current?.focus({ preventScroll: true });
@@ -367,38 +408,39 @@ export default function CatalogWorkspace({
 
   useEffect(() => {
     mounted.current = true;
-    void inspect();
     return () => {
       mounted.current = false;
       workflowGeneration.current += 1;
-      continueGeneration.current += 1;
+      invalidateContinue();
       service.invalidate();
     };
-  }, [inspect, service]);
+  }, [service]);
+
+  useEffect(() => {
+    void inspect();
+  }, [inspect]);
+
+  useEffect(() => {
+    setIsContinuingUnit(false);
+  }, [ownerId, verifiedLibraryEpoch]);
 
   useEffect(() => {
     if (summary) void loadPage(null, false);
   }, [loadPage, summary]);
 
-  useEffect(() => () => searchDebouncer.dispose(), [searchDebouncer]);
+  useEffect(() => cancelSearch, []);
 
   useEffect(() => {
     const updateOnline = () => setIsOnline(browserOnline());
     const restoreUrl = () => {
       const restored = readCatalogWorkspaceQuery(browserLocation());
-      if (synchronizeCatalogHistoryInspection({ service, current: query, restored })) {
+      if (query.catalogId !== restored.catalogId || query.releaseId !== restored.releaseId) {
+        service.invalidate();
         workflowGeneration.current += 1;
       }
-      continueGeneration.current += 1;
-      setConfirmationUnitId(null);
-      setContinueError(null);
-      setIsContinuingUnit(false);
-      pagingGuard.current!.invalidate();
-      searchDebouncer.cancel();
-      setIsLoadingPage(true);
-      setNextCursor(null);
-      setHasMore(false);
-      setIsLoadingMore(false);
+      resetContinue();
+      cancelSearch();
+      resetPaging();
       setTermDraft(restored.term);
       setQuery(restored);
     };
@@ -410,7 +452,7 @@ export default function CatalogWorkspace({
       globalThis.removeEventListener?.('offline', updateOnline);
       globalThis.removeEventListener?.('popstate', restoreUrl);
     };
-  }, [query.catalogId, query.releaseId, searchDebouncer, service]);
+  }, [query.catalogId, query.releaseId, service]);
 
   const download = useCallback(async () => {
     const manifestPath = catalogReleaseManifestPath({
@@ -419,7 +461,7 @@ export default function CatalogWorkspace({
       availability: query.catalogId && query.releaseId ? 'available' : 'unavailable',
     });
     if (!isOnline || !query.catalogId || !query.releaseId || !manifestPath) return;
-    setStatus({ kind: 'downloading', progressPercent: 10, message: i18n._(copy.downloading), messageKey: 'downloading' });
+    setStatus({ kind: 'downloading', progressPercent: 10, messageKey: 'downloading' });
     try {
       const result = await service.download(manifestPath, {
         catalogId: query.catalogId,
@@ -428,7 +470,6 @@ export default function CatalogWorkspace({
         if (mounted.current) setStatus({
           kind: 'downloading',
           progressPercent: progress.progressPercent,
-          message: progress.phase === 'complete' ? i18n._(copy.installed) : i18n._(copy.downloading),
           messageKey: progress.phase === 'complete' ? 'installed' : 'downloading',
         });
       });
@@ -436,7 +477,7 @@ export default function CatalogWorkspace({
       await inspect();
     } catch (error) {
       if (!mounted.current) return;
-      setStatus(catalogErrorStatus(
+      setStatus(catalogErrorState(
         error,
         isOnline,
         'installError',
@@ -447,14 +488,7 @@ export default function CatalogWorkspace({
   const tracks = summary ? catalogTracksFromSummary(summary) : [];
   const selectedTrack = (query.trackId === 'toeic' || query.trackId === 'general') ? query.trackId : 'ielts';
   const selectedTier: CatalogTierId = query.tier ?? 'foundation';
-  const queryFilters = summary
-    ? catalogFiltersFromSummary(summary, selectedTrack, query)
-    : catalogFiltersFromSummary({
-      release: {
-        catalogId: query.catalogId ?? 'unavailable', releaseId: 'unavailable', schemaVersion: 1,
-        contentLanguage: query.languageCode, chunkCount: 1, membershipCount: 1, encodedBytes: 1,
-      }, scannedMemberships: 0, tracks: [],
-    }, selectedTrack, query);
+  const queryFilters = catalogFiltersFromSummary(summary, selectedTrack, query);
   const filters = {
     ...queryFilters,
     term: termDraft,
@@ -477,7 +511,7 @@ export default function CatalogWorkspace({
       ...card,
       libraryState: scopedOptimisticLibrary.addingCardIds.has(card.id)
         ? 'adding' as const
-        : scopedOptimisticLibrary.addedCardIds.has(card.id) || libraryActions.isInLibrary(card)
+        : scopedOptimisticLibrary.addedCardIds.has(card.id) || isInLibrary(card)
           ? 'added' as const
           : scopedOptimisticLibrary.failedCardIds.has(card.id)
             ? 'failed' as const
@@ -493,27 +527,24 @@ export default function CatalogWorkspace({
   const selectedUnitKey = selectedUnit ? pathUnitKey(selectedUnit.unit) : null;
   const allUnitsComplete = trackUnits.length > 0 && trackUnits.every(progress => progress.status === 'complete');
   const pace = readDailyPaceForEta();
-  const etaDays = pace && selectedUnit?.introduced !== null && selectedUnit?.introduced !== undefined
+  const etaDays = pace && selectedUnit?.introduced != null
     ? Math.ceil((selectedUnit.unit.total - selectedUnit.introduced) / pace)
     : null;
   const focusUnitPreview = () => globalThis.requestAnimationFrame?.(() => {
     globalThis.document?.getElementById('catalog-unit-preview')?.focus({ preventScroll: false });
   });
   const selectPathUnit = (trackId: string, unitId: string) => {
-    continueGeneration.current += 1;
+    resetContinue();
     setSelectedPathUnitId(`${trackId}\u0000${unitId}`);
-    setConfirmationUnitId(null);
-    setContinueError(null);
-    setIsContinuingUnit(false);
   };
   const openNextUnitPreview = () => {
-    if (!nextUnit || !progressAvailable || continuingUnitRef.current) return;
+    if (!nextUnit || !progressAvailable || continuingGeneration.current !== null) return;
     selectPathUnit(nextUnit.unit.trackId, nextUnit.unit.unitId);
     setConfirmationUnitId(pathUnitKey(nextUnit.unit));
     focusUnitPreview();
   };
   const prepareSelectedUnit = () => {
-    if (!selectedUnit || continuingUnitRef.current
+    if (!selectedUnit || continuingGeneration.current !== null
       || selectedUnit.status === 'complete' || selectedUnit.status === 'unavailable') return;
     setConfirmationUnitId(pathUnitKey(selectedUnit.unit));
     setContinueError(null);
@@ -521,11 +552,11 @@ export default function CatalogWorkspace({
   };
   const confirmSelectedUnit = async () => {
     if (!selectedUnit || !selectedUnitKey || confirmationUnitId !== selectedUnitKey
-      || continuingUnitRef.current || !continueCatalogUnit || !query.catalogId || !query.releaseId
+      || continuingGeneration.current !== null || !continueCatalogUnit || !query.catalogId || !query.releaseId
       || !ownerId || verifiedLibraryEpoch === null || !progressAvailable
       || selectedUnit.status === 'complete' || selectedUnit.status === 'unavailable') return;
     const generation = ++continueGeneration.current;
-    continuingUnitRef.current = true;
+    continuingGeneration.current = generation;
     const scope = { ownerId, libraryEpoch: verifiedLibraryEpoch, query };
     const isCurrent = () => mounted.current && continueGeneration.current === generation
       && continuationScope.current.ownerId === scope.ownerId
@@ -571,16 +602,14 @@ export default function CatalogWorkspace({
     } catch {
       if (isCurrent()) setContinueError(i18n._(copy.unitReadError));
     } finally {
-      continuingUnitRef.current = false;
+      if (continuingGeneration.current === generation) continuingGeneration.current = null;
       if (isCurrent()) setIsContinuingUnit(false);
     }
   };
   const model: CatalogScreenModel = {
     headingRef,
     mode: query.mode,
-    status: status.messageKey
-      ? { ...status, message: i18n._(copy[status.messageKey].id, status.messageValues) }
-      : status,
+    status: localizeStatus(status),
     selectedLanguage: query.languageCode,
     uiLocale,
     progressAvailable,
@@ -618,29 +647,26 @@ export default function CatalogWorkspace({
   };
   const actions: CatalogScreenActions = {
     selectMode: mode => {
-      searchDebouncer.cancel();
+      cancelSearch();
       setTermDraft('');
       updateQuery({ mode, languageCode: mode === 'personal' ? targetLanguage : query.languageCode, trackId: null, tier: null, cefrLevel: null, topic: null, partOfSpeech: null, skill: null, term: '' });
     },
     selectLanguage: languageCode => updateQuery({ languageCode }),
     selectTrack: trackId => {
       setSelectedPathUnitId(null);
-      setConfirmationUnitId(null);
-      setContinueError(null);
-      continueGeneration.current += 1;
       updateQuery({ trackId, tier: 'foundation' });
     },
     selectTier: tier => updateQuery({ tier }),
     changeTerm: term => {
       setTermDraft(term);
-      searchDebouncer.schedule(term);
+      scheduleSearch(term);
     },
     changeCefr: cefrLevel => updateQuery({ cefrLevel: cefrLevel || null }),
     changeTopic: topic => updateQuery({ topic: topic || null }),
     changePartOfSpeech: partOfSpeech => updateQuery({ partOfSpeech: partOfSpeech || null }),
     changeSkill: skill => updateQuery({ skill: skill || null }),
     resetFilters: () => {
-      searchDebouncer.cancel();
+      cancelSearch();
       setTermDraft('');
       updateQuery({ term: '', cefrLevel: null, topic: null, partOfSpeech: null, skill: null });
     },
@@ -652,7 +678,8 @@ export default function CatalogWorkspace({
       if (!card || card.libraryState !== 'available') return;
       const pending = beginCatalogLibraryAdd(scopedOptimisticLibrary, ownerId, ownerVersion, cardId);
       setOptimisticLibrary(pending.state);
-      void libraryActions.addToLibrary(card)
+      void addToLibrary(card)
+        .catch(() => 'failed' as const)
         .then(result => {
           setOptimisticLibrary(current => settleCatalogLibraryAdd(
             current,
@@ -660,15 +687,6 @@ export default function CatalogWorkspace({
             ownerScope.current.version,
             pending.token,
             result,
-          ));
-        })
-        .catch(() => {
-          setOptimisticLibrary(current => settleCatalogLibraryAdd(
-            current,
-            ownerScope.current.ownerId,
-            ownerScope.current.version,
-            pending.token,
-            'failed',
           ));
         });
     },

@@ -14,6 +14,7 @@ const HAPTIC_PATTERNS: Record<HapticStyle, number | number[]> = {
 
 export const HAPTICS_STORAGE_KEY = 'sonflash_haptics_enabled';
 const HAPTICS_CHANGE_EVENT = 'sonflash_haptics_changed';
+let hapticsPreferenceInSession: boolean | undefined;
 
 /**
  * Reads the haptics preference from Web Storage, persisted the same way
@@ -23,6 +24,7 @@ const HAPTICS_CHANGE_EVENT = 'sonflash_haptics_changed';
  */
 export const isHapticsEnabled = (): boolean => {
   if (typeof window === 'undefined') return true;
+  if (hapticsPreferenceInSession !== undefined) return hapticsPreferenceInSession;
   try {
     const stored = window.localStorage.getItem(HAPTICS_STORAGE_KEY);
     return stored === null ? true : stored === 'true';
@@ -35,8 +37,9 @@ export const setHapticsEnabled = (enabled: boolean): void => {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(HAPTICS_STORAGE_KEY, String(enabled));
+    hapticsPreferenceInSession = undefined;
   } catch {
-    // Keep the in-memory React state usable when storage is denied or full.
+    hapticsPreferenceInSession = enabled;
   }
   window.dispatchEvent(new Event(HAPTICS_CHANGE_EVENT));
 };
@@ -74,11 +77,16 @@ export const useHapticsSettings = () => {
 
   useEffect(() => {
     const handleUpdate = () => setEnabled(isHapticsEnabled());
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== HAPTICS_STORAGE_KEY) return;
+      hapticsPreferenceInSession = undefined;
+      handleUpdate();
+    };
     window.addEventListener(HAPTICS_CHANGE_EVENT, handleUpdate);
-    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('storage', handleStorage);
     return () => {
       window.removeEventListener(HAPTICS_CHANGE_EVENT, handleUpdate);
-      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('storage', handleStorage);
     };
   }, []);
 

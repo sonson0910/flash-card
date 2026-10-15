@@ -153,13 +153,18 @@ export function createCardIntakePipeline({
     promise: Promise<Array<{ card: CardData; created: boolean }>>;
     retryable: boolean;
   }>();
+  const generationOwners = new Map<string, string>();
   const createOperationId = () => normalizeCardOperationId(`create-${globalThis.crypto.randomUUID()}`);
 
   const findExisting: CardIntakeControllerPort['findExisting'] = async words => {
     const current = getContext();
     const session = sessionGuard.capture();
     const normalizedWords = [...new Set(words.map(word => normalizeCardWord(typeof word === 'string' ? word : word.normalizedWord || word.word)).filter(Boolean))];
-    const logicalInputs = words.flatMap(word => typeof word === 'string' || !word.lexemeId ? [] : [[`lexeme:${word.lexemeId}`, word] as const]);
+    const logicalInputs = words.flatMap(word => {
+      if (typeof word === 'string' || (!word.lexemeId && word.language === undefined)) return [];
+      const key = word.lexemeId ? `lexeme:${word.lexemeId}` : cardLogicalKey({ id: '', ...word });
+      return key ? [[key, word] as const] : [];
+    });
     const local = current.getCards().filter(card => belongsToVerifiedLibraryEpoch(card, current.libraryEpoch));
     const matches = indexCardsByNormalizedWord(local);
     const logicalMatches = new Map(local.map(card => [cardLogicalKey(card), card]));
@@ -233,12 +238,16 @@ export function createCardIntakePipeline({
   ) => {
     const current = getContext();
     const session = sessionGuard.capture();
-    if (!current.ownerId) {
+    const ownerId = current.ownerId;
+    if (!ownerId) {
       throw classifyProtectedFunctionError(
         { code: 'unauthenticated' },
         'AI generation',
       );
     }
+    const operationId = request.operationId ?? globalThis.crypto.randomUUID();
+    generationOwners.set(operationId, ownerId);
+    try {
     const normalizedWord = request.language.normalize(request.term).slice(0, 80);
     const partOfSpeechHint = normalizePartOfSpeech(request.partOfSpeechHint);
     const requestedDeck = typeof request.requestedDeck === 'string'
@@ -251,14 +260,20 @@ export function createCardIntakePipeline({
       } catch {
         available = false;
       }
+      assertCurrent(session);
       if (!available) throw new RequestedDeckUnavailableError(requestedDeck);
     }
     const audioPromise = fetchAudioUrl(normalizedWord);
-    const { generateWordInfo } = await import('../../lib/gemini');
+    const { generateWordInfo, PART_OF_SPEECH_HINTS } = await import('../../lib/gemini');
+    assertCurrent(session);
+    const generationPartOfSpeech = PART_OF_SPEECH_HINTS.find(hint => hint === partOfSpeechHint);
     const wordInfo = await generateWordInfo(normalizedWord, {
-      ...(request.operationId ? { operationId: request.operationId } : {}),
+      operationId,
+      expectedOwnerId: ownerId,
+      ...(request.onProgress ? { onProgress: request.onProgress } : {}),
+      ...(request.signal ? { signal: request.signal } : {}),
       context: request.context,
-      ...(partOfSpeechHint ? { partOfSpeechHint } : {}),
+      ...(generationPartOfSpeech ? { partOfSpeech: generationPartOfSpeech } : {}),
       sourceLanguage: request.language.source.code,
       targetLanguage: request.language.target.code,
     });
@@ -324,6 +339,9 @@ export function createCardIntakePipeline({
       },
       mediaPromise,
     };
+    } finally {
+      if (generationOwners.get(operationId) === ownerId) generationOwners.delete(operationId);
+    }
   };
 
   const persistCardsInternal = async (
@@ -499,14 +517,19 @@ export function createCardIntakePipeline({
     const database = db;
     const activeLibraryEpoch = current.libraryEpoch;
     const operationIds = cards.map(createOperationId);
-    const settlements = await Promise.allSettled(cards.map((card, index) =>
-      createCardV2IfAbsent(database, ownerId, card, {
-        libraryEpoch: activeLibraryEpoch,
-        opId: operationIds[index]!,
-        operationCreatedAt: card.createdAt,
-        timeZone: rewardTimeZone(),
-      }),
-    ));
+    const settlements = await mapWithConcurrency(cards, 1, async (card, index) => {
+      try {
+        const value = await createCardV2IfAbsent(database, ownerId, card, {
+          libraryEpoch: activeLibraryEpoch,
+          opId: operationIds[index]!,
+          operationCreatedAt: card.createdAt,
+          timeZone: rewardTimeZone(),
+        });
+        return { status: 'fulfilled' as const, value };
+      } catch (reason) {
+        return { status: 'rejected' as const, reason };
+      }
+    });
     if (!sessionGuard.isCurrent(session) || getContext().libraryEpoch !== activeLibraryEpoch) return { status: 'stale' };
 
     const confirmed = settlements.flatMap((settlement, index) => settlement.status === 'fulfilled'
@@ -578,6 +601,12 @@ export function createCardIntakePipeline({
     touchExisting,
     assignExistingDeck,
     generateCard,
+    cancelGeneration: async operationId => {
+      const ownerId = generationOwners.get(operationId);
+      if (!ownerId) return;
+      const { cancelWordInfoGeneration } = await import('../../lib/gemini');
+      await cancelWordInfoGeneration(operationId, ownerId);
+    },
     persistCards,
     createConfirmedCatalogCards,
     applyMedia: async (card, media) => {

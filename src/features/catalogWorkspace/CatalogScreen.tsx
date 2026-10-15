@@ -38,6 +38,13 @@ interface CatalogScreenProps {
   actions: CatalogScreenActions;
 }
 
+const compactStatusClass = 'mt-3 text-sm font-semibold text-[var(--sf-text-muted)]';
+const kickerClass = 'premium-kicker uppercase tracking-[0.14em]';
+const heroKickerClass = 'premium-kicker uppercase tracking-[0.16em]';
+const shelfClass = 'catalog-shelf rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 sm:p-5';
+const modeButtonClass = 'min-h-11 rounded-xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold focus-visible:outline-2';
+const metadataBadgeClass = 'rounded-full bg-slate-200 px-2.5 py-1 text-slate-900 dark:bg-slate-700 dark:text-slate-50';
+
 const tierStatePresentation: Record<CatalogTierState, { label: ReturnType<typeof msg>; Icon: LucideIcon }> = {
   available: { label: msg({ id: 'paths.tier-state.available', message: 'Available' }), Icon: Circle },
   'in-progress': { label: msg({ id: 'paths.tier-state.in-progress', message: 'In progress' }), Icon: BookOpen },
@@ -148,7 +155,7 @@ function PersonalLibraryPaths({
   return (
     <section aria-labelledby="personal-paths-heading" className="catalog-personal-paths overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
       <div className="grid gap-5 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-        <div className="min-w-0"><p className="premium-kicker uppercase tracking-[0.16em]"><Trans id="catalog.personal.kicker" message="Built from your library" /></p><h2 id="personal-paths-heading" className="mt-2 text-balance text-2xl font-black tracking-tight sm:text-3xl"><Trans id="catalog.personal.title" message="Your personal paths" /></h2><p className="mt-2 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]"><Trans id="catalog.personal.description" message="Use your {count} saved cards now. No draft catalog vocabulary is mixed into these paths." values={{ count: formatNumber(library.total) }} /></p></div>
+        <div className="min-w-0"><p className={heroKickerClass}><Trans id="catalog.personal.kicker" message="Built from your library" /></p><h2 id="personal-paths-heading" className="mt-2 text-balance text-2xl font-black tracking-tight sm:text-3xl"><Trans id="catalog.personal.title" message="Your personal paths" /></h2><p className="mt-2 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]"><Trans id="catalog.personal.description" message="Use your {count} saved cards now. No draft catalog vocabulary is mixed into these paths." values={{ count: formatNumber(library.total) }} /></p></div>
         <div className="flex flex-wrap gap-3 lg:justify-end">
           {library.total > 0 && <button type="button" onClick={actions.continueReview} className="brand-action min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-2.5 text-sm font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.03] hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none cursor-pointer"><Trans id="catalog.action.continue-review" message="Continue review" /></button>}
           <button type="button" onClick={actions.openVocabulary} className="min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 text-sm font-bold text-slate-800 dark:text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none cursor-pointer"><Trans id="catalog.action.open-vocabulary" message="Open vocabulary" /></button>
@@ -170,7 +177,7 @@ function TrackCard({ track, selected, progressAvailable, onSelect }: { track: Ca
   return (
     <button type="button" onClick={onSelect} aria-pressed={selected} className={`catalog-track-card group relative min-h-52 overflow-hidden rounded-[22px] border p-5 text-left shadow-[0_18px_48px_-38px_var(--sf-shadow)] transition-all hover:-translate-y-1 hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transform-none motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm ${selected ? 'border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] ring-1 ring-[var(--sf-brand)]/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
       <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-2 ${selected ? 'bg-[var(--sf-brand)]' : 'bg-[var(--sf-border)] group-hover:bg-[var(--sf-brand)]'}`} />
-      <span className="relative flex items-center justify-between gap-3"><span className="text-xl font-black tracking-tight">{i18n._(copy.label)}</span>{selected && <span className="inline-flex items-center gap-1 rounded-full border border-[var(--sf-brand)]/30 bg-[var(--sf-brand)]/10 px-2 py-1 text-[11px] font-black text-[var(--sf-brand-text)]"><Check aria-hidden="true" className="size-3.5" /><Trans id="paths.selected" message="Selected" /></span>}</span>
+      <span className="relative flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2"><span className="min-w-0 break-words text-xl font-black tracking-tight">{i18n._(copy.label)}</span>{selected && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--sf-brand)]/30 bg-[var(--sf-brand)]/10 px-2 py-1 text-[11px] font-black text-[var(--sf-brand-text)]"><Check aria-hidden="true" className="size-3.5" /><Trans id="paths.selected" message="Selected" /></span>}</span>
       <span className="relative mt-2 block text-sm leading-6 text-[var(--sf-text-muted)]">{i18n._(copy.description)}</span>
       <span className="relative mt-5 block h-1.5 overflow-hidden rounded-full bg-[var(--sf-border)]"><span className="block h-full rounded-full bg-[var(--sf-brand)] transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${progress}%` }} /></span>
       <span className="relative mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--sf-text-muted)]"><Metric value={track.total} label={i18n._(msg({ id: 'paths.metric.words', message: 'words' }))} />{progressAvailable ? <><Metric value={track.started} label={i18n._(msg({ id: 'paths.metric.started', message: 'started' }))} /><Metric value={track.mastered} label={i18n._(msg({ id: 'paths.metric.mastered', message: 'mastered' }))} /></> : <span><Trans id="paths.unit.status.unavailable" message="Progress unavailable" /></span>}</span>
@@ -222,8 +229,8 @@ function PathUnitShelf({
         ? msg({ id: 'paths.unit.status.unavailable', message: 'Progress unavailable' })
       : msg({ id: 'paths.unit.status.not-started', message: 'Not started' });
   return (
-    <section aria-labelledby="catalog-units-heading" className="catalog-shelf rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 sm:p-5">
-      <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="paths.units.kicker" message="Catalog units" /></p><h2 id="catalog-units-heading" className="mt-1 text-xl font-black tracking-tight"><Trans id="paths.units.title" message="Choose a unit" /></h2></div>
+    <section aria-labelledby="catalog-units-heading" className={shelfClass}>
+      <div className="mb-4"><p className={kickerClass}><Trans id="paths.units.kicker" message="Catalog units" /></p><h2 id="catalog-units-heading" className="mt-1 text-xl font-black tracking-tight"><Trans id="paths.units.title" message="Choose a unit" /></h2></div>
       <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label={i18n._(msg({ id: 'paths.units.list-label', message: 'Catalog units' }))}>
         {units.map(progress => {
           const unit = progress.unit;
@@ -240,15 +247,15 @@ function PathUnitShelf({
           ? <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans id="paths.unit.progress-unavailable" message="Progress is unavailable until your library can be verified." /></p>
           : <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans id="paths.unit.progress" message="{introduced} introduced · {mastered} mastered" values={{ introduced: formatNumber(selected.introduced), mastered: formatNumber(selected.mastered) }} /></p>}
         <ol className="mt-3 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
-          {selected.unit.preview.map((lexeme, index) => <li key={`${lexeme.lexemeId}:${index}`} lang={language} className="rounded-lg bg-[var(--sf-surface-raised)] px-3 py-2 font-semibold">{lexeme.lemma}</li>)}
+          {selected.unit.preview.map((lexeme, index) => <li key={`${lexeme.lexemeId}:${index}`} lang={language} className="rounded-lg bg-[var(--sf-surface)] px-3 py-2 font-semibold">{lexeme.lemma}</li>)}
         </ol>
         {continueState?.etaDays !== null && continueState?.etaDays !== undefined && <p className="mt-3 text-sm font-semibold text-[var(--sf-text-muted)]"><Trans id="paths.unit.eta" message="Estimated {days, plural, one {# day} other {# days}} left at your pace." values={{ days: continueState.etaDays }} /></p>}
         {continueState && (selected.status === 'unavailable'
-          ? <p className="mt-3 text-sm font-semibold text-[var(--sf-text-muted)]"><Trans id="paths.unit.continue-unavailable" message="Continue is unavailable until progress can be verified." /></p>
+          ? <p className={compactStatusClass}><Trans id="paths.unit.continue-unavailable" message="Continue is unavailable until progress can be verified." /></p>
           : selected.status === 'complete'
-            ? <p className="mt-3 text-sm font-semibold text-[var(--sf-text-muted)]"><Trans id="paths.unit.complete-message" message="This unit is complete." /></p>
+            ? <p className={compactStatusClass}><Trans id="paths.unit.complete-message" message="This unit is complete." /></p>
           : continueState?.allComplete
-            ? <p className="mt-3 text-sm font-semibold text-[var(--sf-text-muted)]"><Trans id="paths.unit.all-complete" message="All units in this path are complete." /></p>
+            ? <p className={compactStatusClass}><Trans id="paths.unit.all-complete" message="All units in this path are complete." /></p>
             : <div className="mt-4">
               {confirmationArmed && <p className="text-sm text-[var(--sf-text-muted)]"><Trans id="paths.unit.confirm-disclosure" message="Any missing unit words will be added to your Library before study." /></p>}
               <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -294,7 +301,7 @@ function VocabularyCard({ card, onAdd }: { card: CatalogVocabularyPresentation; 
     >
       <header className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0"><h3 id={`catalog-word-${card.id}`} lang={card.language} className="break-words text-2xl font-black">{card.lemma}</h3>{card.phonetic && <p className="mt-1 text-sm text-[var(--sf-text-muted)]">{card.phonetic}</p>}</div>
-        <div className="flex flex-wrap gap-2 text-xs font-bold"><span className="rounded-full bg-cyan-100 px-2.5 py-1 text-cyan-950 dark:bg-cyan-900 dark:text-cyan-50"><Trans id="catalog.card.cefr" message="CEFR {level}" values={{ level: card.cefr }} /></span><span className="rounded-full bg-slate-200 px-2.5 py-1 text-slate-900 dark:bg-slate-700 dark:text-slate-50">{card.tier}</span><span className="rounded-full bg-slate-200 px-2.5 py-1 text-slate-900 dark:bg-slate-700 dark:text-slate-50">{card.partOfSpeech}</span></div>
+        <div className="flex flex-wrap gap-2 text-xs font-bold"><span className="rounded-full bg-cyan-100 px-2.5 py-1 text-cyan-950 dark:bg-cyan-900 dark:text-cyan-50"><Trans id="catalog.card.cefr" message="CEFR {level}" values={{ level: card.cefr }} /></span><span className={metadataBadgeClass}>{card.tier}</span><span className={metadataBadgeClass}>{card.partOfSpeech}</span></div>
       </header>
       <div className="mt-5 space-y-4 text-sm leading-relaxed">
         <section aria-label={i18n._(msg({ id: 'catalog.card.meaning', message: 'Meaning' }))}><h4 className="text-xs font-black uppercase tracking-wide text-[var(--sf-text-muted)]"><Trans id="catalog.card.meaning" message="Meaning" /></h4><p lang={card.meaningLanguage} className="mt-1 font-semibold">{card.meaning}</p>{card.translation && <p lang={card.translationLanguage} className="mt-1 text-[var(--sf-text-muted)]">{card.translation}</p>}</section>
@@ -328,7 +335,9 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
   const pathUnits = model.pathUnits?.filter(unit => unit.unit.trackId === model.selectedTrack);
   const pathUnitContinue = model.pathUnitContinue;
   const featuredUnit = pathUnits?.find(unit => pathUnitKey(unit.unit) === pathUnitContinue?.selectedUnitId) ?? pathUnits?.[0];
-  const continueDisabled = !progressAvailable || !pathUnitContinue?.selectedUnitId || pathUnitContinue.allComplete || pathUnitContinue.busy;
+  const allUnitsComplete = pathUnitContinue?.allComplete
+    ?? (pathUnits ? pathUnits.length > 0 && pathUnits.every(unit => unit.status === 'complete') : false);
+  const continueDisabled = !progressAvailable || !featuredUnit || allUnitsComplete || Boolean(pathUnitContinue?.busy);
   const kicker = isPersonal
     ? i18n._(msg({ id: 'paths.personal.kicker', message: 'Personal learning paths' }))
     : i18n._(msg({ id: 'paths.catalog.kicker', message: 'Reviewed catalog' }));
@@ -339,13 +348,13 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
   return (
     <section className="catalog-canvas mx-auto w-full min-w-0 max-w-7xl space-y-6 sm:space-y-8" aria-labelledby="catalog-heading">
       <header className="catalog-heading grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.32fr)] lg:items-end">
-        <div><p className="premium-kicker uppercase tracking-[0.16em]">{kicker}</p>
+        <div><p className={heroKickerClass}>{kicker}</p>
         <h1 id="catalog-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 break-words text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl"><Trans id="paths.title" message="Paths" /></h1>
         <p className="mt-3 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)] sm:text-base">{description}</p></div>
         <div className="flex flex-col gap-3">
           <div data-catalog-mode-switch role="group" aria-label={i18n._(msg({ id: 'paths.source.label', message: 'Path source' }))} className="flex flex-wrap gap-2">
-            <button type="button" aria-pressed={selectedMode === 'personal'} onClick={() => actions.selectMode('personal')} className={`min-h-11 rounded-xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold focus-visible:outline-2 ${selectedMode === 'personal' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'bg-[var(--sf-surface)] text-[var(--sf-text)]'}`}><Trans id="paths.source.personal" message="My vocabulary" /></button>
-            <button type="button" aria-pressed={selectedMode === 'reviewed'} onClick={() => actions.selectMode('reviewed')} className={`min-h-11 rounded-xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold focus-visible:outline-2 ${selectedMode === 'reviewed' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'bg-[var(--sf-surface)] text-[var(--sf-text)]'}`}><Trans id="paths.source.reviewed" message="Reviewed catalog" /></button>
+            <button type="button" aria-pressed={selectedMode === 'personal'} onClick={() => actions.selectMode('personal')} className={`${modeButtonClass} ${selectedMode === 'personal' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'bg-[var(--sf-surface)] text-[var(--sf-text)]'}`}><Trans id="paths.source.personal" message="My vocabulary" /></button>
+            <button type="button" aria-pressed={selectedMode === 'reviewed'} onClick={() => actions.selectMode('reviewed')} className={`${modeButtonClass} ${selectedMode === 'reviewed' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'bg-[var(--sf-surface)] text-[var(--sf-text)]'}`}><Trans id="paths.source.reviewed" message="Reviewed catalog" /></button>
           </div>
           {!isPersonal && <label htmlFor="catalog-language" className="block text-sm font-bold"><Trans id="paths.language.label" message="Language" />
             <select id="catalog-language" name="catalog-language" value={model.selectedLanguage} onChange={event => actions.selectLanguage(event.target.value)} className="glass-field mt-2 min-h-12 w-full rounded-xl px-3 font-semibold focus-visible:outline-2">
@@ -365,7 +374,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
           {isCrystal && <span aria-hidden="true" className="crystal-starfield pointer-events-none absolute inset-0 opacity-70 motion-reduce:animate-none" />}
           <div className="catalog-current-path-content relative">
             <div className="min-w-0">
-              <p className="premium-kicker uppercase tracking-[0.16em]"><Trans id="paths.current.kicker" message="Your current path" /></p>
+              <p className={heroKickerClass}><Trans id="paths.current.kicker" message="Your current path" /></p>
               <h2 id="catalog-current-path-heading" className="mt-3 text-balance text-3xl font-black tracking-tight sm:text-5xl">{i18n._(activeTrackCopy.label)}</h2>
               <p className="mt-3 max-w-xl text-pretty leading-7 text-[var(--sf-text-muted)]">{i18n._(activeTrackCopy.description)}</p>
               {featuredUnit && <ul className="catalog-feature-words">
@@ -380,12 +389,12 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
                 </ol>
               </>}
               {progressAvailable ? <p className="catalog-feature-count"><Trans id="paths.current.progress" message="{started} started · {mastered} mastered" values={{ started: formatNumber(activeTrack.started), mastered: formatNumber(activeTrack.mastered) }} />{pathUnitContinue?.etaDays !== null && pathUnitContinue?.etaDays !== undefined && <span><Trans id="paths.unit.eta" message="Estimated {days, plural, one {# day} other {# days}} left at your pace." values={{ days: pathUnitContinue.etaDays }} /></span>}</p> : <p className="catalog-feature-count"><Trans id="paths.unit.status.unavailable" message="Progress unavailable" /></p>}
-              {pathUnitContinue && pathUnits && pathUnits.length > 0 && (pathUnitContinue.allComplete ? <p className="mt-5 text-sm font-bold"><Trans id="paths.unit.all-complete" message="All units in this path are complete." /></p> : <button type="button" onClick={actions.openNextUnitPreview} disabled={continueDisabled} className="catalog-feature-continue brand-action min-h-11 font-extrabold focus-visible:outline-2 disabled:cursor-not-allowed disabled:opacity-65"><Trans id="paths.action.continue" message="Continue" /></button>)}
+              {pathUnits && pathUnits.length > 0 && (allUnitsComplete ? <p className="mt-5 text-sm font-bold"><Trans id="paths.unit.all-complete" message="All units in this path are complete." /></p> : <button type="button" onClick={actions.openNextUnitPreview} disabled={continueDisabled} className="catalog-feature-continue brand-action min-h-11 font-extrabold focus-visible:outline-2 disabled:cursor-not-allowed disabled:opacity-65"><Trans id="paths.action.continue" message="Continue" /></button>)}
             </div>
           </div>
         </section>}
-        <section aria-labelledby="catalog-tracks-heading" className="catalog-shelf rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 sm:p-5">
-          <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="paths.goal.kicker" message="Choose your goal" /></p><h2 id="catalog-tracks-heading" className="mt-1 text-xl font-black tracking-tight"><Trans id="paths.shelf.title" message="Your shelf" /></h2></div>
+        <section aria-labelledby="catalog-tracks-heading" className={shelfClass}>
+          <div className="mb-4"><p className={kickerClass}><Trans id="paths.goal.kicker" message="Choose your goal" /></p><h2 id="catalog-tracks-heading" className="mt-1 text-xl font-black tracking-tight"><Trans id="paths.shelf.title" message="Your shelf" /></h2></div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">{model.tracks.map(track => <TrackCard key={track.id} track={track} selected={track.id === model.selectedTrack} progressAvailable={progressAvailable} onSelect={() => actions.selectTrack(track.id)} />)}</div>
         </section>
         </div>
@@ -393,7 +402,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
         {pathUnits && pathUnits.length > 0 && <PathUnitShelf units={pathUnits} selectedUnitId={pathUnitContinue?.selectedUnitId ?? model.selectedPathUnitId} language={model.uiLocale ?? model.selectedLanguage} continueState={pathUnitContinue} actions={actions} />}
 
         <section aria-labelledby="catalog-roadmap-heading" className="catalog-roadmap">
-          <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="paths.roadmap.kicker" message="Your roadmap" /></p><h2 id="catalog-roadmap-heading" className="mt-1 text-2xl font-black tracking-tight"><Trans id="paths.roadmap.title" message="Your learning level" /></h2></div>
+          <div className="mb-4"><p className={kickerClass}><Trans id="paths.roadmap.kicker" message="Your roadmap" /></p><h2 id="catalog-roadmap-heading" className="mt-1 text-2xl font-black tracking-tight"><Trans id="paths.roadmap.title" message="Your learning level" /></h2></div>
           <ol className={model.tiers.length > 1 ? 'grid grid-cols-1 gap-3 md:grid-cols-3' : 'grid grid-cols-1 gap-3'}>{model.tiers.map(tier => <TierStep key={tier.id} tier={tier} selected={tier.id === model.selectedTier} progressAvailable={progressAvailable} onSelect={() => actions.selectTier(tier.id)} />)}</ol>
         </section>
 

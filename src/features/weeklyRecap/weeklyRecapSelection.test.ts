@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import type { WeeklyRecapData } from './weeklyRecapModel';
 import {
   buildSuggestedWeeklyRecapCaption,
+  captionAfterWeeklyRecapSelectionChange,
   clampWeeklyRecapCaption,
   defaultWeeklyRecapSelection,
   toggleWeeklyRecapSelection,
@@ -32,8 +33,8 @@ describe('weekly recap selection toggles', () => {
   });
 
   it('flips exactly the toggled key', () => {
-    const selection = toggleWeeklyRecapSelection(defaultWeeklyRecapSelection(), 'heatmap');
-    expect(selection.heatmap).toBe(false);
+    const selection = toggleWeeklyRecapSelection(defaultWeeklyRecapSelection(), 'reviewed');
+    expect(selection.reviewed).toBe(false);
     expect(selection.totalXp).toBe(true);
   });
 });
@@ -56,5 +57,23 @@ describe('weekly recap caption', () => {
   it('uses singular day wording for exactly one active day', () => {
     const caption = buildSuggestedWeeklyRecapCaption(recap({ totalXp: 20, activeDays: 1, hasActivity: true }));
     expect(caption).toBe('20 XP and 1 active day this week.');
+  });
+
+  it('uses the real review count when XP activity is unavailable', () => {
+    const caption = buildSuggestedWeeklyRecapCaption(recap({ reviewedCount: 9, hasActivity: true }));
+    expect(caption).toBe('9 reviews this week.');
+  });
+
+  it('removes unchecked metrics from automatic captions and preserves edited captions', () => {
+    const reviewOnly = recap({ reviewedCount: 9, hasActivity: true });
+    const withoutReviews = toggleWeeklyRecapSelection(defaultWeeklyRecapSelection(), 'reviewed');
+    expect(captionAfterWeeklyRecapSelectionChange(reviewOnly, withoutReviews, '9 reviews this week.', false)).toBe('');
+    expect(captionAfterWeeklyRecapSelectionChange(reviewOnly, withoutReviews, 'My own caption', true)).toBe('My own caption');
+
+    const xpWeek = recap({ totalXp: 90, activeDays: 3, hasActivity: true });
+    const withoutXp = toggleWeeklyRecapSelection(defaultWeeklyRecapSelection(), 'totalXp');
+    expect(buildSuggestedWeeklyRecapCaption(xpWeek, withoutXp)).toBe('3 active days this week.');
+    const withoutXpOrDays = toggleWeeklyRecapSelection(withoutXp, 'activeDays');
+    expect(buildSuggestedWeeklyRecapCaption(xpWeek, withoutXpOrDays)).toBe('');
   });
 });

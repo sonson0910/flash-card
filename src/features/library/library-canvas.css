@@ -1066,9 +1066,11 @@
   .library-word-body { min-height: 7.7rem; padding: .7rem; }
   .library-word-body h3 { font-size: 1.35rem; }
   .library-word-cover { height: 6rem; }
-  .library-word-controls { opacity: 1; }
+  .library-word-due { top: 2.4rem; left: .65rem !important; }
+  .library-word-star { display: none; }
+  .library-word-controls { top: .2rem; right: .2rem; display: grid; grid-template-columns: repeat(2, 2.75rem); opacity: 1; }
   .library-word-controls button,
-  .library-word-select { width: 1.55rem; height: 1.55rem; }
+  .library-word-select { width: 2.75rem; height: 2.75rem; }
   .library-canvas-collection-head { align-items: start; flex-direction: column; }
   .library-canvas-actions { width: 100%; }
   .library-canvas-actions > button { flex: 1; justify-content: center; }

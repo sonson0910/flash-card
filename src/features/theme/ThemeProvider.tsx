@@ -1,9 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { applyLumiEnabled, LUMI_ENABLED_STORAGE_KEY, readLumiEnabled } from '../settings/lumi-preference';
 import {
-  applyThemePreference,
   applyThemeToRoot,
   getSystemThemeMode,
+  persistThemePreference,
   readThemePreference,
   THEME_FAMILY_STORAGE_KEY,
   THEME_FOLLOW_SYSTEM_STORAGE_KEY,
@@ -35,28 +35,41 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const storage = browserStorage();
   const root = browserRoot();
   const [preference, setPreference] = useState(() => readThemePreference(storage, getSystemThemeMode()));
-  const preferenceRef = useRef(preference);
-  preferenceRef.current = preference;
+  const requestedPreferenceRef = useRef(preference);
+  const crystalReadyRef = useRef(false);
 
-  const apply = useCallback((update: (current: ThemePreference) => ThemePreference) => {
-    const next = update(preferenceRef.current);
-    preferenceRef.current = next;
+  const commit = useCallback((next: ThemePreference) => {
+    applyThemeToRoot(next, root);
     setPreference(next);
-    applyThemePreference(next, storage, root);
-  }, [root, storage]);
+  }, [root]);
+
+  const loadCrystal = useCallback(() => {
+    void import('./loadThemeAssets')
+      .then(({ loadThemeAssets }) => loadThemeAssets('crystal'))
+      .then(() => {
+        crystalReadyRef.current = true;
+        const next = requestedPreferenceRef.current;
+        if (next.family === 'crystal') commit(next);
+      })
+      .catch(() => undefined);
+  }, [commit]);
+
+  const apply = useCallback((update: (current: ThemePreference) => ThemePreference, persist = true) => {
+    const next = update(requestedPreferenceRef.current);
+    requestedPreferenceRef.current = next;
+    if (persist) persistThemePreference(next, storage);
+    if (next.family === 'crystal' && !crystalReadyRef.current) loadCrystal();
+    else commit(next);
+  }, [commit, loadCrystal, storage]);
 
   useEffect(() => {
-    applyThemeToRoot(preference, root);
-  }, [preference, root]);
+    if (preference.family === 'crystal' && !crystalReadyRef.current) loadCrystal();
+    else applyThemeToRoot(preference, root);
+  }, [loadCrystal, preference, root]);
 
   useLumiPreferenceLayoutEffect(() => {
     applyLumiEnabled(readLumiEnabled(storage), null, root);
   }, [root, storage]);
-
-  useEffect(() => {
-    if (preference.family !== 'crystal') return;
-    void import('./loadThemeAssets').then(({ loadThemeAssets }) => loadThemeAssets('crystal'));
-  }, [preference.family]);
 
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
@@ -66,22 +79,20 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       }
       if (event.key === THEME_FAMILY_STORAGE_KEY || event.key === 'lingoflash_theme' || event.key === THEME_FOLLOW_SYSTEM_STORAGE_KEY) {
         const next = readThemePreference(storage, getSystemThemeMode());
-        preferenceRef.current = next;
-        setPreference(next);
-        applyThemeToRoot(next, root);
+        apply(() => next, false);
       }
     };
     globalThis.addEventListener?.('storage', onStorage);
     return () => {
       globalThis.removeEventListener?.('storage', onStorage);
     };
-  }, [root, storage]);
+  }, [apply, root, storage]);
 
   useEffect(() => {
     const media = globalThis.matchMedia?.('(prefers-color-scheme: dark)');
     if (!media) return undefined;
     const onChange = () => {
-      if (!preferenceRef.current.followSystem) return;
+      if (!requestedPreferenceRef.current.followSystem) return;
       apply(current => ({ ...current, mode: media.matches ? 'dark' : 'light' }));
     };
     media.addEventListener('change', onChange);

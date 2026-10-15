@@ -46,17 +46,6 @@ describe('haptics preference', () => {
     expect(isHapticsEnabled()).toBe(true);
   });
 
-  it('defaults to enabled when Web Storage is denied', () => {
-    vi.stubGlobal('window', {
-      get localStorage(): never {
-        throw new DOMException('Access denied', 'SecurityError');
-      },
-      dispatchEvent: vi.fn(),
-    });
-
-    expect(isHapticsEnabled()).toBe(true);
-    expect(() => setHapticsEnabled(false)).not.toThrow();
-  });
 });
 
 describe('triggerHaptic', () => {
@@ -100,5 +89,49 @@ describe('triggerHaptic', () => {
     vi.stubGlobal('window', undefined);
     vi.stubGlobal('navigator', undefined);
     expect(() => triggerHaptic()).not.toThrow();
+  });
+
+  it('uses storage again when a later preference write succeeds', () => {
+    const values = new Map<string, string>();
+    let fails = true;
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: (key: string) => values.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+          if (fails) {
+            fails = false;
+            throw new DOMException('Access denied', 'SecurityError');
+          }
+          values.set(key, value);
+        },
+      },
+      dispatchEvent: vi.fn(),
+    });
+
+    setHapticsEnabled(false);
+    expect(isHapticsEnabled()).toBe(false);
+
+    setHapticsEnabled(true);
+    expect(isHapticsEnabled()).toBe(true);
+  });
+
+  it('defaults to enabled when Web Storage is denied and keeps haptics off for the session', () => {
+    const vibrateFn = vi.fn();
+    vi.stubGlobal('window', {
+      get localStorage(): never {
+        throw new DOMException('Access denied', 'SecurityError');
+      },
+      dispatchEvent: vi.fn(),
+    });
+    vi.stubGlobal('navigator', { vibrate: vibrateFn });
+
+    expect(isHapticsEnabled()).toBe(true);
+    expect(() => setHapticsEnabled(false)).not.toThrow();
+    expect(isHapticsEnabled()).toBe(false);
+    triggerHaptic();
+    expect(vibrateFn).not.toHaveBeenCalled();
+
+    setHapticsEnabled(true);
+    expect(isHapticsEnabled()).toBe(true);
   });
 });

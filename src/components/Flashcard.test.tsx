@@ -87,6 +87,11 @@ describe('Flashcard mobile controls', () => {
     expect(source).toContain('flex items-center rounded-full border border-slate-200/90 bg-slate-100/90 p-1');
   });
 
+  it('uses the active course voice for synchronous fallback speech', () => {
+    expect(cardSurfaceSource).toContain('voiceForActiveCourseCard(data, courseModel.activeCourse)');
+    expect(cardSurfaceSource).toContain('if (voice) utterance.voice = voice;');
+  });
+
   it('keeps back-side meaning, bilingual context and compact learning CTAs visible', () => {
     const html = renderCard(
       <Flashcard

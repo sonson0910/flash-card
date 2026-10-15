@@ -27,7 +27,7 @@ export type AuthoritativeGamification = VerifiedGamificationOutcome;
 export type ReviewOutcome = Partial<ReviewGamificationOutcome>;
 
 export type ReviewApplyResult =
-  | ({ applied: true; duplicate: boolean; card: CardData } & ReviewOutcome)
+  | ({ applied: true; duplicate: boolean; xpAwarded: 0 | 2; card: CardData } & ReviewOutcome)
   | {
       applied: false;
       reason: 'stale-library-epoch' | 'future-library-epoch' | 'missing' | 'identity-conflict'
@@ -83,6 +83,11 @@ const normalizeConflictReason = (value: unknown): ReviewConflictReason | null =>
 
 const isSafeNonNegativeInteger = (value: unknown): value is number =>
   Number.isSafeInteger(value) && Number(value) >= 0;
+
+const parseXpAwarded = (value: unknown): 0 | 2 => {
+  if (value === 0 || value === 2) return value;
+  throw new Error('Invalid review response.');
+};
 
 const isLocalDay = (value: unknown): value is string => {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -158,6 +163,15 @@ const timeZoneHint = (): string | undefined => {
   }
 };
 
+export const stableReviewCommand = (command: ReviewCommand): ReviewCommand => {
+  const timeZone = command.timeZone ?? timeZoneHint();
+  return {
+    ...command,
+    ...(timeZone ? { timeZone } : {}),
+    ...structuredClone({ fields: command.fields, fieldMask: command.fieldMask }),
+  };
+};
+
 const readCallableConflict = (error: unknown): ReviewApplyResult | null => {
   if (!error || typeof error !== 'object') return null;
   const source = error as Record<string, unknown>;
@@ -219,7 +233,13 @@ export async function applyReviewViaCallable(
         ...(envelope.gamification === undefined ? {} : { gamification: parseGamification(envelope.gamification) }),
         ...(envelope.ceremonyEvents === undefined ? {} : { ceremonyEvents: parseCeremonyEvents(envelope.ceremonyEvents) }),
       };
-      return { applied: true, duplicate: envelope.duplicate, card: parseCard(envelope.card), ...outcome };
+      return {
+        applied: true,
+        duplicate: envelope.duplicate,
+        xpAwarded: parseXpAwarded(envelope.xpAwarded),
+        card: parseCard(envelope.card),
+        ...outcome,
+      };
     } catch (error) {
       const conflict = readCallableConflict(error);
       if (conflict) return conflict;
@@ -232,19 +252,20 @@ export async function applyReviewWithConflictRecovery(
   command: ReviewCommand,
   apply: (command: ReviewCommand) => Promise<ReviewApplyResult>,
 ): Promise<ReviewApplyResult> {
-  const first = await apply(command);
+  const stableCommand = stableReviewCommand(command);
+  const first = await apply(stableCommand);
   if (first.applied || first.reason !== 'revision-conflict') return first;
   const authoritative = first.card;
-  const reviewedAt = new Date(command.reviewedAt);
+  const reviewedAt = new Date(stableCommand.reviewedAt);
   if (Number.isNaN(reviewedAt.getTime())) return first;
   const lastReview = authoritative.fsrs?.lastReview ?? authoritative.reviewHistory?.at(-1)?.reviewedAt;
   if (lastReview && reviewedAt.getTime() <= new Date(lastReview).getTime()) return {
     applied: false,
     reason: 'stale-review',
   };
-  const fields = scheduleReview(authoritative, command.rating, reviewedAt);
+  const fields = scheduleReview(authoritative, stableCommand.rating, reviewedAt);
   return apply({
-    ...command,
+    ...stableCommand,
     baseRevision: authoritative.revision ?? first.currentRevision,
     fields,
     fieldMask: REVIEW_FIELDS,

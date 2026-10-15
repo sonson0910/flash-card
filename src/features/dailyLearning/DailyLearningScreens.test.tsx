@@ -9,6 +9,8 @@ import { LessonScreen } from './LessonScreen';
 import { PlacementScreen } from './PlacementScreen';
 import { ProgressScreen } from './ProgressScreen';
 import { TodayScreen } from './TodayScreen';
+import { dailyTodayStatus, isCaughtUpDailyPlan } from './DailyLearningWorkspace';
+import type { DailyPlan } from './dailyPlan';
 import { messages as enToday } from '../../i18n/locales/en/today.po';
 import { messages as viToday } from '../../i18n/locales/vi/today.po';
 import { expandPseudoCatalog } from '../../i18n/pseudo';
@@ -137,6 +139,59 @@ describe('TodayScreen', () => {
     expect(html).toContain('min-h-24 rounded-xl');
   });
 
+  it('uses the real preview card and planned stage counts without inventing progress metrics', () => {
+    const html = renderToStaticMarkup(<TodayScreen model={{
+      ...readyToday,
+      previewCard: {
+        word: 'serendipity',
+        translation: 'sự tình cờ thú vị',
+        phonetic: '/ˌserənˈdipitē/',
+        category: 'Noun',
+        imageUrl: 'https://images.example.test/serendipity.jpg',
+        language: 'en',
+        translationLanguage: 'vi',
+      },
+      sessionStages: [
+        { id: 'review', count: 7, skipped: false },
+        { id: 'new', count: 5, skipped: false },
+        { id: 'match', count: 4, skipped: false },
+        { id: 'recap', count: 0, skipped: false },
+      ],
+    }} actions={todayActions} />);
+
+    expect(html).toContain('data-today-preview="true"');
+    expect(html).toContain('serendipity');
+    expect(html).toContain('sự tình cờ thú vị');
+    expect(html).toContain('data-stage-id="match" data-stage-count="4"');
+    expect(html).toContain('data-stage-id="recap" data-stage-count="0"');
+    expect(html).not.toContain('IELTS');
+    expect(html).not.toContain('XP');
+    expect(html).not.toContain('league');
+  });
+
+  it('keeps the Crystal ready state visibly anchored by Lumi and all four stages', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => ({ sonflash_theme_family: 'crystal', sonflash_lumi_enabled: 'true' })[key] ?? null,
+    });
+    try {
+      const html = renderToStaticMarkup(<ThemeProvider><TodayScreen model={{
+        ...readyToday,
+        sessionStages: [
+          { id: 'review', count: 7, skipped: false },
+          { id: 'new', count: 5, skipped: false },
+          { id: 'match', count: 0, skipped: true },
+          { id: 'recap', count: 0, skipped: false },
+        ],
+      }} actions={todayActions} /></ThemeProvider>);
+      expect(html).toContain('data-today-lumi="hero"');
+      expect(html).toContain('data-lumi-pose="idle"');
+      for (const stage of ['review', 'new', 'match', 'recap']) expect(html).toContain(`data-stage-id="${stage}"`);
+      expect(html).toContain('Skipped');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('always launches the sequenced session from the primary action, whether or not reviews are due', () => {
     const html = renderToStaticMarkup(
       <TodayScreen
@@ -149,6 +204,50 @@ describe('TodayScreen', () => {
     expect(html).toContain("Start today&#x27;s session");
     expect(html).not.toContain('Continue review');
     expect(html).not.toContain('Start recognition lesson');
+  });
+
+  it('keeps the Start branch visible when Match is the only available session stage', () => {
+    const dailyPlan = { items: [], counts: { total: 0, due: 0, weak: 0, new: 0 }, isShort: true } satisfies DailyPlan;
+    const plan = { total: 0, due: 0, weak: 0, fresh: 0, isShort: true };
+    const matchOnlySession = true;
+    const caughtUp = isCaughtUpDailyPlan(dailyPlan, true, matchOnlySession);
+    const model: TodayScreenModel = {
+      ...readyToday,
+      status: dailyTodayStatus('ready', dailyPlan, true, matchOnlySession, false),
+      plan,
+      sessionStages: [
+        { id: 'review', count: 0, skipped: true },
+        { id: 'new', count: 0, skipped: true },
+        { id: 'match', count: 4, skipped: false },
+        { id: 'recap', count: 0, skipped: false },
+      ],
+      ...(caughtUp ? { caughtUp: {} } : {}),
+    };
+
+    const html = renderToStaticMarkup(<TodayScreen model={model} actions={todayActions} />);
+    expect(model.status).toBe('ready');
+    expect(caughtUp).toBe(false);
+    expect(html).toContain('data-primary-learning-action="true"');
+    expect(html).not.toContain('data-today-caught-up="true"');
+    expect(html).toContain('aria-label="Today: 4 items ready to remember."');
+    expect(html).toContain('class="today-ready-total" aria-hidden="true">4</span>');
+    expect(html).toContain('data-stage-id="match" data-stage-count="4"');
+  });
+
+  it('does not call a target-only pool caught up when the active language pair is empty', () => {
+    const dailyPlan = { items: [], counts: { total: 0, due: 0, weak: 0, new: 0 }, isShort: true } satisfies DailyPlan;
+    const model: TodayScreenModel = {
+      ...readyToday,
+      status: dailyTodayStatus('ready', dailyPlan, false, false, false),
+      message: 'Add vocabulary or return when a reviewed card is due.',
+      plan: { total: 0, due: 0, weak: 0, fresh: 0, isShort: true },
+    };
+    const html = renderToStaticMarkup(<TodayScreen model={model} actions={todayActions} />);
+
+    expect(isCaughtUpDailyPlan(dailyPlan, false, false)).toBe(false);
+    expect(model.status).toBe('empty');
+    expect(html).toContain('Add vocabulary');
+    expect(html).not.toContain('data-primary-learning-action="true"');
   });
 
   it.each([
@@ -243,6 +342,36 @@ describe('TodayScreen', () => {
 });
 
 describe('LessonScreen', () => {
+  it('exposes the active immersive lesson shell, controls, and progress semantics', () => {
+    const html = renderToStaticMarkup(<LessonScreen model={choiceLesson} actions={lessonActions} />);
+
+    expect(html).toContain('data-session-shell="lesson"');
+    expect(html).toContain('Exit lesson');
+    expect(html).toContain('Switch light and dark mode');
+    expect(html).toContain('aria-label="daily.lesson.progress-label"');
+    expect(html).toContain('role="progressbar"');
+    expect(html).toContain('aria-valuemin="0"');
+    expect(html).toContain('aria-valuemax="10"');
+    expect(html).toContain('aria-valuenow="1"');
+  });
+
+  it('keeps the immersive shell through the completion action', () => {
+    const html = renderToStaticMarkup(<LessonScreen model={{ ...choiceLesson, status: 'complete' }} actions={lessonActions} />);
+    expect(html).toContain('aria-labelledby="daily-lesson-heading"');
+    expect(html).not.toContain('data-session-shell="lesson"');
+    expect(html).toContain('Back to Today');
+  });
+
+  it('wires text-answer submissions through the shared IME guard', () => {
+    const source = readFileSync(fileURLToPath(new URL('./LessonScreen.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain("import { createImeSubmitGuard } from '../../lib/imeSubmitGuard'");
+    expect(source).toContain('shouldBlockSubmit(event.nativeEvent');
+    expect(source).toContain('onCompositionEnd={imeSubmitGuard.onCompositionEnd}');
+    expect(source).toContain('shouldBlockKeyDown(event.nativeEvent)');
+    expect(source).toContain('onPointerDown={() => { pointerSubmit.current = true;');
+  });
+
   it('keeps study guidance visible when Lumi is disabled', () => {
     vi.stubGlobal('localStorage', { getItem: (key: string) => ({ sonflash_theme_family: 'crystal', sonflash_lumi_enabled: 'false' })[key] ?? null });
     try {
@@ -251,6 +380,7 @@ describe('LessonScreen', () => {
       expect(html).toContain('Take your time. One clear answer at a time.');
       expect(html).not.toContain('data-lumi-pose=');
       expect(html).toContain('Submit answer');
+      expect(html).toContain('Switch light and dark mode');
     } finally {
       vi.unstubAllGlobals();
     }
@@ -464,7 +594,7 @@ describe('ProgressScreen', () => {
     expect(html).toContain('<span class="sr-only">42</span>');
     expect(html).toContain('Review 5 due words');
     expect(html).toContain('data-primary-learning-action="true"');
-    expect(html).toContain('Offline — this may be out of date.');
+    expect(html).toContain('You’re offline. Reconnect to review and save your progress.');
     expect(html).toContain('Existing insights');
   });
 
@@ -485,13 +615,20 @@ describe('ProgressScreen', () => {
 
 describe('daily learning presentation boundaries', () => {
   it('shows a study streak only with activity recorded on the current day', () => {
-    const now = new Date(2026, 8, 24, 12);
-    const today = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const yesterday = new Date(2026, 8, 23, 12).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const now = new Date('2026-10-03T00:30:00.000Z');
+    const today = '2026-10-03';
+    const yesterday = '2026-10-02';
     expect(evidencedStudyStreak(1, [], now)).toBe(0);
     expect(evidencedStudyStreak(4, [{ date: yesterday, XP: 20 }], now)).toBe(0);
     expect(evidencedStudyStreak(4, [{ date: today, XP: 0 }], now)).toBe(0);
     expect(evidencedStudyStreak(4, [{ date: today, XP: 20 }], now)).toBe(4);
+  });
+
+  it('uses the learner reward timezone for ISO XP history dates', () => {
+    const now = new Date('2026-10-03T00:30:00.000Z');
+    const history = [{ date: '2026-10-02', XP: 20 }];
+    expect(evidencedStudyStreak(4, history, now, 'America/Los_Angeles')).toBe(4);
+    expect(evidencedStudyStreak(4, history, now)).toBe(0);
   });
 
   it('rewards a correct reveal with sound and a success haptic, and a wrong one with a haptic nudge only', () => {
@@ -508,7 +645,7 @@ describe('daily learning presentation boundaries', () => {
     i18n.activate(locale);
     try {
       const html = renderToStaticMarkup(<TodayScreen model={readyToday} actions={todayActions} />);
-      expect(html).toContain(i18n._('today.plan.sequence', { count: 12 }));
+      expect(html).toContain(`aria-label="${i18n._('today.title')}: 12 ${i18n._('today.canvas.ready', { count: 12 })}"`);
       expect(html).toContain('data-primary-learning-action="true"');
       if (locale === 'vi') expect(html).not.toContain('12 items are sequenced');
       if (locale === 'en-XA') expect(html).toContain('[');

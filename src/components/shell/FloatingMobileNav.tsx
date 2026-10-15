@@ -11,19 +11,15 @@ export function FloatingMobileNav({ activeView, onSelectView }: FloatingMobileNa
   const { _ } = useLingui();
   const { family } = useTheme();
   if (['study', 'quiz', 'spelling', 'story', 'match', 'shadowing', 'landing'].includes(activeView)) return null;
-  const items = family === 'crystal'
-    ? [
-        { view: 'today', icon: Flame, label: <Trans id="shell.nav.today" message="Today" /> },
-        { view: 'catalog', icon: Map, label: <Trans id="shell.nav.paths" message="Paths" /> },
-        { view: 'library', icon: BookOpen, label: <Trans id="shell.nav.collection" message="Collection" /> },
-        { view: 'progress', icon: Trophy, label: <Trans id="shell.nav.progress" message="Progress" /> },
-      ] as const
-    : [
-        { view: 'today', icon: Flame, label: <Trans id="shell.nav.today" message="Today" /> },
-        { view: 'catalog', icon: Map, label: <Trans id="shell.nav.paths" message="Paths" /> },
-        { view: 'library', icon: BookOpen, label: <Trans id="shell.nav.vocabulary" message="Vocabulary" /> },
-        { view: 'progress', icon: Trophy, label: <Trans id="shell.nav.progress" message="Progress" /> },
-      ] as const;
+  const libraryLabel = family === 'crystal'
+    ? <Trans id="shell.nav.collection" message="Collection" />
+    : <Trans id="shell.nav.vocabulary" message="Vocabulary" />;
+  const items = [
+    { view: 'today', icon: Flame, label: <Trans id="shell.nav.today" message="Today" /> },
+    { view: 'catalog', icon: Map, label: <Trans id="shell.nav.paths" message="Paths" /> },
+    { view: 'library', icon: BookOpen, label: libraryLabel },
+    { view: 'progress', icon: Trophy, label: <Trans id="shell.nav.progress" message="Progress" /> },
+  ] as const;
   return <nav data-shell-layer="mobile" className="claude-mobile-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 items-stretch lg:hidden" aria-label={_(msg({ id: 'shell.navigation.mobile', message: 'Mobile navigation' }))}>
     {items.map(({ view, icon: Icon, label }) => {
       const active = activeView === view;

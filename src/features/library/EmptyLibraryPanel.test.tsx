@@ -35,6 +35,7 @@ const createProps = (overrides: Partial<React.ComponentProps<typeof EmptyLibrary
   onWordInputChange: vi.fn(),
   onGenerate: vi.fn(async () => undefined),
   onImport: vi.fn(),
+  importFile: vi.fn(),
   onOpenPaths: vi.fn(),
   isLoading: false,
   isGenerating: false,
@@ -42,8 +43,9 @@ const createProps = (overrides: Partial<React.ComponentProps<typeof EmptyLibrary
   generationAccess: { available: true as const },
   importProgress: null,
   importResult: null,
+  cards: [],
   ...overrides,
-});
+}) as React.ComponentProps<typeof EmptyLibraryPanel>;
 
 function renderPanel(overrides: Partial<React.ComponentProps<typeof EmptyLibraryPanel>> = {}) {
   return renderToStaticMarkup(
@@ -54,6 +56,16 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof EmptyLibrary
 }
 
 describe('EmptyLibraryPanel', () => {
+  it('uses the shared guard for its typed generation form', () => {
+    const source = readFileSync(fileURLToPath(new URL('./EmptyLibraryPanel.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain("import { createImeSubmitGuard } from '../../lib/imeSubmitGuard'");
+    expect(source).toContain('shouldBlockSubmit(event.nativeEvent');
+    expect(source).toContain('onCompositionEnd={imeSubmitGuard.onCompositionEnd}');
+    expect(source).toContain('shouldBlockKeyDown(event.nativeEvent)');
+    expect(source).toContain('onPointerDown={onPointerSubmit}');
+  });
+
   it('renders the classic Canvas first-use card with an editable draft and the real actions', () => {
     const html = renderPanel();
 

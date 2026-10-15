@@ -16,14 +16,14 @@ const areas = {
   rewards: ['src/features/rewards/AnimeReveal.tsx'],
   library: [
     'src/features/library', 'src/features/cardEdit/EditCardDialog.tsx',
-    'src/features/intake', 'src/features/importExport/SpreadsheetImportDialog.tsx',
+    'src/features/intake', 'src/features/sharing', 'src/features/importExport/SpreadsheetImportDialog.tsx',
     'src/features/importExport/spreadsheetWorkbook.ts',
   ],
   catalog: ['src/features/catalogWorkspace', 'src/features/catalog'],
   progress: ['src/components/stats', 'src/features/weeklyRecap'],
   billing: ['src/features/billing', 'src/features/plan'],
   account: ['src/features/account'],
-  settings: ['src/features/settings'],
+  settings: ['src/features/settings', 'src/features/reminders'],
 } as const;
 
 export default {

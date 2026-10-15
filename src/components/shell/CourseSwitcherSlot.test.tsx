@@ -42,4 +42,14 @@ describe('CourseSwitcherSlot', () => {
     </I18nProvider>);
     expect(html).toContain('claude-course-switcher-slot');
   });
+
+  it('keeps the control reachable after a course-profile read error', () => {
+    const ready = readyValue();
+    const html = renderToStaticMarkup(<I18nProvider i18n={i18n}>
+      <CourseContext.Provider value={{ ...ready, model: { ...ready.model, status: 'error', errorCode: 'cloud-read-failed' } }}>
+        <CourseSwitcherSlot signedIn />
+      </CourseContext.Provider>
+    </I18nProvider>);
+    expect(html).toContain('claude-course-switcher-slot');
+  });
 });

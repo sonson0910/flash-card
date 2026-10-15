@@ -77,6 +77,7 @@ export const createCourseInProfile = (
   const normalized = normalizeCreateCourseInput(input);
   const existing = current.courses.find(course => course.targetLanguage === normalized.targetLanguage);
   if (existing) {
+    if (normalized.operationId === existing.id) return current;
     throw new CourseError(
       'course-exists',
       `A course for ${normalized.targetLanguage} already exists.`,
@@ -87,7 +88,10 @@ export const createCourseInProfile = (
     throw new CourseError('course-limit', `A profile can contain at most ${MAX_COURSES_PER_PROFILE} courses.`);
   }
   const usedCourseIds = new Set(current.courses.map(course => course.id));
-  const courseId = uniqueId('course', factory, usedCourseIds);
+  const courseId = normalized.operationId ?? uniqueId('course', factory, usedCourseIds);
+  if (usedCourseIds.has(courseId)) {
+    throw new CourseError('course-exists', 'A course operation ID already exists.', { courseId });
+  }
   const usedGoalIds = new Set<string>();
   const goals = normalized.goals.map(goal => {
     const next = nextGoal(goal, factory, clock, usedGoalIds);

@@ -13,10 +13,14 @@ export interface CloudLibraryStats {
   unrated: number;
   bookmarked: number;
   due: number;
+  dueAsOfDate?: string;
   legacyUnindexed: number;
   dueForecast?: Array<{ date: string; count: number }>;
   recentlyMastered?: Array<{ id: string; word: string; translation: string; masteredAt: string }>;
 }
+
+export type FreshCloudLibraryStats = CloudLibraryStats & { dueAsOfDate: string };
+export type FreshDueStats = Pick<FreshCloudLibraryStats, 'due' | 'dueAsOfDate'>;
 
 export const EMPTY_LIBRARY_STATS: CloudLibraryStats = {
   total: 0,
@@ -59,7 +63,8 @@ export interface CloudLibraryPageAdapter {
     onError: (error: unknown) => void | Promise<void>,
   ): () => void;
   countCards(ownerId: string, query: CardQueryState): Promise<number>;
-  loadStats(ownerId: string, targetLanguage: string | null): Promise<CloudLibraryStats>;
+  loadStats(ownerId: string, targetLanguage: string | null): Promise<FreshCloudLibraryStats>;
+  loadDueStats(ownerId: string, targetLanguage: string | null): Promise<FreshDueStats>;
   loadProgressEvidence(ownerId: string, targetLanguage: string | null): Promise<Pick<CloudLibraryStats, 'dueForecast' | 'recentlyMastered'>>;
   subscribeFacets(
     ownerId: string,
@@ -102,6 +107,7 @@ export interface CloudLibraryPageSnapshot {
   stats: CloudLibraryStats;
   statsTargetLanguage?: string | null;
   isStatsLoading: boolean;
+  statsSettledRequestId?: number | null;
   facets: Record<string, number>;
   facetsComplete: boolean;
 }
@@ -188,6 +194,7 @@ export function createCloudLibraryPageController({
       total: 0,
       hasNext: false,
       isStatsLoading: false,
+      statsSettledRequestId: null,
       facets: cachedFacets?.categories ?? {},
       facetsComplete: cachedFacets?.complete ?? false,
     });
@@ -365,11 +372,12 @@ export function createCloudLibraryPageController({
             }
           }
           initialPage = false;
+          const awaitingServerForEmptyCache = page.fromCache && page.items.length === 0;
           publish({
             items: page.items.slice(0, boundedPageSize),
             total,
             hasNext: page.hasNext,
-            isLoading: false,
+            isLoading: awaitingServerForEmptyCache,
             cloudUnavailable: false,
             error: null,
           });
@@ -473,42 +481,76 @@ export function createCloudLibraryPageController({
     };
   };
 
-  const requestStats = async (targetLanguage: string | null = null) => {
+  const requestStats = async (targetLanguage: string | null = null, refresh?: { requestId: number }) => {
     const ownerId = activeOwnerId;
-    if (!ownerId || !adapter.available) return;
+    if (!ownerId) return;
+    if (!adapter.available) {
+      if (refresh) publish({ statsSettledRequestId: refresh.requestId, error: 'Could not refresh insights; cached metrics are being used.' });
+      return;
+    }
     const generation = ownerGeneration;
     const requestGeneration = ++statsGeneration;
+    if (refresh) publish({ statsSettledRequestId: null });
     if (progressEvidenceLanguage !== targetLanguage) {
       progressEvidenceLanguage = targetLanguage;
       progressEvidenceGeneration += 1;
-      publish({ stats: EMPTY_LIBRARY_STATS, statsTargetLanguage: undefined, isStatsLoading: false });
+      publish(snapshot.statsTargetLanguage === targetLanguage
+        ? { stats: { ...snapshot.stats, dueForecast: undefined, recentlyMastered: undefined }, isStatsLoading: false }
+        : { stats: EMPTY_LIBRARY_STATS, statsTargetLanguage: undefined, isStatsLoading: false });
     }
     const cached = safeCacheRead(() => cache.readStats(ownerId, targetLanguage), null);
-    if (cached && !shouldRefreshCloudStats(cached.cachedAt, now())) {
+    const currentDate = new Date(now());
+    const localDay = [currentDate.getFullYear(), String(currentDate.getMonth() + 1).padStart(2, '0'), String(currentDate.getDate()).padStart(2, '0')].join('-');
+    const fullStatsFresh = cached && !shouldRefreshCloudStats(cached.cachedAt, now());
+    if (cached && snapshot.statsTargetLanguage !== targetLanguage) {
+      publish({ stats: cached.stats, statsTargetLanguage: targetLanguage });
+    }
+    if (!refresh && fullStatsFresh && cached.stats.dueAsOfDate === localDay) {
       publish({ stats: cached.stats, statsTargetLanguage: targetLanguage, isStatsLoading: false });
       return;
     }
-    if (safeCacheRead(() => cache.isBackoffActive(ownerId), false)) return;
+    if (safeCacheRead(() => cache.isBackoffActive(ownerId), false)) {
+      publish({ isStatsLoading: false, ...(refresh ? {
+        statsSettledRequestId: refresh.requestId,
+        error: 'Could not refresh insights; cached metrics are being used.',
+      } : {}) });
+      return;
+    }
     publish({ isStatsLoading: true });
     try {
+      if (!refresh && fullStatsFresh) {
+        const dueStats = await adapter.loadDueStats(ownerId, targetLanguage);
+        if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration) return;
+        const stats = {
+          ...(snapshot.statsTargetLanguage === targetLanguage ? snapshot.stats : cached.stats),
+          ...dueStats,
+        };
+        publish({ stats, statsTargetLanguage: targetLanguage, isStatsLoading: false, error: null });
+        safeCacheWrite(() => cache.writeStats(ownerId, targetLanguage, stats, cached.cachedAt ?? now()));
+        return;
+      }
       const stats = await adapter.loadStats(ownerId, targetLanguage);
       if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration) return;
+      const publishedStats = {
+        ...stats,
+        ...(progressEvidenceLanguage === targetLanguage ? {
+          dueForecast: snapshot.stats.dueForecast,
+          recentlyMastered: snapshot.stats.recentlyMastered,
+        } : {}),
+      };
       publish({
-        stats: {
-          ...stats,
-          ...(progressEvidenceLanguage === targetLanguage ? {
-            dueForecast: snapshot.stats.dueForecast,
-            recentlyMastered: snapshot.stats.recentlyMastered,
-          } : {}),
-        },
+        stats: publishedStats,
         statsTargetLanguage: targetLanguage,
         isStatsLoading: false,
+        ...(refresh ? { statsSettledRequestId: refresh.requestId } : {}),
+        error: null,
       });
-      safeCacheWrite(() => cache.writeStats(ownerId, targetLanguage, stats, now()));
+      safeCacheWrite(() => cache.writeStats(ownerId, targetLanguage, publishedStats, now()));
     } catch (error) {
       if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration) return;
       publish({
         isStatsLoading: false,
+        ...(refresh ? { statsSettledRequestId: refresh.requestId } : {}),
         error: isCloudQuotaError(error)
           ? 'Firebase has reached today’s read quota; Insights is using cached metrics.'
           : 'Could not refresh insights; cached metrics are being used.',

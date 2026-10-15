@@ -15,7 +15,7 @@ export interface CourseSwitcherSlotProps {
  */
 export function CourseSwitcherSlot({ signedIn }: CourseSwitcherSlotProps) {
   const { model } = useCourseSession();
-  if (!signedIn || model.status !== 'ready') return null;
+  if (!signedIn || (model.status !== 'ready' && model.status !== 'error')) return null;
   return <div className="claude-course-switcher-slot flex min-w-0 items-center">
     <Suspense fallback={null}><CourseSwitcherControl /></Suspense>
   </div>;

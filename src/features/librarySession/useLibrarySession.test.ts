@@ -196,4 +196,12 @@ describe('useLibrarySession facade', () => {
     expect(dependencies.useCloudLibraryPage).toHaveBeenCalledWith(expect.objectContaining({ ownerId: null }));
     expect(session.model.identity.owner).toBeNull();
   });
+
+  it('does not start course-scoped cloud reads before the course snapshot belongs to the identity owner', () => {
+    const { dependencies } = createDependencies();
+    useLibrarySession({ ...inputs, catalog: { ...inputs.catalog, courseScopeReady: false } }, dependencies);
+
+    expect(dependencies.useOwnerLibrarySession).toHaveBeenCalledWith(expect.objectContaining({ ownerId: 'owner-1' }));
+    expect(dependencies.useCloudLibraryPage).toHaveBeenCalledWith(expect.objectContaining({ ownerId: null }));
+  });
 });

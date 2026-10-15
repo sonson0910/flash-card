@@ -1,10 +1,11 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { LUMI_ENABLED_STORAGE_KEY } from '../settings/lumi-preference';
 import { ThemeProvider, useTheme } from './ThemeProvider';
 
-vi.mock('./loadThemeAssets', () => ({ loadThemeAssets: vi.fn().mockResolvedValue(undefined) }));
+const { loadThemeAssets } = vi.hoisted(() => ({ loadThemeAssets: vi.fn() }));
+vi.mock('./loadThemeAssets', () => ({ loadThemeAssets }));
 
 class MemoryStorage {
   private readonly values = new Map<string, string>();
@@ -44,7 +45,8 @@ const installMinimalReactDom = () => {
   return { container: container as unknown as Element, rootElement };
 };
 
-afterEach(() => vi.unstubAllGlobals());
+beforeEach(() => loadThemeAssets.mockResolvedValue(undefined));
+afterEach(() => { loadThemeAssets.mockReset(); vi.unstubAllGlobals(); });
 
 it('keeps both changes made before a rerender', async () => {
   const storage = new MemoryStorage();
@@ -68,6 +70,119 @@ it('keeps both changes made before a rerender', async () => {
     expect(theme).toMatchObject({ family: 'crystal', mode: 'light', followSystem: false });
     expect(storage.getItem('sonflash_theme_family')).toBe('crystal');
     expect(storage.getItem('lingoflash_theme')).toBe('light');
+    await vi.waitFor(() => expect(rootElement.dataset.themeFamily).toBe('crystal'));
+  } finally {
+    await act(async () => { root.unmount(); });
+  }
+});
+
+it('waits for Crystal assets before changing the root theme family', async () => {
+  let resolveAssets: (() => void) | undefined;
+  loadThemeAssets.mockImplementation(() => new Promise<void>(resolve => { resolveAssets = resolve; }));
+  const storage = new MemoryStorage();
+  const { container, rootElement } = installMinimalReactDom();
+  vi.stubGlobal('localStorage', storage);
+  const root = createRoot(container);
+  let theme: ReturnType<typeof useTheme> | null = null;
+
+  function Harness() {
+    theme = useTheme();
+    return null;
+  }
+
+  try {
+    await act(async () => { root.render(<ThemeProvider><Harness /></ThemeProvider>); });
+    await act(async () => { theme?.setFamily('crystal'); });
+
+    await vi.waitFor(() => expect(loadThemeAssets).toHaveBeenCalledWith('crystal'));
+    expect(storage.getItem('sonflash_theme_family')).toBe('crystal');
+    expect(rootElement.dataset.themeFamily).toBe('classic');
+
+    await act(async () => { resolveAssets?.(); });
+    await vi.waitFor(() => expect(rootElement.dataset.themeFamily).toBe('crystal'));
+  } finally {
+    await act(async () => { root.unmount(); });
+  }
+});
+
+it('keeps the active root theme when Crystal assets fail to load', async () => {
+  loadThemeAssets.mockRejectedValue(new Error('stylesheet failed'));
+  const storage = new MemoryStorage();
+  const { container, rootElement } = installMinimalReactDom();
+  vi.stubGlobal('localStorage', storage);
+  const root = createRoot(container);
+  let theme: ReturnType<typeof useTheme> | null = null;
+
+  function Harness() {
+    theme = useTheme();
+    return null;
+  }
+
+  try {
+    await act(async () => { root.render(<ThemeProvider><Harness /></ThemeProvider>); });
+    await act(async () => { theme?.setFamily('crystal'); });
+
+    await vi.waitFor(() => expect(loadThemeAssets).toHaveBeenCalledWith('crystal'));
+    await vi.waitFor(() => expect(rootElement.dataset.themeFamily).toBe('classic'));
+    expect(storage.getItem('sonflash_theme_family')).toBe('crystal');
+  } finally {
+    await act(async () => { root.unmount(); });
+  }
+});
+
+it('applies only the final Crystal choice after a rapid Crystal, Classic, Crystal sequence', async () => {
+  let resolveAssets: (() => void) | undefined;
+  loadThemeAssets.mockImplementation(() => new Promise<void>(resolve => { resolveAssets = resolve; }));
+  const storage = new MemoryStorage();
+  const { container, rootElement } = installMinimalReactDom();
+  vi.stubGlobal('localStorage', storage);
+  const root = createRoot(container);
+  let theme: ReturnType<typeof useTheme> | null = null;
+
+  function Harness() {
+    theme = useTheme();
+    return null;
+  }
+
+  try {
+    await act(async () => { root.render(<ThemeProvider><Harness /></ThemeProvider>); });
+    await act(async () => { theme?.setFamily('crystal'); theme?.setFamily('classic'); theme?.setFamily('crystal'); });
+
+    expect(theme).toMatchObject({ family: 'classic' });
+    expect(rootElement.dataset.themeFamily).toBe('classic');
+    await act(async () => { resolveAssets?.(); });
+    await vi.waitFor(() => expect(theme).toMatchObject({ family: 'crystal' }));
+    expect(rootElement.dataset.themeFamily).toBe('crystal');
+  } finally {
+    await act(async () => { root.unmount(); });
+  }
+});
+
+it('uses an OS mode change made while Crystal assets are pending', async () => {
+  let resolveAssets: (() => void) | undefined;
+  loadThemeAssets.mockImplementation(() => new Promise<void>(resolve => { resolveAssets = resolve; }));
+  const listeners = new Set<() => void>();
+  const media = { matches: false, addEventListener: (_: string, listener: () => void) => listeners.add(listener), removeEventListener: (_: string, listener: () => void) => listeners.delete(listener) };
+  const storage = new MemoryStorage();
+  const { container, rootElement } = installMinimalReactDom();
+  vi.stubGlobal('localStorage', storage);
+  vi.stubGlobal('matchMedia', vi.fn(() => media));
+  const root = createRoot(container);
+  let theme: ReturnType<typeof useTheme> | null = null;
+
+  function Harness() {
+    theme = useTheme();
+    return null;
+  }
+
+  try {
+    await act(async () => { root.render(<ThemeProvider><Harness /></ThemeProvider>); });
+    await act(async () => { theme?.setFamily('crystal'); theme?.setFollowSystem(true); });
+    media.matches = true;
+    await act(async () => { listeners.forEach(listener => listener()); });
+    await act(async () => { resolveAssets?.(); });
+
+    await vi.waitFor(() => expect(theme).toMatchObject({ family: 'crystal', mode: 'dark', followSystem: true }));
     expect(rootElement.dataset.themeFamily).toBe('crystal');
   } finally {
     await act(async () => { root.unmount(); });
@@ -94,6 +209,11 @@ it('follows OS mode changes and turns follow-system off after an explicit mode s
     await act(async () => { theme?.setFamily('crystal'); theme?.setFollowSystem(true); });
     expect(theme).toMatchObject({ family: 'crystal', mode: 'light', followSystem: true });
     expect(storage.getItem('sonflash_theme_follow_system')).toBe('true');
+
+    act(() => { theme?.setFollowSystem(false); });
+    expect(theme).toMatchObject({ followSystem: false });
+    act(() => { theme?.setFollowSystem(true); });
+    expect(theme).toMatchObject({ followSystem: true });
 
     media.matches = true;
     await act(async () => { listeners.forEach(listener => listener()); });

@@ -14,13 +14,15 @@
     "staging:prepare": "node scripts/prepare-staging-target.mjs",
     "build:staging": "npm run staging:prepare && RELEASE_REVISION=$(git rev-parse HEAD) SONFLASH_TARGET=staging npm run build",
     "staging:deploy:rules": "GOOGLE_CLOUD_QUOTA_PROJECT=sonflash-staging-20260906 npm exec --no -- firebase deploy --config firebase.staging.json --project sonflash-staging-20260906 --only firestore:rules --non-interactive",
-    "staging:deploy:functions": "npm run staging:deploy:functions:existing && npm run staging:deploy:functions:pilot",
+    "staging:deploy:indexes": "GOOGLE_CLOUD_QUOTA_PROJECT=sonflash-staging-20260906 npm exec --no -- firebase deploy --config firebase.staging.json --project sonflash-staging-20260906 --only firestore:indexes --non-interactive",
+    "staging:verify:indexes": "gcloud firestore indexes composite list --project=sonflash-staging-20260906 --database=ai-studio-945b4052-4462-4668-8936-277f09f07a37 --format=json | node scripts/verify-entitlement-index.mjs sonflash-staging-20260906 ai-studio-945b4052-4462-4668-8936-277f09f07a37",
+    "staging:deploy:functions": "npm run staging:verify:indexes && npm run staging:deploy:functions:existing && npm run staging:deploy:functions:pilot",
     "staging:deploy:functions:existing": "GOOGLE_CLOUD_QUOTA_PROJECT=sonflash-staging-20260906 npm exec --no -- firebase deploy --config firebase.staging.json --project sonflash-staging-20260906 --only functions:generateVocabulary,functions:createCard,functions:createCardV2,functions:findVocabularyImage,functions:reviewCard,functions:reviewCardV2,functions:startPracticeSessionV1,functions:completePracticeSessionV1,functions:equipOwnedFrame,functions:saveGamification,functions:updateLibraryFacets,functions:createSharedDeck,functions:createSharedDeckV2,functions:revokeSharedDeck --non-interactive",
-    "staging:deploy:functions:pilot": "GOOGLE_CLOUD_QUOTA_PROJECT=sonflash-staging-20260906 npm exec --no -- firebase deploy --config firebase.staging.json --project sonflash-staging-20260906 --only functions:migrateLegacyLibrary,functions:sweepAiOperations,functions:reportCard,functions:getPilotOffer,functions:recordClientEvents,functions:exportMyData,functions:deleteMyAccount,functions:finalizeAccountDeletions,functions:recordPurchaseIntent --non-interactive",
-    "staging:deploy:hosting": "npm run build:staging && npm run verify:secrets:staging && npm run verify:bundle && npm run verify:dist-target -- staging && GOOGLE_CLOUD_QUOTA_PROJECT=sonflash-staging-20260906 npm exec --no -- firebase deploy --config firebase.staging.json --project sonflash-staging-20260906 --only hosting --non-interactive",
+    "staging:deploy:functions:pilot": "npm run staging:verify:indexes && GOOGLE_CLOUD_QUOTA_PROJECT=sonflash-staging-20260906 npm exec --no -- firebase deploy --config firebase.staging.json --project sonflash-staging-20260906 --only functions:migrateLegacyLibrary,functions:sweepAiOperations,functions:cancelCardGeneration,functions:askCardTutor,functions:reportCard,functions:getPilotOffer,functions:recordClientEvents,functions:exportMyData,functions:deleteMyAccount,functions:finalizeAccountDeletions,functions:recordPurchaseIntent,functions:updateReminderSettings,functions:revokePushToken,functions:endPushSession,functions:sweepPushReminders,functions:sweepWeeklyDigests,functions:createStarterCards,functions:renameCardHeadword,functions:bulkMutateCards,functions:clearLibraryCardsPage,functions:createCourse,functions:updateCourse,functions:archiveCourse,functions:reopenCourse,functions:setActiveCourse,functions:addGoal,functions:updateGoal,functions:removeGoal --non-interactive",
+    "staging:deploy:hosting": "npm run build:staging && SONFLASH_TARGET=staging node scripts/check-locale-pages.mjs && npm run verify:secrets:staging && npm run verify:bundle && npm run verify:dist-target -- staging && GOOGLE_CLOUD_QUOTA_PROJECT=sonflash-staging-20260906 npm exec --no -- firebase deploy --config firebase.staging.json --project sonflash-staging-20260906 --only hosting --non-interactive",
     "predeploy:functions": "npm run verify:deploy",
     "predeploy:firestore": "npm run verify:deploy",
-    "predeploy:hosting": "npm run verify:deploy && npm run build:release && npm run verify:secrets && npm run verify:bundle && npm run verify:dist-target -- production",
+    "predeploy:hosting": "npm run verify:deploy && npm run build:release && node scripts/check-locale-pages.mjs && npm run verify:secrets && npm run verify:bundle && npm run verify:dist-target -- production",
     "verify:release-config": "node --env-file-if-exists=.env.production scripts/verify-release-config.mjs",
     "verify:secrets": "node --env-file-if-exists=.env.local scripts/verify-build-secrets.mjs",
     "verify:secrets:staging": "SONFLASH_TARGET=staging node --env-file-if-exists=.env.local scripts/verify-build-secrets.mjs",
@@ -30,10 +32,10 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "test": "vitest",
-    "test:rules": "./node_modules/.bin/firebase emulators:exec --only firestore,auth --project demo-lingoflash \"vitest run --config vitest.rules.config.ts && npm --prefix functions test -- legacyLibraryMigrationFirestore.integration.test.ts sharedDeckPersistenceFirestore.integration.test.ts libraryFacetPersistenceFirestore.integration.test.ts aiCostLedgerFirestore.integration.test.ts aiQuotaFirestore.integration.test.ts entitlementsFirestore.integration.test.ts purchaseIntentFirestore.integration.test.ts accountDataFirestore.integration.test.ts bulkCardMutationPersistenceFirestore.integration.test.ts\"",
+    "test:rules": "./node_modules/.bin/firebase emulators:exec --only firestore,auth --project demo-lingoflash \"vitest run --config vitest.rules.config.ts && npm --prefix functions test -- legacyLibraryMigrationFirestore.integration.test.ts sharedDeckPersistenceFirestore.integration.test.ts libraryFacetPersistenceFirestore.integration.test.ts aiCostLedgerFirestore.integration.test.ts aiQuotaFirestore.integration.test.ts entitlementsFirestore.integration.test.ts purchaseIntentFirestore.integration.test.ts accountDataFirestore.integration.test.ts bulkCardMutationPersistenceFirestore.integration.test.ts reminderDeliveryFirestore.integration.test.ts\"",
     "test:e2e": "npm run build && playwright test",
     "test:e2e:chromium": "npm run build && playwright test --project=chromium",
-    "test:e2e:emulator": "npm --prefix functions run build && SONFLASH_BUILD_OUT_DIR=.e2e-build VITE_SONFLASH_E2E_EMULATOR=true npm run build && SONFLASH_BUILD_OUT_DIR=.e2e-build node scripts/run-e2e-functions-emulator.mjs",
+    "test:e2e:emulator": "npm --prefix functions run build && SONFLASH_BUILD_OUT_DIR=.e2e-build VITE_SONFLASH_E2E_EMULATOR=true VITE_FIREBASE_VAPID_KEY='' VITE_REMINDER_EMAIL_ENABLED=false npm run build && SONFLASH_BUILD_OUT_DIR=.e2e-build node scripts/run-e2e-functions-emulator.mjs",
     "test:a11y": "npm run build && playwright test e2e/accessibility.spec.ts --project=chromium",
     "test:phase6": "vitest run src/features/releaseReadiness src/features/catalogCache/catalogIndex.test.ts src/features/catalogWorkspace/catalogWorkspaceOrchestration.test.ts src/features/session/identitySessionController.test.ts",
     "test:e2e:phase6": "npm run build && playwright test e2e/accessibility.spec.ts e2e/catalog-workspace.spec.ts --project=chromium",
@@ -94,5 +96,10 @@
     "vite": "^6.2.0",
     "vite-node": "^3.2.4",
     "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "@firebase/firestore@4.15.0": {
+      "@grpc/grpc-js": "1.13.6"
+    }
   }
 }

@@ -74,7 +74,7 @@ export interface LibraryViewModelInput {
   isAuthenticated: boolean;
   usesCloudPagination: boolean;
   cloudTotal: number;
-  cloudStats: LibraryDifficultySummary & Pick<LibraryStatsViewModel, 'dueForecast' | 'recentlyMastered'>;
+  cloudStats: LibraryDifficultySummary & Pick<LibraryStatsViewModel, 'dueAsOfDate' | 'dueForecast' | 'recentlyMastered'>;
   cloudCategoryCounts: Record<string, number>;
   cloudFacetsComplete: boolean;
   cloudReadUnavailable: boolean;
@@ -94,6 +94,7 @@ export interface LibraryStatsViewModel {
   learned: number;
   learning: number;
   dueToday: number;
+  dueAsOfDate?: string;
   categoryChart: Array<{ name: string; value: number }>;
   categoryChartIsPartial: boolean;
   difficultyChart: Array<{ name: string; value: number }>;
@@ -215,7 +216,7 @@ export const selectLibraryStats = ({
   rewardTimeZone,
 }: Pick<LibraryViewModelInput,
   'cards' | 'isAuthenticated' | 'cloudFacetsComplete' | 'cloudCategoryCounts' | 'xpHistory' | 'reviewActivity' | 'rewardTimeZone'> & {
-    difficultySummary: LibraryDifficultySummary & Pick<LibraryStatsViewModel, 'dueForecast' | 'recentlyMastered'>;
+    difficultySummary: LibraryDifficultySummary & Pick<LibraryStatsViewModel, 'dueAsOfDate' | 'dueForecast' | 'recentlyMastered'>;
   }): LibraryStatsViewModel => {
   const categoryCounts = isAuthenticated && cloudFacetsComplete
     ? cloudCategoryCounts
@@ -238,6 +239,7 @@ export const selectLibraryStats = ({
     learned: difficultySummary.easy,
     learning: difficultySummary.good + difficultySummary.hard + difficultySummary.unrated,
     dueToday: difficultySummary.due,
+    dueAsOfDate: difficultySummary.dueAsOfDate,
     categoryChart: Object.keys(categoryCounts).map(name => ({ name, value: categoryCounts[name] })),
     categoryChartIsPartial: Boolean(isAuthenticated && !cloudFacetsComplete),
     difficultyChart,

@@ -1,5 +1,6 @@
 import type {
   Course,
+  CourseError,
   CourseGoal,
   CourseProfile,
   CreateCourseInput,
@@ -15,6 +16,9 @@ export interface CourseProfileRead {
   readonly profile: CourseProfile;
 }
 
+export type CourseProfileListener = (read: CourseProfileRead) => void;
+export type CourseProfileErrorListener = (error: CourseError) => void;
+
 /**
  * The course boundary is intentionally independent of Firebase and React.
  * Sign-in is required to study, so every caller supplies a real owner id;
@@ -24,6 +28,11 @@ export interface CourseProfileRead {
 export interface CoursePort {
   readonly available: boolean;
   load(ownerId: string | null): Promise<CourseProfileRead>;
+  subscribe?(
+    ownerId: string | null,
+    onProfile: CourseProfileListener,
+    onError: CourseProfileErrorListener,
+  ): () => void;
   createCourse(ownerId: string | null, input: CreateCourseInput): Promise<CourseProfile>;
   updateCourse(ownerId: string | null, courseId: string, input: UpdateCourseInput): Promise<CourseProfile>;
   archiveCourse(ownerId: string | null, courseId: string): Promise<CourseProfile>;
@@ -35,4 +44,3 @@ export interface CoursePort {
 }
 
 export type { Course, CourseGoal, CourseProfile };
-

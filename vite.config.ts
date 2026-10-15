@@ -96,6 +96,7 @@ export default defineConfig(({ mode }) => {
       outDir: process.env.SONFLASH_BUILD_OUT_DIR || 'dist',
       target: 'es2020',
       minify: 'terser',
+      terserOptions: { ecma: 2020, compress: { passes: 3 } },
       sourcemap: false,
       chunkSizeWarningLimit: 600,
       rollupOptions: {

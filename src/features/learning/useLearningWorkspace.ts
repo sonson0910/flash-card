@@ -241,7 +241,10 @@ export function useLearningWorkspace(
       return outcome;
     },
     clearLibrary: async () => {
-      await commands.clearLibrary();
+      const outcome = await commands.clearLibrary();
+      if (outcome.status !== 'published') {
+        throw new Error('The library could not be cleared. Please try again.');
+      }
       deleteTokensRef.current.clear();
     },
     bulkPatchCards: async patches => {

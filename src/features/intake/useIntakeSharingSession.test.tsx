@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { act } from 'react';
+import { act, useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
 import type { CardIntakeControllerPort } from './cardIntakeController';
+import { languageProfileForPair } from '../courses/courseLanguageProfile';
 import { useCardIntakePort } from './useCardIntakePort';
 import type { CardIntakePortOptions } from './cardIntakePortContract';
 
@@ -639,6 +640,245 @@ describe('useIntakeSharingSession', () => {
       await act(async () => {
         root.unmount();
       });
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('fails closed while an explicitly supplied course session is unavailable', async () => {
+    const port = intakePort();
+    const browser = {
+      getCurrentUrl: () => 'https://example.test/library?share=share-course-loading',
+      replaceLocation: vi.fn(),
+    };
+    const sharing = {
+      adapter: {
+        load: vi.fn(async () => ({
+          category: 'Korean',
+          targetLanguage: 'ko',
+          nativeLanguage: 'vi',
+          cards: [card('shared')],
+        })),
+        create: vi.fn(async () => ({
+          shareId: 'share-1',
+          expiresAt: '2026-09-01T00:00:00.000Z',
+        })),
+        revoke: vi.fn(async () => undefined),
+      },
+      browser,
+      loadCards: vi.fn(async () => ({ cards: [], total: 0, hasNext: false })),
+    };
+    let latestModel: IntakeSharingSessionModel | null = null;
+    let actions: IntakeSharingSessionActions | null = null;
+
+    function Harness() {
+      const session = useIntakeSharingSession({
+        ownerKey: 'owner-a',
+        intake: intakeOptions(),
+        sharing,
+        coursePort: null,
+      }, { useIntakePort: () => port });
+      latestModel = session.model;
+      actions = session.actions;
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => {
+        root.render(<Harness />);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      await act(async () => {
+        await actions!.acceptShared();
+      });
+
+      expect(port.findExisting).not.toHaveBeenCalled();
+      expect(port.persistCards).not.toHaveBeenCalled();
+      expect(browser.replaceLocation).not.toHaveBeenCalled();
+      expect(latestModel!.share).toMatchObject({
+        isShareDialogOpen: true,
+        incomingPreview: expect.objectContaining({ shareId: 'share-course-loading' }),
+        error: 'Could not add this shared deck safely. Please try again.',
+      });
+    } finally {
+      await act(async () => {
+        root.unmount();
+      });
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('keeps one acceptance alive while the listener binds the matching intake pair', async () => {
+    vi.useFakeTimers();
+    const port = intakePort();
+    const adapter = {
+      load: vi.fn(async () => ({
+        category: 'Korean',
+        targetLanguage: 'ko',
+        nativeLanguage: 'vi',
+        cards: [card('shared')],
+      })),
+      create: vi.fn(async () => ({
+        shareId: 'share-1',
+        expiresAt: '2026-09-01T00:00:00.000Z',
+      })),
+      revoke: vi.fn(async () => undefined),
+    };
+    const browser = {
+      getCurrentUrl: () => 'https://example.test/library?share=share-pair',
+      replaceLocation: vi.fn(),
+    };
+    const firstCoursePort = { ensureCourseForIncomingShare: vi.fn(async () => undefined) };
+    const secondCoursePort = { ensureCourseForIncomingShare: vi.fn(async () => undefined) };
+    const sharing = {
+      adapter,
+      browser,
+      loadCards: vi.fn(async () => ({ cards: [], total: 0, hasNext: false })),
+    };
+    let latestModel: IntakeSharingSessionModel | null = null;
+    let actions: IntakeSharingSessionActions | null = null;
+
+    function Harness({ useKorean }: { useKorean: boolean }) {
+      const session = useIntakeSharingSession({
+        ownerKey: 'owner-a',
+        intake: intakeOptions(),
+        sharing,
+        coursePort: useKorean ? secondCoursePort : firstCoursePort,
+        language: useKorean ? languageProfileForPair('ko', 'vi') : undefined,
+      }, { useIntakePort: () => port });
+      latestModel = session.model;
+      actions = session.actions;
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => {
+        root.render(<Harness useKorean={false} />);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(latestModel!.share.incomingPreview).not.toBeNull();
+
+      let acceptance!: ReturnType<IntakeSharingSessionActions['acceptShared']>;
+      await act(async () => {
+        acceptance = actions!.acceptShared();
+        await Promise.resolve();
+      });
+      expect(port.findExisting).not.toHaveBeenCalled();
+
+      await act(async () => {
+        root.render(<Harness useKorean />);
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(25);
+      });
+
+      await expect(acceptance).resolves.toEqual({ status: 'accepted' });
+      expect(firstCoursePort.ensureCourseForIncomingShare).toHaveBeenCalledOnce();
+      expect(port.findExisting).toHaveBeenCalledOnce();
+      expect(port.persistCards).toHaveBeenCalledOnce();
+      expect(browser.replaceLocation).toHaveBeenCalledOnce();
+      expect(latestModel!.share.incomingPreview).toBeNull();
+    } finally {
+      await act(async () => {
+        root.unmount();
+      });
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('invalidates owner A acceptance before forwarding owner B intake', async () => {
+    vi.useFakeTimers();
+    const portA = intakePort();
+    const portB = intakePort();
+    const intakeA = { ...intakeOptions(), ownerId: 'owner-a' };
+    const intakeB = { ...intakeOptions(), ownerId: 'owner-b' };
+    const adapter = {
+      load: vi.fn(async () => ({
+        category: 'Korean',
+        targetLanguage: 'ko',
+        nativeLanguage: 'vi',
+        cards: [card('shared')],
+      })),
+      create: vi.fn(async () => ({
+        shareId: 'share-1',
+        expiresAt: '2026-09-01T00:00:00.000Z',
+      })),
+      revoke: vi.fn(async () => undefined),
+    };
+    const browser = {
+      getCurrentUrl: () => 'https://example.test/library?share=share-owner-race',
+      replaceLocation: vi.fn(),
+    };
+    const firstCoursePort = { ensureCourseForIncomingShare: vi.fn(async () => undefined) };
+    const secondCoursePort = { ensureCourseForIncomingShare: vi.fn(async () => undefined) };
+    const sharing = {
+      adapter,
+      browser,
+      loadCards: vi.fn(async () => ({ cards: [], total: 0, hasNext: false })),
+    };
+    const ownerBCommitted = deferred<void>();
+    let actions: IntakeSharingSessionActions | null = null;
+    let latestModel: IntakeSharingSessionModel | null = null;
+
+    function Harness({ ownerKey }: { ownerKey: 'owner-a' | 'owner-b' }) {
+      const session = useIntakeSharingSession({
+        ownerKey,
+        intake: ownerKey === 'owner-a' ? intakeA : intakeB,
+        sharing,
+        coursePort: ownerKey === 'owner-a' ? firstCoursePort : secondCoursePort,
+        language: ownerKey === 'owner-b' ? languageProfileForPair('ko', 'vi') : undefined,
+      }, {
+        useIntakePort: () => ownerKey === 'owner-a' ? portA : portB,
+      });
+      actions = session.actions;
+      latestModel = session.model;
+      useLayoutEffect(() => {
+        if (ownerKey === 'owner-b') ownerBCommitted.resolve();
+      }, [ownerKey]);
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => {
+        root.render(<Harness ownerKey="owner-a" />);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(latestModel!.share.incomingPreview).not.toBeNull();
+
+      let acceptance!: ReturnType<IntakeSharingSessionActions['acceptShared']>;
+      await act(async () => {
+        acceptance = actions!.acceptShared();
+        await Promise.resolve();
+      });
+      expect(portA.findExisting).not.toHaveBeenCalled();
+
+      vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', false);
+      root.render(<Harness ownerKey="owner-b" />);
+      await ownerBCommitted.promise;
+      await vi.advanceTimersByTimeAsync(25);
+      vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+
+      await act(async () => {
+        await expect(acceptance).resolves.toEqual({ status: 'stale' });
+      });
+      expect(portA.findExisting).not.toHaveBeenCalled();
+      expect(portA.persistCards).not.toHaveBeenCalled();
+      expect(portB.findExisting).not.toHaveBeenCalled();
+      expect(portB.persistCards).not.toHaveBeenCalled();
+      expect(browser.replaceLocation).not.toHaveBeenCalled();
+    } finally {
+      await act(async () => {
+        root.unmount();
+      });
+      vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+      vi.useRealTimers();
       vi.unstubAllGlobals();
     }
   });
