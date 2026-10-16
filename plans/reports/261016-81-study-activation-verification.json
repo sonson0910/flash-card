@@ -1,0 +1,4749 @@
+{
+  "schemaVersion": 1,
+  "parentPublishedRevision": "7bfdec3dc5f20c44617e4b317c06628b50dd73d2",
+  "sourceFiles": [
+    {
+      "path": "README.md",
+      "sha256": "ea49360bb110135aae5b396f2dd69797d5212e54bca6451a3493a8182858b11c"
+    },
+    {
+      "path": "package.json",
+      "sha256": "0a7a6ea3004976707c6125f45e016835783a1128956556a69cefab6e0bf4b5a7"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "d15cdd77eee9586dec19d9167b5e63ee7368fe8533087148941b0ce36ed96a42"
+    },
+    {
+      "path": "src/features/practice/usePracticeSession.ts",
+      "sha256": "e074e84042c92a530c0d6571ea2cc834d18858623d0c01cef2d5d6e7cb7debde"
+    },
+    {
+      "path": "src/features/practice/usePracticeSession.ownerRace.test.ts",
+      "sha256": "e6848cc2ec445f520fcf90c534781c254ae2101eb25414583338b2f2aa39fee6"
+    }
+  ],
+  "toolchain": {
+    "package": "@playwright/test",
+    "version": "1.64.1",
+    "browserRevisions": {
+      "chromium": 1248,
+      "firefox": 1555,
+      "webkit": 2370
+    },
+    "image": "mcr.microsoft.com/playwright:v1.64.1-noble",
+    "imageDigest": "sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf"
+  },
+  "studyRepair": {
+    "cause": "A Library render captures empty Study cards; its delayed effect observes a later mutable active lifecycle and clears that newer activation.",
+    "fix": "Capture activation ID with the render snapshot and require it still matches before empty-session cleanup.",
+    "regressionBeforeFix": true,
+    "preservedContracts": [
+      "current activation with no cards still closes",
+      "replaced Study activation survives old effects",
+      "owner and query generation guards unchanged"
+    ],
+    "sourceReview": "Independent read-only review GO before ordinary browser acceptance"
+  },
+  "nativeCrash": {
+    "status": "Pinned repaired browser verified by ordinary application matrix and exact failure repeat; no claim of minimal A/B crash reproduction",
+    "publishedRevision": "7bfdec3dc5f20c44617e4b317c06628b50dd73d2",
+    "oldPlaywright": "1.62.1",
+    "candidatePlaywright": "1.64.1",
+    "oldWebKitRevision": "2336",
+    "candidateWebKitRevision": "2370",
+    "oldLibrary": {
+      "sha256": "bceb94802c12e30220735ffcc5ce14977b9f333fb03913ee196d1619e6c56703",
+      "buildId": "775f8be98a373450400132b921d85a4c62795f60",
+      "fileOffset": "0x5fd556a",
+      "instruction": "mov (%rdi),%rax; call *0x40(%rax)",
+      "symbolName": "not established: stripped binary"
+    },
+    "nativeCorrelation": {
+      "kernelTimeUtc": "2026-10-16T05:16:44Z",
+      "testStartUtc": "2026-10-16T05:16:42.274Z",
+      "durationMs": 2564,
+      "test": "classic light Zen card keeps both faces opaque and readable at desktop",
+      "thread": "eadedCompositor",
+      "kernelPid": 1950157,
+      "library": "libWPEWebKit-2.0.so.1.10.2",
+      "segfaultAddress": "0",
+      "scope": "Native crash strongly correlated with this failed test; instruction pattern matches upstream report, not a symbolized stack or proof for all earlier failures."
+    },
+    "upstream": {
+      "issue": "https://github.com/microsoft/playwright/issues/42637",
+      "fix": "https://github.com/WebKit/WebKit/pull/73621",
+      "browserRoll": "https://github.com/microsoft/playwright/pull/42748",
+      "firstFixedBrowserRoll": "2364"
+    },
+    "oldMinimalReproducer": {
+      "browserVersion": "26.5",
+      "results": [
+        {
+          "sample": 0,
+          "crashed": false,
+          "completedCycles": 10,
+          "errorKind": null
+        },
+        {
+          "sample": 1,
+          "crashed": false,
+          "completedCycles": 10,
+          "errorKind": null
+        },
+        {
+          "sample": 2,
+          "crashed": false,
+          "completedCycles": 10,
+          "errorKind": null
+        },
+        {
+          "sample": 3,
+          "crashed": false,
+          "completedCycles": 10,
+          "errorKind": null
+        },
+        {
+          "sample": 4,
+          "crashed": false,
+          "completedCycles": 10,
+          "errorKind": null
+        }
+      ]
+    },
+    "oldOrdinaryMatrix72": {
+      "startTime": "2026-10-16T05:22:35.250Z",
+      "duration": 244090.859,
+      "expected": 72,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "ordinaryMatrixFlags": {
+      "retries": 0,
+      "snapshotUpdates": "none"
+    },
+    "productCssChanged": false,
+    "deadlinesOrChecksWeakened": false,
+    "newToolchainVerification": "ordinary 72/72 and exact 30/30; retries0, snapshot updates none",
+    "deploymentPerformed": false,
+    "newMinimalReproducer": {
+      "browserVersion": "27.2",
+      "results": [
+        {
+          "sample": 0,
+          "crashed": false,
+          "completedCycles": 10,
+          "errorKind": null
+        },
+        {
+          "sample": 1,
+          "crashed": false,
+          "completedCycles": 10,
+          "errorKind": null
+        },
+        {
+          "sample": 2,
+          "crashed": false,
+          "completedCycles": 10,
+          "errorKind": null
+        },
+        {
+          "sample": 3,
+          "crashed": false,
+          "completedCycles": 10,
+          "errorKind": null
+        },
+        {
+          "sample": 4,
+          "crashed": false,
+          "completedCycles": 10,
+          "errorKind": null
+        }
+      ]
+    }
+  },
+  "reviewedGolden": {
+    "path": "e2e/course-onboarding-visual.spec.ts-snapshots/course-switcher-create-classic-dark-desktop-firefox-linux.png",
+    "previousSha256": "a6f8662dd6120d632b1c2a3f1088cc4c18e4f7e61bcc1a6c23b3135f30401401",
+    "sha256": "cbf725460dd8d146219950ed2e3fed706c7475f2433dc69e70d76b88fad42336",
+    "actuallyViewed": [
+      "expected",
+      "actual",
+      "diff"
+    ],
+    "identicalOrdinarySamples": 5,
+    "differentPixels": 1978,
+    "reason": "Reviewed deterministic native text rasterization change after Firefox engine upgrade; background text differs, controls/content/layout retained. This is visual acceptance, not proof of font-loading causality.",
+    "assertionsOrToleranceChanged": false
+  },
+  "checks": {
+    "regressionBeforeFix": {
+      "result": "Expected failure proves old empty effect clears new Study",
+      "retainedLogSha256": "95242fa809ab57dcade93747e61d79bbce1c7055ea97c4c0d690161464f426bb"
+    },
+    "focusedUnits": {
+      "result": "PASS 78/78",
+      "retainedLogSha256": "5638f003df05a3c281960e5c8f7d155f5a1d50e283c5d0872ad8520dd1c20a71"
+    },
+    "practiceUnits": {
+      "result": "PASS 220/220 in 19 files",
+      "retainedLogSha256": "c587b0ecdfd0dcf226ca9854816621075ce7f05f2d29c9e5d8151ab6903a9c4e"
+    },
+    "lintAndTypecheck": {
+      "result": "PASS",
+      "retainedLogSha256": "2d3d3c793d5b1c23a11ba05281c36e10f103cd5c98457b531b49fe906adfb667"
+    },
+    "productionOfflineListenBuild": {
+      "result": "PASS",
+      "retainedLogSha256": "de478d2a3c78df4ccccf338d29426597382c47af562e156a97afaafbc31c5bd3"
+    },
+    "bundle": {
+      "result": "PASS; unchanged limits",
+      "retainedLogSha256": "89885d182961b6c83a17f443c7d678613acf26013c012ded2134efb7aeaa412f"
+    },
+    "artifactSecrets": {
+      "result": "PASS 271 files",
+      "retainedLogSha256": "f02eb942e919fd3d2feae7701c865ccc4b7030799c0515d759ebe3fcd7cffcb8"
+    },
+    "emulatorBuild": {
+      "result": "PASS",
+      "retainedLogSha256": "9cdac5554a35adc8e888069dcef166a722f0de03b0c713b852c5d73064eef009"
+    }
+  },
+  "bundle": {
+    "initialJsGzip": 70988,
+    "initialJsGzipLimit": 71000,
+    "initialCssGzip": 29430,
+    "initialCssGzipLimit": 29500,
+    "totalJsRaw": 2848744
+  },
+  "browserResults": {
+    "oldToolchainMatrix72": {
+      "sourceSha256": "46bade45b4e94a56c36fddae6e949b48829f7bc9d0f4197bb47d99d21c5b75ab",
+      "stats": {
+        "startTime": "2026-10-16T05:22:35.250Z",
+        "duration": 244090.859,
+        "expected": 72,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "collectionErrors": 0,
+      "cases": [
+        {
+          "id": "[chromium] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-7817ed7a36f630fc297a",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5120,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:22:38.167Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-e4f27c770a705ec5f7dc",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2636,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:22:43.711Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a flashcard-remediation.spec.ts \u203a classic-dark StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-103b842e50e68719e722",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3172,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:22:46.357Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a flashcard-remediation.spec.ts \u203a classic-dark StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-ab36b6f435d1f1e0af9a",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2795,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:22:49.538Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a flashcard-remediation.spec.ts \u203a crystal-light StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-2ddc1b55601bf1ddb50e",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4075,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:22:52.343Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a flashcard-remediation.spec.ts \u203a crystal-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-abbc0383e3930c78fb27",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2588,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:22:56.427Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a flashcard-remediation.spec.ts \u203a crystal-dark StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-295eff6f2c6f57d18d0c",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3678,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:22:59.025Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a flashcard-remediation.spec.ts \u203a crystal-dark StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-b9c4dd8ab8dfb769c2c5",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2951,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:02.714Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-1a6e102f37f2464b92d6",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3822,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:23:49.282Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-62f1543b277f8622170e",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2570,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:23:53.541Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a flashcard-remediation.spec.ts \u203a classic-dark StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-173d5594815b1f587c85",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3029,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:23:56.120Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a flashcard-remediation.spec.ts \u203a classic-dark StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-148753a40d246e3fa175",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2661,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:23:59.159Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a flashcard-remediation.spec.ts \u203a crystal-light StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-7cd2b1ec0354476e7e9b",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3067,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:01.829Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a flashcard-remediation.spec.ts \u203a crystal-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-5104f894ef3ece130a65",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2826,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:04.905Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a flashcard-remediation.spec.ts \u203a crystal-dark StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-8ec556af991bc7ad021a",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3215,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:07.744Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a flashcard-remediation.spec.ts \u203a crystal-dark StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-5b1b73b44dba4f753a99",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2930,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:10.968Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-36ed49fb2e5439434b59",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5360,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:24:56.051Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-553f32d2b22a305c39ca",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3916,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:25:01.558Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-dark StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-f5e4c3c1e61171ab0f4b",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6213,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:25:05.485Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-dark StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-3123576aabc84e66b7a2",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4465,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:25:11.706Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a crystal-light StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-5f2063a121f06f527714",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6705,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:25:16.179Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a crystal-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-032750c7be48ea9ae6ad",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4134,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:25:22.894Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a crystal-dark StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-5f33f20f070ea0cf6e20",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 7288,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:25:27.039Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a crystal-dark StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-85153562486fdacd6eea",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4849,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:25:34.337Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a classic light reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-08413a10d50a33704829",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4069,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:05.805Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a classic light reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-86cf1c49d52b18a021da",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2091,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:10.300Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a classic dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-c3ae4430645e6e389c36",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2403,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:12.399Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a classic dark reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-1a692c4b84bc09912b06",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2092,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:14.811Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a crystal light reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-8e4d51e7e03d2caddefe",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2351,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:16.911Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a crystal light reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-17f845ec471fb4831842",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3178,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:19.270Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-b722cc1fde5a49f8404c",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2309,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:22.458Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-95aec1eabce87864469f",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3162,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:24.778Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a classic light Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-47d79637116d22906674",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2778,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:27.956Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a classic light Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-46f4d045f4bfa6d54145",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2116,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:30.741Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a classic dark Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-567f1da50b6e07c8a55d",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2279,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:32.867Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a classic dark Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-40b270dbeca75fb71e61",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2100,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:35.153Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a crystal light Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-59524ea9e2e7ef943f26",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2321,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:37.262Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a crystal light Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-7fec51cb38e45755af6b",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3161,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:39.591Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a crystal dark Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-84a231dc57e6ab1e55f7",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2231,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:42.761Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a crystal dark Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-80de78d582187988249f",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3244,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:23:45.004Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a classic light reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-2bdcb667aca8b7df0f3f",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3534,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:14.036Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a classic light reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-1b1106b0992ff6d492c6",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3170,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:18.022Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a classic dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-e953f01d976f6c82c47f",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2481,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:21.202Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a classic dark reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-42099e7f4152948fa83a",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2175,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:23.692Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a crystal light reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-ac97a90123738c0f3898",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2272,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:25.875Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a crystal light reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-8b86a7f684a7fe056084",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2268,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:28.157Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-25b2e4d54c53b2d8690d",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2246,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:30.434Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-49a93b9b67d16556119f",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2232,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:32.688Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a classic light Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-d4ae419a29441f6dd610",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2374,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:34.928Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a classic light Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-e31247ac3c9c99a7c230",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2234,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:37.312Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a classic dark Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-63c6c7c618981dd2539e",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2550,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:39.558Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a classic dark Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-c22c30391a8274112a68",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3545,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:42.117Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a crystal light Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-2477dfbd9e90f752075c",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2551,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:45.671Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a crystal light Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-90c8087c38f10402ab39",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2160,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:48.231Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a crystal dark Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-05ad0879116e66fdb106",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2459,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:50.399Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a crystal dark Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-e096c51e00c98f84cbb2",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2126,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:24:52.866Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a classic light reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-3bbf2530742155bc24ab",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5591,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:25:39.341Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a classic light reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-7554728f0e1f26dc446a",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3142,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:25:45.385Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a classic dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-47711ca125afe459a708",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3832,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:25:48.538Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a classic dark reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-fefa82b106fca9eda681",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3063,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:25:52.378Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal light reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-847e8a2263aeaf2da157",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3975,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:25:55.450Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal light reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-6fdf70831f98177d2293",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3698,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:25:59.437Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-5e719fd44545faac49a3",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3971,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:26:03.145Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-3b189addb9e0f8a2e6a5",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2913,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:26:07.125Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a classic light Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-7c3edbac524394d40660",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4272,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:26:10.045Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a classic light Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-8c536539d3c70ed58d8e",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3038,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:26:14.327Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a classic dark Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-bfc9f814a428b7ea683d",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4126,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:26:17.376Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a classic dark Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-eb45e49bf51f646fed3e",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3040,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:26:21.512Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal light Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-14b4d12fd444c21943e9",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4169,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:26:24.563Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal light Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-14fcf9ea90b7b2033e46",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3169,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:26:28.740Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-17dac79dfaa405792152",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4136,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:26:31.918Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-7325e2f68dad52a841bd",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3185,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:26:36.065Z"
+            }
+          ]
+        }
+      ]
+    },
+    "oldToolchainExactRepeat30": {
+      "sourceSha256": "2d56c6eaa1f0f512759f706f556c26e1cf38031b83a40e139e4139fb61e0a5a0",
+      "stats": {
+        "startTime": "2026-10-16T05:06:20.319Z",
+        "duration": 191217.722,
+        "expected": 27,
+        "skipped": 0,
+        "unexpected": 3,
+        "flaky": 0
+      },
+      "collectionErrors": 0,
+      "cases": [
+        {
+          "id": "[firefox] \u203a course-onboarding-visual.spec.ts \u203a classic dark courses, goals, settings and onboarding capture at desktop",
+          "sourceSpecId": "3c948d34232176fee820-a3599eed6b0ef460b691",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 7471,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:06:23.373Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a course-onboarding-visual.spec.ts \u203a classic dark courses, goals, settings and onboarding capture at desktop",
+          "sourceSpecId": "3c948d34232176fee820-5e1a600812e45a100f59",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5369,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:06:32.308Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a course-onboarding-visual.spec.ts \u203a classic dark courses, goals, settings and onboarding capture at desktop",
+          "sourceSpecId": "3c948d34232176fee820-7fbd34e1a588325a19c9",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5173,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:06:39.116Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a course-onboarding-visual.spec.ts \u203a classic dark courses, goals, settings and onboarding capture at desktop",
+          "sourceSpecId": "3c948d34232176fee820-5065a8fc8d1d500b2fdb",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5949,
+              "retry": 0,
+              "workerIndex": 3,
+              "startTime": "2026-10-16T05:06:45.781Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a course-onboarding-visual.spec.ts \u203a classic dark courses, goals, settings and onboarding capture at desktop",
+          "sourceSpecId": "3c948d34232176fee820-523551c88ed43f21e572",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5515,
+              "retry": 0,
+              "workerIndex": 4,
+              "startTime": "2026-10-16T05:06:53.947Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-553f32d2b22a305c39ca",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4298,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:07:00.995Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-030845c8984fd2f08be3",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4082,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:07:32.121Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-70bb1d82ba53b6f9e1a9",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4017,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:08:00.597Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-a6f1983249ce30eca87e",
+          "occurrenceIndex": 3,
+          "status": "unexpected",
+          "attempts": [
+            {
+              "status": "failed",
+              "durationMs": 7292,
+              "retry": 0,
+              "workerIndex": 9,
+              "startTime": "2026-10-16T05:08:31.286Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-96fbd8cf37321a878e8d",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3964,
+              "retry": 0,
+              "workerIndex": 11,
+              "startTime": "2026-10-16T05:09:05.700Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-3f11b1335769ad6a3066",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5085,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:07:05.482Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-cc59c4faa0ce0cfc7ba8",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 7652,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:07:10.578Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-562ab54d7f99ed7ed124",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6548,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:07:18.240Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-0cd2c1e817df4123c604",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4656,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:07:36.374Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-1735dcc7ba4b1709911b",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 8543,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:07:41.040Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-6086a8278bf3f52f2894",
+          "occurrenceIndex": 1,
+          "status": "unexpected",
+          "attempts": [
+            {
+              "status": "failed",
+              "durationMs": 2245,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:07:49.594Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-db43acba04d29c835198",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4844,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:08:04.780Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-8e6555a72704c66bcb26",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 8069,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:08:09.635Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-70bbf41d3a542fa5a43d",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6433,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:08:17.716Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-e05ef0c9b5c0ca858b10",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4645,
+              "retry": 0,
+              "workerIndex": 10,
+              "startTime": "2026-10-16T05:08:39.840Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-023a450da7b5db598973",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 7701,
+              "retry": 0,
+              "workerIndex": 10,
+              "startTime": "2026-10-16T05:08:44.587Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-1e861500b07c133888e1",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6644,
+              "retry": 0,
+              "workerIndex": 10,
+              "startTime": "2026-10-16T05:08:52.301Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-cbc4de1c3c19d4548c2f",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4722,
+              "retry": 0,
+              "workerIndex": 11,
+              "startTime": "2026-10-16T05:09:09.841Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-d100034abd90a515441f",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 7724,
+              "retry": 0,
+              "workerIndex": 11,
+              "startTime": "2026-10-16T05:09:14.573Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-82006838d30e95cb3e60",
+          "occurrenceIndex": 4,
+          "status": "unexpected",
+          "attempts": [
+            {
+              "status": "failed",
+              "durationMs": 2021,
+              "retry": 0,
+              "workerIndex": 11,
+              "startTime": "2026-10-16T05:09:22.314Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-5e719fd44545faac49a3",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5530,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:07:24.911Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-4f274ba7a42cdbf382c5",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5458,
+              "retry": 0,
+              "workerIndex": 7,
+              "startTime": "2026-10-16T05:07:53.292Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-4f2027c9df3466c81e82",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5437,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:08:24.260Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-779316fb68f77da051c0",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5166,
+              "retry": 0,
+              "workerIndex": 10,
+              "startTime": "2026-10-16T05:08:59.030Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-1c3a021682b9ab3ab329",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5220,
+              "retry": 0,
+              "workerIndex": 12,
+              "startTime": "2026-10-16T05:09:25.666Z"
+            }
+          ]
+        }
+      ]
+    },
+    "newToolchainBeforeStudyFix40": {
+      "sourceSha256": "f7cca8cebb6eba694b954f8a9a0d92a9d818de0c9cda5ee0bd788bc6b059fda7",
+      "stats": {
+        "startTime": "2026-10-16T05:30:43.297Z",
+        "duration": 248751.936,
+        "expected": 38,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      },
+      "collectionErrors": 0,
+      "cases": [
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-553f32d2b22a305c39ca",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 9634,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:30:46.220Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-030845c8984fd2f08be3",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4150,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:31:22.645Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-70bb1d82ba53b6f9e1a9",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4483,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:31:45.755Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-a6f1983249ce30eca87e",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4743,
+              "retry": 0,
+              "workerIndex": 3,
+              "startTime": "2026-10-16T05:32:09.670Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-96fbd8cf37321a878e8d",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4046,
+              "retry": 0,
+              "workerIndex": 4,
+              "startTime": "2026-10-16T05:32:32.066Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-3056ab73a63d283fbe52",
+          "occurrenceIndex": 5,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4053,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:32:55.002Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-7100814f0610e7848abd",
+          "occurrenceIndex": 6,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4117,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:33:16.642Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-07408bc39225a0946bdd",
+          "occurrenceIndex": 7,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4102,
+              "retry": 0,
+              "workerIndex": 7,
+              "startTime": "2026-10-16T05:33:38.594Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-cf08acfabc5e9d761fa8",
+          "occurrenceIndex": 8,
+          "status": "unexpected",
+          "attempts": [
+            {
+              "status": "failed",
+              "durationMs": 7180,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:34:00.684Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-d042dcaa718d8a605114",
+          "occurrenceIndex": 9,
+          "status": "unexpected",
+          "attempts": [
+            {
+              "status": "failed",
+              "durationMs": 7112,
+              "retry": 0,
+              "workerIndex": 10,
+              "startTime": "2026-10-16T05:34:27.284Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-3f11b1335769ad6a3066",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 10130,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:30:56.016Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-cc59c4faa0ce0cfc7ba8",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 7438,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:31:06.158Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-562ab54d7f99ed7ed124",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 7927,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:31:13.605Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-0cd2c1e817df4123c604",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5428,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:31:26.964Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-1735dcc7ba4b1709911b",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6292,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:31:32.402Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-6086a8278bf3f52f2894",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5947,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:31:38.705Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-db43acba04d29c835198",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4711,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:31:50.433Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-8e6555a72704c66bcb26",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6290,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:31:55.153Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-70bbf41d3a542fa5a43d",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 7021,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:32:01.452Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-e05ef0c9b5c0ca858b10",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4366,
+              "retry": 0,
+              "workerIndex": 3,
+              "startTime": "2026-10-16T05:32:14.588Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-023a450da7b5db598973",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6599,
+              "retry": 0,
+              "workerIndex": 3,
+              "startTime": "2026-10-16T05:32:18.964Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-1e861500b07c133888e1",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5441,
+              "retry": 0,
+              "workerIndex": 3,
+              "startTime": "2026-10-16T05:32:25.575Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-cbc4de1c3c19d4548c2f",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4935,
+              "retry": 0,
+              "workerIndex": 4,
+              "startTime": "2026-10-16T05:32:36.305Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-d100034abd90a515441f",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 7066,
+              "retry": 0,
+              "workerIndex": 4,
+              "startTime": "2026-10-16T05:32:41.247Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-82006838d30e95cb3e60",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5659,
+              "retry": 0,
+              "workerIndex": 4,
+              "startTime": "2026-10-16T05:32:48.322Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-75df9f69fc2d16e12e09",
+          "occurrenceIndex": 5,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4212,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:32:59.210Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-8de8cd488c773c2e2bb0",
+          "occurrenceIndex": 5,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6437,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:33:03.432Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-5ef2fe7c343887155f4d",
+          "occurrenceIndex": 5,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5750,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:33:09.878Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-fd1307aa4412a6d9a6e0",
+          "occurrenceIndex": 6,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4305,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:33:21.415Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-24b5ab0f99b672c08bbc",
+          "occurrenceIndex": 6,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6400,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:33:25.733Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-60874dc8ff264b4ad8d5",
+          "occurrenceIndex": 6,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5386,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:33:32.144Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-38141d689e028c1de1b5",
+          "occurrenceIndex": 7,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4843,
+              "retry": 0,
+              "workerIndex": 7,
+              "startTime": "2026-10-16T05:33:42.849Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-b0e1036af75425e87811",
+          "occurrenceIndex": 7,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6399,
+              "retry": 0,
+              "workerIndex": 7,
+              "startTime": "2026-10-16T05:33:47.701Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-3c1647f8568cec117edd",
+          "occurrenceIndex": 7,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5587,
+              "retry": 0,
+              "workerIndex": 7,
+              "startTime": "2026-10-16T05:33:54.111Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-4a26ad8af77c32bbff3e",
+          "occurrenceIndex": 8,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4922,
+              "retry": 0,
+              "workerIndex": 9,
+              "startTime": "2026-10-16T05:34:09.056Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-0ed6b9d27ca53dac62c2",
+          "occurrenceIndex": 8,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6260,
+              "retry": 0,
+              "workerIndex": 9,
+              "startTime": "2026-10-16T05:34:14.067Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-d2ead1fa5b752f837dcd",
+          "occurrenceIndex": 8,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5905,
+              "retry": 0,
+              "workerIndex": 9,
+              "startTime": "2026-10-16T05:34:20.336Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-c25beeb3e7b427f1b151",
+          "occurrenceIndex": 9,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4376,
+              "retry": 0,
+              "workerIndex": 11,
+              "startTime": "2026-10-16T05:34:35.664Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-aeb59572796d2b36f172",
+          "occurrenceIndex": 9,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6404,
+              "retry": 0,
+              "workerIndex": 11,
+              "startTime": "2026-10-16T05:34:40.133Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-36612dc3ac90a711c6eb",
+          "occurrenceIndex": 9,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5467,
+              "retry": 0,
+              "workerIndex": 11,
+              "startTime": "2026-10-16T05:34:46.545Z"
+            }
+          ]
+        }
+      ]
+    },
+    "instrumentedStudyDiagnostic20": {
+      "sourceSha256": "412cf989942b3138fc3215e142f9791583f25d13fc28391b38fb75c1bd1aa709",
+      "stats": {
+        "startTime": "2026-10-16T05:37:43.088Z",
+        "duration": 113105.66100000001,
+        "expected": 18,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      },
+      "collectionErrors": 0,
+      "cases": [
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-553f32d2b22a305c39ca",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5128,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:37:45.864Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-030845c8984fd2f08be3",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4154,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:37:52.059Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-70bb1d82ba53b6f9e1a9",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4347,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:37:57.294Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-a6f1983249ce30eca87e",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4168,
+              "retry": 0,
+              "workerIndex": 3,
+              "startTime": "2026-10-16T05:38:02.720Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-96fbd8cf37321a878e8d",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4060,
+              "retry": 0,
+              "workerIndex": 4,
+              "startTime": "2026-10-16T05:38:07.913Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-3056ab73a63d283fbe52",
+          "occurrenceIndex": 5,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3957,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:38:13.082Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-7100814f0610e7848abd",
+          "occurrenceIndex": 6,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4103,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:38:18.186Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-07408bc39225a0946bdd",
+          "occurrenceIndex": 7,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3983,
+              "retry": 0,
+              "workerIndex": 7,
+              "startTime": "2026-10-16T05:38:23.472Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-cf08acfabc5e9d761fa8",
+          "occurrenceIndex": 8,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4019,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:38:28.717Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-d042dcaa718d8a605114",
+          "occurrenceIndex": 9,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4098,
+              "retry": 0,
+              "workerIndex": 9,
+              "startTime": "2026-10-16T05:38:34.003Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-5a193d54b5f35929e070",
+          "occurrenceIndex": 10,
+          "status": "unexpected",
+          "attempts": [
+            {
+              "status": "failed",
+              "durationMs": 7193,
+              "retry": 0,
+              "workerIndex": 10,
+              "startTime": "2026-10-16T05:38:39.346Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-fff733afee57c7ffcbcd",
+          "occurrenceIndex": 11,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4091,
+              "retry": 0,
+              "workerIndex": 11,
+              "startTime": "2026-10-16T05:38:47.759Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-92e05fb55a76b1b9041f",
+          "occurrenceIndex": 12,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4079,
+              "retry": 0,
+              "workerIndex": 12,
+              "startTime": "2026-10-16T05:38:52.937Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-ba5a1ac7c93a97f5f875",
+          "occurrenceIndex": 13,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4040,
+              "retry": 0,
+              "workerIndex": 13,
+              "startTime": "2026-10-16T05:38:58.128Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-5d5e6a094f110e0bf3d6",
+          "occurrenceIndex": 14,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4156,
+              "retry": 0,
+              "workerIndex": 14,
+              "startTime": "2026-10-16T05:39:03.256Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-e86225f4880c7498852f",
+          "occurrenceIndex": 15,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4146,
+              "retry": 0,
+              "workerIndex": 15,
+              "startTime": "2026-10-16T05:39:08.477Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-9c0d33fcfff9c79d6f07",
+          "occurrenceIndex": 16,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3967,
+              "retry": 0,
+              "workerIndex": 16,
+              "startTime": "2026-10-16T05:39:13.713Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-a51857c64b1875e1a424",
+          "occurrenceIndex": 17,
+          "status": "unexpected",
+          "attempts": [
+            {
+              "status": "failed",
+              "durationMs": 7173,
+              "retry": 0,
+              "workerIndex": 17,
+              "startTime": "2026-10-16T05:39:18.752Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-260ecaaafdbcb19697a4",
+          "occurrenceIndex": 18,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3775,
+              "retry": 0,
+              "workerIndex": 18,
+              "startTime": "2026-10-16T05:39:27.064Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-5869a176010fda14562f",
+          "occurrenceIndex": 19,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4079,
+              "retry": 0,
+              "workerIndex": 19,
+              "startTime": "2026-10-16T05:39:32.002Z"
+            }
+          ]
+        }
+      ]
+    },
+    "repairedMatrix72": {
+      "sourceSha256": "9692b5f433daf09ddf7c9d21f8c8845bdb288ed2339748ad66263d936ba47fe1",
+      "stats": {
+        "startTime": "2026-10-16T05:47:58.943Z",
+        "duration": 240451.224,
+        "expected": 72,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "collectionErrors": 0,
+      "cases": [
+        {
+          "id": "[chromium] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-7817ed7a36f630fc297a",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5164,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:01.831Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-e4f27c770a705ec5f7dc",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2591,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:07.437Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a flashcard-remediation.spec.ts \u203a classic-dark StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-103b842e50e68719e722",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3168,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:10.036Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a flashcard-remediation.spec.ts \u203a classic-dark StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-ab36b6f435d1f1e0af9a",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2880,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:13.210Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a flashcard-remediation.spec.ts \u203a crystal-light StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-2ddc1b55601bf1ddb50e",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4197,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:16.102Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a flashcard-remediation.spec.ts \u203a crystal-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-abbc0383e3930c78fb27",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2862,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:20.307Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a flashcard-remediation.spec.ts \u203a crystal-dark StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-295eff6f2c6f57d18d0c",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3658,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:23.176Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a flashcard-remediation.spec.ts \u203a crystal-dark StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-b9c4dd8ab8dfb769c2c5",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2897,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:26.841Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-1a6e102f37f2464b92d6",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3950,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:13.481Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-62f1543b277f8622170e",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2647,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:18.013Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a flashcard-remediation.spec.ts \u203a classic-dark StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-173d5594815b1f587c85",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3083,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:20.667Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a flashcard-remediation.spec.ts \u203a classic-dark StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-148753a40d246e3fa175",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2760,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:23.758Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a flashcard-remediation.spec.ts \u203a crystal-light StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-7cd2b1ec0354476e7e9b",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3168,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:26.534Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a flashcard-remediation.spec.ts \u203a crystal-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-5104f894ef3ece130a65",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2760,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:29.712Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a flashcard-remediation.spec.ts \u203a crystal-dark StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-8ec556af991bc7ad021a",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3408,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:32.479Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a flashcard-remediation.spec.ts \u203a crystal-dark StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-5b1b73b44dba4f753a99",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2933,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:35.895Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-36ed49fb2e5439434b59",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5566,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:50:19.826Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-553f32d2b22a305c39ca",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3938,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:50:25.484Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-dark StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-f5e4c3c1e61171ab0f4b",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5384,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:50:29.431Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-dark StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-3123576aabc84e66b7a2",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4457,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:50:34.823Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a crystal-light StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-5f2063a121f06f527714",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6362,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:50:39.288Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a crystal-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-032750c7be48ea9ae6ad",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4172,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:50:45.661Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a crystal-dark StudyView captures prompt and revealed rating states at desktop",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-5f33f20f070ea0cf6e20",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 7176,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:50:49.843Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a crystal-dark StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-85153562486fdacd6eea",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4916,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:50:57.028Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a classic light reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-08413a10d50a33704829",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5765,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:29.882Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a classic light reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-86cf1c49d52b18a021da",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2097,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:36.088Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a classic dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-c3ae4430645e6e389c36",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2227,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:38.194Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a classic dark reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-1a692c4b84bc09912b06",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1884,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:40.429Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a crystal light reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-8e4d51e7e03d2caddefe",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2226,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:42.319Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a crystal light reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-17f845ec471fb4831842",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3160,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:44.553Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-b722cc1fde5a49f8404c",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2237,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:47.721Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-95aec1eabce87864469f",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3036,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:49.966Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a classic light Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-47d79637116d22906674",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2717,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:53.013Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a classic light Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-46f4d045f4bfa6d54145",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2154,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:55.738Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a classic dark Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-567f1da50b6e07c8a55d",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2285,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:48:57.898Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a classic dark Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-40b270dbeca75fb71e61",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1870,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:49:00.192Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a crystal light Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-59524ea9e2e7ef943f26",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2062,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:49:02.069Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a crystal light Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-7fec51cb38e45755af6b",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3015,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:49:04.138Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a crystal dark Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-84a231dc57e6ab1e55f7",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2156,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:49:07.159Z"
+            }
+          ]
+        },
+        {
+          "id": "[chromium] \u203a paths-progress-visual.spec.ts \u203a crystal dark Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-80de78d582187988249f",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3057,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:49:09.323Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a classic light reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-2bdcb667aca8b7df0f3f",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3781,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:38.969Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a classic light reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-1b1106b0992ff6d492c6",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2758,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:43.157Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a classic dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-e953f01d976f6c82c47f",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2302,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:45.932Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a classic dark reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-42099e7f4152948fa83a",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2275,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:48.250Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a crystal light reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-ac97a90123738c0f3898",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2467,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:50.539Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a crystal light reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-8b86a7f684a7fe056084",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2256,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:53.022Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-25b2e4d54c53b2d8690d",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2250,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:55.296Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-49a93b9b67d16556119f",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2235,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:57.556Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a classic light Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-d4ae419a29441f6dd610",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2431,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:49:59.799Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a classic light Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-e31247ac3c9c99a7c230",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2168,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:50:02.238Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a classic dark Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-63c6c7c618981dd2539e",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2393,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:50:04.412Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a classic dark Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-c22c30391a8274112a68",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2937,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:50:06.812Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a crystal light Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-2477dfbd9e90f752075c",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2441,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:50:09.756Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a crystal light Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-90c8087c38f10402ab39",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2114,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:50:12.205Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a crystal dark Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-05ad0879116e66fdb106",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2381,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:50:14.327Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a paths-progress-visual.spec.ts \u203a crystal dark Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-e096c51e00c98f84cbb2",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2116,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:50:16.715Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a classic light reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-3bbf2530742155bc24ab",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5377,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:51:02.085Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a classic light reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-7554728f0e1f26dc446a",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2887,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:51:07.938Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a classic dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-47711ca125afe459a708",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3571,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:51:10.833Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a classic dark reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-fefa82b106fca9eda681",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2878,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:51:14.412Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal light reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-847e8a2263aeaf2da157",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3775,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:51:17.297Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal light reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-6fdf70831f98177d2293",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3469,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:51:21.081Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-5e719fd44545faac49a3",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3756,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:51:24.559Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-3b189addb9e0f8a2e6a5",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2897,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:51:28.325Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a classic light Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-7c3edbac524394d40660",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3997,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:51:31.231Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a classic light Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-8c536539d3c70ed58d8e",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3021,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:51:35.238Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a classic dark Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-bfc9f814a428b7ea683d",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3883,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:51:38.270Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a classic dark Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-eb45e49bf51f646fed3e",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3036,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:51:42.163Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal light Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-14b4d12fd444c21943e9",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3915,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:51:45.211Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal light Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-14fcf9ea90b7b2033e46",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3010,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:51:49.135Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark Paths Continue confirmation is visible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-17dac79dfaa405792152",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4088,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:51:52.151Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark Paths Continue confirmation is visible at 390px",
+          "sourceSpecId": "81437b6bd764d3a73e2b-7325e2f68dad52a841bd",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3070,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:51:56.247Z"
+            }
+          ]
+        }
+      ]
+    },
+    "beforeReviewedFirefoxGolden30": {
+      "sourceSha256": "6a3e66c4708b6e5906630809d81091780f2e3d2ecaed171fef7e7060db5ef983",
+      "stats": {
+        "startTime": "2026-10-16T05:52:41.665Z",
+        "duration": 178114.619,
+        "expected": 25,
+        "skipped": 0,
+        "unexpected": 5,
+        "flaky": 0
+      },
+      "collectionErrors": 0,
+      "cases": [
+        {
+          "id": "[firefox] \u203a course-onboarding-visual.spec.ts \u203a classic dark courses, goals, settings and onboarding capture at desktop",
+          "sourceSpecId": "3c948d34232176fee820-a3599eed6b0ef460b691",
+          "occurrenceIndex": 0,
+          "status": "unexpected",
+          "attempts": [
+            {
+              "status": "failed",
+              "durationMs": 7362,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:52:44.534Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a course-onboarding-visual.spec.ts \u203a classic dark courses, goals, settings and onboarding capture at desktop",
+          "sourceSpecId": "3c948d34232176fee820-5e1a600812e45a100f59",
+          "occurrenceIndex": 1,
+          "status": "unexpected",
+          "attempts": [
+            {
+              "status": "failed",
+              "durationMs": 5917,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:52:53.383Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a course-onboarding-visual.spec.ts \u203a classic dark courses, goals, settings and onboarding capture at desktop",
+          "sourceSpecId": "3c948d34232176fee820-7fbd34e1a588325a19c9",
+          "occurrenceIndex": 2,
+          "status": "unexpected",
+          "attempts": [
+            {
+              "status": "failed",
+              "durationMs": 5880,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:53:00.752Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a course-onboarding-visual.spec.ts \u203a classic dark courses, goals, settings and onboarding capture at desktop",
+          "sourceSpecId": "3c948d34232176fee820-5065a8fc8d1d500b2fdb",
+          "occurrenceIndex": 3,
+          "status": "unexpected",
+          "attempts": [
+            {
+              "status": "failed",
+              "durationMs": 5735,
+              "retry": 0,
+              "workerIndex": 3,
+              "startTime": "2026-10-16T05:53:08.091Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a course-onboarding-visual.spec.ts \u203a classic dark courses, goals, settings and onboarding capture at desktop",
+          "sourceSpecId": "3c948d34232176fee820-523551c88ed43f21e572",
+          "occurrenceIndex": 4,
+          "status": "unexpected",
+          "attempts": [
+            {
+              "status": "failed",
+              "durationMs": 5992,
+              "retry": 0,
+              "workerIndex": 4,
+              "startTime": "2026-10-16T05:53:15.275Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-553f32d2b22a305c39ca",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4004,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:53:22.751Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-030845c8984fd2f08be3",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4062,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:53:50.184Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-70bb1d82ba53b6f9e1a9",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3975,
+              "retry": 0,
+              "workerIndex": 7,
+              "startTime": "2026-10-16T05:54:17.836Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-a6f1983249ce30eca87e",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4236,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:54:45.124Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-96fbd8cf37321a878e8d",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4062,
+              "retry": 0,
+              "workerIndex": 9,
+              "startTime": "2026-10-16T05:55:13.361Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-3f11b1335769ad6a3066",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4653,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:53:26.913Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-cc59c4faa0ce0cfc7ba8",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6203,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:53:31.574Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-562ab54d7f99ed7ed124",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5632,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:53:37.783Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-0cd2c1e817df4123c604",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4860,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:53:54.417Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-1735dcc7ba4b1709911b",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6077,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:53:59.284Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-6086a8278bf3f52f2894",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5590,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:54:05.371Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-db43acba04d29c835198",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4629,
+              "retry": 0,
+              "workerIndex": 7,
+              "startTime": "2026-10-16T05:54:21.965Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-8e6555a72704c66bcb26",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6252,
+              "retry": 0,
+              "workerIndex": 7,
+              "startTime": "2026-10-16T05:54:26.601Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-70bbf41d3a542fa5a43d",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5572,
+              "retry": 0,
+              "workerIndex": 7,
+              "startTime": "2026-10-16T05:54:32.862Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-e05ef0c9b5c0ca858b10",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4584,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:54:49.520Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-023a450da7b5db598973",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6530,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:54:54.112Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-1e861500b07c133888e1",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5782,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:55:00.651Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-cbc4de1c3c19d4548c2f",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4222,
+              "retry": 0,
+              "workerIndex": 9,
+              "startTime": "2026-10-16T05:55:17.589Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-d100034abd90a515441f",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6495,
+              "retry": 0,
+              "workerIndex": 9,
+              "startTime": "2026-10-16T05:55:21.819Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-82006838d30e95cb3e60",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5735,
+              "retry": 0,
+              "workerIndex": 9,
+              "startTime": "2026-10-16T05:55:28.324Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-5e719fd44545faac49a3",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5148,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:53:43.507Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-4f274ba7a42cdbf382c5",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5209,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:54:11.106Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-4f2027c9df3466c81e82",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5112,
+              "retry": 0,
+              "workerIndex": 7,
+              "startTime": "2026-10-16T05:54:38.551Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-779316fb68f77da051c0",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5250,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:55:06.528Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-1c3a021682b9ab3ab329",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5122,
+              "retry": 0,
+              "workerIndex": 9,
+              "startTime": "2026-10-16T05:55:34.144Z"
+            }
+          ]
+        }
+      ]
+    },
+    "repairedExactRepeat30": {
+      "sourceSha256": "d9fe3e1cc1cc1291a1b9b650a9bfb6f791ee351c19f59947b1f2560596a6ab08",
+      "stats": {
+        "startTime": "2026-10-16T05:57:22.788Z",
+        "duration": 175041.064,
+        "expected": 30,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "collectionErrors": 0,
+      "cases": [
+        {
+          "id": "[firefox] \u203a course-onboarding-visual.spec.ts \u203a classic dark courses, goals, settings and onboarding capture at desktop",
+          "sourceSpecId": "3c948d34232176fee820-a3599eed6b0ef460b691",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 7869,
+              "retry": 0,
+              "workerIndex": 0,
+              "startTime": "2026-10-16T05:57:25.544Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a course-onboarding-visual.spec.ts \u203a classic dark courses, goals, settings and onboarding capture at desktop",
+          "sourceSpecId": "3c948d34232176fee820-5e1a600812e45a100f59",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5225,
+              "retry": 0,
+              "workerIndex": 1,
+              "startTime": "2026-10-16T05:57:34.648Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a course-onboarding-visual.spec.ts \u203a classic dark courses, goals, settings and onboarding capture at desktop",
+          "sourceSpecId": "3c948d34232176fee820-7fbd34e1a588325a19c9",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5161,
+              "retry": 0,
+              "workerIndex": 2,
+              "startTime": "2026-10-16T05:57:41.166Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a course-onboarding-visual.spec.ts \u203a classic dark courses, goals, settings and onboarding capture at desktop",
+          "sourceSpecId": "3c948d34232176fee820-5065a8fc8d1d500b2fdb",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5709,
+              "retry": 0,
+              "workerIndex": 3,
+              "startTime": "2026-10-16T05:57:47.575Z"
+            }
+          ]
+        },
+        {
+          "id": "[firefox] \u203a course-onboarding-visual.spec.ts \u203a classic dark courses, goals, settings and onboarding capture at desktop",
+          "sourceSpecId": "3c948d34232176fee820-523551c88ed43f21e572",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5322,
+              "retry": 0,
+              "workerIndex": 4,
+              "startTime": "2026-10-16T05:57:54.496Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-553f32d2b22a305c39ca",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3984,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:58:01.108Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-030845c8984fd2f08be3",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4090,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:58:28.771Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-70bb1d82ba53b6f9e1a9",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4099,
+              "retry": 0,
+              "workerIndex": 7,
+              "startTime": "2026-10-16T05:58:56.431Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-a6f1983249ce30eca87e",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4340,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:59:23.549Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-remediation.spec.ts \u203a classic-light StudyView captures prompt and revealed rating states at 390px",
+          "sourceSpecId": "46964ef1fd2b5a260c4e-96fbd8cf37321a878e8d",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4084,
+              "retry": 0,
+              "workerIndex": 9,
+              "startTime": "2026-10-16T05:59:51.209Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-3f11b1335769ad6a3066",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4681,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:58:05.248Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-cc59c4faa0ce0cfc7ba8",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6315,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:58:09.937Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-562ab54d7f99ed7ed124",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5855,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:58:16.262Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-0cd2c1e817df4123c604",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4762,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:58:33.013Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-1735dcc7ba4b1709911b",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6383,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:58:37.783Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-6086a8278bf3f52f2894",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5805,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:58:44.175Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-db43acba04d29c835198",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4150,
+              "retry": 0,
+              "workerIndex": 7,
+              "startTime": "2026-10-16T05:59:00.689Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-8e6555a72704c66bcb26",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6428,
+              "retry": 0,
+              "workerIndex": 7,
+              "startTime": "2026-10-16T05:59:04.848Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-70bbf41d3a542fa5a43d",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5808,
+              "retry": 0,
+              "workerIndex": 7,
+              "startTime": "2026-10-16T05:59:11.283Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-e05ef0c9b5c0ca858b10",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4710,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:59:28.040Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-023a450da7b5db598973",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6394,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:59:32.759Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-1e861500b07c133888e1",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5501,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:59:39.163Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic dark learning-back card matches Canvas at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-cbc4de1c3c19d4548c2f",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4751,
+              "retry": 0,
+              "workerIndex": 9,
+              "startTime": "2026-10-16T05:59:55.450Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at desktop",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-d100034abd90a515441f",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6131,
+              "retry": 0,
+              "workerIndex": 9,
+              "startTime": "2026-10-16T06:00:00.210Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a flashcard-visual.spec.ts \u203a classic light Zen card keeps both faces opaque and readable at mobile",
+          "sourceSpecId": "bfd91aa6d0ef82e6c773-82006838d30e95cb3e60",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5831,
+              "retry": 0,
+              "workerIndex": 9,
+              "startTime": "2026-10-16T06:00:06.353Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-5e719fd44545faac49a3",
+          "occurrenceIndex": 0,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5101,
+              "retry": 0,
+              "workerIndex": 5,
+              "startTime": "2026-10-16T05:58:22.230Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-4f274ba7a42cdbf382c5",
+          "occurrenceIndex": 1,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4951,
+              "retry": 0,
+              "workerIndex": 6,
+              "startTime": "2026-10-16T05:58:50.056Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-4f2027c9df3466c81e82",
+          "occurrenceIndex": 2,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4914,
+              "retry": 0,
+              "workerIndex": 7,
+              "startTime": "2026-10-16T05:59:17.216Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-779316fb68f77da051c0",
+          "occurrenceIndex": 3,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5012,
+              "retry": 0,
+              "workerIndex": 8,
+              "startTime": "2026-10-16T05:59:44.751Z"
+            }
+          ]
+        },
+        {
+          "id": "[webkit] \u203a paths-progress-visual.spec.ts \u203a crystal dark reviewed catalog Paths are visually accessible at desktop",
+          "sourceSpecId": "81437b6bd764d3a73e2b-1c3a021682b9ab3ab329",
+          "occurrenceIndex": 4,
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5062,
+              "retry": 0,
+              "workerIndex": 9,
+              "startTime": "2026-10-16T06:00:12.264Z"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "interpretation": {
+    "ordinaryAcceptance": [
+      "repairedMatrix72",
+      "repairedExactRepeat30"
+    ],
+    "instrumentedNotOrdinaryAcceptance": [
+      "instrumentedStudyDiagnostic20"
+    ],
+    "occurrenceIndex": "Projection order per identical test identity; not a Playwright repeatEachIndex",
+    "snapshotUpdates": "none",
+    "retries": 0,
+    "newGoldensChanged": 1,
+    "earlierFailedResultsPreserved": true,
+    "minimalReproducer": "Both old and new complete 5 pages x 10 cycles; no RED/GREEN proof",
+    "fullRequiredCi": "pending on published exact head",
+    "deploymentPerformed": false,
+    "proGrantRepeated": false
+  }
+}
