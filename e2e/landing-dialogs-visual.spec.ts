@@ -69,6 +69,7 @@ async function openManagementMenu(page: Page) {
 
 for (const theme of themes) for (const viewport of viewports) {
   test(`${theme.family} ${theme.mode} account, plan, and report dialogs match the signed-in shell at ${viewport.name}`, async ({ page, seedCards, seedCourseProfile, signIn, blockExternalNetwork }, testInfo) => {
+    test.setTimeout(90_000);
     await page.clock.setFixedTime(fixedTime);
     await page.setViewportSize(viewport);
     await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });

@@ -30,17 +30,38 @@ export function useCardEffects({ category, faceRef, spotlightRef, reduceMotion, 
   const [isHovered, setIsHovered] = useState(false);
   const rafTiltRef = useRef<number | null>(null);
   const spotlightBoundsRef = useRef<DOMRect | null>(null);
+  const isFlipAnimatingRef = useRef(isFlipAnimating);
+  const lastPointerPositionRef = useRef<{ x: number; y: number } | null>(null);
+  const ignoreStationaryPointerAfterFlipRef = useRef(false);
+  isFlipAnimatingRef.current = isFlipAnimating;
   const aura = getCategoryAura(category);
+
+  useEffect(() => {
+    if (!isFlipAnimating) return;
+    ignoreStationaryPointerAfterFlipRef.current = true;
+    spotlightBoundsRef.current = null;
+    if (rafTiltRef.current !== null) {
+      window.cancelAnimationFrame(rafTiltRef.current);
+      rafTiltRef.current = null;
+    }
+  }, [isFlipAnimating]);
 
   useEffect(() => () => {
     if (rafTiltRef.current !== null) window.cancelAnimationFrame(rafTiltRef.current);
   }, []);
 
   const handleMouseMove = (event: MouseEvent<HTMLDivElement>) => {
-    if (reduceMotion || !window.matchMedia('(hover: hover) and (pointer: fine)').matches || rafTiltRef.current !== null) return;
+    if (reduceMotion || isFlipAnimatingRef.current || !window.matchMedia('(hover: hover) and (pointer: fine)').matches || rafTiltRef.current !== null) return;
     const { clientX, clientY, currentTarget } = event;
+    const lastPointer = lastPointerPositionRef.current;
+    if (ignoreStationaryPointerAfterFlipRef.current) {
+      if (lastPointer && lastPointer.x === clientX && lastPointer.y === clientY) return;
+      ignoreStationaryPointerAfterFlipRef.current = false;
+    }
+    lastPointerPositionRef.current = { x: clientX, y: clientY };
     rafTiltRef.current = window.requestAnimationFrame(() => {
       rafTiltRef.current = null;
+      if (isFlipAnimatingRef.current) return;
       const bounds = spotlightBoundsRef.current ?? currentTarget.getBoundingClientRect();
       spotlightBoundsRef.current = bounds;
       const position = getSpotlightPosition(clientX, clientY, bounds);
@@ -48,7 +69,7 @@ export function useCardEffects({ category, faceRef, spotlightRef, reduceMotion, 
         target?.style.setProperty('--spotlight-x', `${position.x}%`);
         target?.style.setProperty('--spotlight-y', `${position.y}%`);
       }
-      if (!isFlipAnimating && faceRef.current) {
+      if (faceRef.current) {
         const px = ((clientX - bounds.left) / bounds.width - 0.5) * 2;
         const py = ((clientY - bounds.top) / bounds.height - 0.5) * 2;
         gsap.to(faceRef.current, { rotationX: -py * 4, rotationY: px * 4, duration: 0.28, ease: 'power2.out', overwrite: 'auto' });
@@ -63,15 +84,18 @@ export function useCardEffects({ category, faceRef, spotlightRef, reduceMotion, 
     }
     setIsHovered(false);
     spotlightBoundsRef.current = null;
+    lastPointerPositionRef.current = null;
+    ignoreStationaryPointerAfterFlipRef.current = false;
     for (const target of [spotlightRef.current, faceRef.current]) {
       target?.style.setProperty('--spotlight-x', '50%');
       target?.style.setProperty('--spotlight-y', '50%');
     }
-    if (!isFlipAnimating && faceRef.current) gsap.to(faceRef.current, { rotationX: 0, rotationY: 0, duration: 0.35, ease: 'power2.out', overwrite: 'auto' });
+    if (!isFlipAnimatingRef.current && faceRef.current) gsap.to(faceRef.current, { rotationX: 0, rotationY: 0, duration: 0.35, ease: 'power2.out', overwrite: 'auto' });
   };
 
   const handleMouseEnter = (event: MouseEvent<HTMLDivElement>) => {
     if (!reduceMotion && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      lastPointerPositionRef.current = { x: event.clientX, y: event.clientY };
       spotlightBoundsRef.current = event.currentTarget.getBoundingClientRect();
       setIsHovered(true);
     }

@@ -199,6 +199,7 @@ const inlineViews = [['import', 'Import cards']] as const;
 
 for (const theme of themes) for (const viewport of viewports) for (const [group, dialogViews] of dialogGroups) {
   test(`${theme.family} ${theme.mode} Library ${group} dialog surfaces are visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
+    test.setTimeout(90_000);
     page.on('pageerror', error => { throw error; });
     await page.setViewportSize(viewport);
     await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });

@@ -98,11 +98,9 @@ test('LibraryTools, Flashcard, and CardMnemonicSection measure at least 44px in 
   // (tracked as a product bug owned by the onboarding lane); seed a legacy
   // profile so this test can reach the ordinary library shell.
   await seedCourseProfile();
-  let signedIn = false;
   for (const layout of layouts) {
     await page.setViewportSize({ width: layout.width, height: layout.height });
-    if (signedIn) await openLibrary(page);
-    else { await openLibrary(page, signIn); signedIn = true; }
+    await openLibrary(page, signIn);
     await applyLayout(page, layout);
 
     const tools = page.locator('#library-tools');
@@ -118,6 +116,7 @@ test('LibraryTools, Flashcard, and CardMnemonicSection measure at least 44px in 
     const card = page.getByRole('group', { name: /focus flashcard/i });
     await card.getByRole('button', { name: /Reveal the Vietnamese meaning/ }).click();
     await expect(card.locator('[data-mnemonic-generate]')).toBeVisible();
+    await expect.poll(() => card.locator('.flashcard-back').evaluate(element => element.style.transform)).toBe('');
     const revealedContent = card.locator('[data-card-content="revealed"]');
     await expectTargets(revealedContent.locator('button[data-card-control]:visible, button[data-mnemonic-generate]:visible'), `Flashcard and CardMnemonicSection ${layout.name}`);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
@@ -158,11 +157,9 @@ test('Shadowing and SessionRecapModal controls measure at least 44px in both lay
   await seedCards(cards);
   // See the identical onboarding-overlay note in the previous test.
   await seedCourseProfile();
-  let signedIn = false;
   for (const layout of layouts) {
     await page.setViewportSize({ width: layout.width, height: layout.height });
-    if (signedIn) await page.goto('/?view=today');
-    else { await signIn(page, '/?view=today'); signedIn = true; }
+    await signIn(page, '/?view=today');
     await applyLayout(page, layout);
     await page.getByRole('button', { name: 'More practice' }).click();
     // practiceModeRegistry.ts's shadowing mode label is "Shadowing" (its

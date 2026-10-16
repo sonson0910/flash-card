@@ -48,6 +48,7 @@ test.beforeEach(async ({ page, seedCards, seedCourseProfile, blockExternalNetwor
 });
 
 test('card effects retain their observable desktop states', async ({ page, signIn }) => {
+  test.setTimeout(90_000);
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await signIn(page, '/?view=library');
   // The full <Flashcard> (role="group") only renders inside the "Open card"

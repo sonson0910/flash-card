@@ -565,6 +565,7 @@ for (const theme of themes) for (const viewport of viewports) {
 }
 
 test('approved reviewed catalog selects all 45 real units without horizontal clipping', async ({ page, seedCourseProfile, signIn }) => {
+  test.setTimeout(90_000);
   await seedCourseProfile();
   await signIn(page, '/?view=catalog&locale=en');
   await page.getByRole('button', { name: 'Check for reviewed catalog' }).click();

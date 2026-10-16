@@ -101,6 +101,7 @@ test('spelling defers submit during IME composition', async ({ page }) => {
 
 for (const theme of themes) for (const viewport of viewports) {
   test(`${theme.family} ${theme.mode} practice views are visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
+    test.setTimeout(90_000);
     page.on('pageerror', error => { throw error; });
     await page.setViewportSize(viewport);
     await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });

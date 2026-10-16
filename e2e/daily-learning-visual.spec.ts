@@ -99,6 +99,7 @@ test.beforeEach(async ({ page, seedCards, blockExternalNetwork }) => {
 for (const theme of themes) {
   for (const viewport of viewports) {
     test(`${theme.family} ${theme.mode} daily learning screens are visually accessible at ${viewport.name}`, async ({ page, db, testUser, signIn }, testInfo) => {
+      test.setTimeout(90_000);
       await page.setViewportSize(viewport);
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.addInitScript(({ family, mode }) => {

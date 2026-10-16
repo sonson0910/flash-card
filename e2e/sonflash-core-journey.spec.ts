@@ -44,7 +44,7 @@ test('a signed-in learner completes the core course, library, review, recap, and
 
   const createdCard = () => db.collection(`users/${testUser.uid}/cards`).where('word', '==', 'persist').get();
   await expect.poll(async () => (await createdCard()).size).toBe(1);
-  await page.reload();
+  await signIn(page, '/?view=library&locale=en');
   const createdRow = page.locator('[data-library-card-row]').filter({ hasText: 'persist' });
   await expect(createdRow).toHaveCount(1, { timeout: 20_000 });
   await createdRow.getByRole('button', { name: 'Edit card' }).click();
@@ -54,7 +54,7 @@ test('a signed-in learner completes the core course, library, review, recap, and
   await expect(editor).toHaveCount(0);
   await expect.poll(async () => (await createdCard()).docs[0]?.get('translation')).toBe('duy trì');
 
-  await page.reload();
+  await signIn(page, '/?view=library&locale=en');
   await expect(createdRow).toContainText('duy trì', { timeout: 20_000 });
   await page.getByRole('button', { name: 'Study now' }).click();
   const recallSelector = page.locator('[data-study-recall-mode] select');
@@ -65,11 +65,14 @@ test('a signed-in learner completes the core course, library, review, recap, and
   const introduction = page.getByRole('region', { name: 'Meet this word' });
   await expect(introduction).toBeVisible();
   await introduction.getByRole('button', { name: 'I’ve reviewed it — start recall' }).click();
+  await expect(introduction).toBeHidden();
+  await expect(studyCard.getByRole('heading').first()).toBeVisible();
   const journeyHeading = studyCard.getByRole('heading', { name: 'journey', exact: true });
   if (await journeyHeading.count() === 0) {
     await page.getByRole('button', { name: 'Next card' }).click();
     await expect(introduction).toBeVisible();
     await introduction.getByRole('button', { name: 'I’ve reviewed it — start recall' }).click();
+    await expect(introduction).toBeHidden();
   }
   await expect(journeyHeading).toBeVisible();
   await page.getByRole('button', { name: 'Reveal answer' }).click();

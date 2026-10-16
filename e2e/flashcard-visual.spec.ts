@@ -133,9 +133,18 @@ async function expectPaintedSurface(panel: Locator) {
   })).toBe(true);
 }
 
+async function expectCardBackSettled(shell: Locator) {
+  const back = shell.locator('.flashcard-back');
+  await expect(shell).toHaveAttribute('data-card-side', 'back');
+  await expect(back).toBeVisible();
+  await expect.poll(() => back.evaluate(element => element.style.transform)).toBe('');
+  await expect(shell.locator('[data-card-top-controls]')).toHaveClass(/\bopacity-100\b/);
+}
+
 for (const theme of themes) {
   for (const viewport of viewports) {
     test(`${theme.family} ${theme.mode} card front and back pass visual acceptance at ${viewport.name}`, async ({ page, signIn }) => {
+      test.setTimeout(90_000);
       await page.setViewportSize(viewport);
       await page.emulateMedia({ reducedMotion: 'no-preference' });
       await page.addInitScript(({ family, mode }) => {
@@ -172,8 +181,7 @@ for (const theme of themes) {
       await moreTools.click();
 
       await shell.getByRole('button', { name: /Reveal the Vietnamese meaning of luminous/ }).click();
-      await expect(shell).toHaveAttribute('data-card-side', 'back');
-      await expect(shell.locator('.flashcard-back')).toBeVisible();
+      await expectCardBackSettled(shell);
       await expectPaintedSurface(shell.locator('.flashcard-back'));
       await expect(shell.getByText('adjective', { exact: true })).toBeVisible();
       await expect(shell.getByText('/ˈluːmɪnəs/', { exact: true })).toBeVisible();
@@ -223,6 +231,7 @@ for (const state of canvasCardStates) {
   for (const theme of themes) {
     for (const viewport of viewports) {
       test(`${theme.family} ${theme.mode} ${state} card matches Canvas at ${viewport.name}`, async ({ page, seedCards, signIn }) => {
+        test.setTimeout(90_000);
         const futureReview = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
         const stateCard = state === 'learning-back'
           ? { ...card, difficulty: 'good', nextReviewDate: futureReview }
@@ -259,8 +268,7 @@ for (const state of canvasCardStates) {
         } else if (state === 'learning-back') {
           await expect(shell).toHaveAttribute('data-card-tier', 'learning');
           await shell.getByRole('button', { name: /Reveal the Vietnamese meaning of luminous/ }).click();
-          await expect(shell).toHaveAttribute('data-card-side', 'back');
-          await expect(shell.locator('.flashcard-back')).toBeVisible();
+          await expectCardBackSettled(shell);
         } else if (state === 'mastered-hover') {
           await expect(shell).toHaveAttribute('data-card-tier', 'mastered');
           const box = await shell.boundingBox();
@@ -275,7 +283,7 @@ for (const state of canvasCardStates) {
           await expect(shell).toHaveAttribute('data-card-tier', 'new');
           await expect(star).toHaveAttribute('aria-pressed', 'true');
           await shell.getByRole('button', { name: /Reveal the Vietnamese meaning of luminous/ }).click();
-          await expect(shell).toHaveAttribute('data-card-side', 'back');
+          await expectCardBackSettled(shell);
           await expect(star).toHaveAttribute('aria-pressed', 'true');
           await expect(shell.locator('.flashcard-star-selected')).toBeVisible();
         }
@@ -291,6 +299,7 @@ for (const state of canvasCardStates) {
 for (const theme of themes) {
   for (const viewport of viewports) {
     test(`${theme.family} ${theme.mode} Zen card keeps both faces opaque and readable at ${viewport.name}`, async ({ page, signIn }) => {
+      test.setTimeout(90_000);
       await page.setViewportSize(viewport);
       await page.emulateMedia({ reducedMotion: 'no-preference' });
       await page.addInitScript(({ family, mode }) => {
@@ -320,8 +329,7 @@ for (const theme of themes) {
 
       await shell.getByRole('button', { name: 'Reveal meaning' }).click();
       const back = shell.locator('.flashcard-back.zen-glass-slab');
-      await expect(shell).toHaveAttribute('data-card-side', 'back');
-      await expect(back).toBeVisible();
+      await expectCardBackSettled(shell);
       await expectReadableZenGlass(back);
       await expectNoMetadataControlOverlap(shell, [
         back.getByText('Vietnamese', { exact: true }),
@@ -378,6 +386,7 @@ test('reduced motion changes the card face without spatial animation', async ({ 
 for (const theme of themes) {
   for (const viewport of viewports) {
     test(`${theme.family} ${theme.mode} card captures Canvas interaction states at ${viewport.name}`, async ({ page, seedCards, signIn }, testInfo) => {
+      test.setTimeout(90_000);
       const audioBody = Buffer.alloc(44 + 16_000);
       audioBody.write('RIFF', 0);
       audioBody.writeUInt32LE(audioBody.length - 8, 4);

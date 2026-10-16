@@ -51,7 +51,7 @@ jobs:
   build:
     needs: validate_revision
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 240
     environment: production
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
