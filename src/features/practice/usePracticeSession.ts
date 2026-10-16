@@ -771,8 +771,10 @@ export function usePracticeSession({
     studyCardsRef.current = [];
     setStudyCards([]);
   }, []);
+  const studyActivationId = lifecycle.studyActivationId();
   useEffect(() => {
-    if (!lifecycle.isActive('study')) return;
+    // A delayed effect must only close the activation its snapshot belongs to.
+    if (studyActivationId === null || !lifecycle.isStudyActivationCurrent(studyActivationId)) return;
     if (studyCards.length === 0) {
       editorRef.current = null;
       setEditingCardId(null);
@@ -782,7 +784,7 @@ export function usePracticeSession({
       return;
     }
     setStudyIndex(current => Math.min(current, studyCards.length - 1));
-  }, [lifecycle, onEmptyStudy, openView, studyCards.length]);
+  }, [lifecycle, onEmptyStudy, openView, studyActivationId, studyCards.length]);
   const snapshot = useMemo<PracticeSnapshotPort>(() => ({
     findCard: cardId => studyCardsRef.current.find(card => card.id === cardId),
     getCards: () => studyCardsRef.current,

@@ -308,6 +308,57 @@ describe('usePracticeSession owner isolation', () => {
     gemini.generateStoryContext.mockResolvedValue(storyResult);
   });
 
+  it('keeps a newly prepared study when an older library effect flushes late', async () => {
+    const cards = [card(1), card(2)];
+    const pendingPool = deferred<CardData[]>();
+    const { onEmptyStudy, openView, render } = createSessionHarness(cards);
+    const loadPracticePool = vi.fn(() => pendingPool.promise);
+    let session = render({ loadPracticePool, openView: view => openView(view) });
+    flushEffects();
+
+    const preparing = session.commands.startStudy();
+    // The application supplies a new navigation callback during library renders.
+    render({ openView: view => openView(view) });
+    pendingPool.resolve(cards);
+    await preparing;
+    // Flush the library render's empty snapshot before committing the new study.
+    flushEffects();
+
+    expect(onEmptyStudy).not.toHaveBeenCalled();
+    expect(openView).toHaveBeenLastCalledWith('study');
+    session = render({ mode: 'study' });
+    flushEffects();
+    expect(session.study.cards).toHaveLength(cards.length);
+    expect(session.study.cards).toEqual(expect.arrayContaining(cards));
+
+    session.snapshot.clear();
+    render({ mode: 'study' });
+    flushEffects();
+    expect(onEmptyStudy).toHaveBeenCalledOnce();
+    expect(openView).toHaveBeenLastCalledWith('library');
+  });
+
+  it('ignores an empty effect captured for a study that has been replaced', async () => {
+    const { onEmptyStudy, openView, render } = createSessionHarness([]);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudyWithCards([canonicalCard(1)]);
+    session = render({ mode: 'study' });
+    flushEffects();
+
+    session.snapshot.clear();
+    session = render({ mode: 'study', openView: view => openView(view) });
+    const replacement = [canonicalCard(2)];
+    await session.commands.startStudyWithCards(replacement);
+    flushEffects();
+
+    expect(onEmptyStudy).not.toHaveBeenCalled();
+    expect(openView).toHaveBeenLastCalledWith('study');
+    session = render({ mode: 'study' });
+    flushEffects();
+    expect(session.study.cards).toEqual(replacement);
+  });
+
   it('starts an ordered unit study without loading the practice pool', async () => {
     const { openView, render } = createSessionHarness([card(1)]);
     const loadPracticePool = vi.fn(async () => [card(99)]);
