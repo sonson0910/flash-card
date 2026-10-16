@@ -133,15 +133,20 @@ for (const theme of themes) for (const viewport of viewports) {
   });
 }
 
-test('account JSON download contains account data without card contents', async ({ page, seedCards, signIn }, testInfo) => {
+test('account JSON download contains account data without card contents', async ({ page, seedCards, seedCourseProfile, signIn, blockExternalNetwork }, testInfo) => {
   await seedCards([reportCard]);
+  await seedCourseProfile();
+  await blockExternalNetwork(page);
   await signIn(page, '/?view=library&locale=en');
   await openManagementMenu(page);
   await page.getByRole('menuitem', { name: 'Account data' }).click();
+  await expect(page.getByRole('heading', { name: 'Account data' })).toBeVisible();
+  const downloadButton = page.getByRole('button', { name: 'Download account data (JSON, excluding cards)' });
+  await expect(downloadButton).toBeEnabled();
 
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    page.getByRole('button', { name: 'Download account data (JSON, excluding cards)' }).click(),
+    downloadButton.click(),
   ]);
   expect(download.suggestedFilename()).toMatch(/^sonflash-account-\d{4}-\d{2}-\d{2}\.json$/);
   const exportPath = testInfo.outputPath(download.suggestedFilename());

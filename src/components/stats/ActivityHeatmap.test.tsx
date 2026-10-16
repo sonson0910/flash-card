@@ -40,7 +40,7 @@ describe('ActivityHeatmap', () => {
       days: { '2026-09-28': { reviewed: 2, again: 1, hard: 0, good: 1, easy: 0 } },
     }} />);
 
-    expect(html.match(/size-3.5/g)).toHaveLength(42);
+    expect(html.match(/size-3.5/g)).toHaveLength(firstDayOfWeek('en') === 0 ? 35 : 42);
     expect(html).toContain('Activity unavailable before coverage began');
     expect(html).toContain('Sep 28, 2026: 2 reviews');
     expect(html).toContain('Outside selected range');
@@ -66,7 +66,7 @@ describe('ActivityHeatmap', () => {
       { date: '2025-01-01', XP: 8 }, { date: '2026-09-28', XP: 12 },
     ]} />);
 
-    expect(reviewHtml.match(/size-3.5/g)).toHaveLength(42);
+    expect(reviewHtml.match(/size-3.5/g)).toHaveLength(firstDayOfWeek('en') === 0 ? 35 : 42);
     expect(xpHtml).toContain('<strong class="font-bold text-[var(--sf-text)]">20</strong> total XP');
   });
 

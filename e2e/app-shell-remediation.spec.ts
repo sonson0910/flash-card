@@ -223,6 +223,7 @@ test('bookmarking a card preserves the current library page', async ({ page, sig
   // reflects its state via the filled/outline star icon plus the card's
   // "Starred" badge, rather than swapping to a "Remove star" label.
   const starredBadges = page.getByRole('img', { name: 'Starred' });
+  await expect(starredBadges).toHaveCount(3);
   const before = await starredBadges.count();
   await page.getByRole('button', { name: 'Bookmark card' }).first().click();
   await expect(starredBadges).toHaveCount(before - 1);

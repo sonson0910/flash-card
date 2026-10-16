@@ -275,6 +275,8 @@ test('a persistent Chromium profile reopens the cached workspace after all clien
     await expect.poll(() => first.evaluate(() => (
       globalThis as typeof globalThis & { __SONFLASH_RELEASE_MARKER__?: string }
     ).__SONFLASH_RELEASE_MARKER__)).toBe('A');
+    await expect(first.getByRole('heading', { name: 'Your library' })).toBeVisible();
+    await expect(first.getByText('resilient', { exact: true }).first()).toBeVisible();
 
     await context.close();
     context = undefined;

@@ -41,18 +41,18 @@ test('appearance choices switch live and follow the system until a manual choice
   expect(await page.evaluate(() => (window as Window & { __appearanceMarker?: string }).__appearanceMarker)).toBe('mounted');
 });
 
-test('appearance previews carry the four Canvas token palettes', async ({ page, signIn }) => {
+test('appearance previews carry the four Canvas token palettes', async ({ page, signIn, seedCourseProfile }) => {
   await page.addInitScript(() => {
     localStorage.setItem('sonflash_theme_family', 'classic');
     localStorage.setItem('lingoflash_theme', 'dark');
   });
+  await seedCourseProfile();
   await signIn(page, '/?view=settings&locale=en');
 
   await expect(page.locator('[data-theme-preview]')).toHaveCount(4);
-  const previews = await page.locator('[data-theme-preview]').evaluateAll(elements => Object.fromEntries(
+  await expect.poll(async () => page.locator('[data-theme-preview]').evaluateAll(elements => Object.fromEntries(
     elements.map(element => [element.getAttribute('data-theme-preview'), getComputedStyle(element).getPropertyValue('--preview-canvas').trim()]),
-  ));
-  expect(previews).toEqual({
+  ))).toEqual({
     'classic-dark': '#06161f',
     'classic-light': '#f7f2e8',
     'crystal-dark': '#04060c',

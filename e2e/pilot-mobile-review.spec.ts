@@ -4,13 +4,18 @@ import type { Page } from '@playwright/test';
 const card = {
   id: 'word-resilience', word: 'resilience', normalizedWord: 'resilience',
   translation: 'khả năng phục hồi', explanation: 'The ability to recover.',
-  explanationTranslation: 'Khả năng phục hồi sau khó khăn. '.repeat(80),
+  explanationTranslation: 'Khả năng phục hồi sau khó khăn. '.repeat(50),
   phonetic: '/rɪˈzɪliəns/', emoji: '📚', category: 'Reading',
   audioUrl: null, imageUrl: null, origin: 'ai',
   createdAt: '2026-09-24T00:00:00.000Z', bookmarked: false,
   difficulty: 'unrated', customDeck: null, reviews: 0,
   schemaVersion: 2, revision: 1,
 };
+
+test.beforeEach(async ({ page, blockExternalNetwork, seedCourseProfile }) => {
+  await blockExternalNetwork(page);
+  await seedCourseProfile();
+});
 
 type SeedCards = (cards: readonly (typeof card)[]) => Promise<void>;
 type SignIn = (page: Page, url: string) => Promise<void>;

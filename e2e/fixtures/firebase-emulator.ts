@@ -315,20 +315,28 @@ export const test = base.extend<EmulatorFixtures, EmulatorWorkerFixtures>({
   // landing-view target, not a failure, so the final uid wait is skipped.
   signIn: async ({ signInInPlace, testUser, baseURL }, use) => {
     await use(async (page, url) => {
+      const targetUrl = new URL(url, baseURL);
+      const targetView = targetUrl.searchParams.get('view');
+      const isLandingTarget = !targetView || targetView === 'landing';
       const bootstrapUrl = new URL(url, baseURL);
       bootstrapUrl.searchParams.set('view', 'today');
       await page.goto(bootstrapUrl.href);
       await signInInPlace(page);
       await page.goto(url);
-      const hookLoaded = await page.evaluate(
-        () => typeof window.__SONFLASH_TEST__?.getCurrentUid === 'function',
-      );
-      if (hookLoaded) {
+      if (!isLandingTarget) {
         await page.waitForFunction(
-          uid => window.__SONFLASH_TEST__?.getCurrentUid?.() === uid,
-          testUser.uid,
+          () => typeof window.__SONFLASH_TEST__?.getCurrentUid === 'function',
+          undefined,
           { timeout: 10_000 },
         );
+        const restored = await page.waitForFunction(
+          uid => window.__SONFLASH_TEST__?.getCurrentUid?.() === uid,
+          testUser.uid,
+          { timeout: 2_000 },
+        ).then(() => true).catch(() => false);
+        if (!restored) {
+          await signInInPlace(page);
+        }
       }
     });
   },

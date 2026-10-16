@@ -179,7 +179,7 @@ async function attachScreen(page: Page, testInfo: TestInfo, name: string) {
 }
 
 test.beforeEach(async ({ page, db, testUser, seedCards, blockExternalNetwork }) => {
-  await page.clock.install({ time: fixedTime });
+  await page.clock.setFixedTime(fixedTime);
   // beforeAll (below) runs before any beforeEach/test in this worker, so
   // catalogFixturePort is already set to this worker's value by the time
   // this executes.
@@ -493,8 +493,12 @@ test('weekly recap Share sends the PNG and falls back to download', async ({ pag
   await signIn(page, '/?view=progress&locale=en');
   await page.getByRole('button', { name: /view weekly recap/i }).click();
   const dialog = page.getByRole('dialog', { name: /your weekly recap/i });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('220', { exact: true })).toBeVisible();
   await dialog.getByRole('textbox', { name: /caption/i }).fill('A great study week!');
-  await dialog.getByRole('button', { name: 'Share', exact: true }).click();
+  const shareButton = dialog.getByRole('button', { name: 'Share', exact: true });
+  await expect(shareButton).toBeEnabled();
+  await shareButton.click();
   await expect(dialog.getByRole('status').filter({ hasText: 'Shared.' })).toBeVisible();
   expect(await page.evaluate(() => (window as Window & { __weeklyShare?: unknown }).__weeklyShare)).toEqual({
     name: 'sonflash-weekly-recap-2026-09-18-to-2026-09-24.png',
@@ -508,9 +512,10 @@ test('weekly recap Share sends the PNG and falls back to download', async ({ pag
     Object.defineProperty(navigator, 'canShare', { configurable: true, value: undefined });
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
   });
+  await expect(shareButton).toBeEnabled();
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    dialog.getByRole('button', { name: 'Share', exact: true }).click(),
+    shareButton.click(),
   ]);
   expect(download.suggestedFilename()).toBe('sonflash-weekly-recap-2026-09-18-to-2026-09-24.png');
   expect(await download.failure()).toBeNull();

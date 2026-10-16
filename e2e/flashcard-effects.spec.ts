@@ -1,4 +1,7 @@
+import { readFileSync } from 'node:fs';
 import { expect, test } from './fixtures/firebase-emulator';
+
+const cardPhoto = readFileSync('docs/design/sonflash-redesign/canvas/assets/blob/ed058680c239cce56bb63500ca7dd0e4.jpg');
 
 const card = {
   // The card's stored `id` must equal the canonical id `canonicalCard`
@@ -31,12 +34,16 @@ const card = {
   revision: 1,
 };
 
-test.beforeEach(async ({ page, seedCards }) => {
+test.beforeEach(async ({ page, seedCards, seedCourseProfile, blockExternalNetwork }) => {
+  await blockExternalNetwork(page);
+  await page.route(url => url.origin === 'https://images.pexels.com' && url.pathname === '/photos/123/luminous.jpg',
+    route => route.fulfill({ body: cardPhoto, contentType: 'image/jpeg' }));
   await page.addInitScript(() => {
     localStorage.setItem('lingoflash_theme', 'light');
     HTMLMediaElement.prototype.play = () => Promise.resolve();
     HTMLMediaElement.prototype.pause = () => undefined;
   });
+  await seedCourseProfile();
   await seedCards([card]);
 });
 
@@ -56,6 +63,12 @@ test('card effects retain their observable desktop states', async ({ page, signI
   const box = await shell.boundingBox();
   if (!box) throw new Error('Flashcard shell is not measurable');
 
+  await page.mouse.move(0, 0);
+  await shell.evaluate(element => {
+    if (document.activeElement instanceof HTMLElement && element.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+  });
   await expect(shell).toHaveAttribute('data-flip-animation', 'spatial');
   await expect(aura).toHaveCSS('opacity', '0');
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);

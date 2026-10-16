@@ -1,4 +1,11 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
+
+if (process.platform === 'linux' && !process.env.FONTCONFIG_FILE) {
+  fs.mkdirSync('/tmp/sonflash-playwright-fontconfig-cache', { recursive: true });
+  process.env.FONTCONFIG_FILE = path.resolve(import.meta.dirname, 'e2e/fixtures/playwright-linux-fonts.conf');
+}
 
 export default defineConfig({
   testDir: './e2e',
