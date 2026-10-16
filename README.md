@@ -169,6 +169,11 @@ occupied, use a controlled Firebase emulator config through `SONFLASH_E2E_FIREBA
 and set `VITE_SONFLASH_FIRESTORE_EMULATOR_PORT` to its matching port for the build. Run
 root unit tests before browser tests: a release-contract test needs port 4173 itself.
 
+Keep the exact Playwright pin in `package.json` and its matching browser binaries.
+Playwright 1.64 includes the upstream WPE compositor filter-transition crash fix
+([upstream repair](https://github.com/WebKit/WebKit/pull/73621)); older Linux WebKit
+builds can terminate the page while ordinary application transitions run.
+
 Render screenshot goldens with the browser version in the lockfile and the
 Ubuntu 24.04 environment used by Quality CI. A different host OS can select
 different fallback fonts. On Linux, a version-matched Playwright Noble container
