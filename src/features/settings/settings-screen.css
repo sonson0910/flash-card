@@ -1,4 +1,4 @@
-.settings-screen { font-family: Geist, "Segoe UI", system-ui, sans-serif; }
+.settings-screen { font-family: var(--font-sans); }
 .settings-heading h1 { font-family: Fraunces, Georgia, serif; font-weight: 450; letter-spacing: -.04em; }
 .settings-panel { position: relative; overflow: hidden; }
 .settings-panel::before { position: absolute; inset: 0; pointer-events: none; content: ""; opacity: .5; background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--sf-brand) 12%, transparent), transparent 32%); }

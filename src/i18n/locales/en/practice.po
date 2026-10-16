@@ -83,7 +83,7 @@ msgctxt "study.recall-mode"
 msgid "Recall mode"
 msgstr "Recall mode"
 
-#: src/features/practice/SessionRecapModal.tsx:99
+#: src/features/practice/SessionRecapModal.tsx:101
 msgctxt "recap.weekly"
 msgid "View weekly recap"
 msgstr "View weekly recap"
@@ -93,7 +93,7 @@ msgctxt "recap.retained"
 msgid "Retained"
 msgstr "Retained"
 
-#: src/features/practice/SessionRecapModal.tsx:89
+#: src/features/practice/SessionRecapModal.tsx:91
 msgctxt "recap.mastered"
 msgid "Remembered"
 msgstr "Remembered"
@@ -206,6 +206,11 @@ msgctxt "languagePractice.action.next"
 msgid "Next"
 msgstr "Next"
 
+#: src/features/practice/SessionRecapModal.tsx:88
+msgctxt "recap.progress-breakdown"
+msgid "Saved: {saved} / {total} · Skipped: {skipped} · Not started: {remaining} · Saving: {pending} · Failed: {failed}"
+msgstr "Saved: {saved} / {total} · Skipped: {skipped} · Not started: {remaining} · Saving: {pending} · Failed: {failed}"
+
 #: src/features/practice/WordMatchView.tsx:345
 msgctxt "practice.match.verification-failed"
 msgid "We could not verify your result. Your completed pairs are still here."
@@ -309,8 +314,8 @@ msgctxt "practice.loading.study"
 msgid "Loading study session"
 msgstr "Loading study session"
 
-#: src/features/practice/SessionRecapModal.tsx:89
-#: src/features/practice/SessionRecapModal.tsx:90
+#: src/features/practice/SessionRecapModal.tsx:91
+#: src/features/practice/SessionRecapModal.tsx:92
 msgctxt "recap.word-count"
 msgid "{count, plural, one {# word} other {# words}}"
 msgstr "{count, plural, one {# word} other {# words}}"
@@ -367,7 +372,7 @@ msgctxt "practice.loading.language-drill"
 msgid "Loading language drill"
 msgstr "Loading language drill"
 
-#: src/features/practice/SessionRecapModal.tsx:128
+#: src/features/practice/SessionRecapModal.tsx:130
 msgctxt "recap.tomorrow-error"
 msgid "Count unavailable"
 msgstr "Count unavailable"
@@ -387,7 +392,7 @@ msgctxt "practice.match.new-round"
 msgid "New round"
 msgstr "New round"
 
-#: src/features/practice/SessionRecapModal.tsx:125
+#: src/features/practice/SessionRecapModal.tsx:127
 msgctxt "recap.tomorrow"
 msgid "Tomorrow"
 msgstr "Tomorrow"
@@ -418,7 +423,7 @@ msgctxt "languagePractice.feedback.correct"
 msgid "Correct."
 msgstr "Correct."
 
-#: src/features/practice/SessionRecapModal.tsx:100
+#: src/features/practice/SessionRecapModal.tsx:102
 msgctxt "recap.continue"
 msgid "Continue learning"
 msgstr "Continue learning"
@@ -535,7 +540,7 @@ msgctxt "languagePractice.ko.final-correction"
 msgid "Final consonant: {typed} makes a different word. Delete it and choose {expected}."
 msgstr "Final consonant: {typed} makes a different word. Delete it and choose {expected}."
 
-#: src/features/practice/SessionRecapModal.tsx:98
+#: src/features/practice/SessionRecapModal.tsx:100
 msgctxt "recap.retry-weak"
 msgid "Review {count, plural, one {# word} other {# words}}"
 msgstr "Review {count, plural, one {# word} other {# words}}"
@@ -568,7 +573,7 @@ msgctxt "study.recall-mode.target-to-native"
 msgid "{targetLanguage} → {nativeLanguage}"
 msgstr "{targetLanguage} → {nativeLanguage}"
 
-#: src/features/practice/SessionRecapModal.tsx:127
+#: src/features/practice/SessionRecapModal.tsx:129
 msgctxt "recap.tomorrow-loading"
 msgid "Checking cards due…"
 msgstr "Checking cards due…"
@@ -598,7 +603,7 @@ msgctxt "practice.loading.spelling"
 msgid "Loading spelling practice"
 msgstr "Loading spelling practice"
 
-#: src/features/practice/SessionRecapModal.tsx:129
+#: src/features/practice/SessionRecapModal.tsx:131
 msgctxt "recap.tomorrow-count"
 msgid "{count, plural, one {# card due} other {# cards due}}"
 msgstr "{count, plural, one {# card due} other {# cards due}}"
@@ -967,7 +972,7 @@ msgstr "Creating your story."
 msgid "practice.story.ready"
 msgstr "Your story is ready."
 
-#: src/features/practice/SessionRecapModal.tsx:90
+#: src/features/practice/SessionRecapModal.tsx:92
 msgctxt "recap.needs-review"
 msgid "To revisit"
 msgstr "To revisit"
@@ -1273,7 +1278,7 @@ msgctxt "languagePractice.action.hint"
 msgid "Hint"
 msgstr "Hint"
 
-#: src/features/practice/SessionRecapModal.tsx:93
+#: src/features/practice/SessionRecapModal.tsx:95
 msgctxt "recap.words-to-reinforce"
 msgid "Words to reinforce ({count})"
 msgstr "Words to reinforce ({count})"

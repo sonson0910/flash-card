@@ -25,8 +25,9 @@ const practiceViews = ['quiz', 'quiz-answered', 'spelling', 'spelling-checked', 
 let fixtureServer: ViteDevServer | undefined;
 
 async function expectAccessibleAndContained(page: Page, label: string) {
-  const surface = page.locator('[data-practice-visual-view]');
-  const view = await surface.getAttribute('data-practice-visual-view');
+  const root = page.locator('[data-practice-visual-view]');
+  const view = await root.getAttribute('data-practice-visual-view');
+  const surface = view === 'dialog' ? page.getByRole('dialog') : root;
   const scrollingView = view === 'match' || view === 'shadowing';
   await expect(surface.getByRole('button').first()).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -38,7 +39,7 @@ async function expectAccessibleAndContained(page: Page, label: string) {
     control.left < -1 || control.right > window.innerWidth + 1 || (!scrollingView && (control.top < -1 || control.bottom > window.innerHeight + 1))
   )), scrollingView);
   expect(clipped, `${label} has clipped controls`).toEqual([]);
-  const results = await new AxeBuilder({ page }).include('[data-practice-visual-view]').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
+  const results = await new AxeBuilder({ page }).include(view === 'dialog' ? '[role="dialog"]' : '[data-practice-visual-view]').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
   const blocking = results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical');
   expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
 }

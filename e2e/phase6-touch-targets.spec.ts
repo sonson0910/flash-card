@@ -168,7 +168,7 @@ test('Shadowing and SessionRecapModal controls measure at least 44px in both lay
     // practiceModeRegistry.ts's shadowing mode label is "Shadowing" (its
     // description text is concatenated into the same choice's accessible
     // name); there is no "Shadowing Arena" copy anywhere in the app.
-    await page.getByRole('button', { name: 'Shadowing' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: /^Shadowing / }).click();
     await expect(page.getByRole('button', { name: 'Close shadowing practice' })).toBeVisible();
     await expectTargets(page.locator('main button:visible'), `Shadowing ${layout.name}`);
 

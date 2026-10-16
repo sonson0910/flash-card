@@ -164,6 +164,40 @@ test('tablet shell keeps every visible header control in bounds and nav targets 
   }
 });
 
+for (const family of ['classic', 'crystal']) for (const mode of ['light', 'dark'] as const) {
+  test(`${family} ${mode} empty course chooser keeps its mobile arrow and accessible name`, async ({ page, seedCourseProfile, signIn }) => {
+    await page.addInitScript(({ family, mode }) => {
+      localStorage.setItem('sonflash_theme_family', family);
+      localStorage.setItem('lingoflash_theme', mode);
+      localStorage.setItem('sonflash_theme_follow_system', 'false');
+    }, { family, mode });
+    await page.emulateMedia({ colorScheme: mode, reducedMotion: 'reduce' });
+    await seedCourseProfile();
+    await signIn(page, '/?view=library&locale=en');
+    for (const locale of ['en', 'vi']) {
+      await page.goto(`/?view=library&locale=${locale}`);
+      const trigger = page.getByRole('button', { name: locale === 'en' ? 'Choose a course' : 'Chọn khóa học', exact: true });
+      await expect(trigger).toBeVisible();
+      for (const width of [390, 360]) {
+        await page.setViewportSize({ width, height: 844 });
+        await expect.poll(() => trigger.evaluate(button => {
+          const bounds = button.getBoundingClientRect();
+          const arrow = button.querySelector('svg')!.getBoundingClientRect();
+          return bounds.width >= 44 && bounds.height >= 44
+            && bounds.left >= 0 && bounds.right <= window.innerWidth
+            && button.scrollWidth <= button.clientWidth
+            && arrow.left >= bounds.left && arrow.right <= bounds.right;
+        }), { message: `${locale} course chooser and arrow fit a 44px mobile target at ${width}px` }).toBe(true);
+        await trigger.click();
+        await expect(page.getByRole('dialog')).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(page.getByRole('dialog')).toHaveCount(0);
+        await expect(trigger).toBeFocused();
+      }
+    }
+  });
+}
+
 test('mobile library settings menu stays in bounds and restores trigger focus', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page, '/?view=library');
@@ -436,7 +470,12 @@ test(meaningLanguageMismatchShareTestTitle, async ({
   });
   await signIn(page, '/?view=library');
   await expect(page.getByRole('status').filter({ hasText: 'Synced' })).toBeVisible();
+  const sharedDeckResponse = page.waitForResponse(response =>
+    response.url().endsWith('/createSharedDeckV2') && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Share', exact: true }).click();
+  const response = await sharedDeckResponse;
+  await response.finished();
+  expect(response.status()).toBe(200);
   const shareLink = page.getByRole('textbox', { name: 'Vocabulary deck share link' });
   await expect(shareLink).toHaveValue(/\?share=[A-Za-z0-9_-]+/);
   const shareId = new URL(await shareLink.inputValue())
@@ -512,7 +551,7 @@ test('Today and Progress empty states expose concrete next actions without initi
   await expect(page.getByRole('button', { name: 'Explore learning paths' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Progress' }).last().click();
-  await expect(page.getByRole('heading', { name: 'Progress' })).toBeFocused();
+  await expect(page.getByRole('heading', { level: 1, name: 'Progress', exact: true })).toBeFocused();
   await expect(page.getByRole('button', { name: 'Add vocabulary' })).toBeVisible();
 });
 

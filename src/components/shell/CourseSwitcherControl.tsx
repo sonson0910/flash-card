@@ -132,9 +132,9 @@ export function CourseSwitcherControl() {
     {switchedTo && <p role="status" className="sr-only"><Trans {...msg({ context: 'course.switcher.switched', message: 'Switched to {language}' })} values={{ language: _(TARGET_LANGUAGE_LABEL[switchedTo]) }} /></p>}
     <button ref={triggerRef} type="button" aria-haspopup="dialog" aria-expanded={open}
       onClick={() => setOpen(current => !current)}
-      className="claude-course-switcher-trigger flex min-h-11 min-w-0 items-center gap-1.5 truncate rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 text-sm font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none">
+      className="claude-course-switcher-trigger flex min-h-11 min-w-11 items-center gap-1.5 truncate rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 text-sm font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none">
       {activeCourse ? <><span aria-hidden="true">{TARGET_LANGUAGE_FLAG[activeCourse.targetLanguage]}</span><span className="truncate">{_(TARGET_LANGUAGE_LABEL[activeCourse.targetLanguage])}</span></>
-        : <Trans {...msg({ context: 'course.switcher.no-active', message: 'Choose a course' })} />}
+        : <span className="truncate"><Trans {...msg({ context: 'course.switcher.no-active', message: 'Choose a course' })} /></span>}
       <ChevronDown size={16} aria-hidden="true" className={`shrink-0 transition-transform ${open ? 'rotate-180' : ''} motion-reduce:transition-none`} />
     </button>
     {open && <div role="dialog" aria-label={_(msg({ id: 'course.switcher.dialog-label', message: 'Courses' }))}

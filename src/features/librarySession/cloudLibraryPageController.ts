@@ -163,6 +163,7 @@ export function createCloudLibraryPageController({
     facetsComplete: false,
   };
   let pageGeneration = 0;
+  let pageEmissionSequence = 0;
   let ownerGeneration = 0;
   let progressEvidenceGeneration = 0;
   let statsGeneration = 0;
@@ -216,13 +217,14 @@ export function createCloudLibraryPageController({
     request: CloudLibraryPageRequest,
     generation: number,
     error: unknown,
+    cacheOnlySequence?: number,
   ) => {
     if (isCloudQuotaError(error)) safeCacheWrite(() => cache.markBackoff(request.ownerId));
     const fallback = await (async () => {
       try { return await cache.readPage({ ...request, pageSize: boundedPageSize }); }
       catch { return null; }
     })();
-    if (generation !== pageGeneration) return;
+    if (generation !== pageGeneration || (cacheOnlySequence !== undefined && cacheOnlySequence !== pageEmissionSequence)) return;
     if (fallback) {
       publish({
         items: fallback.items.slice(0, boundedPageSize),
@@ -238,6 +240,7 @@ export function createCloudLibraryPageController({
       });
       return;
     }
+    if (cacheOnlySequence !== undefined) return;
     publish({
       items: request.page === 1 ? [] : snapshot.items,
       hasNext: false,
@@ -353,6 +356,12 @@ export function createCloudLibraryPageController({
         { ...request, pageSize: boundedPageSize, cursor: pageCursor },
         async page => {
           if (generation !== pageGeneration) return;
+          const emission = ++pageEmissionSequence;
+          // An empty SDK cache cannot invalidate the last confirmed device page.
+          if (page.fromCache && !page.hasPendingWrites && page.items.length === 0) {
+            await applyFallback(request, generation, new Error('Cloud page is not yet confirmed.'), emission);
+            return;
+          }
           const cachedCount = safeCacheRead(() => cache.readCount(request.ownerId, request.queryKey), null);
           let total = cachedCount?.total ?? activeTotal;
           let countedAt = cachedCount?.cachedAt ?? null;
@@ -449,6 +458,7 @@ export function createCloudLibraryPageController({
         },
         async error => {
           if (generation !== pageGeneration) return;
+          pageEmissionSequence += 1;
           if (snapshot.isLoading) await applyFallback(request, generation, error);
           else {
             if (isCloudQuotaError(error)) safeCacheWrite(() => cache.markBackoff(request.ownerId));

@@ -185,8 +185,8 @@ for (const theme of [
       }, theme);
       const visualCard = { ...card, word: 'resemblance', normalizedWord: 'resemblance', translation: 'sự tương đồng', category: 'Writing', phonetic: '/rɪˈzɛmbləns/', explanationTranslation: 'Sự giống nhau về hình dáng hoặc tính chất.', exampleSentence: 'These designs bear a resemblance.', exampleTranslation: 'Những thiết kế này có nét tương đồng.' };
       await seedCards([{ ...visualCard, id: card.id }, { ...visualCard, id: richCard.id }]);
-      await signIn(page, '/?view=library&locale=en');
       await page.clock.install();
+      await signIn(page, '/?view=library&locale=en');
       await page.getByRole('button', { name: 'Study now' }).click();
       await beginFreshCardRecall(page);
 

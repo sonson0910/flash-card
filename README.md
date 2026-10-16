@@ -169,6 +169,30 @@ occupied, use a controlled Firebase emulator config through `SONFLASH_E2E_FIREBA
 and set `VITE_SONFLASH_FIRESTORE_EMULATOR_PORT` to its matching port for the build. Run
 root unit tests before browser tests: a release-contract test needs port 4173 itself.
 
+Render screenshot goldens with the browser version in the lockfile and the
+Ubuntu 24.04 environment used by Quality CI. A different host OS can select
+different fallback fonts. On Linux, a version-matched Playwright Noble container
+can run the browser server with a read-only project mount; bind it to loopback
+and pass its WebSocket URL through `PW_TEST_CONNECT_WS_ENDPOINT` to the emulator
+runner. Keep credentials and browser profiles outside the container. The
+[typography regression](./e2e/self-hosted-typography.spec.ts) checks the registered
+body font on Landing, workspace and Settings; changed goldens still require
+visual review followed by an ordinary run without snapshot updates.
+
+Offline release fixtures serve the selected `SONFLASH_BUILD_OUT_DIR` artifact
+and authenticate against emulators. Their outage phases stop the app server,
+block backend origins, probe backend unavailability and reject successful
+backend responses before accepting private-card recovery. WebKit uses an
+allowlisted loopback HTTP proxy to close active backend sockets and refuse new
+connections, since its service-worker requests bypass Playwright routing.
+Chromium also uses
+native offline mode and checks a cold profile reopen. Firefox native offline
+reload currently fails with `NS_ERROR_OFFLINE`; Firefox and WebKit therefore
+verify server-outage recovery separately, without claiming native offline reload
+coverage. Firefox still checks the native offline learning guard after recovery.
+Cached library-page recovery does not prove persistent Firestore cache support;
+Safari and the Firefox emulator use Firestore memory caches.
+
 UI translations use Lingui `msg({ context, message })` descriptors for local copy; the
 semantic context stays readable while Lingui generates compact runtime IDs. Keep explicit
 `id` values for direct lookups and externally referenced messages. Pass descriptors to

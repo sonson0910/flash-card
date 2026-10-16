@@ -17,7 +17,7 @@ test('Today offers guidance for reviewed words without recording failure', async
   await page.getByRole('button', { name: "I don't know this yet", exact: true }).click();
   await expect(page.getByRole('heading', { name: 'See it in context' })).toBeVisible();
   await page.getByRole('button', { name: 'Continue to independent recall' }).click();
-  await expect(page.getByText('Independent recall', { exact: true })).toBeVisible();
+  await expect(page.locator('.lesson-eyebrow').filter({ hasText: /^Independent recall$/ })).toBeVisible();
   await page.getByRole('button', { name: "I don't know this — learn first", exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Meet this word' })).toBeVisible();
   expect((await db.collection('users').doc(testUser.uid).collection('cards').get()).docs.every(card => card.data().reviews === 3)).toBe(true);
@@ -27,7 +27,7 @@ for (const mode of ['Multiple-choice quiz', 'Spelling practice']) {
   test(`${mode} can switch to learning without answering`, async ({ page, browserName, signIn, db, testUser }) => {
     await signIn(page, '/?view=today');
     await page.getByRole('button', { name: 'More practice' }).click();
-    await page.getByRole('button', { name: new RegExp(mode) }).click();
+    await page.getByRole('dialog').getByRole('button', { name: mode === 'Spelling practice' ? /^Spelling / : /^Quiz / }).click();
     const heading = page.locator(mode === 'Spelling practice' ? '#spelling-question-heading' : '#quiz-question-heading');
     // focus() does not wait for the entrance animation to make its target visible.
     await expect(heading).toBeVisible();

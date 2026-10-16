@@ -486,6 +486,48 @@ describe('cloud library page controller', () => {
     await pagePublication;
   });
 
+  it('recovers the scoped page cache without replacing it with an unconfirmed empty SDK snapshot', async () => {
+    const { adapter, cache, subscriptions } = createFakes();
+    vi.mocked(cache.readPage).mockResolvedValue({ items: [card('cached')], total: 1, hasNext: false });
+    const controller = createCloudLibraryPageController({ adapter, cache });
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    await subscriptions[0].page({ items: [], hasNext: false, cursor: null, changeTypes: [], fromCache: true, hasPendingWrites: false });
+    expect(controller.getSnapshot()).toMatchObject({ items: [card('cached')], isLoading: false, serverConfirmed: false, cloudUnavailable: true });
+    expect(cache.writePage).not.toHaveBeenCalled();
+    await subscriptions[0].page({ items: [], hasNext: false, cursor: null, changeTypes: ['removed'], fromCache: false, hasPendingWrites: false });
+    expect(controller.getSnapshot()).toMatchObject({ items: [], isLoading: false, serverConfirmed: true, cloudUnavailable: false });
+    expect(cache.writePage).toHaveBeenLastCalledWith(expect.objectContaining({ items: [] }));
+  });
+
+  it.each(['pending deletion', 'newer cache', 'confirmed server'] as const)('does not overwrite a %s with a delayed cached fallback', async kind => {
+    const { adapter, cache, subscriptions } = createFakes();
+    const cached = deferred<{ items: CardData[]; total: number; hasNext: boolean } | null>();
+    vi.mocked(cache.readPage).mockReturnValue(cached.promise);
+    const controller = createCloudLibraryPageController({ adapter, cache });
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    const recovery = subscriptions[0].page({ items: [], hasNext: false, cursor: null, changeTypes: [], fromCache: true, hasPendingWrites: false });
+    const items = kind === 'pending deletion' ? [] : [card('newer')];
+    await subscriptions[0].page({ items, hasNext: false, cursor: null, changeTypes: ['modified'], fromCache: kind !== 'confirmed server', hasPendingWrites: kind === 'pending deletion' });
+    cached.resolve({ items: [card('stale')], total: 1, hasNext: false });
+    await recovery;
+    expect(controller.getSnapshot().items).toEqual(items);
+    expect(cache.writePage).not.toHaveBeenCalledWith(expect.objectContaining({ items: [card('stale')] }));
+  });
+
+  it.each(['owner', 'query', 'page'] as const)('retires an unconfirmed cache read when its %s changes', async scope => {
+    const { adapter, cache, subscriptions } = createFakes();
+    const cached = deferred<{ items: CardData[]; total: number; hasNext: boolean } | null>();
+    vi.mocked(cache.readPage).mockReturnValue(cached.promise);
+    const controller = createCloudLibraryPageController({ adapter, cache });
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    const recovery = subscriptions[0].page({ items: [], hasNext: false, cursor: null, changeTypes: [], fromCache: true, hasPendingWrites: false });
+    const request = { ownerId: scope === 'owner' ? 'owner-b' : 'owner-a', query: filters, queryKey: scope === 'query' ? 'filtered' : 'all', page: scope === 'page' ? 2 : 1 };
+    controller.activate(request);
+    cached.resolve({ items: [card('stale')], total: 1, hasNext: false });
+    await recovery;
+    expect(controller.getSnapshot()).toMatchObject({ ownerId: request.ownerId, queryKey: request.queryKey, page: request.page, items: [] });
+  });
+
   it('keeps an empty cached page loading until a server page confirms the library', async () => {
     const { adapter, cache, subscriptions } = createFakes();
     const controller = createCloudLibraryPageController({ adapter, cache });

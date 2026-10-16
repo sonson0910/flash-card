@@ -313,11 +313,11 @@ export const test = base.extend<EmulatorFixtures, EmulatorWorkerFixtures>({
   // bounce. If `url` itself resolves to the landing view (no routed
   // `view=`), the hook never loads there either — that is a deliberate
   // landing-view target, not a failure, so the final uid wait is skipped.
-  signIn: async ({ signInInPlace, testUser }, use) => {
+  signIn: async ({ signInInPlace, testUser, baseURL }, use) => {
     await use(async (page, url) => {
-      const bootstrapUrl = new URL(url, 'http://sonflash.e2e.invalid');
+      const bootstrapUrl = new URL(url, baseURL);
       bootstrapUrl.searchParams.set('view', 'today');
-      await page.goto(`${bootstrapUrl.pathname}?${bootstrapUrl.searchParams.toString()}`);
+      await page.goto(bootstrapUrl.href);
       await signInInPlace(page);
       await page.goto(url);
       const hookLoaded = await page.evaluate(

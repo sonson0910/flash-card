@@ -1,4 +1,4 @@
-.landing-canvas { font-family: Geist, "Segoe UI", system-ui, sans-serif; }
+.landing-canvas { font-family: var(--font-sans); }
 .landing-header { min-height: 84px; }
 .landing-header > a .font-serif-hero { font-family: Fraunces, Georgia, serif; font-weight: 500; }
 .landing-hero { max-width: 1280px; margin-inline: auto; }
@@ -37,7 +37,7 @@ html[data-theme-family="crystal"] .landing-card > div:last-child { clip-path: po
 .crystal-landing-hero::before { position: absolute; inset: 0 -8vw; z-index: -2; content: ""; background: radial-gradient(ellipse at 74% 38%, color-mix(in srgb, var(--sf-brand) 38%, transparent), transparent 28%), radial-gradient(ellipse at 36% 105%, color-mix(in srgb, var(--sf-brand-hover) 38%, transparent), transparent 35%), var(--sf-canvas); }
 .crystal-landing-hero::after { position: absolute; inset: 0; z-index: -1; content: ""; opacity: .58; background-image: radial-gradient(circle at 12% 14%, #fff 0 1px, transparent 1.5px), radial-gradient(circle at 53% 9%, #fff 0 2px, transparent 3px), radial-gradient(circle at 88% 25%, #fff 0 1px, transparent 1.5px), radial-gradient(circle at 70% 78%, #fff 0 1px, transparent 1.5px); }
 .crystal-copy { position: relative; z-index: 2; max-width: 620px; padding: 0; }
-.crystal-badge { display: inline-flex; padding: 8px 18px; transform: skewX(-16deg); background: var(--sf-brand); color: var(--sf-on-brand); font: 800 italic .78rem/1 Geist, sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+.crystal-badge { display: inline-flex; padding: 8px 18px; transform: skewX(-16deg); background: var(--sf-brand); color: var(--sf-on-brand); font: 800 italic .78rem/1 var(--font-sans); letter-spacing: .14em; text-transform: uppercase; }
 /* `color` carries a solid fallback (and keeps this headline a real, opaque
    text node) while `-webkit-text-fill-color: transparent` — not `color` —
    punches the actual hole for the gradient clip to show through, so the

@@ -133,7 +133,7 @@ for (const theme of themes) for (const viewport of viewports) {
   });
 }
 
-test('account JSON download contains account data without card contents', async ({ page, seedCards, signIn }) => {
+test('account JSON download contains account data without card contents', async ({ page, seedCards, signIn }, testInfo) => {
   await seedCards([reportCard]);
   await signIn(page, '/?view=library&locale=en');
   await openManagementMenu(page);
@@ -144,7 +144,9 @@ test('account JSON download contains account data without card contents', async 
     page.getByRole('button', { name: 'Download account data (JSON, excluding cards)' }).click(),
   ]);
   expect(download.suggestedFilename()).toMatch(/^sonflash-account-\d{4}-\d{2}-\d{2}\.json$/);
-  const exported = JSON.parse(await readFile(await download.path(), 'utf8')) as Record<string, unknown>;
+  const exportPath = testInfo.outputPath(download.suggestedFilename());
+  await download.saveAs(exportPath);
+  const exported = JSON.parse(await readFile(exportPath, 'utf8')) as Record<string, unknown>;
   expect(exported).toHaveProperty('exportedAt');
   expect(exported).toHaveProperty('profile');
   expect(exported).not.toHaveProperty('cards');

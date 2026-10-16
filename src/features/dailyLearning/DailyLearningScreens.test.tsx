@@ -105,6 +105,13 @@ const placementActions: PlacementScreenActions = {
 };
 
 describe('TodayScreen', () => {
+  it('explains the connection loss when an offline day has no loaded plan', () => {
+    const empty: TodayScreenModel = { status: 'empty', isOffline: true, message: 'No cards are due.', plan: null, placementAvailable: false };
+    const html = renderToStaticMarkup(<TodayScreen model={empty} actions={todayActions} />);
+    expect(html).toContain("You&#x27;re offline. Reconnect to start today&#x27;s session.");
+    expect(html).not.toContain('>Start today&#x27;s session<');
+  });
+
   it('shows sleepy Lumi on an empty Crystal day only when the preference allows it', () => {
     const empty: TodayScreenModel = { status: 'empty', isOffline: false, message: 'No cards are due.', plan: null, placementAvailable: false };
     const renderWithPreference = (family: string, lumi: string) => {

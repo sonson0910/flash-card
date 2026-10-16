@@ -770,7 +770,7 @@ msgid "today-screen.learning-journey"
 msgstr "Hành trình học"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:535
+#: src/features/dailyLearning/TodayScreen.tsx:536
 msgid "today.adult-statement"
 msgstr "SonFlash dành cho người học từ 18 tuổi trở lên."
 
@@ -785,7 +785,7 @@ msgid "today.answer.incorrect"
 msgstr "Chưa đúng."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningScreens.test.tsx:795
+#: src/features/dailyLearning/DailyLearningScreens.test.tsx:802
 #: src/features/dailyLearning/TodayScreen.tsx:195
 msgid "today.canvas.ready"
 msgstr "{count, plural, one {mục sẵn sàng để ghi nhớ.} other {mục sẵn sàng để ghi nhớ.}}"
@@ -816,50 +816,50 @@ msgid "today.caught-up.title-emphasis"
 msgstr "xong."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:554
-#: src/features/dailyLearning/TodayScreen.tsx:584
+#: src/features/dailyLearning/TodayScreen.tsx:555
+#: src/features/dailyLearning/TodayScreen.tsx:585
 msgid "today.course.fallback"
 msgstr "Khóa học hiện tại của bạn"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/TodayScreen.tsx:320
-#: src/features/dailyLearning/TodayScreen.tsx:537
+#: src/features/dailyLearning/TodayScreen.tsx:538
 msgid "today.empty.add-vocabulary"
 msgstr "Thêm từ vựng"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:528
+#: src/features/dailyLearning/TodayScreen.tsx:529
 msgid "today.empty.description"
 msgstr "Thêm một từ bạn quan tâm, hoặc bắt đầu với một lộ trình học đã được xem xét."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:533
+#: src/features/dailyLearning/TodayScreen.tsx:534
 msgid "today.empty.kicker"
 msgstr "Bắt đầu tại đây"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:538
+#: src/features/dailyLearning/TodayScreen.tsx:539
 msgid "today.empty.open-paths"
 msgstr "Khám phá lộ trình học"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:534
+#: src/features/dailyLearning/TodayScreen.tsx:535
 msgid "today.empty.title"
 msgstr "Lập kế hoạch học đầu tiên của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:571
+#: src/features/dailyLearning/TodayScreen.tsx:572
 msgid "today.error.kicker"
 msgstr "Kế hoạch chưa khả dụng"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:574
+#: src/features/dailyLearning/TodayScreen.tsx:575
 #: src/features/webWords/WebWordsPage.tsx:198
 msgid "today.error.retry"
 msgstr "Thử lại"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:572
+#: src/features/dailyLearning/TodayScreen.tsx:573
 msgid "today.error.title"
 msgstr "Hôm nay cần được xử lý"
 
@@ -987,8 +987,8 @@ msgstr "Luyện vốn từ qua nhiệm vụ hội thoại có giới hạn, câu
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/TodayScreen.tsx:519
 #: src/features/dailyLearning/TodayScreen.tsx:526
-#: src/features/dailyLearning/TodayScreen.tsx:551
-#: src/features/dailyLearning/TodayScreen.tsx:583
+#: src/features/dailyLearning/TodayScreen.tsx:552
+#: src/features/dailyLearning/TodayScreen.tsx:584
 msgid "today.kicker"
 msgstr "Học hằng ngày"
 
@@ -1124,13 +1124,14 @@ msgstr "Đánh vần"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/DailyLearningWorkspace.tsx:1073
-#: src/features/dailyLearning/TodayScreen.tsx:558
-#: src/features/dailyLearning/TodayScreen.tsx:586
+#: src/features/dailyLearning/TodayScreen.tsx:528
+#: src/features/dailyLearning/TodayScreen.tsx:559
+#: src/features/dailyLearning/TodayScreen.tsx:587
 msgid "today.offline"
 msgstr "Bạn đang ngoại tuyến. Hãy kết nối lại để bắt đầu buổi học hôm nay."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:602
+#: src/features/dailyLearning/TodayScreen.tsx:603
 msgid "today.placement.action"
 msgstr "Làm kiểm tra xếp trình độ"
 
@@ -1145,7 +1146,7 @@ msgid "today.placement.core"
 msgstr "Cốt lõi"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:601
+#: src/features/dailyLearning/TodayScreen.tsx:602
 msgid "today.placement.description"
 msgstr "Làm kiểm tra đánh giá. Kết quả không thay đổi lịch sử ôn tập hoặc mở khóa nội dung."
 
@@ -1165,7 +1166,7 @@ msgid "today.placement.intro"
 msgstr "Kiểm tra chứng cứ từ vựng hiện tại của bạn qua 6–12 câu hỏi."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:599
+#: src/features/dailyLearning/TodayScreen.tsx:600
 msgid "today.placement.kicker"
 msgstr "Tùy chọn"
 
@@ -1180,7 +1181,7 @@ msgid "today.placement.result"
 msgstr "Câu trả lời của bạn cho thấy nên bắt đầu từ đây."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:600
+#: src/features/dailyLearning/TodayScreen.tsx:601
 msgid "today.placement.title"
 msgstr "Chưa biết bắt đầu từ đâu?"
 
@@ -1285,7 +1286,7 @@ msgid "today.practice.title"
 msgstr "Luyện theo cách của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:535
+#: src/features/dailyLearning/TodayScreen.tsx:536
 msgid "today.privacy"
 msgstr "Quyền riêng tư"
 
@@ -1383,12 +1384,12 @@ msgid "today.streak.title"
 msgstr "Nhịp học của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:535
+#: src/features/dailyLearning/TodayScreen.tsx:536
 msgid "today.terms"
 msgstr "Điều khoản"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningScreens.test.tsx:795
+#: src/features/dailyLearning/DailyLearningScreens.test.tsx:802
 #: src/features/dailyLearning/TodayScreen.tsx:62
 #: src/features/dailyLearning/TodayScreen.tsx:210
 msgid "today.title"

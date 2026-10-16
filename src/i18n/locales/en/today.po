@@ -770,7 +770,7 @@ msgid "today-screen.learning-journey"
 msgstr "Learning journey"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:535
+#: src/features/dailyLearning/TodayScreen.tsx:536
 msgid "today.adult-statement"
 msgstr "SonFlash is for learners aged 18 and over."
 
@@ -785,7 +785,7 @@ msgid "today.answer.incorrect"
 msgstr "Not quite."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningScreens.test.tsx:795
+#: src/features/dailyLearning/DailyLearningScreens.test.tsx:802
 #: src/features/dailyLearning/TodayScreen.tsx:195
 msgid "today.canvas.ready"
 msgstr "{count, plural, one {item ready to remember.} other {items ready to remember.}}"
@@ -816,50 +816,50 @@ msgid "today.caught-up.title-emphasis"
 msgstr "up."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:554
-#: src/features/dailyLearning/TodayScreen.tsx:584
+#: src/features/dailyLearning/TodayScreen.tsx:555
+#: src/features/dailyLearning/TodayScreen.tsx:585
 msgid "today.course.fallback"
 msgstr "Your current course"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/TodayScreen.tsx:320
-#: src/features/dailyLearning/TodayScreen.tsx:537
+#: src/features/dailyLearning/TodayScreen.tsx:538
 msgid "today.empty.add-vocabulary"
 msgstr "Add vocabulary"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:528
+#: src/features/dailyLearning/TodayScreen.tsx:529
 msgid "today.empty.description"
 msgstr "Add a word you care about, or begin with a reviewed learning path."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:533
+#: src/features/dailyLearning/TodayScreen.tsx:534
 msgid "today.empty.kicker"
 msgstr "Start here"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:538
+#: src/features/dailyLearning/TodayScreen.tsx:539
 msgid "today.empty.open-paths"
 msgstr "Explore learning paths"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:534
+#: src/features/dailyLearning/TodayScreen.tsx:535
 msgid "today.empty.title"
 msgstr "Build your first learning plan"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:571
+#: src/features/dailyLearning/TodayScreen.tsx:572
 msgid "today.error.kicker"
 msgstr "Plan unavailable"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:574
+#: src/features/dailyLearning/TodayScreen.tsx:575
 #: src/features/webWords/WebWordsPage.tsx:198
 msgid "today.error.retry"
 msgstr "Try again"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:572
+#: src/features/dailyLearning/TodayScreen.tsx:573
 msgid "today.error.title"
 msgstr "Today needs attention"
 
@@ -987,8 +987,8 @@ msgstr "Use a bounded text mission, story, or shadowing practice with your vocab
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/TodayScreen.tsx:519
 #: src/features/dailyLearning/TodayScreen.tsx:526
-#: src/features/dailyLearning/TodayScreen.tsx:551
-#: src/features/dailyLearning/TodayScreen.tsx:583
+#: src/features/dailyLearning/TodayScreen.tsx:552
+#: src/features/dailyLearning/TodayScreen.tsx:584
 msgid "today.kicker"
 msgstr "Daily learning"
 
@@ -1124,13 +1124,14 @@ msgstr "Spelling"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/DailyLearningWorkspace.tsx:1073
-#: src/features/dailyLearning/TodayScreen.tsx:558
-#: src/features/dailyLearning/TodayScreen.tsx:586
+#: src/features/dailyLearning/TodayScreen.tsx:528
+#: src/features/dailyLearning/TodayScreen.tsx:559
+#: src/features/dailyLearning/TodayScreen.tsx:587
 msgid "today.offline"
 msgstr "You're offline. Reconnect to start today's session."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:602
+#: src/features/dailyLearning/TodayScreen.tsx:603
 msgid "today.placement.action"
 msgstr "Take placement check"
 
@@ -1145,7 +1146,7 @@ msgid "today.placement.core"
 msgstr "Core"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:601
+#: src/features/dailyLearning/TodayScreen.tsx:602
 msgid "today.placement.description"
 msgstr "Take a diagnostic check. It will not change your review history or unlock content."
 
@@ -1165,7 +1166,7 @@ msgid "today.placement.intro"
 msgstr "Check your current vocabulary evidence in 6–12 questions."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:599
+#: src/features/dailyLearning/TodayScreen.tsx:600
 msgid "today.placement.kicker"
 msgstr "Optional"
 
@@ -1180,7 +1181,7 @@ msgid "today.placement.result"
 msgstr "Your answers suggest starting here."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:600
+#: src/features/dailyLearning/TodayScreen.tsx:601
 msgid "today.placement.title"
 msgstr "Not sure where to begin?"
 
@@ -1285,7 +1286,7 @@ msgid "today.practice.title"
 msgstr "Practice your way"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:535
+#: src/features/dailyLearning/TodayScreen.tsx:536
 msgid "today.privacy"
 msgstr "Privacy"
 
@@ -1383,12 +1384,12 @@ msgid "today.streak.title"
 msgstr "Your study rhythm"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:535
+#: src/features/dailyLearning/TodayScreen.tsx:536
 msgid "today.terms"
 msgstr "Terms"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningScreens.test.tsx:795
+#: src/features/dailyLearning/DailyLearningScreens.test.tsx:802
 #: src/features/dailyLearning/TodayScreen.tsx:62
 #: src/features/dailyLearning/TodayScreen.tsx:210
 msgid "today.title"

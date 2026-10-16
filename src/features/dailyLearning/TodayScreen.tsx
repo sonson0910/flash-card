@@ -525,6 +525,7 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
         <div className="daily-zero-copy">
           <p className="premium-kicker uppercase tracking-[0.16em]">{_(msg({ id: 'today.kicker', message: 'Daily learning' }))}</p>
           <PageHeading model={model} />
+          {model.isOffline && <p className="mt-4 rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite">{_(msg({ id: 'today.offline', message: "You're offline. Reconnect to start today's session." }))}</p>}
           <p className="daily-zero-lede" role="status" aria-live="polite">{model.message} {_(msg({ id: 'today.empty.description', message: 'Add a word you care about, or begin with a reviewed learning path.' }))}</p>
         </div>
         <div className="daily-facet-panel daily-zero-panel">

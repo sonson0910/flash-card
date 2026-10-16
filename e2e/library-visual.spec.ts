@@ -89,6 +89,8 @@ test('Library create input defers submit during IME composition', async ({ page 
   await input.press('Enter');
   await expect(count).toHaveText('0');
   await input.dispatchEvent('compositionend');
+  // A separate Enter follows the guard's queued composition-end reset.
+  await page.evaluate(() => new Promise<void>(resolve => setTimeout(resolve, 0)));
   await input.press('Enter');
   await expect(count).toHaveText('1');
 });

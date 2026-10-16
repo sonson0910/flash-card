@@ -194,6 +194,9 @@ test.beforeEach(async ({ page, db, testUser, seedCards, blockExternalNetwork }) 
 test.beforeAll(async ({}, testInfo) => {
   catalogFixturePort = CATALOG_FIXTURE_PORT_BASE + testInfo.parallelIndex;
   catalogFixtureOrigin = `http://127.0.0.1:${catalogFixturePort}`;
+  const entryHtml = await readFile('index.html', 'utf8');
+  const themeBootstrap = entryHtml.match(/<script>[\s\S]*?<\/script>/)?.[0];
+  if (!themeBootstrap) throw new Error('Application theme bootstrap is missing.');
   catalogFixtureServer = await createServer({
     configFile: 'vite.config.ts', cacheDir: `node_modules/.vite-e2e/paths-progress-visual-${testInfo.parallelIndex}`,
     appType: 'spa',
@@ -204,7 +207,7 @@ test.beforeAll(async ({}, testInfo) => {
       configureServer(server) {
         server.middlewares.use(catalogFixturePath, (_request, response) => {
           response.setHeader('Content-Type', 'text/html');
-          response.end(`<!doctype html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Reviewed catalog Paths</title><script type="module">import RefreshRuntime from '/@react-refresh'; RefreshRuntime.injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => type => type; window.__vite_plugin_react_preamble_installed__ = true;</script></head><body><div id="root"></div><script type="module" src="${catalogFixtureModuleId}"></script></body></html>`);
+          response.end(`<!doctype html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Reviewed catalog Paths</title>${themeBootstrap}<script type="module">import RefreshRuntime from '/@react-refresh'; RefreshRuntime.injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => type => type; window.__vite_plugin_react_preamble_installed__ = true;</script></head><body><div id="root"></div><script type="module" src="${catalogFixtureModuleId}"></script></body></html>`);
         });
       },
     }],

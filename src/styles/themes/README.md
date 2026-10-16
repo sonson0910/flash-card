@@ -20,6 +20,12 @@ fallback. `public/theme-crystal.css` is loaded from a stylesheet link before pai
 for saved Crystal choices and on demand for later changes. Only `classic.css`
 belongs in the initial stylesheet.
 
+Body text uses the shared `--font-sans` token from `src/index.css`. Its first
+family is `Geist Variable`, the name registered by the existing self-hosted
+Fontsource import. Keep shell utilities, Landing and Settings on that token:
+requesting only `Geist` silently selects different system fonts across Linux
+versions. Display faces retain their theme-specific tokens.
+
 Crystal keeps its Canvas crimson fill for `--sf-brand`, but uses `#04060c` for
 `--sf-on-brand` and `--sf-on-brand-hover`: Canvas `primaryText` is white, which
 does not meet AA contrast for the app's 12px button text on that crimson.

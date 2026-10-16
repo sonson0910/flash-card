@@ -24,6 +24,7 @@ function RecapFixture() {
     onClose={() => undefined}
     onRetryWeak={() => undefined}
     totalCards={12}
+    summary={{ saved: 12, skipped: 0, remaining: 0, pending: 0, failed: 0 }}
     goodCount={10}
     againCount={2}
     xpEarned={175}

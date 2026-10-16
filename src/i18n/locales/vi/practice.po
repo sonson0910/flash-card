@@ -83,7 +83,7 @@ msgctxt "study.recall-mode"
 msgid "Recall mode"
 msgstr "Chế độ gợi nhớ"
 
-#: src/features/practice/SessionRecapModal.tsx:99
+#: src/features/practice/SessionRecapModal.tsx:101
 msgctxt "recap.weekly"
 msgid "View weekly recap"
 msgstr "Xem tổng kết tuần"
@@ -93,7 +93,7 @@ msgctxt "recap.retained"
 msgid "Retained"
 msgstr "Ghi nhớ"
 
-#: src/features/practice/SessionRecapModal.tsx:89
+#: src/features/practice/SessionRecapModal.tsx:91
 msgctxt "recap.mastered"
 msgid "Remembered"
 msgstr "Đã nhớ"
@@ -206,6 +206,11 @@ msgctxt "languagePractice.action.next"
 msgid "Next"
 msgstr "Tiếp"
 
+#: src/features/practice/SessionRecapModal.tsx:88
+msgctxt "recap.progress-breakdown"
+msgid "Saved: {saved} / {total} · Skipped: {skipped} · Not started: {remaining} · Saving: {pending} · Failed: {failed}"
+msgstr "Đã lưu: {saved} / {total} · Bỏ qua: {skipped} · Chưa bắt đầu: {remaining} · Đang lưu: {pending} · Thất bại: {failed}"
+
 #: src/features/practice/WordMatchView.tsx:345
 msgctxt "practice.match.verification-failed"
 msgid "We could not verify your result. Your completed pairs are still here."
@@ -309,8 +314,8 @@ msgctxt "practice.loading.study"
 msgid "Loading study session"
 msgstr "Đang tải phiên học"
 
-#: src/features/practice/SessionRecapModal.tsx:89
-#: src/features/practice/SessionRecapModal.tsx:90
+#: src/features/practice/SessionRecapModal.tsx:91
+#: src/features/practice/SessionRecapModal.tsx:92
 msgctxt "recap.word-count"
 msgid "{count, plural, one {# word} other {# words}}"
 msgstr "{count, plural, other {# từ}}"
@@ -367,7 +372,7 @@ msgctxt "practice.loading.language-drill"
 msgid "Loading language drill"
 msgstr "Đang tải bài luyện ngôn ngữ"
 
-#: src/features/practice/SessionRecapModal.tsx:128
+#: src/features/practice/SessionRecapModal.tsx:130
 msgctxt "recap.tomorrow-error"
 msgid "Count unavailable"
 msgstr "Không lấy được số thẻ"
@@ -387,7 +392,7 @@ msgctxt "practice.match.new-round"
 msgid "New round"
 msgstr "Vòng mới"
 
-#: src/features/practice/SessionRecapModal.tsx:125
+#: src/features/practice/SessionRecapModal.tsx:127
 msgctxt "recap.tomorrow"
 msgid "Tomorrow"
 msgstr "Ngày mai"
@@ -418,7 +423,7 @@ msgctxt "languagePractice.feedback.correct"
 msgid "Correct."
 msgstr "Chính xác."
 
-#: src/features/practice/SessionRecapModal.tsx:100
+#: src/features/practice/SessionRecapModal.tsx:102
 msgctxt "recap.continue"
 msgid "Continue learning"
 msgstr "Tiếp tục học"
@@ -535,7 +540,7 @@ msgctxt "languagePractice.ko.final-correction"
 msgid "Final consonant: {typed} makes a different word. Delete it and choose {expected}."
 msgstr "Phụ âm cuối {typed} tạo thành từ khác. Hãy xóa và chọn {expected}."
 
-#: src/features/practice/SessionRecapModal.tsx:98
+#: src/features/practice/SessionRecapModal.tsx:100
 msgctxt "recap.retry-weak"
 msgid "Review {count, plural, one {# word} other {# words}}"
 msgstr "Ôn lại {count, plural, other {# từ}}"
@@ -568,7 +573,7 @@ msgctxt "study.recall-mode.target-to-native"
 msgid "{targetLanguage} → {nativeLanguage}"
 msgstr "{targetLanguage} → {nativeLanguage}"
 
-#: src/features/practice/SessionRecapModal.tsx:127
+#: src/features/practice/SessionRecapModal.tsx:129
 msgctxt "recap.tomorrow-loading"
 msgid "Checking cards due…"
 msgstr "Đang kiểm tra thẻ đến hạn…"
@@ -598,7 +603,7 @@ msgctxt "practice.loading.spelling"
 msgid "Loading spelling practice"
 msgstr "Đang tải luyện chính tả"
 
-#: src/features/practice/SessionRecapModal.tsx:129
+#: src/features/practice/SessionRecapModal.tsx:131
 msgctxt "recap.tomorrow-count"
 msgid "{count, plural, one {# card due} other {# cards due}}"
 msgstr "{count, plural, other {# thẻ đến hạn}}"
@@ -967,7 +972,7 @@ msgstr "Đang tạo câu chuyện của bạn."
 msgid "practice.story.ready"
 msgstr "Câu chuyện của bạn đã sẵn sàng."
 
-#: src/features/practice/SessionRecapModal.tsx:90
+#: src/features/practice/SessionRecapModal.tsx:92
 msgctxt "recap.needs-review"
 msgid "To revisit"
 msgstr "Cần xem lại"
@@ -1273,7 +1278,7 @@ msgctxt "languagePractice.action.hint"
 msgid "Hint"
 msgstr "Gợi ý"
 
-#: src/features/practice/SessionRecapModal.tsx:93
+#: src/features/practice/SessionRecapModal.tsx:95
 msgctxt "recap.words-to-reinforce"
 msgid "Words to reinforce ({count})"
 msgstr "Từ cần củng cố ({count})"

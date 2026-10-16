@@ -21,7 +21,7 @@ export interface OfflineReleaseFixture {
   readonly close: () => Promise<void>;
 }
 
-const DIST_DIRECTORY = path.resolve(process.cwd(), 'dist');
+const DIST_DIRECTORY = path.resolve(process.cwd(), process.env.SONFLASH_BUILD_OUT_DIR || 'dist');
 const SERVICE_WORKER_TEMPLATE_PATH = path.resolve(
   process.cwd(),
   'src/features/offlineApp/service-worker.js',
@@ -239,5 +239,55 @@ export const startOfflineReleaseFixture = async (): Promise<OfflineReleaseFixtur
         server.close(error => error ? reject(error) : resolve());
       });
     },
+  };
+};
+
+// WebKit SW-owned requests bypass Playwright routes; cut their real upstream sockets.
+export const startBackendOutageProxy = async (appOrigin: string) => {
+  const allowed = new Set([appOrigin, 'http://127.0.0.1:9099', 'http://127.0.0.1:5001',
+    `http://${process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080'}`]);
+  if ([...allowed].some(origin => !['127.0.0.1', 'localhost', '[::1]'].includes(new URL(origin).hostname))) {
+    throw new Error('Offline outage proxy requires loopback app and emulator endpoints.');
+  }
+  const upstreams = new Map<http.ClientRequest, string>();
+  let cut = false;
+  let blocked = 0;
+  const server = http.createServer((request, response) => {
+    let target: URL;
+    try { target = new URL(request.url ?? ''); }
+    catch { request.socket.destroy(); return; }
+    if (!allowed.has(target.origin)) { request.socket.destroy(); return; }
+    if (cut && target.origin !== appOrigin) {
+      blocked += 1;
+      request.socket.destroy();
+      return;
+    }
+    const upstream = http.request(target, { method: request.method, headers: request.headers }, incoming => {
+      response.writeHead(incoming.statusCode ?? 502, incoming.headers);
+      incoming.pipe(response);
+    });
+    upstreams.set(upstream, target.origin);
+    upstream.on('error', () => response.destroy());
+    upstream.on('close', () => upstreams.delete(upstream));
+    response.on('close', () => upstream.destroy());
+    request.pipe(upstream);
+  });
+  server.on('connect', (_request, socket) => socket.destroy());
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  return {
+    origin: `http://127.0.0.1:${(server.address() as AddressInfo).port}`,
+    cutBackends: () => {
+      cut = true;
+      for (const [request, origin] of upstreams) if (origin !== appOrigin) request.destroy();
+    },
+    blockedRequests: () => blocked,
+    close: () => new Promise<void>((resolve, reject) => {
+      for (const request of upstreams.keys()) request.destroy();
+      server.closeAllConnections();
+      server.close(error => error ? reject(error) : resolve());
+    }),
   };
 };
