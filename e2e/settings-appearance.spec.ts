@@ -116,6 +116,7 @@ test('mobile shell opens settings and keeps the page inside 390px', async ({ pag
   });
   await signIn(page, '/?view=library&locale=en');
   await page.getByRole('button', { name: 'Manage library' }).click();
+  await expect(page.getByRole('menuitem', { name: 'See Pro plan' })).toBeVisible();
   await page.getByRole('menuitem', { name: 'Appearance settings' }).click();
   await expect(page).toHaveURL(/view=settings/);
   await expect(page.getByRole('heading', { name: 'Make your study space yours' })).toBeVisible();
@@ -140,6 +141,7 @@ for (const motion of ['reduced', 'interrupted'] as const) {
     await page.keyboard.press('Escape');
     await expect(themeTrigger).toBeFocused();
     await page.getByRole('button', { name: 'Manage library' }).click();
+    await expect(page.getByRole('menuitem', { name: 'See Pro plan' })).toBeVisible();
     await page.getByRole('menuitem', { name: 'Appearance settings' }).click();
     if (motion === 'interrupted') await page.emulateMedia({ reducedMotion: 'reduce' });
     const heading = page.getByRole('heading', { name: 'Make your study space yours' });

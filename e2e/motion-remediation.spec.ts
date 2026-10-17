@@ -93,6 +93,7 @@ test('dialog overlay and content use coordinated entrance animations', async ({ 
   await page.setViewportSize({ width: 1440, height: 900 });
   await signIn(page, '/?view=library');
   await page.getByRole('button', { name: 'Manage library' }).click();
+  await expect(page.getByRole('menuitem', { name: 'See Pro plan' })).toBeVisible();
   await page.getByRole('menuitem', { name: 'Clear the entire library' }).click();
 
   const overlay = page.locator('[data-motion-overlay]');

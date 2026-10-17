@@ -122,8 +122,17 @@ async function attachReachableControls(page: Page, testInfo: TestInfo, name: str
   const scroll = await workspace.evaluate(element => ({ top: element.scrollTop, left: element.scrollLeft }));
   try {
     await expect(controls).not.toHaveCount(0);
-    await surface.evaluate(element => element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' }));
+    const scrollSurfaceToCenter = () => surface.evaluate(async element => {
+      element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    });
+    await scrollSurfaceToCenter();
     for (const control of await controls.all()) {
+      const outOfViewport = await control.evaluate(element => {
+        const rect = element.getBoundingClientRect();
+        return rect.top < 0 || rect.bottom > window.innerHeight;
+      });
+      if (outOfViewport) await scrollSurfaceToCenter();
       await expect(control).toBeInViewport({ ratio: 1 });
       await control.hover({ trial: true });
     }

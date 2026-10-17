@@ -258,6 +258,7 @@ test('the destructive library dialog restores focus to its stable opener', async
 
   const manage = page.getByRole('button', { name: 'Manage library' });
   await manage.click();
+  await expect(page.getByRole('menuitem', { name: 'See Pro plan' })).toBeVisible();
   const clear = page.getByRole('menuitem', { name: 'Clear the entire library' });
   await clear.click();
   await page.getByRole('button', { name: 'Keep library' }).click();
@@ -270,6 +271,7 @@ test('learning insights open from the library menu and lead to Progress', async 
 
   const manage = page.getByRole('button', { name: 'Manage library' });
   await manage.click();
+  await expect(page.getByRole('menuitem', { name: 'See Pro plan' })).toBeVisible();
   await page.getByRole('menuitem', { name: 'Learning insights' }).click();
   const insights = page.getByRole('dialog', { name: 'Learning insights' });
   await expect(insights).toBeVisible();
@@ -278,6 +280,7 @@ test('learning insights open from the library menu and lead to Progress', async 
   await expect(manage).toBeFocused();
 
   await manage.click();
+  await expect(page.getByRole('menuitem', { name: 'See Pro plan' })).toBeVisible();
   await page.getByRole('menuitem', { name: 'Learning insights' }).click();
   await page.getByRole('dialog', { name: 'Learning insights' }).getByRole('button', { name: 'Open full Progress →' }).click();
   await expect(page.getByRole('dialog', { name: 'Learning insights' })).toBeHidden();

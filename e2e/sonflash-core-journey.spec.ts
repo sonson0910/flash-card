@@ -98,6 +98,7 @@ test('a signed-in learner completes the core course, library, review, recap, and
   await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary library' })).toBeVisible();
   await expect(createdRow).toContainText('duy trì');
   await page.getByRole('button', { name: 'Manage library' }).click();
+  await expect(page.getByRole('menuitem', { name: 'See Pro plan' })).toBeVisible();
   await page.getByRole('menuitem', { name: 'Sign out of cloud sync' }).click();
   await expect(page.locator('.landing-canvas')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
