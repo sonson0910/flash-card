@@ -28,7 +28,6 @@ export interface WeeklyRecapDialogProps {
   /** Injectable for deterministic tests; defaults to the real clock. */
   readonly now?: () => Date;
 }
-
 const localDateFromKey = (dateKey: string): Date => new Date(`${dateKey}T12:00:00`);
 const defaultNow = (): Date => new Date();
 
