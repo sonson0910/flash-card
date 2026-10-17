@@ -1,11 +1,20 @@
+import { i18n } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
 import type { CardData } from '../../types/card';
 import { withTimeout } from '../../lib/async';
 import { getProtectedFunctionUserMessage } from '../../lib/protectedFunctionsCapability';
+import { createLexemeId } from '../multilingual/lexemeIdentity';
+import { SharedDeckCourseNativeLanguageMismatchError } from './shared-deck-course-error';
 
 const MAX_SHARED_CARDS = 100;
 const MAX_SHARE_ID_LENGTH = 128;
 const SHARE_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
 const SHARED_DECK_OPERATION_TIMEOUT_MS = 20_000;
+// Shared intake confirms one write at a time against the owner's rate-limit budget.
+const SHARED_DECK_INTAKE_BATCH_SIZE = 1;
+const SHARED_DECK_INTAKE_WRITE_TIMEOUT_MS = 8_000;
+const SHARED_DECK_PAIR_HANDOFF_TIMEOUT_MS = 5_000;
+const SHARED_DECK_PAIR_HANDOFF_POLL_MS = 25;
 const SHARED_DECK_OPERATION_STORAGE_KEY = 'lingoflash_shared_deck_operation_v1';
 const SHARED_DECK_OPERATION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1_000;
 const MAX_PENDING_SHARED_DECK_OPERATIONS = 20;
@@ -31,6 +40,8 @@ export interface SharedDeckAdapter {
 
 type SharedDeckAdoptionResult =
   | { status: 'busy' }
+  | { status: 'pair-mismatch' }
+  | { status: 'stale' }
   | { status: 'failed'; error: unknown }
   | {
     status: 'completed';
@@ -40,7 +51,10 @@ type SharedDeckAdoptionResult =
   };
 
 export interface SharedDeckIntakePort {
-  adoptShared(request: { cards: readonly unknown[] }): Promise<SharedDeckAdoptionResult>;
+  adoptShared(request: {
+    cards: readonly unknown[];
+    expectedPair?: SharedDeckExpectedLanguagePair;
+  }): Promise<SharedDeckAdoptionResult>;
 }
 
 export interface SharedDeckBrowser {
@@ -58,7 +72,42 @@ export interface SharedDeckIncomingPreview {
   shareId: string;
   category: string;
   cardCount: number;
-  sampleWords: readonly string[];
+  sampleWords: readonly SharedDeckSampleWord[];
+  languagePairs?: readonly SharedDeckLanguagePair[];
+  createdAt: string | null;
+  expiresAt: string | null;
+  containsAiGeneratedCards: boolean;
+}
+
+export interface SharedDeckSampleWord {
+  value: string;
+  language: string | null;
+  translation: string;
+  translationLanguage: string | null;
+  origin: 'ai' | 'manual' | null;
+}
+
+export interface SharedDeckLanguagePair {
+  targetLanguage: string | null;
+  translationLanguage: string | null;
+}
+
+export interface SharedDeckExpectedLanguagePair {
+  targetLanguage: string;
+  nativeLanguage: string;
+}
+
+export interface SharedDeckOutgoingPreview {
+  category: string;
+  cardCount: number;
+  languagePairs: readonly SharedDeckLanguagePair[];
+  expiresAt: string | null;
+  containsAiGeneratedCards: boolean;
+}
+
+export interface SharedDeckTruncation {
+  sharedCardCount: number;
+  totalCardCount: number;
 }
 
 export interface SharedDeckSessionSnapshot {
@@ -66,7 +115,8 @@ export interface SharedDeckSessionSnapshot {
   isShareDialogOpen: boolean;
   activeShareId: string | null;
   shareLink: string | null;
-  shareWarning: string | null;
+  shareWarning: SharedDeckTruncation | null;
+  outgoingPreview?: SharedDeckOutgoingPreview | null;
   incomingPreview: SharedDeckIncomingPreview | null;
   expiresAt: string | null;
   notice: string | null;
@@ -87,11 +137,25 @@ export interface SharedDeckSessionActions {
   clearError(): void;
 }
 
+/** The optional dependency `shareCourseMatching.ts` implements. Kept as a structural type here to avoid a cyclic import. */
+export interface SharedDeckCoursePort {
+  ensureCourseForIncomingShare(preview: SharedDeckIncomingPreview): Promise<void>;
+  /** Legacy callers omit this hook and keep their original import behavior. */
+  shouldValidateIncomingPair?(): boolean;
+}
+
 interface SharedDeckSessionOptions {
   adapter: SharedDeckAdapter;
   intake: SharedDeckIntakePort;
   browser: SharedDeckBrowser;
   storage?: SharedDeckOperationStorage | null;
+  /**
+   * Optional and additive: omitting it keeps existing callers on the original
+   * import path. When supplied, it completes before the import call and
+   * a failure leaves the preview retryable instead of producing a
+   * half-imported deck.
+   */
+  coursePort?: SharedDeckCoursePort | null;
 }
 
 export interface SharedDeckOperationStorage {
@@ -122,14 +186,139 @@ const readShareId = (location: string): { present: boolean; shareId: string | nu
   return { present: value !== null, shareId: validShareId(value) };
 };
 
+const isCanonicalLanguageCode = (value: unknown): value is string => (
+  typeof value === 'string'
+  && value.length <= 16
+  && /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(value)
+);
+
+const languagePair = (
+  card: { language?: unknown; translationLanguage?: unknown },
+): SharedDeckLanguagePair => ({
+  targetLanguage: isCanonicalLanguageCode(card.language) ? card.language : null,
+  translationLanguage: isCanonicalLanguageCode(card.translationLanguage) ? card.translationLanguage : null,
+});
+
+const languagePairs = (cards: readonly unknown[]): readonly SharedDeckLanguagePair[] => {
+  const pairs = new Map<string, SharedDeckLanguagePair>();
+  for (const card of cards) {
+    if (!card || typeof card !== 'object' || Array.isArray(card)) continue;
+    const pair = languagePair(card as { language?: unknown; translationLanguage?: unknown });
+    pairs.set(`${pair.targetLanguage ?? ''}\u0000${pair.translationLanguage ?? ''}`, pair);
+  }
+  return [...pairs.values()];
+};
+
+const deckLanguagePair = (cards: readonly CardData[]): { targetLanguage: string; nativeLanguage: string } | null => {
+  const pairs = languagePairs(cards);
+  return pairs.length === 1 && pairs[0].targetLanguage && pairs[0].translationLanguage
+    ? { targetLanguage: pairs[0].targetLanguage, nativeLanguage: pairs[0].translationLanguage }
+    : null;
+};
+
+const incomingLanguagePairs = (
+  cards: readonly unknown[],
+  deckPair: { targetLanguage: string; nativeLanguage: string } | null,
+): readonly SharedDeckLanguagePair[] => {
+  if (deckPair) {
+    return [{ targetLanguage: deckPair.targetLanguage, translationLanguage: deckPair.nativeLanguage }];
+  }
+  const pairs = new Map<string, SharedDeckLanguagePair>();
+  for (const rawCard of cards) {
+    if (!rawCard || typeof rawCard !== 'object' || Array.isArray(rawCard)) continue;
+    const card = rawCard as Record<string, unknown>;
+    const language = canonicalCardLanguage(card);
+    const pair = { targetLanguage: language, translationLanguage: null };
+    pairs.set(`${language ?? ''}\u0000`, pair);
+  }
+  return [...pairs.values()];
+};
+
+const expectedPairFromPreview = (
+  preview: SharedDeckIncomingPreview,
+): SharedDeckExpectedLanguagePair | null => {
+  const pairs = preview.languagePairs ?? [];
+  if (pairs.length !== 1) return null;
+  const [pair] = pairs;
+  return pair.targetLanguage && pair.translationLanguage
+    ? { targetLanguage: pair.targetLanguage, nativeLanguage: pair.translationLanguage }
+    : null;
+};
+
+const canonicalCardLanguage = (card: Record<string, unknown>): string | null => {
+  const language = card.language;
+  const lexemeId = card.lexemeId;
+  const normalizedLemma = typeof card.normalizedLemma === 'string' ? card.normalizedLemma : card.word;
+  const partOfSpeech = card.partOfSpeech;
+  const senseKey = card.senseKey;
+  if (!isCanonicalLanguageCode(language)
+    || typeof lexemeId !== 'string' || !lexemeId
+    || typeof normalizedLemma !== 'string' || !normalizedLemma.trim()
+    || typeof partOfSpeech !== 'string' || !partOfSpeech.trim()
+    || typeof senseKey !== 'string' || !senseKey.trim()) return null;
+  try {
+    return createLexemeId({ language, normalizedLemma, partOfSpeech, senseKey }) === lexemeId
+      ? language
+      : null;
+  } catch {
+    return null;
+  }
+};
+
+const agreesWithDeckTarget = (
+  cards: readonly unknown[],
+  targetLanguage: string,
+): boolean => cards.every(card => {
+  if (!card || typeof card !== 'object' || Array.isArray(card)) return false;
+  const language = canonicalCardLanguage(card as Record<string, unknown>);
+  return language === null || language === targetLanguage;
+});
+
+const deckPairFrom = (record: Record<string, unknown>): {
+  targetLanguage: string;
+  nativeLanguage: string;
+} | null => {
+  if (!isCanonicalLanguageCode(record.targetLanguage) || !isCanonicalLanguageCode(record.nativeLanguage)) return null;
+  return { targetLanguage: record.targetLanguage, nativeLanguage: record.nativeLanguage };
+};
+
+const isoDate = (value: unknown): string | null => {
+  const asIso = (date: Date): string | null => Number.isFinite(date.getTime())
+    ? date.toISOString()
+    : null;
+  if (value instanceof Date) return asIso(value);
+  if (typeof value === 'string') {
+    const millis = Date.parse(value);
+    return Number.isFinite(millis) ? asIso(new Date(millis)) : null;
+  }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const timestamp = value as { toDate?: unknown; seconds?: unknown; nanoseconds?: unknown };
+  if (typeof timestamp.toDate === 'function') {
+    try {
+      const date = timestamp.toDate.call(value);
+      return date instanceof Date ? asIso(date) : null;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof timestamp.seconds === 'number' && Number.isFinite(timestamp.seconds)) {
+    const nanos = typeof timestamp.nanoseconds === 'number' && Number.isFinite(timestamp.nanoseconds)
+      ? timestamp.nanoseconds
+      : 0;
+    return asIso(new Date(timestamp.seconds * 1_000 + nanos / 1_000_000));
+  }
+  return null;
+};
+
 const sharedPayload = (payload: unknown, shareId: string): {
   cards: readonly unknown[];
   preview: SharedDeckIncomingPreview;
 } | null => {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
-  const record = payload as { cards?: unknown; category?: unknown };
-  if (!Array.isArray(record.cards) || record.cards.length === 0) return null;
-  const cards = record.cards.slice(0, MAX_SHARED_CARDS);
+  const record = payload as Record<string, unknown>;
+  const recordCards = record.cards;
+  if (!Array.isArray(recordCards) || recordCards.length === 0) return null;
+  const cards = recordCards.slice(0, MAX_SHARED_CARDS);
   const hasOnlyValidCards = cards.every(card => {
     if (!card || typeof card !== 'object' || Array.isArray(card)) return false;
     const { word, translation } = card as { word?: unknown; translation?: unknown };
@@ -142,16 +331,39 @@ const sharedPayload = (payload: unknown, shareId: string): {
   const category = typeof record.category === 'string'
     ? record.category.trim().slice(0, 128) || 'Shared deck'
     : 'Shared deck';
+  const proposedDeckPair = deckPairFrom(record);
+  const deckPair = proposedDeckPair && agreesWithDeckTarget(cards, proposedDeckPair.targetLanguage)
+    ? proposedDeckPair
+    : null;
   const sampleWords = cards.flatMap(card => {
     if (!card || typeof card !== 'object' || Array.isArray(card)) return [];
-    const word = (card as { word?: unknown }).word;
-    return typeof word === 'string' && word.trim()
-      ? [word.trim().slice(0, 80)]
+    const source = card as Record<string, unknown>;
+    const { word, translation } = source;
+    const origin: SharedDeckSampleWord['origin'] = source.origin === 'ai' || source.origin === 'manual'
+      ? source.origin
+      : null;
+    return typeof word === 'string' && word.trim() && typeof translation === 'string'
+      ? [{
+        value: word.trim().slice(0, 80),
+        language: canonicalCardLanguage(source) ?? deckPair?.targetLanguage ?? null,
+        translation: translation.trim().slice(0, 256),
+        translationLanguage: deckPair?.nativeLanguage ?? null,
+        origin,
+      }]
       : [];
-  }).slice(0, 4);
+  }).slice(0, 5);
   return {
     cards,
-    preview: { shareId, category, cardCount: cards.length, sampleWords },
+    preview: {
+      shareId, category, cardCount: cards.length, sampleWords,
+      languagePairs: incomingLanguagePairs(cards, deckPair),
+      createdAt: isoDate(record.createdAt),
+      expiresAt: isoDate(record.expiresAt),
+      containsAiGeneratedCards: recordCards.some(card => (
+        !!card && typeof card === 'object' && !Array.isArray(card)
+        && (card as Record<string, unknown>).origin === 'ai'
+      )),
+    },
   };
 };
 
@@ -203,6 +415,7 @@ const fingerprint = (value: unknown): string => {
 
 const requestFingerprint = (category: string, cards: readonly CardData[]): string => fingerprint({
     category,
+    ...(deckLanguagePair(cards) ?? {}),
     cards: cards.map(card => ({
       ...(card.lexemeId ? {
         lexemeId: card.lexemeId,
@@ -229,6 +442,7 @@ const requestFingerprint = (category: string, cards: readonly CardData[]): strin
       emoji: card.emoji || '',
       audioUrl: card.audioUrl || null,
       imageUrl: card.imageUrl || null,
+      ...(card.origin === 'ai' || card.origin === 'manual' ? { origin: card.origin } : {}),
       ...(card.mnemonic?.trim() ? { mnemonic: card.mnemonic.trim().slice(0, 2_048) } : {}),
       ...(card.wordFamily ? { wordFamily: card.wordFamily } : {}),
     })),
@@ -261,6 +475,7 @@ export function createSharedDeckSessionController({
   intake,
   browser,
   storage: suppliedStorage,
+  coursePort,
 }: SharedDeckSessionOptions) {
   const storage = suppliedStorage === undefined ? browserStorage() : suppliedStorage;
   let snapshot: SharedDeckSessionSnapshot = {
@@ -269,6 +484,7 @@ export function createSharedDeckSessionController({
     activeShareId: null,
     shareLink: null,
     shareWarning: null,
+    outgoingPreview: null,
     incomingPreview: null,
     expiresAt: null,
     notice: null,
@@ -282,6 +498,7 @@ export function createSharedDeckSessionController({
     lifecycle: number;
     owner: string | null;
     cards: readonly unknown[];
+    expectedPair: SharedDeckExpectedLanguagePair | null;
   } | null = null;
   let disposed = false;
   let pendingCreates: PendingSharedDeckOperation[] = [];
@@ -378,6 +595,7 @@ export function createSharedDeckSessionController({
         activeShareId: null,
         shareLink: null,
         shareWarning: null,
+        outgoingPreview: null,
         incomingPreview: null,
         expiresAt: null,
         notice: null,
@@ -408,6 +626,10 @@ export function createSharedDeckSessionController({
         lifecycle: operationLifecycle,
         owner,
         cards: loaded.cards,
+        expectedPair: coursePort
+          && (coursePort.shouldValidateIncomingPair?.() ?? true)
+          ? expectedPairFromPreview(loaded.preview)
+          : null,
       };
       publish({
         incomingPreview: loaded.preview,
@@ -466,10 +688,17 @@ export function createSharedDeckSessionController({
         : cards.length;
       const isTruncated = hasNext || knownTotal > sharedCards.length;
       const shareWarning = isTruncated
-        ? `This link includes the first ${sharedCards.length} of ${knownTotal} cards. Split this category into smaller decks to share the rest.`
+        ? { sharedCardCount: sharedCards.length, totalCardCount: knownTotal }
         : null;
+      const outgoingPreview: SharedDeckOutgoingPreview = {
+        category: normalizedCategory,
+        cardCount: sharedCards.length,
+        languagePairs: languagePairs(sharedCards),
+        expiresAt: null,
+        containsAiGeneratedCards: sharedCards.some(card => card.origin === 'ai'),
+      };
       activeOperation = true;
-      publish({ isLoading: true, error: null, notice: null, shareWarning: null });
+      publish({ isLoading: true, error: null, notice: null, shareWarning: null, outgoingPreview: null });
       try {
         const result = await withTimeout(
           adapter.create({
@@ -488,15 +717,15 @@ export function createSharedDeckSessionController({
         }
         clearPendingCreate(operation);
         const shareLink = buildShareLink(browser.getCurrentUrl(), shareId);
+        const completedPreview = { ...outgoingPreview, expiresAt: isoDate(result.expiresAt) };
         publish({
           activeShareId: shareId,
           shareLink,
           shareWarning,
+          outgoingPreview: completedPreview,
           isShareDialogOpen: true,
           expiresAt: result.expiresAt,
-          notice: isTruncated
-            ? `Shared the first ${sharedCards.length} of ${knownTotal} cards. Create smaller categories to share the rest.`
-            : null,
+          notice: null,
         });
         return { status: 'created', shareId, shareLink, expiresAt: result.expiresAt };
       } catch (error) {
@@ -525,10 +754,28 @@ export function createSharedDeckSessionController({
       activeOperation = true;
       publish({ isLoading: true, error: null, notice: null });
       try {
-        const adoption = await withTimeout(
-          intake.adoptShared({ cards: pending.cards }),
-          SHARED_DECK_OPERATION_TIMEOUT_MS,
+        if (coursePort && snapshot.incomingPreview) {
+          await coursePort.ensureCourseForIncomingShare(snapshot.incomingPreview);
+          if (!isCurrent(operationLifecycle, owner) || pendingSharedDeck !== pending) return { status: 'stale' };
+        }
+        const adoptionTimeout = SHARED_DECK_OPERATION_TIMEOUT_MS
+          + Math.ceil(pending.cards.length / SHARED_DECK_INTAKE_BATCH_SIZE) * SHARED_DECK_INTAKE_WRITE_TIMEOUT_MS;
+        const adopt = () => withTimeout(
+          intake.adoptShared({
+            cards: pending.cards,
+            ...(pending.expectedPair ? { expectedPair: pending.expectedPair } : {}),
+          }),
+          adoptionTimeout,
         );
+        let adoption = await adopt();
+        if (adoption.status === 'pair-mismatch' && pending.expectedPair) {
+          const deadline = Date.now() + SHARED_DECK_PAIR_HANDOFF_TIMEOUT_MS;
+          while (adoption.status === 'pair-mismatch' && Date.now() < deadline) {
+            await new Promise<void>(resolve => setTimeout(resolve, SHARED_DECK_PAIR_HANDOFF_POLL_MS));
+            if (!isCurrent(operationLifecycle, owner) || pendingSharedDeck !== pending) return { status: 'stale' };
+            adoption = await adopt();
+          }
+        }
         if (!isCurrent(operationLifecycle, owner) || pendingSharedDeck !== pending) {
           return { status: 'stale' };
         }
@@ -537,6 +784,11 @@ export function createSharedDeckSessionController({
             error: 'Another card operation is already running. Please try the shared link again.',
           });
           return { status: 'busy' };
+        }
+        if (adoption.status === 'stale') return { status: 'stale' };
+        if (adoption.status === 'pair-mismatch') {
+          publish({ error: 'Could not add this shared deck safely. Please try again.' });
+          return { status: 'failed' };
         }
         if (adoption.status === 'failed') throw adoption.error;
         if (!Number.isSafeInteger(adoption.candidateCount) || adoption.candidateCount <= 0) {
@@ -557,7 +809,12 @@ export function createSharedDeckSessionController({
           return { status: 'stale' };
         }
         publish({
-          error: getProtectedFunctionUserMessage(error)
+          error: error instanceof SharedDeckCourseNativeLanguageMismatchError
+            ? i18n._(msg({
+              id: 'library.share.meaning-language-mismatch',
+              message: "This shared deck uses a different meaning language from your existing course. Change the course's Meaning language in Settings, then try again.",
+            }))
+            : getProtectedFunctionUserMessage(error)
             ?? 'Could not add this shared deck safely. Please try again.',
         });
         return { status: 'failed' };
@@ -596,6 +853,7 @@ export function createSharedDeckSessionController({
           activeShareId: null,
           shareLink: null,
           shareWarning: null,
+          outgoingPreview: null,
           isShareDialogOpen: false,
           expiresAt: null,
           notice: 'The shared deck link has been revoked.',

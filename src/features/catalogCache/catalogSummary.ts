@@ -7,6 +7,7 @@ import {
   type CatalogReleaseDescriptor,
   type StoredCatalogEntry,
 } from './catalogCache';
+import type { CatalogUnitDescriptorV1 } from '../catalogPipeline/catalogContracts';
 import { observeCatalogTransaction } from './catalogTransaction';
 
 const MAXIMUM_RELEASE_MEMBERSHIPS = 10_000;
@@ -37,10 +38,25 @@ export interface CatalogTrackSummary {
   readonly facets: CatalogFacetSummary;
 }
 
+export interface CatalogUnitPreview {
+  readonly lexemeId: string;
+  readonly lemma: string;
+}
+
+export interface CatalogUnitSummary extends CatalogUnitDescriptorV1 {
+  readonly total: number;
+  readonly started: number;
+  readonly mastered: number;
+  /** First eight memberships by catalog rank, derived from the cached release. */
+  readonly preview: readonly CatalogUnitPreview[];
+}
+
 export interface CatalogWorkspaceSummary {
   readonly release: CatalogReleaseDescriptor;
   readonly scannedMemberships: number;
   readonly tracks: readonly CatalogTrackSummary[];
+  /** Empty for compatible V1 releases. */
+  readonly units?: readonly CatalogUnitSummary[];
 }
 
 interface MutableCount {
@@ -55,6 +71,16 @@ interface MutableTrack extends MutableCount {
   readonly topics: Set<string>;
   readonly partsOfSpeech: Set<string>;
   readonly skills: Set<string>;
+}
+
+interface MutableUnit extends MutableCount {
+  readonly descriptor: CatalogUnitDescriptorV1;
+  readonly preview: UnitPreviewCandidate[];
+}
+
+interface UnitPreviewCandidate extends CatalogUnitPreview {
+  readonly rank: number;
+  readonly membershipId: string;
 }
 
 const transactionDone = (transaction: IDBTransaction): Promise<void> => observeCatalogTransaction(
@@ -105,6 +131,10 @@ const mutableTrack = (): MutableTrack => ({
   skills: new Set(),
 });
 
+const mutableUnit = (descriptor: CatalogUnitDescriptorV1): MutableUnit => ({
+  ...mutableCount(), descriptor, preview: [],
+});
+
 const applyStatus = (count: MutableCount, status: CatalogLearningStatus | undefined): void => {
   count.total += 1;
   if (status !== undefined) count.started += 1;
@@ -112,6 +142,19 @@ const applyStatus = (count: MutableCount, status: CatalogLearningStatus | undefi
 };
 
 const sorted = (values: ReadonlySet<string>): readonly string[] => [...values].sort();
+
+const unitKey = (trackId: string, unitId: string): string => `${trackId}\u0000${unitId}`;
+
+const addPreview = (unit: MutableUnit, entry: StoredCatalogEntry): void => {
+  unit.preview.push({
+    lexemeId: entry.lexemeId,
+    lemma: entry.lemma,
+    rank: entry.rank,
+    membershipId: entry.membershipId,
+  });
+  unit.preview.sort((left, right) => left.rank - right.rank || left.membershipId.localeCompare(right.membershipId));
+  if (unit.preview.length > 8) unit.preview.pop();
+};
 
 /**
  * Reads only the active immutable release and never infers progress from an
@@ -136,6 +179,12 @@ export async function summarizeActiveCatalog(
     .index('releaseKey')
     .openCursor(IDBKeyRange.only(snapshot.releaseKey));
   const tracks = new Map<string, MutableTrack>();
+  const units = new Map<string, MutableUnit>();
+  if (snapshot.release.unitDescriptors) {
+    snapshot.release.unitDescriptors.forEach(descriptor => {
+      units.set(unitKey(descriptor.trackId, descriptor.unitId), mutableUnit(descriptor));
+    });
+  }
   let scannedMemberships = 0;
   let cursor = await requestResult(request);
   while (cursor) {
@@ -145,7 +194,8 @@ export async function summarizeActiveCatalog(
       await done.catch(() => undefined);
       throw new RangeError(`Catalog summary exceeded ${MAXIMUM_RELEASE_MEMBERSHIPS.toLocaleString('en-US')} memberships.`);
     }
-    const entry = publicCatalogEntry(cursor.value as StoredCatalogEntry);
+    const storedEntry = cursor.value as StoredCatalogEntry;
+    const entry = publicCatalogEntry(storedEntry);
     const track = tracks.get(entry.trackId) ?? mutableTrack();
     if (!tracks.has(entry.trackId)) tracks.set(entry.trackId, track);
     const tier = track.tiers.get(entry.tier) ?? mutableCount();
@@ -157,6 +207,21 @@ export async function summarizeActiveCatalog(
     track.topics.add(entry.topic);
     track.partsOfSpeech.add(entry.partOfSpeech);
     entry.skills.forEach(skill => track.skills.add(skill));
+    if (snapshot.release.unitDescriptors) {
+      if (!entry.lessonGroup) {
+        transaction.abort();
+        await done.catch(() => undefined);
+        throw new Error('Catalog V2 membership is missing its lesson group.');
+      }
+      const unit = units.get(unitKey(entry.trackId, entry.lessonGroup));
+      if (!unit || unit.descriptor.tier !== entry.tier) {
+        transaction.abort();
+        await done.catch(() => undefined);
+        throw new Error('Catalog V2 membership does not match its unit descriptor.');
+      }
+      applyStatus(unit, status);
+      addPreview(unit, storedEntry);
+    }
     cursor = await nextCursor(request, cursor);
   }
   await done;
@@ -189,5 +254,15 @@ export async function summarizeActiveCatalog(
         skills: sorted(track.skills),
       },
     })),
+    units: [...units.values()]
+      .sort((left, right) => left.descriptor.trackId.localeCompare(right.descriptor.trackId)
+        || left.descriptor.ordinal - right.descriptor.ordinal)
+      .map(unit => ({
+        ...unit.descriptor,
+        total: unit.total,
+        started: unit.started,
+        mastered: unit.mastered,
+        preview: unit.preview.map(({ lexemeId, lemma }) => ({ lexemeId, lemma })),
+      })),
   };
 }

@@ -1,6 +1,6 @@
-import type { CardData } from '../types/card';
+import type { CardData, CardLanguageCode } from '../types/card';
 import { isCardDue } from './srs';
-import { normalizeCardWord } from './cardIdentity';
+import { effectiveCardTargetLanguage, normalizeCardWord } from './cardIdentity';
 import {
   ALL_PRACTICE_DECK_SCOPE,
   practiceDeckScopeMatchesCard,
@@ -17,6 +17,7 @@ export interface CardQueryState {
   bookmarkedOnly: boolean;
   createdDate: string | null;
   wordPrefix: string;
+  targetLanguage?: CardLanguageCode | null;
 }
 
 export const PART_OF_SPEECH_OPTIONS = [
@@ -93,6 +94,7 @@ export function prioritizePracticeCards<T extends { id: string }>(dueCards: T[],
 }
 
 export function cardMatchesQuery(card: CardData, filters: CardQueryState): boolean {
+  if (filters.targetLanguage && effectiveCardTargetLanguage(card) !== filters.targetLanguage) return false;
   if (filters.category && card.category !== filters.category) return false;
   if (filters.partOfSpeech && normalizePartOfSpeech(card.partOfSpeech) !== filters.partOfSpeech) return false;
   if (!practiceDeckScopeMatchesCard(filters.customDeck ?? ALL_PRACTICE_DECK_SCOPE, card.customDeck)) return false;

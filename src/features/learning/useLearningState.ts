@@ -6,17 +6,30 @@ import {
   type LearningStateController,
   type LearningStateMutation,
   type LearningStateMutationResult,
+  type LearningDeleteUndoToken,
+  type LearningRestoreRequest,
   type LearningStateOutcome,
   type LearningStateSnapshotsPort,
+  type BulkCardFieldPatchOutcome,
+  type BulkCardFieldPatchRequest,
 } from './learningStateController';
 
 export interface LearningStatePersistencePort {
+  ownerId?(): string | null;
   findCard(cardId: string): CardData | undefined;
   persist(mutation: LearningStateMutation): Promise<LearningStateMutationResult>;
+  /**
+   * Optional: patches many cards through one bulk-mutation callable instead
+   * of one `persist` call per card. Absent for persistence ports that do not
+   * back a Library multi-select action (e.g. test doubles).
+   */
+  persistBulkPatch?(
+    patches: readonly BulkCardFieldPatchRequest[],
+  ): Promise<BulkCardFieldPatchOutcome[]>;
 }
 
 export type LearningOperationIdFactory = (
-  intent: 'bookmark' | 'deck' | 'review' | 'patch' | 'delete' | 'clear',
+  intent: 'bookmark' | 'deck' | 'review' | 'patch' | 'delete' | 'restore' | 'clear',
   cardId?: string,
 ) => string;
 
@@ -30,6 +43,7 @@ export interface LearningStateCommands {
     fieldMask?: readonly (keyof CardData)[],
   ): Promise<LearningStateOutcome>;
   deleteCard(cardId: string): Promise<LearningStateOutcome>;
+  restoreCard(token: LearningDeleteUndoToken, request: LearningRestoreRequest): Promise<LearningStateOutcome>;
   clearLibrary(): Promise<LearningStateOutcome>;
 }
 
@@ -66,6 +80,7 @@ export function createLearningStateBinding({
   const controller: LearningStateController = createLearningStateController({
     port: {
       activeOwner: () => activeOwnerId,
+      activeOwnerId: () => persistence.ownerId?.() ?? null,
       findCard: cardId => persistence.findCard(cardId),
       persist: mutation => persistence.persist(mutation),
     },
@@ -90,9 +105,13 @@ export function createLearningStateBinding({
       patchCard: (cardId, fields, fieldMask = Object.keys(fields) as Array<keyof CardData>) =>
         controller.patch(cardId, fields, fieldMask, operation('patch', cardId)),
       deleteCard: cardId => controller.delete(cardId, operation('delete', cardId)),
+      restoreCard: (token, request) => controller.restore(token, request),
       clearLibrary: () => controller.clear(operation('clear')),
     },
-    updateOwner: nextOwnerId => { activeOwnerId = nextOwnerId; },
+    updateOwner: nextOwnerId => {
+      if (activeOwnerId !== nextOwnerId) controller.invalidateUndoTokens();
+      activeOwnerId = nextOwnerId;
+    },
   };
 }
 
@@ -113,6 +132,7 @@ export function useLearningState({
     bindingRef.current = createLearningStateBinding({
       ownerId,
       persistence: {
+        ownerId: () => latestRef.current.persistence.ownerId?.() ?? null,
         findCard: cardId => latestRef.current.persistence.findCard(cardId),
         persist: mutation => latestRef.current.persistence.persist(mutation),
       },

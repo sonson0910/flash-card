@@ -14,6 +14,7 @@ vi.mock('firebase/functions', () => ({
 
 vi.mock('../../lib/firebase', () => ({
   protectedFunctionsCapability: functions.capability,
+  getSonFlashFunctions: (app: unknown, region: string = 'asia-southeast1') => functions.getFunctions(app, region),
 }));
 
 import { migrateLegacyLibraryWithAdmin } from './legacyLibraryMigrationService';

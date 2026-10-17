@@ -1,0 +1,62 @@
+<!--#HEAD Import-->
+<!--#DLGOPEN-->
+    <header style="flex-shrink: 0; padding: 22px 22px 18px 26px; display: flex; align-items: flex-start; gap: 14px; border-bottom: 1px solid {{t.line}};">
+      <div style="flex-grow: 1; min-width: 0;">
+      <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">Import</div>
+      <h2 id="dlg-title" style="margin: 6px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 28px; line-height: 1.12; letter-spacing: -0.02em; color: {{t.textStrong}};">Import from spreadsheet</h2>
+      <p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};"><span style="font-family: 'Geist Mono', ui-monospace, monospace;">vocab-ielts-week-6.xlsx</span> · 120 rows</p>
+      </div>
+      <button aria-label="Close" style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </header>
+    <div style="flex-grow: 1; min-height: 0; padding: 20px 26px 22px; display: flex; flex-direction: column; gap: 14px;">
+      <div role="status" style="padding: 16px; border-radius: {{t.fr}}px; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}};">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="sf-spin" style="width: 16px; height: 16px; box-sizing: border-box; border-radius: 50%; border: 2px solid {{t.accentLine}}; border-top-color: {{t.accent}};"></span>
+          <span style="font-size: 14px; font-weight: 650; color: {{t.textStrong}};">Importing <span style="font-family: 'Geist Mono', ui-monospace, monospace;">38</span> of <span style="font-family: 'Geist Mono', ui-monospace, monospace;">120</span></span>
+          <span style="margin-left: auto; font-size: 13px; color: {{t.text2}};">current: <span style="font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-size: 15px; color: {{t.accentText}};">resilient</span></span>
+        </div>
+        <div role="progressbar" aria-valuenow="38" aria-valuemin="0" aria-valuemax="120" style="margin-top: 12px; height: 8px; border-radius: 8px; background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: 32%; height: 100%; border-radius: 8px; background: {{bar}};"></div></div>
+        <div style="margin-top: 8px; font-size: 12px; color: {{t.text3}};">You can close this — the import keeps running in the background.</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;"><span style="height: 24px; padding: 0 9px; border-radius: 999px; border: 1px solid {{t.warnLine}}; background: {{t.warnBg}}; color: {{t.warn}}; font-size: 11.5px; font-weight: 650; display: flex; align-items: center;">Partial</span><span style="font-size: 14px; font-weight: 650; color: {{t.textStrong}};">When it finishes</span><span style="margin-left: auto; font-size: 12.5px; color: {{t.text3}};">Result preview</span></div>
+      <div style="border-radius: {{t.fr}}px; border: 1px solid {{t.line}}; overflow: hidden;">
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+          <div style="height: 46px; padding: 0 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid {{t.line}}; background: {{r.bg}};">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: {{r.dot}};"></span>
+            <span style="font-size: 14px; color: {{t.text}};">{{r.label}}</span><span style="font-size: 12.5px; color: {{t.text3}};">{{r.hint}}</span>
+            <span style="margin-left: auto; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 15px; color: {{r.color}};">{{r.n}}</span>
+          </div>
+        </sc-for>
+        <ul style="margin: 0; padding: 10px 16px 12px 36px; list-style: none; display: flex; flex-direction: column; gap: 6px; background: {{t.dangerBg}};">
+          <sc-for list="{{errors}}" as="e" hint-placeholder-count="2">
+            <li style="font-size: 12.5px; line-height: 1.45; color: {{t.body}};"><span style="font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.danger}};">{{e.row}}</span> · {{e.msg}}</li>
+          </sc-for>
+        </ul>
+      </div>
+    </div>
+    <footer style="flex-shrink: 0; padding: 16px 22px 20px 26px; border-top: 1px solid {{t.line}}; display: flex; align-items: center; gap: 10px;">
+      <button style="height: 44px; padding: 0 18px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path></svg>Download error report</button>
+      <button class="sf-press" style="margin-left: auto; height: 44px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 8px; cursor: pointer;">Done</button>
+    </footer>
+<!--#DLGCLOSE-->
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":720,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = { ...sfTokens(dark), fr: dark ? 14 : 10 };
+    const rows = [
+      ['Created', 'new cards', 96, t.good, t.textStrong], ['Reused', 'already in library', 18, t.accent, t.textStrong],
+      ['Skipped', 'duplicate rows', 4, t.text3, t.text2], ['Failed', 'see below', 2, t.dangerSolid, t.danger],
+    ].map(([label, hint, n, dot, color]) => ({ label, hint, n, dot, color, bg: label === 'Failed' ? t.dangerBg : 'transparent' }));
+    const errors = [{ row: 'Row 47', msg: '“colleage” has no dictionary match — check the spelling.' }, { row: 'Row 88', msg: 'Meaning column is empty.' }];
+    return {
+      t, dw: 580, grainId: 'import-grain-' + (dark ? 'd' : 'l'), amb: { ax: -180, ay: -220, bx: 380, by: 460 },
+      rows, errors, bar: dark ? 'linear-gradient(90deg, #28d3f4, #966cd7)' : t.accent,
+    };
+  }
+}
+</script>
+</body>
+</html>

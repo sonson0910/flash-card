@@ -1,5 +1,7 @@
 import type { CardData } from '../../types/card';
 import { isSupportedAudioUrl } from '../../lib/mediaUrlPolicy';
+import { detectScriptFamily, isUnsegmentedScript } from '../languagePacks/scriptDetection';
+import { segmentWords } from '../languagePacks/unicodeSegmentation';
 import {
   inferScriptScoringPolicy,
   scoreScriptAnswer,
@@ -110,7 +112,13 @@ const clozePrompt = (card: CardData): string | null => {
 };
 
 const sentenceTokens = (card: CardData): readonly SentenceToken[] => {
-  const raw = card.exampleSentence?.trim().split(/\s+/u).filter(Boolean) ?? [];
+  const sentence = card.exampleSentence?.trim() ?? '';
+  if (!sentence) return [];
+  // Han/Kana example sentences carry no inter-word spaces; whitespace splitting
+  // would otherwise return the whole sentence as a single unsplittable token.
+  const raw = isUnsegmentedScript(detectScriptFamily(sentence))
+    ? segmentWords(sentence).filter(Boolean)
+    : sentence.split(/\s+/u).filter(Boolean);
   if (raw.length < MINIMUM_SENTENCE_TOKENS || raw.length > MAXIMUM_SENTENCE_TOKENS) return [];
   return raw.map((text, index) => ({ id: `${card.id}:${index}`, text }));
 };

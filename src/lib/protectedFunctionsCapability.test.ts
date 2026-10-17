@@ -78,6 +78,45 @@ describe('protected Firebase Functions capability', () => {
 });
 
 describe('protected Firebase Functions failure classification', () => {
+  it('preserves the safe already-Pro business reason', () => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), {
+        code: 'functions/failed-precondition', details: { reason: 'already-pro' },
+      }), 'Pilot offer',
+    );
+    expect(failure).toMatchObject({ kind: 'permission', reason: 'already-pro', retryable: false });
+    expect(failure.message).toBe('Pro is already active on your account.');
+  });
+  it('preserves the unavailable purchase-intent business reason', () => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), {
+        code: 'functions/failed-precondition', details: { reason: 'intent-unavailable' },
+      }), 'Pilot offer',
+    );
+    expect(failure).toMatchObject({ kind: 'configuration', reason: 'intent-unavailable', retryable: false });
+    expect(failure.message).toBe('Purchase registration is temporarily unavailable.');
+  });
+  it('preserves the changed-offer reason so the learner can review new terms', () => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), {
+        code: 'functions/failed-precondition', details: { reason: 'offer-changed' },
+      }), 'Pilot offer',
+    );
+    expect(failure).toMatchObject({ kind: 'configuration', reason: 'offer-changed', retryable: false });
+  });
+  it.each([
+    ['service-daily-cap', 'hạn mức chung'],
+    ['account-daily-spend', 'hạn mức chi phí AI'],
+  ])('explains %s without retrying', (reason, text) => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), { code: 'functions/resource-exhausted', details: { reason } }),
+      'AI generation',
+    );
+    expect(failure).toMatchObject({ kind: 'quota', reason, retryable: false });
+    expect(failure.message).toContain(text);
+    expect(failure.message).toContain('00:00');
+  });
+
   it.each([
     ['functions/unauthenticated', 'authentication', false, 'Sign in again'],
     ['permission-denied', 'permission', false, 'App Check or access rules'],

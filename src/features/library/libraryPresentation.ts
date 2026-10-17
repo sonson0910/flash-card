@@ -2,6 +2,9 @@ import { cardMatchesQuery, sortCardsByActivity, type CardQueryState } from '../.
 import { cardWordKey } from '../../lib/cardIdentity';
 import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
+import { i18n } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
+import { getActiveUiLocale } from '../../i18n/loadCatalog';
 
 export function formatCardDate(dateValue?: string): string {
   if (!dateValue) return 'Older';
@@ -12,6 +15,24 @@ export function formatCardDate(dateValue?: string): string {
   if (date.toDateString() === today.toDateString()) return 'Today';
   if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+/** Returns whole days until a scheduled review, leaving due or invalid dates to the caller. */
+export function getRelativeReviewDays(reviewDate?: string, now = Date.now()): number | null {
+  if (!reviewDate) return null;
+  const reviewTime = new Date(reviewDate).getTime();
+  if (!Number.isFinite(reviewTime) || reviewTime <= now) return null;
+  return Math.max(1, Math.ceil((reviewTime - now) / (24 * 60 * 60 * 1000)));
+}
+
+export function displayCardDate(label: string, locale: string = getActiveUiLocale()): string {
+  if (label === 'All') return i18n._(msg({ id: 'library.date.all', message: 'All dates' }));
+  if (label === 'Today') return i18n._(msg({ id: 'library.date.today', message: 'Today' }));
+  if (label === 'Yesterday') return i18n._(msg({ id: 'library.date.yesterday', message: 'Yesterday' }));
+  if (label === 'Older') return i18n._(msg({ id: 'library.date.older', message: 'Older' }));
+  const date = new Date(label);
+  if (Number.isNaN(date.getTime())) return label;
+  return new Intl.DateTimeFormat(locale === 'pseudo' || locale === 'en-XA' ? 'en' : locale, { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
 }
 
 export function dateLabelToQueryDate(label: string): string | null {

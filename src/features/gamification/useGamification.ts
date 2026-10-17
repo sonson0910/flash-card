@@ -21,12 +21,12 @@ export interface UseGamificationOptions {
 }
 
 export interface GamificationState {
+  sync: { pendingCount: number; error: string | null; retry(): void };
   streak: number;
   xp: number;
   xpHistory: Record<string, number>;
   level: number;
   addXp: (amount: number, operationId?: string) => void;
-  sync: { pendingCount: number; error: string | null; retry: () => void };
 }
 
 const MAX_GAMIFICATION_SAVE_ATTEMPTS = 3;

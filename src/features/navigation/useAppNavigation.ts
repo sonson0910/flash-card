@@ -1,20 +1,17 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { getReducedMotionScrollBehavior, motionDurations } from '../../lib/motion';
+import { getEffectiveReducedMotion } from '../../lib/motionPreference';
+import { useTheme } from '../theme/ThemeProvider';
+import { ENABLED_UI_LOCALES } from '../../i18n/locales';
 
-export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'study' | 'quiz' | 'story' | 'spelling' | 'match' | 'shadowing';
+export { applyLegacyThemePreference as applyThemePreference, resolveInitialDarkMode } from '../theme/themePreference';
+export { APP_VIEW_HEADINGS } from './app-view-headings';
 
-export const APP_VIEW_HEADINGS: Readonly<Record<AppViewMode, string>> = {
-  landing: 'SonFlash — Smart Vocabulary Learning',
-  today: 'Today learning plan',
-  library: 'Vocabulary library',
-  catalog: 'Learning paths',
-  progress: 'Learning progress',
-  study: 'Study session',
-  quiz: 'Vocabulary quiz',
-  spelling: 'Spelling practice',
-  story: 'Context story',
-  match: 'Word match',
-  shadowing: 'Shadowing practice',
+export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'settings' | 'study' | 'quiz' | 'story' | 'spelling' | 'language-drill' | 'match' | 'shadowing';
+const ROUTED_VIEW = /^(landing|today|catalog|library|progress|settings)$/;
+const isLocaleLandingPath = (pathname: string): boolean => {
+  const lower = pathname.replace(/\/$/, '').toLowerCase();
+  return !lower || ENABLED_UI_LOCALES.some(locale => locale !== 'en' && lower === `/${locale.toLowerCase()}`);
 };
 
 export const readAppViewMode = (location: string): AppViewMode => {
@@ -22,9 +19,8 @@ export const readAppViewMode = (location: string): AppViewMode => {
   if (/^\/library\/?$/.test(url.pathname)) return 'library';
   if (/^\/landing\/?$/.test(url.pathname)) return 'landing';
   const view = url.searchParams.get('view');
-  return view === 'landing' || view === 'catalog' || view === 'library' || view === 'progress' || view === 'today'
-    ? view
-    : 'today';
+  if (view) return ROUTED_VIEW.test(view) ? view as AppViewMode : 'today';
+  return isLocaleLandingPath(url.pathname) && !url.searchParams.get('lesson') ? 'landing' : 'today';
 };
 
 export const createAppViewLocation = (
@@ -34,9 +30,8 @@ export const createAppViewLocation = (
   const url = new URL(currentLocation, 'https://sonflash.invalid');
   if (/^\/library\/?$/.test(url.pathname)) url.pathname = '/';
   url.searchParams.delete('lesson');
-  if (viewMode === 'landing' || viewMode === 'catalog' || viewMode === 'library' || viewMode === 'progress') {
-    url.searchParams.set('view', viewMode);
-  } else url.searchParams.delete('view');
+  if (viewMode === 'landing') url.searchParams.delete('view');
+  else url.searchParams.set('view', ROUTED_VIEW.test(viewMode) ? viewMode : 'today');
   return `${url.pathname}${url.search}${url.hash}`;
 };
 
@@ -55,10 +50,6 @@ const windowViewBrowser: AppViewBrowser = {
   },
 };
 
-type ThemeStorageReader = Pick<Storage, 'getItem'>;
-type ThemeStorageWriter = Pick<Storage, 'setItem'>;
-type ThemeRoot = { classList: Pick<DOMTokenList, 'add' | 'remove'> };
-
 export interface NavigationScheduler {
   requestAnimationFrame(callback: FrameRequestCallback): unknown;
   cancelAnimationFrame(handle: unknown): void;
@@ -73,39 +64,7 @@ const browserNavigationScheduler: NavigationScheduler = {
   clearTimeout: handle => globalThis.clearTimeout(handle as ReturnType<typeof globalThis.setTimeout>),
 };
 
-const browserStorage = (): Storage | null => {
-  try {
-    return globalThis.localStorage ?? null;
-  } catch {
-    return null;
-  }
-};
-
-const browserRoot = (): HTMLElement | null => globalThis.document?.documentElement ?? null;
 const browserActiveElement = (): Element | null => globalThis.document?.activeElement ?? null;
-
-export const resolveInitialDarkMode = (storage: ThemeStorageReader | null): boolean => {
-  try {
-    const saved = storage?.getItem('lingoflash_theme');
-    return saved ? saved === 'dark' : true;
-  } catch {
-    return true;
-  }
-};
-
-export const applyThemePreference = (
-  darkMode: boolean,
-  storage: ThemeStorageWriter | null,
-  rootElement: ThemeRoot | null,
-) => {
-  try {
-    storage?.setItem('lingoflash_theme', darkMode ? 'dark' : 'light');
-  } catch {
-    // Theme remains usable in memory when browser storage is unavailable.
-  }
-  if (darkMode) rootElement?.classList.add('dark');
-  else rootElement?.classList.remove('dark');
-};
 
 export const focusHeadingWithMotionPreference = (
   heading: Pick<HTMLElement, 'focus' | 'scrollIntoView'> | null,
@@ -159,39 +118,31 @@ export const scheduleViewHeadingFocus = ({
 export function useAppNavigation({
   initialViewMode,
   practiceOpenerRef = null,
-  storage: suppliedStorage,
-  rootElement: suppliedRoot,
   scheduler = browserNavigationScheduler,
   getActiveElement = browserActiveElement,
   bodyElement = globalThis.document?.body ?? null,
-  prefersReducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
+  prefersReducedMotion = getEffectiveReducedMotion(),
   viewBrowser = windowViewBrowser,
 }: {
   initialViewMode?: AppViewMode;
   practiceOpenerRef?: RefObject<HTMLElement | null> | null;
-  storage?: Storage | null;
-  rootElement?: HTMLElement | null;
   scheduler?: NavigationScheduler;
   getActiveElement?: () => unknown;
   bodyElement?: unknown;
   prefersReducedMotion?: boolean;
   viewBrowser?: AppViewBrowser;
 } = {}) {
-  const storage = suppliedStorage === undefined ? browserStorage() : suppliedStorage;
-  const rootElement = suppliedRoot === undefined ? browserRoot() : suppliedRoot;
+  const { mode } = useTheme();
+  const isDarkMode = mode === 'dark';
   const [viewMode, setViewModeState] = useState<AppViewMode>(() => (
     initialViewMode ?? readAppViewMode(viewBrowser.getCurrentUrl())
   ));
   const [viewFocusIntent, setViewFocusIntent] = useState(0);
-  const [isDarkMode, setIsDarkMode] = useState(() => resolveInitialDarkMode(storage));
   const viewHeadingRef = useRef<HTMLHeadingElement | null>(null);
-  const libraryHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const previousViewModeRef = useRef(viewMode);
   const currentViewModeRef = useRef(viewMode);
   const pendingViewFocusIntentRef = useRef(false);
   currentViewModeRef.current = viewMode;
-
-  useEffect(() => applyThemePreference(isDarkMode, storage, rootElement), [isDarkMode, rootElement, storage]);
 
   useEffect(() => viewBrowser.listenPopState(() => {
     const next = readAppViewMode(viewBrowser.getCurrentUrl());
@@ -215,7 +166,6 @@ export function useAppNavigation({
     });
   }, [bodyElement, getActiveElement, practiceOpenerRef, prefersReducedMotion, scheduler, viewMode]);
 
-  const toggleTheme = useCallback(() => setIsDarkMode(previous => !previous), []);
   const setViewMode = useCallback((next: AppViewMode) => {
     pendingViewFocusIntentRef.current = next !== currentViewModeRef.current;
     if (pendingViewFocusIntentRef.current) setViewFocusIntent(intent => intent + 1);
@@ -227,23 +177,11 @@ export function useAppNavigation({
       viewBrowser.pushState(location);
     }
   }, [viewBrowser]);
-  const focusLibraryHeading = useCallback(() => {
-    const frame = scheduler.requestAnimationFrame(() => {
-      focusHeadingWithMotionPreference(libraryHeadingRef.current, prefersReducedMotion);
-    });
-    return () => scheduler.cancelAnimationFrame(frame);
-  }, [prefersReducedMotion, scheduler]);
-
   return {
     viewMode,
     setViewMode,
-    viewHeading: APP_VIEW_HEADINGS[viewMode],
     viewHeadingRef,
     viewFocusIntent,
-    libraryHeadingRef,
-    focusLibraryHeading,
     isDarkMode,
-    setIsDarkMode,
-    toggleTheme,
   };
 }

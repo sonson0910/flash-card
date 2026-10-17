@@ -1,4 +1,21 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
+import type { Page, TestInfo } from '@playwright/test';
+
+async function beginFreshCardRecall(page: Page) {
+  const introduction = page.getByRole('region', { name: 'Meet this word' });
+  await expect(introduction).toBeVisible();
+  await introduction.getByRole('button', { name: 'I’ve reviewed it — start recall' }).click();
+  await expect(page.getByRole('button', { name: 'Reveal answer' })).toBeVisible();
+  await expect(page.locator('[data-study-session]')).toBeFocused();
+  const bounds = await page.locator('.claude-workspace').evaluate(element => {
+    const box = element.getBoundingClientRect();
+    return { top: box.top + element.clientTop, bottom: Math.min(window.innerHeight, box.top + element.clientTop + element.clientHeight) };
+  });
+  for (const control of [page.locator('[data-study-progress]'), page.locator('[data-study-recall-mode]'), page.locator('[data-study-card] h2').first(), page.getByRole('button', { name: 'Reveal answer' })]) {
+    const box = await control.boundingBox();
+    expect(box && box.y >= bounds.top && box.y + box.height <= bounds.bottom).toBe(true);
+  }
+}
 
 const longWord = 'counterintelligence';
 const longCategory = 'AcademicCategoryWithoutBreaks'.repeat(4);
@@ -23,6 +40,7 @@ const card = {
   createdAt: new Date(2026, 6, 15, 10, 0).toISOString(),
   bookmarked: false,
   difficulty: 'unrated',
+  origin: 'ai',
   customDeck: null,
   exampleSentence: 'Counterintelligence protects sensitive information.',
   exampleTranslation: 'Phản gián bảo vệ thông tin nhạy cảm.',
@@ -38,21 +56,61 @@ const richCard = {
   explanationTranslation: richVietnameseExplanation,
 };
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(storedCards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(storedCards));
-    localStorage.removeItem('lingoflash_cards_owner');
+for (const family of ['classic', 'crystal']) {
+  for (const mode of ['light', 'dark']) {
+    test(`${family} ${mode} keeps recall controls usable at 1280 by 720`, async ({ page, signIn, seedCards }) => {
+      await page.setViewportSize({ width: 1280, height: 720 });
+      await page.addInitScript(({ family, mode }) => {
+        localStorage.setItem('sonflash_theme_family', family);
+        localStorage.setItem('lingoflash_theme', mode);
+        localStorage.setItem('sonflash_theme_follow_system', 'false');
+      }, { family, mode });
+      await seedCards([richCard]);
+      await signIn(page, '/?view=library&locale=en');
+      await page.getByRole('button', { name: 'Study now' }).click();
+      await beginFreshCardRecall(page);
+      const answer = page.getByRole('textbox', { name: 'Your answer', exact: true });
+      await answer.fill('sự tương đồng');
+      await page.getByRole('button', { name: 'Check', exact: true }).click();
+      await expect(page.getByRole('button', { name: 'Reveal answer' })).toBeInViewport({ ratio: 1 });
+      await page.getByRole('button', { name: 'Reveal answer' }).click();
+      await expect(page.locator('[data-study-session]')).toHaveAttribute('data-study-state', 'revealed');
+      await expect(page.locator('[data-study-rating]').getByRole('button').first()).toBeEnabled();
+    });
+  }
+}
+
+test.beforeEach(async ({ page, seedCards, seedCourseProfile }) => {
+  await page.addInitScript(() => {
     localStorage.setItem('lingoflash_theme', 'light');
-  }, [card, richCard]);
+    localStorage.removeItem('sonflash_zen_glass_mode');
+  });
+  await seedCards([card, richCard]);
+  // A fresh emulator test user has no course profile yet, which currently
+  // shows the full-screen OnboardingJourney overlay even for signed-in users
+  // who already have cards (tracked separately as a product bug in the
+  // onboarding lane). Seed a legacy profile so these flashcard-interaction
+  // tests exercise the ordinary library shell instead of that overlay.
+  await seedCourseProfile();
 });
 
-test('study reveal keeps progress visible and scrolls rating controls into view', async ({ page }) => {
+test('study reveal keeps progress visible and scrolls rating controls into view', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
 
-  await page.getByRole('button', { name: /Start a review|Review \d+ due/ }).first().click();
+  // LibraryCardGrid.tsx's collection actions render a single "Study now"
+  // button (library.grid.study-now); the old "Start a review"/"Review N due"
+  // copy no longer exists.
+  await page.getByRole('button', { name: 'Study now' }).click();
   await expect(page.locator('[data-study-progress]')).toBeVisible();
-  await page.getByRole('button', { name: 'I’ve reviewed it — start recall' }).click();
+  await beginFreshCardRecall(page);
+  const heading = page.locator('[data-study-card] h2').first();
+  if (await heading.textContent() !== longWord) {
+    await page.getByRole('button', { name: 'Next card' }).click();
+    await beginFreshCardRecall(page);
+  }
+  await expect(heading).toHaveText(longWord);
+  expect(await heading.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   await page.getByRole('button', { name: 'Reveal answer' }).click();
 
   const rating = page.locator('[data-study-rating]');
@@ -61,11 +119,120 @@ test('study reveal keeps progress visible and scrolls rating controls into view'
     const box = await rating.boundingBox();
     return Boolean(box && box.y >= 0 && box.y + box.height <= 844);
   }).toBe(true);
+  const prepareOffline = page.getByRole('region', { name: 'Offline access' }).getByRole('button', { name: 'Prepare offline' });
+  await prepareOffline.scrollIntoViewIfNeeded();
+  await expect(prepareOffline).toBeInViewport();
 });
 
-test('long vocabulary content wraps without horizontal loss on both faces', async ({ page }) => {
+test('study timer pauses for the card editor and resumes from the elapsed time', async ({ page, signIn }) => {
+  await signIn(page, '/?view=library');
+  await page.clock.install();
+  await page.getByRole('button', { name: 'Study now' }).click();
+
+  const timer = page.locator('[data-study-timer]');
+  await expect(timer).toHaveText('00:00');
+  await page.clock.runFor(2_000);
+  await expect(timer).toHaveText('00:02');
+
+  await beginFreshCardRecall(page);
+  await page.getByRole('button', { name: 'Reveal answer' }).click();
+  await page.getByRole('button', { name: 'Edit card' }).first().click();
+  await expect(page.getByRole('dialog', { name: 'Edit card' })).toBeVisible();
+  await expect(page.locator('[data-study-session]')).toHaveAttribute('data-study-paused', 'true');
+  const pausedTime = await timer.textContent();
+  expect(pausedTime).toMatch(/^\d{2}:\d{2}$/);
+  await page.clock.runFor(5_000);
+  await expect(timer).toHaveText(pausedTime!);
+
+  await page.getByRole('button', { name: 'Close editor' }).click();
+  await expect(page.getByRole('dialog', { name: 'Edit card' })).toBeHidden();
+  await expect(page.locator('[data-study-session]')).toHaveAttribute('data-study-paused', 'false');
+  await page.clock.runFor(1_000);
+  const [minutes, seconds] = pausedTime!.split(':').map(Number);
+  const resumedSeconds = minutes * 60 + seconds + 1;
+  await expect(timer).toHaveText(`${String(Math.floor(resumedSeconds / 60)).padStart(2, '0')}:${String(resumedSeconds % 60).padStart(2, '0')}`);
+});
+
+async function captureStudyState(testInfo: TestInfo, page: Page, name: string) {
+  if (name.endsWith('revealed-rating')) {
+    // Rating auto-scroll must not leave the pointer applying incidental hover effects.
+    await page.mouse.move(0, 0);
+  }
+  const screenshot = testInfo.outputPath(`${name}.png`);
+  await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide' });
+  await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
+  await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true, animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
+}
+
+for (const theme of [
+  { name: 'classic-light', family: 'classic', mode: 'light' },
+  { name: 'classic-dark', family: 'classic', mode: 'dark' },
+  { name: 'crystal-light', family: 'crystal', mode: 'light' },
+  { name: 'crystal-dark', family: 'crystal', mode: 'dark' },
+]) {
+  for (const viewport of [
+    { name: 'desktop', width: 1440, height: 900, ratingRows: 1 },
+    { name: '390px', width: 390, height: 844, ratingRows: 1 },
+  ]) {
+    test(`${theme.name} StudyView captures prompt and revealed rating states at ${viewport.name}`, async ({ page, signIn, seedCards }, testInfo) => {
+      await page.setViewportSize(viewport);
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript(theme => {
+        localStorage.setItem('sonflash_theme_family', theme.family);
+        localStorage.setItem('lingoflash_theme', theme.mode);
+        localStorage.setItem('sonflash_theme_follow_system', 'false');
+        localStorage.setItem('sonflash_reduced_motion', 'true');
+      }, theme);
+      const visualCard = { ...card, word: 'resemblance', normalizedWord: 'resemblance', translation: 'sự tương đồng', category: 'Writing', phonetic: '/rɪˈzɛmbləns/', explanationTranslation: 'Sự giống nhau về hình dáng hoặc tính chất.', exampleSentence: 'These designs bear a resemblance.', exampleTranslation: 'Những thiết kế này có nét tương đồng.' };
+      await seedCards([{ ...visualCard, id: card.id }, { ...visualCard, id: richCard.id }]);
+      await page.clock.install();
+      await signIn(page, '/?view=library&locale=en');
+      await page.getByRole('button', { name: 'Study now' }).click();
+      await beginFreshCardRecall(page);
+
+      const session = page.locator('[data-study-session]');
+      const rating = page.locator('[data-study-rating]');
+      const ratingButtons = rating.getByRole('button');
+      await expect(session).toBeVisible();
+      await expect(session).toHaveAttribute('data-study-state', 'prompt');
+      await expect(session.locator('[data-study-progress-segments] > span')).toHaveCount(12);
+      await expect(session.locator('[data-study-timer]')).toBeVisible();
+      await expect(session.locator('[data-study-recall-mode] select')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Reveal answer' })).toBeVisible();
+      await expect(rating.locator('[data-review-state]')).toHaveAttribute('data-review-state', 'locked');
+      await expect(rating).toContainText('Reveal the answer before rating');
+      await expect(ratingButtons).toHaveCount(4);
+      for (const index of [0, 1, 2, 3]) await expect(ratingButtons.nth(index)).toBeDisabled();
+      await captureStudyState(testInfo, page, `study-review-${theme.name}-${viewport.name}-prompt`);
+
+      await page.getByRole('button', { name: 'Reveal answer' }).click();
+      await expect(session).toHaveAttribute('data-study-state', 'revealed');
+      await expect(session.locator('.flashcard-back')).toBeVisible();
+      await expect(session.locator('.flashcard-back')).toContainText('These designs bear a resemblance.');
+      await expect(rating.locator('[data-review-state]')).toHaveAttribute('data-review-state', 'ready');
+      await expect(rating).toContainText('How well did you remember this card?');
+      for (const index of [0, 1, 2, 3]) await expect(ratingButtons.nth(index)).toBeEnabled();
+
+      const ratingLayout = await ratingButtons.evaluateAll(buttons => buttons.map(button => {
+        const box = button.getBoundingClientRect();
+        return { top: Math.round(box.top), width: box.width, height: box.height };
+      }));
+      expect(new Set(ratingLayout.map(button => button.top)).size).toBe(viewport.ratingRows);
+      for (const button of ratingLayout) {
+        expect(button.width).toBeGreaterThanOrEqual(44);
+        expect(button.height).toBeGreaterThanOrEqual(44);
+      }
+      await captureStudyState(testInfo, page, `study-review-${theme.name}-${viewport.name}-revealed-rating`);
+    });
+  }
+}
+
+test('long vocabulary content wraps without horizontal loss on both faces', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 320, height: 700 });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
+  // The flashcard only renders inside the "Open card" detail dialog
+  // (LibraryCardGrid.tsx's Dialog.Root), not inline in the grid.
+  await page.locator(`[data-library-card-id="${card.id}"] .library-word-open`).click();
 
   const front = page.locator('.flashcard-face').first();
   const wordHeading = front.getByRole('heading', { name: longWord });
@@ -97,8 +264,9 @@ test('long vocabulary content wraps without horizontal loss on both faces', asyn
   }
 });
 
-test('settled card faces do not keep a 3D transform on their text', async ({ page }) => {
-  await page.goto('/?view=library');
+test('settled card faces do not keep a 3D transform on their text', async ({ page, signIn }) => {
+  await signIn(page, '/?view=library');
+  await page.locator(`[data-library-card-id="${card.id}"] .library-word-open`).click();
 
   const cardShell = page.locator('.flashcard-shell').first();
   const hasPersistent3dTransform = () => cardShell.evaluate(element =>
@@ -113,20 +281,22 @@ test('settled card faces do not keep a 3D transform on their text', async ({ pag
   await expect.poll(hasPersistent3dTransform, { timeout: 2_000 }).toBe(false);
 });
 
-test('card change uses a spatial flip while returning to a crisp settled layer', async ({ page }) => {
+test('card change uses a spatial flip while returning to a crisp settled layer', async ({ page, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
+  await page.locator(`[data-library-card-id="${card.id}"] .library-word-open`).click();
 
-  const card = page.locator('.flashcard-shell').first();
-  await expect(card).toHaveAttribute('data-flip-animation', 'spatial');
+  const shell = page.locator('.flashcard-shell').first();
+  await expect(shell).toHaveAttribute('data-flip-animation', 'spatial');
   await page.getByRole('button', { name: new RegExp(`Reveal the Vietnamese meaning of ${longWord}`) }).click();
-  await expect(card).toHaveAttribute('data-card-side', 'back');
+  await expect(shell).toHaveAttribute('data-card-side', 'back');
   await expect(page.locator('.flashcard-back').first()).toHaveCSS('transform', 'none', { timeout: 2_000 });
   await expect(page.getByRole('button', { name: new RegExp(`Return to the English side of ${longWord}`) })).toBeFocused();
 });
 
-test('Vietnamese explanation renders generated Markdown as editorial content', async ({ page }) => {
-  await page.goto('/?view=library');
+test('Vietnamese explanation renders generated Markdown as editorial content', async ({ page, signIn }) => {
+  await signIn(page, '/?view=library');
+  await page.locator(`[data-library-card-id="${richCard.id}"] .library-word-open`).click();
 
   const richFlashcard = page.getByRole('group', { name: /resemblance flashcard/i });
   await richFlashcard.getByRole('button', { name: /Reveal the Vietnamese meaning of resemblance/ }).click();
@@ -146,9 +316,10 @@ test('Vietnamese explanation renders generated Markdown as editorial content', a
   expect(visibleText).not.toContain('* *');
 });
 
-test('reduced-motion users receive an immediate 2D face change', async ({ page }) => {
+test('reduced-motion users receive an immediate 2D face change', async ({ page, signIn }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
+  await page.locator(`[data-library-card-id="${card.id}"] .library-word-open`).click();
 
   await page.getByRole('button', { name: new RegExp(`Reveal the Vietnamese meaning of ${longWord}`) }).click();
   const back = page.locator('.flashcard-back').first();
@@ -164,21 +335,46 @@ test('reduced-motion users receive an immediate 2D face change', async ({ page }
   expect(parseFloat(settledStyle.transitionDuration)).toBeLessThanOrEqual(0.001);
 });
 
-test('closing card dialogs restores focus to a surviving control', async ({ page }) => {
+test('AI disclosure stays visible and guest report actions stay hidden in standard and Zen cards', async ({ page, signIn }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await signIn(page, '/?view=library');
+  await page.locator(`[data-library-card-id="${card.id}"] .library-word-open`).click();
+  const flashcardGroup = page.getByRole('group', { name: /counterintelligence flashcard/i });
+  await flashcardGroup.getByRole('button', { name: /Reveal the Vietnamese meaning/ }).click();
+  await expect(flashcardGroup.locator('[data-ai-disclosure]')).toBeVisible();
+  await expect(flashcardGroup.getByRole('button', { name: 'Báo thẻ sai' })).toHaveCount(0);
+
+  await page.evaluate(() => {
+    localStorage.setItem('sonflash_zen_glass_mode', 'true');
+    window.dispatchEvent(new CustomEvent('sonflash-zen-mode-change', { detail: { enabled: true } }));
+  });
+  const zenCard = page.getByRole('group', { name: /counterintelligence flashcard/i });
+  await expect(zenCard.locator('[data-ai-disclosure]')).toBeVisible();
+  await expect(zenCard.getByRole('button', { name: 'Báo thẻ sai' })).toHaveCount(0);
+});
+
+test('closing card dialogs restores focus to a surviving control', async ({ page, signIn }) => {
   test.setTimeout(60_000);
 
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
 
-  const deleteButton = page.getByRole('button', { name: 'Delete card' }).first();
+  // Both delete buttons here are the grid row's own controls
+  // (LibraryCardGrid.tsx), not the Flashcard component's internal delete
+  // button (never mounted for this card, since its detail dialog is never
+  // opened) — the grid-level confirm dialog's Cancel button reads "Cancel"
+  // (common.cancel), not "Keep card".
+  const cardRow = page.locator(`[data-library-card-id="${card.id}"]`);
+  const deleteButton = cardRow.getByRole('button', { name: 'Delete card' });
   await deleteButton.click();
-  await page.getByRole('button', { name: 'Keep card' }).click();
+  await page.getByRole('button', { name: 'Cancel' }).click();
   await expect(deleteButton).toBeFocused();
 
   await deleteButton.click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete card' }).click();
-  await expect(page.getByRole('group', { name: new RegExp(`${longWord} flashcard`, 'i') })).toHaveCount(0);
+  await expect(cardRow).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Your library' })).toBeFocused();
 
+  await page.locator(`[data-library-card-id="${richCard.id}"] .library-word-open`).click();
   await page.getByRole('button', { name: /Reveal the Vietnamese meaning of resemblance/ }).click();
   await page.locator('details[data-card-disclosure="learning-tools"] > summary').click();
   const detailsButton = page.getByRole('button', { name: /Learning details/ });

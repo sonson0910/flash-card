@@ -452,7 +452,7 @@ jobs:
       - name: Verify the sealed Firebase CLI version
         working-directory: candidate
         shell: bash
-        run: test "$(./node_modules/.bin/firebase --version)" = "15.29.0"
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.34.0"
 
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
@@ -579,7 +579,7 @@ jobs:
       - name: Verify the sealed Firebase CLI version
         working-directory: candidate
         shell: bash
-        run: test "$(./node_modules/.bin/firebase --version)" = "15.29.0"
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.34.0"
 
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
@@ -645,7 +645,7 @@ jobs:
       - name: Verify the sealed Firebase CLI version
         working-directory: candidate
         shell: bash
-        run: test "$(./node_modules/.bin/firebase --version)" = "15.29.0"
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.34.0"
 
       - name: Materialize sealed Functions runtime dependencies
         run: npm ci --prefix candidate/functions --omit=dev --ignore-scripts --no-audit --no-fund
@@ -653,6 +653,18 @@ jobs:
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
+
+      - name: Verify Pro intent Firestore index is ready before Functions promotion
+        shell: bash
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+        run: |
+          set -euo pipefail
+          gcloud firestore indexes composite list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --format=json \
+            | node scripts/verify-entitlement-index.mjs "$FIREBASE_PROJECT_ID" "$FIRESTORE_DATABASE_ID"
 
       - name: Promote only the sealed Functions artifact after App Check approval
         working-directory: candidate

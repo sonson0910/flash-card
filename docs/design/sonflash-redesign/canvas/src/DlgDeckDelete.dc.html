@@ -1,0 +1,39 @@
+<!--#HEAD Delete deck-->
+<!--#DLGOPEN-->
+    <header style="flex-shrink: 0; padding: 22px 22px 18px 26px; display: flex; align-items: flex-start; gap: 14px; border-bottom: 1px solid {{t.line}};">
+      <span aria-hidden="true" style="width: 48px; height: 48px; flex-shrink: 0; border-radius: 14px; background: {{t.dangerBg}}; border: 1px solid {{t.dangerLine}}; color: {{t.danger}}; display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"></path></svg></span>
+      <div style="flex-grow: 1; min-width: 0;">
+      <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">Delete deck</div>
+      <h2 id="dlg-title" style="margin: 6px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 28px; line-height: 1.12; letter-spacing: -0.02em; color: {{t.textStrong}};">Delete “TACN”?</h2>
+      </div>
+      <button aria-label="Close" style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </header>
+    <div style="flex-grow: 1; min-height: 0; padding: 20px 26px 22px; display: flex; flex-direction: column; gap: 16px;">
+      <p style="margin: 0; font-size: 15px; line-height: 1.55; color: {{t.body}};">The deck goes away, but its <span style="font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.textStrong}};">170</span> cards stay in your library and move to <span style="font-weight: 650; color: {{t.textStrong}};">Unassigned</span>. Nothing you have learned is lost.</p>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="flex: 1; padding: 14px 16px; border-radius: {{t.fr}}px; border: 1px solid {{t.line}}; background: {{t.chipBg}};"><div style="font-size: 12px; color: {{t.text2}};">TACN</div><div style="margin-top: 4px; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-size: 26px; line-height: 1.1; color: {{t.textStrong}};"><span style="text-decoration: line-through; text-decoration-color: {{t.danger}};">170</span></div><div style="margin-top: 2px; font-size: 12px; color: {{t.text3}};">deck removed</div></div>
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{t.text3}}" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+        <div style="flex: 1; padding: 14px 16px; border-radius: {{t.fr}}px; border: 1px solid {{t.line}}; background: {{t.chipBg}};"><div style="font-size: 12px; color: {{t.text2}};">Unassigned</div><div style="margin-top: 4px; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-size: 26px; line-height: 1.1; color: {{t.textStrong}};">1,012</div><div style="margin-top: 2px; font-size: 12px; color: {{t.text3}};">842 + 170 cards</div></div>
+      </div>
+      <p style="margin: 0; font-size: 13px; color: {{t.text3}};">Review schedules and mastery are kept for every card.</p>
+    </div>
+    <footer style="flex-shrink: 0; padding: 16px 22px 20px 26px; border-top: 1px solid {{t.line}}; display: flex; align-items: center; gap: 10px;">
+      <button style="margin-left: auto; height: 44px; padding: 0 18px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">Keep deck</button>
+      <button class="sf-press" style="height: 44px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.dangerSolid}}; color: {{t.dangerSolidText}}; box-shadow: 0 14px 30px -16px {{t.dangerSolid}}; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 8px; cursor: pointer;">Delete deck</button>
+    </footer>
+<!--#DLGCLOSE-->
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":720,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = { ...sfTokens(dark), fr: dark ? 14 : 10 };
+    return {
+      t, dw: 500, grainId: 'delete-deck-grain-' + (dark ? 'd' : 'l'), amb: { ax: -180, ay: -220, bx: 380, by: 460 },
+    };
+  }
+}
+</script>
+</body>
+</html>

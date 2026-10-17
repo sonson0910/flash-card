@@ -1,7 +1,13 @@
+import {
+  LEGACY_CARD_LANGUAGE,
+  type CardLanguageCode,
+} from '../types/card';
+
 export interface CardIdentityLike {
   id: string;
   lexemeId?: unknown;
   language?: unknown;
+  translationLanguage?: unknown;
   senseKey?: unknown;
   partOfSpeech?: unknown;
   word?: unknown;
@@ -18,6 +24,8 @@ export interface CardIdentityReservation {
   schemaVersion: 1;
   cardId: string;
   normalizedWord: string;
+  /** Present only for non-English target-scoped reservations. */
+  targetLanguage?: CardLanguageCode;
 }
 
 export function normalizeCardWord(value: unknown): string {
@@ -29,6 +37,23 @@ export function normalizeCardWord(value: unknown): string {
     .replace(/\s+/g, ' ');
 }
 
+const CARD_LANGUAGE_PATTERN = /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/;
+
+export function normalizeCardLanguage(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  const normalized = value.normalize('NFKC').trim().toLowerCase();
+  return normalized.length <= 16 && CARD_LANGUAGE_PATTERN.test(normalized) ? normalized : '';
+}
+
+export function isCardLanguageCode(value: unknown): value is CardLanguageCode {
+  return typeof value === 'string' && value === normalizeCardLanguage(value);
+}
+
+export function effectiveCardTargetLanguage(card: { language?: unknown }): CardLanguageCode | null {
+  if (card.language === undefined) return LEGACY_CARD_LANGUAGE;
+  return normalizeCardLanguage(card.language) || null;
+}
+
 export function cardWordKey(card: CardIdentityLike): string {
   return normalizeCardWord(card.normalizedWord) || normalizeCardWord(card.word);
 }
@@ -36,11 +61,13 @@ export function cardWordKey(card: CardIdentityLike): string {
 /**
  * The compatibility identity is deliberately additive: V3 cards use their
  * canonical lexeme id, while records without it retain their historic word
- * identity.  Do not infer a language for a legacy record.
+ * identity. Known non-English targets scope that fallback by target; an
+ * omitted target keeps the legacy English-compatible key.
  */
 export function cardLogicalKey(card: CardIdentityLike): string {
   const lexemeId = typeof card.lexemeId === 'string' ? card.lexemeId.trim() : '';
   const language = typeof card.language === 'string' ? card.language : '';
+  const targetLanguage = normalizeCardLanguage(card.language);
   const senseKey = typeof card.senseKey === 'string' ? card.senseKey : '';
   const partOfSpeech = typeof card.partOfSpeech === 'string' ? card.partOfSpeech : '';
   const lemma = typeof card.normalizedLemma === 'string' ? card.normalizedLemma : card.normalizedWord || card.word;
@@ -53,10 +80,15 @@ export function cardLogicalKey(card: CardIdentityLike): string {
   const bytes = Array.from(new TextEncoder().encode(tuple))
     .map(byte => byte.toString(16).padStart(2, '0')).join('');
   const expectedId = canonicalLemma ? `lexeme-${createWordCardId(`\u0000${bytes}`).replace(/^word-/, '')}` : '';
-  if (lexemeId && language && senseKey && partOfSpeech && canonicalLemma && lexemeId === expectedId) {
+  if (lexemeId && targetLanguage && senseKey && partOfSpeech && canonicalLemma && lexemeId === expectedId) {
     return `lexeme:${lexemeId}`;
   }
-  return cardWordKey(card);
+  const wordKey = cardWordKey(card);
+  if (!wordKey) return '';
+  if (card.language !== undefined && !targetLanguage) return '';
+  return targetLanguage && targetLanguage !== LEGACY_CARD_LANGUAGE
+    ? `target:${targetLanguage}:${wordKey}`
+    : wordKey;
 }
 
 const SHA256_INITIAL = [
@@ -115,8 +147,39 @@ export function createCardIdentityHash(value: string): string {
   return state.map(value => value.toString(16).padStart(8, '0')).join('');
 }
 
-export function createCardIdentityReservationId(word: string): string {
-  return createCardIdentityHash(normalizeCardWord(word));
+const requiredTargetLanguage = (targetLanguage: string): string => {
+  const normalized = normalizeCardLanguage(targetLanguage);
+  if (!normalized) throw new TypeError('Target language is invalid.');
+  return normalized;
+};
+
+const targetIdentityValue = (word: string, targetLanguage: string): string => (
+  `${requiredTargetLanguage(targetLanguage)}\u0000${normalizeCardWord(word)}`
+);
+
+const createTargetAwareWordId = (word: string, targetLanguage: string): string => {
+  const normalizedTarget = requiredTargetLanguage(targetLanguage);
+  if (normalizedTarget === LEGACY_CARD_LANGUAGE) return createWordCardId(word);
+  const normalizedWord = normalizeCardWord(word);
+  const slug = normalizedWord
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+  const hash = createCardIdentityHash(targetIdentityValue(normalizedWord, normalizedTarget)).slice(0, 24);
+  return `word-${normalizedTarget}-${slug ? `${slug}-` : ''}${hash}`;
+};
+
+export function createTargetAwareCardId(word: string, targetLanguage: string): string {
+  return createTargetAwareWordId(word, targetLanguage);
+}
+
+export function createCardIdentityReservationId(word: string, targetLanguage?: string): string {
+  const normalizedTarget = targetLanguage === undefined ? undefined : requiredTargetLanguage(targetLanguage);
+  return createCardIdentityHash(normalizedTarget && normalizedTarget !== LEGACY_CARD_LANGUAGE
+    ? targetIdentityValue(word, normalizedTarget)
+    : normalizeCardWord(word));
 }
 
 export function createWordCardId(word: string): string {
@@ -134,12 +197,22 @@ export function createWordCardId(word: string): string {
   return `word-${slug ? `${slug}-` : ''}${hash}`;
 }
 
-export function createCardIdentityReservation(word: string): CardIdentityReservation {
+export function createTargetAwareCardIdentityReservationId(word: string, targetLanguage: string): string {
+  return createCardIdentityReservationId(word, targetLanguage);
+}
+
+export function createCardIdentityReservation(word: string, targetLanguage?: string): CardIdentityReservation {
   const normalizedWord = normalizeCardWord(word);
+  const normalizedTarget = targetLanguage === undefined ? undefined : requiredTargetLanguage(targetLanguage);
   return {
     schemaVersion: 1,
-    cardId: createWordCardId(normalizedWord),
+    cardId: normalizedTarget && normalizedTarget !== LEGACY_CARD_LANGUAGE
+      ? createTargetAwareCardId(normalizedWord, normalizedTarget)
+      : createWordCardId(normalizedWord),
     normalizedWord,
+    ...(normalizedTarget && normalizedTarget !== LEGACY_CARD_LANGUAGE
+      ? { targetLanguage: normalizedTarget }
+      : {}),
   };
 }
 
@@ -147,21 +220,28 @@ export function isMatchingCardIdentityReservation(
   value: unknown,
   expected: CardIdentityReservation,
 ): boolean {
-  return isCardIdentityReservationForWord(value, expected.normalizedWord)
+  return isCardIdentityReservationForWord(value, expected.normalizedWord, expected.targetLanguage)
     && value.cardId === expected.cardId;
 }
 
 export function isCardIdentityReservationForWord(
   value: unknown,
   normalizedWord: string,
+  targetLanguage?: string,
 ): value is CardIdentityReservation {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
   const reservation = value as Record<string, unknown>;
-  return Object.keys(reservation).length === 3
+  const normalizedTarget = targetLanguage === undefined ? undefined : normalizeCardLanguage(targetLanguage);
+  if (targetLanguage !== undefined && !normalizedTarget) return false;
+  const targetScoped = normalizedTarget !== undefined && normalizedTarget !== LEGACY_CARD_LANGUAGE;
+  return Object.keys(reservation).length === (targetScoped ? 4 : 3)
     && reservation.schemaVersion === 1
     && typeof reservation.cardId === 'string'
     && /^[a-zA-Z0-9_-]{1,128}$/.test(reservation.cardId)
-    && reservation.normalizedWord === normalizedWord;
+    && reservation.normalizedWord === normalizedWord
+    && (targetScoped
+      ? reservation.targetLanguage === normalizedTarget
+      : !Object.hasOwn(reservation, 'targetLanguage'));
 }
 
 function reviewCount(card: CardIdentityLike): number {

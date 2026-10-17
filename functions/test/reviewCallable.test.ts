@@ -1,4 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('../src/accountData.js', async importOriginal => ({
+  ...await importOriginal<typeof import('../src/accountData.js')>(),
+  isAccountDeleting: vi.fn(async () => false),
+}));
 import { createReviewCardHandler, toReviewHttpsError } from '../src/index.js';
 import { ReviewPersistenceConflictError } from '../src/reviewPersistence.js';
 
@@ -41,7 +46,7 @@ describe('review callable rollout', () => {
 
   it('authorizes before quota consumption and persistence', async () => {
     const consumeBudget = vi.fn(async () => undefined);
-    const applyReviewForOwner = vi.fn(async () => ({ applied: true }));
+    const applyReviewForOwner = vi.fn(async () => ({ applied: true as const, duplicate: false, xpAwarded: 0, card: {} }));
     const handler = createReviewCardHandler(false, { consumeBudget, applyReviewForOwner });
 
     await expect(handler({

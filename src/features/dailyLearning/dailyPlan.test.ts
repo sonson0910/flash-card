@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CardData } from '../../types/card';
-import { buildDailyPlan, buildDailyLessonSteps } from './dailyPlan';
+import { buildDailyPlan, buildDailyLessonSteps, logicalIdentity } from './dailyPlan';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
 
 const card = (id: string, overrides: Partial<CardData> = {}): CardData => ({
@@ -39,6 +39,20 @@ describe('buildDailyPlan', () => {
     expect(plan.isShort).toBe(true);
   });
 
+  it('can have a non-empty source pool with no cards in the current daily plan', () => {
+    const pool = [card('scheduled-later', {
+      reviews: 3,
+      difficulty: 'good',
+      correctStreak: 4,
+      nextReviewDate: '2026-09-01T08:00:00.000Z',
+    })];
+    const plan = buildDailyPlan(pool, { now: new Date('2026-08-04T08:00:00.000Z') });
+
+    expect(pool).toHaveLength(1);
+    expect(plan.items).toEqual([]);
+    expect(plan.counts).toEqual({ due: 0, weak: 0, new: 0, total: 0 });
+  });
+
   it('deduplicates logical words, remains deterministic and caps reviewed work at fifteen', () => {
     const cards = Array.from({ length: 20 }, (_, index) => card(`word-${String(index).padStart(2, '0')}`, {
       reviews: 1,
@@ -58,6 +72,20 @@ describe('buildDailyPlan', () => {
     expect(first.items.map(item => item.card.id)).toEqual(second.items.map(item => item.card.id));
     expect(new Set(first.items.map(item => item.logicalId)).size).toBe(15);
     expect(first.isShort).toBe(false);
+  });
+
+  it('admits a queued new word before the fifteen-card cap without displacing due reviews', () => {
+    const fresh = Array.from({ length: 17 }, (_, index) => card(`word-${String(index).padStart(2, '0')}`));
+    const due = card('due', { reviews: 2, difficulty: 'good', nextReviewDate: '2026-08-01T00:00:00.000Z' });
+    const plan = buildDailyPlan([due, ...fresh], {
+      now: new Date('2026-08-04T08:00:00.000Z'),
+      freshPriorityLogicalIds: [logicalIdentity(fresh[16])],
+    });
+
+    expect(plan.items).toHaveLength(6);
+    expect(plan.items[0].card.id).toBe('due');
+    expect(plan.items[1].card.id).toBe('word-16');
+    expect(plan.counts).toEqual({ due: 1, weak: 0, new: 5, total: 6 });
   });
 
   it('caps new items at five while due and weak items can still fill fifteen', () => {

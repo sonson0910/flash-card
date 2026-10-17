@@ -115,7 +115,7 @@ jobs:
         shell: bash
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
-          test "$(./node_modules/.bin/firebase --version)" = "15.29.0"
+          test "$(./node_modules/.bin/firebase --version)" = "15.34.0"
 
       - name: Materialize sealed Functions runtime dependencies
         run: npm ci --prefix candidate/functions --omit=dev --ignore-scripts --no-audit --no-fund

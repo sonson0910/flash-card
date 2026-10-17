@@ -1,0 +1,113 @@
+<!--#HEAD Mobile review-->
+<div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#AMBIENT-->
+  <header style="position: relative; z-index: 3; height: 64px; flex-shrink: 0; padding: 0 16px; display: flex; align-items: center; gap: 12px;">
+    <a href="#" aria-label="End session" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+    </a>
+    <div aria-hidden="true" style="flex-grow: 1; display: flex; gap: 3px;">
+      <sc-for list="{{segments}}" as="s" hint-placeholder-count="12"><span style="flex: 1; height: 4px; border-radius: 4px; background: {{s.bg}}; box-shadow: {{s.glow}};"></span></sc-for>
+    </div>
+    <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text2}};">5/12</span>
+  </header>
+
+  <div style="position: relative; z-index: 2; flex-grow: 1; display: flex; align-items: flex-start; justify-content: center; padding-top: 6px;">
+    <div onClick="{{flip}}" style="position: relative; width: 350px; height: 560px; cursor: pointer;">
+      <div style="position: absolute; inset: 0; perspective: 1400px;">
+        <div style="position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateY({{ry}}deg); transition: transform 620ms cubic-bezier(.2,.8,.2,1);">
+          <div style="position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-sizing: border-box; border-radius: {{t.mobileRadius}}px; overflow: hidden; display: flex; flex-direction: column; border: {{front.border}}; background: {{front.bg}}; box-shadow: {{front.shadow}};">
+            <div style="position: relative; height: 230px; flex-shrink: 0; margin: {{t.imgMargin}}; border-radius: {{t.imgRadius}}; overflow: hidden;">
+              <img src="../assets/blob/ed058680c239cce56bb63500ca7dd0e4.jpg" alt="Illustration for spelling" style="width: 100%; height: 100%; object-fit: cover; display: block; -webkit-mask-image: {{t.imgMask}}; mask-image: {{t.imgMask}};">
+              <div style="position: absolute; top: 12px; right: 12px; display: flex; gap: 6px;">
+                <button onClick="{{stop}}" aria-label="Hide picture hint" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.iconLine}}; background: {{t.iconBg}}; color: {{t.iconText}}; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+                <button onClick="{{stop}}" aria-label="Star this word" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.iconLine}}; background: {{t.iconBg}}; color: {{t.iconText}}; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"></path></svg></button>
+              </div>
+            </div>
+            <div style="padding: 6px 24px 0; flex-grow: 1; display: flex; flex-direction: column;">
+              <div style="font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text2}};">Noun · New</div>
+              <div style="margin-top: 4px; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};"><span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">Spel</span>ling</div>
+              <div style="margin-top: 12px; display: flex; align-items: center; gap: 10px;">
+                <button onClick="{{stop}}" aria-label="Listen" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
+                <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px; color: {{t.body}};">/ˈspelɪŋ/</span>
+              </div>
+              <p style="margin: 14px 0 0; font-size: 14.5px; line-height: 1.55; color: {{t.body}};">The process or ability of writing the letters of a word in the correct order.</p>
+              <div style="margin-top: auto; height: 56px; border-top: 1px solid {{t.line}}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: {{t.text}};">Tap to reveal</div>
+            </div>
+          </div>
+          <div style="position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: rotateY(180deg); box-sizing: border-box; border-radius: {{t.mobileRadius}}px; overflow: hidden; padding: 36px 26px 22px; display: flex; flex-direction: column; border: {{back.border}}; background: {{back.bg}}; box-shadow: {{back.shadow}}; color: {{back.text}};">
+            <div style="font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: {{back.muted}};">Vietnamese</div>
+            <div style="margin-top: 12px; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 46px; line-height: 1.05; letter-spacing: -0.02em; color: {{back.title}};">Cách đánh vần</div>
+            <div style="margin-top: 14px; width: 90px; height: 3px; border-radius: 2px; background: {{back.rule}};"></div>
+            <p style="margin: 24px 0 0; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 19px; line-height: 1.45;">Check the <span style="font-style: normal; color: {{back.hl}};">spelling</span> before you send it.</p>
+            <p style="margin: 6px 0 0; font-size: 13.5px; color: {{back.muted}};">Kiểm tra chính tả trước khi gửi nhé.</p>
+            <p style="margin: 18px 0 0; font-size: 13.5px; line-height: 1.6; color: {{back.body}};">Cách viết đúng các chữ cái của một từ; cũng chỉ khả năng viết đúng chính tả.</p>
+            <div style="margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px;">
+              <span style="height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid {{back.chipLine}}; display: flex; align-items: center;">spell <span style="margin-left: 4px; color: {{back.muted}};">v.</span></span>
+              <span style="height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid {{back.chipLine}}; display: flex; align-items: center;">misspelling <span style="margin-left: 4px; color: {{back.muted}};">n.</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="position: relative; z-index: 3; flex-shrink: 0; height: 128px; padding: 0 16px 24px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;">
+    <sc-if value="{{flipped}}" hint-placeholder-val="{{false}}">
+      <div role="group" aria-label="How well did you remember?" style="width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
+        <sc-for list="{{grades}}" as="g" hint-placeholder-count="4">
+          <button onClick="{{g.pick}}" style="height: 64px; border-radius: 16px; border: 1px solid {{g.border}}; background: {{g.bg}}; color: {{g.color}}; box-shadow: {{g.shadow}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 14px; font-weight: 650;">
+            <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{g.dot}};"></span>{{g.label}}</span>
+            <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; opacity: 0.75;">{{g.next}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{notFlipped}}" hint-placeholder-val="{{true}}">
+      <button onClick="{{flip}}" class="sf-press" style="width: 100%; height: 58px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 16px; font-weight: 650;">Reveal meaning</button>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { flipped: false };
+  }
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = { ...sfTokens(dark), mobileRadius: dark ? 28 : 20,
+      iconBg: dark ? 'rgb(6 22 31 / 0.5)' : 'rgb(255 252 245 / 0.92)', iconLine: dark ? 'rgb(255 255 255 / 0.2)' : 'rgb(29 26 22 / 0.1)', iconText: dark ? '#ffffff' : '#1d1a16' };
+    const front = dark
+      ? { border: '1.5px solid transparent', bg: t.cardBg + ' padding-box, ' + t.rimNew + ' border-box', shadow: '0 40px 80px -30px rgb(0 0 0 / 0.9)' }
+      : { border: '0', bg: t.cardBg, shadow: t.cardShadow };
+    const back = dark
+      ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 90% 55% at 50% 8%, rgb(40 211 244 / 0.2), transparent 70%) padding-box, ' + t.cardBg + ' padding-box, ' + t.rimNew + ' border-box', shadow: front.shadow, text: '#e5ecf1', title: '#f1f6f9', muted: '#99a7b0', body: '#b5c2ca', rule: '#28d3f4', hl: '#7ee6fa', chipLine: 'rgb(255 255 255 / 0.12)' }
+      : { border: '0', bg: 'radial-gradient(ellipse 80% 50% at 50% 8%, rgb(180 70 26 / 0.22), transparent 70%), #1c2a21', shadow: t.cardShadow, text: '#efe8da', title: '#fbf6ec', muted: '#b7ad9b', body: '#cfc6b5', rule: '#e8a075', hl: '#f0b48f', chipLine: 'rgb(239 232 218 / 0.2)' };
+    const s = this.state;
+    const g = dark ? [
+      ['Again', '1m', t.again, '#f3b3b2', 'rgb(237 83 80 / 0.3)', 'rgb(237 83 80 / 0.08)', 'none'],
+      ['Hard', '6m', t.hard, '#e5ecf1', 'rgb(255 255 255 / 0.08)', 'rgb(255 255 255 / 0.04)', 'none'],
+      ['Good', '1d', '#04141c', '#04141c', '#7ee6fa', '#28d3f4', '0 10px 24px -10px rgb(40 211 244 / 0.7)'],
+      ['Easy', '3d', t.good, '#e5ecf1', 'rgb(255 255 255 / 0.08)', 'rgb(255 255 255 / 0.04)', 'none'],
+    ] : [
+      ['Again', '1m', t.again, '#8f2324', 'rgb(197 54 55 / 0.3)', '#fbf1ec', 'none'],
+      ['Hard', '6m', t.hard, '#1d1a16', 'rgb(29 26 22 / 0.12)', '#fffcf5', 'none'],
+      ['Good', '1d', '#e8a075', '#fbf6ec', '#1d1a16', '#1d1a16', '0 10px 20px -10px rgb(29 26 22 / 0.8)'],
+      ['Easy', '3d', t.good, '#1d1a16', 'rgb(29 26 22 / 0.12)', '#fffcf5', 'none'],
+    ];
+    return {
+      t, front, back, grainId: 'mreview-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: -200, ay: -100, bx: 60, by: 480 },
+      segments: Array.from({ length: 12 }, (_, i) => ({ bg: i < 5 ? t.accent : t.track, glow: dark && i < 5 ? '0 0 6px rgb(40 211 244 / 0.5)' : 'none' })),
+      ry: s.flipped ? 180 : 0, flipped: s.flipped, notFlipped: !s.flipped,
+      flip: () => this.setState({ flipped: !s.flipped }),
+      stop: (e) => e.stopPropagation(),
+      grades: g.map(([label, next, dot, color, border, bg, shadow]) => ({ label, next, dot, color, border, bg, shadow, pick: () => this.setState({ flipped: false }) })),
+    };
+  }
+}
+</script>
+</body>
+</html>

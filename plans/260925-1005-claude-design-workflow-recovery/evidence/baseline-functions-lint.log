@@ -1,0 +1,10 @@
+command=npm --prefix functions run lint
+start_utc=2026-09-25T04:59:45.675382+00:00
+
+
+> lint
+> tsc --noEmit
+
+
+exit_code=0
+end_utc=2026-09-25T04:59:46.165369+00:00

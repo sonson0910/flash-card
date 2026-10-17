@@ -44,14 +44,21 @@ service cloud.firestore {
 
     function isValidCurrentPublicSharedDeck(data) {
       return data.keys().hasAll(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion'])
-        && data.keys().hasOnly(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion'])
+        && data.keys().hasOnly(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion', 'targetLanguage', 'nativeLanguage'])
         && data.category is string
         && data.category.size() <= 128
         && data.cards is list
         && data.cards.size() <= 100
         && data.createdAt is timestamp
         && data.expiresAt is timestamp
-        && data.schemaVersion == 2;
+        && data.schemaVersion == 2
+        && (!data.keys().hasAny(['targetLanguage', 'nativeLanguage']) || (
+          data.keys().hasAll(['targetLanguage', 'nativeLanguage'])
+          && data.targetLanguage is string
+          && data.targetLanguage.size() <= 16
+          && data.nativeLanguage is string
+          && data.nativeLanguage.size() <= 16
+        ));
     }
 
     function isSharedDeckQuarantined(shareId) {
@@ -68,9 +75,19 @@ service cloud.firestore {
         : 0;
     }
 
+    // The fence flag lives on profile/library_state (see isValidLibraryState)
+    // rather than on a standalone profile/library_migration_fence document.
+    // Every caller of this function already calls currentLibraryEpoch(userId)
+    // (or hasLibraryEpochState(userId)) in the same rule evaluation, so this
+    // get() lands on a document path Firestore has already cached for this
+    // request and costs no additional dependent-document read. A missing
+    // library_state doc, or one without the field, means "not fenced" — the
+    // same default a missing standalone fence doc gave before this document
+    // shape was merged.
     function hasActiveLibraryMigrationFence(userId) {
-      return exists(/databases/$(database)/documents/users/$(userId)/profile/library_migration_fence)
-        && get(/databases/$(database)/documents/users/$(userId)/profile/library_migration_fence).data.active == true;
+      return hasLibraryEpochState(userId)
+        && get(/databases/$(database)/documents/users/$(userId)/profile/library_state)
+          .data.get('libraryMigrationFenceActive', false) == true;
     }
 
     function isValidProtocolCounter(value) {
@@ -79,13 +96,19 @@ service cloud.firestore {
         && value <= 9007199254740991;
     }
 
-    function isCurrentProtocolCard(userId, data) {
+    // epoch is the caller's single currentLibraryEpoch(userId) lookup, passed
+    // in rather than recomputed here. The cards/{cardId} update rule was
+    // measured to call currentLibraryEpoch(userId) independently from this
+    // function (old and new data), canUpdateCurrentCard, and the course-index
+    // mirror check, which alone consumed a large share of the Rules
+    // per-request 1,000-expression ceiling.
+    function isCurrentProtocolCard(data, epoch) {
       return data.keys().hasAll(['schemaVersion', 'revision', 'libraryEpoch'])
         && data.schemaVersion == 2
         && isValidProtocolCounter(data.revision)
         && data.revision > 0
         && isValidProtocolCounter(data.libraryEpoch)
-        && data.libraryEpoch == currentLibraryEpoch(userId);
+        && data.libraryEpoch == epoch;
     }
 
     function isLegacyCard(data) {
@@ -125,15 +148,15 @@ service cloud.firestore {
         );
     }
 
-    function canUpdateCurrentCard(userId, data) {
-      return isCurrentProtocolCard(userId, data)
+    function canUpdateCurrentCard(data, epoch) {
+      return isCurrentProtocolCard(data, epoch)
         && isNextCardRevision(resource.data, data.revision)
         && (
           (!resource.data.keys().hasAny(['libraryEpoch'])
-            && currentLibraryEpoch(userId) == 0)
+            && epoch == 0)
           || (
             resource.data.libraryEpoch is int
-            && resource.data.libraryEpoch == currentLibraryEpoch(userId)
+            && resource.data.libraryEpoch == epoch
           )
         );
     }
@@ -224,7 +247,7 @@ service cloud.firestore {
         ])
         && data.keys().hasOnly([
           'streak', 'xp', 'lastActive', 'appliedXpOperationIds',
-          'xpStreamSchemaVersion'
+          'xpStreamSchemaVersion', 'reviewActivityV1'
         ])
         && data.streak is int
         && data.streak >= 0
@@ -306,11 +329,20 @@ service cloud.firestore {
         ));
     }
 
+    // libraryMigrationFenceActive is an optional field: the legacy migration
+    // engine (Admin SDK, bypasses these Rules) field-merges it onto this same
+    // document alongside libraryEpoch so a single get() on this one path
+    // answers both "current epoch" and "is a migration fence active" instead
+    // of needing a second dependent-document read on a standalone fence doc.
+    // A client set()/update() through these Rules only ever touches
+    // schemaVersion/libraryEpoch, so the field must stay optional here rather
+    // than required.
     function isValidLibraryState(data) {
       return data.keys().hasAll(['schemaVersion', 'libraryEpoch'])
-        && data.keys().hasOnly(['schemaVersion', 'libraryEpoch'])
+        && data.keys().hasOnly(['schemaVersion', 'libraryEpoch', 'libraryMigrationFenceActive'])
         && data.schemaVersion == 2
-        && isValidProtocolCounter(data.libraryEpoch);
+        && isValidProtocolCounter(data.libraryEpoch)
+        && (!data.keys().hasAny(['libraryMigrationFenceActive']) || data.libraryMigrationFenceActive is bool);
     }
 
     function isValidCustomDeckProfile(data) {
@@ -320,8 +352,12 @@ service cloud.firestore {
       let joinedDecks = data.keys().hasAny(['decks']) && data.decks is list
         ? data.decks.join('\u001f')
         : '';
+      let presetKeys = data.keys().hasAny(['coverPresets']) && data.coverPresets is map
+        ? data.coverPresets.keys()
+        : [];
+      let joinedPresetKeys = presetKeys.join('\u001f');
       return data.keys().hasAll(['decks'])
-        && data.keys().hasOnly(['decks'])
+        && data.keys().hasOnly(['decks', 'coverPresets'])
         && data.decks is list
         && deckCount <= 100
         && (deckCount == 0 || (
@@ -329,6 +365,14 @@ service cloud.firestore {
           && joinedDecks.matches(
             '^[^\\x{1f}]{1,128}(\\x{1f}[^\\x{1f}]{1,128})*$'
           )
+        ))
+        && (!data.keys().hasAny(['coverPresets']) || (
+          data.coverPresets is map
+          && presetKeys.size() <= 1000
+          && (presetKeys.size() == 0 || joinedPresetKeys.matches(
+            '^d_[A-Za-z0-9_-]{2,512}(\\x{1f}d_[A-Za-z0-9_-]{2,512})*$'
+          ))
+          && data.coverPresets.values().toSet().hasOnly(['aurora', 'violet', 'amber', 'slate', 'moss'])
         ));
     }
 
@@ -423,6 +467,23 @@ service cloud.firestore {
       return hashing.sha256(normalizedWord).toHexString().lower();
     }
 
+    // English reservations retain the historic word-only hash. Other target
+    // languages are scoped by the same NUL-delimited identity used by the
+    // browser and trusted allocation paths.
+    function targetCardReservationId(targetLanguage, normalizedWord) {
+      return cardReservationId(targetLanguage + '\u0000' + normalizedWord);
+    }
+
+    function isValidStoredCardLanguage(value) {
+      return value is string
+        && value.size() <= 16
+        && value.matches('^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$');
+    }
+
+    function isValidStoredTranslationLanguage(value) {
+      return value in ['en', 'vi'];
+    }
+
     function isValidCardReservation(reservationId, data) {
       return (data.keys().hasAll(['schemaVersion', 'cardId', 'normalizedWord'])
           && data.keys().hasOnly(['schemaVersion', 'cardId', 'normalizedWord'])
@@ -432,6 +493,16 @@ service cloud.firestore {
           && data.normalizedWord.size() > 0
           && data.normalizedWord.size() <= 256
           && reservationId == cardReservationId(data.normalizedWord))
+        || (data.keys().hasAll(['schemaVersion', 'cardId', 'normalizedWord', 'targetLanguage'])
+          && data.keys().hasOnly(['schemaVersion', 'cardId', 'normalizedWord', 'targetLanguage'])
+          && data.schemaVersion == 1
+          && isValidId(data.cardId)
+          && data.normalizedWord is string
+          && data.normalizedWord.size() > 0
+          && data.normalizedWord.size() <= 256
+          && isValidStoredCardLanguage(data.targetLanguage)
+          && data.targetLanguage != 'en'
+          && reservationId == targetCardReservationId(data.targetLanguage, data.normalizedWord))
         || (data.keys().hasAll(['schemaVersion', 'cardId', 'lexemeId'])
           && data.keys().hasOnly(['schemaVersion', 'cardId', 'lexemeId'])
           && data.schemaVersion == 2
@@ -442,22 +513,42 @@ service cloud.firestore {
     }
 
     function hasMatchingCardReservation(userId, cardId, data) {
-      let canonical = data.keys().hasAll(['lexemeId']) ? 'lexeme:' + data.lexemeId : data.normalizedWord;
+      let hasLanguage = data.keys().hasAny(['language']);
+      let language = data.get('language', '');
+      let hasValidLanguage = !hasLanguage || isValidStoredCardLanguage(language);
+      let canonical = data.keys().hasAll(['lexemeId'])
+        ? 'lexeme:' + data.lexemeId
+        : (hasLanguage && language != 'en'
+          ? language + '\u0000' + data.normalizedWord
+          : data.normalizedWord);
       let reservationId = cardReservationId(canonical);
       let reservation = /databases/$(database)/documents/users/$(userId)/card_reservations/$(reservationId);
       let reservationData = getAfter(reservation).data;
       return canonical is string
+        && hasValidLanguage
         && existsAfter(reservation)
+        && isValidCardReservation(reservationId, reservationData)
         && reservationData.cardId == cardId
-        && ((reservationData.schemaVersion == 1 && reservationData.normalizedWord == data.normalizedWord)
+        && ((reservationData.schemaVersion == 1
+          && reservationData.normalizedWord == data.normalizedWord
+          && ((language == '' || language == 'en')
+            ? !reservationData.keys().hasAny(['targetLanguage'])
+            : reservationData.targetLanguage == language))
           || (reservationData.schemaVersion == 2 && reservationData.lexemeId == data.lexemeId));
     }
 
     function hasExistingCardForIdentityRepair(userId, data) {
       let card = /databases/$(database)/documents/users/$(userId)/cards/$(data.cardId);
+      // A pre-protocol card may already carry its normalizedWord (older
+      // clients wrote it before reservations existed); it can still claim
+      // the matching reservation. Schema-2 cards never repair client-side.
       return exists(card)
         && get(card).data.id == data.cardId
-        && !get(card).data.keys().hasAny(['normalizedWord'])
+        && (
+          !get(card).data.keys().hasAny(['normalizedWord'])
+          || (get(card).data.normalizedWord == data.normalizedWord
+            && get(card).data.get('schemaVersion', 0) != 2)
+        )
         && get(card).data.word is string
         && existsAfter(card)
         && getAfter(card).data.word == get(card).data.word
@@ -472,14 +563,14 @@ service cloud.firestore {
         && data.normalizedWord.size() > 0;
     }
 
-    function hasValidCardIdentityUpdate(userId, cardId, data) {
+    function hasValidCardIdentityUpdate(userId, cardId, data, epoch) {
       return (
         hasCardIdentity(resource.data)
         && hasCardIdentity(data)
         && resource.data.normalizedWord == data.normalizedWord
         && resource.data.word == data.word
         && (
-          isCurrentProtocolCard(userId, resource.data)
+          isCurrentProtocolCard(resource.data, epoch)
           || hasMatchingCardReservation(userId, cardId, data)
         )
       ) || (
@@ -572,6 +663,15 @@ service cloud.firestore {
     // still cross the same bounds as a canonical application write. This also
     // keeps a boundary-valid update below Rules' expression limit: a one-field
     // update does not revalidate every unrelated nested list and history entry.
+    // Grouped behind one cheap group-level changed.hasAny(...) gate per
+    // block. A single flat &&-chain of 43 independent per-field guards
+    // always pays for every guard on any successful update (a passing
+    // update never makes an early && operand false, so nothing short-
+    // circuits away), which was measured to consume most of the Rules
+    // per-request 1,000-expression ceiling even for a one-field patch. An
+    // untouched group's individual guards are skipped entirely once the
+    // group-level check is false; a touched group still runs the exact
+    // same per-field validators as before.
     function isValidChangedCardFields(data, changed) {
       let fields = data.keys();
       let audioUrl = data.get('audioUrl', null);
@@ -579,54 +679,109 @@ service cloud.firestore {
       let customDeck = data.get('customDeck', null);
       let wordFamily = data.get('wordFamily', null);
       let fsrs = data.get('fsrs', null);
-      return (!changed.hasAny(['id']) || isBoundedText(data.get('id', ''), 128))
-        && (!changed.hasAny(['word']) || isBoundedText(data.get('word', ''), 256))
-        && (!changed.hasAny(['normalizedWord']) || isBoundedText(data.get('normalizedWord', ''), 256))
-        && (!changed.hasAny(['normalizedLemma']) || isBoundedText(data.get('normalizedLemma', ''), 256))
-        && (!changed.hasAny(['lexemeId']) || isBoundedText(data.get('lexemeId', ''), 128))
-        && (!changed.hasAny(['language']) || isBoundedText(data.get('language', ''), 64))
-        && (!changed.hasAny(['senseKey']) || isBoundedText(data.get('senseKey', ''), 128))
-        && (!changed.hasAny(['translation']) || isBoundedText(data.get('translation', ''), 256))
-        && (!changed.hasAny(['explanation']) || isBoundedText(data.get('explanation', ''), 2048))
-        && (!changed.hasAny(['explanationTranslation']) || isBoundedText(data.get('explanationTranslation', ''), 2048))
-        && (!changed.hasAny(['phonetic']) || isBoundedText(data.get('phonetic', ''), 256))
-        && (!changed.hasAny(['category']) || isBoundedText(data.get('category', ''), 128))
-        && (!changed.hasAny(['emoji']) || isBoundedText(data.get('emoji', ''), 64))
-        && (!changed.hasAny(['audioUrl']) || audioUrl == null || isTrustedAudioUrl(audioUrl))
-        && (!changed.hasAny(['imageUrl']) || imageUrl == null || isTrustedImageUrl(imageUrl))
-        && (!changed.hasAny(['imageSearchQuery']) || isOptionalBoundedText(data, 'imageSearchQuery', 256))
-        && (!changed.hasAny(['createdAt']) || isBoundedText(data.get('createdAt', ''), 128))
-        && (!changed.hasAny(['updatedAt']) || isOptionalTimestampOrText(data, 'updatedAt', 128))
-        && (!changed.hasAny(['lastOpenedAt']) || isOptionalBoundedText(data, 'lastOpenedAt', 128))
-        && (!changed.hasAny(['sortTouchedAt']) || isOptionalBoundedText(data, 'sortTouchedAt', 128))
-        && (!changed.hasAny(['customDeck']) || customDeck == null || isBoundedText(customDeck, 128))
-        && (!changed.hasAny(['nextReviewDate']) || isOptionalBoundedText(data, 'nextReviewDate', 128))
-        && (!changed.hasAny(['difficulty']) || data.get('difficulty', '') in ['easy', 'good', 'hard', 'unrated'])
-        && (!changed.hasAny(['bookmarked']) || data.get('bookmarked', false) is bool)
-        && (!changed.hasAny(['reviews']) || (data.get('reviews', 0) is int && data.get('reviews', 0) >= 0 && data.get('reviews', 0) <= 9007199254740991))
-        && (!changed.hasAny(['interval']) || (data.get('interval', 0) is number && data.get('interval', 0) >= 0 && data.get('interval', 0) <= 9007199254740991))
-        && (!changed.hasAny(['easeFactor']) || (data.get('easeFactor', 0) is number && data.get('easeFactor', 0) >= 0 && data.get('easeFactor', 0) <= 5))
-        && (!changed.hasAny(['correctStreak']) || (data.get('correctStreak', 0) is int && data.get('correctStreak', 0) >= 0 && data.get('correctStreak', 0) <= 9007199254740991))
-        && (!changed.hasAny(['partOfSpeech']) || isOptionalBoundedText(data, 'partOfSpeech', 64))
-        && (!changed.hasAny(['cefrLevel']) || isOptionalBoundedText(data, 'cefrLevel', 8))
-        && (!changed.hasAny(['exampleSentence']) || isOptionalBoundedText(data, 'exampleSentence', 2048))
-        && (!changed.hasAny(['exampleTranslation']) || isOptionalBoundedText(data, 'exampleTranslation', 2048))
-        && (!changed.hasAny(['register']) || isOptionalBoundedText(data, 'register', 64))
-        && (!changed.hasAny(['commonMistake']) || isOptionalBoundedText(data, 'commonMistake', 2048))
-        && (!changed.hasAny(['mnemonic']) || isOptionalBoundedText(data, 'mnemonic', 2048))
-        && (!changed.hasAny(['wordFamily']) || wordFamily == null || isValidCardWordFamily(wordFamily))
-        && (!changed.hasAny(['collocations']) || !fields.hasAny(['collocations']) || isValidBoundedStringList(data.collocations))
-        && (!changed.hasAny(['synonyms']) || !fields.hasAny(['synonyms']) || isValidBoundedStringList(data.synonyms))
-        && (!changed.hasAny(['antonyms']) || !fields.hasAny(['antonyms']) || isValidBoundedStringList(data.antonyms))
-        && (!changed.hasAny(['reviewHistory']) || !fields.hasAny(['reviewHistory']) || isValidReviewHistory(data.reviewHistory))
-        && (!changed.hasAny(['fsrs']) || fsrs == null || isValidCardFsrs(fsrs));
+      return (
+        !changed.hasAny(['id', 'origin', 'word', 'normalizedWord', 'normalizedLemma', 'lexemeId', 'senseKey'])
+        || (
+          (!changed.hasAny(['id']) || isBoundedText(data.get('id', ''), 128))
+          && (!changed.hasAny(['origin']) || data.get('origin', '') in ['ai', 'manual'])
+          && (!changed.hasAny(['word']) || isBoundedText(data.get('word', ''), 256))
+          && (!changed.hasAny(['normalizedWord']) || isBoundedText(data.get('normalizedWord', ''), 256))
+          && (!changed.hasAny(['normalizedLemma']) || isBoundedText(data.get('normalizedLemma', ''), 256))
+          && (!changed.hasAny(['lexemeId']) || isBoundedText(data.get('lexemeId', ''), 128))
+          && (!changed.hasAny(['senseKey']) || isBoundedText(data.get('senseKey', ''), 128))
+        )
+      )
+      && (
+        !changed.hasAny(['language', 'translationLanguage'])
+        || (
+          (!changed.hasAny(['language']) || isValidStoredCardLanguage(data.get('language', '')))
+          && (!changed.hasAny(['translationLanguage']) || isValidStoredTranslationLanguage(data.get('translationLanguage', '')))
+        )
+      )
+      && (
+        !changed.hasAny(['translation', 'explanation', 'explanationTranslation', 'phonetic', 'category', 'emoji'])
+        || (
+          (!changed.hasAny(['translation']) || isBoundedText(data.get('translation', ''), 256))
+          && (!changed.hasAny(['explanation']) || isBoundedText(data.get('explanation', ''), 2048))
+          && (!changed.hasAny(['explanationTranslation']) || isBoundedText(data.get('explanationTranslation', ''), 2048))
+          && (!changed.hasAny(['phonetic']) || isBoundedText(data.get('phonetic', ''), 256))
+          && (!changed.hasAny(['category']) || isBoundedText(data.get('category', ''), 128))
+          && (!changed.hasAny(['emoji']) || isBoundedText(data.get('emoji', ''), 64))
+        )
+      )
+      && (
+        !changed.hasAny(['audioUrl', 'imageUrl', 'imageSearchQuery'])
+        || (
+          (!changed.hasAny(['audioUrl']) || audioUrl == null || isTrustedAudioUrl(audioUrl))
+          && (!changed.hasAny(['imageUrl']) || imageUrl == null || isTrustedImageUrl(imageUrl))
+          && (!changed.hasAny(['imageSearchQuery']) || isOptionalBoundedText(data, 'imageSearchQuery', 256))
+        )
+      )
+      && (
+        !changed.hasAny(['createdAt', 'updatedAt', 'lastOpenedAt', 'sortTouchedAt', 'customDeck'])
+        || (
+          (!changed.hasAny(['createdAt']) || isBoundedText(data.get('createdAt', ''), 128))
+          && (!changed.hasAny(['updatedAt']) || isOptionalTimestampOrText(data, 'updatedAt', 128))
+          && (!changed.hasAny(['lastOpenedAt']) || isOptionalBoundedText(data, 'lastOpenedAt', 128))
+          && (!changed.hasAny(['sortTouchedAt']) || isOptionalBoundedText(data, 'sortTouchedAt', 128))
+          && (!changed.hasAny(['customDeck']) || customDeck == null || isBoundedText(customDeck, 128))
+        )
+      )
+      && (
+        !changed.hasAny(['nextReviewDate', 'difficulty', 'bookmarked', 'reviews', 'interval', 'easeFactor', 'correctStreak'])
+        || (
+          (!changed.hasAny(['nextReviewDate']) || isOptionalBoundedText(data, 'nextReviewDate', 128))
+          && (!changed.hasAny(['difficulty']) || data.get('difficulty', '') in ['easy', 'good', 'hard', 'unrated'])
+          && (!changed.hasAny(['bookmarked']) || data.get('bookmarked', false) is bool)
+          && (!changed.hasAny(['reviews']) || (data.get('reviews', 0) is int && data.get('reviews', 0) >= 0 && data.get('reviews', 0) <= 9007199254740991))
+          && (!changed.hasAny(['interval']) || (data.get('interval', 0) is number && data.get('interval', 0) >= 0 && data.get('interval', 0) <= 9007199254740991))
+          && (!changed.hasAny(['easeFactor']) || (data.get('easeFactor', 0) is number && data.get('easeFactor', 0) >= 0 && data.get('easeFactor', 0) <= 5))
+          && (!changed.hasAny(['correctStreak']) || (data.get('correctStreak', 0) is int && data.get('correctStreak', 0) >= 0 && data.get('correctStreak', 0) <= 9007199254740991))
+        )
+      )
+      && (
+        !changed.hasAny(['partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation', 'register', 'commonMistake', 'mnemonic', 'wordFamily'])
+        || (
+          (!changed.hasAny(['partOfSpeech']) || isOptionalBoundedText(data, 'partOfSpeech', 64))
+          && (!changed.hasAny(['cefrLevel']) || isOptionalBoundedText(data, 'cefrLevel', 8))
+          && (!changed.hasAny(['exampleSentence']) || isOptionalBoundedText(data, 'exampleSentence', 2048))
+          && (!changed.hasAny(['exampleTranslation']) || isOptionalBoundedText(data, 'exampleTranslation', 2048))
+          && (!changed.hasAny(['register']) || isOptionalBoundedText(data, 'register', 64))
+          && (!changed.hasAny(['commonMistake']) || isOptionalBoundedText(data, 'commonMistake', 2048))
+          && (!changed.hasAny(['mnemonic']) || isOptionalBoundedText(data, 'mnemonic', 2048))
+          && (!changed.hasAny(['wordFamily']) || wordFamily == null || isValidCardWordFamily(wordFamily))
+        )
+      )
+      && (
+        !changed.hasAny(['collocations', 'synonyms', 'antonyms', 'reviewHistory', 'fsrs'])
+        || (
+          (!changed.hasAny(['collocations']) || !fields.hasAny(['collocations']) || isValidBoundedStringList(data.collocations))
+          && (!changed.hasAny(['synonyms']) || !fields.hasAny(['synonyms']) || isValidBoundedStringList(data.synonyms))
+          && (!changed.hasAny(['antonyms']) || !fields.hasAny(['antonyms']) || isValidBoundedStringList(data.antonyms))
+          && (!changed.hasAny(['reviewHistory']) || !fields.hasAny(['reviewHistory']) || isValidReviewHistory(data.reviewHistory))
+          && (!changed.hasAny(['fsrs']) || fsrs == null || isValidCardFsrs(fsrs))
+        )
+      );
     }
 
+    // wasCanonical (full 30-key hasAll on the OLD document) is replaced by a
+    // cheaper equivalent: a canonical field can only stop being present if a
+    // canonical key was actually removed in this diff, which
+    // mapDiff.removedKeys() answers in one pass instead of a second 30-item
+    // hasAll. If nothing canonical was removed the guard passes without ever
+    // needing isCanonical; if something was removed, isCanonical is false
+    // too (that key is now missing), so the outcome matches the original
+    // "was fully canonical implies must stay fully canonical" check exactly.
+    // This and reusing one data.diff(resource.data) call for both `changed`
+    // and the removed-keys check were measured to matter: the Rules
+    // per-request 1,000-expression ceiling is otherwise nearly exhausted by
+    // this function alone, on every card update regardless of which fields
+    // actually changed.
     function isValidCardUpdate(data) {
       let fields = data.keys();
-      let previousFields = resource.data.keys();
-      let changed = data.diff(resource.data).affectedKeys();
-      let isCanonical = fields.hasAll([
+      let mapDiff = data.diff(resource.data);
+      let changed = mapDiff.affectedKeys();
+      let canonicalFields = [
         'id', 'word', 'normalizedWord', 'translation', 'explanation',
         'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
         'imageUrl', 'imageSearchQuery', 'createdAt', 'bookmarked', 'customDeck',
@@ -634,24 +789,11 @@ service cloud.firestore {
         'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
         'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
         'reviewHistory'
-      ]);
-      let wasCanonical = previousFields.hasAll([
-        'id', 'word', 'normalizedWord', 'translation', 'explanation',
-        'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
-        'imageUrl', 'imageSearchQuery', 'createdAt', 'bookmarked', 'customDeck',
-        'difficulty', 'reviews', 'interval', 'easeFactor', 'correctStreak',
-        'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
-        'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
-        'reviewHistory'
-      ]);
-      // Canonical identity is assigned by trusted server paths, which can
-      // reproduce the byte-level V3 hash. Client patches keep that tuple
-      // immutable; non-canonical cards may still edit descriptive POS data.
-      return !changed.hasAny(['lexemeId', 'language', 'senseKey', 'normalizedLemma'])
-        && (!previousFields.hasAny(['lexemeId', 'language', 'senseKey'])
-          || !changed.hasAny(['partOfSpeech']))
-        && fields.hasOnly([
-          'id', 'lexemeId', 'language', 'senseKey', 'word', 'normalizedWord', 'normalizedLemma', 'translation', 'explanation',
+      ];
+      let isCanonical = fields.hasAll(canonicalFields);
+      let removedCanonicalKey = mapDiff.removedKeys().hasAny(canonicalFields);
+      return fields.hasOnly([
+          'id', 'origin', 'lexemeId', 'language', 'translationLanguage', 'senseKey', 'word', 'normalizedWord', 'normalizedLemma', 'translation', 'explanation',
           'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
           'imageUrl', 'imageSearchQuery', 'createdAt', 'lastOpenedAt', 'updatedAt',
           'sortTouchedAt', 'schemaVersion', 'revision', 'libraryEpoch',
@@ -659,11 +801,55 @@ service cloud.firestore {
           'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
           'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
           'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
-          'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds'
+          'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'masteredAt', 'japanesePitchAccent', 'source'
         ])
-        && (!wasCanonical || isCanonical)
+        && (!removedCanonicalKey || isCanonical)
+        // Server-owned origin, capture, mastery, pitch and canonical lexeme
+        // identity cannot be introduced, removed or changed by a client update.
+        && !changed.hasAny([
+          'origin', 'source', 'masteredAt', 'japanesePitchAccent',
+          'lexemeId', 'language', 'translationLanguage', 'senseKey', 'normalizedLemma'
+        ])
+        // language/translationLanguage are immutable after creation (the
+        // guard above), so an update never introduces a malformed value
+        // through this diff; it only ever carries an already-stored value
+        // forward. Revalidating it here still catches a card whose stored
+        // value predates this shape (or was written directly), so an
+        // unrelated field update can never silently keep coasting on a
+        // corrupt language forever.
+        && (!fields.hasAny(['language']) || isValidStoredCardLanguage(data.language))
+        && (!fields.hasAny(['translationLanguage']) || isValidStoredTranslationLanguage(data.translationLanguage))
         && (isCanonical || fields.hasAll(['id', 'word', 'translation']))
+        && (!fields.hasAny(['lexemeId', 'senseKey', 'normalizedLemma'])
+          || (fields.hasAll(['lexemeId', 'language', 'senseKey', 'partOfSpeech', 'normalizedLemma'])
+            && !changed.hasAny(['partOfSpeech'])))
         && isValidChangedCardFields(data, changed);
+    }
+
+    // One shared currentLibraryEpoch(userId) lookup for the whole update
+    // chain (see isCurrentProtocolCard above). Wrapping the update condition
+    // in a function is what makes a single `let epoch = ...` possible; an
+    // `allow update: if <expr>` clause cannot declare its own `let`.
+    function canPatchOwnedCard(userId, cardId, data) {
+      let epoch = currentLibraryEpoch(userId);
+      return !hasActiveLibraryMigrationFence(userId)
+        && data.id == cardId
+        && isValidCardUpdate(data)
+        && hasValidCardIdentityUpdate(userId, cardId, data, epoch)
+        && (
+          !data.diff(resource.data).affectedKeys().hasAny([
+            'difficulty', 'nextReviewDate', 'reviews', 'interval', 'easeFactor',
+            'correctStreak', 'fsrs', 'reviewHistory', 'appliedReviewOperationIds'
+          ])
+          || (
+            canInitializeLegacyDifficulty(data)
+            && !data.diff(resource.data).affectedKeys().hasAny([
+              'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
+              'fsrs', 'reviewHistory', 'appliedReviewOperationIds'
+            ])
+          )
+        )
+        && canUpdateCurrentCard(data, epoch);
     }
 
     // Target match rules for Cards
@@ -673,27 +859,12 @@ service cloud.firestore {
       // the App Check-protected createCard callable, while updates/deletes keep
       // their owner-scoped revision and tombstone barriers below.
       allow create: if false;
-      allow update: if isOwner(userId)
-        && !hasActiveLibraryMigrationFence(userId)
-        && request.resource.data.id == cardId
-        && isValidCardUpdate(request.resource.data)
-        && hasValidCardIdentityUpdate(userId, cardId, request.resource.data)
-        && (
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-            'difficulty', 'nextReviewDate', 'reviews', 'interval', 'easeFactor',
-            'correctStreak', 'fsrs', 'reviewHistory', 'appliedReviewOperationIds'
-          ])
-          || (
-            canInitializeLegacyDifficulty(request.resource.data)
-            && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-              'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
-              'fsrs', 'reviewHistory', 'appliedReviewOperationIds'
-            ])
-          )
-        )
-        && canUpdateCurrentCard(userId, request.resource.data);
+      allow update: if isOwner(userId) && canPatchOwnedCard(userId, cardId, request.resource.data);
       allow delete: if isOwner(userId)
         && !hasActiveLibraryMigrationFence(userId)
+        // Catalog cards have a server-owned progress projection. Their delete
+        // must go through the callable so both documents change atomically.
+        && !resource.data.keys().hasAny(['lexemeId'])
         && (
           isOldCardGeneration(userId, resource.data)
           || hasValidDeletionBarrier(userId, cardId, resource.data)
@@ -733,22 +904,97 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /users/{userId}/review_xp_awards/{awardId} {
+      // Award receipts are created and checked only by the review transaction.
+      allow read, write: if false;
+    }
+
     match /users/{userId}/profile/library_state {
       allow read: if isOwner(userId);
+      // Only the trusted migration engine (Admin SDK, bypasses these Rules)
+      // may set libraryMigrationFenceActive; a client create/update can never
+      // introduce or change it, so a client cannot self-fence or clear an
+      // active fence by shaping its own write payload.
       allow create: if isOwner(userId)
         && !hasActiveLibraryMigrationFence(userId)
-        && isValidLibraryState(request.resource.data);
+        && isValidLibraryState(request.resource.data)
+        && !request.resource.data.keys().hasAny(['libraryMigrationFenceActive']);
       allow update: if isOwner(userId)
         && !hasActiveLibraryMigrationFence(userId)
         && isValidLibraryState(request.resource.data)
         && resource.data.libraryEpoch is int
-        && request.resource.data.libraryEpoch >= resource.data.libraryEpoch;
+        && request.resource.data.libraryEpoch >= resource.data.libraryEpoch
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['libraryMigrationFenceActive']);
       allow delete: if false;
     }
 
-    match /users/{userId}/profile/stats {
+    // Course profile and query-index control state are server-owned. Owners
+    // may read their own documents; callable/Admin code performs every write.
+    match /users/{userId}/profile/courses {
       allow read: if isOwner(userId);
       allow create, update, delete: if false;
+    }
+
+    match /users/{userId}/profile/stats {
+      // Admin writers validate nested review activity; clients cannot mutate stats.
+      allow read: if isOwner(userId);
+      allow create, update, delete: if false;
+    }
+
+    match /users/{userId}/reminderState/{stateId} {
+      allow get: if isOwner(userId) && stateId == 'current';
+      allow list, create, update, delete: if false;
+    }
+
+    match /users/{userId}/pushTokens/{tokenId} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId}/pushTokenSessionCutoffs/{tokenId} {
+      allow read, write: if false;
+    }
+
+    match /pushTokenOwners/{tokenId} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId}/reminderReceipts/{receiptId} {
+      allow read, write: if false;
+    }
+
+    // Reward inventory is server-authoritative. Owners may only hydrate their
+    // own inventory; callable/Admin code performs every mutation.
+    match /users/{userId}/profile/rewards {
+      allow read: if isOwner(userId);
+      allow create, update, delete: if false;
+    }
+
+    // Verified-create replay receipts and verified-practice session state are
+    // callable/Admin-only so clients cannot forge outcomes or inspect them.
+    match /users/{userId}/card_create_receipts/{opId} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId}/practice_sessions/{sessionId} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId}/profile/plan {
+      allow get: if isOwner(userId);
+      allow list, write: if false;
+    }
+
+    match /users/{userId}/ai_usage/{periodKey} {
+      allow get: if isOwner(userId);
+      allow list, write: if false;
+    }
+
+    match /users/{userId}/ai_operations/{operationId} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId}/ai_daily/{day} {
+      allow read, write: if false;
     }
 
     match /users/{userId}/xp_streams/{clientId} {
@@ -809,7 +1055,10 @@ service cloud.firestore {
     match /users/{userId}/profile/{profileDocId} {
       // Keep the supported-name exclusions visible to source-level guards.
       // profileDocId != 'library_state'
+      // profileDocId != 'courses'
       // profileDocId != 'stats'
+      // profileDocId != 'rewards'
+      // profileDocId != 'plan'
       // profileDocId != 'xp_history'
       // profileDocId != 'resource_usage'
       allow read, write: if false;
@@ -838,6 +1087,13 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Paths joins this server-owned projection with the downloaded catalog.
+    // Only trusted callable code creates, updates, or removes it.
+    match /users/{userId}/catalog_progress/{lexemeId} {
+      allow read: if isOwner(userId);
+      allow create, update, delete: if false;
+    }
+
     // Editorial candidates, immutable revisions and audit evidence are trusted
     // pipeline inputs. They are never a client-readable or client-writable API.
     match /catalog_candidates/{candidateId} {
@@ -849,6 +1105,12 @@ service cloud.firestore {
     }
 
     match /catalog_audit/{eventId} {
+      allow read, write: if false;
+    }
+
+    // Trigger Email consumes these documents with Admin privileges. Clients
+    // must not enqueue mail or read a recipient's digest.
+    match /mail/{messageId} {
       allow read, write: if false;
     }
 

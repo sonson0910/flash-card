@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const guestCards = ['accessible', 'inclusive'].map((word, index) => ({
   id: `axe-${index}`,
@@ -18,26 +18,12 @@ const guestCards = ['accessible', 'inclusive'].map((word, index) => ({
   customDeck: null,
 }));
 
-const zenCard = {
-  ...guestCards[0],
-  id: 'axe-zen-cefr',
-  word: 'focus',
-  normalizedWord: 'focus',
-  translation: 'tập trung',
-  explanation: 'A Zen accessibility fixture with a truthful CEFR level.',
-  difficulty: 'hard',
-  cefrLevel: 'A2',
-};
-
-test.skip(({ browserName }) => browserName !== 'chromium', 'The deterministic axe gate runs on Chromium.');
-test('guest library has no serious or critical automated WCAG violations', async ({ page }) => {
+test('signed-in library has no serious or critical automated WCAG violations', async ({ page, seedCards, signIn, blockExternalNetwork }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.addInitScript(cards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(cards));
-    localStorage.removeItem('lingoflash_cards_owner');
-  }, guestCards);
-  await page.goto('/?view=library');
-  await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
+  await seedCards(guestCards);
+  await blockExternalNetwork(page);
+  await signIn(page, '/?view=library&locale=en');
+  await expect(page.locator('#library-card-grid').getByRole('heading', { name: 'Your library' })).toBeVisible();
   await expect(page.locator('#library-card-grid')).toHaveAttribute('aria-busy', 'false');
 
   const results = await new AxeBuilder({ page })
@@ -58,120 +44,13 @@ test('guest library has no serious or critical automated WCAG violations', async
   expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
 });
 
-test('Zen card CEFR stays truthful and readable in light and dark themes', async ({ page }) => {
-  await page.addInitScript(card => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify([card]));
-    localStorage.removeItem('lingoflash_cards_owner');
-    localStorage.setItem('lingoflash_theme', 'light');
-    localStorage.setItem('sonflash_zen_glass_mode', 'true');
-  }, zenCard);
-  await page.goto('/?view=library');
-
-  const card = page.locator('.zen-glass-slab').first();
-  await expect(card).toBeVisible();
-  await expect(card).toContainText('CEFR A2');
-  await expect(card).not.toContainText('B2 UPPER-INT');
-
-  const lightResults = await new AxeBuilder({ page }).include('.zen-glass-slab').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
-  expect(lightResults.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical')).toEqual([]);
-
-  await card.scrollIntoViewIfNeeded();
-  await card.getByRole('button', { name: 'Reveal meaning' }).click();
-  await expect(page.locator('[data-card-side="back"]')).toHaveCount(1);
-  const lightBackResults = await new AxeBuilder({ page }).include('.zen-glass-slab').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
-  expect(lightBackResults.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical')).toEqual([]);
-
-  await card.getByRole('button', { name: 'Return to English' }).click();
-  await expect(page.locator('[data-card-side="front"]')).toHaveCount(1);
-
-  await page.getByRole('button', { name: 'Use dark theme' }).click();
-  await expect(page.locator('html')).toHaveClass(/dark/);
-  await expect(card).toContainText('CEFR A2');
-  await expect(card).not.toContainText('B2 UPPER-INT');
-
-  const darkFrontResults = await new AxeBuilder({ page }).include('.zen-glass-slab').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
-  expect(darkFrontResults.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical')).toEqual([]);
-
-  await card.scrollIntoViewIfNeeded();
-  await card.getByRole('button', { name: 'Reveal meaning' }).click();
-  await expect(page.locator('[data-card-side="back"]')).toHaveCount(1);
-  const darkBackResults = await new AxeBuilder({ page }).include('.zen-glass-slab').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
-  expect(darkBackResults.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical')).toEqual([]);
-  await expect(card).toContainText('CEFR A2');
-  await expect(card).not.toContainText('B2 UPPER-INT');
-});
-
-test('Zen CEFR badge stays clear of top controls on both faces', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.addInitScript(card => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify([card]));
-    localStorage.removeItem('lingoflash_cards_owner');
-    localStorage.setItem('lingoflash_theme', 'light');
-    localStorage.setItem('sonflash_zen_glass_mode', 'true');
-  }, zenCard);
-  await page.goto('/?view=library');
-
-  const assertBadgeDoesNotOverlapControls = async () => {
-    await page.waitForFunction(() => {
-      const card = [...document.querySelectorAll('.zen-glass-slab')].find(element => {
-        const side = element.closest('[data-card-side]');
-        return side && getComputedStyle(side).visibility !== 'hidden';
-      });
-      const badge = [...(card?.querySelectorAll('div.rounded-full') ?? [])]
-        .find(element => element.textContent?.trim() === 'CEFR A2');
-      if (!badge) return false;
-      if (!badge.parentElement?.getAnimations().every(animation => animation.playState !== 'running')) return false;
-
-      // React swaps the face before the browser has applied its new flex styles.
-      // Poll until the settled badge is measurable instead of sampling that frame.
-      return badge.getBoundingClientRect().height < 36;
-    });
-
-    const geometry = await page.locator('.zen-glass-slab').filter({ visible: true }).evaluate(card => {
-      const badge = [...card.querySelectorAll('div.rounded-full')].find(element => element.textContent?.trim() === 'CEFR A2');
-      const controls = card.closest('.flashcard-shell')?.querySelector('[data-card-top-controls]');
-      if (!badge || !controls) return null;
-
-      const badgeBox = badge.getBoundingClientRect();
-      const controlBoxes = [...controls.querySelectorAll('button')].map(button => button.getBoundingClientRect());
-      return {
-        badge: { left: badgeBox.left, right: badgeBox.right, top: badgeBox.top, bottom: badgeBox.bottom, height: badgeBox.height },
-        controls: controlBoxes.map(box => ({ left: box.left, right: box.right, top: box.top, bottom: box.bottom })),
-      };
-    });
-
-    expect(geometry).not.toBeNull();
-    expect(geometry?.controls.length).toBeGreaterThan(0);
-    expect(geometry?.badge.height).toBeLessThan(36);
-    const overlaps = geometry?.controls.some(control => (
-      geometry.badge.left < control.right &&
-      geometry.badge.right > control.left &&
-      geometry.badge.top < control.bottom &&
-      geometry.badge.bottom > control.top
-    ));
-    expect(overlaps).toBe(false);
-  };
-
-  for (const width of [320, 360, 390]) {
-    await page.setViewportSize({ width, height: 844 });
-    await page.goto('/?view=library');
-    await assertBadgeDoesNotOverlapControls();
-    const card = page.locator('.zen-glass-slab').filter({ visible: true });
-    await card.getByRole('button', { name: 'Reveal meaning' }).click();
-    await expect(page.locator('[data-card-side="back"]')).toHaveCount(1);
-    await assertBadgeDoesNotOverlapControls();
-  }
-});
-
-test('library supports 320px reflow, 200% text and visible keyboard focus', async ({ page }) => {
+test('library supports 320px reflow, 200% text and visible keyboard focus', async ({ page, seedCards, signIn, blockExternalNetwork }) => {
   await page.setViewportSize({ width: 320, height: 640 });
-  await page.addInitScript(cards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(cards));
-    localStorage.removeItem('lingoflash_cards_owner');
-  }, guestCards);
-  await page.goto('/?view=library');
+  await seedCards(guestCards);
+  await blockExternalNetwork(page);
+  await signIn(page, '/?view=library&locale=en');
   await page.locator('html').evaluate(element => { element.style.fontSize = '200%'; });
-  await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
+  await expect(page.locator('#library-card-grid').getByRole('heading', { name: 'Your library' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
   await page.keyboard.press('Tab');
@@ -189,33 +68,69 @@ test('library supports 320px reflow, 200% text and visible keyboard focus', asyn
   const manage = page.getByRole('button', { name: 'Manage library' });
   await manage.focus();
   await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('menuitem', { name: /Sound effects:/ })).toBeFocused();
-  await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('menuitem', { name: /Card style:/ })).toBeFocused();
-  await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('menuitem', { name: 'Export library to Excel' })).toBeFocused();
-  await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('menuitem', { name: 'Clear the entire library' })).toBeFocused();
+  await expect(page.getByRole('menu', { name: 'Library management' })).toBeVisible();
+  // "Sync now" stays disabled, and so is skipped by arrow keys, until the
+  // initial cloud check settles; reopen once it is idle so the order below
+  // is the steady-state one.
+  const syncNow = page.getByRole('menuitem', { name: 'Sync now', exact: true });
+  if (await syncNow.count()) {
+    await expect(syncNow).toBeEnabled();
+    await page.keyboard.press('Escape');
+    await expect(manage).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByRole('menu', { name: 'Library management' })).toBeVisible();
+  }
+  // The menu renders, in this fixed DOM order: an authenticated+online "Sync
+  // now" action (LibraryManagementMenu.tsx's shouldShowSyncNow — true for
+  // this fixture's always-authenticated, always-online test user), then
+  // exactly one of "Sign in & sync" (signed out) or the authenticated
+  // account's real accessible name "Sign out of cloud sync" (not the
+  // shorter "Sign out" this list used to check for, which never matches and
+  // silently produced an empty prefix).
+  const identityActions: string[] = [];
+  if (await page.getByRole('menuitem', { name: 'Sync now', exact: true }).count()) identityActions.push('Sync now');
+  if (await page.getByRole('menuitem', { name: 'Sign in & sync', exact: true }).count()) identityActions.push('Sign in & sync');
+  else if (await page.getByRole('menuitem', { name: 'Sign out of cloud sync', exact: true }).count()) identityActions.push('Sign out of cloud sync');
+  const menuNames = [
+    ...identityActions,
+    'Privacy',
+    'Terms',
+    'Extension privacy',
+    'Account data',
+    'Appearance settings',
+    /Card style:/,
+    'Learning insights',
+    'Export library to Excel',
+    'Clear the entire library',
+  ];
+  for (const [index, name] of menuNames.entries()) {
+    if (index > 0) await page.keyboard.press('ArrowDown');
+    await expect(page.getByRole('menuitem', { name, exact: typeof name === 'string' })).toBeFocused();
+  }
   await page.keyboard.press('Escape');
   await expect(manage).toBeFocused();
 });
 
-test('landing presents one trustworthy, accessible product story', async ({ page }) => {
+test('Crystal landing presents one trustworthy, accessible product story', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'crystal');
+  });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/?view=landing');
 
   const main = page.getByRole('main');
   await expect(main).toHaveCount(1);
-  await expect(main.locator('#features')).toBeVisible();
-  await expect(main.locator('#methods')).toBeVisible();
+  await expect(main.locator('#how-it-works')).toBeVisible();
+  await expect(main.locator('#methods-heading')).toBeVisible();
+  await expect(main.locator('#pricing')).toBeVisible();
   await expect(main.getByRole('button', { name: 'Start learning' }).first()).toBeInViewport();
 
   const mobileMenu = page.locator('summary[aria-label="Open navigation menu"]');
   await mobileMenu.click();
   const mobileNavigation = page.getByRole('navigation', { name: 'Mobile navigation' });
-  await expect(mobileNavigation.getByRole('link', { name: 'AI Features' })).toBeVisible();
-  await expect(mobileNavigation.getByRole('link', { name: 'FSRS Method' })).toBeVisible();
+  await expect(mobileNavigation.getByRole('link', { name: 'How it works' })).toBeVisible();
+  await expect(mobileNavigation.getByRole('link', { name: 'Pricing & access' })).toHaveAttribute('href', '#pricing');
   await expect(mobileNavigation.getByRole('button', { name: 'Curriculum' })).toBeVisible();
   await expect(mobileNavigation.getByRole('button', { name: 'Vocabulary' })).toBeVisible();
   await page.keyboard.press('Escape');

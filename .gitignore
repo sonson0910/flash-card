@@ -2,10 +2,11 @@ node_modules/
 build/
 dist/
 .firebase/
-.lingoflash-device-sync/
+firebase.staging.json
 .worktrees/
 coverage/
 playwright-report/
+.e2e-build/
 test-results/
 blob-report/
 artifacts/
@@ -15,3 +16,4 @@ __pycache__/
 *.log
 .env*
 !.env.example
+functions/.secret.local

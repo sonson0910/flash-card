@@ -1,0 +1,58 @@
+<!--#HEAD Share deck-->
+<!--#DLGOPEN-->
+    <header style="flex-shrink: 0; padding: 22px 22px 18px 26px; display: flex; align-items: flex-start; gap: 14px; border-bottom: 1px solid {{t.line}};">
+      <div style="flex-grow: 1; min-width: 0;">
+      <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">Share deck</div>
+      <h2 id="dlg-title" style="margin: 6px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 28px; line-height: 1.12; letter-spacing: -0.02em; color: {{t.textStrong}};">Share “IELTS core”</h2>
+      <p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">Anyone with the link can preview this deck and copy it into their own library.</p>
+      </div>
+      <button aria-label="Close" style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </header>
+    <div style="flex-grow: 1; min-height: 0; padding: 20px 26px 22px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 16px; padding: 14px; border-radius: {{t.fr}}px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
+        <div aria-hidden="true" style="position: relative; width: 64px; height: 72px; flex-shrink: 0;">
+          <span style="position: absolute; inset: 0; transform: rotate(-8deg) translate(-4px, 2px); border-radius: 10px; background: {{cover.back}};"></span>
+          <span style="position: absolute; inset: 0; transform: rotate(5deg) translate(4px, 1px); border-radius: 10px; background: {{cover.mid}};"></span>
+          <span style="position: absolute; inset: 0; border-radius: 10px; background: {{cover.front}}; box-shadow: {{cover.shadow}}; display: flex; align-items: flex-end; padding: 6px 8px; box-sizing: border-box; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-style: italic; font-size: 36px; line-height: 0.8; color: {{cover.text}};">I</span>
+        </div>
+        <div style="flex-grow: 1; min-width: 0;">
+          <div style="font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-size: 20px; color: {{t.textStrong}};">IELTS core</div>
+          <div style="margin-top: 4px; font-size: 13px; color: {{t.text2}};"><span style="font-family: 'Geist Mono', ui-monospace, monospace;">120</span> cards · <span style="font-family: 'Geist Mono', ui-monospace, monospace;">38</span> mastered · Band 6.5–7</div>
+        </div>
+      </div>
+      <label style="display: flex; flex-direction: column; gap: 6px;"><span style="font-size: 12px; font-weight: 600; color: {{t.text2}};">Share link</span>
+        <span style="box-sizing: border-box; height: 42px; padding: 0 14px; border-radius: {{t.fr}}px; border: 1px solid {{t.line}}; background: {{t.inputBg}}; color: {{t.textStrong}}; font-size: 14px; display: flex; align-items: center; gap: 8px; height: 50px; padding: 0 6px 0 14px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{t.text3}}" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"></path></svg><span style="flex-grow: 1; min-width: 0; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; color: {{t.textStrong}}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">sonflash.app/s/ielts-core-7Qm2x</span>
+          <button aria-live="polite" style="height: 38px; padding: 0 14px; border-radius: 10px; border: 1px solid {{t.okLine}}; background: {{t.okBg}}; color: {{t.ok}}; font-size: 13px; font-weight: 650; display: flex; align-items: center; gap: 6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Copied</button></span>
+      </label>
+      <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px;">
+        <sc-for list="{{facts}}" as="f" hint-placeholder-count="3">
+          <li style="display: flex; gap: 10px; font-size: 13.5px; line-height: 1.45; color: {{t.body}};"><span style="margin-top: 2px; width: 18px; height: 18px; flex-shrink: 0; border-radius: 50%; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>{{f}}</li>
+        </sc-for>
+      </ul>
+      <div role="alert" style="display: flex; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid {{t.warnLine}}; background: {{t.warnBg}}; color: {{t.warn}}; font-size: 13px; line-height: 1.45;"><span style="flex-shrink: 0; margin-top: 1px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path><path d="M12 9v4M12 17h.01"></path></svg></span><span>Your memory hooks and personal notes are included in shared cards. Remove anything private before sending the link.</span></div>
+    </div>
+    <footer style="flex-shrink: 0; padding: 16px 22px 20px 26px; border-top: 1px solid {{t.line}}; display: flex; align-items: center; gap: 10px;">
+      <button style="height: 44px; padding: 0 4px; border: 0; background: none; color: {{t.danger}}; font-size: 14px; font-weight: 600; cursor: pointer;">Revoke link</button>
+      <button class="sf-press" style="margin-left: auto; height: 44px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 8px; cursor: pointer;">Done</button>
+    </footer>
+<!--#DLGCLOSE-->
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":720,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = { ...sfTokens(dark), fr: dark ? 14 : 10 };
+    const cover = dark
+      ? { back: 'rgb(150 108 215 / 0.35)', mid: 'rgb(40 211 244 / 0.3)', front: 'linear-gradient(150deg, #7ee6fa, #28d3f4 45%, #966cd7)', shadow: '0 10px 24px -8px rgb(40 211 244 / 0.6)', text: '#04141c' }
+      : { back: '#d8c6a4', mid: '#e7d9bf', front: '#337344', shadow: '0 8px 16px -8px rgb(60 40 20 / 0.6)', text: '#f3d58a' };
+    const facts = ['Recipients get their own copy — your progress and review history stay private.', 'Edits you make later are not pushed to copies already taken.', 'The link works until you revoke it.'];
+    return {
+      t, dw: 560, grainId: 'share-deck-grain-' + (dark ? 'd' : 'l'), amb: { ax: -180, ay: -220, bx: 380, by: 460 },
+      cover, facts,
+    };
+  }
+}
+</script>
+</body>
+</html>

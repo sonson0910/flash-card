@@ -1,0 +1,399 @@
+.account-menu-root {
+  --account-menu-rim: var(--sf-rim-learning);
+}
+
+.claude-app-shell .account-menu-trigger {
+  position: relative;
+  width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--sf-brand) 10%, var(--sf-surface));
+  color: var(--sf-brand-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.account-menu-trigger img,
+.account-menu-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account-menu-trigger[data-equipped-frame="crimson-wing"],
+.account-menu-avatar[data-equipped-frame="crimson-wing"] {
+  border-color: #ff5470;
+  box-shadow: 0 0 0 2px #5ef2ff, 0 0 13px rgb(255 42 77 / .82), 0 0 21px rgb(94 242 255 / .56);
+}
+
+.account-menu-trigger[data-equipped-frame="crimson-wing"]::before,
+.account-menu-avatar[data-equipped-frame="crimson-wing"]::before {
+  position: absolute;
+  z-index: 1;
+  width: 150%;
+  height: 55%;
+  border-top: 2px solid #ff5470;
+  border-bottom: 2px solid #5ef2ff;
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+  transform: rotate(-22deg);
+}
+
+.account-menu-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 50;
+  margin-top: 0.5rem;
+  box-sizing: border-box;
+  width: min(20rem, calc(100vw - 1.5rem));
+  max-height: min(calc(100dvh - 5rem), 40rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--sf-border);
+  border-radius: 18px;
+  background: var(--sf-dialog-bg, var(--sf-surface));
+  box-shadow: var(--sf-panel-shadow);
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.account-menu-surface {
+  box-sizing: border-box;
+  padding: 6px;
+}
+
+@media (max-width: 1023px) {
+  .account-menu-panel {
+    max-height: min(calc(100dvh - 5rem - 78px - env(safe-area-inset-bottom, 0px)), 40rem);
+  }
+}
+
+.account-menu-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 12px;
+}
+
+.account-menu-avatar {
+  position: relative;
+  display: flex;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--sf-border);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface));
+  color: var(--sf-brand-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.account-menu-identity-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.account-menu-name {
+  overflow: hidden;
+  color: var(--sf-text);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu-email {
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--sf-text-muted);
+  font-family: var(--sf-font-mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  color: var(--sf-reward);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .03em;
+}
+
+.account-menu-title svg {
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--sf-reward) 80%, transparent));
+}
+
+.account-menu-status {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  margin: 0 4px 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--sf-border);
+  border-radius: 12px;
+  background: var(--sf-surface-raised);
+  color: var(--sf-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.account-menu-status[data-status-kind="synced"] {
+  border-color: color-mix(in srgb, var(--sf-success) 28%, var(--sf-border));
+  background: color-mix(in srgb, var(--sf-success) 8%, var(--sf-surface));
+  color: var(--sf-success);
+}
+
+.account-menu-status[data-status-kind="session-lost"],
+.account-menu-status[data-status-kind="needs-attention"] {
+  border-color: color-mix(in srgb, var(--sf-danger) 28%, var(--sf-border));
+  background: color-mix(in srgb, var(--sf-danger) 8%, var(--sf-surface));
+  color: var(--sf-danger);
+}
+
+.account-menu-status[data-status-kind="offline"],
+.account-menu-status[data-status-kind="cloud-paused"],
+.account-menu-status[data-status-kind="device"] {
+  border-color: color-mix(in srgb, var(--sf-reward) 28%, var(--sf-border));
+  background: color-mix(in srgb, var(--sf-reward) 8%, var(--sf-surface));
+  color: color-mix(in srgb, var(--sf-reward) 70%, var(--sf-text));
+}
+
+.account-menu-status[data-status-kind="checking"],
+.account-menu-status[data-status-kind="syncing"],
+.account-menu-status[data-status-kind="queued"],
+.account-menu-status[data-status-kind="saving-offline"] {
+  border-color: color-mix(in srgb, var(--sf-brand) 26%, var(--sf-border));
+  background: color-mix(in srgb, var(--sf-brand) 8%, var(--sf-surface));
+  color: var(--sf-brand-text);
+}
+
+.account-menu-status-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.account-menu-status-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.account-menu-status-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu-status-detail {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--sf-text-muted);
+  font-size: 10.5px;
+  font-weight: 400;
+  line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.account-menu-count {
+  display: inline-flex;
+  max-width: 42%;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  color: var(--sf-text-muted);
+  font-family: var(--sf-font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu-count svg {
+  flex: 0 0 auto;
+}
+
+.account-menu-divider {
+  height: 1px;
+  margin: 5px 8px;
+  background: var(--sf-border);
+}
+
+.account-menu-item {
+  height: auto;
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-decoration: none;
+}
+
+.account-menu-item > svg {
+  flex: 0 0 auto;
+  color: var(--sf-text-muted);
+  stroke-width: 1.9;
+}
+
+.account-menu-item:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--sf-brand) 8%, var(--sf-surface));
+}
+
+.account-menu-item:focus-visible {
+  outline: 2px solid var(--sf-brand) !important;
+  outline-offset: -2px;
+}
+
+.account-menu-sync-action > svg,
+.account-menu-primary-action > svg {
+  color: var(--sf-brand-text);
+}
+
+.account-menu-danger-action {
+  color: var(--sf-danger);
+}
+
+.account-menu-danger-action > svg {
+  color: var(--sf-danger);
+}
+
+html[data-theme-family="crystal"] .claude-app-shell .account-menu-trigger {
+  border: 0;
+  border-radius: 0;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: var(--sf-crimson-gradient, linear-gradient(145deg, #ff5470, #7a0820));
+  color: #fff;
+  font-family: var(--sf-font-display, Kanit, Nunito, sans-serif);
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 900;
+  filter: drop-shadow(0 0 9px rgb(255 42 77 / 0.42));
+}
+
+html[data-theme-family="crystal"] .claude-app-shell .account-menu-panel {
+  padding: 1.5px;
+  border: 0;
+  border-radius: 0;
+  background: var(--sf-menu-rim, linear-gradient(160deg, #ff5470, rgb(255 255 255 / 0.12) 40%, #1aa7c9));
+  clip-path: var(--nk-chamfer, polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%));
+  filter: drop-shadow(0 18px 28px rgb(0 0 0 / 0.24));
+}
+
+html[data-theme-family="crystal"] .account-menu-surface {
+  min-height: 100%;
+  padding: 8px;
+  background: var(--sf-dialog-bg, var(--sf-surface));
+  clip-path: var(--nk-chamfer, polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%));
+}
+
+html[data-theme-family="crystal"] .account-menu-identity {
+  padding: 8px 8px 10px;
+}
+
+html[data-theme-family="crystal"] .account-menu-avatar {
+  border: 0;
+  border-radius: 0;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: var(--sf-crimson-gradient, linear-gradient(145deg, #ff5470, #7a0820));
+  color: #fff;
+  font-family: var(--sf-font-display, Kanit, Nunito, sans-serif);
+  font-style: italic;
+  font-weight: 900;
+}
+
+html[data-theme-family="crystal"] .account-menu-status {
+  min-height: 42px;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm, polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%));
+  border-color: transparent;
+  background: color-mix(in srgb, var(--sf-brand) 8%, var(--sf-surface));
+}
+
+html[data-theme-family="crystal"] .account-menu-status[data-status-kind="synced"] {
+  background: rgb(26 167 201 / 0.12);
+  color: var(--sf-brand-text);
+}
+
+html[data-theme-family="crystal"] .account-menu-status[data-status-kind="session-lost"],
+html[data-theme-family="crystal"] .account-menu-status[data-status-kind="needs-attention"] {
+  background: rgb(224 23 63 / 0.1);
+  color: #c40f35;
+}
+
+html[data-theme-family="crystal"] .account-menu-status[data-status-kind="offline"],
+html[data-theme-family="crystal"] .account-menu-status[data-status-kind="cloud-paused"],
+html[data-theme-family="crystal"] .account-menu-status[data-status-kind="device"] {
+  background: rgb(255 190 60 / 0.16);
+  color: #8a5a00;
+}
+
+html[data-theme-family="crystal"] .account-menu-status[data-status-kind="checking"],
+html[data-theme-family="crystal"] .account-menu-status[data-status-kind="syncing"],
+html[data-theme-family="crystal"] .account-menu-status[data-status-kind="queued"],
+html[data-theme-family="crystal"] .account-menu-status[data-status-kind="saving-offline"] {
+  background: rgb(31 111 214 / 0.1);
+  color: #1f5fc4;
+}
+
+html[data-theme-family="crystal"] .account-menu-divider {
+  background: color-mix(in srgb, var(--sf-text) 13%, transparent);
+}
+
+html[data-theme-family="crystal"] .account-menu-item {
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm, polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%));
+  font-family: var(--sf-font-display, Kanit, Nunito, sans-serif);
+  font-size: 13px;
+  font-style: italic;
+  font-weight: 800;
+}
+
+html[data-theme-family="crystal"] .account-menu-item > svg {
+  color: var(--sf-brand-text);
+}
+
+html[data-theme-family="crystal"] .account-menu-item:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--sf-brand) 9%, var(--sf-surface));
+  box-shadow: inset 3px 0 0 var(--sf-brand);
+}
+
+html[data-theme-family="crystal"] .account-menu-danger-action {
+  background: rgb(224 23 63 / 0.08);
+  color: #c40f35;
+}
+
+html[data-theme-family="crystal"] .account-menu-danger-action > svg {
+  color: #c40f35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-menu-panel,
+  .account-menu-item,
+  .account-menu-trigger {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}

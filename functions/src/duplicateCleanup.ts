@@ -73,7 +73,7 @@ export const cleanupCardIdentity = (card: Record<string, unknown>): CleanupIdent
   const senseKey = typeof card.senseKey === 'string' ? card.senseKey.trim() : '';
   const partOfSpeech = typeof card.partOfSpeech === 'string' ? card.partOfSpeech.trim() : '';
   const normalizedLemma = typeof card.normalizedLemma === 'string' ? card.normalizedLemma.trim() : normalizedWord;
-  const hasTuple = Boolean(lexemeId || language || senseKey || card.normalizedLemma !== undefined);
+  const hasTuple = Boolean(lexemeId || senseKey || card.normalizedLemma !== undefined);
   if (!hasTuple) return { key: `word:${normalizedWord}`, normalizedWord };
   if (!lexemeId || !language || !senseKey || !partOfSpeech || !normalizedLemma
     || lexemeId !== canonicalLexemeId(language, normalizedLemma, partOfSpeech, senseKey)) return null;

@@ -559,7 +559,7 @@ export class OfflineMediaPackManager {
   constructor(options: OfflineMediaPackManagerOptions = {}) {
     this.cacheStorage = options.cacheStorage
       ?? (globalThis.caches as unknown as OfflineMediaPackCacheStorage | undefined);
-    this.lock = options.lock ?? defaultLock();
+    this.lock = 'lock' in options ? options.lock : defaultLock();
     this.fetcher = options.fetcher ?? defaultFetcher;
     this.estimateStorage = options.estimateStorage ?? defaultEstimate;
     this.digest = options.digest ?? defaultDigest;

@@ -1,0 +1,142 @@
+<!--#AHEAD Crystal Star word match-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column; padding-bottom: 30px;">
+<!--#ABG-->
+  <header style="position: relative; z-index: 5; height: 84px; flex-shrink: 0; padding: 0 40px; display: flex; align-items: center; gap: 16px;">
+    <button class="nk-lift" aria-label="End word match" style="width: 44px; height: 44px; clip-path: {{t.chamferSm}}; border: 0; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; letter-spacing: 0.08em; color: {{t.text2}};">ROUND 3 <span style="color: {{t.crimsonText}};">//</span> WORD MATCH <span style="color: {{t.text3}};">· 60-SECOND SPRINT</span></div>
+    <span style="margin-left: auto; height: 36px; padding: 0 14px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; display: flex; align-items: center; gap: 8px; font-size: 13px; color: {{t.text2}};">PERSONAL BEST <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 17px; color: {{t.goldText}};">14 PAIRS</span></span>
+    <button class="nk-lift" onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 44px; height: 44px; clip-path: {{t.chamferSm}}; border: 0; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+      <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
+    </button>
+    <span style="height: 44px; padding: 0 16px 0 12px; clip-path: {{t.chamferSm}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 6px;"><svg width="17" height="17" viewBox="0 0 24 24" fill="#ffd166"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>12</span>
+  </header>
+
+  <main style="position: relative; z-index: 3; width: 1200px; margin: auto; display: grid; grid-template-columns: 1fr 270px 1fr; gap: 34px; align-items: center;">
+    <div style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 12px;">
+      <sc-for list="{{left}}" as="c" hint-placeholder-count="6">
+        <div class="{{c.cls}}" style="position: relative; filter: {{c.glow}}; opacity: {{c.opacity}}; transition: opacity 240ms ease;">
+          <button class="nk-press" onClick="{{c.pick}}" aria-pressed="{{c.selected}}" style="position: relative; width: 100%; height: 82px; border: 0; padding: 2px; clip-path: {{t.chamfer}}; background: {{c.edge}}; cursor: pointer; display: block; text-align: left;">
+            <span style="width: 100%; height: 100%; box-sizing: border-box; clip-path: {{t.chamfer}}; background: {{c.bg}}; color: {{c.color}}; padding: 0 22px; display: flex; align-items: center; gap: 12px;">
+              <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 30px; letter-spacing: 0.01em;">{{c.text}}</span>
+              <span style="margin-left: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.08em; color: {{c.tagColor}};">{{c.tag}}</span>
+            </span>
+          </button>
+          <sc-if value="{{c.flare}}" hint-placeholder-val="{{false}}">
+            <span aria-hidden="true" class="nk-flare" style="position: absolute; right: 18px; top: -26px; width: 72px; height: 72px; pointer-events: none;"><span style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, #ffffff, transparent);"></span></span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+      <div aria-hidden="true" class="nk-unfold" style="position: absolute; left: -100px; top: 0; width: 250px; height: 190px; opacity: 0.5; filter: drop-shadow(0 0 18px rgb(255 42 77 / 0.7));">
+<!--#WINGS-->
+      </div>
+      <div aria-hidden="true" class="nk-unfold" style="position: absolute; right: -100px; top: 0; width: 250px; height: 190px; transform: scaleX(-1); opacity: 0.5; filter: drop-shadow(0 0 18px rgb(255 42 77 / 0.7));">
+<!--#WINGS-->
+      </div>
+      <div role="timer" aria-label="{{timeLeft}} seconds left" style="position: relative; width: 200px; height: 200px; filter: drop-shadow(0 0 16px rgb(255 42 77 / 0.55));">
+        <svg width="200" height="200" viewBox="0 0 200 200" style="position: absolute; inset: 0;">
+          <polygon points="100,6 181,53 181,147 100,194 19,147 19,53" fill="{{t.panelSolid}}" stroke="{{t.lineStrong}}" stroke-width="2"></polygon>
+          <circle cx="100" cy="100" r="78" fill="none" stroke="{{t.track}}" stroke-width="10"></circle>
+          <circle cx="100" cy="100" r="78" fill="none" stroke="url(#am-ring-{{t.dark}})" stroke-width="10" stroke-linecap="butt" stroke-dasharray="490" stroke-dashoffset="{{ringOffset}}" transform="rotate(-90 100 100)" style="transition: stroke-dashoffset 500ms ease;"></circle>
+          <defs><linearGradient id="am-ring-{{t.dark}}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff8fa3"></stop><stop offset="1" stop-color="#ff2a4d"></stop></linearGradient></defs>
+        </svg>
+        <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+          <span class="{{timeCls}}" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 54px; line-height: 1; color: {{t.crimsonText}};">0:{{timeText}}</span>
+          <span style="margin-top: 4px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.2em; color: {{t.text3}};">TIME LEFT</span>
+        </div>
+      </div>
+      <div style="text-align: center;">
+        <div class="{{pairsCls}}" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 72px; line-height: 0.95; background: linear-gradient(180deg, #ffffff 0%, #ffe3ea 46%, #ff8fa3 54%, #ffffff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 16px rgb(255 42 77 / 0.6));">{{pairs}}</div>
+        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.16em; color: {{t.text2}};">PAIRS MATCHED</div>
+      </div>
+      <div class="{{bannerCls}}" style="position: relative; width: 250px; height: 58px;">
+        <div style="position: absolute; left: 20px; right: 0; top: 8px; height: 44px; transform: skewX(-16deg); background: linear-gradient(90deg, rgb(179 15 51 / 0.95), rgb(255 42 77 / 0.85) 70%, rgb(255 42 77 / 0.2)); box-shadow: 0 0 26px -6px rgb(255 42 77 / 0.8);"></div>
+        <div style="position: absolute; left: 0; top: 2px; width: 52px; height: 52px; filter: drop-shadow(0 0 10px rgb(255 42 77 / 0.9));">
+<!--#STAR5-->
+        </div>
+        <div style="position: absolute; left: 58px; top: 12px; display: flex; align-items: baseline; gap: 8px; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic;"><span style="font-weight: 900; font-size: 26px; letter-spacing: 0.02em;">{{comboName}}</span><span style="font-weight: 800; font-size: 13px; letter-spacing: 0.06em; opacity: 0.95;">×{{combo}} · +{{comboXp}} XP</span></div>
+      </div>
+      <div style="display: flex; align-items: flex-end; gap: 6px;">
+        <div class="nk-float" style="width: 120px; height: 120px; flex-shrink: 0;">
+<!--#MASCOT $-->
+        </div>
+        <div style="margin-bottom: 18px; max-width: 136px; padding: 8px 10px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; text-align: left;">
+          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 10.5px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
+          <div style="margin-top: 2px; font-size: 12.5px; font-weight: 800; line-height: 1.35; color: {{t.textStrong}};">{{lumiLine}}</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 12px;">
+      <sc-for list="{{right}}" as="c" hint-placeholder-count="6">
+        <div class="{{c.cls}}" style="position: relative; filter: {{c.glow}}; opacity: {{c.opacity}}; transition: opacity 240ms ease;">
+          <button class="nk-press" onClick="{{c.pick}}" aria-pressed="{{c.selected}}" style="position: relative; width: 100%; height: 82px; border: 0; padding: 2px; clip-path: {{t.chamfer}}; background: {{c.edge}}; cursor: pointer; display: block; text-align: left;">
+            <span style="width: 100%; height: 100%; box-sizing: border-box; clip-path: {{t.chamfer}}; background: {{c.bg}}; color: {{c.color}}; padding: 0 22px; display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 18px; font-weight: 800; line-height: 1.3;">{{c.text}}</span>
+              <span style="margin-left: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.08em; color: {{c.tagColor}};">{{c.tag}}</span>
+            </span>
+          </button>
+          <sc-if value="{{c.flare}}" hint-placeholder-val="{{false}}">
+            <span aria-hidden="true" class="nk-flare" style="position: absolute; left: 18px; top: -26px; width: 72px; height: 72px; pointer-events: none;"><span style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, #ffffff, transparent);"></span></span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </main>
+  <p style="position: relative; z-index: 3; margin: 0; text-align: center; font-weight: 700; font-size: 13.5px; color: {{t.text2}};">Pick a word, then its meaning. Wrong pairs cost 2 seconds.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { doneL: [0, 4], doneR: [2, 5], selL: 1, bad: { l: 3, r: 4 }, fresh: null, pairs: 11, combo: 3, time: 9 };
+  }
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const s = this.state;
+    const later = (ms, fn) => window.setTimeout(fn, ms);
+    const leftWords = ['permanent', 'immediate', 'recharge', 'warden', 'exact', 'ambition'];
+    const rightWords = ['người quản lý, cai ngục', 'nạp lại năng lượng', 'vĩnh viễn', 'tham vọng', 'ngay lập tức', 'chính xác'];
+    const meaningOf = [2, 4, 1, 0, 5, 3];
+    const S = {
+      idle: { edge: 'linear-gradient(150deg, ' + t.lineStrong + ', ' + t.line + ')', bg: t.panelSolid, color: t.textStrong, tag: '', tagColor: t.text3, glow: 'none', opacity: 1, cls: '', flare: false, selected: 'false' },
+      done: { edge: 'linear-gradient(150deg, ' + t.line + ', ' + t.line + ')', bg: t.chip, color: t.text3, tag: '✓', tagColor: t.holoText, glow: 'none', opacity: 0.45, cls: '', flare: false, selected: 'false' },
+      fresh: { edge: 'linear-gradient(150deg, #e9feff, #5ef2ff 45%, #1aa7c9)', bg: dark ? 'linear-gradient(90deg, rgb(94 242 255 / 0.22), rgb(8 10 18 / 0.96) 75%)' : 'linear-gradient(90deg, rgb(94 242 255 / 0.35), #eef9ff 75%)', color: t.textStrong, tag: 'MATCH!', tagColor: t.holoText, glow: 'drop-shadow(0 0 18px rgb(94 242 255 / 0.6))', opacity: 1, cls: 'nk-pop', flare: true, selected: 'false' },
+      sel: { edge: 'linear-gradient(150deg, #e9feff, #5ef2ff 40%, #ff5470)', bg: dark ? 'linear-gradient(90deg, rgb(94 242 255 / 0.16), rgb(8 10 18 / 0.96) 75%)' : 'linear-gradient(90deg, rgb(94 242 255 / 0.28), #eef9ff 75%)', color: t.textStrong, tag: 'SELECTED', tagColor: t.holoText, glow: 'drop-shadow(0 0 16px rgb(94 242 255 / 0.55))', opacity: 1, cls: '', flare: false, selected: 'true' },
+      bad: { edge: 'linear-gradient(150deg, #ff8fa3, #ff2a4d 50%, #7a0820)', bg: dark ? 'linear-gradient(90deg, rgb(255 42 77 / 0.24), rgb(8 10 18 / 0.96) 75%)' : 'linear-gradient(90deg, rgb(255 84 112 / 0.25), #fff1f4 75%)', color: t.crimsonText, tag: '−2s', tagColor: t.crimsonText, glow: 'drop-shadow(0 0 14px rgb(255 42 77 / 0.5))', opacity: 1, cls: 'sf-shake', flare: false, selected: 'false' },
+    };
+    const leftState = (i) => s.fresh && s.fresh.l === i ? 'fresh' : s.doneL.includes(i) ? 'done' : s.bad && s.bad.l === i ? 'bad' : s.selL === i ? 'sel' : 'idle';
+    const rightState = (j) => s.fresh && s.fresh.r === j ? 'fresh' : s.doneR.includes(j) ? 'done' : s.bad && s.bad.r === j ? 'bad' : 'idle';
+    const pickL = (i) => { if (!s.doneL.includes(i)) this.setState({ selL: i, bad: null, fresh: null }); };
+    const pickR = (j) => {
+      if (s.selL === null || s.doneR.includes(j)) return;
+      if (meaningOf[s.selL] === j) {
+        this.setState({ doneL: [...s.doneL, s.selL], doneR: [...s.doneR, j], fresh: { l: s.selL, r: j }, selL: null, bad: null, pairs: s.pairs + 1, combo: s.combo + 1 });
+        later(900, () => this.setState({ fresh: null }));
+      } else {
+        this.setState({ bad: { l: s.selL, r: j }, selL: null, fresh: null, combo: 0, time: Math.max(0, s.time - 2) });
+      }
+    };
+    const lumi = s.fresh ? 'happy' : s.bad ? 'oops' : s.combo >= 3 ? 'proud' : 'idle';
+    return {
+      t, bg: { wings: true }, toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      left: leftWords.map((text, i) => ({ text, ...S[leftState(i)], pick: () => pickL(i) })),
+      right: rightWords.map((text, j) => ({ text, ...S[rightState(j)], pick: () => pickR(j) })),
+      pairs: s.pairs, pairsCls: s.fresh ? 'nk-pop' : '',
+      combo: s.combo, comboName: nkCombo(s.combo), comboXp: s.combo * 10, bannerCls: s.fresh ? 'nk-banner' : '',
+      timeLeft: s.time, timeText: String(s.time).padStart(2, '0'), timeCls: s.bad ? 'sf-shake' : '',
+      ringOffset: Math.round(490 - 490 * s.time / 60),
+      lumiSrc: t.lumi[lumi],
+      lumiLine: s.fresh ? 'Đúng cặp rồi!' : s.bad ? 'Sai cặp, mất 2 giây!' : 'Còn ' + s.time + ' giây, nhanh lên!',
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!--#HEAD Weekly recap-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#AMBIENT-->
+<!--#NAV-->
+
+  <main style="position: relative; z-index: 2; margin: auto; padding-bottom: 20px; display: flex; align-items: center; gap: 72px;">
+    <div style="position: relative;">
+      <div aria-hidden="true" style="position: absolute; inset: 30px -24px -24px 30px; border-radius: 26px; background: {{stack}}; transform: rotate(4deg);"></div>
+      <figure aria-label="Shareable weekly recap card" class="sf-deal-1" style="position: relative; margin: 0; width: 432px; height: 540px; box-sizing: border-box; border-radius: 26px; overflow: hidden; border: {{card.border}}; background: {{card.bg}}; box-shadow: {{card.shadow}}; color: {{card.text}}; padding: 30px 30px 24px; display: flex; flex-direction: column;">
+        <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}">
+          <div aria-hidden="true" style="position: absolute; left: -120px; top: -140px; width: 380px; height: 380px; border-radius: 50%; background: rgb(150 108 215 / 0.55); filter: blur(80px);"></div>
+          <div aria-hidden="true" style="position: absolute; right: -140px; bottom: 60px; width: 340px; height: 340px; border-radius: 50%; background: rgb(40 211 244 / 0.4); filter: blur(80px);"></div>
+        </sc-if>
+        <div style="position: relative; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{card.muted}};">
+          <span style="width: 22px; height: 22px; border-radius: 7px; background: {{t.logoBg}}; color: {{t.logoText}}; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 13px; letter-spacing: 0; text-transform: none; display: flex; align-items: center; justify-content: center;">S</span>
+          My week · 16–22 Sep
+        </div>
+        <div style="position: relative; margin-top: 26px; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 120px; line-height: 0.85; letter-spacing: -0.03em; font-variant-numeric: lining-nums proportional-nums; font-feature-settings: 'lnum' 1, 'pnum' 1; color: {{card.strong}};">146</div>
+        <div style="position: relative; margin-top: 8px; font-family: Fraunces, Georgia, serif; font-size: 28px; line-height: 1.05; color: {{card.strong}};">words <span style="font-style: {{t.emStyle}}; color: {{card.em}}; text-shadow: {{t.emGlow}};">this week</span></div>
+
+        <div style="position: relative; margin-top: 22px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+          <sc-for list="{{cardStats}}" as="s" hint-placeholder-count="3">
+            <div style="padding: 10px 11px; border-radius: 12px; background: {{card.chip}}; border: 1px solid {{card.line}};">
+              <div style="font-family: Fraunces, Georgia, serif; font-size: 22px; line-height: 1; white-space: nowrap; color: {{card.strong}};">{{s.value}}</div>
+              <div style="margin-top: 4px; font-size: 11px; color: {{card.muted}};">{{s.label}}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="position: relative; margin-top: 16px; padding: 12px 14px; border-radius: 14px; border: 1px solid {{card.line}}; background: {{card.chip}}; display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{card.muted}};">Word of the week</span>
+          <span style="margin-left: auto; font-family: Fraunces, Georgia, serif; font-size: 24px; color: {{card.strong}};">im<span style="font-style: {{t.emStyle}}; color: {{card.em}};">me</span>diate</span>
+        </div>
+
+        <div style="position: relative; margin-top: 16px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px;">
+          <sc-for list="{{heat}}" as="h" hint-placeholder-count="7">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;"><span style="width: 100%; height: 28px; border-radius: 7px; background: {{h.bg}};"></span><span style="font-size: 10.5px; color: {{card.muted}};">{{h.d}}</span></div>
+          </sc-for>
+        </div>
+
+        <div style="position: relative; margin-top: auto; padding-top: 14px; border-top: 1px solid {{card.line}}; display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: {{card.muted}};">
+          <span>Learn with me on <strong style="color: {{card.strong}}; font-weight: 650;">SonFlash</strong></span>
+          <span style="font-family: 'Geist Mono', ui-monospace, monospace;">sonflash.app/i/khanh</span>
+        </div>
+      </figure>
+    </div>
+
+    <section aria-labelledby="share-title" style="width: 520px;">
+      <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text2}};">Weekly recap · ready to share</p>
+      <h1 id="share-title" style="margin: 10px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 48px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">Your best week <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">so far.</span></h1>
+      <p style="margin: 12px 0 0; font-size: 14.5px; line-height: 1.55; color: {{t.text2}};">+38 words compared with last week. Friends who join from your link get 7 days of Pro — and so do you.</p>
+
+      <div style="margin-top: 22px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px;">
+        <sc-for list="{{targets}}" as="s" hint-placeholder-count="5">
+          <button class="sf-press" style="height: 78px; border-radius: 16px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; color: {{t.text}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; font-size: 12px; font-weight: 600; cursor: pointer;">
+            <span style="width: 30px; height: 30px; border-radius: 9px; background: {{s.bg}}; color: {{s.fg}}; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{s.icon}}"></path></svg></span>{{s.label}}
+          </button>
+        </sc-for>
+      </div>
+
+      <h2 style="margin: 22px 0 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text3}};">Show on the card</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+        <sc-for list="{{include}}" as="i" hint-placeholder-count="6">
+          <button aria-pressed="{{i.on}}" style="height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid {{i.border}}; background: {{i.bg}}; color: {{i.fg}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <sc-if value="{{i.check}}" hint-placeholder-val="{{true}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>{{i.label}}</button>
+        </sc-for>
+      </div>
+
+      <h2 style="margin: 22px 0 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text3}};">Caption</h2>
+      <div style="padding: 12px 14px; border-radius: 14px; border: 1px solid {{t.line}}; background: {{t.inputBg}}; font-size: 14px; line-height: 1.5; color: {{t.text}};">146 new words this week on SonFlash 🔥 12 days in a row. Học cùng mình không? sonflash.app/i/khanh
+        <div style="margin-top: 6px; display: flex; justify-content: space-between; font-size: 12px; color: {{t.text3}};"><span>Edit caption</span><span style="font-family: 'Geist Mono', ui-monospace, monospace;">96 / 220</span></div>
+      </div>
+
+      <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <button class="sf-press" style="height: 50px; padding: 0 22px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 15px; font-weight: 650; display: flex; align-items: center; gap: 8px; cursor: pointer;">Share to story</button>
+        <button style="height: 50px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 14.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path></svg>Download PNG</button>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    const card = dark
+      ? { border: '1.5px solid transparent', bg: 'linear-gradient(170deg, #0f2a38, #07161f 70%) padding-box, ' + t.rimLearning + ' border-box', shadow: '0 50px 90px -40px rgb(0 0 0 / 0.95), 0 0 80px -30px rgb(40 211 244 / 0.6)', text: '#e5ecf1', strong: '#f1f6f9', muted: '#99a7b0', em: '#28d3f4', chip: 'rgb(255 255 255 / 0.05)', line: 'rgb(255 255 255 / 0.1)' }
+      : { border: '0', bg: '#1c2a21', shadow: '0 50px 80px -40px rgb(60 40 20 / 0.7), 0 2px 6px rgb(60 40 20 / 0.12)', text: '#e9e2d2', strong: '#fbf6ec', muted: '#aab3a6', em: '#e8a075', chip: 'rgb(251 246 236 / 0.06)', line: 'rgb(251 246 236 / 0.14)' };
+    const heatC = dark ? ['rgb(255 255 255 / 0.06)', 'rgb(40 211 244 / 0.3)', 'rgb(40 211 244 / 0.55)', '#28d3f4', '#7ee6fa'] : ['rgb(251 246 236 / 0.08)', 'rgb(232 160 117 / 0.3)', 'rgb(232 160 117 / 0.55)', '#e8a075', '#f3c7a4'];
+    const lv = [2, 3, 1, 4, 2, 4, 3];
+    const I = {
+      story: 'M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM17.5 6.5h.01',
+      fb: 'M15 3h-2a4 4 0 0 0-4 4v3H6v4h3v7h4v-7h3l1-4h-4V7a1 1 0 0 1 1-1h2z',
+      zalo: 'M4 5h16v11H9l-5 4zM8 9h5l-5 4h5',
+      link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
+      dl: 'M12 3v12M7 10l5 5 5-5M5 21h14',
+    };
+    const inc = [['Words learned', 1], ['Streak', 1], ['Recall', 1], ['Word of the week', 1], ['Heatmap', 1], ['My name', 0]];
+    return {
+      t, grainId: 'wk-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: -120, ay: -160, bx: 980, by: 480 },
+      streak: 12, nav: sfNav(t, 3), toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      card, stack: dark ? 'rgb(255 255 255 / 0.04)' : 'rgb(29 26 22 / 0.06)',
+      cardStats: [{ value: '12 d', label: 'streak' }, { value: '91%', label: 'recall' }, { value: '2 h 40', label: 'studied' }],
+      heat: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => ({ d, bg: heatC[lv[i]] })),
+      targets: [
+        { label: 'Story', icon: I.story, bg: 'linear-gradient(45deg, #f09433, #dc2743 50%, #bc1888)', fg: '#ffffff' },
+        { label: 'Facebook', icon: I.fb, bg: '#1877f2', fg: '#ffffff' },
+        { label: 'Zalo', icon: I.zalo, bg: '#0068ff', fg: '#ffffff' },
+        { label: 'Copy link', icon: I.link, bg: t.accentSoft, fg: t.accentText },
+        { label: 'PNG', icon: I.dl, bg: t.chipBg, fg: t.text },
+      ],
+      include: inc.map(([label, on]) => ({ label, on: on ? 'true' : 'false', check: !!on, border: on ? t.accentLine : t.line, bg: on ? t.accentSoft : 'transparent', fg: on ? t.accentText : t.text2 })),
+    };
+  }
+}
+</script>
+</body>
+</html>

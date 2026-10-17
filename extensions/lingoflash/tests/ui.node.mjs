@@ -11,6 +11,8 @@ test('keeps complete card example fields in the inline result path', () => {
   assert.match(coreSource, /exampleTranslation/);
   assert.match(uiSource, /exampleSentence/);
   assert.match(uiSource, /exampleTranslation/);
+  assert.match(uiSource, /payload\.aiGenerated/);
+  assert.match(uiSource, /Nội dung do AI tạo, có thể sai\. Hãy kiểm tra nghĩa\./);
 });
 
 test('provides an accessible live status and auth link in the inline bubble', () => {
@@ -236,6 +238,101 @@ test('renders SVG controls in the serialized inline bubble', () => {
 
   assert.equal(result?.ok, true);
   assert.ok(nodes.some(node => node.tagName === 'SVG'));
+});
+
+const renderBubbleForToneAssertions = payload => {
+  class FakeElement {
+    constructor(tagName = '') {
+      this.tagName = tagName.toUpperCase();
+      this.children = [];
+      this.style = {};
+      this.dataset = {};
+      this.attributes = {};
+      this.isConnected = true;
+      this.textContent = '';
+      this.disabled = false;
+    }
+    setAttribute(name, value) { this.attributes[name] = String(value); }
+    append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
+    attachShadow() { this.shadowRoot = new FakeElement(); return this.shadowRoot; }
+    remove() { this.isConnected = false; }
+  }
+  const isolated = {
+    Array, Math, Number, Object, String, URL,
+    document: {
+      documentElement: new FakeElement('html'),
+      getElementById: () => null,
+      createElement: tagName => new FakeElement(tagName),
+      createElementNS: (_namespace, tagName) => new FakeElement(tagName),
+    },
+    innerWidth: 1280,
+    innerHeight: 720,
+    speechSynthesis: { speak() {}, cancel() {} },
+    SpeechSynthesisUtterance: class { constructor(text) { this.text = text; } },
+  };
+  isolated.globalThis = isolated;
+  vm.createContext(isolated);
+  const sourceContext = { globalThis: {} };
+  vm.createContext(sourceContext);
+  vm.runInContext(uiSource, sourceContext, { filename: 'background-ui.js' });
+  const renderer = vm.runInContext(`(${sourceContext.globalThis.LingoFlashExtensionUi.renderInlineBubble.toString()})`, isolated);
+
+  const result = renderer({ bubbleDurationMs: 0, ...payload });
+  const collect = node => [node, ...(node.children ?? []).flatMap(collect), ...(node.shadowRoot ? collect(node.shadowRoot) : [])];
+  const nodes = collect(isolated.document.documentElement);
+  return { result, nodes };
+};
+
+test('gives a duplicate (existing) card a distinct amber badge tone, never the created tone', () => {
+  const { result, nodes } = renderBubbleForToneAssertions({ status: 'existing', text: 'resilient', translation: 'bền bỉ' });
+  const badge = nodes.find(node => node.className === 'ok');
+
+  assert.equal(result?.ok, true);
+  assert.equal(badge?.dataset?.tone, 'existing');
+  assert.match(badge?.textContent ?? '', /Đã có trong thư viện/);
+});
+
+test('does not tag a freshly created card with the duplicate tone', () => {
+  const { result, nodes } = renderBubbleForToneAssertions({ status: 'created', text: 'resilient', translation: 'bền bỉ' });
+  const badge = nodes.find(node => node.className === 'ok');
+
+  assert.equal(result?.ok, true);
+  assert.equal(badge?.dataset?.tone, undefined);
+  assert.match(badge?.textContent ?? '', /Đã thêm vào thư viện/);
+});
+
+test('classifies an AI-quota error message as a quota tone with an upgrade action, not a retry button', () => {
+  const { result, nodes } = renderBubbleForToneAssertions({
+    status: 'error',
+    text: 'resilient',
+    message: 'Dịch vụ AI đã hết hạn mức. Từ đã chọn vẫn được giữ lại; hãy thử lại sau.',
+    retryId: 'job_quota_1',
+  });
+  const errorNode = nodes.find(node => node.className === 'err');
+  const note = nodes.find(node => node.className === 'quota-note');
+  const buttons = nodes.filter(node => node.tagName === 'BUTTON' && node.className === 'speak');
+
+  assert.equal(result?.ok, true);
+  assert.equal(errorNode?.dataset?.tone, 'quota');
+  assert.match(note?.textContent ?? '', /Dịch nhanh vẫn miễn phí/);
+  assert.ok(buttons.some(button => /Nâng cấp Pro/.test(button.textContent ?? '')));
+  assert.equal(buttons.some(button => /Thử lại từ này/.test(button.textContent ?? '')), false);
+});
+
+test('keeps the retry button, and no quota tone, for a non-quota error even with a retryId', () => {
+  const { result, nodes } = renderBubbleForToneAssertions({
+    status: 'error',
+    text: 'resilient',
+    message: 'Dịch vụ AI đang bận. Thử lại sau.',
+    retryId: 'job_generic_1',
+  });
+  const errorNode = nodes.find(node => node.className === 'err');
+  const buttons = nodes.filter(node => node.tagName === 'BUTTON' && node.className === 'speak');
+
+  assert.equal(result?.ok, true);
+  assert.equal(errorNode?.dataset?.tone, undefined);
+  assert.ok(buttons.some(button => /Thử lại từ này/.test(button.textContent ?? '')));
 });
 
 const createSelectionCaptureContext = ({

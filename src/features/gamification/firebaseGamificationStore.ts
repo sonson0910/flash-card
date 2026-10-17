@@ -1,9 +1,10 @@
 import { doc, runTransaction, type Firestore } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions';
 import {
   app,
   auth,
   db,
+  getSonFlashFunctions,
   isFirebaseConfigured,
   protectedFunctionsCapability,
 } from '../../lib/firebase';
@@ -294,7 +295,7 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
     assertCurrentOwner();
     try {
       const callable = httpsCallable<typeof request, GamificationStoreSaveCommit>(
-        getFunctions(app!, 'asia-southeast1'),
+        await getSonFlashFunctions(app!),
         'saveGamification',
       );
       assertCurrentOwner();

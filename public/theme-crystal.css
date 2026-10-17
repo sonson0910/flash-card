@@ -1,0 +1,34 @@
+/* Starry Night (dark) and Prism Day (light). This stylesheet is loaded only for Crystal Star. */
+:root[data-theme-family="crystal"] {
+  color-scheme: light;
+  --sf-canvas: #dff1ff;
+  --sf-surface: #e6f5ff; --sf-surface-raised: rgb(226 244 255 / 0.9); --sf-surface-muted: rgb(226 244 255 / 0.9);
+  --sf-text: #0d1a33; --sf-text-muted: #3f5272; --sf-border: rgb(13 40 80 / 0.12);
+  --sf-brand: #ff2a4d; --sf-brand-hover: #b30f33; --sf-brand-text: #c40f35;
+  --sf-on-brand: #04060c; --sf-on-brand-hover: #04060c; --sf-reward: #ffd166;
+  --sf-success: #0a8fb0; --sf-danger: #c40f35; --sf-surface-glass: linear-gradient(160deg, rgb(238 249 255 / 0.9), rgb(208 234 255 / 0.86));
+  --sf-surface-control: rgb(226 244 255 / 0.9); --sf-edge-highlight: rgb(13 40 80 / 0.24); --sf-shadow: rgb(20 70 130 / 0.45); --sf-panel-shadow: 0 26px 50px -28px rgb(20 70 130 / 0.45);
+  --sf-second: #5ef2ff; --sf-rim-new: linear-gradient(150deg, #e9feff, #5ef2ff 40%, #1aa7c9 75%, #e9feff); --sf-rim-learning: linear-gradient(150deg, #ffe3f1, #ff8fb6 35%, #ff5470 65%, #5ef2ff); --sf-gold-rim: conic-gradient(from 200deg, #fff3c4, #ffd166, #ff2a4d, #7a0820, #ff5470, #ffffff, #ffd166, #fff3c4);
+  --sf-card-bg: linear-gradient(115deg, #ffe0ef, #cdeaff 30%, #bfe9ff 55%, #d0fbf2 75%, #ffe6f2); --sf-dialog-bg: linear-gradient(160deg, rgb(238 249 255 / 0.9), rgb(208 234 255 / 0.86)); --sf-scrim: rgb(10 40 80 / 0.35);
+  --sf-grain-blend: normal; --sf-grain-opacity: 0; --sf-heat-0: rgb(94 242 255 / 0.2); --sf-heat-1: rgb(94 242 255 / 0.5); --sf-heat-2: rgb(255 143 182 / 0.55); --sf-heat-3: rgb(255 42 77 / 0.6); --sf-heat-4: #ffd166;
+  --sf-confetti-0: #d1123a; --sf-confetti-1: #5ef2ff; --sf-confetti-2: #ffd166; --sf-confetti-3: #ffffff; --sf-confetti-4: #ff8fb6;
+  --sf-rating-again: #d1123a; --sf-rating-hard: #c25a0a; --sf-rating-good: #0a8fb0; --sf-rating-easy: #1f6fd6;
+  --nk-chamfer: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px); --nk-chamfer-sm: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); --nk-snap: cubic-bezier(.2,1.4,.4,1); --nk-stars: radial-gradient(2px 2px at 8% 14%, #fff, transparent), radial-gradient(1.5px 1.5px at 22% 36%, #fff, transparent), radial-gradient(2.5px 2.5px at 36% 10%, #fff, transparent), radial-gradient(1.5px 1.5px at 52% 30%, #fff, transparent), radial-gradient(2px 2px at 66% 16%, #fff, transparent), radial-gradient(1.5px 1.5px at 80% 40%, #fff, transparent), radial-gradient(2.5px 2.5px at 92% 12%, #fff, transparent), radial-gradient(2px 2px at 14% 70%, #fff, transparent), radial-gradient(1.5px 1.5px at 72% 78%, #fff, transparent); --nk-wing-opacity: 0.42;
+}
+
+:root[data-theme-family="crystal"].dark {
+  color-scheme: dark;
+  --sf-canvas: #04060c;
+  --sf-surface: #0e111c; --sf-surface-raised: rgb(255 255 255 / 0.06); --sf-surface-muted: rgb(255 255 255 / 0.06);
+  --sf-text: #f3f5fa; --sf-text-muted: #aab3c5; --sf-border: rgb(255 255 255 / 0.1);
+  --sf-brand: #ff2a4d; --sf-brand-hover: #b30f33; --sf-brand-text: #ff6b85;
+  --sf-on-brand: #04060c; --sf-on-brand-hover: #04060c; --sf-reward: #ffd166;
+  --sf-success: #5ef2ff; --sf-danger: #ff6b85; --sf-surface-glass: linear-gradient(160deg, rgb(22 26 40 / 0.9), rgb(8 10 18 / 0.94));
+  --sf-surface-control: rgb(255 255 255 / 0.06); --sf-edge-highlight: rgb(255 255 255 / 0.22); --sf-shadow: rgb(0 0 0 / 0.9); --sf-panel-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.9);
+  --sf-second: #5ef2ff; --sf-rim-new: linear-gradient(150deg, #e9feff, #5ef2ff 40%, #1aa7c9 75%, #e9feff); --sf-rim-learning: linear-gradient(150deg, #ffe3f1, #ff8fb6 35%, #ff5470 65%, #5ef2ff); --sf-gold-rim: conic-gradient(from 200deg, #fff3c4, #ffd166, #ff2a4d, #7a0820, #ff5470, #ffffff, #ffd166, #fff3c4);
+  --sf-card-bg: linear-gradient(180deg, #121624 0%, #080a12 100%); --sf-dialog-bg: linear-gradient(160deg, rgb(22 26 40 / 0.9), rgb(8 10 18 / 0.94)); --sf-scrim: rgb(4 3 10 / 0.72);
+  --sf-grain-blend: normal; --sf-grain-opacity: 0; --sf-heat-0: rgb(94 242 255 / 0.2); --sf-heat-1: rgb(94 242 255 / 0.5); --sf-heat-2: rgb(255 143 182 / 0.55); --sf-heat-3: rgb(255 42 77 / 0.6); --sf-heat-4: #ffd166;
+  --sf-confetti-0: #ff2a4d; --sf-confetti-1: #5ef2ff; --sf-confetti-2: #ffd166; --sf-confetti-3: #ffffff; --sf-confetti-4: #ff8fb6;
+  --sf-rating-again: #ff2a4d; --sf-rating-hard: #ff8a3d; --sf-rating-good: #5ef2ff; --sf-rating-easy: #ffd166;
+  --nk-chamfer: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px); --nk-chamfer-sm: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); --nk-snap: cubic-bezier(.2,1.4,.4,1); --nk-stars: radial-gradient(1.5px 1.5px at 6% 12%, #cfe0ff, transparent), radial-gradient(1px 1px at 18% 38%, #fff, transparent), radial-gradient(2px 2px at 31% 8%, #9fd0ff, transparent), radial-gradient(1px 1px at 44% 28%, #fff, transparent), radial-gradient(1.5px 1.5px at 57% 62%, #cfe0ff, transparent), radial-gradient(1px 1px at 69% 18%, #fff, transparent), radial-gradient(2px 2px at 81% 44%, #9fd0ff, transparent), radial-gradient(1px 1px at 93% 9%, #fff, transparent), radial-gradient(1.5px 1.5px at 12% 78%, #fff, transparent), radial-gradient(1px 1px at 38% 88%, #9fd0ff, transparent), radial-gradient(1.5px 1.5px at 74% 84%, #fff, transparent), radial-gradient(1px 1px at 88% 94%, #cfe0ff, transparent); --nk-wing-opacity: 0.55;
+}

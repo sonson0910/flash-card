@@ -26,6 +26,15 @@ const {
   normalizeSelectedText,
   selectionValidation,
   validateAppUrl,
+  t,
+  normalizeDueCount,
+  normalizeDueCountMetadata,
+  MAX_DUE_COUNT,
+  applyThemeFamily,
+  normalizeCourseTargetLanguage,
+  normalizeCourseNativeLanguage,
+  normalizeCourseLocaleMetadata,
+  normalizeRetiredCourseLocaleScopes,
 } = globalThis.LingoFlashExtension;
 
 test('normalizes browser selection', () => {
@@ -51,10 +60,52 @@ test('normalizes settings to safe bounded defaults', () => {
     quickTranslateSource: 'auto',
     quickTranslateTarget: 'vi',
     selectionIconSites: [],
+    themeFamily: 'classic',
+    colorScheme: 'system',
   });
   assert.deepEqual(normalizeSettings(null), DEFAULT_SETTINGS);
+  assert.deepEqual(normalizeSettings({ themeFamily: 'crystal', colorScheme: 'dark' }), {
+    ...DEFAULT_SETTINGS,
+    themeFamily: 'crystal',
+    colorScheme: 'dark',
+  });
+  assert.equal(normalizeSettings({ themeFamily: 'neon' }).themeFamily, 'classic');
+  assert.equal(normalizeSettings({ colorScheme: 'midnight' }).colorScheme, 'system');
   assert.equal(normalizeSettings({ bubbleDurationMs: null }).bubbleDurationMs, DEFAULT_SETTINGS.bubbleDurationMs);
   assert.equal(normalizeSettings({ bubbleDurationMs: '' }).bubbleDurationMs, DEFAULT_SETTINGS.bubbleDurationMs);
+});
+
+test('applyThemeFamily sets a bounded data-theme-family attribute, defaulting unknown families to classic', () => {
+  const attributes = new Map();
+  const previousDocument = globalThis.document;
+  globalThis.document = {
+    documentElement: {
+      setAttribute: (name, value) => attributes.set(name, value),
+      removeAttribute: name => attributes.delete(name),
+    },
+  };
+  try {
+    applyThemeFamily('crystal');
+    assert.equal(attributes.get('data-theme-family'), 'crystal');
+    applyThemeFamily('classic');
+    assert.equal(attributes.get('data-theme-family'), 'classic');
+    applyThemeFamily('not-a-real-family');
+    assert.equal(attributes.get('data-theme-family'), 'classic');
+    applyThemeFamily(undefined);
+    assert.equal(attributes.get('data-theme-family'), 'classic');
+  } finally {
+    globalThis.document = previousDocument;
+  }
+});
+
+test('applyThemeFamily is a no-op without a document (e.g. before the DOM is ready)', () => {
+  const previousDocument = globalThis.document;
+  globalThis.document = undefined;
+  try {
+    assert.doesNotThrow(() => applyThemeFamily('crystal'));
+  } finally {
+    globalThis.document = previousDocument;
+  }
 });
 
 test('normalizes the opt-in selection-icon site allowlist and excludes protected URLs', () => {
@@ -258,6 +309,161 @@ test('purges stale local history even when the history setting is disabled', asy
 
   assert.equal(history.length, 0);
   assert.deepEqual(values.get('lingoflash_recent_lookups').map(item => item.text), ['new']);
+});
+
+test('falls back to the caller-supplied text outside a real i18n runtime', () => {
+  assert.equal(t('missingKey', [], 'Chưa gán'), 'Chưa gán');
+  assert.equal(t('missingKey'), '');
+});
+
+test('localizeDocument upgrades text only when a real i18n runtime resolves a different message', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { runInNewContext } = await import('node:vm');
+  const source = await readFile(new URL('../shared.js', import.meta.url), 'utf8');
+  const makeElement = (i18nKey, textContent) => ({
+    dataset: { i18n: i18nKey },
+    textContent,
+    children: [],
+  });
+  const untouched = makeElement('shortcutConfigure', 'Cấu hình phím tắt');
+  const translated = makeElement('shortcutConfigure', 'Cấu hình phím tắt');
+  const document = {
+    querySelectorAll: () => [untouched],
+  };
+  const contextNoI18n = {
+    chrome: undefined,
+    browser: undefined,
+    document,
+    URL, URLSearchParams, TextEncoder, TextDecoder, Uint8Array, Uint32Array,
+    Promise, Error, String, Number, Array, Object, Math, Date,
+    crypto: globalThis.crypto, btoa, atob,
+  };
+  contextNoI18n.globalThis = contextNoI18n;
+  runInNewContext(source, contextNoI18n);
+  contextNoI18n.LingoFlashExtension.localizeDocument(document);
+  assert.equal(untouched.textContent, 'Cấu hình phím tắt');
+
+  const contextWithI18n = {
+    chrome: { i18n: { getMessage: name => (name === 'shortcutConfigure' ? 'Configure shortcuts' : '') } },
+    document: { querySelectorAll: () => [translated] },
+    URL, URLSearchParams, TextEncoder, TextDecoder, Uint8Array, Uint32Array,
+    Promise, Error, String, Number, Array, Object, Math, Date,
+    crypto: globalThis.crypto, btoa, atob,
+  };
+  contextWithI18n.globalThis = contextWithI18n;
+  runInNewContext(source, contextWithI18n);
+  contextWithI18n.LingoFlashExtension.localizeDocument(contextWithI18n.document);
+  assert.equal(translated.textContent, 'Configure shortcuts');
+});
+
+test('bounds and validates due-count metadata like deck metadata', () => {
+  assert.equal(normalizeDueCount(12), 12);
+  assert.equal(normalizeDueCount(-1), null);
+  assert.equal(normalizeDueCount(1.5), null);
+  assert.equal(normalizeDueCount(MAX_DUE_COUNT + 500), MAX_DUE_COUNT);
+  assert.deepEqual(normalizeDueCountMetadata({ scope: 'a'.repeat(12), count: 7 }), { scope: 'a'.repeat(12), count: 7 });
+  assert.equal(normalizeDueCountMetadata({ scope: '', count: 7 }), null);
+  assert.equal(normalizeDueCountMetadata({ scope: 'a'.repeat(12), count: -1 }), null);
+  assert.equal(normalizeDueCountMetadata(null), null);
+});
+
+test('normalizes course target/native languages to the known contract lists, dropping anything else (07.5)', () => {
+  assert.equal(normalizeCourseTargetLanguage('ko'), 'ko');
+  assert.equal(normalizeCourseTargetLanguage('fr'), '');
+  assert.equal(normalizeCourseTargetLanguage(undefined), '');
+  assert.equal(normalizeCourseNativeLanguage('en'), 'en');
+  assert.equal(normalizeCourseNativeLanguage('vi'), 'vi');
+  assert.equal(normalizeCourseNativeLanguage('fr'), '');
+});
+
+test('bounds and validates course-locale metadata like deck metadata and due count (07.5)', () => {
+  assert.deepEqual(
+    normalizeCourseLocaleMetadata({ scope: 'a'.repeat(12), nativeLanguage: 'en', targetLanguage: 'ko' }),
+    { scope: 'a'.repeat(12), nativeLanguage: 'en', targetLanguage: 'ko' },
+  );
+  assert.equal(normalizeCourseLocaleMetadata({ scope: '', nativeLanguage: 'en', targetLanguage: 'ko' }), null);
+  assert.equal(normalizeCourseLocaleMetadata({ scope: 'a'.repeat(12), nativeLanguage: 'fr', targetLanguage: 'ko' }), null);
+  assert.equal(normalizeCourseLocaleMetadata({ scope: 'a'.repeat(12), nativeLanguage: 'en', targetLanguage: 'fr' }), null);
+  assert.equal(normalizeCourseLocaleMetadata(null), null);
+});
+
+test('retires course-locale scopes with the same bounded dedup rules as deck metadata (07.5)', () => {
+  assert.deepEqual(
+    normalizeRetiredCourseLocaleScopes(['a'.repeat(12), 'a'.repeat(12), 'b'.repeat(12)]),
+    ['a'.repeat(12), 'b'.repeat(12)],
+  );
+  assert.deepEqual(normalizeRetiredCourseLocaleScopes(null), []);
+});
+
+test('ignores a delayed locale catalog after its provider scope is retired', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { runInNewContext } = await import('node:vm');
+  const source = await readFile(new URL('../shared.js', import.meta.url), 'utf8');
+  let resolveLocaleResponse;
+  let resolveCatalog;
+  const context = {
+    browser: {
+      runtime: {
+        sendMessage: () => new Promise(resolve => { resolveLocaleResponse = resolve; }),
+        getURL: path => `chrome-extension://test/${path}`,
+      },
+      i18n: {
+        getUILanguage: () => 'vi',
+        getMessage: () => '',
+      },
+      storage: {
+        session: { get: () => Promise.resolve({}), set: () => Promise.resolve(), remove: () => Promise.resolve() },
+        sync: { get: () => Promise.resolve({}), set: () => Promise.resolve(), remove: () => Promise.resolve() },
+      },
+    },
+    fetch: () => Promise.resolve({
+      ok: true,
+      json: () => new Promise(resolve => { resolveCatalog = resolve; }),
+    }),
+    URL,
+    URLSearchParams,
+    TextEncoder,
+    TextDecoder,
+    Uint8Array,
+    Uint32Array,
+    Promise,
+    Error,
+    String,
+    Number,
+    Array,
+    Object,
+    Math,
+    Date,
+    crypto: globalThis.crypto,
+    btoa,
+    atob,
+  };
+  context.globalThis = context;
+  runInNewContext(source, context);
+  const api = context.LingoFlashExtension;
+  const applying = api.applyCourseUiLocale();
+  resolveLocaleResponse({
+    ok: true,
+    nativeLanguage: 'en',
+    targetLanguage: 'ko',
+    generation: 1,
+    scope: 'opaque_scope_locale_a_123456',
+  });
+  await Promise.resolve();
+  await Promise.resolve();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(typeof resolveCatalog, 'function');
+
+  api.invalidateExtensionMetadata({
+    generation: 1,
+    scopes: { locale: 'opaque_scope_locale_a_123456' },
+  });
+  resolveCatalog({
+    dueCountBadge: { message: '$COUNT$ cards due' },
+  });
+
+  assert.equal(await applying, false);
+  assert.equal(api.getActiveCourseTargetLanguage(), '');
 });
 
 test('locks the extension to the production LingoFlash origin', () => {

@@ -1,0 +1,144 @@
+<!--#AHEAD Crystal Star shadowing-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#ABG-->
+  <header style="position: relative; z-index: 5; height: 84px; flex-shrink: 0; padding: 0 40px; display: flex; align-items: center; gap: 16px;">
+    <button class="nk-lift" aria-label="End shadowing" style="width: 44px; height: 44px; clip-path: {{t.chamferSm}}; border: 0; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; letter-spacing: 0.08em; color: {{t.text2}};">PRACTICE <span style="color: {{t.crimsonText}};">//</span> SHADOWING <span style="color: {{t.text3}};">· SAY IT AFTER ME</span></div>
+    <div role="progressbar" aria-label="Sentence 3 of 8" aria-valuemin="0" aria-valuemax="8" aria-valuenow="3" style="margin: 0 auto; display: flex; align-items: center; gap: 4px;">
+      <sc-for list="{{segments}}" as="seg" hint-placeholder-count="8">
+        <span style="width: 46px; height: 10px; transform: skewX(-30deg); background: {{seg.bg}}; box-shadow: {{seg.glow}};"></span>
+      </sc-for>
+      <span style="margin-left: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; color: {{t.textStrong}};">3<span style="font-size: 15px; color: {{t.text3}};"> / 8</span></span>
+    </div>
+    <button class="nk-lift" onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 44px; height: 44px; clip-path: {{t.chamferSm}}; border: 0; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+      <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
+    </button>
+    <span style="height: 44px; padding: 0 16px 0 12px; clip-path: {{t.chamferSm}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 6px;"><svg width="17" height="17" viewBox="0 0 24 24" fill="#ffd166"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>12</span>
+  </header>
+
+  <aside style="position: absolute; z-index: 4; left: 36px; bottom: 34px; width: 230px;">
+    <div class="nk-rise-3" style="position: relative; box-sizing: border-box; padding: 12px 16px 14px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+      <span aria-hidden="true" style="position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; background: linear-gradient(180deg, #ff2a4d, #5ef2ff);"></span>
+      <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
+      <div style="margin-top: 3px; font-weight: 900; font-size: 15.5px; line-height: 1.3; color: {{t.textStrong}};">{{lumiLine}}</div>
+      <div style="margin-top: 3px; font-size: 12.5px; line-height: 1.5; color: {{t.text2}};">Nhấn âm tiết thứ hai: re-<b style="color: {{t.textStrong}};">CHARGE</b>. “quiet” có hai nhịp: <b style="color: {{t.textStrong}};">qui·et</b>.</div>
+    </div>
+    <div class="nk-float" style="width: 230px; height: 240px; margin-top: 10px;">
+<!--#MASCOT $-->
+    </div>
+  </aside>
+
+  <main style="position: relative; z-index: 3; width: 940px; margin: 0 auto; padding-top: 22px; display: flex; flex-direction: column; align-items: center; text-align: center;">
+    <span class="nk-rise" style="height: 34px; padding: 0 14px; transform: skewX(-14deg); background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; display: flex; align-items: center;"><span style="transform: skewX(14deg); display: flex; align-items: center; gap: 10px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: {{t.text2}};">FOCUS WORD <span style="font-size: 18px; letter-spacing: 0.02em; color: {{t.textStrong}};">re·<span style="color: {{t.crimsonText}};">charge</span></span></span></span>
+    <p class="nk-rise" style="margin: 20px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 48px; line-height: 1.2; color: {{t.textStrong}}; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 16px;">
+      <sc-for list="{{words}}" as="w" hint-placeholder-count="9">
+        <span style="position: relative; padding-bottom: 10px;"><span style="background: {{w.fill}}; -webkit-background-clip: {{w.clip}}; background-clip: {{w.clip}}; color: {{w.color}}; filter: {{w.glow}};">{{w.text}}</span><span aria-hidden="true" style="position: absolute; left: 2px; right: 2px; bottom: 0; height: 5px; transform: skewX(-24deg); background: {{w.bar}}; box-shadow: 0 0 10px {{w.bar}};"></span></span>
+      </sc-for>
+    </p>
+    <p style="margin: 12px 0 0; font-size: 16px; color: {{t.text2}};">Tôi cần một kỳ nghỉ cuối tuần yên tĩnh để nạp lại năng lượng.</p>
+
+    <div class="nk-rise-2" style="position: relative; margin-top: 28px; width: 900px; box-sizing: border-box; padding: 20px 26px 22px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; text-align: left;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: {{t.text2}};">
+          <button class="nk-lift" onClick="{{playModel}}" aria-label="Play the model sentence" style="width: 34px; height: 34px; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(180deg, #9ff9ff, #1aa7c9); color: #031820; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
+          MODEL · LUMI <span style="margin-left: auto; font-family: {{t.fMono}}; font-style: normal; font-weight: 400; letter-spacing: 0; color: {{t.text3}};">0:03.4</span>
+        </div>
+        <div aria-hidden="true" style="margin-top: 14px; height: 66px; display: flex; align-items: center; gap: 3px;">
+          <sc-for list="{{model}}" as="b" hint-placeholder-count="48">
+            <span class="{{b.cls}}" style="flex: 1; height: {{b.h}}%; background: {{b.bg}}; animation-delay: {{b.d}}ms;"></span>
+          </sc-for>
+        </div>
+      </div>
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: {{t.text2}};">
+          <span style="width: 12px; height: 12px; transform: rotate(45deg); background: {{recDot}}; box-shadow: 0 0 10px {{recDot}};"></span>
+          {{takeLabel}} <span style="margin-left: auto; font-family: {{t.fMono}}; font-style: normal; font-weight: 400; letter-spacing: 0; color: {{t.text3}};">0:02.1</span>
+        </div>
+        <div aria-hidden="true" style="margin-top: 14px; height: 66px; display: flex; align-items: center; gap: 3px;">
+          <sc-for list="{{you}}" as="b" hint-placeholder-count="48">
+            <span class="{{b.cls}}" style="flex: 1; height: {{b.h}}%; background: {{b.bg}}; box-shadow: {{b.glow}}; animation-delay: {{b.d}}ms;"></span>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 28px; width: 900px; display: flex; align-items: center; gap: 28px;">
+      <div style="flex: 1; text-align: left;">
+        <div style="display: flex; align-items: baseline; gap: 10px;"><span class="{{scoreCls}}" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 60px; line-height: 1; background: linear-gradient(180deg, #ffffff 0%, #ffe3ea 46%, #ff8fa3 54%, #ffffff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 14px rgb(255 42 77 / 0.55));">{{score}}%</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; letter-spacing: 0.1em; color: {{t.text2}};">SYNC · {{scoreTake}}</span><span style="margin-left: 4px; height: 26px; padding: 0 10px; clip-path: {{t.chamferSm}}; background: {{sRim}}; color: #1a0610; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; display: flex; align-items: center;">S</span></div>
+        <div style="margin-top: 10px; height: 10px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div class="nk-bar" style="width: {{score}}%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / 0.6);"></div></div>
+        <div style="margin-top: 10px; display: flex; gap: 16px; font-size: 13px; font-weight: 700; color: {{t.text2}};">
+          <sc-for list="{{legend}}" as="l" hint-placeholder-count="3">
+            <span style="display: flex; align-items: center; gap: 7px;"><span style="width: 16px; height: 5px; transform: skewX(-24deg); background: {{l.c}};"></span>{{l.label}}</span>
+          </sc-for>
+        </div>
+      </div>
+      <div style="position: relative; width: 116px; height: 116px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+        <div aria-hidden="true" style="position: absolute; inset: 0; border-radius: 50%; overflow: hidden; opacity: {{ringOpacity}}; -webkit-mask: radial-gradient(circle, transparent 60%, #000 61%); mask: radial-gradient(circle, transparent 60%, #000 61%);"><div class="nk-rim-spin" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: conic-gradient(from 0deg, #ff2a4d, transparent 35%, #5ef2ff 55%, transparent 85%, #ff2a4d);"></div></div>
+        <button class="nk-lift" onClick="{{toggleRec}}" aria-label="{{recLabel}}" style="width: 92px; height: 92px; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; filter: drop-shadow(0 0 18px rgb(255 42 77 / 0.7));">
+          <sc-if value="{{recording}}" hint-placeholder-val="{{true}}"><span style="width: 28px; height: 28px; background: currentColor; clip-path: {{t.chamferSm}};"></span></sc-if>
+          <sc-if value="{{notRecording}}" hint-placeholder-val="{{false}}"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></sc-if>
+        </button>
+      </div>
+      <div style="flex: 1; display: flex; justify-content: flex-end; gap: 12px;">
+        <button class="nk-lift" onClick="{{retry}}" style="height: 56px; padding: 0 22px; border: 0; clip-path: {{t.chamfer}}; background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.secondaryText}}; font-family: {{t.fDisplay}}; font-style: italic; font-size: 16px; font-weight: 800; letter-spacing: 0.08em; cursor: pointer;">TRY AGAIN</button>
+        <button class="nk-lift" style="position: relative; height: 56px; padding: 0 26px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 17px; font-weight: 900; letter-spacing: 0.08em; cursor: pointer; filter: drop-shadow(0 0 14px rgb(255 42 77 / 0.55));"><span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 50px; background: rgb(255 255 255 / 0.4);"></span><span style="position: relative;">NEXT ▸</span></button>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"state":{"editor":"enum","options":["recording","scored"],"default":"recording"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const scored = (props.state ?? 'recording') === 'scored';
+    this.state = { recording: !scored, take: scored ? 2 : 1, playingModel: false };
+  }
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const s = this.state;
+    const later = (ms, fn) => window.setTimeout(fn, ms);
+    const seed = (i) => { const x = Math.sin(i * 12.9898) * 43758.5453; return x - Math.floor(x); };
+    const score = { ok: '#5ef2ff', close: t.hard, miss: '#ff2a4d' };
+    const words = [['I', 'ok'], ['need', 'ok'], ['a', 'ok'], ['quiet', 'miss'], ['weekend', 'ok'], ['to', 'ok'], ['recharge', 'focus'], ['my', 'ok'], ['batteries.', 'close']];
+    const wave = (n, off) => Array.from({ length: n }, (_, i) => Math.round(18 + 76 * Math.abs(Math.sin(i * 0.45 + off)) * (0.45 + 0.55 * seed(i + off * 10))));
+    const done = !s.recording;
+    const pct = s.take === 2 && done ? 91 : 82;
+    const holo = dark ? '#5ef2ff' : '#0a8fb0';
+    return {
+      t, bg: { wings: true }, toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      words: words.map(([text, st]) => st === 'focus'
+        ? { text, bar: '#5ef2ff', fill: 'linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33)', clip: 'text', color: 'transparent', glow: 'drop-shadow(0 0 14px rgb(255 42 77 / 0.6))' }
+        : { text, bar: score[st], fill: 'none', clip: 'border-box', color: t.textStrong, glow: 'none' }),
+      model: wave(48, 1).map((h, i) => ({ h, bg: dark ? 'rgb(255 255 255 / 0.26)' : 'rgb(13 40 80 / 0.24)', cls: s.playingModel ? 'sf-wave' : '', d: (i % 8) * 90 })),
+      you: wave(48, 1.3).map((h, i) => done
+        ? { h, bg: holo, glow: '0 0 6px rgb(94 242 255 / 0.45)', cls: '', d: 0 }
+        : i < 30 ? { h, bg: holo, glow: '0 0 6px rgb(94 242 255 / 0.45)', cls: '', d: 0 }
+          : i < 34 ? { h, bg: '#ff2a4d', glow: '0 0 8px rgb(255 42 77 / 0.7)', cls: 'sf-wave', d: (i - 30) * 120 }
+            : { h: 6, bg: t.track, glow: 'none', cls: '', d: 0 }),
+      recording: s.recording, notRecording: !s.recording,
+      recLabel: s.recording ? 'Stop recording' : 'Record again',
+      recDot: s.recording ? '#ff2a4d' : holo,
+      takeLabel: s.recording ? 'TAKE ' + (s.take + 1) + ' · RECORDING' : 'TAKE ' + s.take + ' · SAVED',
+      ringOpacity: s.recording ? 1 : 0.35,
+      sRim: t.tier.learning.rim,
+      score: pct, scoreTake: 'TAKE ' + s.take, scoreCls: done ? 'nk-pop' : '',
+      legend: [{ c: '#5ef2ff', label: 'Clear' }, { c: t.hard, label: 'Close' }, { c: '#ff2a4d', label: 'Missed' }],
+      lumiSrc: t.lumi[s.recording ? 'idle' : pct >= 90 ? 'proud' : 'happy'],
+      lumiLine: s.recording ? 'Nói theo mình nhé!' : pct >= 90 ? 'Đồng bộ 91%! Nở hoa rồi!' : 'Khá lắm, thử lại nhé!',
+      segments: Array.from({ length: 8 }, (_, i) => ({
+        bg: i < 2 ? 'linear-gradient(90deg, #5ef2ff, #9fe9ff)' : i === 2 ? '#ff2a4d' : t.track,
+        glow: i < 2 ? '0 0 8px rgb(94 242 255 / 0.5)' : i === 2 ? '0 0 14px rgb(255 42 77 / 0.9)' : 'none',
+      })),
+      playModel: () => { this.setState({ playingModel: true }); later(1800, () => this.setState({ playingModel: false })); },
+      toggleRec: () => this.setState(s.recording ? { recording: false, take: s.take + 1 } : { recording: true }),
+      retry: () => this.setState({ recording: true }),
+    };
+  }
+}
+</script>
+</body>
+</html>

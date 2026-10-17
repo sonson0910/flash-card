@@ -5,7 +5,7 @@ import {
   type RulesTestContext,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch, type Firestore } from 'firebase/firestore';
 import { readFile } from 'node:fs/promises';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -15,6 +15,8 @@ import {
 } from './src/lib/cardIdentity';
 import { normalizeCardData } from './src/lib/cardNormalization';
 import { createLexemeId } from './src/features/multilingual/lexemeIdentity';
+import { createOwnerDeckMutationFirebaseAdapter } from './src/features/librarySession/ownerLibrarySessionFirebaseAdapter';
+import { customDeckCoverKey } from './src/features/library/customDecks';
 
 const PROJECT_ID = 'demo-lingoflash';
 
@@ -165,13 +167,72 @@ describe('Firestore security rules', () => {
     await assertFails(getDoc(doc(signedOut, 'users/owner/cards/card-1')));
   });
 
-  it('blocks direct owner mutations while the server migration fence is active', async () => {
+  it('allows only the owner to read catalog progress and denies every client mutation', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'users/owner/catalog_progress/lexeme-lead'), {
+        schemaVersion: 1,
+        ownerId: 'owner',
+        lexemeId: 'lexeme-lead',
+        targetLanguage: 'en',
+        status: 'active',
+        cardRevision: 1,
+        libraryEpoch: 0,
+        updatedAt: '2026-09-28T00:00:00.000Z',
+      });
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const intruder = testEnvironment.authenticatedContext('intruder').firestore();
+    const ownerRef = doc(owner, 'users/owner/catalog_progress/lexeme-lead');
+
+    await assertSucceeds(getDoc(ownerRef));
+    await assertFails(getDoc(doc(intruder, 'users/owner/catalog_progress/lexeme-lead')));
+    await assertFails(updateDoc(ownerRef, { status: 'mastered' }));
+    await assertFails(deleteDoc(ownerRef));
+    await assertFails(setDoc(doc(owner, 'users/owner/catalog_progress/lexeme-new'), {
+      schemaVersion: 1, ownerId: 'owner', lexemeId: 'lexeme-new', targetLanguage: 'en',
+      status: 'active', cardRevision: 1, libraryEpoch: 0,
+    }));
+  });
+
+  it('keeps reminder delivery state private and server-owned', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      const database = context.firestore();
+      await setDoc(doc(database, 'users/owner/reminderState/current'), { channels: { push: true } });
+      await setDoc(doc(database, 'users/owner/pushTokens/device'), { token: 'private-token' });
+      await setDoc(doc(database, 'users/owner/pushTokenSessionCutoffs/device'), { authTimeSeconds: 123 });
+      await setDoc(doc(database, 'pushTokenOwners/device'), { ownerId: 'owner' });
+      await setDoc(doc(database, 'users/owner/reminderReceipts/2026-10-04_push'), { channel: 'push' });
+      await setDoc(doc(database, 'mail/owner_2026-10-04_emailDigest'), { ownerId: 'owner', to: ['private@example.test'] });
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const intruder = testEnvironment.authenticatedContext('intruder').firestore();
+    const state = doc(owner, 'users/owner/reminderState/current');
+    await assertSucceeds(getDoc(state));
+    await assertFails(getDoc(doc(intruder, state.path)));
+    await assertFails(getDocs(collection(owner, 'users/owner/reminderState')));
+    await assertFails(updateDoc(state, { timezone: 'UTC' }));
+    await assertFails(getDoc(doc(owner, 'users/owner/pushTokens/device')));
+    await assertFails(getDoc(doc(owner, 'users/owner/pushTokenSessionCutoffs/device')));
+    await assertFails(getDoc(doc(owner, 'users/owner/reminderReceipts/2026-10-04_push')));
+    await assertFails(setDoc(doc(owner, 'users/owner/pushTokens/other'), { token: 'unsafe' }));
+    await assertFails(getDoc(doc(owner, 'pushTokenOwners/device')));
+    await assertFails(setDoc(doc(owner, 'pushTokenOwners/other'), { ownerId: 'owner' }));
+    await assertFails(getDoc(doc(owner, 'mail/owner_2026-10-04_emailDigest')));
+    await assertFails(setDoc(doc(owner, 'mail/unsafe'), { to: ['other@example.test'] }));
+  });
+
+  it('blocks direct owner mutations while the merged migration fence field is active', async () => {
     await seedCurrentCard(testEnvironment, 'owner', 'card-1', validCard());
     await testEnvironment.withSecurityRulesDisabled(async context => {
-      await setDoc(doc(context.firestore(), 'users/owner/profile/library_migration_fence'), {
-        schemaVersion: 1,
-        active: true,
-      });
+      // The fence now lives on profile/library_state itself (folded in
+      // alongside libraryEpoch) rather than on a standalone
+      // profile/library_migration_fence document, so a card update rule
+      // evaluation only pays for one dependent-document read instead of two.
+      await setDoc(doc(context.firestore(), 'users/owner/profile/library_state'), {
+        schemaVersion: 2,
+        libraryEpoch: 0,
+        libraryMigrationFenceActive: true,
+      }, { merge: true });
     });
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     await assertFails(updateDoc(doc(owner, 'users/owner/cards/card-1'), { word: 'blocked' }));
@@ -186,6 +247,119 @@ describe('Firestore security rules', () => {
       complete: false,
       scanned: 0,
       updatedAt: '2026-08-24T00:00:00.000Z',
+    }));
+  });
+
+  it('no longer honors the legacy standalone fence document from Rules', async () => {
+    // The migration engine (functions/src/legacyLibraryMigrationFirestore.ts)
+    // still writes this document for its own lease/resume bookkeeping, but
+    // Rules now only read the merged field on profile/library_state. Seeding
+    // only the legacy document must not block a direct owner write, or the
+    // update/delete hot paths would silently regress back to two dependent
+    // reads because of an OR against this second document path.
+    await seedCurrentCard(testEnvironment, 'owner', 'card-1', validCard());
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'users/owner/profile/library_migration_fence'), {
+        schemaVersion: 1,
+        active: true,
+      });
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    await assertSucceeds(updateDoc(doc(owner, 'users/owner/cards/card-1'), {
+      translation: 'not blocked',
+      revision: 2,
+    }));
+  });
+
+  it('keeps the mastery timestamp owned by the review callable', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const cardRef = doc(owner, 'users/owner/cards/card-1');
+    await seedCurrentCard(testEnvironment, 'owner', 'card-1', {
+      ...validCard(),
+      masteredAt: '2026-09-27T12:00:00.000Z',
+    });
+
+    await assertFails(updateDoc(cardRef, { masteredAt: '2026-09-28T12:00:00.000Z', revision: 2 }));
+    await assertFails(updateDoc(cardRef, { masteredAt: deleteField(), revision: 2 }));
+    await assertSucceeds(updateDoc(cardRef, { translation: 'đã học', revision: 2 }));
+
+    await seedCurrentCard(testEnvironment, 'owner', 'card-2', validCard('card-2'));
+    await assertFails(updateDoc(doc(owner, 'users/owner/cards/card-2'), {
+      masteredAt: '2026-09-28T12:00:00.000Z',
+      revision: 2,
+    }));
+  });
+
+  it('keeps Japanese pitch provenance owned by trusted card writes', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const cardRef = doc(owner, 'users/owner/cards/card-1');
+    const pitch = {
+      readingKana: 'にっぽん', moraCount: 4, downstep: 3,
+      source: {
+        dataset: 'unidic-kana-accent', version: '2.1.2',
+        archiveSha256: '70793cacda81b403eda71736cc180f3144303623755a612b13e1dffeb6554591',
+        row: '503828|日本|ニッポン|3|*|*',
+      },
+    };
+    await seedCurrentCard(testEnvironment, 'owner', 'card-1', { ...validCard(), japanesePitchAccent: pitch });
+
+    await assertFails(updateDoc(cardRef, { japanesePitchAccent: { ...pitch, downstep: 0 }, revision: 2 }));
+    await assertFails(updateDoc(cardRef, { japanesePitchAccent: deleteField(), revision: 2 }));
+    await assertSucceeds(updateDoc(cardRef, { translation: 'Nhật Bản', revision: 2 }));
+    await assertSucceeds(updateDoc(cardRef, { phonetic: 'にほん', revision: 3 }));
+  });
+
+  it('keeps epoch conflict enforcement working once the merged fence field clears', async () => {
+    await seedCurrentCard(testEnvironment, 'owner', 'epoch-after-fence', validCard('epoch-after-fence'));
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'users/owner/profile/library_state'), {
+        schemaVersion: 2,
+        libraryEpoch: 0,
+        libraryMigrationFenceActive: true,
+      }, { merge: true });
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    await assertFails(updateDoc(doc(owner, 'users/owner/cards/epoch-after-fence'), {
+      revision: 2,
+      translation: 'blocked while fenced',
+    }));
+    // Clearing the field the way the migration engine does (a field-level
+    // merge, never a whole-document replace) must restore normal epoch
+    // enforcement without disturbing libraryEpoch.
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'users/owner/profile/library_state'), {
+        libraryMigrationFenceActive: deleteField(),
+      }, { merge: true });
+    });
+    await assertSucceeds(updateDoc(doc(owner, 'users/owner/cards/epoch-after-fence'), {
+      revision: 2,
+      translation: 'allowed after fence clears',
+    }));
+    await assertFails(writeReservedCard(owner, 'owner', 'future-epoch-after-fence', {
+      ...validCard('future-epoch-after-fence'),
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 1,
+    }));
+  });
+
+  it('never lets a client introduce or change the merged fence field itself', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    await assertFails(setDoc(doc(owner, 'users/owner/profile/library_state'), {
+      schemaVersion: 2,
+      libraryEpoch: 0,
+      libraryMigrationFenceActive: true,
+    }));
+    await assertSucceeds(setDoc(doc(owner, 'users/owner/profile/library_state'), {
+      schemaVersion: 2,
+      libraryEpoch: 0,
+    }));
+    await assertFails(updateDoc(doc(owner, 'users/owner/profile/library_state'), {
+      libraryEpoch: 1,
+      libraryMigrationFenceActive: true,
+    }));
+    await assertSucceeds(updateDoc(doc(owner, 'users/owner/profile/library_state'), {
+      libraryEpoch: 1,
     }));
   });
 
@@ -565,6 +739,18 @@ describe('Firestore security rules', () => {
     await seedReservedCard(testEnvironment, 'owner-b', id, card);
   });
 
+  it('keeps card reports inaccessible to direct client reads and writes', async () => {
+    const owner = testEnvironment.authenticatedContext('report-owner').firestore();
+    const report = doc(owner, 'card_reports/report-1');
+    await assertFails(setDoc(report, {
+      uid: 'report-owner',
+      cardId: 'word-focus',
+      reason: 'other',
+      status: 'open',
+    }));
+    await assertFails(getDoc(report));
+  });
+
   it('prevents a card update from changing its reserved normalized identity', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const id = createWordCardId('chance');
@@ -695,6 +881,62 @@ describe('Firestore security rules', () => {
       libraryEpoch: 0,
     });
     await assertFails(newAllocation.commit());
+  });
+
+  it('allows editing a legacy AI card while repairing its missing reservation', async () => {
+    const owner = testEnvironment.authenticatedContext('legacy-ai-owner').firestore();
+    const cardId = 'legacy-ai-card';
+    const cardRef = doc(owner, `users/legacy-ai-owner/cards/${cardId}`);
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), `users/legacy-ai-owner/cards/${cardId}`), {
+        id: cardId, word: 'lead', normalizedWord: 'lead', translation: 'chì',
+        explanation: 'A metal.', explanationTranslation: 'Một kim loại.', phonetic: '/liːd/',
+        emoji: '📚', category: 'Reading', audioUrl: null, imageUrl: null,
+        origin: 'ai', createdAt: '2026-09-24T00:00:00.000Z', bookmarked: false,
+        difficulty: 'unrated', customDeck: null, reviews: 0,
+      });
+    });
+
+    const edit = writeBatch(owner);
+    edit.set(doc(
+      owner,
+      `users/legacy-ai-owner/card_reservations/${createCardIdentityReservationId('lead')}`,
+    ), {
+      schemaVersion: 1,
+      cardId,
+      normalizedWord: 'lead',
+    });
+    edit.set(cardRef, {
+      translation: 'dẫn đầu',
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 0,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+    await assertSucceeds(edit.commit());
+
+    const mismatchedId = 'legacy-ai-mismatch';
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), `users/legacy-ai-owner/cards/${mismatchedId}`), {
+        id: mismatchedId, word: 'mead', normalizedWord: 'meat', translation: 'rượu mật ong',
+      });
+    });
+    const mismatchedClaim = writeBatch(owner);
+    mismatchedClaim.set(doc(
+      owner,
+      `users/legacy-ai-owner/card_reservations/${createCardIdentityReservationId('mead')}`,
+    ), {
+      schemaVersion: 1,
+      cardId: mismatchedId,
+      normalizedWord: 'mead',
+    });
+    mismatchedClaim.set(doc(owner, `users/legacy-ai-owner/cards/${mismatchedId}`), {
+      translation: 'đồ uống',
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 0,
+    }, { merge: true });
+    await assertFails(mismatchedClaim.commit());
   });
 
   it('allows the sparse migration v2 merge to initialize legacy difficulty', async () => {
@@ -1145,6 +1387,46 @@ describe('Firestore security rules', () => {
     await assertSucceeds(deleteDoc(card));
   });
 
+  it('allows editing AI cards but prevents changing or removing their origin', async () => {
+    const owner = testEnvironment.authenticatedContext('ai-card-owner').firestore();
+    const card = doc(owner, 'users/ai-card-owner/cards/ai-card');
+    await seedReservedCard(testEnvironment, 'ai-card-owner', 'ai-card', {
+      ...validCard('ai-card'),
+      origin: 'ai',
+    });
+
+    await assertSucceeds(updateDoc(card, { bookmarked: true, revision: 2 }));
+    await assertSucceeds(updateDoc(card, { translation: 'nghĩa đã sửa', revision: 3 }));
+    await assertFails(updateDoc(card, { origin: 'manual', revision: 4 }));
+    await assertFails(updateDoc(card, { origin: deleteField(), revision: 4 }));
+  });
+
+  it('denies a client from forging, editing, or removing captured-source metadata', async () => {
+    const owner = testEnvironment.authenticatedContext('source-card-owner').firestore();
+    const withoutSource = doc(owner, 'users/source-card-owner/cards/card-without-source');
+    await seedReservedCard(testEnvironment, 'source-card-owner', 'card-without-source', validCard('card-without-source'));
+    await assertFails(updateDoc(withoutSource, {
+      source: { url: 'https://example.com/', title: 'Forged', context: 'forged', capturedAt: '2026-09-27T00:00:00.000Z' },
+      revision: 2,
+    }));
+    await assertSucceeds(updateDoc(withoutSource, { bookmarked: true, revision: 2 }));
+
+    const withSource = doc(owner, 'users/source-card-owner/cards/card-with-source');
+    await seedReservedCard(testEnvironment, 'source-card-owner', 'card-with-source', {
+      ...validCard('card-with-source'),
+      source: { url: 'https://example.com/article', title: 'Example article', capturedAt: '2026-09-27T00:00:00.000Z' },
+    });
+    // An unrelated patch must still succeed even though the existing `source`
+    // field stays present in the merged document (the field-guard allowlist
+    // must include it, or every update to a sourced card would fail).
+    await assertSucceeds(updateDoc(withSource, { bookmarked: true, revision: 2 }));
+    await assertFails(updateDoc(withSource, {
+      source: { url: 'https://example.com/different', title: 'Changed', capturedAt: '2026-09-27T00:00:00.000Z' },
+      revision: 2,
+    }));
+    await assertFails(updateDoc(withSource, { source: deleteField(), revision: 2 }));
+  });
+
   it('requires current-epoch updates to advance the revision exactly once', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const card = doc(owner, 'users/owner/cards/revisioned-card');
@@ -1280,6 +1562,116 @@ describe('Firestore security rules', () => {
     await assertFails(setDoc(decks, { decks: ['valid', `embedded\u001fdelimiter`] }));
   });
 
+  it('keeps old deck-only clients compatible while validating cover preset maps', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const decks = doc(owner, 'users/owner/profile/custom_decks');
+    await assertSucceeds(setDoc(decks, {
+      decks: ['IELTS'],
+      coverPresets: { d_SUVMVFM: 'violet' },
+    }));
+    await assertSucceeds(setDoc(decks, { decks: ['IELTS', 'Travel'] }, { merge: true }));
+    await assertFails(setDoc(decks, {
+      decks: ['IELTS'],
+      coverPresets: { malformed: 'violet' },
+    }));
+    await assertFails(setDoc(decks, {
+      decks: ['IELTS'],
+      coverPresets: { d_SUVMVFM: 'unknown' },
+    }));
+  });
+
+  it('allows a valid 1,000-entry legacy preset map and its pruned replacement', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const decks = doc(owner, 'users/owner/profile/custom_decks');
+    const stalePresets = Object.fromEntries(Array.from({ length: 1_000 }, (_, index) => [
+      `d_${index.toString(36).padStart(2, 'a')}`,
+      'aurora',
+    ]));
+
+    await assertSucceeds(setDoc(decks, { decks: ['IELTS'], coverPresets: stalePresets }));
+    await assertSucceeds(setDoc(decks, {
+      decks: ['IELTS', 'Travel'],
+      coverPresets: { d_SUVMVFM: 'aurora', d_VHJhdmVs: 'moss' },
+    }));
+  });
+
+  it('keeps concurrent deck creates and their covers through the profile transaction', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const mutations = createOwnerDeckMutationFirebaseAdapter(owner as unknown as Firestore);
+    const profile = doc(owner, 'users/owner/profile/custom_decks');
+
+    await Promise.all([
+      mutations.add('owner', 'Travel', 'violet'),
+      mutations.add('owner', 'Work', 'moss'),
+    ]);
+
+    expect((await getDoc(profile)).data()).toEqual({
+      decks: expect.arrayContaining(['Travel', 'Work']),
+      coverPresets: expect.objectContaining({
+        [customDeckCoverKey('Travel')]: 'violet',
+        [customDeckCoverKey('Work')]: 'moss',
+      }),
+    });
+  });
+
+  it('prunes old-client orphan presets on recreate and deletes only the requested cover', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const mutations = createOwnerDeckMutationFirebaseAdapter(owner as unknown as Firestore);
+    const profile = doc(owner, 'users/owner/profile/custom_decks');
+    const stalePresets = Object.fromEntries(Array.from({ length: 998 }, (_, index) => [
+      `d_${index.toString(36).padStart(2, 'a')}`,
+      'aurora',
+    ]));
+    await assertSucceeds(setDoc(profile, { decks: ['Travel', 'Work'], coverPresets: {
+      ...stalePresets,
+      [customDeckCoverKey('Travel')]: 'violet',
+      [customDeckCoverKey('Work')]: 'moss',
+    } }));
+    await assertSucceeds(setDoc(profile, { decks: ['Work'] }, { merge: true }));
+
+    await mutations.add('owner', 'Travel', 'amber');
+    expect((await getDoc(profile)).data()).toEqual({
+      decks: expect.arrayContaining(['Travel', 'Work']),
+      coverPresets: {
+        [customDeckCoverKey('Travel')]: 'amber',
+        [customDeckCoverKey('Work')]: 'moss',
+      },
+    });
+
+    await mutations.removeProfile('owner', 'Travel');
+    expect((await getDoc(profile)).data()).toEqual({
+      decks: ['Work'],
+      coverPresets: { [customDeckCoverKey('Work')]: 'moss' },
+    });
+  });
+
+  it('preserves a recreated cover when a concurrent create prunes its orphan', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const mutations = createOwnerDeckMutationFirebaseAdapter(owner as unknown as Firestore);
+    const profile = doc(owner, 'users/owner/profile/custom_decks');
+    await assertSucceeds(setDoc(profile, {
+      decks: ['Work'],
+      coverPresets: {
+        [customDeckCoverKey('Travel')]: 'violet',
+        [customDeckCoverKey('Work')]: 'slate',
+      },
+    }));
+
+    await Promise.all([
+      mutations.add('owner', 'Travel', 'amber'),
+      mutations.add('owner', 'Food', 'moss'),
+    ]);
+
+    expect((await getDoc(profile)).data()).toEqual({
+      decks: expect.arrayContaining(['Work', 'Travel', 'Food']),
+      coverPresets: {
+        [customDeckCoverKey('Work')]: 'slate',
+        [customDeckCoverKey('Travel')]: 'amber',
+        [customDeckCoverKey('Food')]: 'moss',
+      },
+    });
+  });
+
   it('accepts the maximum safe library counters but rejects overflow values', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const state = doc(owner, 'users/owner/profile/library_state');
@@ -1408,6 +1800,65 @@ describe('Firestore security rules', () => {
     await assertFails(deleteDoc(stream));
   });
 
+  it('keeps reward inventory owner-readable but server-write-only', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'users/owner/profile/rewards'), {
+        schemaVersion: 1,
+        unlockedBadgeIds: ['web-wanderer'],
+        ownedFrameIds: ['crimson-wing'],
+        ownedTitleIds: ['word-collector'],
+        equippedFrameId: 'crimson-wing',
+        hintTokens: 1,
+        streakFreezes: 1,
+        receipts: { 'streak-30-v1': true, 'level-13-v1': true },
+      });
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const intruder = testEnvironment.authenticatedContext('intruder').firestore();
+    const rewards = doc(owner, 'users/owner/profile/rewards');
+
+    await assertSucceeds(getDoc(rewards));
+    await assertFails(getDoc(doc(intruder, 'users/owner/profile/rewards')));
+    await assertFails(setDoc(rewards, { schemaVersion: 1 }));
+    await assertFails(updateDoc(rewards, { hintTokens: 2 }));
+    await assertFails(deleteDoc(rewards));
+  });
+
+  it('keeps verified reward receipts and practice sessions callable-only', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    for (const path of [
+      'users/owner/card_create_receipts/create-op-1',
+      'users/owner/practice_sessions/session-1',
+    ]) {
+      const serverOnly = doc(owner, path);
+      await assertFails(getDoc(serverOnly));
+      await assertFails(setDoc(serverOnly, { forged: true }));
+    }
+  });
+
+  it('lets only the owner get plan and usage while keeping AI counters server-only', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      const admin = context.firestore();
+      await setDoc(doc(admin, 'users/owner/profile/plan'), { tier: 'pro', entitlementId: 'test' });
+      await setDoc(doc(admin, 'users/owner/ai_usage/free-2026-09'), { used: 1, limit: 30 });
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const other = testEnvironment.authenticatedContext('other').firestore();
+    for (const path of ['users/owner/profile/plan', 'users/owner/ai_usage/free-2026-09']) {
+      await assertSucceeds(getDoc(doc(owner, path)));
+      await assertFails(getDoc(doc(other, path)));
+      await assertFails(setDoc(doc(owner, path), { used: 999 }));
+    }
+    await assertFails(getDoc(doc(owner, 'users/owner/ai_operations/operation')));
+    await assertFails(setDoc(doc(owner, 'users/owner/ai_daily/2026-09-24'), { nonCardActions: 0 }));
+    for (const path of [
+      'users/owner/entitlements/grant', 'operator_audit/audit', 'analytics_events/intent',
+    ]) {
+      await assertFails(getDoc(doc(owner, path)));
+      await assertFails(setDoc(doc(owner, path), { tier: 'pro', pid: 'forged' }));
+    }
+  });
+
   it('keeps gamification history owner-readable but server-write-only', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const intruder = testEnvironment.authenticatedContext('intruder').firestore();
@@ -1469,6 +1920,34 @@ describe('Firestore security rules', () => {
     await assertFails(updateDoc(tombstone, { revision: 2, opId: 'older-op' }));
     await assertSucceeds(setDoc(tombstone, validTombstone));
     await assertFails(deleteDoc(tombstone));
+  });
+
+  it('denies client deletion of a catalog card so its progress projection cannot be orphaned', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    await assertSucceeds(setDoc(
+      doc(owner, 'users/owner/profile/library_state'),
+      { schemaVersion: 2, libraryEpoch: 9 },
+    ));
+    await seedReservedCard(testEnvironment, 'owner', 'catalog-card', {
+      ...validCard('catalog-card'),
+      libraryEpoch: 9,
+      lexemeId: 'lexeme-catalog-card',
+      language: 'en',
+      normalizedLemma: 'catalog',
+      senseKey: 'default',
+      partOfSpeech: 'noun',
+    });
+    const deletion = writeBatch(owner);
+    deletion.set(doc(owner, 'users/owner/card_tombstones/catalog-card'), {
+      cardId: 'catalog-card',
+      opId: 'delete-catalog-card',
+      libraryEpoch: 9,
+      revision: 2,
+      deletedAt: '2026-09-28T00:00:00.000Z',
+    });
+    deletion.delete(doc(owner, 'users/owner/cards/catalog-card'));
+
+    await assertFails(deletion.commit());
   });
 
   it('allows a newer tombstone libraryEpoch to reset revision to one', async () => {
@@ -1563,6 +2042,22 @@ describe('Firestore security rules', () => {
 
     await expect(assertSucceeds(getDoc(doc(reader, 'shared_decks/deck-1')))).resolves.toBeDefined();
     await assertFails(updateDoc(sharedDeck, { category: 'Changed' }));
+  });
+
+  it('allows a paired language schema-2 share and rejects unknown public fields', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      const database = context.firestore();
+      const share = {
+        category: 'Basics', cards: [validSharedCard()], createdAt: Timestamp.fromMillis(0),
+        expiresAt: Timestamp.fromDate(new Date('2099-01-01T00:00:00.000Z')), schemaVersion: 2,
+        targetLanguage: 'en', nativeLanguage: 'vi',
+      };
+      await setDoc(doc(database, 'shared_decks/paired-language'), share);
+      await setDoc(doc(database, 'shared_decks/paired-language-extra'), { ...share, privateNote: 'no' });
+    });
+    const reader = testEnvironment.unauthenticatedContext().firestore();
+    await expect(assertSucceeds(getDoc(doc(reader, 'shared_decks/paired-language')))).resolves.toBeDefined();
+    await assertFails(getDoc(doc(reader, 'shared_decks/paired-language-extra')));
   });
 
   it('denies a schema-2 share while its server quarantine copy exists', async () => {
@@ -1881,5 +2376,289 @@ describe('Firestore security rules', () => {
       ...validLearningStateV3('owner', 'too-many-collections'),
       customCollections: ['deck-1', 'deck-2'],
     }));
+  });
+
+  it('keeps course profiles owner-readable and server-owned', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const intruder = testEnvironment.authenticatedContext('intruder').firestore();
+    const card = validCard('course-control-card');
+    await seedCurrentCard(testEnvironment, 'owner', 'course-control-card', card);
+
+    await assertSucceeds(getDoc(doc(owner, 'users/owner/profile/courses')));
+    await assertFails(getDoc(doc(intruder, 'users/owner/profile/courses')));
+    await assertFails(setDoc(doc(owner, 'users/owner/profile/courses'), { courses: [], activeCourseId: null }));
+  });
+
+  it('keeps language metadata independent from plain identity while preserving immutability', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const cardId = 'course-ko-plain-card';
+    const card = {
+      ...validCard(cardId),
+      language: 'ko',
+      translationLanguage: 'vi',
+    };
+    await seedCurrentCard(testEnvironment, 'owner', cardId, card);
+    await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+      bookmarked: true,
+      revision: 2,
+    }));
+    await assertFails(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+      language: 'ja',
+      revision: 3,
+    }));
+    await assertFails(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+      translationLanguage: 'en',
+      revision: 3,
+    }));
+  });
+
+  it('rejects an explicit malformed source language instead of mapping it to English', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const cardId = 'course-invalid-language-card';
+    const card = { ...validCard(cardId), language: 42 };
+    await seedCurrentCard(testEnvironment, 'owner', cardId, card);
+    await assertFails(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+      bookmarked: true,
+      revision: 2,
+    }));
+  });
+
+  it('rejects partial canonical identity but preserves a complete published tuple', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const partialId = 'course-partial-lexeme-card';
+    const partial = validCard(partialId);
+    await seedCurrentCard(testEnvironment, 'owner', partialId, partial);
+    await assertFails(updateDoc(doc(owner, `users/owner/cards/${partialId}`), {
+      lexemeId: 'lexeme-partial',
+      revision: 2,
+    }));
+
+    const canonicalId = 'course-complete-lexeme-card';
+    const canonical = {
+      ...validCard(canonicalId),
+      lexemeId: 'lexeme-complete',
+      language: 'en',
+      senseKey: 'default',
+      normalizedLemma: 'hello',
+      translation: 'xin chào',
+      explanation: '',
+      explanationTranslation: '',
+      phonetic: '',
+      category: 'Other',
+      emoji: '📝',
+      audioUrl: null,
+      imageUrl: null,
+      imageSearchQuery: '',
+      createdAt: '1970-01-01T00:00:00.000Z',
+      bookmarked: false,
+      customDeck: null,
+      difficulty: 'unrated',
+      reviews: 0,
+      interval: 0,
+      easeFactor: 2.5,
+      correctStreak: 0,
+      partOfSpeech: 'noun',
+      cefrLevel: '',
+      exampleSentence: '',
+      exampleTranslation: '',
+      collocations: [],
+      synonyms: [],
+      antonyms: [],
+      register: '',
+      commonMistake: '',
+      reviewHistory: [],
+    };
+    await seedCurrentCard(testEnvironment, 'owner', canonicalId, canonical);
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'lexemes/lexeme-complete'), {
+        schemaVersion: 3,
+        id: 'lexeme-complete',
+        language: 'en',
+        normalizedLemma: 'hello',
+        partOfSpeech: 'noun',
+        senseKey: 'default',
+        provenance: { editorialStatus: 'published' },
+      });
+    });
+    await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${canonicalId}`), {
+      bookmarked: true,
+      revision: 2,
+    }));
+  });
+
+  it('updates trusted canonical cards without requiring a duplicate public lexeme', async () => {
+    const owner = testEnvironment.authenticatedContext('canonical-owner').firestore();
+    const identity = {
+      language: 'en',
+      normalizedLemma: 'break the news',
+      partOfSpeech: 'phrase',
+      senseKey: 'share-bad-news',
+    };
+    const id = createLexemeId(identity);
+    const cardRef = doc(owner, `users/canonical-owner/cards/${id}`);
+
+    await seedCurrentCard(testEnvironment, 'canonical-owner', id, {
+      ...validCard(id),
+      id,
+      word: identity.normalizedLemma,
+      normalizedWord: identity.normalizedLemma,
+      ...identity,
+      lexemeId: id,
+      imageUrl: null,
+      imageSearchQuery: '',
+    });
+
+    await assertSucceeds(updateDoc(cardRef, {
+      imageUrl: 'https://images.pexels.com/photos/123/example.jpeg',
+      imageSearchQuery: 'breaking news',
+      revision: 2,
+      updatedAt: Timestamp.fromMillis(2),
+    }));
+    await assertFails(updateDoc(cardRef, {
+      normalizedLemma: 'changed identity',
+      revision: 3,
+    }));
+  });
+
+  it('keeps canonical identity assignment server-only even for a published lexeme', async () => {
+    const identity = {
+      language: 'en',
+      normalizedLemma: 'break the news',
+      partOfSpeech: 'phrase',
+      senseKey: 'share-bad-news',
+    };
+    const id = createLexemeId(identity);
+    const owner = testEnvironment.authenticatedContext('canonical-adoption-owner').firestore();
+    await seedCurrentCard(testEnvironment, 'canonical-adoption-owner', id, {
+      ...validCard(id),
+      id,
+      word: identity.normalizedLemma,
+      normalizedWord: identity.normalizedLemma,
+    });
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      const database = context.firestore();
+      await setDoc(doc(database, `lexemes/${id}`), {
+        schemaVersion: 3,
+        id,
+        ...identity,
+        provenance: { editorialStatus: 'published' },
+      });
+    });
+
+    const canonicalPatch = { ...identity, lexemeId: id, revision: 2 };
+    await assertFails(updateDoc(
+      doc(owner, `users/canonical-adoption-owner/cards/${id}`),
+      canonicalPatch,
+    ));
+  });
+
+  describe('card edit-sheet mutation allowlist', () => {
+    it('allows a legacy card (no lexemeId) to change part of speech in one write', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-legacy-pos';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, { ...validCard(cardId), partOfSpeech: 'noun' });
+      await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+        partOfSpeech: 'verb',
+        revision: 2,
+      }));
+    });
+
+    it('rejects a canonical (lexemeId) card changing part of speech, since it names a published sense', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const canonicalId = 'edit-sheet-canonical-pos';
+      const canonical = {
+        ...validCard(canonicalId),
+        lexemeId: 'lexeme-edit-sheet',
+        language: 'en',
+        senseKey: 'default',
+        normalizedLemma: 'hello',
+        translation: 'xin chào',
+        explanation: '', explanationTranslation: '', phonetic: '', category: 'Other',
+        emoji: '📝', audioUrl: null, imageUrl: null, imageSearchQuery: '',
+        createdAt: '1970-01-01T00:00:00.000Z', bookmarked: false, customDeck: null,
+        difficulty: 'unrated', reviews: 0, interval: 0, easeFactor: 2.5, correctStreak: 0,
+        partOfSpeech: 'noun', cefrLevel: '', exampleSentence: '', exampleTranslation: '',
+        collocations: [], synonyms: [], antonyms: [], register: '', commonMistake: '', reviewHistory: [],
+      };
+      await seedCurrentCard(testEnvironment, 'owner', canonicalId, canonical);
+      await testEnvironment.withSecurityRulesDisabled(async context => {
+        await setDoc(doc(context.firestore(), 'lexemes/lexeme-edit-sheet'), {
+          schemaVersion: 3, id: 'lexeme-edit-sheet', language: 'en', normalizedLemma: 'hello',
+          partOfSpeech: 'noun', senseKey: 'default', provenance: { editorialStatus: 'published' },
+        });
+      });
+      await assertFails(updateDoc(doc(owner, `users/owner/cards/${canonicalId}`), {
+        partOfSpeech: 'verb',
+        revision: 2,
+      }));
+    });
+
+    it('allows changing category in one write', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-category';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, { ...validCard(cardId), category: 'Nature' });
+      await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+        category: 'Business',
+        revision: 2,
+      }));
+    });
+
+    it('allows changing customDeck in one write', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-custom-deck';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, { ...validCard(cardId), customDeck: null });
+      await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+        customDeck: 'Travel words',
+        revision: 2,
+      }));
+    });
+
+    it('allows removing the image by setting imageUrl to null', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-image-remove';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, {
+        ...validCard(cardId),
+        imageUrl: 'https://images.pexels.com/photos/1/old.jpg',
+        imageSearchQuery: 'old query',
+      });
+      await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+        imageUrl: null,
+        imageSearchQuery: '',
+        revision: 2,
+      }));
+    });
+
+    it('allows replacing the image with a trusted-domain url', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-image-replace-trusted';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, { ...validCard(cardId), imageUrl: null });
+      await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+        imageUrl: 'https://images.unsplash.com/photo-1',
+        imageSearchQuery: 'new query',
+        revision: 2,
+      }));
+    });
+
+    it('rejects replacing the image with an untrusted-domain url', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-image-replace-untrusted';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, { ...validCard(cardId), imageUrl: null });
+      await assertFails(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+        imageUrl: 'https://attacker.example/photo.jpg',
+        imageSearchQuery: 'new query',
+        revision: 2,
+      }));
+    });
+
+    it('rejects a direct client update to word/normalizedWord, confirming the headword rename callable is required', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-word-lock';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, validCard(cardId));
+      await assertFails(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+        word: 'goodbye',
+        normalizedWord: 'goodbye',
+        revision: 2,
+      }));
+    });
   });
 });

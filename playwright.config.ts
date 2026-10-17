@@ -1,4 +1,11 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
+
+if (process.platform === 'linux' && !process.env.FONTCONFIG_FILE) {
+  fs.mkdirSync('/tmp/sonflash-playwright-fontconfig-cache', { recursive: true });
+  process.env.FONTCONFIG_FILE = path.resolve(import.meta.dirname, 'e2e/fixtures/playwright-linux-fonts.conf');
+}
 
 export default defineConfig({
   testDir: './e2e',
@@ -20,6 +27,8 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
   webServer: {
+    // `vite preview` serves the configured build.outDir, so an emulator run
+    // that builds with SONFLASH_BUILD_OUT_DIR serves that same artifact.
     command: 'npm run preview -- --host 127.0.0.1 --port 4173 --strictPort',
     url: 'http://127.0.0.1:4173/health.json',
     // A passing health endpoint alone cannot prove which build owns port 4173.
@@ -30,15 +39,28 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: /pilot-mobile-review\.spec\.ts|shell-share-workflow\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'firefox',
+      testIgnore: /pilot-mobile-review\.spec\.ts|shell-share-workflow\.spec\.ts/,
       use: { ...devices['Desktop Firefox'] },
     },
     {
       name: 'webkit',
+      testIgnore: /pilot-mobile-review\.spec\.ts|shell-share-workflow\.spec\.ts/,
       use: { ...devices['Desktop Safari'] },
+    },
+    {
+      name: 'mobile-chrome',
+      testMatch: /pilot-mobile-review\.spec\.ts/,
+      use: { ...devices['Pixel 7'] },
+    },
+    {
+      name: 'mobile-safari',
+      testMatch: /pilot-mobile-review\.spec\.ts/,
+      use: { ...devices['iPhone 14'] },
     },
   ],
 });

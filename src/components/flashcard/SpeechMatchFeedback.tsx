@@ -1,4 +1,6 @@
 import { CheckCircle2, Sparkles, Star, XCircle } from 'lucide-react';
+import { detectScriptFamily } from '../../features/languagePacks/scriptDetection';
+import { segmentGraphemes, segmentWords } from '../../features/languagePacks/unicodeSegmentation';
 
 export interface SpeechMatchFeedbackValue {
   score: number;
@@ -12,10 +14,60 @@ interface SpeechMatchFeedbackProps {
   target: string;
 }
 
-const compareWords = (target: string, transcript: string) => {
-  const clean = (text: string) => text.toLocaleLowerCase('en-US').replace(/[.,?!:;'"()\-]/g, '').trim();
-  const transcriptWords = new Set(clean(transcript).split(/\s+/).filter(Boolean));
-  return clean(target).split(/\s+/).filter(Boolean).map(word => ({ word, matched: transcriptWords.has(word) }));
+const LETTER_OR_DIGIT_PATTERN = /[\p{L}\p{N}]/u;
+
+/** NFKC + case-fold; case-folding is a harmless no-op for scripts without letter casing. */
+const normalizeForDiagnostics = (value: string) => value.normalize('NFKC').toLocaleLowerCase();
+
+export const compareWords = (target: string, transcript: string) => {
+  const clean = (text: string) => normalizeForDiagnostics(text).replace(/[.,?!:;'"()\-]/g, '').trim();
+  const transcriptWords = new Set(segmentWords(clean(transcript)));
+  return segmentWords(clean(target)).map(word => ({ word, matched: transcriptWords.has(word) }));
+};
+
+/**
+ * Grapheme-aware so a Hangul syllable, a kanji, or a combining-mark sequence
+ * counts as one diagnostic unit instead of the raw `[^a-z]` strip erasing
+ * every non-Latin character before any comparison happens.
+ */
+export const getLetterDiagnostics = (target: string, transcript: string) => {
+  const cleanTarget = segmentGraphemes(normalizeForDiagnostics(target)).filter(char => LETTER_OR_DIGIT_PATTERN.test(char));
+  const cleanTranscript = segmentGraphemes(normalizeForDiagnostics(transcript)).filter(char => LETTER_OR_DIGIT_PATTERN.test(char));
+
+  if (cleanTranscript.length === 0) {
+    return cleanTarget.map(char => ({ char, status: 'missing' as const }));
+  }
+
+  const result: Array<{ char: string; status: 'correct' | 'near' | 'missing' }> = [];
+  for (let i = 0; i < cleanTarget.length; i += 1) {
+    const targetChar = cleanTarget[i];
+    const transChar = cleanTranscript[i];
+
+    if (transChar === targetChar) {
+      result.push({ char: targetChar, status: 'correct' });
+    } else if (cleanTranscript.includes(targetChar)) {
+      result.push({ char: targetChar, status: 'near' });
+    } else {
+      result.push({ char: targetChar, status: 'missing' });
+    }
+  }
+  return result;
+};
+
+export const getPronunciationTip = (score: number, target: string, transcript: string) => {
+  if (score >= 90) return '🎉 Outstanding! Natural and accurate pronunciation.';
+  if (score >= 70) return '👍 Good job! Emphasize the stress and ending consonants.';
+  // The ending-consonant tip only makes sense for Latin/English orthography;
+  // other scripts get the generic slow-repeat tip instead of a nonsensical
+  // "/x/" suffix check against a non-Latin transcript.
+  if (detectScriptFamily(target) === 'latin') {
+    const cleanTarget = target.toLowerCase().replace(/[^a-z]/g, '');
+    const lastChar = cleanTarget.slice(-1);
+    if (['s', 't', 'd', 'k', 'p', 'z'].includes(lastChar) && !transcript.toLowerCase().endsWith(lastChar)) {
+      return `💡 Tip: Pronounce the ending sound "/${lastChar}/" clearly.`;
+    }
+  }
+  return '💡 Tip: Listen at 0.75x slow speed and repeat each syllable.';
 };
 
 export function SpeechMatchFeedback({ value, target }: SpeechMatchFeedbackProps) {

@@ -62,6 +62,34 @@ const install = async (entries: readonly CatalogCacheEntry[], releaseId = 'relea
   await activateCatalogInstall(handle);
 };
 
+const installV2 = async (entries: readonly CatalogCacheEntry[]) => {
+  const handle = await beginCatalogInstall({
+    catalogId: 'english-core',
+    releaseId: 'release-v2',
+    schemaVersion: 2,
+    contentLanguage: 'en',
+    chunkCount: 1,
+    lexemeCount: 0,
+    membershipCount: entries.length,
+    encodedBytes: 128,
+    unitDescriptors: [
+      {
+        unitId: 'unit-1', trackId: 'ielts', tier: 'foundation', ordinal: 1,
+        titles: [{ language: 'en', text: 'Start here' }, { language: 'vi', text: 'Bắt đầu' }],
+      },
+      {
+        unitId: 'unit-2', trackId: 'ielts', tier: 'core', ordinal: 2,
+        titles: [{ language: 'en', text: 'Keep going' }, { language: 'vi', text: 'Tiếp tục' }],
+      },
+    ],
+  });
+  await stageCatalogChunk(handle, {
+    chunkId: 'chunk-1', sha256: 'b'.repeat(64), lexemeCount: 0,
+    membershipCount: entries.length, encodedBytes: 128,
+  }, entries);
+  await activateCatalogInstall(handle);
+};
+
 describe('active catalog summary', () => {
   beforeEach(async () => {
     closeCatalogCacheForTests();
@@ -132,5 +160,34 @@ describe('active catalog summary', () => {
     expect(result?.release.releaseId).toBe('release-2');
     expect(result?.tracks.map(track => track.trackId)).toEqual(['toeic']);
     expect(result?.scannedMemberships).toBe(1);
+  });
+
+  it('derives ordered V2 units, full counts, and the first eight rank-ordered previews in the membership scan', async () => {
+    await installV2([
+      membership('m3', 'lexeme-3', 'ielts', 'foundation', { lessonGroup: 'unit-1', rank: 3 }),
+      membership('m1', 'lexeme-1', 'ielts', 'foundation', { lessonGroup: 'unit-1', rank: 1 }),
+      membership('m2', 'lexeme-2', 'ielts', 'foundation', { lessonGroup: 'unit-1', rank: 2 }),
+      membership('m4', 'lexeme-4', 'ielts', 'core', { lessonGroup: 'unit-2', rank: 1 }),
+    ]);
+
+    const result = await summarizeActiveCatalog('english-core', new Map([
+      ['lexeme-1', 'mastered'],
+      ['lexeme-4', 'started'],
+    ]));
+
+    expect(result?.units).toEqual([
+      expect.objectContaining({
+        unitId: 'unit-1', ordinal: 1, total: 3, started: 1, mastered: 1,
+        preview: [
+          { lexemeId: 'lexeme-1', lemma: 'lexeme-1' },
+          { lexemeId: 'lexeme-2', lemma: 'lexeme-2' },
+          { lexemeId: 'lexeme-3', lemma: 'lexeme-3' },
+        ],
+      }),
+      expect.objectContaining({
+        unitId: 'unit-2', ordinal: 2, total: 1, started: 1, mastered: 0,
+        preview: [{ lexemeId: 'lexeme-4', lemma: 'lexeme-4' }],
+      }),
+    ]);
   });
 });

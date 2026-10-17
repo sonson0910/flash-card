@@ -1,0 +1,119 @@
+<!--#HEAD Extension options-->
+<div style="width: 960px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#AMBIENT-->
+  <header style="position: relative; z-index: 2; height: 64px; flex-shrink: 0; padding: 0 48px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid {{t.navLine}};">
+    <span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 8px; background: {{t.logoBg}}; box-shadow: {{t.logoShadow}}; display: flex; align-items: center; justify-content: center; color: {{t.logoText}}; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 16px;">S</span>
+    <span style="font-family: Fraunces, Georgia, serif; font-size: 19px;">Son<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">Flash</span></span>
+    <span style="font-size: 13px; color: {{t.text3}};">/ Tiện ích Chrome</span>
+    <span style="margin-left: auto; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11.5px; color: {{t.text3}};">v1.6.3</span>
+  </header>
+
+  <div style="position: relative; z-index: 2; padding: 30px 48px 0;">
+    <h1 style="margin: 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 44px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">Cài <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">đặt</span></h1>
+    <p style="margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: {{t.body}};">Tuỳ chỉnh cách SonFlash dịch và lưu từ trên mọi trang bạn đọc.</p>
+  </div>
+
+  <div style="position: relative; z-index: 2; flex-grow: 1; padding: 22px 48px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-content: start;">
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <section style="{{card}}">
+        <h2 style="{{h2}}">Hiển thị &amp; âm thanh</h2>
+        <div style="{{row}}">
+          <div><div style="{{rowTitle}}">Tự đọc phát âm</div><div style="{{rowHint}}">Phát âm ngay khi bong bóng hiện ra</div></div>
+          <span role="switch" aria-checked="true" style="{{swOn}}"><span style="{{knobOn}}"></span></span>
+        </div>
+        <div style="{{row}}; border-bottom: 0;">
+          <div><div style="{{rowTitle}}">Thời gian hiện bong bóng</div><div style="{{rowHint}}">0 = chỉ đóng thủ công</div></div>
+          <span style="height: 38px; box-sizing: border-box; padding: 0 4px 0 12px; border-radius: 10px; border: 1px solid {{t.line}}; background: {{t.inputBg}}; display: flex; align-items: center; gap: 6px;"><span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px; color: {{t.textStrong}};">8000</span><span style="height: 28px; padding: 0 8px; border-radius: 7px; background: {{t.chipBg}}; font-size: 12px; color: {{t.text2}}; display: flex; align-items: center;">ms</span></span>
+        </div>
+      </section>
+
+      <section style="{{card}}">
+        <h2 style="{{h2}}">Biểu tượng nổi</h2>
+        <p style="margin: 6px 0 0; font-size: 12.5px; line-height: 1.5; color: {{t.text2}};">Hiện nút <span style="font-family: Fraunces, Georgia, serif; font-style: italic; color: {{t.emColor}};">S</span> cạnh chữ bạn bôi đen, chỉ trên các trang đã cấp quyền.</p>
+        <div style="margin-top: 14px; display: flex; gap: 8px;">
+          <span style="flex-grow: 1; height: 42px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; border: 1px solid {{t.accentLine}}; background: {{t.inputBg}}; box-shadow: 0 0 0 4px {{t.accentSoft}}; display: flex; align-items: center; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; color: {{t.textStrong}};">https://www.theguardian.com</span>
+          <button class="sf-press" style="height: 42px; padding: 0 14px; border-radius: 12px; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 13px; font-weight: 650; cursor: pointer;">Cấp quyền</button>
+        </div>
+        <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px;">
+          <sc-for list="{{sites}}" as="s" hint-placeholder-count="3">
+            <div style="height: 40px; box-sizing: border-box; padding: 0 6px 0 12px; border-radius: 10px; background: {{t.chipBg}}; border: 1px solid {{t.line}}; display: flex; align-items: center; gap: 10px;">
+              <span style="width: 18px; height: 18px; border-radius: 5px; background: {{s.color}}; color: #ffffff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{s.letter}}</span>
+              <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12.5px; color: {{t.text}};">{{s.host}}</span>
+              <button aria-label="Gỡ quyền" style="margin-left: auto; height: 28px; padding: 0 10px; border-radius: 8px; border: 0; background: transparent; color: {{t.text3}}; font-size: 12px; font-weight: 600; cursor: pointer;">Gỡ</button>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <section style="{{card}}">
+        <h2 style="{{h2}}">Lịch sử &amp; dịch</h2>
+        <div style="{{row}}">
+          <div><div style="{{rowTitle}}">Lưu tra cứu gần đây</div><div style="{{rowHint}}">Tối đa 20 từ, chỉ trên máy này</div></div>
+          <span role="switch" aria-checked="true" style="{{swOn}}"><span style="{{knobOn}}"></span></span>
+        </div>
+        <div style="{{row}}">
+          <div><div style="{{rowTitle}}">Ngôn ngữ nguồn</div><div style="{{rowHint}}">Tự nhận diện hoặc cố định tiếng Anh</div></div>
+          <div role="radiogroup" style="height: 36px; padding: 3px; box-sizing: border-box; border-radius: 10px; background: {{t.chipBg}}; border: 1px solid {{t.line}}; display: flex; gap: 2px;">
+            <span role="radio" aria-checked="true" style="padding: 0 12px; border-radius: 7px; background: {{t.navActiveBg}}; color: {{t.navActiveText}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center;">Tự động</span>
+            <span role="radio" aria-checked="false" style="padding: 0 12px; border-radius: 7px; color: {{t.text2}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center;">English</span>
+          </div>
+        </div>
+        <div style="{{row}}; border-bottom: 0;">
+          <div><div style="{{rowTitle}}">Ngôn ngữ đích</div><div style="{{rowHint}}">Hiện chỉ hỗ trợ tiếng Việt</div></div>
+          <span style="height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid {{t.line}}; color: {{t.text2}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 6px;">Tiếng Việt <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg></span>
+        </div>
+      </section>
+
+      <section style="{{card}}">
+        <h2 style="{{h2}}">Tài khoản</h2>
+        <div style="margin-top: 14px; display: flex; align-items: center; gap: 12px;">
+          <span style="width: 42px; height: 42px; border-radius: 50%; background: {{t.avatarBg}}; border: 1px solid {{t.line}}; color: {{t.avatarText}}; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center;">KB</span>
+          <div>
+            <div style="font-size: 14px; font-weight: 650; color: {{t.textStrong}};">Đã đăng nhập</div>
+            <div style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text2}};">kb…@gmail.com</div>
+          </div>
+          <a href="#" style="margin-left: auto; font-size: 12.5px; font-weight: 600; color: {{t.text2}}; text-decoration: none;">Đăng xuất</a>
+        </div>
+        <div style="margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: {{t.okBg}}; border: 1px solid {{t.okLine}}; color: {{t.ok}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 8px;"><span style="width: 7px; height: 7px; border-radius: 50%; background: {{t.good}};"></span>Đã đồng bộ 5 deck · 1 phút trước<a href="#" style="margin-left: auto; color: inherit; font-weight: 650;">Đồng bộ lại</a></div>
+        <div style="margin-top: 10px; font-size: 12.5px; color: {{t.text2}};">Deck mặc định: <span style="color: {{t.textStrong}}; font-weight: 600;">IELTS</span></div>
+      </section>
+    </div>
+  </div>
+
+  <footer style="position: relative; z-index: 2; flex-shrink: 0; margin: 0 48px 28px; padding: 14px 14px 14px 20px; border-radius: 18px; border: 1px solid {{t.line}}; background: {{t.surfaceSolid}}; box-shadow: {{t.surfaceShadow}}; display: flex; align-items: center; gap: 12px;">
+    <span role="status" class="sf-pop" style="height: 30px; padding: 0 12px; border-radius: 999px; background: {{t.okBg}}; border: 1px solid {{t.okLine}}; color: {{t.ok}}; font-size: 12.5px; font-weight: 650; display: flex; align-items: center; gap: 6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Đã lưu</span>
+    <span style="font-size: 12.5px; color: {{t.text3}};">Áp dụng cho mọi tab đang mở</span>
+    <a href="#" style="margin-left: auto; font-size: 13px; font-weight: 600; color: {{t.text2}}; text-decoration: none;">Phím tắt Chrome</a>
+    <button class="sf-press" style="height: 44px; padding: 0 22px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14px; font-weight: 650; cursor: pointer;">Lưu cài đặt</button>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":960,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    return {
+      t, grainId: 'extopt-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: 480, ay: -300, bx: -220, by: 520 },
+      card: 'box-sizing: border-box; padding: 20px 22px; border-radius: ' + t.radius + 'px; border: 1px solid ' + t.line + '; background: ' + t.surface + '; box-shadow: ' + t.surfaceShadow + '; backdrop-filter: ' + t.blur + '; -webkit-backdrop-filter: ' + t.blur,
+      h2: 'margin: 0; font-family: Fraunces, Georgia, serif; font-weight: ' + t.displayWeight + '; font-size: 21px; letter-spacing: -0.01em; color: ' + t.textStrong,
+      row: 'min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid ' + t.line,
+      rowTitle: 'font-size: 14px; font-weight: 600; color: ' + t.text,
+      rowHint: 'margin-top: 2px; font-size: 12px; color: ' + t.text3,
+      swOn: 'position: relative; flex-shrink: 0; width: 44px; height: 26px; border-radius: 999px; background: ' + (dark ? '#28d3f4' : '#337344') + '; box-shadow: ' + (dark ? '0 0 16px -4px rgb(40 211 244 / 0.7)' : 'none'),
+      knobOn: 'position: absolute; top: 3px; left: 21px; width: 20px; height: 20px; border-radius: 50%; background: ' + (dark ? '#04141c' : '#fffcf5') + '; box-shadow: 0 1px 3px rgb(0 0 0 / 0.3)',
+      sites: [
+        { host: 'www.theguardian.com', letter: 'G', color: '#052962' },
+        { host: 'medium.com', letter: 'M', color: '#1a1a1a' },
+        { host: 'en.wikipedia.org', letter: 'W', color: '#636466' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

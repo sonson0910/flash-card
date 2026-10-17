@@ -1,10 +1,13 @@
-import { Children, isValidElement, type ErrorInfo, type ReactElement, type ReactNode } from 'react';
+import { type ErrorInfo, type ReactElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AppRuntimeBoundary } from './AppRuntimeBoundary';
+import AppRuntimeError from './app-runtime-error';
 
 describe('AppRuntimeBoundary', () => {
-  it('keeps the landing recovery affordance after a runtime chunk error', () => {
+  it('provides a retry action after a runtime chunk error', () => {
     const onError = vi.fn();
     const onRetry = vi.fn();
     const error = new Error('Failed to fetch dynamically imported module');
@@ -15,12 +18,14 @@ describe('AppRuntimeBoundary', () => {
 
     expect(boundary.state.error).toBe(error);
     expect(onError).toHaveBeenCalledWith(error);
-    expect(renderToStaticMarkup(boundary.render())).toContain('Workspace could not load');
+    i18n.load('en', {});
+    i18n.activate('en');
+    const errorHtml = renderToStaticMarkup(<I18nProvider i18n={i18n}><AppRuntimeError onRetry={onRetry} /></I18nProvider>);
+    expect(errorHtml.match(/<h1>(.*?)<\/h1>/)?.[1].replace(/<[^>]+>/g, '')).toBe('Workspace could not load.');
+    expect(renderToStaticMarkup(<I18nProvider i18n={i18n}>{boundary.render()}</I18nProvider>)).toContain('Retry workspace');
 
-    const fallback = boundary.render() as ReactElement<{ children?: ReactNode }>;
-    const retryButton = Children.toArray(fallback.props.children).find(
-      child => isValidElement(child) && child.type === 'button',
-    ) as ReactElement<{ onClick: () => void }>;
+    const fallback = boundary.render() as ReactElement<{ fallback: ReactNode }>;
+    const retryButton = fallback.props.fallback as ReactElement<{ onClick: () => void }>;
     retryButton.props.onClick();
 
     expect(onRetry).toHaveBeenCalledOnce();

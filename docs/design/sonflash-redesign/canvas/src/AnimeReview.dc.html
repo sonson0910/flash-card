@@ -1,0 +1,325 @@
+<!--#AHEAD Crystal Star review-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#ABG-->
+  <sc-if value="{{flash}}" hint-placeholder-val="{{false}}">
+    <div aria-hidden="true" class="nk-pillar" style="position: absolute; z-index: 40; left: 50%; top: 0; bottom: 0; width: 520px; margin-left: -260px; pointer-events: none; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.85) 30%, #ffffff 50%, rgb(255 255 255 / 0.85) 70%, transparent); mix-blend-mode: screen;"></div>
+  </sc-if>
+
+  <header style="position: relative; z-index: 5; height: 84px; flex-shrink: 0; padding: 0 40px; display: flex; align-items: center; gap: 16px;">
+    <button class="nk-lift" aria-label="End session" style="width: 44px; height: 44px; clip-path: {{t.chamferSm}}; border: 0; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; letter-spacing: 0.08em; color: {{t.text2}};">STEP 1 <span style="color: {{t.crimsonText}};">//</span> REVIEW</div>
+    <div role="progressbar" aria-valuemin="0" aria-valuemax="12" aria-valuenow="{{position}}" style="margin: 0 auto; display: flex; align-items: center; gap: 4px;">
+      <sc-for list="{{segments}}" as="seg" hint-placeholder-count="12">
+        <span style="width: 32px; height: 10px; transform: skewX(-30deg); background: {{seg.bg}}; box-shadow: {{seg.glow}};"></span>
+      </sc-for>
+      <span style="margin-left: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; color: {{t.textStrong}};">{{position}}<span style="font-size: 15px; color: {{t.text3}};"> / 12</span></span>
+    </div>
+    <button class="nk-lift" onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 44px; height: 44px; clip-path: {{t.chamferSm}}; border: 0; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+      <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
+    </button>
+    <span style="height: 44px; padding: 0 16px 0 12px; clip-path: {{t.chamferSm}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 6px;"><svg width="17" height="17" viewBox="0 0 24 24" fill="#ffd166"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>12</span>
+  </header>
+
+  <aside style="position: absolute; z-index: 4; left: 64px; top: 220px; width: 290px;">
+    <div class="nk-rise" style="position: relative; box-sizing: border-box; padding: 16px 20px 18px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}};">
+      <span aria-hidden="true" style="position: absolute; left: 0; top: 18px; bottom: 18px; width: 3px; background: linear-gradient(180deg, #ff2a4d, #5ef2ff);"></span>
+      <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.1em; color: {{t.holoText}};">LUMI · LINK</div>
+      <div style="margin-top: 4px; font-weight: 900; font-size: 18px; line-height: 1.3; color: {{t.textStrong}};">{{voltLine}}</div>
+      <div style="margin-top: 4px; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">{{voltSub}}</div>
+    </div>
+    <div class="nk-float" style="width: 290px; height: 310px; margin: 18px 0 0 -10px;">
+<!--#MASCOT $-->
+    </div>
+  </aside>
+
+  <aside style="position: absolute; z-index: 4; right: 60px; top: 120px; width: 300px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="position: relative; height: 150px;">
+      <div class="{{bannerCls}}" style="position: absolute; left: 6px; right: 0; top: 16px; height: 96px; transform: skewX(-16deg); background: linear-gradient(90deg, rgb(179 15 51 / 0.95), rgb(255 42 77 / 0.85) 60%, rgb(255 42 77 / 0)); box-shadow: 0 0 40px -6px rgb(255 42 77 / 0.7);"></div>
+      <div style="position: absolute; left: 0; top: 0; width: 70px; height: 70px; filter: drop-shadow(0 0 12px rgb(255 42 77 / 0.9));">
+<!--#STAR5-->
+      </div>
+      <div class="{{bannerCls}}" style="position: absolute; left: 60px; top: 22px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 52px; line-height: 1; letter-spacing: 0.02em; background: linear-gradient(180deg, #ffffff 0%, #ffe3ea 48%, #ffb3c2 52%, #ffffff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 16px rgb(255 42 77 / 0.8));">{{comboName}}</div>
+      <div style="position: absolute; left: 66px; top: 82px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 17px; letter-spacing: 0.14em; color: #ffffff;">COMBO ×{{combo}}</div>
+      <sc-if value="{{xpPop}}" hint-placeholder-val="{{false}}">
+        <div class="nk-pop" style="position: absolute; right: 8px; top: 118px; height: 30px; padding: 0 14px; clip-path: {{t.chamferSm}}; background: linear-gradient(180deg, #fff0b8, #ffd166); color: #4a2a00; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; display: flex; align-items: center;">+{{xpGain}} XP</div>
+      </sc-if>
+    </div>
+    <div style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 16px 20px 18px;">
+      <div style="display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: {{t.holoText}};"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: #5ef2ff; box-shadow: 0 0 8px #5ef2ff;"></span>DAILY GOAL</div>
+      <div style="margin-top: 6px; font-weight: 900; font-size: 17px; color: {{t.textStrong}};">Review 12 cards</div>
+      <div style="margin-top: 10px; height: 10px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div style="width: {{questPct}}%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / 0.7); transition: width 600ms {{t.snap}};"></div></div>
+      <div style="margin-top: 8px; display: flex; justify-content: space-between; font-size: 13px; color: {{t.text2}};"><span>{{position}} / 12</span><span style="color: {{t.goldText}}; font-weight: 900;">+50 XP</span></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 9px; padding: 2px 4px;">
+      <sc-for list="{{tiers}}" as="r" hint-placeholder-count="3">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: {{t.text2}};">
+          <span style="min-width: 46px; height: 24px; padding: 0 8px; box-sizing: border-box; clip-path: {{t.chamferSm}}; background: {{r.rim}}; color: #1a0610; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 14px; display: flex; align-items: center; justify-content: center;">{{r.grade}}</span>
+          <span style="font-weight: 800; color: {{t.textStrong}};">{{r.label}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </aside>
+
+  <main style="position: relative; z-index: 3; flex-grow: 1; display: flex; flex-direction: column; align-items: center;">
+    <div class="{{dealClass}}" style="position: relative; width: 460px; height: 620px;">
+      <div onMouseEnter="{{enter}}" onMouseMove="{{move}}" onMouseLeave="{{leave}}" style="position: absolute; inset: 0;">
+        <div aria-hidden="true" style="position: absolute; left: -360px; top: 40px; width: 520px; height: 350px; pointer-events: none; transform-origin: 90% 75%; transform: scale({{wingScale}}) rotate({{wingRot}}deg); opacity: {{wingOpacity}}; transition: transform 460ms {{t.snap}}, opacity 300ms ease; filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.7));">
+<!--#WINGS-->
+        </div>
+        <div aria-hidden="true" style="position: absolute; right: -360px; top: 40px; width: 520px; height: 350px; pointer-events: none; transform-origin: 10% 75%; transform: scaleX(-1) scale({{wingScale}}) rotate({{wingRot}}deg); opacity: {{wingOpacity}}; transition: transform 460ms {{t.snap}}, opacity 300ms ease; filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.7));">
+<!--#WINGS-->
+        </div>
+        <div aria-hidden="true" style="position: absolute; inset: -40px; pointer-events: none; filter: blur(40px); background: radial-gradient(ellipse at 50% 45%, {{tierSoft}}, transparent 70%); opacity: {{auraOpacity}}; transition: opacity 320ms ease-out;"></div>
+        <div style="position: absolute; inset: 0; perspective: 1600px;">
+          <div style="position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateX({{rx}}deg) rotateY({{ry}}deg); transition: {{rotorTransition}};">
+
+            <!-- FRONT -->
+            <div style="position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; filter: drop-shadow(0 30px 40px rgb(0 0 0 / 0.45)) drop-shadow({{tierDrop}});">
+              <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; overflow: hidden;">
+                <div class="{{rimCls}}" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: {{rim}};"></div>
+              </div>
+              <div style="position: absolute; inset: 3px; box-sizing: border-box; clip-path: {{t.chamfer}}; overflow: hidden; background: {{t.cardFront}}; display: flex; flex-direction: column;">
+                <div style="position: relative; height: 282px; flex-shrink: 0; overflow: hidden; clip-path: polygon(0 0, 100% 0, 100% 80%, 0 100%);">
+                  <img src="{{front.image}}" alt="Illustration for {{front.word}}" style="width: 100%; height: 100%; object-fit: cover; display: block; transform: scale({{imgScale}}) translate3d({{imgShiftX}}px, {{imgShiftY}}px, 0); filter: {{imgFilter}}; transition: filter 500ms ease, transform 400ms cubic-bezier(.22,1,.36,1);">
+                  <div aria-hidden="true" style="position: absolute; inset: 0; background: linear-gradient(180deg, rgb(7 6 15 / 0.35), transparent 35%, transparent 60%, rgb(179 15 51 / 0.35));"></div>
+                  <sc-if value="{{blind}}" hint-placeholder-val="{{false}}">
+                    <div style="position: absolute; inset: 0; background: rgb(10 6 24 / 0.72); display: flex; align-items: center; justify-content: center;">
+                      <svg aria-hidden="true" viewBox="0 0 460 282" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%;"><polyline points="0,150 70,128 110,160 170,118 205,150 250,96 300,140 340,110 390,146 460,120" fill="none" stroke="#5ef2ff" stroke-width="3" style="filter: drop-shadow(0 0 8px #5ef2ff);"></polyline><polyline points="0,150 70,128 110,160 170,118 205,150 250,96 300,140 340,110 390,146 460,120" fill="none" stroke="#ffffff" stroke-width="1"></polyline><polyline points="170,118 180,70 214,40M250,96 262,190 240,240" fill="none" stroke="#ff5470" stroke-width="1.6"></polyline></svg>
+                      <div style="position: relative; padding: 10px 22px; clip-path: {{t.chamferSm}}; background: linear-gradient(180deg, #ff5470, #b30f33); color: #ffffff; text-align: center;">
+                        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 20px; letter-spacing: 0.06em;">MEANING HIDDEN</div>
+                        <div style="font-size: 12px; font-weight: 700; opacity: 0.9;">Picture hint hidden · recall from the word</div>
+                      </div>
+                    </div>
+                  </sc-if>
+                  <div style="position: absolute; top: 16px; left: 18px; right: 16px; display: flex; align-items: flex-start; gap: 8px;">
+                    <span style="height: 34px; padding: 0 14px 0 12px; clip-path: {{t.chamferSm}}; background: {{rim}}; display: flex; align-items: center; gap: 8px;">
+                      <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 20px; color: #ffffff; text-shadow: 0 2px 0 #7a0820, 0 0 10px rgb(0 0 0 / 0.4);">{{tierGrade}}</span>
+                      <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 13px; color: #1a0610;">{{tierLabel}}</span>
+                    </span>
+                    <button class="nk-lift" onClick="{{toggleBlind}}" aria-label="Hide picture hint" aria-pressed="{{blind}}" style="margin-left: auto; width: 44px; height: 44px; border: 0; clip-path: {{t.chamferSm}}; background: {{blindBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+                    <span style="position: relative; display: inline-flex;">
+                      <button class="nk-lift" onClick="{{star}}" aria-label="Star this word" aria-pressed="{{starred}}" style="width: 44px; height: 44px; border: 0; clip-path: {{t.chamferSm}}; background: {{starBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer;"><span class="{{starAnim}}" style="display: inline-flex;"><svg width="19" height="19" viewBox="0 0 24 24" fill="{{starFill}}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"></path></svg></span></button>
+                      <sc-if value="{{starred}}" hint-placeholder-val="{{false}}">
+                        <span aria-hidden="true" class="nk-flare" style="position: absolute; left: -26px; top: -26px; width: 96px; height: 96px; pointer-events: none;"><span style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, #ffffff, transparent);"></span></span>
+                      </sc-if>
+                    </span>
+                  </div>
+                </div>
+
+                <div style="position: relative; z-index: 2; flex-grow: 1; display: flex; flex-direction: column; padding: 0 28px; margin-top: -8px;">
+                  <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.crimsonText}};">{{front.pos}} <span style="color: {{t.text3}};">// {{front.category}}</span></div>
+                  <h2 style="margin: 2px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 58px; line-height: 1.02; color: {{t.textStrong}};"><span>{{front.wPre}}</span><span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 16px rgb(255 42 77 / 0.6));">{{front.wStress}}</span><span>{{front.wRest}}</span></h2>
+                  <div style="display: flex; align-items: center; gap: 12px; margin-top: 10px;">
+                    <button class="nk-lift" onClick="{{listen}}" aria-label="Listen to pronunciation" style="width: 44px; height: 44px; flex-shrink: 0; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                      <sc-if value="{{playing}}" hint-placeholder-val="{{false}}">
+                        <span aria-hidden="true" style="display: flex; align-items: center; gap: 2px; height: 16px;">
+                          <span class="sf-wave" style="width: 3px; height: 100%; background: currentColor;"></span>
+                          <span class="sf-wave" style="width: 3px; height: 100%; background: currentColor; animation-delay: 120ms;"></span>
+                          <span class="sf-wave" style="width: 3px; height: 100%; background: currentColor; animation-delay: 240ms;"></span>
+                          <span class="sf-wave" style="width: 3px; height: 100%; background: currentColor; animation-delay: 360ms;"></span>
+                        </span>
+                      </sc-if>
+                      <sc-if value="{{notPlaying}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></sc-if>
+                    </button>
+                    <span style="font-family: {{t.fMono}}; font-size: 15px; color: {{t.body}};">{{front.ipa}}</span>
+                    <span style="font-size: 13px; color: {{t.text3}};">{{front.syll}}</span>
+                  </div>
+                  <p style="margin: 12px 0 0; font-size: 15px; line-height: 1.6; color: {{t.body}}; text-wrap: pretty;">{{front.definition}}</p>
+                </div>
+
+                <div style="padding: 0 22px 22px; flex-shrink: 0;">
+                  <button class="nk-lift" onClick="{{flip}}" style="position: relative; width: 100%; height: 58px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 20px; font-weight: 900; letter-spacing: 0.08em; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer;">
+                    <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 60px; background: rgb(255 255 255 / 0.4);"></span>
+                    <svg style="position: relative;" width="22" height="22" viewBox="0 0 24 24"><path d="M12 1.5l3 7.1 7.7.6-5.9 5 1.8 7.5L12 17.7l-6.6 4 1.8-7.5-5.9-5 7.7-.6z" fill="#ffffff"></path><path d="M12 1.5l3 7.1-3 9.1z" fill="#ffd166"></path></svg>
+                    <span style="position: relative;">REVEAL</span>
+                    <span style="position: relative; height: 24px; padding: 0 8px; background: rgb(0 0 0 / 0.22); font-family: {{t.fMono}}; font-style: normal; font-size: 11px; font-weight: 500; letter-spacing: 0; display: flex; align-items: center;">Space</span>
+                  </button>
+                </div>
+
+                <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 20; pointer-events: none; background: linear-gradient(115deg, transparent {{band1}}%, rgb(255 255 255 / 0.18) {{band2}}%, rgb(255 255 255 / 0.04) {{band3}}%, transparent {{band4}}%); opacity: {{spotOpacity}}; transition: opacity 200ms ease;"></div>
+                <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 21; pointer-events: none; background: radial-gradient(circle at {{mx}}% {{my}}%, {{tierSoft}} 0%, transparent 40%); mix-blend-mode: screen; opacity: {{spotOpacity}}; transition: opacity 200ms ease;"></div>
+                <span aria-hidden="true" style="position: absolute; z-index: 22; left: calc({{mx}}% - 50px); top: calc({{my}}% - 50px); width: 100px; height: 100px; pointer-events: none; opacity: {{spotOpacity}};"><span style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; top: 10px; bottom: 10px; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #ffffff; box-shadow: 0 0 14px 5px {{tierSoft}};"></span></span>
+                <sc-if value="{{mastered}}" hint-placeholder-val="{{false}}">
+                  <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 23; pointer-events: none; mix-blend-mode: color-dodge; opacity: {{holoOpacity}}; background: repeating-linear-gradient(115deg, rgb(255 143 182 / 0.5) 0%, rgb(255 209 102 / 0.5) 6%, rgb(94 242 255 / 0.5) 12%, rgb(155 107 255 / 0.5) 18%, rgb(255 84 112 / 0.5) 24%, rgb(255 143 182 / 0.5) 30%); background-size: 300% 300%; background-position: {{mx}}% {{my}}%; transition: opacity 300ms ease;"></div>
+                </sc-if>
+              </div>
+            </div>
+
+            <!-- BACK -->
+            <div style="position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: rotateY(180deg); filter: drop-shadow(0 30px 40px rgb(0 0 0 / 0.45)) drop-shadow({{tierDrop}});">
+              <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; overflow: hidden;">
+                <div class="{{rimCls}}" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: {{rim}};"></div>
+              </div>
+              <div style="position: absolute; inset: 3px; box-sizing: border-box; clip-path: {{t.chamfer}}; overflow: hidden; background: {{t.cardBack}}; display: flex; flex-direction: column;">
+                <div aria-hidden="true" class="nk-beam" style="position: absolute; left: 20%; top: -30%; width: 110px; height: 160%; transform: rotate(22deg); background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent); filter: blur(3px);"></div>
+                <div aria-hidden="true" style="position: absolute; right: -40px; bottom: 60px; width: 180px; height: 180px; opacity: 0.18;">
+<!--#STAR5-->
+                </div>
+                <div style="position: relative; display: flex; align-items: center; gap: 10px; padding: 18px 18px 0 0;">
+                  <span style="height: 32px; padding: 0 22px 0 24px; clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); background: {{t.primaryBg}}; display: flex; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: #ffffff;">VIETNAMESE</span>
+                  <sc-if value="{{back.due}}" hint-placeholder-val="{{false}}">
+                    <span style="height: 26px; padding: 0 12px; clip-path: {{t.chamferSm}}; background: linear-gradient(180deg, #fff0b8, #ffd166); color: #4a2a00; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; display: flex; align-items: center;">DUE TODAY</span>
+                  </sc-if>
+                  <button class="nk-lift" onClick="{{star}}" aria-label="Star this word" aria-pressed="{{starred}}" style="margin-left: auto; width: 40px; height: 40px; border: 0; clip-path: {{t.chamferSm}}; background: {{starBgBack}}; color: {{starColorBack}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><span class="{{starAnim}}" style="display: inline-flex;"><svg width="18" height="18" viewBox="0 0 24 24" fill="{{starFill}}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"></path></svg></span></button>
+                </div>
+
+                <div style="position: relative; flex-grow: 1; display: flex; flex-direction: column; align-items: center; padding: 14px 28px 0; text-align: center;">
+                  <div class="{{revealCls}}" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 50px; line-height: 1.1; color: {{t.textStrong}}; text-shadow: 0 0 24px {{tierSoft}}; text-wrap: balance;">{{back.meaning}}</div>
+                  <div class="{{revealCls2}}" style="margin-top: 6px; display: flex; align-items: center; gap: 10px; font-size: 14px; color: {{t.text2}};">
+                    <span style="font-weight: 900; color: {{t.textStrong}};">{{back.word}}</span>
+                    <span style="font-family: {{t.fMono}}; font-size: 13px;">{{back.ipa}}</span>
+                    <button class="nk-lift" onClick="{{listen}}" aria-label="Listen to pronunciation" style="width: 32px; height: 32px; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
+                  </div>
+                  <figure class="{{revealCls3}}" style="position: relative; margin: 18px 0 0; width: 100%; box-sizing: border-box; padding: 14px 18px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; text-align: left;">
+                    <blockquote style="margin: 0; font-weight: 800; font-size: 17px; line-height: 1.45; color: {{t.textStrong}};">“{{back.examplePre}}<span style="font-weight: 900; color: {{t.crimsonText}};">{{back.exampleWord}}</span>{{back.examplePost}}”</blockquote>
+                    <figcaption style="margin-top: 6px; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">{{back.exampleVi}}</figcaption>
+                  </figure>
+                  <p class="{{revealCls3}}" style="margin: 12px 2px 0; font-size: 14px; line-height: 1.6; color: {{t.body}}; text-align: left; align-self: stretch;">{{back.explanation}}</p>
+                  <div class="{{revealCls3}}" style="margin-top: 12px; align-self: stretch; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
+                    <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 12px; letter-spacing: 0.12em; color: {{t.text3}}; margin-right: 2px;">FAMILY</span>
+                    <sc-for list="{{back.family}}" as="fw" hint-placeholder-count="3">
+                      <span style="height: 28px; padding: 0 12px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; font-weight: 800; font-size: 13px; color: {{t.textStrong}}; display: flex; align-items: center; gap: 5px;">{{fw.w}}<span style="color: {{t.text3}}; font-weight: 600; font-size: 11.5px;">{{fw.p}}</span></span>
+                    </sc-for>
+                  </div>
+                  <div style="margin-top: auto; padding-bottom: 14px; align-self: stretch; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="nk-lift" style="height: 44px; border: 0; clip-path: {{t.chamferSm}}; background: linear-gradient(180deg, #fff0b8, #ffd166); color: #4a2a00; font-size: 14px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"></path></svg>Memory hook</button>
+                    <button class="nk-lift" style="height: 44px; border: 0; clip-path: {{t.chamferSm}}; background: linear-gradient(180deg, #7ff6ff, #1aa7c9); color: #031820; font-size: 14px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.8 9.2L24 12l-9.2 2.8L12 24l-2.8-9.2L0 12l9.2-2.8z"></path></svg>Ask AI tutor</button>
+                  </div>
+                </div>
+                <button onClick="{{flip}}" style="position: relative; height: 48px; flex-shrink: 0; border: 0; border-top: 1px solid {{t.lineStrong}}; background: transparent; color: {{t.text2}}; font-family: {{t.fDisplay}}; font-style: italic; font-size: 14px; font-weight: 700; letter-spacing: 0.08em; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg>BACK TO ENGLISH</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height: 124px; display: flex; align-items: center; justify-content: center;">
+      <sc-if value="{{flipped}}" hint-placeholder-val="{{false}}">
+        <div role="group" aria-label="How well did you remember?" class="nk-rise" style="display: flex; gap: 12px;">
+          <sc-for list="{{grades}}" as="g" hint-placeholder-count="4">
+            <button class="nk-lift" onClick="{{g.pick}}" style="width: {{g.w}}px; height: 64px; border: 0; transform: skewX(-14deg); background: {{g.bg}}; color: {{g.color}}; box-shadow: {{g.shadow}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+              <span style="transform: skewX(14deg); display: flex; flex-direction: column; align-items: center; gap: 1px;">
+                <span style="font-family: {{t.fDisplay}}; font-style: italic; font-size: 21px; font-weight: 900; letter-spacing: 0.06em; line-height: 1.1;">{{g.label}}</span>
+                <span style="font-family: {{t.fMono}}; font-size: 11px; opacity: 0.85;">{{g.key}} · {{g.next}}</span>
+              </span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{notFlipped}}" hint-placeholder-val="{{true}}">
+        <div style="font-weight: 800; font-size: 15px; color: {{t.text2}}; display: flex; align-items: center; gap: 10px;">Say it out loud, then reveal <span style="height: 26px; padding: 0 9px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; font-family: {{t.fMono}}; font-size: 11px; display: flex; align-items: center;">Space</span></div>
+      </sc-if>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { index: 0, flipped: false, flipping: false, dealing: false, revealed: false, hover: false, rx: 0, ryTilt: 0, mx: 50, my: 50, starred: false, starPulse: false, blind: false, playing: false, combo: 4, xpPop: false, xpGain: 10, flash: false };
+  }
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const s = this.state;
+    const deck = [
+      {
+        tier: 'new',
+        front: { word: 'Spelling', wPre: '', wStress: 'Spel', wRest: 'ling', syll: 'spel·ling', pos: 'Noun', category: 'Language', ipa: '/ˈspelɪŋ/', definition: 'The process or ability of writing or naming the letters that form a word in the correct sequence.', image: '../assets/blob/ed058680c239cce56bb63500ca7dd0e4.jpg' },
+        back: { word: 'Spelling', ipa: '/ˈspelɪŋ/', meaning: 'Cách đánh vần', due: false, examplePre: 'Check the ', exampleWord: 'spelling', examplePost: ' before you send it.', exampleVi: 'Kiểm tra chính tả trước khi gửi nhé.', family: [{ w: 'spell', p: 'v.' }, { w: 'speller', p: 'n.' }, { w: 'misspelling', p: 'n.' }], explanation: 'Cách viết đúng các chữ cái của một từ; cũng dùng để chỉ khả năng viết đúng chính tả.' },
+      },
+      {
+        tier: 'learning',
+        front: { word: 'Immediate', wPre: 'Im', wStress: 'me', wRest: 'diate', syll: 'im·me·di·ate', pos: 'Adjective', category: 'Time and action', ipa: '/ɪˈmiːdiət/', definition: 'Happening or done without delay; acting or occurring at once.', image: '../assets/blob/dc9678b28352d8aeb0fea95d3a58a38d.jpg' },
+        back: { word: 'Immediate', ipa: '/ɪˈmiːdiət/', meaning: 'Ngay lập tức', due: true, examplePre: 'The new policy takes ', exampleWord: 'immediate', examplePost: ' effect.', exampleVi: 'Chính sách mới có hiệu lực ngay lập tức.', family: [{ w: 'immediately', p: 'adv.' }, { w: 'immediacy', p: 'n.' }], explanation: 'Xảy ra hoặc được thực hiện ngay, không chậm trễ. Hay đi với effect, action, response.' },
+      },
+      {
+        tier: 'mastered',
+        front: { word: 'Instant', wPre: '', wStress: 'In', wRest: 'stant', syll: 'in·stant', pos: 'Noun', category: 'Time', ipa: '/ˈɪnstənt/', definition: 'A very short period of time; a precise moment.', image: '../assets/blob/4e8348b18995828a6faaee433ba17ccd.jpg' },
+        back: { word: 'Instant', ipa: '/ˈɪnstənt/', meaning: 'Khoảnh khắc', due: false, examplePre: 'For an ', exampleWord: 'instant', examplePost: ', nobody said a word.', exampleVi: 'Trong một khoảnh khắc, không ai nói lời nào.', family: [{ w: 'instantly', p: 'adv.' }, { w: 'instantaneous', p: 'adj.' }], explanation: 'Một khoảng thời gian cực ngắn, hoặc một thời điểm chính xác.' },
+      },
+    ];
+    const card = deck[s.index % deck.length];
+    const tv = t.tier[card.tier];
+    const mastered = card.tier === 'mastered';
+    const later = (ms, fn) => window.setTimeout(fn, ms);
+    const flip = () => {
+      if (s.flipping) return;
+      const next = !s.flipped;
+      this.setState({ flipped: next, flipping: true, revealed: false, flash: next });
+      later(640, () => this.setState({ flipping: false, revealed: next, flash: false }));
+    };
+    const gradeDefs = [
+      { label: 'AGAIN', key: '1', next: '1m', bg: t.again, color: '#ffffff', w: 132, reset: true, xp: 2 },
+      { label: 'HARD', key: '2', next: '6m', bg: t.hard, color: '#ffffff', w: 132, xp: 6 },
+      { label: 'GOOD', key: '3', next: '1d', bg: dark ? 'linear-gradient(180deg, #9ff9ff, #5ef2ff 50%, #1aa7c9)' : 'linear-gradient(180deg, #2bc4e0, #0a8fb0)', color: dark ? '#031820' : '#ffffff', w: 164, xp: 10, big: true },
+      { label: 'EASY', key: '4', next: '3d', bg: t.easy, color: '#ffffff', w: 132, xp: 12 },
+    ];
+    const advance = (g) => {
+      this.setState({ index: s.index + 1, flipped: false, flipping: false, dealing: true, revealed: false, starred: false, blind: false, hover: false, rx: 0, ryTilt: 0, combo: g.reset ? 0 : s.combo + 1, xpPop: true, xpGain: g.xp });
+      later(600, () => this.setState({ dealing: false }));
+      later(1400, () => this.setState({ xpPop: false }));
+    };
+    const pos = 5 + (s.index % 8);
+    return {
+      t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      bg: { wings: true },
+      front: card.front, back: card.back,
+      rim: tv.rim, tierSoft: tv.soft, tierDrop: '0 0 22px ' + tv.soft, tierLabel: tv.label, tierGrade: tv.grade,
+      rimCls: mastered ? 'nk-rim-spin' : '', mastered,
+      tiers: ['new', 'learning', 'mastered'].map(k => ({ label: t.tier[k].label, grade: t.tier[k].grade, rim: t.tier[k].rim })),
+      comboName: nkCombo(s.combo), bannerCls: s.xpPop ? 'nk-banner' : '',
+      lumiSrc: t.lumi[s.flipped ? 'hint' : s.xpPop ? (s.combo === 0 ? 'oops' : s.combo >= 3 ? 'proud' : 'happy') : s.blind ? 'proud' : 'idle'],
+      voltLine: s.flipped ? 'Did you get it? Be honest!' : s.blind ? 'Meaning hidden — peek-free!' : 'Say it out loud first!',
+      voltSub: s.flipped ? 'Good keeps your combo alive.' : s.blind ? 'No picture hint. Break it with memory alone.' : 'Then reveal. Hover the card to unfold its crystal wings.',
+      dealClass: s.dealing ? 'nk-unfold' : '',
+      flash: s.flash,
+      flipped: s.flipped, notFlipped: !s.flipped,
+      revealCls: s.revealed ? 'nk-pop' : '', revealCls2: s.revealed ? 'nk-pop-2' : '', revealCls3: s.revealed ? 'nk-rise-3' : '',
+      mx: s.mx, my: s.my,
+      band1: s.mx - 26, band2: s.mx - 14, band3: s.mx - 6, band4: s.mx + 2,
+      rx: s.rx, ry: (s.flipped ? 180 : 0) + s.ryTilt,
+      rotorTransition: s.dealing ? 'none' : s.flipping ? 'transform 640ms cubic-bezier(.2,.8,.2,1)' : 'transform 280ms cubic-bezier(.22,1,.36,1)',
+      wingScale: s.hover ? 1.15 : 0.55, wingRot: s.hover ? 0 : -16, wingOpacity: s.hover ? 1 : (mastered ? 0.35 : 0),
+      auraOpacity: s.hover ? 0.95 : 0.4,
+      spotOpacity: s.hover ? 1 : 0,
+      holoOpacity: s.hover ? 0.55 : 0.22,
+      imgShiftX: s.hover ? (50 - s.mx) * 0.12 : 0, imgShiftY: s.hover ? (50 - s.my) * 0.12 : 0,
+      blind: s.blind, starred: s.starred, playing: s.playing, notPlaying: !s.playing,
+      imgFilter: s.blind ? 'blur(20px) saturate(0.5)' : 'none',
+      imgScale: s.blind ? 1.14 : 1.06,
+      blindBg: s.blind ? 'linear-gradient(180deg, #7ff6ff, #1aa7c9)' : 'rgb(7 6 15 / 0.55)',
+      starBg: s.starred ? 'linear-gradient(180deg, #ff5470, #b30f33)' : 'rgb(7 6 15 / 0.55)', starFill: s.starred ? '#ffd166' : 'none',
+      starBgBack: s.starred ? 'linear-gradient(180deg, #ff5470, #b30f33)' : t.chip, starColorBack: s.starred ? '#ffffff' : t.text,
+      starAnim: s.starPulse ? 'nk-pop' : '',
+      combo: s.combo, xpPop: s.xpPop, xpGain: s.xpGain,
+      questPct: Math.round(pos / 12 * 100),
+      position: pos,
+      segments: Array.from({ length: 12 }, (_, i) => ({
+        bg: i < pos - 1 ? 'linear-gradient(90deg, #5ef2ff, #9fe9ff)' : i === pos - 1 ? '#ff2a4d' : t.track,
+        glow: i === pos - 1 ? '0 0 14px rgb(255 42 77 / 0.9)' : i < pos ? '0 0 8px rgb(94 242 255 / 0.5)' : 'none',
+      })),
+      grades: gradeDefs.map(g => ({ ...g, shadow: g.big ? '0 0 30px -4px rgb(94 242 255 / 0.85)' : 'inset 0 1px 0 rgb(255 255 255 / 0.3)', pick: () => advance(g) })),
+      flip,
+      enter: () => this.setState({ hover: true }),
+      move: (e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width;
+        const py = (e.clientY - r.top) / r.height;
+        this.setState({ hover: true, mx: px * 100, my: py * 100, rx: -(py - 0.5) * 10, ryTilt: (px - 0.5) * 10 });
+      },
+      leave: () => this.setState({ hover: false, rx: 0, ryTilt: 0, mx: 50, my: 50 }),
+      star: () => { this.setState({ starred: !s.starred, starPulse: true }); later(520, () => this.setState({ starPulse: false })); },
+      toggleBlind: () => this.setState({ blind: !s.blind }),
+      listen: () => { this.setState({ playing: true }); later(1600, () => this.setState({ playing: false })); },
+    };
+  }
+}
+</script>
+</body>
+</html>

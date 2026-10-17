@@ -3,7 +3,7 @@ import type { Exercise } from './exerciseEngine';
 import type { LessonStep } from './lessonReducer';
 import { createDailySessionController } from './dailySessionController';
 
-const published = { status: 'published' as const, result: {} as never };
+const published = (xpAwarded = 0) => ({ status: 'published' as const, result: { xpAwarded } as never });
 
 const exercise = (cardId: string): Exercise => ({
   cardId,
@@ -23,7 +23,7 @@ const deferred = <T,>() => {
 
 describe('daily session controller', () => {
   it('reintroduces a forgotten reviewed word without saving or growing repeated guidance', async () => {
-    const reviewCard = vi.fn(async () => published);
+    const reviewCard = vi.fn(async () => published());
     const card = { id: 'old', word: 'work', translation: 'job', explanation: '', phonetic: '', emoji: '', category: '', audioUrl: null, imageUrl: null, reviews: 3 };
     const controller = createDailySessionController({ reviewCard });
     controller.start([{ stage: 'review', card, exercise: exercise('old') }]);
@@ -39,12 +39,12 @@ describe('daily session controller', () => {
     expect(card.reviews).toBe(3);
     controller.chooseIntroduction('independent-recall');
     controller.submit('work');
-    await expect(controller.rate('good')).resolves.toEqual({ status: 'completed' });
+    await expect(controller.rate('good')).resolves.toEqual({ status: 'completed', xpAwarded: 0 });
     expect(reviewCard).toHaveBeenCalledOnce();
   });
 
   it('keeps introduction and guided practice persistence-free until independent recall is rated', async () => {
-    const reviewCard = vi.fn(async () => published);
+    const reviewCard = vi.fn(async () => published());
     const source = exercise('new-card');
     const steps: readonly LessonStep[] = [
       { stage: 'introduction', exercise: source },
@@ -63,12 +63,12 @@ describe('daily session controller', () => {
     expect(reviewCard).not.toHaveBeenCalled();
 
     controller.submit('word-new-card');
-    await expect(controller.rate('good')).resolves.toEqual({ status: 'completed' });
+    await expect(controller.rate('good')).resolves.toEqual({ status: 'completed', xpAwarded: 0 });
     expect(reviewCard).toHaveBeenCalledTimes(1);
   });
 
   it('lets test-now skip guidance without creating a review operation', async () => {
-    const reviewCard = vi.fn(async () => published);
+    const reviewCard = vi.fn(async () => published());
     const steps: readonly LessonStep[] = [
       { stage: 'introduction', exercise: exercise('known-new') },
       { stage: 'guided', exercise: exercise('known-new') },
@@ -86,7 +86,7 @@ describe('daily session controller', () => {
     const operationIds: string[] = [];
     const reviewCard = vi.fn(async (_cardId: string, _rating: string, operationId: string) => {
       operationIds.push(operationId);
-      return published;
+      return published();
     });
     for (let index = 0; index < 2; index += 1) {
       const controller = createDailySessionController({ reviewCard });
@@ -97,7 +97,7 @@ describe('daily session controller', () => {
     expect(new Set(operationIds).size).toBe(2);
   });
   it('uses the lesson reducer and does not persist before feedback and a learner rating', async () => {
-    const reviewCard = vi.fn(async () => published);
+    const reviewCard = vi.fn(async () => published());
     const controller = createDailySessionController({ reviewCard, createOperationId: () => 'op-a' });
     controller.start([exercise('card-a'), exercise('card-b')]);
 
@@ -106,13 +106,46 @@ describe('daily session controller', () => {
     expect(controller.getSnapshot()).toMatchObject({ phase: 'feedback', index: 0 });
     expect(reviewCard).not.toHaveBeenCalled();
 
-    await expect(controller.rate('good')).resolves.toEqual({ status: 'advanced' });
+    await expect(controller.rate('good')).resolves.toEqual({ status: 'advanced', xpAwarded: 0 });
     expect(reviewCard).toHaveBeenCalledWith('card-a', 'good', 'op-a');
     expect(controller.getSnapshot()).toMatchObject({ phase: 'answering', index: 1 });
   });
 
+  it('appends a promoted exercise without resetting the current card or feedback', async () => {
+    const controller = createDailySessionController({ reviewCard: vi.fn(async () => published()), createOperationId: () => 'append-op' });
+    controller.start([exercise('card-a'), exercise('card-b')]);
+    controller.submit('word-card-a');
+
+    controller.append([exercise('card-b'), exercise('card-c')]);
+
+    expect(controller.getSnapshot()).toMatchObject({ phase: 'feedback', index: 0 });
+    expect(controller.getSnapshot()?.exercises.map(item => item.cardId)).toEqual(['card-a', 'card-c', 'card-b']);
+    await expect(controller.rate('good')).resolves.toEqual({ status: 'advanced', xpAwarded: 0 });
+    expect(controller.getSnapshot()).toMatchObject({ phase: 'answering', index: 1 });
+  });
+
+  it('reopens a completed lesson at the promoted card without changing completed work', async () => {
+    const controller = createDailySessionController({ reviewCard: vi.fn(async () => published()), createOperationId: () => 'completed-append-op' });
+    controller.start([exercise('card-a')]);
+    controller.submit('word-card-a');
+    await controller.rate('good');
+
+    controller.append([exercise('card-b')]);
+
+    expect(controller.getSnapshot()).toMatchObject({ phase: 'answering', index: 1, feedback: null, pendingReview: null });
+    expect(controller.getSnapshot()?.exercises.map(item => item.cardId)).toEqual(['card-a', 'card-b']);
+  });
+
+  it('returns the server award of 2 XP after an advanced review', async () => {
+    const controller = createDailySessionController({ reviewCard: vi.fn(async () => published(2)) });
+    controller.start([exercise('card-a'), exercise('card-b')]);
+    controller.submit('word-card-a');
+
+    await expect(controller.rate('good')).resolves.toEqual({ status: 'advanced', xpAwarded: 2 });
+  });
+
   it('coalesces duplicate ratings by operation ID and advances only after persistence succeeds', async () => {
-    const pending = deferred<typeof published>();
+    const pending = deferred<ReturnType<typeof published>>();
     const reviewCard = vi.fn(() => pending.promise);
     const controller = createDailySessionController({ reviewCard, createOperationId: () => 'stable-op' });
     controller.start([exercise('card-a'), exercise('card-b')]);
@@ -126,17 +159,17 @@ describe('daily session controller', () => {
       phase: 'persisting', index: 0,
       pendingReview: { itemId: 'card-a', operationId: 'stable-op', rating: 'easy' },
     });
-    pending.resolve(published);
+    pending.resolve(published());
 
-    await expect(first).resolves.toEqual({ status: 'advanced' });
-    await expect(duplicate).resolves.toEqual({ status: 'advanced' });
+    await expect(first).resolves.toEqual({ status: 'advanced', xpAwarded: 0 });
+    await expect(duplicate).resolves.toEqual({ status: 'advanced', xpAwarded: 0 });
     expect(controller.getSnapshot()).toMatchObject({ phase: 'answering', index: 1 });
   });
 
   it('retains the same operation ID on a retry and advances only after the retry succeeds', async () => {
     const reviewCard = vi.fn()
       .mockRejectedValueOnce(new Error('offline write failed'))
-      .mockResolvedValueOnce(published);
+      .mockResolvedValueOnce(published());
     const createOperationId = vi.fn(() => 'retry-safe-op');
     const controller = createDailySessionController({ reviewCard, createOperationId });
     controller.start([exercise('card-a')]);
@@ -150,7 +183,7 @@ describe('daily session controller', () => {
       pendingReview: { itemId: 'card-a', operationId: 'retry-safe-op', rating: 'hard' },
     });
 
-    await expect(controller.retry()).resolves.toEqual({ status: 'completed' });
+    await expect(controller.retry()).resolves.toEqual({ status: 'completed', xpAwarded: 0 });
     expect(createOperationId).toHaveBeenCalledTimes(1);
     expect(reviewCard).toHaveBeenCalledTimes(2);
     expect(reviewCard).toHaveBeenNthCalledWith(1, 'card-a', 'hard', 'retry-safe-op');
@@ -159,7 +192,7 @@ describe('daily session controller', () => {
   });
 
   it('never acknowledges an old persistence request into a replacement session', async () => {
-    const pending = deferred<typeof published>();
+    const pending = deferred<ReturnType<typeof published>>();
     const controller = createDailySessionController({
       reviewCard: vi.fn(() => pending.promise),
       createOperationId: () => 'old-op',
@@ -169,7 +202,7 @@ describe('daily session controller', () => {
     const oldRating = controller.rate('good');
 
     controller.start([exercise('new')]);
-    pending.resolve(published);
+    pending.resolve(published());
 
     await expect(oldRating).resolves.toEqual({ status: 'stale-session' });
     expect(controller.getSnapshot()).toMatchObject({ phase: 'answering', index: 0 });
@@ -177,7 +210,7 @@ describe('daily session controller', () => {
   });
 
   it('closes a session without letting a late request restore it', async () => {
-    const pending = deferred<typeof published>();
+    const pending = deferred<ReturnType<typeof published>>();
     const controller = createDailySessionController({
       reviewCard: vi.fn(() => pending.promise), createOperationId: () => 'op-close',
     });
@@ -185,44 +218,16 @@ describe('daily session controller', () => {
     controller.submit('word-card-a');
     const rating = controller.rate('good');
     controller.close();
-    pending.resolve(published);
+    pending.resolve(published());
 
     await expect(rating).resolves.toEqual({ status: 'stale-session' });
     expect(controller.getSnapshot()).toBeNull();
   });
 
-  it('advances a queued non-final review provisionally without treating it as committed', async () => {
-    const controller = createDailySessionController({
-      reviewCard: vi.fn(async () => ({ status: 'durably-queued' as const, result: {} as never })),
-      createOperationId: () => 'queued-op',
-    });
-    controller.start([exercise('card-a'), exercise('card-b')]);
-    controller.submit('word-card-a');
-
-    await expect(controller.rate('good')).resolves.toEqual({ status: 'provisionally-advanced' });
-    expect(controller.getSnapshot()).toMatchObject({
-      phase: 'answering', index: 1, pendingReview: null, completedOperationIds: [], syncPendingReviewCount: 1,
-    });
-  });
-
-  it('keeps a queued final review visibly sync-pending instead of completing the lesson', async () => {
-    const controller = createDailySessionController({
-      reviewCard: vi.fn(async () => ({ status: 'durably-queued' as const, result: {} as never })),
-      createOperationId: () => 'queued-final-op',
-    });
-    controller.start([exercise('card-a')]);
-    controller.submit('word-card-a');
-
-    await expect(controller.rate('good')).resolves.toEqual({ status: 'sync-pending' });
-    expect(controller.getSnapshot()).toMatchObject({
-      phase: 'sync-pending', index: 0, pendingReview: null, completedOperationIds: [], syncPendingReviewCount: 1,
-    });
-  });
-
   it.each([
     ['conflicted', { status: 'review-conflict' as const, result: {} as never }],
     ['missing owner', { status: 'no-active-owner' as const }],
-    ['void at runtime', undefined as unknown as typeof published],
+    ['void at runtime', undefined as unknown as ReturnType<typeof published>],
   ])('does not advance when review persistence is %s', async (_scenario, outcome) => {
     const controller = createDailySessionController({
       reviewCard: vi.fn(async () => outcome as never),
@@ -233,5 +238,18 @@ describe('daily session controller', () => {
 
     await expect(controller.rate('good')).resolves.toMatchObject({ status: 'failed' });
     expect(controller.getSnapshot()).toMatchObject({ phase: 'save-error', index: 0 });
+  });
+
+  it('does not return XP when the saved review lacks an authoritative award', async () => {
+    const controller = createDailySessionController({
+      reviewCard: vi.fn(async () => ({ status: 'published' as const, result: {} as never })),
+      createOperationId: () => 'missing-xp',
+    });
+    controller.start([exercise('card-a')]);
+    controller.submit('word-card-a');
+
+    const result = await controller.rate('good');
+    expect(result).toMatchObject({ status: 'failed' });
+    expect(result).not.toHaveProperty('xpAwarded');
   });
 });

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   CATALOG_LANGUAGE_REGISTRY,
@@ -8,20 +9,29 @@ import {
 } from './catalogWorkspaceRegistry';
 
 describe('catalog workspace registry', () => {
-  it('keeps every language unavailable until a validated release is registered', () => {
+  it('registers only the approved English tiers while other languages remain unavailable', () => {
     const english = getCatalogLanguage('en');
 
     expect(english).toMatchObject({
       code: 'en',
-      catalogId: null,
-      releaseId: null,
-      availability: 'unavailable',
+      catalogId: 'english-core',
+      releaseId: 'r-261124da6107eb25204587aa',
+      availability: 'available',
     });
     expect(english.tracks.map(track => track.id)).toEqual(['ielts', 'toeic', 'general']);
-    expect(english.tracks[0]?.tiers.map(tier => tier.id)).toEqual([
-      'foundation',
-      'core',
-      'advanced',
+    expect(english.tracks.map(track => track.tiers.map(tier => tier.id)))
+      .toEqual([['advanced'], ['core'], ['foundation']]);
+    const path = catalogReleaseManifestPath(resolveCatalogWorkspaceSelection('en', 'ielts', null));
+    if (path === null) throw new Error('Approved English catalog requires a manifest path.');
+    const release = JSON.parse(readFileSync(new URL(`../../../public${path}`, import.meta.url), 'utf8')) as {
+      catalogId: string; releaseId: string; unitDescriptors: readonly { trackId: string; tier: string }[];
+    };
+    expect(release).toMatchObject({ catalogId: english.catalogId, releaseId: english.releaseId });
+    expect(release.unitDescriptors).toHaveLength(45);
+    expect(release.unitDescriptors.map(unit => `${unit.trackId}:${unit.tier}`)).toEqual([
+      ...Array(15).fill('general:foundation'),
+      ...Array(15).fill('ielts:advanced'),
+      ...Array(15).fill('toeic:core'),
     ]);
     expect(CATALOG_LANGUAGE_REGISTRY.filter(language => language.availability === 'unavailable'))
       .toEqual(expect.arrayContaining([
@@ -48,22 +58,21 @@ describe('catalog workspace registry', () => {
     });
   });
 
-  it('does not derive a catalog slot without validated release metadata', () => {
+  it('falls back to the actual tier available for each English track', () => {
     const selection = resolveCatalogWorkspaceSelection('en', 'general', 'core');
 
-    expect(selection.catalogId).toBeNull();
-    expect(selection).toMatchObject({ trackId: null, tierId: null, availability: 'unavailable' });
+    expect(selection).toMatchObject({
+      catalogId: 'english-core', trackId: 'general', tierId: 'foundation', availability: 'available',
+    });
+    expect(resolveCatalogWorkspaceSelection('en', 'ielts', 'foundation').tierId).toBe('advanced');
+    expect(resolveCatalogWorkspaceSelection('en', 'toeic', 'advanced').tierId).toBe('core');
   });
 
   it('does not expose track or tier fallbacks for an unavailable release', () => {
-    expect(resolveCatalogWorkspaceSelection('en', 'unknown', 'advanced')).toMatchObject({
-      trackId: null,
-      tierId: null,
-    });
-    expect(resolveCatalogWorkspaceSelection('en', 'toeic', 'unknown')).toMatchObject({
-      trackId: null,
-      tierId: null,
-    });
+    expect(resolveCatalogWorkspaceSelection('ja', 'unknown', 'advanced'))
+      .toMatchObject({ trackId: null, tierId: null });
+    expect(resolveCatalogWorkspaceSelection('ko', 'toeic', 'unknown'))
+      .toMatchObject({ trackId: null, tierId: null });
   });
 
   it('threads an approved immutable release id into runtime selection and its manifest path', () => {

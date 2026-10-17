@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "encoded-hangout-433912-h2"
+    "default": "encoded-hangout-433912-h2",
+    "staging": "sonflash-staging-20260906"
   }
 }

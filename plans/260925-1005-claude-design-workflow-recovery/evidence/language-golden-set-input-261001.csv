@@ -1,0 +1,81 @@
+case_id,source_language,target_language,term,part_of_speech,context_stratum,context,coverage_tags
+en-01,en,vi,conduct,verb,context-present,"The guide will conduct the visitors through the museum.",polysemy;verb
+en-02,en,vi,lead,noun,context-present,"The pipe is made from lead and must be handled safely.",polysemy;homograph;noun
+en-03,en,vi,bass,noun,context-present,"She plays bass in a jazz band every Friday.",heteronym;music
+en-04,en,vi,bow,noun,context-absent,,heteronym;weapon-or-ribbon-or-gesture ambiguity
+en-05,en,vi,record,verb,context-present,"Please record the meeting so absent students can listen later.",polysemy;verb
+en-06,en,vi,sow,verb,context-absent,,heteronym;plant-or-female-pig ambiguity
+en-07,en,vi,minute,noun,context-present,"Wait one minute before adding the sauce.",heteronym;time
+en-08,en,vi,desert,noun,context-absent,,heteronym;arid-place-or-abandon ambiguity
+en-09,en,vi,wind,noun,context-present,"The wind was strong enough to close the window.",heteronym;weather
+en-10,en,vi,dove,noun,context-absent,,heteronym;bird-or-past-tense ambiguity
+en-11,en,vi,close,verb,context-present,"Close the door quietly when you leave.",heteronym;verb
+en-12,en,vi,does,verb,context-absent,,heteronym;verb-or-deer ambiguity
+en-13,en,vi,tear,noun,context-present,"A tear rolled down his cheek after the farewell.",heteronym;emotion
+en-14,en,vi,live,verb,context-absent,,heteronym;verb-or-adjective ambiguity
+en-15,en,vi,object,noun,context-present,"The object on the table belongs to the science lab.",heteronym;noun
+en-16,en,vi,present,noun,context-absent,,heteronym;gift-or-current ambiguity
+en-17,en,vi,refuse,verb,context-present,"They refuse to sign the contract without legal advice.",heteronym;verb
+en-18,en,vi,row,noun,context-absent,,heteronym;line-or-argument ambiguity
+en-19,en,vi,read,verb,context-absent,,irregular-past;tense-and-pronunciation ambiguity
+en-20,en,vi,polish,verb,context-absent,,heteronym;verb-or-nationality ambiguity
+ko-01,ko,vi,눈,noun,context-present,"눈이 많이 와서 학교가 휴교했다.",homograph;eye-or-snow
+ko-02,ko,vi,손,noun,context-absent,,hangul;body-part-or-help ambiguity
+ko-03,ko,vi,말,noun,context-present,"그 말은 친구에게 상처가 될 수 있다.",homograph;word-or-horse
+ko-04,ko,vi,길,noun,context-absent,,hangul;road-or-way ambiguity
+ko-05,ko,vi,배,noun,context-present,"배를 타고 한강을 건넜다.",homograph;boat-or-pear-or-stomach
+ko-06,ko,vi,차,noun,context-absent,,homograph;tea-or-car ambiguity
+ko-07,ko,vi,사과,noun,context-present,"늦어서 미안하다는 사과를 전했다.",homograph;apple-or-apology
+ko-08,ko,vi,새,noun,context-absent,,homograph;bird-or-new ambiguity
+ko-09,ko,vi,밤,noun,context-present,"밤에 별을 보며 산책했다.",homograph;night-or-chestnut
+ko-10,ko,vi,벌,noun,context-absent,,homograph;bee-or-punishment ambiguity
+ko-11,ko,vi,가다,verb,context-present,"내일 부산에 가서 가족을 만날 거예요.",verb;honorific-free sentence
+ko-12,ko,vi,자다,verb,context-absent,,verb;dictionary form
+ko-13,ko,vi,학교,noun,context-present,"학교 앞에서 버스를 기다렸다.",hangul;compound noun
+ko-14,ko,vi,시장,noun,context-absent,,hangul;market-or-mayor ambiguity
+ko-15,ko,vi,커피,noun,context-present,"아침마다 따뜻한 커피를 한 잔 마신다.",loanword;hangul transliteration
+ko-16,ko,vi,버스,noun,context-absent,,loanword;hangul transliteration
+ko-17,ko,vi,읽다,verb,context-present,"주말에 새 소설을 읽고 서평을 썼다.",batchim;reading;verb
+ko-18,ko,vi,앉다,verb,context-absent,,batchim;reading;dictionary form
+ko-19,ko,vi,좋다,adjective,context-present,"이 영화는 음악과 연기가 모두 좋다.",adjective;final-consonant reading
+ko-20,ko,vi,빠르다,adjective,context-absent,,adjective;dictionary form
+ja-01,ja,vi,生,noun,context-present,"このビールは生です。",multiple-reading;kanji;draft-beer
+ja-02,ja,vi,明日,noun,context-absent,,irregular-reading;kanji compound
+ja-03,ja,vi,行く,verb,context-present,"明日、電車で京都へ行く。",kanji-kana;verb;reading
+ja-04,ja,vi,上手,adjective,context-absent,,multiple-reading;kanji compound
+ja-05,ja,vi,今日,noun,context-present,"今日は雨なので家にいます。",irregular-reading;kanji compound
+ja-06,ja,vi,下手,adjective,context-absent,,multiple-reading;kanji compound
+ja-07,ja,vi,大人,noun,context-present,"大人になってから料理を始めた。",irregular-reading;kanji compound
+ja-08,ja,vi,日本,noun,context-absent,,kanji compound;proper noun
+ja-09,ja,vi,橋,noun,context-present,"川に新しい橋がかかった。",homophone;kanji reading
+ja-10,ja,vi,角,noun,context-absent,,multiple-reading;kanji ambiguity
+ja-11,ja,vi,箸,noun,context-present,"箸で豆腐を食べる。",homophone;kanji reading
+ja-12,ja,vi,紙,noun,context-absent,,homophone;kanji reading
+ja-13,ja,vi,端,noun,context-present,"机の端にかばんを置いた。",homophone;kanji reading
+ja-14,ja,vi,気,noun,context-absent,,kanji;abstract noun
+ja-15,ja,vi,一日,noun,context-present,"一日中、図書館で勉強した。",multiple-reading;duration
+ja-16,ja,vi,会う,verb,context-absent,,kanji-kana;homophone relevance
+ja-17,ja,vi,雨,noun,context-present,"雨が降る前に洗濯物を入れた。",kanji;basic noun
+ja-18,ja,vi,話,noun,context-absent,,kanji;reading;conversation
+ja-19,ja,vi,食べる,verb,context-present,"朝ごはんを食べる時間がない。",kanji-kana;verb;reading
+ja-20,ja,vi,開く,verb,context-absent,,multiple-reading;kanji-kana ambiguity
+zh-01,zh,vi,行,,context-present,"这样做行吗？",polyphonic;stative-or-verb;acceptable
+zh-02,zh,vi,便,noun,context-absent,,polyphonic;convenience-or-stool ambiguity
+zh-03,zh,vi,长,adjective,context-present,"这条路很长。",polyphonic;adjective;long
+zh-04,zh,vi,得,,context-absent,,polyphonic;grammar particle-or-obtain ambiguity
+zh-05,zh,vi,还,adverb,context-present,"我还没看完这本书。",polyphonic;adverb;still
+zh-06,zh,vi,为,preposition,context-absent,,polyphonic;for-or-do ambiguity
+zh-07,zh,vi,重,adjective,context-present,"这个箱子太重了。",polyphonic;adjective;heavy
+zh-08,zh,vi,都,adverb,context-absent,,polyphonic;all-or-capital ambiguity
+zh-09,zh,vi,乐,noun,context-present,"他喜欢听古典音乐。",polyphonic;music
+zh-10,zh,vi,着,,context-absent,,polyphonic;aspect-particle-or-contact ambiguity
+zh-11,zh,vi,空,adjective,context-present,"房间里没有人，是空的。",polyphonic;empty
+zh-12,zh,vi,了,,context-absent,,grammar-particle;pronunciation relevance
+zh-13,zh,vi,看,verb,context-present,"医生正在看病人。",polyphonic;verb;look-or-treat
+zh-14,zh,vi,兴,,context-absent,,polyphonic;interest-or-prosperity ambiguity
+zh-15,zh,vi,睡觉,verb,context-present,"我每天晚上十一点睡觉。",polyphonic;verb;sleep
+zh-16,zh,vi,只,adverb,context-absent,,polyphonic;only-or-classifier ambiguity
+zh-17,zh,vi,银行,noun,context-present,"银行九点开门。",simplified-hanzi;compound noun
+zh-18,zh,vi,朝,noun,context-absent,,polyphonic;morning-or-dynasty ambiguity
+zh-19,zh,vi,你好,interjection,context-present,"见到老师时，我说：你好。",tone-sandhi relevance;greeting
+zh-20,zh,vi,处,noun,context-absent,,polyphonic;place-or-handle ambiguity

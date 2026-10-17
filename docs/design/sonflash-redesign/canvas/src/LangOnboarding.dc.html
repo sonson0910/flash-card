@@ -1,0 +1,314 @@
+<!--#HEAD Language onboarding-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#AMBIENT-->
+  <header style="position: relative; z-index: 3; height: 76px; flex-shrink: 0; padding: 0 56px; display: flex; align-items: center; gap: 24px;">
+    <span style="display: flex; align-items: center; gap: 10px;">
+      <span aria-hidden="true" style="width: 30px; height: 30px; border-radius: 9px; background: {{t.logoBg}}; box-shadow: {{t.logoShadow}}; display: flex; align-items: center; justify-content: center; color: {{t.logoText}}; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 18px; font-weight: 500;">S</span>
+      <span style="font-family: Fraunces, Georgia, serif; font-size: 22px; font-weight: 450; letter-spacing: -0.01em;">Son<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">Flash</span></span>
+    </span>
+    <div role="progressbar" aria-label="{{c.progress}}" aria-valuemin="1" aria-valuemax="6" aria-valuenow="{{stepNo}}" style="margin: 0 auto; display: flex; align-items: center; gap: 14px;">
+      <div style="display: flex; gap: 6px;">
+        <sc-for list="{{dots}}" as="d" hint-placeholder-count="6">
+          <span style="width: {{d.w}}px; height: 6px; border-radius: 6px; background: {{d.bg}}; box-shadow: {{d.glow}};"></span>
+        </sc-for>
+      </div>
+      <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text2}};">{{stepNo}} / 6</span>
+    </div>
+    <button aria-label="{{c.uiLangLabel}}" style="height: 38px; padding: 0 14px 0 12px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; font-size: 13.5px; font-weight: 550; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"></path></svg>
+      <span style="color: {{t.textStrong}};">{{uiLang}}</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m6 9 6 6 6-6"></path></svg>
+    </button>
+  </header>
+
+  <main style="position: relative; z-index: 2; flex-grow: 1; min-height: 0; padding: 0 56px 24px; display: flex; flex-direction: column; justify-content: center;">
+
+    <sc-if value="{{isSpeak}}" hint-placeholder-val="{{true}}">
+      <div class="sf-rise" style="width: 1120px; margin: 0 auto;">
+        <div style="display: flex; align-items: flex-end; gap: 40px;">
+          <div style="flex-grow: 1;">
+            <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text2}};">Welcome · Chào mừng · ようこそ · Bienvenido</p>
+            <h1 style="margin: 12px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 1.02; letter-spacing: -0.035em; color: {{t.textStrong}};">Which language <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">do you speak?</span></h1>
+            <p style="margin: 14px 0 0; max-width: 620px; font-size: 16px; line-height: 1.55; color: {{t.body}};">SonFlash uses it for the app and for every meaning and explanation on your cards. You pick what to learn next.</p>
+          </div>
+          <div style="width: 360px; flex-shrink: 0; box-sizing: border-box; padding: 14px 16px; border-radius: 16px; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; display: flex; gap: 12px; align-items: flex-start;">
+            <span style="width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px; background: {{t.primaryBg}}; color: {{t.primaryText}}; display: flex; align-items: center; justify-content: center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H4zM8 20h8M12 16v4"></path></svg></span>
+            <span style="font-size: 13.5px; line-height: 1.45; color: {{t.body}};"><span style="font-weight: 650; color: {{t.textStrong}};">Detected from your browser:</span> Tiếng Việt (vi-VN). We pre-selected it. Change it anytime in Settings.</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 26px; display: flex; align-items: center; gap: 12px;">
+          <label style="flex-grow: 1; height: 50px; box-sizing: border-box; padding: 0 16px; border-radius: {{t.inputRadius}}; border: 1px solid {{t.line}}; background: {{t.inputBg}}; display: flex; align-items: center; gap: 10px; color: {{t.text3}}; font-size: 15px;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+            Search 40+ languages — try “Thai”, “ไทย” or “th”
+          </label>
+          <span style="display: flex; align-items: center; gap: 16px; font-size: 12.5px; color: {{t.text2}};">
+            <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{t.accent}};"></span>App + meanings</span>
+            <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid {{t.text3}}; box-sizing: border-box;"></span>Meanings only · app in English</span>
+          </span>
+        </div>
+
+        <div role="radiogroup" aria-label="Language you speak" style="margin-top: 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+          <sc-for list="{{natives}}" as="n" hint-placeholder-count="16">
+            <button role="radio" aria-checked="{{n.on}}" lang="{{n.code}}" class="sf-lift" style="position: relative; height: 74px; box-sizing: border-box; padding: 0 16px; border-radius: 16px; border: {{n.border}}; background: {{n.bg}}; box-shadow: {{n.shadow}}; color: {{t.text}}; display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;">
+              <span style="min-width: 0; flex-grow: 1;">
+                <span style="display: block; font-family: {{n.font}}; font-size: 21px; font-weight: 500; line-height: 1.15; color: {{t.textStrong}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{n.endo}}</span>
+                <span style="display: block; margin-top: 3px; font-size: 12px; color: {{t.text2}};">{{n.en}}</span>
+              </span>
+              <sc-if value="{{n.selected}}" hint-placeholder-val="{{false}}">
+                <span style="width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%; background: {{t.primaryBg}}; color: {{t.primaryText}}; display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+              </sc-if>
+              <sc-if value="{{n.dotOn}}" hint-placeholder-val="{{true}}">
+                <span aria-label="{{n.tier}}" style="position: absolute; top: 12px; right: 12px; width: 8px; height: 8px; border-radius: 50%; background: {{n.dotBg}}; border: {{n.dotBorder}}; box-sizing: border-box;"></span>
+              </sc-if>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isLearn}}" hint-placeholder-val="{{false}}">
+      <div class="sf-rise" style="width: 1180px; margin: 0 auto;">
+        <div style="display: flex; align-items: flex-end; gap: 40px;">
+          <div style="flex-grow: 1;">
+            <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text2}};">Khoá học đầu tiên</p>
+            <h1 style="margin: 12px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 56px; line-height: 1.04; letter-spacing: -0.035em; color: {{t.textStrong}};">Bạn muốn <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">học tiếng gì?</span></h1>
+          </div>
+          <p style="margin: 0; width: 380px; font-size: 14.5px; line-height: 1.55; color: {{t.body}};">Mỗi ngôn ngữ là một khoá học riêng với thẻ, streak và lịch ôn của nó. <span style="color: {{t.textStrong}}; font-weight: 600;">Bạn thêm được ngôn ngữ khác bất cứ lúc nào</span> và chuyển qua lại ngay trên thanh đầu trang.</p>
+        </div>
+        <div role="radiogroup" aria-label="Ngôn ngữ muốn học" style="margin-top: 30px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+          <sc-for list="{{targets}}" as="g" hint-placeholder-count="8">
+            <button role="radio" aria-checked="{{g.on}}" class="sf-lift" style="position: relative; height: 234px; box-sizing: border-box; padding: 20px 20px 18px; border-radius: {{t.radius}}px; border: {{g.border}}; background: {{g.bg}}; box-shadow: {{g.shadow}}; color: {{t.text}}; display: flex; flex-direction: column; align-items: flex-start; text-align: left; cursor: pointer; opacity: {{g.op}};">
+              <span lang="{{g.code}}" style="font-family: {{g.font}}; font-size: 38px; font-weight: {{g.weight}}; line-height: 1.1; letter-spacing: -0.01em; color: {{g.sampleColor}}; white-space: nowrap;">{{g.sample}}</span>
+              <span style="margin-top: 4px; font-family: Geist, system-ui, sans-serif; font-size: 12px; color: {{t.text3}};">{{g.reading}}</span>
+              <span style="margin-top: auto; display: flex; align-items: baseline; gap: 8px;"><span lang="{{g.code}}" style="font-family: {{g.fontUi}}; font-size: 20px; font-weight: 600; color: {{t.textStrong}};">{{g.endo}}</span><span style="font-size: 13px; color: {{t.text2}};">{{g.vi}}</span></span>
+              <span style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px;">
+                <sc-for list="{{g.tags}}" as="x" hint-placeholder-count="2"><span style="height: 24px; padding: 0 9px; border-radius: 999px; background: {{t.chipBg}}; border: 1px solid {{t.line}}; font-size: 11.5px; font-weight: 600; color: {{t.text2}}; display: flex; align-items: center;">{{x}}</span></sc-for>
+              </span>
+              <span style="margin-top: 10px; font-size: 12px; color: {{t.text3}};">{{g.proof}}</span>
+              <sc-if value="{{g.selected}}" hint-placeholder-val="{{false}}">
+                <span style="position: absolute; top: 16px; right: 16px; width: 26px; height: 26px; border-radius: 50%; background: {{t.primaryBg}}; color: {{t.primaryText}}; display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+              </sc-if>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isLevel}}" hint-placeholder-val="{{false}}">
+      <div class="sf-rise" style="width: 1140px; margin: 0 auto; display: grid; grid-template-columns: 1fr 420px; gap: 56px; align-items: center;">
+        <div>
+          <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text2}};"><span lang="ko" style="font-family: {{koFont}}; text-transform: none; letter-spacing: 0;">한국어</span> · Trình độ và mục tiêu</p>
+          <h1 style="margin: 12px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 1.04; letter-spacing: -0.035em; color: {{t.textStrong}};">Bạn đang ở đâu, <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">muốn đi tới đâu?</span></h1>
+          <div role="radiogroup" aria-label="Trình độ tiếng Hàn" style="margin-top: 24px; display: flex; flex-direction: column; gap: 8px;">
+            <sc-for list="{{levels}}" as="l" hint-placeholder-count="4">
+              <button role="radio" aria-checked="{{l.on}}" style="height: 60px; box-sizing: border-box; padding: 0 16px; border-radius: 14px; border: {{l.border}}; background: {{l.bg}}; box-shadow: {{l.shadow}}; color: {{t.text}}; display: flex; align-items: center; gap: 14px; text-align: left; cursor: pointer;">
+                <span style="width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px; background: {{l.numBg}}; color: {{l.numFg}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500; display: flex; align-items: center; justify-content: center;">{{l.n}}</span>
+                <span style="flex-grow: 1;"><span style="display: block; font-size: 15px; font-weight: 650; color: {{t.textStrong}};">{{l.name}}</span><span style="display: block; margin-top: 1px; font-size: 12.5px; color: {{t.text2}};">{{l.desc}}</span></span>
+                <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text3}};">{{l.cefr}}</span>
+              </button>
+            </sc-for>
+          </div>
+          <div style="margin-top: 22px; display: flex; align-items: flex-end; gap: 28px;">
+            <div>
+              <div style="font-size: 13px; font-weight: 600; color: {{t.text2}};">Kỳ thi mục tiêu</div>
+              <div role="radiogroup" aria-label="Kỳ thi" style="margin-top: 8px; display: flex; gap: 6px;">
+                <sc-for list="{{exams}}" as="e" hint-placeholder-count="4">
+                  <button role="radio" aria-checked="{{e.on}}" style="height: 42px; padding: 0 16px; border-radius: 999px; border: {{e.border}}; background: {{e.bg}}; color: {{e.fg}}; font-size: 14px; font-weight: 600; cursor: pointer;">{{e.name}}</button>
+                </sc-for>
+              </div>
+            </div>
+            <label style="display: flex; flex-direction: column; gap: 8px;"><span style="font-size: 13px; font-weight: 600; color: {{t.text2}};">Ngày thi</span>
+              <span style="height: 42px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; border: 1px solid {{t.accentLine}}; background: {{t.inputBg}}; display: flex; align-items: center; gap: 9px; font-size: 14.5px; color: {{t.textStrong}}; white-space: nowrap;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg>CN, 17/01/2027</span>
+            </label>
+          </div>
+          <p style="margin: 18px 0 0; font-size: 12.5px; line-height: 1.55; color: {{t.text3}};">Mỗi ngôn ngữ có kỳ thi riêng: <span style="color: {{t.text2}};">JLPT N5–N1 · HSK 1–6 · DELF/DALF A1–C2 · Goethe A1–C2 · DELE A1–C2 · IELTS / TOEIC</span></p>
+        </div>
+        <div style="position: relative; height: 520px; box-sizing: border-box; border-radius: {{t.cardRadius}}px; border: {{hero.border}}; background: {{hero.bg}}; box-shadow: {{hero.shadow}}; padding: 32px; display: flex; flex-direction: column; overflow: hidden;">
+          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text2}};">Lộ trình của bạn</span>
+          <div lang="ko" style="margin-top: 18px; font-family: {{koFont}}; font-size: 30px; font-weight: 700; color: {{t.textStrong}};">한국어능력시험 <span style="color: {{t.accentText}};">I</span></div>
+          <div style="margin-top: 4px; font-size: 13px; color: {{t.text2}};">TOPIK I · cấp 1–2 · khoảng 800 → 1.500 từ</div>
+          <div style="margin-top: auto; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 128px; line-height: 0.85; letter-spacing: -0.05em; color: {{t.textStrong}};">116</div>
+          <div style="margin-top: 8px; font-family: Fraunces, Georgia, serif; font-size: 26px; color: {{t.accentText}}; font-style: {{t.emStyle}};">ngày tới TOPIK I</div>
+          <div style="margin-top: 22px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px;">
+            <sc-for list="{{topik}}" as="k" hint-placeholder-count="6">
+              <span style="display: flex; flex-direction: column; gap: 5px;"><span style="height: 26px; border-radius: 6px; background: {{k.bg}}; box-shadow: {{k.glow}};"></span><span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; text-align: center; color: {{k.fg}};">{{k.label}}</span></span>
+            </sc-for>
+          </div>
+          <p style="margin: 12px 0 0; font-size: 13px; line-height: 1.5; color: {{t.text2}};">Bắt đầu bằng 20 phút học Hangul, rồi 12 từ mới mỗi ngày.</p>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isScript}}" hint-placeholder-val="{{false}}">
+      <div class="sf-rise" style="width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 430px 1fr; gap: 56px; align-items: center;">
+        <div>
+          <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text2}};">Bảng chữ cái · <span lang="ko" style="font-family: {{koFont}}; letter-spacing: 0;">한글</span></p>
+          <h1 style="margin: 12px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 1.04; letter-spacing: -0.035em; color: {{t.textStrong}};">Đọc được Hangul <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">trong 20 phút.</span></h1>
+          <p style="margin: 14px 0 0; font-size: 15.5px; line-height: 1.55; color: {{t.body}};">Hangul có 14 phụ âm và 10 nguyên âm cơ bản, ghép lại thành từng khối âm tiết. Học xong 4 bài ngắn, thẻ của bạn sẽ không cần phiên âm nữa.</p>
+          <div style="margin-top: 22px; display: flex; flex-direction: column; gap: 8px;">
+            <sc-for list="{{lessons}}" as="s" hint-placeholder-count="4">
+              <div style="height: 50px; box-sizing: border-box; padding: 0 14px; border-radius: 14px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; display: flex; align-items: center; gap: 12px;">
+                <span style="width: 28px; height: 28px; border-radius: 8px; background: {{t.accentSoft}}; color: {{t.accentText}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12.5px; display: flex; align-items: center; justify-content: center;">{{s.n}}</span>
+                <span style="flex-grow: 1; font-size: 14.5px; font-weight: 600; color: {{t.textStrong}};">{{s.name}}</span>
+                <span lang="ko" style="font-family: {{koFont}}; font-size: 15px; color: {{t.text2}};">{{s.sample}}</span>
+                <span style="width: 48px; text-align: right; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text3}};">{{s.min}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top: 22px; display: flex; gap: 10px;">
+            <button class="sf-press" style="height: 54px; padding: 0 24px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 15.5px; font-weight: 650; cursor: pointer;">Dạy tôi Hangul trước</button>
+            <button style="height: 54px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: transparent; color: {{t.text}}; font-size: 15px; font-weight: 600; cursor: pointer;">Tôi đã đọc được</button>
+          </div>
+        </div>
+
+        <div style="position: relative; box-sizing: border-box; padding: 28px 30px; border-radius: {{t.cardRadius}}px; border: {{hero.border}}; background: {{hero.bg}}; box-shadow: {{hero.shadow}}; overflow: hidden;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between;"><span style="font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text2}};">Ghép một khối âm tiết</span><span style="font-size: 12.5px; color: {{t.text3}};">phụ âm đầu + nguyên âm + phụ âm cuối (patchim)</span></div>
+          <div lang="ko" style="margin-top: 18px; display: flex; align-items: center; gap: 14px; font-family: {{koFont}};">
+            <sc-for list="{{blocks}}" as="b" hint-placeholder-count="5">
+              <span style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                <span style="width: {{b.w}}px; height: {{b.w}}px; box-sizing: border-box; border-radius: 18px; border: {{b.border}}; background: {{b.bg}}; box-shadow: {{b.shadow}}; display: flex; align-items: center; justify-content: center; font-size: {{b.size}}px; font-weight: 700; color: {{b.fg}};">{{b.ch}}</span>
+                <span style="font-family: Geist, system-ui, sans-serif; font-size: 12px; color: {{t.text2}};">{{b.rom}}</span>
+              </span>
+            </sc-for>
+            <span style="margin-left: 8px; display: flex; flex-direction: column; gap: 2px;"><span lang="ko" style="font-size: 30px; font-weight: 700; color: {{t.textStrong}};">한국 <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px; font-weight: 400; color: {{t.text2}};">han·guk</span></span><span style="font-family: Geist, system-ui, sans-serif; font-size: 13px; color: {{t.accentText}};">Hàn Quốc</span></span>
+          </div>
+          <div style="margin-top: 24px; padding-top: 18px; border-top: 1px dashed {{t.lineStrong}};">
+            <div style="display: flex; align-items: baseline; justify-content: space-between;"><span style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text2}};">Phụ âm cơ bản</span><span style="font-size: 12px; color: {{t.text3}};">14 · bấm để nghe</span></div>
+            <div lang="ko" style="margin-top: 10px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;">
+              <sc-for list="{{consonants}}" as="j" hint-placeholder-count="14">
+                <span style="height: 58px; border-radius: 12px; border: 1px solid {{j.line}}; background: {{j.bg}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;"><span style="font-family: {{koFont}}; font-size: 24px; font-weight: 700; line-height: 1; color: {{j.fg}};">{{j.ch}}</span><span style="font-family: Geist, system-ui, sans-serif; font-size: 11px; color: {{t.text3}};">{{j.rom}}</span></span>
+              </sc-for>
+            </div>
+            <div style="margin-top: 16px; display: flex; align-items: baseline; justify-content: space-between;"><span style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text2}};">Nguyên âm cơ bản</span><span style="font-size: 12px; color: {{t.text3}};">10</span></div>
+            <div lang="ko" style="margin-top: 10px; display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px;">
+              <sc-for list="{{vowels}}" as="j" hint-placeholder-count="10">
+                <span style="height: 58px; border-radius: 12px; border: 1px solid {{j.line}}; background: {{j.bg}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;"><span style="font-family: {{koFont}}; font-size: 24px; font-weight: 700; line-height: 1; color: {{j.fg}};">{{j.ch}}</span><span style="font-family: Geist, system-ui, sans-serif; font-size: 11px; color: {{t.text3}};">{{j.rom}}</span></span>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </main>
+
+  <footer style="position: relative; z-index: 3; flex-shrink: 0; height: 88px; padding: 0 56px; display: flex; align-items: center; gap: 16px; border-top: 1px solid {{t.navLine}};">
+    <button style="height: 48px; padding: 0 18px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: transparent; color: {{t.text2}}; font-size: 14px; font-weight: 600; opacity: {{backOpacity}}; cursor: pointer;">{{c.back}}</button>
+    <span style="font-size: 13.5px; color: {{t.text2}};">{{summary}}</span>
+    <sc-if value="{{showNext}}" hint-placeholder-val="{{true}}">
+      <button class="sf-press" style="margin-left: auto; height: 50px; padding: 0 26px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 15px; font-weight: 650; display: flex; align-items: center; gap: 10px; cursor: pointer;">{{nextLabel}}<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+    </sc-if>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"step":{"editor":"enum","options":["speak","learn","level","script"],"default":"speak"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    const step = this.props.step ?? 'speak';
+    const order = ['speak', 'learn', 'level', 'script', 'pace', 'reminder'];
+    const idx = Math.max(0, order.indexOf(step));
+    // Script fonts: sans in Midnight Aurora, serif in Ink & Paper so CJK matches Fraunces.
+    const F = dark
+      ? { ko: "'Noto Sans KR', sans-serif", ja: "'Noto Sans JP', sans-serif", zh: "'Noto Sans SC', sans-serif", latin: "Fraunces, Georgia, serif" }
+      : { ko: "'Noto Serif KR', serif", ja: "'Noto Serif JP', serif", zh: "'Noto Serif SC', serif", latin: "Fraunces, Georgia, serif" };
+    const pick = (on) => dark
+      ? (on ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 90% 70% at 100% 0%, rgb(150 108 215 / 0.25), transparent 70%) padding-box, linear-gradient(180deg, #10293a, #0a1a22) padding-box, ' + t.rimLearning + ' border-box', shadow: '0 0 44px -14px rgb(40 211 244 / 0.6), 0 30px 60px -30px rgb(0 0 0 / 0.9)' }
+            : { border: '1px solid rgb(255 255 255 / 0.08)', bg: t.surface, shadow: t.surfaceShadow })
+      : (on ? { border: '1.5px solid #1d1a16', bg: '#fffcf5', shadow: '0 0 0 4px rgb(180 70 26 / 0.1), 0 20px 36px -20px rgb(60 40 20 / 0.5)' }
+            : { border: '1px solid rgb(29 26 22 / 0.1)', bg: t.surface, shadow: t.surfaceShadow });
+    const chip = (on) => on
+      ? { border: '1px solid transparent', bg: t.primaryBg, fg: t.primaryText }
+      : { border: '1px solid ' + t.line, bg: t.chipBg, fg: t.text };
+    const scriptFont = (code) => code === 'ko' ? F.ko : code === 'ja' ? F.ja : code.startsWith('zh') ? F.zh : "Geist, system-ui, sans-serif";
+    // [endonym, English name, BCP-47, full UI translation available]
+    const N = [
+      ['Tiếng Việt', 'Vietnamese', 'vi', true], ['English', 'English', 'en', true], ['Español', 'Spanish', 'es', true], ['Português (Brasil)', 'Portuguese (Brazil)', 'pt-BR', true],
+      ['Bahasa Indonesia', 'Indonesian', 'id', true], ['Türkçe', 'Turkish', 'tr', true], ['日本語', 'Japanese', 'ja', true], ['한국어', 'Korean', 'ko', true],
+      ['中文（简体）', 'Chinese, Simplified', 'zh-Hans', true], ['中文（繁體）', 'Chinese, Traditional', 'zh-Hant', false], ['Français', 'French', 'fr', true], ['Deutsch', 'German', 'de', true],
+      ['ไทย', 'Thai', 'th', false], ['हिन्दी', 'Hindi', 'hi', false], ['Italiano', 'Italian', 'it', false], ['Polski', 'Polish', 'pl', false],
+    ];
+    const natives = N.map(([endo, en, code, ui], i) => ({
+      endo, en, code, on: i === 0 ? 'true' : 'false', selected: i === 0, dotOn: i !== 0, tier: ui ? 'App and meanings' : 'Meanings only',
+      dotBg: ui ? t.accent : 'transparent', dotBorder: ui ? '0' : '1.5px solid ' + t.text3,
+      font: code === 'ko' || code === 'ja' || code.startsWith('zh') ? scriptFont(code) : "Fraunces, Georgia, serif", ...pick(i === 0),
+    }));
+    // [sample, reading, endonym, Vietnamese name, code, exam tags, social proof]
+    const TG = [
+      ['Hello', '/həˈloʊ/', 'English', 'Tiếng Anh', 'en', ['IELTS', 'TOEIC'], '48.200 người Việt đang học'],
+      ['안녕하세요', 'annyeonghaseyo', '한국어', 'Tiếng Hàn', 'ko', ['TOPIK', 'EPS-TOPIK'], '21.600 người Việt đang học'],
+      ['こんにちは', 'konnichiwa', '日本語', 'Tiếng Nhật', 'ja', ['JLPT N5–N1'], '17.900 người Việt đang học'],
+      ['你好', 'nǐ hǎo', '中文', 'Tiếng Trung', 'zh', ['HSK 1–6'], '15.300 người Việt đang học'],
+      ['Hola', '/ˈola/', 'Español', 'Tiếng Tây Ban Nha', 'es', ['DELE'], '3.100 người Việt đang học'],
+      ['Bonjour', '/bɔ̃.ʒuʁ/', 'Français', 'Tiếng Pháp', 'fr', ['DELF', 'DALF'], '4.800 người Việt đang học'],
+      ['Hallo', '/ˈhalo/', 'Deutsch', 'Tiếng Đức', 'de', ['Goethe', 'TestDaF'], '6.200 người Việt đang học'],
+    ];
+    const targets = TG.map(([sample, reading, endo, vi, code, tags, proof]) => {
+      const on = code === 'ko';
+      const cjk = code === 'ko' || code === 'ja' || code === 'zh';
+      return { sample, reading, endo, vi, code, tags, proof, on: on ? 'true' : 'false', selected: on, op: 1,
+        font: cjk ? scriptFont(code) : F.latin, fontUi: cjk ? scriptFont(code) : "Geist, system-ui, sans-serif", weight: cjk ? 700 : dark ? 440 : 400,
+        sampleColor: on ? (dark ? '#7ee6fa' : '#b4461a') : t.textStrong, ...pick(on) };
+    });
+    targets.push({ sample: 'Ciao · Olá', reading: 'sắp ra mắt', endo: 'Italiano, Português…', vi: '', code: 'it', tags: ['Bình chọn'], proof: 'Bình chọn ngôn ngữ tiếp theo', on: 'false', selected: false, op: 0.62,
+      font: F.latin, fontUi: "Geist, system-ui, sans-serif", weight: dark ? 440 : 400, sampleColor: t.text2,
+      border: '1px dashed ' + t.lineStrong, bg: 'transparent', shadow: 'none' });
+    const L = [
+      ['0', 'Mới bắt đầu', 'Chưa đọc được Hangul', 'pre-A1', true],
+      ['1', 'Sơ cấp', 'Đọc được Hangul, biết vài trăm từ', 'A1–A2'],
+      ['2', 'Trung cấp', 'Tương đương TOPIK 3–4', 'B1–B2'],
+      ['3', 'Cao cấp', 'Tương đương TOPIK 5–6', 'C1'],
+    ];
+    const accentBar = dark ? '#28d3f4' : '#b4461a';
+    const copy = step === 'speak'
+      ? { progress: 'Setup progress', uiLangLabel: 'App language', back: 'Back' }
+      : { progress: 'Tiến độ cài đặt', uiLangLabel: 'Ngôn ngữ ứng dụng', back: 'Quay lại' };
+    // Jamo used in the 한 demo above are highlighted in the chart.
+    const inDemo = (ch) => ch === 'ㅎ' || ch === 'ㅏ' || ch === 'ㄴ';
+    const jamo = (list) => list.map(([ch, rom]) => ({ ch, rom, line: inDemo(ch) ? t.accentLine : t.line,
+      bg: inDemo(ch) ? t.accentSoft : t.surface, fg: inDemo(ch) ? t.accentText : t.textStrong }));
+    const tile = (on) => on
+      ? { border: dark ? '1.5px solid transparent' : '1.5px solid #1d1a16', bg: dark ? 'linear-gradient(180deg, #10293a, #0a1a22) padding-box, ' + t.rimLearning + ' border-box' : '#fffcf5', shadow: dark ? '0 0 30px -8px rgb(40 211 244 / 0.6)' : '0 0 0 4px rgb(180 70 26 / 0.1)', fg: dark ? '#7ee6fa' : '#b4461a' }
+      : { border: '1px solid ' + t.line, bg: t.surface, shadow: t.surfaceShadow, fg: t.textStrong };
+    return {
+      t, grainId: 'lonb-grain-' + step + (dark ? 'd' : 'l'), c: copy,
+      amb: { ax: -180, ay: -260, bx: 960, by: 420 },
+      stepNo: idx + 1, koFont: F.ko,
+      uiLang: step === 'speak' ? 'English' : 'Tiếng Việt',
+      isSpeak: step === 'speak', isLearn: step === 'learn', isLevel: step === 'level', isScript: step === 'script',
+      showNext: step !== 'script',
+      nextLabel: step === 'speak' ? 'Continue in Tiếng Việt' : step === 'learn' ? 'Học tiếng Hàn' : 'Tiếp tục',
+      summary: step === 'speak' ? 'The app switches to Tiếng Việt right away.' : step === 'learn' ? 'Khoá học: 한국어 ← Tiếng Việt' : step === 'level' ? 'Mới bắt đầu · TOPIK I · 17/01/2027' : 'Có thể bỏ qua và học Hangul sau trong mục Lộ trình.',
+      backOpacity: idx === 0 ? 0 : 1,
+      dots: order.map((_, i) => ({ w: i === idx ? 28 : 8, bg: i <= idx ? (dark ? '#28d3f4' : '#1d1a16') : t.track, glow: i === idx && dark ? '0 0 10px rgb(40 211 244 / 0.7)' : 'none' })),
+      natives, targets,
+      levels: L.map(([n, name, desc, cefr, on]) => ({ n, name, desc, cefr, on: on ? 'true' : 'false', ...pick(!!on),
+        numBg: on ? t.primaryBg : t.chipBg, numFg: on ? t.primaryText : t.text2 })),
+      exams: ['TOPIK I', 'TOPIK II', 'EPS-TOPIK', 'Không thi'].map((name, i) => ({ name, on: i === 0 ? 'true' : 'false', ...chip(i === 0) })),
+      hero: dark
+        ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 80% 60% at 100% 0%, rgb(150 108 215 / 0.3), transparent 70%) padding-box, linear-gradient(180deg, #0f2430, #0a1a22) padding-box, ' + t.rimLearning + ' border-box', shadow: '0 0 60px -20px rgb(40 211 244 / 0.55), 0 40px 80px -40px rgb(0 0 0 / 0.9)' }
+        : { border: '0', bg: '#fffcf5', shadow: t.cardShadow },
+      topik: ['1', '2', '3', '4', '5', '6'].map((label, i) => ({ label: 'cấp ' + label,
+        bg: i < 2 ? accentBar : t.track, glow: i < 2 && dark ? '0 0 12px rgb(40 211 244 / 0.5)' : 'none', fg: i < 2 ? t.accentText : t.text3 })),
+      lessons: [
+        ['1', 'Nguyên âm cơ bản', 'ㅏ ㅓ ㅗ ㅜ', '5 phút'], ['2', 'Phụ âm cơ bản', 'ㄱ ㄴ ㄷ ㄹ', '5 phút'],
+        ['3', 'Ghép khối âm tiết', '가 나 다', '5 phút'], ['4', 'Phụ âm cuối (patchim)', '한 국 밥', '5 phút'],
+      ].map(([n, name, sample, min]) => ({ n, name, sample, min })),
+      blocks: [
+        { ch: 'ㅎ', rom: 'h', ...tile(false), w: 76, size: 38 },
+        { ch: 'ㅏ', rom: 'a', ...tile(false), w: 76, size: 38 },
+        { ch: 'ㄴ', rom: 'n', ...tile(false), w: 76, size: 38 },
+        { ch: '=', rom: ' ', border: '0', bg: 'transparent', shadow: 'none', fg: t.text3, w: 40, size: 30 },
+        { ch: '한', rom: 'han', ...tile(true), w: 96, size: 56 },
+      ],
+      consonants: jamo([['ㄱ', 'g/k'], ['ㄴ', 'n'], ['ㄷ', 'd/t'], ['ㄹ', 'r/l'], ['ㅁ', 'm'], ['ㅂ', 'b/p'], ['ㅅ', 's'],
+        ['ㅇ', '–/ng'], ['ㅈ', 'j'], ['ㅊ', 'ch'], ['ㅋ', 'k'], ['ㅌ', 't'], ['ㅍ', 'p'], ['ㅎ', 'h']]),
+      vowels: jamo([['ㅏ', 'a'], ['ㅑ', 'ya'], ['ㅓ', 'eo'], ['ㅕ', 'yeo'], ['ㅗ', 'o'], ['ㅛ', 'yo'], ['ㅜ', 'u'], ['ㅠ', 'yu'], ['ㅡ', 'eu'], ['ㅣ', 'i']]),
+    };
+  }
+}
+</script>
+</body>
+</html>

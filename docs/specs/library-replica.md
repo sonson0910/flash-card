@@ -1,5 +1,7 @@
 # Spec: Owner-scoped Library Replica
 
+> **Superseded (2026-09-26):** offline learning, the device pending queue, and this library replica were removed as part of the Firebase cost rebuild. Sign-in is required to study; Firestore (with its own `persistentLocalCache`) is the single source of truth. This spec describes removed architecture and is kept for history only.
+
 ## Objective
 
 Deepen the existing card synchronization cluster into one owner-scoped Library

@@ -4,6 +4,7 @@ import type {
   Firestore,
   Transaction,
 } from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
 import { InputValidationError } from './inputValidation.js';
 
 export const MAX_XP_VALUE = Number.MAX_SAFE_INTEGER;
@@ -15,6 +16,11 @@ export const MAX_APPLIED_XP_OPERATION_IDS = 2_048;
 export const MAX_LEGACY_XP_CLIENT_STREAMS = 64;
 export const MAX_XP_STREAM_WATERMARKS = 128;
 export const XP_STREAM_SCHEMA_VERSION = 2;
+const VERIFIED_GAMIFICATION_SCHEMA_VERSION = 1;
+const VERIFIED_HISTORY_FIELD = 'verifiedByDayV1';
+const REVIEW_ACTIVITY_FIELD = 'reviewActivityV1';
+const MAX_REVIEW_ACTIVITY_DAYS = 182;
+const MAX_REVIEW_ACTIVITY_LANGUAGES = 16;
 
 const MAX_OPERATION_ID_LENGTH = 128;
 const MAX_CLIENT_ID_LENGTH = 64;
@@ -115,6 +121,48 @@ const validLastActive = (value: unknown): string | null =>
     ? value
     : null;
 
+const validVerifiedStudyDay = (value: unknown): boolean => {
+  if (value === null) return true;
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+
+const validReviewActivityCoverageDay = (value: unknown): boolean => value !== null && validVerifiedStudyDay(value);
+
+const validReviewActivityLanguage = (value: unknown): value is string => typeof value === 'string'
+  && value.length <= 16
+  && /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(value);
+
+const validReviewActivityCounters = (value: unknown): boolean => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const counters = value as Record<string, unknown>;
+  const keys = ['reviewed', 'again', 'hard', 'good', 'easy'];
+  return Object.keys(counters).length === keys.length
+    && keys.every(key => Number.isSafeInteger(counters[key]) && Number(counters[key]) >= 0 && Number(counters[key]) <= MAX_XP_VALUE)
+    && Number(counters.reviewed) === Number(counters.again) + Number(counters.hard) + Number(counters.good) + Number(counters.easy);
+};
+
+const validReviewActivity = (value: unknown): boolean => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const source = value as Record<string, unknown>;
+  if (Object.keys(source).length !== 2
+    || !source.coverageStartedOnByLanguage || typeof source.coverageStartedOnByLanguage !== 'object' || Array.isArray(source.coverageStartedOnByLanguage)
+    || !source.daysByLanguage || typeof source.daysByLanguage !== 'object' || Array.isArray(source.daysByLanguage)) return false;
+  const coverage = source.coverageStartedOnByLanguage as Record<string, unknown>;
+  const byLanguage = source.daysByLanguage as Record<string, unknown>;
+  const languages = Object.keys(byLanguage);
+  if (languages.length > MAX_REVIEW_ACTIVITY_LANGUAGES || languages.length !== Object.keys(coverage).length) return false;
+  return languages.every(language => {
+    const days = byLanguage[language];
+    if (!validReviewActivityLanguage(language) || !validReviewActivityCoverageDay(coverage[language])
+      || !days || typeof days !== 'object' || Array.isArray(days)) return false;
+    const entries = Object.entries(days as Record<string, unknown>);
+    return entries.length <= MAX_REVIEW_ACTIVITY_DAYS
+      && entries.every(([day, counters]) => validVerifiedStudyDay(day) && validReviewActivityCounters(counters));
+  });
+};
+
 const validOperationId = (value: unknown): value is string =>
   typeof value === 'string'
   && value.length > 0
@@ -150,7 +198,7 @@ const parseHistory = (value: unknown, message: string): Record<string, number> =
   }
   const history: Record<string, number> = {};
   for (const [day, amount] of entries) {
-    if (!validDay(day)) throw new InputValidationError(message);
+    if (day === VERIFIED_HISTORY_FIELD || !validDay(day)) throw new InputValidationError(message);
     history[day] = safeCounter(amount, message);
   }
   return history;
@@ -303,7 +351,17 @@ const parseStoredHistory = (value: unknown): Record<string, number> => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new GamificationMigrationRequiredError();
   }
-  const entries = Object.entries(value);
+  const source = value as Record<string, unknown>;
+  const verifiedHistory = source[VERIFIED_HISTORY_FIELD];
+  if (Object.prototype.hasOwnProperty.call(source, VERIFIED_HISTORY_FIELD)
+    && (!verifiedHistory || typeof verifiedHistory !== 'object' || Array.isArray(verifiedHistory)
+      || Object.entries(verifiedHistory).some(([day, amount]) => !validDay(day)
+        || !Number.isSafeInteger(amount)
+        || Number(amount) < 0
+        || Number(amount) > MAX_XP_VALUE))) {
+    throw new GamificationMigrationRequiredError();
+  }
+  const entries = Object.entries(source).filter(([day]) => day !== VERIFIED_HISTORY_FIELD);
   if (entries.length > MAX_GAMIFICATION_HISTORY_ENTRIES
     || entries.some(([day, amount]) => !validDay(day)
       || !Number.isSafeInteger(amount)
@@ -327,6 +385,16 @@ const parseStoredStats = (value: DocumentData | undefined): StoredGamificationSt
   ];
   const hasLegacySequenceMap = Object.prototype.hasOwnProperty.call(source, 'appliedXpSequenceByClient');
   const hasSchemaVersion = Object.prototype.hasOwnProperty.call(source, 'xpStreamSchemaVersion');
+  const verifiedKeys = [
+    'verifiedSchemaVersion',
+    'verifiedXp',
+    'verifiedStreak',
+    'lastVerifiedStudyDay',
+    'rewardTimeZone',
+  ];
+  const hasVerifiedSchema = verifiedKeys.some(key => Object.prototype.hasOwnProperty.call(source, key));
+  const hasVerifiedReviewAt = Object.prototype.hasOwnProperty.call(source, 'lastVerifiedReviewAt');
+  const hasReviewActivity = Object.prototype.hasOwnProperty.call(source, REVIEW_ACTIVITY_FIELD);
   if (hasLegacySequenceMap && hasSchemaVersion) {
     throw new GamificationMigrationRequiredError();
   }
@@ -337,6 +405,9 @@ const parseStoredStats = (value: DocumentData | undefined): StoredGamificationSt
     ...(hasLegacySequenceMap
       ? ['appliedXpSequenceByClient']
       : hasSchemaVersion ? ['xpStreamSchemaVersion'] : []),
+    ...(hasVerifiedSchema ? verifiedKeys : []),
+    ...(hasVerifiedSchema && hasVerifiedReviewAt ? ['lastVerifiedReviewAt'] : []),
+    ...(hasReviewActivity ? [REVIEW_ACTIVITY_FIELD] : []),
   ];
   if (Object.keys(source).length !== expectedKeys.length
     || Object.keys(source).some(key => !expectedKeys.includes(key))) {
@@ -344,6 +415,33 @@ const parseStoredStats = (value: DocumentData | undefined): StoredGamificationSt
   }
   if (hasSchemaVersion
     && source.xpStreamSchemaVersion !== XP_STREAM_SCHEMA_VERSION) {
+    throw new GamificationMigrationRequiredError();
+  }
+  if (hasVerifiedSchema
+    && (source.verifiedSchemaVersion !== VERIFIED_GAMIFICATION_SCHEMA_VERSION
+      || !Number.isSafeInteger(source.verifiedXp)
+      || Number(source.verifiedXp) < 0
+      || Number(source.verifiedXp) > MAX_XP_VALUE
+      || !Number.isSafeInteger(source.verifiedStreak)
+      || Number(source.verifiedStreak) < 0
+      || Number(source.verifiedStreak) > MAX_XP_VALUE
+      || !validVerifiedStudyDay(source.lastVerifiedStudyDay)
+      || typeof source.rewardTimeZone !== 'string'
+      || source.rewardTimeZone.length === 0
+      || source.rewardTimeZone.length > MAX_DAY_LENGTH)) {
+    throw new GamificationMigrationRequiredError();
+  }
+  if (hasVerifiedSchema) {
+    try {
+      Intl.DateTimeFormat(undefined, { timeZone: source.rewardTimeZone as string });
+    } catch {
+      throw new GamificationMigrationRequiredError();
+    }
+  }
+  if (hasReviewActivity && (!hasVerifiedSchema || !validReviewActivity(source[REVIEW_ACTIVITY_FIELD]))) {
+    throw new GamificationMigrationRequiredError();
+  }
+  if (hasVerifiedReviewAt && source.lastVerifiedReviewAt !== null && !(source.lastVerifiedReviewAt instanceof Timestamp)) {
     throw new GamificationMigrationRequiredError();
   }
   const lastActive = source.lastActive === null ? null : validLastActive(source.lastActive);
@@ -566,8 +664,8 @@ export async function applyGamificationForOwner(
       xp: authoritativeSnapshot.xp,
       appliedXpOperationIds: appliedOperationIds,
       xpStreamSchemaVersion: XP_STREAM_SCHEMA_VERSION,
-    });
-    transaction.set(historyRef, authoritativeSnapshot.history);
+    }, { merge: true });
+    transaction.set(historyRef, authoritativeSnapshot.history, { merge: true });
     for (const [clientId, sequence] of Object.entries(appliedSequenceByClient)) {
       if (!streamClientIds.has(clientId) && !hasLegacySequenceMap) continue;
       const existing = streamSnapshotByClient.get(clientId);

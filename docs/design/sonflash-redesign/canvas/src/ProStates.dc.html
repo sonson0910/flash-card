@@ -1,0 +1,148 @@
+<!--#HEAD Pro and trial states-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}};">
+<!--#AMBIENT-->
+<!--#NAV-->
+
+  <div role="status" style="position: relative; z-index: 2; height: 44px; padding: 0 56px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid {{pro.line}}; background: {{pro.band}}; font-size: 13.5px; color: {{t.text}};">
+    <span style="height: 24px; padding: 0 10px; border-radius: 999px; background: {{pro.solid}}; color: {{pro.solidText}}; font-size: 11.5px; font-weight: 700; display: flex; align-items: center; gap: 6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"></path></svg>Pro trial · 5 days left</span>
+    <span style="color: {{t.body}};">AI cards, tutor, stories and shadowing scores are unlocked until Mon 28 Sep.</span>
+    <div aria-hidden="true" style="width: 140px; height: 5px; border-radius: 5px; background: {{t.track}}; overflow: hidden;"><div style="width: 29%; height: 100%; background: {{pro.bar}};"></div></div>
+    <a href="#" style="margin-left: auto; font-weight: 650; color: {{pro.text}}; text-decoration: none;">See plans →</a>
+    <button aria-label="Dismiss" style="width: 28px; height: 28px; border-radius: 50%; border: 0; background: transparent; color: {{t.text3}}; display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+  </div>
+
+  <main style="position: relative; z-index: 2; padding: 22px 56px 0; display: grid; grid-template-columns: 1.25fr 1fr 1fr; grid-template-rows: 372px 318px; gap: 22px 22px;">
+
+    <section aria-labelledby="trial-end" style="grid-row: span 2; display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">Trial ends · day 7</div>
+      <div style="position: relative; flex-grow: 1; box-sizing: border-box; padding: 26px 26px 22px; border-radius: {{t.dlgRadius}}px; border: {{t.dlgBorder}}; background: {{t.dlgBg}}; box-shadow: {{t.dlgShadow}}; display: flex; flex-direction: column; overflow: hidden;">
+        <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{pro.text}};">Today is the last day of your trial</p>
+        <h2 id="trial-end" style="margin: 10px 0 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 34px; line-height: 1.05; letter-spacing: -0.02em; color: {{t.textStrong}};">In 7 days you saved <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">86 words</span> and read 4 stories.</h2>
+        <p style="margin: 10px 0 0; font-size: 14px; line-height: 1.55; color: {{t.body}};">Nothing you learned goes away. Here is what changes tomorrow if you stay on Free.</p>
+        <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div style="padding: 14px 16px; border-radius: 16px; border: 1px solid {{t.okLine}}; background: {{t.okBg}};">
+            <div style="font-size: 12.5px; font-weight: 700; color: {{t.ok}};">You keep</div>
+            <ul style="margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 7px; font-size: 13px; color: {{t.text}};">
+              <sc-for list="{{keep}}" as="k" hint-placeholder-count="4"><li style="display: flex; gap: 8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{t.ok}}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>{{k}}</li></sc-for>
+            </ul>
+          </div>
+          <div style="padding: 14px 16px; border-radius: 16px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
+            <div style="font-size: 12.5px; font-weight: 700; color: {{t.text2}};">Pauses on Free</div>
+            <ul style="margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 7px; font-size: 13px; color: {{t.text2}};">
+              <sc-for list="{{lose}}" as="k" hint-placeholder-count="4"><li style="display: flex; gap: 8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg>{{k}}</li></sc-for>
+            </ul>
+          </div>
+        </div>
+        <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px;">
+          <button class="sf-press" style="height: 52px; border-radius: {{t.btnRadius}}; border: 0; background: {{pro.solid}}; color: {{pro.solidText}}; box-shadow: {{pro.glow}}; font-size: 15px; font-weight: 700; cursor: pointer;">Keep Pro · 949.000 ₫ / year</button>
+          <button style="height: 46px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 14px; font-weight: 600; cursor: pointer;">Continue on Free</button>
+          <p style="margin: 0; text-align: center; font-size: 11.5px; color: {{t.text3}};">We never charge automatically after a trial.</p>
+        </div>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">Account menu · Pro</div>
+      <div style="position: relative; flex-grow: 1;">
+        <div style="display: flex; justify-content: flex-end;">
+          <span style="position: relative; width: 44px; height: 44px; box-sizing: border-box; border-radius: 50%; border: 2px solid transparent; background: {{avatar.bg}}; box-shadow: {{avatar.shadow}}; color: {{t.avatarText}}; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center;">KB
+            <span style="position: absolute; right: -8px; bottom: -6px; height: 18px; padding: 0 6px; border-radius: 999px; background: {{pro.solid}}; color: {{pro.solidText}}; font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; display: flex; align-items: center;">PRO</span>
+          </span>
+        </div>
+        <div role="menu" aria-label="Account" class="sf-pop" style="margin-top: 12px; box-sizing: border-box; padding: 8px; border-radius: 18px; border: {{t.dlgBorder}}; background: {{t.dlgBg}}; box-shadow: {{t.dlgShadow}};">
+          <div style="padding: 10px 12px 12px; border-bottom: 1px solid {{t.line}};">
+            <div style="font-size: 14.5px; font-weight: 650; color: {{t.textStrong}};">Khánh Bùi</div>
+            <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: {{t.text2}};"><span style="height: 20px; padding: 0 8px; border-radius: 999px; border: 1px solid {{pro.line}}; background: {{pro.soft}}; color: {{pro.text}}; font-size: 11px; font-weight: 700; display: flex; align-items: center;">Pro · annual</span>Renews 23 Sep 2027</div>
+          </div>
+          <sc-for list="{{menu}}" as="m" hint-placeholder-count="4">
+            <button role="menuitem" style="width: 100%; height: 42px; padding: 0 12px; border-radius: 10px; border: 0; background: {{m.bg}}; color: {{m.color}}; font-size: 13.5px; display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{m.icon}}"></path></svg><span style="flex-grow: 1;">{{m.label}}</span><span style="font-size: 12px; font-weight: 650; color: {{pro.text}};">{{m.tag}}</span></button>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">Downgraded to Free</div>
+      <div style="flex-grow: 1; box-sizing: border-box; padding: 22px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; display: flex; flex-direction: column;">
+        <span style="align-self: flex-start; height: 24px; padding: 0 10px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; font-size: 11.5px; font-weight: 700; display: flex; align-items: center;">Free plan</span>
+        <h3 style="margin: 12px 0 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 24px; line-height: 1.1; color: {{t.textStrong}};">All 1,284 cards are still yours.</h3>
+        <p style="margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: {{t.body}};">Reviews, streak and the extension keep working. AI cards are back to 5 a day.</p>
+        <div style="margin-top: auto; padding-top: 14px; display: flex; align-items: center; gap: 10px;">
+          <button style="height: 40px; padding: 0 14px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 13.5px; font-weight: 650; cursor: pointer;">Review 12 due</button>
+          <a href="#" style="font-size: 13px; font-weight: 600; color: {{pro.text}}; text-decoration: none;">Get Pro back</a>
+        </div>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">AI quota · inline</div>
+      <div style="flex-grow: 1; box-sizing: border-box; padding: 20px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; display: flex; flex-direction: column; gap: 14px;">
+        <span style="height: 50px; box-sizing: border-box; padding: 0 6px 0 16px; border-radius: 14px; border: 1px solid {{t.accentLine}}; background: {{t.inputBg}}; display: flex; align-items: center; gap: 8px;">
+          <input value="resilient" aria-label="Word to add" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; color: {{t.textStrong}}; font-family: Fraunces, Georgia, serif; font-size: 19px;">
+          <button style="height: 38px; padding: 0 14px; border-radius: 11px; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; font-size: 13px; font-weight: 650; display: flex; align-items: center; gap: 6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"></path></svg>Create with AI</button>
+        </span>
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 12.5px; color: {{t.text2}};"><span><span style="font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.textStrong}};">3 of 5</span> AI cards today</span><span>Resets 00:00</span></div>
+          <div role="meter" aria-valuemin="0" aria-valuemax="5" aria-valuenow="3" aria-label="AI cards used today" style="margin-top: 8px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px;">
+            <sc-for list="{{quota}}" as="q" hint-placeholder-count="5"><span style="height: 8px; border-radius: 4px; background: {{q}};"></span></sc-for>
+          </div>
+        </div>
+        <p style="margin: 0; font-size: 12.5px; line-height: 1.5; color: {{t.text2}};">Out of AI cards? You can always add a word by hand. <a href="#" style="font-weight: 600; color: {{pro.text}}; text-decoration: none;">Pro is unlimited.</a></p>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">Locked feature · referral toast</div>
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 14px;">
+        <button aria-disabled="true" style="height: 72px; box-sizing: border-box; padding: 0 14px 0 10px; border-radius: 18px; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;">
+          <span style="width: 50px; height: 50px; flex-shrink: 0; border-radius: 14px; background: {{t.chipBg}}; border: 1px solid {{t.line}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z"></path></svg></span>
+          <span style="flex-grow: 1;"><span style="display: block; font-size: 15px; font-weight: 650;">Story</span><span style="display: block; margin-top: 2px; font-size: 12.5px; color: {{t.text2}};">Free story used this week · next on Mon</span></span>
+          <span style="height: 26px; padding: 0 10px; border-radius: 999px; border: 1px solid {{pro.line}}; background: {{pro.soft}}; color: {{pro.text}}; font-size: 11.5px; font-weight: 700; display: flex; align-items: center; gap: 5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg>Pro</span>
+        </button>
+        <div role="status" class="sf-pop" style="margin-top: auto; box-sizing: border-box; padding: 14px 14px 14px 16px; border-radius: 18px; border: {{toast.border}}; background: {{toast.bg}}; box-shadow: {{toast.shadow}}; display: flex; align-items: center; gap: 12px;">
+          <span style="width: 42px; height: 42px; flex-shrink: 0; border-radius: 12px; background: {{pro.solid}}; color: {{pro.solidText}}; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16v10H4zM2 7h20v4H2zM12 7v14M12 7c-2-4-6-4-6-1.5S10 7 12 7zM12 7c2-4 6-4 6-1.5S14 7 12 7z"></path></svg></span>
+          <span style="flex-grow: 1; min-width: 0;"><span style="display: block; font-size: 14px; font-weight: 700; color: {{t.textStrong}};">+7 days Pro</span><span style="display: block; margin-top: 2px; font-size: 12.5px; color: {{t.text2}};">Minh joined with your link. You both got a week.</span></span>
+          <button aria-label="Dismiss" style="width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; border: 0; background: transparent; color: {{t.text3}}; display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    const pro = dark
+      ? { text: '#ffd98a', soft: 'rgb(245 174 57 / 0.1)', line: 'rgb(245 174 57 / 0.3)', solid: 'linear-gradient(135deg, #ffe6a8, #f5ae39)', solidText: '#1d1204', glow: '0 16px 40px -14px rgb(245 174 57 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.5)', band: 'linear-gradient(90deg, rgb(245 174 57 / 0.12), rgb(150 108 215 / 0.08))', bar: 'linear-gradient(90deg, #ffe6a8, #f5ae39)' }
+      : { text: '#8a5a0c', soft: 'rgb(184 134 43 / 0.1)', line: 'rgb(184 134 43 / 0.3)', solid: '#1d1a16', solidText: '#fbf6ec', glow: '0 14px 28px -14px rgb(29 26 22 / 0.9)', band: 'rgb(184 134 43 / 0.09)', bar: '#b8862b' };
+    const quotaOn = dark ? 'linear-gradient(90deg, #28d3f4, #966cd7)' : '#b4461a';
+    return {
+      t, pro, grainId: 'pro-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: -200, ay: -220, bx: 980, by: 460 },
+      streak: 23,
+      nav: sfNav(t, 0),
+      toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      keep: ['All 1,284 cards & decks', 'Unlimited FSRS reviews', 'Your 23-day streak', 'Chrome extension'],
+      lose: ['AI cards → 5 a day', 'Tutor & stories → 1 a week', 'Shadowing scores', 'Streak freezes'],
+      avatar: dark
+        ? { bg: t.avatarBg + ' padding-box, ' + t.goldRim + ' border-box', shadow: '0 0 20px -4px rgb(245 174 57 / 0.6)' }
+        : { bg: t.avatarBg + ' padding-box, ' + t.goldRim + ' border-box', shadow: '0 0 0 3px #fffcf5, 0 0 0 4px rgb(184 134 43 / 0.35)' },
+      menu: [
+        { label: 'Manage plan', icon: 'M3 7h18v12H3zM3 11h18', tag: '', bg: t.dark ? t.navActiveBg : 'rgb(29 26 22 / 0.06)', color: t.text },
+        { label: 'Invite friends', icon: 'M16 11a4 4 0 1 0-8 0M4 21a8 8 0 0 1 16 0M19 8v6M22 11h-6', tag: '+7 days each', bg: 'transparent', color: t.text },
+        { label: 'Settings', icon: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM4 12h2M18 12h2M12 4v2M12 18v2', tag: '', bg: 'transparent', color: t.text },
+        { label: 'Sign out', icon: 'M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10', tag: '', bg: 'transparent', color: t.text2 },
+      ],
+      quota: [0, 1, 2, 3, 4].map((i) => (i < 3 ? quotaOn : t.track)),
+      toast: dark
+        ? { border: '1.5px solid transparent', bg: t.cardBg + ' padding-box, ' + t.goldRim + ' border-box', shadow: '0 20px 40px -20px rgb(0 0 0 / 0.9), 0 0 36px -14px rgb(245 174 57 / 0.55)' }
+        : { border: '1px solid rgb(184 134 43 / 0.4)', bg: '#fffcf5', shadow: 'inset 0 1px 0 #ffffff, 0 20px 36px -20px rgb(60 40 20 / 0.5)' },
+    };
+  }
+}
+</script>
+</body>
+</html>

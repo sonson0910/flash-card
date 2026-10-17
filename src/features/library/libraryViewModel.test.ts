@@ -1,7 +1,17 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { i18n } from '@lingui/core';
 import type { CardData } from '../../types/card';
+import { buildLibraryViewModel, getLibraryCardTier, isLibraryCardDue, sortLibraryCards, type LibraryViewModelInput } from './libraryViewModel';
+
+i18n.load('en', {});
+i18n.load('vi', {
+  'shell.library-count.cards': '{count, plural, one {# thẻ} other {# thẻ}}',
+  'shell.library-count.cached-cloud': '{cached, number} đã lưu / {cloud, number} đám mây',
+  'shell.library-count.cloud-paused': 'Đám mây đang tạm dừng',
+});
+
+beforeEach(() => i18n.activate('en'));
 import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
-import { buildLibraryViewModel, type LibraryViewModelInput } from './libraryViewModel';
 
 const makeCard = (id: string, overrides: Partial<CardData> = {}): CardData => ({
   id,
@@ -56,6 +66,44 @@ const input = (overrides: Partial<LibraryViewModelInput> = {}): LibraryViewModel
 afterEach(() => vi.useRealTimers());
 
 describe('library view model', () => {
+  it('maps compatible review state to the Canvas New, Learning, and Mastered tiers', () => {
+    expect(getLibraryCardTier(makeCard('new'))).toBe('new');
+    expect(getLibraryCardTier(makeCard('learning', { reviews: 1, difficulty: 'good' }))).toBe('learning');
+    expect(getLibraryCardTier(makeCard('mastered', { reviews: 1, difficulty: 'easy' }))).toBe('mastered');
+    expect(getLibraryCardTier(makeCard('long-interval', { reviews: 1, interval: 21 }))).toBe('mastered');
+  });
+
+  it('uses the scheduled review date, including the FSRS fallback, for Canvas due labels', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-03T12:00:00+07:00'));
+    expect(isLibraryCardDue(makeCard('next', { nextReviewDate: '2026-08-03T01:00:00.000Z' }))).toBe(true);
+    expect(isLibraryCardDue(makeCard('fsrs', { fsrs: { due: '2026-08-03T01:00:00.000Z', stability: 1, difficulty: 1, elapsedDays: 0, scheduledDays: 1, learningSteps: 0, reps: 1, lapses: 0, state: 1 } }))).toBe(true);
+    expect(isLibraryCardDue(makeCard('future', { nextReviewDate: '2026-08-04T01:00:00.000Z' }))).toBe(false);
+  });
+
+  it('sorts only the loaded page while leaving the caller collection untouched', () => {
+    const cards = [
+      makeCard('zulu', { word: 'Zulu', createdAt: '2026-08-02T00:00:00.000Z' }),
+      makeCard('alpha', { word: 'alpha', createdAt: '2026-08-01T00:00:00.000Z' }),
+    ];
+
+    expect(sortLibraryCards(cards, 'alphabetical').map(card => card.id)).toEqual(['alpha', 'zulu']);
+    expect(sortLibraryCards(cards, 'recent').map(card => card.id)).toEqual(['zulu', 'alpha']);
+    expect(cards.map(card => card.id)).toEqual(['zulu', 'alpha']);
+  });
+
+  it('formats count labels from the active catalog without changing count values', () => {
+    i18n.activate('vi');
+
+    expect(buildLibraryViewModel(input({ cards: [makeCard('one')] })).countLabel).toBe('1 thẻ');
+    expect(buildLibraryViewModel(input({
+      cards: [],
+      isAuthenticated: true,
+      cloudReadUnavailable: true,
+      cloudTotal: 12_480,
+      cloudStats: { ...cloudStats, total: 12_480 },
+    })).countLabel).toBe('12.480 đã lưu / 12.480 đám mây');
+  });
   it('keeps an empty XP history empty instead of fabricating a zero-value day', () => {
     const model = buildLibraryViewModel(input({ xpHistory: {} }));
 
@@ -210,9 +258,9 @@ describe('library view model', () => {
     ]);
     expect(model.stats.categoryChartIsPartial).toBe(false);
     expect(model.stats.difficultyChart).toEqual([
-      { name: 'Mastered', value: 3, color: '#10b981' },
-      { name: 'Learning', value: 3, color: '#f59e0b' },
-      { name: 'Not reviewed', value: 3, color: '#94a3b8' },
+      { name: 'Mastered', value: 3 },
+      { name: 'Learning', value: 3 },
+      { name: 'Not reviewed', value: 3 },
     ]);
     expect(model.stats.xpChartData).toEqual([
       { date: 'Aug 1, 2026', XP: 5 },

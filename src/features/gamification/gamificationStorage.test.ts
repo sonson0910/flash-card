@@ -11,6 +11,7 @@ import {
   MAX_PENDING_XP_OPERATIONS,
   rebaseGamificationSnapshots,
 } from './gamificationModel';
+import { getFormatLocale, setFormatLocale } from '../../lib/format';
 
 class MemoryStorage {
   private values = new Map<string, string>();
@@ -49,6 +50,21 @@ describe('UID-scoped gamification storage', () => {
   it('uses separate keys for anonymous sessions and each account', () => {
     expect(gamificationStorageKeys(null).xp).not.toBe(gamificationStorageKeys('user-a').xp);
     expect(gamificationStorageKeys('user-a').xp).not.toBe(gamificationStorageKeys('user-b').xp);
+  });
+
+  it('keeps the persisted XP day key in English when the UI locale changes', () => {
+    const previousLocale = getFormatLocale();
+    try {
+      setFormatLocale('vi');
+      const next = addXpToStoredGamification(new MemoryStorage(), 'user-a', {
+        streak: 0, xp: 0, lastActive: null, history: {},
+      }, 5, new Date(2026, 8, 23, 12), 'locale-independent-xp');
+
+      expect(next.history).toHaveProperty('Sep 23, 2026', 5);
+      expect(next.pendingOperations?.[0]?.day).toBe('Sep 23, 2026');
+    } finally {
+      setFormatLocale(previousLocale);
+    }
   });
 
   it('does not expose one account snapshot to another account', () => {

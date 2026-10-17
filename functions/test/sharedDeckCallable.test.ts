@@ -1,9 +1,20 @@
 import { readFileSync } from 'node:fs';
 import { Timestamp } from 'firebase-admin/firestore';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { LEGACY_SHARED_DECK_OPERATION_COMPATIBILITY_END } from '../src/inputValidation.js';
 
+vi.mock('../src/accountData.js', async importOriginal => ({
+  ...await importOriginal<typeof import('../src/accountData.js')>(),
+  isAccountDeleting: vi.fn(async () => false),
+}));
+
 describe('shared deck callable rollout', () => {
+  const previousKey = process.env.ANALYTICS_PSEUDONYM_KEY;
+  beforeAll(() => { process.env.ANALYTICS_PSEUDONYM_KEY = 'x'.repeat(32); });
+  afterAll(() => {
+    if (previousKey === undefined) delete process.env.ANALYTICS_PSEUDONYM_KEY;
+    else process.env.ANALYTICS_PSEUDONYM_KEY = previousKey;
+  });
   afterEach(() => vi.restoreAllMocks());
   it.each([undefined, 'owner-2'])(
     'denies a V2 request for a missing or mismatched expected owner: %s',

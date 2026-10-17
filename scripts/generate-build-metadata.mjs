@@ -6,7 +6,7 @@ import {
   createOfflineShellDescriptor,
   renderOfflineServiceWorker,
 } from './offline-shell.mjs';
-import { buildReleaseMetadata } from './release-config.mjs';
+import { buildReleaseMetadata, RELEASE_TARGETS, resolveReleaseTarget } from './release-config.mjs';
 
 const packageJson = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const revision = (
@@ -16,7 +16,10 @@ const revision = (
   || 'local'
 ).trim();
 const builtAt = process.env.BUILD_TIMESTAMP?.trim() || new Date().toISOString();
-const output = path.resolve('dist/health.json');
+const output = path.resolve(process.env.SONFLASH_BUILD_OUT_DIR || 'dist', 'health.json');
+const target = resolveReleaseTarget(process.env);
+const targetConfig = JSON.parse(fs.readFileSync(new URL(`../${RELEASE_TARGETS[target].configPath}`, import.meta.url), 'utf8'));
+const { projectId } = targetConfig.targets?.[target] ?? targetConfig;
 
 const artifactId = (() => {
   const dist = path.dirname(output);
@@ -46,6 +49,8 @@ const metadata = {
     version: String(packageJson.version),
     revision,
     builtAt,
+    target,
+    projectId,
   }),
   artifactId,
 };

@@ -12,17 +12,14 @@ import {
 
 const summary: CatalogWorkspaceSummary = {
   release: {
-    catalogId: 'english-core', releaseId: 'reviewed-1', schemaVersion: 1,
+    catalogId: 'english-core', releaseId: 'reviewed-1', schemaVersion: 2,
     contentLanguage: 'en', chunkCount: 1, lexemeCount: 1, membershipCount: 2,
     encodedBytes: 200,
   },
   scannedMemberships: 2,
   tracks: [{
     trackId: 'ielts', total: 2, started: 1, mastered: 1,
-    tiers: [
-      { tier: 'foundation', total: 1, started: 1, mastered: 1 },
-      { tier: 'core', total: 1, started: 0, mastered: 0 },
-    ],
+    tiers: [{ tier: 'advanced', total: 2, started: 1, mastered: 1 }],
     facets: {
       cefrLevels: ['A2', 'B2'], topics: ['education'],
       partsOfSpeech: ['noun'], skills: ['reading'],
@@ -55,9 +52,7 @@ describe('catalog workspace presenter', () => {
       expect.objectContaining({ id: 'general', total: 0, started: 0, mastered: 0 }),
     ]);
     expect(catalogTiersFromSummary(summary, 'ielts')).toEqual([
-      expect.objectContaining({ id: 'foundation', total: 1, state: 'completed' }),
-      expect.objectContaining({ id: 'core', total: 1, state: 'available' }),
-      expect.objectContaining({ id: 'advanced', total: 0, state: 'available' }),
+      expect.objectContaining({ id: 'advanced', total: 2, state: 'in-progress' }),
     ]);
     expect(catalogFiltersFromSummary(summary, 'ielts')).toMatchObject({
       cefrOptions: [{ value: 'A2', label: 'A2' }, { value: 'B2', label: 'B2' }],

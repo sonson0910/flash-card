@@ -1,101 +1,45 @@
 import { useLayoutEffect } from 'react';
 import { Sparkles } from 'lucide-react';
+import { i18n } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
+import { Trans } from '@lingui/react';
 import { CountUp } from '../../components/motion/CountUp';
+import { Lumi } from '../../components/lumi/Lumi';
+import { useTheme } from '../theme/ThemeProvider';
+import { readLumiEnabled } from '../settings/lumi-preference';
+import './daily-learning-canvas.css';
 import type { ProgressScreenProps } from './dailyLearningPresentation';
 
-const primaryClass = 'brand-action shimmer-sweep min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
+const primaryClass = 'brand-action crystal-chamfer min-h-11 rounded-2xl bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition duration-200 hover:bg-[var(--sf-brand-hover)] active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 
-export function ProgressScreen({ model, actions, children }: ProgressScreenProps) {
+function ProgressHeading({ model }: Pick<ProgressScreenProps, 'model'>) {
   const assignHeading = (heading: HTMLHeadingElement | null) => {
     if (model.headingRef) model.headingRef.current = heading;
   };
+  return <h1 id="daily-progress-heading" ref={assignHeading} tabIndex={-1} className="text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl"><Trans {...msg({ context: 'progress.title', message: 'Progress' })} /></h1>;
+}
 
+function Metric({ label, value, tone }: { readonly label: React.ReactNode; readonly value: number | null; readonly tone: string }) {
+  return <div className="crystal-chamfer-sm min-w-0 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 shadow-[var(--sf-panel-shadow)]"><dt className="text-xs font-black uppercase tracking-[.12em] text-[var(--sf-text-muted)]">{label}</dt><dd className={`mt-2 text-2xl font-black tabular-nums tracking-tight ${tone}`}>{value === null ? '—' : <CountUp to={value} />}</dd></div>;
+}
+
+function Summary({ model, actions }: Omit<ProgressScreenProps, 'children'>) {
+  const { family } = useTheme();
+  const showLumi = family === 'crystal' && readLumiEnabled();
+  const title = model.status === 'empty' ? <Trans {...msg({ context: 'progress.empty.title', message: 'Your learning story starts here' })} /> : model.status === 'loading' || model.dueToday === null ? <Trans {...msg({ context: 'progress.loading.title', message: 'Your saved progress' })} /> : model.dueToday > 0 ? <Trans {...msg({ context: 'progress.due.title', message: 'Keep today’s memory work moving' })} /> : <Trans {...msg({ context: 'progress.clear.title', message: 'Your scheduled review is clear' })} />;
+  return <section aria-labelledby="progress-summary-heading" className="liquid-glass crystal-chamfer relative overflow-hidden rounded-[28px] border border-[var(--sf-border)] p-6 shadow-[var(--sf-panel-shadow)] sm:p-7">
+    {family === 'crystal' && <span aria-hidden="true" className="crystal-starfield pointer-events-none absolute inset-0 opacity-45 motion-reduce:animate-none" />}
+    <div className="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end"><div className="min-w-0"><div className="flex flex-wrap items-center gap-3"><span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--sf-brand)]/30 bg-[color-mix(in_srgb,var(--sf-brand)_10%,transparent)] px-3 py-1 text-[11px] font-black uppercase tracking-[.16em] text-[var(--sf-brand-text)]"><Sparkles size={13} aria-hidden="true" /><Trans {...msg({ context: 'progress.kicker', message: 'Study diary' })} /></span>{showLumi && <Lumi pose="proud" size={48} className="crystal-ornament -my-2" />}</div><h2 id="progress-summary-heading" className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl">{title}</h2><p className="mt-2 max-w-2xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]" role={model.status === 'loading' ? 'status' : undefined} aria-live={model.status === 'loading' ? 'polite' : undefined}>{model.status === 'empty' ? <Trans {...msg({ context: 'progress.empty.description', message: 'Complete a review to begin your progress history.' })} /> : model.message}</p></div>
+      {model.status === 'ready' && model.dueToday !== null && model.dueToday > 0 && <button type="button" data-primary-learning-action="true" disabled={model.isOffline} onClick={actions.startReview} className={`${primaryClass} w-full sm:w-auto`}><Trans {...msg({ context: 'progress.review-due', message: 'Review {count, plural, one {# due word} other {# due words}}' })} values={{ count: model.dueToday }} /></button>}
+      {model.status === 'empty' && <button type="button" data-primary-learning-action="true" disabled={model.isOffline && model.hasVocabulary} onClick={model.hasVocabulary ? actions.startReview : actions.openVocabulary} className={`${primaryClass} w-full sm:w-auto`}>{model.hasVocabulary ? <Trans {...msg({ context: 'progress.start-review', message: 'Start your first review' })} /> : <Trans {...msg({ context: 'progress.add-vocabulary', message: 'Add vocabulary' })} />}</button>}</div>
+    <div className="relative mt-6 border-t border-[var(--sf-border)] pt-5"><p className="premium-kicker uppercase tracking-[.14em]"><Trans {...msg({ context: 'progress.evidence', message: 'Supporting evidence' })} /></p><dl data-progress-evidence="true" className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3"><Metric label={<Trans {...msg({ context: 'progress.metric.reviewed', message: 'Reviewed' })} />} value={model.reviewed} tone="text-[var(--sf-text)]" /><Metric label={<Trans {...msg({ context: 'progress.metric.mastered', message: 'Mastered' })} />} value={model.mastered} tone="text-[var(--sf-reward)]" /><Metric label={<Trans {...msg({ context: 'progress.metric.due', message: 'Due today' })} />} value={model.dueToday} tone="text-[var(--sf-brand-text)]" /></dl></div>
+  </section>;
+}
+
+export function ProgressScreen({ model, actions, children }: ProgressScreenProps) {
   useLayoutEffect(() => {
     if ((model.focusIntent ?? 0) > 0) model.headingRef?.current?.focus({ preventScroll: true });
   }, [model.focusIntent, model.headingRef]);
-
-  const heading = <h1 id="daily-progress-heading" ref={assignHeading} tabIndex={-1} className="text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl">Learning progress</h1>;
-
-  return (
-    <section aria-labelledby="daily-progress-heading" className="mx-auto max-w-6xl space-y-5 sm:space-y-6">
-      <header>
-        <p className="premium-kicker uppercase tracking-[0.16em]">Learning history</p>
-        {heading}
-        <p className="mt-2 max-w-2xl text-pretty text-[var(--sf-text-muted)]" role={model.status === 'loading' ? 'status' : undefined} aria-live={model.status === 'loading' ? 'polite' : undefined}>{model.message}</p>
-      </header>
-
-      {model.isOffline && <p className="rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite">Available offline · showing saved progress</p>}
-
-      {model.status === 'error' ? (
-        <div className="max-w-3xl rounded-[28px] border border-rose-500/70 bg-rose-500/5 p-6 sm:p-8" role="alert">
-          <p className="premium-kicker uppercase tracking-[0.16em]">Progress unavailable</p>
-          <h2 className="mt-3 text-2xl font-black tracking-tight">Progress needs attention</h2>
-          <p className="mt-2 text-[var(--sf-text-muted)]">{model.message}</p>
-        </div>
-      ) : (
-        <section
-          aria-labelledby="progress-summary-heading"
-          className="liquid-glass relative overflow-hidden rounded-[28px] border border-slate-200/90 bg-white/95 p-6 shadow-[0_28px_70px_-52px_var(--sf-shadow)] backdrop-blur-xl dark:border-white/10 dark:bg-[#071318]/90 sm:p-7"
-        >
-          {/* Ambient Aurora Glow */}
-          <div className="pointer-events-none absolute -right-24 -top-24 size-80 rounded-full bg-cyan-500/15 blur-3xl dark:bg-cyan-400/15" aria-hidden="true" />
-          <div className="pointer-events-none absolute -left-24 -bottom-24 size-80 rounded-full bg-emerald-500/15 blur-3xl dark:bg-emerald-400/15" aria-hidden="true" />
-
-          <div className="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-            <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-800 dark:text-cyan-300">
-                <Sparkles size={13} className="text-cyan-600 dark:text-cyan-400" />
-                Next useful step
-              </span>
-              <h2 id="progress-summary-heading" className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl">
-                {model.status === 'empty' ? 'Begin your learning history' : model.dueToday > 0 ? 'Keep today’s memory work moving' : 'Your scheduled review is clear'}
-              </h2>
-              <p className="mt-2 max-w-2xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">
-                {model.status === 'empty' ? 'Complete a review to begin your progress history.' : model.dueToday > 0 ? `${model.dueToday} words are ready for review now.` : 'New review activity will appear here as you learn.'}
-              </p>
-            </div>
-            {model.status === 'ready' && model.dueToday > 0 && <button type="button" data-primary-learning-action="true" onClick={actions.startReview} className={`${primaryClass} w-full sm:w-auto`}>Review {model.dueToday} due words</button>}
-            {model.status === 'empty' && <button type="button" data-primary-learning-action="true" onClick={model.hasVocabulary ? actions.startReview : actions.openVocabulary} className={`${primaryClass} w-full sm:w-auto`}>{model.hasVocabulary ? 'Start your first review' : 'Add vocabulary'}</button>}
-          </div>
-
-          <div data-progress-evidence="true" className="relative mt-6 border-t border-[var(--sf-border)] pt-5">
-            <p className="premium-kicker uppercase tracking-[0.14em]">Supporting evidence</p>
-            <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-3">
-              <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-300 hover:border-sky-400/50 hover:shadow-md hover:shadow-sky-500/5 dark:border-white/10 dark:bg-white/[0.04]">
-                <dt className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">
-                  <span className="size-2 rounded-full bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.6)]" aria-hidden="true" />
-                  Reviewed
-                </dt>
-                <dd className="mt-2 text-2xl font-black tabular-nums tracking-tight text-[var(--sf-text)]">
-                  <CountUp to={model.reviewed} suffix=" reviewed" /> <span aria-hidden="true" className="text-xs font-semibold text-[var(--sf-text-muted)]">reviewed</span>
-                </dd>
-              </div>
-
-              <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-300 hover:border-emerald-400/50 hover:shadow-md hover:shadow-emerald-500/5 dark:border-white/10 dark:bg-white/[0.04]">
-                <dt className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">
-                  <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" aria-hidden="true" />
-                  Mastered
-                </dt>
-                <dd className="mt-2 text-2xl font-black tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400">
-                  <CountUp to={model.mastered} suffix=" mastered" /> <span aria-hidden="true" className="text-xs font-semibold text-[var(--sf-text-muted)]">mastered</span>
-                </dd>
-              </div>
-
-              <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-300 hover:border-amber-400/50 hover:shadow-md hover:shadow-amber-500/5 dark:border-white/10 dark:bg-white/[0.04]">
-                <dt className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">
-                  <span className="size-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" aria-hidden="true" />
-                  Due today
-                </dt>
-                <dd className="mt-2 text-2xl font-black tabular-nums tracking-tight text-amber-600 dark:text-amber-400">
-                  <CountUp to={model.dueToday} suffix=" due today" /> <span aria-hidden="true" className="text-xs font-semibold text-[var(--sf-text-muted)]">due today</span>
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </section>
-      )}
-
-      {children && <section aria-label="Detailed learning insights" className="min-w-0 motion-reduce:transition-none">{children}</section>}
-    </section>
-  );
+  const insights = children && <section aria-label={i18n._(msg({ id: 'progress.insights.label', message: 'Detailed learning insights' }))} className="min-w-0 motion-reduce:transition-none">{children}</section>;
+  return <section aria-labelledby="daily-progress-heading" aria-busy={model.status === 'loading' || undefined} className="mx-auto max-w-6xl space-y-5 sm:space-y-6"><header><p className="premium-kicker uppercase tracking-[.16em]"><Trans {...msg({ context: 'progress.history-kicker', message: 'Learning history' })} /></p><ProgressHeading model={model} />{model.isOffline && <p className="mt-2 text-xs font-medium text-[var(--sf-text-muted)]" role="status" aria-live="polite"><Trans {...msg({ context: 'progress.offline.reconnect', message: 'You’re offline. Reconnect to review and save your progress.' })} /></p>}</header>{model.status === 'error' ? <div className="crystal-chamfer max-w-3xl rounded-[28px] border border-[var(--sf-danger)] bg-[color-mix(in_srgb,var(--sf-danger)_8%,var(--sf-surface))] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8" role="alert"><p className="premium-kicker uppercase tracking-[.16em]"><Trans {...msg({ context: 'progress.error.kicker', message: 'Progress unavailable' })} /></p><h2 className="mt-3 text-2xl font-black tracking-tight"><Trans {...msg({ context: 'progress.error.title', message: 'Progress needs attention' })} /></h2><p className="mt-2 text-[var(--sf-text-muted)]">{model.message}</p></div> : <>{model.status === 'ready' && insights}<Summary model={model} actions={actions} />{model.status !== 'ready' && insights}</>}</section>;
 }

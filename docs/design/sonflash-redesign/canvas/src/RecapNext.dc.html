@@ -1,0 +1,123 @@
+<!--#HEAD Recap with next steps-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#AMBIENT-->
+  <sc-for list="{{confetti}}" as="c" hint-placeholder-count="14">
+    <span aria-hidden="true" class="sf-fall" style="position: absolute; z-index: 1; left: {{c.x}}px; top: -30px; width: {{c.w}}px; height: {{c.h}}px; border-radius: 2px; background: {{c.color}}; animation-duration: {{c.d}}s; animation-delay: {{c.delay}}s; opacity: 0.8;"></span>
+  </sc-for>
+
+  <main style="position: relative; z-index: 2; flex-grow: 1; padding: 44px 72px 36px; display: flex; flex-direction: column;">
+    <div style="display: grid; grid-template-columns: 1fr 470px; gap: 40px; align-items: end;">
+      <div class="sf-rise">
+        <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text2}};">Session complete · 11 min 40 s</p>
+        <h1 style="margin: 12px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 68px; line-height: 0.98; letter-spacing: -0.04em; color: {{t.textStrong}};">Day 13. <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">Sharper than yesterday.</span></h1>
+        <div style="margin-top: 26px; display: flex; gap: 12px;">
+          <sc-for list="{{stats}}" as="s" hint-placeholder-count="4">
+            <div style="min-width: 128px; padding: 14px 16px; box-sizing: border-box; border-radius: 16px; border: 1px solid {{s.line}}; background: {{s.bg}};">
+              <div style="font-size: 12px; color: {{t.text2}};">{{s.label}}</div>
+              <div style="margin-top: 2px; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 32px; white-space: nowrap; color: {{s.fg}};">{{s.value}}</div>
+              <div style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text3}};">{{s.sub}}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div class="sf-rise-2" style="position: relative; box-sizing: border-box; border-radius: {{t.cardRadius}}px; border: {{hero.border}}; background: {{hero.bg}}; box-shadow: {{hero.shadow}}; padding: 24px 26px; overflow: hidden;">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text2}};">What this means for IELTS</div>
+        <div style="margin-top: 14px; display: flex; align-items: center; gap: 18px;">
+          <div style="position: relative; width: 104px; height: 104px; flex-shrink: 0;">
+            <svg width="104" height="104" viewBox="0 0 104 104" aria-hidden="true" style="transform: rotate(-90deg);"><circle cx="52" cy="52" r="44" fill="none" stroke="{{t.track}}" stroke-width="8"></circle><circle cx="52" cy="52" r="44" fill="none" stroke="{{ring}}" stroke-width="8" stroke-linecap="round" stroke-dasharray="{{dash}}" style="filter: {{ringGlow}};"></circle></svg>
+            <span style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: Fraunces, Georgia, serif; font-size: 30px; color: {{t.textStrong}};">78%</span>
+          </div>
+          <p style="margin: 0; font-size: 14.5px; line-height: 1.5; color: {{t.body}};">You now know <span style="color: {{t.textStrong}}; font-weight: 600;">~78% of the words</span> in a typical IELTS Reading passage. <span style="color: {{t.ok}};">+2% this week.</span></p>
+        </div>
+        <div style="margin-top: 18px; padding-top: 16px; border-top: 1px solid {{t.line}}; display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 13px; color: {{t.text2}};">Projected band</span>
+          <span style="margin-left: auto; font-family: Fraunces, Georgia, serif; font-size: 28px; color: {{t.text3}};">6.5</span>
+          <svg width="30" height="12" viewBox="0 0 30 12" fill="none" stroke="{{t.text3}}" stroke-width="1.6" stroke-linecap="round"><path d="M1 6h27M23 1l5 5-5 5"></path></svg>
+          <span style="font-family: Fraunces, Georgia, serif; font-size: 36px; color: {{t.accentText}}; text-shadow: {{t.emGlow}};">7.0</span>
+          <span style="font-size: 12px; color: {{t.text3}};">by 19 Dec</span>
+        </div>
+      </div>
+    </div>
+
+    <section style="margin-top: 26px;" aria-labelledby="lvl-title">
+      <h2 id="lvl-title" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text2}};">Leveled up today</h2>
+      <div style="margin-top: 12px; display: flex; gap: 10px;">
+        <sc-for list="{{words}}" as="w" hint-placeholder-count="5">
+          <div class="sf-deal-1" style="flex: 1; padding: 12px 14px; border-radius: 14px; border: {{w.border}}; background: {{w.bg}};">
+            <div style="font-family: Fraunces, Georgia, serif; font-size: 21px; color: {{t.textStrong}};">{{w.a}}<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">{{w.b}}</span>{{w.c}}</div>
+            <div style="margin-top: 4px; font-size: 12px; color: {{t.text2}};">{{w.from}} <span style="color: {{w.toFg}}; font-weight: 600;">→ {{w.to}}</span></div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="margin-top: 26px;" aria-labelledby="next-title">
+      <h2 id="next-title" style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 28px; letter-spacing: -0.01em; color: {{t.textStrong}};">What next?</h2>
+      <div style="margin-top: 14px; display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 14px;">
+        <button class="sf-press" style="height: 108px; box-sizing: border-box; padding: 0 22px; border-radius: {{t.radius}}px; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; display: flex; align-items: center; gap: 16px; text-align: left; cursor: pointer;">
+          <span style="width: 52px; height: 52px; border-radius: 16px; background: {{t.primaryKbdBg}}; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg></span>
+          <span><span style="display: block; font-size: 17px; font-weight: 650;">Play Word Match · 60 s</span><span style="display: block; margin-top: 3px; font-size: 13px; opacity: 0.75;">Beat your best of 9 pairs · +40 XP</span></span>
+        </button>
+        <div style="height: 108px; box-sizing: border-box; padding: 0 20px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; display: flex; align-items: center; gap: 14px;">
+          <span style="width: 46px; height: 46px; flex-shrink: 0; border-radius: 14px; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0"></path></svg></span>
+          <span style="flex-grow: 1;"><span style="display: block; font-size: 15.5px; font-weight: 650; color: {{t.textStrong}};">Tomorrow · 14 cards</span><span style="display: block; margin-top: 3px; font-size: 13px; color: {{t.text2}};">Remind me at <span style="font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.text}};">08:00</span></span></span>
+          <span role="switch" aria-checked="true" aria-label="Daily reminder" style="width: 46px; height: 26px; flex-shrink: 0; border-radius: 26px; background: {{sw.track}}; position: relative;"><span style="position: absolute; top: 3px; left: 23px; width: 20px; height: 20px; border-radius: 50%; background: {{sw.knob}};"></span></span>
+        </div>
+        <button class="sf-press" style="height: 108px; box-sizing: border-box; padding: 0 20px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; color: {{t.text}}; display: flex; align-items: center; gap: 14px; text-align: left; cursor: pointer;">
+          <span style="width: 46px; height: 46px; flex-shrink: 0; border-radius: 14px; background: {{t.warmBg}}; border: 1px solid {{t.warmLine}}; color: {{t.warm}}; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"></path></svg></span>
+          <span><span style="display: block; font-size: 15.5px; font-weight: 650; color: {{t.textStrong}};">Share your week</span><span style="display: block; margin-top: 3px; font-size: 13px; color: {{t.text2}};">43 words · 13-day streak card</span></span>
+        </button>
+      </div>
+    </section>
+
+    <div role="note" style="margin-top: auto; height: 58px; box-sizing: border-box; padding: 0 12px 0 18px; border-radius: 16px; border: {{pro.border}}; background: {{pro.bg}}; display: flex; align-items: center; gap: 12px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="{{pro.icon}}"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"></path></svg>
+      <span style="font-size: 14px; color: {{t.body}};"><span style="font-weight: 650; color: {{t.textStrong}};">Your AI Story is ready</span> — a 2-minute read built from today's 6 new words.</span>
+      <span style="height: 22px; padding: 0 8px; border-radius: 6px; background: {{pro.tagBg}}; color: {{pro.tagFg}}; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; display: flex; align-items: center;">PRO</span>
+      <button style="margin-left: auto; height: 38px; padding: 0 16px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; font-size: 13.5px; font-weight: 600; cursor: pointer;">Read with Pro trial</button>
+      <button aria-label="Dismiss" style="width: 34px; height: 34px; border-radius: 50%; border: 0; background: transparent; color: {{t.text3}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    const C = 2 * Math.PI * 44;
+    const plain = { line: t.line, bg: t.surface, fg: t.textStrong };
+    const W = [
+      ['re', 'sil', 'ient', 'New', 'Learning'], ['un', 'pre', 'cedented', 'New', 'Learning'], ['', 'mit', 'igate', 'Learning', 'Known'],
+      ['', 'vi', 'able', 'Learning', 'Known'], ['in', 'her', 'ent', 'Known', 'Mastered'],
+    ];
+    return {
+      t, grainId: 'recapn-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: -200, ay: -260, bx: 1000, by: 300 },
+      confetti: Array.from({ length: 14 }, (_, i) => ({ x: 60 + i * 97, w: i % 2 ? 7 : 10, h: i % 3 ? 14 : 8, color: t.confetti[i % t.confetti.length], d: 7 + (i % 5), delay: -(i * 0.9) })),
+      stats: [
+        { label: 'XP earned', value: '+156', sub: '120 + 36 combo', line: t.warmLine, bg: t.warmBg, fg: t.warm },
+        { label: 'Accuracy', value: '92%', sub: '23 of 25', ...plain },
+        { label: 'Best combo', value: '×9', sub: 'new record', ...plain },
+        { label: 'Streak', value: '13 d', sub: '2 freezes left', ...plain },
+      ],
+      hero: dark
+        ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 80% 60% at 100% 0%, rgb(150 108 215 / 0.28), transparent 70%) padding-box, linear-gradient(180deg, #0f2430, #0a1a22) padding-box, ' + t.rimLearning + ' border-box', shadow: '0 0 50px -20px rgb(40 211 244 / 0.55), 0 30px 60px -30px rgb(0 0 0 / 0.9)' }
+        : { border: '0', bg: '#fffcf5', shadow: t.cardShadow },
+      ring: dark ? '#28d3f4' : '#b4461a', ringGlow: dark ? 'drop-shadow(0 0 6px rgb(40 211 244 / 0.7))' : 'none',
+      dash: (C * 0.78).toFixed(1) + ' ' + C.toFixed(1),
+      words: W.map(([a, b, c, from, to]) => ({ a, b, c, from, to,
+        toFg: to === 'Mastered' ? t.gold : to === 'Known' ? t.ok : t.accentText,
+        border: to === 'Mastered' ? (dark ? '1px solid rgb(245 174 57 / 0.45)' : '1px solid rgb(184 134 43 / 0.45)') : '1px solid ' + t.line,
+        bg: to === 'Mastered' ? t.warmBg : t.surface })),
+      sw: dark ? { track: '#28d3f4', knob: '#04141c' } : { track: '#1d1a16', knob: '#fbf6ec' },
+      pro: dark
+        ? { border: '1px solid rgb(150 108 215 / 0.35)', bg: 'linear-gradient(90deg, rgb(150 108 215 / 0.14), rgb(40 211 244 / 0.06))', icon: '#c9b3f0', tagBg: 'linear-gradient(135deg, #f5ae39, #ffe6a8)', tagFg: '#2b1d08' }
+        : { border: '1px solid rgb(184 134 43 / 0.3)', bg: '#fbf3df', icon: '#b8862b', tagBg: '#1d1a16', tagFg: '#f3d58a' },
+    };
+  }
+}
+</script>
+</body>
+</html>

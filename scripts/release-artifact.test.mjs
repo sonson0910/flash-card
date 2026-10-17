@@ -8,6 +8,7 @@ import path from 'node:path';
 import {
   createPromotedFirebaseConfig,
   sealReleaseArtifact,
+  validateStagingReleaseTarget,
   verifyReleaseArtifact,
 } from './release-artifact.mjs';
 
@@ -58,7 +59,7 @@ const createCandidate = (revision = 'a'.repeat(40)) => {
   }));
   fs.writeFileSync(path.join(root, 'functions/package.json'), '{"main":"lib/index.js"}\n');
   fs.writeFileSync(path.join(root, 'functions/package-lock.json'), '{"lockfileVersion":3}\n');
-    fs.writeFileSync(path.join(root, 'package.json'), '{"devDependencies":{"firebase-tools":"15.29.0"}}\n');
+    fs.writeFileSync(path.join(root, 'package.json'), '{"devDependencies":{"firebase-tools":"15.34.0"}}\n');
   fs.writeFileSync(path.join(root, 'package-lock.json'), '{"lockfileVersion":3}\n');
   fs.writeFileSync(path.join(root, 'firestore.rules'), 'rules_version = "2";');
   fs.writeFileSync(path.join(root, 'firestore.indexes.json'), '{"indexes":[]}\n');
@@ -92,6 +93,21 @@ afterEach(() => {
 });
 
 describe('sealed release artifact', () => {
+  it('accepts the sealed staging project, database, app and Functions runtime target', () => {
+    const root = createCandidate();
+    fs.mkdirSync(path.join(root, 'firebase-targets'), { recursive: true });
+    for (const file of ['firebase.json', 'firebase-targets/staging.json']) {
+      fs.copyFileSync(path.resolve(file), path.join(root, file));
+    }
+    fs.copyFileSync(path.resolve('functions/src/runtime-target.json'), path.join(root, 'functions/lib/runtime-target.json'));
+    expect(validateStagingReleaseTarget(root)).toMatchObject({
+      projectId: 'sonflash-staging-20260906',
+      databaseId: 'ai-studio-945b4052-4462-4668-8936-277f09f07a37',
+      appId: '1:890120640842:web:f8a858029dc582fc7e49b3',
+      region: 'asia-southeast1',
+    });
+  });
+
   it('refuses an unrelated 200 server on the configured E2E port instead of hopping ports', async () => {
     const staleServer = createServer((_request, response) => {
       response.writeHead(200, { 'content-type': 'application/json' });

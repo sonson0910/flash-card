@@ -3,13 +3,11 @@ export const canStartLibraryClear = (isLibraryMutationInFlight: boolean) => !isL
 export async function runEpochProtectedLibraryClear({
   incrementEpoch,
   onEpochAdvanced,
-  clearPending,
   deleteCards,
   assertActive = () => undefined,
 }: {
   incrementEpoch: () => Promise<number>;
   onEpochAdvanced: (epoch: number) => void;
-  clearPending: () => Promise<void>;
   deleteCards: (epoch: number) => Promise<void>;
   assertActive?: () => void;
 }): Promise<number> {
@@ -17,8 +15,6 @@ export async function runEpochProtectedLibraryClear({
   const nextEpoch = await incrementEpoch();
   assertActive();
   onEpochAdvanced(nextEpoch);
-  assertActive();
-  await clearPending();
   assertActive();
   await deleteCards(nextEpoch);
   assertActive();

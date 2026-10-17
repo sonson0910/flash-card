@@ -1,0 +1,151 @@
+<!--#HEAD Extension language routing-->
+<div style="width: 380px; height: 640px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#AMBIENT-->
+  <header style="position: relative; z-index: 2; height: 56px; flex-shrink: 0; padding: 0 12px 0 16px; display: flex; align-items: center; gap: 9px; border-bottom: 1px solid {{t.navLine}};">
+    <span aria-hidden="true" style="width: 26px; height: 26px; border-radius: 8px; background: {{t.logoBg}}; box-shadow: {{t.logoShadow}}; display: flex; align-items: center; justify-content: center; color: {{t.logoText}}; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 15px;">S</span>
+    <span style="font-family: Fraunces, Georgia, serif; font-size: 18px;">Son<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">Flash</span></span>
+    <button aria-label="Active course: {{course.en}}" style="margin-left: auto; height: 34px; padding: 0 10px 0 8px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text}}; display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600;">
+      <span style="height: 20px; padding: 0 6px; border-radius: 6px; background: {{t.accentSoft}}; color: {{t.accentText}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10.5px; display: flex; align-items: center;">{{course.code}}</span>
+      <span style="font-family: {{course.font}};">{{course.name}}</span>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color: {{t.text3}};"><path d="m6 9 6 6 6-6"></path></svg>
+    </button>
+  </header>
+
+  <div style="position: relative; z-index: 2; flex-grow: 1; min-height: 0; padding: 12px 16px 0; display: flex; flex-direction: column; gap: 10px;">
+    <div style="flex-shrink: 0; height: 34px; padding: 0 10px; border-radius: 10px; border: 1px solid {{banner.line}}; background: {{banner.bg}}; color: {{banner.text}}; display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"></path></svg>
+      <span>{{banner.label}} <span style="font-family: {{sel.font}};">{{sel.name}}</span></span>
+      <span style="margin-left: auto; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 400; opacity: 0.8;">{{banner.meta}}</span>
+    </div>
+
+    <label style="display: block; flex-shrink: 0;">
+      <span style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: {{t.text2}};">Selected text<span style="font-weight: 400; color: {{t.text3}};">Meanings in Tiếng Việt</span></span>
+      <span style="margin-top: 6px; height: 46px; box-sizing: border-box; padding: 0 6px 0 14px; border-radius: 14px; border: 1px solid {{t.accentLine}}; background: {{t.inputBg}}; display: flex; align-items: center; gap: 8px;">
+        <input lang="{{sel.code}}" value="{{sel.word}}" aria-label="Selected text" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; color: {{t.textStrong}}; font-family: {{sel.wordFont}}; font-size: 19px;">
+        <button aria-label="Listen" style="width: 36px; height: 36px; border-radius: 10px; border: 0; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
+      </span>
+    </label>
+
+    <sc-if value="{{isDetect}}" hint-placeholder-val="{{true}}">
+      <div style="padding: 10px 12px; border-radius: 12px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: {{t.text2}};">
+        <span style="width: 28px; height: 28px; flex-shrink: 0; border-radius: 9px; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span>
+        <span style="line-height: 1.4;">Saving to your <strong style="color: {{t.textStrong}};">Korean course</strong><br><span style="color: {{t.text3}};">한국어 ← Tiếng Việt · TOPIK II deck</span></span>
+        <a href="#" style="margin-left: auto; font-size: 12px; font-weight: 600; color: {{t.accentText}}; text-decoration: none;">Change</a>
+      </div>
+      <div style="position: relative; box-sizing: border-box; border-radius: {{t.miniR}}px; overflow: hidden; border: {{card.border}}; background: {{card.bg}}; box-shadow: {{card.shadow}}; padding: 14px 18px 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="height: 24px; padding: 0 9px; border-radius: 999px; background: {{t.okBg}}; color: {{t.okText}}; font-size: 11.5px; font-weight: 650; display: flex; align-items: center; gap: 5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Saved to 한국어</span>
+          <span style="margin-left: auto; font-size: 11.5px; color: {{t.text3}};">First review: tomorrow</span>
+        </div>
+        <div lang="ko" style="margin-top: 10px; font-family: {{F.ko}}; font-weight: 700; font-size: 36px; line-height: 1.15; color: {{t.textStrong}};">결정</div>
+        <div style="margin-top: 4px; font-size: 12.5px; color: {{t.text2}};"><span style="font-family: 'Geist Mono', ui-monospace, monospace;">gyeol·jeong</span> · noun · <span style="font-family: {{F.ko}};">決定</span></div>
+        <div style="margin-top: 10px; font-family: Fraunces, Georgia, serif; font-size: 24px; color: {{t.accentText}};">quyết định</div>
+        <p lang="ko" style="margin: 8px 0 0; font-family: {{F.ko}}; font-size: 14px; line-height: 1.6; color: {{t.body}};">빠른 <span style="color: {{t.textStrong}}; font-weight: 700;">결정</span>이 필요해요.</p>
+        <p style="margin: 2px 0 0; font-size: 12.5px; color: {{t.text3}};">Cần một quyết định nhanh.</p>
+      </div>
+      <div>
+        <div style="font-size: 12px; font-weight: 600; color: {{t.text2}};">Recent in 한국어</div>
+        <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
+          <sc-for list="{{recent}}" as="r" hint-placeholder-count="4">
+            <button lang="ko" style="height: 30px; padding: 0 11px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text}}; font-family: {{F.ko}}; font-size: 13.5px;">{{r}}</button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isMismatch}}" hint-placeholder-val="{{false}}">
+      <div style="padding: 14px 16px; border-radius: {{t.miniR}}px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}};">
+        <div style="font-family: Fraunces, Georgia, serif; font-size: 21px; line-height: 1.2; color: {{t.textStrong}};">This looks like <span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">Français</span></div>
+        <p style="margin: 6px 0 0; font-size: 13px; line-height: 1.5; color: {{t.body}};">You don’t have a French course yet. “rendez-vous” means <strong style="color: {{t.textStrong}};">cuộc hẹn</strong> · appointment.</p>
+      </div>
+      <button class="sf-press" style="min-height: 58px; padding: 10px 14px; border-radius: 14px; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; display: flex; align-items: center; gap: 12px; text-align: left;">
+        <span style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 10px; background: {{t.onPrimarySoft}}; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+        <span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 14px; font-weight: 650;">Add a Français course</span><span style="font-size: 11.5px; opacity: 0.75;">Free · meanings in Tiếng Việt · save this word first</span></span>
+      </button>
+      <button style="min-height: 58px; padding: 10px 14px; border-radius: 14px; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; box-shadow: {{t.secondaryShadow}}; color: {{t.text}}; display: flex; align-items: center; gap: 12px; text-align: left;">
+        <span style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 10px; background: {{t.chipBg}}; border: 1px solid {{t.line}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10.5px; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;">en</span>
+        <span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 13.5px; font-weight: 650;">Save “appointment” to English</span><span style="font-size: 11.5px; color: {{t.text3}};">Translated first, then added to your English course</span></span>
+      </button>
+      <button style="height: 42px; border-radius: 12px; border: 0; background: transparent; color: {{t.text2}}; font-size: 13px; font-weight: 600;">Just translate · don’t save</button>
+      <div style="margin-top: auto; padding: 10px 12px; border-radius: 12px; border: 1px dashed {{t.line}}; display: flex; align-items: center; gap: 10px; font-size: 11.5px; line-height: 1.45; color: {{t.text3}};">
+        <span style="display: flex; gap: 4px; flex-shrink: 0;"><span lang="ko" style="width: 24px; height: 24px; border-radius: 7px; background: {{t.chipBg}}; border: 1px solid {{t.line}}; display: flex; align-items: center; justify-content: center; font-size: 12px; color: {{t.text2}};">한</span><span style="width: 24px; height: 24px; border-radius: 7px; background: {{t.chipBg}}; border: 1px solid {{t.line}}; display: flex; align-items: center; justify-content: center; font-size: 12px; color: {{t.text2}};">A</span></span>
+        <span>Your courses: 한국어, English. Pages in these languages save automatically — no pop-up.</span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isReading}}" hint-placeholder-val="{{false}}">
+      <div style="position: relative; box-sizing: border-box; border-radius: {{t.miniR}}px; overflow: hidden; border: {{card.border}}; background: {{card.bg}}; box-shadow: {{card.shadow}}; padding: 14px 18px 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="height: 24px; padding: 0 9px; border-radius: 999px; background: {{t.accentSoft}}; color: {{t.accentText}}; font-size: 11.5px; font-weight: 650; display: flex; align-items: center;">JLPT N2</span>
+          <span style="height: 24px; padding: 0 9px; border-radius: 999px; border: 1px solid {{t.line}}; color: {{t.text2}}; font-size: 11.5px; display: flex; align-items: center;">Noun</span>
+          <span style="margin-left: auto; font-size: 11.5px; color: {{t.text3}};">Not saved yet</span>
+        </div>
+        <div lang="ja" style="margin-top: 12px; font-family: {{F.ja}}; font-weight: 700; font-size: 36px; line-height: 1.3; color: {{t.textStrong}};"><ruby>締<rt style="font-size: 13px; font-weight: 500; color: {{t.accentText}};">し</rt></ruby>め<ruby>切<rt style="font-size: 13px; font-weight: 500; color: {{t.accentText}};">き</rt></ruby>り</div>
+        <div style="margin-top: 6px; font-size: 13px; color: {{t.text2}};"><span lang="ja" style="font-family: {{F.ja}};">しめきり</span> · <span style="font-family: 'Geist Mono', ui-monospace, monospace;">shimekiri</span></div>
+        <div style="margin-top: 10px; font-family: Fraunces, Georgia, serif; font-size: 24px; color: {{t.accentText}};">hạn chót</div>
+        <p lang="ja" style="margin: 8px 0 0; font-family: {{F.ja}}; font-size: 14px; line-height: 1.7; color: {{t.body}};"><span style="color: {{t.textStrong}}; font-weight: 700;">締め切り</span>は金曜日です。</p>
+        <p style="margin: 0; font-size: 12.5px; color: {{t.text3}};">Hạn chót là thứ Sáu.</p>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+        <sc-for list="{{toggles}}" as="g" hint-placeholder-count="2">
+          <div style="height: 38px; padding: 0 10px 0 12px; border-radius: 12px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: {{t.text}};">
+            <span>{{g.label}}</span>
+            <span style="margin-left: auto;"></span>
+            <span role="switch" aria-checked="{{g.on}}" style="width: 34px; height: 20px; border-radius: 999px; background: {{g.track}}; position: relative;"><span style="position: absolute; top: 2px; left: {{g.x}}px; width: 16px; height: 16px; border-radius: 50%; background: {{g.knob}};"></span></span>
+          </div>
+        </sc-for>
+      </div>
+      <button class="sf-press" style="flex-shrink: 0; height: 48px; border-radius: 14px; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 650;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Save to <span lang="ja" style="font-family: {{F.jaUi}};">日本語</span></button>
+    </sc-if>
+  </div>
+
+  <footer style="position: relative; z-index: 2; flex-shrink: 0; padding: 12px 16px 14px; border-top: 1px solid {{t.navLine}}; display: flex; flex-direction: column; gap: 10px;">
+    <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: {{t.text2}};">
+      <span><span style="font-family: 'Geist Mono', ui-monospace, monospace; padding: 2px 6px; border-radius: 5px; border: 1px solid {{t.line}};">Ctrl Shift L</span> save</span>
+      <span><span style="font-family: 'Geist Mono', ui-monospace, monospace; padding: 2px 6px; border-radius: 5px; border: 1px solid {{t.line}};">Alt Shift L</span> translate</span>
+    </div>
+    <a href="#" style="height: 42px; border-radius: 12px; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; font-size: 13.5px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">Open SonFlash <span style="color: {{t.accentText}};">· {{footerDue}}</span></a>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"state":{"editor":"enum","options":["detect","mismatch","reading"],"default":"detect"},"$preview":{"width":380,"height":640}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const state = this.props.state ?? 'detect';
+    const t = { ...sfTokens(dark), miniR: dark ? 20 : 14,
+      okBg: dark ? 'rgb(117 208 121 / 0.14)' : 'rgb(51 115 68 / 0.1)', okText: dark ? '#9be09e' : '#2c6a3d',
+      onPrimarySoft: dark ? 'rgb(4 20 28 / 0.14)' : 'rgb(251 246 236 / 0.14)' };
+    const F = {
+      ko: dark ? "'Noto Sans KR', sans-serif" : "'Noto Serif KR', serif",
+      ja: dark ? "'Noto Sans JP', sans-serif" : "'Noto Serif JP', serif",
+      koUi: "'Noto Sans KR', sans-serif", jaUi: "'Noto Sans JP', sans-serif",
+    };
+    const card = dark
+      ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 80% 60% at 100% 0%, rgb(150 108 215 / 0.22), transparent 70%) padding-box, ' + t.cardBg + ' padding-box, ' + t.rimLearning + ' border-box', shadow: '0 20px 40px -20px rgb(0 0 0 / 0.9), 0 0 36px -14px rgb(40 211 244 / 0.5)' }
+      : { border: '0', bg: t.cardBg, shadow: 'inset 0 1px 0 #ffffff, inset 0 0 0 1px rgb(29 26 22 / 0.06), 0 12px 24px -16px rgb(60 40 20 / 0.4)' };
+    const info = { line: t.accentLine, bg: t.accentSoft, text: t.accentText };
+    const warn = { line: t.warmLine, bg: t.warmBg, text: t.warm };
+    const S = {
+      detect: { course: { code: 'ko', name: '한국어', en: 'Korean', font: F.koUi }, sel: { code: 'ko', name: '한국어', font: F.koUi, word: '결정', wordFont: F.ko },
+        banner: { ...info, label: 'Page language:', meta: 'auto · 99%' }, footerDue: '18 due in 한국어' },
+      mismatch: { course: { code: 'ko', name: '한국어', en: 'Korean', font: F.koUi }, sel: { code: 'fr', name: 'Français', font: 'Geist, sans-serif', word: 'rendez-vous', wordFont: 'Fraunces, Georgia, serif' },
+        banner: { ...warn, label: 'Selection is in', meta: 'no course' }, footerDue: '30 due today' },
+      reading: { course: { code: 'ja', name: '日本語', en: 'Japanese', font: F.jaUi }, sel: { code: 'ja', name: '日本語', font: F.jaUi, word: '締め切り', wordFont: F.ja },
+        banner: { ...info, label: 'Page language:', meta: 'auto · 97%' }, footerDue: '9 due in 日本語' },
+    }[state];
+    const toggle = (label, hint, on) => ({ label, hint, on: on ? 'true' : 'false', x: on ? 16 : 2,
+      track: on ? t.accent : t.track, knob: on ? (dark ? '#04141c' : '#fbf6ec') : (dark ? '#99a7b0' : '#8a8072') });
+    return {
+      t, F, card, ...S, grainId: 'langext-grain-' + state + (dark ? 'd' : 'l'),
+      amb: { ax: -260, ay: -300, bx: 120, by: 380 },
+      isDetect: state === 'detect', isMismatch: state === 'mismatch', isReading: state === 'reading',
+      recent: ['확인', '준비', '영향', '기회'],
+            toggles: [toggle('Furigana', '', true), toggle('Romaji', '', false)],
+    };
+  }
+}
+</script>
+</body>
+</html>

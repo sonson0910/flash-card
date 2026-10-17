@@ -9,6 +9,7 @@ import {
   type Ref,
 } from 'react';
 import { getGsapEntranceMotion, type GsapEntranceVariant } from '../../lib/motion';
+import { useReducedMotion } from '../../lib/motionPreference';
 
 gsap.registerPlugin(useGSAP);
 
@@ -33,6 +34,7 @@ export const GsapEntrance = forwardRef<HTMLDivElement, GsapEntranceProps>(functi
   variant = 'view',
   ...props
 }, forwardedRef) {
+  const reducedMotion = useReducedMotion();
   const elementRef = useRef<HTMLDivElement | null>(null);
   const onEnteredRef = useRef(onEntered);
   onEnteredRef.current = onEntered;
@@ -40,26 +42,16 @@ export const GsapEntrance = forwardRef<HTMLDivElement, GsapEntranceProps>(functi
   useGSAP(() => {
     const element = elementRef.current;
     if (!element) return;
-    const media = gsap.matchMedia();
-    media.add(
-      {
-        reduced: '(prefers-reduced-motion: reduce)',
-        expressive: '(prefers-reduced-motion: no-preference)',
-      },
-      context => {
-        const animation = getGsapEntranceMotion(variant, direction, Boolean(context.conditions?.reduced));
+    const animation = getGsapEntranceMotion(variant, direction, reducedMotion);
         gsap.fromTo(element, animation.from, {
           ...animation.to,
-          force3D: !context.conditions?.reduced,
+          force3D: !reducedMotion,
           onComplete: () => {
             gsap.set(element, { clearProps: 'transform,opacity,visibility' });
             onEnteredRef.current?.();
           },
         });
-      },
-    );
-    return () => media.revert();
-  }, { scope: elementRef, dependencies: [animationKey, direction, variant], revertOnUpdate: true });
+  }, { scope: elementRef, dependencies: [animationKey, direction, reducedMotion, variant], revertOnUpdate: true });
 
   return (
     <div

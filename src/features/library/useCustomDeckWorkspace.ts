@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { withDevicePendingFlush, type DevicePendingFlushLease, type DevicePendingOperation } from '../../lib/deviceSync';
 import type { PracticeDeckScope } from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
 import {
-  CUSTOM_DECK_RESERVED_NAME_ERROR,
+  defaultCoverPreset,
+  customDeckCoverKey,
+  normalizeCustomDeckProfile,
   planCustomDeckCreation,
-  normalizeCustomDeckCollection,
+  type CoverPreset,
+  CUSTOM_DECK_RESERVED_NAME_ERROR,
 } from './customDecks';
 import { planDeckDeletionFailureRecovery } from './libraryMutationRecovery';
 import {
@@ -17,20 +19,21 @@ import {
 } from './ownerScopedDeckCache';
 
 export interface CustomDeckMutationPort {
-  add(ownerId: string, deckName: string): Promise<void>;
+  add(ownerId: string, deckName: string, preset: CoverPreset): Promise<void>;
   clearAssignments(ownerId: string, deckName: string): Promise<void>;
   removeProfile(ownerId: string, deckName: string): Promise<void>;
 }
 
 export interface CustomDeckCachePort {
-  read(): { ownerId: string | null; decks: string[] };
-  write(ownerId: string | null, decks: readonly string[]): void;
+  read(): { ownerId: string | null; decks: string[]; coverPresets?: Record<string, CoverPreset> };
+  write(ownerId: string | null, decks: readonly string[], coverPresets?: Record<string, CoverPreset>): void;
 }
 
 export interface CustomDeckWorkspaceOptions {
   identityReady: boolean;
   owner: { id: string | null; remoteAvailable: boolean };
   remoteDecks: readonly string[] | null;
+  remoteCoverPresets?: Record<string, CoverPreset> | null;
   cards: readonly CardData[];
   activeDeck: PracticeDeckScope;
   knownLibraryTotal: number;
@@ -38,11 +41,6 @@ export interface CustomDeckWorkspaceOptions {
   cache?: CustomDeckCachePort;
   ports: {
     assignCard(cardId: string, deckName: string | null): Promise<void>;
-    patchDeviceCards(
-      changes: readonly { card: CardData; fields: Partial<CardData> }[],
-      nextTotal: number,
-    ): Promise<DevicePendingOperation[]>;
-    acknowledgeDevicePending(operations: readonly DevicePendingOperation[], lease?: DevicePendingFlushLease): Promise<void>;
     publishCards(cardIds: ReadonlySet<string>, fields: Partial<CardData>): void;
     publishPractice(cardIds: ReadonlySet<string>, fields: Partial<CardData>): void;
     chooseAllDecks(): void;
@@ -54,12 +52,13 @@ export interface CustomDeckWorkspaceOptions {
 
 export interface CustomDeckWorkspaceModel {
   decks: string[];
+  coverPresets: Record<string, CoverPreset>;
   newDeckInput: string;
 }
 
 export interface CustomDeckWorkspaceActions {
   changeNewDeckInput(value: string): void;
-  createDeck(name: string): Promise<void>;
+  createDeck(name: string, preset?: CoverPreset): Promise<void>;
   deleteDeck(name: string): Promise<void>;
   assignDeck(cardId: string, deckName: string | null): Promise<void>;
 }
@@ -69,6 +68,7 @@ type DeckOwnerScope = string | null | undefined;
 interface ScopedDeckState {
   ownerScope: DeckOwnerScope;
   decks: string[];
+  coverPresets: Record<string, CoverPreset>;
 }
 
 const deckCreationFailureMessage = 'The deck could not be created. Check your connection and try again.';
@@ -83,19 +83,19 @@ const browserCache: CustomDeckCachePort = {
       if (scoped) return scoped;
       return {
         ownerId: globalThis.localStorage?.getItem(legacyDeckOwnerCacheKey) ?? null,
-        decks: normalizeCustomDeckCollection(JSON.parse(
+        ...normalizeCustomDeckProfile({ decks: JSON.parse(
           globalThis.localStorage?.getItem(legacyDeckCacheKey) ?? '[]',
-        )),
+        ) }),
       };
     } catch {
-      return { ownerId: null, decks: [] };
+      return { ownerId: null, decks: [], coverPresets: {} };
     }
   },
-  write: (ownerId, decks) => {
+  write: (ownerId, decks, coverPresets = {}) => {
     try {
       globalThis.localStorage?.setItem(
         ownerScopedDeckCacheKey,
-        serializeOwnerScopedDeckCache(ownerId, decks),
+        serializeOwnerScopedDeckCache(ownerId, decks, coverPresets),
       );
     } catch { /* optional */ }
   },
@@ -108,11 +108,24 @@ export function readCachedDecksForIdentity(
   remoteDecks: readonly string[] | null,
 ): string[] {
   if (!identityReady || !ownerId) return [];
-  if (remoteDecks) return normalizeCustomDeckCollection(remoteDecks);
+  if (remoteDecks) return normalizeCustomDeckProfile({ decks: remoteDecks }).decks;
   const cached = cache.read();
   return cached.ownerId === ownerId
-    ? normalizeCustomDeckCollection(cached.decks)
+    ? normalizeCustomDeckProfile(cached).decks
     : [];
+}
+
+export function readCachedDeckProfileForIdentity(
+  cache: CustomDeckCachePort,
+  identityReady: boolean,
+  ownerId: string | null,
+  remoteDecks: readonly string[] | null,
+  remoteCoverPresets: Record<string, CoverPreset> | null | undefined,
+) {
+  if (!identityReady || !ownerId) return normalizeCustomDeckProfile({});
+  if (remoteDecks) return normalizeCustomDeckProfile({ decks: remoteDecks, coverPresets: remoteCoverPresets });
+  const cached = cache.read();
+  return cached.ownerId === ownerId ? normalizeCustomDeckProfile(cached) : normalizeCustomDeckProfile({});
 }
 
 export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
@@ -135,13 +148,16 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
   const ownerVersion = ownerLifecycleRef.current.version;
   const [deckState, setDeckState] = useState<ScopedDeckState>(() => ({
     ownerScope,
-    decks: readCachedDecksForIdentity(
+    ...readCachedDeckProfileForIdentity(
       cache,
       options.identityReady,
       options.owner.id,
       options.remoteDecks,
+      options.remoteCoverPresets,
     ),
   }));
+  const deckStateRef = useRef(deckState);
+  deckStateRef.current = deckState;
   const decks = deckState.ownerScope === ownerScope
     ? deckState.decks
     : readCachedDecksForIdentity(
@@ -150,19 +166,25 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
       options.owner.id,
       options.remoteDecks,
     );
+  const coverPresets = deckState.ownerScope === ownerScope
+    ? deckState.coverPresets
+    : readCachedDeckProfileForIdentity(cache, options.identityReady, options.owner.id, options.remoteDecks, options.remoteCoverPresets).coverPresets;
   const [newDeckInput, setNewDeckInput] = useState('');
 
   useEffect(() => {
-    setDeckState({
+    const next = {
       ownerScope,
-      decks: readCachedDecksForIdentity(
+      ...readCachedDeckProfileForIdentity(
         cache,
         options.identityReady,
         options.owner.id,
         options.remoteDecks,
+        options.remoteCoverPresets,
       ),
-    });
-  }, [cache, options.identityReady, options.owner.id, options.remoteDecks, ownerScope]);
+    };
+    deckStateRef.current = next;
+    setDeckState(next);
+  }, [cache, options.identityReady, options.owner.id, options.remoteDecks, options.remoteCoverPresets, ownerScope]);
 
   useEffect(() => {
     const ownerId = options.owner.id;
@@ -172,7 +194,7 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
       || ownerScope !== ownerId
       || deckState.ownerScope !== ownerScope
     ) return;
-    cache.write(ownerId, deckState.decks);
+    cache.write(ownerId, deckState.decks, deckState.coverPresets);
   }, [cache, deckState, options.owner.id, options.remoteDecks, ownerScope]);
 
   const actions = useMemo<CustomDeckWorkspaceActions>(() => ({
@@ -185,7 +207,7 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
       const current = latestRef.current;
       await current.ports.assignCard(cardId, deckName);
     },
-    createDeck: async name => {
+    createDeck: async (name, preset = defaultCoverPreset) => {
       const creationOwnerVersion = ownerVersion;
       const isCurrentOwner = () => (
         ownerLifecycleRef.current.version === creationOwnerVersion
@@ -205,17 +227,28 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
       }
       if (current.owner.id && current.owner.remoteAvailable) {
         try {
-          await current.mutations.add(current.owner.id, plan.name);
+          await current.mutations.add(current.owner.id, plan.name, preset);
         } catch (cause) {
-          if (!isCurrentOwner()) return;
+          if (!isCurrentOwner() || !latestRef.current.owner.remoteAvailable) return;
           current.ports.warn('Custom deck profile could not be updated.', cause);
           current.ports.reportError(deckCreationFailureMessage);
           throw new Error(deckCreationFailureMessage);
         }
+        if (!isCurrentOwner() || !latestRef.current.owner.remoteAvailable) return;
       }
       if (!isCurrentOwner()) return;
-      setDeckState({ ownerScope, decks: plan.decks });
-      cacheRef.current.write(current.owner.id, plan.decks);
+      const previous = deckStateRef.current;
+      if (previous.ownerScope !== ownerScope) return;
+      const next = {
+        ownerScope,
+        ...normalizeCustomDeckProfile({
+          decks: [...previous.decks, plan.name],
+          coverPresets: { ...previous.coverPresets, [customDeckCoverKey(plan.name)]: preset },
+        }),
+      };
+      deckStateRef.current = next;
+      setDeckState(next);
+      cacheRef.current.write(current.owner.id, next.decks, next.coverPresets);
     },
     deleteDeck: async deckName => {
       const current = latestRef.current;
@@ -230,10 +263,20 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
         .filter(card => card.customDeck === deckName)
         .map(card => ({ ...card, customDeck: null }));
       const changedIds = new Set(changedCards.map(card => card.id));
+      const remoteOwnerId = current.owner.id;
+      const remoteAccessAvailable = () => Boolean(
+        remoteOwnerId
+        && isCurrentOwner()
+        && latestRef.current.owner.id === remoteOwnerId
+        && latestRef.current.owner.remoteAvailable,
+      );
       const applyLocalResult = () => {
         if (!isCurrentOwner()) return;
-        setDeckState({ ownerScope, decks: updated });
-        cacheRef.current.write(current.owner.id, updated);
+        const nextCoverPresets = normalizeCustomDeckProfile({ decks: updated, coverPresets }).coverPresets;
+        const next = { ownerScope, decks: updated, coverPresets: nextCoverPresets };
+        deckStateRef.current = next;
+        setDeckState(next);
+        cacheRef.current.write(current.owner.id, updated, nextCoverPresets);
         current.ports.publishCards(changedIds, { customDeck: null });
         current.ports.publishPractice(changedIds, { customDeck: null });
         if (current.activeDeck.kind === 'deck' && current.activeDeck.name === deckName) {
@@ -243,28 +286,20 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
 
       let assignmentsCleared = false;
       let deckProfileRemoved = false;
-      if (current.owner.id && current.owner.remoteAvailable) {
+      if (remoteOwnerId && current.owner.remoteAvailable) {
         try {
-          const leaseResult = await withDevicePendingFlush(current.owner.id, false, async lease => {
-            await lease.assertOwnership();
-            await current.mutations.clearAssignments(current.owner.id!, deckName);
-            assignmentsCleared = true;
-            await lease.assertOwnership();
-            await current.mutations.removeProfile(current.owner.id!, deckName);
-            deckProfileRemoved = true;
-            const pending = await current.ports.patchDeviceCards(
-              changedCards.map(card => ({ card, fields: { customDeck: null } })),
-              current.knownLibraryTotal,
-            );
-            await lease.assertOwnership();
-            await current.ports.acknowledgeDevicePending(pending, lease);
-          });
-          if (!leaseResult.acquired) throw new Error('Cloud sync is finishing another operation. Try deleting the deck again in a moment.');
+          if (!remoteAccessAvailable()) return;
+          await current.mutations.clearAssignments(remoteOwnerId, deckName);
+          assignmentsCleared = true;
+          if (!remoteAccessAvailable()) return;
+          await current.mutations.removeProfile(remoteOwnerId, deckName);
+          deckProfileRemoved = true;
+          if (!isCurrentOwner() || !remoteAccessAvailable()) return;
         } catch (cause) {
-          if (!isCurrentOwner()) return;
+          if (!isCurrentOwner() || !remoteAccessAvailable()) return;
           current.ports.warn('Deck deletion could not complete atomically.', cause);
           const recovery = planDeckDeletionFailureRecovery(assignmentsCleared, deckProfileRemoved);
-          current.ports.recoverCloud(current.owner.id, recovery.message);
+          current.ports.recoverCloud(remoteOwnerId, recovery.message);
           if (recovery.applyLocalResult) {
             applyLocalResult();
             return;
@@ -274,9 +309,10 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
         }
       }
       if (!isCurrentOwner()) return;
+      if (remoteOwnerId && current.owner.remoteAvailable && !remoteAccessAvailable()) return;
       applyLocalResult();
     },
-  }), [decks, ownerScope, ownerVersion]);
+  }), [coverPresets, decks, ownerScope, ownerVersion]);
 
-  return { model: { decks, newDeckInput }, actions };
+  return { model: { decks, coverPresets, newDeckInput }, actions };
 }

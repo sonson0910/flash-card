@@ -6,6 +6,30 @@ describe('setZenGlassMode', () => {
     vi.unstubAllGlobals();
   });
 
+  it('notifies other hook consumers when persistence is unavailable', () => {
+    const dispatchEvent = vi.fn();
+    vi.stubGlobal('window', {
+      localStorage: { setItem: () => { throw new Error('denied'); } },
+      dispatchEvent,
+    });
+    vi.stubGlobal('CustomEvent', class {
+      type: string;
+      detail: { enabled: boolean };
+
+      constructor(type: string, init: { detail: { enabled: boolean } }) {
+        this.type = type;
+        this.detail = init.detail;
+      }
+    });
+
+    setZenGlassMode(true);
+
+    expect(dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'sonflash-zen-mode-change',
+      detail: { enabled: true },
+    }));
+  });
+
   it('persists the value and dispatches one change event', () => {
     const setItem = vi.fn();
     const dispatchEvent = vi.fn();

@@ -71,4 +71,15 @@ describe('shared motion language', () => {
       to: { autoAlpha: 1, x: 0, y: 0, scale: 1, duration: 0, ease: 'none' },
     });
   });
+
+  it('collapses the session reveal and completion entrances the same way under reduced motion', () => {
+    // The daily session's reveal (feedback) and recap (result) transitions share this same
+    // early return, so a passing 'step' case above does not by itself prove these two do too.
+    const collapsed = {
+      from: { autoAlpha: 1, x: 0, y: 0, scale: 1 },
+      to: { autoAlpha: 1, x: 0, y: 0, scale: 1, duration: 0, ease: 'none' },
+    };
+    expect(getGsapEntranceMotion('feedback', 1, true)).toEqual(collapsed);
+    expect(getGsapEntranceMotion('result', 1, true)).toEqual(collapsed);
+  });
 });

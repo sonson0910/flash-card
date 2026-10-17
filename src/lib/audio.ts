@@ -53,13 +53,23 @@ export function claimContentPlayback(stop: () => void): () => void {
 const speechFailureMessage = 'Audio could not be played. Check this site’s audio permission and try again.';
 
 interface WordAudioOptions extends SpeechCallbacks {
+  speechLocale?: string;
+  voice?: SpeechSynthesisVoice;
   audio?: HTMLAudioElement | null;
   speed?: 1 | 0.75;
 }
 
 export type WordAudioPlayback = (() => void) & { cancel(): void };
 
-export function playWordAudio(word: string, audioUrl: string | null, options: WordAudioOptions = {}): WordAudioPlayback {
+export function playWordAudio(
+  word: string,
+  audioUrl: string | null,
+  optionsOrLocale: WordAudioOptions | string = {},
+  voice?: SpeechSynthesisVoice,
+): WordAudioPlayback {
+  const options: WordAudioOptions = typeof optionsOrLocale === 'string'
+    ? { speechLocale: optionsOrLocale, voice }
+    : optionsOrLocale;
   let active = true;
   let audio: HTMLAudioElement | null = null;
   let speaking = false;
@@ -87,7 +97,7 @@ export function playWordAudio(word: string, audioUrl: string | null, options: Wo
       if (!speakNow(word, {
         onEnd: stop,
         onError: () => fail(speechFailureMessage),
-      }, options.speed === 0.75 ? 0.65 : 0.9)) fail('Audio playback is not supported by this browser.');
+      }, options.speed === 0.75 ? 0.65 : 0.9, options.speechLocale, options.voice)) fail('Audio playback is not supported by this browser.');
     } catch { fail(speechFailureMessage); }
   };
   try {
@@ -109,7 +119,15 @@ export function playWordAudio(word: string, audioUrl: string | null, options: Wo
   return stop;
 }
 
+let currentSpeechUtterance: SpeechSynthesisUtterance | null = null;
+let currentSpeechOwner: SpeechSynthesis | null = null;
+
 export function cancelSpeech() {
+  if (currentSpeechUtterance) currentSpeechUtterance.volume = 0;
+  const owner = currentSpeechOwner;
+  currentSpeechUtterance = null;
+  currentSpeechOwner = null;
+  if (owner && (typeof window === 'undefined' || owner !== window.speechSynthesis)) owner.cancel();
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
 }
@@ -120,17 +138,26 @@ export interface SpeechCallbacks {
   onError?: (error: string) => void;
 }
 
-const speakNow = (text: string, callbacks: SpeechCallbacks = {}, rate = 0.9): boolean => {
+const speakNow = (text: string, callbacks: SpeechCallbacks = {}, rate = 0.9, locale = 'en-US', voice?: SpeechSynthesisVoice): boolean => {
   const normalized = text.trim();
   if (!normalized || typeof window === 'undefined'
     || !('speechSynthesis' in window)
     || typeof SpeechSynthesisUtterance === 'undefined') return false;
-  cancelSpeech();
+  if (currentSpeechUtterance || window.speechSynthesis.speaking || window.speechSynthesis.pending) cancelSpeech();
   const utterance = new SpeechSynthesisUtterance(normalized);
-  utterance.lang = 'en-US';
+  currentSpeechUtterance = utterance;
+  currentSpeechOwner = window.speechSynthesis;
+  utterance.lang = locale;
+  if (voice) utterance.voice = voice;
   utterance.rate = rate;
   utterance.onstart = () => callbacks.onStart?.();
-  utterance.onend = () => callbacks.onEnd?.();
+  utterance.onend = () => {
+    if (currentSpeechUtterance === utterance) {
+      currentSpeechUtterance = null;
+      currentSpeechOwner = null;
+    }
+    callbacks.onEnd?.();
+  };
   utterance.onerror = event => callbacks.onError?.(event?.error ?? 'speech-failed');
   window.speechSynthesis.resume?.();
   window.speechSynthesis.speak(utterance);
@@ -146,6 +173,7 @@ export function speakText(text: string, callbacks?: SpeechCallbacks): boolean {
     release();
   };
   const release = claimContentPlayback(stop);
+  cancelSpeech();
   const started = speakNow(text, {
     onStart: callbacks?.onStart,
     onEnd: () => {

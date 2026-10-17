@@ -1,0 +1,12 @@
+.hangul-breakdown-slot { width: 100%; margin-top: 1rem; }
+@media (min-width: 1320px) { .hangul-breakdown-slot { position: absolute; left: calc(50% + 354px); top: 0; width: 300px; margin-top: 0; } }
+.hangul-breakdown { width: 100%; max-width: 36rem; margin: 0 auto; padding: 1rem; border: 1px solid var(--sf-border); border-radius: 1rem; background: var(--sf-surface-raised); color: var(--sf-text); text-align: left; }
+.hangul-breakdown__title { margin: 0; color: var(--sf-text-muted); font-size: .625rem; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+.hangul-breakdown__grid { display: grid; gap: .5rem; margin-top: .5rem; }
+@media (min-width: 640px) and (max-width: 1319px) { .hangul-breakdown__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.hangul-breakdown__row { display: flex; min-width: 0; align-items: center; gap: .5rem; padding: .5rem .625rem; border-radius: .75rem; background: var(--sf-surface-muted); }
+.hangul-breakdown__block { display: flex; flex: 0 0 2.5rem; height: 2.5rem; align-items: center; justify-content: center; border: 1px solid var(--sf-border); border-radius: .5rem; color: var(--sf-brand-text); font-size: 1.125rem; font-weight: 700; }
+.hangul-breakdown__equals { color: var(--sf-text-muted); }
+.hangul-breakdown__parts { display: flex; min-width: 0; flex-wrap: wrap; column-gap: .5rem; row-gap: .25rem; }
+.hangul-breakdown__part { display: flex; min-width: 1.5rem; flex-direction: column; align-items: center; font-size: 1rem; font-weight: 600; }
+.hangul-breakdown__part span + span { color: var(--sf-brand-text); font-size: .625rem; font-weight: 700; }

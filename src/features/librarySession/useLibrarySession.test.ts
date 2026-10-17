@@ -43,18 +43,15 @@ const inputs: LibrarySessionInputs = {
     pageSize: 9,
     refreshKey: 4,
     statsOpen: true,
+    progressEvidenceOpen: false,
   },
   library: {
-    cards: [card],
     knownTotal: 12,
     cloudTotal: 11,
     cloudStatsTotal: 10,
-    browserOnline: true,
-    cloudUnavailable: false,
   },
   ports: {
     ownerAdapter: { available: false } as never,
-    deviceEvents: {} as never,
     getPromotedCards: () => [card],
   },
 };
@@ -67,25 +64,12 @@ const createDependencies = (authenticated = true) => {
     acceptVerifiedOwnerEpoch: vi.fn(() => true),
   };
   const ownerActions = {
-      migrateLegacy: vi.fn(async () => ({
-        status: 'completed' as const,
-        migrated: 0,
-        scanned: 0,
-        complete: true,
-      })),
-    discardCards: vi.fn(),
-  };
-  const deviceFunctions = {
-    getFallback: vi.fn(async () => null),
-    refreshPending: vi.fn(async () => 0),
-    acknowledge: vi.fn(async () => undefined),
-    upsertCards: vi.fn(async () => []),
-    patchCards: vi.fn(async () => []),
-    removeCard: vi.fn(async () => []),
-    flush: vi.fn(async () => undefined),
-    syncMirror: vi.fn(async () => 0),
-    syncNow: vi.fn(async () => undefined),
-    retry: vi.fn(async () => undefined),
+    migrateLegacy: vi.fn(async () => ({
+      status: 'completed' as const,
+      migrated: 0,
+      scanned: 0,
+      complete: true,
+    })),
   };
   const dependencies: LibrarySessionHookDependencies = {
     useIdentitySession: vi.fn(() => ({
@@ -95,14 +79,15 @@ const createDependencies = (authenticated = true) => {
       canPublishMutations: authenticated,
       isSigningIn: false,
       isSigningOut: false,
+      authenticationRecovery: null,
       error: null,
       ...identityActions,
     })),
     useOwnerLibrarySession: vi.fn(() => ({
       model: {
         ownerId: authenticated ? 'owner-1' : null,
-        cards: [],
         decks: ['IELTS'],
+        coverPresets: {},
         legacyPending: 3,
         legacyIssue: null,
         isMigratingLegacy: false,
@@ -110,12 +95,6 @@ const createDependencies = (authenticated = true) => {
         error: null,
       },
       actions: ownerActions,
-    })),
-    useLibraryDeviceSync: vi.fn(() => ({
-      isSyncing: false,
-      pendingCount: 2,
-      error: null,
-      ...deviceFunctions,
     })),
     useCloudLibraryPage: vi.fn(() => ({
       ownerId: authenticated ? 'owner-1' : null,
@@ -134,7 +113,7 @@ const createDependencies = (authenticated = true) => {
       facetsComplete: true,
     })),
   };
-  return { dependencies, identityActions, ownerActions, deviceFunctions };
+  return { dependencies, identityActions, ownerActions };
 };
 
 describe('useLibrarySession facade', () => {
@@ -147,14 +126,14 @@ describe('useLibrarySession facade', () => {
     const session = useLibrarySession(inputs, dependencies);
 
     expect(source).not.toMatch(/firebase|Firestore|QueryDocumentSnapshot|Dispatch|SetStateAction/i);
-    expect(Object.keys(session)).toEqual(['model', 'actions', 'ports']);
-    expect(Object.keys(session.model)).toEqual(['identity', 'owner', 'sync', 'cloud']);
-    expect(Object.keys(session.actions)).toEqual(['identity', 'owner', 'sync']);
+    expect(Object.keys(session)).toEqual(['model', 'actions']);
+    expect(Object.keys(session.model)).toEqual(['identity', 'owner', 'cloud']);
+    expect(Object.keys(session.actions)).toEqual(['identity', 'owner']);
     expect(JSON.stringify(Object.keys(session.actions))).not.toMatch(/set[A-Z]/);
   });
 
-  it('derives owner identity once and wires sync fallback into the cloud page', () => {
-    const { dependencies, deviceFunctions } = createDependencies();
+  it('derives owner identity once and wires the cloud page directly', () => {
+    const { dependencies } = createDependencies();
     const session = useLibrarySession(inputs, dependencies);
 
     expect(dependencies.useOwnerLibrarySession).toHaveBeenCalledWith({
@@ -162,16 +141,7 @@ describe('useLibrarySession facade', () => {
       libraryEpoch: 7,
       cloudTotal: 12,
       adapter: inputs.ports.ownerAdapter,
-      cache: undefined,
     });
-    expect(dependencies.useLibraryDeviceSync).toHaveBeenCalledWith(expect.objectContaining({
-      owner: { uid: 'owner-1' },
-      epoch: { userId: 'owner-1', value: 7 },
-      cards: [card],
-      query,
-      currentPage: 2,
-      events: inputs.ports.deviceEvents,
-    }));
     expect(dependencies.useCloudLibraryPage).toHaveBeenCalledWith({
       ownerId: 'owner-1',
       query,
@@ -180,34 +150,44 @@ describe('useLibrarySession facade', () => {
       pageSize: 9,
       refreshKey: 4,
       statsOpen: true,
-      getDeviceFallback: deviceFunctions.getFallback,
+      progressEvidenceOpen: false,
       getPromotedCards: inputs.ports.getPromotedCards,
     });
-    expect(session.model.sync).toEqual({ isSyncing: false, pendingCount: 2, error: null });
+    expect(session.model.cloud.items).toEqual([card]);
   });
 
-  it('publishes narrow domain actions and consumer ports without re-wrapping them', () => {
-    const { dependencies, identityActions, ownerActions, deviceFunctions } = createDependencies();
+  it('keeps ownership visible while exposing authentication recovery', () => {
+    const { dependencies } = createDependencies();
+    const identity = dependencies.useIdentitySession();
+    vi.mocked(dependencies.useIdentitySession).mockReturnValue({
+      ...identity,
+      authenticationRecovery: 'session-lost',
+      ownerEpoch: null,
+      canPublishMutations: false,
+    });
+
+    const session = useLibrarySession(inputs, dependencies);
+
+    expect(session.model.identity).toMatchObject({
+      owner: { id: 'owner-1' },
+      authenticationRecovery: 'session-lost',
+      canPublishMutations: false,
+    });
+    expect(dependencies.useOwnerLibrarySession).toHaveBeenCalledWith(expect.objectContaining({
+      ownerId: 'owner-1',
+      libraryEpoch: null,
+    }));
+  });
+
+  it('publishes narrow domain actions without re-wrapping them', () => {
+    const { dependencies, identityActions, ownerActions } = createDependencies();
     const session = useLibrarySession(inputs, dependencies);
 
     expect(session.actions.identity).toEqual(identityActions);
     expect(session.actions.owner).toEqual(ownerActions);
-    expect(session.actions.sync).toEqual({ syncNow: deviceFunctions.syncNow, retry: deviceFunctions.retry });
-    expect(session.ports.cards).toEqual({
-      acknowledge: deviceFunctions.acknowledge,
-      upsert: deviceFunctions.upsertCards,
-      patch: deviceFunctions.patchCards,
-      remove: deviceFunctions.removeCard,
-    });
-    expect(session.ports.cloud).toEqual({
-      getFallback: deviceFunctions.getFallback,
-      flush: deviceFunctions.flush,
-      refreshPending: deviceFunctions.refreshPending,
-      syncMirror: deviceFunctions.syncMirror,
-    });
   });
 
-  it('passes anonymous ownership through every child session', () => {
+  it('passes signed-out ownership through every child session', () => {
     const { dependencies } = createDependencies(false);
     const session = useLibrarySession(inputs, dependencies);
 
@@ -215,11 +195,15 @@ describe('useLibrarySession facade', () => {
       ownerId: null,
       libraryEpoch: null,
     }));
-    expect(dependencies.useLibraryDeviceSync).toHaveBeenCalledWith(expect.objectContaining({
-      owner: null,
-      epoch: null,
-    }));
     expect(dependencies.useCloudLibraryPage).toHaveBeenCalledWith(expect.objectContaining({ ownerId: null }));
     expect(session.model.identity.owner).toBeNull();
+  });
+
+  it('does not start course-scoped cloud reads before the course snapshot belongs to the identity owner', () => {
+    const { dependencies } = createDependencies();
+    useLibrarySession({ ...inputs, catalog: { ...inputs.catalog, courseScopeReady: false } }, dependencies);
+
+    expect(dependencies.useOwnerLibrarySession).toHaveBeenCalledWith(expect.objectContaining({ ownerId: 'owner-1' }));
+    expect(dependencies.useCloudLibraryPage).toHaveBeenCalledWith(expect.objectContaining({ ownerId: null }));
   });
 });

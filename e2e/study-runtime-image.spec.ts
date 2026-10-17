@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const cardWithBrokenRuntimeImage = {
   id: 'runtime-image-failure',
@@ -16,19 +16,19 @@ const cardWithBrokenRuntimeImage = {
   difficulty: 'hard',
 };
 
-test('a runtime image error moves Image to Word study to a usable text cue', async ({ page }) => {
+test('a runtime image error moves Image to Word study to a usable text cue', async ({ page, seedCards, signIn }) => {
   await page.route('https://images.pexels.com/**', route => route.abort('failed'));
-  await page.addInitScript(card => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify([card]));
-    localStorage.removeItem('lingoflash_cards_owner');
-  }, cardWithBrokenRuntimeImage);
-  await page.goto('/?view=library');
+  await seedCards([cardWithBrokenRuntimeImage]);
+  await signIn(page, '/?view=library');
 
-  await page.getByRole('button', { name: /Start review|Review \d+ due/ }).click();
+  // LibraryCardGrid.tsx's collection actions render a single "Study now"
+  // button (library.grid.study-now); the old "Start review"/"Review N due"
+  // copy no longer exists.
+  await page.getByRole('button', { name: 'Study now' }).click();
   const recallMode = page.getByLabel('Recall mode');
   await recallMode.selectOption('image-to-word');
 
-  await expect(recallMode).toHaveValue('vi-to-en');
+  await expect(recallMode).toHaveValue('native-to-target');
   await expect(recallMode.locator('option[value="image-to-word"]')).toHaveAttribute('disabled', '');
   await expect(page.getByText('Recall the English word')).toBeVisible();
   await expect(page.getByText('Name what you see')).toHaveCount(0);

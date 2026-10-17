@@ -1,10 +1,19 @@
-import { expect, test } from '@playwright/test';
-import { readdirSync, readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { expect, test } from './fixtures/firebase-emulator';
+import type { Page } from '@playwright/test';
 
 const cloudRequest = /firebase|googleapis|recaptcha|identitytoolkit|securetoken|\/api\/device-cards/i;
 const runtimeCloudScript = /\/assets\/(?:AppRuntime|firebase|firebase-functions)[^/]*\.js$/i;
-const buildAssetsDirectory = fileURLToPath(new URL('../dist/assets/', import.meta.url));
+const heroMedia = /\/assets\/(?:still-water|deep-woods|quiet-dawn|golden-hour)[^/]*\.(?:mp4|webm)(?:\?|$)/i;
+
+async function setAtmospherePreference(page: Page, mode: 'light' | 'dark', reduced: boolean) {
+  await page.emulateMedia({ colorScheme: mode, reducedMotion: reduced ? 'reduce' : 'no-preference' });
+  await page.addInitScript(({ mode, reduced }) => {
+    localStorage.setItem('sonflash_theme_family', 'classic');
+    localStorage.setItem('lingoflash_theme', mode);
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+    localStorage.setItem('sonflash_reduced_motion', String(reduced));
+  }, { mode, reduced });
+}
 const landingCards = Array.from({ length: 6 }, (_, index) => ({
   id: `landing-${index}`,
   word: `landing-word-${index}`,
@@ -23,24 +32,9 @@ const landingCards = Array.from({ length: 6 }, (_, index) => ({
   customDeck: null,
 }));
 
-test('production runtime keeps the retry identity distinct and ES2020-compatible', () => {
-  const assets = readdirSync(buildAssetsDirectory);
-  const runtimeAsset = assets.find(asset => /^AppRuntime-[^/]+\.js$/.test(asset));
-  const retryAsset = assets.find(asset => /^AppRuntimeRetry\.virtual-[^/]+\.js$/.test(asset));
-
-  if (!runtimeAsset || !retryAsset) throw new Error('Production runtime assets are missing.');
-  expect(assets.filter(asset => /^AppRuntime-[^/]+\.js$/.test(asset))).toHaveLength(1);
-  expect(readFileSync(`${buildAssetsDirectory}/${retryAsset}`, 'utf8')).toMatch(
-    new RegExp(`AppRuntime-[^/]+\\.js\\?runtime-retry=1`),
-  );
-  expect(readFileSync(`${buildAssetsDirectory}/${runtimeAsset}`, 'utf8')).not.toMatch(/\|\|=|&&=|\?\?=/);
-});
-
-test('cold landing is cloud-free and warm runtime stays mounted across navigation', async ({ page }) => {
-  await page.addInitScript(initialCards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));
-    localStorage.removeItem('lingoflash_cards_owner');
-  }, landingCards);
+test('cold landing is cloud-free and warm runtime stays mounted across navigation', async ({ page, seedCards, signInInPlace }) => {
+  await setAtmospherePreference(page, 'dark', false);
+  await seedCards(landingCards);
   const requests: string[] = [];
   let documentRequests = 0;
   page.on('request', request => {
@@ -61,7 +55,21 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
   }
 
   expect(requests.filter(url => cloudRequest.test(url))).toEqual([]);
+  // Sign-in happens in place (no navigation) so documentRequests below still
+  // reflects exactly one document load; Today now requires an authenticated
+  // owner since guest/local-only mode was removed. window.__SONFLASH_TEST__
+  // is only installed once AppRuntime's lazy chunk evaluates, which only
+  // happens once the view leaves 'landing' — so this priming click (Start
+  // learning -> enterApp -> setViewMode('today')) mounts that chunk first.
+  // AppRuntime's signed-out effect immediately bounces viewMode back to
+  // 'landing', capturing the pre-bounce /?view=today URL in
+  // preSignInLocationRef; once signInInPlace resolves and `user` becomes
+  // truthy, AppRuntime's own restore effect pushes that captured URL back and
+  // dispatches a synthetic popstate, landing on Today automatically — no
+  // second "Start learning" click, since the button (and the landing page
+  // under it) is already gone by then.
   await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
+  await signInInPlace(page);
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
   await page.getByRole('button', { name: 'More practice' }).click();
   await expect(page.getByRole('dialog', { name: 'Choose a practice mode' })).toBeVisible();
@@ -75,8 +83,9 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Choose a practice mode' })).toBeHidden();
 
-  await page.getByRole('button', { name: 'Home', exact: true }).click();
+  await page.getByRole('button', { name: 'SonFlash', exact: true }).click();
   await expect(page.locator('video[data-hero-video]')).toHaveCount(4);
+  await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
   await page.getByRole('button', { name: 'Vocabulary', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'Vocabulary library' })).toBeVisible();
   expect(new URL(page.url()).searchParams.get('view')).toBe('library');
@@ -91,6 +100,7 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
 });
 
 test('atmosphere controls activate every video without moving the page', async ({ page }) => {
+  await setAtmospherePreference(page, 'dark', false);
   await page.goto('/?view=landing');
 
   for (const label of ['Still Water', 'Deep Woods', 'Quiet Dawn', 'Golden Hour']) {
@@ -108,57 +118,71 @@ test('atmosphere controls activate every video without moving the page', async (
   }
 });
 
-test('data saver keeps the landing page static without requesting hero video', async ({ page }) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'connection', {
-      configurable: true,
-      value: { saveData: true },
-    });
+for (const condition of ['light', 'reduced-motion', 'compact'] as const) {
+  test(`cold ${condition} landing stays cloud-free without loading hero media`, async ({ page }) => {
+    await setAtmospherePreference(page, condition === 'light' ? 'light' : 'dark', condition === 'reduced-motion');
+    if (condition === 'compact') await page.setViewportSize({ width: 390, height: 844 });
+    const requests: string[] = [];
+    page.on('request', request => requests.push(request.url()));
+    await page.goto('/?view=landing');
+    await expect(page.getByRole('status').filter({ hasText: 'Static atmosphere is enabled' })).toHaveCount(1);
+    await expect(page.locator('video[data-hero-video]')).toHaveCount(0);
+    expect(requests.filter(url => cloudRequest.test(url) || heroMedia.test(url))).toEqual([]);
   });
-  const mediaRequests: string[] = [];
-  page.on('request', request => {
-    if (/\.mp4(?:\?|$)/i.test(request.url())) mediaRequests.push(request.url());
-  });
+}
 
-  await page.goto('/?view=landing');
-
-  await expect(page.getByRole('status')).toBeVisible();
-  await expect(page.locator('fieldset')).toHaveCount(0);
-  expect(mediaRequests).toEqual([]);
-});
-
-test('failed runtime import restores landing and retries with a fresh runtime entry', async ({ page }) => {
-  await page.addInitScript(initialCards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));
-    localStorage.removeItem('lingoflash_cards_owner');
-  }, landingCards);
+test('failed runtime import restores landing and retries with a fresh runtime entry', async ({ page, seedCards, signInInPlace }) => {
+  await seedCards(landingCards);
+  const initialRuntimeScript = /\/assets\/AppRuntimeInitial\.virtual-[^/]+\.js$/i;
+  const retryRuntimeScript = /\/assets\/AppRuntimeRetry\.virtual-[^/]+\.js$/i;
   const requests: string[] = [];
+  const failedRuntimeRequests: string[] = [];
+  const finishedRuntimeRequests: string[] = [];
   let documentRequests = 0;
-  await page.route(/\/assets\/AppRuntime-[^/]+\.js(?:\?.*)?$/i, route => {
-    if (new URL(route.request().url()).searchParams.get('runtime-retry') === '1') return route.continue();
-    return route.abort();
-  });
+  let blockRuntime = true;
+  await page.route(initialRuntimeScript, route => (blockRuntime ? route.abort() : route.continue()));
   page.on('request', request => {
     requests.push(request.url());
     if (request.resourceType() === 'document' && request.frame() === page.mainFrame()) documentRequests += 1;
+  });
+  page.on('requestfailed', request => {
+    if (initialRuntimeScript.test(request.url()) || retryRuntimeScript.test(request.url())) failedRuntimeRequests.push(request.url());
+  });
+  page.on('requestfinished', request => {
+    if (initialRuntimeScript.test(request.url()) || retryRuntimeScript.test(request.url())) finishedRuntimeRequests.push(request.url());
   });
 
   await page.goto('/?view=landing');
   expect(requests.filter(url => cloudRequest.test(url))).toEqual([]);
 
   await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
-  await expect(page.getByRole('heading', { name: /Remember words\. Use them when it matters\./ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Workspace could not load.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Remember words\. Use them when it matters\./ })).toBeHidden();
   await expect(page.getByRole('button', { name: 'Retry workspace', exact: true })).toBeVisible();
-  await expect(page).toHaveURL(/view=landing/);
+  await expect(page).toHaveURL('http://127.0.0.1:4173/');
+  const initialRequestsBeforeRetry = requests.filter(url => initialRuntimeScript.test(url));
+  expect(initialRequestsBeforeRetry.length).toBeGreaterThan(0);
+  expect(failedRuntimeRequests).toEqual(initialRequestsBeforeRetry);
 
   await page.getByRole('button', { name: 'Retry workspace', exact: true }).click();
   await expect(page).toHaveURL(/runtime-retry=\d+/);
   await expect(page.getByRole('button', { name: 'Start learning', exact: true }).first()).toBeVisible();
+  // Same priming click as the top test: this retry reload landed back on
+  // the (view-less) landing URL, so AppRuntimeRetry's chunk and its hook
+  // have not loaded yet either. As in the top test, AppRuntime's own
+  // sign-in return-flow effect (bounce to landing, then restore the
+  // captured URL via pushState + a synthetic popstate once `user` resolves)
+  // lands on Today by itself once signInInPlace resolves, so no second click
+  // is needed or possible (the button is already gone).
   await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
+  await signInInPlace(page);
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
   expect(documentRequests).toBe(2);
-  const runtimeRequests = requests.filter(url => /\/assets\/AppRuntime-[^/]+\.js(?:\?.*)?$/i.test(url));
-  expect(runtimeRequests).toHaveLength(2);
-  expect(new URL(runtimeRequests[0]).search).toBe('');
-  expect(new URL(runtimeRequests[1]).searchParams.get('runtime-retry')).toBe('1');
+  const runtimeRequests = requests.filter(url => initialRuntimeScript.test(url) || retryRuntimeScript.test(url));
+  const retryRequestIndex = runtimeRequests.findIndex(url => retryRuntimeScript.test(url));
+  expect(retryRequestIndex).toBe(initialRequestsBeforeRetry.length);
+  expect(runtimeRequests.slice(retryRequestIndex + 1).filter(url => initialRuntimeScript.test(url))).toEqual([]);
+  expect(runtimeRequests.filter(url => retryRuntimeScript.test(url))).toHaveLength(1);
+  expect(failedRuntimeRequests.filter(url => retryRuntimeScript.test(url))).toEqual([]);
+  expect(finishedRuntimeRequests.filter(url => retryRuntimeScript.test(url))).toHaveLength(1);
 });

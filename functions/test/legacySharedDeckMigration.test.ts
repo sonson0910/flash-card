@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createHash, generateKeyPairSync, sign } from 'node:crypto';
 import { Timestamp } from 'firebase-admin/firestore';
-import { calculateSharedDeckPayloadBytes } from '../src/inputValidation.js';
+import { calculateSharedDeckPayloadBytes, type CreateSharedDeckRequest } from '../src/inputValidation.js';
 import { createFirestoreLegacySharedDeckInventoryStore } from '../src/legacySharedDeckInventoryFirestore.js';
 import {
   buildInventoryReport,
@@ -261,6 +261,12 @@ describe('legacy shared-deck exact inventory', () => {
   });
 
   it('keeps exact current records and upgrades matching private v1 metadata', () => {
+    expect(classifyLegacyShare({ ...current('current-with-languages', {
+      targetLanguage: 'en', nativeLanguage: 'vi',
+    }), privateData: privateV1() }, ownerUid)).toMatchObject({
+      disposition: 'upgrade-private-v1',
+      reasonCode: 'private-v1-upgrade',
+    });
     expect(classifyLegacyShare({ ...current(), privateData: {
       ...privateV1(),
       createdAt: timestamp,
@@ -291,6 +297,42 @@ describe('legacy shared-deck exact inventory', () => {
       disposition: 'block',
       reasonCode: 'private-conflict',
     });
+  });
+
+  it('binds safe origin and the complete deck language pair into current payload validation', () => {
+    const languagePair = { targetLanguage: 'en', nativeLanguage: 'vi' };
+    const payload: CreateSharedDeckRequest = {
+      category: 'Basics', cards: [{ ...card, origin: 'ai' }], ...languagePair,
+    };
+    const { cards } = payload;
+    const privateV2 = {
+      ownerUid,
+      createdAt: timestamp,
+      expiresAt: { seconds: 1_900_000_000, nanoseconds: 0 },
+      payloadBytes: calculateSharedDeckPayloadBytes(payload),
+      schemaVersion: 2,
+    };
+    const valid = classifyLegacyShare({
+      ...current('current-attribution', { cards, ...languagePair }),
+      privateData: privateV2,
+    }, ownerUid);
+    expect(valid).toMatchObject({
+      disposition: 'keep-current',
+      reasonCode: 'current',
+      payloadBytes: calculateSharedDeckPayloadBytes(payload),
+    });
+
+    for (const invalid of [
+      current('partial-pair', { cards, targetLanguage: 'en' }),
+      current('non-canonical-pair', { cards, targetLanguage: 'english', nativeLanguage: 'vi' }),
+      current('unsafe-origin', { cards: [{ ...card, origin: 'provider' }], ...languagePair }),
+      current('per-card-native-language', { cards: [{ ...card, translationLanguage: 'vi' }], ...languagePair }),
+    ]) {
+      expect(classifyLegacyShare(invalid, ownerUid)).toMatchObject({
+        disposition: 'quarantine-candidate',
+        reasonCode: 'malformed-public',
+      });
+    }
   });
 
   it('keeps matching schema-v2 public and private fixtures with a lexeme tuple', () => {
@@ -1192,11 +1234,17 @@ describe('legacy shared-deck exact inventory', () => {
     )).toThrow(/backup/i);
   });
 
-  it('applies a frozen owner atomically, preserves IDs and payload digest, and retries as a no-op', async () => {
+  it('applies a frozen owner atomically while preserving card origin and deck languages', async () => {
+    const publicSource = current('apply-me', {
+      cards: [{ ...card, origin: 'ai' }],
+      targetLanguage: 'en',
+      nativeLanguage: 'vi',
+    }).publicData as Record<string, unknown>;
+    const privateSource = privateV1();
     const inventory = await createFrozenLegacySharedDeckInventory({
       store: pageStore([{
-        publicDocuments: [publicDocument(legacy('apply-me'))],
-        privateDocuments: [],
+        publicDocuments: [{ id: 'apply-me', data: publicSource }],
+        privateDocuments: [{ id: 'apply-me', data: privateSource }],
         publicTerminal: true,
         privateTerminal: true,
       }]),
@@ -1216,7 +1264,8 @@ describe('legacy shared-deck exact inventory', () => {
         ledgerReady: false,
         manifest: inventory.sealedManifest,
       }],
-      ['shared_decks/apply-me', inventory.entries[0] ? (legacy('apply-me').publicData as Record<string, unknown>) : {}],
+      ['shared_decks/apply-me', publicSource],
+      ['shared_deck_owners/apply-me', privateSource],
     ]);
     expect(digestCanonicalValue(data.get('admin_shared_deck_migration_jobs/shared_deck_v2')!.manifest))
       .toBe(digestCanonicalValue(inventory.sealedManifest));
@@ -1255,7 +1304,12 @@ describe('legacy shared-deck exact inventory', () => {
       indexPreparation: preparedIndexes(inventory),
     });
     expect(first.migratedShareIds).toEqual(['apply-me']);
-    expect(data.get('shared_decks/apply-me')).toMatchObject({ schemaVersion: 2 });
+    expect(data.get('shared_decks/apply-me')).toMatchObject({
+      schemaVersion: 2,
+      targetLanguage: 'en',
+      nativeLanguage: 'vi',
+      cards: [{ origin: 'ai' }],
+    });
     expect(data.get('shared_decks/apply-me')).not.toHaveProperty('authorUid');
     expect(data.get('shared_deck_owners/apply-me')).toMatchObject({ ownerUid, schemaVersion: 2 });
     expect((data.get('shared_deck_owners/apply-me')?.expiresAt as Timestamp).toMillis())

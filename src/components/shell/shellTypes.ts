@@ -1,4 +1,4 @@
-export type ShellViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'study' | 'quiz' | 'story' | 'spelling' | 'match' | 'shadowing';
+export type ShellViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'settings' | 'study' | 'quiz' | 'story' | 'spelling' | 'match' | 'shadowing';
 
 export type SyncIdentityViewModel =
   | { status: 'loading' }

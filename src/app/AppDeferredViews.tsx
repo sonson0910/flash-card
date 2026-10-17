@@ -1,21 +1,38 @@
-import { lazy, Suspense } from 'react';
+import { msg } from '@lingui/core/macro';
+import { lazy, Suspense, type ReactNode } from 'react';
+import { Trans } from '@lingui/react';
 import type { LibraryScreenProps } from '../features/library/LibraryScreen';
 import type { PracticeWorkspace } from '../features/practice/usePracticeWorkspace';
+import type { CreateCardDialogProps } from '../features/intake/CreateCardDialog';
+import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
+import { WorkspaceLoadingPanel } from '../components/WorkspaceLoadingPanel';
 
-const LibraryScreen = lazy(() => import('../features/library/LibraryScreen').then(module => ({ default: module.LibraryScreen })));
-const PracticeScreen = lazy(() => import('../features/practice/PracticeScreen').then(module => ({ default: module.PracticeScreen })));
+const LibraryScreen = lazy(() => Promise.all([
+  import('../features/library/LibraryScreen'), loadCatalog(getActiveUiLocale(), 'library'),
+]).then(([module]) => ({ default: module.LibraryScreen })));
+const PracticeScreen = lazy(() => Promise.all([
+  import('../features/practice/PracticeScreen'), loadCatalog(getActiveUiLocale(), 'practice'),
+]).then(([module]) => ({ default: module.PracticeScreen })));
+const CreateCardDialog = lazy(() => Promise.all([
+  import('../features/intake/CreateCardDialog'), loadCatalog(getActiveUiLocale(), 'library'),
+]).then(([module]) => ({ default: module.CreateCardDialog })));
 
-export function AppViewFallback({ label }: { label: string }) {
+export function AppDeferredCreateCardDialog(props: CreateCardDialogProps) {
+  if (!props.model.open) return null;
   return (
-    <div className="skeleton-sheen min-h-40 rounded-[26px] border border-[var(--sf-border)]" role="status">
-      <span className="sr-only">{label}</span>
-    </div>
+    <Suspense fallback={<span className="sr-only" role="status"><Trans {...msg({ context: 'shell.opening-dialog', message: 'Opening dialog' })} /></span>}>
+      <CreateCardDialog {...props} />
+    </Suspense>
   );
+}
+
+export function AppViewFallback({ label }: { label: ReactNode }) {
+  return <WorkspaceLoadingPanel>{label}</WorkspaceLoadingPanel>;
 }
 
 export function AppDeferredLibraryView({ model, actions }: LibraryScreenProps) {
   return (
-    <Suspense fallback={<AppViewFallback label="Loading library" />}>
+    <Suspense fallback={<AppViewFallback label={<Trans {...msg({ context: 'shell.loading.library', message: 'Loading library' })} />} />}>
       <div className="async-content-enter" data-async-content="library">
         <LibraryScreen model={model} actions={actions} />
       </div>
@@ -27,14 +44,15 @@ interface AppDeferredPracticeViewProps {
   session: PracticeWorkspace['model']['session'];
   actions: PracticeWorkspace['actions'];
   customDecks: string[];
-  addXp: (amount: number) => void;
+  openWeeklyRecap: () => void;
+  onDeleteCard?: (cardId: string) => Promise<boolean>;
 }
 
-export function AppDeferredPracticeView({ session, actions, customDecks, addXp }: AppDeferredPracticeViewProps) {
+export function AppDeferredPracticeView({ session, actions, customDecks, openWeeklyRecap, onDeleteCard }: AppDeferredPracticeViewProps) {
   return (
-    <Suspense fallback={<AppViewFallback label="Loading practice" />}>
+    <Suspense fallback={<AppViewFallback label={<Trans {...msg({ context: 'shell.loading.practice', message: 'Loading practice' })} />} />}>
       <div className="async-content-enter" data-async-content="practice">
-        <PracticeScreen session={session} actions={actions} customDecks={customDecks} addXp={addXp} />
+        <PracticeScreen session={session} actions={actions} customDecks={customDecks} openWeeklyRecap={openWeeklyRecap} onDeleteCard={onDeleteCard} />
       </div>
     </Suspense>
   );

@@ -1,24 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const runtime = vi.hoisted(() => ({
-  app: { kind: 'firebase-app' },
-  capability: { available: true } as { available: boolean },
-  getFunctions: vi.fn(),
-  httpsCallable: vi.fn(),
+import type { CardData } from '../types/card';
+const mocks = vi.hoisted(() => ({
   callable: vi.fn(),
+  httpsCallable: vi.fn(),
 }));
 
 vi.mock('./firebase', () => ({
-  app: runtime.app,
+  app: { name: 'test-app' },
   isFirebaseConfigured: true,
-  protectedFunctionsCapability: runtime.capability,
+  protectedFunctionsCapability: {},
+  getSonFlashFunctions: () => ({ kind: 'functions' }),
+}));
+
+vi.mock('./protectedFunctionsCapability', () => ({
+  runProtectedFunction: async (_capability: unknown, _label: string, operation: () => Promise<unknown>) => operation(),
 }));
 
 vi.mock('firebase/functions', () => ({
-  getFunctions: runtime.getFunctions,
-  httpsCallable: runtime.httpsCallable,
+  getFunctions: vi.fn(() => ({ kind: 'functions' })),
+  httpsCallable: mocks.httpsCallable,
 }));
-import type { CardData } from '../types/card';
+
 import {
   applyReviewViaCallable,
   applyReviewWithConflictRecovery,
@@ -59,26 +62,78 @@ const command: ReviewCommand = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  runtime.capability.available = true;
-  runtime.getFunctions.mockReturnValue({ region: 'asia-southeast1' });
-  runtime.httpsCallable.mockReturnValue(runtime.callable);
-  runtime.callable.mockResolvedValue({
-    data: { applied: true, duplicate: false, card: { ...card, schemaVersion: 2 } },
+  mocks.httpsCallable.mockReturnValue(mocks.callable);
+  mocks.callable.mockResolvedValue({
+    data: { applied: true, duplicate: false, xpAwarded: 0, card: { ...card, schemaVersion: 2 } },
   });
 });
 
 describe('review conflict recovery', () => {
   it('uses the strict V2 callable for the current client contract', async () => {
-    runtime.httpsCallable.mockReturnValue(runtime.callable);
-    runtime.callable.mockResolvedValue({ data: {
+    mocks.httpsCallable.mockReturnValue(mocks.callable);
+    mocks.callable.mockResolvedValue({ data: {
       applied: true,
       duplicate: false,
+      xpAwarded: 2,
       card: { ...card, schemaVersion: 2 },
     } });
 
-    await expect(applyReviewViaCallable({} as never, 'owner-a', command)).resolves.toMatchObject({ applied: true });
+    await expect(applyReviewViaCallable({} as never, 'owner-a', command)).resolves.toMatchObject({ applied: true, xpAwarded: 2 });
 
-    expect(runtime.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'reviewCardV2');
+    expect(mocks.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'reviewCardV2');
+    expect(mocks.callable).toHaveBeenCalledWith(expect.objectContaining({ timeZone: expect.any(String) }));
+  });
+
+  it('keeps an authoritative gamification outcome and ceremony events from the V2 receipt', async () => {
+    mocks.httpsCallable.mockReturnValue(mocks.callable);
+    mocks.callable.mockResolvedValue({ data: {
+      applied: true,
+      duplicate: true,
+      xpAwarded: 0,
+      card: { ...card, schemaVersion: 2 },
+      gamification: {
+        xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: ['streak'], rewardTimeZone: 'Asia/Saigon',
+        reviewActivity: {
+          targetLanguage: 'en', coverageStartedOn: '2026-08-24',
+          days: { '2026-08-24': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 } },
+        },
+      },
+      ceremonyEvents: ['tierup', 'streak'],
+    } });
+
+    await expect(applyReviewViaCallable({} as never, 'owner-a', command)).resolves.toMatchObject({
+      applied: true,
+      duplicate: true,
+      xpAwarded: 0,
+      gamification: {
+        xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: ['streak'], rewardTimeZone: 'Asia/Saigon',
+        reviewActivity: {
+          targetLanguage: 'en', coverageStartedOn: '2026-08-24',
+          days: { '2026-08-24': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 } },
+        },
+      },
+      ceremonyEvents: ['tierup', 'streak'],
+    });
+  });
+
+  it.each([
+    { targetLanguage: 'en', coverageStartedOn: '2026-02-30', days: {} },
+    { targetLanguage: 'language-code-that-is-too-long', coverageStartedOn: '2026-08-24', days: {} },
+    {
+      targetLanguage: 'en', coverageStartedOn: '2026-08-24',
+      days: { '2026-08-24': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0, extra: 0 } },
+    },
+  ])('rejects malformed authoritative review activity: %o', async reviewActivity => {
+    mocks.httpsCallable.mockReturnValue(mocks.callable);
+    mocks.callable.mockResolvedValue({ data: {
+      applied: true,
+      duplicate: false,
+      xpAwarded: 2,
+      card: { ...card, schemaVersion: 2 },
+      gamification: { xp: 2, level: 1, streak: 1, studyDay: '2026-08-24', events: [], reviewActivity },
+    } });
+
+    await expect(applyReviewViaCallable({} as never, 'owner-a', command)).rejects.toThrow('Invalid review response.');
   });
 
   it('recomputes from the authoritative card and retries exactly once with the same operation', async () => {
@@ -90,7 +145,7 @@ describe('review conflict recovery', () => {
     };
     const apply = vi.fn<(_: ReviewCommand) => Promise<ReviewApplyResult>>()
       .mockResolvedValueOnce(first)
-      .mockResolvedValueOnce({ applied: true, duplicate: false, card: { ...first.card, revision: 5 } });
+      .mockResolvedValueOnce({ applied: true, duplicate: false, xpAwarded: 2, card: { ...first.card, revision: 5 } });
 
     const result = await applyReviewWithConflictRecovery(command, apply);
 
@@ -111,6 +166,18 @@ describe('review conflict recovery', () => {
       vi.fn(async (): Promise<ReviewApplyResult> => ({ applied: false, reason: 'missing' })),
     );
     expect(result).toEqual({ applied: false, reason: 'missing' });
+  });
+
+  it.each([undefined, 1, -1, 3])('rejects an invalid top-level XP award: %o', async xpAwarded => {
+    mocks.httpsCallable.mockReturnValue(mocks.callable);
+    mocks.callable.mockResolvedValue({ data: {
+      applied: true,
+      duplicate: false,
+      xpAwarded,
+      card: { ...card, schemaVersion: 2 },
+    } });
+
+    await expect(applyReviewViaCallable({} as never, 'owner-a', command)).rejects.toThrow('Invalid review response.');
   });
 
   it('does not retry a timestamp that is equal to the authoritative review', async () => {
@@ -142,7 +209,7 @@ describe('review callable owner binding', () => {
   it('sends the captured owner ID in the callable payload', async () => {
     await applyReviewViaCallable({} as never, 'owner-a', command);
 
-    expect(runtime.callable).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mocks.callable).toHaveBeenCalledWith(expect.objectContaining({
       expectedOwnerId: 'owner-a',
       cardId: command.cardId,
       opId: command.opId,

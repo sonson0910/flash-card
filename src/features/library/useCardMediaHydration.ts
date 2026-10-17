@@ -43,9 +43,12 @@ export interface CardMediaHydrationScope {
   enabled: boolean;
 }
 
+// Image searches for one owner share a persistent rate-limit document.
+const DEFAULT_MEDIA_CONCURRENCY = 1;
+
 export function createCardMediaHydrationController(
   port: CardMediaHydrationPort,
-  concurrency = 3,
+  concurrency = DEFAULT_MEDIA_CONCURRENCY,
 ) {
   const attempted = new Set<string>();
   const inFlight = new Map<string, Promise<CardMediaUpdate | null>>();
@@ -56,6 +59,8 @@ export function createCardMediaHydrationController(
   let ownerGeneration = 0;
   let pendingCount = 0;
   let disposed = false;
+  let hydrationRun: Promise<void> | null = null;
+  let hydrationRequested = false;
 
   const snapshot = (): CardMediaHydrationSnapshot => ({
     pendingCount,
@@ -145,13 +150,43 @@ export function createCardMediaHydrationController(
     isLifecycleCurrent,
   };
 
+  const hydrateLibrary = (): Promise<void> => {
+    if (disposed || !scope.enabled) return Promise.resolve();
+    hydrationRequested = true;
+    if (hydrationRun) return hydrationRun;
+
+    const run = async () => {
+      let firstError: unknown;
+      let failed = false;
+      const failedCards = new Set<string>();
+      do {
+        hydrationRequested = false;
+        const generation = ownerGeneration;
+        const candidates = scope.cards
+          .filter(card => !port.hasMedia(card) && !failedCards.has(`${generation}:${card.id}`))
+          .slice(0, 20);
+        await mapWithConcurrency([...candidates], concurrency, async card => {
+          if (generation !== ownerGeneration) return;
+          try {
+            await hydrateCard(card);
+          } catch (error) {
+            failedCards.add(`${generation}:${card.id}`);
+            if (!failed) {
+              firstError = error;
+              failed = true;
+            }
+          }
+        });
+      } while (hydrationRequested && !disposed && scope.enabled);
+      if (failed) throw firstError;
+    };
+    hydrationRun = run().finally(() => { hydrationRun = null; });
+    return hydrationRun;
+  };
+
   return {
     replace,
-    hydrateLibrary: async () => {
-      if (disposed || !scope.enabled) return;
-      const candidates = scope.cards.filter(card => !port.hasMedia(card)).slice(0, 20);
-      await mapWithConcurrency([...candidates], concurrency, card => hydrateCard(card));
-    },
+    hydrateLibrary,
     getSnapshot: () => currentSnapshot,
     subscribe(listener: () => void) {
       listeners.add(listener);
@@ -178,7 +213,7 @@ export function useCardMediaHydration({
   cards,
   enabled,
   port,
-  concurrency = 3,
+  concurrency = DEFAULT_MEDIA_CONCURRENCY,
 }: UseCardMediaHydrationOptions): {
   model: CardMediaHydrationSnapshot;
   actions: CardMediaHydrationActions;

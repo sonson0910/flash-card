@@ -23,7 +23,7 @@ export function RecoverableActionFeedback({
       role="alert"
       aria-atomic="true"
       className={cn(
-        'mt-3 flex items-center gap-2 rounded-xl border border-rose-300 bg-rose-50 p-2 text-left text-xs font-semibold text-rose-800 dark:border-rose-800 dark:bg-rose-950/80 dark:text-rose-100',
+        'crystal-chamfer-sm mt-3 flex items-center gap-2 border border-[var(--sf-danger)] bg-[color-mix(in_srgb,var(--sf-danger)_10%,var(--sf-surface))] p-2 text-left text-xs font-semibold text-[var(--sf-text)]',
         className,
       )}
     >

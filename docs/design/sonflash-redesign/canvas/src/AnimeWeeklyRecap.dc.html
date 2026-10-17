@@ -1,0 +1,184 @@
+<!--#AHEAD Crystal Star weekly recap-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#ABG-->
+<!--#ANAV-->
+
+  <main style="position: relative; z-index: 3; flex-grow: 1; padding: 4px 56px 28px; display: grid; grid-template-columns: 620px 1fr; gap: 48px; min-height: 0;">
+    <div style="position: relative; display: flex; align-items: center; justify-content: center;">
+      <div aria-hidden="true" class="nk-unfold" style="position: absolute; left: -40px; top: 90px; width: 700px; height: 470px; opacity: {{t.wingOpacity}}; filter: drop-shadow(0 0 30px rgb(255 42 77 / 0.7));">
+<!--#WINGS-->
+      </div>
+      <div aria-hidden="true" style="position: absolute; left: 130px; top: 40px; width: 400px; height: 690px; transform: rotate(-6deg); clip-path: {{t.chamfer}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}};"></div>
+
+      <figure aria-label="Shareable weekly recap card" class="nk-unfold" style="position: relative; margin: 0; width: 420px; height: 700px; filter: drop-shadow(0 0 40px rgb(255 42 77 / 0.6));">
+        <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; overflow: hidden;"><div class="nk-rim-spin" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: {{sssRim}};"></div></div>
+        <div style="position: absolute; inset: 3px; clip-path: {{t.chamfer}}; background: {{cardBg}}; overflow: hidden; padding: 26px 28px 24px; box-sizing: border-box; display: flex; flex-direction: column;">
+          <div aria-hidden="true" class="nk-beam" style="position: absolute; left: 55%; top: -40%; width: 90px; height: 180%; transform: rotate(24deg); background: linear-gradient(90deg, transparent, {{cc.beam}}, transparent);"></div>
+          <div style="position: relative; display: flex; align-items: center; gap: 10px;">
+            <span style="display: block; flex-shrink: 0; width: 30px; height: 30px; filter: drop-shadow(0 0 8px rgb(255 42 77 / 0.8));">
+<!--#STAR5-->
+            </span>
+            <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.14em; color: {{cc.ink}};">MY WEEK <span style="color: {{cc.accent}};">//</span> 16–22 SEP</span>
+          </div>
+
+          <div class="nk-float" style="position: absolute; right: 14px; top: 58px; width: 104px; height: 182px;">
+<!--#MASCOT chibi-->
+          </div>
+
+          <sc-if value="{{show.words}}" hint-placeholder-val="{{true}}">
+            <div style="position: relative; margin-top: 18px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 136px; line-height: 0.9; letter-spacing: -0.02em; background: {{cc.numGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: {{cc.numShadow}};">146</div>
+            <div style="position: relative; margin-top: 4px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 26px; letter-spacing: 0.04em; color: {{cc.ink}};">WORDS <span style="color: {{cc.accent}};">THIS WEEK</span></div>
+          </sc-if>
+
+          <div style="position: relative; margin-top: 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+            <sc-for list="{{cardStats}}" as="s" hint-placeholder-count="3">
+              <div style="padding: 10px 10px 9px; clip-path: {{t.chamferSm}}; background: {{cc.tile}}; box-shadow: inset 0 0 0 1px {{cc.tileEdge}}; opacity: {{s.op}};">
+                <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; line-height: 1; color: {{s.color}};">{{s.value}}</div>
+                <div style="margin-top: 4px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 11px; letter-spacing: 0.12em; color: {{cc.sub}};">{{s.label}}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{show.wotw}}" hint-placeholder-val="{{true}}">
+            <div style="position: relative; margin-top: 16px; padding: 12px 16px; clip-path: {{t.chamferSm}}; background: linear-gradient(90deg, rgb(255 42 77 / 0.28), rgb(255 42 77 / 0.05)); box-shadow: inset 3px 0 0 #ff2a4d; display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; color: {{cc.wotwLabel}};">WORD OF THE WEEK</span>
+              <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 26px; color: {{cc.ink}};">im<span style="color: {{cc.accent}};">me</span>diate</span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{show.heat}}" hint-placeholder-val="{{true}}">
+            <div style="position: relative; margin-top: 16px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;">
+              <sc-for list="{{heat}}" as="h" hint-placeholder-count="7">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;"><span style="width: 100%; height: 30px; clip-path: {{t.chamferSm}}; background: {{h.bg}}; filter: {{h.glow}};"></span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; color: {{cc.sub}};">{{h.d}}</span></div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <div style="position: relative; margin-top: 18px;">
+            <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; color: {{cc.sub}};">BLOOM GARDEN</div>
+            <div style="margin-top: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+              <sc-for list="{{haul}}" as="g" hint-placeholder-count="3">
+                <div style="position: relative; height: 62px; clip-path: {{t.chamferSm}}; background: {{g.rim}}; padding: 2px; box-sizing: border-box;">
+                  <div style="height: 100%; clip-path: {{t.chamferSm}}; background: {{cc.tileSolid}}; display: flex; align-items: center; justify-content: space-between; padding: 0 12px;">
+                    <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; color: {{g.color}};">{{g.grade}}</span>
+                    <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; color: {{cc.ink}};">{{g.n}}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="position: relative; margin-top: auto; padding-top: 14px; border-top: 1px solid {{cc.tileEdge}}; display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; color: {{cc.sub}};">
+            <span>Learn with <sc-if value="{{show.name}}" hint-placeholder-val="{{false}}"><strong style="color: {{cc.ink}};">Khánh</strong> </sc-if>on <strong style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; color: {{cc.ink}};">SON<span style="color: {{cc.accent}};">FLASH</span></strong></span>
+            <span style="font-family: {{t.fMono}}; font-size: 11.5px; color: {{cc.link}};">sonflash.app/i/khanh</span>
+          </div>
+        </div>
+      </figure>
+    </div>
+
+    <section aria-labelledby="share-title" style="display: flex; flex-direction: column; justify-content: center; padding-bottom: 10px;">
+      <p class="nk-rise" style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.16em; color: {{t.crimsonText}};">WEEKLY RECAP <span style="color: {{t.text3}};">//</span> READY TO SHARE</p>
+      <h1 id="share-title" class="nk-rise" style="margin: 8px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 60px; line-height: 0.98; letter-spacing: 0.01em;"><span style="background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820);">YOUR BEST WEEK</span><br><span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 20px rgb(255 42 77 / 0.8));">SO FAR.</span></h1>
+      <p class="nk-rise-2" style="margin: 14px 0 0; max-width: 560px; font-size: 15.5px; line-height: 1.55; color: {{t.body}};"><span style="font-weight: 900; color: {{t.holoText}};">+38 words</span> compared with last week. Friends who join from your link get 7 days of Pro — and so do you.</p>
+
+      <div class="nk-rise-2" style="margin-top: 20px; display: flex; gap: 10px;">
+        <sc-for list="{{targets}}" as="s" hint-placeholder-count="5">
+          <button class="nk-lift" style="height: 46px; padding: 0 16px 0 6px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.textStrong}}; font-family: {{t.fBody}}; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <span style="width: 34px; height: 34px; clip-path: {{t.chamferSm}}; background: {{s.bg}}; color: {{s.fg}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{s.icon}}"></path></svg></span>{{s.label}}
+          </button>
+        </sc-for>
+      </div>
+
+      <h2 class="nk-rise-3" style="margin: 24px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; letter-spacing: 0.14em; color: {{t.holoText}};">SHOW ON THE CARD</h2>
+      <div class="nk-rise-3" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; max-width: 620px;">
+        <sc-for list="{{include}}" as="i" hint-placeholder-count="6">
+          <button aria-pressed="{{i.on}}" onClick="{{i.pick}}" style="height: 36px; padding: 0 14px; border: 0; transform: skewX(-14deg); background: {{i.bg}}; box-shadow: {{i.edge}}; cursor: pointer;"><span style="display: flex; align-items: center; gap: 7px; transform: skewX(14deg); font-family: {{t.fBody}}; font-size: 13.5px; font-weight: 800; color: {{i.fg}};"><sc-if value="{{i.check}}" hint-placeholder-val="{{true}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>{{i.label}}</span></button>
+        </sc-for>
+      </div>
+
+      <h2 class="nk-rise-3" style="margin: 24px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; letter-spacing: 0.14em; color: {{t.holoText}};">CAPTION</h2>
+      <div class="nk-rise-3" style="margin-top: 10px; max-width: 620px; padding: 14px 18px 12px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; font-size: 15px; line-height: 1.5; color: {{t.textStrong}};">146 new words this week on SonFlash 🔥 12 days in a row. Học cùng mình không? sonflash.app/i/khanh
+        <div style="margin-top: 8px; display: flex; justify-content: space-between; font-size: 12.5px; color: {{t.text3}};"><span style="font-weight: 800; color: {{t.crimsonText}};">Edit caption</span><span style="font-family: {{t.fMono}};">96 / 220</span></div>
+      </div>
+
+      <div class="nk-rise-3" style="margin-top: 24px; display: flex; gap: 12px;">
+        <button class="nk-lift" style="position: relative; height: 54px; padding: 0 32px; border: 0; transform: skewX(-14deg); background: {{t.primaryBg}}; color: #ffffff; cursor: pointer; overflow: hidden; filter: drop-shadow(0 0 16px rgb(255 42 77 / 0.7));"><span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 50px; background: rgb(255 255 255 / 0.35);"></span><span style="position: relative; display: block; transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 19px; letter-spacing: 0.05em;">SHARE TO STORY</span></button>
+        <button class="nk-lift" style="height: 54px; padding: 0 24px; border: 0; transform: skewX(-14deg); background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; cursor: pointer;"><span style="display: flex; align-items: center; gap: 8px; transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; letter-spacing: 0.05em; color: {{t.secondaryText}};"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path></svg>DOWNLOAD PNG</span></button>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { inc: [true, true, true, true, true, false] };
+  }
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const inc = this.state.inc;
+    const heatC = dark ? ['rgb(255 255 255 / 0.08)', 'rgb(94 242 255 / 0.3)', 'rgb(94 242 255 / 0.6)', '#ff5470', '#ff2a4d']
+      : ['rgb(13 40 80 / 0.1)', 'rgb(26 167 201 / 0.35)', 'rgb(26 167 201 / 0.7)', '#ff5470', '#e0173f'];
+    // Share-card palette: the light card is a prism-day print of the same layout.
+    const cc = dark ? {
+      ink: '#ffffff', sub: '#aab3c5', accent: '#ff5470', link: '#5ef2ff', wotwLabel: '#ffb3c2', beam: 'rgb(255 255 255 / 0.1)',
+      tile: 'rgb(255 255 255 / 0.07)', tileSolid: '#0e111c', tileEdge: 'rgb(255 255 255 / 0.14)',
+      numGrad: 'linear-gradient(180deg, #ffffff 0%, #ffe3ea 46%, #ff8fa3 54%, #ffffff 100%)', numShadow: 'drop-shadow(0 5px 0 #7a0820) drop-shadow(0 0 24px rgb(255 42 77 / 0.8))',
+    } : {
+      ink: '#081329', sub: '#3f5272', accent: '#e0173f', link: '#0a7d99', wotwLabel: '#b30f33', beam: 'rgb(255 255 255 / 0.6)',
+      tile: 'rgb(255 255 255 / 0.6)', tileSolid: '#f2faff', tileEdge: 'rgb(13 40 80 / 0.14)',
+      numGrad: t.metal, numShadow: 'drop-shadow(0 5px 0 #ffc2cf) drop-shadow(0 0 20px rgb(255 42 77 / 0.35))',
+    };
+    const lv = [2, 3, 1, 4, 2, 4, 3];
+    const I = {
+      story: 'M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM17.5 6.5h.01',
+      fb: 'M15 3h-2a4 4 0 0 0-4 4v3H6v4h3v7h4v-7h3l1-4h-4V7a1 1 0 0 1 1-1h2z',
+      zalo: 'M4 5h16v11H9l-5 4zM8 9h5l-5 4h5',
+      link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
+      dl: 'M12 3v12M7 10l5 5 5-5M5 21h14',
+    };
+    const labels = ['Words learned', 'Streak', 'Recall', 'Word of the week', 'Heatmap', 'My name'];
+    return {
+      t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      nav: nkNav(t, -1), streak: 12,
+      bg: { wings: false },
+      sssRim: t.tier.mastered.rim,
+      cardBg: dark
+        ? 'radial-gradient(ellipse 70% 45% at 80% 8%, rgb(179 15 51 / 0.55), transparent 70%), radial-gradient(ellipse 80% 50% at 10% 100%, rgb(16 60 120 / 0.6), transparent 70%), linear-gradient(170deg, #141a2c, #06070d 75%)'
+        : 'radial-gradient(ellipse 70% 45% at 80% 8%, rgb(255 84 112 / 0.32), transparent 70%), radial-gradient(ellipse 80% 50% at 10% 100%, rgb(94 242 255 / 0.4), transparent 70%), linear-gradient(170deg, #f7fcff, #cfe9ff 75%)',
+      cc,
+      haul: [
+        { grade: 'Bud', n: 62, rim: t.tier.new.rim, color: t.dark ? '#5ef2ff' : '#0a7d99' },
+        { grade: 'Bloom', n: 58, rim: t.tier.learning.rim, color: t.dark ? '#ff8fb6' : '#b3265a' },
+        { grade: 'Star', n: 26, rim: t.tier.mastered.rim, color: t.dark ? '#ffd166' : '#c40f35' },
+      ],
+      show: { words: inc[0], wotw: inc[3], heat: inc[4], name: inc[5] },
+      cardStats: [
+        { value: '12 D', label: 'STREAK', color: dark ? '#ffd166' : '#8a5a00', op: inc[1] ? 1 : 0.18 },
+        { value: '91%', label: 'RECALL', color: dark ? '#5ef2ff' : '#0a7d99', op: inc[2] ? 1 : 0.18 },
+        { value: '2H40', label: 'STUDIED', color: cc.ink, op: 1 },
+      ],
+      heat: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => ({ d, bg: heatC[lv[i]], glow: lv[i] >= 3 ? 'drop-shadow(0 0 6px rgb(255 42 77 / ' + (dark ? 0.7 : 0.4) + '))' : 'none' })),
+      targets: [
+        { label: 'Story', icon: I.story, bg: 'linear-gradient(45deg, #f09433, #dc2743 50%, #bc1888)', fg: '#ffffff' },
+        { label: 'Facebook', icon: I.fb, bg: '#1877f2', fg: '#ffffff' },
+        { label: 'Zalo', icon: I.zalo, bg: '#0068ff', fg: '#ffffff' },
+        { label: 'Copy link', icon: I.link, bg: 'linear-gradient(180deg, #9ff9ff, #1aa7c9)', fg: '#031820' },
+        { label: 'PNG', icon: I.dl, bg: t.primaryBg, fg: '#ffffff' },
+      ],
+      include: labels.map((label, i) => {
+        const on = inc[i];
+        return { label, on: on ? 'true' : 'false', check: on,
+          pick: () => this.setState({ inc: inc.map((v, j) => j === i ? !v : v) }),
+          bg: on ? (dark ? 'rgb(255 42 77 / 0.2)' : 'rgb(255 84 112 / 0.16)') : t.chip,
+          edge: 'inset 0 0 0 1px ' + (on ? t.panelEdge : t.line), fg: on ? t.textStrong : t.text2 };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

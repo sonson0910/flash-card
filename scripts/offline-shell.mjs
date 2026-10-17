@@ -73,7 +73,11 @@ const isAllowedShellAsset = url => (
   && !PROTECTED_SHELL_PATH_PATTERN.test(url)
 );
 
-const shouldInclude = relativePath => isAllowedShellAsset(`/${relativePath}`);
+// Optional CJK web fonts load with their course; the offline shell uses native
+// system glyphs instead of precaching every language's multi-megabyte font.
+const LAZY_CJK_FONT_PATTERN = /^assets\/noto-sans-(?:jp|kr|sc)-[^/]+\.woff2$/i;
+const shouldInclude = relativePath => isAllowedShellAsset(`/${relativePath}`)
+  && !LAZY_CJK_FONT_PATTERN.test(relativePath);
 
 const collectFiles = (directory, rootDirectory, output) => {
   let entries;
