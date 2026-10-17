@@ -249,7 +249,7 @@ export const startBackendOutageProxy = async (appOrigin: string) => {
   if ([...allowed].some(origin => !['127.0.0.1', 'localhost', '[::1]'].includes(new URL(origin).hostname))) {
     throw new Error('Offline outage proxy requires loopback app and emulator endpoints.');
   }
-  const upstreams = new Map<http.ClientRequest, string>();
+  const upstreams = new Map<http.ClientRequest, { origin: string; response: http.ServerResponse }>();
   let cut = false;
   let blocked = 0;
   const server = http.createServer((request, response) => {
@@ -263,10 +263,16 @@ export const startBackendOutageProxy = async (appOrigin: string) => {
       return;
     }
     const upstream = http.request(target, { method: request.method, headers: request.headers }, incoming => {
+      if (cut && target.origin !== appOrigin) {
+        blocked += 1;
+        incoming.destroy();
+        response.destroy();
+        return;
+      }
       response.writeHead(incoming.statusCode ?? 502, incoming.headers);
       incoming.pipe(response);
     });
-    upstreams.set(upstream, target.origin);
+    upstreams.set(upstream, { origin: target.origin, response });
     upstream.on('error', () => response.destroy());
     upstream.on('close', () => upstreams.delete(upstream));
     response.on('close', () => upstream.destroy());
@@ -281,11 +287,20 @@ export const startBackendOutageProxy = async (appOrigin: string) => {
     origin: `http://127.0.0.1:${(server.address() as AddressInfo).port}`,
     cutBackends: () => {
       cut = true;
-      for (const [request, origin] of upstreams) if (origin !== appOrigin) request.destroy();
+      for (const [request, { origin, response }] of upstreams) {
+        if (origin !== appOrigin) {
+          request.destroy();
+          response.socket?.destroy();
+          response.destroy();
+        }
+      }
     },
     blockedRequests: () => blocked,
     close: () => new Promise<void>((resolve, reject) => {
-      for (const request of upstreams.keys()) request.destroy();
+      for (const [request, { response }] of upstreams) {
+        request.destroy();
+        response.destroy();
+      }
       server.closeAllConnections();
       server.close(error => error ? reject(error) : resolve());
     }),

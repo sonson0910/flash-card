@@ -242,4 +242,30 @@ describe('renderWeeklyRecapPng', () => {
       dateRangeLabel: 'Sep 21 – Sep 27', locale: 'en', copy: englishCopy, theme,
     }, () => canvas)).rejects.toBeInstanceOf(WeeklyRecapExportUnavailableError);
   });
+
+  it('falls back to synchronous PNG data URL encoding when async toBlob stalls', async () => {
+    vi.useFakeTimers();
+    try {
+      const { context } = createMockContext();
+      const canvas = {
+        width: 0,
+        height: 0,
+        getContext: vi.fn(() => context),
+        toBlob: vi.fn(),
+        toDataURL: vi.fn(() => 'data:image/png;base64,iVBORw0KGgo='),
+      } as unknown as HTMLCanvasElement;
+
+      const promise = renderWeeklyRecapPng({
+        data: recap(), selection: defaultWeeklyRecapSelection(), caption: 'Hi', milestones: { unlocked: 1, total: 6 },
+        dateRangeLabel: 'Sep 21 – Sep 27', locale: 'en', copy: englishCopy, theme,
+      }, () => canvas);
+
+      await vi.advanceTimersByTimeAsync(250);
+      const blob = await promise;
+      expect(blob.type).toBe('image/png');
+      expect([...new Uint8Array(await blob.arrayBuffer())]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

@@ -30,8 +30,9 @@ export interface WeeklyRecapDialogProps {
 }
 
 const localDateFromKey = (dateKey: string): Date => new Date(`${dateKey}T12:00:00`);
+const defaultNow = (): Date => new Date();
 
-export default function WeeklyRecapDialog({ open, onOpenChange, stats, showingSavedStats = false, now = () => new Date() }: WeeklyRecapDialogProps) {
+export default function WeeklyRecapDialog({ open, onOpenChange, stats, showingSavedStats = false, now = defaultNow }: WeeklyRecapDialogProps) {
   const { _, i18n: activeI18n } = useLingui();
   const data = useMemo(
     () => computeWeeklyRecap(stats.xpChartData, now(), stats.reviewActivity, stats.rewardTimeZone),

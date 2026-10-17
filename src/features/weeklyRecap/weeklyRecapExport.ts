@@ -208,6 +208,19 @@ export function drawWeeklyRecapCard(context: CanvasRenderingContext2D, input: We
   wrapText(context, copy.privacy, marginX, height - 90, contentWidth, 28);
 }
 
+function pngBlobFromDataUrl(canvas: HTMLCanvasElement): Blob | null {
+  if (typeof canvas.toDataURL !== 'function' || typeof atob !== 'function') return null;
+  const dataUrl = canvas.toDataURL('image/png');
+  const prefix = 'data:image/png;base64,';
+  if (!dataUrl.startsWith(prefix)) return null;
+  const binary = atob(dataUrl.slice(prefix.length));
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return new Blob([bytes], { type: 'image/png' });
+}
+
 export async function renderWeeklyRecapPng(
   input: WeeklyRecapExportInput,
   createCanvas: () => HTMLCanvasElement = () => document.createElement('canvas'),
@@ -219,7 +232,28 @@ export async function renderWeeklyRecapPng(
   if (!context) throw new WeeklyRecapExportUnavailableError();
   drawWeeklyRecapCard(context, input);
   return new Promise<Blob>((resolve, reject) => {
+    let settled = false;
+    const retain: unknown[] = [canvas, context];
+    const fallbackTimer = typeof canvas.toDataURL === 'function'
+      ? setTimeout(() => {
+          if (settled) return;
+          try {
+            const fallbackBlob = pngBlobFromDataUrl(canvas);
+            if (fallbackBlob) {
+              settled = true;
+              retain.length = 0;
+              resolve(fallbackBlob);
+            }
+          } catch {
+            // Let the primary toBlob callback report any failure.
+          }
+        }, 250)
+      : undefined;
     canvas.toBlob(blob => {
+      if (fallbackTimer !== undefined) clearTimeout(fallbackTimer);
+      retain.length = 0;
+      if (settled) return;
+      settled = true;
       if (blob) resolve(blob);
       else reject(new WeeklyRecapExportUnavailableError());
     }, 'image/png');

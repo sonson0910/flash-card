@@ -133,6 +133,8 @@ test('a prepared shell recovers the cached learner workspace during an app-serve
 
     await page.reload();
     await expect.poll(() => page.evaluate(() => navigator.serviceWorker.controller !== null)).toBe(true);
+    await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
+    await expect(page.getByText('resilient', { exact: true }).first()).toBeVisible();
 
     const onlineApi = await page.evaluate(async () => {
       const response = await fetch('/api/device-cards');
@@ -141,20 +143,8 @@ test('a prepared shell recovers the cached learner workspace during an app-serve
     expect(onlineApi.status).toBe(503);
     expect(onlineApi.contentType).toContain('application/json');
 
-    const outageRequests = new Set<Request>();
-    const successfulBackendResponses: number[] = [];
-    let outageStarted = false;
-    page.on('request', request => {
-      if (outageStarted && new URL(request.url()).origin !== fixture.origin) outageRequests.add(request);
-    });
-    page.on('response', response => {
-      if (outageRequests.has(response.request()) && response.ok()) {
-        successfulBackendResponses.push(response.status());
-      }
-    });
-    await page.route(url => url.origin !== fixture.origin, route => route.abort());
-    outageStarted = true;
     proxy?.cutBackends();
+    await page.route(url => url.origin !== fixture.origin, route => route.abort());
     await fixture.close();
     // Firefox's native offline mode prevents SW navigations; WebKit does not
     // expose a reliable native offline signal. Both still exercise server loss.
@@ -163,6 +153,18 @@ test('a prepared shell recovers the cached learner workspace during an app-serve
       description: browserName === 'chromium' ? 'native offline and stopped server' : 'stopped server and blocked backends; native offline reload not verified',
     });
     if (browserName === 'chromium') await page.context().setOffline(true);
+    await page.evaluate(() => undefined);
+
+    const outageRequests = new Set<Request>();
+    const successfulBackendResponses: number[] = [];
+    page.on('request', request => {
+      if (new URL(request.url()).origin !== fixture.origin) outageRequests.add(request);
+    });
+    page.on('response', response => {
+      if (outageRequests.has(response.request()) && response.ok()) {
+        successfulBackendResponses.push(response.status());
+      }
+    });
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
     await expect(page.getByText('resilient', { exact: true }).first()).toBeVisible();
@@ -221,6 +223,7 @@ test('protected and mutable paths stay outside the shell online and offline', as
     await expect(page.getByText('Available offline.', { exact: true })).toBeVisible();
     await page.reload();
     await expect.poll(() => page.evaluate(() => navigator.serviceWorker.controller !== null)).toBe(true);
+    await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
 
     const onlineResponses = await page.evaluate(async paths => Promise.all(paths.map(async pathname => {
       const response = await fetch(pathname);
