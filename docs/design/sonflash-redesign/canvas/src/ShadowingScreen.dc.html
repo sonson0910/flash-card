@@ -1,0 +1,109 @@
+<!--#HEAD Shadowing-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column; padding-bottom: 56px;">
+<!--#AMBIENT-->
+  <header style="position: relative; z-index: 3; height: 80px; padding: 0 40px; display: flex; align-items: center; gap: 16px;">
+    <a href="#" aria-label="End shadowing" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+    </a>
+    <span style="font-size: 14px; font-weight: 600; color: {{t.text2}};">Shadowing <span style="color: {{t.text3}};">· say it after me</span></span>
+    <div style="margin: 0 auto; display: flex; gap: 5px;" aria-label="Sentence 3 of 8">
+      <sc-for list="{{segments}}" as="s" hint-placeholder-count="8">
+        <span style="width: 44px; height: 4px; border-radius: 4px; background: {{s.bg}}; box-shadow: {{s.glow}};"></span>
+      </sc-for>
+    </div>
+    <button onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+      <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
+    </button>
+  </header>
+
+  <main style="position: relative; z-index: 2; width: 1120px; margin: auto; display: flex; flex-direction: column; align-items: center; text-align: center;">
+    <span style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 8px;">Focus word <span style="font-family: Fraunces, Georgia, serif; font-size: 15px; color: {{t.textStrong}};">re·<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">charge</span></span></span>
+    <p style="margin: 22px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 50px; line-height: 1.25; letter-spacing: -0.02em; color: {{t.textStrong}}; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 16px;">
+      <sc-for list="{{words}}" as="w" hint-placeholder-count="9">
+        <span style="position: relative; padding-bottom: 8px; color: {{w.color}}; font-style: {{w.style}}; text-shadow: {{w.glow}};">{{w.text}}<span aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: 0; height: 4px; border-radius: 4px; background: {{w.bar}};"></span></span>
+      </sc-for>
+    </p>
+    <p style="margin: 14px 0 0; font-size: 16px; color: {{t.text2}};">Tôi cần một kỳ nghỉ cuối tuần yên tĩnh để nạp lại năng lượng.</p>
+
+    <div style="margin-top: 34px; width: 900px; box-sizing: border-box; padding: 22px 26px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}}; display: grid; grid-template-columns: 1fr 1fr; gap: 26px; text-align: left;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 12.5px; font-weight: 600; color: {{t.text2}};">
+          <button aria-label="Play the model sentence" style="width: 30px; height: 30px; border-radius: 50%; border: 0; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
+          Model <span style="margin-left: auto; font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 400; color: {{t.text3}};">0:03.4</span>
+        </div>
+        <div aria-hidden="true" style="margin-top: 14px; height: 64px; display: flex; align-items: center; gap: 3px;">
+          <sc-for list="{{model}}" as="b" hint-placeholder-count="48">
+            <span style="flex: 1; height: {{b.h}}%; border-radius: 3px; background: {{t.modelBar}};"></span>
+          </sc-for>
+        </div>
+      </div>
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 12.5px; font-weight: 600; color: {{t.text2}};">
+          <span style="width: 10px; height: 10px; border-radius: 50%; background: {{t.again}}; box-shadow: {{t.recDot}};"></span>
+          Take 2 · recording <span style="margin-left: auto; font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 400; color: {{t.text3}};">0:02.1</span>
+        </div>
+        <div aria-hidden="true" style="margin-top: 14px; height: 64px; display: flex; align-items: center; gap: 3px;">
+          <sc-for list="{{you}}" as="b" hint-placeholder-count="48">
+            <span class="{{b.cls}}" style="flex: 1; height: {{b.h}}%; border-radius: 3px; background: {{b.bg}}; animation-delay: {{b.d}}ms;"></span>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 30px; width: 900px; display: flex; align-items: center; gap: 26px;">
+      <div style="flex: 1; text-align: left;">
+        <div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-family: Fraunces, Georgia, serif; font-size: 46px; font-weight: {{t.displayWeight}}; line-height: 1; color: {{t.textStrong}};">82</span><span style="font-size: 18px; color: {{t.text2}};">% match · take 1</span></div>
+        <div style="margin-top: 10px; height: 8px; border-radius: 8px; background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: 82%; height: 100%; border-radius: 8px; background: {{t.meter}};"></div></div>
+        <div style="margin-top: 10px; display: flex; gap: 14px; font-size: 12.5px; color: {{t.text2}};">
+          <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 3px; border-radius: 3px; background: {{t.good}};"></span>Clear</span>
+          <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 3px; border-radius: 3px; background: {{t.hard}};"></span>Close</span>
+          <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 3px; border-radius: 3px; background: {{t.again}};"></span>Missed</span>
+        </div>
+      </div>
+      <button class="sf-press sf-pulse" aria-label="Stop recording" style="--sf-pulse: {{t.pulse}}; width: 104px; height: 104px; flex-shrink: 0; border-radius: 50%; border: 0; background: {{t.recBg}}; color: #ffffff; box-shadow: {{t.recShadow}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        <span style="width: 30px; height: 30px; border-radius: 8px; background: currentColor;"></span>
+      </button>
+      <div style="flex: 1; display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="sf-press" style="height: 52px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 15px; font-weight: 600; cursor: pointer;">Try again</button>
+        <button class="sf-press" style="height: 52px; padding: 0 24px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 15px; font-weight: 650; cursor: pointer;">Next →</button>
+      </div>
+    </div>
+    <p style="margin: 18px 0 0; font-size: 13.5px; color: {{t.text2}};">Stress the second syllable: re-<b style="color: {{t.textStrong}};">CHARGE</b>. “quiet” came out as one beat — try two: <b style="color: {{t.textStrong}};">qui·et</b>.</p>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = { ...sfTokens(dark),
+      modelBar: dark ? 'rgb(255 255 255 / 0.22)' : 'rgb(29 26 22 / 0.2)',
+      meter: dark ? 'linear-gradient(90deg, #28d3f4, #75d079)' : '#337344',
+      pulse: dark ? 'rgb(237 83 80 / 0.5)' : 'rgb(197 54 55 / 0.3)',
+      recBg: dark ? 'radial-gradient(circle at 35% 30%, #ff8f8c, #ed5350 60%, #b8302e)' : '#c53637',
+      recShadow: dark ? '0 18px 40px -12px rgb(237 83 80 / 0.8)' : '0 14px 28px -12px rgb(197 54 55 / 0.8)',
+      recDot: dark ? '0 0 10px #ed5350' : 'none' };
+    const seed = (i) => { const x = Math.sin(i * 12.9898) * 43758.5453; return x - Math.floor(x); };
+    const score = { ok: t.good, close: t.hard, miss: t.again };
+    const words = [['I', 'ok'], ['need', 'ok'], ['a', 'ok'], ['quiet', 'miss'], ['weekend', 'ok'], ['to', 'ok'], ['recharge', 'focus'], ['my', 'ok'], ['batteries.', 'close']];
+    const wave = (n, off) => Array.from({ length: n }, (_, i) => Math.round(18 + 76 * Math.abs(Math.sin(i * 0.45 + off)) * (0.45 + 0.55 * seed(i + off * 10))));
+    return {
+      t, grainId: 'shadow-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: 700, ay: -280, bx: -160, by: 420 },
+      toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      words: words.map(([text, s]) => s === 'focus'
+        ? { text, color: t.emColor, style: t.emStyle, glow: t.emGlow, bar: t.good }
+        : { text, color: t.textStrong, style: 'normal', glow: 'none', bar: score[s] }),
+      model: wave(48, 1).map(h => ({ h })),
+      you: wave(48, 1.3).map((h, i) => i < 30
+        ? { h, bg: dark ? '#28d3f4' : '#1d1a16', cls: '', d: 0 }
+        : i < 34 ? { h, bg: t.again, cls: 'sf-wave', d: (i - 30) * 120 } : { h: 6, bg: t.track, cls: '', d: 0 }),
+      segments: Array.from({ length: 8 }, (_, i) => ({ bg: i < 2 ? t.accent : i === 2 ? t.accentLine : t.track, glow: dark && i < 2 ? '0 0 8px rgb(40 211 244 / 0.55)' : 'none' })),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -105,7 +105,10 @@ export function prepareCardForCreate(
   card: CardData,
   { libraryEpoch = card.libraryEpoch ?? 0 }: { libraryEpoch?: number } = {},
 ): CardData {
-  if (card.lexemeId || card.language || card.senseKey) {
+  const hasCanonicalIdentity = Boolean(
+    card.lexemeId || card.senseKey || card.normalizedLemma !== undefined,
+  );
+  if (hasCanonicalIdentity) {
     if (!card.lexemeId || !card.language || !card.senseKey || !card.partOfSpeech) {
       throw new TypeError('Canonical card identity is incomplete.');
     }

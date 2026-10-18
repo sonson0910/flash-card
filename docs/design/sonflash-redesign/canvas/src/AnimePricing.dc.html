@@ -1,0 +1,135 @@
+<!--#AHEAD Crystal Star pricing-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#ABG-->
+<!--#ANAV-->
+
+  <main style="position: relative; z-index: 3; flex-grow: 1; padding: 6px 56px 30px; display: flex; flex-direction: column;">
+    <div style="display: flex; align-items: flex-end; gap: 20px;">
+      <div>
+        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.14em; color: {{t.holoText}};">SONFLASH <span style="color: {{t.crimsonText}};">//</span> MEMBERSHIP</div>
+        <h1 style="margin: 4px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 52px; line-height: 1; background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / 0.6));">CHOOSE YOUR PLAN</h1>
+      </div>
+      <p style="margin: 0 0 6px; max-width: 300px; font-size: 14px; line-height: 1.5; color: {{t.text2}};">Reviewing your cards is free forever. Pro unlocks the AI. Prices shown are the full price, no hidden fees.</p>
+      <div class="nk-float" style="margin-left: auto; margin-top: -34px; margin-bottom: -10px; width: 116px; height: 112px; flex-shrink: 0;">
+<!--#MASCOT proud-->
+      </div>
+      <div style="margin-bottom: 6px; display: flex; gap: 10px;">
+        <span style="height: 36px; padding: 0 16px; transform: skewX(-14deg); background: linear-gradient(180deg, #fff0b8, #ffd166); display: flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 14px; letter-spacing: 0.04em; color: #4a2a00;">STUDENTS −50%</span></span>
+        <span style="height: 36px; padding: 0 16px; transform: skewX(-14deg); background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: flex; align-items: center;"><span style="transform: skewX(14deg); font-weight: 800; font-size: 13px; color: {{t.textStrong}};">7-day Pro trial</span></span>
+      </div>
+    </div>
+
+    <div style="margin-top: 22px; flex-grow: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1.08fr 1fr; gap: 26px; align-items: stretch;">
+      <sc-for list="{{plans}}" as="p" hint-placeholder-count="3">
+        <div class="{{p.cls}}" style="position: relative; margin-top: {{p.lift}}px;">
+          <sc-if value="{{p.sss}}" hint-placeholder-val="{{false}}">
+            <div aria-hidden="true" style="position: absolute; right: -170px; top: -70px; width: 460px; height: 310px; pointer-events: none; transform: scaleX(-1); opacity: 0.9; filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.7));">
+<!--#WINGS-->
+            </div>
+          </sc-if>
+          <div style="position: absolute; inset: 0; filter: drop-shadow(0 0 {{p.glowSize}}px {{p.glow}});">
+            <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; overflow: hidden;">
+              <div class="{{p.rimCls}}" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: {{p.rim}};"></div>
+            </div>
+            <div style="position: absolute; inset: {{p.rimW}}px; clip-path: {{t.chamfer}}; background: {{t.cardFront}};"></div>
+          </div>
+          <div style="position: relative; height: 100%; box-sizing: border-box; padding: 24px 26px 22px; display: flex; flex-direction: column;">
+            <sc-if value="{{p.popular}}" hint-placeholder-val="{{false}}">
+              <div class="nk-banner" style="position: absolute; right: 18px; top: -16px; transform: skewX(-16deg); height: 32px; padding: 0 16px; background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; display: flex; align-items: center;"><span style="transform: skewX(16deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; letter-spacing: 0.1em; color: #ffffff;">MOST POPULAR</span></div>
+            </sc-if>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="height: 40px; min-width: 58px; padding: 0 12px; box-sizing: border-box; clip-path: {{t.chamferSm}}; background: {{p.rim}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; color: #ffffff; text-shadow: 0 2px 0 #7a0820;">{{p.grade}}</span>
+              <div>
+                <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 28px; line-height: 1; color: {{t.textStrong}};">{{p.name}}</div>
+                <div style="margin-top: 3px; font-size: 13px; color: {{t.text2}};">{{p.tagline}}</div>
+              </div>
+            </div>
+
+            <div style="margin-top: 18px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
+              <span style="font-weight: 900; font-size: 40px; line-height: 1; letter-spacing: -0.01em; white-space: nowrap; color: {{t.textStrong}};">{{p.price}}</span>
+              <span style="font-weight: 800; font-size: 15px; white-space: nowrap; color: {{t.text2}};">{{p.per}}</span>
+            </div>
+            <div style="margin-top: 6px; min-height: 20px; font-size: 13px; font-weight: 700; white-space: nowrap; color: {{p.noteColor}};">{{p.note}}</div>
+
+            <div style="margin-top: 16px; height: 1px; background: linear-gradient(90deg, {{p.lineColor}}, transparent);"></div>
+            <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px;">
+              <sc-for list="{{p.rows}}" as="r" hint-placeholder-count="6">
+                <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">
+                  <span style="width: 20px; height: 20px; flex-shrink: 0; clip-path: {{r.shape}}; background: {{r.iconBg}}; display: flex; align-items: center; justify-content: center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="{{r.iconFg}}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="{{r.icon}}"></path></svg></span>
+                  <span style="flex-grow: 1; color: {{r.labelColor}}; font-weight: 700;">{{r.label}}</span>
+                  <span style="font-weight: 900; white-space: nowrap; color: {{r.valueColor}};">{{r.value}}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <button class="nk-lift" style="position: relative; overflow: hidden; margin-top: auto; width: 100%; height: 54px; border: 0; clip-path: {{t.chamfer}}; background: {{p.ctaBg}}; box-shadow: {{p.ctaEdge}}; color: {{p.ctaColor}}; font-family: {{t.fDisplay}}; font-style: italic; font-size: 18px; font-weight: 900; letter-spacing: 0.06em; cursor: pointer;">
+              <sc-if value="{{p.shine}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 60px; background: rgb(255 255 255 / 0.4);"></span></sc-if>
+              <span style="position: relative;">{{p.cta}}</span>
+            </button>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top: 20px; display: flex; align-items: center; gap: 14px;">
+      <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: {{t.text3}};">PAY WITH</span>
+      <sc-for list="{{pays}}" as="m" hint-placeholder-count="4">
+        <span style="height: 34px; padding: 0 16px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13.5px; color: {{t.textStrong}};"><span style="width: 10px; height: 10px; transform: rotate(45deg); background: {{m.color}};"></span>{{m.label}}</span>
+      </sc-for>
+      <div style="margin-left: auto; height: 40px; padding: 0 16px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: flex; align-items: center; gap: 10px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{t.holoText}}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"></path><path d="M8.5 12l2.5 2.5 4.5-5"></path></svg>
+        <span style="font-weight: 800; font-size: 13.5px; color: {{t.textStrong}};">Không tự trừ tiền khi hết trial</span>
+        <span style="font-size: 13px; color: {{t.text2}};">· huỷ bất kỳ lúc nào</span>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const CHECK = 'M5 12.5l4.5 4.5L19 7.5', DASH = 'M6 12h12';
+    const hex = 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)';
+    const accent = { Bud: t.holoText, Bloom: t.violetText, Star: t.crimsonText };
+    const fill = { Bud: 'linear-gradient(180deg, #7ff6ff, #1aa7c9)', Bloom: 'linear-gradient(180deg, #ffb3cc, #ff5470)', Star: 'linear-gradient(180deg, #ff5470, #b30f33)' };
+    const row = (grade, label, value, on) => ({
+      label, value, icon: on ? CHECK : DASH, shape: hex,
+      iconBg: on ? fill[grade] : t.chip, iconFg: on ? (grade === 'Bud' ? '#031820' : '#ffffff') : t.text3,
+      labelColor: on ? t.textStrong : t.text3, valueColor: on ? accent[grade] : t.text3,
+    });
+    const plans = [
+      {
+        grade: 'Bud', tier: 'new', name: 'FREE', tagline: 'Everything you need to review', price: '0 ₫', per: 'mãi mãi', note: 'No card required', lift: 30,
+        rows: [row('Bud', 'SRS review, all practice modes', 'Forever', true), row('Bud', 'AI cards and translations', '20 / tháng', true), row('Bud', 'AI tutor and AI stories', '—', false), row('Bud', 'Streak freezes', 'Earned', true), row('Bud', 'IELTS band projection', '—', false), row('Bud', 'Exam countdown plan', '—', false)],
+        cta: 'CURRENT PLAN', ctaBg: t.chip, ctaEdge: 'inset 0 0 0 1px ' + t.lineStrong, ctaColor: t.text2, glowSize: 10, rimW: 2, cls: 'nk-rise',
+      },
+      {
+        grade: 'Bloom', tier: 'learning', name: 'PRO', tagline: 'The full AI kit, every day', price: '79.000 ₫', per: '/ tháng', note: 'Billed 949.000 ₫ / năm · ≈ 2.600 ₫ / ngày', lift: 0, popular: true, shine: true,
+        rows: [row('Bloom', 'SRS review, all practice modes', 'Forever', true), row('Bloom', 'AI cards and translations', 'Unlimited', true), row('Bloom', 'AI tutor and AI stories', 'Included', true), row('Bloom', 'Streak freezes', '+2 / mo', true), row('Bloom', 'IELTS band projection', 'Included', true), row('Bloom', 'Exam countdown plan', '—', false)],
+        cta: 'START 7-DAY TRIAL', ctaBg: t.primaryBg, ctaEdge: 'none', ctaColor: '#ffffff', glowSize: 22, rimW: 3, cls: 'nk-rise-2',
+      },
+      {
+        grade: 'Star', tier: 'mastered', name: 'EXAM SPRINT', tagline: 'Pro plus a plan to exam day', price: '249.000 ₫', per: '/ 3 tháng', note: 'One payment · no auto-renew', lift: 30, sss: true,
+        rows: [row('Star', 'SRS review, all practice modes', 'Forever', true), row('Star', 'AI cards and translations', 'Unlimited', true), row('Star', 'AI tutor and AI stories', 'Included', true), row('Star', 'Streak freezes', '+2 / mo', true), row('Star', 'IELTS band projection', 'Weekly', true), row('Star', 'Exam countdown plan', 'Included', true)],
+        cta: 'GET EXAM SPRINT', ctaBg: 'linear-gradient(180deg, #fff0b8, #ffd166)', ctaEdge: 'none', ctaColor: '#4a2a00', glowSize: 26, rimW: 3, cls: 'nk-rise-3',
+      },
+    ].map(p => ({
+      ...p, popular: !!p.popular, sss: !!p.sss, shine: !!p.shine,
+      rim: t.tier[p.tier].rim, rimCls: p.sss ? 'nk-rim-spin' : '',
+      glow: t.tier[p.tier].soft, noteColor: p.popular ? t.violetText : t.text2, lineColor: t.tier[p.tier].color,
+    }));
+    return {
+      t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      nav: nkNav(t, -1), streak: 12,
+      bg: { wings: false },
+      plans,
+      pays: [{ label: 'MoMo', color: '#d82d8b' }, { label: 'ZaloPay', color: '#0068ff' }, { label: 'VNPay', color: '#e31837' }, { label: 'Thẻ', color: t.holoText }],
+    };
+  }
+}
+</script>
+</body>
+</html>

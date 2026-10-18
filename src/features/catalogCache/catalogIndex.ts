@@ -12,6 +12,7 @@ import {
   type StoredCatalogEntry,
 } from './catalogCache';
 import { parseLexemeV3 } from '../multilingual/schemaV3Validation';
+import type { CatalogUnitDescriptorV1 } from '../catalogPipeline/catalogContracts';
 import { observeCatalogTransaction } from './catalogTransaction';
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -50,6 +51,20 @@ export interface CatalogCachePageResult {
   readonly scanned: number;
   readonly hasMore: boolean;
   readonly nextCursor: string | null;
+}
+
+export interface CatalogCacheUnitQuery {
+  readonly catalogId: string;
+  /** The release observed by the summary that selected this unit. */
+  readonly releaseId: string;
+  readonly language: string;
+  readonly trackId: string;
+  readonly unitId: string;
+}
+
+export interface CatalogCacheUnitResult {
+  readonly descriptor: CatalogUnitDescriptorV1;
+  readonly entries: readonly HydratedCatalogEntry[];
 }
 
 interface CatalogCacheQuerySnapshot {
@@ -399,4 +414,108 @@ export async function queryCatalogCache(input: CatalogCacheQuery): Promise<Catal
 export async function readCatalogCachePage(input: CatalogCacheQuery): Promise<CatalogCachePageResult> {
   const { hydrated, scanned, hasMore, nextCursor } = await queryCatalogCacheSnapshot(input, true);
   return { items: hydrated, scanned, hasMore, nextCursor };
+}
+
+/** Reads one complete Catalog V2 unit from the active local release only. */
+export async function readCatalogCacheUnit(
+  input: CatalogCacheUnitQuery,
+): Promise<CatalogCacheUnitResult | null> {
+  const catalogId = boundedString(input.catalogId, 'catalogId', 128);
+  const releaseId = boundedString(input.releaseId, 'releaseId', 128);
+  const language = boundedString(input.language, 'language', 35);
+  const trackId = boundedString(input.trackId, 'trackId', 128);
+  const unitId = boundedString(input.unitId, 'unitId', 128);
+  const database = await openCatalogCacheDatabase();
+  const transaction = database.transaction([CATALOG_STORE, RELEASE_STORE, ENTRY_STORE, LEXEME_STORE], 'readonly');
+  const done = transactionDone(transaction);
+  try {
+    const catalog = await requestResult(
+      transaction.objectStore(CATALOG_STORE).get(catalogId),
+    ) as { activeReleaseKey?: unknown } | undefined;
+    const releaseKey = typeof catalog?.activeReleaseKey === 'string' ? catalog.activeReleaseKey : null;
+    if (!releaseKey) {
+      await done;
+      return null;
+    }
+    const release = await requestResult(
+      transaction.objectStore(RELEASE_STORE).get(releaseKey),
+    ) as {
+      releaseKey?: unknown;
+      releaseId?: unknown;
+      status?: unknown;
+      schemaVersion?: unknown;
+      contentLanguage?: unknown;
+      unitDescriptors?: unknown;
+    } | undefined;
+    if (release?.releaseKey !== releaseKey || release.releaseId !== releaseId || release.status !== 'complete'
+      || (release.contentLanguage !== undefined && release.contentLanguage !== language) || release.schemaVersion !== 2
+      || !Array.isArray(release.unitDescriptors)) {
+      await done;
+      return null;
+    }
+    const descriptor = release.unitDescriptors.find((value): value is CatalogUnitDescriptorV1 => (
+      typeof value === 'object' && value !== null
+      && (value as CatalogUnitDescriptorV1).trackId === trackId
+      && (value as CatalogUnitDescriptorV1).unitId === unitId
+    ));
+    if (!descriptor) {
+      await done;
+      return null;
+    }
+    const descriptorByUnit = new Map(release.unitDescriptors.map(value => {
+      const item = value as CatalogUnitDescriptorV1;
+      return [`${item.trackId}\u0000${item.unitId}`, item] as const;
+    }));
+    const request = transaction.objectStore(ENTRY_STORE)
+      .index('releaseLanguageTrackRank')
+      .openCursor(IDBKeyRange.bound(
+        [releaseKey, language, trackId, 0, ''],
+        [releaseKey, language, trackId, MAX_RANK, '\uffff'],
+      ));
+    const memberships: CatalogCacheEntry[] = [];
+    const ranks = new Set<number>();
+    let cursor = await requestResult(request);
+    while (cursor) {
+      const entry = publicCatalogEntry(cursor.value as StoredCatalogEntry);
+      const membershipDescriptor = entry.lessonGroup
+        ? descriptorByUnit.get(`${entry.trackId}\u0000${entry.lessonGroup}`)
+        : undefined;
+      if (!membershipDescriptor || membershipDescriptor.tier !== entry.tier) {
+        throw new Error('Catalog V2 membership does not match its unit descriptor.');
+      }
+      if (entry.lessonGroup === unitId) {
+        if (ranks.has(entry.rank)) {
+          throw new Error(`Catalog V2 unit ${unitId} has duplicate membership ranks.`);
+        }
+        ranks.add(entry.rank);
+        memberships.push(entry);
+        if (memberships.length > 20) {
+          throw new RangeError(`Catalog V2 unit ${unitId} exceeds 20 memberships.`);
+        }
+      }
+      cursor = await nextCursor(request, cursor);
+    }
+    if (memberships.length === 0) {
+      throw new Error(`Catalog V2 unit ${unitId} has no memberships.`);
+    }
+    const entries = await Promise.all(memberships.map(async membership => {
+      const stored = await requestResult(
+        transaction.objectStore(LEXEME_STORE).get(catalogLexemeKey(releaseKey, membership.lexemeId)),
+      ) as { value?: unknown } | undefined;
+      if (stored?.value === undefined) {
+        throw new Error(`Catalog lexeme ${membership.lexemeId} is unavailable in the active release.`);
+      }
+      const lexeme = parseLexemeV3(stored.value);
+      if (lexeme.id !== membership.lexemeId) {
+        throw new Error(`Catalog lexeme ${membership.lexemeId} does not match its stored identity.`);
+      }
+      return { membership, lexeme };
+    }));
+    await done;
+    return { descriptor, entries };
+  } catch (error) {
+    try { transaction.abort(); } catch { /* already completed or aborted */ }
+    await done.catch(() => undefined);
+    throw error;
+  }
 }

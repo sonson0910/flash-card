@@ -22,7 +22,6 @@ import type {
   SharedDeckCardBatch,
 } from '../features/sharing/sharedDeckSessionController';
 import type { ShareCategorySelection } from '../features/intake/useIntakeSharingSession';
-import { firebaseGamificationStore } from '../features/gamification/firebaseGamificationStore';
 import { isQuotaError } from '../features/library/libraryStorage';
 import { defaultLearningPersistenceHook } from '../features/learning/learningWorkspacePersistenceAdapter';
 import { useCardIntakePort } from '../features/intake/useCardIntakePort';
@@ -64,11 +63,8 @@ const practicePool = practiceDatabase ? {
   load: async (
     ownerId: string,
     maximum: number,
-    options: { includeFuture: boolean; customDeck: PracticeDeckScope },
-  ) => fetchPracticeCards(practiceDatabase, ownerId, maximum, {
-    includeFuture: options.includeFuture,
-    customDeck: options.customDeck,
-  }),
+    options: { includeFuture: boolean; targetLanguage?: string; customDeck: PracticeDeckScope },
+  ) => fetchPracticeCards(practiceDatabase, ownerId, maximum, options),
   classifyFailure: (error: unknown) => isQuotaError(error) ? 'quota' as const : 'unavailable' as const,
 } : null;
 
@@ -80,6 +76,7 @@ const loadAllCards = async (ownerId: string | null): Promise<CardData[] | null> 
 const loadCategoryCards = async (
   ownerId: string | null,
   selection: ShareCategorySelection,
+  targetLanguage?: string,
 ): Promise<SharedDeckCardBatch> => {
   if (!cloudAvailable || !db || !ownerId) {
     return { cards: [], total: 0, hasNext: false };
@@ -92,6 +89,10 @@ const loadCategoryCards = async (
     bookmarkedOnly: false,
     createdDate: null,
     wordPrefix: '',
+    // Scopes outgoing shares to the active course: without this, sharing
+    // from the "All" category could leak cards from another course's
+    // target language into the recipient's import.
+    targetLanguage,
   };
   const page = await withTimeout(fetchCardPage({
     db,
@@ -159,15 +160,14 @@ export const appDependencies = {
   },
   practice: {
     pool: practicePool,
-    gamification: firebaseGamificationStore,
   },
   intake: {
-    forOwner: (ownerId: string | null): {
+    forOwner: (ownerId: string | null, targetLanguage?: string): {
       adapter: SharedDeckAdapter;
       loadCards(selection: ShareCategorySelection): Promise<SharedDeckCardBatch>;
     } => ({
       adapter: sharedDeck,
-      loadCards: selection => loadCategoryCards(ownerId, selection),
+      loadCards: selection => loadCategoryCards(ownerId, selection, targetLanguage),
     }),
   },
 };

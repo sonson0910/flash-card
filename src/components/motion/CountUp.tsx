@@ -1,5 +1,8 @@
 import gsap from 'gsap';
 import { useEffect, useRef } from 'react';
+import { useUiLocale } from '../../i18n/I18nProvider';
+import { formatNumber } from '../../lib/format';
+import { useReducedMotion } from '../../lib/motionPreference';
 
 interface CountUpProps {
   readonly to: number;
@@ -8,18 +11,19 @@ interface CountUpProps {
   readonly suffix?: string;
 }
 
-const formatCount = (value: number): string => Math.round(value).toLocaleString('en-US');
+const formatCount = (value: number): string => formatNumber(Math.round(value));
 
 // Adapted from React Bits CountUp, using the GSAP runtime already shipped by this app.
 export function CountUp({ to, className, duration = 0.5, suffix = '' }: CountUpProps) {
+  const locale = useUiLocale();
   const visualRef = useRef<HTMLSpanElement | null>(null);
   const previousValueRef = useRef(0);
   const finalText = `${formatCount(to)}${suffix}`;
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     const element = visualRef.current;
     if (!element) return;
-    const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     if (reducedMotion) {
       element.textContent = formatCount(to);
       previousValueRef.current = to;
@@ -37,7 +41,7 @@ export function CountUp({ to, className, duration = 0.5, suffix = '' }: CountUpP
       },
     });
     return () => { tween.kill(); };
-  }, [duration, to]);
+  }, [duration, locale, reducedMotion, to]);
 
   return (
     <>

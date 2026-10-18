@@ -27,12 +27,14 @@ vi.mock('firebase/auth', () => ({
 
 vi.mock('../../lib/firebase', () => ({
   protectedFunctionsCapability: functions.capability,
+  getSonFlashFunctions: functions.getFunctions,
 }));
 
 import { createSharedDeckShare, revokeSharedDeckShare } from './sharedDeckService';
 
 const privateCard: CardData = {
   id: 'private-id',
+  origin: 'ai',
   word: 'opportunity',
   translation: 'cơ hội',
   explanation: 'A favorable situation.',
@@ -40,6 +42,8 @@ const privateCard: CardData = {
   emoji: '✨',
   category: 'IELTS',
   partOfSpeech: 'noun',
+  language: 'en',
+  translationLanguage: 'vi',
   explanationTranslation: 'Một tình huống thuận lợi.',
   cefrLevel: 'B2',
   exampleSentence: 'This role is a great opportunity.',
@@ -110,6 +114,7 @@ describe('sharedDeckService', () => {
       cards: [{
         word: 'opportunity',
         translation: 'cơ hội',
+        origin: 'ai',
         explanation: 'A favorable situation.',
         explanationTranslation: 'Một tình huống thuận lợi.',
         phonetic: '/ˌɒpəˈtjuːnəti/',
@@ -130,7 +135,45 @@ describe('sharedDeckService', () => {
         audioUrl: 'https://media.example/audio.mp3',
         imageUrl: 'https://media.example/image.webp',
       }],
+      targetLanguage: 'en',
+      nativeLanguage: 'vi',
     });
+  });
+
+  it('omits deck language metadata for mixed language pairs', async () => {
+    functions.callable.mockResolvedValue({ data: { shareId: 'share-1', expiresAt: '2026-08-10T00:00:00.000Z' } });
+    await createSharedDeckShare({} as never, 'Mixed', [
+      { ...privateCard, language: 'en', translationLanguage: 'vi' },
+      { ...privateCard, id: 'second', language: 'ko', translationLanguage: 'vi' },
+    ], 'owner-1');
+
+    expect(functions.callable).toHaveBeenCalledWith(expect.not.objectContaining({
+      targetLanguage: expect.anything(), nativeLanguage: expect.anything(),
+    }));
+  });
+
+  it('keeps missing source and native languages unknown instead of defaulting', async () => {
+    functions.callable.mockResolvedValue({ data: { shareId: 'share-1', expiresAt: '2026-08-10T00:00:00.000Z' } });
+    await createSharedDeckShare({} as never, 'Legacy', [
+      { ...privateCard, language: undefined, translationLanguage: undefined, origin: undefined },
+    ], 'owner-1');
+
+    expect(functions.callable).toHaveBeenCalledWith(expect.not.objectContaining({
+      targetLanguage: expect.anything(), nativeLanguage: expect.anything(),
+    }));
+    expect(functions.callable.mock.calls[0]?.[0].cards[0]).not.toHaveProperty('origin');
+    expect(functions.callable.mock.calls[0]?.[0].cards[0]).not.toHaveProperty('translationLanguage');
+  });
+
+  it('omits an overlong language code from optional deck metadata', async () => {
+    functions.callable.mockResolvedValue({ data: { shareId: 'share-1', expiresAt: '2026-08-10T00:00:00.000Z' } });
+    await createSharedDeckShare({} as never, 'Legacy', [
+      { ...privateCard, language: 'zh-hant-123456789', translationLanguage: 'vi' },
+    ], 'owner-1');
+
+    expect(functions.callable).toHaveBeenCalledWith(expect.not.objectContaining({
+      targetLanguage: expect.anything(), nativeLanguage: expect.anything(),
+    }));
   });
 
   it('refreshes the current owner token once when the callable rejects stale authentication', async () => {

@@ -90,7 +90,7 @@ const safeDelta = (value: unknown): number => {
   return Number(value);
 };
 
-const operationCreatedAt = (value: unknown, now: number): string => {
+const operationCreatedAt = (value: unknown, now: number, allowExpiredOperation: boolean): string => {
   if (typeof value !== 'string' || value.length < 1 || value.length > 128) {
     throw new InputValidationError('Library facet operation creation time is invalid.');
   }
@@ -99,7 +99,7 @@ const operationCreatedAt = (value: unknown, now: number): string => {
   if (time > now + LIBRARY_FACET_OPERATION_FUTURE_SKEW_MS) {
     throw new InputValidationError('Library facet operation creation time is too far in the future.');
   }
-  if (time < now - LIBRARY_FACET_RECEIPT_TTL_MS) {
+  if (!allowExpiredOperation && time < now - LIBRARY_FACET_RECEIPT_TTL_MS) {
     throw new InputValidationError('Library facet operation is too old to retry.');
   }
   return new Date(time).toISOString();
@@ -122,6 +122,13 @@ export const libraryFacetV2OperationId = (timestamp: number, nonce: string): str
   }
   const digest = createHash('sha256').update(`library-facet-v2:${timestamp}:${nonce}`).digest('hex');
   return `v2:${timestamp}:${nonce}:${digest}`;
+};
+
+export const libraryFacetRestoreOperationId = (operationId: string, operationCreatedAt: string): string => {
+  if (!validOperationId(operationId)) throw new InputValidationError('Card restore operation ID is invalid.');
+  const timestamp = Date.parse(operationCreatedAt);
+  const nonce = createHash('sha256').update(`library-facet-restore:${operationId}`).digest('hex').slice(0, 24);
+  return libraryFacetV2OperationId(timestamp, nonce);
 };
 
 const parseCategoryMap = (value: unknown, message: string): Record<string, number> => {
@@ -212,7 +219,11 @@ const requestFingerprint = (request: LibraryFacetMutationRequest): string => cre
   .update(canonicalRequest(request))
   .digest('hex');
 
-export const parseLibraryFacetMutationRequest = (value: unknown, now = Date.now()): LibraryFacetMutationRequest => {
+const parseFacetMutationRequest = (
+  value: unknown,
+  now: number,
+  allowExpiredOperation: boolean,
+): LibraryFacetMutationRequest => {
   const source = asRecord(value, 'Library facet request must be an object.');
   const isV2 = typeof source.opId === 'string' && source.opId.startsWith('v2:');
   const expectedBaseKeys = isV2 ? ['op', 'opId', 'operationCreatedAt', 'ownerId'] : ['op', 'opId', 'ownerId'];
@@ -223,7 +234,7 @@ export const parseLibraryFacetMutationRequest = (value: unknown, now = Date.now(
       }
       return undefined;
     }
-    const timestamp = operationCreatedAt(source.operationCreatedAt, now);
+    const timestamp = operationCreatedAt(source.operationCreatedAt, now, allowExpiredOperation);
     const parsedOperationId = v2OperationId(source.opId as string);
     if (!parsedOperationId || parsedOperationId.timestamp !== Date.parse(timestamp)) {
       throw new InputValidationError('Library facet V2 operation ID does not match operation creation time.');
@@ -259,6 +270,9 @@ export const parseLibraryFacetMutationRequest = (value: unknown, now = Date.now(
   throw new InputValidationError('Library facet operation is invalid.');
 };
 
+export const parseLibraryFacetMutationRequest = (value: unknown, now = Date.now()): LibraryFacetMutationRequest =>
+  parseFacetMutationRequest(value, now, false);
+
 const facetsReference = (database: Firestore, ownerId: string) =>
   database.collection('users').doc(ownerId).collection('profile').doc('library_facets');
 
@@ -285,6 +299,103 @@ export async function findLibraryFacetReceipt(
   return parseReceiptResult(storedReceipt.result);
 }
 
+const applyParsedLibraryFacetMutation = async (
+  database: Firestore,
+  transaction: Transaction,
+  ownerId: string,
+  parsedRequest: LibraryFacetMutationRequest,
+): Promise<LibraryFacets> => {
+  const facetsRef = facetsReference(database, ownerId);
+  const receiptsRef = receiptsReference(database, ownerId);
+  const receiptRef = receiptReference(database, ownerId, parsedRequest.opId);
+  const fingerprint = requestFingerprint(parsedRequest);
+  const receiptSnapshot = await transaction.get(receiptRef);
+  if (receiptSnapshot.exists) {
+    const storedReceipt = asRecord(receiptSnapshot.data(), 'Stored library facet receipt is invalid.');
+    if (storedReceipt.fingerprint !== fingerprint) {
+      throw new InputValidationError('Library facet operation ID was reused with a different payload.');
+    }
+    return parseReceiptResult(storedReceipt.result);
+  }
+  await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
+  const [facetsSnapshot, receiptsSnapshot] = await Promise.all([
+    transaction.get(facetsRef),
+    transaction.get(receiptsRef),
+  ]);
+  const current = facetsSnapshot.exists
+    ? parseStoredFacets(facetsSnapshot.data())
+    : { categories: Object.create(null) as Record<string, number>, complete: false };
+  const receipts = receiptsSnapshot.exists
+    ? parseReceiptDocument(receiptsSnapshot.data())
+    : { version: 1 as const, receipts: [] };
+  const categories = Object.fromEntries(Object.entries(current.categories));
+  let complete = current.complete;
+  if (parsedRequest.op === 'clear') {
+    for (const category of Object.keys(categories)) delete categories[category];
+    complete = true;
+  } else {
+    for (const [category, delta] of Object.entries(parsedRequest.delta)) {
+      const previousValue = categories[category] ?? 0;
+      const next = previousValue + delta;
+      if (delta > 0 && (!Number.isSafeInteger(next) || next > MAX_LIBRARY_FACET_COUNTER)) {
+        throw new InputValidationError('Library facet result counter is outside the safe range.');
+      }
+      const boundedNext = next < 0 ? 0 : next;
+      if (!Number.isSafeInteger(boundedNext) || boundedNext > MAX_LIBRARY_FACET_COUNTER) {
+        throw new InputValidationError('Library facet result counter is outside the safe range.');
+      }
+      if (boundedNext === 0) delete categories[category];
+      else categories[category] = boundedNext;
+    }
+    if (Object.keys(categories).length > MAX_LIBRARY_FACET_CATEGORIES) {
+      throw new InputValidationError('Library facet result exceeds the transaction budget.');
+    }
+  }
+  const result = parseResult({ categories, complete });
+  const receipt: LibraryFacetReceipt = { fingerprint, opId: parsedRequest.opId };
+  transaction.set(facetsRef, {
+    categories: result.categories,
+    complete: result.complete,
+    version: 1,
+    updatedAt: new Date().toISOString(),
+  });
+  transaction.set(receiptsRef, {
+    version: 1,
+    receipts: [...receipts.receipts, receipt].slice(-MAX_LIBRARY_FACET_RECEIPTS),
+  });
+  transaction.create(receiptRef, {
+    ownerId,
+    opId: parsedRequest.opId,
+    fingerprint,
+    result,
+    createdAt: FieldValue.serverTimestamp(),
+    // Cached legacy clients have no timestamp-bound replay window. Keep a
+    // receipt through the compatibility cutoff plus the normal retry period.
+    expiresAt: new Date(parsedRequest.operationCreatedAt
+      ? Date.now() + LIBRARY_FACET_RECEIPT_TTL_MS
+      : Math.max(Date.now() + LIBRARY_FACET_RECEIPT_TTL_MS, LIBRARY_FACET_LEGACY_COMPATIBILITY_CUTOFF_MS + LIBRARY_FACET_RECEIPT_TTL_MS)),
+  });
+  return result;
+};
+
+export async function applyLibraryFacetMutationInTransaction(
+  database: Firestore,
+  transaction: Transaction,
+  ownerId: string,
+  request: LibraryFacetMutationRequest,
+): Promise<LibraryFacets> {
+  if (!ownerId || ownerId.includes('/')) throw new InputValidationError('Library facet owner is invalid.');
+  const source = asRecord(request, 'Library facet request must be an object.');
+  if (typeof source.opId !== 'string' || !source.opId.startsWith('v2:')) {
+    throw new InputValidationError('Library facet transaction operation ID is invalid.');
+  }
+  // Queued restores may replay after the public receipt retry window. Keep the
+  // operation timestamp bound to the v2 ID and still enforce future skew.
+  const parsedRequest = parseFacetMutationRequest(request, Date.now(), true);
+  if (parsedRequest.ownerId !== ownerId) throw new LibraryFacetOwnerMismatchError();
+  return applyParsedLibraryFacetMutation(database, transaction, ownerId, parsedRequest);
+}
+
 export async function applyLibraryFacetMutation(
   database: Firestore,
   ownerId: string,
@@ -293,77 +404,6 @@ export async function applyLibraryFacetMutation(
   if (!ownerId || ownerId.includes('/')) throw new InputValidationError('Library facet owner is invalid.');
   const parsedRequest = parseLibraryFacetMutationRequest(request);
   if (parsedRequest.ownerId !== ownerId) throw new LibraryFacetOwnerMismatchError();
-  const facetsRef = facetsReference(database, ownerId);
-  const receiptsRef = receiptsReference(database, ownerId);
-  const receiptRef = receiptReference(database, ownerId, parsedRequest.opId);
-  const fingerprint = requestFingerprint(parsedRequest);
-  return database.runTransaction(async (transaction: Transaction) => {
-    const receiptSnapshot = await transaction.get(receiptRef);
-    if (receiptSnapshot.exists) {
-      const storedReceipt = asRecord(receiptSnapshot.data(), 'Stored library facet receipt is invalid.');
-      if (storedReceipt.fingerprint !== fingerprint) {
-        throw new InputValidationError('Library facet operation ID was reused with a different payload.');
-      }
-      return parseReceiptResult(storedReceipt.result);
-    }
-    await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
-    const [facetsSnapshot, receiptsSnapshot] = await Promise.all([
-      transaction.get(facetsRef),
-      transaction.get(receiptsRef),
-    ]);
-    const current = facetsSnapshot.exists
-      ? parseStoredFacets(facetsSnapshot.data())
-      : { categories: Object.create(null) as Record<string, number>, complete: false };
-    const receipts = receiptsSnapshot.exists
-      ? parseReceiptDocument(receiptsSnapshot.data())
-      : { version: 1 as const, receipts: [] };
-    const categories = Object.fromEntries(Object.entries(current.categories));
-    let complete = current.complete;
-    if (parsedRequest.op === 'clear') {
-      for (const category of Object.keys(categories)) delete categories[category];
-      complete = true;
-    } else {
-      for (const [category, delta] of Object.entries(parsedRequest.delta)) {
-        const previousValue = categories[category] ?? 0;
-        const next = previousValue + delta;
-        if (delta > 0 && (!Number.isSafeInteger(next) || next > MAX_LIBRARY_FACET_COUNTER)) {
-          throw new InputValidationError('Library facet result counter is outside the safe range.');
-        }
-        const boundedNext = next < 0 ? 0 : next;
-        if (!Number.isSafeInteger(boundedNext) || boundedNext > MAX_LIBRARY_FACET_COUNTER) {
-          throw new InputValidationError('Library facet result counter is outside the safe range.');
-        }
-        if (boundedNext === 0) delete categories[category];
-        else categories[category] = boundedNext;
-      }
-      if (Object.keys(categories).length > MAX_LIBRARY_FACET_CATEGORIES) {
-        throw new InputValidationError('Library facet result exceeds the transaction budget.');
-      }
-    }
-    const result = parseResult({ categories, complete });
-    const receipt: LibraryFacetReceipt = { fingerprint, opId: parsedRequest.opId };
-    transaction.set(facetsRef, {
-      categories: result.categories,
-      complete: result.complete,
-      version: 1,
-      updatedAt: new Date().toISOString(),
-    });
-    transaction.set(receiptsRef, {
-      version: 1,
-      receipts: [...receipts.receipts, receipt].slice(-MAX_LIBRARY_FACET_RECEIPTS),
-    });
-    transaction.create(receiptRef, {
-      ownerId,
-      opId: parsedRequest.opId,
-      fingerprint,
-      result,
-      createdAt: FieldValue.serverTimestamp(),
-      // Cached legacy clients have no timestamp-bound replay window. Keep a
-      // receipt through the compatibility cutoff plus the normal retry period.
-      expiresAt: new Date(parsedRequest.operationCreatedAt
-        ? Date.now() + LIBRARY_FACET_RECEIPT_TTL_MS
-        : Math.max(Date.now() + LIBRARY_FACET_RECEIPT_TTL_MS, LIBRARY_FACET_LEGACY_COMPATIBILITY_CUTOFF_MS + LIBRARY_FACET_RECEIPT_TTL_MS)),
-    });
-    return result;
-  });
+  return database.runTransaction(transaction =>
+    applyParsedLibraryFacetMutation(database, transaction, ownerId, parsedRequest));
 }

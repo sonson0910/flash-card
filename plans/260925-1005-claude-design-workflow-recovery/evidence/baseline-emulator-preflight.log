@@ -1,0 +1,5 @@
+captured_utc=2026-09-25T05:00:41.871194+00:00
+port_8080=free
+port_9099=free
+firebase_emulator_cache_exists=True
+firebase_emulator_cache_files=cloud-firestore-emulator-v1.22.0.jar

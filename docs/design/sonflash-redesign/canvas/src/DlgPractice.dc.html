@@ -1,0 +1,74 @@
+<!--#HEAD Practice modes-->
+<!--#DLGOPEN-->
+    <header style="flex-shrink: 0; padding: 22px 22px 18px 26px; display: flex; align-items: flex-start; gap: 14px; border-bottom: 1px solid {{t.line}};">
+      <div style="flex-grow: 1; min-width: 0;">
+      <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">Practice · Unassigned · 3 cards</div>
+      <h2 id="dlg-title" style="margin: 6px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 28px; line-height: 1.12; letter-spacing: -0.02em; color: {{t.textStrong}};">Choose a practice mode</h2>
+      <p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">Warm up differently — every answer still feeds the same memory schedule.</p>
+      </div>
+      <button aria-label="Close" style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </header>
+    <div style="flex-grow: 1; min-height: 0; padding: 20px 26px 22px; display: flex; flex-direction: column; gap: 8px;">
+      <sc-for list="{{modes}}" as="m" hint-placeholder-count="5">
+        <button aria-disabled="{{m.locked}}" style="width: 100%; box-sizing: border-box; min-height: 70px; padding: 12px 16px 12px 12px; border-radius: {{t.fr}}px; border: {{m.border}}; background: {{m.bg}}; box-shadow: {{m.shadow}}; opacity: {{m.opacity}}; display: flex; align-items: center; gap: 14px; text-align: left; color: {{t.text}}; cursor: {{m.cursor}};">
+          <span aria-hidden="true" style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; background: {{m.iconBg}}; color: {{m.iconColor}}; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{m.icon}}"></path></svg></span>
+          <span style="flex-grow: 1; min-width: 0;">
+            <span style="display: flex; align-items: baseline; gap: 8px;"><span style="font-size: 15px; font-weight: 650; color: {{t.textStrong}};">{{m.name}}</span><span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11.5px; color: {{t.text3}};">{{m.time}}</span></span>
+            <span style="display: block; margin-top: 3px; font-size: 13px; line-height: 1.4; color: {{t.text2}};">{{m.desc}}</span>
+          </span>
+          <sc-if value="{{m.isLoading}}" hint-placeholder-val="{{false}}">
+            <span role="status" style="flex-shrink: 0; display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: {{t.accentText}};"><span class="sf-spin" style="width: 16px; height: 16px; box-sizing: border-box; border-radius: 50%; border: 2px solid {{t.accentLine}}; border-top-color: {{t.accent}};"></span>Preparing…</span>
+          </sc-if>
+          <sc-if value="{{m.locked}}" hint-placeholder-val="{{false}}">
+            <span style="flex-shrink: 0; height: 26px; padding: 0 10px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; font-size: 11.5px; font-weight: 600; display: flex; align-items: center; gap: 6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>{{m.lockText}}</span>
+          </sc-if>
+          <sc-if value="{{m.ready}}" hint-placeholder-val="{{true}}">
+            <span style="flex-shrink: 0; font-family: 'Geist Mono', ui-monospace, monospace; width: 26px; height: 26px; border-radius: 7px; border: 1px solid {{t.line}}; color: {{t.text3}}; font-size: 12px; display: flex; align-items: center; justify-content: center;">{{m.key}}</span>
+          </sc-if>
+        </button>
+      </sc-for>
+    </div>
+    <footer style="flex-shrink: 0; padding: 16px 22px 20px 26px; border-top: 1px solid {{t.line}}; display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: 12.5px; color: {{t.text3}};">Press <span style="font-family: 'Geist Mono', ui-monospace, monospace; padding: 1px 6px; border-radius: 5px; border: 1px solid {{t.line}};">1</span>–<span style="font-family: 'Geist Mono', ui-monospace, monospace; padding: 1px 6px; border-radius: 5px; border: 1px solid {{t.line}};">5</span> to pick · add cards to unlock more</span>
+      <button style="margin-left: auto; height: 44px; padding: 0 18px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">Cancel</button>
+    </footer>
+<!--#DLGCLOSE-->
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":720,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = { ...sfTokens(dark), fr: dark ? 14 : 10 };
+    const I = {
+      quiz: 'M4 5h16v14H4zM8 9h8M8 13h5',
+      spell: 'M4 17 9 5l5 12M6 13h6M15 17h5M15 12h5',
+      match: 'M4 7h6M4 17h6M14 7h6M14 17h6M10 7l4 10M10 17l4-10',
+      shadow: 'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3',
+      story: 'M4 5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2zM8 7h6M8 11h6',
+    };
+    const rows = [
+      { name: 'Quiz', desc: 'Pick the right meaning out of four.', time: '~3 min', icon: I.quiz, state: 'loading', key: '1' },
+      { name: 'Spelling', desc: 'Hear the word, type it letter by letter.', time: '~4 min', icon: I.spell, state: 'ready', key: '2' },
+      { name: 'Word Match', desc: 'Pair words and meanings against a 60-second clock.', time: '60 s', icon: I.match, state: 'locked', lockText: 'Needs 4 cards · you have 3', key: '3' },
+      { name: 'Shadowing', desc: 'Say the example sentence, then compare word by word.', time: '~5 min', icon: I.shadow, state: 'ready', key: '4' },
+      { name: 'Story', desc: 'A short AI story woven from the words you are learning.', time: '~6 min', icon: I.story, state: 'locked', lockText: 'Needs 5 cards · you have 3', key: '5' },
+    ];
+    const modes = rows.map(r => {
+      const loading = r.state === 'loading', locked = r.state === 'locked';
+      return { ...r, isLoading: loading, locked, ready: r.state === 'ready', lockText: r.lockText || '',
+        border: loading ? '1px solid ' + t.accentLine : '1px solid ' + t.line,
+        bg: loading ? t.accentSoft : (dark ? 'rgb(255 255 255 / 0.025)' : t.chipBg),
+        shadow: loading && dark ? '0 0 30px -12px rgb(40 211 244 / 0.6)' : 'none',
+        opacity: locked ? 0.55 : 1, cursor: locked ? 'not-allowed' : 'pointer',
+        iconBg: locked ? t.chipBg : t.accentSoft, iconColor: locked ? t.text3 : t.accentText };
+    });
+    return {
+      t, dw: 560, grainId: 'practice-modes-grain-' + (dark ? 'd' : 'l'), amb: { ax: -180, ay: -220, bx: 380, by: 460 },
+      modes,
+    };
+  }
+}
+</script>
+</body>
+</html>

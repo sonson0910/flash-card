@@ -1,3 +1,9 @@
+import {
+  COURSE_NATIVE_LANGUAGES,
+  COURSE_TARGET_LANGUAGES,
+  type CourseNativeLanguage,
+  type CourseTargetLanguage,
+} from './course-profile-contract.js';
 import { createHash } from 'node:crypto';
 
 export class InputValidationError extends Error {
@@ -7,14 +13,43 @@ export class InputValidationError extends Error {
   }
 }
 
-export type VocabularyRequest =
-  | { action: 'word'; word: string; context?: string; language?: { source: string; target: string } }
+export function parsePurchaseIntentRequest(value: unknown): { trigger: 'quota' | 'menu'; expectedOwnerId?: string; offerVersion?: string } {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new InputValidationError('Purchase intent must be an object.');
+  }
+  const source = value as Record<string, unknown>;
+  if (Object.keys(source).some(key => key !== 'trigger' && key !== 'expectedOwnerId' && key !== 'offerVersion') || !Object.hasOwn(source, 'trigger')
+    || (source.trigger !== 'quota' && source.trigger !== 'menu')) {
+    throw new InputValidationError('Purchase intent trigger must be quota or menu.');
+  }
+  const expectedOwnerId = parseExpectedOwnerId(source.expectedOwnerId);
+  if (source.offerVersion !== undefined && (typeof source.offerVersion !== 'string' || !/^[a-f0-9]{64}$/.test(source.offerVersion))) {
+    throw new InputValidationError('Purchase intent offer version is invalid.');
+  }
+  return {
+    trigger: source.trigger,
+    ...(expectedOwnerId === undefined ? {} : { expectedOwnerId }),
+    ...(source.offerVersion === undefined ? {} : { offerVersion: source.offerVersion }),
+  };
+}
+
+export const PART_OF_SPEECH_HINTS = [
+  'noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction',
+  'determiner', 'interjection', 'phrasal verb', 'auxiliary verb', 'modal verb',
+  'article', 'numeral', 'idiom', 'phrase',
+] as const;
+
+export type PartOfSpeechHint = typeof PART_OF_SPEECH_HINTS[number];
+
+type VocabularyRequest =
+  | { action: 'word'; word: string; operationId?: string; context?: string; language?: { source: string; target: string }; partOfSpeech?: PartOfSpeechHint }
+  | { action: 'story'; schemaVersion?: undefined; words: string[]; targetLanguage: CourseTargetLanguage; translationLanguage: CourseNativeLanguage }
   | { action: 'story'; schemaVersion: 1; words: string[] }
   | { action: 'story'; schemaVersion: 2; words: string[] }
   | { action: 'translate'; text: string }
   | { action: 'tutor'; word: string; translation: string; partOfSpeech?: string; question: string }
   | { action: 'mnemonic'; word: string; translation: string; partOfSpeech?: string }
-  | { action: 'extract'; text: string }
+  | { action: 'extract'; text: string; targetLanguage?: CourseTargetLanguage; translationLanguage?: CourseNativeLanguage }
   | { action: 'dialogue'; cards: Array<{ word: string; translation: string }> }
   | {
     action: 'conversation';
@@ -40,6 +75,7 @@ export type SharedCardInput = {
   normalizedLemma?: string;
   word: string;
   translation: string;
+  origin?: 'ai' | 'manual';
   explanation: string;
   explanationTranslation: string;
   phonetic: string;
@@ -69,13 +105,18 @@ export type CreateSharedDeckRequest = {
   operationCreatedAt?: string;
   category: string;
   cards: SharedCardInput[];
+  targetLanguage?: string;
+  nativeLanguage?: string;
 };
 
 export const LEGACY_SHARED_DECK_OPERATION_COMPATIBILITY_END = '2026-12-31T23:59:59.999Z';
 const STRICT_SHARED_DECK_OPERATION_ID = /^share-v2:(\d{13}):[A-Za-z0-9_-]{1,96}$/;
 
 export const sharedDeckRequestFingerprint = (input: CreateSharedDeckRequest): string => createHash('sha256')
-  .update(JSON.stringify({ category: input.category, cards: input.cards, operationCreatedAt: input.operationCreatedAt }))
+  .update(JSON.stringify({
+    category: input.category, cards: input.cards, operationCreatedAt: input.operationCreatedAt,
+    targetLanguage: input.targetLanguage, nativeLanguage: input.nativeLanguage,
+  }))
   .digest('hex');
 
 export const strictSharedDeckOperationMatches = (input: CreateSharedDeckRequest): boolean => {
@@ -94,7 +135,10 @@ export const sharedDeckRequestOwnerMatches = (
 ): boolean => expectedOwnerId !== undefined && expectedOwnerId === authenticatedOwnerId;
 
 export const calculateSharedDeckPayloadBytes = (input: CreateSharedDeckRequest): number =>
-  new TextEncoder().encode(JSON.stringify({ category: input.category, cards: input.cards })).byteLength;
+  new TextEncoder().encode(JSON.stringify({
+    category: input.category, cards: input.cards,
+    ...(input.targetLanguage ? { targetLanguage: input.targetLanguage, nativeLanguage: input.nativeLanguage } : {}),
+  })).byteLength;
 
 export type DuplicateCleanupRequest = {
   action: 'run' | 'status';
@@ -134,7 +178,153 @@ const strictConversationText = (value: unknown, maximum: number, label: string):
   return text;
 };
 
-const canonicalLexemeId = (language: string, lemma: string, partOfSpeech: string, senseKey: string): string => {
+const boundedLanguageCode = (value: unknown, invalidMessage: string, lowercase = false) => {
+  if (typeof value === 'string' && value.trim().length > 16) {
+    throw new InputValidationError(invalidMessage);
+  }
+  const text = boundedText(value, 16);
+  return lowercase ? text.toLowerCase() : text;
+};
+
+const parsePartOfSpeechHint = (value: unknown): PartOfSpeechHint | undefined => {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string' || value.trim().length === 0 || value.trim().length > 64) {
+    throw new InputValidationError('Part of speech hint is invalid.');
+  }
+  const normalized = value.trim().toLocaleLowerCase('en-US');
+  if (!PART_OF_SPEECH_HINTS.includes(normalized as PartOfSpeechHint)) {
+    throw new InputValidationError('Part of speech hint is invalid.');
+  }
+  return normalized as PartOfSpeechHint;
+};
+
+export const isCanonicalLanguageCode = (value: unknown): value is string => (
+  typeof value === 'string'
+  && value.length <= 16
+  && /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(value)
+);
+
+export const isSupportedCardTranslationLanguage = (value: unknown): value is 'en' | 'vi' => (
+  value === 'en' || value === 'vi'
+);
+
+export type CardLanguageFields = {
+  language?: string;
+  translationLanguage?: string;
+};
+
+/**
+ * Validate card language metadata independently from the canonical lexeme
+ * tuple. Wave-1 meaning languages are en/vi. Legacy cards may provide either
+ * field; missing values are resolved to en/vi by read models and are not
+ * written here.
+ */
+export const parseCardLanguagePair = (value: unknown): CardLanguageFields => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new InputValidationError('Card language fields must be an object.');
+  }
+  const source = value as Record<string, unknown>;
+  const result: CardLanguageFields = {};
+  for (const field of ['language', 'translationLanguage'] as const) {
+    if (source[field] === undefined) continue;
+    const code = boundedLanguageCode(source[field], 'Card language codes are invalid.', true);
+    if (!isCanonicalLanguageCode(code)) throw new InputValidationError('Card language codes are invalid.');
+    if (field === 'translationLanguage' && !isSupportedCardTranslationLanguage(code)) {
+      throw new InputValidationError('Card language codes are invalid.');
+    }
+    result[field] = code;
+  }
+  return result;
+};
+
+export type CardSourceMetadata = {
+  url?: string;
+  title?: string;
+  context?: string;
+  capturedAt?: string;
+};
+
+const CARD_SOURCE_FIELDS = ['url', 'title', 'context', 'capturedAt'] as const;
+const CARD_SOURCE_URL_MAX_LENGTH = 2_048;
+const CARD_SOURCE_TITLE_MAX_LENGTH = 256;
+const CARD_SOURCE_CONTEXT_MAX_LENGTH = 500;
+
+const boundedSourceText = (value: unknown, field: string, maximum: number): string => {
+  if (value === undefined || value === null || value === '') return '';
+  if (typeof value !== 'string' || value.length > maximum) {
+    throw new InputValidationError(`Card source ${field} is invalid.`);
+  }
+  return value.trim();
+};
+
+/**
+ * Strip credentials, the query string, and the fragment before persisting a
+ * captured page URL. Query and fragment routinely carry session tokens, auth
+ * codes, or tracking identifiers that add privacy risk without adding value
+ * for "which page did this word come from" — origin + pathname is enough to
+ * recognize or revisit the page. http/https only; anything else (javascript:,
+ * data:, chrome-extension:, file:, …) is rejected outright.
+ */
+const trustedCardSourceUrl = (value: unknown): string => {
+  const text = boundedSourceText(value, 'url', CARD_SOURCE_URL_MAX_LENGTH);
+  if (!text) return '';
+  let url: URL;
+  try {
+    url = new URL(text);
+  } catch {
+    throw new InputValidationError('Card source url is invalid.');
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new InputValidationError('Card source url is invalid.');
+  }
+  url.username = '';
+  url.password = '';
+  url.search = '';
+  url.hash = '';
+  const serialized = url.toString();
+  if (serialized.length > CARD_SOURCE_URL_MAX_LENGTH) {
+    throw new InputValidationError('Card source url is invalid.');
+  }
+  return serialized;
+};
+
+const parseCardSourceCapturedAt = (value: unknown): string => {
+  const text = boundedSourceText(value, 'capturedAt', 128);
+  if (!text) return '';
+  const parsed = Date.parse(text);
+  if (Number.isNaN(parsed)) throw new InputValidationError('Card source capturedAt is invalid.');
+  return new Date(parsed).toISOString();
+};
+
+/**
+ * Bounded metadata for a card captured from a web page via the browser
+ * extension. Every field is optional and independent; a card created inside
+ * the app (or any legacy card) simply omits `source`, and nothing here ever
+ * guesses or backfills one. `canonicalCard` only calls this at creation time
+ * — Firestore Rules separately deny any client update that touches `source`,
+ * so once set it is immutable for the life of the card.
+ */
+export const parseCardSourceMetadata = (value: unknown): CardSourceMetadata | undefined => {
+  if (value === undefined) return undefined;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new InputValidationError('Card source must be an object.');
+  }
+  const source = value as Record<string, unknown>;
+  assertAllowedFields(source, CARD_SOURCE_FIELDS, 'Card source contains an unsupported field.');
+  const url = trustedCardSourceUrl(source.url);
+  const title = boundedSourceText(source.title, 'title', CARD_SOURCE_TITLE_MAX_LENGTH);
+  const context = boundedSourceText(source.context, 'context', CARD_SOURCE_CONTEXT_MAX_LENGTH);
+  const capturedAt = parseCardSourceCapturedAt(source.capturedAt);
+  if (!url && !title && !context && !capturedAt) return undefined;
+  return {
+    ...(url ? { url } : {}),
+    ...(title ? { title } : {}),
+    ...(context ? { context } : {}),
+    ...(capturedAt ? { capturedAt } : {}),
+  };
+};
+
+export const canonicalLexemeId = (language: string, lemma: string, partOfSpeech: string, senseKey: string): string => {
   const component = (value: string, lowercase = false) => {
     const normalized = value.normalize('NFKC').trim().replace(/\s+/g, ' ');
     return lowercase ? normalized.toLowerCase() : normalized;
@@ -170,6 +360,23 @@ const assertAllowedFields = (
   if (Object.keys(source).some(key => !allowed.includes(key))) throw new InputValidationError(message);
 };
 
+/**
+ * Word-generation source languages with a shipped language pack (headword
+ * script handling, romanization/furigana/pinyin reading, speech scoring).
+ * Adding a language here without a pack lets learners request generation for
+ * a language the UI and speech pipeline cannot render or score correctly, so
+ * this list is intentionally the same set as `LANGUAGE_PACK_IDS`.
+ */
+const SUPPORTED_WORD_LANGUAGE_SOURCES = ['en', 'ko', 'ja', 'zh'] as const;
+/** Meaning languages the generation prompt is tuned to translate into. */
+const SUPPORTED_WORD_LANGUAGE_TARGETS = ['en', 'vi'] as const;
+
+export const isSupportedWordLanguagePair = (source: string, target: string): boolean => (
+  (SUPPORTED_WORD_LANGUAGE_SOURCES as readonly string[]).includes(source)
+  && (SUPPORTED_WORD_LANGUAGE_TARGETS as readonly string[]).includes(target)
+  && source !== target
+);
+
 const parseWordLanguage = (value: unknown): { source: string; target: string } | undefined => {
   if (value === undefined) return undefined;
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -177,13 +384,31 @@ const parseWordLanguage = (value: unknown): { source: string; target: string } |
   }
   const language = value as Record<string, unknown>;
   assertAllowedFields(language, ['source', 'target'], 'Unsupported word language field.');
-  const source = boundedText(language.source, 16).toLowerCase();
-  const target = boundedText(language.target, 16).toLowerCase();
-  if (!/^[a-z]{2,8}(?:-[a-z]{2,8})?$/.test(source)
-    || !/^[a-z]{2,8}(?:-[a-z]{2,8})?$/.test(target)) {
+  const source = boundedLanguageCode(language.source, 'Word language codes are invalid.', true);
+  const target = boundedLanguageCode(language.target, 'Word language codes are invalid.', true);
+  if (!isCanonicalLanguageCode(source) || !isCanonicalLanguageCode(target)) {
     throw new InputValidationError('Word language codes are invalid.');
   }
+  if (!isSupportedWordLanguagePair(source, target)) {
+    throw new InputValidationError('This language pair is not supported for generation yet.');
+  }
   return { source, target };
+};
+
+const parseSharedDeckLanguagePair = (data: Record<string, unknown>): {
+  targetLanguage?: string;
+  nativeLanguage?: string;
+} => {
+  const hasTarget = data.targetLanguage !== undefined;
+  const hasNative = data.nativeLanguage !== undefined;
+  if (!hasTarget && !hasNative) return {};
+  if (!hasTarget || !hasNative) throw new InputValidationError('Shared-deck language fields must be provided together.');
+  const targetLanguage = boundedLanguageCode(data.targetLanguage, 'Shared-deck language codes are invalid.', true);
+  const nativeLanguage = boundedLanguageCode(data.nativeLanguage, 'Shared-deck language codes are invalid.', true);
+  if (!isCanonicalLanguageCode(targetLanguage) || !isCanonicalLanguageCode(nativeLanguage)) {
+    throw new InputValidationError('Shared-deck language codes are invalid.');
+  }
+  return { targetLanguage, nativeLanguage };
 };
 
 const boundedTextList = (value: unknown): string[] => Array.isArray(value)
@@ -232,6 +457,26 @@ const SHARED_AUDIO_HOSTS = new Set([
   'api.dictionaryapi.dev',
   'ssl.gstatic.com',
 ]);
+
+const WORD_OPERATION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export const parseExpectedOwnerId = (value: unknown): string | undefined => {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string' || value.length === 0 || value.length > 128 || value.includes('/')) {
+    throw new InputValidationError('Expected owner is invalid.');
+  }
+  return value;
+};
+
+export const parseCancelCardGenerationRequest = (value: unknown): string => {
+  const data = asRecord(value);
+  assertAllowedFields(data, ['operationId', 'expectedOwnerId'], 'Unsupported cancellation field.');
+  parseExpectedOwnerId(data.expectedOwnerId);
+  if (typeof data.operationId !== 'string' || !WORD_OPERATION_ID.test(data.operationId)) {
+    throw new InputValidationError('Operation ID must be a UUID v4.');
+  }
+  return data.operationId;
+};
 
 const parseVocabularyCardInput = (
   value: unknown,
@@ -342,20 +587,26 @@ const parseConversationInput = (value: unknown): {
 
 export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
   const data = asRecord(value);
-  assertAllowedFields(data, ['action', 'input'], 'Unsupported vocabulary request field.');
+  assertAllowedFields(data, ['action', 'input', 'operationId', 'expectedOwnerId'], 'Unsupported vocabulary request field.');
+  parseExpectedOwnerId(data.expectedOwnerId);
   const action = boundedText(data.action, 16);
+  const operationId = data.operationId === undefined ? undefined : data.operationId;
+  if (operationId !== undefined && (action !== 'word' || typeof operationId !== 'string'
+    || !WORD_OPERATION_ID.test(operationId))) {
+    throw new InputValidationError('Operation ID must be a UUID v4 for a word request.');
+  }
 
   if (action === 'word') {
     if (typeof data.input === 'string') {
       const word = boundedText(data.input, 80);
       if (!word) throw new InputValidationError('A word is required.');
-      return { action, word };
+      return { action, word, ...(operationId ? { operationId } : {}) };
     }
     if (!data.input || typeof data.input !== 'object' || Array.isArray(data.input)) {
       throw new InputValidationError('A word is required.');
     }
     const input = data.input as Record<string, unknown>;
-    assertAllowedFields(input, ['term', 'context', 'language'], 'Unsupported word input field.');
+    assertAllowedFields(input, ['term', 'context', 'language', 'partOfSpeech'], 'Unsupported word input field.');
     const word = boundedText(input.term, 80);
     if (!word) throw new InputValidationError('A word is required.');
     if (input.context !== undefined && typeof input.context !== 'string') {
@@ -363,35 +614,68 @@ export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
     }
     const context = boundedText(input.context, 500).replace(/\s+/g, ' ');
     const language = parseWordLanguage(input.language);
+    const partOfSpeech = parsePartOfSpeechHint(input.partOfSpeech);
     return {
       action,
       word,
+      ...(operationId ? { operationId } : {}),
       ...(context ? { context } : {}),
       ...(language ? { language } : {}),
+      ...(partOfSpeech ? { partOfSpeech } : {}),
     };
   }
 
   if (action === 'story') {
-    const legacyInput = Array.isArray(data.input) ? data.input : null;
-    if (legacyInput && legacyInput.length > 5) {
-      throw new InputValidationError('A story can contain at most five words.');
+    if (Array.isArray(data.input) || (data.input && typeof data.input === 'object' && Object.hasOwn(data.input, 'schemaVersion'))) {
+      const legacyInput = Array.isArray(data.input) ? data.input : null;
+      if (legacyInput && legacyInput.length > 5) {
+        throw new InputValidationError('A story can contain at most five words.');
+      }
+      const input = legacyInput
+        ? undefined
+        : asRecord(data.input);
+      if (input) {
+        assertAllowedFields(input, ['schemaVersion', 'words'], 'Unsupported story input field.');
+        if (input.schemaVersion !== 2) throw new InputValidationError('Unsupported story schema version.');
+        if (!Array.isArray(input.words)) throw new InputValidationError('At least one word is required.');
+        if (input.words.length > 5) throw new InputValidationError('A story can contain at most five words.');
+      } else if (!legacyInput) {
+        throw new InputValidationError('At least one word is required.');
+      }
+      const rawWords = legacyInput ?? input?.words;
+      if (!Array.isArray(rawWords)) throw new InputValidationError('At least one word is required.');
+      const words = rawWords.map(item => boundedText(item, 80)).filter(Boolean);
+      if (words.length === 0) throw new InputValidationError('At least one word is required.');
+      return { action, schemaVersion: legacyInput ? 1 : 2, words };
     }
-    const input = legacyInput
-      ? undefined
-      : asRecord(data.input);
-    if (input) {
-      assertAllowedFields(input, ['schemaVersion', 'words'], 'Unsupported story input field.');
-      if (input.schemaVersion !== 2) throw new InputValidationError('Unsupported story schema version.');
-      if (!Array.isArray(input.words)) throw new InputValidationError('At least one word is required.');
-      if (input.words.length > 5) throw new InputValidationError('A story can contain at most five words.');
-    } else if (!legacyInput) {
+    const legacyInput = Array.isArray(data.input);
+    if (!legacyInput && (!data.input || typeof data.input !== 'object')) {
       throw new InputValidationError('At least one word is required.');
     }
-    const rawWords = legacyInput ?? input?.words;
-    if (!Array.isArray(rawWords)) throw new InputValidationError('At least one word is required.');
-    const words = rawWords.map(item => boundedText(item, 80)).filter(Boolean);
+    const input = legacyInput ? undefined : data.input as Record<string, unknown>;
+    if (input) assertAllowedFields(input, ['words', 'targetLanguage', 'translationLanguage'], 'Unsupported story input field.');
+    const wordInput = legacyInput ? data.input : input?.words;
+    if (!Array.isArray(wordInput)) throw new InputValidationError('At least one word is required.');
+    if (wordInput.length > 5) {
+      throw new InputValidationError('A story can contain at most five words.');
+    }
+    const words = wordInput.map(item => boundedText(item, 80)).filter(Boolean);
     if (words.length === 0) throw new InputValidationError('At least one word is required.');
-    return { action, schemaVersion: legacyInput ? 1 : 2, words };
+    const targetLanguage = legacyInput ? 'en' : input?.targetLanguage;
+    const translationLanguage = legacyInput ? 'vi' : input?.translationLanguage;
+    if (typeof targetLanguage !== 'string' || !COURSE_TARGET_LANGUAGES.includes(targetLanguage as CourseTargetLanguage)) {
+      throw new InputValidationError('Story target language is invalid.');
+    }
+    if (typeof translationLanguage !== 'string'
+      || !COURSE_NATIVE_LANGUAGES.includes(translationLanguage as CourseNativeLanguage)) {
+      throw new InputValidationError('Story translation language is invalid.');
+    }
+    return {
+      action,
+      words,
+      targetLanguage: targetLanguage as CourseTargetLanguage,
+      translationLanguage: translationLanguage as CourseNativeLanguage,
+    };
   }
 
   if (action === 'translate') {
@@ -413,9 +697,18 @@ export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
   }
 
   if (action === 'extract') {
-    const text = boundedText(data.input, 2_000);
+    const structured = typeof data.input !== 'string';
+    const input = structured ? asRecord(data.input) : null;
+    if (input) assertAllowedFields(input, ['text', 'targetLanguage', 'translationLanguage'], 'Unsupported extraction input field.');
+    const text = boundedText(input ? input.text : data.input, 2_000);
     if (!text) throw new InputValidationError('Text is required.');
-    return { action, text };
+    if (!input) return { action, text };
+    if (!COURSE_TARGET_LANGUAGES.includes(input.targetLanguage as CourseTargetLanguage)
+      || !COURSE_NATIVE_LANGUAGES.includes(input.translationLanguage as CourseNativeLanguage)) {
+      throw new InputValidationError('Extraction language pair is invalid.');
+    }
+    return { action, text, targetLanguage: input.targetLanguage as CourseTargetLanguage,
+      translationLanguage: input.translationLanguage as CourseNativeLanguage };
   }
 
   if (action === 'dialogue') {
@@ -455,20 +748,35 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
     }
     const mnemonic = boundedText(card.mnemonic, 2_048);
     const wordFamily = boundedWordFamily(card.wordFamily);
+    const origin = card.origin;
+    if (origin !== undefined && origin !== 'ai' && origin !== 'manual') {
+      throw new InputValidationError('A shared card origin is invalid.');
+    }
     const lexemeId = boundedText(card.lexemeId, 128);
-    const language = boundedText(card.language, 64);
     const senseKey = boundedText(card.senseKey, 128);
     const partOfSpeech = boundedText(card.partOfSpeech, 64);
     const normalizedLemma = boundedText(card.normalizedLemma, 256) || word;
-    const hasCanonicalIdentity = Boolean(lexemeId || language || senseKey);
+    const hasCanonicalIdentity = Boolean(lexemeId || senseKey || card.normalizedLemma !== undefined);
+    const language = card.language === undefined
+      ? undefined
+      : typeof card.language === 'string' && card.language.trim().length <= 16
+        ? boundedLanguageCode(card.language, 'A shared card has an invalid language code.', true)
+        : '';
+    if (card.language !== undefined && !isCanonicalLanguageCode(language)) {
+      throw new InputValidationError(hasCanonicalIdentity
+        ? 'A shared card has an invalid lexeme identity.'
+        : 'A shared card has an invalid language code.');
+    }
     if (hasCanonicalIdentity && (!language || !senseKey || !partOfSpeech
-      || !validSharedLexemeIdentity({ lexemeId, language, normalizedLemma, partOfSpeech, senseKey }))) {
+      || lexemeId !== canonicalLexemeId(language, normalizedLemma, partOfSpeech, senseKey))) {
       throw new InputValidationError('A shared card has an invalid lexeme identity.');
     }
     return {
       ...(hasCanonicalIdentity ? { lexemeId, language, senseKey, normalizedLemma } : {}),
+      ...(!hasCanonicalIdentity && language ? { language } : {}),
       word,
       translation,
+      ...(origin ? { origin } : {}),
       explanation: boundedText(card.explanation, 2_048),
       explanationTranslation: boundedText(card.explanationTranslation, 2_048),
       phonetic: boundedText(card.phonetic, 256),
@@ -508,12 +816,19 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
     }
     operationCreatedAt = new Date(Date.parse(data.operationCreatedAt)).toISOString();
   }
+  const languagePair = parseSharedDeckLanguagePair(data);
+  if (languagePair.targetLanguage && cards.some(card => (
+    card.language !== undefined && card.language !== languagePair.targetLanguage
+  ))) {
+    throw new InputValidationError('A shared-deck target language must match every canonical card language.');
+  }
   const normalized = {
     ...(expectedOwnerId ? { expectedOwnerId } : {}),
     ...(opId ? { opId } : {}),
     ...(operationCreatedAt ? { operationCreatedAt } : {}),
     category,
     cards,
+    ...languagePair,
   };
   if (calculateSharedDeckPayloadBytes(normalized) > 750_000) {
     throw new InputValidationError('The shared deck is too large.');

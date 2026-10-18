@@ -10,7 +10,8 @@ import {
 } from './lessonReducer';
 
 export type DailySessionPersistenceResult =
-  | { readonly status: 'advanced' | 'completed' | 'provisionally-advanced' | 'sync-pending' | 'stale-session' | 'not-ready' }
+  | { readonly status: 'advanced' | 'completed'; readonly xpAwarded: number }
+  | { readonly status: 'stale-session' | 'not-ready' }
   | { readonly status: 'failed'; readonly error: string };
 
 export interface DailySessionController {
@@ -20,6 +21,7 @@ export interface DailySessionController {
   chooseIntroduction(choice: 'guided' | 'independent-recall'): boolean;
   continueGuided(): boolean;
   requestGuidance(): boolean;
+  append(exercises: readonly Exercise[]): void;
   submit(answer: ExerciseAnswer): boolean;
   rate(rating: ReviewRatingValue): Promise<DailySessionPersistenceResult>;
   retry(): Promise<DailySessionPersistenceResult>;
@@ -71,27 +73,20 @@ export function createDailySessionController({
     operation = (async () => {
       try {
         const outcome = await reviewCard(review.itemId, review.rating, review.operationId);
-        if (outcome?.status === 'durably-queued') {
-          if (generation !== sessionGeneration || !snapshot) return { status: 'stale-session' };
-          const next = reduceLessonState(snapshot, {
-            type: 'provisionally-persisted',
-            operationId: review.operationId,
-          });
-          if (next === snapshot) return { status: 'stale-session' };
-          publish(next);
-          return { status: next.phase === 'sync-pending' ? 'sync-pending' : 'provisionally-advanced' };
-        }
         if (outcome?.status !== 'published') {
           throw new Error(`The review was not saved (${outcome?.status ?? 'missing outcome'}).`);
         }
         if (generation !== sessionGeneration || !snapshot) return { status: 'stale-session' };
+        if (typeof outcome.result.xpAwarded !== 'number') {
+          throw new Error('The review was saved without an authoritative XP award.');
+        }
         const next = reduceLessonState(snapshot, {
           type: 'persisted',
           operationId: review.operationId,
         });
         if (next === snapshot) return { status: 'stale-session' };
         publish(next);
-        return { status: next.phase === 'completed' ? 'completed' : 'advanced' };
+        return { status: next.phase === 'completed' ? 'completed' : 'advanced', xpAwarded: outcome.result.xpAwarded };
       } catch (error) {
         if (generation !== sessionGeneration || !snapshot) return { status: 'stale-session' };
         const message = errorMessage(error);
@@ -119,6 +114,28 @@ export function createDailySessionController({
       sessionGeneration += 1;
       pending.clear();
       publish(createLessonState(exercises));
+    },
+    append(exercises) {
+      if (!snapshot || exercises.length === 0) return;
+      const existingIds = new Set(snapshot.exercises.map(exercise => exercise.cardId));
+      const additions: Exercise[] = [];
+      for (const exercise of exercises) {
+        if (!existingIds.has(exercise.cardId)) {
+          existingIds.add(exercise.cardId);
+          additions.push(exercise);
+        }
+      }
+      if (additions.length === 0) return;
+      if (snapshot.exercises.length + additions.length > 15) {
+        throw new TypeError('A lesson cannot contain more than 15 exercises.');
+      }
+      const insertionIndex = snapshot.phase === 'completed' ? snapshot.exercises.length : snapshot.index + 1;
+      publish({
+        ...snapshot,
+        exercises: [...snapshot.exercises.slice(0, insertionIndex), ...additions, ...snapshot.exercises.slice(insertionIndex)],
+        steps: [...snapshot.steps.slice(0, insertionIndex), ...additions.map(exercise => ({ stage: 'review' as const, exercise })), ...snapshot.steps.slice(insertionIndex)],
+        ...(snapshot.phase === 'completed' ? { phase: 'answering', feedback: null, pendingReview: null, error: null } : {}),
+      });
     },
     chooseIntroduction(choice) {
       if (!snapshot || snapshot.phase !== 'introduction') return false;

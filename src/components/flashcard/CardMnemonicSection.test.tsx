@@ -1,3 +1,7 @@
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
+i18n.load('en', {}); i18n.activate('en');
+import { createElement } from 'react';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -21,10 +25,10 @@ const sampleCard = {
 describe('CardMnemonicSection', () => {
   it('renders the mnemonic action', () => {
     const html = renderToStaticMarkup(
-      <CardMnemonicSection card={sampleCard} onUpdateCard={vi.fn()} />,
+      createElement(I18nProvider, { i18n }, <CardMnemonicSection card={sampleCard} onUpdateCard={vi.fn()} />),
     );
 
-    expect(html).toContain('Generate AI Mnemonic');
+    expect(html).toContain('Memory hook');
   });
 
   it('routes mnemonic generation through the dedicated operation', () => {

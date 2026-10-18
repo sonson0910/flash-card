@@ -1,5 +1,5 @@
 import { withTimeout } from './async';
-import { app, auth } from './firebase';
+import { app, auth, getSonFlashFunctions } from './firebase';
 import { isSupportedImageUrl } from './mediaUrlPolicy';
 
 export { isSupportedImageUrl } from './mediaUrlPolicy';
@@ -152,9 +152,9 @@ export async function fetchImageUrl(input: string | VocabularyImageContext): Pro
   try {
     if (!import.meta.env.DEV) {
       try {
-        const { getFunctions, httpsCallable } = await import('firebase/functions');
+        const { httpsCallable } = await import('firebase/functions');
         if (!app || !auth?.currentUser) throw new Error('Sign in to search for images.');
-        const functions = getFunctions(app, 'asia-southeast1');
+        const functions = await getSonFlashFunctions(app);
         const callable = httpsCallable<
           { word: string; query: string },
           { imageUrl: string | null; status?: 'transient' | 'no-result' }

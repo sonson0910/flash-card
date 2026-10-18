@@ -10,7 +10,8 @@ import {
   stageCatalogChunk,
   type CatalogCacheEntry,
 } from './catalogCache';
-import { queryCatalogCache, readCatalogCachePage } from './catalogIndex';
+import type { CatalogUnitDescriptorV1 } from '../catalogPipeline/catalogContracts';
+import { queryCatalogCache, readCatalogCachePage, readCatalogCacheUnit } from './catalogIndex';
 import { assessCatalogPerformance } from '../releaseReadiness/catalogPerformanceGate';
 
 const deleteDatabase = () => new Promise<void>((resolve, reject) => {
@@ -50,6 +51,30 @@ const install = async (items: readonly CatalogCacheEntry[]) => {
       membershipCount: chunk.length,
       encodedBytes: 128,
     }, chunk);
+  }
+  await activateCatalogInstall(handle);
+};
+
+const installV2 = async (
+  items: readonly CatalogCacheEntry[],
+  unitDescriptors: readonly CatalogUnitDescriptorV1[],
+  lexemes: readonly LexemeV3[] = [],
+) => {
+  const chunkCount = Math.ceil(items.length / 100);
+  const handle = await beginCatalogInstall({
+    catalogId: 'english-core', releaseId: 'release-1', schemaVersion: 2, contentLanguage: 'en',
+    chunkCount, lexemeCount: lexemes.length, membershipCount: items.length, encodedBytes: chunkCount * 128, unitDescriptors,
+  });
+  for (let offset = 0; offset < items.length; offset += 100) {
+    const chunk = items.slice(offset, offset + 100);
+    const chunkLexemes = offset === 0 ? lexemes : [];
+    await stageCatalogChunk(handle, {
+      chunkId: `chunk-${String(offset / 100).padStart(4, 'a')}`,
+      sha256: String(offset / 100).padStart(64, 'a').slice(-64),
+      lexemeCount: chunkLexemes.length,
+      membershipCount: chunk.length,
+      encodedBytes: 128,
+    }, chunk, chunkLexemes);
   }
   await activateCatalogInstall(handle);
 };
@@ -159,6 +184,65 @@ describe('catalog cache indexed query', () => {
     await expect(readCatalogCachePage({
       catalogId: 'english-core', language: 'en', trackId: 'ielts', pageSize: 10,
     })).resolves.toEqual({ items: [], scanned: 0, hasMore: false, nextCursor: null });
+  });
+
+  it('keeps V1 releases unavailable to the V2 unit reader', async () => {
+    await install([item(1)]);
+    await expect(readCatalogCacheUnit({
+      catalogId: 'english-core', releaseId: 'release-1', language: 'en', trackId: 'ielts', unitId: 'unit-1',
+    })).resolves.toBeNull();
+  });
+
+  it('reads one V2 unit in membership order without a remote request', async () => {
+    const descriptor = {
+      unitId: 'unit-1', trackId: 'ielts', tier: 'foundation', ordinal: 1,
+      titles: [{ language: 'en', text: 'Start' }],
+    } satisfies CatalogUnitDescriptorV1;
+    const lexeme = contentLexeme('release-1', 'Bắt đầu');
+    const membership = (index: number) => item(index, {
+      rank: index, tier: 'foundation', lessonGroup: 'unit-1', lexemeId: lexeme.id,
+      normalizedLemma: lexeme.normalizedLemma, lemma: lexeme.lemma, partOfSpeech: lexeme.partOfSpeech,
+    });
+    await installV2([membership(3), membership(1), membership(2)], [descriptor], [lexeme]);
+
+    await expect(readCatalogCacheUnit({
+      catalogId: 'english-core', releaseId: 'release-0', language: 'en', trackId: 'ielts', unitId: 'unit-1',
+    })).resolves.toBeNull();
+    await expect(readCatalogCacheUnit({
+      catalogId: 'english-core', releaseId: 'release-1', language: 'vi', trackId: 'ielts', unitId: 'unit-1',
+    })).resolves.toBeNull();
+    await expect(readCatalogCacheUnit({
+      catalogId: 'english-core', releaseId: 'release-1', language: 'en', trackId: 'ielts', unitId: 'unit-1',
+    })).resolves.toEqual({
+      descriptor,
+      entries: [
+        expect.objectContaining({ membership: expect.objectContaining({ membershipId: 'membership-0001', rank: 1 }), lexeme }),
+        expect.objectContaining({ membership: expect.objectContaining({ membershipId: 'membership-0002', rank: 2 }), lexeme }),
+        expect.objectContaining({ membership: expect.objectContaining({ membershipId: 'membership-0003', rank: 3 }), lexeme }),
+      ],
+    });
+  });
+
+  it('rejects inconsistent and oversized V2 unit content', async () => {
+    const descriptor = {
+      unitId: 'unit-1', trackId: 'ielts', tier: 'foundation', ordinal: 1,
+      titles: [{ language: 'en', text: 'Start' }],
+    } satisfies CatalogUnitDescriptorV1;
+    await installV2([
+      item(1, { tier: 'core', lessonGroup: 'unit-1' }),
+    ], [descriptor]);
+    await expect(readCatalogCacheUnit({
+      catalogId: 'english-core', releaseId: 'release-1', language: 'en', trackId: 'ielts', unitId: 'unit-1',
+    })).rejects.toThrow(/does not match/i);
+
+    closeCatalogCacheForTests();
+    await deleteDatabase();
+    await installV2(Array.from({ length: 21 }, (_, index) => item(index, {
+      tier: 'foundation', lessonGroup: 'unit-1',
+    })), [descriptor]);
+    await expect(readCatalogCacheUnit({
+      catalogId: 'english-core', releaseId: 'release-1', language: 'en', trackId: 'ielts', unitId: 'unit-1',
+    })).rejects.toThrow(/exceeds 20/i);
   });
 
   it('rejects a page cursor after the active release changes', async () => {

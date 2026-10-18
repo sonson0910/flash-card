@@ -24,6 +24,7 @@ vi.mock('../../lib/cardRepository', () => ({
 }));
 
 import { createIdentitySessionFirebaseAdapter } from './identitySessionFirebaseAdapter';
+import { createIdentitySessionController } from './identitySessionController';
 
 describe('identity session Firebase adapter', () => {
   beforeEach(() => {
@@ -50,5 +51,38 @@ describe('identity session Firebase adapter', () => {
     await vi.waitFor(() => expect(onError).toHaveBeenCalledWith(redirectError));
 
     expect(firebaseAuth.getRedirectResult).toHaveBeenCalledWith(auth);
+  });
+
+  it('enters recoverable state when the Firebase auth observer loses a known user', async () => {
+    let emitAuthState: ((user: unknown) => void) | null = null;
+    firebaseAuth.onAuthStateChanged.mockImplementation((_auth, next) => {
+      emitAuthState = next as (user: unknown) => void;
+      return () => undefined;
+    });
+    const auth = { kind: 'auth' };
+    const adapter = createIdentitySessionFirebaseAdapter({
+      app: null,
+      auth: auth as never,
+      configured: true,
+      storage: null,
+    });
+    const session = createIdentitySessionController({ adapter });
+    session.start();
+    const sendAuthState = (user: unknown) => {
+      if (!emitAuthState) throw new Error('Firebase auth observer was not registered.');
+      emitAuthState(user);
+    };
+
+    sendAuthState({ uid: 'known-owner', displayName: 'Learner', email: null, photoURL: null });
+    await vi.waitFor(() => expect(session.getSnapshot().owner?.id).toBe('known-owner'));
+    sendAuthState(null);
+    await vi.waitFor(() => expect(session.getSnapshot().authenticationRecovery).toBe('session-lost'));
+
+    expect(session.getSnapshot()).toMatchObject({
+      owner: { id: 'known-owner' },
+      ownerEpoch: null,
+      canPublishMutations: false,
+      authenticationRecovery: 'session-lost',
+    });
   });
 });

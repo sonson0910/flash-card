@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Direction 1 — Midnight Aurora</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#06161f}
+button{font-family:inherit}
+.au-grain{background-image:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+@keyframes au-drift-a{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(60px,40px,0) scale(1.12)}}
+@keyframes au-drift-b{0%,100%{transform:translate3d(0,0,0) scale(1.05)}50%{transform:translate3d(-70px,-30px,0) scale(.94)}}
+@keyframes au-drift-c{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(30px,-50px,0)}}
+@keyframes au-wave{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+@keyframes au-star{0%,100%{transform:scale(1) rotate(0)}45%{transform:scale(1.25) rotate(10deg)}}
+@keyframes au-reveal{from{opacity:0;transform:translate3d(0,10px,0);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes au-deal-a{from{opacity:0;transform:translate3d(70px,18px,0) rotate(4deg) scale(.95)}to{opacity:1;transform:none}}
+@keyframes au-deal-b{from{opacity:0;transform:translate3d(70px,18px,0) rotate(4deg) scale(.95)}to{opacity:1;transform:none}}
+@keyframes au-pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes au-laser{0%,100%{opacity:.75;transform:scaleX(.92)}50%{opacity:1;transform:scaleX(1)}}
+.au-star-pop{animation:au-star 280ms cubic-bezier(.16,1,.3,1)}
+.au-reveal{animation:au-reveal 420ms cubic-bezier(.16,1,.3,1) 80ms both}
+.au-reveal-2{animation:au-reveal 420ms cubic-bezier(.16,1,.3,1) 180ms both}
+.au-reveal-3{animation:au-reveal 420ms cubic-bezier(.16,1,.3,1) 280ms both}
+.au-deal-a{animation:au-deal-a 560ms cubic-bezier(.16,1,.3,1) both}
+.au-deal-b{animation:au-deal-b 560ms cubic-bezier(.16,1,.3,1) both}
+.au-blob-a{animation:au-drift-a 22s ease-in-out infinite}
+.au-blob-b{animation:au-drift-b 26s ease-in-out infinite}
+.au-blob-c{animation:au-drift-c 30s ease-in-out infinite}
+.au-seg-now{animation:au-pulse 1.6s ease-in-out infinite}
+.au-laser{animation:au-laser 2.4s ease-in-out infinite}
+.au-grade{transition:transform 180ms cubic-bezier(.16,1,.3,1), background-color 180ms ease}
+.au-grade:hover{transform:translateY(-3px)}
+.au-grade:active{transform:translateY(0) scale(.97)}
+.au-icon-btn{transition:transform 180ms cubic-bezier(.16,1,.3,1), background-color 180ms ease}
+.au-icon-btn:hover{transform:scale(1.06)}
+@media (prefers-reduced-motion: reduce){.au-star-pop,.au-reveal,.au-reveal-2,.au-reveal-3,.au-deal-a,.au-deal-b,.au-blob-a,.au-blob-b,.au-blob-c,.au-seg-now,.au-laser{animation:none}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: #e5ecf1; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: #06161f;">
+
+  <div aria-hidden="true" style="position: absolute; inset: 0; overflow: hidden; pointer-events: none;">
+    <div class="au-blob-a" style="position: absolute; left: 330px; top: 60px; width: 520px; height: 520px; border-radius: 50%; background: {{amb.a}}; filter: blur(100px); opacity: 0.8; transition: background-color 1200ms ease;"></div>
+    <div class="au-blob-b" style="position: absolute; left: 680px; top: 260px; width: 560px; height: 560px; border-radius: 50%; background: {{amb.b}}; filter: blur(110px); opacity: 0.6; transition: background-color 1200ms ease;"></div>
+    <div class="au-blob-c" style="position: absolute; left: -160px; top: 520px; width: 520px; height: 520px; border-radius: 50%; background: rgb(40 211 244 / 0.16); filter: blur(120px);"></div>
+    <div style="position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 45%, transparent 40%, rgb(3 10 14 / 0.75) 100%);"></div>
+    <div class="au-grain" style="position: absolute; inset: 0; opacity: 0.07; mix-blend-mode: overlay;"></div>
+  </div>
+
+  <header style="position: relative; z-index: 5; height: 80px; padding: 0 40px; display: flex; align-items: center; gap: 20px;">
+    <button class="au-icon-btn" aria-label="End session" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgb(255 255 255 / 0.1); background: rgb(255 255 255 / 0.04); color: #c3ced5; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(12px);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <div style="margin: 0 auto; display: flex; align-items: center; gap: 16px;">
+      <div role="progressbar" aria-valuemin="0" aria-valuemax="12" aria-valuenow="{{position}}" style="display: flex; gap: 5px;">
+        <sc-for list="{{segments}}" as="seg" hint-placeholder-count="12">
+          <span class="{{seg.cls}}" style="width: 30px; height: 4px; border-radius: 4px; background: {{seg.bg}}; box-shadow: {{seg.glow}}; transition: background-color 400ms ease;"></span>
+        </sc-for>
+      </div>
+      <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; color: #99a7b0; letter-spacing: 0.02em;">{{position}}<span style="opacity: 0.5;"> / 12</span></span>
+    </div>
+    <button class="au-icon-btn" onClick="{{toggleTheme}}" aria-label="Switch to light theme" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgb(255 255 255 / 0.1); background: rgb(255 255 255 / 0.04); color: #c3ced5; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+    <div style="height: 36px; padding: 0 14px 0 10px; border-radius: 999px; border: 1px solid rgb(245 174 57 / 0.28); background: rgb(245 174 57 / 0.08); display: flex; align-items: center; gap: 7px; color: #f5ae39; font-size: 13px; font-weight: 600;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"/></svg>
+      12 days
+    </div>
+  </header>
+
+  <main style="position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center;">
+    <div class="{{dealClass}}" style="position: relative; width: 460px; height: 620px; margin-top: 4px;">
+
+      <div aria-hidden="true" style="position: absolute; inset: 0; border-radius: 34px; background: #0b1d26; border: 1px solid rgb(255 255 255 / 0.06); transform: translate3d(0, 55px, 0) scale(0.9); opacity: 0.5;"></div>
+      <div aria-hidden="true" style="position: absolute; inset: 0; border-radius: 34px; background: #0d212b; border: 1px solid rgb(255 255 255 / 0.07); transform: translate3d(0, 28px, 0) scale(0.95); opacity: 0.8;"></div>
+
+      <div onMouseEnter="{{enter}}" onMouseMove="{{move}}" onMouseLeave="{{leave}}" style="position: absolute; inset: 0;">
+        <div aria-hidden="true" style="position: absolute; inset: -26px; border-radius: 56px; filter: blur(30px); background: radial-gradient(ellipse at 50% 40%, {{aura.core}} 0%, {{aura.mid}} 45%, {{aura.outer}} 70%, transparent 86%); opacity: {{auraOpacity}}; transition: opacity 320ms ease-out;"></div>
+        <div style="position: absolute; inset: 0; perspective: 1600px;">
+          <div style="position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateX({{rx}}deg) rotateY({{ry}}deg); transition: {{rotorTransition}};">
+
+            <!-- FRONT -->
+            <div style="position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;">
+              <div style="width: 460px; height: 620px; box-sizing: border-box; position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: 34px; border: 1.5px solid transparent; background: linear-gradient(180deg, #0f2430, #0a1a22) padding-box, {{rim}} border-box; box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.9), 0 0 0 1px rgb(0 0 0 / 0.3){{rimGlow}};">
+
+                <div style="position: relative; height: 300px; flex-shrink: 0; overflow: hidden;">
+                  <img src="{{front.image}}" alt="Illustration for {{front.word}}" style="width: 100%; height: 100%; object-fit: cover; display: block; transform: scale({{imgScale}}) translate3d({{imgShiftX}}px, {{imgShiftY}}px, 0); filter: {{imgFilter}}; transition: filter 500ms ease, transform 400ms cubic-bezier(.22,1,.36,1); -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 42%, rgb(0 0 0 / 0.35) 72%, transparent 100%); mask-image: linear-gradient(to bottom, #000 0%, #000 42%, rgb(0 0 0 / 0.35) 72%, transparent 100%);">
+                  <div aria-hidden="true" style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(6 22 31 / 0.35) 0%, transparent 30%);"></div>
+                  <sc-if value="{{blind}}" hint-placeholder-val="{{false}}">
+                    <div style="position: absolute; inset: 0 0 90px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #ffffff; font-size: 13px; font-weight: 600; letter-spacing: 0.02em;">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.5 10.5 0 0 1 12 5c6 0 9.5 7 9.5 7a17 17 0 0 1-3.2 4.2M6.3 6.3C3.8 8 2.5 12 2.5 12S6 19 12 19c1.8 0 3.4-.5 4.7-1.3"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                      Picture hint hidden
+                    </div>
+                  </sc-if>
+                  <div style="position: absolute; top: 18px; left: 18px; right: 18px; display: flex; align-items: center; gap: 8px;">
+                    <span style="height: 30px; padding: 0 12px 0 10px; border-radius: 999px; background: rgb(6 22 31 / 0.5); border: 1px solid rgb(255 255 255 / 0.16); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); color: #ffffff; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 7px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{accentDot}};"></span>{{front.category}}</span>
+                    <button class="au-icon-btn" onClick="{{toggleBlind}}" aria-label="Hide picture hint" aria-pressed="{{blind}}" style="margin-left: auto; width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{blindBorder}}; background: {{blindBg}}; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); color: {{blindColor}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                    <button class="au-icon-btn" onClick="{{star}}" aria-label="Star this word" aria-pressed="{{starred}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{starBorder}}; background: {{starBg}}; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); color: {{starColor}}; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: {{starGlow}};">
+                      <span class="{{starAnim}}" style="display: inline-flex;"><svg width="18" height="18" viewBox="0 0 24 24" fill="{{starFill}}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg></span>
+                    </button>
+                  </div>
+                </div>
+
+                <div style="position: relative; z-index: 2; flex-grow: 1; display: flex; flex-direction: column; padding: 0 32px; margin-top: -78px;">
+                  <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #99a7b0;">
+                    <span>{{front.pos}}</span>
+                    <span aria-hidden="true" style="width: 3px; height: 3px; border-radius: 50%; background: #5d6d76;"></span>
+                    <span style="display: inline-flex; align-items: center; gap: 6px; color: {{tierColor}};"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{tierColor}}; box-shadow: 0 0 10px {{tierColor}};"></span>{{tierLabel}}</span>
+                  </div>
+                  <h2 style="margin: 6px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: 440; font-size: 70px; line-height: 1; letter-spacing: -0.025em; color: #f1f6f9;"><span>{{front.wPre}}</span><span style="color: {{accent}}; text-shadow: 0 0 28px {{accentGlow}};">{{front.wStress}}</span><span>{{front.wRest}}</span></h2>
+                  <div style="display: flex; align-items: center; gap: 12px; margin-top: 14px;">
+                    <button class="au-icon-btn" onClick="{{listen}}" aria-label="Listen to pronunciation" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgb(40 211 244 / 0.35); background: {{listenBg}}; color: #28d3f4; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;">
+                      <sc-if value="{{playing}}" hint-placeholder-val="{{false}}">
+                        <span aria-hidden="true" style="display: flex; align-items: center; gap: 2px; height: 14px;">
+                          <span style="width: 2px; height: 100%; border-radius: 2px; background: currentColor; animation: au-wave 0.9s ease-in-out infinite;"></span>
+                          <span style="width: 2px; height: 100%; border-radius: 2px; background: currentColor; animation: au-wave 0.9s ease-in-out 0.15s infinite;"></span>
+                          <span style="width: 2px; height: 100%; border-radius: 2px; background: currentColor; animation: au-wave 0.9s ease-in-out 0.3s infinite;"></span>
+                          <span style="width: 2px; height: 100%; border-radius: 2px; background: currentColor; animation: au-wave 0.9s ease-in-out 0.45s infinite;"></span>
+                        </span>
+                      </sc-if>
+                      <sc-if value="{{notPlaying}}" hint-placeholder-val="{{true}}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>
+                      </sc-if>
+                    </button>
+                    <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 15px; color: #c3ced5;">{{front.ipa}}</span>
+                    <span style="font-size: 13px; color: #99a7b0; letter-spacing: 0.03em;">{{front.syll}}</span>
+                  </div>
+                  <p style="margin: 18px 0 0; font-size: 15.5px; line-height: 1.6; color: #b5c2ca; text-wrap: pretty;">{{front.definition}}</p>
+
+                  <div style="margin-top: auto; padding-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                    <button style="height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid rgb(255 255 255 / 0.1); background: rgb(255 255 255 / 0.04); color: #c3ced5; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer;">1×</button>
+                    <button style="height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid rgb(255 255 255 / 0.1); background: rgb(255 255 255 / 0.04); color: #e5ecf1; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; cursor: pointer;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+                      Say it
+                    </button>
+                    <button style="height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid rgb(255 255 255 / 0.1); background: rgb(255 255 255 / 0.04); color: #e5ecf1; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; cursor: pointer;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#966cd7" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>
+                      Quiz me
+                    </button>
+                    <button aria-label="More actions" style="margin-left: auto; width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgb(255 255 255 / 0.1); background: transparent; color: #99a7b0; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <button onClick="{{flip}}" style="position: relative; z-index: 3; height: 60px; flex-shrink: 0; border: 0; border-top: 1px solid rgb(255 255 255 / 0.07); background: rgb(255 255 255 / 0.02); color: #e5ecf1; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
+                  <span aria-hidden="true" class="au-laser" style="position: absolute; top: -1px; left: 26%; right: 26%; height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, #28d3f4 20%, #966cd7 80%, transparent); box-shadow: 0 0 14px rgb(40 211 244 / 0.8);"></span>
+                  Reveal meaning
+                  <span style="height: 22px; padding: 0 7px; border-radius: 6px; border: 1px solid rgb(255 255 255 / 0.14); font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; color: #99a7b0; display: flex; align-items: center;">Space</span>
+                </button>
+
+                <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 20; pointer-events: none; border-radius: 34px; background: linear-gradient({{specAngle}}deg, rgb(255 255 255 / 0.1) 0%, transparent 28%); opacity: {{specOpacity}}; transition: opacity 300ms ease;"></div>
+                <div aria-hidden="true" style="position: absolute; top: 0; left: 12%; right: 12%; height: 1px; z-index: 21; pointer-events: none; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.5), transparent);"></div>
+                <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 22; pointer-events: none; background: radial-gradient(circle at {{mx}}% {{my}}%, rgb(40 211 244 / 0.14) 0%, transparent 55%); opacity: {{spotOpacity}}; transition: opacity 200ms ease;"></div>
+                <sc-if value="{{mastered}}" hint-placeholder-val="{{false}}">
+                  <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 23; pointer-events: none; mix-blend-mode: color-dodge; opacity: {{holoOpacity}}; background: repeating-linear-gradient(115deg, rgb(255 120 120 / 0.5) 0%, rgb(255 220 120 / 0.5) 6%, rgb(140 255 170 / 0.5) 12%, rgb(120 220 255 / 0.5) 18%, rgb(190 150 255 / 0.5) 24%, rgb(255 120 120 / 0.5) 30%); background-size: 300% 300%; background-position: {{holoX}}% {{holoY}}%; transition: opacity 300ms ease;"></div>
+                  <div aria-hidden="true" class="au-grain" style="position: absolute; inset: 0; z-index: 24; pointer-events: none; mix-blend-mode: overlay; opacity: {{holoGrain}};"></div>
+                  <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 25; pointer-events: none; mix-blend-mode: overlay; background: radial-gradient(circle at {{mx}}% {{my}}%, rgb(255 255 255 / 0.55) 0%, transparent 45%); opacity: {{spotOpacity}};"></div>
+                </sc-if>
+              </div>
+            </div>
+
+            <!-- BACK -->
+            <div style="position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: rotateY(180deg);">
+              <div style="width: 460px; height: 620px; box-sizing: border-box; position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: 34px; border: 1.5px solid transparent; background: radial-gradient(ellipse 90% 55% at 50% 18%, {{backTint}} 0%, transparent 70%) padding-box, radial-gradient(circle at 100% 0%, rgb(150 108 215 / 0.18), transparent 45%) padding-box, linear-gradient(180deg, #0f2430, #0a1a22) padding-box, {{rim}} border-box; box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.9){{rimGlow}};">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 22px 22px 0 28px;">
+                  <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #99a7b0; display: flex; align-items: center; gap: 8px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #28d3f4; box-shadow: 0 0 10px #28d3f4;"></span>Vietnamese</span>
+                  <sc-if value="{{back.due}}" hint-placeholder-val="{{false}}">
+                    <span style="height: 26px; padding: 0 10px; border-radius: 999px; background: rgb(245 174 57 / 0.12); border: 1px solid rgb(245 174 57 / 0.3); color: #f5ae39; font-size: 11.5px; font-weight: 600; display: flex; align-items: center;">Due today</span>
+                  </sc-if>
+                  <button class="au-icon-btn" onClick="{{star}}" aria-label="Star this word" aria-pressed="{{starred}}" style="margin-left: auto; width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{starBorder}}; background: {{starBgBack}}; color: {{starColor}}; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: {{starGlow}};">
+                    <span class="{{starAnim}}" style="display: inline-flex;"><svg width="18" height="18" viewBox="0 0 24 24" fill="{{starFill}}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg></span>
+                  </button>
+                </div>
+
+                <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; padding: 18px 34px 0; text-align: center;">
+                  <div class="{{revealCls}}" style="font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: 420; font-size: 54px; line-height: 1.08; letter-spacing: -0.02em; color: #f1f6f9; text-wrap: balance;">{{back.meaning}}</div>
+                  <div class="{{revealCls2}}" style="margin-top: 14px; display: flex; align-items: center; gap: 10px; color: #99a7b0; font-size: 14px;">
+                    <span style="font-weight: 600; color: #c3ced5;">{{back.word}}</span>
+                    <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px;">{{back.ipa}}</span>
+                    <button onClick="{{listen}}" aria-label="Listen to pronunciation" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgb(40 211 244 / 0.35); background: {{listenBg}}; color: #28d3f4; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>
+                    </button>
+                  </div>
+
+                  <figure class="{{revealCls3}}" style="margin: 26px 0 0; width: 100%; box-sizing: border-box; padding: 18px 20px; border-radius: 20px; background: rgb(255 255 255 / 0.035); border: 1px solid rgb(255 255 255 / 0.07); text-align: left;">
+                    <blockquote style="margin: 0; font-family: Fraunces, Georgia, serif; font-style: italic; font-weight: 380; font-size: 19px; line-height: 1.45; color: #e5ecf1;">“{{back.examplePre}}<span style="font-style: normal; font-weight: 520; color: #28d3f4; background: linear-gradient(transparent 62%, rgb(40 211 244 / 0.18) 62%);">{{back.exampleWord}}</span>{{back.examplePost}}”</blockquote>
+                    <figcaption style="margin-top: 8px; font-size: 13.5px; line-height: 1.5; color: #99a7b0;">{{back.exampleVi}}</figcaption>
+                  </figure>
+                  <p class="{{revealCls3}}" style="margin: 16px 2px 0; font-size: 14px; line-height: 1.6; color: #b5c2ca; text-align: left; align-self: stretch; text-wrap: pretty;">{{back.explanation}}</p>
+
+
+                  <div class="{{revealCls3}}" style="margin-top: 16px; align-self: stretch; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
+                    <span style="font-size: 11.5px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #6f808a; margin-right: 4px;">Family</span>
+                    <sc-for list="{{back.family}}" as="fw" hint-placeholder-count="3">
+                      <span style="height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid rgb(255 255 255 / 0.09); background: rgb(255 255 255 / 0.03); font-size: 12.5px; color: #c3ced5; display: flex; align-items: center; gap: 5px;">{{fw.w}}<span style="color: #6f808a; font-size: 11.5px;">{{fw.p}}</span></span>
+                    </sc-for>
+                  </div>
+                  <div style="margin-top: auto; padding-bottom: 20px; align-self: stretch; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button style="height: 44px; border-radius: 14px; border: 1px solid rgb(245 174 57 / 0.28); background: rgb(245 174 57 / 0.07); color: #f5ae39; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg>
+                      Memory hook
+                    </button>
+                    <button style="height: 44px; border-radius: 14px; border: 1px solid rgb(150 108 215 / 0.35); background: rgb(150 108 215 / 0.1); color: #c9b3f0; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>
+                      Ask AI tutor
+                    </button>
+                  </div>
+                </div>
+
+                <button onClick="{{flip}}" style="position: relative; height: 56px; flex-shrink: 0; border: 0; border-top: 1px solid rgb(255 255 255 / 0.07); background: rgb(255 255 255 / 0.02); color: #99a7b0; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                  Back to English
+                </button>
+                <div aria-hidden="true" style="position: absolute; top: 0; left: 12%; right: 12%; height: 1px; pointer-events: none; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.5), transparent);"></div>
+                <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at {{mxBack}}% {{my}}%, rgb(40 211 244 / 0.1) 0%, transparent 55%); opacity: {{spotOpacity}}; transition: opacity 200ms ease;"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height: 150px; display: flex; align-items: center; justify-content: center;">
+      <sc-if value="{{flipped}}" hint-placeholder-val="{{false}}">
+        <div role="group" aria-label="How well did you remember?" style="display: flex; gap: 6px; padding: 6px; border-radius: 24px; background: rgb(12 30 40 / 0.6); border: 1px solid rgb(255 255 255 / 0.08); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 20px 50px -20px rgb(0 0 0 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.06);">
+          <sc-for list="{{grades}}" as="g" hint-placeholder-count="4">
+            <button class="au-grade" onClick="{{g.pick}}" style="width: 136px; height: 68px; border-radius: 18px; border: 1px solid {{g.border}}; background: {{g.bg}}; color: {{g.color}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; box-shadow: {{g.shadow}};">
+              <span style="display: flex; align-items: center; gap: 7px; font-size: 15px; font-weight: 650;"><span style="width: 7px; height: 7px; border-radius: 50%; background: {{g.dot}}; box-shadow: 0 0 10px {{g.dot}};"></span>{{g.label}}</span>
+              <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11.5px; opacity: 0.75;">{{g.key}} · {{g.next}}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{notFlipped}}" hint-placeholder-val="{{true}}">
+        <div style="font-size: 14px; color: #99a7b0; display: flex; align-items: center; gap: 10px;">
+          Say it out loud first, then reveal
+          <span style="height: 24px; padding: 0 8px; border-radius: 6px; border: 1px solid rgb(255 255 255 / 0.14); font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; display: flex; align-items: center;">Space</span>
+        </div>
+      </sc-if>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { index: 0, flipped: false, flipping: false, dealing: false, revealed: false, hover: false, rx: 0, ryTilt: 0, mx: 50, my: 50, starred: false, starPulse: false, blind: false, playing: false };
+  }
+  renderVals() {
+    const s = this.state;
+    const deck = [
+      {
+        tier: 'new',
+        front: { word: 'Spelling', wPre: '', wStress: 'Spel', wRest: 'ling', syll: 'spel·ling', pos: 'Noun', category: 'Language', ipa: '/ˈspelɪŋ/', definition: 'The process or ability of writing or naming the letters that form a word in the correct sequence.', image: '../assets/blob/ed058680c239cce56bb63500ca7dd0e4.jpg' },
+        back: { word: 'Spelling', ipa: '/ˈspelɪŋ/', meaning: 'Cách đánh vần', due: false, examplePre: 'Check the ', exampleWord: 'spelling', examplePost: ' before you send it.', exampleVi: 'Kiểm tra chính tả trước khi gửi nhé.', family: [{ w: 'spell', p: 'v.' }, { w: 'speller', p: 'n.' }, { w: 'misspelling', p: 'n.' }], explanation: 'Cách viết đúng các chữ cái của một từ; cũng dùng để chỉ khả năng viết đúng chính tả.' },
+        amb: { a: 'rgb(40 211 244 / 0.55)', b: 'rgb(150 108 215 / 0.5)' },
+        aura: { core: 'rgba(40, 211, 244, 0.75)', mid: 'rgba(14, 165, 233, 0.45)', outer: 'rgba(150, 108, 215, 0.25)' },
+        backTint: 'rgb(40 211 244 / 0.16)',
+      },
+      {
+        tier: 'learning',
+        front: { word: 'Immediate', wPre: 'Im', wStress: 'me', wRest: 'diate', syll: 'im·me·di·ate', pos: 'Adjective', category: 'Time and action', ipa: '/ɪˈmiːdiət/', definition: 'Happening or done without delay; acting or occurring at once.', image: '../assets/blob/dc9678b28352d8aeb0fea95d3a58a38d.jpg' },
+        back: { word: 'Immediate', ipa: '/ɪˈmiːdiət/', meaning: 'Ngay lập tức', due: true, examplePre: 'The new policy takes ', exampleWord: 'immediate', examplePost: ' effect.', exampleVi: 'Chính sách mới có hiệu lực ngay lập tức.', family: [{ w: 'immediately', p: 'adv.' }, { w: 'immediacy', p: 'n.' }], explanation: 'Xảy ra hoặc được thực hiện ngay, không chậm trễ. Hay đi với effect, action, response.' },
+        amb: { a: 'rgb(150 108 215 / 0.6)', b: 'rgb(40 211 244 / 0.4)' },
+        aura: { core: 'rgba(150, 108, 215, 0.75)', mid: 'rgba(40, 211, 244, 0.45)', outer: 'rgba(99, 102, 241, 0.2)' },
+        backTint: 'rgb(150 108 215 / 0.2)',
+      },
+      {
+        tier: 'mastered',
+        front: { word: 'Instant', wPre: '', wStress: 'In', wRest: 'stant', syll: 'in·stant', pos: 'Noun', category: 'Time', ipa: '/ˈɪnstənt/', definition: 'A very short period of time; a precise moment.', image: '../assets/blob/4e8348b18995828a6faaee433ba17ccd.jpg' },
+        back: { word: 'Instant', ipa: '/ˈɪnstənt/', meaning: 'Khoảnh khắc', due: false, examplePre: 'For an ', exampleWord: 'instant', examplePost: ', nobody said a word.', exampleVi: 'Trong một khoảnh khắc, không ai nói lời nào.', family: [{ w: 'instantly', p: 'adv.' }, { w: 'instantaneous', p: 'adj.' }], explanation: 'Một khoảng thời gian cực ngắn, hoặc một thời điểm chính xác.' },
+        amb: { a: 'rgb(245 174 57 / 0.5)', b: 'rgb(237 83 80 / 0.3)' },
+        aura: { core: 'rgba(245, 174, 57, 0.7)', mid: 'rgba(237, 83, 80, 0.35)', outer: 'rgba(40, 211, 244, 0.2)' },
+        backTint: 'rgb(245 174 57 / 0.16)',
+      },
+    ];
+    const card = deck[s.index % deck.length];
+    const tiers = {
+      new: { label: 'New', color: '#c3ced5', rim: 'linear-gradient(160deg, rgb(255 255 255 / 0.4), rgb(255 255 255 / 0.06) 38%, rgb(255 255 255 / 0.05) 70%, rgb(255 255 255 / 0.22))', glow: '' },
+      learning: { label: 'Learning', color: '#28d3f4', rim: 'linear-gradient(155deg, #7ee6fa, rgb(40 211 244 / 0.2) 40%, rgb(150 108 215 / 0.35) 75%, #b395ea)', glow: ', 0 0 50px -14px rgb(40 211 244 / 0.5)' },
+      mastered: { label: 'Mastered', color: '#f5ae39', rim: 'conic-gradient(from 200deg, #ffe6a8, #f5ae39, #fff6dc, #7ee6fa, #c9a3ff, #f5ae39, #ffe6a8)', glow: ', 0 0 56px -12px rgb(245 174 57 / 0.55)' },
+    };
+    const tv = tiers[card.tier];
+    const later = (ms, fn) => window.setTimeout(fn, ms);
+    const flip = () => {
+      if (s.flipping) return;
+      const next = !s.flipped;
+      this.setState({ flipped: next, flipping: true, revealed: false });
+      later(640, () => this.setState({ flipping: false, revealed: next }));
+    };
+    const gradeDefs = [
+      { label: 'Again', key: '1', next: '1m', dot: '#ed5350', color: '#f3b3b2', border: 'rgb(237 83 80 / 0.3)', bg: 'rgb(237 83 80 / 0.08)', shadow: 'none' },
+      { label: 'Hard', key: '2', next: '6m', dot: '#f59145', color: '#e5ecf1', border: 'rgb(255 255 255 / 0.08)', bg: 'rgb(255 255 255 / 0.03)', shadow: 'none' },
+      { label: 'Good', key: '3', next: '1d', dot: '#06161f', color: '#04141c', border: '#7ee6fa', bg: '#28d3f4', shadow: '0 12px 30px -10px rgb(40 211 244 / 0.75), inset 0 1px 0 rgb(255 255 255 / 0.5)' },
+      { label: 'Easy', key: '4', next: '3d', dot: '#75d079', color: '#e5ecf1', border: 'rgb(255 255 255 / 0.08)', bg: 'rgb(255 255 255 / 0.03)', shadow: 'none' },
+    ];
+    const advance = () => {
+      this.setState({ index: s.index + 1, flipped: false, flipping: false, dealing: true, revealed: false, starred: false, blind: false, hover: false, rx: 0, ryTilt: 0 });
+      later(600, () => this.setState({ dealing: false }));
+    };
+    const pos = 5 + s.index;
+    const mastered = card.tier === 'mastered';
+    return {
+      toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      front: card.front, back: card.back, aura: card.aura, amb: card.amb, backTint: card.backTint,
+      rim: tv.rim, rimGlow: tv.glow, tierColor: tv.color, tierLabel: tv.label, mastered,
+      accent: mastered ? '#f5ae39' : card.tier === 'learning' ? '#7ee6fa' : '#28d3f4',
+      accentGlow: mastered ? 'rgb(245 174 57 / 0.55)' : 'rgb(40 211 244 / 0.55)',
+      accentDot: mastered ? '#f5ae39' : '#28d3f4',
+      dealClass: s.index % 2 === 0 ? 'au-deal-a' : 'au-deal-b',
+      flipped: s.flipped, notFlipped: !s.flipped,
+      revealCls: s.revealed ? 'au-reveal' : '', revealCls2: s.revealed ? 'au-reveal-2' : '', revealCls3: s.revealed ? 'au-reveal-3' : '',
+      mx: s.mx, my: s.my, mxBack: 100 - s.mx,
+      rx: s.rx, ry: (s.flipped ? 180 : 0) + s.ryTilt,
+      rotorTransition: s.dealing ? 'none' : s.flipping ? 'transform 640ms cubic-bezier(.2,.8,.2,1)' : 'transform 280ms cubic-bezier(.22,1,.36,1)',
+      auraOpacity: s.hover ? 0.42 : 0,
+      spotOpacity: s.hover ? 1 : 0,
+      specAngle: 150 + (s.mx - 50) * 0.8, specOpacity: s.hover ? 1 : 0.6,
+      holoX: s.mx, holoY: s.my, holoOpacity: s.hover ? 0.5 : 0.22, holoGrain: s.hover ? 0.35 : 0.2,
+      imgShiftX: s.hover ? (50 - s.mx) * 0.12 : 0, imgShiftY: s.hover ? (50 - s.my) * 0.12 : 0,
+      blind: s.blind, starred: s.starred, playing: s.playing, notPlaying: !s.playing,
+      imgFilter: s.blind ? 'blur(24px) saturate(0.5)' : 'none',
+      imgScale: s.blind ? 1.14 : 1.06,
+      blindBg: s.blind ? '#28d3f4' : 'rgb(6 22 31 / 0.5)', blindBorder: s.blind ? '#7ee6fa' : 'rgb(255 255 255 / 0.2)', blindColor: s.blind ? '#04141c' : '#ffffff',
+      starBg: s.starred ? '#f5ae39' : 'rgb(6 22 31 / 0.5)', starBgBack: s.starred ? '#f5ae39' : 'rgb(255 255 255 / 0.04)',
+      starBorder: s.starred ? '#ffd88a' : 'rgb(255 255 255 / 0.2)',
+      starColor: s.starred ? '#1f1403' : '#ffffff', starFill: s.starred ? '#1f1403' : 'none',
+      starGlow: s.starred ? '0 0 22px -2px rgb(245 174 57 / 0.7)' : 'none',
+      starAnim: s.starPulse ? 'au-star-pop' : '',
+      listenBg: s.playing ? 'rgb(40 211 244 / 0.2)' : 'rgb(40 211 244 / 0.08)',
+      position: pos,
+      segments: Array.from({ length: 12 }, (_, i) => ({
+        bg: i < pos - 1 ? '#28d3f4' : i === pos - 1 ? '#7ee6fa' : 'rgb(255 255 255 / 0.09)',
+        glow: i < pos ? '0 0 8px rgb(40 211 244 / 0.55)' : 'none',
+        cls: i === pos - 1 ? 'au-seg-now' : '',
+      })),
+      grades: gradeDefs.map(g => ({ ...g, pick: advance })),
+      flip,
+      enter: () => this.setState({ hover: true }),
+      move: (e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width;
+        const py = (e.clientY - r.top) / r.height;
+        this.setState({ hover: true, mx: px * 100, my: py * 100, rx: -(py - 0.5) * 8, ryTilt: (px - 0.5) * 8 });
+      },
+      leave: () => this.setState({ hover: false, rx: 0, ryTilt: 0, mx: 50, my: 50 }),
+      star: () => { this.setState({ starred: !s.starred, starPulse: true }); later(300, () => this.setState({ starPulse: false })); },
+      toggleBlind: () => this.setState({ blind: !s.blind }),
+      listen: () => { this.setState({ playing: true }); later(1600, () => this.setState({ playing: false })); },
+    };
+  }
+}
+</script>
+</body>
+</html>

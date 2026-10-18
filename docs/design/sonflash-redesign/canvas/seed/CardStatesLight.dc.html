@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Flashcard states — light</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f4f7f8}</style>
+</helmet>
+<div style="width: 1620px; height: 760px; box-sizing: border-box; padding: 70px 60px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 60px; background: radial-gradient(circle at 9% 0%, rgb(2 132 199 / 0.07), transparent 30rem), radial-gradient(circle at 92% 12%, rgb(14 165 233 / 0.06), transparent 34rem), #f4f7f8;">
+  <dc-import name="FlashFront" theme="light" tier="new" hint-size="460px,620px"></dc-import>
+  <dc-import name="FlashBack" theme="light" tier="learning" card="{{immediate}}" hint-size="460px,620px"></dc-import>
+  <dc-import name="FlashFront" theme="light" tier="mastered" hover="{{yes}}" mx="{{foilX}}" my="{{foilY}}" card="{{instant}}" hint-size="460px,620px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1620,"height":760}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      yes: true, foilX: 45, foilY: 30,
+      immediate: { word: 'Immediate', ipa: '/ɪˈmiːdiət/', meaning: 'Ngay lập tức', due: true, examplePre: 'The new policy takes ', exampleWord: 'immediate', examplePost: ' effect.', exampleVi: 'Chính sách mới có hiệu lực ngay lập tức.', explanation: 'Xảy ra hoặc được thực hiện ngay, không chậm trễ. Hay đi với effect, action, response.' },
+      instant: { word: 'Instant', pos: 'Noun', category: 'Time', ipa: '/ˈɪnstənt/', pre: '', stressed: 'in', rest: '·stant', definition: 'A very short period of time; a precise moment.', image: '../assets/blob/4e8348b18995828a6faaee433ba17ccd.jpg' },
+    };
+  }
+}
+</script>
+</body>
+</html>

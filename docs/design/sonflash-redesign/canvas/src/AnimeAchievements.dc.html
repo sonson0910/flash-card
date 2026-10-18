@@ -1,0 +1,174 @@
+<!--#AHEAD Crystal Star collection-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#ABG-->
+<!--#ANAV-->
+
+  <main style="position: relative; z-index: 3; flex-grow: 1; padding: 14px 44px 36px; display: grid; grid-template-columns: 360px 1fr; gap: 32px;">
+    <aside class="nk-rise" style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 22px 24px 22px;">
+        <div aria-hidden="true" class="nk-beam" style="position: absolute; left: 50%; top: -40%; width: 90px; height: 180%; transform: rotate(24deg); background: linear-gradient(90deg, transparent, {{t.beam}}, transparent);"></div>
+        <div style="position: relative; display: flex; align-items: center; gap: 16px;">
+          <div style="position: relative; width: 88px; height: 96px; flex-shrink: 0; filter: drop-shadow(0 0 16px rgb(255 42 77 / 0.6));">
+            <div style="position: absolute; inset: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: conic-gradient(from 200deg, #fff3c4, #ffd166, #ff2a4d, #7a0820, #ff5470, #ffffff, #ffd166, #fff3c4);"></div>
+            <div style="position: absolute; inset: 4px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, #ff5470, #7a0820); display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; color: #ffffff;">KB</div>
+          </div>
+          <div style="min-width: 0;">
+            <div style="font-weight: 900; font-size: 24px; color: {{t.textStrong}};">Khánh</div>
+            <div style="margin-top: 4px; display: inline-flex; height: 26px; padding: 0 14px; transform: skewX(-14deg); background: {{t.primaryBg}}; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.1em; color: #ffffff;">WORD COLLECTOR</span></div>
+            <div style="margin-top: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; color: {{t.holoText}};">LV 12 <span style="color: {{t.text3}}; font-weight: 700;">· 2.340 / 3.600 XP</span></div>
+          </div>
+        </div>
+        <div style="position: relative; margin-top: 16px; height: 10px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div style="width: 65%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / 0.7);"></div></div>
+      </div>
+
+      <div style="clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 18px 22px;">
+        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: {{t.holoText}};">CARDS BY BLOOM</div>
+        <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px;">
+          <sc-for list="{{grades}}" as="g" hint-placeholder-count="3">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="width: 54px; height: 30px; flex-shrink: 0; clip-path: {{t.chamferSm}}; background: {{g.rim}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 17px; color: #ffffff; text-shadow: 0 2px 0 #7a0820;">{{g.grade}}</span>
+              <div style="flex-grow: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; font-size: 13.5px;"><span style="font-weight: 800; color: {{t.textStrong}};">{{g.label}}</span><span style="font-weight: 900; color: {{t.textStrong}};">{{g.count}}</span></div>
+                <div style="margin-top: 5px; height: 6px; transform: skewX(-24deg); background: {{t.track}};"><div style="width: {{g.pct}}%; height: 100%; background: {{g.rim}};"></div></div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="position: relative; flex-grow: 1; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 18px 22px; display: flex; align-items: flex-end; gap: 12px;">
+        <div class="nk-float" style="width: 124px; height: 124px; flex-shrink: 0;">
+<!--#MASCOT proud-->
+        </div>
+        <div style="padding-bottom: 8px;">
+          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
+          <div style="margin-top: 4px; font-weight: 800; font-size: 14.5px; line-height: 1.4; color: {{t.textStrong}};">3 cards away from <span style="color: {{t.crimsonText}};">Star Keeper</span>.</div>
+        </div>
+      </div>
+    </aside>
+
+    <section style="display: flex; flex-direction: column; min-width: 0;">
+      <div style="display: flex; align-items: flex-end; gap: 22px;">
+        <h1 style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 50px; line-height: 1; letter-spacing: 0.01em; background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / 0.6));">COLLECTION</h1>
+        <nav aria-label="Collection" style="display: flex; gap: 4px; padding-bottom: 6px;">
+          <sc-for list="{{tabs}}" as="tb" hint-placeholder-count="3">
+            <a href="#" aria-current="{{tb.current}}" style="height: 36px; padding: 0 20px; transform: skewX(-16deg); background: {{tb.bg}}; box-shadow: {{tb.edge}}; display: flex; align-items: center; text-decoration: none;"><span style="transform: skewX(16deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.08em; color: {{tb.color}};">{{tb.label}}</span></a>
+          </sc-for>
+        </nav>
+        <span style="margin-left: auto; padding-bottom: 12px; font-weight: 800; font-size: 14px; color: {{t.text2}};">18 / 40 unlocked</span>
+      </div>
+
+      <div style="margin-top: 22px; display: grid; grid-template-columns: 340px 1fr; gap: 22px; flex-grow: 1; min-height: 0;">
+        <div class="nk-unfold" style="position: relative;">
+          <div aria-hidden="true" style="position: absolute; left: -150px; top: 20px; width: 640px; height: 430px; pointer-events: none; opacity: 0.9; filter: drop-shadow(0 0 26px rgb(255 42 77 / 0.7));">
+<!--#WINGS-->
+          </div>
+          <div style="position: absolute; left: 20px; right: 20px; top: 40px; bottom: 30px; filter: drop-shadow(0 0 30px rgb(255 42 77 / 0.75));">
+            <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; overflow: hidden;">
+              <div class="nk-rim-spin" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: {{sssRim}};"></div>
+            </div>
+            <div style="position: absolute; inset: 3px; clip-path: {{t.chamfer}}; background: {{t.cardFront}}; display: flex; flex-direction: column; align-items: center; padding: 22px 22px 20px; box-sizing: border-box; text-align: center;">
+              <span style="align-self: flex-start; height: 32px; padding: 0 14px; clip-path: {{t.chamferSm}}; background: {{sssRim}}; display: flex; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 19px; color: #ffffff; text-shadow: 0 2px 0 #7a0820;">STAR</span>
+              <div class="nk-float" style="margin-top: 10px; width: 150px; height: 150px; filter: drop-shadow(0 0 22px rgb(255 42 77 / 0.9));">
+<!--#STAR5-->
+              </div>
+              <div style="margin-top: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; line-height: 1.05; color: {{t.textStrong}};">STAR KEEPER</div>
+              <div style="margin-top: 6px; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">Help 100 cards shine as Stars.</div>
+              <div style="margin-top: auto; width: 100%;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 800;"><span style="color: {{t.text2}};">Progress</span><span style="color: {{t.crimsonText}};">97 / 100</span></div>
+                <div style="margin-top: 6px; height: 10px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div style="width: 97%; height: 100%; background: {{t.primaryBg}}; box-shadow: 0 0 12px rgb(255 42 77 / 0.8);"></div></div>
+              </div>
+            </div>
+          </div>
+          <span class="nk-flare" aria-hidden="true" style="position: absolute; right: 0; top: 18px; width: 110px; height: 110px; pointer-events: none;"><span style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #ffffff; box-shadow: 0 0 16px 6px rgb(255 84 112 / 0.7);"></span></span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; gap: 14px; min-height: 0;">
+          <sc-for list="{{badges}}" as="b" hint-placeholder-count="9">
+            <div class="{{b.cls}}" style="position: relative; filter: drop-shadow(0 0 12px {{b.glow}});">
+              <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; background: {{b.rim}};"></div>
+              <div style="position: absolute; inset: 2px; clip-path: {{t.chamferSm}}; background: {{t.cardFront}}; padding: 12px 14px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="width: 46px; height: 46px; flex-shrink: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{b.rim}}; display: flex; align-items: center; justify-content: center;">
+                    <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="{{b.icon}}" fill="#ffffff" stroke="#7a0820" stroke-width="0.8" stroke-linejoin="round"></path></svg>
+                  </span>
+                  <div style="min-width: 0;">
+                    <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; line-height: 1.1; color: {{t.textStrong}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{b.name}}</div>
+                    <div style="margin-top: 2px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; color: {{b.gradeText}};">{{b.grade}}</div>
+                  </div>
+                </div>
+                <div style="margin-top: 8px; font-size: 12.5px; line-height: 1.4; color: {{t.text2}};">{{b.desc}}</div>
+                <div style="margin-top: auto; display: flex; align-items: center; gap: 8px;">
+                  <div style="flex-grow: 1; height: 6px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div style="width: {{b.pct}}%; height: 100%; background: {{b.rim}};"></div></div>
+                  <span style="font-size: 12px; font-weight: 900; color: {{t.text2}};">{{b.progress}}</span>
+                </div>
+                <sc-if value="{{b.locked}}" hint-placeholder-val="{{false}}">
+                  <div style="position: absolute; inset: 0; background: rgb(10 6 24 / 0.78); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center;">
+                    <svg aria-hidden="true" viewBox="0 0 200 120" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%;"><polyline points="0,64 30,52 52,72 84,44 106,66 132,40 158,62 200,48" fill="none" stroke="#5ef2ff" stroke-width="2" style="filter: drop-shadow(0 0 6px #5ef2ff);"></polyline><polyline points="84,44 90,18 110,4" fill="none" stroke="#ff5470" stroke-width="1.4"></polyline></svg>
+                    <span style="position: relative; height: 28px; padding: 0 14px; clip-path: {{t.chamferSm}}; background: linear-gradient(180deg, #ff5470, #b30f33); display: flex; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; letter-spacing: 0.1em; color: #ffffff;">LOCKED</span>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const icons = {
+      star: 'M12 1.5l3 7.1 7.7.6-5.9 5 1.8 7.5L12 17.7l-6.6 4 1.8-7.5-5.9-5 7.7-.6z',
+      blade: 'M4 20l3-8L19 2l-5 12-8 4zM12 12l3 3',
+      trail: 'M3 13l4-2 3 3 4-5 3 3 4-3-2 6-4-1-3 4-3-3-4 2z',
+      flame: 'M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z',
+      book: 'M3 5l8-2v16l-8 2zM21 5l-8-2v16l8 2z',
+      crystal: 'M12 1l7 7-7 15L5 8z',
+    };
+    const gradeText = { Bud: t.holoText, Bloom: t.violetText, Star: t.crimsonText };
+    const glow = { Bud: 'rgb(94 242 255 / 0.35)', Bloom: 'rgb(255 143 182 / 0.45)', Star: 'rgb(255 42 77 / 0.55)' };
+    const tierOf = { Bud: 'new', Bloom: 'learning', Star: 'mastered' };
+    const raw = [
+      { name: 'First Spark', grade: 'Bud', icon: 'star', desc: 'Finish your first review.', progress: '1/1', pct: 100 },
+      { name: 'Ribbon Streak', grade: 'Bloom', icon: 'star', desc: 'Hold a 14-day streak.', progress: '12/14', pct: 86 },
+      { name: 'Cozy Flame', grade: 'Star', icon: 'flame', desc: 'Keep a 60-day streak.', progress: '12/60', pct: 20 },
+      { name: 'Page Turner', grade: 'Bud', icon: 'book', desc: 'Read 5 AI stories.', progress: '5/5', pct: 100 },
+      { name: 'Web Wanderer', grade: 'Bloom', icon: 'trail', desc: 'Save 50 words from the web.', progress: '38/50', pct: 76 },
+      { name: 'Crystal Heart', grade: 'Star', icon: 'crystal', desc: 'DREAMY combo in 3 sessions.', progress: '0/3', pct: 0, locked: true },
+      { name: 'Quick Hands', grade: 'Bud', icon: 'star', desc: 'Win Word Match under 40 s.', progress: '1/1', pct: 100 },
+      { name: 'Night Owl', grade: 'Bloom', icon: 'star', desc: 'Review after 22:00 ten times.', progress: '0/10', pct: 0, locked: true },
+      { name: 'Band Dreamer', grade: 'Star', icon: 'trail', desc: 'Reach a projected band 7.0.', progress: '6.5/7', pct: 93 },
+    ];
+    const counts = [
+      { grade: 'Bud', label: 'New', count: 214, pct: 100 },
+      { grade: 'Bloom', label: 'Learning', count: 138, pct: 64 },
+      { grade: 'Star', label: 'Mastered', count: 97, pct: 45 },
+    ];
+    return {
+      t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      nav: nkNav(t, 2), streak: 12,
+      bg: { wings: false },
+      sssRim: t.tier.mastered.rim,
+      grades: counts.map(c => ({ ...c, rim: t.tier[tierOf[c.grade]].rim })),
+      tabs: ['BADGES', 'CARDS', 'TITLES'].map((label, i) => ({
+        label, current: i === 0 ? 'page' : 'false',
+        bg: i === 0 ? t.primaryBg : t.chip, color: i === 0 ? '#ffffff' : t.text2,
+        edge: i === 0 ? t.primaryGlow : 'inset 0 0 0 1px ' + t.lineStrong,
+      })),
+      badges: raw.map((b, i) => ({
+        ...b, locked: !!b.locked, icon: icons[b.icon],
+        rim: t.tier[tierOf[b.grade]].rim, gradeText: gradeText[b.grade], glow: b.locked ? 'transparent' : glow[b.grade],
+        cls: i < 3 ? 'nk-rise' : i < 6 ? 'nk-rise-2' : 'nk-rise-3',
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

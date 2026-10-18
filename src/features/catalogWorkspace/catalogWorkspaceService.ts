@@ -11,19 +11,20 @@ import {
   readCatalogCachePage,
   type CatalogCachePageResult,
   type CatalogCacheQuery,
+  readCatalogCacheUnit,
+  type CatalogCacheUnitQuery,
+  type CatalogCacheUnitResult,
 } from '../catalogCache/catalogIndex';
 import {
   summarizeActiveCatalog,
   type CatalogLearningStatus as CatalogCacheLearningStatus,
   type CatalogWorkspaceSummary,
 } from '../catalogCache/catalogSummary';
-import type { CatalogReleaseManifestV1 } from '../catalogPipeline/catalogContracts';
-import { parseCatalogReleaseManifestV1 } from '../catalogPipeline/catalogValidation';
-import type { LearningStateV3 } from '../multilingual/schemaV3';
+import type { CatalogReleaseManifest } from '../catalogPipeline/catalogContracts';
 import {
-  CATALOG_PROGRESS_MEMBERSHIP_LIMIT,
-  classifyCatalogLearningState,
-} from './catalogProgress';
+  parseCatalogReleaseManifestV1,
+  parseCatalogReleaseManifestV2,
+} from '../catalogPipeline/catalogValidation';
 
 // Covers the worst-case bounded 100-chunk descriptor set (including track IDs)
 // while remaining far below the 50 MiB release-content ceiling.
@@ -34,7 +35,7 @@ const DEFAULT_TIMEOUT_MILLISECONDS = 15_000;
 const MAXIMUM_TIMEOUT_MILLISECONDS = 60_000;
 const MAXIMUM_PAGE_SIZE = 100;
 
-export type CatalogWorkspaceRequestChannel = 'inspect' | 'summary' | 'download' | 'page';
+export type CatalogWorkspaceRequestChannel = 'inspect' | 'summary' | 'download' | 'page' | 'unit';
 
 export interface CatalogWorkspaceRequestToken {
   readonly channel: CatalogWorkspaceRequestChannel;
@@ -83,6 +84,7 @@ export interface CatalogWorkspaceRuntimePort {
     signal?: AbortSignal,
   ): Promise<CatalogReleaseInstallResult>;
   readPage(input: CatalogCacheQuery): Promise<CatalogCachePageResult>;
+  readUnit(input: CatalogCacheUnitQuery): Promise<CatalogCacheUnitResult | null>;
 }
 
 export interface CatalogWorkspaceServiceOptions {
@@ -97,7 +99,7 @@ export interface CatalogWorkspaceService {
   inspect(catalogId: string): Promise<CatalogWorkspaceResult<CatalogReleaseDescriptor | null>>;
   summarize(
     catalogId: string,
-    learningStates: ReadonlyMap<string, LearningStateV3 | null>,
+    statuses: ReadonlyMap<string, CatalogCacheLearningStatus>,
   ): Promise<CatalogWorkspaceResult<CatalogWorkspaceSummary | null>>;
   download(
     manifestUrl: string,
@@ -105,6 +107,7 @@ export interface CatalogWorkspaceService {
     reportProgress?: (progress: CatalogDownloadProgress) => void,
   ): Promise<CatalogWorkspaceResult<CatalogReleaseInstallResult>>;
   readPage(input: CatalogCacheQuery): Promise<CatalogWorkspaceResult<CatalogCachePageResult>>;
+  readUnit(input: CatalogCacheUnitQuery): Promise<CatalogWorkspaceResult<CatalogCacheUnitResult | null>>;
   invalidate(): void;
 }
 
@@ -268,7 +271,7 @@ const decodeJson = (bytes: Uint8Array, label: string): unknown => {
 
 export async function fetchCatalogReleaseManifest(
   options: CatalogManifestFetchOptions,
-): Promise<CatalogReleaseManifestV1> {
+): Promise<CatalogReleaseManifest> {
   const origin = originUrl(options.origin);
   const url = requestUrl(options.manifestUrl, origin, 'Catalog manifest URL');
   const maximumBytes = boundedInteger(
@@ -285,8 +288,15 @@ export async function fetchCatalogReleaseManifest(
   );
   const fetcher = options.fetcher ?? globalThis.fetch.bind(globalThis);
   const bytes = await fetchBytes(url, fetcher, maximumBytes, timeoutMilliseconds, true, options.signal);
-  return parseCatalogReleaseManifestV1(decodeJson(bytes, 'Catalog manifest'));
+  return parseCatalogReleaseManifest(decodeJson(bytes, 'Catalog manifest'));
 }
+
+const parseCatalogReleaseManifest = (value: unknown): CatalogReleaseManifest => (
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+    && (value as { manifestVersion?: unknown }).manifestVersion === 2
+    ? parseCatalogReleaseManifestV2(value)
+    : parseCatalogReleaseManifestV1(value)
+);
 
 const createChunkSource = (
   baseUrl: string,
@@ -296,10 +306,11 @@ const createChunkSource = (
   reportProgress?: (progress: CatalogDownloadProgress) => void,
 ): CatalogChunkFetchPort => {
   const origin = originUrl(baseUrl);
+  const base = requestUrl(baseUrl, origin, 'Catalog release base URL');
   let receivedBytes = 0;
   return {
     async fetchChunk(path, signal) {
-      const url = requestUrl(path, origin, 'Catalog chunk URL');
+      const url = requestUrl(new URL(path, base).href, origin, 'Catalog chunk URL');
       const bytes = await fetchBytes(
         url,
         fetcher,
@@ -327,7 +338,7 @@ const defaultRuntimePort = (
   inspect: getActiveCatalogRelease,
   summarize: summarizeActiveCatalog,
   install: (manifestInput, baseUrl, reportProgress, signal) => {
-    const manifest = parseCatalogReleaseManifestV1(manifestInput);
+    const manifest = parseCatalogReleaseManifest(manifestInput);
     return installCatalogRelease(
       manifest,
       createChunkSource(
@@ -340,27 +351,8 @@ const defaultRuntimePort = (
     );
   },
   readPage: readCatalogCachePage,
+  readUnit: readCatalogCacheUnit,
 });
-
-const catalogLearningStatuses = (
-  learningStates: ReadonlyMap<string, LearningStateV3 | null>,
-): ReadonlyMap<string, CatalogCacheLearningStatus> => {
-  if (!(learningStates instanceof Map) || learningStates.size > CATALOG_PROGRESS_MEMBERSHIP_LIMIT) {
-    throw new TypeError(`Learning State input must be a Map with at most ${CATALOG_PROGRESS_MEMBERSHIP_LIMIT.toLocaleString('en-US')} entries.`);
-  }
-  const statuses = new Map<string, CatalogCacheLearningStatus>();
-  for (const [lexemeId, state] of learningStates) {
-    if (typeof lexemeId !== 'string' || lexemeId.length === 0 || lexemeId.length > 128) {
-      throw new TypeError('Each Learning State key must be a bounded Lexeme ID.');
-    }
-    if (state !== null && state.lexemeId !== lexemeId) {
-      throw new TypeError(`Learning State key does not match Lexeme ID: ${lexemeId}`);
-    }
-    const status = classifyCatalogLearningState(state);
-    if (status !== 'not-started') statuses.set(lexemeId, status);
-  }
-  return statuses;
-};
 
 export function createCatalogWorkspaceService(
   options: CatalogWorkspaceServiceOptions,
@@ -393,9 +385,9 @@ export function createCatalogWorkspaceService(
 
   return {
     inspect: catalogId => runLatest('inspect', () => ports.inspect(catalogId)),
-    summarize: (catalogId, learningStates) => runLatest(
+    summarize: (catalogId, statuses) => runLatest(
       'summary',
-      () => ports.summarize(catalogId, catalogLearningStatuses(learningStates)),
+      () => ports.summarize(catalogId, statuses),
     ),
     async download(manifestUrl, expectedRelease, reportProgress) {
       downloadController?.abort(new Error('Catalog download was replaced.'));
@@ -424,9 +416,10 @@ export function createCatalogWorkspaceService(
           phase: 'chunks', receivedBytes: 0,
           totalBytes: manifest.counts.encodedBytes, progressPercent: 0,
         });
+        const releaseBaseUrl = new URL('.', requestUrl(manifestUrl, origin, 'Catalog manifest URL')).href;
         const value = reportProgress
-          ? await ports.install(manifest, origin.href, reportIfCurrent, controller.signal)
-          : await ports.install(manifest, origin.href, undefined, controller.signal);
+          ? await ports.install(manifest, releaseBaseUrl, reportIfCurrent, controller.signal)
+          : await ports.install(manifest, releaseBaseUrl, undefined, controller.signal);
         reportIfCurrent({
           phase: 'complete', receivedBytes: manifest.counts.encodedBytes,
           totalBytes: manifest.counts.encodedBytes, progressPercent: 100,
@@ -443,6 +436,7 @@ export function createCatalogWorkspaceService(
       )) throw new TypeError(`Catalog query pageSize must be between 1 and ${MAXIMUM_PAGE_SIZE}.`);
       return runLatest('page', () => ports.readPage(input));
     },
+    readUnit: input => runLatest('unit', () => ports.readUnit(input)),
     invalidate: () => {
       downloadController?.abort(new Error('Catalog workspace was invalidated.'));
       guard.invalidate();

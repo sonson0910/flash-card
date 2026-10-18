@@ -1,0 +1,36 @@
+command=npm exec --no -- firebase emulators:exec --only firestore,auth --project demo-lingoflash npm --prefix functions test -- sharedDeckPersistenceFirestore.integration.test.ts
+port_8080=free
+port_9099=free
+start_utc=2026-09-25T05:02:43.743450+00:00
+
+i  emulators: Starting emulators: auth, firestore
+i  emulators: Detected demo project ID "demo-lingoflash", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail.
+i  firestore: Firestore Emulator logging to firestore-debug.log
+✔  firestore: Firestore Emulator was started in standard edition.
+✔  firestore: Firestore Emulator UI websocket is running on 9150.
+i  Running script: npm --prefix functions test -- sharedDeckPersistenceFirestore.integration.test.ts
+
+> test
+> vitest run sharedDeckPersistenceFirestore.integration.test.ts
+
+
+ RUN  v3.2.7 /mnt/Projects/startup/flash-card/functions
+
+ ✓ test/sharedDeckPersistenceFirestore.integration.test.ts (2 tests) 7457ms
+   ✓ Firestore shared-deck persistence > serializes two first creates through a missing usage document  4227ms
+   ✓ Firestore shared-deck persistence > commits one share for concurrent identical operations  3225ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  12:02:51
+   Duration  8.45s (transform 67ms, setup 0ms, collect 615ms, tests 7.46s, environment 0ms, prepare 135ms)
+
+✔  Script exited successfully (code 0)
+i  emulators: Shutting down emulators.
+i  firestore: Stopping Firestore Emulator
+i  auth: Stopping Authentication Emulator
+i  hub: Stopping emulator hub
+i  logging: Stopping Logging Emulator
+
+exit_code=0
+end_utc=2026-09-25T05:03:01.028799+00:00

@@ -7,11 +7,8 @@ import { useBrowserCapabilities } from '../features/browser/useBrowserCapabiliti
 import { useLibraryCatalogQuery } from '../features/catalog/useLibraryCatalogQuery';
 import { useLibraryExport } from '../features/importExport/useLibraryExport';
 import { useLibraryCloudProjection } from '../features/librarySession/useLibraryCloudProjection';
-import { useLibrarySession } from '../features/librarySession/useLibrarySession';
-import {
-  useLibrarySessionPorts,
-  type LibrarySessionPortStats,
-} from '../features/librarySession/useLibrarySessionPorts';
+import { useLibrarySession, type IdentitySessionBinding } from '../features/librarySession/useLibrarySession';
+import { useLibrarySessionPorts, type LibrarySessionPortStats } from '../features/librarySession/useLibrarySessionPorts';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { appDependencies } from './appDependencies';
 
@@ -40,16 +37,25 @@ const EMPTY_CLOUD_STATS: LibrarySessionPortStats = {
 };
 
 interface UseAppLibraryRuntimeOptions {
+  identity: IdentitySessionBinding;
+  courseScopeReady: boolean;
   viewMode: AppViewMode;
   isStatsOpen: boolean;
+  statsRefreshRequest: { ownerId: string; requestId: number } | null;
+  /** Active course's target language; scopes the library query so cards from another course never leak in. */
+  targetLanguage: string;
   reportError(message: string | null): void;
   clearError(message: string): void;
   notify(message: string | null): void;
 }
 
 export function useAppLibraryRuntime({
+  identity,
+  courseScopeReady,
   viewMode,
   isStatsOpen,
+  statsRefreshRequest,
+  targetLanguage,
   reportError,
   clearError,
   notify,
@@ -98,6 +104,7 @@ export function useAppLibraryRuntime({
     bookmarkedOnly: catalog.starred,
     createdDate: dateLabelToQueryDate(catalog.date),
     wordPrefix: catalog.debouncedSearch,
+    targetLanguage,
   }), [
     catalog.category,
     catalog.date,
@@ -106,21 +113,12 @@ export function useAppLibraryRuntime({
     catalog.difficulty,
     catalog.partOfSpeech,
     catalog.starred,
+    targetLanguage,
   ]);
   const cloudQueryKey = useMemo(() => queryStateKey(cloudQueryState), [cloudQueryState]);
   const sessionPorts = useLibrarySessionPorts({
     ownerAdapter: appDependencies.adapters.ownerLibrary,
     publications: {
-      library: {
-        replace: setCards,
-        advance: (cardId, advance) => setCards(previous => previous.map(card => card.id === cardId ? advance(card) : card)),
-        remove: cardId => setCards(previous => previous.filter(card => card.id !== cardId)),
-      },
-      practice: {
-        find: cardId => practicePublicationRef.current.findCard(cardId),
-        advance: (cardId, advance) => practicePublicationRef.current.updateCard(cardId, advance),
-        remove: cardId => practicePublicationRef.current.removeCard(cardId),
-      },
       cloud: {
         total: setCloudTotal,
         stats: setCloudStats,
@@ -133,7 +131,6 @@ export function useAppLibraryRuntime({
         refresh: () => setCloudRefresh(previous => previous + 1),
       },
       navigation: { resetPage: () => catalogActions.goToPage(1), previousPage: catalogActions.goToPreviousPage },
-      feedback: { error: reportError, notice: notify },
       promotedCards: () => [...recentlyPromotedCardsRef.current.values()],
     },
   });
@@ -144,20 +141,27 @@ export function useAppLibraryRuntime({
       page: catalog.page,
       pageSize: cardsPerPage,
       refreshKey: cloudRefresh,
-      statsOpen: isStatsOpen || viewMode === 'progress',
+      // CatalogScreen's personal-path summary (Review due / Keep learning /
+      // Mastered) reads library.dueToday/learning/learned, which for an
+      // authenticated user come from cloudStats rather than a local scan of
+      // `cards` (see selectLibraryStats in libraryViewModel.ts). Cloud stats
+      // are only fetched while this flag is true, so the catalog/paths view
+      // needs to opt in the same way the progress view already does, or an
+      // authenticated visitor sees an all-zero summary even with data in the
+      // library.
+      statsOpen: isStatsOpen || viewMode === 'progress' || viewMode === 'catalog',
+      courseScopeReady,
+      statsRefreshRequest,
+      progressEvidenceOpen: viewMode === 'progress' && Math.max(cloudTotal, cloudStats.total, cards.length) > 0,
     },
     library: {
-      cards,
       knownTotal: Math.max(cloudTotal, cloudStats.total, cards.length),
       cloudTotal,
       cloudStatsTotal: cloudStats.total,
-      browserOnline: browserCapabilities.model.isOnline,
-      cloudUnavailable: cloudReadUnavailable,
     },
     ports: sessionPorts.ports.session,
-  }, appDependencies.sessions.libraryHooks);
+  }, { ...appDependencies.sessions.libraryHooks, useIdentitySession: () => identity });
   const identitySession = librarySession.model.identity;
-  sessionPorts.actions.connectVerifiedEpoch(librarySession.actions.identity.acceptVerifiedOwnerEpoch);
   const user = useMemo(() => identitySession.owner ? {
     uid: identitySession.owner.id,
     displayName: identitySession.owner.displayName,
@@ -171,10 +175,8 @@ export function useAppLibraryRuntime({
   const knownLibraryTotal = user ? Math.max(cloudTotal, cloudStats.total, cards.length) : cards.length;
   const shellSyncStatus = {
     isOnline: browserCapabilities.model.isOnline,
-    isSyncing: librarySession.model.sync.isSyncing,
-    isCheckingCloud: Boolean(user && (!identitySession.canPublishMutations || !librarySession.model.cloud.serverConfirmed) && !identitySession.error && !cloudReadUnavailable),
-    pendingCount: librarySession.model.sync.pendingCount,
-    error: librarySession.model.sync.error ?? identitySession.error,
+    isCheckingCloud: Boolean(user && !identitySession.canPublishMutations && !identitySession.error),
+    error: identitySession.error,
     cloudUnavailable: cloudReadUnavailable,
   };
   cardsRef.current = cards;
@@ -192,6 +194,7 @@ export function useAppLibraryRuntime({
     },
     resetCloud: () => {
       setCloudTotal(0);
+      setCloudStats(EMPTY_CLOUD_STATS);
       setCloudCategoryCounts({});
       setCloudFacetsComplete(false);
     },
@@ -203,7 +206,6 @@ export function useAppLibraryRuntime({
   }), [catalogActions, clearError, notify, reportError]);
   useLibraryCloudProjection({
     session: librarySession.model,
-    cards,
     page: catalog.page,
     publication: cloudProjectionPublication,
   });
@@ -231,10 +233,22 @@ export function useAppLibraryRuntime({
     return result;
   };
   const signOut = async () => {
-    const result = await librarySession.actions.identity.signOut();
-    if (result.status !== 'completed') return;
-    librarySession.actions.owner.discardCards();
-    setCards([]);
+    let finishReminderSignOut: (() => void) | undefined;
+    try {
+      const reminders = await import('../features/reminders/reminderService');
+      finishReminderSignOut = reminders.finishReminderSignOut;
+      const { revokeCurrentOwnerPushToken } = reminders;
+      await revokeCurrentOwnerPushToken();
+    } catch (error) {
+      finishReminderSignOut?.();
+      reportError('Could not stop browser reminders. Try signing out again.');
+      return { status: 'failed' as const, error };
+    }
+    try {
+      const result = await librarySession.actions.identity.signOut();
+      if (result.status !== 'completed') return;
+      setCards([]);
+    } finally { finishReminderSignOut?.(); }
   };
 
   return {
@@ -256,12 +270,11 @@ export function useAppLibraryRuntime({
     actions: {
       catalog: catalogActions,
       exportLibrary,
-      syncNow: librarySession.actions.sync.syncNow,
       signIn: librarySession.actions.identity.signIn,
       signOut,
       migrateLegacyCards,
       clearAuthError: librarySession.actions.identity.clearError,
-      retrySync: librarySession.actions.sync.retry,
+      retrySync: async () => { setCloudRefresh(value => value + 1); },
     },
     ports: {
       setCards,

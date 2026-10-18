@@ -1,14 +1,23 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { i18n } from '@lingui/core';
 import type { CardData } from '../../types/card';
 import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import { EMPTY_LIBRARY_STATS } from '../librarySession/cloudLibraryPageController';
+import { createInitialCardCreatorModel } from '../intake/card-creator-model';
 import {
   buildLibraryScreenContract,
   createLibraryScreenContractBuilder,
   type LibraryScreenContractInput,
 } from './useLibraryScreenContract';
+
+i18n.load('en', {
+  'shell.library-count.cards': '{count, plural, one {# card} other {# cards}}',
+  'shell.library-count.cached-cloud': '{cached, number} cached / {cloud, number} cloud',
+  'shell.library-count.cloud-paused': 'Cloud paused',
+});
+beforeEach(() => i18n.activate('en'));
 
 const card = (word: string, category = 'General'): CardData => ({
   id: `word-${word}`,
@@ -41,25 +50,33 @@ const createInput = () => {
         scanned: 2,
         complete: true,
       })),
-      discardCards: vi.fn(),
     },
-    sync: { syncNow: vi.fn(), retry: vi.fn(async () => undefined) },
   };
   const intakeActions = {
+    cardCreator: {
+      open: vi.fn(), updateDraft: vi.fn(), updatePreview: vi.fn(), createManualDraft: vi.fn(), cancel: vi.fn(),
+      generatePreview: vi.fn(async () => ({ status: 'busy' as const })),
+      regenerate: vi.fn(async () => ({ status: 'busy' as const })),
+      save: vi.fn(async () => ({ status: 'busy' as const })),
+    },
     changeDraft: vi.fn(), clearDraft: vi.fn(), generate: vi.fn(async () => ({ status: 'busy' as const })),
     importFile: vi.fn(async () => ({ status: 'missing' as const })), shareCategory: vi.fn(async () => ({ status: 'invalid' as const })),
+    createConfirmedCatalogCards: vi.fn(async () => ({ status: 'invalid' as const, reason: 'invalid-catalog-cards' as const })),
     acceptShared: vi.fn(async () => ({ status: 'missing' as const })), cancelShared: vi.fn(),
     revokeShare: vi.fn(), dismissShareLink: vi.fn(), showShareDialog: vi.fn(),
-    clearError: vi.fn(), clearNotice: vi.fn(), invalidateCard: vi.fn(),
+    clearShareError: vi.fn(), clearError: vi.fn(), clearNotice: vi.fn(), invalidateCard: vi.fn(),
   };
   const learningActions = {
     toggleBookmark: vi.fn(async () => undefined), assignDeck: vi.fn(async () => undefined),
-    reviewCard: vi.fn(async () => ({ status: 'published' as const, result: {} as never })), updateCard: vi.fn(async () => undefined),
-    deleteCard: vi.fn(async () => undefined), clearLibrary: vi.fn(async () => undefined),
+    reviewCard: vi.fn(async () => ({ status: 'published' as const, result: {} as never })),
+    updateCard: vi.fn(async () => ({ status: 'published' as const, result: {} as never })),
+    deleteCard: vi.fn(async () => true), clearLibrary: vi.fn(async () => undefined),
+    bulkPatchCards: vi.fn(async () => undefined),
   };
   const commands = {
     startStudy: vi.fn(async () => undefined),
     openCardCreator: vi.fn(),
+    openPaths: vi.fn(),
     changeNewDeckInput: vi.fn(),
     createCustomDeck: vi.fn(async () => undefined),
     deleteCustomDeck: vi.fn(async () => undefined),
@@ -82,13 +99,13 @@ const createInput = () => {
             canPublishMutations: true,
             isSigningIn: false,
             isSigningOut: false,
+            authenticationRecovery: null,
             error: null,
           },
           owner: {
-            ownerId: 'owner-1', cards: [], decks: ['IELTS'], legacyPending: 2,
+            ownerId: 'owner-1', decks: ['IELTS'], coverPresets: {}, legacyPending: 2,
             legacyIssue: null, isMigratingLegacy: false, status: 'ready', error: null,
           },
-          sync: { isSyncing: false, pendingCount: 1, error: null },
           cloud: {
             ownerId: 'owner-1', queryKey: 'all', page: 1, items: [apple], total: 4,
             hasNext: false, isLoading: false, cloudUnavailable: false, canRetryAutomatically: false, error: null,
@@ -101,10 +118,11 @@ const createInput = () => {
       intake: {
         model: {
           draft: 'pear', importProgress: null, importResult: null, error: null, notice: null, isBusy: false,
+          cardCreator: createInitialCardCreatorModel(),
           isSubmitting: false, isImporting: false, isAdoptingSharedDeck: false,
           share: {
-            isLoading: false, isShareDialogOpen: false, activeShareId: null,
-            shareLink: null, shareWarning: null, incomingPreview: null, expiresAt: null,
+            error: null, isLoading: false, isShareDialogOpen: false, activeShareId: null,
+            shareLink: null, shareWarning: null, outgoingPreview: null, incomingPreview: null, expiresAt: null,
           },
         },
         actions: intakeActions,
@@ -153,9 +171,23 @@ describe('library screen contract', () => {
     expect(contract.navigation).toEqual({
       canUseVisibleLibrary: true,
       practiceLibraryCount: 4,
-      libraryCountLabel: '4 CARDS',
+      libraryCountLabel: '4 cards',
     });
     expect(contract.overlays).toMatchObject({ visibleLibraryCount: 1, stats: { total: 4, dueToday: 1 } });
+  });
+
+  it('passes only the active course language review activity into progress stats', () => {
+    const { input } = createInput();
+    input.gamification = {
+      ...input.gamification,
+      targetLanguage: 'ko',
+      reviewActivityByLanguage: {
+        en: { coverageStartedOn: '2026-09-01', days: { '2026-09-27': { reviewed: 2, again: 0, hard: 0, good: 1, easy: 1 } } },
+        ko: { coverageStartedOn: '2026-09-20', days: { '2026-09-27': { reviewed: 1, again: 1, hard: 0, good: 0, easy: 0 } } },
+      },
+    };
+
+    expect(buildLibraryScreenContract(input).overlays.stats.reviewActivity).toEqual(input.gamification.reviewActivityByLanguage!.ko);
   });
 
   it('publishes truthful signed-out access for protected production AI generation', () => {
@@ -202,14 +234,16 @@ describe('library screen contract', () => {
     await contract.actions.grid.deleteCard('word-apple');
 
     expect(preventDefault).toHaveBeenCalledOnce();
-    expect(intakeActions.generate).toHaveBeenCalledOnce();
+    expect(commands.openCardCreator).toHaveBeenCalledOnce();
+    expect(intakeActions.cardCreator.generatePreview).toHaveBeenCalledOnce();
+    expect(commands.openCardCreator.mock.invocationCallOrder[0]).toBeLessThan(intakeActions.cardCreator.generatePreview.mock.invocationCallOrder[0]);
+    expect(intakeActions.generate).not.toHaveBeenCalled();
     expect(intakeActions.importFile).toHaveBeenCalledWith(file);
     expect(intakeActions.shareCategory).toHaveBeenCalledWith({
       category: 'IELTS', customDeck: ALL_PRACTICE_DECK_SCOPE,
     });
     expect(sessionActions.owner.migrateLegacy).toHaveBeenCalledOnce();
     expect(catalogActions.replaceQuery).toHaveBeenCalledWith(expect.objectContaining({ category: 'All', page: 1 }));
-    expect(sessionActions.sync.retry).not.toHaveBeenCalled();
     expect(learningActions.deleteCard).toHaveBeenCalledWith('word-apple');
     expect(contract.actions.startStudy).not.toBe(commands.startStudy);
   });
@@ -287,17 +321,15 @@ describe('library screen contract', () => {
     });
   });
 
-  it('passes the active deck and an availability guard to card generation', async () => {
+  it('starts the creator preview in the selected deck', async () => {
     const { input, intakeActions } = createInput();
     input.workspace.catalog.model.deck = { kind: 'deck', name: 'IELTS' };
     const contract = buildLibraryScreenContract(input);
 
     await contract.actions.tools.generateCard({ preventDefault: vi.fn() } as never);
 
-    expect(intakeActions.generate).toHaveBeenCalledWith({
-      requestedDeck: 'IELTS',
-      requestedDeckAvailable: expect.any(Function),
-    });
+    expect(intakeActions.cardCreator.updateDraft).toHaveBeenCalledWith({ deck: 'IELTS' });
+    expect(intakeActions.cardCreator.generatePreview).toHaveBeenCalledOnce();
   });
 
   it('reuses the full contract while immutable input groups are unchanged', () => {
@@ -310,5 +342,15 @@ describe('library screen contract', () => {
     const changed = builder.build({ ...input, ui: { ...input.ui, isLibraryBusy: true } });
     expect(changed).not.toBe(first);
     expect(changed.model.tools.isLoading).toBe(true);
+  });
+
+  it('rebuilds the presentation contract when the active locale changes', () => {
+    const { input } = createInput();
+    const builder = createLibraryScreenContractBuilder();
+    const english = builder.build(input, 'en');
+    const vietnamese = builder.build(input, 'vi');
+
+    expect(vietnamese).not.toBe(english);
+    expect(builder.build(input, 'vi')).toBe(vietnamese);
   });
 });

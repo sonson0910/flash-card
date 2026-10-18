@@ -1,0 +1,641 @@
+/* Immersive Lesson and Placement compositions. The data model stays in the TSX files. */
+.lesson-canvas,
+.placement-canvas,
+.lesson-complete-canvas {
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none !important;
+  min-height: 100%;
+  margin: 0 !important;
+  padding: clamp(1rem, 3vw, 2.5rem) clamp(1rem, 5vw, 4rem) calc(1.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.lesson-canvas::before,
+.placement-canvas::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: radial-gradient(ellipse 44% 52% at 76% 14%, color-mix(in srgb, var(--sf-brand) 10%, transparent), transparent 72%);
+  content: '';
+  pointer-events: none;
+}
+
+.lesson-canvas > *,
+.placement-canvas > *,
+.lesson-complete-canvas > * {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.lesson-header,
+.placement-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(78rem, 100%);
+  margin-inline: auto;
+}
+
+.lesson-header-start,
+.placement-header-start {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: .85rem;
+}
+
+.lesson-header-actions,
+.placement-header-actions {
+  flex: none;
+}
+
+.lesson-exit,
+.placement-exit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.lesson-eyebrow,
+.placement-eyebrow {
+  margin: 0;
+  color: var(--sf-brand-text);
+  font-size: .72rem;
+  font-weight: 850;
+}
+
+.lesson-title,
+.placement-title {
+  margin-bottom: 0;
+  font-size: clamp(2.35rem, 6vw, 4.65rem) !important;
+  line-height: .92;
+  letter-spacing: -.055em;
+}
+
+.lesson-sequence,
+.lesson-progress,
+.lesson-footer,
+.lesson-flow,
+.placement-layout,
+.placement-result-layout {
+  width: min(72rem, 100%);
+  margin-inline: auto;
+}
+
+.lesson-sequence {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .85rem;
+  margin-top: clamp(1.25rem, 4vw, 2.5rem);
+  color: var(--sf-text-muted);
+}
+
+.lesson-sequence-label,
+.lesson-sequence-count {
+  font-size: .76rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.lesson-sequence-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: .3rem;
+  min-width: 0;
+}
+
+.lesson-sequence-track > span {
+  display: block;
+  height: .42rem;
+  transform: skewX(-18deg);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sf-border) 78%, transparent);
+}
+
+.lesson-sequence-track > span[data-segment-state='complete'],
+.lesson-sequence-track > span[data-segment-state='current'] {
+  background: var(--sf-brand);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--sf-brand) 48%, transparent);
+}
+
+.lesson-progress,
+.placement-progress {
+  padding: .8rem 0 0;
+}
+
+.lesson-progress-copy,
+.placement-progress-copy {
+  color: var(--sf-text);
+}
+
+.lesson-progress .lesson-sequence-track,
+.placement-progress-track {
+  margin-top: .55rem;
+}
+
+.lesson-flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, 14rem);
+  align-items: start;
+  gap: clamp(1rem, 3vw, 2rem);
+  margin-top: clamp(1.2rem, 3vw, 2.5rem);
+}
+
+.lesson-card,
+.placement-question-card,
+.placement-guidance,
+.placement-intro-panel,
+.placement-status-panel,
+.placement-result-panel,
+.placement-result-summary,
+.lesson-complete-card {
+  border-color: var(--sf-border);
+  background: var(--sf-surface-glass);
+  box-shadow: var(--sf-panel-shadow);
+}
+
+.lesson-card,
+.placement-question-card {
+  min-width: 0;
+}
+
+.lesson-card {
+  display: flex;
+  min-height: min(34rem, 62vh);
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.lesson-form {
+  position: relative;
+  z-index: 1;
+}
+
+.lesson-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .65rem;
+}
+
+.lesson-card-mode {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  padding: .35rem .7rem;
+  border: 1px solid color-mix(in srgb, var(--sf-brand) 46%, var(--sf-border));
+  border-radius: 999px;
+  color: var(--sf-brand-text);
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.lesson-card-instruction {
+  color: var(--sf-text-muted);
+  font-size: .82rem;
+  font-weight: 600;
+}
+
+.lesson-prompt,
+.placement-word {
+  max-width: 56rem;
+  overflow-wrap: anywhere;
+}
+
+.lesson-prompt {
+  font-size: clamp(1.8rem, 4vw, 3.35rem) !important;
+  line-height: 1.13;
+}
+
+.lesson-field-label,
+.placement-field-label,
+.placement-card-kicker {
+  color: var(--sf-text-muted);
+}
+
+.lesson-choice-grid,
+.lesson-rating-grid,
+.placement-choice-grid {
+  min-width: 0;
+}
+
+.lesson-control,
+.lesson-primary,
+.placement-control,
+.placement-primary {
+  min-height: 44px;
+  transition: border-color 180ms ease, background-color 180ms ease, color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.lesson-control,
+.placement-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lesson-choice,
+.placement-choice {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: .15rem;
+  min-height: 4.35rem;
+  line-height: 1.35;
+}
+
+.lesson-choice-index,
+.placement-choice-index {
+  flex: none;
+}
+
+.lesson-choice--selected,
+.placement-choice--selected,
+.lesson-token--selected {
+  color: var(--sf-text);
+}
+
+.lesson-submit,
+.placement-submit {
+  min-height: 48px;
+}
+
+.lesson-guidance {
+  min-height: 12rem;
+}
+
+.lesson-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  color: var(--sf-text-muted);
+  font-size: .8rem;
+  font-weight: 650;
+}
+
+.lesson-feedback {
+  position: relative;
+  z-index: 1;
+}
+
+.lesson-feedback-rule {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: var(--sf-brand);
+}
+
+.lesson-feedback-error {
+  color: var(--sf-text);
+}
+
+.lesson-complete-canvas {
+  display: grid;
+  min-height: 100%;
+  place-items: center;
+}
+
+.lesson-complete-card {
+  width: min(42rem, 100%);
+  text-align: center;
+}
+
+/* Placement keeps its prompt and choices on an open diagnostic canvas. */
+.placement-canvas {
+  display: flex;
+  flex-direction: column;
+}
+
+.placement-header {
+  align-items: center;
+}
+
+.placement-heading-copy {
+  min-width: 0;
+}
+
+.placement-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 19rem);
+  align-items: start;
+  gap: clamp(2rem, 7vw, 6rem);
+  margin-top: clamp(2rem, 8vh, 6rem);
+}
+
+.placement-question-card {
+  min-height: 0;
+}
+
+.placement-word {
+  font-size: clamp(2.2rem, 5vw, 4.6rem) !important;
+  line-height: 1.05;
+}
+
+.placement-guidance {
+  min-height: 16rem;
+}
+
+.placement-guidance-kicker {
+  margin: 0;
+}
+
+.placement-lumi {
+  max-width: 100%;
+  margin-top: 1.5rem;
+}
+
+.placement-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem;
+}
+
+.placement-intro-panel,
+.placement-status-panel,
+.placement-result-panel,
+.placement-result-summary {
+  width: min(72rem, 100%);
+  margin-inline: auto;
+}
+
+.placement-intro-panel {
+  min-height: 18rem;
+}
+
+.placement-intro-mark {
+  max-width: 22%;
+}
+
+.placement-panel-kicker {
+  color: var(--sf-brand-text);
+}
+
+.placement-count-note {
+  max-width: 42rem;
+}
+
+.placement-result-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(13rem, 17rem);
+  align-items: start;
+  gap: 1rem;
+}
+
+.placement-result-summary {
+  margin-top: 0;
+}
+
+.placement-result-title {
+  font-size: clamp(2.45rem, 7vw, 5.5rem) !important;
+  line-height: .98;
+}
+
+.placement-result-facts {
+  color: var(--sf-text);
+}
+
+.placement-fact {
+  border: 1px solid var(--sf-border);
+}
+
+/* Crystal keeps the Canvas edge treatment while classic keeps its paper surface. */
+:root[data-theme-family='crystal'] .lesson-canvas::before,
+:root[data-theme-family='crystal'] .placement-canvas::before {
+  background: var(--nk-stars), radial-gradient(ellipse 50% 56% at 84% 16%, color-mix(in srgb, var(--sf-brand) 30%, transparent), transparent 72%), radial-gradient(ellipse 46% 42% at 16% 84%, color-mix(in srgb, #10336f 44%, transparent), transparent 70%);
+  opacity: .85;
+}
+
+:root[data-theme-family='crystal'] .lesson-card,
+:root[data-theme-family='crystal'] .lesson-guidance,
+:root[data-theme-family='crystal'] .placement-guidance,
+:root[data-theme-family='crystal'] .placement-intro-panel,
+:root[data-theme-family='crystal'] .placement-status-panel,
+:root[data-theme-family='crystal'] .placement-result-panel,
+:root[data-theme-family='crystal'] .placement-result-summary,
+:root[data-theme-family='crystal'] .lesson-complete-card {
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer);
+  box-shadow: inset 0 0 0 1px var(--sf-border), 0 18px 42px -30px rgb(0 0 0 / .8);
+}
+
+:root[data-theme-family='crystal'] .lesson-title,
+:root[data-theme-family='crystal'] .placement-title,
+:root[data-theme-family='crystal'] .placement-result-title {
+  display: inline-block;
+  padding-inline-end: .08em;
+  font-family: Kanit, Nunito, sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -.035em;
+  background: linear-gradient(180deg, #fff, #ffe3ea 48%, #ff8fa3 56%, #fff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 3px 0 #7a0820);
+}
+
+:root[data-theme-family='crystal'] .lesson-prompt,
+:root[data-theme-family='crystal'] .placement-word {
+  font-family: Kanit, Nunito, sans-serif;
+  font-style: italic;
+  font-weight: 850;
+}
+
+:root[data-theme-family='crystal'] .lesson-control,
+:root[data-theme-family='crystal'] .placement-control {
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  box-shadow: inset 0 0 0 1px var(--sf-border);
+}
+
+:root[data-theme-family='crystal'] .lesson-primary,
+:root[data-theme-family='crystal'] .placement-primary {
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  box-shadow: 0 0 22px -5px color-mix(in srgb, var(--sf-brand) 82%, transparent);
+  font-family: Kanit, Nunito, sans-serif;
+  font-style: italic;
+}
+
+:root[data-theme-family='crystal'] .lesson-card-mode {
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background: color-mix(in srgb, var(--sf-brand) 18%, transparent);
+}
+
+@media (max-width: 760px) {
+  .lesson-canvas,
+  .placement-canvas,
+  .lesson-complete-canvas {
+    padding-inline: 1rem;
+  }
+
+  .lesson-flow,
+  .placement-layout,
+  .placement-result-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .lesson-guidance,
+  .placement-guidance,
+  .placement-result-summary {
+    min-height: 0;
+  }
+
+  .lesson-guidance {
+    padding: 1rem;
+  }
+
+  .placement-guidance {
+    order: 2;
+  }
+
+  .placement-result-summary {
+    order: 2;
+  }
+
+  .placement-question-card,
+  .lesson-card {
+    min-height: 0;
+  }
+
+  .placement-action-row > .placement-primary,
+  .placement-action-row > .placement-control {
+    flex: 1 1 12rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .lesson-canvas,
+  .placement-canvas,
+  .lesson-complete-canvas {
+    padding-top: .9rem;
+    padding-inline: .85rem;
+  }
+
+  .lesson-header,
+  .placement-header {
+    gap: .65rem;
+  }
+
+  .lesson-header-start,
+  .placement-header-start {
+    gap: .6rem;
+  }
+
+  .lesson-exit-label,
+  .placement-exit-label {
+    display: none;
+  }
+
+  .lesson-title {
+    font-size: clamp(2rem, 11vw, 3rem) !important;
+  }
+
+  .placement-title {
+    font-size: clamp(1.55rem, 6.8vw, 1.95rem) !important;
+    line-height: .98;
+  }
+
+  .lesson-sequence {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .55rem;
+  }
+
+  .lesson-sequence-label {
+    grid-column: 1 / -1;
+  }
+
+  .lesson-sequence-track {
+    grid-column: 1;
+  }
+
+  .lesson-sequence-count {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .lesson-card,
+  .placement-question-card,
+  .placement-intro-panel,
+  .placement-status-panel,
+  .placement-result-panel {
+    padding: 1.25rem;
+  }
+
+  .lesson-rating-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lesson-footer {
+    margin-top: .75rem;
+    font-size: .75rem;
+  }
+
+  .placement-word {
+    font-size: clamp(2rem, 13vw, 3.5rem) !important;
+  }
+
+  .placement-action-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .placement-action-row > .placement-primary,
+  .placement-action-row > .placement-control {
+    width: 100%;
+    flex: none;
+  }
+}
+
+/* Keep the diagnostic question on the canvas, rather than inside a second page card. */
+.placement-header { align-items: center; }
+.placement-header-start { align-items: center; flex: 1; }
+.placement-header .placement-title { margin: 0; font-family: var(--sf-font-body, inherit); font-size: .9rem !important; font-weight: 650; line-height: 1.3; letter-spacing: 0; }
+.placement-exit { width: 44px; padding: 0; border-radius: 50%; }
+.placement-header > .placement-progress { flex: 1; max-width: 24rem; padding: 0; }
+.placement-progress-copy { font-size: .7rem; }
+.placement-canvas .placement-question-card { min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; clip-path: none; overflow: visible; }
+.placement-card-kicker { color: var(--sf-text-muted); font-size: .75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.placement-question-title { margin-top: .85rem; max-width: 40rem; font-size: clamp(2rem, 3.6vw, 3.25rem); font-weight: 550; letter-spacing: -.03em; line-height: 1.1; }
+.placement-question-note { margin-top: .75rem; color: var(--sf-text-muted); line-height: 1.6; }
+.placement-word-block { margin-top: 2rem; }
+.placement-layout .placement-guidance { align-self: start; border-radius: var(--sf-card-radius, 20px); }
+:root[data-theme-family='crystal'] .placement-header .placement-title { background: none; color: var(--sf-text); filter: none; }
+:root[data-theme-family='crystal'] .placement-question-title { font-style: italic; font-weight: 900; color: var(--sf-brand-text); }
+:root[data-theme-family='crystal'] .placement-word-block { padding: 1rem 1.5rem; background: var(--sf-surface-glass); box-shadow: inset 0 0 0 1px var(--sf-border); clip-path: var(--nk-chamfer); }
+:root[data-theme-family='crystal'] .placement-word { margin: 0; }
+@media (max-width: 760px) {
+  .placement-header { flex-wrap: wrap; }
+  .placement-header-start { flex: 1; }
+  .placement-header > .placement-progress { order: 3; flex-basis: 100%; max-width: none; }
+  .placement-layout { grid-template-columns: 1fr; margin-top: 2rem; gap: 1.5rem; }
+  .placement-word-block { margin-top: 1.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lesson-canvas *,
+  .placement-canvas *,
+  .lesson-complete-canvas * {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .001ms !important;
+  }
+}

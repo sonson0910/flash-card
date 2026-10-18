@@ -227,10 +227,10 @@ jobs:
 
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ inputs.revision }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
-      - name: Verify revision ancestry and exact checkout
+      - name: Verify candidate ancestry and protected workflow checkout
         shell: bash
         env:
           REVISION: ${{ inputs.revision }}
@@ -238,7 +238,7 @@ jobs:
         run: |
           git fetch --no-tags origin "refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"
           git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"
-          test "$(git rev-parse HEAD)" = "$REVISION"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -407,15 +407,13 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ inputs.revision }}
+          ref: ${{ github.sha }}
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Verify exact Index checkout
+      - name: Verify protected Index workflow checkout
         shell: bash
-        env:
-          REVISION: ${{ inputs.revision }}
-        run: test "$(git rev-parse HEAD)" = "$REVISION"
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -445,14 +443,12 @@ jobs:
           node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
           node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID"
 
-      - name: Install the sealed Firebase CLI dependency tree
-        working-directory: candidate
+      - name: Install the protected Firebase CLI dependency tree
         run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Verify the sealed Firebase CLI version
-        working-directory: candidate
+      - name: Verify the protected Firebase CLI version
         shell: bash
-        run: test "$(./node_modules/.bin/firebase --version)" = "15.29.0"
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.34.0"
 
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
@@ -476,7 +472,7 @@ jobs:
             --project="$FIREBASE_PROJECT_ID" \
             --database="$FIRESTORE_DATABASE_ID" \
             --limit=1000 --format=json > artifacts/firestore-index-readiness/baseline-operations.json
-          (cd candidate && ./node_modules/.bin/firebase deploy --only firestore:indexes --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive)
+          (cd candidate && "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only firestore:indexes --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive)
           gcloud firestore databases describe \
             --project="$FIREBASE_PROJECT_ID" \
             --database="$FIRESTORE_DATABASE_ID" \
@@ -534,15 +530,13 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ inputs.revision }}
+          ref: ${{ github.sha }}
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Verify exact Hosting checkout
+      - name: Verify protected Hosting workflow checkout
         shell: bash
-        env:
-          REVISION: ${{ inputs.revision }}
-        run: test "$(git rev-parse HEAD)" = "$REVISION"
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -572,14 +566,12 @@ jobs:
           node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
           node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID"
 
-      - name: Install the sealed Firebase CLI dependency tree
-        working-directory: candidate
+      - name: Install the protected Firebase CLI dependency tree
         run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Verify the sealed Firebase CLI version
-        working-directory: candidate
+      - name: Verify the protected Firebase CLI version
         shell: bash
-        run: test "$(./node_modules/.bin/firebase --version)" = "15.29.0"
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.34.0"
 
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
@@ -587,7 +579,8 @@ jobs:
 
       - name: Promote only the sealed Hosting artifact
         working-directory: candidate
-        run: ./node_modules/.bin/firebase deploy --only hosting --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+        run: >-
+          "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only hosting --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
 
@@ -600,15 +593,13 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ inputs.revision }}
+          ref: ${{ github.sha }}
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Verify exact Functions checkout
+      - name: Verify protected Functions workflow checkout
         shell: bash
-        env:
-          REVISION: ${{ inputs.revision }}
-        run: test "$(git rev-parse HEAD)" = "$REVISION"
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -638,14 +629,12 @@ jobs:
           node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
           node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json
 
-      - name: Install the sealed Firebase CLI dependency tree
-        working-directory: candidate
+      - name: Install the protected Firebase CLI dependency tree
         run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Verify the sealed Firebase CLI version
-        working-directory: candidate
+      - name: Verify the protected Firebase CLI version
         shell: bash
-        run: test "$(./node_modules/.bin/firebase --version)" = "15.29.0"
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.34.0"
 
       - name: Materialize sealed Functions runtime dependencies
         run: npm ci --prefix candidate/functions --omit=dev --ignore-scripts --no-audit --no-fund
@@ -653,6 +642,18 @@ jobs:
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
+
+      - name: Verify Pro intent Firestore index is ready before Functions promotion
+        shell: bash
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+        run: |
+          set -euo pipefail
+          gcloud firestore indexes composite list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --format=json \
+            | node scripts/verify-entitlement-index.mjs "$FIREBASE_PROJECT_ID" "$FIRESTORE_DATABASE_ID"
 
       - name: Promote only the sealed Functions artifact after App Check approval
         working-directory: candidate
@@ -673,7 +674,7 @@ jobs:
           test -f "$parameter_file"
           grep -qxF 'ENFORCE_APP_CHECK=true' "$parameter_file"
       
-          ./node_modules/.bin/firebase deploy --only functions --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+          "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only functions --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           APP_CHECK_OBSERVATION_REF: ${{ inputs.app_check_observation_ref }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}

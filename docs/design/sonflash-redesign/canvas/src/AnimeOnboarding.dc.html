@@ -1,0 +1,189 @@
+<!--#AHEAD Crystal Star onboarding-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#ABG-->
+  <div aria-hidden="true" class="nk-beam" style="position: absolute; left: 50%; top: -40px; bottom: -40px; width: 460px; margin-left: -150px; pointer-events: none; background: {{t.prism}}; opacity: {{pillarOpacity}}; filter: blur(18px); -webkit-mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent); mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);"></div>
+  <div aria-hidden="true" style="position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; margin-left: 78px; pointer-events: none; background: linear-gradient(180deg, transparent, #ffffff 30%, #ffffff 70%, transparent); opacity: 0.7; filter: blur(1px); box-shadow: 0 0 30px 8px rgb(255 255 255 / 0.5);"></div>
+
+  <header style="position: relative; z-index: 5; height: 84px; flex-shrink: 0; padding: 0 44px; display: flex; align-items: center; gap: 22px;">
+    <span style="display: flex; align-items: center; gap: 10px;">
+      <span style="width: 34px; height: 34px; filter: drop-shadow(0 0 10px rgb(255 42 77 / 0.7));">
+<!--#STAR5-->
+      </span>
+      <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; color: {{t.textStrong}};">SON<span style="color: {{t.crimsonText}};">FLASH</span></span>
+    </span>
+    <span style="height: 30px; padding: 0 16px; transform: skewX(-16deg); background: {{t.primaryBg}}; display: flex; align-items: center;"><span style="transform: skewX(16deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.12em; color: #ffffff;">HELLO · LET'S BEGIN</span></span>
+    <div role="progressbar" aria-valuemin="1" aria-valuemax="5" aria-valuenow="{{stepNo}}" style="margin: 0 auto; display: flex; align-items: center; gap: 6px;">
+      <sc-for list="{{steps}}" as="st" hint-placeholder-count="5">
+        <span style="width: 56px; height: 10px; transform: skewX(-30deg); background: {{st.bg}}; box-shadow: {{st.glow}};"></span>
+      </sc-for>
+      <span style="margin-left: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; color: {{t.textStrong}};">{{stepNo}}<span style="font-size: 14px; color: {{t.text3}};"> / 5</span></span>
+    </div>
+    <a href="#" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 14px; letter-spacing: 0.1em; color: {{t.text2}}; text-decoration: none;">SKIP ›</a>
+  </header>
+
+  <aside style="position: absolute; z-index: 4; left: 56px; top: 190px; width: 290px;">
+    <div class="nk-rise" style="position: relative; box-sizing: border-box; padding: 16px 20px 18px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+      <span aria-hidden="true" style="position: absolute; left: 0; top: 18px; bottom: 18px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
+      <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.1em; color: {{t.holoText}};">LUMI · ONLINE</div>
+      <div style="margin-top: 4px; font-weight: 900; font-size: 18px; line-height: 1.3; color: {{t.textStrong}};">{{mascotLine}}</div>
+      <div style="margin-top: 4px; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">{{mascotSub}}</div>
+    </div>
+    <div class="nk-float" style="width: 290px; height: 310px; margin: 18px 0 0 -10px;">
+<!--#MASCOT $-->
+    </div>
+  </aside>
+
+  <sc-if value="{{isGoal}}" hint-placeholder-val="{{true}}">
+    <main style="position: relative; z-index: 3; flex-grow: 1; margin-left: 380px; margin-right: 60px; display: flex; flex-direction: column;">
+      <div class="nk-rise" style="margin-top: 22px;">
+        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 15px; letter-spacing: 0.16em; color: {{t.crimsonText}};">STEP 1 // YOUR GOAL</div>
+        <h1 style="margin: 4px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 68px; line-height: 1; letter-spacing: 0.01em; background: {{titleGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / 0.55));">CHOOSE YOUR PATH</h1>
+        <p style="margin: 10px 0 0; max-width: 620px; font-size: 16px; line-height: 1.55; color: {{t.body}};">Mỗi con đường mở một bộ thẻ và nhịp học riêng. Bạn đổi lại được bất cứ lúc nào trong Cài đặt.</p>
+      </div>
+
+      <div style="margin-top: 34px; display: grid; grid-template-columns: repeat(4, 230px); gap: 22px;">
+        <sc-for list="{{paths}}" as="p" hint-placeholder-count="4">
+          <button class="{{p.cls}}" aria-pressed="{{p.selected}}" style="position: relative; width: 230px; height: 318px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; font-family: inherit;">
+            <sc-if value="{{p.selected}}" hint-placeholder-val="{{false}}">
+              <div aria-hidden="true" class="nk-unfold" style="position: absolute; left: -150px; right: -150px; top: -40px; height: 330px; pointer-events: none; opacity: 0.95; filter: drop-shadow(0 0 22px rgb(255 42 77 / 0.7));">
+<!--#WINGS-->
+              </div>
+            </sc-if>
+            <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{p.rim}}; filter: drop-shadow({{p.glow}});"></div>
+            <div style="position: absolute; inset: 2px; box-sizing: border-box; clip-path: {{t.chamfer}}; background: {{p.bg}}; padding: 22px 22px 20px; display: flex; flex-direction: column;">
+              <span style="width: 64px; height: 64px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{p.emblemBg}}; color: {{p.emblemFg}}; display: flex; align-items: center; justify-content: center;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{p.icon}}"></path></svg></span>
+              <div style="margin-top: 18px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 28px; line-height: 1.05; color: {{p.fg}};">{{p.name}}</div>
+              <div style="margin-top: 8px; font-size: 14px; line-height: 1.5; color: {{p.sub}};">{{p.desc}}</div>
+              <div style="margin-top: auto; display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; color: {{p.sub}};">{{p.meta}}</span>
+                <span style="width: 28px; height: 28px; clip-path: {{t.chamferSm}}; background: {{p.checkBg}}; color: {{p.checkFg}}; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+              </div>
+            </div>
+          </button>
+        </sc-for>
+      </div>
+
+      <div style="margin-top: auto; margin-bottom: 44px; display: flex; align-items: center; gap: 18px;">
+        <button class="nk-lift" style="position: relative; height: 60px; padding: 0 44px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 21px; font-weight: 900; letter-spacing: 0.08em; display: flex; align-items: center; gap: 12px; cursor: pointer;">
+          <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 60px; background: rgb(255 255 255 / 0.4);"></span>
+          <span style="position: relative;">CONTINUE</span>
+          <svg style="position: relative;" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"></path></svg>
+        </button>
+        <span style="font-size: 14px; color: {{t.text2}};">Đã chọn: <strong style="color: {{t.textStrong}};">IELTS</strong> · mục tiêu band 7.0 · thi ngày 14/12</span>
+      </div>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{isAha}}" hint-placeholder-val="{{false}}">
+    <main style="position: relative; z-index: 3; flex-grow: 1; margin-left: 380px; margin-right: 56px; display: grid; grid-template-columns: 1fr 380px; gap: 40px;">
+      <section style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+        <div style="position: relative; width: 250px; height: 250px; margin-top: 6px;">
+          <div aria-hidden="true" class="nk-unfold" style="position: absolute; left: -220px; right: -220px; top: -40px; height: 300px; opacity: 0.8; filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.6));">
+<!--#WINGS-->
+          </div>
+          <div class="nk-pop" style="position: absolute; inset: 0; filter: drop-shadow(0 0 28px rgb(255 42 77 / 0.8));">
+<!--#STAR5-->
+          </div>
+          <div class="nk-pop-2" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding-top: 18px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 92px; line-height: 1; color: #ffffff; text-shadow: 0 4px 0 #7a0820, 0 0 24px rgb(255 255 255 / 0.6);">S</div>
+        </div>
+        <h1 class="nk-pop-3" style="margin: 14px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 52px; line-height: 1; background: {{titleGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / 0.55));">4/5 CARDS BROKEN!</h1>
+        <p style="margin: 12px 0 0; max-width: 520px; font-size: 16px; line-height: 1.55; color: {{t.body}};">Bạn nhớ 4 trên 5 từ đầu tiên. Từ bị lỡ sẽ quay lại trong phiên ngày mai, đúng lúc bạn sắp quên.</p>
+        <div style="margin-top: 26px; display: flex; gap: 12px;">
+          <sc-for list="{{minis}}" as="m" hint-placeholder-count="5">
+            <div class="nk-rise-2" style="position: relative; width: 104px; height: 138px;">
+              <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; background: {{m.rim}};"></div>
+              <div style="position: absolute; inset: 2px; box-sizing: border-box; clip-path: {{t.chamferSm}}; background: {{t.cardFront}}; padding: 12px 10px; display: flex; flex-direction: column; align-items: flex-start; text-align: left;">
+                <span style="height: 22px; padding: 0 8px; clip-path: {{t.chamferSm}}; background: {{m.badgeBg}}; color: {{m.badgeFg}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; display: flex; align-items: center;">{{m.state}}</span>
+                <div style="margin-top: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 17px; line-height: 1.05; color: {{t.textStrong}};">{{m.word}}</div>
+                <div style="margin-top: 3px; font-size: 12px; color: {{t.text2}};">{{m.vi}}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section class="nk-rise-3" style="align-self: start; margin-top: 30px; position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 26px 26px 24px;">
+        <div aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 0; height: 6px; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d);"></div>
+        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.crimsonText}};">STEP 4 // POWER UNLOCK</div>
+        <div style="margin-top: 6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 32px; line-height: 1.05; color: {{t.textStrong}};">PRO SPARKLE · 7 NGÀY</div>
+        <p style="margin: 10px 0 0; font-size: 14.5px; line-height: 1.55; color: {{t.body}};">Mở toàn bộ sức mạnh AI trong 7 ngày. Ôn thẻ SRS vẫn miễn phí mãi mãi.</p>
+        <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 10px;">
+          <sc-for list="{{perks}}" as="k" hint-placeholder-count="4">
+            <div style="display: flex; align-items: center; gap: 10px; font-size: 14.5px; font-weight: 700; color: {{t.textStrong}};"><span style="width: 10px; height: 10px; transform: rotate(45deg); background: {{k.c}}; box-shadow: 0 0 8px {{k.c}}; flex-shrink: 0;"></span>{{k.label}}</div>
+          </sc-for>
+        </div>
+        <button class="nk-lift" style="position: relative; margin-top: 22px; width: 100%; height: 58px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 19px; font-weight: 900; letter-spacing: 0.06em; cursor: pointer;">
+          <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 60px; background: rgb(255 255 255 / 0.4);"></span>
+          <span style="position: relative;">START 7-DAY PRO TRIAL</span>
+        </button>
+        <button class="nk-lift" style="margin-top: 10px; width: 100%; height: 48px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.secondaryText}}; font-family: {{t.fDisplay}}; font-style: italic; font-size: 16px; font-weight: 700; letter-spacing: 0.06em; cursor: pointer;">Continue free</button>
+        <p style="margin: 14px 0 0; display: flex; gap: 8px; font-size: 13px; line-height: 1.5; color: {{t.text2}};"><svg style="flex-shrink: 0; margin-top: 2px;" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M8.5 12l2.5 2.5 4.5-5"></path></svg><span>Không cần thẻ thanh toán. Hết 7 ngày không tự trừ tiền: bạn tự chọn nâng cấp hoặc tiếp tục bản miễn phí.</span></p>
+      </section>
+    </main>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"step":{"editor":"enum","options":["goal","aha"],"default":"goal"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const step = this.props.step ?? 'goal';
+    const isGoal = step !== 'aha';
+    const stepNo = isGoal ? 1 : 4;
+    const icons = {
+      ielts: 'M2 9l10-5 10 5-10 5zM6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5M22 9v6',
+      talk: 'M4 5h16v11H9l-5 4zM8 10h8M8 13h5',
+      work: 'M3 8h18v11H3zM9 8V5h6v3M3 13h18',
+      abroad: 'M2 16l20-8-6 12-3-5zM13 15l-2 5',
+    };
+    const pathDefs = [
+      { key: 'ielts', name: 'IELTS', desc: 'Từ vựng Academic theo band, bám sát 4 kỹ năng.', meta: '3.200 thẻ · band 5 → 8', selected: true },
+      { key: 'talk', name: 'Giao tiếp', desc: 'Cụm từ đời thường, phát âm và phản xạ nói.', meta: '1.800 thẻ · A2 → B2' },
+      { key: 'work', name: 'Công việc', desc: 'Email, họp, thuyết trình và phỏng vấn.', meta: '2.100 thẻ · B1 → C1' },
+      { key: 'abroad', name: 'Du học', desc: 'Học thuật, đời sống campus và thủ tục.', meta: '2.400 thẻ · B1 → C1' },
+    ];
+    const paths = pathDefs.map((p, i) => p.selected ? {
+      ...p, icon: icons[p.key], selected: true, cls: 'nk-lift nk-pop',
+      rim: t.tier.mastered.rim, glow: '0 0 26px rgb(255 42 77 / 0.75)', bg: 'linear-gradient(180deg, #ff5470 0%, #e0173f 45%, #7a0820 100%)',
+      emblemBg: '#ffffff', emblemFg: '#b30f33', fg: '#ffffff', sub: 'rgb(255 255 255 / 0.85)', checkBg: '#ffd166', checkFg: '#4a2a00',
+    } : {
+      ...p, icon: icons[p.key], selected: false, cls: 'nk-lift ' + (i === 1 ? 'nk-rise' : i === 2 ? 'nk-rise-2' : 'nk-rise-3'),
+      rim: dark ? 'linear-gradient(150deg, rgb(94 242 255 / 0.55), rgb(255 255 255 / 0.08) 50%, rgb(255 143 182 / 0.4))' : 'linear-gradient(150deg, rgb(26 167 201 / 0.6), rgb(28 16 48 / 0.08) 50%, rgb(255 143 182 / 0.45))',
+      glow: '0 0 0 transparent', bg: t.cardFront,
+      emblemBg: dark ? 'rgb(94 242 255 / 0.14)' : 'rgb(26 167 201 / 0.12)', emblemFg: t.holoText, fg: t.textStrong, sub: t.text2, checkBg: t.chip, checkFg: t.text3,
+    });
+    const minis = [
+      { word: 'Instant', vi: 'khoảnh khắc', ok: true },
+      { word: 'Immediate', vi: 'ngay lập tức', ok: true },
+      { word: 'Spelling', vi: 'chính tả', ok: true },
+      { word: 'Council', vi: 'hội đồng', ok: false },
+      { word: 'Barrier', vi: 'rào chắn', ok: true },
+    ].map(m => m.ok ? { ...m, state: 'BROKEN', rim: t.tier.mastered.rim, badgeBg: t.primaryBg, badgeFg: '#ffffff' }
+      : { ...m, state: 'RETRY', rim: t.tier.new.rim, badgeBg: dark ? 'rgb(94 242 255 / 0.18)' : 'rgb(26 167 201 / 0.14)', badgeFg: t.holoText });
+    return {
+      t, bg: { wings: true },
+      isGoal, isAha: !isGoal, stepNo,
+      pillarOpacity: dark ? 0.32 : 0.85,
+      titleGrad: dark ? t.metal : 'linear-gradient(180deg, #2a1040 0%, #150a28 45%, #b30f33 60%, #ff2a4d 100%)',
+      steps: Array.from({ length: 5 }, (_, i) => ({
+        bg: i < stepNo - 1 ? 'linear-gradient(90deg, #5ef2ff, #9fe9ff)' : i === stepNo - 1 ? '#ff2a4d' : t.track,
+        glow: i === stepNo - 1 ? '0 0 14px rgb(255 42 77 / 0.9)' : i < stepNo ? '0 0 8px rgb(94 242 255 / 0.5)' : 'none',
+      })),
+      lumiSrc: t.lumi[isGoal ? 'happy' : 'proud'],
+      mascotLine: isGoal ? 'Tinh thể đã thức tỉnh!' : 'Không tệ chút nào!',
+      mascotSub: isGoal ? 'Chọn con đường của bạn. Mình sẽ xếp thẻ và nhịp ôn cho đúng mục tiêu.' : 'Nở hoa ngay lần đầu. Muốn thử toàn bộ sức mạnh AI trong 7 ngày không?',
+      paths, minis,
+      perks: [
+        { label: 'AI tạo thẻ từ mọi bài báo', c: '#ff2a4d' },
+        { label: 'AI tutor giải thích từng từ', c: '#5ef2ff' },
+        { label: 'Dự đoán band IELTS mỗi tuần', c: '#ff8fb6' },
+        { label: '+2 streak freeze mỗi tháng', c: '#ffd166' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

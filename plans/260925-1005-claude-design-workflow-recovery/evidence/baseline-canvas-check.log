@@ -1,0 +1,10 @@
+command=python3 <isolated-copy>/build.py --check
+source=docs/design/sonflash-redesign/canvas/build.py
+source_file_count=730
+source_tree_sha256=b5d4092024ec602ac17b6d5e1bbf5fe0fde844007e400e5baca607542ea1fcb0
+start_utc=2026-09-25T04:59:26.536527+00:00
+
+compiled 112 components
+
+exit_code=0
+end_utc=2026-09-25T04:59:26.913843+00:00

@@ -6,6 +6,8 @@ export interface FlashcardAudioOptions {
   readonly cardId: string;
   readonly word: string;
   readonly explanation: string;
+  readonly speechLocale?: string;
+  readonly voice?: SpeechSynthesisVoice;
   readonly audioUrl?: string | null;
 }
 
@@ -24,7 +26,7 @@ export interface FlashcardAudioResult {
   readonly playExplanationAudio: (event: FlashcardAudioControlEvent) => void;
 }
 
-export function useFlashcardAudio({ cardId, word, explanation, audioUrl }: FlashcardAudioOptions): FlashcardAudioResult {
+export function useFlashcardAudio({ cardId, word, explanation, audioUrl, speechLocale, voice }: FlashcardAudioOptions): FlashcardAudioResult {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stopPlaybackRef = useRef<(() => void) | null>(null);
   const runIdRef = useRef(0);
@@ -43,7 +45,7 @@ export function useFlashcardAudio({ cardId, word, explanation, audioUrl }: Flash
     setIsPlayingAudio(false);
     setPronunciationError(null);
     return stopActiveRun;
-  }, [audioUrl, cardId, stopActiveRun]);
+  }, [audioUrl, cardId, speechLocale, voice, stopActiveRun]);
 
   const play = useCallback((event: FlashcardAudioControlEvent, text: string, native: boolean) => {
     event.stopPropagation();
@@ -51,13 +53,14 @@ export function useFlashcardAudio({ cardId, word, explanation, audioUrl }: Flash
     const runId = runIdRef.current;
     setPronunciationError(null);
     setIsPlayingAudio(native);
-    stopPlaybackRef.current = playWordAudio(text, audioUrl ?? null, {
+    stopPlaybackRef.current = playWordAudio(text, native ? audioUrl ?? null : null, {
+      speechLocale, voice,
       audio: native ? audioRef.current : null,
       speed: audioSpeed,
       onEnd: () => { if (runId === runIdRef.current) setIsPlayingAudio(false); },
       onError: message => { if (runId === runIdRef.current) setPronunciationError(message); },
     });
-  }, [audioSpeed, audioUrl, stopActiveRun]);
+  }, [audioSpeed, audioUrl, speechLocale, voice, stopActiveRun]);
   const playAudio = useCallback((event: FlashcardAudioControlEvent) => play(event, word, true), [play, word]);
   const playExplanationAudio = useCallback((event: FlashcardAudioControlEvent) => play(event, explanation, false), [explanation, play]);
   const toggleAudioSpeed = useCallback((event: FlashcardAudioControlEvent) => {

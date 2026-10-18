@@ -23,6 +23,7 @@ type HarnessProps = {
   readonly cardId: string;
   readonly word: string;
   readonly explanation: string;
+  readonly speechLocale?: string;
 };
 
 type HarnessSnapshot = FlashcardSpeechMatchResult & {
@@ -88,7 +89,7 @@ const mountHarness = (onPronunciationError?: (message: string | null) => void) =
   const container = installMinimalReactDom();
   let snapshot!: HarnessSnapshot;
 
-  function Harness({ cardId, word, explanation }: HarnessProps) {
+  function Harness({ cardId, word, explanation, speechLocale }: HarnessProps) {
     const [pronunciationError, setPronunciationError] = useState<string | null>(null);
     const reportPronunciationError = useCallback((message: string | null) => {
       onPronunciationError?.(message);
@@ -98,6 +99,7 @@ const mountHarness = (onPronunciationError?: (message: string | null) => void) =
       cardId,
       word,
       explanation,
+      speechLocale,
       onPronunciationError: reportPronunciationError,
     });
     snapshot = { ...result, pronunciationError };
@@ -138,6 +140,22 @@ describe('useFlashcardSpeechMatch', () => {
       });
       expect(harness.snapshot().isRecording).toBe(true);
       expect(harness.snapshot().recordingTarget).toBe('word');
+    } finally {
+      await act(async () => harness.root.unmount());
+    }
+  });
+
+  it('uses the edited speech locale on the same card', async () => {
+    const { instances } = installRecognition();
+    const harness = mountHarness();
+    try {
+      const card = { cardId: 'card-a', word: 'hello', explanation: 'a greeting' };
+      await harness.render({ ...card, speechLocale: 'en-US' });
+      act(() => harness.snapshot().startPronunciationCheck({ stopPropagation: vi.fn() }));
+      act(() => instances[0].onend?.());
+      await harness.render({ ...card, speechLocale: 'ko-KR' });
+      act(() => harness.snapshot().startPronunciationCheck({ stopPropagation: vi.fn() }));
+      expect(instances.map(instance => instance.lang)).toEqual(['en-US', 'ko-KR']);
     } finally {
       await act(async () => harness.root.unmount());
     }

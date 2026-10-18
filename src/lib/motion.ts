@@ -1,3 +1,5 @@
+import { getEffectiveReducedMotion } from './motionPreference';
+
 export const motionDurations = {
   fast: 0.14,
   standard: 0.2,
@@ -27,7 +29,7 @@ export const getStepVariants = (direction: 1 | -1 = 1) => ({
   exit: { opacity: 0, x: -24 * direction, scale: 0.985 },
 });
 
-export const getReducedMotionScrollBehavior = (prefersReducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false): ScrollBehavior =>
+export const getReducedMotionScrollBehavior = (prefersReducedMotion = getEffectiveReducedMotion()): ScrollBehavior =>
   prefersReducedMotion ? 'auto' : 'smooth';
 
 export const getFlashcardFlipMotion = (direction: 1 | -1, prefersReducedMotion: boolean) => ({

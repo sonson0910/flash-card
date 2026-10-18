@@ -1,0 +1,80 @@
+<!--#HEAD Mobile practice sheet-->
+<div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}};">
+<!--#AMBIENT-->
+  <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 1; filter: blur(1.5px);">
+    <div style="height: 64px; padding: 0 20px; display: flex; align-items: center; gap: 10px;">
+      <span style="width: 30px; height: 30px; border-radius: 9px; background: {{t.logoBg}}; box-shadow: {{t.logoShadow}};"></span>
+      <span style="font-family: Fraunces, Georgia, serif; font-size: 21px;">Son<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">Flash</span></span>
+    </div>
+    <div style="padding: 14px 20px 0;">
+      <p style="margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: {{t.text2}};">Wednesday · 23 Sep</p>
+      <div style="margin-top: 10px; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 42px; line-height: 1.02; letter-spacing: -0.03em; color: {{t.textStrong}};">12 words ready to <span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">remember.</span></div>
+      <div style="margin: 26px auto 0; width: 230px; height: 190px; border-radius: 22px; border: {{ghost.border}}; background: {{ghost.bg}}; box-shadow: {{ghost.shadow}};"></div>
+    </div>
+  </div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 2; background: {{t.scrim}};"></div>
+
+  <div role="dialog" aria-modal="true" aria-labelledby="sheet-title" class="sf-rise" style="position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; box-sizing: border-box; padding: 10px 16px 26px; border-radius: 28px 28px 0 0; border-top: {{t.dlgBorder}}; background: {{t.dlgBg}}; box-shadow: {{t.dlgShadow}};">
+    <div aria-hidden="true" style="margin: 0 auto; width: 40px; height: 5px; border-radius: 5px; background: {{t.lineStrong}};"></div>
+    <div style="padding: 16px 6px 12px; display: flex; align-items: flex-end;">
+      <div>
+        <h2 id="sheet-title" style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 30px; line-height: 1; letter-spacing: -0.02em; color: {{t.textStrong}};">Practice</h2>
+        <div style="margin-top: 5px; font-size: 13px; color: {{t.text2}};">From IELTS · 120 cards</div>
+      </div>
+      <button style="margin-left: auto; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 5px;">IELTS <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"></path></svg></button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <sc-for list="{{modes}}" as="m" hint-placeholder-count="5">
+        <button aria-disabled="{{m.disabled}}" style="height: 70px; box-sizing: border-box; padding: 0 14px 0 10px; border-radius: 18px; border: 1px solid {{m.line}}; background: {{m.bg}}; color: {{t.text}}; display: flex; align-items: center; gap: 12px; text-align: left; opacity: {{m.opacity}};">
+          <span style="width: 48px; height: 48px; flex-shrink: 0; border-radius: 14px; background: {{m.iconBg}}; color: {{m.iconFg}}; box-shadow: {{m.iconGlow}}; display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{m.icon}}"></path></svg></span>
+          <span style="flex-grow: 1; min-width: 0;">
+            <span style="display: block; font-size: 15.5px; font-weight: 650; color: {{t.textStrong}};">{{m.name}}</span>
+            <span style="display: block; margin-top: 2px; font-size: 12.5px; color: {{m.descColor}};">{{m.desc}}</span>
+          </span>
+          <sc-if value="{{m.open}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{t.text3}}" stroke-width="2" stroke-linecap="round"><path d="m9 6 6 6-6 6"></path></svg></sc-if>
+          <sc-if value="{{m.locked}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{t.text3}}" stroke-width="2" stroke-linecap="round"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg></sc-if>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    const palette = dark
+      ? [['rgb(40 211 244 / 0.14)', '#7ee6fa'], ['rgb(150 108 215 / 0.18)', '#c9b3f0'], ['rgb(245 174 57 / 0.14)', '#f5ae39'], ['rgb(117 208 121 / 0.14)', '#9be09e'], ['rgb(255 255 255 / 0.05)', '#6f808a']]
+      : [['rgb(180 70 26 / 0.1)', '#97400d'], ['rgb(51 115 68 / 0.1)', '#2c6a3d'], ['rgb(184 134 43 / 0.14)', '#8a5a0c'], ['rgb(29 26 22 / 0.07)', '#1d1a16'], ['rgb(29 26 22 / 0.04)', '#8a8072']];
+    const modes = [
+      ['Quiz', '4 choices · 10 questions', 'M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z'],
+      ['Spelling', 'Listen, then type it', 'M4 20h4L19 9l-4-4L4 16zM14 6l4 4'],
+      ['Word match', '60-second sprint', 'M13 2 4 14h7l-1 8 9-12h-7z'],
+      ['Shadowing', 'Speak along · uses mic', 'M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM5 11a7 7 0 0 0 14 0M12 18v3'],
+      ['Story', 'Unlocks at 5 cards in this deck', 'M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z'],
+    ];
+    return {
+      t, grainId: 'msheet-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: -180, ay: -160, bx: 80, by: 300 },
+      ghost: dark
+        ? { border: '1.5px solid transparent', bg: t.cardBg + ' padding-box, ' + t.rimLearning + ' border-box', shadow: '0 0 40px -12px rgb(40 211 244 / 0.5)' }
+        : { border: '0', bg: t.cardBg, shadow: t.cardShadow },
+      modes: modes.map(([name, desc, icon], i) => {
+        const locked = i === 4;
+        return {
+          name, desc, icon, locked, open: !locked, disabled: locked ? 'true' : 'false',
+          iconBg: palette[i][0], iconFg: palette[i][1],
+          iconGlow: dark && i === 0 ? '0 0 20px -6px rgb(40 211 244 / 0.6)' : 'none',
+          line: i === 0 ? t.accentLine : t.line,
+          bg: i === 0 ? t.accentSoft : (locked ? 'transparent' : t.secondaryBg),
+          opacity: locked ? 0.62 : 1, descColor: locked ? t.text3 : t.text2,
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

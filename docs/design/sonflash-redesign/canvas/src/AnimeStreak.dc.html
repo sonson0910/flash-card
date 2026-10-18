@@ -1,0 +1,170 @@
+<!--#AHEAD Crystal Star streak-->
+<div style="width: 720px; height: 780px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; align-items: center; justify-content: center;">
+<!--#ABG-->
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: {{t.scrim}};"></div>
+
+  <sc-if value="{{milestone}}" hint-placeholder-val="{{false}}">
+    <div aria-hidden="true" class="nk-beam" style="position: absolute; left: 50%; top: -10%; width: 260px; height: 120%; margin-left: -130px; background: {{t.prism}}; opacity: 0.4; filter: blur(22px);"></div>
+    <div aria-hidden="true" class="nk-unfold" style="position: absolute; left: -160px; top: 40px; width: 480px; height: 330px; filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.8));">
+<!--#WINGS-->
+    </div>
+    <div aria-hidden="true" class="nk-unfold" style="position: absolute; right: -160px; top: 40px; width: 480px; height: 330px; transform: scaleX(-1); filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.8));">
+<!--#WINGS-->
+    </div>
+  </sc-if>
+
+  <div role="dialog" aria-modal="true" aria-labelledby="st-title" class="nk-rise" style="position: relative; z-index: 3; width: 600px; height: 720px; filter: drop-shadow(0 0 22px {{rimGlow}}) drop-shadow(0 30px 40px rgb(0 0 0 / 0.4));">
+    <div aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; overflow: hidden;"><div class="{{rimCls}}" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: {{rim}};"></div></div>
+    <div aria-hidden="true" style="position: absolute; inset: 3px; clip-path: {{t.chamfer}}; background: {{t.cardFront}};"></div>
+
+    <div style="position: relative; height: 100%; box-sizing: border-box; padding: 26px 34px 26px; display: flex; flex-direction: column;">
+      <button aria-label="Close" class="nk-lift" style="position: absolute; z-index: 3; right: 18px; top: 18px; width: 38px; height: 38px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+
+      <div style="position: relative; height: 156px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+        <div class="nk-float" style="position: absolute; left: -14px; bottom: -6px; width: 140px; height: 158px;">
+<!--#MASCOT $-->
+        </div>
+        <div class="nk-pop" style="position: relative; width: 132px; height: 148px; filter: {{emblem.glow}};">
+          <sc-if value="{{milestone}}" hint-placeholder-val="{{false}}">
+            <div style="position: absolute; inset: -6px;">
+<!--#STAR5-->
+            </div>
+            <span style="position: absolute; inset: 0; padding-top: 22px; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 46px; color: #ffffff; text-shadow: 0 3px 0 #7a0820;">30</span>
+          </sc-if>
+          <sc-if value="{{notMilestone}}" hint-placeholder-val="{{true}}">
+            <div style="position: absolute; inset: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{emblem.rim}};"></div>
+            <div style="position: absolute; inset: 4px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{emblem.bg}}; display: flex; align-items: center; justify-content: center;">
+              <svg width="58" height="58" viewBox="0 0 24 24" fill="{{emblem.fg}}" style="opacity: {{emblem.opacity}};"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>
+            </div>
+            <sc-if value="{{freeze}}" hint-placeholder-val="{{true}}">
+              <span style="position: absolute; right: -8px; bottom: 14px; width: 46px; height: 52px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.tier.new.rim}}; display: flex; align-items: center; justify-content: center; color: #031820;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11"></path></svg></span>
+            </sc-if>
+            <sc-if value="{{repair}}" hint-placeholder-val="{{false}}">
+              <svg aria-hidden="true" width="100%" height="100%" viewBox="0 0 150 168" style="position: absolute; inset: 0;"><path d="M78 10 L66 60 L86 84 L62 118 L74 158" fill="none" stroke="{{t.crimson}}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </sc-if>
+          </sc-if>
+        </div>
+      </div>
+
+      <div style="margin-top: 10px; text-align: center;">
+        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; letter-spacing: 0.16em; color: {{copy.eyebrowColor}};">{{copy.eyebrow}}</div>
+        <h2 id="st-title" style="margin: 6px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 32px; line-height: 1.05; color: {{t.textStrong}};">{{copy.title}} <span style="background: {{copy.emGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 12px {{copy.emGlow}});">{{copy.em}}</span></h2>
+        <p style="margin: 8px auto 0; max-width: 440px; font-size: 14.5px; line-height: 1.55; color: {{t.body}};">{{copy.sub}}</p>
+      </div>
+
+      <div role="list" aria-label="This week" style="margin-top: 18px; display: flex; justify-content: center; gap: 10px;">
+        <sc-for list="{{week}}" as="d" hint-placeholder-count="7">
+          <div role="listitem" aria-label="{{d.aria}}" style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+            <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.06em; color: {{d.labelColor}};">{{d.label}}</span>
+            <span style="width: 48px; height: 54px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{d.bg}}; color: {{d.fg}}; display: flex; align-items: center; justify-content: center;">
+              <sc-if value="{{d.done}}" hint-placeholder-val="{{true}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg></sc-if>
+              <sc-if value="{{d.frozen}}" hint-placeholder-val="{{false}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11"></path></svg></sc-if>
+              <sc-if value="{{d.missed}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></sc-if>
+              <sc-if value="{{d.empty}}" hint-placeholder-val="{{false}}"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: currentColor;"></span></sc-if>
+            </span>
+          </div>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{freeze}}" hint-placeholder-val="{{true}}">
+        <div style="margin-top: 20px; height: 76px; box-sizing: border-box; padding: 0 18px; clip-path: {{t.chamfer}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1.5px {{t.panelEdge2}}; display: flex; align-items: center; gap: 14px;">
+          <div style="display: flex; gap: 6px;">
+            <span aria-hidden="true" style="width: 32px; height: 36px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.track}};"></span>
+            <span aria-hidden="true" style="width: 32px; height: 36px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.tier.new.rim}}; display: flex; align-items: center; justify-content: center; color: #031820;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11"></path></svg></span>
+          </div>
+          <div style="flex-grow: 1;">
+            <div style="font-weight: 900; font-size: 15px; color: {{t.textStrong}};">1 of 2 freezes left</div>
+            <div style="margin-top: 2px; font-size: 13px; color: {{t.text2}};">Earn one back every 7-day streak · refills Monday</div>
+          </div>
+          <span style="height: 28px; padding: 0 12px; transform: skewX(-12deg); background: linear-gradient(180deg, #fff0b8, #ffd166); display: flex; align-items: center;"><span style="transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 12.5px; color: #4a2a00;">PRO HOLDS 5</span></span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{repair}}" hint-placeholder-val="{{false}}">
+        <div style="margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div style="padding: 14px 16px; clip-path: {{t.chamfer}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1.5px {{t.panelEdge2}};">
+            <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.14em; color: {{t.holoText}};">FREE</div>
+            <div style="margin-top: 4px; font-weight: 900; font-size: 15px; color: {{t.textStrong}};">Do 2 sessions today</div>
+            <div style="margin-top: 10px; display: flex; gap: 6px;"><span style="flex-grow: 1; height: 8px; transform: skewX(-30deg); background: {{t.track}};"></span><span style="flex-grow: 1; height: 8px; transform: skewX(-30deg); background: {{t.track}};"></span></div>
+            <div style="margin-top: 8px; font-family: {{t.fMono}}; font-size: 12.5px; color: {{t.text2}};">0 / 2 · ~12 min</div>
+          </div>
+          <div style="padding: 14px 16px; clip-path: {{t.chamfer}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1.5px {{t.gold}};">
+            <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.14em; color: {{t.goldText}};">PRO</div>
+            <div style="margin-top: 4px; font-weight: 900; font-size: 15px; color: {{t.textStrong}};">Repair instantly</div>
+            <div style="margin-top: 8px; font-size: 13px; line-height: 1.45; color: {{t.text2}};">1 repair a month is included with Pro.</div>
+          </div>
+        </div>
+        <div style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px;">
+          <span style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: {{t.text2}};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>Repair window: <span style="font-family: {{t.fMono}}; font-weight: 700; color: {{t.crimsonText}};">35 h 12 m</span></span>
+          <span style="color: {{t.text3}};">Your XP and words are safe either way.</span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{milestone}}" hint-placeholder-val="{{false}}">
+        <div style="margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+          <sc-for list="{{stats}}" as="s" hint-placeholder-count="3">
+            <div style="padding: 12px 14px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}};">
+              <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.14em; color: {{t.text2}};">{{s.label}}</div>
+              <div style="margin-top: 4px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 28px; line-height: 1; color: {{s.color}};">{{s.value}}</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <footer style="margin-top: auto; display: flex; align-items: center; gap: 12px;">
+        <span style="flex-grow: 1; font-size: 12.5px; font-weight: 700; color: {{t.text3}};">{{copy.foot}}</span>
+        <button class="nk-lift" style="height: 50px; padding: 0 20px; border: 0; transform: skewX(-12deg); background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.secondaryText}}; cursor: pointer;"><span style="display: block; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14.5px; white-space: nowrap;">{{copy.secondary}}</span></button>
+        <button class="nk-lift" style="height: 50px; padding: 0 24px; border: 0; transform: skewX(-12deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; color: #ffffff; cursor: pointer;"><span style="display: block; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15.5px; letter-spacing: 0.04em; white-space: nowrap;">{{copy.primary}}</span></button>
+      </footer>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"state":{"editor":"enum","options":["freeze","repair","milestone"],"default":"freeze"},"$preview":{"width":720,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const state = this.props.state ?? 'freeze';
+    const freeze = state === 'freeze', repair = state === 'repair', milestone = state === 'milestone';
+    const hot = dark ? 'linear-gradient(180deg, #ffd166 0%, #ff5470 60%, #ff2a4d 100%)' : 'linear-gradient(180deg, #ff2a4d 0%, #c40f35 60%, #8a0a26 100%)';
+    const ice = dark ? 'linear-gradient(180deg, #e9feff 0%, #5ef2ff 60%, #1aa7c9 100%)' : 'linear-gradient(180deg, #1aa7c9 0%, #0a7d99 60%, #06566b 100%)';
+    const emblem = freeze
+      ? { rim: t.tier.new.rim, bg: dark ? 'radial-gradient(circle at 40% 30%, #16384a, #081420 70%)' : 'radial-gradient(circle at 40% 30%, #ffffff, #cdeaff 80%)', fg: t.holoText, opacity: 1, glow: 'drop-shadow(0 0 24px rgb(94 242 255 / 0.7))' }
+      : repair
+      ? { rim: t.lineStrong, bg: dark ? '#0b0e18' : '#e6f2fb', fg: t.text3, opacity: 0.55, glow: 'none' }
+      : { rim: t.tier.mastered.rim, bg: t.cardFront, fg: t.crimson, opacity: 1, glow: 'drop-shadow(0 0 30px rgb(255 42 77 / 0.9))' };
+    const copy = freeze
+      ? { eyebrow: '12-DAY STREAK', eyebrowColor: t.holoText, title: 'Your streak', em: 'is safe.', emGrad: ice, emGlow: 'rgb(94 242 255 / 0.5)', sub: 'You missed yesterday, so a streak freeze stepped in. Study today and the streak keeps going.', foot: 'Freezes are used automatically.', secondary: 'MANAGE FREEZES', primary: 'KEEP IT GOING' }
+      : repair
+      ? { eyebrow: '23 → 0', eyebrowColor: t.crimsonText, title: 'Your 23-day streak', em: 'ended.', emGrad: hot, emGlow: 'rgb(255 42 77 / 0.4)', sub: 'Life happens. You can still bring it back — repair it within the next 36 hours, or simply start fresh today.', foot: 'No penalty if you let it go.', secondary: 'START FRESH', primary: 'START SESSION 1 OF 2' }
+      : { eyebrow: 'BADGE UNLOCKED · MONTH OF FIRE', eyebrowColor: t.goldText, title: '30 days', em: 'in a row!', emGrad: hot, emGlow: 'rgb(255 209 102 / 0.5)', sub: 'A whole month of showing up. That is how words stick for good.', foot: '+300 XP bonus added', secondary: 'CONTINUE', primary: 'SHARE MY STREAK' };
+    const W = freeze
+      ? [['MON', 'done'], ['TUE', 'done'], ['WED', 'done'], ['THU', 'frozen'], ['FRI', 'today'], ['SAT', 'future'], ['SUN', 'future']]
+      : repair
+      ? [['MON', 'done'], ['TUE', 'done'], ['WED', 'missed'], ['THU', 'missed'], ['FRI', 'today'], ['SAT', 'future'], ['SUN', 'future']]
+      : [['MON', 'done'], ['TUE', 'done'], ['WED', 'done'], ['THU', 'done'], ['FRI', 'done'], ['SAT', 'future'], ['SUN', 'future']];
+    const week = W.map(([label, s]) => {
+      const base = { label, done: s === 'done', frozen: s === 'frozen', missed: s === 'missed', empty: s === 'today' || s === 'future', aria: label + ': ' + s, labelColor: s === 'today' ? t.textStrong : t.text3 };
+      if (s === 'done') return { ...base, bg: milestone ? t.tier.mastered.rim : t.primaryBg, fg: milestone ? '#ffffff' : '#ffd166' };
+      if (s === 'frozen') return { ...base, bg: t.tier.new.rim, fg: '#031820' };
+      if (s === 'missed') return { ...base, bg: dark ? 'rgb(255 42 77 / 0.18)' : 'rgb(209 18 58 / 0.14)', fg: t.crimsonText };
+      if (s === 'today') return { ...base, bg: dark ? 'rgb(94 242 255 / 0.22)' : 'rgb(10 125 153 / 0.18)', fg: t.holoText };
+      return { ...base, bg: t.track, fg: t.text3 };
+    });
+    return {
+      t, bg: { wings: !milestone },
+      freeze, repair, milestone, notMilestone: !milestone,
+      rim: milestone ? t.tier.mastered.rim : freeze ? t.tier.new.rim : t.tier.learning.rim,
+      rimCls: milestone ? 'nk-rim-spin' : '',
+      rimGlow: milestone ? 'rgb(255 42 77 / 0.6)' : freeze ? t.tier.new.soft : t.tier.learning.soft,
+      lumiSrc: t.lumi[milestone ? 'proud' : repair ? 'sad' : 'hint'],
+      emblem, copy, week,
+      stats: [{ label: 'REVIEWS', value: '1,284', color: t.textStrong }, { label: 'NEW WORDS', value: '312', color: t.crimsonText }, { label: 'RECALL', value: '91%', color: t.holoText }],
+    };
+  }
+}
+</script>
+</body>
+</html>

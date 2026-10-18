@@ -131,8 +131,8 @@ describe('library facet persistence', () => {
   it('starts from an empty incomplete document and clears it atomically', async () => {
     const test = harness();
     await expect(applyLibraryFacetMutation(test.database, 'owner', {
-      op: 'clear', ownerId: 'owner', operationCreatedAt: new Date().toISOString(),
-      opId: libraryFacetV2OperationId(Date.now(), 'facet-op'),
+      op: 'clear', ownerId: 'owner', operationCreatedAt: TEST_OPERATION_CREATED_AT,
+      opId: TEST_OPERATION_ID,
     }))
       .resolves.toEqual({ categories: {}, complete: true });
   });

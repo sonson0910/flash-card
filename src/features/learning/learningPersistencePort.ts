@@ -1,6 +1,13 @@
-import type { DeviceDeleteContext, DevicePendingFlushLease, DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
+import type {
+  LearningDeleteUndoToken,
+  LearningRestoreConflictReason,
+} from './learningStateController';
 import type { LearningStatePersistencePort } from './useLearningState';
+import type { ReviewOutcome } from '../../lib/cardReviewRepository';
+
+export type { BulkCardFieldPatchOutcome, BulkCardFieldPatchRequest } from './learningStateController';
+export type { ReviewOutcome } from '../../lib/cardReviewRepository';
 
 export interface LearningPersistenceStats {
   total: number;
@@ -18,16 +25,9 @@ export interface LearningPersistenceOptions {
   ownerId: string | null;
   verifiedEpoch: number | null;
   knownLibraryTotal: number;
+  validateRestore(token: LearningDeleteUndoToken): LearningRestoreConflictReason | null;
   findCard(cardId: string): CardData | undefined;
   canPublishPatch(cardId: string): boolean;
-  patchDeviceCards(
-    changes: readonly { card: CardData; fields: Partial<CardData> }[],
-    nextTotal?: number,
-    operationId?: string,
-    operation?: 'patch' | 'review',
-  ): Promise<DevicePendingOperation[]>;
-  removeDeviceCard(cardId: string, context?: DeviceDeleteContext): Promise<DevicePendingOperation[]>;
-  acknowledgeDevicePending(operations: readonly DevicePendingOperation[], lease?: DevicePendingFlushLease): Promise<void>;
   acceptVerifiedEpoch(ownerId: string, epoch: number): void;
   updateCloudStats(update: (current: LearningPersistenceStats) => LearningPersistenceStats): void;
   updateCategoryFacets(deltas: Record<string, number>, operationId?: string): Promise<void>;
@@ -37,7 +37,7 @@ export interface LearningPersistenceOptions {
   setCloudUnavailable(unavailable: boolean): void;
   setMutationPending(pending: boolean): void;
   reportError(message: string): void;
-  addXp(amount: number, operationId?: string): void;
+  onReviewOutcome?(outcome: ReviewOutcome, operationId: string, card: CardData): void;
 }
 
 export type LearningPersistenceHook = (

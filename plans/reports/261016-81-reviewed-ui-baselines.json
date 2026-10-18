@@ -1,0 +1,349 @@
+{
+  "baseRevision": "5a36c6b309b6761526972e77aa3b2efd9cb26670",
+  "reviewedAt": "2026-10-15T19:20:38.809487+00:00",
+  "scope": "Individually reviewed Chromium Linux integration baselines; unchanged matcher tolerances and full browser matrix.",
+  "verification": {
+    "firstOrdinaryRun": {
+      "passed": 39,
+      "failed": 1,
+      "cause": "Last downstream Crystal dark mobile Placement baseline reached after Lesson passed."
+    },
+    "dailyFollowUp": {
+      "passed": 8,
+      "failed": 0,
+      "retries": 0
+    },
+    "fullRequiredCi": "pending"
+  },
+  "baselines": [
+    {
+      "path": "e2e/course-onboarding-visual.spec.ts-snapshots/course-switcher-create-crystal-dark-mobile-chromium-linux.png",
+      "previousSha256": "a1e702437f202d98114b16476c6e7872984d3ddec023eacb099aa18a5f0d755a",
+      "acceptedSha256": "69d587fffed511103033496bbe9538e6e4760e759cd281eff71da130167b5a0b",
+      "reason": "Preserve main OfflineReadiness and LearningJourney; unchanged course popover/bottomsheet controls.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/course-onboarding-visual.spec.ts-snapshots/course-switcher-create-classic-dark-desktop-chromium-linux.png",
+      "previousSha256": "50f2fd5f8d9976d2f8a55c4fd7b52f9e1273901886dde5340a6192042d476677",
+      "acceptedSha256": "5a09b85cd824070a294e43b3a66ace2760ff78f14be0ff6633f8ac9e54d7d1a4",
+      "reason": "Preserve main OfflineReadiness and LearningJourney; unchanged course popover/bottomsheet controls.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/course-onboarding-visual.spec.ts-snapshots/course-switcher-create-crystal-dark-desktop-chromium-linux.png",
+      "previousSha256": "1adf9763fc3e36e393f0766043ae88ddab55f441cfa891478d6c55341d56586c",
+      "acceptedSha256": "c47cdc0f459a46e4b8f32e099700320d090fdbe8cd569b72cf409db69fd6f9e6",
+      "reason": "Preserve main OfflineReadiness and LearningJourney; unchanged course popover/bottomsheet controls.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/course-onboarding-visual.spec.ts-snapshots/course-switcher-create-classic-light-desktop-chromium-linux.png",
+      "previousSha256": "05d2d599a85e28d25b7b53e3a622c06ea4ea8e1bc456cb76939baa1415167921",
+      "acceptedSha256": "b1ed5796df739517f6a176101cc59aec616a7698c310e50c3c196c31d6c5e977",
+      "reason": "Preserve main OfflineReadiness and LearningJourney; unchanged course popover/bottomsheet controls.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/course-onboarding-visual.spec.ts-snapshots/course-switcher-create-classic-light-mobile-chromium-linux.png",
+      "previousSha256": "ce0281b31823ae11a97da481ab48594ce5cbd31797725abe98872409f72d043a",
+      "acceptedSha256": "fa56ba674437ba5b52a961753ed360d9d04e33263e43292dc8b40e792c6bcba4",
+      "reason": "Preserve main OfflineReadiness and LearningJourney; unchanged course popover/bottomsheet controls.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/course-onboarding-visual.spec.ts-snapshots/course-switcher-create-crystal-light-mobile-chromium-linux.png",
+      "previousSha256": "33e7b8b5f972a3e8b7f5a47b712bbecc2cdc5c5dc051499fa07a892bd1f5ce60",
+      "acceptedSha256": "828f1b4235f0803c59fa352bf5013cab2baafecd4d211a865483d09e01f64eeb",
+      "reason": "Preserve main OfflineReadiness and LearningJourney; unchanged course popover/bottomsheet controls.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/course-onboarding-visual.spec.ts-snapshots/course-switcher-create-classic-dark-mobile-chromium-linux.png",
+      "previousSha256": "f59c5b71f67c703cee2279c48ec275f01bc41587e524bad79c5c4c22b00e36f8",
+      "acceptedSha256": "9dff3afc7b508ff8a9da009d6a9e0edc33ac9ea22db2641688731e05e29b4a71",
+      "reason": "Preserve main OfflineReadiness and LearningJourney; unchanged course popover/bottomsheet controls.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/course-onboarding-visual.spec.ts-snapshots/course-switcher-create-crystal-light-desktop-chromium-linux.png",
+      "previousSha256": "d6ad4d6e8e4d00c35564f32d64e264f877f70b9552fcdedbcd5a4f4b26102b5f",
+      "acceptedSha256": "b560b9f0675a1ab57f7d930b9b5982eae4444ab1ef77b477cbc4aa51f4969196",
+      "reason": "Preserve main OfflineReadiness and LearningJourney; unchanged course popover/bottomsheet controls.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/course-onboarding-visual.spec.ts-snapshots/course-onboarding-pace-classic-light-desktop-chromium-linux.png",
+      "previousSha256": "13cc07fb4db7e04467898ffda2a6885a02151336e554d3a990ef0538bcf8d30b",
+      "acceptedSha256": "e993c078c8a0bd9f6a9c8ca602883c529ec9afabdb07074093c5b0c8b33c9769",
+      "reason": "Text rasterization changed; complete identical geometry/content reviewed; all required font requests 200 and screenshot font readiness awaited.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/classic-light-desktop-today-chromium-linux.png",
+      "previousSha256": "765d2e8b893e7be08ed87a58575368155221d008c234c00487c3eee2740df4ba",
+      "acceptedSha256": "6d721de5376df8614bb5479032825c9e312aa08f903b982065b173e83088376c",
+      "reason": "Preserve main offline readiness, bounded five-new-card plan and practice-length controls; primary lesson board before recommendations/journey. CTA dock geometry and axe/overflow passed.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/classic-light-mobile-today-chromium-linux.png",
+      "previousSha256": "9d11f133b8b66565c051ddb4dd10e16dd82d1e16b5636d942e179ffd5e8cadbe",
+      "acceptedSha256": "ed83076f837173d14c367a9c9fad27b1c6038414e601a3907db78ebabf2ad69b",
+      "reason": "Preserve main offline readiness, bounded five-new-card plan and practice-length controls; primary lesson board before recommendations/journey. CTA dock geometry and axe/overflow passed.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/classic-dark-mobile-today-chromium-linux.png",
+      "previousSha256": "fe6aece23736953c9e62abfb70454a65ac4c693aed7d019cc6e2fe0aa4493f6b",
+      "acceptedSha256": "e5ff057db8c3ee74f1e80fc258464ad7c03ffc7d8fee29db3b63bba1995fb18d",
+      "reason": "Preserve main offline readiness, bounded five-new-card plan and practice-length controls; primary lesson board before recommendations/journey. CTA dock geometry and axe/overflow passed.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/classic-dark-desktop-today-chromium-linux.png",
+      "previousSha256": "805526fb3f6c6d70080032f9e2016c39767f9007e3fbd309cffd48c18ff4e4fd",
+      "acceptedSha256": "de25f39178efadd79e813ec8d56751596c699c272b9473c991d6965825d86b28",
+      "reason": "Preserve main offline readiness, bounded five-new-card plan and practice-length controls; primary lesson board before recommendations/journey. CTA dock geometry and axe/overflow passed.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/crystal-light-mobile-today-chromium-linux.png",
+      "previousSha256": "3aee5e438e3fcd4251deaf8ca6d7adcbbf98b5af0d1dfd37d8ac038c85dc4356",
+      "acceptedSha256": "feb7132368b848a0c513a7f092220898f39ed423e2fa5d4fa0719ec42526c8ac",
+      "reason": "Preserve main offline readiness, bounded five-new-card plan and practice-length controls; primary lesson board before recommendations/journey. CTA dock geometry and axe/overflow passed.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/crystal-dark-desktop-today-chromium-linux.png",
+      "previousSha256": "e662b6a308bea65dcc0dad3a22df6f17839bc852a39c97136b689f7302a07dfc",
+      "acceptedSha256": "17b9d22bfac4f94e92d200493f7a40b3f02b026039004eba6c560863a8fa5ff9",
+      "reason": "Preserve main offline readiness, bounded five-new-card plan and practice-length controls; primary lesson board before recommendations/journey. CTA dock geometry and axe/overflow passed.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/crystal-dark-mobile-today-chromium-linux.png",
+      "previousSha256": "69989fe4553eaba2b74a29c0ac2bc26be537e94c93dd81a827d5bd49a4b4b3c0",
+      "acceptedSha256": "925fc173afb4c30164e8cf8b79f9dc00b8a5cdf05fb51b55aa6e8993562fb241",
+      "reason": "Preserve main offline readiness, bounded five-new-card plan and practice-length controls; primary lesson board before recommendations/journey. CTA dock geometry and axe/overflow passed.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/crystal-light-desktop-today-chromium-linux.png",
+      "previousSha256": "6fdafe5c494aea6a68192ea28719ec87e8eab349933f74bf560a3f99c40eb37e",
+      "acceptedSha256": "c81e02f325c24bc936eb146359bbb5eaff954699f0405186a5922e875b9c5549",
+      "reason": "Preserve main offline readiness, bounded five-new-card plan and practice-length controls; primary lesson board before recommendations/journey. CTA dock geometry and axe/overflow passed.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/classic-light-desktop-streak-chromium-linux.png",
+      "previousSha256": "4331f45cf3a3fe334c7b2b224ad3b94fb4671a47ff48498d2af85f69025d6213",
+      "acceptedSha256": "16627407db1e41468b7cd29544fcbfed46b7d1f9e3e7f737655d1aa28b69775d",
+      "reason": "Streak dialog unchanged; backdrop now contains the individually reviewed main offline readiness and bounded five-new-card plan. Expected/actual reviewed for each theme.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/crystal-light-desktop-streak-chromium-linux.png",
+      "previousSha256": "ef012018b20a60e4080bed6a5b8c1ffe2e7bf07b56654a1b44b98d7fe766baf7",
+      "acceptedSha256": "d7f6dbbe5e1fedc35280f5e8af66e95ec9178f01547d475c780a264246810a8c",
+      "reason": "Streak dialog unchanged; backdrop now contains the individually reviewed main offline readiness and bounded five-new-card plan. Expected/actual reviewed for each theme.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/crystal-dark-desktop-streak-chromium-linux.png",
+      "previousSha256": "8dc340be627192d7fabd02d90db5a23eb0a96856ee14ac318e99b5c9c3558210",
+      "acceptedSha256": "98adfe24598b85f47446ae6195a98f2c04567e19578c08a6cba7565f26a56f7a",
+      "reason": "Streak dialog unchanged; backdrop now contains the individually reviewed main offline readiness and bounded five-new-card plan. Expected/actual reviewed for each theme.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/classic-light-desktop-lesson-chromium-linux.png",
+      "previousSha256": "a2190dcc2d30e4effe36ab4e394f8890e9bdbaae81a2a2bb9f5d9d29ad6df2d2",
+      "acceptedSha256": "af233c70d96c9f52f9d31231bfa98490cba51df0bed509a1052971427679bf2c",
+      "reason": "Individually reviewed real independent-recall branch after explicit known-word introduction choice; preserve bounded five-card plan and main offline readiness. Progress, axe and overflow assertions passed. Final ordinary rerun required.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/classic-light-mobile-lesson-chromium-linux.png",
+      "previousSha256": "0f15287f69c5f96f3f53f05390189dad3fba330aace5aae7a7525109dbcf2df3",
+      "acceptedSha256": "7ff4cd4dbf13e1a8a4cbb1a6747c5664d8eb977aa47f110d5a50df1328431536",
+      "reason": "Individually reviewed real independent-recall branch after explicit known-word introduction choice; preserve bounded five-card plan and main offline readiness. Progress, axe and overflow assertions passed. Final ordinary rerun required.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/classic-dark-mobile-lesson-chromium-linux.png",
+      "previousSha256": "78debb33b8378c8aed702903044ec0660345f8490648c326e0ca5af15e8d7a61",
+      "acceptedSha256": "8f6937c0e531bfb319ad9994551f84f11f3cf684119e4a00a47bb6b062112145",
+      "reason": "Individually reviewed real independent-recall branch after explicit known-word introduction choice; preserve bounded five-card plan and main offline readiness. Progress, axe and overflow assertions passed. Final ordinary rerun required.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/classic-dark-desktop-lesson-chromium-linux.png",
+      "previousSha256": "aa7fa04c28db9f4aabf451ba1d41111de19259fa53ad0e119169898e07f3900f",
+      "acceptedSha256": "67d736f97aacc1a038de81586ce1e6c6d5d22dc57e7cbee778234171ad13d4b0",
+      "reason": "Individually reviewed real independent-recall branch after explicit known-word introduction choice; preserve bounded five-card plan and main offline readiness. Progress, axe and overflow assertions passed. Final ordinary rerun required.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/crystal-light-mobile-lesson-chromium-linux.png",
+      "previousSha256": "5b70eae3356cf373d1f3ce081143bdf6b739457aed429536c7b6f4e6802607f8",
+      "acceptedSha256": "63c0686c501d4541a48ce3b509c1780d24900a92557bbbba34d30b970cfcecbd",
+      "reason": "Individually reviewed real independent-recall branch after explicit known-word introduction choice; preserve bounded five-card plan and main offline readiness. Progress, axe and overflow assertions passed. Final ordinary rerun required.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/crystal-dark-desktop-lesson-chromium-linux.png",
+      "previousSha256": "806e09afcfeebaf761096605a235adeba67789cd538b92ee304ba9cd6be09b98",
+      "acceptedSha256": "f1c4330bf12372a9092755040d70ac9de0275c40c816b7f8cbb95f50e34a5679",
+      "reason": "Individually reviewed real independent-recall branch after explicit known-word introduction choice; preserve bounded five-card plan and main offline readiness. Progress, axe and overflow assertions passed. Final ordinary rerun required.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/crystal-dark-mobile-streak-chromium-linux.png",
+      "previousSha256": "e25b0249d80d1d67a71ea54b295393ab880057f50e9cf08abb362bd2286b4a2e",
+      "acceptedSha256": "f56f854d82e09ed2f8cb398412515fe4eb15fef94c13a519fc22f0d1f6c45e1b",
+      "reason": "Individually reviewed identical streak dialog with previously reviewed real offline readiness and bounded Today plan in backdrop.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/crystal-light-desktop-lesson-chromium-linux.png",
+      "previousSha256": "0fabd951c6028333428cc9b8c0adba700236a5397ff9eda6ce9fbcdc204a9531",
+      "acceptedSha256": "a3c64af69d5e3fc54894ae3482087a5a4780260b59edc54d94305aa3672fb640",
+      "reason": "Individually reviewed real independent-recall branch after explicit known-word introduction choice; preserve bounded five-card plan and main offline readiness. Progress, axe and overflow assertions passed. Final ordinary rerun required.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/flashcard-remediation.spec.ts-snapshots/study-review-classic-dark-390px-prompt-chromium-linux.png",
+      "previousSha256": "478c306e6a2a71473a428aaa619b196912aaacf59c2fc7fdc267567f04032eaf",
+      "acceptedSha256": "9b53c13c51c2aca8de14731615ddedc4c6d86a48916a44ac204154403a2ba1d9",
+      "reason": "Individually reviewed prompt after surface alignment: preserve authoritative saved count, Summary/focus-mode and learn-first controls; progress, selector, word and Reveal viewport assertions passed at this size. Rating remains locked until reveal. Final artifact rerun required after short-height-only cap.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/flashcard-remediation.spec.ts-snapshots/study-review-classic-dark-desktop-prompt-chromium-linux.png",
+      "previousSha256": "f61e7c0736b45350985a39eaf1d0d6abf2434f8d8f43a7342c3a79eb87f363e5",
+      "acceptedSha256": "3f1535c693329405c08a8f56f27de3f22330eca903a391bcfa21a2ed0bc5daae",
+      "reason": "Individually reviewed prompt after surface alignment: preserve authoritative saved count, Summary/focus-mode and learn-first controls; progress, selector, word and Reveal viewport assertions passed at this size. Rating remains locked until reveal. Final artifact rerun required after short-height-only cap.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/flashcard-remediation.spec.ts-snapshots/study-review-classic-light-desktop-prompt-chromium-linux.png",
+      "previousSha256": "22ade6459998909c4adfd734b7e2301edeb45db79a48693c65589a3620664b80",
+      "acceptedSha256": "5d72fc56786bb92439723effaf13cb5079551fe8482252d1e8cc7c669dfcee38",
+      "reason": "Individually reviewed prompt after surface alignment: preserve authoritative saved count, Summary/focus-mode and learn-first controls; progress, selector, word and Reveal viewport assertions passed at this size. Rating remains locked until reveal. Final artifact rerun required after short-height-only cap.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/flashcard-remediation.spec.ts-snapshots/study-review-classic-light-390px-prompt-chromium-linux.png",
+      "previousSha256": "e371a84a79903d3a3dd789f58f3e9be8f9ba16dcd6f75c411579e063831399a4",
+      "acceptedSha256": "d73c67b8a1ae55fe03bc4b58361d6ae9c385a4bcecddfff6a30e2dfb401b8e8b",
+      "reason": "Individually reviewed prompt after surface alignment: preserve authoritative saved count, Summary/focus-mode and learn-first controls; progress, selector, word and Reveal viewport assertions passed at this size. Rating remains locked until reveal. Final artifact rerun required after short-height-only cap.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/flashcard-remediation.spec.ts-snapshots/study-review-crystal-dark-desktop-prompt-chromium-linux.png",
+      "previousSha256": "011447eecd4e5517a82d376a8c41d5906bdca7c61c2b9b249081a4432487c4b7",
+      "acceptedSha256": "1eea20e474e57006b96aa327fe9f750c98eff411f2b802bf42c3680ad80fec40",
+      "reason": "Individually reviewed prompt after surface alignment: preserve authoritative saved count, Summary/focus-mode and learn-first controls; progress, selector, word and Reveal viewport assertions passed at this size. Rating remains locked until reveal. Final artifact rerun required after short-height-only cap.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/flashcard-remediation.spec.ts-snapshots/study-review-crystal-dark-390px-prompt-chromium-linux.png",
+      "previousSha256": "2f082ed379f144eb1c1dafb2cb23cdc3503735dd977b372744159254189f70ef",
+      "acceptedSha256": "2f033ce5096240fe809f1b6f7675fe16e4fe4d0508e9aa74195bc35125e35b62",
+      "reason": "Individually reviewed prompt after surface alignment: preserve authoritative saved count, Summary/focus-mode and learn-first controls; progress, selector, word and Reveal viewport assertions passed at this size. Rating remains locked until reveal. Final artifact rerun required after short-height-only cap.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/flashcard-remediation.spec.ts-snapshots/study-review-crystal-light-desktop-prompt-chromium-linux.png",
+      "previousSha256": "ba4f928a68947058787da404fe84d656e9a39d9e531700a058f2777825cead34",
+      "acceptedSha256": "a8be3404a521b377025d82a12a9e6a26cc99d9b83991509b598fdbd6c88c6073",
+      "reason": "Individually reviewed prompt after surface alignment: preserve authoritative saved count, Summary/focus-mode and learn-first controls; progress, selector, word and Reveal viewport assertions passed at this size. Rating remains locked until reveal. Final artifact rerun required after short-height-only cap.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/flashcard-remediation.spec.ts-snapshots/study-review-crystal-light-390px-prompt-chromium-linux.png",
+      "previousSha256": "db3f87d25be7ac82830a4d944adbe3c8939d104b94cb52ff7f1f39977ebb2323",
+      "acceptedSha256": "4c70ee5138617147439de31c8e989f8a0887e8a522419d2fdfedc4621a831d2e",
+      "reason": "Individually reviewed prompt after surface alignment: preserve authoritative saved count, Summary/focus-mode and learn-first controls; progress, selector, word and Reveal viewport assertions passed at this size. Rating remains locked until reveal. Final artifact rerun required after short-height-only cap.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/classic-light-desktop-placement-chromium-linux.png",
+      "previousSha256": "783b53a7550314a12719fb22d2dc140ffb91802c989d349ea720dc8572d643f4",
+      "acceptedSha256": "42d8907b26d4ccdd606b9b8757a12e40ce270d60341c63116e2e0db6b23e3c3f",
+      "reason": "Individually reviewed unchanged Placement controls, level-check question/options and progress with main offline readiness panel retained; content remains scrollable and axe/overflow checks passed before screenshot.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/classic-light-mobile-placement-chromium-linux.png",
+      "previousSha256": "6b5d8475aea7e04e0e43f9c27b57eaa83642964ea0e93c6c248dc17b36ff0a41",
+      "acceptedSha256": "5691ee39e072bed52e69b11f640a3193c4fc6fb224c61666d79a48891bfedd15",
+      "reason": "Individually reviewed unchanged Placement controls, level-check question/options and progress with main offline readiness panel retained; content remains scrollable and axe/overflow checks passed before screenshot.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/classic-dark-mobile-placement-chromium-linux.png",
+      "previousSha256": "316c9915f3c62e5e2721692d5e626ac6a924d2ac08251cd7ed7d9ba5bc9dd6bf",
+      "acceptedSha256": "cf8b8d67b82994e77d65ed66ea37e847ca88ab866231421befaf83c1d090460e",
+      "reason": "Individually reviewed unchanged Placement controls, level-check question/options and progress with main offline readiness panel retained; content remains scrollable and axe/overflow checks passed before screenshot.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/classic-dark-desktop-placement-chromium-linux.png",
+      "previousSha256": "d99dc1d432b96c04894886911f5e80299604f9a482136968f9f38603f60abe49",
+      "acceptedSha256": "2646a764e8a8db970e4c0ce896a437a4d728ee15ef69ee5f6cc4d030b1864f55",
+      "reason": "Individually reviewed unchanged Placement controls, level-check question/options and progress with main offline readiness panel retained; content remains scrollable and axe/overflow checks passed before screenshot.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/crystal-light-mobile-placement-chromium-linux.png",
+      "previousSha256": "cbc6474b7db37443db09ca67ebdebf4d94618d680f84672d822d192c12639b23",
+      "acceptedSha256": "30d818ded3196fe490ab51a948e64630c8c0918c38d8dabe7781c1c9569572f5",
+      "reason": "Individually reviewed unchanged Placement controls, level-check question/options and progress with main offline readiness panel retained; content remains scrollable and axe/overflow checks passed before screenshot.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/crystal-dark-desktop-placement-chromium-linux.png",
+      "previousSha256": "a38510399bfb40a1244fc4898fabb8634c71049fe1813ea686336b326a8ccf4f",
+      "acceptedSha256": "bba816821c46b384ae97b34ade4c5814f61b0c3eb5f50326db01836f136a2ac2",
+      "reason": "Individually reviewed unchanged Placement controls, level-check question/options and progress with main offline readiness panel retained; content remains scrollable and axe/overflow checks passed before screenshot.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/crystal-dark-mobile-lesson-chromium-linux.png",
+      "previousSha256": "459c03d814f79238605eac0a13c265fee595ec767c7785a8c1bfec2ea1e234ff",
+      "acceptedSha256": "273b8767b05f835475a7be03ac6f9fe20174a4aff22fec0bb56594d7d3c0fa4d",
+      "reason": "Individually reviewed actual independent-recall branch selected after introduction, bounded five-card plan, learn-first and offline readiness; axe/progress/overflow passed.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/crystal-light-desktop-placement-chromium-linux.png",
+      "previousSha256": "e0edc31f02bca9a349ab710a5a0d1f50384334592680591f0929c7ab0b984324",
+      "acceptedSha256": "eb553802b85e14403838045b2e74cd05af46ec220ea3b036d8e7cb40c7d81daa",
+      "reason": "Individually reviewed unchanged Placement controls, level-check question/options and progress with main offline readiness panel retained; content remains scrollable and axe/overflow checks passed before screenshot.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/flashcard-remediation.spec.ts-snapshots/study-review-classic-light-desktop-revealed-rating-chromium-linux.png",
+      "previousSha256": "1172381bbd0afd5c619d362a1a338db60f461968b867c50650d98b8ccaa290b6",
+      "acceptedSha256": "184b7c303e1f80a5deac33904e769e59666172898bd7d88c35e061ade0a10d72",
+      "reason": "Individually reviewed neutral revealed card and enabled ratings. Computed hover=false, focus-within=false and aura opacity=0 before/after pointer normalization; content and rating geometry retained. Compact main mobile header retained. No claim about old screenshot interaction state.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/flashcard-remediation.spec.ts-snapshots/study-review-crystal-dark-390px-revealed-rating-chromium-linux.png",
+      "previousSha256": "230d9ef6b20ef631964ef198a11d278fbe0050357b8b4a2fcfe438b51f2688ea",
+      "acceptedSha256": "78237c2cfcde0a4b13b6ed49599e11dbbf37d4ea0fb09156037b0b7c377b6397",
+      "reason": "Individually reviewed neutral revealed card and enabled ratings. Computed hover=false, focus-within=false and aura opacity=0 before/after pointer normalization; content and rating geometry retained. Compact main mobile header retained. No claim about old screenshot interaction state.",
+      "reviewed": true
+    },
+    {
+      "path": "e2e/daily-learning-visual.spec.ts-snapshots/crystal-dark-mobile-placement-chromium-linux.png",
+      "previousSha256": "c610cf6805fff64d295ca0719e8bf33a08dbfc1a095baea439a86783723d85d9",
+      "acceptedSha256": "7462b04a9e9280d301ebfea6a10200b2f7a0ddfb1058dd84078b61e3d7ab7c6d",
+      "reason": "Last individually reviewed Placement state reached after lesson golden passed; unchanged question/options/progress with real main offline readiness. Axe and horizontal containment passed; vertical workspace remains scrollable.",
+      "reviewed": true
+    }
+  ]
+}

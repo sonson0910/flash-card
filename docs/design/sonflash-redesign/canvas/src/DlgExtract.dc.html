@@ -1,0 +1,63 @@
+<!--#HEAD Scan text-->
+<!--#DLGOPEN-->
+    <header style="flex-shrink: 0; padding: 22px 22px 18px 26px; display: flex; align-items: flex-start; gap: 14px; border-bottom: 1px solid {{t.line}};">
+      <div style="flex-grow: 1; min-width: 0;">
+      <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">Word extractor</div>
+      <h2 id="dlg-title" style="margin: 6px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 28px; line-height: 1.12; letter-spacing: -0.02em; color: {{t.textStrong}};">Scan text</h2>
+      <p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">Paste a passage — SonFlash pulls out words worth learning.</p>
+      </div>
+      <button aria-label="Close" style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </header>
+    <div style="flex-grow: 1; min-height: 0; padding: 20px 26px 22px; display: flex; flex-direction: column; gap: 14px;">
+      <div aria-label="Pasted text" style="position: relative; padding: 14px 16px; border-radius: {{t.fr}}px; border: 1px solid {{t.line}}; background: {{t.inputBg}}; font-size: 14px; line-height: 1.75; color: {{t.body}};">
+        When the river <sc-for list="{{p1}}" as="w" hint-placeholder-count="1"><mark style="background: {{w.bg}}; color: {{w.color}}; border-bottom: 1.5px solid {{w.line}}; padding: 0 2px; border-radius: 3px;">{{w.text}}</mark></sc-for> at dawn, residents who spent years <sc-for list="{{p2}}" as="w" hint-placeholder-count="1"><mark style="background: {{w.bg}}; color: {{w.color}}; border-bottom: 1.5px solid {{w.line}}; padding: 0 2px; border-radius: 3px;">{{w.text}}</mark></sc-for> for new <sc-for list="{{p3}}" as="w" hint-placeholder-count="1"><mark style="background: {{w.bg}}; color: {{w.color}}; border-bottom: 1.5px solid {{w.line}}; padding: 0 2px; border-radius: 3px;">{{w.text}}</mark></sc-for> felt <sc-for list="{{p4}}" as="w" hint-placeholder-count="1"><mark style="background: {{w.bg}}; color: {{w.color}}; border-bottom: 1.5px solid {{w.line}}; padding: 0 2px; border-radius: 3px;">{{w.text}}</mark></sc-for>. The council’s response was <sc-for list="{{p5}}" as="w" hint-placeholder-count="1"><mark style="background: {{w.bg}}; color: {{w.color}}; border-bottom: 1.5px solid {{w.line}}; padding: 0 2px; border-radius: 3px;">{{w.text}}</mark></sc-for>, yet engineers called the <sc-for list="{{p6}}" as="w" hint-placeholder-count="1"><mark style="background: {{w.bg}}; color: {{w.color}}; border-bottom: 1.5px solid {{w.line}}; padding: 0 2px; border-radius: 3px;">{{w.text}}</mark></sc-for> a <sc-for list="{{p7}}" as="w" hint-placeholder-count="1"><mark style="background: {{w.bg}}; color: {{w.color}}; border-bottom: 1.5px solid {{w.line}}; padding: 0 2px; border-radius: 3px;">{{w.text}}</mark></sc-for> fix and asked for a <sc-for list="{{p8}}" as="w" hint-placeholder-count="1"><mark style="background: {{w.bg}}; color: {{w.color}}; border-bottom: 1.5px solid {{w.line}}; padding: 0 2px; border-radius: 3px;">{{w.text}}</mark></sc-for>, <sc-for list="{{p9}}" as="w" hint-placeholder-count="1"><mark style="background: {{w.bg}}; color: {{w.color}}; border-bottom: 1.5px solid {{w.line}}; padding: 0 2px; border-radius: 3px;">{{w.text}}</mark></sc-for> plan.
+        <span style="position: absolute; right: 12px; bottom: 8px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text3}};">48 words</span>
+      </div>
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <span style="font-size: 14px; font-weight: 650; color: {{t.textStrong}};">Found 9 words</span><span style="font-size: 12.5px; color: {{t.text3}};">2 already in your library</span>
+        <button style="margin-left: auto; border: 0; background: none; padding: 0; font-size: 12.5px; font-weight: 600; color: {{t.accentText}}; cursor: pointer;">Clear selection</button>
+      </div>
+      <ul style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px;">
+        <sc-for list="{{words}}" as="w" hint-placeholder-count="9">
+          <li style="height: 42px; box-sizing: border-box; padding: 0 12px 0 10px; border-radius: 11px; border: 1px solid {{w.border}}; background: {{w.bg}}; opacity: {{w.opacity}}; display: flex; align-items: center; gap: 10px;">
+            <span role="checkbox" aria-checked="{{w.on}}" aria-disabled="{{w.disabled}}" style="width: 18px; height: 18px; flex-shrink: 0; box-sizing: border-box; border-radius: 5px; border: {{w.boxBorder}}; background: {{w.boxBg}}; color: {{t.primaryText}}; display: flex; align-items: center; justify-content: center;">{{w.tick}}</span>
+            <span style="font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-size: 16px; color: {{t.textStrong}};">{{w.word}}</span>
+            <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: {{t.text2}};">{{w.vi}}</span>
+            <span style="margin-left: auto; flex-shrink: 0; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10.5px; color: {{w.tagColor}};">{{w.tag}}</span>
+          </li>
+        </sc-for>
+      </ul>
+    </div>
+    <footer style="flex-shrink: 0; padding: 16px 22px 20px 26px; border-top: 1px solid {{t.line}}; display: flex; align-items: center; gap: 10px;">
+      <button style="height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">Deck: Unassigned <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"></path></svg></button>
+      <button style="margin-left: auto; height: 44px; padding: 0 18px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">Cancel</button>
+      <button class="sf-press" style="height: 44px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 8px; cursor: pointer;">Save 7 cards</button>
+    </footer>
+<!--#DLGCLOSE-->
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":720,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = { ...sfTokens(dark), fr: dark ? 14 : 10 };
+    const W = [
+      ['crested', 'đạt đỉnh (lũ)', 'C1', false], ['lobbying', 'vận động hành lang', 'C1', false], ['barriers', 'rào chắn', 'B1', false],
+      ['vindicated', 'được minh oan', 'C2', false], ['immediate', 'ngay lập tức', 'In library', true], ['embankments', 'đê, bờ kè', 'C1', false],
+      ['provisional', 'tạm thời', 'C1', false], ['resilient', 'kiên cường', 'In library', true], ['comprehensive', 'toàn diện', 'B2', false],
+    ];
+    const hl = (w, owned) => [{ text: w, bg: owned ? 'transparent' : t.accentSoft, color: owned ? t.text2 : t.textStrong, line: owned ? t.lineStrong : t.accent }];
+    const words = W.map(([word, vi, tag, owned]) => ({
+      word, vi, tag, on: String(!owned), disabled: String(owned), tick: owned ? '' : '✓',
+      border: owned ? t.line : t.accentLine, bg: owned ? 'transparent' : (dark ? 'rgb(40 211 244 / 0.05)' : t.chipBg), opacity: owned ? 0.55 : 1,
+      boxBorder: owned ? '1.5px solid ' + t.lineStrong : '0', boxBg: owned ? 'transparent' : t.primaryBg, tagColor: owned ? t.text3 : t.accentText,
+    }));
+    return {
+      t, dw: 620, grainId: 'scan-text-grain-' + (dark ? 'd' : 'l'), amb: { ax: -180, ay: -220, bx: 380, by: 460 },
+      words, p1: hl('crested'), p2: hl('lobbying'), p3: hl('barriers'), p4: hl('vindicated'), p5: hl('immediate', true), p6: hl('embankments'), p7: hl('provisional'), p8: hl('resilient', true), p9: hl('comprehensive'),
+    };
+  }
+}
+</script>
+</body>
+</html>

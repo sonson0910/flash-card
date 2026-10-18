@@ -8,17 +8,18 @@ import {
 describe('catalog workspace URL state', () => {
   it('retains bounded filters but strips an unregistered catalog selection from untrusted URL state', () => {
     const query = readCatalogWorkspaceQuery(
-      '?view=catalog&catalog=english-core&lang=en&track=toeic&tier=core&cefr=B2'
+      '?view=catalog&catalog=untrusted-release&lang=en&track=toeic&tier=core&cefr=B2'
       + '&topic=workplace&pos=noun&skill=listening&term=%20annual%20report%20',
     );
 
     expect(query).toEqual({
       view: 'catalog',
-      catalogId: null,
-      releaseId: null,
+      mode: 'reviewed',
+      catalogId: 'english-core',
+      releaseId: 'r-261124da6107eb25204587aa',
       languageCode: 'en',
-      trackId: null,
-      tier: null,
+      trackId: 'toeic',
+      tier: 'core',
       cefrLevel: 'B2',
       topic: 'workplace',
       partOfSpeech: 'noun',
@@ -36,6 +37,26 @@ describe('catalog workspace URL state', () => {
         trackId: null,
         tier: null,
       });
+  });
+
+  it('keeps personal paths addressable alongside a published English release', () => {
+    const personal = readCatalogWorkspaceQuery('?view=catalog&catalog=personal&lang=en&track=ielts');
+    expect(personal).toMatchObject({ catalogId: null, releaseId: null, trackId: null, tier: null });
+    expect(createCatalogWorkspaceLocation('/?view=catalog&utm=kept', personal)).toContain('catalog=personal');
+    expect(patchCatalogWorkspaceQuery(personal, { mode: 'reviewed' })).toMatchObject({
+      catalogId: 'english-core', releaseId: 'r-261124da6107eb25204587aa',
+    });
+    expect(patchCatalogWorkspaceQuery(readCatalogWorkspaceQuery('?view=catalog&lang=en'), { mode: 'personal' }))
+      .toMatchObject({ catalogId: null, releaseId: null });
+  });
+
+  it('keeps a non-English personal route distinct from an unavailable reviewed release', () => {
+    const personal = readCatalogWorkspaceQuery('?view=catalog&catalog=personal&lang=ko');
+    const reviewed = readCatalogWorkspaceQuery('?view=catalog&lang=ko');
+    expect(personal).toMatchObject({ mode: 'personal', languageCode: 'ko', catalogId: null });
+    expect(reviewed).toMatchObject({ mode: 'reviewed', languageCode: 'ko', catalogId: null });
+    expect(createCatalogWorkspaceLocation('/?view=catalog', personal)).toContain('catalog=personal');
+    expect(patchCatalogWorkspaceQuery(personal, { mode: 'reviewed' }).mode).toBe('reviewed');
   });
 
   it('rejects overlong and invalid values without silently falling back to English', () => {
@@ -69,10 +90,10 @@ describe('catalog workspace URL state', () => {
     const url = new URL(location, 'https://sonflash.example');
 
     expect(url.searchParams.get('view')).toBe('catalog');
-    expect(url.searchParams.get('catalog')).toBeNull();
+    expect(url.searchParams.get('catalog')).toBe('english-core');
     expect(url.searchParams.get('lang')).toBe('en');
-    expect(url.searchParams.get('track')).toBeNull();
-    expect(url.searchParams.get('tier')).toBeNull();
+    expect(url.searchParams.get('track')).toBe('ielts');
+    expect(url.searchParams.get('tier')).toBe('advanced');
     expect(url.searchParams.get('topic')).toBe('education');
     expect(url.searchParams.get('share')).toBe('deck-1');
     expect(url.searchParams.get('utm_source')).toBe('audit');
@@ -100,8 +121,8 @@ describe('catalog workspace URL state', () => {
 
     expect(patchCatalogWorkspaceQuery(current, { topic: 'education' }).cursor).toBeNull();
     expect(patchCatalogWorkspaceQuery(current, { trackId: 'toeic' })).toMatchObject({
-      trackId: null,
-      tier: null,
+      trackId: 'toeic',
+      tier: 'core',
       cursor: null,
     });
     expect(patchCatalogWorkspaceQuery(current, { languageCode: 'ja' })).toMatchObject({

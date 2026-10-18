@@ -1,0 +1,66 @@
+<!--#HEAD Add a word-->
+<!--#DLGOPEN-->
+    <header style="flex-shrink: 0; padding: 22px 22px 18px 26px; display: flex; align-items: flex-start; gap: 14px; border-bottom: 1px solid {{t.line}};">
+      <div style="flex-grow: 1; min-width: 0;">
+      <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">New card</div>
+      <h2 id="dlg-title" style="margin: 6px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 28px; line-height: 1.12; letter-spacing: -0.02em; color: {{t.textStrong}};">Add a word</h2>
+      <p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">SonFlash drafts the card — you decide what stays.</p>
+      </div>
+      <button aria-label="Close" style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </header>
+    <div style="flex-grow: 1; min-height: 0; padding: 20px 26px 22px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: grid; grid-template-columns: 1fr 1.35fr; gap: 12px;">
+        <label style="display: flex; flex-direction: column; gap: 6px;"><span style="font-size: 12px; font-weight: 600; color: {{t.text2}};">Word or phrase</span><span style="box-sizing: border-box; height: 42px; padding: 0 14px; border-radius: {{t.fr}}px; border: 1px solid {{t.line}}; background: {{t.inputBg}}; color: {{t.textStrong}}; font-size: 14px; display: flex; align-items: center; gap: 8px; border-color: {{t.accentLine}}; box-shadow: 0 0 0 4px {{t.accentSoft}};"><input value="resilient" style="width: 100%; border: 0; outline: none; background: transparent; color: {{t.textStrong}}; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-size: 18px;"></span></label>
+        <label style="display: flex; flex-direction: column; gap: 6px;"><span style="font-size: 12px; font-weight: 600; color: {{t.text2}};">Context sentence <span style="font-weight: 400; color: {{t.text3}};">· optional</span></span><span style="box-sizing: border-box; height: 42px; padding: 0 14px; border-radius: {{t.fr}}px; border: 1px solid {{t.line}}; background: {{t.inputBg}}; color: {{t.textStrong}}; font-size: 14px; display: flex; align-items: center; gap: 8px; color: {{t.body}}; font-size: 13px;">The team stayed resilient after the launch slipped.</span></label>
+      </div>
+      <div role="radiogroup" aria-label="Part of speech" style="display: flex; gap: 4px; padding: 4px; border-radius: {{t.fr}}px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
+        <sc-for list="{{pos}}" as="p" hint-placeholder-count="5">
+          <button role="radio" aria-checked="{{p.on}}" style="flex: 1; height: 32px; border-radius: 9px; border: 0; background: {{p.bg}}; color: {{p.color}}; box-shadow: {{p.shadow}}; font-size: 13px; font-weight: 600; cursor: pointer;">{{p.label}}</button>
+        </sc-for>
+      </div>
+      <div style="position: relative; display: flex; gap: 16px; padding: 16px; border-radius: {{t.fr}}px; border: {{preview.border}}; background: {{preview.bg}}; box-shadow: {{preview.shadow}};">
+        <div aria-hidden="true" style="width: 128px; flex-shrink: 0; border-radius: 12px; background: {{preview.cover}}; display: flex; align-items: flex-end; padding: 10px 12px; box-sizing: border-box; overflow: hidden;"><span style="font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-style: italic; font-size: 92px; line-height: 0.8; color: {{preview.coverText}};">r</span></div>
+        <div style="flex-grow: 1; min-width: 0;">
+          <div style="display: flex; align-items: center; gap: 8px;"><span style="height: 22px; padding: 0 8px; border-radius: 999px; background: {{t.accentSoft}}; color: {{t.accentText}}; font-size: 11px; font-weight: 650; display: flex; align-items: center; gap: 5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"></path></svg>AI draft</span><span style="margin-left: auto; font-size: 12px; color: {{t.text3}};">Click any field to edit</span></div>
+          <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;"><span style="font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 34px; line-height: 1; letter-spacing: -0.02em; color: {{t.textStrong}};">re<span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">sil</span>ient</span><button aria-label="Play pronunciation" style="width: 30px; height: 30px; border-radius: 50%; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button></div>
+          <div style="margin-top: 6px; font-size: 12.5px; color: {{t.text2}};"><span style="font-family: 'Geist Mono', ui-monospace, monospace;">/rɪˈzɪliənt/</span> · adjective · C1</div>
+          <div style="margin-top: 10px; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-size: 22px; color: {{t.accentText}};">kiên cường, mau phục hồi</div>
+          <p style="margin: 6px 0 0; font-size: 13px; line-height: 1.5; color: {{t.body}}; font-style: italic;">“Children are often more <span style="font-weight: 650; font-style: normal; color: {{t.textStrong}};">resilient</span> than we expect.”</p>
+          <div style="margin-top: 8px; font-size: 12.5px; color: {{t.text2}};">Family: resilience · resiliently</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 12px; font-weight: 600; color: {{t.text2}};">Save to</span>
+        <button style="height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">IELTS <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"></path></svg></button>
+        <span style="margin-left: auto; font-size: 12.5px; color: {{t.text3}};">First review: tomorrow</span>
+      </div>
+    </div>
+    <footer style="flex-shrink: 0; padding: 16px 22px 20px 26px; border-top: 1px solid {{t.line}}; display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: 12.5px; color: {{t.text3}}; display: flex; align-items: center; gap: 6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"></path></svg>1 AI request</span>
+      <button style="margin-left: auto; height: 44px; padding: 0 18px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"></path></svg>Regenerate</button>
+      <button class="sf-press" style="height: 44px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 8px; cursor: pointer;">Save card</button>
+    </footer>
+<!--#DLGCLOSE-->
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":720,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = { ...sfTokens(dark), fr: dark ? 14 : 10 };
+    const pos = ['Auto', 'noun', 'verb', 'adjective', 'adverb'].map(label => {
+      const on = label === 'adjective';
+      return { label, on: String(on), bg: on ? (dark ? 'rgb(255 255 255 / 0.1)' : t.primaryBg) : 'transparent', color: on ? (dark ? t.textStrong : t.primaryText) : t.text2, shadow: on && dark ? 'inset 0 1px 0 rgb(255 255 255 / 0.08)' : 'none' };
+    });
+    const preview = dark
+      ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 70% 60% at 100% 0%, rgb(150 108 215 / 0.2), transparent 70%) padding-box, ' + t.cardBg + ' padding-box, ' + t.rimLearning + ' border-box', shadow: '0 20px 40px -24px rgb(0 0 0 / 0.9), 0 0 36px -16px rgb(40 211 244 / 0.5)', cover: 'radial-gradient(circle at 30% 20%, rgb(126 230 250 / 0.5), transparent 60%), linear-gradient(160deg, #1b3b4a, #2a2150)', coverText: 'rgb(229 236 241 / 0.9)' }
+      : { border: '0', bg: t.cardBg, shadow: 'inset 0 1px 0 #ffffff, inset 0 0 0 1px rgb(29 26 22 / 0.07), 0 14px 26px -18px rgb(60 40 20 / 0.45)', cover: 'linear-gradient(160deg, #e9dcc4, #d8c6a4)', coverText: '#97400d' };
+    return {
+      t, dw: 620, grainId: 'add-a-word-grain-' + (dark ? 'd' : 'l'), amb: { ax: -180, ay: -220, bx: 380, by: 460 },
+      pos, preview,
+    };
+  }
+}
+</script>
+</body>
+</html>

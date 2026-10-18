@@ -1,3 +1,7 @@
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
+i18n.load('en', {}); i18n.activate('en');
+import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../features/language/languageProfile';
 import { act, createElement, useEffect, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
@@ -266,6 +270,7 @@ const makeProps = (
   showClearConfirm: false,
   setShowClearConfirm: vi.fn(),
   clearAll: async () => undefined,
+  clearStatus: 'idle' as const, clearError: null, resetClearFeedback: () => undefined,
   isLoading: false,
   shareOpenerRef: { current: null },
   practiceOpenerRef: { current: practiceOpener },
@@ -293,11 +298,11 @@ describe('AppOverlays listening handoff', () => {
 
     try {
       await act(async () => {
-        root.render(createElement(AppOverlays, makeProps(
+        root.render(createElement(I18nProvider, { i18n }, createElement(AppOverlays, makeProps(
           handoff,
           onDismissListenPractice,
           opener as unknown as HTMLElement,
-        )));
+        ))));
         await flushReact();
       });
       const closeButton = findElement(container, candidate => candidate.getAttribute('aria-label') === 'Close text practice');
@@ -307,11 +312,11 @@ describe('AppOverlays listening handoff', () => {
       overlayMockState.latestCloseAutoFocus({ preventDefault: vi.fn() });
 
       await act(async () => {
-        root.render(createElement(AppOverlays, makeProps(
+        root.render(createElement(I18nProvider, { i18n }, createElement(AppOverlays, makeProps(
           { ...handoff, generation: 3 },
           onDismissListenPractice,
           opener as unknown as HTMLElement,
-        )));
+        ))));
         await flushReact();
       });
       await act(async () => vi.runAllTimers());
@@ -340,11 +345,11 @@ describe('AppOverlays listening handoff', () => {
 
     try {
       await act(async () => {
-        root.render(createElement(AppOverlays, makeProps(
+        root.render(createElement(I18nProvider, { i18n }, createElement(AppOverlays, makeProps(
           handoff,
           onDismissListenPractice,
           opener as unknown as HTMLElement,
-        )));
+        ))));
         await flushReact();
       });
 
@@ -388,12 +393,12 @@ describe('AppOverlays listening handoff', () => {
 
     try {
       await act(async () => {
-        root.render(createElement(AppOverlays, makeProps(
+        root.render(createElement(I18nProvider, { i18n }, createElement(AppOverlays, makeProps(
           handoff,
           onDismissListenPractice,
           opener as unknown as HTMLElement,
           options,
-        )));
+        ))));
         await flushReact();
       });
 
@@ -413,6 +418,7 @@ describe('AppOverlays listening handoff', () => {
     const renderWorkspace = (index: number) => {
       dailyPilotMock.index = index;
       return createElement(DailyLearningWorkspace, {
+        languageProfile: ENGLISH_TO_VIETNAMESE_PROFILE, streak: 0, studyXpHistory: [], openWeeklyRecap: () => undefined, onVerifiedPracticeOutcome: () => undefined,
         ownerId: 'owner-a',
         isOffline: false,
         initialLesson: 'listening',
@@ -435,13 +441,13 @@ describe('AppOverlays listening handoff', () => {
     };
 
     try {
-      await act(async () => root.render(createElement(Probe, { index: 0 })));
+      await act(async () => root.render(createElement(I18nProvider, { i18n }, createElement(Probe, { index: 0 }))));
       expect(scopeEvents).toEqual([{ ownerId: 'owner-a', clipId: 'clip-a', generation: 0 }]);
       expect(timeline.slice(0, 2)).toEqual(['scope:clip-a:0', 'passive:0']);
 
       scopeEvents.length = 0;
       timeline.length = 0;
-      await act(async () => root.render(createElement(Probe, { index: 1 })));
+      await act(async () => root.render(createElement(I18nProvider, { i18n }, createElement(Probe, { index: 1 }))));
       expect(scopeEvents).toEqual([{ ownerId: 'owner-a', clipId: 'clip-b', generation: 1 }]);
       expect(timeline.slice(0, 2)).toEqual(['scope:clip-b:1', 'passive:1']);
     } finally {

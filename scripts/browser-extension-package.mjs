@@ -1,4 +1,4 @@
-import { lstat, readFile, realpath } from 'node:fs/promises';
+import { lstat, readdir, readFile, realpath } from 'node:fs/promises';
 import path from 'node:path';
 
 const normalizeReference = value => {
@@ -79,13 +79,34 @@ export const readExtensionManifest = async extensionRoot => {
   return JSON.parse(await readFile(manifestFile.absolute, 'utf8'));
 };
 
+// Chrome loads the whole _locales/<locale>/messages.json tree by directory
+// convention whenever manifest.default_locale is set; nothing else in the
+// package (manifest/HTML/CSS/JS) ever references these paths by string, so
+// they must be walked explicitly instead of discovered by reference scanning.
+const localeMessageFiles = async (root, manifest) => {
+  if (typeof manifest.default_locale !== 'string' || !manifest.default_locale) return [];
+  const localesRoot = path.join(root, '_locales');
+  let entries;
+  try {
+    entries = await readdir(localesRoot, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const references = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    references.push(`_locales/${entry.name}/messages.json`);
+  }
+  return references;
+};
+
 export const collectExtensionFiles = async (extensionRoot, suppliedManifest = null) => {
   const root = await realpath(extensionRoot);
   const files = new Map();
   const manifestFile = await extensionFile(root, 'manifest.json');
   files.set(manifestFile.relative, manifestFile);
   const manifest = suppliedManifest ?? JSON.parse(await readFile(manifestFile.absolute, 'utf8'));
-  const pending = [...manifestReferences(manifest)];
+  const pending = [...manifestReferences(manifest), ...(await localeMessageFiles(root, manifest))];
 
   const add = async reference => {
     const relative = normalizeReference(reference);

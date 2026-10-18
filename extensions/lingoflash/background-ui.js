@@ -144,6 +144,21 @@
     // self-contained and cannot rely on the service-worker closure.
     const id = 'lingoflash-inline-translation-host';
     const speechStatusId = `${id}-speech-status`;
+    // Content scripts and executeScript-injected functions keep access to
+    // chrome.i18n; this falls back to the same literal SonFlash copy outside
+    // a real extension runtime (e.g. unit tests).
+    const bt = (name, substitutions, fallback) => {
+      try {
+        const resolved = (globalThis.browser ?? globalThis.chrome)?.i18n?.getMessage(name, substitutions);
+        return typeof resolved === 'string' && resolved ? resolved : fallback;
+      } catch { return fallback; }
+    };
+    // Mirrors popup.js's QUOTA_MESSAGE_HINTS/isQuotaMessage. This function is
+    // serialized standalone into the page via executeScript, so it cannot
+    // import that module — the same substrings captureFailureMessage.ts
+    // guarantees for a quota-kind error are duplicated here instead.
+    const isQuotaMessageInPage = message => typeof message === 'string'
+      && ['hạn mức', 'số thẻ', 'lượt AI'].some(hint => message.includes(hint));
     const speechSupportedInPage = () => Boolean(
       globalThis.speechSynthesis && typeof globalThis.speechSynthesis.speak === 'function'
         && typeof globalThis.SpeechSynthesisUtterance === 'function',
@@ -178,26 +193,27 @@
     const setSpeechState = (button, state, label) => {
       if (button.dataset) button.dataset.speechState = state;
       else button.setAttribute('data-speech-state', state);
-      const suffix = state === 'playing' ? ' (đang phát)' : state === 'error' ? ' (lỗi)' : '';
+      const suffix = state === 'playing' ? bt('bubbleSpeechPlayingSuffix', undefined, ' (đang phát)') : state === 'error' ? bt('bubbleSpeechErrorSuffix', undefined, ' (lỗi)') : '';
       button.setAttribute('aria-label', `${label}${suffix}`);
     };
-    const speakTextInPage = (value, lang = 'en-US', button = null, label = 'Nghe phát âm') => {
+    const speakTextInPage = (value, lang = 'en-US', button = null, label) => {
+      const resolvedLabel = label ?? bt('bubbleSpeakDefaultLabel', undefined, 'Nghe phát âm');
       const text = typeof value === 'string' ? value.trim() : '';
       const speech = globalThis.speechSynthesis;
       const Utterance = globalThis.SpeechSynthesisUtterance;
       if (!text || !speech || typeof speech.speak !== 'function' || typeof Utterance !== 'function') return false;
-      if (button) setSpeechState(button, 'playing', label);
+      if (button) setSpeechState(button, 'playing', resolvedLabel);
       try {
         speech.cancel?.();
         const utterance = new Utterance(text);
         utterance.lang = speechLocale(lang);
         utterance.rate = 0.88;
-        utterance.onend = () => { if (button) setSpeechState(button, 'ended', label); };
-        utterance.onerror = () => { if (button) setSpeechState(button, 'error', label); };
+        utterance.onend = () => { if (button) setSpeechState(button, 'ended', resolvedLabel); };
+        utterance.onerror = () => { if (button) setSpeechState(button, 'error', resolvedLabel); };
         speech.speak(utterance);
         return true;
       } catch {
-        if (button) setSpeechState(button, 'error', label);
+        if (button) setSpeechState(button, 'error', resolvedLabel);
         return false;
       }
     };
@@ -207,7 +223,7 @@
       button.className = 'speak';
       const icon = svgIconInPage('volume');
       if (icon) button.append(icon);
-      else button.textContent = 'Nghe';
+      else button.textContent = bt('recentSpeakLabel', undefined, 'Nghe');
       button.title = label;
       const supported = speechSupportedInPage();
       button.disabled = !supported;
@@ -228,14 +244,15 @@
     if (!root) return { ok: false, error: 'Inline result host has no shadow root.' };
     root.replaceChildren();
     const style = document.createElement('style');
-    style.textContent = '*{box-sizing:border-box}.c{border:1px solid rgba(103,232,249,0.22);border-radius:18px;padding:15px 16px;color:#f8fafc;background:rgba(7,17,31,0.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 24px 60px -12px rgba(2,6,23,0.75),0 0 24px rgba(34,211,238,0.08);font:500 13px/1.45 system-ui,-apple-system,BlinkMacSystemFont,sans-serif;animation:sf-fade .18s cubic-bezier(0.16,1,0.3,1) forwards;max-height:calc(100vh - 24px);overflow:auto;overscroll-behavior:contain}@keyframes sf-fade{from{opacity:0;transform:translateY(4px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}.h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.b{color:#67e8f9;font-size:10px;font-weight:800;letter-spacing:.12em}.source-line,.example-line{display:flex;align-items:center;gap:7px}.example-line{align-items:flex-start}.example-line .e{min-width:0}.s{color:#94a3b8;font-size:12px;margin-top:2px;overflow-wrap:anywhere}.speak{border:1px solid rgba(103,232,249,0.25);border-radius:8px;padding:3px 7px;color:#a5f3fc;background:rgba(8,47,73,0.35);cursor:pointer;font-size:11px;display:inline-flex;align-items:center;gap:4px;transition:all .15s ease}.speak:hover{border-color:#67e8f9;background:rgba(14,116,144,0.4);transform:translateY(-1px)}.speak[data-speech-state="playing"]{color:#facc15;border-color:#facc15}.speak[data-speech-state="ended"]{color:#86efac;border-color:#86efac}.speak[data-speech-state="error"]{color:#fca5a5;border-color:#fca5a5}.speak:disabled{cursor:not-allowed;opacity:.45;transform:none}.speak:focus-visible,.x:focus-visible{outline:2px solid #67e8f9;outline-offset:2px}.speech-help{color:#fbbf24;font-size:11px;margin-top:5px}.m{display:inline-block;color:#a5f3fc;background:rgba(22,78,99,0.45);border:1px solid rgba(103,232,249,0.18);border-radius:999px;padding:3px 9px;margin-top:6px;font-size:10px;font-weight:700}.x{border:0;background:rgba(255,255,255,0.05);color:#94a3b8;font:700 16px/1 sans-serif;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease}.x:hover{background:rgba(255,255,255,0.15);color:#f8fafc;transform:scale(1.08)}.t{font-size:20px;font-weight:800;margin-top:10px;color:#f8fafc;letter-spacing:-0.02em}.p{color:#67e8f9;margin-top:3px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}.e{color:#cbd5e1;margin-top:8px;font-size:12px;line-height:1.45}.e a{color:#67e8f9;text-decoration:underline}.ok{color:#86efac;margin-top:10px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px}.err{color:#fca5a5;margin-top:10px;background:rgba(239,68,68,0.1);padding:8px 10px;border-radius:8px;border:1px solid rgba(248,113,113,0.2)}.load{color:#cbd5e1;margin-top:11px;display:flex;align-items:center}.spin{display:inline-block;width:14px;height:14px;border:2px solid #164e63;border-top-color:#67e8f9;border-radius:50%;margin-right:8px;vertical-align:-2px;animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}@media (prefers-reduced-motion: reduce){.spin{animation:none}.c{animation:none}.x{transition:none}.speak{transition:none}}';
+    style.textContent = '*{box-sizing:border-box}.c{border:1px solid rgba(103,232,249,0.22);border-radius:18px;padding:15px 16px;color:#f8fafc;background:rgba(7,17,31,0.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 24px 60px -12px rgba(2,6,23,0.75),0 0 24px rgba(34,211,238,0.08);font:500 13px/1.45 system-ui,-apple-system,BlinkMacSystemFont,sans-serif;animation:sf-fade .18s cubic-bezier(0.16,1,0.3,1) forwards;max-height:calc(100vh - 24px);overflow:auto;overscroll-behavior:contain}@keyframes sf-fade{from{opacity:0;transform:translateY(4px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}.h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.b{color:#67e8f9;font-size:10px;font-weight:800;letter-spacing:.12em}.source-line,.example-line{display:flex;align-items:center;gap:7px}.example-line{align-items:flex-start}.example-line .e{min-width:0}.s{color:#94a3b8;font-size:12px;margin-top:2px;overflow-wrap:anywhere}.speak{border:1px solid rgba(103,232,249,0.25);border-radius:8px;padding:3px 7px;color:#a5f3fc;background:rgba(8,47,73,0.35);cursor:pointer;font-size:11px;display:inline-flex;align-items:center;gap:4px;transition:all .15s ease}.speak:hover{border-color:#67e8f9;background:rgba(14,116,144,0.4);transform:translateY(-1px)}.speak[data-speech-state="playing"]{color:#facc15;border-color:#facc15}.speak[data-speech-state="ended"]{color:#86efac;border-color:#86efac}.speak[data-speech-state="error"]{color:#fca5a5;border-color:#fca5a5}.speak:disabled{cursor:not-allowed;opacity:.45;transform:none}.speak:focus-visible,.x:focus-visible{outline:2px solid #67e8f9;outline-offset:2px}.speech-help{color:#fbbf24;font-size:11px;margin-top:5px}.m{display:inline-block;color:#a5f3fc;background:rgba(22,78,99,0.45);border:1px solid rgba(103,232,249,0.18);border-radius:999px;padding:3px 9px;margin-top:6px;font-size:10px;font-weight:700}.x{border:0;background:rgba(255,255,255,0.05);color:#94a3b8;font:700 16px/1 sans-serif;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease}.x:hover{background:rgba(255,255,255,0.15);color:#f8fafc;transform:scale(1.08)}.t{font-size:20px;font-weight:800;margin-top:10px;color:#f8fafc;letter-spacing:-0.02em}.p{color:#67e8f9;margin-top:3px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}.e{color:#cbd5e1;margin-top:8px;font-size:12px;line-height:1.45}.e a{color:#67e8f9;text-decoration:underline}.ok{color:#86efac;margin-top:10px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px}.ok[data-tone="existing"]{color:#fde68a;background:rgba(250,204,21,0.1);padding:6px 9px;border-radius:8px;border:1px solid rgba(250,204,21,0.25)}.err{color:#fca5a5;margin-top:10px;background:rgba(239,68,68,0.1);padding:8px 10px;border-radius:8px;border:1px solid rgba(248,113,113,0.2)}.err[data-tone="quota"]{color:#fde68a;background:rgba(250,204,21,0.1);border-color:rgba(250,204,21,0.25)}.quota-note{color:#94a3b8;margin-top:6px;font-size:11px}.load{color:#cbd5e1;margin-top:11px;display:flex;align-items:center}.spin{display:inline-block;width:14px;height:14px;border:2px solid #164e63;border-top-color:#67e8f9;border-radius:50%;margin-right:8px;vertical-align:-2px;animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}@media (prefers-reduced-motion: reduce){.spin{animation:none}.c{animation:none}.x{transition:none}.speak{transition:none}}';
     const card = document.createElement('section'); card.className = 'c'; card.setAttribute('role', 'status'); card.setAttribute('aria-live', 'polite');
     const head = document.createElement('div'); head.className = 'h';
     const info = document.createElement('div');
-    const brand = document.createElement('div'); brand.className = 'b'; brand.textContent = payload.version ? `LINGOFLASH v${payload.version}` : 'LINGOFLASH';
+    const brand = document.createElement('div'); brand.className = 'b'; brand.textContent = payload.version ? bt('bubbleBrand', [payload.version], `SONFLASH v${payload.version}`) : bt('bubbleBrandNoVersion', undefined, 'SONFLASH');
     const source = document.createElement('div'); source.className = 's'; source.textContent = payload.text || '';
     const sourceLine = document.createElement('div'); sourceLine.className = 'source-line';
-    const sourceSpeaker = speechButtonInPage(payload.text || '', `Nghe phát âm ${payload.text || 'từ đã chọn'}`, payload.speechLocale);
+    const sourceFallback = payload.text || bt('bubbleDefaultWordFallback', undefined, 'từ đã chọn');
+    const sourceSpeaker = speechButtonInPage(payload.text || '', bt('bubbleSpeakSelectionLabel', [sourceFallback], `Nghe phát âm ${sourceFallback}`), payload.speechLocale);
     sourceLine.append(source, sourceSpeaker);
     info.append(brand, sourceLine);
     if (!speechSupportedInPage()) {
@@ -244,11 +261,11 @@
       speechHelp.className = 'speech-help';
       speechHelp.setAttribute('role', 'status');
       speechHelp.setAttribute('aria-live', 'polite');
-      speechHelp.textContent = 'Trình duyệt này không hỗ trợ phát âm.';
+      speechHelp.textContent = bt('bubbleSpeechUnsupported', undefined, 'Trình duyệt này không hỗ trợ phát âm.');
       info.append(speechHelp);
     }
     if (payload.modeLabel) { const mode = document.createElement('span'); mode.className = 'm'; mode.textContent = payload.modeLabel; info.append(mode); }
-    const close = document.createElement('button'); close.className = 'x'; close.type = 'button'; close.setAttribute('aria-label', 'Đóng kết quả LingoFlash');
+    const close = document.createElement('button'); close.className = 'x'; close.type = 'button'; close.setAttribute('aria-label', bt('bubbleCloseAriaLabel', undefined, 'Đóng kết quả SonFlash'));
     const closeIcon = svgIconInPage('close');
     if (closeIcon) close.append(closeIcon);
     else close.textContent = 'Đóng';
@@ -257,31 +274,76 @@
     if (String(payload.status).startsWith('loading')) {
       const line = document.createElement('div'); line.className = 'load'; line.setAttribute('role', 'status'); line.setAttribute('aria-live', 'polite');
       const spinner = document.createElement('span'); spinner.className = 'spin'; spinner.setAttribute('aria-hidden', 'true');
-      line.append(spinner, document.createTextNode(payload.status === 'loading-save' ? 'Đang tạo và lưu flashcard…' : 'Đang dịch nhanh…')); card.append(line);
+      line.append(spinner, document.createTextNode(payload.status === 'loading-save' ? bt('bubbleLoadingSave', undefined, 'Đang tạo và lưu flashcard…') : bt('bubbleLoadingTranslate', undefined, 'Đang dịch nhanh…'))); card.append(line);
     } else if (['translated','created','existing'].includes(payload.status)) {
-      const text = document.createElement('div'); text.className = 't'; text.textContent = payload.translation || 'Đã xử lý'; card.append(text);
+      const text = document.createElement('div'); text.className = 't'; text.textContent = payload.translation || bt('bubbleResult', undefined, 'Đã xử lý'); card.append(text);
+      if (payload.aiGenerated) { const disclosure = document.createElement('div'); disclosure.className = 'e'; disclosure.textContent = bt('bubbleAiDisclosure', undefined, 'Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa.'); card.append(disclosure); }
       if (payload.phonetic) { const p = document.createElement('div'); p.className = 'p'; p.textContent = payload.phonetic; card.append(p); }
       if (payload.explanation) { const e = document.createElement('div'); e.className = 'e'; e.textContent = payload.explanation; card.append(e); }
       if (payload.exampleSentence) {
         const exampleLine = document.createElement('div'); exampleLine.className = 'example-line';
-        const e = document.createElement('div'); e.className = 'e'; e.textContent = `Ví dụ: ${payload.exampleSentence}`;
-        exampleLine.append(e, speechButtonInPage(payload.exampleSentence, 'Nghe phát âm câu ví dụ', payload.speechLocale));
+        const e = document.createElement('div'); e.className = 'e'; e.textContent = bt('bubbleExamplePrefix', [payload.exampleSentence], `Ví dụ: ${payload.exampleSentence}`);
+        exampleLine.append(e, speechButtonInPage(payload.exampleSentence, bt('bubbleSpeakExampleLabel', undefined, 'Nghe phát âm câu ví dụ'), payload.speechLocale));
         card.append(exampleLine);
       }
-      if (payload.exampleTranslation) { const e = document.createElement('div'); e.className = 'e'; e.textContent = `Dịch ví dụ: ${payload.exampleTranslation}`; card.append(e); }
-      const ok = document.createElement('div'); ok.className = 'ok'; ok.textContent = payload.status === 'translated' ? 'Chỉ dịch • không lưu • không dùng quota AI' : payload.status === 'existing' ? 'Đã có trong thư viện' : 'Đã thêm vào thư viện'; card.append(ok);
+      if (payload.exampleTranslation) { const e = document.createElement('div'); e.className = 'e'; e.textContent = bt('bubbleExampleTranslationPrefix', [payload.exampleTranslation], `Dịch ví dụ: ${payload.exampleTranslation}`); card.append(e); }
+      const ok = document.createElement('div'); ok.className = 'ok';
+      if (payload.status === 'existing') ok.dataset.tone = 'existing';
+      ok.textContent = payload.status === 'translated' ? bt('bubbleTranslatedOnly', undefined, 'Chỉ dịch • không lưu • không dùng quota AI') : payload.status === 'existing' ? bt('bubbleExisting', undefined, 'Đã có trong thư viện') : bt('bubbleCreated', undefined, 'Đã thêm vào thư viện'); card.append(ok);
     } else {
+      const isQuota = payload.status === 'error' && isQuotaMessageInPage(payload.message);
       const e = document.createElement('div'); e.className = payload.status === 'auth-required' ? 'e' : 'err';
+      if (isQuota) e.dataset.tone = 'quota';
       if (payload.status === 'auth-required') {
-        e.append(document.createTextNode('Cần đăng nhập LingoFlash để hoàn tất. '));
+        e.append(document.createTextNode(bt('bubbleAuthRequired', undefined, 'Cần đăng nhập SonFlash để hoàn tất. ')));
         try {
           const login = new URL(payload.loginUrl || '');
           if (login.origin === 'https://encoded-hangout-433912-h2.web.app') {
-            const link = document.createElement('a'); link.href = login.toString(); link.target = '_blank'; link.rel = 'noopener'; link.textContent = 'Đăng nhập / mở thư viện'; e.append(link);
+            const link = document.createElement('a'); link.href = login.toString(); link.target = '_blank'; link.rel = 'noopener'; link.textContent = bt('bubbleAuthLink', undefined, 'Đăng nhập / mở thư viện'); e.append(link);
           }
         } catch {}
-      } else e.textContent = payload.message || 'Không thể xử lý. Hãy thử lại.';
+      } else e.textContent = payload.message || bt('bubbleGenericError', undefined, 'Không thể xử lý. Hãy thử lại.');
       card.append(e);
+      if (isQuota) {
+        const note = document.createElement('div'); note.className = 'quota-note'; note.textContent = bt('bubbleQuotaNote', undefined, 'Dịch nhanh vẫn miễn phí, không dùng lượt AI.');
+        card.append(note);
+        const openApp = document.createElement('button');
+        openApp.type = 'button'; openApp.className = 'speak'; openApp.textContent = bt('bubbleQuotaAction', undefined, 'Mở SonFlash · Nâng cấp Pro');
+        openApp.style.marginTop = '8px';
+        openApp.onclick = () => {
+          const runtime = (globalThis.browser ?? globalThis.chrome)?.runtime;
+          if (!runtime?.sendMessage) return;
+          const message = { type: 'OPEN_APP' };
+          if (globalThis.browser?.runtime) void runtime.sendMessage(message);
+          else runtime.sendMessage(message, () => {});
+        };
+        card.append(openApp);
+      } else if (payload.status === 'error' && typeof payload.retryId === 'string') {
+        const retry = document.createElement('button');
+        retry.type = 'button'; retry.className = 'speak'; retry.textContent = bt('bubbleRetry', undefined, 'Thử lại từ này');
+        retry.style.marginTop = '8px';
+        retry.onclick = () => {
+          const runtime = (globalThis.browser ?? globalThis.chrome)?.runtime;
+          if (!runtime?.sendMessage) return;
+          retry.disabled = true;
+          retry.textContent = bt('bubbleRetrying', undefined, 'Đang thử lại…');
+          const finish = response => {
+            if (response?.ok === true) return;
+            retry.disabled = false;
+            retry.textContent = bt('bubbleRetry', undefined, 'Thử lại từ này');
+            e.textContent = response?.error || runtime.lastError?.message || bt('bubbleRetryFailed', undefined, 'Không thể thử lại. Hãy mở extension và chọn từ lần nữa.');
+          };
+          try {
+            const message = { type: 'RETRY_QUICK_ADD', id: payload.retryId };
+            if (globalThis.browser?.runtime) {
+              void runtime.sendMessage(message).then(finish, error => finish({ error: error?.message }));
+            } else {
+              runtime.sendMessage(message, finish);
+            }
+          } catch (error) { finish({ error: error?.message }); }
+        };
+        card.append(retry);
+      }
     }
     root.append(style, card);
     if (payload.autoSpeak && ['translated', 'created', 'existing'].includes(payload.status)) {

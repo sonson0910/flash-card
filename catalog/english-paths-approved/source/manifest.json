@@ -1,0 +1,15 @@
+{
+  "manifestVersion": 2,
+  "catalogId": "english-core",
+  "contentLanguage": "en",
+  "supportLanguages": [
+    "vi"
+  ],
+  "lexemeFiles": [
+    "lexemes.jsonl"
+  ],
+  "membershipFiles": [
+    "memberships.jsonl"
+  ],
+  "unitDescriptorFile": "unit-descriptors.json"
+}

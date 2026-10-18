@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   dateLabelToQueryDate,
+  displayCardDate,
   existingCardRevealState,
   formatCardDate,
   getCategoryEmoji,
@@ -20,6 +21,12 @@ describe('library presentation model', () => {
     expect(formatCardDate('2026-07-12T01:00:00.000Z')).toBe('Yesterday');
     expect(dateLabelToQueryDate('Today')).toBe('2026-07-13');
     vi.useRealTimers();
+  });
+
+  it('localizes displayed dates without changing filter keys', () => {
+    const key = 'Jul 15, 2026';
+    expect(displayCardDate(key, 'vi')).toBe(new Intl.DateTimeFormat('vi', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(key)));
+    expect(dateLabelToQueryDate(key)).toBe('2026-07-15');
   });
 
   it('groups cards and provides stable category icons', () => {

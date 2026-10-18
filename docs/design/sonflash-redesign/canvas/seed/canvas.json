@@ -1,0 +1,2176 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "PairAnimeLanding.dc.html": {
+      "x": 0,
+      "y": 28180,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Landing — meteor-night key visual, fanned star cards",
+      "is_interactive": true
+    },
+    "PairAnimeToday.dc.html": {
+      "x": 0,
+      "y": 31432,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Today home — one lesson, route, quests",
+      "is_interactive": true
+    },
+    "PairAnimeReview.dc.html": {
+      "x": 0,
+      "y": 32452,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Review — wings unfold on hover, Bud/Bloom/Star tiers, flare spotlight, transform flip, sealed hint, combo banner",
+      "is_interactive": true
+    },
+    "PairAnimeRecap.dc.html": {
+      "x": 0,
+      "y": 33472,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Lesson clear — star rating, crystals leveled up, what next",
+      "is_interactive": true
+    },
+    "PairAnimeAchievements.dc.html": {
+      "x": 0,
+      "y": 36484,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Star collection — student card, badges by tier",
+      "is_interactive": true
+    },
+    "PairAnimeLeague.dc.html": {
+      "x": 0,
+      "y": 37504,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · League — podium, promotion zone, study buddy",
+      "is_interactive": true
+    },
+    "PairAnimePricing.dc.html": {
+      "x": 0,
+      "y": 38524,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Pricing — academy membership, transparent",
+      "is_interactive": true
+    },
+    "PairReview.dc.html": {
+      "x": 0,
+      "y": 105600,
+      "w": 2960,
+      "h": 900,
+      "title": "Review session — dark · light (hover, flip, grade, star, blind, listen)",
+      "is_interactive": true
+    },
+    "PairRecap.dc.html": {
+      "x": 0,
+      "y": 106620,
+      "w": 2960,
+      "h": 900,
+      "title": "Session complete — level-ups, stats, next review",
+      "is_interactive": true
+    },
+    "PairQuiz.dc.html": {
+      "x": 0,
+      "y": 107940,
+      "w": 2960,
+      "h": 900,
+      "title": "Practice · Quiz — multiple choice, answered state",
+      "is_interactive": true
+    },
+    "PairSpelling.dc.html": {
+      "x": 0,
+      "y": 108960,
+      "w": 2960,
+      "h": 900,
+      "title": "Practice · Spelling — listen and type, letter feedback",
+      "is_interactive": true
+    },
+    "PairMatch.dc.html": {
+      "x": 0,
+      "y": 109980,
+      "w": 2960,
+      "h": 900,
+      "title": "Practice · Word Match — 60-second pairs",
+      "is_interactive": true
+    },
+    "PairShadowing.dc.html": {
+      "x": 0,
+      "y": 111000,
+      "w": 2960,
+      "h": 900,
+      "title": "Practice · Shadowing — record and compare",
+      "is_interactive": true
+    },
+    "PairStory.dc.html": {
+      "x": 0,
+      "y": 112020,
+      "w": 2960,
+      "h": 900,
+      "title": "Practice · Story — AI reading with glosses",
+      "is_interactive": true
+    },
+    "PairLesson.dc.html": {
+      "x": 0,
+      "y": 113040,
+      "w": 2960,
+      "h": 900,
+      "title": "Today lesson — active recall / cloze exercise",
+      "is_interactive": true
+    },
+    "PairPlacement.dc.html": {
+      "x": 0,
+      "y": 114060,
+      "w": 2960,
+      "h": 900,
+      "title": "Placement check — find a starting level",
+      "is_interactive": true
+    },
+    "PairToday.dc.html": {
+      "x": 0,
+      "y": 115380,
+      "w": 2960,
+      "h": 900,
+      "title": "Today — home (hover the card stack)",
+      "is_interactive": true
+    },
+    "PairVocabulary.dc.html": {
+      "x": 0,
+      "y": 116400,
+      "w": 2960,
+      "h": 900,
+      "title": "Vocabulary — decks, filters, mini cards",
+      "is_interactive": true
+    },
+    "PairPaths.dc.html": {
+      "x": 0,
+      "y": 117420,
+      "w": 2960,
+      "h": 900,
+      "title": "Paths — current path and shelf",
+      "is_interactive": true
+    },
+    "PairProgress.dc.html": {
+      "x": 0,
+      "y": 118440,
+      "w": 2960,
+      "h": 900,
+      "title": "Progress — activity, mastery, forecast",
+      "is_interactive": true
+    },
+    "PairAchievements.dc.html": {
+      "x": 0,
+      "y": 119460,
+      "w": 2960,
+      "h": 900,
+      "title": "Achievements — level, XP, badges",
+      "is_interactive": true
+    },
+    "PairFeedback.dc.html": {
+      "x": 0,
+      "y": 127056,
+      "w": 2960,
+      "h": 900,
+      "title": "Toasts, sync status, account and library menus",
+      "is_interactive": true
+    },
+    "PairSystem.dc.html": {
+      "x": 0,
+      "y": 128076,
+      "w": 2960,
+      "h": 900,
+      "title": "Error, offline, empty and loading states",
+      "is_interactive": true
+    },
+    "PairLanding.dc.html": {
+      "x": 0,
+      "y": 129396,
+      "w": 2960,
+      "h": 900,
+      "title": "Landing — live card in the hero (hover, click to flip)",
+      "is_interactive": true
+    },
+    "PairLandingSales.dc.html": {
+      "x": 0,
+      "y": 130416,
+      "w": 2960,
+      "h": 900,
+      "title": "Landing — live demo, social proof, Free vs Pro, FAQ",
+      "is_interactive": true
+    },
+    "PairTodaySession.dc.html": {
+      "x": 0,
+      "y": 86184,
+      "w": 2960,
+      "h": 900,
+      "title": "Today — one session CTA, plan timeline, words from the web",
+      "is_interactive": true
+    },
+    "PairSessionBridge.dc.html": {
+      "x": 0,
+      "y": 87204,
+      "w": 2960,
+      "h": 900,
+      "title": "Session — interstitial between parts, combo",
+      "is_interactive": true
+    },
+    "PairRecapNext.dc.html": {
+      "x": 0,
+      "y": 88224,
+      "w": 2960,
+      "h": 900,
+      "title": "Recap — meaningful progress and what next",
+      "is_interactive": true
+    },
+    "PairWebWords.dc.html": {
+      "x": 0,
+      "y": 89244,
+      "w": 2960,
+      "h": 900,
+      "title": "Words you met on the web — extension inbox",
+      "is_interactive": true
+    },
+    "PairPricing.dc.html": {
+      "x": 0,
+      "y": 90564,
+      "w": 2960,
+      "h": 900,
+      "title": "Pricing — Free, Pro, Exam Sprint",
+      "is_interactive": true
+    },
+    "PairProStates.dc.html": {
+      "x": 0,
+      "y": 95568,
+      "w": 2960,
+      "h": 900,
+      "title": "Trial, quota, downgrade and Pro moments",
+      "is_interactive": true
+    },
+    "PairReminders.dc.html": {
+      "x": 0,
+      "y": 98880,
+      "w": 2960,
+      "h": 900,
+      "title": "Settings — reminders, sounds and haptics",
+      "is_interactive": true
+    },
+    "PairWeeklyRecap.dc.html": {
+      "x": 0,
+      "y": 99900,
+      "w": 2960,
+      "h": 900,
+      "title": "Weekly recap — shareable card",
+      "is_interactive": true
+    },
+    "PairReferral.dc.html": {
+      "x": 0,
+      "y": 100920,
+      "w": 2960,
+      "h": 900,
+      "title": "Referral — give 7 days, get 7 days",
+      "is_interactive": true
+    },
+    "PairLeague.dc.html": {
+      "x": 0,
+      "y": 101940,
+      "w": 2960,
+      "h": 900,
+      "title": "Weekly league and study buddy",
+      "is_interactive": true
+    },
+    "PairMotion.dc.html": {
+      "x": 0,
+      "y": 103260,
+      "w": 2960,
+      "h": 900,
+      "title": "Motion — shared-element transitions spec",
+      "is_interactive": true
+    },
+    "PairEditSheet.dc.html": {
+      "x": 0,
+      "y": 104280,
+      "w": 2960,
+      "h": 900,
+      "title": "Edit card in a side sheet without leaving review",
+      "is_interactive": true
+    },
+    "Dialogs1.dc.html": {
+      "x": 0,
+      "y": 120780,
+      "w": 3180,
+      "h": 1872,
+      "title": "Dialogs — practice menu, AI tutor, add word, edit card",
+      "is_interactive": true
+    },
+    "Dialogs2.dc.html": {
+      "x": 0,
+      "y": 122772,
+      "w": 3180,
+      "h": 1872,
+      "title": "Dialogs — scan text, share, incoming share, insights",
+      "is_interactive": true
+    },
+    "Dialogs3.dc.html": {
+      "x": 0,
+      "y": 124764,
+      "w": 3180,
+      "h": 1872,
+      "title": "Dialogs — deck create/delete, clear library, import",
+      "is_interactive": true
+    },
+    "GridOnboarding.dc.html": {
+      "x": 0,
+      "y": 83952,
+      "w": 7560,
+      "h": 2112,
+      "title": "Onboarding — goal, exam, pace, first cards, reminder + trial",
+      "is_interactive": true
+    },
+    "DialogsPaywall.dc.html": {
+      "x": 0,
+      "y": 91584,
+      "w": 3180,
+      "h": 1872,
+      "title": "Paywall — contextual moments",
+      "is_interactive": true
+    },
+    "DialogsCheckout.dc.html": {
+      "x": 0,
+      "y": 93576,
+      "w": 2400,
+      "h": 1872,
+      "title": "Checkout and AI streaming",
+      "is_interactive": true
+    },
+    "DialogsStreak.dc.html": {
+      "x": 0,
+      "y": 96888,
+      "w": 2400,
+      "h": 1872,
+      "title": "Streak — freeze, repair, milestone",
+      "is_interactive": true
+    },
+    "GridAnimeOnboarding.dc.html": {
+      "x": 0,
+      "y": 29200,
+      "w": 3060,
+      "h": 2112,
+      "title": "Crystal Star · Onboarding — enrollment chapter",
+      "is_interactive": true
+    },
+    "GridAnimeReveal.dc.html": {
+      "x": 0,
+      "y": 34492,
+      "w": 2400,
+      "h": 1872,
+      "title": "Crystal Star · Ceremonies — tier up, streak, level up",
+      "is_interactive": true
+    },
+    "Mobile.dc.html": {
+      "x": 0,
+      "y": 131736,
+      "w": 5570,
+      "h": 1000,
+      "title": "Mobile — review, Today, quiz, practice sheet",
+      "is_interactive": true
+    },
+    "ExtPopups.dc.html": {
+      "x": 0,
+      "y": 133156,
+      "w": 3140,
+      "h": 1592,
+      "title": "Chrome extension — popup states and context menu",
+      "is_interactive": true
+    },
+    "PairExtInPage.dc.html": {
+      "x": 0,
+      "y": 134868,
+      "w": 2480,
+      "h": 760,
+      "title": "Chrome extension — selection bubble on any page",
+      "is_interactive": true
+    },
+    "PairExtOptions.dc.html": {
+      "x": 0,
+      "y": 135748,
+      "w": 2000,
+      "h": 900,
+      "title": "Chrome extension — options page",
+      "is_interactive": true
+    },
+    "GridAnimeDlgStudy.dc.html": {
+      "x": 0,
+      "y": 39844,
+      "w": 3180,
+      "h": 1872,
+      "title": "Crystal Star · Dialogs study - practice menu, Lumi AI tutor, add word, edit card",
+      "is_interactive": true
+    },
+    "GridAnimeDlgStream.dc.html": {
+      "x": 0,
+      "y": 41836,
+      "w": 840,
+      "h": 1872,
+      "title": "Crystal Star · Dialogs AI streaming - card writes itself field by field",
+      "is_interactive": true
+    },
+    "GridAnimeDlgLibrary.dc.html": {
+      "x": 0,
+      "y": 43828,
+      "w": 3180,
+      "h": 1872,
+      "title": "Crystal Star · Dialogs library - scan text, share, incoming share, insights",
+      "is_interactive": true
+    },
+    "GridAnimeDlgManage.dc.html": {
+      "x": 0,
+      "y": 45820,
+      "w": 3180,
+      "h": 1872,
+      "title": "Crystal Star · Dialogs manage - new deck, delete deck, clear library, import",
+      "is_interactive": true
+    },
+    "PairAnimeFeedback.dc.html": {
+      "x": 0,
+      "y": 47812,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Feedback - toasts, rewards, sync status, account and library menus",
+      "is_interactive": true
+    },
+    "PairAnimeSystem.dc.html": {
+      "x": 0,
+      "y": 48832,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · System states - error, offline, empty, all caught up, loading",
+      "is_interactive": true
+    },
+    "GridAnimeExtAll.dc.html": {
+      "x": 0,
+      "y": 52272,
+      "w": 3140,
+      "h": 1592,
+      "title": "Crystal Star · Extension popup - idle, quick, saved, error, loop, quota, context menu",
+      "is_interactive": true
+    },
+    "PairAnimeExtInPage.dc.html": {
+      "x": 0,
+      "y": 53984,
+      "w": 2480,
+      "h": 760,
+      "title": "Crystal Star · Extension bubble - selection lookup on any page",
+      "is_interactive": true
+    },
+    "PairAnimeExtOptions.dc.html": {
+      "x": 0,
+      "y": 54864,
+      "w": 2000,
+      "h": 900,
+      "title": "Crystal Star · Extension options - loadout page",
+      "is_interactive": true
+    },
+    "GridAnimeMobileAll.dc.html": {
+      "x": 0,
+      "y": 50152,
+      "w": 3210,
+      "h": 2000,
+      "title": "Crystal Star · Mobile app - lobby, review, result, quiz, practice sheet, onboarding, Pro",
+      "is_interactive": true
+    },
+    "PairAnimeMotion.dc.html": {
+      "x": 0,
+      "y": 55884,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Motion spec - deal, wings, transform flip, combo, tier up",
+      "is_interactive": true
+    },
+    "PairAnimeLessonBridge.dc.html": {
+      "x": 0,
+      "y": 57204,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Step bridge — combo carry-over, dealt card, next step countdown",
+      "is_interactive": true
+    },
+    "GridAnimeLesson.dc.html": {
+      "x": 0,
+      "y": 58224,
+      "w": 3060,
+      "h": 2112,
+      "title": "Crystal Star · Cloze lesson — active recall, hint letters, perfect clear",
+      "is_interactive": true
+    },
+    "PairAnimeStory.dc.html": {
+      "x": 0,
+      "y": 60456,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Story mode — Lumi narrates, tap words for gloss",
+      "is_interactive": true
+    },
+    "PairAnimePlacement.dc.html": {
+      "x": 0,
+      "y": 61476,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Rank trial — placement check, rank ladder",
+      "is_interactive": true
+    },
+    "PairAnimeEditSheet.dc.html": {
+      "x": 0,
+      "y": 62496,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Edit card sheet — paused review, AI meaning picks",
+      "is_interactive": true
+    },
+    "PairAnimeVocabulary.dc.html": {
+      "x": 0,
+      "y": 63816,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Word garden — deck tabs, grade filters, tilting Bud/Bloom/Star mini cards",
+      "is_interactive": true
+    },
+    "PairAnimePaths.dc.html": {
+      "x": 0,
+      "y": 64836,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Journeys — IELTS core unit route, shelf of journeys",
+      "is_interactive": true
+    },
+    "PairAnimeProgress.dc.html": {
+      "x": 0,
+      "y": 65856,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Study diary — heatmap, Star ring, due forecast",
+      "is_interactive": true
+    },
+    "PairAnimeWebWords.dc.html": {
+      "x": 0,
+      "y": 66876,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Web words inbox — saved sentences by article",
+      "is_interactive": true
+    },
+    "PairAnimeWeeklyRecap.dc.html": {
+      "x": 0,
+      "y": 67896,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Weekly share card — Star share card, share targets",
+      "is_interactive": true
+    },
+    "PairAnimeLandingSales.dc.html": {
+      "x": 0,
+      "y": 69216,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Landing sales — live flip demo, reviews, Free vs Pro, quest log FAQ",
+      "is_interactive": true
+    },
+    "PairAnimeProStates.dc.html": {
+      "x": 0,
+      "y": 74220,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Pro states — trial ending, account menu, downgrade, AI quota, referral toast",
+      "is_interactive": true
+    },
+    "PairAnimeReferral.dc.html": {
+      "x": 0,
+      "y": 77232,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Referral — party up, give 7 days get 7 days, reward route",
+      "is_interactive": true
+    },
+    "PairAnimeSettings.dc.html": {
+      "x": 0,
+      "y": 78252,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Settings — reminders, channels, sounds and haptics",
+      "is_interactive": true
+    },
+    "GridAnimePaywall.dc.html": {
+      "x": 0,
+      "y": 70236,
+      "w": 3180,
+      "h": 1872,
+      "title": "Crystal Star · Paywall moments — story, AI quota, streak at risk, band",
+      "is_interactive": true
+    },
+    "GridAnimeCheckout.dc.html": {
+      "x": 0,
+      "y": 72228,
+      "w": 1620,
+      "h": 1872,
+      "title": "Crystal Star · Checkout — pay, welcome to Pro",
+      "is_interactive": true
+    },
+    "GridAnimeStreak.dc.html": {
+      "x": 0,
+      "y": 75240,
+      "w": 2400,
+      "h": 1872,
+      "title": "Crystal Star · Streak dialogs — freeze, repair, 30-day milestone",
+      "is_interactive": true
+    },
+    "PairAnimeQuiz.dc.html": {
+      "x": 0,
+      "y": 79572,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Practice Quiz — pick the word, crystal verdict, combo chip, Lumi explains",
+      "is_interactive": true
+    },
+    "PairAnimeSpelling.dc.html": {
+      "x": 0,
+      "y": 80592,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Practice Spelling — hex audio orb, letter crystals, missing-letter feedback",
+      "is_interactive": true
+    },
+    "PairAnimeMatch.dc.html": {
+      "x": 0,
+      "y": 81612,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Practice Word Match — 60s sprint, hex timer, pair combos",
+      "is_interactive": true
+    },
+    "PairAnimeShadowing.dc.html": {
+      "x": 0,
+      "y": 82632,
+      "w": 2960,
+      "h": 900,
+      "title": "Crystal Star · Practice Shadowing — sync meter, model vs take waveforms, record hex",
+      "is_interactive": true
+    },
+    "PairLangReview.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 2960,
+      "h": 900,
+      "title": "Multilingual · Korean course review (native: Vietnamese) — course switcher, romanization toggle, Hangul breakdown, grades",
+      "is_interactive": true
+    },
+    "GridLangCardCJK.dc.html": {
+      "x": 0,
+      "y": 1020,
+      "w": 2400,
+      "h": 1872,
+      "title": "Multilingual · CJK packs — Hangul blocks, furigana ruby + pitch accent, pinyin tone colours, Hán Việt bridge",
+      "is_interactive": true
+    },
+    "GridLangCardLatin.dc.html": {
+      "x": 0,
+      "y": 3012,
+      "w": 3180,
+      "h": 1872,
+      "title": "Multilingual · Latin-script packs — stress, IPA variants, grammatical gender, plurals",
+      "is_interactive": true
+    },
+    "GridAnimeLangCard.dc.html": {
+      "x": 0,
+      "y": 5004,
+      "w": 3180,
+      "h": 1872,
+      "title": "Crystal Star · language packs — Korean, Japanese, Chinese, German",
+      "is_interactive": true
+    },
+    "GridLangOnboarding.dc.html": {
+      "x": 0,
+      "y": 7296,
+      "w": 6060,
+      "h": 2112,
+      "title": "Onboarding — native language (drives app + meanings), target language, level/exam per target, Hangul primer",
+      "is_interactive": true
+    },
+    "PairLangSettings.dc.html": {
+      "x": 0,
+      "y": 9528,
+      "w": 2960,
+      "h": 900,
+      "title": "Settings — app language, meaning language, per-course pronunciation, voice, keyboard",
+      "is_interactive": true
+    },
+    "GridAnimeLangOnboarding.dc.html": {
+      "x": 0,
+      "y": 10548,
+      "w": 3060,
+      "h": 2112,
+      "title": "Crystal Star · Onboarding — pick a language crystal, rank and exam goal",
+      "is_interactive": true
+    },
+    "GridLangCourses.dc.html": {
+      "x": 0,
+      "y": 13080,
+      "w": 4560,
+      "h": 2112,
+      "title": "Multilingual · Course switcher — 한국어 / 日本語 / English from Tiếng Việt, add a language, switched state",
+      "is_interactive": true
+    },
+    "GalleryLangMobile.dc.html": {
+      "x": 0,
+      "y": 15312,
+      "w": 1890,
+      "h": 1000,
+      "title": "Multilingual · Mobile — course switcher sheet, Korean review card with romanization and audio",
+      "is_interactive": true
+    },
+    "GridAnimeLangCourses.dc.html": {
+      "x": 0,
+      "y": 16432,
+      "w": 3060,
+      "h": 2112,
+      "title": "Crystal Star · Course select — one course per language, Lumi, extension save target",
+      "is_interactive": true
+    },
+    "GridLangPractice.dc.html": {
+      "x": 0,
+      "y": 18964,
+      "w": 3960,
+      "h": 1872,
+      "title": "Multilingual · Practice modes per language pack — Hangul blocks, kana reading + pitch, Mandarin tones, noun gender, segmented cloze",
+      "is_interactive": true
+    },
+    "GridAnimeLangPractice.dc.html": {
+      "x": 0,
+      "y": 20956,
+      "w": 3180,
+      "h": 1872,
+      "title": "Crystal Star · Practice modes per language pack — Hangul, kana, tones, der/die/das",
+      "is_interactive": true
+    },
+    "PairLangLanding.dc.html": {
+      "x": 0,
+      "y": 23248,
+      "w": 2960,
+      "h": 900,
+      "title": "Multilingual · Landing — pick any of 7 languages on the live card, interface-language picker, local-currency price",
+      "is_interactive": true
+    },
+    "PairLangLocales.dc.html": {
+      "x": 0,
+      "y": 24268,
+      "w": 2960,
+      "h": 900,
+      "title": "Multilingual · UI locales — one screen in 6 languages + pseudo-locale, i18n layout rules",
+      "is_interactive": true
+    },
+    "GridLangExt.dc.html": {
+      "x": 0,
+      "y": 25288,
+      "w": 1380,
+      "h": 1592,
+      "title": "Multilingual · Extension — auto-detected course, missing-course choice, furigana reading",
+      "is_interactive": true
+    },
+    "PairLangExtInPage.dc.html": {
+      "x": 0,
+      "y": 27000,
+      "w": 2480,
+      "h": 760,
+      "title": "Multilingual · Extension — selection bubble on a Korean article, meaning in Vietnamese",
+      "is_interactive": true
+    },
+    "AchievementsScreen.dc.html": {
+      "x": 7960,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AchievementsScreen",
+      "is_interactive": true
+    },
+    "AnimeAchievements.dc.html": {
+      "x": 9480,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeAchievements",
+      "is_interactive": true
+    },
+    "AnimeBridge.dc.html": {
+      "x": 7960,
+      "y": 1020,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeBridge",
+      "is_interactive": true
+    },
+    "AnimeEditSheet.dc.html": {
+      "x": 9480,
+      "y": 1020,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeEditSheet",
+      "is_interactive": true
+    },
+    "AnimeFeedback.dc.html": {
+      "x": 7960,
+      "y": 2040,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeFeedback",
+      "is_interactive": true
+    },
+    "AnimeLanding.dc.html": {
+      "x": 9480,
+      "y": 2040,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeLanding",
+      "is_interactive": true
+    },
+    "AnimeLandingSales.dc.html": {
+      "x": 7960,
+      "y": 3060,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeLandingSales",
+      "is_interactive": true
+    },
+    "AnimeLangCourses.dc.html": {
+      "x": 9480,
+      "y": 3060,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeLangCourses",
+      "is_interactive": true
+    },
+    "AnimeLangOnboarding.dc.html": {
+      "x": 7960,
+      "y": 4080,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeLangOnboarding",
+      "is_interactive": true
+    },
+    "AnimeLeague.dc.html": {
+      "x": 9480,
+      "y": 4080,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeLeague",
+      "is_interactive": true
+    },
+    "AnimeLesson.dc.html": {
+      "x": 7960,
+      "y": 5100,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeLesson",
+      "is_interactive": true
+    },
+    "AnimeMatch.dc.html": {
+      "x": 9480,
+      "y": 5100,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeMatch",
+      "is_interactive": true
+    },
+    "AnimeMotion.dc.html": {
+      "x": 7960,
+      "y": 6120,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeMotion",
+      "is_interactive": true
+    },
+    "AnimeOnboarding.dc.html": {
+      "x": 9480,
+      "y": 6120,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeOnboarding",
+      "is_interactive": true
+    },
+    "AnimePaths.dc.html": {
+      "x": 7960,
+      "y": 7140,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimePaths",
+      "is_interactive": true
+    },
+    "AnimePlacement.dc.html": {
+      "x": 9480,
+      "y": 7140,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimePlacement",
+      "is_interactive": true
+    },
+    "AnimePricing.dc.html": {
+      "x": 7960,
+      "y": 8160,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimePricing",
+      "is_interactive": true
+    },
+    "AnimeProStates.dc.html": {
+      "x": 9480,
+      "y": 8160,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeProStates",
+      "is_interactive": true
+    },
+    "AnimeProgress.dc.html": {
+      "x": 7960,
+      "y": 9180,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeProgress",
+      "is_interactive": true
+    },
+    "AnimeQuiz.dc.html": {
+      "x": 9480,
+      "y": 9180,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeQuiz",
+      "is_interactive": true
+    },
+    "AnimeRecap.dc.html": {
+      "x": 7960,
+      "y": 10200,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeRecap",
+      "is_interactive": true
+    },
+    "AnimeReferral.dc.html": {
+      "x": 9480,
+      "y": 10200,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeReferral",
+      "is_interactive": true
+    },
+    "AnimeReview.dc.html": {
+      "x": 7960,
+      "y": 11220,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeReview",
+      "is_interactive": true
+    },
+    "AnimeSettings.dc.html": {
+      "x": 9480,
+      "y": 11220,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeSettings",
+      "is_interactive": true
+    },
+    "AnimeShadowing.dc.html": {
+      "x": 7960,
+      "y": 12240,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeShadowing",
+      "is_interactive": true
+    },
+    "AnimeSpelling.dc.html": {
+      "x": 9480,
+      "y": 12240,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeSpelling",
+      "is_interactive": true
+    },
+    "AnimeStory.dc.html": {
+      "x": 7960,
+      "y": 13260,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeStory",
+      "is_interactive": true
+    },
+    "AnimeSystem.dc.html": {
+      "x": 9480,
+      "y": 13260,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeSystem",
+      "is_interactive": true
+    },
+    "AnimeToday.dc.html": {
+      "x": 7960,
+      "y": 14280,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeToday",
+      "is_interactive": true
+    },
+    "AnimeVocabulary.dc.html": {
+      "x": 9480,
+      "y": 14280,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeVocabulary",
+      "is_interactive": true
+    },
+    "AnimeWebWords.dc.html": {
+      "x": 7960,
+      "y": 15300,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeWebWords",
+      "is_interactive": true
+    },
+    "AnimeWeeklyRecap.dc.html": {
+      "x": 9480,
+      "y": 15300,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — AnimeWeeklyRecap",
+      "is_interactive": true
+    },
+    "Atelier.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Direction 2 — Ink & Paper (live: hover, flip, grade, star, blind, listen)",
+      "w": 1440,
+      "x": 7960,
+      "y": 16320
+    },
+    "Aurora.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Direction 1 — Midnight Aurora (live: hover, flip, grade, star, blind, listen)",
+      "w": 1440,
+      "x": 9480,
+      "y": 16320
+    },
+    "EditSheet.dc.html": {
+      "x": 7960,
+      "y": 17340,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — EditSheet",
+      "is_interactive": true
+    },
+    "FeedbackSheet.dc.html": {
+      "x": 9480,
+      "y": 17340,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — FeedbackSheet",
+      "is_interactive": true
+    },
+    "LandingSales.dc.html": {
+      "x": 7960,
+      "y": 18360,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — LandingSales",
+      "is_interactive": true
+    },
+    "LandingScreen.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Component — LandingScreen",
+      "w": 1440,
+      "x": 9480,
+      "y": 18360
+    },
+    "LangCourses.dc.html": {
+      "x": 7960,
+      "y": 19380,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — LangCourses",
+      "is_interactive": true
+    },
+    "LangLanding.dc.html": {
+      "x": 9480,
+      "y": 19380,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — LangLanding",
+      "is_interactive": true
+    },
+    "LangLocales.dc.html": {
+      "x": 7960,
+      "y": 20400,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — LangLocales",
+      "is_interactive": true
+    },
+    "LangOnboarding.dc.html": {
+      "x": 9480,
+      "y": 20400,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — LangOnboarding",
+      "is_interactive": true
+    },
+    "LangReview.dc.html": {
+      "x": 7960,
+      "y": 21420,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — LangReview",
+      "is_interactive": true
+    },
+    "LangSettings.dc.html": {
+      "x": 9480,
+      "y": 21420,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — LangSettings",
+      "is_interactive": true
+    },
+    "LeagueScreen.dc.html": {
+      "x": 7960,
+      "y": 22440,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — LeagueScreen",
+      "is_interactive": true
+    },
+    "LessonScreen.dc.html": {
+      "x": 9480,
+      "y": 22440,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — LessonScreen",
+      "is_interactive": true
+    },
+    "LibraryScreen.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Component — Vocabulary screen",
+      "w": 1440,
+      "x": 7960,
+      "y": 23460
+    },
+    "MatchScreen.dc.html": {
+      "x": 9480,
+      "y": 23460,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — MatchScreen",
+      "is_interactive": true
+    },
+    "MotionStoryboard.dc.html": {
+      "x": 7960,
+      "y": 24480,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — MotionStoryboard",
+      "is_interactive": true
+    },
+    "Onboarding.dc.html": {
+      "x": 9480,
+      "y": 24480,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — Onboarding",
+      "is_interactive": true
+    },
+    "PathsScreen.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Component — PathsScreen",
+      "w": 1440,
+      "x": 7960,
+      "y": 25500
+    },
+    "PlacementScreen.dc.html": {
+      "x": 9480,
+      "y": 25500,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — PlacementScreen",
+      "is_interactive": true
+    },
+    "PricingScreen.dc.html": {
+      "x": 7960,
+      "y": 26520,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — PricingScreen",
+      "is_interactive": true
+    },
+    "ProStates.dc.html": {
+      "x": 9480,
+      "y": 26520,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — ProStates",
+      "is_interactive": true
+    },
+    "ProgressScreen.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Component — ProgressScreen",
+      "w": 1440,
+      "x": 7960,
+      "y": 27540
+    },
+    "QuizScreen.dc.html": {
+      "x": 9480,
+      "y": 27540,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — QuizScreen",
+      "is_interactive": true
+    },
+    "RecapNext.dc.html": {
+      "x": 7960,
+      "y": 28560,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — RecapNext",
+      "is_interactive": true
+    },
+    "RecapScreen.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Component — RecapScreen",
+      "w": 1440,
+      "x": 9480,
+      "y": 28560
+    },
+    "ReferralScreen.dc.html": {
+      "x": 7960,
+      "y": 29580,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — ReferralScreen",
+      "is_interactive": true
+    },
+    "ReminderSettings.dc.html": {
+      "x": 9480,
+      "y": 29580,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — ReminderSettings",
+      "is_interactive": true
+    },
+    "SessionBridge.dc.html": {
+      "x": 7960,
+      "y": 30600,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — SessionBridge",
+      "is_interactive": true
+    },
+    "ShadowingScreen.dc.html": {
+      "x": 9480,
+      "y": 30600,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — ShadowingScreen",
+      "is_interactive": true
+    },
+    "SpellingScreen.dc.html": {
+      "x": 7960,
+      "y": 31620,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — SpellingScreen",
+      "is_interactive": true
+    },
+    "StoryScreen.dc.html": {
+      "x": 9480,
+      "y": 31620,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — StoryScreen",
+      "is_interactive": true
+    },
+    "SystemStates.dc.html": {
+      "x": 7960,
+      "y": 32640,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — SystemStates",
+      "is_interactive": true
+    },
+    "TodayScreen.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Component — Today screen",
+      "w": 1440,
+      "x": 9480,
+      "y": 32640
+    },
+    "TodaySession.dc.html": {
+      "x": 7960,
+      "y": 33660,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — TodaySession",
+      "is_interactive": true
+    },
+    "WebWords.dc.html": {
+      "x": 9480,
+      "y": 33660,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — WebWords",
+      "is_interactive": true
+    },
+    "WeeklyRecap.dc.html": {
+      "x": 7960,
+      "y": 34680,
+      "w": 1440,
+      "h": 900,
+      "title": "Component — WeeklyRecap",
+      "is_interactive": true
+    },
+    "AnimeExtInPage.dc.html": {
+      "x": 9480,
+      "y": 34680,
+      "w": 1200,
+      "h": 760,
+      "title": "Component — AnimeExtInPage",
+      "is_interactive": true
+    },
+    "ExtInPage.dc.html": {
+      "h": 760,
+      "is_interactive": true,
+      "title": "Component — ExtInPage",
+      "w": 1200,
+      "x": 7960,
+      "y": 35700
+    },
+    "LangExtInPage.dc.html": {
+      "x": 9240,
+      "y": 35700,
+      "w": 1200,
+      "h": 760,
+      "title": "Component — LangExtInPage",
+      "is_interactive": true
+    },
+    "AnimeExtOptions.dc.html": {
+      "x": 7960,
+      "y": 36580,
+      "w": 960,
+      "h": 900,
+      "title": "Component — AnimeExtOptions",
+      "is_interactive": true
+    },
+    "ExtOptions.dc.html": {
+      "x": 9000,
+      "y": 36580,
+      "w": 960,
+      "h": 900,
+      "title": "Component — ExtOptions",
+      "is_interactive": true
+    },
+    "AiStreaming.dc.html": {
+      "x": 10040,
+      "y": 36580,
+      "w": 720,
+      "h": 780,
+      "title": "Component — AiStreaming",
+      "is_interactive": true
+    },
+    "AnimeCheckout.dc.html": {
+      "x": 7960,
+      "y": 37600,
+      "w": 720,
+      "h": 780,
+      "title": "Component — AnimeCheckout",
+      "is_interactive": true
+    },
+    "AnimeDlgLibrary.dc.html": {
+      "x": 8760,
+      "y": 37600,
+      "w": 720,
+      "h": 780,
+      "title": "Component — AnimeDlgLibrary",
+      "is_interactive": true
+    },
+    "AnimeDlgManage.dc.html": {
+      "x": 9560,
+      "y": 37600,
+      "w": 720,
+      "h": 780,
+      "title": "Component — AnimeDlgManage",
+      "is_interactive": true
+    },
+    "AnimeDlgStudy.dc.html": {
+      "x": 7960,
+      "y": 38500,
+      "w": 720,
+      "h": 780,
+      "title": "Component — AnimeDlgStudy",
+      "is_interactive": true
+    },
+    "AnimeLangCard.dc.html": {
+      "x": 8760,
+      "y": 38500,
+      "w": 720,
+      "h": 780,
+      "title": "Component — AnimeLangCard",
+      "is_interactive": true
+    },
+    "AnimeLangPractice.dc.html": {
+      "x": 9560,
+      "y": 38500,
+      "w": 720,
+      "h": 780,
+      "title": "Component — AnimeLangPractice",
+      "is_interactive": true
+    },
+    "AnimePaywall.dc.html": {
+      "x": 7960,
+      "y": 39400,
+      "w": 720,
+      "h": 780,
+      "title": "Component — AnimePaywall",
+      "is_interactive": true
+    },
+    "AnimeReveal.dc.html": {
+      "x": 8760,
+      "y": 39400,
+      "w": 720,
+      "h": 780,
+      "title": "Component — AnimeReveal",
+      "is_interactive": true
+    },
+    "AnimeStreak.dc.html": {
+      "x": 9560,
+      "y": 39400,
+      "w": 720,
+      "h": 780,
+      "title": "Component — AnimeStreak",
+      "is_interactive": true
+    },
+    "DlgCheckout.dc.html": {
+      "x": 7960,
+      "y": 40300,
+      "w": 720,
+      "h": 780,
+      "title": "Component — DlgCheckout",
+      "is_interactive": true
+    },
+    "DlgClear.dc.html": {
+      "x": 8760,
+      "y": 40300,
+      "w": 720,
+      "h": 780,
+      "title": "Component — DlgClear",
+      "is_interactive": true
+    },
+    "DlgCreate.dc.html": {
+      "x": 9560,
+      "y": 40300,
+      "w": 720,
+      "h": 780,
+      "title": "Component — DlgCreate",
+      "is_interactive": true
+    },
+    "DlgDeckDelete.dc.html": {
+      "x": 7960,
+      "y": 41200,
+      "w": 720,
+      "h": 780,
+      "title": "Component — DlgDeckDelete",
+      "is_interactive": true
+    },
+    "DlgDeckNew.dc.html": {
+      "x": 8760,
+      "y": 41200,
+      "w": 720,
+      "h": 780,
+      "title": "Component — DlgDeckNew",
+      "is_interactive": true
+    },
+    "DlgEdit.dc.html": {
+      "x": 9560,
+      "y": 41200,
+      "w": 720,
+      "h": 780,
+      "title": "Component — DlgEdit",
+      "is_interactive": true
+    },
+    "DlgExtract.dc.html": {
+      "x": 7960,
+      "y": 42100,
+      "w": 720,
+      "h": 780,
+      "title": "Component — DlgExtract",
+      "is_interactive": true
+    },
+    "DlgImport.dc.html": {
+      "x": 8760,
+      "y": 42100,
+      "w": 720,
+      "h": 780,
+      "title": "Component — DlgImport",
+      "is_interactive": true
+    },
+    "DlgInsights.dc.html": {
+      "x": 9560,
+      "y": 42100,
+      "w": 720,
+      "h": 780,
+      "title": "Component — DlgInsights",
+      "is_interactive": true
+    },
+    "DlgPaywall.dc.html": {
+      "x": 7960,
+      "y": 43000,
+      "w": 720,
+      "h": 780,
+      "title": "Component — DlgPaywall",
+      "is_interactive": true
+    },
+    "DlgPractice.dc.html": {
+      "x": 8760,
+      "y": 43000,
+      "w": 720,
+      "h": 780,
+      "title": "Component — DlgPractice",
+      "is_interactive": true
+    },
+    "DlgShare.dc.html": {
+      "x": 9560,
+      "y": 43000,
+      "w": 720,
+      "h": 780,
+      "title": "Component — DlgShare",
+      "is_interactive": true
+    },
+    "DlgShareIn.dc.html": {
+      "x": 7960,
+      "y": 43900,
+      "w": 720,
+      "h": 780,
+      "title": "Component — DlgShareIn",
+      "is_interactive": true
+    },
+    "DlgStreak.dc.html": {
+      "x": 8760,
+      "y": 43900,
+      "w": 720,
+      "h": 780,
+      "title": "Component — DlgStreak",
+      "is_interactive": true
+    },
+    "DlgTutor.dc.html": {
+      "x": 9560,
+      "y": 43900,
+      "w": 720,
+      "h": 780,
+      "title": "Component — DlgTutor",
+      "is_interactive": true
+    },
+    "LangCard.dc.html": {
+      "x": 7960,
+      "y": 44800,
+      "w": 720,
+      "h": 780,
+      "title": "Component — LangCard",
+      "is_interactive": true
+    },
+    "LangPractice.dc.html": {
+      "x": 8760,
+      "y": 44800,
+      "w": 720,
+      "h": 780,
+      "title": "Component — LangPractice",
+      "is_interactive": true
+    },
+    "AnimeMobile.dc.html": {
+      "x": 9560,
+      "y": 44800,
+      "w": 390,
+      "h": 844,
+      "title": "Component — AnimeMobile",
+      "is_interactive": true
+    },
+    "LangMobile.dc.html": {
+      "x": 10030,
+      "y": 44800,
+      "w": 390,
+      "h": 844,
+      "title": "Component — LangMobile",
+      "is_interactive": true
+    },
+    "MobileOnboard.dc.html": {
+      "x": 10500,
+      "y": 44800,
+      "w": 390,
+      "h": 844,
+      "title": "Component — MobileOnboard",
+      "is_interactive": true
+    },
+    "MobilePaywall.dc.html": {
+      "x": 7960,
+      "y": 45764,
+      "w": 390,
+      "h": 844,
+      "title": "Component — MobilePaywall",
+      "is_interactive": true
+    },
+    "MobileQuiz.dc.html": {
+      "x": 8430,
+      "y": 45764,
+      "w": 390,
+      "h": 844,
+      "title": "Component — MobileQuiz",
+      "is_interactive": true
+    },
+    "MobileReview.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Component — MobileReview",
+      "w": 390,
+      "x": 8900,
+      "y": 45764
+    },
+    "MobileSheet.dc.html": {
+      "x": 9370,
+      "y": 45764,
+      "w": 390,
+      "h": 844,
+      "title": "Component — MobileSheet",
+      "is_interactive": true
+    },
+    "MobileToday.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Component — MobileToday",
+      "w": 390,
+      "x": 9840,
+      "y": 45764
+    },
+    "AnimeExtContextMenu.dc.html": {
+      "x": 10310,
+      "y": 45764,
+      "w": 380,
+      "h": 640,
+      "title": "Component — AnimeExtContextMenu",
+      "is_interactive": true
+    },
+    "AnimeExtPopup.dc.html": {
+      "x": 7960,
+      "y": 46728,
+      "w": 380,
+      "h": 640,
+      "title": "Component — AnimeExtPopup",
+      "is_interactive": true
+    },
+    "ExtContextMenu.dc.html": {
+      "x": 8420,
+      "y": 46728,
+      "w": 380,
+      "h": 640,
+      "title": "Component — ExtContextMenu",
+      "is_interactive": true
+    },
+    "ExtLoop.dc.html": {
+      "x": 8880,
+      "y": 46728,
+      "w": 380,
+      "h": 640,
+      "title": "Component — ExtLoop",
+      "is_interactive": true
+    },
+    "ExtPopup.dc.html": {
+      "h": 640,
+      "is_interactive": true,
+      "title": "Component — ExtPopup",
+      "w": 380,
+      "x": 9340,
+      "y": 46728
+    },
+    "ExtPopupState.dc.html": {
+      "x": 9800,
+      "y": 46728,
+      "w": 380,
+      "h": 640,
+      "title": "Component — ExtPopupState",
+      "is_interactive": true
+    },
+    "LangExt.dc.html": {
+      "x": 10260,
+      "y": 46728,
+      "w": 380,
+      "h": 640,
+      "title": "Component — LangExt",
+      "is_interactive": true
+    },
+    "Main.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Review session — live card (hover, flip, star, listen)",
+      "w": 1440,
+      "x": 0,
+      "y": 137268
+    },
+    "CardStatesDark.dc.html": {
+      "h": 760,
+      "title": "Card states — dark: new (hover) · back · learning (blind, starred, playing) · mastered foil",
+      "w": 2140,
+      "x": 1520,
+      "y": 137268
+    },
+    "CardStatesLight.dc.html": {
+      "h": 760,
+      "title": "Card states — light: new · learning back · mastered foil",
+      "w": 1620,
+      "x": 3740,
+      "y": 137268
+    },
+    "FlashFront.dc.html": {
+      "h": 620,
+      "title": "Component — English side",
+      "w": 460,
+      "x": 0,
+      "y": 138288
+    },
+    "FlashBack.dc.html": {
+      "h": 620,
+      "title": "Component — Vietnamese side",
+      "w": 460,
+      "x": 540,
+      "y": 138288
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-09-23T06:20:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "lang-cards": {
+      "kind": "title1",
+      "x": 0,
+      "y": -260,
+      "maxW": 7560,
+      "text": "Multilingual — one card, every language (target-language packs)"
+    },
+    "lang-onboarding": {
+      "kind": "title1",
+      "x": 0,
+      "y": 7036,
+      "maxW": 7560,
+      "text": "Multilingual — choose what you speak and what you learn"
+    },
+    "lang-courses": {
+      "kind": "title1",
+      "x": 0,
+      "y": 12820,
+      "maxW": 7560,
+      "text": "Multilingual — several courses, one switcher"
+    },
+    "lang-practice": {
+      "kind": "title1",
+      "x": 0,
+      "y": 18704,
+      "maxW": 7560,
+      "text": "Multilingual — practice modes per language pack"
+    },
+    "lang-global": {
+      "kind": "title1",
+      "x": 0,
+      "y": 22988,
+      "maxW": 7560,
+      "text": "Multilingual — global landing, UI locales and extension"
+    },
+    "anime": {
+      "kind": "title1",
+      "x": 0,
+      "y": 27920,
+      "maxW": 7560,
+      "text": "Anime edition — Crystal Star · dark: Starry Night · light: Prism Day"
+    },
+    "anime-dialogs": {
+      "kind": "title1",
+      "x": 0,
+      "y": 39584,
+      "maxW": 7560,
+      "text": "Crystal Star — dialogs, feedback and system states"
+    },
+    "anime-ext": {
+      "kind": "title1",
+      "x": 0,
+      "y": 49892,
+      "maxW": 7560,
+      "text": "Crystal Star — extension, mobile and motion"
+    },
+    "anime-lessons": {
+      "kind": "title1",
+      "x": 0,
+      "y": 56944,
+      "maxW": 7560,
+      "text": "Crystal Star — lessons, story, placement"
+    },
+    "anime-library": {
+      "kind": "title1",
+      "x": 0,
+      "y": 63556,
+      "maxW": 7560,
+      "text": "Crystal Star — library, paths, progress"
+    },
+    "anime-money": {
+      "kind": "title1",
+      "x": 0,
+      "y": 68956,
+      "maxW": 7560,
+      "text": "Crystal Star — Pro, paywalls, streak and growth"
+    },
+    "anime-practice": {
+      "kind": "title1",
+      "x": 0,
+      "y": 79312,
+      "maxW": 7560,
+      "text": "Crystal Star — practice modes"
+    },
+    "onboard": {
+      "kind": "title1",
+      "x": 0,
+      "y": 83692,
+      "maxW": 7560,
+      "text": "Onboarding and the daily session loop"
+    },
+    "money": {
+      "kind": "title1",
+      "x": 0,
+      "y": 90304,
+      "maxW": 7560,
+      "text": "Pricing and Pro"
+    },
+    "growth": {
+      "kind": "title1",
+      "x": 0,
+      "y": 96628,
+      "maxW": 7560,
+      "text": "Retention and growth"
+    },
+    "motion": {
+      "kind": "title1",
+      "x": 0,
+      "y": 103000,
+      "maxW": 7560,
+      "text": "Motion and flow"
+    },
+    "study": {
+      "kind": "title1",
+      "x": 0,
+      "y": 105340,
+      "maxW": 7560,
+      "text": "Study flow"
+    },
+    "practice": {
+      "kind": "title1",
+      "x": 0,
+      "y": 107680,
+      "maxW": 7560,
+      "text": "Practice modes and lessons"
+    },
+    "home": {
+      "kind": "title1",
+      "x": 0,
+      "y": 115120,
+      "maxW": 7560,
+      "text": "Home, library and progress"
+    },
+    "dialogs": {
+      "kind": "title1",
+      "x": 0,
+      "y": 120520,
+      "maxW": 7560,
+      "text": "Dialogs (top: dark · bottom: light)"
+    },
+    "states": {
+      "kind": "title1",
+      "x": 0,
+      "y": 126796,
+      "maxW": 7560,
+      "text": "Feedback, menus and system states"
+    },
+    "web": {
+      "kind": "title1",
+      "x": 0,
+      "y": 129136,
+      "maxW": 7560,
+      "text": "Landing"
+    },
+    "mobile": {
+      "kind": "title1",
+      "x": 0,
+      "y": 131476,
+      "maxW": 7560,
+      "text": "Mobile"
+    },
+    "ext": {
+      "kind": "title1",
+      "x": 0,
+      "y": 132896,
+      "maxW": 7560,
+      "text": "Chrome extension"
+    },
+    "sources": {
+      "kind": "title1",
+      "x": 7960,
+      "y": -260,
+      "maxW": 3000,
+      "text": "Components (single theme, used on the left)"
+    },
+    "old": {
+      "kind": "title1",
+      "x": 0,
+      "y": 137008,
+      "maxW": 2960,
+      "text": "Archive — v2 (superseded)"
+    },
+    "directions": {
+      "kind": "title1",
+      "x": 0,
+      "y": -560,
+      "maxW": 6400,
+      "text": "SonFlash — left: dark · Midnight Aurora   right: light · Ink & Paper"
+    }
+  },
+  "order": [
+    "PairAnimeLanding.dc.html",
+    "PairAnimeToday.dc.html",
+    "PairAnimeReview.dc.html",
+    "PairAnimeRecap.dc.html",
+    "PairAnimeAchievements.dc.html",
+    "PairAnimeLeague.dc.html",
+    "PairAnimePricing.dc.html",
+    "PairReview.dc.html",
+    "PairRecap.dc.html",
+    "PairQuiz.dc.html",
+    "PairSpelling.dc.html",
+    "PairMatch.dc.html",
+    "PairShadowing.dc.html",
+    "PairStory.dc.html",
+    "PairLesson.dc.html",
+    "PairPlacement.dc.html",
+    "PairToday.dc.html",
+    "PairVocabulary.dc.html",
+    "PairPaths.dc.html",
+    "PairProgress.dc.html",
+    "PairAchievements.dc.html",
+    "PairFeedback.dc.html",
+    "PairSystem.dc.html",
+    "PairLanding.dc.html",
+    "PairLandingSales.dc.html",
+    "PairTodaySession.dc.html",
+    "PairSessionBridge.dc.html",
+    "PairRecapNext.dc.html",
+    "PairWebWords.dc.html",
+    "PairPricing.dc.html",
+    "PairProStates.dc.html",
+    "PairReminders.dc.html",
+    "PairWeeklyRecap.dc.html",
+    "PairReferral.dc.html",
+    "PairLeague.dc.html",
+    "PairMotion.dc.html",
+    "PairEditSheet.dc.html",
+    "Dialogs1.dc.html",
+    "Dialogs2.dc.html",
+    "Dialogs3.dc.html",
+    "GridOnboarding.dc.html",
+    "DialogsPaywall.dc.html",
+    "DialogsCheckout.dc.html",
+    "DialogsStreak.dc.html",
+    "GridAnimeOnboarding.dc.html",
+    "GridAnimeReveal.dc.html",
+    "Mobile.dc.html",
+    "ExtPopups.dc.html",
+    "PairExtInPage.dc.html",
+    "PairExtOptions.dc.html",
+    "GridAnimeDlgStudy.dc.html",
+    "GridAnimeDlgStream.dc.html",
+    "GridAnimeDlgLibrary.dc.html",
+    "GridAnimeDlgManage.dc.html",
+    "PairAnimeFeedback.dc.html",
+    "PairAnimeSystem.dc.html",
+    "GridAnimeExtAll.dc.html",
+    "PairAnimeExtInPage.dc.html",
+    "PairAnimeExtOptions.dc.html",
+    "GridAnimeMobileAll.dc.html",
+    "PairAnimeMotion.dc.html",
+    "PairAnimeLessonBridge.dc.html",
+    "GridAnimeLesson.dc.html",
+    "PairAnimeStory.dc.html",
+    "PairAnimePlacement.dc.html",
+    "PairAnimeEditSheet.dc.html",
+    "PairAnimeVocabulary.dc.html",
+    "PairAnimePaths.dc.html",
+    "PairAnimeProgress.dc.html",
+    "PairAnimeWebWords.dc.html",
+    "PairAnimeWeeklyRecap.dc.html",
+    "PairAnimeLandingSales.dc.html",
+    "PairAnimeProStates.dc.html",
+    "PairAnimeReferral.dc.html",
+    "PairAnimeSettings.dc.html",
+    "GridAnimePaywall.dc.html",
+    "GridAnimeCheckout.dc.html",
+    "GridAnimeStreak.dc.html",
+    "PairAnimeQuiz.dc.html",
+    "PairAnimeSpelling.dc.html",
+    "PairAnimeMatch.dc.html",
+    "PairAnimeShadowing.dc.html",
+    "PairLangReview.dc.html",
+    "GridLangCardCJK.dc.html",
+    "GridLangCardLatin.dc.html",
+    "GridAnimeLangCard.dc.html",
+    "GridLangOnboarding.dc.html",
+    "PairLangSettings.dc.html",
+    "GridAnimeLangOnboarding.dc.html",
+    "GridLangCourses.dc.html",
+    "GalleryLangMobile.dc.html",
+    "GridAnimeLangCourses.dc.html",
+    "GridLangPractice.dc.html",
+    "GridAnimeLangPractice.dc.html",
+    "PairLangLanding.dc.html",
+    "PairLangLocales.dc.html",
+    "GridLangExt.dc.html",
+    "PairLangExtInPage.dc.html",
+    "AchievementsScreen.dc.html",
+    "AnimeAchievements.dc.html",
+    "AnimeBridge.dc.html",
+    "AnimeEditSheet.dc.html",
+    "AnimeFeedback.dc.html",
+    "AnimeLanding.dc.html",
+    "AnimeLandingSales.dc.html",
+    "AnimeLangCourses.dc.html",
+    "AnimeLangOnboarding.dc.html",
+    "AnimeLeague.dc.html",
+    "AnimeLesson.dc.html",
+    "AnimeMatch.dc.html",
+    "AnimeMotion.dc.html",
+    "AnimeOnboarding.dc.html",
+    "AnimePaths.dc.html",
+    "AnimePlacement.dc.html",
+    "AnimePricing.dc.html",
+    "AnimeProStates.dc.html",
+    "AnimeProgress.dc.html",
+    "AnimeQuiz.dc.html",
+    "AnimeRecap.dc.html",
+    "AnimeReferral.dc.html",
+    "AnimeReview.dc.html",
+    "AnimeSettings.dc.html",
+    "AnimeShadowing.dc.html",
+    "AnimeSpelling.dc.html",
+    "AnimeStory.dc.html",
+    "AnimeSystem.dc.html",
+    "AnimeToday.dc.html",
+    "AnimeVocabulary.dc.html",
+    "AnimeWebWords.dc.html",
+    "AnimeWeeklyRecap.dc.html",
+    "Atelier.dc.html",
+    "Aurora.dc.html",
+    "EditSheet.dc.html",
+    "FeedbackSheet.dc.html",
+    "LandingSales.dc.html",
+    "LandingScreen.dc.html",
+    "LangCourses.dc.html",
+    "LangLanding.dc.html",
+    "LangLocales.dc.html",
+    "LangOnboarding.dc.html",
+    "LangReview.dc.html",
+    "LangSettings.dc.html",
+    "LeagueScreen.dc.html",
+    "LessonScreen.dc.html",
+    "LibraryScreen.dc.html",
+    "MatchScreen.dc.html",
+    "MotionStoryboard.dc.html",
+    "Onboarding.dc.html",
+    "PathsScreen.dc.html",
+    "PlacementScreen.dc.html",
+    "PricingScreen.dc.html",
+    "ProStates.dc.html",
+    "ProgressScreen.dc.html",
+    "QuizScreen.dc.html",
+    "RecapNext.dc.html",
+    "RecapScreen.dc.html",
+    "ReferralScreen.dc.html",
+    "ReminderSettings.dc.html",
+    "SessionBridge.dc.html",
+    "ShadowingScreen.dc.html",
+    "SpellingScreen.dc.html",
+    "StoryScreen.dc.html",
+    "SystemStates.dc.html",
+    "TodayScreen.dc.html",
+    "TodaySession.dc.html",
+    "WebWords.dc.html",
+    "WeeklyRecap.dc.html",
+    "AnimeExtInPage.dc.html",
+    "ExtInPage.dc.html",
+    "LangExtInPage.dc.html",
+    "AnimeExtOptions.dc.html",
+    "ExtOptions.dc.html",
+    "AiStreaming.dc.html",
+    "AnimeCheckout.dc.html",
+    "AnimeDlgLibrary.dc.html",
+    "AnimeDlgManage.dc.html",
+    "AnimeDlgStudy.dc.html",
+    "AnimeLangCard.dc.html",
+    "AnimeLangPractice.dc.html",
+    "AnimePaywall.dc.html",
+    "AnimeReveal.dc.html",
+    "AnimeStreak.dc.html",
+    "DlgCheckout.dc.html",
+    "DlgClear.dc.html",
+    "DlgCreate.dc.html",
+    "DlgDeckDelete.dc.html",
+    "DlgDeckNew.dc.html",
+    "DlgEdit.dc.html",
+    "DlgExtract.dc.html",
+    "DlgImport.dc.html",
+    "DlgInsights.dc.html",
+    "DlgPaywall.dc.html",
+    "DlgPractice.dc.html",
+    "DlgShare.dc.html",
+    "DlgShareIn.dc.html",
+    "DlgStreak.dc.html",
+    "DlgTutor.dc.html",
+    "LangCard.dc.html",
+    "LangPractice.dc.html",
+    "AnimeMobile.dc.html",
+    "LangMobile.dc.html",
+    "MobileOnboard.dc.html",
+    "MobilePaywall.dc.html",
+    "MobileQuiz.dc.html",
+    "MobileReview.dc.html",
+    "MobileSheet.dc.html",
+    "MobileToday.dc.html",
+    "AnimeExtContextMenu.dc.html",
+    "AnimeExtPopup.dc.html",
+    "ExtContextMenu.dc.html",
+    "ExtLoop.dc.html",
+    "ExtPopup.dc.html",
+    "ExtPopupState.dc.html",
+    "LangExt.dc.html",
+    "Main.dc.html",
+    "CardStatesDark.dc.html",
+    "CardStatesLight.dc.html",
+    "FlashFront.dc.html",
+    "FlashBack.dc.html"
+  ],
+  "pages": [],
+  "title": "SonFlash Redesign"
+}

@@ -18,6 +18,7 @@ describe('offline shell descriptor', () => {
       fs.writeFileSync(path.join(fixture, 'assets', 'lazy.js'), 'lazy');
       fs.writeFileSync(path.join(fixture, 'assets', 'style.css'), 'style');
       fs.writeFileSync(path.join(fixture, 'assets', 'geist.woff2'), 'font');
+      fs.writeFileSync(path.join(fixture, 'assets', 'noto-sans-jp-japanese-400-test.woff2'), 'optional font');
       fs.writeFileSync(path.join(fixture, 'assets', 'landing.mp4'), 'video');
       fs.writeFileSync(path.join(fixture, 'media', 'listen-mvp', 'clip.m4a'), 'audio');
       fs.writeFileSync(path.join(fixture, 'health.json'), '{}');

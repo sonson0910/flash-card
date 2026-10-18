@@ -1,0 +1,114 @@
+<!--#HEAD Today session-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}};">
+<!--#AMBIENT-->
+<!--#NAV-->
+
+  <main style="position: relative; z-index: 2; padding: 34px 56px 0; display: grid; grid-template-columns: 1fr 420px; gap: 32px;">
+    <section>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 7px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg>IELTS in 86 days · target 7.0</span>
+        <span style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M4.9 7l14.2 10M19.1 7 4.9 17"></path></svg>2 streak freezes</span>
+      </div>
+      <h1 class="sf-rise" style="margin: 18px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 64px; line-height: 1; letter-spacing: -0.04em; color: {{t.textStrong}};">Good morning, Khanh.<br><span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">Twelve minutes</span> today.</h1>
+
+      <div class="sf-rise-2" style="margin-top: 30px; position: relative; box-sizing: border-box; border-radius: {{t.cardRadius}}px; border: {{plan.border}}; background: {{plan.bg}}; box-shadow: {{plan.shadow}}; padding: 26px 28px 28px; overflow: hidden;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between;">
+          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text2}};">Today's session</span>
+          <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text3}};">tuned for band 7.0</span>
+        </div>
+        <ol aria-label="Session plan" style="list-style: none; margin: 22px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; position: relative;">
+          <sc-for list="{{parts}}" as="p" hint-placeholder-count="4">
+            <li style="position: relative; padding-right: 14px;">
+              <div style="display: flex; align-items: center; gap: 0;">
+                <span style="width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; border: {{p.ring}}; background: {{p.dotBg}}; color: {{p.dotFg}}; box-shadow: {{p.glow}}; display: flex; align-items: center; justify-content: center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="{{p.icon}}"></path></svg></span>
+                <span style="flex-grow: 1; height: 2px; margin-left: 10px; background: {{p.link}};"></span>
+              </div>
+              <div style="margin-top: 14px; font-family: Fraunces, Georgia, serif; font-size: 22px; line-height: 1.1; color: {{t.textStrong}};">{{p.title}}</div>
+              <div style="margin-top: 4px; font-size: 13px; color: {{t.text2}};">{{p.sub}}</div>
+              <div style="margin-top: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11.5px; color: {{t.text3}};">{{p.time}}</div>
+            </li>
+          </sc-for>
+        </ol>
+        <div style="margin-top: 26px; display: flex; align-items: center; gap: 18px;">
+          <button class="sf-press sf-pulse" style="--sf-pulse: {{pulse}}; height: 60px; padding: 0 30px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 17px; font-weight: 650; display: flex; align-items: center; gap: 12px; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg>Start today's session · 12 min<span style="height: 24px; padding: 0 7px; border-radius: 6px; background: {{t.primaryKbdBg}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; display: flex; align-items: center;">Space</span></button>
+          <span style="font-size: 13.5px; line-height: 1.45; color: {{t.text2}};">+120 XP when you finish<br><span style="color: {{t.warm}}; font-weight: 600;">keeps your 12-day streak</span></span>
+        </div>
+      </div>
+
+      <div style="margin-top: 22px; display: flex; align-items: center; gap: 16px;">
+        <div style="flex-grow: 1;">
+          <div style="display: flex; justify-content: space-between; font-size: 12.5px; color: {{t.text2}};"><span>Level 7 · <span style="font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.textStrong}};">2,340</span> / 3,000 XP</span><span>Level 8 after ≈ 4 sessions</span></div>
+          <div style="margin-top: 7px; height: 7px; border-radius: 7px; background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: 78%; height: 100%; border-radius: 7px; background: {{bar}}; box-shadow: {{barGlow}};"></div></div>
+        </div>
+        <a href="#" style="font-size: 13px; font-weight: 600; color: {{t.text2}}; text-decoration: none; white-space: nowrap;">Just review instead →</a>
+      </div>
+    </section>
+
+    <aside class="sf-rise-2" aria-labelledby="web-title" style="box-sizing: border-box; height: 700px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; padding: 22px 22px 18px; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="width: 34px; height: 34px; border-radius: 10px; background: {{t.logoBg}}; box-shadow: {{t.logoShadow}}; color: {{t.logoText}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"></path></svg></span>
+        <div style="flex-grow: 1;">
+          <h2 id="web-title" style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 22px; color: {{t.textStrong}};">Words you met on the web</h2>
+          <div style="font-size: 12.5px; color: {{t.text2}};">8 saved yesterday · all in today's session</div>
+        </div>
+      </div>
+      <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 8px; flex-grow: 1; min-height: 0; overflow: hidden;">
+        <sc-for list="{{web}}" as="w" hint-placeholder-count="5">
+          <div style="padding: 11px 13px; border-radius: 14px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 18px; height: 18px; border-radius: 5px; background: {{w.fav}}; color: #ffffff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{w.site0}}</span>
+              <span style="font-family: Fraunces, Georgia, serif; font-size: 19px; color: {{t.textStrong}};">{{w.a}}<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">{{w.b}}</span>{{w.c}}</span>
+              <span style="margin-left: auto; font-size: 12.5px; color: {{t.accentText}};">{{w.vi}}</span>
+            </div>
+            <div style="margin-top: 5px; font-size: 12.5px; line-height: 1.4; color: {{t.text2}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{w.site}} · “{{w.snip}}”</div>
+          </div>
+        </sc-for>
+      </div>
+      <a href="#" style="margin-top: 14px; height: 42px; border-radius: 12px; border: 1px solid {{t.line}}; color: {{t.text}}; font-size: 13.5px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">See all 8 with their sentences <span style="color: {{t.text3}};">→</span></a>
+    </aside>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    const P = [
+      ['Review', '14 cards due', '≈ 5 min', 'M4 4v6h6M20 20v-6h-6M5.5 15a7.5 7.5 0 0 0 13 2.5M18.5 9a7.5 7.5 0 0 0-13-2.5'],
+      ['New words', '6 · 4 from the web', '≈ 4 min', 'M12 5v14M5 12h14'],
+      ['Word Match', '60-second round', '1 min', 'M13 2 4 14h7l-1 8 9-12h-7z'],
+      ['Recap', 'XP, streak, tomorrow', '≈ 1 min', 'M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z'],
+    ];
+    const W = [
+      ['BBC', '#b80000', 'r', 'e', 'silient', 'kiên cường', 'Coastal towns proved remarkably resilient after…'],
+      ['The Guardian', '#052962', 'un', 'pre', 'cedented', 'chưa từng có', 'an unprecedented rise in sea temperatures'],
+      ['Medium', '#1d1a16', 'a', 'llev', 'iate', 'giảm bớt', 'small habits that alleviate burnout at work'],
+      ['BBC', '#b80000', '', 'scru', 'tiny', 'sự giám sát', 'faces growing scrutiny from regulators'],
+      ['Wikipedia', '#5a5a5a', 'ub', 'iq', 'uitous', 'phổ biến khắp nơi', 'Smartphones became ubiquitous by 2015'],
+    ];
+    return {
+      t, grainId: 'todays-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: -220, ay: -240, bx: 900, by: 440 },
+      streak: 12,
+      nav: sfNav(t, 0),
+      toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      plan: dark
+        ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 70% 80% at 100% 0%, rgb(150 108 215 / 0.24), transparent 70%) padding-box, linear-gradient(180deg, #0f2430, #0a1a22) padding-box, ' + t.rimLearning + ' border-box', shadow: '0 0 60px -24px rgb(40 211 244 / 0.6), 0 40px 80px -40px rgb(0 0 0 / 0.9)' }
+        : { border: '0', bg: '#fffcf5', shadow: t.cardShadow },
+      parts: P.map(([title, sub, time, icon], i) => ({ title, sub, time, icon,
+        ring: i === 0 ? '0' : '1.5px solid ' + t.lineStrong,
+        dotBg: i === 0 ? t.primaryBg : 'transparent', dotFg: i === 0 ? t.primaryText : t.text2,
+        glow: i === 0 && dark ? '0 0 20px rgb(40 211 244 / 0.6)' : 'none',
+        link: i === 3 ? 'transparent' : (dark ? 'linear-gradient(90deg, rgb(40 211 244 / 0.4), rgb(255 255 255 / 0.08))' : 'repeating-linear-gradient(90deg, rgb(29 26 22 / 0.3) 0 5px, transparent 5px 10px)') })),
+      pulse: dark ? 'rgb(40 211 244 / 0.4)' : 'rgb(29 26 22 / 0.2)',
+      bar: dark ? 'linear-gradient(90deg, #28d3f4, #966cd7)' : '#b4461a',
+      barGlow: dark ? '0 0 14px rgb(40 211 244 / 0.6)' : 'none',
+      web: W.map(([site, fav, a, b, c, vi, snip]) => ({ site, site0: site[0], fav, a, b, c, vi, snip })),
+    };
+  }
+}
+</script>
+</body>
+</html>

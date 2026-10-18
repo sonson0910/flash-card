@@ -29,6 +29,9 @@ vi.mock('react', () => ({
     return [hookRuntime.states[index] as T, setState] as const;
   },
 }));
+vi.mock('../theme/ThemeProvider', () => ({
+  useTheme: () => ({ mode: 'dark', setMode: vi.fn() }),
+}));
 
 import {
   APP_VIEW_HEADINGS,
@@ -55,34 +58,42 @@ describe('useAppNavigation', () => {
   const render = () => {
     hookRuntime.stateCursor = 0;
     hookRuntime.refCursor = 0;
-    return useAppNavigation({ storage: null, rootElement: null });
+    return useAppNavigation();
   };
 
   it('keeps every view mode paired with its accessible heading', () => {
-    expect(APP_VIEW_HEADINGS).toEqual({
+    expect(Object.fromEntries(Object.entries(APP_VIEW_HEADINGS).map(([view, heading]) => [view, heading.message]))).toEqual({
       landing: 'SonFlash — Smart Vocabulary Learning',
       today: 'Today learning plan',
       library: 'Vocabulary library',
       catalog: 'Learning paths',
       progress: 'Learning progress',
+      settings: 'Settings and appearance',
       study: 'Study session',
       quiz: 'Vocabulary quiz',
       spelling: 'Spelling practice',
+      'language-drill': 'Language drill',
       story: 'Context story',
       match: 'Word match',
       shadowing: 'Shadowing practice',
     });
+    expect(new Set(Object.values(APP_VIEW_HEADINGS).map(heading => heading.id)).size).toBe(13);
 
     const navigation = render();
-    expect(navigation.viewMode).toBe('today');
-    expect(navigation.viewHeading).toBe('Today learning plan');
+    expect(navigation.viewMode).toBe('landing');
+    expect(APP_VIEW_HEADINGS[navigation.viewMode].message).toBe('SonFlash — Smart Vocabulary Learning');
     navigation.setViewMode('story');
-    expect(render().viewHeading).toBe('Context story');
+    expect(APP_VIEW_HEADINGS[render().viewMode].message).toBe('Context story');
   });
 
-  it('deep-links the catalog view while preserving unrelated URL state', () => {
+  it('routes locale landing paths and keeps their prefix through app navigation', () => {
+    expect(readAppViewMode('/')).toBe('landing');
+    expect(readAppViewMode('/vi/')).toBe('landing');
+    expect(readAppViewMode('/?lesson=session')).toBe('today');
+    expect(readAppViewMode('/vi/?view=today')).toBe('today');
     expect(readAppViewMode('?utm_source=phase4&view=catalog')).toBe('catalog');
     expect(readAppViewMode('?view=progress')).toBe('progress');
+    expect(readAppViewMode('?view=settings')).toBe('settings');
     expect(readAppViewMode('?view=library')).toBe('library');
     expect(readAppViewMode('/library?share=deck-1')).toBe('library');
     expect(readAppViewMode('?view=unknown')).toBe('today');
@@ -95,13 +106,17 @@ describe('useAppNavigation', () => {
       'library',
     )).toBe('/?utm_source=phase4&view=library#paths');
     expect(createAppViewLocation(
-      '/library?utm_source=phase5#words',
+      '/vi/?utm_source=phase5#words',
       'today',
-    )).toBe('/?utm_source=phase5#words');
+    )).toBe('/vi/?utm_source=phase5&view=today#words');
     expect(createAppViewLocation(
       '/?lesson=recognition&utm_source=phase5#lesson',
       'catalog',
     )).toBe('/?utm_source=phase5&view=catalog#lesson');
+    expect(createAppViewLocation('/?utm_source=appearance#options', 'settings'))
+      .toBe('/?utm_source=appearance&view=settings#options');
+    expect(createAppViewLocation('/vi/?utm_source=landing#hero', 'landing'))
+      .toBe('/vi/?utm_source=landing#hero');
   });
 
   it('defaults to dark mode and safely reads an explicit stored preference', () => {

@@ -13,7 +13,8 @@
       "firestoreDatabaseId": "ai-studio-945b4052-4462-4668-8936-277f09f07a37",
       "storageBucket": "encoded-hangout-433912-h2.firebasestorage.app",
       "messagingSenderId": "1067459151505",
-      "measurementId": ""
+      "measurementId": "",
+      "appCheckProvider": "enterprise"
     },
     "staging": {
       "allowedHosts": [
@@ -28,7 +29,8 @@
       "firestoreDatabaseId": "ai-studio-945b4052-4462-4668-8936-277f09f07a37",
       "storageBucket": "sonflash-staging-20260906.firebasestorage.app",
       "messagingSenderId": "890120640842",
-      "measurementId": ""
+      "measurementId": "",
+      "appCheckProvider": "enterprise"
     }
   }
 }

@@ -1,13 +1,56 @@
-import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { describe, expect, it, vi } from 'vitest';
+import type { CardData } from '../../types/card';
+import { SyllableStressBadge } from './SyllableStressBadge';
 
-describe('SyllableStressBadge audio lifecycle', () => {
-  it('uses the shared playback handle and cancels it on replay, word changes, and unmount', () => {
-    const source = readFileSync(new URL('./SyllableStressBadge.tsx', import.meta.url), 'utf8');
+vi.mock('@lingui/react', async importOriginal => ({
+  ...(await importOriginal<typeof import('@lingui/react')>()),
+  Trans: ({ message, values }: { message: string; values?: Record<string, unknown> }) => message.split(/(\{\w+\})/).map(part => {
+    const key = part.slice(1, -1);
+    return part.startsWith('{') && part.endsWith('}') ? (values?.[key] ?? part) : part;
+  }),
+  useLingui: () => ({
+    _: (descriptor: { message: string }) => descriptor.message,
+    i18n: {
+      locale: 'en',
+      _: (id: string, values?: Record<string, unknown>) => id.replace(/\{(\w+)\}/g, (_match, key) => String(values?.[key] ?? `{${key}}`)),
+    },
+  }),
+}));
 
-    expect(source).toContain("import { playWordAudio, type WordAudioPlayback } from '../../lib/audio'");
-    expect(source).toContain('playbackRef.current?.cancel()');
-    expect(source).toContain('useEffect(() => () => playbackRef.current?.cancel(), [word])');
-    expect(source).toContain("playWordAudio(syllable.text, null, { speed: 0.75 })");
+const card = (overrides: Partial<CardData> = {}): CardData => ({
+  id: 'card',
+  word: 'word',
+  normalizedWord: 'word',
+  translation: 'meaning',
+  explanation: '',
+  phonetic: '',
+  emoji: '',
+  category: 'General',
+  audioUrl: null,
+  imageUrl: null,
+  ...overrides,
+});
+
+describe('SyllableStressBadge', () => {
+  it('still shows the English syllable breakdown', () => {
+    const markup = renderToStaticMarkup(
+      <SyllableStressBadge card={card({ word: 'serendipity', phonetic: '/ˌser.ənˈdɪp.ə.ti/' })} />,
+    );
+    expect(markup).toContain('Syllables');
+  });
+
+  it('renders nothing for a Korean card instead of running the English vowel-cluster heuristic on it', () => {
+    const markup = renderToStaticMarkup(
+      <SyllableStressBadge card={card({ word: '안녕하세요', language: 'ko' })} />,
+    );
+    expect(markup).toBe('');
+  });
+
+  it('renders nothing for a Chinese card', () => {
+    const markup = renderToStaticMarkup(
+      <SyllableStressBadge card={card({ word: '你好', language: 'zh' })} />,
+    );
+    expect(markup).toBe('');
   });
 });

@@ -1,0 +1,1829 @@
+{
+  "reference_count": 331,
+  "files": [
+    {
+      "path": "docs/design/sonflash-redesign/canvas/project/canvas.json",
+      "sha256": "919d380314f022271a893a368bd66fc9577d9c27307b2ce841e2e536bc473617"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AchievementsScreen-dark.png",
+      "sha256": "fab6d8913c67060ade631f28e21dc1b15cc2d1d88a56ee76c143415ed62ff25a"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AchievementsScreen-light.png",
+      "sha256": "9a2e13ff5d44bebf35729c80c8e9bb1ee6360c95dabf77028653652b1c78d43f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AiStreaming-dark.png",
+      "sha256": "08fb1ccbef3f3342c65de5eda065a401424c9505e0c94dabb152ee81e97cb7fb"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AiStreaming-light.png",
+      "sha256": "9b540924edabf243acbc46e872d564ceb263da20e46c0969550a882d0bb19b69"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeAchievements-dark.png",
+      "sha256": "4f83c99e099c6df2cfa6651ec09d13e181de6bdd3297dfaf2603874a0036e119"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeAchievements-light.png",
+      "sha256": "52b2fc4b7b083f23ac9428cbe93188266f15786476627c69f73cf9b293b3d54f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeBridge-dark.png",
+      "sha256": "73861717986a4009b61c3599b8d564f90fbca101072ccd0a1ce0d19af05c106f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeBridge-light.png",
+      "sha256": "5269916c3cf89611a88c382b56fa640a6b7d265d2eaf4be1c412cd9dcb2501c3"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeCheckout-dark.png",
+      "sha256": "d1c1550f5cab531765fdaf5c8144375e69baaa320ef45827e6198a1f7f744eb2"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeCheckout-light.png",
+      "sha256": "b9f75c912f2db6726ddd12b83a3444eda98d0408b0363e432a782574247e2b52"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeDlgLibrary-dark.png",
+      "sha256": "d508e56a2d5ce44075b3cb08beff4429c58be92a064ee9654bf1c4c9598a8b6e"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeDlgLibrary-light.png",
+      "sha256": "84203816482d0dc3b42ef4132ca5ba80fa7a3695c6cdaea263d1582101be5433"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeDlgManage-dark.png",
+      "sha256": "dcc60106101ed69b5b6fb9337cee583baea41d474007bba317f6dfd5f2c00766"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeDlgManage-light.png",
+      "sha256": "ef6596578053393ce9a9176f43beccb8fdb4ee6691aba102d46813006cf37071"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeDlgStudy-dark.png",
+      "sha256": "7f808977b41a831d988de5c6f232cadb433474d1678447aa358c9ff33ace54d8"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeDlgStudy-light.png",
+      "sha256": "6a60757b250dd6c984bfe1f3b04b0b0e4fac16d12399bb9be28f6866b7425846"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeEditSheet-dark.png",
+      "sha256": "b37d14b162be186cb44b28b44c804b2c15d2c90a4a2aaf756ef46a7196cceb22"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeEditSheet-light.png",
+      "sha256": "45d8fcc413d9eb8615913fe11ed1adc3c9938706d5e26b535b14f15ca5ef6d2a"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeExtContextMenu-dark.png",
+      "sha256": "e05726d2a9613ab353dc0ec861b43c64bbfdc71cbd833f8102977c5e91318063"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeExtContextMenu-light.png",
+      "sha256": "e9b01f67db60617b53235f25f0f64a171dcffe80773acdcb1190b63e6775e1ff"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeExtInPage-dark.png",
+      "sha256": "d52f4ec88a31e1ba4d36ee983bb2ce199f03a58f84f26a3e83a421cf0fe8d1f7"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeExtInPage-light.png",
+      "sha256": "f0936c4f7f3c3f9dcd9194befa778cfb50b6822c63ed65ee07cb3205488b6072"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeExtOptions-dark.png",
+      "sha256": "1a5c808a2e346ec281f87eea4c0d8b56b04c2427a034f9e476245b20a3b10ef7"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeExtOptions-light.png",
+      "sha256": "7df3d028c0b7b636c1f69c413878c541de47e6a8da0413e450f2226658c79bb2"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeExtPopup-dark.png",
+      "sha256": "c1c9120c4075329f6be0c83cf80f6f5668c589d4a7eb14e10e3a4b3a38f795d2"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeExtPopup-light.png",
+      "sha256": "527564343a1c1e8892101113373e53102bb5a77892682c5a9d241af712c710eb"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeFeedback-dark.png",
+      "sha256": "2c3ace061f43523def9d7cdcd55f8d4bfaf86613473267527efff438e9df10ea"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeFeedback-light.png",
+      "sha256": "de1f2d2ec5b578d02c5961d9492d922a6a6460619a44e108b283f001ee9cecb2"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeLanding-dark.png",
+      "sha256": "623bc90955f47c9db4d54eeb8ebdf24bf7e717b98d359a2361fe4089452c98ee"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeLanding-light.png",
+      "sha256": "26010d1405e6e7d418e3d415f9a1f67a22325fff73e57429f8d5a866fe04d3c7"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeLandingSales-dark.png",
+      "sha256": "ef0383a90c1f9896405d407ccd7c6a242c4fefc4fd16400abb00705edbf900e3"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeLandingSales-light.png",
+      "sha256": "a106453f78978be19fdcbda41ac63a90074ea4b15733c01c4ae77cf1d55ed878"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeLangCard-dark.png",
+      "sha256": "9df1b6d029fb84ae83050faa7d808d9c7289e30f01b79198dfcebf138ec4be39"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeLangCard-light.png",
+      "sha256": "d409c60b079542ea9fdb901ec46bdeb20c5a36a3489f123d9037d0a62d94e550"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeLangCourses-dark.png",
+      "sha256": "b2c7c1f2ae6ac6b21655000a15a1b4808899b60614080d0396b2f233a19d6384"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeLangCourses-light.png",
+      "sha256": "5b4d122823bb07b32ad1199ee22454c0c99528d5424b7794f814e3231637c853"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeLangOnboarding-dark.png",
+      "sha256": "4da47b5ae1c5888d4d23d9e96afc838e35e0d21eb60032d955a57024d2125075"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeLangOnboarding-light.png",
+      "sha256": "f43987675e473a7de11f696e4c113fadbc3d118cbbd1d7e74d71d7734d289ebb"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeLangPractice-dark.png",
+      "sha256": "00045c8b2769c424ba01b7620f49b3e150fae90d49d221dd232bf7158b5e9e51"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeLangPractice-light.png",
+      "sha256": "8bee4e74b99f835b1e42f894d305e1a4c995f7ea1daba862831a4f57b5a4b44e"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeLeague-dark.png",
+      "sha256": "b5786f081b3446b29436dad21fd6a48920f3944cffa0c28f5c0e555a8e2602d1"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeLeague-light.png",
+      "sha256": "34ba9c4eadcb849041bcdcc485a2f5b8464f2d65213b844e785c21522f89046b"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeLesson-dark.png",
+      "sha256": "e8ba60ba89206a76ff6463f4f2e0a50bd8c862e6323b20c720c45acd92583244"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeLesson-light.png",
+      "sha256": "fa144575bc3b066cc5fc7008f880584aa2cb8b1b25fca2ecca31abf5ec8377dd"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeMatch-dark.png",
+      "sha256": "e5639b8796e35780f5ce658d95135607fb08153e7636f7e24cab1c229b07ea5d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeMatch-light.png",
+      "sha256": "6fa75aedcf71d11e1cabe42779d7621a7859ebd359abdeac5f0009f780f31196"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeMobile-dark.png",
+      "sha256": "458cd456766806e08d6fbc6c2c5a64603b20c49e0630b62eb6a8ac4995ce7b70"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeMobile-light.png",
+      "sha256": "963d44967080cc541451c82c217fe2b732059a81169377357955753db7f8f683"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeMotion-dark.png",
+      "sha256": "2022bd99b8b1bf9ca3f080e80d4ecd4fd9f310b2af1ecd61981c5caa97f5aa96"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeMotion-light.png",
+      "sha256": "7c66420433d5cea4b7b5350e62020fccaa521298f40c56716f51f81d0c47d023"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeOnboarding-dark.png",
+      "sha256": "408f1365c97598c7444ef3195382019620b2a9bf168e3d203f0c217bd0c4bb41"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeOnboarding-light.png",
+      "sha256": "013bcaf00886951c75f4205f3694f126000fa1b5748995f812d599bfd7860dda"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimePaths-dark.png",
+      "sha256": "201092f621a8e765d3e5c2ef79ef7a8e00919f4b9e297a8d2afdde9ac66d9718"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimePaths-light.png",
+      "sha256": "36e19afa5bfb3e217ab513849ff92d29ea8757fb0110f1da3fe21fb23bbf4a1d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimePaywall-dark.png",
+      "sha256": "55003d1bbd83ca24b0889c69e03cdd5159d7356b61007f60bd55abd860756cb2"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimePaywall-light.png",
+      "sha256": "7dee53dc77c2457e44c57c51adb0e9f847d4a1bc2129876c2316004b2d82d517"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimePlacement-dark.png",
+      "sha256": "b56d204cc1b2cc52d22e633a4dec36836a00f5abb123e6a04abee7687782fa48"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimePlacement-light.png",
+      "sha256": "feeb1e61294c481cf41273c11e49e9651e45917fdf2f6f6884e3b89a6a752d2a"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimePricing-dark.png",
+      "sha256": "6b8eba3f447b99370aa6491b36aa13a32c61972d833ab265f6fa00488cad0187"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimePricing-light.png",
+      "sha256": "96a31324bd2b063cc20f6c3b54941b6b131ef4ba814c9ec824232237c87fbe5c"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeProStates-dark.png",
+      "sha256": "1d79e9247f5f93a96b31c67f7138d277bad7442809bb76f50a0d8497526dd015"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeProStates-light.png",
+      "sha256": "3f6aeda8c79ad4982575cb1bef801672d9d186a1814542d93f2d8ad1fed34981"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeProgress-dark.png",
+      "sha256": "298c61edfde495cc1620a4ec36f57095e92af02189ec666ff54359c32a2b9913"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeProgress-light.png",
+      "sha256": "6c1dc49440c492912d4f256134fd6a4159ac5ee6dbdbd6a4116f91ece8da8978"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeQuiz-dark.png",
+      "sha256": "a8eb15b90957dcde3c87acbe863cc30209e9d85c7f8f7ddc8babaf7b01fe3fa1"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeQuiz-light.png",
+      "sha256": "e5607c5969c60960adda8b2f1b682622e5faf69756e60644cbf083705142ffea"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeRecap-dark.png",
+      "sha256": "c7c335cd4eb7cca7c2f5c29bb807297c03b83e757797a5d8704fe78ea79a554d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeRecap-light.png",
+      "sha256": "d3379cdc2e613dcfa617ce670bd0ddba594c5709bf8c19f1fd39a2885ae00059"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeReferral-dark.png",
+      "sha256": "355b4da2146a9af6a2cfe8df69ff1a33c8b33ddcbc37387bb714049caa574d4e"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeReferral-light.png",
+      "sha256": "4bc73528ce6632d3a7bfa65e9482c29e7f8428064fbdd9f921ba0ebdb100b01b"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeReveal-dark.png",
+      "sha256": "d077f9c085caa723114f7a64c210bd1b9cee5ac0bb32a6982c06e481019e7556"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeReveal-light.png",
+      "sha256": "e56b8a7ca89440a3fd1e23715f89f8473d34d4186d80545e9ad600d857f112e3"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeReview-dark.png",
+      "sha256": "9703f33c130bce23600450cd017b9fdd785f6d2e265964760e560e002739543b"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeReview-light.png",
+      "sha256": "7bc1ade6eb92e8cd87cdbf8ea88c21d82e4b1afe9ed0e795e8134f05dedc5ac5"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeSettings-dark.png",
+      "sha256": "fb6aa816a3e642de9ffe87f75f9d3503a18c96f246147708318ec762c477d7a3"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeSettings-light.png",
+      "sha256": "12458f494e469934bac3900e1f658ad1252c91cf42542bb52516c10e203eedd1"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeShadowing-dark.png",
+      "sha256": "e11cc60009297de58d86d27071a38d91782ebdfb6f9b760b5cd8770b8126a930"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeShadowing-light.png",
+      "sha256": "7e45bacbedfde33bcfbdb6809ddde4de2ae7e6bc9076f24c975482ba5657ba09"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeSpelling-dark.png",
+      "sha256": "6fd4c1aded996e896670aebbe3d85dccd5e31f3a06445c4266236eec6f5e7e53"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeSpelling-light.png",
+      "sha256": "a0491e2a11f2d20e2cf87b970563016f7d9284806bb9d8f7525a3c8f129fe62e"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeStory-dark.png",
+      "sha256": "a498300d19b0155233eda303f2682a74bb7524c3be6b6fda84888876cc466a8a"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeStory-light.png",
+      "sha256": "67fbbb7142cefa09cf0e59f91e58a1b84db25173abea999cd479323b056d8f84"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeStreak-dark.png",
+      "sha256": "dd6fd5df1ae960c48530ca4553891d52de6dd2a263f22377cba34cb7f2910ad6"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeStreak-light.png",
+      "sha256": "91a916c3a02bf4174ff8bda6f396b6dfdddde4a2ea7c29ee45154b6833c91a0f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeSystem-dark.png",
+      "sha256": "dedc880b443355146acd85edb358ff3f8892cbf9dfc01b966e339d61909d3d24"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeSystem-light.png",
+      "sha256": "ff9354d881abe9a62e21281eb37571345fa965e66f5f38d29b7c034edbbaf733"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeToday-dark.png",
+      "sha256": "275ceb4f0cccc01e5ebd421605e24dc0f245aebd7fb6a74ca71a8b306c918e7c"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeToday-light.png",
+      "sha256": "acb98d74237236305fd9ffd73a50967165a7354b2eb27da55fad4d8d24b0802d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeVocabulary-dark.png",
+      "sha256": "921c028f244dde41ed286ae69afcfcc2d43354f9b1542ebe394df2d4e1b48abb"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeVocabulary-light.png",
+      "sha256": "372f81cd97d4fea17d249de8bd6ba7eab9d4e07c48a6fbaf4b8d1a5ef6acc3b6"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeWebWords-dark.png",
+      "sha256": "fbf0ee269acd697c1fa6e8497e14ec2e2fa02ddf4f9b8776e59d8327bacdc7ad"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeWebWords-light.png",
+      "sha256": "d14171cdcab33511788e1d32b1e0e720890ca4c7d4591f3befe97bb0a153c179"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeWeeklyRecap-dark.png",
+      "sha256": "9f42563e10add7e9e14b1cae13a9a6cd3b82590a2d2aff4feed81adc90898a98"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/AnimeWeeklyRecap-light.png",
+      "sha256": "4924178b0d65102e09e674d881a42062d8321b9dc627786534e96e7f431c8810"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/Atelier-comparison.png",
+      "sha256": "5bf32d2e855152ab752808c672d4a6ecb3f1daf9025974fa11fa6401550d849f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/Aurora-comparison.png",
+      "sha256": "a40f99d0d701c3f31092cb554c557af39577126d765ea13c7e0ff80d45c70802"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/CardStatesDark-comparison.png",
+      "sha256": "67ba21a30a8dd58ec0cda15d91bed2595c97bca4ee388e53d88779494ab743de"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/CardStatesLight-comparison.png",
+      "sha256": "c4ffe6225049e63d38b1973e0331a9cb52b84e4281a6f5cf8e07432587b7ad99"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/Dialogs1-comparison.png",
+      "sha256": "4c53caf87b0442e8d85d29ea58960a74abf1757cf46d8d80e23423ed886863ab"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/Dialogs2-comparison.png",
+      "sha256": "823070454e3a7cfd78e358826aad3eb3d4132892891af7350a202432d374d629"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/Dialogs3-comparison.png",
+      "sha256": "3f04400baefe61f9bf59835d2fa6dfeb1715a49d2069f6f2ede54d7e9d234029"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DialogsCheckout-comparison.png",
+      "sha256": "e1b013544ef5ff706299ccf2cda88dc21eeaa9b8ad9cc9a66f67e4345a2e632d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DialogsPaywall-comparison.png",
+      "sha256": "0951ac8a572e8443d480a755fcd603204290df523352d18e4a40a8e730974eb2"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DialogsStreak-comparison.png",
+      "sha256": "12a30c1f6719e4c8fc3f7041a3c1a3c2cdf64e4a477e72b3d7c71eebfaebd8bb"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgCheckout-dark.png",
+      "sha256": "b91fee8b97b2602ca61cb3c5e0bb144186a2e8d6359537f1fcffcf74f69cfd91"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgCheckout-light.png",
+      "sha256": "9612e0c75a4de671bc3fe582f3078bf563f78b66d931d7c8bb5485d602fa4fd2"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgClear-dark.png",
+      "sha256": "2033e4793b0229a48a2b3dba9fa5ef1e43e450a33f0744ea9db4cf23e422b29c"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgClear-light.png",
+      "sha256": "c46b2760375bc72be291896a132da1c1a1898a605543d891cd44843f6bbe4bd4"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgCreate-dark.png",
+      "sha256": "8413331d55fa83e2e82d72f9d9090c41726d440457792030d57aea401f52b6a3"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgCreate-light.png",
+      "sha256": "b84adde81decc073980e57545910dadd7719af927f46c0d3479146b669c19d52"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgDeckDelete-dark.png",
+      "sha256": "3c3fe11aa92679edbe97c033fab2cc1a7a43813efd1dec290d1e625a81dc0c3d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgDeckDelete-light.png",
+      "sha256": "e2481f4b6c86efcc319fb6d20ed0bd8a47d712e1c773eb23dd6b0c9a0bafb5fd"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgDeckNew-dark.png",
+      "sha256": "781f383d7e82cc258a4063ed59de40403ccab7e0efb8df3e50c817b437bdafb8"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgDeckNew-light.png",
+      "sha256": "a65275813374a026c7acde4118a85cc9d7401966d73fdcde0fe7c50bab1930f0"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgEdit-dark.png",
+      "sha256": "95dda3261138a7ccd7d1a25aa1f6f01ba144bbc647048ff078ffa516df5b2344"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgEdit-light.png",
+      "sha256": "8da35998d8ef0898a1bb7b291aae2b29a6b35ab863d06f8d45a37c8af5dce3e0"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgExtract-dark.png",
+      "sha256": "d8fabe7a3c7aeb707adab3ac36740f7c76041889587b2c58910d8a0b234dc20a"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgExtract-light.png",
+      "sha256": "5a4a946af7fbe533c48c3f82f01ec66878e84aae756bfce8ada7245c2ec10a83"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgImport-dark.png",
+      "sha256": "454205a5a7f163fef03eefcfd33899c40db7f2189d5dfdd7ba84c70ead39dc9d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgImport-light.png",
+      "sha256": "0133de6c4ea74f34a76357a95169bad0c08b4dc5929f3c1acf5d96c98217ed04"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgInsights-dark.png",
+      "sha256": "22e67b9d8338d0f80d2b58f099d2a38fe22629f392b6ba728231eb9a995e4a25"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgInsights-light.png",
+      "sha256": "82c4c9731eb401397f692ee92eb600b1e0eaff42eb6a82ed803aade263bfad26"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgPaywall-dark.png",
+      "sha256": "164733b87dda5f9a911ddfc0a03d631b3cc9ed0e63ec8decb54a21390596e409"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgPaywall-light.png",
+      "sha256": "a745f8fa90a289b6a5a66399e42762cba19d3b6b23164b738f53d0a645d01301"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgPractice-dark.png",
+      "sha256": "6dc3d9c6b648e47769f4be7655d203b18e021ed8e795d71fcaec6b4e86e29243"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgPractice-light.png",
+      "sha256": "d9d964b2b4baae1a83c3680320cec0d97102dc595246251e1b47555d7785d638"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgShare-dark.png",
+      "sha256": "1fde2745fe5a069285db5dd7a57809bc41eb73a8602c1f97543e1c9a6245ce41"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgShare-light.png",
+      "sha256": "821e672857a9b9798bcf7c2f2ec52460935f547006941ea93ac71ccf30a07e39"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgShareIn-dark.png",
+      "sha256": "249b5022754eebf094b3b0bc61597589e16d5d6692952719df0bd64c2fec64a3"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgShareIn-light.png",
+      "sha256": "7265833bf31d8b0af257f3e521f578e463480e2057723788537aebc886a3f7b0"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgStreak-dark.png",
+      "sha256": "96b6c41b22923c481fb021a4bd68e6f854bf83343ae1909a5135723b6f48a6dc"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgStreak-light.png",
+      "sha256": "73949613881f16ca93c36ce76a5ceaa6b6b1897cf399e5c5cf2301a2f16ddfe2"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgTutor-dark.png",
+      "sha256": "f2e7a0fcaedfd674ada854f829555cf2408c1adbb54ef2523b2ea54dfbde5cbb"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/DlgTutor-light.png",
+      "sha256": "cda260a1b59dd48a4b64a4231363a6abc81577bd0ad8581884ea90417017505e"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/EditSheet-dark.png",
+      "sha256": "7da4e9b268eec4001f94a8ff1989117bbfea5e648f6bcc2866fe83ed12b780e0"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/EditSheet-light.png",
+      "sha256": "eac7296cb9f8a208498043c6dcbb09e24c903083a0a9b9f6fab277dfae61fbe5"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ExtContextMenu-dark.png",
+      "sha256": "f5ffbbf070d412e5e3225a54dea3acf330e74962da824e342e522713f03410a7"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ExtContextMenu-light.png",
+      "sha256": "daa687d3a1aad3490851fde1ceed2d5319a9e1677345d261e354d8d8153ff739"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ExtInPage-dark.png",
+      "sha256": "6734b0f545e56700302a86f2b5651dcc9b66034ab1793671eb4593885845886f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ExtInPage-light.png",
+      "sha256": "b0a2f4166fd87b9c21699038f4bd6e6c8b8f07150f3155d47f8441993c2b26a6"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ExtLoop-dark.png",
+      "sha256": "37b12efb2e848b5b58b877158a1da1c41197e2b4f53ab64401d9a9fffce44962"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ExtLoop-light.png",
+      "sha256": "eb97e6ef01e5e85087473f7520ae5f30972355539f427eb5574e1eb261bbd8b7"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ExtOptions-dark.png",
+      "sha256": "c776ad07931adb40bc32686016b11d007ec3e69875e71d0fa1607b0ed5212d8f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ExtOptions-light.png",
+      "sha256": "cba9e487ccc62e37d5da819828ba66ae52dbae6c74d4216a2bdd8f1516251a1b"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ExtPopup-dark.png",
+      "sha256": "82b89597355094d775f1ce180c4c17b55aba86b07142316de3cb4ded56af6307"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ExtPopup-light.png",
+      "sha256": "7848920867239bdfd7376e142ef6a79be4a6c0c03570e8d9096448298c728fbc"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ExtPopupState-dark.png",
+      "sha256": "2e09112269de69bf4152b1ce9511759f7a0effbca6d74c7be5e13c56387efbc0"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ExtPopupState-light.png",
+      "sha256": "3a8353de5152113119d5dcda6efd413ac1fdb693547a9478fbb83c68213794ed"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ExtPopups-comparison.png",
+      "sha256": "cb2c36a3ddd98fff025fec811d09157ca3142c4d8eed8c248137513131072870"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/FeedbackSheet-dark.png",
+      "sha256": "cd86977298c63401dc0598c0165a72f5f74ba221530428fb8065ca6921aaca38"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/FeedbackSheet-light.png",
+      "sha256": "f013e7711e47f35093a17e06da6b0d9337ca8eaf6ec04fe026e4309c7a7fa14a"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/FlashBack-comparison.png",
+      "sha256": "07b35ef7b0d256511ac6a266836155a52407f4ab4f83a43f0650848c69955c77"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/FlashFront-comparison.png",
+      "sha256": "b539a3bf8516c132785f8dc286d7824b09de6150748d064b5f3fe7bc73674e97"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GalleryLangMobile-comparison.png",
+      "sha256": "0a09190ef00eea70ec8c13c012d403034813470c944750db22a1d334fababae8"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridAnimeCheckout-comparison.png",
+      "sha256": "d2b95a21ef7703be0276836d11444c5868583143fdcb4edbc2d5e20b0d74a85c"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridAnimeDlgLibrary-comparison.png",
+      "sha256": "3ac0353d88398f9cb478cbadc91125ad3fc36a3a9410c23945f3d63d4162a974"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridAnimeDlgManage-comparison.png",
+      "sha256": "46d36e9e90d807bce86c832bc05f3dbd85e7434d3f432f92c995db03cf4ac180"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridAnimeDlgStream-comparison.png",
+      "sha256": "c897d170b083832cc013ba634f3744a2cf8e3fb349f13c817d8a92bb1838f181"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridAnimeDlgStudy-comparison.png",
+      "sha256": "77a1610d53d3267bcf2de8606ee9063816c4aa64df29a5a73411953d26c6bd56"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridAnimeExtAll-comparison.png",
+      "sha256": "0b0158fa28d80785669a09ce701deaf1561583c4ce92fec84027251fe377135b"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridAnimeLangCard-comparison.png",
+      "sha256": "1286dea6456f804e2b768681a975c6ad999bacc043dd35e17a249f2e9af57138"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridAnimeLangCourses-comparison.png",
+      "sha256": "2a1b352fdedc2a1fb55a42d8b6383b6e20a7cf64126e9bfd1f18435956d29d33"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridAnimeLangOnboarding-comparison.png",
+      "sha256": "ad700e92f69bf7784db59e5ba0902941913a393920af28cd0af36149a96e66ce"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridAnimeLangPractice-comparison.png",
+      "sha256": "884b5cda6f67e789f3aa44854d5e79b118aabc6c7d71e84e536f6e003ebb6b9c"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridAnimeLesson-comparison.png",
+      "sha256": "ba35071e9fc9260a5ee9f9d8ff61b8008a472e4c48c321aaacf03c513f950a82"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridAnimeMobileAll-comparison.png",
+      "sha256": "860066898e9a3a2543ad540b0acfcc70558d710fe2ad27ac080ed2645c8873be"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridAnimeOnboarding-comparison.png",
+      "sha256": "afd55d9e625acd53ae7288b91381f0d031bb849b2856020643870f9e31094978"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridAnimePaywall-comparison.png",
+      "sha256": "92c22e451c2b171b9688eb4bca8e188c538129d3836cfdceb8007d79f6e88e0d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridAnimeReveal-comparison.png",
+      "sha256": "968f1f50cc8ee1ecab9b072340b1003bb2300285f277c00640f799516183219f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridAnimeStreak-comparison.png",
+      "sha256": "fdaff2f937c99af0d7cd1b6dcdd834f7dbc81aeb2a331075208e6f0c7528a962"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridLangCardCJK-comparison.png",
+      "sha256": "bb9c81bda3fa62c1ebefc1481763fc4e8836ce17b20c3666965356a3b017ef2e"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridLangCardLatin-comparison.png",
+      "sha256": "9d19fc61e92c817fd118d7e33543517b76368379f28bbc5889351a16d429169d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridLangCourses-comparison.png",
+      "sha256": "daceda3ce260bccb62d6bfb086474ea08f49855993c7e007853420f9197d10a1"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridLangExt-comparison.png",
+      "sha256": "f01a742aaeeca99a698e4be7407cc26e6f088e872b842ab969f45ead836290da"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridLangOnboarding-comparison.png",
+      "sha256": "a65e177cbeb73ac09352ff2bad2b6b09568e9423c9220cbff2cda826ca349d53"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridLangPractice-comparison.png",
+      "sha256": "fe4d944f780ee7b59d501ef0bd50f13e8d9098e77036aab68f866b8f9f6625a7"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/GridOnboarding-comparison.png",
+      "sha256": "b646b7801758a1d4677a3998f289d2db7a0358ea3914524318432bda8682ed3a"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LandingSales-dark.png",
+      "sha256": "4d30a2b6d8b8381c7df88e805ef43a828c4e34e50aa64bb80db991783bb7ba8f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LandingSales-light.png",
+      "sha256": "f9bafbf8cd0910a8b4bcdd9f24ef327c9301e3f0f2a51db15c3895aad914c2a6"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LandingScreen-dark.png",
+      "sha256": "8eb99510e35f7e6b51529fa59d33c819df75381b4103ba47e9beee9fb8a6f091"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LandingScreen-light.png",
+      "sha256": "603adb800578e028edf69dcd85727ff5bd56eb28de8118ffe0114c8c68d4a959"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangCard-dark.png",
+      "sha256": "2e2ad03254d3abd17f472114d0b84d16817d909fcd3a0c0cf92028cb94006d20"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangCard-light.png",
+      "sha256": "83a3e9b8361947a289e176b2fdba522c8c3db1887c961a86815fc7096278ad89"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangCourses-dark.png",
+      "sha256": "25ee054c5a5ee412d6ca10cfddce7ef4f6408f23fb83cad9443f892fdd2c0435"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangCourses-light.png",
+      "sha256": "7fac39d7d976d7ae9f2c9797639a42c9c03c5a22d18249cdc8f1f6f089b4e45b"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangExt-dark.png",
+      "sha256": "f34b32529577c58ce8c0b0dc3e99bf49f994e9f56820c73e347a2ea50fa33d98"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangExt-light.png",
+      "sha256": "abfdf504d7df38a14405e779c901c84f09b4da8597fe94a7120a2b919e0e4f9d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangExtInPage-dark.png",
+      "sha256": "bdce3d3a89102df6f1fe2ee66951cd0a59d6dcfdb8ec41e73dc913d4c23a7c41"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangExtInPage-light.png",
+      "sha256": "178e364645deb4912f162163521b722f6ca9d663164625204ef9ea126abcb39d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangLanding-dark.png",
+      "sha256": "94b96ada3b247ef888cf7a8194893eb61e6e4c7a7a21d7be0fe1316e29cfeba0"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangLanding-light.png",
+      "sha256": "5ab75c76adfe761cb5c96cdf5f19ed3eefc6d08ff01077e31cef862a2ca8863b"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangLocales-dark.png",
+      "sha256": "fa96fc6bfbe30dc54b9f6acd7425526de58db6b0acf6b8cdc6658d234e37b038"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangLocales-light.png",
+      "sha256": "6888040c213ea7b5c07bdd0ada82fb71f9cc153440214d7d037c5f1a9ef77546"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangMobile-dark.png",
+      "sha256": "b1a5dee6dbcca5fbf04c45ded0c443e2ebbe46c48ea581fcba199f8e4f87dd10"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangMobile-light.png",
+      "sha256": "3c4dd3876a2fce03f4bada5d89df88bdaa5583156887bb9606f4f4558e13f30a"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangOnboarding-dark.png",
+      "sha256": "79e6730a404b9860819926628606b39172e5f00ff26fb43a818c57cd1ba6ff77"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangOnboarding-light.png",
+      "sha256": "3a2964abb94d6c0e060bb60f3cf0008b94bed6a3dc6cc955eed4bd5436bdd9d9"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangPractice-dark.png",
+      "sha256": "9fc4a214226df99e6a3b436b5ecfbf37033ad58e22bed6171acc9fcaa4b4e368"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangPractice-light.png",
+      "sha256": "8696089d9047727941dd80fbb48b0eb23bc891c3fd98eeced68c25d2818c268f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangReview-dark.png",
+      "sha256": "edce2b0672a23aa3ce41b90a18d1f0b3cec1466efded71fe19bbb34c3e37dc48"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangReview-light.png",
+      "sha256": "40f5da84bcd4d75034e9a3a0e92d27d1800ad0b72371ecb097900ce5d70635d4"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangSettings-dark.png",
+      "sha256": "a32c7283ce2443a37872ca7bd0c0a5dededdd93e0d72285052e364809f5434d7"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LangSettings-light.png",
+      "sha256": "7ca3458cd9362f3ad0c10302df5ba694f1139d13330d66ae96d4371b2555011c"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LeagueScreen-dark.png",
+      "sha256": "7d8bbe3d603df8d5b4f0a3797ad20ea3641b12609a95cd44d4b54f8d7f588ba4"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LeagueScreen-light.png",
+      "sha256": "891b6ab6d1eeaec3337ef74ead865d24cb7880eb0ef6a9365627c076c9ee27c8"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LessonScreen-dark.png",
+      "sha256": "58df774a29ae3358e153a5a03d82ab4c044f1013253aec35573e0404c5408b7c"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LessonScreen-light.png",
+      "sha256": "57195bcfacdec0d3c26b72b30859179c62e0ee75ec09866e5535e7b6ebc01db9"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/LibraryScreen-comparison.png",
+      "sha256": "89c19b2732e55a48ad0119cdb5c70b9cd3cd15a85a420b1433a431435883adce"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/Main-comparison.png",
+      "sha256": "b498b6a10d710c63a7a5f16177f022ac1bc26bce39a54fb7d21601351a66e6fe"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/MatchScreen-dark.png",
+      "sha256": "52c68085b8c1add5bd7858d15ecc7825dad87c1811d318985d9580e3efb9eddc"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/MatchScreen-light.png",
+      "sha256": "5192dd640d01e0fbe818b4bbb28baa781ffb080607e4ac800950dfc11e43e5c3"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/Mobile-comparison.png",
+      "sha256": "4e4f45630b3a1ced1ebcd13d2cc7ed479d7f9375ee693b4cbc57f1a6573dc550"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/MobileOnboard-dark.png",
+      "sha256": "742fe8bb9dd791fb2e97e78872ac3bd3352b62ac97df9ca33c9b12cd3c2f4afd"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/MobileOnboard-light.png",
+      "sha256": "12596b1afd2dda7fe2cc0ae36b467880c5d5cd4cfaf20632302645bc0e98db52"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/MobilePaywall-dark.png",
+      "sha256": "5f2e8c854d54c3210fe288d5fab16e24c711a4d0e73418b0824211ea0cfafbbf"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/MobilePaywall-light.png",
+      "sha256": "a6eebc57e245d1f0f2ac0358f14ff92d4fa5f78b93794c9b5921c74b39b1fb73"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/MobileQuiz-dark.png",
+      "sha256": "6da8cb502ed8ef0c4891e6de16b47f023d7149f1c466a13eefbccd9ce08e5442"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/MobileQuiz-light.png",
+      "sha256": "8e7c04ac152072f28175fccc3e831e722d46f74da8fd382f3e090043e9b47fad"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/MobileReview-dark.png",
+      "sha256": "f1200ddfc1ed258aabf11bd636b424a37ff93b31bc1d08707ebfdab47d98ac8e"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/MobileReview-light.png",
+      "sha256": "c6adeba00e6e10a908701184c854ecd23b966abb8aeced9b6906e62d5ed6e0fa"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/MobileSheet-dark.png",
+      "sha256": "74375ce5f508134e76ee2a1b5d8a9612ae5a7326450ec67775059762cdf38515"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/MobileSheet-light.png",
+      "sha256": "85a599f259872d0c39b3b6c3febd467c8be3f539818f2dd023029f66fac93b33"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/MobileToday-dark.png",
+      "sha256": "e1fa7242894de277dc5162c70983b02efbe06b3b7252ea0b58dcdf2f82b7397a"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/MobileToday-light.png",
+      "sha256": "415aa8dbb78573038fb73437eb54cac97e4b5d096e94f07daa603a37af1cf17f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/MotionStoryboard-dark.png",
+      "sha256": "66ef8e153c271b149d65f320fee03ed80345852c31a8c477f2a3cc322945e574"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/MotionStoryboard-light.png",
+      "sha256": "9dc91b31120213bf5ddee3e55849ead01da34e7ec52c4208f1bee456c8cb648c"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/Onboarding-dark.png",
+      "sha256": "933c0dbfc780da361cd68cc6b77d3196246e79466a9cddceef559c0c4ea36a76"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/Onboarding-light.png",
+      "sha256": "1d47c791948c8053576b0f5393dfafd68de4e3268c379f63b5bcc0f1fb08a7d7"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAchievements-comparison.png",
+      "sha256": "f06146cd9bc3d6462b7798705dede4f63b70e2ebf3bee8a38fe32713823446ed"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeAchievements-comparison.png",
+      "sha256": "4d1a59f09c0acc5ff89fe888afcf59558ef86f2b17fb604adc8b6322c9bb5445"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeEditSheet-comparison.png",
+      "sha256": "e02bdfe99cff5bfe53d450990e184171a65132cc187f1c913580b6bab14f0863"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeExtInPage-comparison.png",
+      "sha256": "cf4d6d991ee8753ad703c697c084a020e0dc92c340226ee5275efd32f854c354"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeExtOptions-comparison.png",
+      "sha256": "153b60a4714fa9354d169010354effc786d08613d52e2398e80c2f0535cceea1"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeFeedback-comparison.png",
+      "sha256": "6d2036b50317717cad68f02d3b18488b2b3f809b2ff25abfc796cfdfad87f1df"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeLanding-comparison.png",
+      "sha256": "c68ffa2094ea64ffca465a6f64e08303b902c6c87fc6a09964fd1bf25b05aeec"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeLandingSales-comparison.png",
+      "sha256": "5527cc7dcd4af478a05f18d171628b319c8673f965d2706846b0319a84141d2f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeLeague-comparison.png",
+      "sha256": "6d9ddb62a9a609131dc0031f5ef653e3a2216a5e49473e0cc09a61e4ac4974f0"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeLessonBridge-comparison.png",
+      "sha256": "2d43c9af855c8d581b0cd9c9dd5144fef21f5ef9545ff5bf8c1ce2502ac52e5a"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeMatch-comparison.png",
+      "sha256": "3093d8a8cdf31aab21ca2d08adf0b4ef446bc7de9062e74c4f61961e58b2f3cc"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeMotion-comparison.png",
+      "sha256": "5b767b0f69aee4f7886ebca508cfa274aa45655ae1ab17d11a245ca85ec0cf54"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimePaths-comparison.png",
+      "sha256": "16d01711127fb20fce334a1b70cac29f499fd30c61d69768b5ac9408393ea9f8"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimePlacement-comparison.png",
+      "sha256": "a35bffd1dc87e9ea06eda746c972cbf81ffc52eca67354ea28737ac55380e636"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimePricing-comparison.png",
+      "sha256": "00abea879e63954fe555596873f261d6f392889b9b60201de8ef676b0d973c63"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeProStates-comparison.png",
+      "sha256": "ad6a308427c703d19549cf2340756626c12800e57baf850c3c21a5950b009131"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeProgress-comparison.png",
+      "sha256": "6ed4f1e2cc7c97063975ced4acd991364ba6d0015ec30f63384c0f0abb56e653"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeQuiz-comparison.png",
+      "sha256": "5a20f8a51ec9d8f634270de55cb5d9151efd0243a5cde414097ce38eb2cb528f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeRecap-comparison.png",
+      "sha256": "96b9252238a010d71d2224c208a4e1645e8aee4eeb08677d8dc089e5c198be0e"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeReferral-comparison.png",
+      "sha256": "0ff03acf21abc6e601994e6e8ebb8f649a2607e6840e3221d9751dd226b04347"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeReview-comparison.png",
+      "sha256": "1dcbb0c444454c295a3761530485350d8dcdfa8327df8ad90673c3c28ba48888"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeSettings-comparison.png",
+      "sha256": "9672d322149cdaaf850096cff1da0090e1d46607138984257f6f1932c1e59404"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeShadowing-comparison.png",
+      "sha256": "00afd80fcf96c48eeb1f01bb3edda5c8c65899b6502873ff365840795e03265f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeSpelling-comparison.png",
+      "sha256": "2222bc8d60ff83e508c2c10402b70b7fb53de606437f71bdee72d6ef78c1a9b8"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeStory-comparison.png",
+      "sha256": "c838861e4b111cd1f8e800a374b0c4d4de98a249ba7df5a38178825a2e353e14"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeSystem-comparison.png",
+      "sha256": "42af673641af2ab078cd7dcc1603ecb0e3d8db2e7d837134bf2dc40446b95301"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeToday-comparison.png",
+      "sha256": "59145c5fc7b983ffa4b686c3f27f4e004bc937fa74e9a22ff6181b0660672f0f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeVocabulary-comparison.png",
+      "sha256": "3758784f9f7661ef858d3cca38707f294831ee23263c416761fe5739cc8bd19f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeWebWords-comparison.png",
+      "sha256": "505cd0ed9e20f22201bd47fcf973fe49e3d7f9365057cd111ed6b35c5aa3bdd8"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairAnimeWeeklyRecap-comparison.png",
+      "sha256": "a70e230cdd8fb24a510d251dfaeaadd988bd7eab40ce8aff3740841cb3ada4b8"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairEditSheet-comparison.png",
+      "sha256": "31e6297d3e492caf07b8e3206a70964e49e1dce7131db5170b219e309477defd"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairExtInPage-comparison.png",
+      "sha256": "acb057b358f52d8b9f731fdb0a48502e7f674b87c2174d67be6d3d182ffcad69"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairExtOptions-comparison.png",
+      "sha256": "f2906262f28578f04c4a9ab43713ec943047def40cad2d780bfe4a098f32aace"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairFeedback-comparison.png",
+      "sha256": "d3db36b63adad3e7773d888fbcda9c8eb186195d6ff7c3eb189ca8379f22c749"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairLanding-comparison.png",
+      "sha256": "53be290c7d9fc3443b691f95b0386b632289dcde69784d681b202e37b9f98505"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairLandingSales-comparison.png",
+      "sha256": "213bd4597fed34a1d1b2247feaa0de2ba8ba89ff7e70401fe42131b276dcdc54"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairLangExtInPage-comparison.png",
+      "sha256": "edd10a7b1e70f4370a25ddfeaeb43a53167046aeaf9caf0334a60944457691e3"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairLangLanding-comparison.png",
+      "sha256": "11e2ca58c9817d59db48c1b05aefaee57db5b57e3a3920d599cf9587790d16ac"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairLangLocales-comparison.png",
+      "sha256": "a2dd94803ac3d299a3e18f8eb0fdb27eb8e691e8f6697acef5543e56fe2c13d2"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairLangReview-comparison.png",
+      "sha256": "7c365895d4e827e9f7661bb4ad69df7a6209a5206f8bd64fd092420a29e8bce5"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairLangSettings-comparison.png",
+      "sha256": "a476306940b98ccc0e5c6d803c25566d94d5a88b4fed79e76dc1fe9fcc64c6e3"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairLeague-comparison.png",
+      "sha256": "bcd986374300e836d067a62e2530eaa797f76991e4c876f29c5e9c2bfec3d911"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairLesson-comparison.png",
+      "sha256": "6abcfdd562a2662ca53dbce5a7c73e85800246c947c691994fce00f6c7da7f0a"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairMatch-comparison.png",
+      "sha256": "f68d5c0371c846b7ab793626056f4d60498d575a3573ee61ffc672e8d5148d92"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairMotion-comparison.png",
+      "sha256": "f51efec6a28431d2702ca6a8059d70e19b7138a0e9d2fcb0a97160658a7fa333"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairPaths-comparison.png",
+      "sha256": "2c523bdfd5508b2c4f47deee69eff3e3e2a74e767120ec79a9a79886e98b1113"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairPlacement-comparison.png",
+      "sha256": "365dd19eff7d98e41c1da7b61306607243d2145c431469f35910524e28297fc9"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairPricing-comparison.png",
+      "sha256": "55dc8ada3aaca4900a3c1fe551deba253401c30358ad4dcb7c4bbf49e5815218"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairProStates-comparison.png",
+      "sha256": "d26434990b271b993d3a02bd01c4f26a78cc6870d73458666c1fec9da3acca57"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairProgress-comparison.png",
+      "sha256": "1522d181db4585df6203c308e9a3e4b6d51484532ccdfde907b1b246933338a3"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairQuiz-comparison.png",
+      "sha256": "7789cc096aa54b7812393ae0652f2b47b0020d0a3e4bc49eb7ed62c9cf08ac3e"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairRecap-comparison.png",
+      "sha256": "69380a3e1d6324032389fceeaf960c8336e8fd10dfe0b42b34998a1db6991594"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairRecapNext-comparison.png",
+      "sha256": "bea8d1f0d356069805778aa70c21dcf79ea91ce8b97e1ccd6ade235b8a466e97"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairReferral-comparison.png",
+      "sha256": "24039b770feadd80e3d8c3c0f27f8468deb52623114be3956e17ca8e525d39a5"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairReminders-comparison.png",
+      "sha256": "61b29ebcb460a055a2340658c6d2c5c924a5fe3a3116b8cc6d7cd153cd83381d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairReview-comparison.png",
+      "sha256": "7b34f2e1e00397670f8ef29c4d6d41088767c53765c2c70aba65c51566acda7e"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairSessionBridge-comparison.png",
+      "sha256": "52c19624950444304280f75740c20e85710867246d503722d6dfe905b0382a77"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairShadowing-comparison.png",
+      "sha256": "718f3177e5fd223fedbe412e8b6b8028acc72ae0cbee75f714c37586fcf38774"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairSpelling-comparison.png",
+      "sha256": "1f5a6ad11713078ca8ecb4cd4221e7fca7cf0f98ded46e9a193c7d9290308321"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairStory-comparison.png",
+      "sha256": "abc27074807b2bd648931b95b8459622efaa0f414b3e3ced41e9f50c1bf98414"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairSystem-comparison.png",
+      "sha256": "99323bf62a51ce26aa125f659d637a0a84404c506568d2738a0c8eea1df4859e"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairToday-comparison.png",
+      "sha256": "675ed2a54e2ee13a5a85d48667498c710004db3efbbec3d0c80efdb8dc5a3c9c"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairTodaySession-comparison.png",
+      "sha256": "3717e9cb9db62fc4184a03af53b96ee49c920f278199b0a00b0476b502f94152"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairVocabulary-comparison.png",
+      "sha256": "b989e0a8d4dcff01a8a22a586eb8937cc4fdcc8905c63052626f8a3abc9ac2ac"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairWebWords-comparison.png",
+      "sha256": "8513c5983ed03fbbe4f6d8d6878a7b8ac3697c8c9e03f9dbf946352a9077533e"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PairWeeklyRecap-comparison.png",
+      "sha256": "1851d35b5f91a6b08f5c3ef53718c95db1d698c083f596bef0fcbe83559f7279"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PathsScreen-dark.png",
+      "sha256": "bfd8400a5ff2cab508c782410cd86ca13f067b5e4c6b88831aa483cc2c6e3529"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PathsScreen-light.png",
+      "sha256": "57bb7f7ab27d406236c074047c477cb93f9dae1125ec04ed056aacf7a7b06ecd"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PlacementScreen-dark.png",
+      "sha256": "7541a58148950defc8cb5c8d104e23db8f62c142ca52ce055f30b6afeb61e4af"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PlacementScreen-light.png",
+      "sha256": "fa36918044b244af02dada5bfe20edcd4b027a155909c9d5ebdb754dbfe42d90"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PricingScreen-dark.png",
+      "sha256": "203c978a354601aa975957304451719a69a0251c13bbd37b00c0702ac566b052"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/PricingScreen-light.png",
+      "sha256": "176d41314ef4dcc7a01766063354998a121475a4ada2c4165a2c52eda60958bb"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ProStates-dark.png",
+      "sha256": "8bc1ebb3860218148f1809e5dae6d5161b166585d0ac014410f0e470c6295034"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ProStates-light.png",
+      "sha256": "0e1cae71f18891fe19fa3b470710ecbea9fa4d3c161e08c0f63ed17757fcafe3"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ProgressScreen-dark.png",
+      "sha256": "0c80770ca836e85082de90530be9a59cf776b48c2e109ab38bc8368f0470123b"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ProgressScreen-light.png",
+      "sha256": "746e41e09ddab95e54af82700138a259390442b4c45b67c12ec8f0c33a21fd1f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/QuizScreen-dark.png",
+      "sha256": "49b31173b52cc9aa36f25e5908582919242c7c065c176d198d7dad16a8df6239"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/QuizScreen-light.png",
+      "sha256": "caec7f72886c9a4ad98eda20786e819e425d392c0d3312c832e6da90745bae3d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/RecapNext-dark.png",
+      "sha256": "756ddf4425c9a06bfbbae3e27ab5b437ff32fbbb1bfb570c86d7591c8a358e8f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/RecapNext-light.png",
+      "sha256": "0f78d124fa223fd81ce0dd0ec0bfa1935951710beba5e42833df29741825c9c4"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/RecapScreen-dark.png",
+      "sha256": "d94f8ad3f569526c502a97e94b7d22668982b4017dfe5317c5c15b23fd960621"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/RecapScreen-light.png",
+      "sha256": "4d4257f47de1513d69fed37f49415e4fa7d70fd1ea600c50a8972a1ed3c7728f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ReferralScreen-dark.png",
+      "sha256": "26f1743738e3b0f2504c99fef1034827eaa9fc8ee79c21072d2680445ad84e2d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ReferralScreen-light.png",
+      "sha256": "7931b1dd2c15d67a495b284e954fc26e5092cc97b8607837da230711ba64071e"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ReminderSettings-dark.png",
+      "sha256": "843f9f11c048af7d2cbfdbde67380b83826a42c02582263a84eded8900d20a89"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ReminderSettings-light.png",
+      "sha256": "1d202fe8d4b28b19bdb99c80c3d2d9213e0656acfee8418affbb738a990d0cf3"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/SessionBridge-dark.png",
+      "sha256": "f4d455504d2d09b36279efe345dea76863a53cce6124b401cac097af4d0944ec"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/SessionBridge-light.png",
+      "sha256": "4a7472b53377c8fbe3c84642244f5a8dd676b614b41b3f5c7a8f1e042bc19b37"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ShadowingScreen-dark.png",
+      "sha256": "73a7bd8ded4c9567aa86465659dbb3b5622fa4cf9eb536e81db740768c4d6511"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/ShadowingScreen-light.png",
+      "sha256": "179c8bd8fccbd8143e12669ca2c88bd07e1efc30ef89e5a2b6575f132f738e36"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/SpellingScreen-dark.png",
+      "sha256": "567282cf5a2cdaad6eac722e87b20da4dd5e662c1f3ab611186dd25fcc19557d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/SpellingScreen-light.png",
+      "sha256": "0d3aa2db77535c04c6670f64f2b6988a3efbf2c828031ddc9355c6766d79b3a1"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/StoryScreen-dark.png",
+      "sha256": "4b7dfd861120f2995bb09c64bfb6687bbac27868db0939600c6e22858baa0de3"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/StoryScreen-light.png",
+      "sha256": "ddafab14c98b7c3aae0f43e417b5208cf7403b318c39d6ec2e00a216e0c63683"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/SystemStates-dark.png",
+      "sha256": "e129a23bffbc99366e2ad3dbc1c46b9b3626fe62d0e7585181084130395358ff"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/SystemStates-light.png",
+      "sha256": "adcb2e84dac8dbf0bb81674d8740543e3f86e09844e2d9cb193816bf3051e7a4"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/TodayScreen-comparison.png",
+      "sha256": "430f13270e2ac281e84897bd355c3bb2c98f15f9637b893eacdd65bfcbe2c26f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/TodaySession-dark.png",
+      "sha256": "b240f8794fb6f61d569989f9248835b2508e4c27a9eef27afedbc214ced2a835"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/TodaySession-light.png",
+      "sha256": "3c46ac9b0ee0b53aa97bc4e0fb44780bd3128fd5797f8bcf8e0d1f7ca8c73c72"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/WebWords-dark.png",
+      "sha256": "1bc131f589dce453dc48f1f7dc960e985ec633c3a299329098cac017a212fa56"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/WebWords-light.png",
+      "sha256": "8edf078c2fa9009e7f6dbfdfbc63ed253584fb3e460b3d86e0d92f878263c07e"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/WeeklyRecap-dark.png",
+      "sha256": "efdb26fb84702e70698d7e3bc452d429f6b35504883e219218f1101926a33cb6"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/reference/WeeklyRecap-light.png",
+      "sha256": "b08dcff20e3e2d70c5f7b7a4ed0b2aa6b059842828f937517d1677268d547769"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/seed/Atelier.dc.html",
+      "sha256": "6b79ee372322727d01bbc9fc42618d56b5c85de5f7b7ec0901356b53e379f31a"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/seed/Aurora.dc.html",
+      "sha256": "5c11b42e9fc10d353b476b1fad30398901cacd7e41ee4dbfa925335f438065eb"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/seed/CardStatesDark.dc.html",
+      "sha256": "037b6ba6b2bb5739f2d3927f43247aa99adedf2085bb1f9c7e163216c40515d3"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/seed/CardStatesLight.dc.html",
+      "sha256": "95f167902fca10d27c4d5a004505d3fd91319698d55b6221ca4c998c41436955"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/seed/FlashBack.dc.html",
+      "sha256": "bed77afa599fc007f6cd057cf6338c0cf743ea7f19031f572386de3986d7887f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/seed/FlashFront.dc.html",
+      "sha256": "e25df9d6397806e9aea16ea723db7bc2fc5035e3460e41312e19f5599d09c3e4"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/seed/LibraryScreen.dc.html",
+      "sha256": "db6cbb456922a7e9576b7550d306ec7afe56fd8e4bcb4080d0819faec094b4d2"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/seed/Main.dc.html",
+      "sha256": "1af78e891c8f12c7bb84775d1b6ef687b9df40f69dc0cae63bfb3cff4eb47e4c"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/seed/Review.dc.html",
+      "sha256": "a068657490e4c25beb3eb439825921f09ac75ddd644b00acbf69f8b48dd6f35d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/seed/TodayScreen.dc.html",
+      "sha256": "33f7cea1fad136dd14c3917e38c7af892066d14d16542625df679d6cf668515d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/seed/canvas.json",
+      "sha256": "eecb18382ffbd8e65f42b7c330194cca6e6a696d22876a4f378e672805e1a129"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/seed/support.js",
+      "sha256": "82ab863dabf94f79db1b4ced13046a03425dcd255e97a5e42c60b6e8035fea34"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AchievementsScreen.dc.html",
+      "sha256": "d50307861ef8ad7bb5bd168bec06f006a765aec202a44b927956a0001e58f4b0"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AiStreaming.dc.html",
+      "sha256": "6234d470860c2a742e8051447c97d9c35b0595c458a8709c202cc25317374fdb"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeAchievements.dc.html",
+      "sha256": "edc1bc73e18ce3a3ca146d357f70420271ac598ab8af5e9c83811c9b7a330faa"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeBridge.dc.html",
+      "sha256": "1d467f321cc12cb29ea5382d5fd8e7473cb0e6ffd34528d693894241547ed4dd"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeCheckout.dc.html",
+      "sha256": "fc419bfdb1c728f4e81b34e47ea69fc52abfb56cba21d7e1d57a07d30ba3008c"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeDlgLibrary.dc.html",
+      "sha256": "25d40cbec7a4ac8cf7bff8dda460b8a52e38e5794ffaa1975ff11e37006923da"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeDlgManage.dc.html",
+      "sha256": "e662c4b4897f523b73f2cc81312659ea7b9e3a76d4c907211f6bb76a26a69a3c"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeDlgStudy.dc.html",
+      "sha256": "06a874cf9eb7cfa6f2c9ba28a6e397bd84dde1aa3dc7c55a61e6b62785027ad1"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeEditSheet.dc.html",
+      "sha256": "7693e353e57c58bf7d1c516c70ad8d1ae09b770575d22ebe61f99d0de2f5f221"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeExtContextMenu.dc.html",
+      "sha256": "d96b91051d0219ada078074d2c4759aa41608f9210b98ad4bc068151878a7f89"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeExtInPage.dc.html",
+      "sha256": "42b80ba01c1481bee83789a65e7946d75f53611434a6b3d62deb434a0fbfcc4c"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeExtOptions.dc.html",
+      "sha256": "3f2629a8288ee948758bfbdde557302bcb4c865c648d865cf56ec6784eb04ab8"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeExtPopup.dc.html",
+      "sha256": "1a0d2a2df41c30702998c643f564d86604fec9a034381c7efcf4b31b142ba35b"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeFeedback.dc.html",
+      "sha256": "f39a651abf4ac6d5c691e7a9cd41a34920a9b527c298343c6ae400cba2d661b0"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeLanding.dc.html",
+      "sha256": "7ca62288d0c3ed2324f1af9cabac9b439edd8b0a280f0545bc05ec971952ebb6"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeLandingSales.dc.html",
+      "sha256": "9c79d529b60cf510b82c206bfde466ad71266e8f35ba1ac8750b231d3763aefc"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeLangCard.dc.html",
+      "sha256": "7a22bfa3a8396de533af6992948aa3d5066ac398027c5ec0c92ed3f3d32ab991"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeLangCourses.dc.html",
+      "sha256": "86cca72cf3a955d96e2b1fd857764b621fa964e194f08eba8c6e5083cc4df7f8"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeLangOnboarding.dc.html",
+      "sha256": "80ad8fdd75ffc4225826d3ccec7c7ffc3bc5747f5b24141041b6419cdccd6f81"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeLangPractice.dc.html",
+      "sha256": "ab1528164a8e185cc4b1348da1955a2d80907be8915141e8d8a86dd1d81b8ad6"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeLeague.dc.html",
+      "sha256": "22912f7ee12a6fcbc02ea4a7be491a75d44d100d5aa3739db4ab55f3dd131673"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeLesson.dc.html",
+      "sha256": "5af4a3039634cd991bc13aad8c9dee286bfd8ca935e148c32c6ea1cacc4902d5"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeMatch.dc.html",
+      "sha256": "4bd866a404d6152c96a9c142f2a88c2715c1c775967d723b86f208d6a20e5b51"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeMobile.dc.html",
+      "sha256": "996ce436c9bad709695f701d3524eab377dce3e7ba67d143bada9fd14c03c271"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeMotion.dc.html",
+      "sha256": "fd5c0020e9650fccb4ce3d5aa7c42cb5866528c8130ed65b29114ec49f726168"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeOnboarding.dc.html",
+      "sha256": "24bfb340f92a75a86a0a03fced4ec3959d0856ca9f98b10aa5c353b3a8d41043"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimePaths.dc.html",
+      "sha256": "1e0e41debb4c9b46c64904476ed91d603a70c7e41246f5a9277e2284bc1a1dc0"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimePaywall.dc.html",
+      "sha256": "04d7fd3114184cde282fe16d3f47e0d7882f573a3654ef00d343173365918a4f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimePlacement.dc.html",
+      "sha256": "fb31a9894212c811cc30ed0daf24aed3d57ca62933584a484cf3deb1e41f6857"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimePricing.dc.html",
+      "sha256": "eb1d0d44f4835afe48e2f85d59b1e6bc7ef13202abdb1b1a206139393407fecb"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeProStates.dc.html",
+      "sha256": "b56be35540b9e2f3a4bf272a69bd1183644451e4bce1dc91b14b67b8ade2aa42"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeProgress.dc.html",
+      "sha256": "d16388e0c4d68d8241d456b53f8c1273850252d3789bf4899592cc9a870bb87a"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeQuiz.dc.html",
+      "sha256": "5fa9b7d4d3b0c39d1d2d139bfa9f813bd061c7a7b028c4ff0e19574384ccca11"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeRecap.dc.html",
+      "sha256": "cd05bc4b11f19db16ddcd20034f2987a334896293aefebf85a956b9ebe2903d6"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeReferral.dc.html",
+      "sha256": "9337eeb503253d1ef6f9985b44f8af9ab0b0315dc5ec173eac79bd193a11d808"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeReveal.dc.html",
+      "sha256": "f5fa8b96f8ebc84d48bf6dc4f98c3b4ab20695d03bf3537caaa98f3532cd8843"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeReview.dc.html",
+      "sha256": "87dfcddf3459ceae5ac9147d573d5ae69f7d6981bc692a7357200d13fc2a3a2d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeSettings.dc.html",
+      "sha256": "b3ccce61bcb41cee7312814d5343e996626e8492e38524224dfafc663e027d5c"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeShadowing.dc.html",
+      "sha256": "7530933b8a88b77b5b36b71f0b947976856b9fc9a985d48aebfcd22d04f040f1"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeSpelling.dc.html",
+      "sha256": "b3904ae9689cf2cb4ab3c60d3b2269b5cb251b9116e7b1be621631e21b93005d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeStory.dc.html",
+      "sha256": "940e2f3ec0eba52c25860c4c9b0088696dc9f0ad51124db7fedc95400c1b6d34"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeStreak.dc.html",
+      "sha256": "5557897f9ec686af6f5bc4930e546aa943c8c661a259ff17cfe39f67947ff3d9"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeSystem.dc.html",
+      "sha256": "3dd300db1e4b5954f0e14ec1c340d8daae1a27b958986eb0a3812a2db01c2be1"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeToday.dc.html",
+      "sha256": "bda8c7b0e054d158fca97020909e234437dea0c54754d66ffd1005a7d931d70d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeVocabulary.dc.html",
+      "sha256": "92992d27aacf0f19e6103adc4abb4bcac14f3a3b833928c977d70898c9f32919"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeWebWords.dc.html",
+      "sha256": "f2ac96fd07419cf5c831548e4e613b24fedf4ccc5f2f3e76fc01eecba944364b"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/AnimeWeeklyRecap.dc.html",
+      "sha256": "ab4e702e056db4677630ff3a05d9f4b5e41b6050a44d41e956a9816ee6ba5343"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/DlgCheckout.dc.html",
+      "sha256": "5ae95e0a773a17638d820a38d511c2e7da4417e08fc6924252c871427bbdb7a3"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/DlgClear.dc.html",
+      "sha256": "e900e70eaa4b253bc4a1a6b178119c72f40157360d41c6c05ed3dd939532c8bf"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/DlgCreate.dc.html",
+      "sha256": "d115dbd75e9ba9770bb104b22088d441146f32cb57c615bb44bfe2fb768014dc"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/DlgDeckDelete.dc.html",
+      "sha256": "3b3c7b71cd5e16136871e23bb5b68d0dfe32c70795f911721da7059944f4b902"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/DlgDeckNew.dc.html",
+      "sha256": "5bb97086b6206b071d9f6d595790013623a0ef4dc1946e9c36e1f9fa0b0a55db"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/DlgEdit.dc.html",
+      "sha256": "39cd028979923c9516bd3a9980338e6cca4ed7fb442307542fc4dcefd3f13e61"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/DlgExtract.dc.html",
+      "sha256": "873a61a065b7283c29ae980aa136a27a3d377ee1bb6611bf0f1577d195e8308d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/DlgImport.dc.html",
+      "sha256": "d122a186d2ce3de5f7302b3e7a13f79aeba90dc44d45ab456d79a9e392000ff1"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/DlgInsights.dc.html",
+      "sha256": "92bbf5bfbf411335ab4b3c3ff55735ed782dfb57cb22a72cbbb5bad4631e806c"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/DlgPaywall.dc.html",
+      "sha256": "d93fd4cac07522c4ee1b14bcc6f5d42d7e0123cf2c8bbce18aa42f249154a6f0"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/DlgPractice.dc.html",
+      "sha256": "12e0a9bf3f49a18411742840591c0498dd9ed781e646b131ebc151e02760fe84"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/DlgShare.dc.html",
+      "sha256": "ad97e93e59a610586d4e1a06a2dd269783da0f4ac3caa0042b8b09379d0469a3"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/DlgShareIn.dc.html",
+      "sha256": "8cb477b134f2635dee38322c9ca39accdcfbeae02784ba2aa7a33354b66cff7f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/DlgStreak.dc.html",
+      "sha256": "9ab6e776028ea070731fabb6f497bb265dc7da77b53a334f68f41c13f653e590"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/DlgTutor.dc.html",
+      "sha256": "20e9906900ce5dda5cbdbd48ecc587d5c44631ca0aad77eecdd9fc1081d4ce11"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/EditSheet.dc.html",
+      "sha256": "2af84f5c94b70ed297b570d17543cfe061a18fe2cb8d93518f91e28b55adc021"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/ExtContextMenu.dc.html",
+      "sha256": "184c576034c646d0aad20a39b4d1a80d7e1ed8fff463575a9e560754ad8b7246"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/ExtInPage.dc.html",
+      "sha256": "ea25837e72f4b53edb1fd79a78b16021e342755e97aefe234ddfcfe19a03abcf"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/ExtLoop.dc.html",
+      "sha256": "14a59071e7dd5ab2ef2720548f59a1169fd48c82f2c06684e260a095156ff880"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/ExtOptions.dc.html",
+      "sha256": "612a1c28c282234ca4a11d1221b56a60c8ea87e3ab6b6e4ed0f6ececc686a00f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/ExtPopup.dc.html",
+      "sha256": "94d0b009879c820dc533f8db9646706ac6a933f1a0e5c19a964273f4e0ab982b"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/ExtPopupState.dc.html",
+      "sha256": "62129c9a18a3eaeebe9820449b8b4d4bbf6ddcf1bedded6c565c1feeab51e07c"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/FeedbackSheet.dc.html",
+      "sha256": "5203978a4a99886f984eaaef1565996b5cec89e6500f030336fd56f68f6dad4d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/LandingSales.dc.html",
+      "sha256": "acf1ae1406f0d1a9ecfbdafb06ef15b22ae3aa4a3a513df6d2d398604d1eca1b"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/LandingScreen.dc.html",
+      "sha256": "c613dfae31c4433cf6b92f289e9e290655c6269238ec6a9315d41708f5663136"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/LangCard.dc.html",
+      "sha256": "ad7fc366d6966b9189f9550e5fc5b7320561ccf76b9fdc81c6895666821cd884"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/LangCourses.dc.html",
+      "sha256": "feb58ee84a45b19cb5562c72b8b2a3dbcca20e438db459214fd7d481792f3744"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/LangExt.dc.html",
+      "sha256": "4091b6c4879a3f8ce9d4ebc0acd4f02cc2e46da36339e483ddc4a52dc61ceddf"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/LangExtInPage.dc.html",
+      "sha256": "8168602d24e20b1ee22f1bbfe86376fe9ebbc4e4868a95ade51f34703e2dfadd"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/LangLanding.dc.html",
+      "sha256": "bce7a643823fa2ef4932c8e962af27f00fc7cb8426d7d89e88a69c1201c4b6b0"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/LangLocales.dc.html",
+      "sha256": "67b45aae4ed50c078bbb25108889329a3ac00b7ef7a106e9b3a650fcececcd58"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/LangMobile.dc.html",
+      "sha256": "518eb2ee152662bc345f3977ee4117f5b3343d71e006e0ece655bbfcf5070efa"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/LangOnboarding.dc.html",
+      "sha256": "bc252817f4812118cf7cbd9391457373005d3e4868e2370454afb8517fdeb103"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/LangPractice.dc.html",
+      "sha256": "fbda4ca4ec5979039a0016e4d11184a7098a5d39a5dbb3ff1de096bd8dc35692"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/LangReview.dc.html",
+      "sha256": "40ad133a621b929e0cc5eda83e704de599a25c02f0bc20b4f63f89fb1570975d"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/LangSettings.dc.html",
+      "sha256": "8786f167e39a04bdfa7703b141d9d3c84358888410c36da5a7526977f20c7ff4"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/LeagueScreen.dc.html",
+      "sha256": "fb885e969b5d8669ab80bc5bba5c137de580ea1ad3bcc7c34c0eaa382e6553fc"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/LessonScreen.dc.html",
+      "sha256": "1861303ef4ec3096703cc97fd4044926b15e58a970fd21f7c0645b308aa5e6d0"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/MatchScreen.dc.html",
+      "sha256": "cc469e8af9764eac4b42c40a7efb070e6348772697219c9e77dbefab72cf4550"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/MobileOnboard.dc.html",
+      "sha256": "e50299be4805a10f863f1224ebbd47b82bba021f5def6dca7aef07d637a7cf5f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/MobilePaywall.dc.html",
+      "sha256": "60b0ed791a0205572e194a3db5dde05e7b7158307c4636baeb2ece0f31cd543f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/MobileQuiz.dc.html",
+      "sha256": "b6c60c70771dc8b835bda6469dcaecdf0ceba0129ea99f3477c4447d562b32db"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/MobileReview.dc.html",
+      "sha256": "5914817f33b10c40ee37e5452450f97e3f82a207888abcd7ab018f0a18d63853"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/MobileSheet.dc.html",
+      "sha256": "285ce0b4e347686539acbb75f1bbd38d3f497b50a0dcd4be8a2fff20529d867f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/MobileToday.dc.html",
+      "sha256": "9140f058541654cc910f31ef517aaa62f7bea12bbb7a96e66a6c49246d942cbd"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/MotionStoryboard.dc.html",
+      "sha256": "c31d42b668c15dce1bd3f6cd89a09abdea05622c42a902291ac8d3d27abb20a1"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/Onboarding.dc.html",
+      "sha256": "7bf1e48370c79af7ec47f9678481f7e60d0d113688cc7cf1411b48db5af08305"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/PathsScreen.dc.html",
+      "sha256": "659603553e07e4d021a72785c5fb4be368678ed3763c6b64747cef4af5b764ed"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/PlacementScreen.dc.html",
+      "sha256": "a3b5ada439edb6f9887466b77d61ccbd6a06ee47f95cd9b084effa13c6083cf7"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/PricingScreen.dc.html",
+      "sha256": "2f87bf0e76d978c81b0af2f41e5e4516367fb1a908a904055e3816b31cc8c221"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/ProStates.dc.html",
+      "sha256": "fef9030454daa1161fa2b8b24cae611e3609b78332f612b23c5eee6117f95119"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/ProgressScreen.dc.html",
+      "sha256": "4cbee90ac8a9456aac8110021b292252e525238519156b89c8e9bfb8497cdb8b"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/QuizScreen.dc.html",
+      "sha256": "7a40c1926591c9a70a1e5ceda0dc092eb1016cc781ccaad202bcc61acf4cb7c2"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/RecapNext.dc.html",
+      "sha256": "e24a9bd7313ecd6439915f60571f9bc718391e9eb22112eadd24db444a591478"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/RecapScreen.dc.html",
+      "sha256": "d6a15824c18920eaaf94a27c90168c45dccbcd3ae8df441e8bd3050df70932af"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/ReferralScreen.dc.html",
+      "sha256": "a9103d11b3813c5c26990495dfda43e143d62b67e13a5e87e75ae5ddd4f4c685"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/ReminderSettings.dc.html",
+      "sha256": "7fa46be48054ffedea6f8d344d85e7a7f75e8bdcde3ffefbd643191e0f861fe2"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/SessionBridge.dc.html",
+      "sha256": "595cc820883ce6b8fa791a8b73e1d94ec169302e51b201da51c0ac41764d6d7f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/ShadowingScreen.dc.html",
+      "sha256": "874d5fe11a6f9ac45a71fcb5c03c2ef557a3db09f0af2863c432fd9a6dbb08d4"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/SpellingScreen.dc.html",
+      "sha256": "5f07356eca142f5d10ee5fac8f87db9bf33b257e5ff5f2de4a988568428bd71e"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/StoryScreen.dc.html",
+      "sha256": "9d495bc3a1d58bdb48ee844100304550f131d394330cde3bf5ebb136879430e7"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/SystemStates.dc.html",
+      "sha256": "d11f4ff7de16ae83fa908fea1b1db8e363e9198c8a5a6a64f9b8d6bc7d80686f"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/TodaySession.dc.html",
+      "sha256": "49ae13dcdfeea4644467d72b42e2438c8320e6ef7bbb198a89876e38944b4789"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/WebWords.dc.html",
+      "sha256": "5f351aba9486791b5379142c9a433c3c4a0afacb4840699cab992f9d7489e047"
+    },
+    {
+      "path": "docs/design/sonflash-redesign/canvas/src/WeeklyRecap.dc.html",
+      "sha256": "59ab7c65efd02b8b1cf3591e357a67e5625cf397288e07435c28bd4d61360486"
+    }
+  ]
+}

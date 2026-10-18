@@ -1,4 +1,4 @@
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import type { SpreadsheetImportRequest } from '../importExport/spreadsheetImportService';
 import type { LanguageProfile } from '../language/languageProfile';
 import {
@@ -6,8 +6,11 @@ import {
   type CardGenerationOptions,
   type CardIntakeControllerPort,
   type CardIntakeDraftPort,
+  type CardIntakeLanguagePair,
   type CardIntakeSnapshot,
 } from './cardIntakeController';
+import { createInitialCardCreatorModel, type CardCreatorActions } from './card-creator-model';
+import type { CardData } from '../../types/card';
 
 type IntakeController = ReturnType<typeof createCardIntakeController>;
 
@@ -23,6 +26,10 @@ export interface CardIntakeBindingOptions {
   language?: LanguageProfile;
   now?: () => string;
   spreadsheetDelay?: (milliseconds: number) => Promise<void>;
+  analytics?: {
+    captureStarted(event: { requestId: string; surface: 'app' | 'extension' }): void;
+    captureFailed(event: { requestId: string; surface: 'app' | 'extension'; latencyMs: number; error: unknown }): void;
+  };
 }
 
 export interface CardIntakeActions {
@@ -30,9 +37,12 @@ export interface CardIntakeActions {
   clearDraft(): void;
   generate(options?: CardGenerationOptions): ReturnType<IntakeController['generateDraft']>;
   importSpreadsheet(request: SpreadsheetImportRequest): ReturnType<IntakeController['importSpreadsheet']>;
-  adoptShared(request: { cards: readonly unknown[] }): ReturnType<IntakeController['adoptSharedDeck']>;
+  adoptShared(request: { cards: readonly unknown[]; expectedPair?: CardIntakeLanguagePair }): ReturnType<IntakeController['adoptSharedDeck']>;
+  createConfirmedCatalogCards(cards: readonly CardData[]): ReturnType<IntakeController['createConfirmedCatalogCards']>;
   invalidateCard(cardId: string): void;
   clearError(): void;
+  clearSharedAdoptionError(): void;
+  cardCreator: CardCreatorActions;
 }
 
 export interface CardIntakeBindingOwner {
@@ -52,7 +62,8 @@ const sameOptions = (
   && left.ports.resetSpreadsheetSource === right.ports.resetSpreadsheetSource
   && left.language === right.language
   && left.now === right.now
-  && left.spreadsheetDelay === right.spreadsheetDelay;
+  && left.spreadsheetDelay === right.spreadsheetDelay
+  && left.analytics === right.analytics;
 
 const createController = (options: CardIntakeBindingOptions): IntakeController =>
   createCardIntakeController({
@@ -62,6 +73,7 @@ const createController = (options: CardIntakeBindingOptions): IntakeController =
     language: options.language,
     now: options.now,
     spreadsheetDelay: options.spreadsheetDelay,
+    diagnostics: options.analytics,
   });
 
 export function createCardIntakeBindingOwner(
@@ -89,8 +101,20 @@ export function createCardIntakeBindingOwner(
     generate: options => controller.generateDraft(options),
     importSpreadsheet: request => controller.importSpreadsheet(request),
     adoptShared: request => controller.adoptSharedDeck(request),
+    createConfirmedCatalogCards: cards => controller.createConfirmedCatalogCards(cards),
     invalidateCard: cardId => controller.invalidateCard(cardId),
     clearError: () => controller.clearError(),
+    clearSharedAdoptionError: () => controller.clearSharedAdoptionError(),
+    cardCreator: {
+      open: opener => controller.cardCreator.open(opener),
+      updateDraft: patch => controller.cardCreator.updateDraft(patch),
+      generatePreview: () => controller.cardCreator.generatePreview(),
+      updatePreview: patch => controller.cardCreator.updatePreview(patch),
+      regenerate: fields => controller.cardCreator.regenerate(fields),
+      createManualDraft: fields => controller.cardCreator.createManualDraft(fields),
+      save: () => controller.cardCreator.save(),
+      cancel: () => controller.cardCreator.cancel(),
+    },
   };
 
   return {
@@ -129,17 +153,33 @@ export interface UseCardIntakeResult {
 
 export function useCardIntake(options: CardIntakeBindingOptions): UseCardIntakeResult {
   const ownerRef = useRef<CardIntakeBindingOwner | null>(null);
+  const ownerKeyRef = useRef(options.ownerKey);
   if (ownerRef.current === null) {
     ownerRef.current = createCardIntakeBindingOwner(options);
   }
   const owner = ownerRef.current;
-  const model = useSyncExternalStore(
+  const snapshot = useSyncExternalStore(
     owner.subscribe,
     owner.getSnapshot,
     owner.getSnapshot,
   );
+  const ownerChanged = ownerKeyRef.current !== options.ownerKey;
+  const model = ownerChanged ? {
+    ...snapshot,
+    draft: '',
+    isSubmitting: false,
+    isImporting: false,
+    isAdoptingSharedDeck: false,
+    importProgress: null,
+    importResult: null,
+    error: null,
+    cardCreator: createInitialCardCreatorModel(),
+  } : snapshot;
 
-  useEffect(() => {
+  // Bind the new language/port before passive effects can accept a shared deck.
+  // The controller still checks the pair at the operation boundary.
+  useLayoutEffect(() => {
+    ownerKeyRef.current = options.ownerKey;
     owner.replace(options);
   }, [
     owner,
@@ -150,6 +190,7 @@ export function useCardIntake(options: CardIntakeBindingOptions): UseCardIntakeR
     options.ports.draft,
     options.ports.resetSpreadsheetSource,
     options.spreadsheetDelay,
+    options.analytics,
   ]);
 
   useEffect(() => () => owner.dispose(), [owner]);
