@@ -44,6 +44,16 @@ The manifest and readiness files are the exact sealed files retained with that
 tuple. The LKG has its own independent tuple and must remain retrievable before
 promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
 
+Deployment tooling comes from the immutable protected-default-branch workflow
+checkout (`github.sha`), independently of the selected candidate revision. Staging,
+production and Rules deployment jobs install that checkout's locked root dependencies without
+lifecycle scripts, verify the approved Firebase CLI version before authentication,
+and invoke its absolute binary path while operating in the verified candidate
+directory. They never install the candidate's historical root development tooling
+or rebuild its files. This keeps retained artifacts deployable after a CLI upgrade;
+the candidate's sealed root manifests remain unchanged as provenance. Functions
+runtime dependencies still come from the candidate's sealed Functions lockfile.
+
 ## 1. Build, seal and retain one candidate
 
 1. Dispatch `Build release candidate` for the reviewed full commit revision. The

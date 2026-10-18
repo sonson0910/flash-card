@@ -35,7 +35,8 @@ describe('release workflow contracts', () => {
       expect(workflow).toContain('DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}');
       expect(workflow).toContain('git fetch --no-tags origin "refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"');
       expect(workflow).toContain('git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"');
-      expect(workflow).toContain('test "$(git rev-parse HEAD)" = "$REVISION"');
+      const checkoutRevision = relativePath.includes('/deploy-') ? '$GITHUB_SHA' : '$REVISION';
+      expect(workflow).toContain(`test "$(git rev-parse HEAD)" = "${checkoutRevision}"`);
       expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"');
       expect(workflow).toContain('fetch-depth: 0');
     }
@@ -54,7 +55,7 @@ describe('release workflow contracts', () => {
       expect(workflow).not.toContain('test "$GITHUB_SHA" = "$REVISION"');
       expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"');
       expect(workflow).toContain('git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"');
-      expect(workflow).toContain('test "$(git rev-parse HEAD)" = "$REVISION"');
+      expect(workflow).toContain('test "$(git rev-parse HEAD)" = "$GITHUB_SHA"');
     }
   });
 
@@ -210,7 +211,7 @@ describe('release workflow contracts', () => {
     expect(rulesIndex).toBeGreaterThan(readinessIndex);
     expect(functionsIndex).toBeGreaterThan(readinessIndex);
     expect(hostingIndex).toBeGreaterThan(readinessIndex);
-    expect(workflow).toContain('firebase deploy --only firestore:indexes --config firebase.promoted.json');
+    expect(workflow).toContain('firebase" deploy --only firestore:indexes --config firebase.promoted.json');
     expect(workflow).toContain('candidate/firestore.indexes.json');
     expect(workflow).toContain('gcloud firestore indexes composite list');
     expect(workflow).toContain('gcloud firestore indexes fields list');
@@ -275,7 +276,7 @@ describe('release workflow contracts', () => {
     expect(hostingJob).toContain('timeout-minutes: 15');
     expect(setupGcloudIndex).toBeGreaterThan(authIndex);
     expect(readinessIndex).toBeGreaterThan(setupGcloudIndex);
-    expect(indexJob).toContain('firebase deploy --only firestore:indexes --config firebase.promoted.json');
+    expect(indexJob).toContain('firebase" deploy --only firestore:indexes --config firebase.promoted.json');
     expect(indexJob).toContain('candidate/firestore.indexes.json');
     expect(indexJob).toContain('gcloud firestore indexes composite list');
     expect(indexJob).toContain('gcloud firestore indexes fields list');
@@ -294,7 +295,7 @@ describe('release workflow contracts', () => {
     const validateJob = workflow.slice(workflow.indexOf('  validate_candidate:'), workflow.indexOf('  deploy_indexes:'));
     const indexJob = workflow.slice(workflow.indexOf('  deploy_indexes:'), workflow.indexOf('  deploy_hosting:'));
     const safetyReceiptIndex = workflow.indexOf('name: Verify the Firestore release-safety receipt');
-    const indexDeployIndex = workflow.indexOf('firebase deploy --only firestore:indexes');
+    const indexDeployIndex = workflow.indexOf('firebase" deploy --only firestore:indexes');
 
     expect(workflow).toContain('firestore_safety_run_id:');
     expect(workflow).toContain('firestore_safety_receipt_sha256:');
@@ -386,7 +387,32 @@ describe('release workflow contracts', () => {
     expect(runbook).not.toContain('that is the planned rollback window');
   });
 
-  it('seals the pinned root Firebase CLI dependency tree and uses only the verified local binary', () => {
+  it('keeps retained candidates deployable after the protected Firebase CLI pin changes', () => {
+    for (const [relativePath, expectedJobs] of [
+      ['.github/workflows/deploy-production.yml', ['deploy_indexes', 'deploy_hosting', 'deploy_functions']],
+      ['.github/workflows/deploy-firestore-rules.yml', ['deploy_rules']],
+      ['.github/workflows/deploy-staging.yml', ['deploy']],
+    ]) {
+      const workflow = read(relativePath);
+      expect(workflow).not.toContain('ref: ${{ inputs.revision }}');
+      for (const jobName of expectedJobs) {
+        const job = workflow.split(`\n  ${jobName}:`)[1].split(/\n  [a-z_]+:/)[0];
+        const checkout = job.slice(job.indexOf('actions/checkout@'), job.indexOf('actions/setup-node@'));
+        expect(checkout).toContain('ref: ${{ github.sha }}');
+        expect(checkout).toContain('test "$(git rev-parse HEAD)" = "$GITHUB_SHA"');
+        expect(checkout).not.toContain('ref: ${{ inputs.revision }}');
+        const tooling = job.slice(job.indexOf('name: Install'), job.indexOf('google-github-actions/auth@'));
+        expect(tooling).not.toContain('working-directory: candidate');
+        expect(tooling).not.toContain('working-directory: validated');
+        expect(tooling).toContain('npm ci --ignore-scripts --no-audit --no-fund');
+        const deployLines = job.split('\n').filter(line => /firebase" deploy/.test(line));
+        expect(deployLines.length).toBeGreaterThan(0);
+        for (const line of deployLines) expect(line).toContain('"$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy');
+      }
+    }
+  });
+
+  it('seals root dependency provenance and uses the verified protected deployment CLI', () => {
     const packageJson = JSON.parse(read('package.json'));
     const packageLock = JSON.parse(read('package-lock.json'));
     expect(packageJson.devDependencies['firebase-tools']).toBe('15.34.0');
@@ -414,7 +440,7 @@ describe('release workflow contracts', () => {
         expect(install).toBeGreaterThan(-1);
         expect(version).toBeGreaterThan(install);
         expect(auth).toBeGreaterThan(version);
-        expect(job).toContain('./node_modules/.bin/firebase deploy');
+        expect(job).toContain('"$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy');
         expect(job).not.toContain('npx --yes firebase-tools');
       }
     }
@@ -472,7 +498,7 @@ describe('release workflow contracts', () => {
     expect(functionsJob).not.toContain('needs: [validate_candidate, deploy_hosting]');
     expect(functionsJob).toContain('npm ci --prefix candidate/functions --omit=dev --ignore-scripts --no-audit --no-fund');
     expect(functionsJob.indexOf('npm ci --prefix candidate/functions')).toBeLessThan(
-      functionsJob.indexOf('./node_modules/.bin/firebase deploy --only functions'),
+      functionsJob.indexOf('"$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only functions'),
     );
     expect(workflow.match(/firebase_project_pattern='\^\[a-z\]\[a-z0-9-\]\{4,28\}\[a-z0-9\]\$'/g)).toHaveLength(3);
     expect(workflow).not.toMatch(/firebase-tools@[^\n]+ deploy --non-interactive\s*$/m);

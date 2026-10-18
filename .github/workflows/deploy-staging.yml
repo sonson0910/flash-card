@@ -110,8 +110,7 @@ jobs:
           node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "$REVISION" --workflow-run-id "$CANDIDATE_RUN_ID" --candidate-sha256 "$CANDIDATE_SHA256" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID" --origin "$STAGING_ORIGIN"
           node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID"
 
-      - name: Install and verify the sealed Firebase CLI
-        working-directory: candidate
+      - name: Install and verify the protected Firebase CLI
         shell: bash
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
@@ -144,7 +143,7 @@ jobs:
             --project="$FIREBASE_PROJECT_ID" \
             --database="$FIRESTORE_DATABASE_ID" \
             --limit=1000 --format=json > artifacts/firestore-index-readiness/baseline-operations.json
-          (cd candidate && ./node_modules/.bin/firebase deploy --only firestore:indexes --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive)
+          (cd candidate && "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only firestore:indexes --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive)
           gcloud firestore databases describe \
             --project="$FIREBASE_PROJECT_ID" \
             --database="$FIRESTORE_DATABASE_ID" \
@@ -195,7 +194,8 @@ jobs:
 
       - name: Deploy only sealed Firestore Rules
         working-directory: candidate
-        run: ./node_modules/.bin/firebase deploy --only firestore:rules --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+        run: >-
+          "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only firestore:rules --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
 
@@ -218,13 +218,14 @@ jobs:
           test -f "$parameter_file"
           grep -qxF 'ENFORCE_APP_CHECK=true' "$parameter_file"
 
-          ./node_modules/.bin/firebase deploy --only functions --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+          "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only functions --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
 
       - name: Deploy only sealed Hosting bytes
         working-directory: candidate
-        run: ./node_modules/.bin/firebase deploy --only hosting --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+        run: >-
+          "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only hosting --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
 
