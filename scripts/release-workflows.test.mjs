@@ -412,6 +412,30 @@ describe('release workflow contracts', () => {
     }
   });
 
+  it('keeps shell-only staging baselines separate from full promotion evidence', () => {
+    const workflow = read('.github/workflows/deploy-staging.yml');
+    expect(workflow).toContain('hosting_only:');
+    for (const name of [
+      'Materialize sealed Functions runtime dependencies',
+      'Deploy and verify candidate Firestore composite indexes',
+      'Upload immutable Firestore index readiness report',
+      'Deploy only sealed Firestore Rules',
+      'Deploy only sealed Functions',
+      'Upload immutable staging deployment receipt',
+    ]) {
+      const step = workflow.split(`- name: ${name}\n`)[1]?.split('\n      - ')[0] ?? '';
+      expect(step).toContain('if: ${{ !inputs.hosting_only }}');
+    }
+    const probe = workflow.slice(workflow.indexOf('- name: Verify live HTTPS bytes'));
+    expect(probe).toContain('HOSTING_ONLY: ${{ inputs.hosting_only }}');
+    expect(probe).toContain('if [[ "$HOSTING_ONLY" == "true" ]]; then');
+    expect(probe.indexOf('exit 0')).toBeGreaterThan(-1);
+    expect(probe.indexOf('node scripts/staging-deployment-receipt.mjs')).toBeGreaterThan(probe.indexOf('exit 0'));
+    const production = read('.github/workflows/deploy-production.yml');
+    expect(production).toContain('release-staging-receipt-${REVISION}-${STAGING_RUN_ID}');
+    expect(production).toContain('select(.expired == false and .workflow_run.id == ($run | tonumber))] | length');
+  });
+
   it('seals root dependency provenance and uses the verified protected deployment CLI', () => {
     const packageJson = JSON.parse(read('package.json'));
     const packageLock = JSON.parse(read('package-lock.json'));

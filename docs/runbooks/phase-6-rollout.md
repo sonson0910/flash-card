@@ -184,7 +184,18 @@ Firebase/Hosting deploy is not evidence. The protected staging workflow must:
 4. emit an immutable deployment receipt binding the candidate run ID, revision,
    candidate SHA-256, manifest/readiness, protected target and HTTPS origin.
 
-Until a successful receipt exists for the selected tuple, do not run or accept the
+To prepare a retained A shell before the native update rehearsal, or restore its
+Hosting shell as R afterward, dispatch this same protected staging workflow with
+`hosting_only=true` and that retained candidate's exact tuple. It verifies the
+candidate, deploys only its sealed Hosting bytes and checks live health/worker bytes.
+It leaves the current Functions, Rules and indexes in place, avoiding deletion of
+newer backend endpoints when the retained shell predates them. Record the workflow
+run, tuple and Hosting-only scope with the A/R observations. This mode issues no
+complete staging deployment receipt and cannot satisfy production's receipt gate.
+Deploy the actual B candidate with `hosting_only=false` (the default); all runtime,
+index, Rules and immutable-receipt gates above remain required for promotion.
+
+Until a successful full deployment receipt exists for the selected B tuple, do not run or accept the
 smoke below, do not promote the candidate, and do not record staging evidence. The browser/manual evidence
 must bind to the immutable deployment receipt as well as the candidate tuple; an
 origin-only or manually deployed result is not evidence.

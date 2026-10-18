@@ -15,6 +15,11 @@ on:
         description: Candidate SHA-256 shown in that workflow summary
         required: true
         type: string
+      hosting_only:
+        description: Prepare a retained shell baseline without runtime deployment or a full staging receipt
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   actions: read
@@ -117,6 +122,7 @@ jobs:
           test "$(./node_modules/.bin/firebase --version)" = "15.34.0"
 
       - name: Materialize sealed Functions runtime dependencies
+        if: ${{ !inputs.hosting_only }}
         run: npm ci --prefix candidate/functions --omit=dev --ignore-scripts --no-audit --no-fund
 
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
@@ -128,6 +134,7 @@ jobs:
       - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
 
       - name: Deploy and verify candidate Firestore composite indexes
+        if: ${{ !inputs.hosting_only }}
         shell: bash
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
@@ -185,6 +192,7 @@ jobs:
           exit 1
 
       - name: Upload immutable Firestore index readiness report
+        if: ${{ !inputs.hosting_only }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-staging-index-readiness-${{ inputs.revision }}-${{ github.run_id }}
@@ -193,6 +201,7 @@ jobs:
           retention-days: 90
 
       - name: Deploy only sealed Firestore Rules
+        if: ${{ !inputs.hosting_only }}
         working-directory: candidate
         run: >-
           "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only firestore:rules --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
@@ -200,6 +209,7 @@ jobs:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
 
       - name: Deploy only sealed Functions
+        if: ${{ !inputs.hosting_only }}
         working-directory: candidate
         shell: bash
         run: |
@@ -236,6 +246,7 @@ jobs:
           CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
           FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          HOSTING_ONLY: ${{ inputs.hosting_only }}
           REVISION: ${{ inputs.revision }}
           STAGING_ORIGIN: ${{ vars.STAGING_ORIGIN }}
         run: |
@@ -246,6 +257,10 @@ jobs:
           test "$sw_status" = "200"
           jq -e --arg revision "$REVISION" '.revision == $revision and .status == "ok"' artifacts/live-staging/health.json
           test "$(sha256sum candidate/dist/sw.js | cut -d' ' -f1)" = "$(sha256sum artifacts/live-staging/sw.js | cut -d' ' -f1)"
+          if [[ "$HOSTING_ONLY" == "true" ]]; then
+            echo "Verified Hosting-only shell baseline: revision=$REVISION candidate_run_id=$CANDIDATE_RUN_ID candidate_sha256=$CANDIDATE_SHA256. No complete staging receipt was issued." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           export MANIFEST_SHA256="$(sha256sum candidate/artifacts/release-candidate-manifest.json | cut -d' ' -f1)"
           export READINESS_SHA256="$(sha256sum candidate/artifacts/phase6-readiness.json | cut -d' ' -f1)"
           export HEALTH_SHA256="$(sha256sum artifacts/live-staging/health.json | cut -d' ' -f1)"
@@ -256,6 +271,7 @@ jobs:
           jq -e '.' artifacts/staging-deployment-receipt.json >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload immutable staging deployment receipt
+        if: ${{ !inputs.hosting_only }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-staging-receipt-${{ inputs.revision }}-${{ github.run_id }}
