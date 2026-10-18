@@ -86,6 +86,8 @@ test.beforeEach(async ({ page, seedCards, blockExternalNetwork }, testInfo) => {
 
 test('library exposes one canonical heading and a keyboard-operable skip link', async ({ page, signIn, browserName }) => {
   await signIn(page, '/?view=library');
+  // Set keyboard focus only after the initial course scope renders the Library.
+  await page.locator('[data-library-region="overview"]').waitFor({ state: 'visible' });
 
   const skipLink = page.getByRole('link', { name: 'Skip to content' });
   const main = page.locator('main#learning-workspace');
