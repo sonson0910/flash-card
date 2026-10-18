@@ -32,14 +32,14 @@ test('verified XP and rewards refresh on two signed-in devices without navigatio
     const peerPage = await peerContext.newPage();
     await blockExternalNetwork(page);
     await blockExternalNetwork(peerPage);
-    await Promise.all([
-      signIn(page, '/?view=progress&locale=en'),
-      signIn(peerPage, '/?view=progress&locale=en'),
-    ]);
-
     const firstOwnerLevel = page.getByLabel('Level 1, 99 XP');
     const peerFirstOwnerLevel = peerPage.getByLabel('Level 1, 99 XP');
+    // Finish each device's initial hydration before measuring live updates.
+    await signIn(page, '/?view=progress&locale=en');
+    await expect(page.getByRole('heading', { level: 1, name: 'Progress', exact: true })).toBeVisible();
     await expect(firstOwnerLevel).toBeVisible();
+    await signIn(peerPage, '/?view=progress&locale=en');
+    await expect(peerPage.getByRole('heading', { level: 1, name: 'Progress', exact: true })).toBeVisible();
     await expect(peerFirstOwnerLevel).toBeVisible();
     await expect(page.locator('[data-native-chart="xp"] [data-xp-hit-area] title')).toHaveText(`${chartDate(initialDay)}: 99 XP`);
     await expect(peerPage.locator('[data-native-chart="xp"] [data-xp-hit-area] title')).toHaveText(`${chartDate(initialDay)}: 99 XP`);
