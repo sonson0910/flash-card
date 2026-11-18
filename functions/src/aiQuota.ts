@@ -4,7 +4,10 @@ import type { PilotConfig } from './pilotConfig.js';
 import { dayKey } from './aiCostLedger.js';
 
 type Plan = { tier: 'free' | 'pro'; periodKey: string; startsAt: Date; endsAt: Date; limit: number };
-export type AiOperationRecord = { status?: string; attemptId?: string; periodKey?: string; reservedAt?: unknown; result?: unknown; requestHash?: string };
+export type AiOperationRecord = {
+  status?: string; attemptId?: string; periodKey?: string; reservedAt?: unknown; result?: unknown; requestHash?: string;
+  deliveredAt?: unknown;
+};
 
 export class AiQuotaError extends Error {
   constructor(readonly reason: 'ai-card-quota' | 'ai-daily-allowance' | 'operation-in-flight'
@@ -91,9 +94,11 @@ export async function reserveWordOperation(database: Firestore, uid: string, ope
       periodKey, tier: plan.tier, used: used + 1, limit: plan.limit,
       periodStartsAt: plan.startsAt, periodEndsAt: plan.endsAt, updatedAt: now,
     }, { merge: true });
+    // A takeover inherits the charged unit, so it keeps any earlier delivery mark with it.
     transaction.set(operationRef, {
       status: 'reserved', attemptId, periodKey, requestHash, reservedAt: now,
       completedAt: null, result: null, expiresAt: new Date(now.getTime() + 7 * 86_400_000),
+      ...(takeover ? {} : { deliveredAt: null }),
     }, { merge: true });
     return { kind: 'reserved', attemptId, periodKey };
   });
@@ -109,7 +114,10 @@ export async function settleWordOperation(database: Firestore, uid: string, oper
     const usageRef = owner.collection('ai_usage').doc(operation.periodKey);
     const usage = await transaction.get(usageRef);
     if (result === null) {
-      transaction.set(usageRef, { used: Math.max(0, asAiQuotaCount(usage.data()?.used) - 1), updatedAt: now }, { merge: true });
+      // A failure refunds the card unit only while the learner has received none of the card.
+      if (!operation.deliveredAt) {
+        transaction.set(usageRef, { used: Math.max(0, asAiQuotaCount(usage.data()?.used) - 1), updatedAt: now }, { merge: true });
+      }
       transaction.set(operationRef, { status: 'failed', completedAt: now, result: null }, { merge: true });
     } else {
       transaction.set(operationRef, { status: 'completed', completedAt: now, result }, { merge: true });
@@ -118,10 +126,26 @@ export async function settleWordOperation(database: Firestore, uid: string, oper
   });
 }
 
+/**
+ * Records that this attempt is about to send card content to the learner. It returns false when the
+ * attempt no longer owns the reservation (cancelled, settled or taken over); the caller must then send nothing.
+ */
+export async function markWordOperationDelivered(database: Firestore, uid: string, operationId: string,
+  attemptId: string, now: Date): Promise<boolean> {
+  const operationRef = database.collection('users').doc(uid).collection('ai_operations').doc(operationId);
+  return database.runTransaction(async transaction => {
+    const operation = (await transaction.get(operationRef)).data() as AiOperationRecord | undefined;
+    if (operation?.status !== 'reserved' || operation.attemptId !== attemptId) return false;
+    if (!operation.deliveredAt) transaction.set(operationRef, { deliveredAt: now }, { merge: true });
+    return true;
+  });
+}
+
+/** Cancels a generation that has not delivered content yet; delivered work completes and stays charged. */
 export async function cancelWordOperation(database: Firestore, uid: string, operationId: string, now: Date): Promise<boolean> {
   const operation = (await database.collection('users').doc(uid).collection('ai_operations').doc(operationId).get())
     .data() as AiOperationRecord | undefined;
-  if (operation?.status !== 'reserved' || typeof operation.attemptId !== 'string') return false;
+  if (operation?.status !== 'reserved' || typeof operation.attemptId !== 'string' || operation.deliveredAt) return false;
   return settleWordOperation(database, uid, operationId, operation.attemptId, null, now);
 }
 

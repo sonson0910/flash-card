@@ -3,8 +3,8 @@ import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
-  cancelWordOperation, freePeriod, refundNonCardAction, reserveNonCardAction, reserveWordOperation,
-  settleWordOperation, sweepExpiredWordOperations,
+  cancelWordOperation, freePeriod, markWordOperationDelivered, refundNonCardAction, reserveNonCardAction,
+  reserveWordOperation, settleWordOperation, sweepExpiredWordOperations,
 } from '../src/aiQuota.js';
 import { PILOT_CONFIG_DEFAULTS } from '../src/pilotConfig.js';
 
@@ -76,6 +76,48 @@ describeWithEmulator('Firestore account AI quota', () => {
     const owner = database.collection('users').doc(uid);
     expect((await owner.collection('ai_operations').doc(operationId).get()).data()?.status).toBe('failed');
     expect((await owner.collection('ai_usage').doc(freePeriod(now, config).periodKey).get()).data()?.used).toBe(0);
+  });
+
+  it('keeps the card unit once content was delivered, through cancel, failure, and sweep', async () => {
+    const uid = `delivered-${randomUUID()}`;
+    const owner = database.collection('users').doc(uid);
+    const usedCards = async () => (await owner.collection('ai_usage').doc(freePeriod(now, config).periodKey).get()).data()?.used;
+    const operationId = randomUUID();
+    const reservation = await reserveWordOperation(database, uid, operationId, 'same', now, config);
+    if (reservation.kind !== 'reserved') throw new Error('expected a reservation');
+    expect(await markWordOperationDelivered(database, uid, operationId, 'another-attempt', now)).toBe(false);
+    expect(await markWordOperationDelivered(database, uid, operationId, reservation.attemptId, now)).toBe(true);
+    expect(await cancelWordOperation(database, uid, operationId, now)).toBe(false);
+    expect((await owner.collection('ai_operations').doc(operationId).get()).data()?.status).toBe('reserved');
+    expect(await settleWordOperation(database, uid, operationId, reservation.attemptId, null, now)).toBe(true);
+    expect((await owner.collection('ai_operations').doc(operationId).get()).data()?.status).toBe('failed');
+    expect(await usedCards()).toBe(1);
+
+    // A fresh attempt on the same ID is a new charge with no inherited delivery, so its failure refunds.
+    const retried = await reserveWordOperation(database, uid, operationId, 'same', now, config);
+    if (retried.kind !== 'reserved') throw new Error('expected a reservation');
+    expect(await usedCards()).toBe(2);
+    expect(await settleWordOperation(database, uid, operationId, retried.attemptId, null, now)).toBe(true);
+    expect(await usedCards()).toBe(1);
+
+    const abandoned = randomUUID();
+    const stale = await reserveWordOperation(database, uid, abandoned, 'other', now, config);
+    if (stale.kind !== 'reserved') throw new Error('expected a reservation');
+    expect(await markWordOperationDelivered(database, uid, abandoned, stale.attemptId, now)).toBe(true);
+    expect(await sweepExpiredWordOperations(database, new Date(now.getTime() + 11 * 60_000))).toBeGreaterThanOrEqual(1);
+    expect((await owner.collection('ai_operations').doc(abandoned).get()).data()?.status).toBe('failed');
+    expect(await usedCards()).toBe(2);
+  }, 15_000);
+
+  it('refuses to mark delivery after a cancel has refunded the reservation', async () => {
+    const uid = `cancel-first-${randomUUID()}`;
+    const operationId = randomUUID();
+    const reservation = await reserveWordOperation(database, uid, operationId, 'same', now, config);
+    if (reservation.kind !== 'reserved') throw new Error('expected a reservation');
+    expect(await cancelWordOperation(database, uid, operationId, now)).toBe(true);
+    expect(await markWordOperationDelivered(database, uid, operationId, reservation.attemptId, now)).toBe(false);
+    const usage = await database.collection('users').doc(uid).collection('ai_usage').doc(freePeriod(now, config).periodKey).get();
+    expect(usage.data()?.used).toBe(0);
   });
 
   it('rejects a hash conflict on a live operation but allows a different hash once it failed', async () => {
