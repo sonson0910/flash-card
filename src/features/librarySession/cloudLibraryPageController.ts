@@ -14,8 +14,14 @@ export interface CloudLibraryStats {
   unrated: number;
   bookmarked: number;
   due: number;
+  dueAsOfDate?: string;
   legacyUnindexed: number;
+  dueForecast?: Array<{ date: string; count: number }>;
+  recentlyMastered?: Array<{ id: string; word: string; translation: string; masteredAt: string }>;
 }
+
+export type FreshCloudLibraryStats = CloudLibraryStats & { dueAsOfDate: string };
+export type FreshDueStats = Pick<FreshCloudLibraryStats, 'due' | 'dueAsOfDate'>;
 
 export const EMPTY_LIBRARY_STATS: CloudLibraryStats = {
   total: 0,
@@ -58,7 +64,9 @@ export interface CloudLibraryPageAdapter {
     onError: (error: unknown) => void | Promise<void>,
   ): () => void;
   countCards(ownerId: string, query: CardQueryState): Promise<number>;
-  loadStats(ownerId: string): Promise<CloudLibraryStats>;
+  loadStats(ownerId: string, targetLanguage: string | null): Promise<FreshCloudLibraryStats>;
+  loadDueStats(ownerId: string, targetLanguage: string | null): Promise<FreshDueStats>;
+  loadProgressEvidence(ownerId: string, targetLanguage: string | null): Promise<Pick<CloudLibraryStats, 'dueForecast' | 'recentlyMastered'>>;
   subscribeFacets(
     ownerId: string,
     onFacets: (facets: { categories: Record<string, number>; complete: boolean }) => void,
@@ -79,8 +87,8 @@ export interface CloudLibraryCachePort {
     countedAt: number | null;
   }): void | Promise<void>;
   readCount(ownerId: string, queryKey: string): { total: number; cachedAt: number | null } | null;
-  readStats(ownerId: string): { stats: CloudLibraryStats; cachedAt: number | null } | null;
-  writeStats(ownerId: string, stats: CloudLibraryStats, updatedAt: number): void;
+  readStats(ownerId: string, targetLanguage: string | null): { stats: CloudLibraryStats; cachedAt: number | null } | null;
+  writeStats(ownerId: string, targetLanguage: string | null, stats: CloudLibraryStats, updatedAt: number): void;
   readFacets(ownerId: string): { categories: Record<string, number>; complete: boolean } | null;
   writeFacets(ownerId: string, facets: { categories: Record<string, number>; complete: boolean }): void;
   isBackoffActive(ownerId: string): boolean;
@@ -100,7 +108,9 @@ export interface CloudLibraryPageSnapshot {
   canRetryAutomatically: boolean;
   error: string | null;
   stats: CloudLibraryStats;
+  statsTargetLanguage?: string | null;
   isStatsLoading: boolean;
+  statsSettledRequestId?: number | null;
   facets: Record<string, number>;
   facetsComplete: boolean;
 }
@@ -153,7 +163,11 @@ export function createCloudLibraryPageController({
     facetsComplete: false,
   };
   let pageGeneration = 0;
+  let pageEmissionSequence = 0;
   let ownerGeneration = 0;
+  let progressEvidenceGeneration = 0;
+  let statsGeneration = 0;
+  let progressEvidenceLanguage: string | null | undefined;
   let activeOwnerId: string | null = null;
   let unsubscribePage: (() => void) | null = null;
   let unsubscribeFacets: (() => void) | null = null;
@@ -165,22 +179,27 @@ export function createCloudLibraryPageController({
     listeners.forEach(listener => listener(snapshot));
   };
 
-  const setupOwner = (ownerId: string) => {
+  const setupOwner = (ownerId: string, targetLanguage: string | null) => {
     if (activeOwnerId !== ownerId) {
-    activeOwnerId = ownerId;
-    ownerGeneration += 1;
+      activeOwnerId = ownerId;
+      ownerGeneration += 1;
+      statsGeneration += 1;
+      progressEvidenceGeneration += 1;
+      progressEvidenceLanguage = undefined;
     unsubscribeFacets?.();
     unsubscribeFacets = null;
 
-    const cachedStats = safeCacheRead(() => cache.readStats(ownerId), null);
+    const cachedStats = safeCacheRead(() => cache.readStats(ownerId, targetLanguage), null);
     const cachedFacets = safeCacheRead(() => cache.readFacets(ownerId), null);
     publish({
       ownerId,
       stats: cachedStats?.stats ?? EMPTY_LIBRARY_STATS,
+      statsTargetLanguage: cachedStats ? targetLanguage : undefined,
       items: [],
       total: 0,
       hasNext: false,
       isStatsLoading: false,
+      statsSettledRequestId: null,
       facets: cachedFacets?.categories ?? {},
       facetsComplete: cachedFacets?.complete ?? false,
     });
@@ -198,13 +217,14 @@ export function createCloudLibraryPageController({
     request: CloudLibraryPageRequest,
     generation: number,
     error: unknown,
+    cacheOnlySequence?: number,
   ) => {
     if (isCloudQuotaError(error)) safeCacheWrite(() => cache.markBackoff(request.ownerId));
     const fallback = await (async () => {
       try { return await cache.readPage({ ...request, pageSize: boundedPageSize }); }
       catch { return null; }
     })();
-    if (generation !== pageGeneration) return;
+    if (generation !== pageGeneration || (cacheOnlySequence !== undefined && cacheOnlySequence !== pageEmissionSequence)) return;
     if (fallback) {
       publish({
         items: fallback.items.slice(0, boundedPageSize),
@@ -220,6 +240,7 @@ export function createCloudLibraryPageController({
       });
       return;
     }
+    if (cacheOnlySequence !== undefined) return;
     publish({
       items: request.page === 1 ? [] : snapshot.items,
       hasNext: false,
@@ -232,13 +253,72 @@ export function createCloudLibraryPageController({
     });
   };
 
+  // Deep-linking straight to a page beyond 1 (bookmark, shared URL, browser
+  // history restore) lands here with no cursor yet: the cursor chain is only
+  // built by visiting pages in ascending order, one fetch at a time. Without
+  // this, `activate` treated an unresolved cursor as "past the end", which
+  // made `useLibraryCloudProjection`'s exhausted-page guard silently bounce
+  // the URL back to page 1. Walk the chain forward with one-shot reads so a
+  // genuinely valid deep-linked page resolves instead of being misread as
+  // exhausted.
+  const fetchOnePage = (
+    request: CloudLibraryPageRequest,
+    cursor: string | null,
+  ): Promise<CloudPage> => new Promise((resolve, reject) => {
+    let settled = false;
+    const unsubscribe = adapter.subscribePage(
+      { ...request, pageSize: boundedPageSize, cursor },
+      page => {
+        if (settled) return;
+        settled = true;
+        unsubscribe();
+        resolve(page);
+      },
+      error => {
+        if (settled) return;
+        settled = true;
+        unsubscribe();
+        reject(error);
+      },
+    );
+  });
+
+  const resolveCursorChain = async (
+    request: CloudLibraryPageRequest,
+    pageCursors: Map<number, string | null>,
+    generation: number,
+  ): Promise<string | null | undefined> => {
+    let current = Math.max(...[...pageCursors.keys()].filter(pageNumber => pageNumber <= request.page));
+    while (current < request.page) {
+      if (generation !== pageGeneration) return undefined;
+      const cursor = pageCursors.get(current);
+      if (cursor === undefined) return undefined;
+      let page: CloudPage;
+      try {
+        page = await fetchOnePage(request, cursor);
+      } catch {
+        return undefined;
+      }
+      if (generation !== pageGeneration) return undefined;
+      if (!page.hasNext || !page.cursor) {
+        for (const pageNumber of [...pageCursors.keys()]) {
+          if (pageNumber > current) pageCursors.delete(pageNumber);
+        }
+        return undefined;
+      }
+      pageCursors.set(current + 1, page.cursor);
+      current += 1;
+    }
+    return pageCursors.get(request.page);
+  };
+
   const activate = (request: CloudLibraryPageRequest) => {
     unsubscribePage?.();
     unsubscribePage = null;
     const generation = ++pageGeneration;
     const continuesSameQuery = snapshot.ownerId === request.ownerId
       && snapshot.queryKey === request.queryKey;
-    setupOwner(request.ownerId);
+    setupOwner(request.ownerId, request.query.targetLanguage ?? null);
     const scope = `${request.ownerId}\u0000${request.queryKey}`;
     const pageCursors = cursors.get(scope) ?? new Map<number, string | null>([[1, null]]);
     cursors.set(scope, pageCursors);
@@ -254,186 +334,245 @@ export function createCloudLibraryPageController({
       error: null,
     });
 
-    if (!adapter.available || safeCacheRead(() => cache.isBackoffActive(request.ownerId), false) || cursor === undefined) {
-      void applyFallback(request, generation, Object.assign(new Error(
-        cursor === undefined ? 'The previous page cursor is unavailable.' : 'Cloud reads are paused.',
-      ), { code: adapter.available && cursor !== undefined ? 'unavailable' : 'failed-precondition' }));
+    if (!adapter.available || safeCacheRead(() => cache.isBackoffActive(request.ownerId), false)) {
+      void applyFallback(request, generation, new Error('Cloud reads are paused.'));
       return () => undefined;
     }
 
-    let initialPage = true;
-    // 0 = idle, 1 = counting, 2 = recount requested while counting.
-    let countRefreshState = 0;
-    let activeTotal = continuesSameQuery ? snapshot.total : 0;
-    void (async () => {
-      let cachedPage: Awaited<ReturnType<CloudLibraryCachePort['readPage']>>;
-      try {
-        cachedPage = await cache.readPage({ ...request, pageSize: boundedPageSize });
-      } catch {
-        return;
-      }
-      if (!cachedPage || !initialPage || generation !== pageGeneration || activeOwnerId !== request.ownerId) return;
-      const inferredMinimum = ((request.page - 1) * boundedPageSize)
-        + cachedPage.items.length
-        + (cachedPage.hasNext ? 1 : 0);
-      activeTotal = Math.max(activeTotal, cachedPage.total, inferredMinimum);
-      publish({
-        items: cachedPage.items.slice(0, boundedPageSize),
-        total: activeTotal,
-        hasNext: cachedPage.hasNext,
-        isLoading: false,
-        cloudUnavailable: false,
-        serverConfirmed: false,
-        error: null,
-      });
-    })();
-    const defaultQuery = request.page === 1
-      && request.query.wordPrefix === ''
-      && !request.query.category
-      && (request.query.customDeck?.kind ?? 'all') === ALL_PRACTICE_DECK_SCOPE.kind
-      && !request.query.difficulty
-      && !request.query.partOfSpeech
-      && !request.query.bookmarkedOnly
-      && !request.query.createdDate;
-    const activeSubscription = adapter.subscribePage(
-      { ...request, pageSize: boundedPageSize, cursor },
-      async page => {
-        if (generation !== pageGeneration) return;
-        const cachedCount = safeCacheRead(() => cache.readCount(request.ownerId, request.queryKey), null);
-        let total = cachedCount?.total ?? activeTotal;
-        let countedAt = cachedCount?.cachedAt ?? null;
-        const refreshInitialCount = initialPage && shouldRefreshCloudCount({
-          page: request.page,
-          cachedAt: cachedCount?.cachedAt ?? null,
-          now: now(),
-        });
-        const refreshRealtimeCount = !initialPage
-          && !page.fromCache
-          && !page.hasPendingWrites
-          && shouldRefreshCountForRealtimeChanges(false, page.changeTypes);
-        const requestsCountRefresh = refreshInitialCount || refreshRealtimeCount;
-        const shouldRefreshCount = requestsCountRefresh && countRefreshState === 0;
-        if (requestsCountRefresh) countRefreshState = countRefreshState === 0 ? 1 : 2;
-        if (generation !== pageGeneration) return;
-        const inferredMinimum = ((request.page - 1) * boundedPageSize)
-          + page.items.length
-          + (page.hasNext ? 1 : 0);
-        total = Math.max(total, activeTotal, inferredMinimum);
-        activeTotal = total;
-        if (page.hasNext && page.cursor) pageCursors.set(request.page + 1, page.cursor);
-        else {
-          for (const pageNumber of [...pageCursors.keys()]) {
-            if (pageNumber > request.page) pageCursors.delete(pageNumber);
+    const subscribeToPage = (pageCursor: string | null): (() => void) => {
+      let initialPage = true;
+      // 0 = idle, 1 = counting, 2 = recount requested while counting.
+      let countRefreshState = 0;
+      let activeTotal = continuesSameQuery ? snapshot.total : 0;
+      const defaultQuery = request.page === 1
+        && request.query.wordPrefix === ''
+        && !request.query.category
+        && (request.query.customDeck?.kind ?? 'all') === ALL_PRACTICE_DECK_SCOPE.kind
+        && !request.query.difficulty
+        && !request.query.partOfSpeech
+        && !request.query.bookmarkedOnly
+        && !request.query.createdDate;
+      const activeSubscription = adapter.subscribePage(
+        { ...request, pageSize: boundedPageSize, cursor: pageCursor },
+        async page => {
+          if (generation !== pageGeneration) return;
+          const emission = ++pageEmissionSequence;
+          // An empty SDK cache cannot invalidate the last confirmed device page.
+          if (page.fromCache && !page.hasPendingWrites && page.items.length === 0) {
+            await applyFallback(request, generation, new Error('Cloud page is not yet confirmed.'), emission);
+            return;
           }
-        }
-        initialPage = false;
-        publish({
-          items: page.items.slice(0, boundedPageSize),
-          total,
-          hasNext: page.hasNext,
-          isLoading: false,
-          cloudUnavailable: false,
-          serverConfirmed: !page.fromCache && !page.hasPendingWrites,
-          canRetryAutomatically: false,
-          error: null,
-        });
-        await safeCacheWriteAsync(() => cache.writePage({
-          ...request,
-          items: page.items.slice(0, boundedPageSize),
-          total,
-          hasNext: page.hasNext,
-          countedAt,
-        }));
-
-        if (shouldRefreshCount) {
-          do {
-            countRefreshState = 1;
-            const countedTotal = await adapter.countCards(request.ownerId, request.query).catch(() => null);
-            if (generation !== pageGeneration) break;
-            if (countedTotal === null) continue;
-            const refreshedAt = now();
-            const currentItems = snapshot.items.slice(0, boundedPageSize);
-            total = Math.max(
-              countedTotal,
-              ((request.page - 1) * boundedPageSize)
-                + currentItems.length
-                + (snapshot.hasNext ? 1 : 0),
-            );
-            activeTotal = total;
-            const cachedStats = defaultQuery
-              ? safeCacheRead(() => cache.readStats(request.ownerId), null)
-              : null;
-            const nextStats = defaultQuery
-              ? {
-                ...(cachedStats?.stats ?? snapshot.stats),
-                total,
-              }
-              : null;
-            const cachedStatsAt = cachedStats?.cachedAt;
-            publish(nextStats ? { total, stats: nextStats } : { total });
-            if (nextStats && typeof cachedStatsAt === 'number') {
-              // A count only makes `total` authoritative. Preserve the age of
-              // the full stats cache so requestStats still refreshes its facets.
-              safeCacheWrite(() => cache.writeStats(
-                request.ownerId,
-                nextStats,
-                cachedStatsAt,
-              ));
+          const cachedCount = safeCacheRead(() => cache.readCount(request.ownerId, request.queryKey), null);
+          let total = cachedCount?.total ?? activeTotal;
+          let countedAt = cachedCount?.cachedAt ?? null;
+          const refreshInitialCount = initialPage && shouldRefreshCloudCount({
+            page: request.page,
+            cachedAt: cachedCount?.cachedAt ?? null,
+            now: now(),
+          });
+          const refreshRealtimeCount = !initialPage
+            && !page.fromCache
+            && !page.hasPendingWrites
+            && shouldRefreshCountForRealtimeChanges(false, page.changeTypes);
+          const requestsCountRefresh = refreshInitialCount || refreshRealtimeCount;
+          const shouldRefreshCount = requestsCountRefresh && countRefreshState === 0;
+          if (requestsCountRefresh) countRefreshState = countRefreshState === 0 ? 1 : 2;
+          if (generation !== pageGeneration) return;
+          const inferredMinimum = ((request.page - 1) * boundedPageSize)
+            + page.items.length
+            + (page.hasNext ? 1 : 0);
+          total = Math.max(total, activeTotal, inferredMinimum);
+          activeTotal = total;
+          if (page.hasNext && page.cursor) pageCursors.set(request.page + 1, page.cursor);
+          else {
+            for (const pageNumber of [...pageCursors.keys()]) {
+              if (pageNumber > request.page) pageCursors.delete(pageNumber);
             }
-            await safeCacheWriteAsync(() => cache.writePage({
-              ...request,
-              items: currentItems,
-              total,
-              hasNext: snapshot.hasNext,
-              countedAt: refreshedAt,
-            }));
-          } while (countRefreshState === 2 && generation === pageGeneration);
-          countRefreshState = 0;
-        }
-      },
-      async error => {
-        if (generation !== pageGeneration) return;
-        initialPage = false;
-        if (snapshot.isLoading) await applyFallback(request, generation, error);
-        else {
-          if (isCloudQuotaError(error)) safeCacheWrite(() => cache.markBackoff(request.ownerId));
+          }
+          initialPage = false;
+          const awaitingServerForEmptyCache = page.fromCache && page.items.length === 0;
           publish({
-            isLoading: false,
-            cloudUnavailable: true,
-            canRetryAutomatically: isRetryableCloudError(error),
+            items: page.items.slice(0, boundedPageSize),
+            total,
+            hasNext: page.hasNext,
+            isLoading: awaitingServerForEmptyCache,
+            cloudUnavailable: false,
+            serverConfirmed: !page.fromCache && !page.hasPendingWrites,
+            canRetryAutomatically: false,
             error: null,
           });
+          await safeCacheWriteAsync(() => cache.writePage({
+            ...request,
+            items: page.items.slice(0, boundedPageSize),
+            total,
+            hasNext: page.hasNext,
+            countedAt,
+          }));
+
+          if (shouldRefreshCount) {
+            do {
+              countRefreshState = 1;
+              const countedTotal = await adapter.countCards(request.ownerId, request.query).catch(() => null);
+              if (generation !== pageGeneration) break;
+              if (countedTotal === null) continue;
+              const refreshedAt = now();
+              const currentItems = snapshot.items.slice(0, boundedPageSize);
+              total = Math.max(
+                countedTotal,
+                ((request.page - 1) * boundedPageSize)
+                  + currentItems.length
+                  + (snapshot.hasNext ? 1 : 0),
+              );
+              activeTotal = total;
+              const cachedStats = defaultQuery
+                ? safeCacheRead(() => cache.readStats(request.ownerId, request.query.targetLanguage ?? null), null)
+                : null;
+              const nextStats = defaultQuery
+                ? {
+                  ...(cachedStats?.stats ?? snapshot.stats),
+                  total,
+                }
+                : null;
+              const cachedStatsAt = cachedStats?.cachedAt;
+              publish(nextStats ? { total, stats: nextStats } : { total });
+              if (nextStats && typeof cachedStatsAt === 'number') {
+                // A count only makes `total` authoritative. Preserve the age of
+                // the full stats cache so requestStats still refreshes its facets.
+                safeCacheWrite(() => cache.writeStats(
+                  request.ownerId,
+                  request.query.targetLanguage ?? null,
+                  nextStats,
+                  cachedStatsAt,
+                ));
+              }
+              await safeCacheWriteAsync(() => cache.writePage({
+                ...request,
+                items: currentItems,
+                total,
+                hasNext: snapshot.hasNext,
+                countedAt: refreshedAt,
+              }));
+            } while (countRefreshState === 2 && generation === pageGeneration);
+            countRefreshState = 0;
+          }
+        },
+        async error => {
+          if (generation !== pageGeneration) return;
+          pageEmissionSequence += 1;
+          if (snapshot.isLoading) await applyFallback(request, generation, error);
+          else {
+            if (isCloudQuotaError(error)) safeCacheWrite(() => cache.markBackoff(request.ownerId));
+            publish({
+              isLoading: false,
+              cloudUnavailable: true,
+              canRetryAutomatically: isRetryableCloudError(error),
+              error: null,
+            });
+          }
+        },
+      );
+      unsubscribePage = activeSubscription;
+      return () => {
+        if (generation === pageGeneration) pageGeneration += 1;
+        activeSubscription();
+        if (unsubscribePage === activeSubscription) unsubscribePage = null;
+      };
+    };
+
+    if (cursor !== undefined) return subscribeToPage(cursor);
+
+    let cancelled = false;
+    let liveCleanup: (() => void) | null = null;
+    void resolveCursorChain(request, pageCursors, generation)
+      .then(resolvedCursor => {
+        if (cancelled || generation !== pageGeneration) return;
+        if (resolvedCursor === undefined) {
+          void applyFallback(request, generation, new Error('The previous page cursor is unavailable.'));
+          return;
         }
-      },
-    );
-    unsubscribePage = activeSubscription;
+        liveCleanup = subscribeToPage(resolvedCursor);
+      })
+      .catch(error => {
+        if (cancelled || generation !== pageGeneration) return;
+        void applyFallback(request, generation, error);
+      });
     return () => {
+      cancelled = true;
       if (generation === pageGeneration) pageGeneration += 1;
-      activeSubscription();
-      if (unsubscribePage === activeSubscription) unsubscribePage = null;
+      liveCleanup?.();
     };
   };
 
-  const requestStats = async () => {
+  const requestStats = async (targetLanguage: string | null = null, refresh?: { requestId: number }) => {
     const ownerId = activeOwnerId;
-    if (!ownerId || !adapter.available) return;
-    const generation = ownerGeneration;
-    const cached = safeCacheRead(() => cache.readStats(ownerId), null);
-    if (cached && !shouldRefreshCloudStats(cached.cachedAt, now())) {
-      publish({ stats: cached.stats });
+    if (!ownerId) return;
+    if (!adapter.available) {
+      if (refresh) publish({ statsSettledRequestId: refresh.requestId, error: 'Could not refresh insights; cached metrics are being used.' });
       return;
     }
-    if (safeCacheRead(() => cache.isBackoffActive(ownerId), false)) return;
+    const generation = ownerGeneration;
+    const requestGeneration = ++statsGeneration;
+    if (refresh) publish({ statsSettledRequestId: null });
+    if (progressEvidenceLanguage !== targetLanguage) {
+      progressEvidenceLanguage = targetLanguage;
+      progressEvidenceGeneration += 1;
+      publish(snapshot.statsTargetLanguage === targetLanguage
+        ? { stats: { ...snapshot.stats, dueForecast: undefined, recentlyMastered: undefined }, isStatsLoading: false }
+        : { stats: EMPTY_LIBRARY_STATS, statsTargetLanguage: undefined, isStatsLoading: false });
+    }
+    const cached = safeCacheRead(() => cache.readStats(ownerId, targetLanguage), null);
+    const currentDate = new Date(now());
+    const localDay = [currentDate.getFullYear(), String(currentDate.getMonth() + 1).padStart(2, '0'), String(currentDate.getDate()).padStart(2, '0')].join('-');
+    const fullStatsFresh = cached && !shouldRefreshCloudStats(cached.cachedAt, now());
+    if (cached && snapshot.statsTargetLanguage !== targetLanguage) {
+      publish({ stats: cached.stats, statsTargetLanguage: targetLanguage });
+    }
+    if (!refresh && fullStatsFresh && cached.stats.dueAsOfDate === localDay) {
+      publish({ stats: cached.stats, statsTargetLanguage: targetLanguage, isStatsLoading: false });
+      return;
+    }
+    if (safeCacheRead(() => cache.isBackoffActive(ownerId), false)) {
+      publish({ isStatsLoading: false, ...(refresh ? {
+        statsSettledRequestId: refresh.requestId,
+        error: 'Could not refresh insights; cached metrics are being used.',
+      } : {}) });
+      return;
+    }
     publish({ isStatsLoading: true });
     try {
-      const stats = await adapter.loadStats(ownerId);
-      if (generation !== ownerGeneration || activeOwnerId !== ownerId) return;
-      publish({ stats, isStatsLoading: false });
-      safeCacheWrite(() => cache.writeStats(ownerId, stats, now()));
+      if (!refresh && fullStatsFresh) {
+        const dueStats = await adapter.loadDueStats(ownerId, targetLanguage);
+        if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration) return;
+        const stats = {
+          ...(snapshot.statsTargetLanguage === targetLanguage ? snapshot.stats : cached.stats),
+          ...dueStats,
+        };
+        publish({ stats, statsTargetLanguage: targetLanguage, isStatsLoading: false, error: null });
+        safeCacheWrite(() => cache.writeStats(ownerId, targetLanguage, stats, cached.cachedAt ?? now()));
+        return;
+      }
+      const stats = await adapter.loadStats(ownerId, targetLanguage);
+      if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration) return;
+      const publishedStats = {
+        ...stats,
+        ...(progressEvidenceLanguage === targetLanguage ? {
+          dueForecast: snapshot.stats.dueForecast,
+          recentlyMastered: snapshot.stats.recentlyMastered,
+        } : {}),
+      };
+      publish({
+        stats: publishedStats,
+        statsTargetLanguage: targetLanguage,
+        isStatsLoading: false,
+        ...(refresh ? { statsSettledRequestId: refresh.requestId } : {}),
+        error: null,
+      });
+      safeCacheWrite(() => cache.writeStats(ownerId, targetLanguage, publishedStats, now()));
     } catch (error) {
-      if (generation !== ownerGeneration || activeOwnerId !== ownerId) return;
+      if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration) return;
       publish({
         isStatsLoading: false,
+        ...(refresh ? { statsSettledRequestId: refresh.requestId } : {}),
         error: isCloudQuotaError(error)
           ? 'Firebase has reached today’s read quota; Insights is using cached metrics.'
           : 'Could not refresh insights; cached metrics are being used.',
@@ -441,9 +580,30 @@ export function createCloudLibraryPageController({
     }
   };
 
+  const requestProgressEvidence = async (targetLanguage: string | null = null) => {
+    const ownerId = activeOwnerId;
+    if (!ownerId || !adapter.available) return;
+    const generation = ownerGeneration;
+    if (progressEvidenceLanguage !== targetLanguage) {
+      progressEvidenceLanguage = targetLanguage;
+      publish({ stats: { ...snapshot.stats, dueForecast: undefined, recentlyMastered: undefined } });
+    }
+    const evidenceGeneration = ++progressEvidenceGeneration;
+    try {
+      const evidence = await adapter.loadProgressEvidence(ownerId, targetLanguage);
+      if (generation !== ownerGeneration || activeOwnerId !== ownerId || evidenceGeneration !== progressEvidenceGeneration) return;
+      publish({ stats: { ...snapshot.stats, ...evidence } });
+    } catch {
+      // Progress keeps the cached base stats when its optional evidence cannot load.
+    }
+  };
+
   const stop = () => {
     pageGeneration += 1;
     ownerGeneration += 1;
+    statsGeneration += 1;
+    progressEvidenceGeneration += 1;
+    progressEvidenceLanguage = undefined;
     unsubscribePage?.();
     unsubscribeFacets?.();
     unsubscribePage = null;
@@ -459,6 +619,7 @@ export function createCloudLibraryPageController({
     },
     activate,
     requestStats,
+    requestProgressEvidence,
     stop,
   };
 }

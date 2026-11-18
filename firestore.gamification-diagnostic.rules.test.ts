@@ -103,4 +103,25 @@ describe('Firestore gamification direct-write boundary', () => {
       await assertFails(setDoc(protectedDocument.intruder, protectedDocument.value));
     }
   });
+
+  it('keeps per-card review XP awards server-only', async () => {
+    const path = 'users/owner/review_xp_awards/award-1';
+    const owner = doc(testEnvironment.authenticatedContext('owner').firestore(), path);
+    const intruder = doc(testEnvironment.authenticatedContext('intruder').firestore(), path);
+    const award = { cardId: 'word-focus', studyDay: '2026-10-01', schemaVersion: 1 };
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), path), award);
+    });
+
+    for (const reference of [owner, intruder]) {
+      await assertFails(getDoc(reference));
+      await assertFails(updateDoc(reference, { studyDay: '2026-10-02' }));
+      await assertFails(deleteDoc(reference));
+    }
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await deleteDoc(doc(context.firestore(), path));
+    });
+    await assertFails(setDoc(owner, award));
+    await assertFails(setDoc(intruder, award));
+  });
 });

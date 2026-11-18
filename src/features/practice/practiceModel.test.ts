@@ -5,6 +5,8 @@ import {
   createPracticeSnapshot,
   createQuizQuestions,
   createSpellingQueue,
+  createWordMatchRound,
+  cardsForLanguagePair,
   eligibleWordMatchCards,
 } from './practiceModel';
 
@@ -45,6 +47,7 @@ describe('practice model', () => {
     questions.forEach(question => {
       expect(question.options).toContain(question.correctAnswer);
       expect(new Set(question.options).size).toBe(question.options.length);
+      expect(['target-to-native', 'native-to-target']).toContain(question.type);
     });
   });
 
@@ -77,6 +80,31 @@ describe('practice model', () => {
     expect(snapshot.map(card => card.id)).toEqual(['1', '2', '0']);
     expect(cards.map(card => card.id)).toEqual(original);
     expect(snapshot).not.toBe(cards);
+  });
+
+  it('creates a trimmed, logically unique Match round with its actual eligible pair count', () => {
+    const round = createWordMatchRound([
+      ...cards.slice(0, 4),
+      { ...cards[0], id: 'duplicate', word: ' ONE ', translation: ' vi-one ' },
+      { ...cards[1], id: 'blank-word', word: ' ', translation: 'valid' },
+      { ...cards[2], id: 'blank-translation', word: 'valid', translation: ' ' },
+      cards[4],
+    ], 6, () => 0);
+
+    expect(round).toHaveLength(4);
+    expect(round.some(card => normalizeCardWord(card.word) === 'one')).toBe(false);
+    expect(round.every(card => card.word === card.word.trim() && card.translation === card.translation.trim())).toBe(true);
+  });
+
+  it('keeps only cards in the active pair and treats omitted translation metadata as Vietnamese', () => {
+    const eligible = cardsForLanguagePair([
+      { ...cards[0], id: 'ko-vi', language: 'ko', translationLanguage: 'vi' },
+      { ...cards[1], id: 'ko-en', language: 'ko', translationLanguage: 'en' },
+      { ...cards[2], id: 'ko-legacy-native', language: 'ko' },
+      { ...cards[3], id: 'en-vi', language: 'en', translationLanguage: 'vi' },
+    ], 'ko', 'vi');
+
+    expect(eligible.map(card => card.id)).toEqual(['ko-vi', 'ko-legacy-native']);
   });
 
 });

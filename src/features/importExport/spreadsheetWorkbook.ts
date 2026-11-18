@@ -1,3 +1,6 @@
+import { i18n } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
+
 export const MAX_SPREADSHEET_FILE_BYTES = 10 * 1024 * 1024;
 export const MAX_SPREADSHEET_UNCOMPRESSED_BYTES = 50 * 1024 * 1024;
 export const MAX_SPREADSHEET_ZIP_ENTRIES = 5_000;
@@ -11,12 +14,39 @@ export const MAX_SPREADSHEET_WORKSHEET_XML_BYTES = 16 * 1024 * 1024;
 export interface SpreadsheetWorkbook {
   structuredRows: unknown[];
   flatRows: unknown[][];
+  hasStructuredHeader?: boolean;
+  structuredSourceRows?: SpreadsheetStructuredSourceRow[];
+  flatSourceCells?: SpreadsheetFlatSourceCell[];
+}
+
+export interface SpreadsheetStructuredSourceRow {
+  row: unknown;
+  sourceRow: number;
+}
+
+export interface SpreadsheetFlatSourceCell {
+  value: unknown;
+  sourceRow: number;
+  sourceColumn: number;
 }
 
 export class SpreadsheetReadError extends Error {
   constructor(message = 'Failed to read the spreadsheet.') {
     super(message);
     this.name = 'SpreadsheetReadError';
+  }
+}
+
+/**
+ * Thrown when the file is a recognizable spreadsheet format that this app
+ * deliberately does not support (currently: legacy .xls / BIFF). Unlike other
+ * {@link SpreadsheetReadError} cases, its message is safe and specific enough
+ * to show to the user as-is.
+ */
+export class SpreadsheetUnsupportedFormatError extends SpreadsheetReadError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SpreadsheetUnsupportedFormatError';
   }
 }
 
@@ -32,8 +62,6 @@ const ZIP_ENCRYPTED_FLAG = 0x0001;
 const ZIP_SAFE_FLAGS = ZIP_UTF8_FLAG;
 const ZIP_STORED_METHOD = 0;
 const ZIP_DEFLATE_METHOD = 8;
-
-const CFB_MAGIC = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
 
 const readU16 = (view: DataView, offset: number): number => view.getUint16(offset, true);
 const readU32 = (view: DataView, offset: number): number => view.getUint32(offset, true);
@@ -57,10 +85,6 @@ const crc32 = (bytes: Uint8Array, initial = 0xffffffff): number => {
   for (const byte of bytes) value = CRC32_TABLE[(value ^ byte) & 0xff] ^ (value >>> 8);
   return (value ^ 0xffffffff) >>> 0;
 };
-
-const containsMagic = (bytes: Uint8Array, magic: Uint8Array): boolean => (
-  bytes.byteLength >= magic.byteLength && sameBytes(bytes.subarray(0, magic.byteLength), magic)
-);
 
 const findEndOfCentralDirectory = (view: DataView): number => {
   const minimum = Math.max(0, view.byteLength - (22 + 0xffff));
@@ -677,12 +701,20 @@ export const preflightCsvBytes = (bytes: Uint8Array): string => {
   return String.fromCharCode(delimiter);
 };
 
-type SpreadsheetFormat = 'csv' | 'xls' | 'xlsx';
+type SpreadsheetFormat = 'csv' | 'xlsx';
+type XlsxMiniModule = typeof import('@e965/xlsx/dist/xlsx.mini.min');
 
 const formatForFile = (file: File): SpreadsheetFormat => {
   const match = /^.+\.(csv|xls|xlsx)$/i.exec(file.name);
   if (!match) throw new SpreadsheetReadError('Unsupported spreadsheet file type.');
-  return match[1].toLowerCase() as SpreadsheetFormat;
+  const extension = match[1].toLowerCase();
+  if (extension === 'xls') {
+    throw new SpreadsheetUnsupportedFormatError(i18n._(msg({
+      id: 'library.import.xls-unsupported',
+      message: "Legacy .xls files aren't supported. Re-save the file as .xlsx or .csv, then try again.",
+    })));
+  }
+  return extension as SpreadsheetFormat;
 };
 
 const validateMagic = (bytes: Uint8Array, format: SpreadsheetFormat): void => {
@@ -694,16 +726,13 @@ const validateMagic = (bytes: Uint8Array, format: SpreadsheetFormat): void => {
     && ((content[2] === 0x03 && content[3] === 0x04)
       || (content[2] === 0x05 && content[3] === 0x06)
       || (content[2] === 0x07 && content[3] === 0x08));
-  const isCfb = containsMagic(content, CFB_MAGIC);
   if (isZip && format !== 'xlsx') throw new SpreadsheetReadError('ZIP content requires an .xlsx extension.');
-  if (isCfb && format !== 'xls') throw new SpreadsheetReadError('CFB content requires an .xls extension.');
-  if (!isZip && !isCfb && format !== 'csv') {
+  if (!isZip && format !== 'csv') {
     throw new SpreadsheetReadError('Spreadsheet content does not match its extension.');
   }
-  if (format === 'csv' && (isZip || isCfb)) {
-    throw new SpreadsheetReadError('CSV content cannot be a ZIP or CFB workbook.');
+  if (format === 'csv' && isZip) {
+    throw new SpreadsheetReadError('CSV content cannot be a ZIP workbook.');
   }
-  if (format === 'xls' && !isCfb) throw new SpreadsheetReadError('XLS content is not a CFB workbook.');
   if (format === 'xlsx' && !isZip) throw new SpreadsheetReadError('XLSX content is not a ZIP workbook.');
 };
 
@@ -725,8 +754,25 @@ const validateCellBounds = (matrix: unknown[][]): void => {
   }
 };
 
-const matrixToWorkbook = (matrix: unknown[][]): SpreadsheetWorkbook => {
-  const headers = matrix[0] ?? [];
+const isNonBlankRow = (row: unknown[]): boolean => row.some(cell => cell !== '' && cell !== null && cell !== undefined);
+
+const hasStructuredCardHeader = (row: unknown[]): boolean => {
+  const headers = new Set(row.map(value => String(value ?? '').trim().toLocaleLowerCase()));
+  return (headers.has('word') || headers.has('từ vựng'))
+    && (headers.has('translation') || headers.has('nghĩa') || headers.has('ý nghĩa'));
+};
+
+const matrixToWorkbook = (
+  matrix: unknown[][],
+  sourceRowOffset = 0,
+  sourceColumnOffset = 0,
+): SpreadsheetWorkbook => {
+  const firstNonBlankRow = matrix.findIndex(isNonBlankRow);
+  const structuredHeaderIndex = firstNonBlankRow >= 0 && hasStructuredCardHeader(matrix[firstNonBlankRow])
+    ? firstNonBlankRow
+    : -1;
+  const headerIndex = structuredHeaderIndex >= 0 ? structuredHeaderIndex : 0;
+  const headers = matrix[headerIndex] ?? [];
   const usedHeaders = new Set<string>();
   const keys = headers.map(header => {
     const base = header === '' || header === null || header === undefined ? '__EMPTY' : String(header);
@@ -739,99 +785,36 @@ const matrixToWorkbook = (matrix: unknown[][]): SpreadsheetWorkbook => {
     usedHeaders.add(key);
     return key;
   });
-  const structuredRows = matrix.slice(1).map(row => Object.fromEntries(
-    keys.flatMap((key, index) => row[index] === undefined || row[index] === '' ? [] : [[key, row[index]]]),
-  ));
-  return { structuredRows, flatRows: matrix };
-};
-
-const LEGACY_WORKER_TIMEOUT_MS = 5_000;
-
-const workerMatrix = (value: unknown): unknown[][] => {
-  if (!value || typeof value !== 'object') throw new SpreadsheetReadError('Legacy spreadsheet parser rejected the file.');
-  const response = value as { ok?: unknown; matrix?: unknown };
-  if (response.ok !== true || !Array.isArray(response.matrix) || response.matrix.some(row => !Array.isArray(row))) {
-    throw new SpreadsheetReadError('Legacy spreadsheet parser rejected the file.');
-  }
-  return response.matrix as unknown[][];
-};
-
-const parseLegacyWorkbookInBrowserWorker = (bytes: Uint8Array): Promise<unknown[][]> => new Promise((resolve, reject) => {
-  const worker = new Worker(new URL('./spreadsheetParser.worker.mjs', import.meta.url), { type: 'module' });
-  let settled = false;
-  const finish = (callback: () => void): void => {
-    if (settled) return;
-    settled = true;
-    clearTimeout(timeout);
-    worker.terminate();
-    callback();
-  };
-  const timeout = setTimeout(() => finish(() => reject(new SpreadsheetReadError('Legacy spreadsheet parser timed out.'))), LEGACY_WORKER_TIMEOUT_MS);
-  worker.onmessage = event => finish(() => {
-    try {
-      resolve(workerMatrix(event.data));
-    } catch (error) {
-      reject(error);
-    }
-  });
-  worker.onerror = () => finish(() => reject(new SpreadsheetReadError('Legacy spreadsheet parser failed.')));
-  worker.onmessageerror = () => finish(() => reject(new SpreadsheetReadError('Legacy spreadsheet parser failed.')));
-  worker.postMessage({ bytes: bytes.buffer }, [bytes.buffer as ArrayBuffer]);
-});
-
-const parseLegacyWorkbookInNodeWorker = async (bytes: Uint8Array): Promise<unknown[][]> => {
-  let NodeWorker: typeof import('node:worker_threads').Worker;
-  try {
-    const nodeWorkerThreads = 'node:' + 'worker_threads';
-    const nodeWorkerModule = await import(nodeWorkerThreads) as typeof import('node:worker_threads');
-    ({ Worker: NodeWorker } = nodeWorkerModule);
-  } catch {
-    throw new SpreadsheetReadError('Legacy spreadsheet isolation is unavailable.');
-  }
-  return new Promise((resolve, reject) => {
-    const worker = new NodeWorker(new URL('./spreadsheetParser.worker.mjs', import.meta.url));
-    let settled = false;
-    const finish = (callback: () => void): void => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      void worker.terminate();
-      callback();
-    };
-    const timeout = setTimeout(() => finish(() => reject(new SpreadsheetReadError('Legacy spreadsheet parser timed out.'))), LEGACY_WORKER_TIMEOUT_MS);
-    worker.on('message', value => finish(() => {
-      try {
-        resolve(workerMatrix(value));
-      } catch (error) {
-        reject(error);
-      }
+  const structuredSourceRows = matrix.slice(headerIndex + 1)
+    .map((row, index) => ({ row, sourceRow: sourceRowOffset + headerIndex + index + 2 }))
+    .filter(({ row }) => isNonBlankRow(row))
+    .map(({ row, sourceRow }) => ({
+      row: Object.fromEntries(
+        keys.flatMap((key, index) => row[index] === undefined || row[index] === '' ? [] : [[key, row[index]]]),
+      ),
+      sourceRow,
     }));
-    worker.on('error', () => finish(() => reject(new SpreadsheetReadError('Legacy spreadsheet parser failed.'))));
-    worker.on('messageerror', () => finish(() => reject(new SpreadsheetReadError('Legacy spreadsheet parser failed.'))));
-    worker.postMessage({ bytes: bytes.buffer }, [bytes.buffer as ArrayBuffer]);
-  });
-};
-
-const parseLegacyWorkbook = async (bytes: Uint8Array): Promise<unknown[][]> => {
-  if (typeof globalThis.Worker === 'function') return parseLegacyWorkbookInBrowserWorker(bytes);
-  if (typeof process !== 'undefined' && process.versions?.node) return parseLegacyWorkbookInNodeWorker(bytes);
-  throw new SpreadsheetReadError('Legacy spreadsheet isolation is unavailable.');
+  const flatSourceCells = matrix.flatMap((row, rowIndex) => row.map((value, columnIndex) => ({
+    value,
+    sourceRow: sourceRowOffset + rowIndex + 1,
+    sourceColumn: sourceColumnOffset + columnIndex + 1,
+  })));
+  return {
+    structuredRows: structuredSourceRows.map(({ row }) => row),
+    flatRows: matrix,
+    hasStructuredHeader: structuredHeaderIndex >= 0,
+    structuredSourceRows,
+    flatSourceCells,
+  };
 };
 
 const parseWorkbook = async (bytes: Uint8Array, format: SpreadsheetFormat): Promise<SpreadsheetWorkbook> => {
   if (format === 'xlsx') await preflightZipArchive(bytes);
-  if (format === 'xls') {
-    const matrix = await parseLegacyWorkbook(bytes);
-    if (matrix.length > MAX_SPREADSHEET_ROWS) {
-      throw new SpreadsheetReadError(`Spreadsheet exceeds ${MAX_SPREADSHEET_ROWS - 1} data rows.`);
-    }
-    validateCellBounds(matrix);
-    return matrixToWorkbook(matrix);
-  }
   const csvDelimiter = format === 'csv' ? preflightCsvBytes(bytes) : undefined;
-  let XLSX: typeof import('@e965/xlsx');
+  let XLSX: XlsxMiniModule;
   try {
-    XLSX = await import('@e965/xlsx');
+    const module = await import('@e965/xlsx/dist/xlsx.mini.min') as XlsxMiniModule & { default?: XlsxMiniModule };
+    XLSX = module.default ?? module;
   } catch {
     throw new SpreadsheetReadError('Spreadsheet parser is unavailable.');
   }
@@ -877,7 +860,7 @@ const parseWorkbook = async (bytes: Uint8Array, format: SpreadsheetFormat): Prom
       header: 1,
       raw: true,
       defval: '',
-      blankrows: false,
+      blankrows: true,
     }) as unknown[][];
   } catch {
     throw new SpreadsheetReadError('Spreadsheet cells could not be converted.');
@@ -886,7 +869,7 @@ const parseWorkbook = async (bytes: Uint8Array, format: SpreadsheetFormat): Prom
     throw new SpreadsheetReadError(`Spreadsheet exceeds ${MAX_SPREADSHEET_ROWS - 1} data rows.`);
   }
   validateCellBounds(matrix);
-  return matrixToWorkbook(matrix);
+  return matrixToWorkbook(matrix, range.s.r, range.s.c);
 };
 
 export const loadSpreadsheetWorkbook = async (file: File): Promise<SpreadsheetWorkbook> => {

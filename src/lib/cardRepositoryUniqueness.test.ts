@@ -17,10 +17,11 @@ const firebaseRuntime = vi.hoisted(() => ({
     available: false,
     reason: 'app-check-unconfigured' as const,
   },
+  getSonFlashFunctions: (app: unknown, region: string = 'asia-southeast1') => functionsRuntime.getFunctions(app, region),
 }));
 
 const functionsRuntime = vi.hoisted(() => ({
-  getFunctions: vi.fn(() => ({ region: 'asia-southeast1' })),
+  getFunctions: vi.fn((_app: unknown, _region: string) => ({ region: 'asia-southeast1' })),
   httpsCallable: vi.fn(),
 }));
 
@@ -60,10 +61,12 @@ vi.mock('firebase/functions', () => ({
 import {
   CardMutationPreconditionError,
   createCardIfAbsent,
+  createCardV2IfAbsent,
   deleteAllCards,
   applyCardPatchIfCurrent,
   clearCustomDeckAssignments,
   deleteCardWithTombstone,
+  fetchCatalogUnitCards,
   findCardByNormalizedWord,
   findCardById,
   findCardsByNormalizedWords,
@@ -88,6 +91,77 @@ beforeEach(() => {
   firebaseRuntime.protectedFunctionsCapability.available = false;
   functionsRuntime.getFunctions.mockClear();
   functionsRuntime.httpsCallable.mockReset();
+});
+
+function mockDeleteCallable(result: Record<string, unknown>): ReturnType<typeof vi.fn> {
+  firebaseRuntime.isFirebaseConfigured = true;
+  firebaseRuntime.protectedFunctionsCapability.available = true;
+  const callable = vi.fn().mockResolvedValue({ data: { results: [result] } });
+  functionsRuntime.httpsCallable.mockReturnValue(callable);
+  return callable;
+}
+
+function mockDeleteCallableFailure(error: unknown): ReturnType<typeof vi.fn> {
+  firebaseRuntime.isFirebaseConfigured = true;
+  firebaseRuntime.protectedFunctionsCapability.available = true;
+  const callable = vi.fn().mockRejectedValue(error);
+  functionsRuntime.httpsCallable.mockReturnValue(callable);
+  return callable;
+}
+
+describe('catalog unit card hydration', () => {
+  beforeEach(() => firestore.getDocs.mockReset());
+
+  it('reads at most 20 cards in one server query and retains the learned duplicate', async () => {
+    firestore.getDocs.mockResolvedValueOnce(snapshot([
+      { id: 'first', data: { lexemeId: 'lexeme-a', language: 'en', libraryEpoch: 2, word: 'alpha' } },
+      { id: 'learned', data: { lexemeId: 'lexeme-a', language: 'en', libraryEpoch: 2, word: 'alpha', correctStreak: 3 } },
+      { id: 'second', data: { lexemeId: 'lexeme-b', language: 'en', libraryEpoch: 2, word: 'beta' } },
+    ]));
+
+    const cards = await fetchCatalogUnitCards({} as never, 'owner-a', {
+      lexemeIds: ['lexeme-a', 'lexeme-b'], targetLanguage: 'en', libraryEpoch: 2,
+    });
+
+    expect(firestore.getDocs).toHaveBeenCalledTimes(1);
+    expect(firestore.getDocs.mock.calls[0]?.[0]).toMatchObject({
+      type: 'query',
+      args: [
+        expect.anything(),
+        { type: 'where', args: ['lexemeId', 'in', ['lexeme-a', 'lexeme-b']] },
+        { type: 'where', args: ['libraryEpoch', '==', 2] },
+        { type: 'where', args: ['language', '==', 'en'] },
+        { type: 'limit', args: [20] },
+      ],
+    });
+    expect([...cards.keys()]).toEqual(['lexeme-a', 'lexeme-b']);
+    expect(cards.get('lexeme-a')?.id).toBe('learned');
+  });
+
+  it('rejects an oversized or repeated unit before reading Firestore', async () => {
+    await expect(fetchCatalogUnitCards({} as never, 'owner-a', {
+      lexemeIds: Array.from({ length: 21 }, (_, index) => `lexeme-${index}`),
+      targetLanguage: 'en', libraryEpoch: 0,
+    })).rejects.toThrow('Invalid catalog unit card request');
+    await expect(fetchCatalogUnitCards({} as never, 'owner-a', {
+      lexemeIds: ['lexeme-a', 'lexeme-a'], targetLanguage: 'en', libraryEpoch: 0,
+    })).rejects.toThrow('Invalid catalog unit card request');
+    expect(firestore.getDocs).not.toHaveBeenCalled();
+  });
+
+  it('rejects a card from another epoch, language, or unit', async () => {
+    for (const data of [
+      { lexemeId: 'lexeme-a', language: 'en', libraryEpoch: 1 },
+      { lexemeId: 'lexeme-a', language: 'ko', libraryEpoch: 2 },
+      { lexemeId: 'lexeme-other', language: 'en', libraryEpoch: 2 },
+    ]) {
+      firestore.getDocs.mockResolvedValueOnce(snapshot([{ id: 'wrong', data }]));
+      await expect(fetchCatalogUnitCards({} as never, 'owner-a', {
+        lexemeIds: ['lexeme-a'], targetLanguage: 'en', libraryEpoch: 2,
+      })).rejects.toThrow('unexpected card');
+    }
+    expect(firestore.getDocs).toHaveBeenCalledTimes(3);
+  });
 });
 
 describe('findCardByNormalizedWord', () => {
@@ -366,6 +440,46 @@ describe('findCardByNormalizedWord', () => {
       0,
     )).resolves.toMatchObject({ id: 'current-card' });
   });
+
+  it('scopes fallback word lookup by the requested non-English target', async () => {
+    firestore.getDocs.mockResolvedValueOnce(snapshot([{
+      id: 'word-ko-lead',
+      data: {
+        word: 'lead',
+        normalizedWord: 'lead',
+        language: 'ko',
+        translation: '납',
+        libraryEpoch: 0,
+        revision: 1,
+      },
+    }]));
+
+    await expect(findCardByNormalizedWord(
+      {} as never,
+      'user-1',
+      { word: 'lead', normalizedWord: 'lead', language: 'ko' },
+      0,
+    )).resolves.toMatchObject({ id: 'word-ko-lead', language: 'ko' });
+    expect(firestore.getDocs.mock.calls[0]?.[0]).toEqual(expect.objectContaining({
+      args: expect.arrayContaining([
+        expect.objectContaining({ type: 'where', args: ['language', '==', 'ko'] }),
+      ]),
+    }));
+  });
+});
+
+describe('findCardById', () => {
+  it('reads the authoritative card document without a word query', async () => {
+    firestore.getDoc.mockResolvedValueOnce({
+      exists: () => true,
+      id: 'authoritative-card',
+      data: () => ({ word: 'focus', translation: 'tập trung', revision: 4, libraryEpoch: 2 }),
+    });
+
+    await expect(findCardById({} as never, 'user-1', 'authoritative-card')).resolves.toMatchObject({
+      id: 'authoritative-card', revision: 4, libraryEpoch: 2,
+    });
+  });
 });
 
 describe('findCardById', () => {
@@ -421,82 +535,12 @@ describe('streamAllCardsInBatches', () => {
 });
 
 describe('deleteAllCards', () => {
-  beforeEach(() => {
-    firestore.getDocs.mockReset();
-    firestore.runTransaction.mockReset();
-    firestore.writeBatch.mockReset();
-  });
-
-  it('stops before the next batch when the lease is lost', async () => {
-    let leaseLost = false;
-    firestore.getDocs.mockResolvedValueOnce(
-      snapshot([{ id: 'first-card', data: {} }]),
-    );
-    firestore.runTransaction.mockImplementation(async (_db, callback) => {
-      const result = await callback({
-        get: vi.fn(async () => ({
-          exists: () => true,
-          data: () => ({}),
-        })),
-        delete: vi.fn(),
-      });
-      leaseLost = true;
-      return result;
-    });
-
-    const assertActive = () => {
-      if (leaseLost) throw new Error('lease lost');
-    };
-
-    await expect(
-      deleteAllCards({} as never, 'user-1', assertActive, 2),
-    ).rejects.toThrow('lease lost');
-    expect(firestore.runTransaction).toHaveBeenCalledOnce();
-    expect(firestore.getDocs).toHaveBeenCalledOnce();
-  });
-
-  it('does not delete a card recreated in the new epoch after the snapshot', async () => {
-    const oldCard = { id: 'raced-card', data: { libraryEpoch: 1 } };
-    const oldCardData = oldCard.data;
-    const newCardData = { libraryEpoch: 2 };
-    let currentCard: Record<string, unknown> | null = oldCardData;
-    firestore.getDocs
-      .mockResolvedValueOnce(snapshot([oldCard]))
-      .mockResolvedValueOnce(snapshot([]));
-
-    const batch = {
-      delete: vi.fn(),
-      commit: vi.fn(async () => {
-        currentCard = null;
-      }),
-    };
-    firestore.writeBatch.mockReturnValue(batch);
-    firestore.runTransaction.mockImplementation(async (_db, callback) => {
-      let deleteRequested = false;
-      const firstAttempt = await callback({
-        get: vi.fn(async () => ({ exists: () => true, data: () => oldCardData })),
-        delete: vi.fn(() => {
-          deleteRequested = true;
-        }),
-      });
-      if (!deleteRequested) return firstAttempt;
-
-      currentCard = newCardData;
-      deleteRequested = false;
-      const retriedAttempt = await callback({
-        get: vi.fn(async () => ({ exists: () => true, data: () => newCardData })),
-        delete: vi.fn(() => {
-          deleteRequested = true;
-        }),
-      });
-      if (deleteRequested) currentCard = null;
-      return retriedAttempt;
-    });
-
-    await deleteAllCards({} as never, 'user-1', () => undefined, 2);
-
-    expect(currentCard).toEqual(newCardData);
-    expect(batch.commit).not.toHaveBeenCalled();
+  it('fails closed without a protected cloud runtime before reading or deleting cards', async () => {
+    firestore.getDocs.mockClear();
+    firestore.runTransaction.mockClear();
+    await expect(deleteAllCards({} as never, 'user-1', 2)).rejects.toMatchObject({ code: 'firebase-unconfigured' });
+    expect(firestore.getDocs).not.toHaveBeenCalled();
+    expect(firestore.runTransaction).not.toHaveBeenCalled();
   });
 });
 
@@ -721,7 +765,7 @@ describe('createCardIfAbsent', () => {
     firebaseRuntime.isFirebaseConfigured = true;
     firebaseRuntime.protectedFunctionsCapability.available = true;
     const callable = vi.fn().mockResolvedValue({
-      data: { created: true, card: callableCard },
+      data: { created: true, card: callableCard, restored: true },
     });
     functionsRuntime.httpsCallable.mockReturnValue(callable);
 
@@ -730,8 +774,10 @@ describe('createCardIfAbsent', () => {
       baseRevision: 2,
       opId: 'create-quite-1',
       operationCreatedAt: '2026-08-23T00:00:00.000Z',
+      restore: true,
     })).resolves.toMatchObject({
       created: true,
+      restored: true,
       card: {
         id: 'word-quite',
         normalizedWord: 'quite',
@@ -751,6 +797,35 @@ describe('createCardIfAbsent', () => {
       baseRevision: 2,
       opId: 'create-quite-1',
       operationCreatedAt: '2026-08-23T00:00:00.000Z',
+      restore: true,
+    });
+  });
+
+  it('uses createCardV2 for fresh cards and parses its authoritative outcome', async () => {
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
+    const callable = vi.fn().mockResolvedValue({
+      data: {
+        created: true,
+        card: callableCard,
+        gamification: {
+          xp: 10, level: 1, streak: 0, studyDay: '2026-09-27', events: [], rewardTimeZone: 'Asia/Saigon',
+        },
+      },
+    });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+
+    await expect(createCardV2IfAbsent({} as never, 'user-1', candidate, {
+      libraryEpoch: 4, opId: 'create-quite-v2', timeZone: 'Asia/Ho_Chi_Minh',
+    })).resolves.toMatchObject({
+      created: true, card: { id: 'word-quite' }, gamification: { xp: 10, level: 1, rewardTimeZone: 'Asia/Saigon' },
+    });
+    expect(functionsRuntime.httpsCallable).toHaveBeenCalledWith(
+      { region: 'asia-southeast1' }, 'createCardV2',
+    );
+    expect(callable).toHaveBeenCalledWith({
+      card: expect.objectContaining(candidate), libraryEpoch: 4, expectedOwnerId: 'user-1',
+      opId: 'create-quite-v2', timeZone: 'Asia/Ho_Chi_Minh',
     });
   });
 
@@ -1030,7 +1105,12 @@ describe('createCardIfAbsent', () => {
       get: vi.fn(async (reference: { args?: unknown[] }) => {
         const path = reference.args?.at(-1);
         const collectionName = reference.args?.at(-2);
-        if (path === 'library_state' || collectionName === 'card_tombstones') {
+        if (
+          path === 'library_state'
+          || path === 'course_query_index'
+          || collectionName === 'course_query_generations'
+          || collectionName === 'card_tombstones'
+        ) {
           return { exists: (): boolean => false };
         }
         if (collectionName === 'card_reservations') {
@@ -1091,13 +1171,61 @@ describe('createCardIfAbsent', () => {
       reference.args?.at(-2) === 'card_reservations')).toHaveLength(1);
   });
 
+  it('keeps same-spelling English and non-English cards on separate local identities', async () => {
+    const records = new Map<string, Record<string, unknown>>();
+    const set = vi.fn((reference: { args?: unknown[] }, data: Record<string, unknown>) => {
+      records.set((reference.args ?? []).join('/'), data);
+    });
+    const remove = vi.fn((reference: { args?: unknown[] }) => {
+      records.delete((reference.args ?? []).join('/'));
+    });
+    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
+      get: vi.fn(async (reference: { args?: unknown[] }) => {
+        const value = records.get((reference.args ?? []).join('/'));
+        return value
+          ? { exists: (): boolean => true, data: () => value }
+          : { exists: (): boolean => false };
+      }),
+      set,
+      delete: remove,
+    }));
+    const baseCard = {
+      id: 'temporary',
+      word: 'lead',
+      normalizedWord: 'lead',
+      translation: 'meaning',
+      explanation: '',
+      phonetic: '',
+      emoji: '📝',
+      category: 'Other',
+      audioUrl: null,
+      imageUrl: null,
+    };
+
+    const english = await createCardIfAbsent({} as never, 'user-1', baseCard, { libraryEpoch: 0 });
+    const korean = await createCardIfAbsent({} as never, 'user-1', { ...baseCard, language: 'ko' }, { libraryEpoch: 0 });
+    const koreanRetry = await createCardIfAbsent({} as never, 'user-1', { ...baseCard, id: 'another-id', language: 'ko' }, { libraryEpoch: 0 });
+
+    expect(english.card.id).toBe('word-lead');
+    expect(korean.card.id).not.toBe(english.card.id);
+    expect(korean.card.language).toBe('ko');
+    expect(koreanRetry).toMatchObject({ created: false, card: { id: korean.card.id, language: 'ko' } });
+    expect([...records.keys()].filter(key => key.includes('/cards/'))).toHaveLength(2);
+    expect([...records.values()].filter(value => value.targetLanguage === 'ko')).toHaveLength(1);
+  });
+
   it('recreates a missing card at the immutable id stored by an existing reservation', async () => {
     const set = vi.fn();
     firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
       get: vi.fn(async (reference: { args?: unknown[] }) => {
         const path = reference.args?.at(-1);
         const collectionName = reference.args?.at(-2);
-        if (path === 'library_state' || collectionName === 'card_tombstones') {
+        if (
+          path === 'library_state'
+          || path === 'course_query_index'
+          || collectionName === 'course_query_generations'
+          || collectionName === 'card_tombstones'
+        ) {
           return { exists: (): boolean => false };
         }
         if (collectionName === 'card_reservations') {
@@ -1481,52 +1609,27 @@ describe('createCardIfAbsent', () => {
     );
   });
 
-  it('deletes a recreated card without carrying an older epoch tombstone revision forward', async () => {
-    const set = vi.fn();
-    const remove = vi.fn();
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        const collectionName = reference.args?.at(-2);
-        if (path === 'library_state') {
-          return { exists: (): boolean => true, data: () => ({ libraryEpoch: 7 }) };
-        }
-        if (collectionName === 'card_tombstones') {
-          return {
-            exists: (): boolean => true,
-            data: () => ({
-              cardId: 'word-quite',
-              opId: 'old-delete',
-              libraryEpoch: 6,
-              revision: 12,
-              deletedAt: '2026-07-25T00:00:00.000Z',
-            }),
-          };
-        }
-        return {
-          exists: (): boolean => true,
-          data: () => ({ id: 'word-quite', schemaVersion: 2, revision: 1, libraryEpoch: 7 }),
-        };
-      }),
-      set,
-      delete: remove,
-    }));
+  it('routes a delete through the trusted callable and preserves its tombstone receipt', async () => {
+    const callable = mockDeleteCallable({
+      cardId: 'word-quite', op: 'delete', applied: true, revision: 2,
+      deletedAt: '2026-09-28T00:00:00.000Z', opId: 'server-delete', libraryEpoch: 7,
+    });
 
     await expect(deleteCardWithTombstone({} as never, 'user-1', {
-      cardId: 'word-quite',
-      opId: 'delete-current',
-      libraryEpoch: 7,
-      baseRevision: 1,
-    })).resolves.toMatchObject({
+      cardId: 'word-quite', opId: 'delete-current', libraryEpoch: 7, baseRevision: 1,
+    })).resolves.toEqual({
       deleted: true,
-      tombstone: { cardId: 'word-quite', libraryEpoch: 7, revision: 2 },
+      tombstone: {
+        cardId: 'word-quite', opId: 'server-delete', libraryEpoch: 7, revision: 2,
+        deletedAt: '2026-09-28T00:00:00.000Z',
+      },
     });
-    expect(set).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ libraryEpoch: 7, revision: 2 }),
-      { merge: false },
-    );
-    expect(remove).toHaveBeenCalledOnce();
+    expect(functionsRuntime.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'bulkMutateCards');
+    expect(callable).toHaveBeenCalledWith({
+      libraryEpoch: 7,
+      patches: [],
+      deletes: [{ cardId: 'word-quite', baseRevision: 1, opId: 'delete-current' }],
+    });
   });
 
   it('does not promote a deterministic-id card from an older explicit generation', async () => {
@@ -2259,156 +2362,81 @@ describe('createCardIfAbsent', () => {
     expect(set).not.toHaveBeenCalled();
   });
 
-  it('deletes a card and writes its revisioned tombstone in one transaction', async () => {
-    const set = vi.fn();
-    const remove = vi.fn();
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        if (path === 'library_state') {
-          return { exists: (): boolean => true, data: () => ({ libraryEpoch: 2 }) };
-        }
-        if (path === 'word-quite') {
-          const collectionName = reference.args?.at(-2);
-          if (collectionName === 'card_tombstones') return { exists: () => false };
-          return { exists: () => true, data: () => ({ revision: 4 }) };
-        }
-        return { exists: () => false };
-      }),
-      set,
-      delete: remove,
-    }));
+  it('normalizes a legacy delete operation ID before calling the trusted endpoint', async () => {
+    const callable = mockDeleteCallable({
+      cardId: 'word-quite', op: 'delete', applied: true, revision: 5,
+      deletedAt: '2026-09-28T00:00:00.000Z', opId: 'legacy-delete-word-quite-2026-07-26T04-12-03-456Z', libraryEpoch: 2,
+    });
 
-    const result = await deleteCardWithTombstone({} as never, 'user-1', {
+    await deleteCardWithTombstone({} as never, 'user-1', {
       cardId: 'word-quite',
       opId: 'legacy-delete-word-quite-2026-07-26T04:12:03.456Z',
       libraryEpoch: 2,
       baseRevision: 4,
     });
-    expect(result).toMatchObject({
-      deleted: true,
-      tombstone: {
-        cardId: 'word-quite',
-        libraryEpoch: 2,
-        revision: 5,
-      },
-    });
-    if (!result.deleted) throw new Error('Expected the delete to succeed.');
-    expect(result.tombstone.opId).toMatch(/^[a-zA-Z0-9_-]{1,128}$/);
-    expect(set).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        opId: expect.stringMatching(/^[a-zA-Z0-9_-]{1,128}$/),
-        revision: 5,
-      }),
-      { merge: false },
-    );
-    expect(remove).toHaveBeenCalledWith(expect.anything());
+
+    expect(callable).toHaveBeenCalledWith(expect.objectContaining({
+      deletes: [expect.objectContaining({
+        opId: expect.stringMatching(/^op-legacy-delete-word-quite-2026-07-26t04-12-03-456z-[a-f0-9]+$/),
+      })],
+    }));
   });
 
-  it('acknowledges a different same-epoch delete when the card is already gone', async () => {
-    const set = vi.fn();
-    const existingTombstone = {
-      cardId: 'word-quite',
-      opId: 'other-device-delete',
-      libraryEpoch: 2,
-      revision: 5,
-      deletedAt: '2026-07-26T00:00:00.000Z',
-    };
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        const collectionName = reference.args?.at(-2);
-        if (path === 'library_state') {
-          return { exists: () => true, data: () => ({ libraryEpoch: 2 }) };
-        }
-        if (collectionName === 'card_tombstones') {
-          return { exists: (): boolean => true, data: () => existingTombstone };
-        }
-        return { exists: (): boolean => false };
-      }),
-      set,
-      delete: vi.fn(),
-    }));
+  it('preserves the server tombstone when another device already deleted the card', async () => {
+    mockDeleteCallable({
+      cardId: 'word-quite', op: 'delete', applied: true, revision: 5,
+      deletedAt: '2026-07-26T00:00:00.000Z', opId: 'other-device-delete', libraryEpoch: 2,
+    });
 
     await expect(deleteCardWithTombstone({} as never, 'user-1', {
-      cardId: 'word-quite',
-      opId: 'local-delete',
-      libraryEpoch: 2,
-      baseRevision: 3,
+      cardId: 'word-quite', opId: 'local-delete', libraryEpoch: 2, baseRevision: 3,
     })).resolves.toEqual({
       deleted: true,
-      tombstone: existingTombstone,
-    });
-    expect(set).not.toHaveBeenCalled();
-  });
-
-  it('does not allocate a tombstone for a card that never existed', async () => {
-    const set = vi.fn();
-    const remove = vi.fn();
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => (
-        reference.args?.at(-1) === 'library_state'
-          ? { exists: (): boolean => true, data: () => ({ libraryEpoch: 2 }) }
-          : { exists: (): boolean => false }
-      )),
-      set,
-      delete: remove,
-    }));
-
-    await expect(deleteCardWithTombstone({} as never, 'user-1', {
-      cardId: 'never-created',
-      opId: 'local-delete',
-      libraryEpoch: 2,
-      baseRevision: 0,
-    })).resolves.toMatchObject({ deleted: true });
-    expect(set).not.toHaveBeenCalled();
-    expect(remove).not.toHaveBeenCalled();
-  });
-
-  it('does not treat the same delete id from an earlier epoch as a current retry', async () => {
-    const set = vi.fn();
-    const remove = vi.fn();
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        const collectionName = reference.args?.at(-2);
-        if (path === 'library_state') {
-          return { exists: (): boolean => true, data: () => ({ libraryEpoch: 3 }) };
-        }
-        if (collectionName === 'card_tombstones') {
-          return {
-            exists: (): boolean => true,
-            data: () => ({
-              cardId: 'word-quite',
-              opId: 'same-delete-id',
-              libraryEpoch: 2,
-              revision: 5,
-              deletedAt: '2026-07-25T00:00:00.000Z',
-            }),
-          };
-        }
-        return { exists: (): boolean => false };
-      }),
-      set,
-      delete: remove,
-    }));
-
-    await expect(deleteCardWithTombstone({} as never, 'user-1', {
-      cardId: 'word-quite',
-      opId: 'same-delete-id',
-      libraryEpoch: 3,
-      baseRevision: 0,
-    })).resolves.toMatchObject({
-      deleted: true,
       tombstone: {
-        libraryEpoch: 3,
-        revision: 1,
+        cardId: 'word-quite', opId: 'other-device-delete', libraryEpoch: 2, revision: 5,
+        deletedAt: '2026-07-26T00:00:00.000Z',
       },
     });
-    expect(set).toHaveBeenCalled();
-    expect(remove).not.toHaveBeenCalled();
   });
+
+  it('preserves the callable receipt for a card that was already absent', async () => {
+    mockDeleteCallable({
+      cardId: 'never-created', op: 'delete', applied: true, revision: 1,
+      deletedAt: '2026-09-28T00:00:00.000Z', opId: 'local-delete', libraryEpoch: 2,
+    });
+
+    await expect(deleteCardWithTombstone({} as never, 'user-1', {
+      cardId: 'never-created', opId: 'local-delete', libraryEpoch: 2, baseRevision: 0,
+    })).resolves.toMatchObject({ deleted: true });
+  });
+
+  it('uses the callable tombstone from the current library epoch', async () => {
+    mockDeleteCallable({
+      cardId: 'word-quite', op: 'delete', applied: true, revision: 1,
+      deletedAt: '2026-09-28T00:00:00.000Z', opId: 'same-delete-id', libraryEpoch: 3,
+    });
+
+    await expect(deleteCardWithTombstone({} as never, 'user-1', {
+      cardId: 'word-quite', opId: 'same-delete-id', libraryEpoch: 3, baseRevision: 0,
+    })).resolves.toMatchObject({
+      deleted: true,
+      tombstone: { libraryEpoch: 3, revision: 1 },
+    });
+  });
+
+  it.each(['stale-library-epoch', 'future-library-epoch'] as const)(
+    'returns %s from the callable as a delete conflict result',
+    async reason => {
+      mockDeleteCallableFailure(Object.assign(new Error('failed-precondition'), {
+        code: 'functions/failed-precondition',
+        details: { reason },
+      }));
+
+      await expect(deleteCardWithTombstone({} as never, 'user-1', {
+        cardId: 'word-quite', opId: 'epoch-delete', libraryEpoch: 2, baseRevision: 1,
+      })).resolves.toEqual({ deleted: false, reason });
+    },
+  );
 });
 
 describe('library epoch', () => {
@@ -2511,7 +2539,7 @@ describe('legacy card maintenance', () => {
     )).resolves.toEqual({ scanned: 42, complete: true });
   });
 
-  it('clears deck assignments through the v2 transaction protocol', async () => {
+  it('clears deck assignments through the bulk mutation callable', async () => {
     firestore.getDocs
       .mockResolvedValueOnce(snapshot([{
         id: 'legacy-deck-card',
@@ -2524,43 +2552,29 @@ describe('legacy card maintenance', () => {
       }]))
       .mockResolvedValueOnce(snapshot([]));
     firestore.getDoc.mockResolvedValue({ exists: () => false });
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        const collectionName = reference.args?.at(-2);
-        if (path === 'library_state' || collectionName === 'card_reservations') {
-          return { exists: (): boolean => false };
-        }
-        return {
-          exists: (): boolean => true,
-          data: () => ({
-            id: 'legacy-deck-card',
-            word: 'legacy',
-            translation: 'cũ',
-            customDeck: 'Old deck',
-          }),
-        };
-      }),
-      set: firestore.transactionSet,
-    }));
+    const callable = vi.fn().mockResolvedValueOnce({
+      data: { results: [{ cardId: 'legacy-deck-card', op: 'patch', applied: true, revision: 1 }] },
+    });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
 
     await expect(clearCustomDeckAssignments(
       {} as never,
       'user-1',
       'Old deck',
     )).resolves.toBeUndefined();
-    expect(firestore.transactionSet).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        customDeck: null,
-        schemaVersion: 2,
-        normalizedWord: 'legacy',
-        revision: 1,
-        libraryEpoch: 0,
-        updatedAt: { type: 'server-timestamp' },
-      }),
-      { merge: true },
-    );
+    expect(functionsRuntime.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'bulkMutateCards');
+    expect(callable).toHaveBeenCalledWith({
+      libraryEpoch: 0,
+      patches: [{
+        cardId: 'legacy-deck-card',
+        baseRevision: 0,
+        fields: { customDeck: null },
+        fieldMask: ['customDeck'],
+      }],
+      deletes: [],
+    });
   });
 
   it('refreshes the library epoch after a stale deck patch', async () => {
@@ -2589,15 +2603,16 @@ describe('legacy card maintenance', () => {
         exists: () => true,
         data: () => ({ libraryEpoch: 2 }),
       });
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        return path === 'library_state'
-          ? { exists: () => true, data: () => ({ libraryEpoch: 2 }) }
-          : { exists: () => true, data: () => deckCard.data };
-      }),
-      set: firestore.transactionSet,
-    }));
+    const callable = vi.fn()
+      .mockResolvedValueOnce({
+        data: { results: [{ cardId: 'stale-epoch-card', op: 'patch', applied: false, reason: 'stale-library-epoch' }] },
+      })
+      .mockResolvedValueOnce({
+        data: { results: [{ cardId: 'stale-epoch-card', op: 'patch', applied: true, revision: 5 }] },
+      });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
 
     await expect(clearCustomDeckAssignments(
       {} as never,
@@ -2605,14 +2620,15 @@ describe('legacy card maintenance', () => {
       'Old deck',
     )).resolves.toBeUndefined();
     expect(firestore.getDoc).toHaveBeenCalledTimes(2);
-    expect(firestore.transactionSet).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ customDeck: null, revision: 5 }),
-      { merge: true },
-    );
+    expect(callable).toHaveBeenCalledTimes(2);
+    expect(callable.mock.calls[0][0]).toMatchObject({ libraryEpoch: 1 });
+    expect(callable.mock.calls[1][0]).toMatchObject({
+      libraryEpoch: 2,
+      patches: [expect.objectContaining({ cardId: 'stale-epoch-card', baseRevision: 4 })],
+    });
   });
 
-  it('retries a conflicting deck patch only while the card remains in that deck', async () => {
+  it('retries a conflicting deck patch on the next query with a fresh revision', async () => {
     const queriedCard = {
       id: 'conflicting-card',
       data: {
@@ -2625,39 +2641,41 @@ describe('legacy card maintenance', () => {
         libraryEpoch: 3,
       },
     };
-    const currentCard = { ...queriedCard.data, revision: 9 };
+    const requeriedCard = { ...queriedCard, data: { ...queriedCard.data, revision: 9 } };
     firestore.getDocs
       .mockResolvedValueOnce(snapshot([queriedCard]))
+      .mockResolvedValueOnce(snapshot([requeriedCard]))
       .mockResolvedValueOnce(snapshot([]));
-    firestore.getDoc.mockImplementation(async (reference: { args?: unknown[] }) => {
-      const path = reference.args?.at(-1);
-      return path === 'library_state'
-        ? { exists: () => true, data: () => ({ libraryEpoch: 3 }) }
-        : { exists: () => true, data: () => currentCard };
-    });
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        return path === 'library_state'
-          ? { exists: () => true, data: () => ({ libraryEpoch: 3 }) }
-          : { exists: () => true, data: () => currentCard };
-      }),
-      set: firestore.transactionSet,
-    }));
+    firestore.getDoc.mockResolvedValue({ exists: () => true, data: () => ({ libraryEpoch: 3 }) });
+    const callable = vi.fn()
+      .mockResolvedValueOnce({
+        data: { results: [{ cardId: 'conflicting-card', op: 'patch', applied: false, reason: 'revision-conflict', currentRevision: 9 }] },
+      })
+      .mockResolvedValueOnce({
+        data: { results: [{ cardId: 'conflicting-card', op: 'patch', applied: true, revision: 10 }] },
+      });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
 
     await expect(clearCustomDeckAssignments(
       {} as never,
       'user-1',
       'Old deck',
     )).resolves.toBeUndefined();
-    expect(firestore.transactionSet).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ customDeck: null, revision: 10 }),
-      { merge: true },
-    );
+    expect(callable).toHaveBeenCalledTimes(2);
+    expect(callable.mock.calls[0][0]).toMatchObject({
+      patches: [expect.objectContaining({ cardId: 'conflicting-card', baseRevision: 8 })],
+    });
+    expect(callable.mock.calls[1][0]).toMatchObject({
+      patches: [expect.objectContaining({ cardId: 'conflicting-card', baseRevision: 9 })],
+    });
+    // The libraryEpoch is only re-read on a stale-library-epoch reason; a
+    // plain revision conflict must not trigger an extra getDoc round trip.
+    expect(firestore.getDoc).toHaveBeenCalledTimes(1);
   });
 
-  it('preserves a concurrent reassignment when retrying a deck patch', async () => {
+  it('preserves a concurrent reassignment away from the deck being cleared', async () => {
     const queriedCard = {
       id: 'reassigned-card',
       data: {
@@ -2670,39 +2688,28 @@ describe('legacy card maintenance', () => {
         libraryEpoch: 3,
       },
     };
-    const reassignedCard = {
-      ...queriedCard.data,
-      customDeck: 'New deck',
-      revision: 9,
-    };
     firestore.getDocs
       .mockResolvedValueOnce(snapshot([queriedCard]))
+      // The card moved to a different deck before the retry query ran, so
+      // the live `customDeck == 'Old deck'` filter naturally excludes it.
       .mockResolvedValueOnce(snapshot([]));
-    firestore.getDoc.mockImplementation(async (reference: { args?: unknown[] }) => {
-      const path = reference.args?.at(-1);
-      return path === 'library_state'
-        ? { exists: () => true, data: () => ({ libraryEpoch: 3 }) }
-        : { exists: () => true, data: () => reassignedCard };
+    firestore.getDoc.mockResolvedValue({ exists: () => true, data: () => ({ libraryEpoch: 3 }) });
+    const callable = vi.fn().mockResolvedValueOnce({
+      data: { results: [{ cardId: 'reassigned-card', op: 'patch', applied: false, reason: 'revision-conflict', currentRevision: 9 }] },
     });
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        return path === 'library_state'
-          ? { exists: () => true, data: () => ({ libraryEpoch: 3 }) }
-          : { exists: () => true, data: () => reassignedCard };
-      }),
-      set: firestore.transactionSet,
-    }));
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
 
     await expect(clearCustomDeckAssignments(
       {} as never,
       'user-1',
       'Old deck',
     )).resolves.toBeUndefined();
-    expect(firestore.transactionSet).not.toHaveBeenCalled();
+    expect(callable).toHaveBeenCalledTimes(1);
   });
 
-  it('waits for sibling deck mutations to settle before reporting a batch failure', async () => {
+  it('waits for sibling deck mutations to settle before reporting a migration-fallback failure', async () => {
     const documents = [
       {
         id: 'failing-card',
@@ -2729,6 +2736,20 @@ describe('legacy card maintenance', () => {
         await siblingGate;
         return { applied: true, revision: 2 };
       });
+    // Both cards fail the bulk callable's simplified identity check, so
+    // they fall back to the single-card migration path, which is where
+    // the sibling-wait concurrency guarantee still applies.
+    const callable = vi.fn().mockResolvedValueOnce({
+      data: {
+        results: [
+          { cardId: 'failing-card', op: 'patch', applied: false, reason: 'requires-migration' },
+          { cardId: 'in-flight-card', op: 'patch', applied: false, reason: 'requires-migration' },
+        ],
+      },
+    });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
 
     let settled = false;
     let rejection: unknown;
@@ -2761,20 +2782,19 @@ describe('legacy card maintenance', () => {
         revision: 2,
       },
     };
-    firestore.getDocs
-      .mockResolvedValueOnce(snapshot([deckCard]))
-      .mockResolvedValueOnce(snapshot([]));
+    firestore.getDocs.mockResolvedValueOnce(snapshot([deckCard]));
     firestore.getDoc.mockResolvedValue({
       exists: () => true,
-      data: () => ({ libraryEpoch: 3 }),
+      data: () => ({ libraryEpoch: 2 }),
     });
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async () => ({
-        exists: () => true,
-        data: () => ({ libraryEpoch: 2 }),
-      })),
-      set: firestore.transactionSet,
-    }));
+    const httpsError = Object.assign(new Error('failed-precondition'), {
+      code: 'functions/failed-precondition',
+      details: { reason: 'future-library-epoch' },
+    });
+    const callable = vi.fn().mockRejectedValueOnce(httpsError);
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
 
     await expect(clearCustomDeckAssignments(
       {} as never,
@@ -2782,7 +2802,7 @@ describe('legacy card maintenance', () => {
       'Old deck',
     )).rejects.toThrow('Card mutation rejected: future-library-epoch.');
     expect(firestore.getDocs).toHaveBeenCalledTimes(1);
-    expect(firestore.transactionSet).not.toHaveBeenCalled();
+    expect(callable).toHaveBeenCalledTimes(1);
   });
 
   it('fails a repeated non-empty deck batch that cannot make progress', async () => {
@@ -2798,37 +2818,21 @@ describe('legacy card maintenance', () => {
         libraryEpoch: 0,
       },
     };
-    let currentRevision = 1;
     firestore.getDocs.mockImplementation(async () => {
       if (firestore.getDocs.mock.calls.length > 3) {
         throw new Error('deck query exceeded its safety bound');
       }
       return snapshot([conflictingCard]);
     });
-    firestore.getDoc.mockImplementation(async (reference: { args?: unknown[] }) => {
-      const path = reference.args?.at(-1);
-      return path === 'library_state'
-        ? { exists: () => false }
-        : {
-            exists: () => true,
-            data: () => ({ ...conflictingCard.data, revision: currentRevision }),
-          };
-    });
-    firestore.runTransaction.mockImplementation(async (_db, callback) => {
-      currentRevision += 1;
-      return callback({
-        get: vi.fn(async (reference: { args?: unknown[] }) => {
-          const path = reference.args?.at(-1);
-          return path === 'library_state'
-            ? { exists: (): boolean => false }
-            : {
-                exists: (): boolean => true,
-                data: () => ({ ...conflictingCard.data, revision: currentRevision }),
-              };
-        }),
-        set: firestore.transactionSet,
-      });
-    });
+    firestore.getDoc.mockResolvedValue({ exists: () => false });
+    const callable = vi.fn().mockImplementation(async () => ({
+      data: {
+        results: [{ cardId: 'moving-conflict-card', op: 'patch', applied: false, reason: 'revision-conflict', currentRevision: 2 }],
+      },
+    }));
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
 
     await expect(clearCustomDeckAssignments(
       {} as never,
@@ -2836,8 +2840,8 @@ describe('legacy card maintenance', () => {
       'Old deck',
     )).rejects.toThrow('same card batch made no progress');
     expect(firestore.getDocs).toHaveBeenCalledTimes(3);
-    expect(firestore.runTransaction).toHaveBeenCalledTimes(9);
-    expect(firestore.transactionSet).not.toHaveBeenCalled();
+    expect(callable).toHaveBeenCalledTimes(3);
+    expect(firestore.runTransaction).not.toHaveBeenCalled();
   });
 
   it('restarts a versionless completed scan and claims a fully current card identity', async () => {

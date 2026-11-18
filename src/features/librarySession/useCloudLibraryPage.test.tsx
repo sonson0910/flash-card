@@ -2,13 +2,21 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
 import type { CardQueryState } from '../../lib/cardQuery';
-import type { DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import type { CloudLibraryPageAdapter } from './cloudLibraryPageController';
 
-const deviceSyncMocks = vi.hoisted(() => ({
-  loadDevicePending: vi.fn<() => Promise<DevicePendingOperation[]>>(async () => []),
+// available/loadStats are mutable per test so one suite can cover both the
+// paused-cloud fallback path (available: false, the pre-existing default)
+// and the course-scoped stats wiring (available: true, set within a test).
+const adapterState = vi.hoisted(() => ({
+  available: false,
+  loadStats: vi.fn(async () => ({
+    total: 0, reviewed: 0, easy: 0, good: 0, hard: 0,
+    unrated: 0, bookmarked: 0, due: 0, dueAsOfDate: '2026-09-28', legacyUnindexed: 0,
+  })),
+  loadDueStats: vi.fn(async () => ({ due: 0, dueAsOfDate: '2026-09-28' })),
+  getTargetLanguage: undefined as (() => string | null) | undefined,
 }));
 const cloudMocks = vi.hoisted(() => ({
   available: false,
@@ -16,24 +24,22 @@ const cloudMocks = vi.hoisted(() => ({
 }));
 
 vi.mock('../../lib/firebase', () => ({ db: null, isFirebaseConfigured: false }));
-vi.mock('../../lib/deviceSync', async () => {
-  const actual = await vi.importActual<typeof import('../../lib/deviceSync')>('../../lib/deviceSync');
-  return { ...actual, loadDevicePending: deviceSyncMocks.loadDevicePending };
-});
 vi.mock('./cloudLibraryPageFirebaseAdapter', () => ({
-  createCloudLibraryPageFirebaseAdapter: () => ({
-    get available() { return cloudMocks.available; },
-    subscribePage: cloudMocks.subscribePage,
-    countCards: vi.fn(async () => 0),
-    loadStats: vi.fn(async () => ({
-      total: 0, reviewed: 0, easy: 0, good: 0, hard: 0,
-      unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0,
-    })),
-    subscribeFacets: vi.fn(() => vi.fn()),
-  }),
+  createCloudLibraryPageFirebaseAdapter: (options: { getTargetLanguage?: () => string | null }) => {
+    adapterState.getTargetLanguage = options.getTargetLanguage;
+    return {
+      available: adapterState.available || cloudMocks.available,
+      subscribePage: cloudMocks.subscribePage,
+      countCards: vi.fn(async () => 0),
+      loadStats: adapterState.loadStats,
+      loadDueStats: adapterState.loadDueStats,
+      subscribeFacets: vi.fn(() => vi.fn()),
+    };
+  },
 }));
 
 import { useCloudLibraryPage } from './useCloudLibraryPage';
+import { cloudPageCacheKey, cloudStatsCacheKey } from '../library/libraryStorage';
 
 const query: CardQueryState = {
   category: null,
@@ -87,14 +93,33 @@ const installMinimalReactDom = () => {
   return container as unknown as Element;
 };
 
+const localStorageValues = new Map<string, string>();
+const installLocalStorage = () => {
+  localStorageValues.clear();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => localStorageValues.get(key) ?? null,
+    setItem: (key: string, value: string) => { localStorageValues.set(key, value); },
+    removeItem: (key: string) => { localStorageValues.delete(key); },
+  });
+};
+
+const writeCachedPage = (ownerId: string, queryKey: string, page: number, items: CardData[], total: number) => {
+  localStorageValues.set(cloudPageCacheKey(ownerId), JSON.stringify({
+    queryKey, page, items, total, hasNext: false, updatedAt: new Date().toISOString(),
+  }));
+};
+
 afterEach(() => {
-  vi.useRealTimers();
-  cloudMocks.available = false;
-  cloudMocks.subscribePage.mockReset();
-  cloudMocks.subscribePage.mockImplementation(() => vi.fn());
-  deviceSyncMocks.loadDevicePending.mockReset();
-  deviceSyncMocks.loadDevicePending.mockResolvedValue([]);
   vi.unstubAllGlobals();
+  adapterState.available = false;
+  cloudMocks.available = false;
+  cloudMocks.subscribePage.mockReset().mockImplementation(() => vi.fn());
+  vi.useRealTimers();
+  adapterState.loadStats.mockReset();
+  adapterState.loadStats.mockImplementation(async () => ({
+    total: 0, reviewed: 0, easy: 0, good: 0, hard: 0,
+    unrated: 0, bookmarked: 0, due: 0, dueAsOfDate: '2026-09-28', legacyUnindexed: 0,
+  }));
 });
 
 it('retries a paused read without pending writes, respecting backoff and unmount', async () => {
@@ -108,6 +133,7 @@ it('retries a paused read without pending writes, respecting backoff and unmount
   });
   const fallback = vi.fn(async () => ({ items: [card('cached')], total: 1, hasNext: false }));
   cloudMocks.available = true;
+  cloudMocks.subscribePage.mockReset();
   cloudMocks.subscribePage.mockImplementation((_request, onPage, onError) => {
     if (cloudMocks.subscribePage.mock.calls.length === 1) void onError({ code: 'unavailable' });
     else void onPage({ items: [card('cloud')], hasNext: false, cursor: null,
@@ -118,7 +144,7 @@ it('retries a paused read without pending writes, respecting backoff and unmount
   const root = createRoot(container);
   function Harness() {
     snapshot = useCloudLibraryPage({ ownerId: 'user-a', query, queryKey: 'all', page: 1, pageSize: 9,
-      refreshKey: 0, statsOpen: false, getDeviceFallback: fallback, getPromotedCards: () => [] });
+      refreshKey: 0, statsOpen: false, progressEvidenceOpen: false, getPromotedCards: () => [] });
     return null;
   }
   await act(async () => root.render(<Harness />));
@@ -139,8 +165,10 @@ it('retries a paused read without pending writes, respecting backoff and unmount
 });
 
 it('overlays a promoted duplicate onto a paused-cloud fallback without requiring reload', async () => {
+  installLocalStorage();
   const cachedPage = Array.from({ length: 9 }, (_, index) => card(`cached-${index + 1}`));
   const promoted = { ...card('existing-hidden'), sortTouchedAt: '2026-08-12T00:00:00.000Z' };
+  writeCachedPage('user-a', 'all', 1, cachedPage, 10);
   const captured: { current: ReturnType<typeof useCloudLibraryPage> | null } = { current: null };
   const container = installMinimalReactDom();
   const root = createRoot(container);
@@ -154,7 +182,7 @@ it('overlays a promoted duplicate onto a paused-cloud fallback without requiring
       pageSize: 9,
       refreshKey: 0,
       statsOpen: false,
-      getDeviceFallback: async () => ({ items: cachedPage, total: 10, hasNext: true }),
+      progressEvidenceOpen: false,
       getPromotedCards: () => [promoted],
     });
     return null;
@@ -172,49 +200,9 @@ it('overlays a promoted duplicate onto a paused-cloud fallback without requiring
   await act(async () => root.unmount());
 });
 
-it('keeps a locally deleted promoted card hidden while the cloud page is stale', async () => {
-  const deleted = { ...card('recently-promoted'), sortTouchedAt: '2026-08-12T00:00:00.000Z' };
-  deviceSyncMocks.loadDevicePending.mockResolvedValue([{
-    type: 'delete',
-    cardId: deleted.id,
-    ownerUserId: 'user-a',
-    updatedAt: '2026-08-12T00:01:00.000Z',
-  }]);
-  const captured: { current: ReturnType<typeof useCloudLibraryPage> | null } = { current: null };
-  const container = installMinimalReactDom();
-  const root = createRoot(container);
-
-  function Harness() {
-    captured.current = useCloudLibraryPage({
-      ownerId: 'user-a',
-      query,
-      queryKey: 'all',
-      page: 1,
-      pageSize: 9,
-      refreshKey: 0,
-      statsOpen: false,
-      getDeviceFallback: async () => ({ items: [deleted, card('still-visible')], total: 2, hasNext: false }),
-      getPromotedCards: () => [deleted],
-    });
-    return null;
-  }
-
-  await act(async () => { root.render(<Harness />); });
-  await act(async () => {
-    await vi.waitFor(() => expect(captured.current?.isLoading).toBe(false));
-  });
-
-  expect(captured.current?.items.map(candidate => candidate.id)).toEqual(['still-visible']);
-
-  await act(async () => root.unmount());
-});
-
 it('does not restart the cloud page when only the query object identity changes', async () => {
-  const getDeviceFallback = vi.fn(async () => ({
-    items: [card('stable')],
-    total: 1,
-    hasNext: false,
-  }));
+  installLocalStorage();
+  writeCachedPage('user-a', 'all', 1, [card('stable')], 1);
   const captured: { current: ReturnType<typeof useCloudLibraryPage> | null } = { current: null };
   const container = installMinimalReactDom();
   const root = createRoot(container);
@@ -228,7 +216,7 @@ it('does not restart the cloud page when only the query object identity changes'
       pageSize: 9,
       refreshKey: 0,
       statsOpen: false,
-      getDeviceFallback,
+      progressEvidenceOpen: false,
       getPromotedCards: () => [],
     });
     return null;
@@ -238,13 +226,110 @@ it('does not restart the cloud page when only the query object identity changes'
   await act(async () => {
     await vi.waitFor(() => expect(captured.current?.isLoading).toBe(false));
   });
-  expect(getDeviceFallback).toHaveBeenCalledOnce();
+  expect(captured.current?.items.map(candidate => candidate.id)).toEqual(['stable']);
 
+  // Changing the query object identity without changing the queryKey must not restart the listener.
   await act(async () => { root.render(<Harness filters={{ ...query }} />); });
   await act(async () => { await Promise.resolve(); });
 
-  expect(getDeviceFallback).toHaveBeenCalledOnce();
   expect(captured.current?.items.map(candidate => candidate.id)).toEqual(['stable']);
+
+  await act(async () => root.unmount());
+});
+
+it('scopes the stats cache to the active course and refetches only when its language changes', async () => {
+  installLocalStorage();
+  adapterState.available = true;
+  adapterState.loadStats.mockImplementation(async () => ({
+    total: 7, reviewed: 0, easy: 0, good: 0, hard: 0, unrated: 7, bookmarked: 0, due: 0, dueAsOfDate: '2026-09-28', legacyUnindexed: 0,
+  }));
+  const captured: { current: ReturnType<typeof useCloudLibraryPage> | null } = { current: null };
+  const container = installMinimalReactDom();
+  const root = createRoot(container);
+
+  function Harness({ targetLanguage }: { targetLanguage: string }) {
+    captured.current = useCloudLibraryPage({
+      ownerId: 'user-a',
+      query: { ...query, targetLanguage },
+      queryKey: `all-${targetLanguage}`,
+      page: 1,
+      pageSize: 9,
+      refreshKey: 0,
+      statsOpen: true,
+      progressEvidenceOpen: false,
+      getPromotedCards: () => [],
+    });
+    return null;
+  }
+
+  await act(async () => { root.render(<Harness targetLanguage="en" />); });
+  await act(async () => { await Promise.resolve(); });
+
+  expect(adapterState.loadStats).toHaveBeenCalledTimes(1);
+  expect(captured.current?.stats.total).toBe(7);
+  expect(localStorageValues.has(cloudStatsCacheKey('user-a', 'en'))).toBe(true);
+
+  adapterState.loadStats.mockImplementation(async () => ({
+    total: 2, reviewed: 0, easy: 0, good: 0, hard: 0, unrated: 2, bookmarked: 0, due: 0, dueAsOfDate: '2026-09-28', legacyUnindexed: 0,
+  }));
+
+  // Switching the active course must refetch instead of reusing course A's cached stats.
+  await act(async () => { root.render(<Harness targetLanguage="ko" />); });
+  await act(async () => { await Promise.resolve(); });
+
+  expect(adapterState.loadStats).toHaveBeenCalledTimes(2);
+  expect(captured.current?.stats.total).toBe(2);
+  expect(localStorageValues.has(cloudStatsCacheKey('user-a', 'ko'))).toBe(true);
+
+  // Switching back within the cache TTL must reuse course A's own cache, not re-fetch.
+  await act(async () => { root.render(<Harness targetLanguage="en" />); });
+  await act(async () => { await Promise.resolve(); });
+
+  expect(adapterState.loadStats).toHaveBeenCalledTimes(2);
+  expect(captured.current?.stats.total).toBe(7);
+
+  await act(async () => root.unmount());
+});
+
+it('refreshes recap stats after the intent arrives without treating the initial idle snapshot as ready', async () => {
+  installLocalStorage();
+  adapterState.available = true;
+  const now = new Date();
+  const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+  let finishRefresh!: (value: Awaited<ReturnType<typeof adapterState.loadStats>>) => void;
+  adapterState.loadStats.mockResolvedValueOnce({
+    total: 1, reviewed: 1, easy: 0, good: 1, hard: 0, unrated: 0,
+    bookmarked: 0, due: 0, dueAsOfDate: today, legacyUnindexed: 0,
+  }).mockImplementationOnce(() => new Promise(resolve => { finishRefresh = resolve; }));
+  const captured: { current: ReturnType<typeof useCloudLibraryPage> | null } = { current: null };
+  const root = createRoot(installMinimalReactDom());
+
+  function Harness({ requestId }: { requestId: number | null }) {
+    captured.current = useCloudLibraryPage({
+      ownerId: 'user-a', query: { ...query, targetLanguage: 'en' }, queryKey: 'all-en', page: 1,
+      pageSize: 9, refreshKey: 0, statsOpen: true,
+      statsRefreshRequest: requestId === null ? null : { ownerId: 'user-a', requestId },
+      progressEvidenceOpen: false, getPromotedCards: () => [],
+    });
+    return null;
+  }
+
+  await act(async () => { root.render(<Harness requestId={null} />); });
+  expect(captured.current?.stats.reviewed).toBe(1);
+  expect(captured.current?.isStatsLoading).toBe(false);
+  expect(captured.current?.statsSettledRequestId).toBeNull();
+
+  await act(async () => { root.render(<Harness requestId={7} />); });
+  expect(adapterState.loadStats).toHaveBeenCalledTimes(2);
+  expect(captured.current?.isStatsLoading).toBe(true);
+  expect(captured.current?.statsSettledRequestId).toBeNull();
+
+  await act(async () => {
+    finishRefresh({ total: 1, reviewed: 2, easy: 0, good: 1, hard: 0, unrated: 0,
+      bookmarked: 0, due: 0, dueAsOfDate: today, legacyUnindexed: 0 });
+    await Promise.resolve();
+  });
+  expect(captured.current).toMatchObject({ stats: { reviewed: 2 }, isStatsLoading: false, statsSettledRequestId: 7 });
 
   await act(async () => root.unmount());
 });

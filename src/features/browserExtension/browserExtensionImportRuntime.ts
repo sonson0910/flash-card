@@ -1,4 +1,5 @@
 import type { CardIntakeActions } from '../intake/useCardIntake';
+import { captureFailureMessage } from '../../lib/captureFailureMessage';
 import {
   BROWSER_EXTENSION_IMPORT_APP_SOURCE,
   BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE,
@@ -7,9 +8,12 @@ import {
   clearPendingBrowserExtensionImport,
   getBrowserExtensionImportBrowser,
   parseBrowserExtensionImportValue,
+  readPendingBrowserExtensionImportOwner,
   readPendingBrowserExtensionImport,
+  writePendingBrowserExtensionImportOwner,
   type BrowserExtensionImportBrowser,
   type BrowserExtensionImportIntent,
+  type BrowserExtensionImportStorage,
 } from './browserExtensionImport';
 
 export interface BrowserExtensionImportOptions {
@@ -23,6 +27,35 @@ export interface BrowserExtensionImportOptions {
   openLibrary(): void;
   notify(message: string): void;
   reportError(message: string): void;
+  /**
+   * The signed-in owner's active course native/target language, when known.
+   * `useBrowserExtensionImport` syncs this pair to the extension the same
+   * way it already syncs deck metadata (07.5, `LINGOFLASH_EXTENSION_COURSE_
+   * LOCALE`), which the extension uses to follow the course's native
+   * language in its own popup/options UI and to tag a fresh capture with the
+   * course's target language. Omitting either field (or passing `null`)
+   * sends no course-locale sync at all, so the extension keeps its today's
+   * Chrome-i18n UI locale and fixed English capture assumption unchanged.
+   */
+  courseNativeLanguage?: string | null;
+  courseTargetLanguage?: string | null;
+  /**
+   * Runs immediately before a silent (one-click, no-review) capture is
+   * generated. Receives the target language the extension captured this
+   * word under — the active course's target language when the extension had
+   * one synced (07.5), else `'en'`, the extension's original fixed
+   * assumption for a build (or a not-yet-synced session) that never reports
+   * one. When the active course targets a different language, this is the
+   * only point where a human ever sees the mismatch — manual (non-silent)
+   * captures instead land in the library view, where the real course
+   * switcher is already visible before the user generates anything.
+   * Returning `'cancel'` drops the capture with no side effects: nothing is
+   * generated, the pending storage entry is cleared, and the extension
+   * receives a clean error result. Omitting this option (or resolving
+   * `'proceed'`) keeps generation byte-for-byte identical to before this
+   * option existed.
+   */
+  ensureCaptureCourse?(targetLanguage: NonNullable<BrowserExtensionImportIntent['sourceLanguage']>): Promise<'proceed' | 'cancel'>;
 }
 
 export interface BrowserExtensionImportRuntime {
@@ -50,6 +83,7 @@ const publishSilentResult = (
       explanation?: unknown;
       exampleSentence?: unknown;
       exampleTranslation?: unknown;
+      origin?: unknown;
     };
   },
 ): void => {
@@ -69,6 +103,7 @@ const publishSilentResult = (
       explanation: boundedText(card?.explanation, 1024),
       exampleSentence: boundedText(card?.exampleSentence, 1024),
       exampleTranslation: boundedText(card?.exampleTranslation, 1024),
+      aiGenerated: card?.origin === 'ai',
       message: boundedText(payload.message, 512),
     },
   };
@@ -100,6 +135,10 @@ export const startBrowserExtensionImportRuntime = (
   }
   let options = initialOptions;
   let pendingIntent: BrowserExtensionImportIntent | null = null;
+  // A verified capture belongs to the owner that was signed in when it was
+  // claimed. When startup begins anonymously, the first resolved owner claims
+  // it. A later owner must never inherit that capture.
+  let pendingOwnerId: string | null = initialOptions.ownerId;
   const intentKey = (intent: BrowserExtensionImportIntent): string =>
     `${intent.id}:${intent.nonce ?? ''}`;
   let preparedIntentKey: string | null = null;
@@ -107,21 +146,81 @@ export const startBrowserExtensionImportRuntime = (
   let signedOutNoticeKey: string | null = null;
   let retryTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
   let disposed = false;
+  let generationEpoch = 0;
+  const terminalIntentKeys = new Set<string>();
+
+  const publishTerminalError = (intent: BrowserExtensionImportIntent, message: string) => {
+    const key = intentKey(intent);
+    if (terminalIntentKeys.has(key)) return;
+    terminalIntentKeys.add(key);
+    publishSilentResult(intent, { status: 'error', message });
+  };
+
+  const clearRetry = () => {
+    if (retryTimer !== null) globalThis.clearTimeout(retryTimer);
+    retryTimer = null;
+  };
+
+  const invalidatePendingIntent = (ownerChanged = false) => {
+    const intent = pendingIntent;
+    generationEpoch += 1;
+    clearRetry();
+    pendingIntent = null;
+    pendingOwnerId = null;
+    preparedIntentKey = null;
+    activeIntentKey = null;
+    if (intent) {
+      clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
+      if (ownerChanged) {
+        publishTerminalError(intent, 'Import cancelled because the signed-in account changed. Capture the word again.');
+      }
+    }
+  };
+
+  const rejectBeforeClaim = (
+    intent: BrowserExtensionImportIntent,
+    storage: BrowserExtensionImportStorage | null,
+    message: string,
+  ) => {
+    clearPendingBrowserExtensionImport(storage, intent.id, intent.nonce);
+    publishTerminalError(intent, message);
+  };
 
   const finishIntent = (intent: BrowserExtensionImportIntent) => {
     const key = intentKey(intent);
-    if (pendingIntent && intentKey(pendingIntent) === key) pendingIntent = null;
+    if (pendingIntent && intentKey(pendingIntent) === key) {
+      pendingIntent = null;
+      pendingOwnerId = null;
+    }
     if (activeIntentKey === key) activeIntentKey = null;
   };
 
   const claimVerifiedIntent = (candidate: unknown) => {
     const intent = parseBrowserExtensionImportValue(candidate);
     if (!intent || intent.mode !== 'silent') return;
+    let storage;
+    try { storage = browser.getSessionStorage(); } catch {
+      publishTerminalError(intent, 'Could not securely verify this import. Capture the word again.');
+      return;
+    }
+    const storedOwnerId = readPendingBrowserExtensionImportOwner(storage, intent);
+    if (storedOwnerId && options.ownerId && storedOwnerId !== options.ownerId) {
+      rejectBeforeClaim(intent, storage, 'Import cancelled because the signed-in account changed. Capture the word again.');
+      return;
+    }
     const key = intentKey(intent);
     if ((pendingIntent && intentKey(pendingIntent) === key)
       || activeIntentKey === key
       || preparedIntentKey === key) return;
     pendingIntent = intent;
+    pendingOwnerId = storedOwnerId ?? options.ownerId;
+    if (!storedOwnerId && pendingOwnerId
+      && !writePendingBrowserExtensionImportOwner(storage, intent, pendingOwnerId)) {
+      rejectBeforeClaim(intent, storage, 'Could not securely prepare this import. Capture the word again.');
+      pendingIntent = null;
+      pendingOwnerId = null;
+      return;
+    }
     browser.postMessage({
       source: BROWSER_EXTENSION_IMPORT_APP_SOURCE,
       type: BROWSER_EXTENSION_IMPORT_CLAIMED_MESSAGE,
@@ -141,7 +240,10 @@ export const startBrowserExtensionImportRuntime = (
       && pending.text === intent.text
       && pending.createdAt === intent.createdAt
       && (pending.context ?? '') === (intent.context ?? '')
-      && (pending.requestedDeck ?? '') === (intent.requestedDeck ?? '');
+      && (pending.requestedDeck ?? '') === (intent.requestedDeck ?? '')
+      && (pending.sourceUrl ?? '') === (intent.sourceUrl ?? '')
+      && (pending.pageTitle ?? '') === (intent.pageTitle ?? '')
+      && (pending.sourceLanguage ?? '') === (intent.sourceLanguage ?? '');
   };
 
   const processPending = () => {
@@ -149,10 +251,16 @@ export const startBrowserExtensionImportRuntime = (
     const intent = pendingIntent;
 
     const key = intentKey(intent);
-    if (preparedIntentKey !== key) {
-      preparedIntentKey = key;
-      if (intent.mode !== 'silent') options.openLibrary();
-      options.changeDraft(intent.text);
+    if (pendingOwnerId && options.ownerId && pendingOwnerId !== options.ownerId) {
+      invalidatePendingIntent(true);
+      return;
+    }
+    if (!pendingOwnerId && options.ownerId) {
+      pendingOwnerId = options.ownerId;
+      if (!writePendingBrowserExtensionImportOwner(browser.getSessionStorage(), intent, pendingOwnerId)) {
+        invalidatePendingIntent();
+        return;
+      }
     }
 
     if (options.identityLoading) return;
@@ -161,17 +269,24 @@ export const startBrowserExtensionImportRuntime = (
         clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
         publishSilentResult(intent, {
           status: 'auth-required',
-          message: 'Sign in to LingoFlash once, then retry the selected word.',
+          message: 'Đăng nhập Google vào SonFlash rồi thử lại từ đã chọn.',
         });
         finishIntent(intent);
         return;
       }
       if (signedOutNoticeKey !== key) {
         signedOutNoticeKey = key;
-        options.notify('Sign in to LingoFlash to translate and save the selected word.');
+        options.notify('Đăng nhập Google vào SonFlash để tạo và lưu thẻ từ đã chọn.');
       }
       return;
     }
+
+    if (preparedIntentKey !== key) {
+      preparedIntentKey = key;
+      if (intent.mode !== 'silent') options.openLibrary();
+      options.changeDraft(intent.text);
+    }
+
     if (!options.libraryReady) return;
     const requestedDeck = intent.requestedDeck?.trim() ?? '';
     if (requestedDeck && !options.customDecks.includes(requestedDeck)) {
@@ -186,59 +301,107 @@ export const startBrowserExtensionImportRuntime = (
     if (options.isBusy || activeIntentKey === key) return;
 
     activeIntentKey = key;
-    clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
+    const ownerId = pendingOwnerId;
+    const epoch = generationEpoch;
+    const isCurrent = () => !disposed
+      && pendingIntent === intent
+      && pendingOwnerId === ownerId
+      && options.ownerId === ownerId
+      && generationEpoch === epoch;
 
-    void options.generate({
-      ...(intent.context ? { context: intent.context } : {}),
-      ...(requestedDeck ? {
-        requestedDeck,
-        requestedDeckAvailable: (deck: string) => options.customDecks.includes(deck),
-      } : {}),
-    }).then(result => {
-      if (disposed) return;
-      if (result.status === 'busy') {
-        if (activeIntentKey === key) activeIntentKey = null;
-        retryTimer = globalThis.setTimeout(processPending, 250);
+    const runGeneration = () => {
+      if (!isCurrent()) return;
+      clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
+
+      void options.generate({
+        operationId: intent.id,
+        surface: 'extension',
+        ...(intent.context ? { context: intent.context } : {}),
+        ...(intent.sourceUrl ? { sourceUrl: intent.sourceUrl } : {}),
+        ...(intent.pageTitle ? { pageTitle: intent.pageTitle } : {}),
+        capturedAt: new Date(intent.createdAt).toISOString(),
+        ...(requestedDeck ? {
+          requestedDeck,
+          requestedDeckAvailable: (deck: string) => options.customDecks.includes(deck),
+        } : {}),
+      }).then(result => {
+        if (!isCurrent()) return;
+        if (result.status === 'busy') {
+          if (activeIntentKey === key) activeIntentKey = null;
+          clearRetry();
+          retryTimer = globalThis.setTimeout(() => {
+            retryTimer = null;
+            if (isCurrent()) processPending();
+          }, 250);
+          return;
+        }
+
+        finishIntent(intent);
+        if (result.status === 'created') {
+          publishSilentResult(intent, { status: 'created', card: result.card });
+          if (intent.mode !== 'silent') {
+            options.notify(`Added “${intent.text}” to your LingoFlash library.`);
+          }
+        } else if (result.status === 'existing') {
+          publishSilentResult(intent, { status: 'existing', card: result.card });
+          if (intent.mode !== 'silent') {
+            options.notify(`“${intent.text}” is already in your LingoFlash library.`);
+          }
+        } else if (result.status === 'invalid') {
+          publishSilentResult(intent, {
+            status: 'error',
+            message: 'Select an English word or short phrase of at most 80 characters.',
+          });
+          if (intent.mode !== 'silent') {
+            options.reportError('The selected text could not be added. Select an English word or short phrase.');
+          }
+        } else if (result.status === 'failed') {
+          publishSilentResult(intent, {
+            status: 'error',
+            message: captureFailureMessage(result.error),
+          });
+        }
+      }).catch(error => {
+        if (!isCurrent()) return;
+        finishIntent(intent);
+        publishSilentResult(intent, {
+          status: 'error',
+          message: captureFailureMessage(error),
+        });
+        if (intent.mode !== 'silent') {
+          options.reportError(captureFailureMessage(error));
+        }
+      });
+    };
+
+    const ensureCaptureCourse = options.ensureCaptureCourse;
+    if (!ensureCaptureCourse) {
+      runGeneration();
+      return;
+    }
+    void ensureCaptureCourse(intent.sourceLanguage ?? 'en').then(decision => {
+      if (!isCurrent()) return;
+      if (decision === 'cancel') {
+        // No half-done side effects: nothing was generated, the pending
+        // storage entry is dropped so a reload can't resurrect it, and the
+        // extension gets a clean, terminal result instead of hanging.
+        clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
+        finishIntent(intent);
+        publishSilentResult(intent, {
+          status: 'error',
+          message: 'Import cancelled: switch to a matching course, then capture the word again.',
+        });
         return;
       }
-
-      finishIntent(intent);
-      if (result.status === 'created') {
-        publishSilentResult(intent, { status: 'created', card: result.card });
-        if (intent.mode !== 'silent') {
-          options.notify(`Added “${intent.text}” to your LingoFlash library.`);
-        }
-      } else if (result.status === 'existing') {
-        publishSilentResult(intent, { status: 'existing', card: result.card });
-        if (intent.mode !== 'silent') {
-          options.notify(`“${intent.text}” is already in your LingoFlash library.`);
-        }
-      } else if (result.status === 'invalid') {
-        publishSilentResult(intent, {
-          status: 'error',
-          message: 'Select an English word or short phrase of at most 80 characters.',
-        });
-        if (intent.mode !== 'silent') {
-          options.reportError('The selected text could not be added. Select an English word or short phrase.');
-        }
-      } else if (result.status === 'failed') {
-        publishSilentResult(intent, {
-          status: 'error',
-          message: 'LingoFlash could not translate or save this word. Please try again.',
-        });
-      }
-    }).catch(error => {
-      if (disposed) return;
+      runGeneration();
+    }).catch(() => {
+      if (!isCurrent()) return;
+      clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
       finishIntent(intent);
       publishSilentResult(intent, {
         status: 'error',
-        message: 'LingoFlash could not translate or save this word. Please try again.',
+        message: 'Could not prepare the matching course. The word was not saved.',
       });
-      if (intent.mode !== 'silent') {
-        options.reportError(error instanceof Error
-          ? error.message
-          : 'The selected text could not be added to LingoFlash.');
-      }
     });
   };
 
@@ -254,17 +417,29 @@ export const startBrowserExtensionImportRuntime = (
     if (candidate.source !== BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE
       || candidate.type !== BROWSER_EXTENSION_IMPORT_READY_MESSAGE) return;
     const intent = parseBrowserExtensionImportValue(candidate.payload);
-    if (intent?.mode === 'silent' && isBackedByVerifiedStorage(intent)) claimVerifiedIntent(intent);
+    if (intent?.mode === 'silent') {
+      if (isBackedByVerifiedStorage(intent)) claimVerifiedIntent(intent);
+      else publishTerminalError(intent, 'Could not securely verify this import. Capture the word again.');
+    }
   });
   capturePending();
 
   return {
     update(nextOptions) {
+      const priorOwnerId = options.ownerId;
       options = nextOptions;
+      if (pendingIntent && pendingOwnerId && nextOptions.ownerId && pendingOwnerId !== nextOptions.ownerId) {
+        invalidatePendingIntent(true);
+        return;
+      }
+      if (pendingIntent && !pendingOwnerId && !priorOwnerId && nextOptions.ownerId) {
+        pendingOwnerId = nextOptions.ownerId;
+      }
       processPending();
     },
     acceptVerifiedIntent(intent) {
       if (isBackedByVerifiedStorage(intent)) claimVerifiedIntent(intent);
+      else publishTerminalError(intent, 'Could not securely verify this import. Capture the word again.');
     },
     acceptUnverifiedIntent(candidate) {
       const intent = parseBrowserExtensionImportValue(candidate);
@@ -275,7 +450,7 @@ export const startBrowserExtensionImportRuntime = (
     dispose() {
       disposed = true;
       stopMessageListener();
-      if (retryTimer !== null) globalThis.clearTimeout(retryTimer);
+      clearRetry();
     },
   };
 };

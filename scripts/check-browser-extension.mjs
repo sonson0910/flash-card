@@ -16,7 +16,7 @@ const extensionRoot = process.env.LINGOFLASH_EXTENSION_ROOT
 const productionPattern = 'https://encoded-hangout-433912-h2.web.app/*';
 const translatePattern = 'https://translate.googleapis.com/*';
 const optionalHostPermissions = ['http://*/*', 'https://*/*'];
-const fail = message => { console.error(`Extension check failed: ${message}`); process.exit(1); };
+const fail = message => { throw new Error(`Extension check failed: ${message}`); };
 const manifest = await readExtensionManifest(extensionRoot);
 const packageFiles = await collectExtensionFiles(extensionRoot, manifest);
 if (manifest.manifest_version !== 3) fail('manifest_version must be 3.');
@@ -69,8 +69,15 @@ const requiredFiles = [
   'background.js','background-ui.js','background-core.js',
   'app-bridge.js','shared.js','popup.html','popup.css','popup.js',
   'options.html','options.css','options.js','selection-icon.js',
+  'design-tokens.css','design-fonts.css',
 ];
 for (const file of requiredFiles) await readFile(path.join(extensionRoot, file), 'utf8');
+if (manifest.default_locale) {
+  for (const locale of ['vi', 'en']) {
+    const catalog = JSON.parse(await readFile(path.join(extensionRoot, '_locales', locale, 'messages.json'), 'utf8'));
+    if (!Object.keys(catalog).length) fail(`_locales/${locale}/messages.json is empty.`);
+  }
+}
 const signature = Buffer.from([0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A]);
 for (const size of [16,32,48,128]) {
   const icon = await readFile(path.join(extensionRoot, 'icons', `icon-${size}.png`));

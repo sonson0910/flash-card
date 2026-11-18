@@ -1,10 +1,53 @@
 import { calculateTotalPages, normalizePartOfSpeech, sortCardsByActivity } from '../../lib/cardQuery';
+import { i18n } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
 import { practiceDeckScopeMatchesCard, type PracticeDeckScope } from '../../lib/practiceScope';
 import { resolvePracticeLibraryCount } from '../../lib/practiceAvailability';
 import { isCardDue } from '../../lib/srs';
 import type { CardData } from '../../types/card';
 import type { LibraryDifficulty } from '../catalog/libraryCatalogQuery';
 import { formatCardDate, groupCardsByDate } from './libraryPresentation';
+import type { ReviewActivity } from '../gamification/verifiedGamificationClient';
+
+export type LibraryCardTier = 'new' | 'learning' | 'mastered';
+export type LibrarySortOrder = 'recent' | 'alphabetical' | 'due';
+
+/**
+ * Canvas calls the three learner states Bud, Bloom, and Star. The card model
+ * stores the compatible review fields instead, so keep this mapping in one
+ * place for both the grid and its filter controls.
+ */
+export function getLibraryCardTier(card: CardData): LibraryCardTier {
+  const hasReview = (card.reviews ?? 0) > 0
+    || Boolean(card.reviewHistory?.length)
+    || (card.fsrs?.reps ?? 0) > 0
+    || Boolean(card.nextReviewDate);
+  if (!hasReview) return 'new';
+  if (card.difficulty === 'easy' || (card.interval ?? card.fsrs?.scheduledDays ?? 0) >= 21) return 'mastered';
+  return 'learning';
+}
+
+export function isLibraryCardDue(card: CardData, now = Date.now()): boolean {
+  const due = card.nextReviewDate ?? card.fsrs?.due;
+  if (!due) return false;
+  const timestamp = new Date(due).getTime();
+  return Number.isFinite(timestamp) && timestamp <= now;
+}
+
+export function sortLibraryCards(cards: readonly CardData[], order: LibrarySortOrder): CardData[] {
+  const sorted = [...cards];
+  if (order === 'alphabetical') {
+    return sorted.sort((left, right) => left.word.localeCompare(right.word, undefined, { sensitivity: 'base' }));
+  }
+  if (order === 'due') {
+    return sorted.sort((left, right) => {
+      const leftDue = new Date(left.nextReviewDate ?? left.fsrs?.due ?? '9999-12-31').getTime();
+      const rightDue = new Date(right.nextReviewDate ?? right.fsrs?.due ?? '9999-12-31').getTime();
+      return leftDue - rightDue || left.word.localeCompare(right.word, undefined, { sensitivity: 'base' });
+    });
+  }
+  return sortCardsByActivity(sorted);
+}
 
 export interface LibraryDifficultySummary {
   total: number;
@@ -32,7 +75,7 @@ export interface LibraryViewModelInput {
   isAuthenticated: boolean;
   usesCloudPagination: boolean;
   cloudTotal: number;
-  cloudStats: LibraryDifficultySummary;
+  cloudStats: LibraryDifficultySummary & Pick<LibraryStatsViewModel, 'dueAsOfDate' | 'dueForecast' | 'recentlyMastered'>;
   cloudCategoryCounts: Record<string, number>;
   cloudFacetsComplete: boolean;
   cloudReadUnavailable: boolean;
@@ -42,6 +85,8 @@ export interface LibraryViewModelInput {
   hasNextCloudPage: boolean;
   knownLibraryTotal: number;
   xpHistory: Record<string, number>;
+  reviewActivity?: ReviewActivity;
+  rewardTimeZone?: string;
 }
 
 export interface LibraryStatsViewModel {
@@ -50,11 +95,33 @@ export interface LibraryStatsViewModel {
   learned: number;
   learning: number;
   dueToday: number;
+  dueAsOfDate?: string;
   categoryChart: Array<{ name: string; value: number }>;
   categoryChartIsPartial: boolean;
-  difficultyChart: Array<{ name: string; value: number; color: string }>;
+  difficultyChart: Array<{ name: string; value: number }>;
   xpChartData: Array<{ date: string; XP: number }>;
+  dueForecast?: Array<{ date: string; count: number }>;
+  recentlyMastered?: Array<{ id: string; word: string; translation: string; masteredAt: string }>;
+  reviewActivity?: ReviewActivity;
+  rewardTimeZone?: string;
 }
+
+const libraryCountLabel = ({
+  isAuthenticated,
+  cloudReadUnavailable,
+  pageable,
+  total,
+}: Pick<LibraryViewModelInput, 'isAuthenticated' | 'cloudReadUnavailable'> & {
+  pageable: number;
+  total: number;
+}): string => {
+  if (isAuthenticated && cloudReadUnavailable) {
+    return pageable > 0
+      ? i18n._(msg({ id: 'shell.library-count.cached-cloud', message: '{cached, number} cached / {cloud, number} cloud' }).id, { cached: pageable, cloud: total })
+      : i18n._(msg({ id: 'shell.library-count.cloud-paused', message: 'Cloud paused' }).id);
+  }
+  return i18n._(msg({ id: 'shell.library-count.cards', message: '{count, plural, one {# card} other {# cards}}' }).id, { count: total });
+};
 
 export const selectLocalDifficultySummary = (cards: readonly CardData[]): LibraryDifficultySummary => ({
   total: cards.length,
@@ -145,9 +212,11 @@ export const selectLibraryStats = ({
   cloudFacetsComplete,
   cloudCategoryCounts,
   xpHistory,
+  reviewActivity,
+  rewardTimeZone,
 }: Pick<LibraryViewModelInput,
-  'cards' | 'isAuthenticated' | 'cloudFacetsComplete' | 'cloudCategoryCounts' | 'xpHistory'> & {
-    difficultySummary: LibraryDifficultySummary;
+  'cards' | 'isAuthenticated' | 'cloudFacetsComplete' | 'cloudCategoryCounts' | 'xpHistory' | 'reviewActivity' | 'rewardTimeZone'> & {
+    difficultySummary: LibraryDifficultySummary & Pick<LibraryStatsViewModel, 'dueAsOfDate' | 'dueForecast' | 'recentlyMastered'>;
   }): LibraryStatsViewModel => {
   const categoryCounts = isAuthenticated && cloudFacetsComplete
     ? cloudCategoryCounts
@@ -157,9 +226,9 @@ export const selectLibraryStats = ({
         return counts;
       }, {});
   const difficultyChart = [
-    { name: 'Mastered', value: difficultySummary.easy, color: '#10b981' },
-    { name: 'Learning', value: difficultySummary.good + difficultySummary.hard, color: '#f59e0b' },
-    { name: 'Not reviewed', value: difficultySummary.unrated, color: '#94a3b8' },
+    { name: 'Mastered', value: difficultySummary.easy },
+    { name: 'Learning', value: difficultySummary.good + difficultySummary.hard },
+    { name: 'Not reviewed', value: difficultySummary.unrated },
   ].filter(entry => entry.value > 0);
   const xpChartData = Object.keys(xpHistory)
     .map(date => ({ date, XP: xpHistory[date] || 0 }))
@@ -170,10 +239,15 @@ export const selectLibraryStats = ({
     learned: difficultySummary.easy,
     learning: difficultySummary.good + difficultySummary.hard + difficultySummary.unrated,
     dueToday: difficultySummary.due,
+    dueAsOfDate: difficultySummary.dueAsOfDate,
     categoryChart: Object.keys(categoryCounts).map(name => ({ name, value: categoryCounts[name] })),
     categoryChartIsPartial: Boolean(isAuthenticated && !cloudFacetsComplete),
     difficultyChart,
     xpChartData,
+    reviewActivity: isAuthenticated ? reviewActivity : undefined,
+    rewardTimeZone: isAuthenticated ? rewardTimeZone : undefined,
+    dueForecast: isAuthenticated ? difficultySummary.dueForecast : undefined,
+    recentlyMastered: isAuthenticated ? difficultySummary.recentlyMastered : undefined,
   };
 };
 
@@ -220,9 +294,12 @@ export function buildLibraryViewModel(input: LibraryViewModelInput) {
         Boolean(input.isAuthenticated && input.hasNextCloudPage),
       ),
     },
-    countLabel: input.isAuthenticated && input.cloudReadUnavailable
-      ? pageable > 0 ? `${pageable} CACHED / ${total} CLOUD` : 'CLOUD PAUSED'
-      : `${total} CARDS`,
+    countLabel: libraryCountLabel({
+      isAuthenticated: input.isAuthenticated,
+      cloudReadUnavailable: input.cloudReadUnavailable,
+      pageable,
+      total,
+    }),
     difficultySummary,
     stats,
   };

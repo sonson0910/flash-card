@@ -1,5 +1,7 @@
 # Spec: Local Card Mirror
 
+> **Superseded (2026-09-26):** the IndexedDB card mirror, the device pending queue, and offline learning were removed as part of the Firebase cost rebuild. Sign-in is required to study; Firestore (with its own `persistentLocalCache`) is the single source of truth. This spec describes removed architecture and is kept for history only.
+
 ## Objective
 
 Mirror each signed-in user's complete Firestore card library into browser IndexedDB. Firestore remains the source of truth; IndexedDB provides fast page and exact-word queries without rendering or retaining the full library in React state.

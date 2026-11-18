@@ -1,12 +1,14 @@
 import type { RefObject } from 'react';
+import { msg } from '@lingui/core/macro';
 import type { PersonalLibraryPathPresentation } from './personalLibraryPaths';
+import type { CatalogPathUnitProgress } from './catalogProgressProjectionService';
 
 export type CatalogAvailabilityStatus =
   | { kind: 'checking'; message: string }
   | { kind: 'personal'; message: string }
   | { kind: 'unavailable'; isOnline: boolean; canDownload: boolean; message: string }
   | { kind: 'downloading'; progressPercent: number; message: string }
-  | { kind: 'ready'; isOnline: boolean; isAvailableOffline: boolean; message: string }
+  | { kind: 'ready'; isOnline: boolean; message: string }
   | { kind: 'error'; isOnline: boolean; message: string; detail?: string };
 
 export interface CatalogLanguageOption {
@@ -16,8 +18,42 @@ export interface CatalogLanguageOption {
   isAvailable: boolean;
 }
 
+/** IDs are stable across catalogs; only the three available IDs are rendered today. */
+export type CatalogTrackId = 'ielts' | 'toeic' | 'general' | 'topik' | 'jlpt' | 'hsk';
+export type AvailableCatalogTrackId = Extract<CatalogTrackId, 'ielts' | 'toeic' | 'general'>;
+
+export const catalogTrackMessages = {
+  ielts: {
+    label: msg({ id: 'paths.track.ielts.label', message: 'IELTS' }),
+    description: msg({ id: 'paths.track.ielts.description', message: 'Academic and general test vocabulary' }),
+  },
+  toeic: {
+    label: msg({ id: 'paths.track.toeic.label', message: 'TOEIC' }),
+    description: msg({ id: 'paths.track.toeic.description', message: 'Workplace and business vocabulary' }),
+  },
+  general: {
+    label: msg({ id: 'paths.track.general.label', message: 'General English' }),
+    description: msg({ id: 'paths.track.general.description', message: 'Everyday communication vocabulary' }),
+  },
+} satisfies Record<AvailableCatalogTrackId, { label: ReturnType<typeof msg>; description: ReturnType<typeof msg> }>;
+
+export const catalogTierMessages = {
+  foundation: {
+    label: msg({ id: 'paths.tier.foundation.label', message: 'Foundation' }),
+    description: msg({ id: 'paths.tier.foundation.description', message: 'Build an essential vocabulary base.' }),
+  },
+  core: {
+    label: msg({ id: 'paths.tier.core.label', message: 'Core' }),
+    description: msg({ id: 'paths.tier.core.description', message: 'Grow a confident working range.' }),
+  },
+  advanced: {
+    label: msg({ id: 'paths.tier.advanced.label', message: 'Advanced' }),
+    description: msg({ id: 'paths.tier.advanced.description', message: 'Use precise and nuanced language.' }),
+  },
+} as const;
+
 export interface CatalogTrackPresentation {
-  id: 'ielts' | 'toeic' | 'general';
+  id: AvailableCatalogTrackId;
   label: string;
   description: string;
   total: number;
@@ -31,6 +67,7 @@ export interface CatalogTierPresentation {
   id: 'foundation' | 'core' | 'advanced';
   label: string;
   description: string;
+  cefrRange?: string;
   total: number;
   started: number;
   mastered: number;
@@ -86,7 +123,10 @@ export interface CatalogVocabularyPresentation {
 export interface CatalogScreenModel {
   headingRef?: RefObject<HTMLHeadingElement | null>;
   status: CatalogAvailabilityStatus;
+  mode?: 'personal' | 'reviewed';
   selectedLanguage: string;
+  uiLocale?: string;
+  progressAvailable?: boolean;
   languages: CatalogLanguageOption[];
   selectedTrack: CatalogTrackPresentation['id'];
   tracks: CatalogTrackPresentation[];
@@ -99,9 +139,20 @@ export interface CatalogScreenModel {
   isLoadingPage: boolean;
   isLoadingMore: boolean;
   personalLibrary?: PersonalLibraryPathPresentation;
+  pathUnits?: readonly CatalogPathUnitProgress[] | null;
+  selectedPathUnitId?: string | null;
+  pathUnitContinue?: {
+    selectedUnitId: string | null;
+    confirmationUnitId: string | null;
+    busy: boolean;
+    error: string | null;
+    etaDays: number | null;
+    allComplete: boolean;
+  };
 }
 
 export interface CatalogScreenActions {
+  selectMode: (mode: 'personal' | 'reviewed') => void;
   selectLanguage: (language: string) => void;
   selectTrack: (track: CatalogTrackPresentation['id']) => void;
   selectTier: (tier: CatalogTierPresentation['id']) => void;
@@ -117,4 +168,8 @@ export interface CatalogScreenActions {
   addToLibrary: (cardId: string) => void;
   openVocabulary: () => void;
   continueReview: () => void;
+  selectPathUnit: (trackId: string, unitId: string) => void;
+  openNextUnitPreview: () => void;
+  prepareSelectedUnit: () => void;
+  confirmSelectedUnit: () => void;
 }

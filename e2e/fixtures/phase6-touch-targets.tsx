@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
 import '../../src/index.css';
 import { SessionRecapModal } from '../../src/features/practice/SessionRecapModal';
 import { UndoToast, type UndoToastItem } from '../../src/components/ui/UndoToast';
@@ -37,4 +39,8 @@ function RecapHarness() {
 }
 
 const root = createRoot(document.getElementById('root')!);
-root.render(new URLSearchParams(location.search).get('view') === 'recap' ? <RecapHarness /> : <UndoHarness />);
+i18n.load('en', {});
+i18n.activate('en');
+root.render(<I18nProvider i18n={i18n}>
+  {new URLSearchParams(location.search).get('view') === 'recap' ? <RecapHarness /> : <UndoHarness />}
+</I18nProvider>);

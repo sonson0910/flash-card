@@ -1,13 +1,18 @@
 import type { FirebaseApp } from 'firebase/app';
-import { arrayRemove, arrayUnion, doc, onSnapshot, setDoc, type Firestore } from 'firebase/firestore';
+import { FieldPath, arrayRemove, deleteField, doc, onSnapshot, runTransaction, updateDoc, type Firestore } from 'firebase/firestore';
 import {
   clearCustomDeckAssignments,
   getLegacyCardQueryMigrationProgress,
 } from '../../lib/cardRepository';
-import { queueDeviceUpserts } from '../../lib/deviceSync';
-import { normalizeCardForStorage } from '../library/libraryStorage';
 import { migrateLegacyLibraryWithAdmin } from './legacyLibraryMigrationService';
 import type { OwnerLibrarySessionAdapter } from './ownerLibrarySessionController';
+import {
+  customDeckCoverKey,
+  defaultCoverPreset,
+  normalizeCoverPreset,
+  normalizeCustomDeckProfile,
+  type CoverPreset,
+} from '../library/customDecks';
 
 export function createOwnerLibrarySessionFirebaseAdapter({
   app,
@@ -21,21 +26,6 @@ export function createOwnerLibrarySessionFirebaseAdapter({
   const available = configured && database !== null;
   return {
     available,
-    queueCardMigration: async (ownerId, cards, libraryEpoch) => {
-      await queueDeviceUpserts(
-        cards.map(card => normalizeCardForStorage({ ...card, libraryEpoch })),
-        cards.length,
-        ownerId,
-      );
-    },
-    seedDeckProfile: async (ownerId, decks) => {
-      if (!database || decks.length === 0) return;
-      await setDoc(
-        doc(database, 'users', ownerId, 'profile', 'custom_decks'),
-        { decks: arrayUnion(...decks) },
-        { merge: true },
-      );
-    },
     subscribeDeckProfile: (ownerId, onDecks, onError) => {
       if (!database) return () => undefined;
       return onSnapshot(
@@ -45,8 +35,7 @@ export function createOwnerLibrarySessionFirebaseAdapter({
             onDecks(null);
             return;
           }
-          const decks = snapshot.data()?.decks;
-          onDecks(Array.isArray(decks) ? decks : []);
+          onDecks(snapshot.data());
         },
         onError,
       );
@@ -64,11 +53,22 @@ export function createOwnerLibrarySessionFirebaseAdapter({
 
 export function createOwnerDeckMutationFirebaseAdapter(database: Firestore | null) {
   return {
-    add: async (ownerId: string, deckName: string) => {
+    add: async (ownerId: string, deckName: string, preset: CoverPreset = defaultCoverPreset) => {
       if (!database) return;
-      await setDoc(doc(database, 'users', ownerId, 'profile', 'custom_decks'), {
-        decks: arrayUnion(deckName),
-      }, { merge: true });
+      const profileRef = doc(database, 'users', ownerId, 'profile', 'custom_decks');
+      await runTransaction(database, async transaction => {
+        const profile = normalizeCustomDeckProfile((await transaction.get(profileRef)).data());
+        if (profile.decks.includes(deckName)) throw new Error('custom-deck-duplicate');
+        if (profile.decks.length >= 100) throw new Error('custom-deck-limit');
+        const decks = [...profile.decks, deckName];
+        transaction.set(profileRef, {
+          decks,
+          coverPresets: {
+            ...profile.coverPresets,
+            [customDeckCoverKey(deckName)]: normalizeCoverPreset(preset),
+          },
+        });
+      });
     },
     clearAssignments: async (ownerId: string, deckName: string) => {
       if (!database) return;
@@ -76,9 +76,12 @@ export function createOwnerDeckMutationFirebaseAdapter(database: Firestore | nul
     },
     removeProfile: async (ownerId: string, deckName: string) => {
       if (!database) return;
-      await setDoc(doc(database, 'users', ownerId, 'profile', 'custom_decks'), {
-        decks: arrayRemove(deckName),
-      }, { merge: true });
+      const profileRef = doc(database, 'users', ownerId, 'profile', 'custom_decks');
+      await updateDoc(
+        profileRef,
+        'decks', arrayRemove(deckName),
+        new FieldPath('coverPresets', customDeckCoverKey(deckName)), deleteField(),
+      );
     },
   };
 }

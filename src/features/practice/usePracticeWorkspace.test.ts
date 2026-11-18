@@ -12,8 +12,8 @@ vi.mock('react', () => ({
   useRef: <T,>(initial: T) => ({ current: initial }),
 }));
 
-vi.mock('../gamification/useGamification', () => ({
-  useGamificationState: doubles.gamification,
+vi.mock('../gamification/verifiedGamificationClient', () => ({
+  useVerifiedGamificationState: doubles.gamification,
 }));
 
 vi.mock('./usePracticeSession', () => ({
@@ -40,6 +40,7 @@ describe('createPracticePoolLoader', () => {
     const cloudCards = Array.from({ length: 60 }, (_, index) => card(`cloud-${index}`));
     const source = { load: vi.fn(async () => cloudCards) };
     const load = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: 'owner-1',
       cloudBackoffActive: false,
       cards: [],
@@ -49,13 +50,14 @@ describe('createPracticePoolLoader', () => {
 
     const result = await load(500, true);
 
-    expect(source.load).toHaveBeenCalledWith('owner-1', 50, { includeFuture: true, customDeck: { kind: 'all' } });
+    expect(source.load).toHaveBeenCalledWith('owner-1', 50, { includeFuture: true, targetLanguage: 'en', customDeck: { kind: 'all' } });
     expect(result).toHaveLength(50);
   });
 
   it('forwards a typed custom deck scope to cloud loading', async () => {
     const source = { load: vi.fn(async () => [card('cloud')]) };
     const load = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: 'owner-1',
       cloudBackoffActive: false,
       cards: [],
@@ -66,6 +68,7 @@ describe('createPracticePoolLoader', () => {
     await expect(load(10, false, { kind: 'deck', name: 'IELTS' })).resolves.toEqual([card('cloud')]);
     expect(source.load).toHaveBeenCalledWith('owner-1', 10, {
       includeFuture: false,
+      targetLanguage: 'en',
       customDeck: { kind: 'deck', name: 'IELTS' },
     });
   });
@@ -73,6 +76,7 @@ describe('createPracticePoolLoader', () => {
   it('keeps an unscoped Today load global after a Library deck selection', async () => {
     const source = { load: vi.fn(async () => [card('cloud')]) };
     const load = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: 'owner-1',
       cloudBackoffActive: false,
       cards: [],
@@ -85,10 +89,12 @@ describe('createPracticePoolLoader', () => {
 
     expect(source.load).toHaveBeenNthCalledWith(1, 'owner-1', 1, {
       includeFuture: true,
+      targetLanguage: 'en',
       customDeck: { kind: 'deck', name: 'IELTS' },
     });
     expect(source.load).toHaveBeenNthCalledWith(2, 'owner-1', 1, {
       includeFuture: true,
+      targetLanguage: 'en',
       customDeck: { kind: 'all' },
     });
   });
@@ -102,6 +108,7 @@ describe('createPracticePoolLoader', () => {
       classifyFailure: vi.fn(() => 'quota' as const),
     };
     const load = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: 'owner-1',
       cloudBackoffActive: false,
       cards: [due, future],
@@ -117,10 +124,42 @@ describe('createPracticePoolLoader', () => {
     );
   });
 
+  it('falls back when cloud loading stalls and ignores a late cloud response', async () => {
+    vi.useFakeTimers();
+    const reportError = vi.fn();
+    const local = { ...card('local'), language: 'en', difficulty: 'unrated' as const };
+    let resolveCloud: (cards: CardData[]) => void = () => undefined;
+    const source = {
+      load: vi.fn(() => new Promise<CardData[]>(resolve => { resolveCloud = resolve; })),
+    };
+    const load = createPracticePoolLoader({
+      targetLanguage: 'en',
+      ownerId: 'owner-1',
+      cloudBackoffActive: false,
+      cards: [local],
+      source,
+      reportError,
+    });
+
+    const result = load(1, false);
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    await expect(result).resolves.toEqual([local]);
+    expect(source.load).toHaveBeenCalledTimes(1);
+    expect(reportError).toHaveBeenCalledWith(
+      'Could not load the cloud queue. Practice is using cards cached on this device.',
+    );
+
+    resolveCloud([card('late-cloud')]);
+    await Promise.resolve();
+    await expect(result).resolves.toEqual([local]);
+  });
+
   it('uses local cards without contacting cloud for anonymous or backed-off sessions', async () => {
     const source = { load: vi.fn(async () => [card('cloud')]) };
     const local = card('local');
     const anonymousLoad = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: null,
       cloudBackoffActive: false,
       cards: [local],
@@ -128,6 +167,7 @@ describe('createPracticePoolLoader', () => {
       reportError: vi.fn(),
     });
     const backedOffLoad = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: 'owner-1',
       cloudBackoffActive: true,
       cards: [local],
@@ -145,6 +185,7 @@ describe('createPracticePoolLoader', () => {
     const legacy = { ...card('legacy'), difficulty: 'good' as const };
     const future = { ...card('future', '2999-01-01T00:00:00.000Z'), difficulty: 'good' as const };
     const load = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: null,
       cloudBackoffActive: false,
       cards: [newCard, legacy, future],
@@ -160,6 +201,7 @@ describe('createPracticePoolLoader', () => {
     const targetDue = { ...card('target-due', '2020-01-01T00:00:00.000Z'), customDeck: 'IELTS', difficulty: 'good' as const };
     const targetFuture = { ...card('target-future', '2999-01-01T00:00:00.000Z'), customDeck: 'IELTS', difficulty: 'good' as const };
     const load = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: null,
       cloudBackoffActive: false,
       cards: [unrelatedDue, targetDue, targetFuture],
@@ -175,6 +217,7 @@ describe('createPracticePoolLoader', () => {
     const unassigned = { ...card('unassigned'), customDeck: null };
     const assigned = { ...card('assigned'), customDeck: 'IELTS' };
     const load = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: null,
       cloudBackoffActive: false,
       cards: [assigned, unassigned],
@@ -189,6 +232,7 @@ describe('createPracticePoolLoader', () => {
     const literalDeck = { ...card('literal-deck'), customDeck: 'unassigned' };
     const unassigned = { ...card('unassigned'), customDeck: null };
     const load = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: null,
       cloudBackoffActive: false,
       cards: [literalDeck, unassigned],
@@ -203,6 +247,7 @@ describe('createPracticePoolLoader', () => {
     const assigned = { ...card('assigned'), customDeck: 'IELTS' };
     const unassigned = { ...card('unassigned'), customDeck: null };
     const load = createPracticePoolLoader({
+      targetLanguage: 'en',
       ownerId: null,
       cloudBackoffActive: false,
       cards: [assigned, unassigned],
@@ -219,11 +264,37 @@ describe('usePracticeWorkspace', () => {
     vi.clearAllMocks();
   });
 
+  it('keeps language drill cards and session scope within the active course pair', () => {
+    doubles.session.mockReturnValue({ mode: 'library', commands: {}, snapshot: {} });
+    doubles.gamification.mockReturnValue({ acceptAuthoritativeOutcome: vi.fn() });
+    const japaneseEnglish = { ...card('ja-en'), language: 'ja', translationLanguage: 'en' };
+    const japaneseVietnamese = { ...card('ja-vi'), language: 'ja' };
+    const chineseEnglish = { ...card('zh-en'), language: 'zh', translationLanguage: 'en' };
+
+    usePracticeWorkspace({
+      mode: 'library', openView: vi.fn(), ownerId: 'owner-1', cloudBackoffActive: false,
+      cards: [japaneseEnglish, japaneseVietnamese, chineseEnglish], poolSource: null,
+      gamificationDatabase: null,
+      learning: { reviewCard: vi.fn(), toggleBookmark: vi.fn(), assignDeck: vi.fn(), updateCard: vi.fn() },
+      languageProfile: {
+        id: 'ja-en', source: { code: 'ja', displayName: 'Japanese' },
+        target: { code: 'en', displayName: 'English' }, speechLocale: 'ja-JP',
+        normalize: (value: unknown) => String(value),
+      },
+      reportError: vi.fn(),
+    });
+
+    expect(doubles.session).toHaveBeenCalledWith(expect.objectContaining({
+      languageDrillCards: [japaneseEnglish],
+      languageDrillScopeKey: 'owner-1:ja:en',
+    }));
+  });
+
   it('exposes one compact model/action contract and keeps controller internals private', () => {
     const commands = { startStudy: vi.fn() };
     const snapshot = { getCards: vi.fn(() => []) };
-    const session = { mode: 'library', sessionKey: 7, commands, snapshot };
-    const gamification = { streak: 2, xp: 320, xpHistory: {}, level: 2, addXp: vi.fn() };
+    const session = { mode: 'library', sessionKey: null, commands, snapshot };
+    const gamification = { streak: 2, xp: 320, xpHistory: {}, level: 2, acceptAuthoritativeOutcome: vi.fn(), equipFrame: vi.fn() };
     doubles.session.mockReturnValue(session);
     doubles.gamification.mockReturnValue(gamification);
     const learning = {
@@ -232,7 +303,6 @@ describe('usePracticeWorkspace', () => {
       assignDeck: vi.fn(),
       updateCard: vi.fn(),
     };
-    const storage = { getItem: vi.fn(() => null), setItem: vi.fn() };
     const languageProfile = {
       id: 'en-vi',
       source: { code: 'en', displayName: 'English' },
@@ -248,8 +318,7 @@ describe('usePracticeWorkspace', () => {
       cloudBackoffActive: false,
       cards: [card('local')],
       poolSource: null,
-      gamificationStore: null,
-      gamificationStorage: storage,
+      gamificationDatabase: null,
       learning,
       languageProfile,
       reportError: vi.fn(),
@@ -275,15 +344,19 @@ describe('usePracticeWorkspace', () => {
     expect(doubles.session).toHaveBeenCalledWith(expect.objectContaining({
       ownerId: 'owner-1',
       learning,
-      addXp: gamification.addXp,
+      onAuthoritativeOutcome: expect.any(Function),
       languageProfile,
     }));
     expect(doubles.gamification).toHaveBeenCalledWith(expect.objectContaining({
       ownerId: 'owner-1',
-      cloudBackoffActive: false,
-      store: null,
-      storage,
+      database: null,
     }));
+
+    const onAuthoritativeOutcome = doubles.session.mock.calls[0][0].onAuthoritativeOutcome;
+    onAuthoritativeOutcome({ xp: 20, level: 1, streak: 0, events: [] }, 'op-a', 1);
+    expect(gamification.acceptAuthoritativeOutcome).not.toHaveBeenCalled();
+    onAuthoritativeOutcome({ xp: 20, level: 1, streak: 0, events: [] }, 'op-a', 0);
+    expect(gamification.acceptAuthoritativeOutcome).toHaveBeenCalledWith({ xp: 20, level: 1, streak: 0, events: [] });
   });
 
   it('keeps the composition boundary free of provider and persistence vocabulary', () => {

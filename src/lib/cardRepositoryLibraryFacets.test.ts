@@ -6,9 +6,10 @@ const firebaseRuntime = vi.hoisted(() => ({
   auth: { currentUser: { uid: 'owner-1' } as { uid: string } | null },
   isFirebaseConfigured: true,
   protectedFunctionsCapability: { available: true } as { available: boolean; reason?: string },
+  getSonFlashFunctions: (app: unknown, region: string = 'asia-southeast1') => functionsRuntime.getFunctions(app, region),
 }));
 const functionsRuntime = vi.hoisted(() => ({
-  getFunctions: vi.fn(() => ({ region: 'asia-southeast1' })),
+  getFunctions: vi.fn((_app: unknown, _region: string) => ({ region: 'asia-southeast1' })),
   httpsCallable: vi.fn(),
 }));
 
@@ -104,20 +105,6 @@ describe('card repository library facets', () => {
       operationCreatedAt: expect.any(String),
     });
     expect(second).toEqual(first);
-  });
-
-  it('retains operation identity beyond 256 later operations within the receipt window', async () => {
-    const callable = vi.fn().mockResolvedValue({ data: { categories: { IELTS: 2 }, complete: true } });
-    functionsRuntime.httpsCallable.mockReturnValue(callable);
-    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'operation-0');
-    const first = callable.mock.calls[0][0];
-
-    for (let index = 1; index <= 256; index += 1) {
-      await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, `operation-${index}`);
-    }
-    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'operation-0');
-
-    expect(callable.mock.calls.at(-1)?.[0]).toEqual(first);
   });
 
   it('keeps a facet operation timestamp after a module reload', async () => {

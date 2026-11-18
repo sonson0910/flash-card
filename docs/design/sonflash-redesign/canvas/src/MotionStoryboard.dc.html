@@ -1,0 +1,167 @@
+<!--#HEAD Motion storyboard-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}};">
+<!--#AMBIENT-->
+  <div style="position: relative; z-index: 2; padding: 40px 56px 0;">
+    <header style="display: flex; align-items: flex-end; gap: 40px;">
+      <div style="flex-grow: 1;">
+        <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text2}};">Motion spec · shared element</p>
+        <h1 style="margin: 8px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 44px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">One card, <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">one continuous motion.</span></h1>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 16px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}};">
+        <svg width="84" height="52" viewBox="-4 -4 108 68" aria-hidden="true"><path d="M0 60 L100 60 M0 60 L0 0" stroke="{{t.lineStrong}}" stroke-width="1.5" fill="none"></path><path d="M0 60 C16 0 30 0 100 0" stroke="{{curve}}" stroke-width="3" fill="none" stroke-linecap="round"></path><circle cx="16" cy="0" r="3.5" fill="{{curve}}"></circle><circle cx="30" cy="0" r="3.5" fill="{{curve}}"></circle></svg>
+        <div>
+          <div style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.textStrong}};">ease-out-expo</div>
+          <div style="margin-top: 3px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text2}};">cubic-bezier(.16,1,.3,1)</div>
+        </div>
+        <div style="width: 1px; height: 40px; background: {{t.line}};"></div>
+        <div style="display: grid; grid-template-columns: auto auto; gap: 3px 12px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text2}};">
+          <span>fast</span><span style="color: {{t.textStrong}};">120 ms</span>
+          <span>base</span><span style="color: {{t.textStrong}};">240 ms</span>
+          <span>move</span><span style="color: {{t.textStrong}};">420 ms</span>
+          <span>settle</span><span style="color: {{t.textStrong}};">600 ms</span>
+        </div>
+      </div>
+    </header>
+
+    <div style="margin-top: 26px; display: flex; align-items: baseline; gap: 12px;">
+      <h2 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 22px; color: {{t.textStrong}};">Today → Review</h2>
+      <span style="font-size: 12.5px; color: {{t.text2}};">The card the learner tapped is the card they review. No page swap, no reload.</span>
+    </div>
+
+    <div style="margin-top: 14px; display: flex; align-items: flex-start; gap: 42px;">
+      <figure style="margin: 0; width: 300px; position: relative;">
+        <div style="position: relative; height: 180px; border-radius: 14px; overflow: hidden; border: 1px solid {{t.line}}; background: {{m.bg}};">
+          <div style="height: 22px; padding: 0 10px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid {{t.navLine}};"><span style="width: 10px; height: 10px; border-radius: 3px; background: {{t.logoBg}};"></span><span style="width: 26px; height: 5px; border-radius: 3px; background: {{m.bar}};"></span><span style="width: 20px; height: 5px; border-radius: 3px; background: {{m.bar}};"></span><span style="width: 24px; height: 5px; border-radius: 3px; background: {{m.bar}};"></span></div>
+          <div style="position: absolute; left: 14px; top: 44px;"><div style="width: 110px; height: 9px; border-radius: 4px; background: {{m.barStrong}};"></div><div style="margin-top: 6px; width: 84px; height: 9px; border-radius: 4px; background: {{m.barStrong}};"></div><div style="margin-top: 14px; width: 70px; height: 18px; border-radius: 9px; background: {{t.primaryBg}};"></div></div>
+          <div style="position: absolute; left: 186px; top: 40px; width: 80px; height: 104px; border-radius: 9px; border: 1px solid {{t.line}}; background: {{m.ghost}}; transform: rotate(7deg) translateX(10px);"></div>
+          <div style="position: absolute; left: 180px; top: 42px; width: 80px; height: 104px; border-radius: 9px; border: 1px solid {{t.line}}; background: {{m.ghost}}; transform: rotate(-6deg) translateX(-8px);"></div>
+          <div style="position: absolute; left: 182px; top: 38px; width: 80px; height: 104px; box-sizing: border-box; border-radius: 9px; border: {{m.cardBorder}}; background: {{m.card}}; box-shadow: {{m.cardShadow}}; padding: 8px;"><div style="height: 40px; border-radius: 5px; background: {{m.art}};"></div><div style="margin-top: 7px; font-family: Fraunces, Georgia, serif; font-size: 13px; color: {{t.textStrong}};">im<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">me</span>diate</div></div>
+        </div>
+        <figcaption style="margin-top: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 22px; height: 22px; border-radius: 50%; background: {{t.accentSoft}}; border: 1px solid {{t.accentLine}}; color: {{t.accentText}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; display: flex; align-items: center; justify-content: center;">1</span><span style="font-size: 14px; font-weight: 650; color: {{t.textStrong}};">Rest · tap Start</span></div>
+          <div style="margin-top: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text2}};">0 ms · press scale .97 · 120 ms</div>
+        </figcaption>
+      </figure>
+
+      <figure style="margin: 0; width: 300px; position: relative;">
+        <div style="position: relative; height: 180px; border-radius: 14px; overflow: hidden; border: 1px solid {{t.line}}; background: {{m.bg}};">
+          <div style="height: 22px; padding: 0 10px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid {{t.navLine}};"><span style="width: 10px; height: 10px; border-radius: 3px; background: {{t.logoBg}};"></span><span style="width: 26px; height: 5px; border-radius: 3px; background: {{m.bar}};"></span><span style="width: 20px; height: 5px; border-radius: 3px; background: {{m.bar}};"></span><span style="width: 24px; height: 5px; border-radius: 3px; background: {{m.bar}};"></span></div>
+          <div style="position: absolute; left: 14px; top: 44px; opacity: 0.55;"><div style="width: 110px; height: 9px; border-radius: 4px; background: {{m.barStrong}};"></div><div style="margin-top: 6px; width: 84px; height: 9px; border-radius: 4px; background: {{m.barStrong}};"></div><div style="margin-top: 14px; width: 70px; height: 18px; border-radius: 9px; background: {{t.primaryBg}};"></div></div>
+          <div style="position: absolute; left: 186px; top: 48px; width: 80px; height: 104px; border-radius: 9px; border: 1px solid {{t.line}}; background: {{m.ghost}}; transform: rotate(10deg) translateX(18px); opacity: 0.4;"></div>
+          <div style="position: absolute; left: 180px; top: 50px; width: 80px; height: 104px; border-radius: 9px; border: 1px solid {{t.line}}; background: {{m.ghost}}; transform: rotate(-9deg) translateX(-16px); opacity: 0.4;"></div>
+          <div style="position: absolute; left: 180px; top: 26px; width: 80px; height: 104px; box-sizing: border-box; border-radius: 9px; border: {{m.cardBorder}}; background: {{m.card}}; box-shadow: {{m.liftShadow}}; padding: 8px; transform: scale(1.08) rotate(-1deg);"><div style="height: 40px; border-radius: 5px; background: {{m.art}};"></div><div style="margin-top: 7px; font-family: Fraunces, Georgia, serif; font-size: 13px; color: {{t.textStrong}};">im<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">me</span>diate</div></div>
+          <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true" style="position: absolute; left: 272px; top: 26px;"><path d="M6 24V6M1 11l5-5 5 5" stroke="{{curve}}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </div>
+        <figcaption style="margin-top: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 22px; height: 22px; border-radius: 50%; background: {{t.accentSoft}}; border: 1px solid {{t.accentLine}}; color: {{t.accentText}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; display: flex; align-items: center; justify-content: center;">2</span><span style="font-size: 14px; font-weight: 650; color: {{t.textStrong}};">Lift · stack fans out</span></div>
+          <div style="margin-top: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text2}};">120–360 ms · y −12, scale 1.08 · ghosts fade .4</div>
+        </figcaption>
+      </figure>
+
+      <figure style="margin: 0; width: 300px; position: relative;">
+        <div style="position: relative; height: 180px; border-radius: 14px; overflow: hidden; border: 1px solid {{t.line}}; background: {{m.bg}};">
+          <div style="height: 22px; padding: 0 10px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid {{t.navLine}}; opacity: 0.15;"><span style="width: 10px; height: 10px; border-radius: 3px; background: {{t.logoBg}};"></span><span style="width: 26px; height: 5px; border-radius: 3px; background: {{m.bar}};"></span><span style="width: 20px; height: 5px; border-radius: 3px; background: {{m.bar}};"></span></div>
+          <div style="position: absolute; left: 182px; top: 38px; width: 80px; height: 104px; box-sizing: border-box; border-radius: 9px; border: 1.5px dashed {{t.lineStrong}};"></div>
+          <svg width="300" height="180" viewBox="0 0 300 180" aria-hidden="true" style="position: absolute; inset: 0;"><path d="M222 80 C200 60 170 60 150 78" stroke="{{curve}}" stroke-width="1.6" stroke-dasharray="3 4" fill="none"></path><path d="M146 72l4 7 7-3" stroke="{{curve}}" stroke-width="1.6" fill="none" stroke-linecap="round"></path></svg>
+          <div style="position: absolute; left: 92px; top: 30px; width: 116px; height: 138px; box-sizing: border-box; border-radius: 12px; border: {{m.cardBorder}}; background: {{m.card}}; box-shadow: {{m.liftShadow}}; padding: 10px;"><div style="height: 56px; border-radius: 6px; background: {{m.art}};"></div><div style="margin-top: 9px; font-family: Fraunces, Georgia, serif; font-size: 18px; color: {{t.textStrong}};">im<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">me</span>diate</div><div style="margin-top: 5px; width: 50px; height: 5px; border-radius: 3px; background: {{m.bar}};"></div></div>
+        </div>
+        <figcaption style="margin-top: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 22px; height: 22px; border-radius: 50%; background: {{t.accentSoft}}; border: 1px solid {{t.accentLine}}; color: {{t.accentText}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; display: flex; align-items: center; justify-content: center;">3</span><span style="font-size: 14px; font-weight: 650; color: {{t.textStrong}};">Fly · chrome recedes</span></div>
+          <div style="margin-top: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text2}};">240–660 ms · FLIP 420 ms expo · nav → .15</div>
+        </figcaption>
+      </figure>
+
+      <figure style="margin: 0; width: 300px; position: relative;">
+        <div style="position: relative; height: 180px; border-radius: 14px; overflow: hidden; border: 1px solid {{t.accentLine}}; background: {{m.bg}}; box-shadow: {{m.focus}};">
+          <div style="height: 22px; padding: 0 10px; display: flex; align-items: center; gap: 8px;"><span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 8px; color: {{t.text2}};">1 / 12</span><span style="flex-grow: 1; height: 3px; border-radius: 3px; background: {{t.track}}; overflow: hidden;"><span style="display: block; width: 8%; height: 100%; background: {{curve}};"></span></span></div>
+          <div style="position: absolute; left: 86px; top: 26px; width: 128px; height: 120px; box-sizing: border-box; border-radius: 12px; border: {{m.cardBorder}}; background: {{m.card}}; box-shadow: {{m.cardShadow}}; padding: 10px;"><div style="height: 46px; border-radius: 6px; background: {{m.art}};"></div><div style="margin-top: 9px; font-family: Fraunces, Georgia, serif; font-size: 20px; color: {{t.textStrong}};">im<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">me</span>diate</div><div style="margin-top: 4px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 7.5px; color: {{t.text2}};">/ɪˈmiːdiət/</div></div>
+          <div style="position: absolute; left: 70px; right: 70px; bottom: 10px; display: flex; gap: 4px;" class="sf-rise-3"><span style="flex: 1; height: 14px; border-radius: 5px; background: {{m.g1}};"></span><span style="flex: 1; height: 14px; border-radius: 5px; background: {{m.g2}};"></span><span style="flex: 1; height: 14px; border-radius: 5px; background: {{m.g3}};"></span><span style="flex: 1; height: 14px; border-radius: 5px; background: {{m.g4}};"></span></div>
+        </div>
+        <figcaption style="margin-top: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 22px; height: 22px; border-radius: 50%; background: {{t.primaryBg}}; color: {{t.primaryText}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; display: flex; align-items: center; justify-content: center;">4</span><span style="font-size: 14px; font-weight: 650; color: {{t.textStrong}};">Ready · grades rise</span></div>
+          <div style="margin-top: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text2}};">660–900 ms · buttons stagger 40 ms · focus card</div>
+        </figcaption>
+      </figure>
+    </div>
+
+    <div style="margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 42px;">
+      <section>
+        <div style="display: flex; align-items: baseline; gap: 12px;"><h2 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 22px; color: {{t.textStrong}};">Recap → next action</h2><span style="font-size: 12.5px; color: {{t.text2}};">A finish line, never a dead end.</span></div>
+        <div style="margin-top: 14px; display: flex; gap: 42px;">
+          <figure style="margin: 0; width: 300px;">
+            <div style="position: relative; height: 180px; border-radius: 14px; overflow: hidden; border: 1px solid {{t.line}}; background: {{m.bg}};">
+              <div style="position: absolute; left: 0; right: 0; top: 30px; text-align: center;"><div style="font-family: Fraunces, Georgia, serif; font-size: 22px; color: {{t.textStrong}};">Session <span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">complete</span></div><div style="margin-top: 14px; display: flex; justify-content: center; gap: 8px;"><span style="padding: 6px 10px; border-radius: 8px; border: 1px solid {{t.line}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; color: {{t.textStrong}};">12 cards</span><span style="padding: 6px 10px; border-radius: 8px; border: 1px solid {{t.line}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; color: {{t.textStrong}};">92%</span><span style="padding: 6px 10px; border-radius: 8px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; color: {{t.warm}};">+120 XP</span></div></div>
+              <div style="position: absolute; left: 70px; right: 70px; bottom: 18px; height: 5px; border-radius: 3px; background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: 78%; height: 100%; background: {{curve}};"></div></div>
+            </div>
+            <figcaption style="margin-top: 12px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="width: 22px; height: 22px; border-radius: 50%; background: {{t.accentSoft}}; border: 1px solid {{t.accentLine}}; color: {{t.accentText}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; display: flex; align-items: center; justify-content: center;">1</span><span style="font-size: 14px; font-weight: 650; color: {{t.textStrong}};">Stats count up</span></div><div style="margin-top: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text2}};">0–1100 ms · XP bar grows · confetti</div></figcaption>
+          </figure>
+          <figure style="margin: 0; width: 300px;">
+            <div style="position: relative; height: 180px; border-radius: 14px; overflow: hidden; border: 1px solid {{t.line}}; background: {{m.bg}};">
+              <div style="position: absolute; left: 0; right: 0; top: 18px; text-align: center; opacity: 0.35;"><div style="font-family: Fraunces, Georgia, serif; font-size: 18px; color: {{t.textStrong}};">Session complete</div></div>
+              <div class="sf-rise" style="position: absolute; left: 16px; right: 16px; bottom: 12px; box-sizing: border-box; padding: 12px; border-radius: 12px; border: 1px solid {{t.accentLine}}; background: {{m.sheet}}; box-shadow: {{m.cardShadow}};">
+                <div style="font-size: 9px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text2}};">Up next</div>
+                <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px;"><span style="flex-grow: 1; font-family: Fraunces, Georgia, serif; font-size: 15px; color: {{t.textStrong}};">Word Match · 60 s</span><span style="height: 22px; padding: 0 10px; border-radius: 11px; background: {{t.primaryBg}}; color: {{t.primaryText}}; font-size: 10px; font-weight: 650; display: flex; align-items: center;">Play</span></div>
+                <div style="margin-top: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: {{t.text2}};"><span>Remind me tomorrow · 08:00</span><span style="width: 24px; height: 13px; border-radius: 7px; background: {{curve}}; position: relative;"><span style="position: absolute; right: 2px; top: 2px; width: 9px; height: 9px; border-radius: 50%; background: #fff;"></span></span></div>
+              </div>
+            </div>
+            <figcaption style="margin-top: 12px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="width: 22px; height: 22px; border-radius: 50%; background: {{t.primaryBg}}; color: {{t.primaryText}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; display: flex; align-items: center; justify-content: center;">2</span><span style="font-size: 14px; font-weight: 650; color: {{t.textStrong}};">Next step slides up</span></div><div style="margin-top: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text2}};">+1200 ms · y 14 → 0 · 600 ms expo</div></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section>
+        <div style="display: flex; align-items: baseline; gap: 12px;"><h2 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 22px; color: {{t.textStrong}};">Dialog → side sheet</h2><span style="font-size: 12.5px; color: {{t.text2}};">Edit without losing the card.</span></div>
+        <div style="margin-top: 14px; display: flex; gap: 42px;">
+          <figure style="margin: 0; width: 300px;">
+            <div style="position: relative; height: 180px; border-radius: 14px; overflow: hidden; border: 1px solid {{t.line}}; background: {{m.bg}};">
+              <div style="position: absolute; left: 92px; top: 30px; width: 116px; height: 124px; border-radius: 12px; border: {{m.cardBorder}}; background: {{m.card}}; box-sizing: border-box;"></div>
+              <div style="position: absolute; inset: 0; background: {{t.scrim}};"></div>
+              <div style="position: absolute; left: 60px; top: 36px; width: 180px; height: 110px; box-sizing: border-box; border-radius: 12px; border: {{t.dlgBorder}}; background: {{t.dlgBg}}; box-shadow: {{m.cardShadow}}; padding: 12px;"><div style="width: 70px; height: 8px; border-radius: 4px; background: {{m.barStrong}};"></div><div style="margin-top: 10px; height: 16px; border-radius: 6px; border: 1px solid {{t.line}};"></div><div style="margin-top: 6px; height: 16px; border-radius: 6px; border: 1px solid {{t.line}};"></div><div style="margin-top: 10px; margin-left: auto; width: 46px; height: 16px; border-radius: 8px; background: {{t.primaryBg}};"></div></div>
+              <span style="position: absolute; left: 10px; top: 10px; height: 18px; padding: 0 8px; border-radius: 9px; background: {{t.dangerBg}}; color: {{t.danger}}; font-size: 9.5px; font-weight: 650; display: flex; align-items: center;">Before · card hidden</span>
+            </div>
+            <figcaption style="margin-top: 12px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="width: 22px; height: 22px; border-radius: 50%; border: 1px solid {{t.dangerLine}}; color: {{t.danger}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; display: flex; align-items: center; justify-content: center;">×</span><span style="font-size: 14px; font-weight: 650; color: {{t.textStrong}};">Modal breaks the flow</span></div><div style="margin-top: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text2}};">scrim covers context · focus lost on close</div></figcaption>
+          </figure>
+          <figure style="margin: 0; width: 300px;">
+            <div style="position: relative; height: 180px; border-radius: 14px; overflow: hidden; border: 1px solid {{t.accentLine}}; background: {{m.bg}};">
+              <div style="position: absolute; left: 30px; top: 30px; width: 116px; height: 124px; box-sizing: border-box; border-radius: 12px; border: {{m.cardBorder}}; background: {{m.card}}; box-shadow: {{m.cardShadow}}; padding: 10px; opacity: 0.8;"><div style="height: 46px; border-radius: 6px; background: {{m.art}};"></div><div style="margin-top: 9px; font-family: Fraunces, Georgia, serif; font-size: 18px; color: {{t.textStrong}};">im<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">me</span>diate</div></div>
+              <div class="sf-rise" style="position: absolute; right: 0; top: 0; bottom: 0; width: 120px; box-sizing: border-box; border-left: 1px solid {{t.line}}; background: {{m.sheet}}; box-shadow: -20px 0 40px -24px rgb(0 0 0 / 0.5); padding: 12px;"><div style="width: 56px; height: 8px; border-radius: 4px; background: {{m.barStrong}};"></div><div style="margin-top: 12px; height: 16px; border-radius: 6px; border: 1px solid {{t.accentLine}};"></div><div style="margin-top: 7px; height: 30px; border-radius: 6px; border: 1px solid {{t.line}};"></div><div style="margin-top: 7px; height: 16px; border-radius: 6px; border: 1px solid {{t.line}};"></div><div style="position: absolute; left: 12px; right: 12px; bottom: 12px; height: 18px; border-radius: 9px; background: {{t.primaryBg}};"></div></div>
+              <svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true" style="position: absolute; left: 150px; top: 80px;"><path d="M28 10H4M9 5l-5 5 5 5" stroke="{{curve}}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </div>
+            <figcaption style="margin-top: 12px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="width: 22px; height: 22px; border-radius: 50%; background: {{t.primaryBg}}; color: {{t.primaryText}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; display: flex; align-items: center; justify-content: center;">✓</span><span style="font-size: 14px; font-weight: 650; color: {{t.textStrong}};">Sheet keeps the card</span></div><div style="margin-top: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text2}};">x 440 → 0 · 420 ms expo · card x −220</div></figcaption>
+          </figure>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    const m = dark ? {
+      bg: 'radial-gradient(ellipse 80% 70% at 70% 30%, rgb(150 108 215 / 0.14), transparent 70%), #081a23',
+      bar: 'rgb(255 255 255 / 0.12)', barStrong: 'rgb(255 255 255 / 0.22)', ghost: 'rgb(255 255 255 / 0.04)',
+      card: t.cardBg + ' padding-box, ' + t.rimLearning + ' border-box', cardBorder: '1.5px solid transparent',
+      cardShadow: '0 14px 30px -14px rgb(0 0 0 / 0.9), 0 0 24px -10px rgb(40 211 244 / 0.45)',
+      liftShadow: '0 24px 40px -14px rgb(0 0 0 / 0.95), 0 0 34px -8px rgb(40 211 244 / 0.7)',
+      art: 'linear-gradient(160deg, #1f4a5c, #2a2150 70%)', sheet: '#0f2430',
+      focus: '0 0 30px -12px rgb(40 211 244 / 0.6)',
+      g1: 'rgb(237 83 80 / 0.5)', g2: 'rgb(245 145 69 / 0.5)', g3: 'rgb(117 208 121 / 0.55)', g4: 'rgb(40 211 244 / 0.6)',
+    } : {
+      bg: '#f7f2e8', bar: 'rgb(29 26 22 / 0.1)', barStrong: 'rgb(29 26 22 / 0.2)', ghost: '#f3ece0',
+      card: '#fffcf5', cardBorder: '1px solid rgb(29 26 22 / 0.1)',
+      cardShadow: '0 10px 20px -12px rgb(60 40 20 / 0.45)',
+      liftShadow: '0 22px 30px -14px rgb(60 40 20 / 0.55)',
+      art: 'linear-gradient(160deg, #d9c7a6, #b98a62)', sheet: '#fffcf5',
+      focus: '0 0 0 3px rgb(180 70 26 / 0.12)',
+      g1: 'rgb(197 54 55 / 0.35)', g2: 'rgb(211 114 30 / 0.35)', g3: 'rgb(51 115 68 / 0.4)', g4: '#1d1a16',
+    };
+    return { t, m, grainId: 'motion-grain-' + (dark ? 'd' : 'l'), amb: { ax: 900, ay: -260, bx: -200, by: 520 }, curve: dark ? '#28d3f4' : '#b4461a' };
+  }
+}
+</script>
+</body>
+</html>

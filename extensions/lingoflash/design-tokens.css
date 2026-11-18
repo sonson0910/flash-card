@@ -1,0 +1,351 @@
+/*
+ * SonFlash extension design tokens for both theme families.
+ *
+ * Classic is ported 1:1 from the Canvas source of truth at
+ * docs/design/sonflash-redesign/canvas/src/tokens.js (sfTokens). Dark =
+ * "Midnight Aurora", light = "Ink & Paper".
+ *
+ * Crystal Star is ported from the app's own production tokens: direct values
+ * come from public/theme-crystal.css and
+ * docs/design/sonflash-redesign/canvas/tokens.json (crystal-dark/crystal-light).
+ * A handful of extension-only fields with no app equivalent (accent-soft,
+ * warn/info-style backgrounds, kbd/input radii) are derived with the exact
+ * same formula the Classic block already uses (a base app color at the same
+ * alpha ratio), never invented from scratch. Dark = "Starry Night", light =
+ * "Prism Day".
+ *
+ * The extension boots with the dark Classic values below (the bare :root
+ * selector) so the popup/options pages render correctly before any script
+ * runs; shared.js then sets documentElement[data-theme-family] from the
+ * saved themeFamily setting and documentElement[data-scheme] from the saved
+ * colorScheme setting (or the system preference), and the family/light
+ * overrides below take effect.
+ */
+:root,
+:root[data-theme-family="classic"] {
+  color-scheme: dark;
+  --sf-page-bg: #06161f;
+  --sf-text: #e5ecf1;
+  --sf-text-strong: #f1f6f9;
+  --sf-body: #b5c2ca;
+  --sf-text-2: #99a7b0;
+  --sf-text-3: #6f808a;
+  --sf-line: rgb(255 255 255 / 0.08);
+  --sf-line-strong: rgb(255 255 255 / 0.14);
+  --sf-nav-line: rgb(255 255 255 / 0.06);
+  --sf-chip-bg: rgb(255 255 255 / 0.04);
+  --sf-accent: #28d3f4;
+  --sf-accent-text: #7ee6fa;
+  --sf-accent-soft: rgb(40 211 244 / 0.12);
+  --sf-accent-line: rgb(40 211 244 / 0.35);
+  --sf-em-style: normal;
+  --sf-em-color: #28d3f4;
+  --sf-logo-bg: linear-gradient(145deg, #7ee6fa, #28d3f4 45%, #966cd7);
+  --sf-logo-text: #04141c;
+  --sf-primary-bg: #28d3f4;
+  --sf-primary-text: #04141c;
+  --sf-primary-shadow: 0 16px 40px -14px rgb(40 211 244 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.5);
+  --sf-secondary-bg: rgb(255 255 255 / 0.04);
+  --sf-secondary-shadow: none;
+  --sf-btn-radius: 16px;
+  --sf-surface: rgb(255 255 255 / 0.035);
+  --sf-surface-solid: #0d212b;
+  --sf-surface-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  --sf-input-bg: rgb(255 255 255 / 0.04);
+  --sf-input-radius: 14px;
+  --sf-card-radius: 20px;
+  --sf-card-bg: linear-gradient(180deg, #0f2430, #0a1a22);
+  --sf-card-shadow: 0 20px 40px -20px rgb(0 0 0 / 0.9);
+  --sf-ok: #9be09e;
+  --sf-ok-bg: rgb(117 208 121 / 0.12);
+  --sf-ok-line: rgb(117 208 121 / 0.32);
+  --sf-danger: #ff8a86;
+  --sf-danger-bg: rgb(237 83 80 / 0.12);
+  --sf-danger-line: rgb(237 83 80 / 0.35);
+  --sf-warn: #f7c46e;
+  --sf-warn-bg: rgb(245 174 57 / 0.1);
+  --sf-warn-line: rgb(245 174 57 / 0.32);
+  --sf-due-bg: rgb(6 22 31 / 0.55);
+  --sf-due-text: #7ee6fa;
+  --sf-due-line: rgb(126 230 250 / 0.35);
+  --sf-font-display: Fraunces, Georgia, serif;
+  --sf-font-body: Geist, 'Segoe UI', system-ui, sans-serif;
+  --sf-font-mono: 'Geist Mono', ui-monospace, monospace;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-scheme="dark"]):not([data-theme-family="crystal"]) { color-scheme: light; }
+  :root:not([data-scheme="dark"]):not([data-theme-family="crystal"]) {
+    --sf-page-bg: #efe9dd;
+    --sf-text: #1d1a16;
+    --sf-text-strong: #1d1a16;
+    --sf-body: #3d372f;
+    --sf-text-2: #6b6255;
+    --sf-text-3: #8a8072;
+    --sf-line: rgb(29 26 22 / 0.1);
+    --sf-line-strong: rgb(29 26 22 / 0.18);
+    --sf-nav-line: rgb(29 26 22 / 0.08);
+    --sf-chip-bg: #fbf8f2;
+    --sf-accent: #b4461a;
+    --sf-accent-text: #97400d;
+    --sf-accent-soft: rgb(180 70 26 / 0.08);
+    --sf-accent-line: rgb(151 64 13 / 0.25);
+    --sf-em-style: italic;
+    --sf-em-color: #b4461a;
+    --sf-logo-bg: #1d1a16;
+    --sf-logo-text: #fbf6ec;
+    --sf-primary-bg: #1d1a16;
+    --sf-primary-text: #fbf6ec;
+    --sf-primary-shadow: 0 14px 28px -14px rgb(29 26 22 / 0.9);
+    --sf-secondary-bg: #fffcf5;
+    --sf-secondary-shadow: 0 1px 2px rgb(60 40 20 / 0.08);
+    --sf-btn-radius: 999px;
+    --sf-surface: #fffcf5;
+    --sf-surface-solid: #fffcf5;
+    --sf-surface-shadow: inset 0 1px 0 #ffffff, 0 1px 2px rgb(60 40 20 / 0.06), 0 14px 28px -18px rgb(60 40 20 / 0.3);
+    --sf-input-bg: #fffcf5;
+    --sf-input-radius: 999px;
+    --sf-card-radius: 20px;
+    --sf-card-bg: #fffcf5;
+    --sf-card-shadow: inset 0 1px 0 #ffffff, inset 0 0 0 1px rgb(29 26 22 / 0.06), 0 10px 20px -10px rgb(60 40 20 / 0.18);
+    --sf-ok: #2c6a3d;
+    --sf-ok-bg: rgb(51 115 68 / 0.09);
+    --sf-ok-line: rgb(51 115 68 / 0.25);
+    --sf-danger: #b3261e;
+    --sf-danger-bg: rgb(197 54 55 / 0.07);
+    --sf-danger-line: rgb(197 54 55 / 0.25);
+    --sf-warn: #8a5a0c;
+    --sf-warn-bg: rgb(184 134 43 / 0.1);
+    --sf-warn-line: rgb(184 134 43 / 0.3);
+    --sf-due-bg: #fffcf5;
+    --sf-due-text: #97400d;
+    --sf-due-line: rgb(151 64 13 / 0.25);
+  }
+}
+
+:root[data-scheme="light"]:not([data-theme-family="crystal"]) {
+  color-scheme: light;
+  --sf-page-bg: #efe9dd;
+  --sf-text: #1d1a16;
+  --sf-text-strong: #1d1a16;
+  --sf-body: #3d372f;
+  --sf-text-2: #6b6255;
+  --sf-text-3: #8a8072;
+  --sf-line: rgb(29 26 22 / 0.1);
+  --sf-line-strong: rgb(29 26 22 / 0.18);
+  --sf-nav-line: rgb(29 26 22 / 0.08);
+  --sf-chip-bg: #fbf8f2;
+  --sf-accent: #b4461a;
+  --sf-accent-text: #97400d;
+  --sf-accent-soft: rgb(180 70 26 / 0.08);
+  --sf-accent-line: rgb(151 64 13 / 0.25);
+  --sf-em-style: italic;
+  --sf-em-color: #b4461a;
+  --sf-logo-bg: #1d1a16;
+  --sf-logo-text: #fbf6ec;
+  --sf-primary-bg: #1d1a16;
+  --sf-primary-text: #fbf6ec;
+  --sf-primary-shadow: 0 14px 28px -14px rgb(29 26 22 / 0.9);
+  --sf-secondary-bg: #fffcf5;
+  --sf-secondary-shadow: 0 1px 2px rgb(60 40 20 / 0.08);
+  --sf-btn-radius: 999px;
+  --sf-surface: #fffcf5;
+  --sf-surface-solid: #fffcf5;
+  --sf-surface-shadow: inset 0 1px 0 #ffffff, 0 1px 2px rgb(60 40 20 / 0.06), 0 14px 28px -18px rgb(60 40 20 / 0.3);
+  --sf-input-bg: #fffcf5;
+  --sf-input-radius: 999px;
+  --sf-card-radius: 20px;
+  --sf-card-bg: #fffcf5;
+  --sf-card-shadow: inset 0 1px 0 #ffffff, inset 0 0 0 1px rgb(29 26 22 / 0.06), 0 10px 20px -10px rgb(60 40 20 / 0.18);
+  --sf-ok: #2c6a3d;
+  --sf-ok-bg: rgb(51 115 68 / 0.09);
+  --sf-ok-line: rgb(51 115 68 / 0.25);
+  --sf-danger: #b3261e;
+  --sf-danger-bg: rgb(197 54 55 / 0.07);
+  --sf-danger-line: rgb(197 54 55 / 0.25);
+  --sf-warn: #8a5a0c;
+  --sf-warn-bg: rgb(184 134 43 / 0.1);
+  --sf-warn-line: rgb(184 134 43 / 0.3);
+  --sf-due-bg: #fffcf5;
+  --sf-due-text: #97400d;
+  --sf-due-line: rgb(151 64 13 / 0.25);
+}
+
+/*
+ * Crystal Star — dark ("Starry Night"), direct from public/theme-crystal.css
+ * and docs/design/sonflash-redesign/canvas/tokens.json (crystal-dark) unless
+ * noted otherwise below.
+ */
+:root[data-theme-family="crystal"] {
+  color-scheme: dark;
+  --sf-page-bg: #04060c;
+  --sf-text: #f3f5fa;
+  --sf-text-strong: #ffffff;
+  --sf-body: #d6dbe6;
+  --sf-text-2: #aab3c5;
+  --sf-text-3: #7a8397;
+  --sf-line: rgb(255 255 255 / 0.1);
+  --sf-line-strong: rgb(255 255 255 / 0.22);
+  --sf-nav-line: rgb(255 255 255 / 0.1);
+  --sf-chip-bg: rgb(255 255 255 / 0.06);
+  --sf-accent: #ff2a4d;
+  --sf-accent-text: #ff6b85;
+  /* Extension-only field; same alpha ratio (0.12) Classic already applies to its own accent. */
+  --sf-accent-soft: rgb(255 42 77 / 0.12);
+  /* tokens.json panelEdge (dark): the app's own card-edge glow color. */
+  --sf-accent-line: rgb(255 84 112 / 0.55);
+  --sf-em-style: normal;
+  --sf-em-color: #ff2a4d;
+  /* tokens.json crimsonGrad, identical in both modes. */
+  --sf-logo-bg: linear-gradient(180deg, #ff5470 0%, #ff2a4d 45%, #b30f33 100%);
+  /* public/theme-crystal.css --sf-on-brand: white fails AA contrast on the crimson fill at extension button text sizes. */
+  --sf-logo-text: #04060c;
+  --sf-primary-bg: linear-gradient(180deg, #ff5470 0%, #ff2a4d 45%, #b30f33 100%);
+  --sf-primary-text: #04060c;
+  /* tokens.json primaryGlow (dark). */
+  --sf-primary-shadow: 0 0 30px -4px rgb(255 42 77 / 0.85);
+  --sf-secondary-bg: rgb(255 255 255 / 0.06);
+  --sf-secondary-shadow: none;
+  --sf-btn-radius: 14px;
+  --sf-surface: rgb(255 255 255 / 0.06);
+  --sf-surface-solid: #0e111c;
+  /* public/theme-crystal.css --sf-edge-highlight (dark). */
+  --sf-surface-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22);
+  --sf-input-bg: rgb(255 255 255 / 0.06);
+  --sf-input-radius: 14px;
+  --sf-card-radius: 20px;
+  --sf-card-bg: linear-gradient(180deg, #121624 0%, #080a12 100%);
+  --sf-card-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.9);
+  --sf-ok: #5ef2ff;
+  --sf-ok-bg: rgb(94 242 255 / 0.12);
+  --sf-ok-line: rgb(94 242 255 / 0.32);
+  --sf-danger: #ff6b85;
+  --sf-danger-bg: rgb(255 42 77 / 0.12);
+  --sf-danger-line: rgb(255 107 133 / 0.35);
+  /* tokens.json gold: Crystal's warm/amber tone, standing in for Classic's warn hue. */
+  --sf-warn: #ffd166;
+  --sf-warn-bg: rgb(255 209 102 / 0.1);
+  --sf-warn-line: rgb(255 209 102 / 0.32);
+  --sf-due-bg: rgb(4 6 12 / 0.55);
+  --sf-due-text: #5ef2ff;
+  --sf-due-line: rgb(94 242 255 / 0.35);
+  --sf-font-display: Kanit, 'Segoe UI', system-ui, sans-serif;
+  --sf-font-body: Nunito, 'Segoe UI', system-ui, sans-serif;
+  --sf-font-mono: 'Geist Mono', ui-monospace, monospace;
+  /*
+   * Crystal Star's chamfered-corner treatment (07.1), ported verbatim from
+   * public/theme-crystal.css --nk-chamfer/--nk-chamfer-sm. Identical in both
+   * modes there, so one definition here covers dark and light.
+   */
+  --sf-chamfer: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+  --sf-chamfer-sm: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+/*
+ * Crystal Star — light ("Prism Day"), direct from public/theme-crystal.css
+ * and tokens.json (crystal-light) unless noted otherwise below.
+ */
+@media (prefers-color-scheme: light) {
+  :root[data-theme-family="crystal"]:not([data-scheme="dark"]) { color-scheme: light; }
+  :root[data-theme-family="crystal"]:not([data-scheme="dark"]) {
+    --sf-page-bg: #dff1ff;
+    --sf-text: #0d1a33;
+    --sf-text-strong: #081329;
+    --sf-body: #243553;
+    --sf-text-2: #3f5272;
+    --sf-text-3: #627392;
+    --sf-line: rgb(13 40 80 / 0.12);
+    --sf-line-strong: rgb(13 40 80 / 0.24);
+    --sf-nav-line: rgb(13 40 80 / 0.12);
+    --sf-chip-bg: rgb(226 244 255 / 0.9);
+    --sf-accent: #ff2a4d;
+    --sf-accent-text: #c40f35;
+    --sf-accent-soft: rgb(255 42 77 / 0.08);
+    --sf-accent-line: rgb(224 23 63 / 0.55);
+    --sf-em-style: normal;
+    --sf-em-color: #ff2a4d;
+    --sf-logo-bg: linear-gradient(180deg, #ff5470 0%, #ff2a4d 45%, #b30f33 100%);
+    --sf-logo-text: #04060c;
+    --sf-primary-bg: linear-gradient(180deg, #ff5470 0%, #e0173f 50%, #a30c2d 100%);
+    --sf-primary-text: #04060c;
+    --sf-primary-shadow: 0 12px 28px -8px rgb(224 23 63 / 0.6);
+    --sf-secondary-bg: #e6f5ff;
+    --sf-secondary-shadow: 0 1px 2px rgb(20 70 130 / 0.08);
+    --sf-btn-radius: 14px;
+    --sf-surface: #e6f5ff;
+    --sf-surface-solid: #e6f5ff;
+    --sf-surface-shadow: inset 0 1px 0 rgb(13 40 80 / 0.24);
+    --sf-input-bg: #e6f5ff;
+    --sf-input-radius: 14px;
+    --sf-card-radius: 20px;
+    --sf-card-bg: linear-gradient(115deg, #ffe0ef, #cdeaff 30%, #bfe9ff 55%, #d0fbf2 75%, #ffe6f2);
+    --sf-card-shadow: 0 26px 50px -28px rgb(20 70 130 / 0.45);
+    --sf-ok: #0a8fb0;
+    --sf-ok-bg: rgb(10 143 176 / 0.09);
+    --sf-ok-line: rgb(10 143 176 / 0.25);
+    --sf-danger: #c40f35;
+    --sf-danger-bg: rgb(196 15 53 / 0.07);
+    --sf-danger-line: rgb(196 15 53 / 0.25);
+    /* tokens.json goldText (light): a darkened gold that keeps AA contrast on the light surface. */
+    --sf-warn: #8a5a00;
+    --sf-warn-bg: rgb(138 90 0 / 0.1);
+    --sf-warn-line: rgb(138 90 0 / 0.3);
+    --sf-due-bg: #e6f5ff;
+    --sf-due-text: #0a7d99;
+    --sf-due-line: rgb(10 143 176 / 0.25);
+    --sf-font-display: Kanit, 'Segoe UI', system-ui, sans-serif;
+    --sf-font-body: Nunito, 'Segoe UI', system-ui, sans-serif;
+    --sf-font-mono: 'Geist Mono', ui-monospace, monospace;
+  }
+}
+
+:root[data-theme-family="crystal"][data-scheme="light"] {
+  color-scheme: light;
+  --sf-page-bg: #dff1ff;
+  --sf-text: #0d1a33;
+  --sf-text-strong: #081329;
+  --sf-body: #243553;
+  --sf-text-2: #3f5272;
+  --sf-text-3: #627392;
+  --sf-line: rgb(13 40 80 / 0.12);
+  --sf-line-strong: rgb(13 40 80 / 0.24);
+  --sf-nav-line: rgb(13 40 80 / 0.12);
+  --sf-chip-bg: rgb(226 244 255 / 0.9);
+  --sf-accent: #ff2a4d;
+  --sf-accent-text: #c40f35;
+  --sf-accent-soft: rgb(255 42 77 / 0.08);
+  --sf-accent-line: rgb(224 23 63 / 0.55);
+  --sf-em-style: normal;
+  --sf-em-color: #ff2a4d;
+  --sf-logo-bg: linear-gradient(180deg, #ff5470 0%, #ff2a4d 45%, #b30f33 100%);
+  --sf-logo-text: #04060c;
+  --sf-primary-bg: linear-gradient(180deg, #ff5470 0%, #e0173f 50%, #a30c2d 100%);
+  --sf-primary-text: #04060c;
+  --sf-primary-shadow: 0 12px 28px -8px rgb(224 23 63 / 0.6);
+  --sf-secondary-bg: #e6f5ff;
+  --sf-secondary-shadow: 0 1px 2px rgb(20 70 130 / 0.08);
+  --sf-btn-radius: 14px;
+  --sf-surface: #e6f5ff;
+  --sf-surface-solid: #e6f5ff;
+  --sf-surface-shadow: inset 0 1px 0 rgb(13 40 80 / 0.24);
+  --sf-input-bg: #e6f5ff;
+  --sf-input-radius: 14px;
+  --sf-card-radius: 20px;
+  --sf-card-bg: linear-gradient(115deg, #ffe0ef, #cdeaff 30%, #bfe9ff 55%, #d0fbf2 75%, #ffe6f2);
+  --sf-card-shadow: 0 26px 50px -28px rgb(20 70 130 / 0.45);
+  --sf-ok: #0a8fb0;
+  --sf-ok-bg: rgb(10 143 176 / 0.09);
+  --sf-ok-line: rgb(10 143 176 / 0.25);
+  --sf-danger: #c40f35;
+  --sf-danger-bg: rgb(196 15 53 / 0.07);
+  --sf-danger-line: rgb(196 15 53 / 0.25);
+  --sf-warn: #8a5a00;
+  --sf-warn-bg: rgb(138 90 0 / 0.1);
+  --sf-warn-line: rgb(138 90 0 / 0.3);
+  --sf-due-bg: #e6f5ff;
+  --sf-due-text: #0a7d99;
+  --sf-due-line: rgb(10 143 176 / 0.25);
+  --sf-font-display: Kanit, 'Segoe UI', system-ui, sans-serif;
+  --sf-font-body: Nunito, 'Segoe UI', system-ui, sans-serif;
+  --sf-font-mono: 'Geist Mono', ui-monospace, monospace;
+}

@@ -280,6 +280,48 @@ const validateReleaseTargets = (root, {
   })) };
 };
 
+export function validateStagingReleaseTarget(root = process.cwd()) {
+  const relativePath = 'firebase-targets/staging.json';
+  const file = path.resolve(root, relativePath);
+  requireFile(root, relativePath, 'stagingTarget');
+  const bytes = fs.readFileSync(file);
+  if (bytes.byteLength > 65_536) throw new Error('Staging target config exceeds 64 KiB.');
+  let target;
+  try {
+    target = JSON.parse(bytes.toString('utf8'));
+  } catch {
+    throw new Error('Staging target config is not valid JSON.');
+  }
+  if (
+    target?.projectId !== 'sonflash-staging-20260906'
+    || target?.appId !== '1:890120640842:web:f8a858029dc582fc7e49b3'
+    || target?.authDomain !== 'sonflash-staging-20260906.firebaseapp.com'
+    || target?.firestoreDatabaseId !== 'ai-studio-945b4052-4462-4668-8936-277f09f07a37'
+    || target?.region !== 'asia-southeast1'
+    || typeof target.apiKey !== 'string' || !target.apiKey.trim()
+    || typeof target.appCheckSiteKey !== 'string' || !target.appCheckSiteKey.trim()
+  ) {
+    throw new Error('Staging target does not match the sealed project, app, database, region, and App Check identity.');
+  }
+  const deploymentConfig = readFirebaseDeploymentConfig(root);
+  validateFirebaseDeploymentConfig(deploymentConfig, {
+    expectedFirestoreDatabaseId: target.firestoreDatabaseId,
+  });
+  const appletDatabaseId = readSingleStagingDatabaseId(target);
+  const runtimeTarget = readFunctionsRuntimeTarget(root);
+  if (appletDatabaseId !== runtimeTarget.firestoreDatabaseId) {
+    throw new Error('Staging client and Functions runtime databases do not match.');
+  }
+  return {
+    projectId: target.projectId,
+    databaseId: target.firestoreDatabaseId,
+    appId: target.appId,
+    region: target.region,
+  };
+}
+
+const readSingleStagingDatabaseId = target => target.firestoreDatabaseId;
+
 const readReadinessEvidence = root => {
   const relativePath = COMPONENT_PATHS.readiness.path;
   const file = path.resolve(root, relativePath);

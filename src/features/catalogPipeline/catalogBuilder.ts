@@ -6,7 +6,9 @@ import {
   type CatalogLexemeCandidateV1,
   type CatalogMembershipCandidateV1,
   type CatalogReviewerAuthorityV1,
+  type CatalogReleaseManifest,
   type CatalogReleaseManifestV1,
+  type CatalogReleaseManifestV2,
   type CatalogSourceAssetRegistryV1,
   type CatalogSourceBundleV1,
 } from './catalogContracts';
@@ -20,6 +22,7 @@ import {
 import {
   parseCatalogSourceAssetRegistryV1,
   parseCatalogReleaseManifestV1,
+  parseCatalogReleaseManifestV2,
   validateCatalogSourceBundle,
 } from './catalogValidation';
 
@@ -124,6 +127,8 @@ export const fingerprintCatalogReviewContent = async (
 export interface CatalogReleaseBuildOptions {
   readonly sequence: number;
   readonly previousReleaseId: string | null;
+  /** Required when extending a release so stable unit assignments are compared. */
+  readonly compatiblePreviousMemberships?: readonly TrackMembershipV3[];
   /** Supplied by the operator boundary; never inferred from catalog source JSON. */
   readonly reviewerAuthority: CatalogReviewerAuthorityV1;
   /** Supplied by the trusted operator boundary; never inferred from source JSON. */
@@ -137,7 +142,7 @@ export interface BuiltCatalogChunk {
 }
 
 export interface BuiltCatalogRelease {
-  readonly manifest: CatalogReleaseManifestV1;
+  readonly manifest: CatalogReleaseManifest;
   readonly manifestBytes: Uint8Array;
   readonly chunks: readonly BuiltCatalogChunk[];
 }
@@ -164,6 +169,9 @@ export type CatalogReleaseBuildResult =
         | 'semantic-quality'
         | 'public-provenance-mismatch'
         | 'release-requires-membership'
+        | 'invalid-unit-descriptors'
+        | 'compatibility-baseline-required'
+        | 'incompatible-unit-assignment'
         | 'unreferenced-lexeme'
         | 'chunk-too-large'
         | 'too-many-chunks'
@@ -306,6 +314,7 @@ const releaseIdentityProjection = (
       left.entity.id,
       right.entity.id,
     )),
+    ...(source.unitDescriptors === undefined ? {} : { unitDescriptors: source.unitDescriptors }),
   },
   lineage: {
     sequence: options.sequence,
@@ -314,6 +323,98 @@ const releaseIdentityProjection = (
   },
   assetRightsDigest,
 });
+
+const descriptorKey = (trackId: string, unitId: string): string => `${trackId}\u0000${unitId}`;
+
+const descriptorIssue = (
+  source: CatalogSourceBundleV1,
+): CatalogReleaseBuildRejection | null => {
+  const descriptors = source.unitDescriptors;
+  if (source.manifest.manifestVersion === 1) return descriptors === undefined
+    ? null
+    : { status: 'rejected', reason: 'invalid-unit-descriptors', path: 'unitDescriptors' };
+  if (descriptors === undefined) {
+    return { status: 'rejected', reason: 'invalid-unit-descriptors', path: 'unitDescriptors' };
+  }
+  if (descriptors.length === 0) {
+    return { status: 'rejected', reason: 'invalid-unit-descriptors', path: 'unitDescriptors' };
+  }
+  const expectedTitleLanguages = [
+    source.manifest.contentLanguage,
+    ...source.manifest.supportLanguages,
+  ].sort().join('\u0000');
+  const seen = new Set<string>();
+  const descriptorsByKey = new Map<string, typeof descriptors[number]>();
+  const nextOrdinalByTrack = new Map<string, number>();
+  let previousTrackId: string | null = null;
+  for (let index = 0; index < descriptors.length; index += 1) {
+    const descriptor = descriptors[index];
+    const path = `unitDescriptors[${index}]`;
+    const key = descriptorKey(descriptor.trackId, descriptor.unitId);
+    if (seen.has(key)) return { status: 'rejected', reason: 'invalid-unit-descriptors', path };
+    seen.add(key);
+    descriptorsByKey.set(key, descriptor);
+    if (previousTrackId !== null && descriptor.trackId < previousTrackId) {
+      return { status: 'rejected', reason: 'invalid-unit-descriptors', path };
+    }
+    previousTrackId = descriptor.trackId;
+    const expectedOrdinal = nextOrdinalByTrack.get(descriptor.trackId) ?? 1;
+    if (descriptor.ordinal !== expectedOrdinal) {
+      return { status: 'rejected', reason: 'invalid-unit-descriptors', path };
+    }
+    nextOrdinalByTrack.set(descriptor.trackId, expectedOrdinal + 1);
+    if (descriptor.titles.map(title => title.language).sort().join('\u0000') !== expectedTitleLanguages) {
+      return { status: 'rejected', reason: 'invalid-unit-descriptors', path };
+    }
+  }
+  const membershipDescriptorKeys = new Set<string>();
+  const ranksByDescriptor = new Map<string, Set<number>>();
+  for (const membership of source.memberships.map(candidate => candidate.entity)) {
+    const key = descriptorKey(membership.trackId, membership.lessonGroup);
+    const matching = descriptorsByKey.get(key);
+    if (matching === undefined || matching.tier !== membership.tier) {
+      return { status: 'rejected', reason: 'invalid-unit-descriptors', path: 'memberships' };
+    }
+    const ranks = ranksByDescriptor.get(key) ?? new Set<number>();
+    if (ranks.has(membership.rank)) {
+      return { status: 'rejected', reason: 'invalid-unit-descriptors', path: 'memberships' };
+    }
+    ranks.add(membership.rank);
+    if (ranks.size > CATALOG_PIPELINE_LIMITS.maximumUnitMemberships) {
+      return { status: 'rejected', reason: 'invalid-unit-descriptors', path: 'memberships' };
+    }
+    ranksByDescriptor.set(key, ranks);
+    membershipDescriptorKeys.add(key);
+  }
+  if (descriptors.some(descriptor => !membershipDescriptorKeys.has(descriptorKey(
+    descriptor.trackId,
+    descriptor.unitId,
+  )))) {
+    return { status: 'rejected', reason: 'invalid-unit-descriptors', path: 'unitDescriptors' };
+  }
+  return null;
+};
+
+const membershipAssignmentIssue = (
+  source: CatalogSourceBundleV1,
+  options: CatalogReleaseBuildOptions,
+): CatalogReleaseBuildRejection | null => {
+  if (options.previousReleaseId === null) return null;
+  if (options.compatiblePreviousMemberships === undefined) {
+    return { status: 'rejected', reason: 'compatibility-baseline-required' };
+  }
+  const nextByIdentity = new Map(source.memberships.map(candidate => [
+    `${candidate.entity.trackId}\u0000${candidate.entity.lexemeId}`,
+    candidate.entity,
+  ]));
+  for (const previous of options.compatiblePreviousMemberships) {
+    const next = nextByIdentity.get(`${previous.trackId}\u0000${previous.lexemeId}`);
+    if (next === undefined || next.lessonGroup !== previous.lessonGroup || next.tier !== previous.tier) {
+      return { status: 'rejected', reason: 'incompatible-unit-assignment' };
+    }
+  }
+  return null;
+};
 
 const deriveCatalogReleaseIdForRegistry = async (
   source: CatalogSourceBundleV1,
@@ -372,6 +473,10 @@ export async function buildCatalogRelease(
         };
   }
   const catalog = validation.catalog;
+  const unitsIssue = descriptorIssue(catalog);
+  if (unitsIssue !== null) return unitsIssue;
+  const compatibilityIssue = membershipAssignmentIssue(catalog, options);
+  if (compatibilityIssue !== null) return compatibilityIssue;
   const approvalDigest = await fingerprintCatalogApproval(catalog, trustedAssetRegistry);
   const approvalIssue = protectedApprovalIssue(options.reviewerAuthority, referenceTime);
   if (approvalIssue !== null) return approvalIssue;
@@ -479,8 +584,7 @@ export async function buildCatalogRelease(
   if (encodedBytes > CATALOG_PIPELINE_LIMITS.maximumReleaseBytes) {
     return { status: 'rejected', reason: 'release-too-large' };
   }
-  const manifestValue: CatalogReleaseManifestV1 = {
-    manifestVersion: 1,
+  const manifestBase = {
     catalogId: catalog.manifest.catalogId,
     releaseId,
     sequence: options.sequence,
@@ -496,8 +600,13 @@ export async function buildCatalogRelease(
     },
     chunks: builtChunks.map(chunk => chunk.descriptor),
   };
+  const manifestValue: CatalogReleaseManifest = catalog.manifest.manifestVersion === 1
+    ? { manifestVersion: 1, ...manifestBase }
+    : { manifestVersion: 2, ...manifestBase, unitDescriptors: catalog.unitDescriptors! };
   try {
-    const manifest = parseCatalogReleaseManifestV1(manifestValue);
+    const manifest = manifestValue.manifestVersion === 1
+      ? parseCatalogReleaseManifestV1(manifestValue as CatalogReleaseManifestV1)
+      : parseCatalogReleaseManifestV2(manifestValue as CatalogReleaseManifestV2);
     return {
       status: 'built',
       artifact: {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BROWSER_EXTENSION_IMPORT_HASH_KEY,
+  BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY,
   BROWSER_EXTENSION_IMPORT_STORAGE_KEY,
   BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY,
   BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
@@ -12,6 +13,8 @@ import {
   parseBrowserExtensionImport,
   parseBrowserExtensionImportValue,
   readPendingBrowserExtensionImport,
+  readPendingBrowserExtensionImportOwner,
+  writePendingBrowserExtensionImportOwner,
   type BrowserExtensionImportBrowser,
   type BrowserExtensionImportStorage,
 } from './browserExtensionImport';
@@ -118,6 +121,81 @@ describe('browser extension import protocol', () => {
     };
     expect(parseBrowserExtensionImportValue({ ...valid, context: 42 }, now)).toBeNull();
     expect(parseBrowserExtensionImportValue({ ...valid, requestedDeck: ['Reading'] }, now)).toBeNull();
+  });
+
+  it('preserves a bounded http(s) captured sourceUrl and pageTitle for a verified v3 import', () => {
+    const now = Date.UTC(2026, 7, 19, 8, 0, 0);
+    expect(parseBrowserExtensionImportValue({
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_source_123',
+      nonce,
+      text: 'lead',
+      sourceUrl: 'https://example.com/article',
+      pageTitle: 'An Example Article',
+      createdAt: now,
+      mode: 'silent',
+    }, now)).toEqual({
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_source_123',
+      nonce,
+      text: 'lead',
+      sourceUrl: 'https://example.com/article',
+      pageTitle: 'An Example Article',
+      createdAt: now,
+      mode: 'silent',
+    });
+  });
+
+  it('drops a non-http(s) sourceUrl and rejects a non-string sourceUrl or pageTitle at the bridge boundary', () => {
+    const now = Date.UTC(2026, 7, 19, 8, 0, 0);
+    const valid = {
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_source_123',
+      nonce,
+      text: 'lead',
+      createdAt: now,
+      mode: 'silent' as const,
+    };
+    const withNonHttpUrl = parseBrowserExtensionImportValue({ ...valid, sourceUrl: 'javascript:alert(1)' }, now);
+    expect(withNonHttpUrl).not.toHaveProperty('sourceUrl');
+    expect(parseBrowserExtensionImportValue({ ...valid, sourceUrl: 42 }, now)).toBeNull();
+    expect(parseBrowserExtensionImportValue({ ...valid, pageTitle: ['forged'] }, now)).toBeNull();
+  });
+
+  it('preserves a known captured sourceLanguage for a verified v3 import', () => {
+    const now = Date.UTC(2026, 7, 19, 8, 0, 0);
+    expect(parseBrowserExtensionImportValue({
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_source_language_123',
+      nonce,
+      text: '회복력',
+      sourceLanguage: 'ko',
+      createdAt: now,
+      mode: 'silent',
+    }, now)).toEqual({
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_source_language_123',
+      nonce,
+      text: '회복력',
+      sourceLanguage: 'ko',
+      createdAt: now,
+      mode: 'silent',
+    });
+  });
+
+  it('drops an unrecognized or wrongly typed sourceLanguage instead of rejecting the whole intent', () => {
+    const now = Date.UTC(2026, 7, 19, 8, 0, 0);
+    const valid = {
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_source_language_123',
+      nonce,
+      text: 'resilient',
+      createdAt: now,
+      mode: 'silent' as const,
+    };
+    expect(parseBrowserExtensionImportValue({ ...valid, sourceLanguage: 'fr' }, now)).not.toHaveProperty('sourceLanguage');
+    expect(parseBrowserExtensionImportValue({ ...valid, sourceLanguage: 42 }, now)).not.toHaveProperty('sourceLanguage');
+    expect(parseBrowserExtensionImportValue({ ...valid, sourceLanguage: 'en' }, now)).toHaveProperty('sourceLanguage', 'en');
   });
 
   it('rejects silent intents with a missing or malformed nonce', () => {
@@ -285,6 +363,27 @@ describe('browser extension import protocol', () => {
 
     expect(readPendingBrowserExtensionImport(storage, now)?.nonce)
       .toBe('nonce_B_123456789012345678');
+  });
+
+  it('keeps an owner binding scoped to its exact pending intent', () => {
+    const now = Date.now();
+    const storage = new MemoryStorage();
+    const intent = {
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_owner_123',
+      nonce: 'nonce_A_123456789012345678',
+      text: 'owner',
+      createdAt: now,
+      mode: 'silent' as const,
+    };
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify(intent));
+    writePendingBrowserExtensionImportOwner(storage, intent, 'owner-a');
+
+    expect(readPendingBrowserExtensionImportOwner(storage, intent)).toBe('owner-a');
+    clearPendingBrowserExtensionImport(storage, intent.id, 'nonce_B_123456789012345678');
+    expect(storage.getItem(BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY)).not.toBeNull();
+    clearPendingBrowserExtensionImport(storage, intent.id, intent.nonce);
+    expect(storage.getItem(BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY)).toBeNull();
   });
 
   it('does not clear the matching intent merely because its timestamp is stale', () => {

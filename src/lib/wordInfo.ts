@@ -24,6 +24,8 @@ export interface WordInfo {
   imageSearchQuery: string;
 }
 
+export interface PlainStoryInfo { story: string; translation: string }
+
 export interface StoryInfo {
   title: string;
   segments: StorySegment[];
@@ -75,7 +77,7 @@ const optionalWordFamily = (value: unknown) => {
   const adv = typeof obj.adv === 'string' ? obj.adv.trim().slice(0, 100) : undefined;
   if (!noun && !verb && !adj && !adv) return undefined;
   return Object.fromEntries(
-    Object.entries({ noun, verb, adj, adv }).filter(([, item]) => item !== undefined),
+    Object.entries({ noun, verb, adj, adv }).filter(([, item]) => Boolean(item)),
   ) as WordInfo['wordFamily'];
 };
 
@@ -202,3 +204,9 @@ const parseStoryInfoWithWords = (value: unknown, requestedWords: readonly string
     targetPhrases,
   };
 };
+
+export function parsePlainStoryInfo(value: unknown): PlainStoryInfo {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid AI story data');
+  const source = value as Record<string, unknown>;
+  return { story: requiredText(source, 'story'), translation: requiredText(source, 'translation') };
+}

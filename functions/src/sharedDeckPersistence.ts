@@ -94,6 +94,7 @@ export const buildSharedDeckDocuments = <TimestampValue>(
     createdAt,
     expiresAt,
     schemaVersion: 2,
+    ...(input.targetLanguage ? { targetLanguage: input.targetLanguage, nativeLanguage: input.nativeLanguage } : {}),
   },
   ownership: {
     ownerUid,
@@ -321,6 +322,8 @@ export const createSharedDeckAtomically = async (
     const fingerprint = operation?.fingerprint ?? (operation ? sharedDeckRequestFingerprint({
       category: documents.sharedDeck.category as string,
       cards: documents.sharedDeck.cards as CreateSharedDeckRequest['cards'],
+      targetLanguage: documents.sharedDeck.targetLanguage as string | undefined,
+      nativeLanguage: documents.sharedDeck.nativeLanguage as string | undefined,
     }) : undefined);
     if (operation) {
       const operationMillis = Date.parse(operation.operationCreatedAt);

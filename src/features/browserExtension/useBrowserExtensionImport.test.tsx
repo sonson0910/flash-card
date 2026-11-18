@@ -109,3 +109,255 @@ describe('useBrowserExtensionImport deck metadata sync', () => {
     }
   });
 });
+
+describe('useBrowserExtensionImport course locale sync', () => {
+  it('clears a missing active course and uses a fresh scope when another course becomes active', async () => {
+    const posted: Array<{ type: string; payload: { scope: string } }> = [];
+    vi.stubGlobal('location', { origin: 'https://app.example.test' });
+    vi.stubGlobal('postMessage', (message: { type: string; payload: { scope: string } }) => posted.push(message));
+    const root = createRoot(installMinimalReactDom());
+
+    function Harness(props: { options: BrowserExtensionImportOptions }) {
+      useBrowserExtensionImport(props.options);
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        root.render(<Harness options={optionsFor({ courseNativeLanguage: 'vi', courseTargetLanguage: 'ko' })} />);
+      });
+      const firstScope = posted.find(message => message.type === 'LINGOFLASH_EXTENSION_COURSE_LOCALE')?.payload.scope;
+      expect(firstScope).toBeDefined();
+
+      await act(async () => {
+        root.render(<Harness options={optionsFor({ courseNativeLanguage: null, courseTargetLanguage: null })} />);
+      });
+      expect(posted).toContainEqual(expect.objectContaining({
+        type: 'LINGOFLASH_EXTENSION_COURSE_LOCALE_CLEAR', payload: { scope: firstScope },
+      }));
+      expect(posted).toContainEqual(expect.objectContaining({
+        type: 'LINGOFLASH_EXTENSION_DECK_METADATA_CLEAR', payload: { scope: firstScope },
+      }));
+
+      await act(async () => {
+        root.render(<Harness options={optionsFor({ courseNativeLanguage: 'en', courseTargetLanguage: 'ja' })} />);
+      });
+      const locales = posted.filter(message => message.type === 'LINGOFLASH_EXTENSION_COURSE_LOCALE');
+      expect(locales).toHaveLength(2);
+      expect(locales[1].payload.scope).not.toBe(firstScope);
+      expect(posted).toContainEqual(expect.objectContaining({
+        type: 'LINGOFLASH_EXTENSION_DECK_METADATA',
+        payload: expect.objectContaining({ scope: locales[1].payload.scope }),
+      }));
+    } finally {
+      act(() => root.unmount());
+    }
+  });
+
+  it('retires deck and course locale when the same owner loses library readiness', async () => {
+    const posted: Array<{ type: string; payload: { scope: string } }> = [];
+    vi.stubGlobal('location', { origin: 'https://app.example.test' });
+    vi.stubGlobal('postMessage', (message: { type: string; payload: { scope: string } }) => posted.push(message));
+    const root = createRoot(installMinimalReactDom());
+
+    function Harness(props: { options: BrowserExtensionImportOptions }) {
+      useBrowserExtensionImport(props.options);
+      return null;
+    }
+
+    try {
+      const active = optionsFor({ courseNativeLanguage: 'vi', courseTargetLanguage: 'ko' });
+      await act(async () => { root.render(<Harness options={active} />); });
+      const firstScope = posted.find(message => message.type === 'LINGOFLASH_EXTENSION_COURSE_LOCALE')?.payload.scope;
+      expect(firstScope).toBeDefined();
+
+      await act(async () => { root.render(<Harness options={{ ...active, libraryReady: false }} />); });
+      expect(posted).toContainEqual(expect.objectContaining({
+        type: 'LINGOFLASH_EXTENSION_DECK_METADATA_CLEAR', payload: { scope: firstScope },
+      }));
+      expect(posted).toContainEqual(expect.objectContaining({
+        type: 'LINGOFLASH_EXTENSION_COURSE_LOCALE_CLEAR', payload: { scope: firstScope },
+      }));
+
+      await act(async () => { root.render(<Harness options={active} />); });
+      const locales = posted.filter(message => message.type === 'LINGOFLASH_EXTENSION_COURSE_LOCALE');
+      expect(locales).toHaveLength(3);
+      expect(locales.at(-1)!.payload.scope).not.toBe(firstScope);
+    } finally {
+      act(() => root.unmount());
+    }
+  });
+
+  it('clears the shared metadata scope when the bridge component unmounts', async () => {
+    const posted: unknown[] = [];
+    vi.stubGlobal('location', { origin: 'https://app.example.test' });
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    const root = createRoot(installMinimalReactDom());
+
+    function Harness(props: { options: BrowserExtensionImportOptions }) {
+      useBrowserExtensionImport(props.options);
+      return null;
+    }
+
+    await act(async () => {
+      root.render(<Harness options={optionsFor({ courseNativeLanguage: 'en', courseTargetLanguage: 'ko' })} />);
+    });
+    const metadata = posted.find((message): message is { type: string; payload: { scope: string } } => (
+      Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_DECK_METADATA')
+    ));
+    expect(metadata).toBeDefined();
+
+    act(() => root.unmount());
+    expect(posted).toContainEqual(expect.objectContaining({
+      type: 'LINGOFLASH_EXTENSION_DECK_METADATA_CLEAR',
+      payload: { scope: metadata!.payload.scope },
+    }));
+    expect(posted).toContainEqual(expect.objectContaining({
+      type: 'LINGOFLASH_EXTENSION_COURSE_LOCALE_CLEAR',
+      payload: { scope: metadata!.payload.scope },
+    }));
+  });
+
+  it('publishes current deck and locale state again after a replacement provider handshake', async () => {
+    const posted: unknown[] = [];
+    const listeners = new Set<(event: MessageEvent) => void>();
+    vi.stubGlobal('location', { origin: 'https://app.example.test' });
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    vi.stubGlobal('addEventListener', (type: string, listener: (event: MessageEvent) => void) => {
+      if (type === 'message') listeners.add(listener);
+    });
+    vi.stubGlobal('removeEventListener', (type: string, listener: (event: MessageEvent) => void) => {
+      if (type === 'message') listeners.delete(listener);
+    });
+    const dispatchProviderReady = () => {
+      const event = {
+        source: globalThis,
+        origin: 'https://app.example.test',
+        data: {
+          source: 'lingoflash-extension-bridge',
+          type: 'LINGOFLASH_EXTENSION_PROVIDER_READY',
+        },
+      } as unknown as MessageEvent;
+      for (const listener of listeners) listener(event);
+    };
+    function Harness(props: { options: BrowserExtensionImportOptions }) {
+      useBrowserExtensionImport(props.options);
+      return null;
+    }
+    const root = createRoot(installMinimalReactDom());
+
+    try {
+      const firstOptions = optionsFor({
+        customDecks: ['Korean'],
+        courseNativeLanguage: 'vi',
+        courseTargetLanguage: 'ko',
+      });
+      await act(async () => { root.render(<Harness options={firstOptions} />); });
+      const firstDeck = posted.find((message): message is { type: string; payload: { scope: string } } => (
+        Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_DECK_METADATA')
+      ));
+      const firstLocale = posted.find((message): message is { type: string; payload: { scope: string } } => (
+        Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_COURSE_LOCALE')
+      ));
+      expect(firstDeck).toBeDefined();
+      expect(firstLocale?.payload.scope).toBe(firstDeck?.payload.scope);
+
+      dispatchProviderReady();
+      const republishedDecks = posted.filter(message => (
+        Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_DECK_METADATA')
+      ));
+      const republishedLocales = posted.filter(message => (
+        Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_COURSE_LOCALE')
+      ));
+      expect(republishedDecks).toHaveLength(2);
+      expect(republishedLocales).toHaveLength(2);
+      expect((republishedDecks[1] as { payload: { decks: string[]; scope: string } }).payload.decks).toEqual(['Korean']);
+      expect((republishedLocales[1] as { payload: { targetLanguage: string; scope: string } }).payload.targetLanguage).toBe('ko');
+
+      const secondOptions = optionsFor({
+        ownerId: 'owner-b',
+        customDecks: ['Japanese'],
+        courseNativeLanguage: 'vi',
+        courseTargetLanguage: 'ja',
+      });
+      await act(async () => { root.render(<Harness options={secondOptions} />); });
+      dispatchProviderReady();
+      const latestDeck = [...posted].reverse().find((message): message is { type: string; payload: { decks: string[]; scope: string } } => (
+        Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_DECK_METADATA')
+      ));
+      const latestLocale = [...posted].reverse().find((message): message is { type: string; payload: { targetLanguage: string; scope: string } } => (
+        Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_COURSE_LOCALE')
+      ));
+      expect(latestDeck?.payload.decks).toEqual(['Japanese']);
+      expect(latestLocale?.payload.targetLanguage).toBe('ja');
+      expect(latestDeck?.payload.scope).not.toBe(firstDeck!.payload.scope);
+    } finally {
+      act(() => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('sends no course locale message when the active course is unknown, keeping today\'s behavior', async () => {
+    const posted: unknown[] = [];
+    vi.stubGlobal('location', { origin: 'https://app.example.test' });
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    const root = createRoot(installMinimalReactDom());
+
+    function Harness(props: { options: BrowserExtensionImportOptions }) {
+      useBrowserExtensionImport(props.options);
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        root.render(<Harness options={optionsFor()} />);
+      });
+      expect(posted.some(message => (
+        typeof message === 'object' && message !== null
+        && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_COURSE_LOCALE'
+      ))).toBe(false);
+    } finally {
+      act(() => root.unmount());
+    }
+  });
+
+  it('syncs the active course native/target language under the same opaque scope as deck metadata, and clears it on owner change', async () => {
+    const posted: unknown[] = [];
+    vi.stubGlobal('location', { origin: 'https://app.example.test' });
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    const root = createRoot(installMinimalReactDom());
+
+    function Harness(props: { options: BrowserExtensionImportOptions }) {
+      useBrowserExtensionImport(props.options);
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        root.render(<Harness options={optionsFor({ courseNativeLanguage: 'en', courseTargetLanguage: 'ko' })} />);
+      });
+      const deckMetadata = posted.find((message): message is { type: string; payload: { scope: string } } => (
+        Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_DECK_METADATA')
+      ));
+      const courseLocale = posted.find((message): message is { type: string; payload: { scope: string; nativeLanguage: string; targetLanguage: string } } => (
+        Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_COURSE_LOCALE')
+      ));
+      expect(courseLocale).toBeDefined();
+      expect(courseLocale?.payload).toEqual({
+        scope: deckMetadata?.payload.scope,
+        nativeLanguage: 'en',
+        targetLanguage: 'ko',
+      });
+
+      await act(async () => {
+        root.render(<Harness options={optionsFor({ ownerId: null, libraryReady: false, customDecks: [] })} />);
+      });
+      expect(posted).toContainEqual(expect.objectContaining({
+        type: 'LINGOFLASH_EXTENSION_COURSE_LOCALE_CLEAR',
+        payload: { scope: deckMetadata?.payload.scope },
+      }));
+    } finally {
+      act(() => root.unmount());
+    }
+  });
+});

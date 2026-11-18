@@ -1,0 +1,9 @@
+captured_utc=2026-09-25T05:03:41.937529+00:00
+revision=8d1ec44e3af7e08e45b90454c887055a902ef7d2
+hash_scope=all tracked and non-ignored worktree files except plans/ and local tooling metadata (.claude/, .serena/, .ui-snapshot/, .codegraph/)
+file_count=1632
+aggregate_sha256=cd2c28c3440b97d3bb342c3140939b522a8f3dc77b53ecc982dd5275a5a41264
+pre_build_hash=cd2c28c3440b97d3bb342c3140939b522a8f3dc77b53ecc982dd5275a5a41264
+changed_since_pre_build=False
+status_of_owned_build_and_canvas_outputs_begin
+cleanstatus_of_owned_build_and_canvas_outputs_end

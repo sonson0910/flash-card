@@ -19,7 +19,7 @@ vi.mock('react', () => ({
     if (changed) hookRuntime.callbacks[index] = { callback, deps };
     return (changed ? callback : previous.callback) as T;
   },
-  useEffect: () => undefined,
+  useEffect: (effect: () => unknown) => { effect(); },
   useRef: <T,>(initial: T) => {
     const index = hookRuntime.refCursor++;
     if (!(index in hookRuntime.refs)) hookRuntime.refs[index] = { current: initial };
@@ -64,12 +64,13 @@ describe('useOverlayState', () => {
     scheduler?: Parameters<typeof useOverlayState>[0] extends infer Options
       ? Options extends { scheduler?: infer Scheduler } ? Scheduler : never
       : never,
+    ownerId: string | null = null,
   ) => {
     currentActiveElement = activeElement;
     hookRuntime.stateCursor = 0;
     hookRuntime.refCursor = 0;
     hookRuntime.callbackCursor = 0;
-    return useOverlayState({ getActiveElement, practiceOpenerRef, scheduler });
+    return useOverlayState({ ownerId, getActiveElement, practiceOpenerRef, scheduler });
   };
 
   it('remembers the explicit opener and mounts overlays when opening practice', () => {
@@ -123,6 +124,20 @@ describe('useOverlayState', () => {
     const updated = render(activeElement);
     expect(updated.showClearConfirm).toBe(true);
     expect(updated.clearOpenerRef.current).toBe(activeElement);
+  });
+
+  it('closes and clears the clear dialog when the account owner changes', () => {
+    const opener = { isConnected: true } as HTMLElement;
+    const overlays = render(opener, undefined, undefined, 'owner-a');
+
+    expect(overlays.openClearConfirm(opener, true)).toBe(true);
+    expect(render(opener, undefined, undefined, 'owner-a').showClearConfirm).toBe(true);
+
+    const switched = render(opener, undefined, undefined, 'owner-b');
+    expect(switched.showClearConfirm).toBe(false);
+    expect(switched.clearOpenerRef.current).toBeNull();
+    expect(render(opener, undefined, undefined, 'owner-b').showClearConfirm).toBe(false);
+    expect(render(opener, undefined, undefined, 'owner-b').clearOpenerRef.current).toBeNull();
   });
 
   it('chooses a connected opener and otherwise falls back to the view heading', () => {

@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   MAX_CUSTOM_DECKS,
   MAX_CUSTOM_DECK_NAME_LENGTH,
+  customDeckCoverKey,
+  defaultCoverPreset,
+  deckMonogram,
+  normalizeCustomDeckProfile,
   normalizeAssignedDeckName,
   normalizeCustomDeckCollection,
   normalizeCustomDeckName,
@@ -74,5 +78,35 @@ describe('custom deck boundaries', () => {
 
     expect(normalizeCustomDeckCollection(decks)).toEqual(decks);
     expect(normalizeCustomDeckCollection([...decks, 'ignored'])).toEqual(decks);
+  });
+
+  it('uses an encoded key for punctuation and reserved-looking deck names', () => {
+    const name = '__system__.Café / nâng cao';
+
+    expect(customDeckCoverKey(name)).toMatch(/^d_[A-Za-z0-9_-]+$/);
+    expect(customDeckCoverKey(name)).not.toContain('.');
+  });
+
+  it('repairs a truncated surrogate before using it in the deck and cover key', () => {
+    const name = `${'a'.repeat(MAX_CUSTOM_DECK_NAME_LENGTH - 1)}😀`;
+    const normalized = normalizeCustomDeckName(name);
+
+    expect(normalized.endsWith('\uFFFD')).toBe(true);
+    expect(new TextEncoder().encode(normalized)).toBeTruthy();
+    expect(customDeckCoverKey(name)).toBe(customDeckCoverKey(normalized));
+  });
+
+  it('keeps presets only for active names and defaults missing values', () => {
+    const deck = 'Travel';
+    const key = customDeckCoverKey(deck);
+    expect(normalizeCustomDeckProfile({
+      decks: [deck],
+      coverPresets: { [key]: 'violet', orphan: 'moss' },
+    })).toEqual({ decks: [deck], coverPresets: { [key]: 'violet' } });
+    expect(defaultCoverPreset).toBe('aurora');
+  });
+
+  it('uses a full Unicode code point for deck monograms', () => {
+    expect(deckMonogram('😀 Travel')).toBe('😀');
   });
 });

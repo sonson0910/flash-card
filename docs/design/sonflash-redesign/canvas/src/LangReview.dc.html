@@ -1,0 +1,643 @@
+<!--#HEAD Korean course review-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#AMBIENT-->
+  <header style="position: relative; z-index: 5; height: 80px; flex-shrink: 0; padding: 0 40px; display: flex; align-items: center; gap: 14px;">
+    <button class="au-icon-btn" aria-label="Kết thúc phiên" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+    </button>
+    <button aria-haspopup="menu" aria-label="Đổi khoá học" style="height: 44px; padding: 0 12px 0 6px; border-radius: 999px; border: 1px solid {{t.lineStrong}}; background: {{t.chipBg}}; box-shadow: {{t.surfaceShadow}}; color: {{t.text}}; display: flex; align-items: center; gap: 9px; cursor: pointer; font-family: inherit;">
+      <span style="height: 32px; min-width: 36px; padding: 0 8px; box-sizing: border-box; border-radius: 999px; background: {{t.primaryBg}}; color: {{t.primaryText}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center;">KO</span>
+      <span lang="ko" style="font-family: 'Noto Sans KR', sans-serif; font-size: 15px; font-weight: 700;">한국어</span>
+      <span style="font-size: 14px; font-weight: 550; color: {{t.text2}};">· Tiếng Hàn</span>
+      <span style="height: 22px; padding: 0 8px; border-radius: 999px; background: {{t.warmBg}}; border: 1px solid {{t.warmLine}}; color: {{t.warm}}; font-size: 12px; font-weight: 650; display: flex; align-items: center;">24</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: {{t.text2}};"><path d="M6 9l6 6 6-6"></path></svg>
+    </button>
+    <div style="margin: 0 auto; display: flex; align-items: center; gap: 14px;">
+      <div role="progressbar" aria-valuemin="0" aria-valuemax="24" aria-valuenow="{{position}}" style="display: flex; gap: 5px;">
+        <sc-for list="{{segments}}" as="seg" hint-placeholder-count="12">
+          <span class="{{seg.cls}}" style="width: 26px; height: 4px; border-radius: 4px; background: {{seg.bg}}; box-shadow: {{seg.glow}};"></span>
+        </sc-for>
+      </div>
+      <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; color: {{t.text2}};">{{position}}<span style="opacity: 0.55;"> / 24</span></span>
+    </div>
+    <button onClick="{{toggleRomaji}}" aria-pressed="{{romaji}}" style="height: 40px; padding: 0 14px 0 10px; border-radius: 999px; border: 1px solid {{romajiLine}}; background: {{romajiBg}}; color: {{romajiBtnColor}}; font-family: inherit; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 9px; cursor: pointer;">
+      <span style="width: 30px; height: 17px; border-radius: 999px; background: {{romajiTrack}}; position: relative;"><span style="position: absolute; top: 3px; left: {{romajiKnobHead}}px; width: 11px; height: 11px; border-radius: 50%; background: {{romajiKnobBg}}; transition: left 200ms ease;"></span></span>
+      Phiên âm La-tinh
+    </button>
+    <span style="height: 38px; padding: 0 14px 0 11px; border-radius: 999px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; color: {{t.warm}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>
+      9 ngày
+    </span>
+    <button onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+      <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
+    </button>
+  </header>
+
+  <aside aria-label="Khoá học" class="sf-rise" style="position: absolute; z-index: 3; left: 72px; top: 150px; width: 300px; box-sizing: border-box; padding: 22px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}};">
+    <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">Khoá đang học</div>
+    <div style="margin-top: 10px; display: flex; align-items: baseline; gap: 10px;">
+      <span lang="ko" style="font-family: 'Noto Serif KR', serif; font-size: 34px; font-weight: 600; color: {{t.textStrong}};">한국어</span>
+      <span style="font-size: 13px; color: {{t.text2}};">← Tiếng Việt</span>
+    </div>
+    <div style="margin-top: 6px; font-size: 13.5px; line-height: 1.5; color: {{t.body}};">Lộ trình TOPIK II · từ vựng trung cấp. Nghĩa, ví dụ và mẹo nhớ viết bằng tiếng Việt.</div>
+    <div style="margin-top: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+      <sc-for list="{{stats}}" as="st" hint-placeholder-count="3">
+        <div style="padding: 10px 10px 9px; border-radius: 14px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
+          <div style="font-family: Fraunces, Georgia, serif; font-size: 24px; font-weight: 500; line-height: 1; color: {{st.color}};">{{st.n}}</div>
+          <div style="margin-top: 4px; font-size: 11.5px; color: {{t.text2}};">{{st.label}}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin-top: 16px; padding-top: 14px; border-top: 1px dashed {{t.lineStrong}}; font-size: 12.5px; line-height: 1.5; color: {{t.text2}};">Thẻ tiếng Anh và tiếng Nhật của bạn vẫn ở khoá riêng. Mỗi khoá có hàng ôn và streak riêng.</div>
+  </aside>
+
+  <aside aria-label="Phân tích Hangul" class="sf-rise-2" style="position: absolute; z-index: 3; right: 72px; top: 150px; width: 300px; box-sizing: border-box; padding: 22px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}};">
+    <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">Phân tích Hangul</div>
+    <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+      <sc-for list="{{jamo}}" as="jm" hint-placeholder-count="4">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span lang="ko" style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; font-family: 'Noto Sans KR', sans-serif; font-size: 22px; font-weight: 700; color: {{t.textStrong}}; display: flex; align-items: center; justify-content: center;">{{jm.block}}</span>
+          <span aria-hidden="true" style="color: {{t.text3}};">=</span>
+          <sc-for list="{{jm.parts}}" as="p" hint-placeholder-count="3">
+            <span style="display: flex; flex-direction: column; align-items: center; min-width: 30px;"><span lang="ko" style="font-family: 'Noto Sans KR', sans-serif; font-size: 18px; font-weight: 600; color: {{t.text}};">{{p.j}}</span><span style="font-size: 11px; font-weight: 600; color: {{romajiColor}};">{{p.r}}</span></span>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: {{t.warmBg}}; border: 1px solid {{t.warmLine}}; font-size: 12.5px; line-height: 1.5; color: {{t.body}};"><span lang="ko" style="font-weight: 700; color: {{t.warm}};">심 → [씸]</span> · căng hoá sau ㄹ trong từ Hán Hàn, nên đọc là [결씸하다].</div>
+  </aside>
+
+  <main style="position: relative; z-index: 2; flex-grow: 1; display: flex; flex-direction: column; align-items: center;">
+    <div style="margin-top: 8px;">
+    <div class="{{dealCls}}" style="position: relative; width: 440px; height: 628px; flex-shrink: 0;">
+      <div aria-hidden="true" style="position: absolute; inset: 0; border-radius: {{c.radius}}px; background: {{c.stack1}}; box-shadow: {{c.stackShadow}}; transform: translate3d(0, 44px, 0) scale(0.9); opacity: 0.5;"></div>
+      <div aria-hidden="true" style="position: absolute; inset: 0; border-radius: {{c.radius}}px; background: {{c.stack2}}; box-shadow: {{c.stackShadow}}; transform: translate3d(0, 22px, 0) scale(0.95); opacity: 0.8;"></div>
+
+      <div onMouseEnter="{{enter}}" onMouseMove="{{move}}" onMouseLeave="{{leave}}" style="position: absolute; inset: 0;">
+        <div aria-hidden="true" style="position: absolute; inset: -26px; border-radius: 56px; filter: blur(30px); background: radial-gradient(ellipse at 50% 40%, {{aura.core}} 0%, {{aura.mid}} 45%, {{aura.outer}} 70%, transparent 86%); opacity: {{auraOpacity}}; transition: opacity 320ms ease-out;"></div>
+        <div style="position: absolute; inset: 0; perspective: 1600px;">
+          <div style="position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateX({{rx}}deg) rotateY({{ry}}deg); transition: {{rotorTransition}};">
+
+            <!-- FRONT: target language -->
+            <div style="position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;">
+              <div style="width: 440px; height: 628px; box-sizing: border-box; position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: {{c.radius}}px; border: {{c.frontBorder}}; background: {{c.frontBg}}; box-shadow: {{c.frontShadow}};">
+                <div aria-hidden="true" style="position: absolute; right: -30px; top: 40px; font-family: {{v.headFont}}; font-size: 260px; line-height: 1; font-weight: 700; color: {{f.watermark}}; pointer-events: none; user-select: none;">{{watermark}}</div>
+
+                <div style="position: relative; display: flex; align-items: center; gap: 8px; padding: 20px 20px 0 26px;">
+                  <span style="height: 28px; padding: 0 11px; border-radius: 999px; border: 1px solid {{f.chipLine}}; background: {{f.chipBg}}; color: {{f.head}}; font-size: 12px; font-weight: 650; display: flex; align-items: center; gap: 7px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{tierColor}}; box-shadow: {{tierDotGlow}};"></span>{{L.level}}</span>
+                  <button class="au-icon-btn" onClick="{{toggleBlind}}" aria-label="{{S.blind}}" aria-pressed="{{blind}}" title="{{S.blind}}" style="margin-left: auto; width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{blindBorder}}; background: {{blindBg}}; color: {{blindColor}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  </button>
+                  <button class="au-icon-btn" onClick="{{star}}" aria-label="Star this word" aria-pressed="{{starred}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{starBorder}}; background: {{starBg}}; color: {{starColor}}; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: {{starGlow}};">
+                    <span class="{{starAnim}}" style="display: inline-flex;"><svg width="18" height="18" viewBox="0 0 24 24" fill="{{starFill}}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"></path></svg></span>
+                  </button>
+                </div>
+
+                <div style="position: relative; z-index: 2; flex-grow: 1; display: flex; flex-direction: column; padding: 0 30px;">
+                  <div style="margin-top: 18px; display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 550; letter-spacing: 0.08em; text-transform: uppercase; color: {{f.text2}};">
+                    <span>{{L.pos}}</span>
+                    <span aria-hidden="true" style="width: 3px; height: 3px; border-radius: 50%; background: {{f.text3}};"></span>
+                    <span style="color: {{tierColor}};">{{tierLabel}}</span>
+                  </div>
+
+                  <sc-if value="{{v.isLatin}}" hint-placeholder-val="{{true}}">
+                    <h2 style="margin: 8px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{f.displayWeight}}; font-size: {{v.headSize}}px; line-height: 1.02; letter-spacing: -0.025em; color: {{f.head}};"><span style="font-style: italic; font-weight: 500; color: {{v.genderColor}};">{{L.article}} </span><span>{{L.wPre}}</span><span style="font-style: {{f.stressStyle}}; color: {{f.stress}}; text-shadow: {{f.stressGlow}};">{{L.wStress}}</span><span>{{L.wRest}}</span></h2>
+                  </sc-if>
+                  <sc-if value="{{v.isKo}}" hint-placeholder-val="{{false}}">
+                    <h2 lang="ko" style="margin: 10px 0 0; font-family: {{v.headFont}}; font-weight: 600; font-size: {{v.headSize}}px; line-height: 1.05; letter-spacing: 0.01em; color: {{f.head}};"><span style="color: {{f.stress}}; text-shadow: {{f.stressGlow}};">{{L.kHl}}</span>{{L.kRest}}</h2>
+                  </sc-if>
+                  <sc-if value="{{v.isJa}}" hint-placeholder-val="{{false}}">
+                    <h2 lang="ja" style="margin: 6px 0 0; font-family: {{v.headFont}}; font-weight: 600; font-size: {{v.headSize}}px; line-height: 1.25; letter-spacing: 0.04em; color: {{f.head}};">
+                      <sc-for list="{{L.chars}}" as="ch" hint-placeholder-count="2"><ruby>{{ch.b}}<rt style="font-family: {{v.sansFont}}; font-size: 19px; font-weight: 500; letter-spacing: 0.06em; color: {{f.stress}}; filter: {{v.aidFilter}}; transition: filter 300ms ease;">{{ch.rt}}</rt></ruby></sc-for>
+                    </h2>
+                  </sc-if>
+                  <sc-if value="{{v.isZh}}" hint-placeholder-val="{{false}}">
+                    <h2 lang="zh-CN" style="margin: 6px 0 0; font-family: {{v.headFont}}; font-weight: 600; font-size: {{v.headSize}}px; line-height: 1.25; letter-spacing: 0.06em; color: {{f.head}};">
+                      <sc-for list="{{v.zchars}}" as="z" hint-placeholder-count="2"><ruby>{{z.b}}<rt style="font-family: Geist, system-ui, sans-serif; font-size: 20px; font-weight: 600; letter-spacing: 0.02em; color: {{z.color}}; filter: {{v.aidFilter}}; transition: filter 300ms ease;">{{z.rt}}</rt></ruby></sc-for>
+                    </h2>
+                  </sc-if>
+
+                  <div style="display: flex; align-items: center; gap: 12px; margin-top: 14px; min-height: 44px;">
+                    <button class="au-icon-btn" onClick="{{listen}}" aria-label="Listen · {{L.speech}}" style="width: 42px; height: 42px; border-radius: 50%; border: 1px solid {{f.accentLine}}; background: {{listenBg}}; color: {{f.accent}}; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;">
+                      <sc-if value="{{playing}}" hint-placeholder-val="{{false}}">
+                        <span aria-hidden="true" style="display: flex; align-items: center; gap: 2px; height: 14px;">
+                          <span class="sf-wave" style="width: 2px; height: 100%; border-radius: 2px; background: currentColor;"></span>
+                          <span class="sf-wave" style="width: 2px; height: 100%; border-radius: 2px; background: currentColor; animation-delay: 150ms;"></span>
+                          <span class="sf-wave" style="width: 2px; height: 100%; border-radius: 2px; background: currentColor; animation-delay: 300ms;"></span>
+                          <span class="sf-wave" style="width: 2px; height: 100%; border-radius: 2px; background: currentColor; animation-delay: 450ms;"></span>
+                        </span>
+                      </sc-if>
+                      <sc-if value="{{notPlaying}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></sc-if>
+                    </button>
+
+                    <sc-if value="{{v.isLatin}}" hint-placeholder-val="{{true}}">
+                      <div style="display: flex; flex-direction: column; gap: 5px; filter: {{v.aidFilter}}; transition: filter 300ms ease;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                          <sc-for list="{{ipas}}" as="p" hint-placeholder-count="2">
+                            <button onClick="{{p.pick}}" aria-pressed="{{p.on}}" style="height: 24px; padding: 0 8px; border-radius: 999px; border: 1px solid {{p.line}}; background: {{p.bg}}; color: {{p.color}}; font-size: 11px; font-weight: 650; letter-spacing: 0.04em; cursor: pointer;">{{p.tag}}</button>
+                          </sc-for>
+                          <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 15px; color: {{f.body}};">{{ipa}}</span>
+                        </div>
+                        <span style="font-size: 12.5px; color: {{f.text2}}; letter-spacing: 0.03em;">{{L.syll}}</span>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{v.isKo}}" hint-placeholder-val="{{false}}">
+                      <div style="display: flex; gap: 6px; filter: {{v.aidFilter}}; transition: filter 300ms ease;">
+                        <sc-for list="{{L.blocks}}" as="bk" hint-placeholder-count="4">
+                          <span style="min-width: 48px; height: 50px; padding: 0 6px; box-sizing: border-box; border-radius: 12px; border: 1px solid {{f.chipLine}}; background: {{f.chipBg}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;">
+                            <span lang="ko" style="font-family: {{v.sansFont}}; font-size: 18px; font-weight: 700; color: {{f.head}};">{{bk.h}}</span>
+                            <span style="font-size: 11px; font-weight: 600; color: {{romajiColor}};">{{bk.r}}</span>
+                          </span>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{v.isJa}}" hint-placeholder-val="{{false}}">
+                      <div style="display: flex; flex-direction: column; gap: 4px; filter: {{v.aidFilter}}; transition: filter 300ms ease;">
+                        <div role="img" aria-label="Pitch accent: heiban" style="display: flex;">
+                          <sc-for list="{{v.morae}}" as="m" hint-placeholder-count="4">
+                            <span lang="ja" style="padding: 3px 7px; border-top: 2px solid {{m.top}}; border-bottom: 2px solid {{m.bottom}}; border-left: 2px solid {{m.left}}; font-family: {{v.sansFont}}; font-size: 17px; font-weight: 600; color: {{f.head}};">{{m.k}}</span>
+                          </sc-for>
+                        </div>
+                        <span style="font-size: 12.5px; color: {{f.text2}};"><span style="font-weight: 650; color: {{romajiColor}};">{{romajiText}}</span> · {{L.accent}}</span>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{v.isZh}}" hint-placeholder-val="{{false}}">
+                      <div style="display: flex; gap: 8px; filter: {{v.aidFilter}}; transition: filter 300ms ease;">
+                        <sc-for list="{{v.zchars}}" as="z" hint-placeholder-count="2">
+                          <span style="height: 44px; padding: 0 10px; box-sizing: border-box; border-radius: 12px; border: 1px solid {{f.chipLine}}; background: {{f.chipBg}}; display: flex; align-items: center; gap: 8px;">
+                            <svg width="24" height="16" viewBox="0 0 24 16" aria-hidden="true"><path d="{{z.path}}" fill="none" stroke="{{z.color}}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                            <span style="font-size: 12px; font-weight: 650; color: {{z.color}};">{{z.rt}} · {{z.tone}}</span>
+                          </span>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
+
+                  <div style="margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px;">
+                    <sc-for list="{{L.chips}}" as="cp" hint-placeholder-count="2">
+                      <span style="height: 26px; padding: 0 10px; border-radius: 999px; border: 1px solid {{f.chipLine}}; background: {{f.chipBg}}; color: {{f.body}}; font-family: {{v.sansFont}}; font-size: 12px; font-weight: 550; display: flex; align-items: center;">{{cp}}</span>
+                    </sc-for>
+                    <sc-if value="{{v.hasPlural}}" hint-placeholder-val="{{false}}">
+                      <span style="height: 26px; padding: 0 10px; border-radius: 999px; border: 1px solid {{f.chipLine}}; background: {{f.chipBg}}; color: {{f.body}}; font-size: 12px; font-weight: 550; display: flex; align-items: center;">{{L.plural}}</span>
+                    </sc-if>
+                  </div>
+
+                  <sc-if value="{{v.hasGenders}}" hint-placeholder-val="{{false}}">
+                    <div aria-label="Grammatical gender" style="margin-top: 10px; display: flex; gap: 6px;">
+                      <sc-for list="{{v.genders}}" as="g" hint-placeholder-count="2">
+                        <span style="height: 26px; padding: 0 10px; border-radius: 8px; border: 1.5px solid {{g.color}}; background: {{g.bg}}; opacity: {{g.op}}; color: {{g.color}}; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px;"><span style="font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 14px;">{{g.art}}</span>{{g.label}}</span>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+
+                  <figure style="margin: 16px 0 0; padding: 12px 14px; border-radius: 14px; border: 1px solid {{f.exLine}}; background: {{f.exBg}};">
+                    <figcaption style="font-size: 11px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: {{f.text3}};">{{S.example}}</figcaption>
+                    <sc-if value="{{v.isJa}}" hint-placeholder-val="{{false}}">
+                      <p lang="ja" style="margin: 4px 0 0; font-family: {{v.headFont}}; font-size: 17px; line-height: 1.9; color: {{f.head}};"><sc-for list="{{v.exFront}}" as="s" hint-placeholder-count="6"><ruby style="color: {{s.color}}; font-weight: {{s.weight}}; background: {{s.bg}};">{{s.t}}<rt style="font-family: {{v.sansFont}}; font-size: 9.5px; color: {{f.text2}}; filter: {{v.aidFilter}};">{{s.rt}}</rt></ruby></sc-for></p>
+                    </sc-if>
+                    <sc-if value="{{notJa}}" hint-placeholder-val="{{true}}">
+                      <p lang="{{langTag}}" style="margin: 4px 0 0; font-family: {{exFont}}; font-size: 16px; line-height: 1.5; color: {{f.head}};"><sc-for list="{{v.exFront}}" as="s" hint-placeholder-count="3"><span style="color: {{s.color}}; font-weight: {{s.weight}}; background: {{s.bg}};">{{s.t}}</span></sc-for></p>
+                    </sc-if>
+                    <sc-if value="{{v.hasExReading}}" hint-placeholder-val="{{false}}">
+                      <p style="margin: 3px 0 0; font-size: 12.5px; line-height: 1.45; color: {{f.text2}}; filter: {{v.aidFilter}}; transition: filter 300ms ease;">{{L.exReading}}</p>
+                    </sc-if>
+                  </figure>
+
+                  <div style="margin-top: 14px;">
+                    <div style="font-size: 11px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: {{f.text3}};">{{S.phrases}}</div>
+                    <div style="margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px;">
+                      <sc-for list="{{L.phrases}}" as="ph" hint-placeholder-count="3">
+                        <span lang="{{langTag}}" style="height: 30px; padding: 0 12px; border-radius: 10px; border: 1px dashed {{f.accentLine}}; color: {{f.head}}; font-family: {{exFont}}; font-size: 14px; display: flex; align-items: center;">{{ph}}</span>
+                      </sc-for>
+                    </div>
+                  </div>
+
+                  <div style="margin-top: auto; padding-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <button style="height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid {{f.chipLine}}; background: {{f.chipBg}}; color: {{f.head}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; cursor: pointer;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>
+                      {{S.say}}
+                      <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{f.text3}};">{{L.speech}}</span>
+                    </button>
+                    <sc-if value="{{v.isCjk}}" hint-placeholder-val="{{false}}">
+                      <button onClick="{{toggleRomaji}}" aria-pressed="{{romaji}}" style="margin-left: auto; height: 38px; padding: 0 12px; border-radius: 999px; border: 1px solid {{romajiLine}}; background: {{romajiBg}}; color: {{romajiBtnColor}}; font-size: 12.5px; font-weight: 650; display: flex; align-items: center; gap: 7px; cursor: pointer;">
+                        <span style="width: 26px; height: 15px; border-radius: 999px; background: {{romajiTrack}}; position: relative;"><span style="position: absolute; top: 2px; left: {{romajiKnob}}px; width: 11px; height: 11px; border-radius: 50%; background: {{romajiKnobBg}}; transition: left 200ms ease;"></span></span>
+                        {{romajiLabel}}
+                      </button>
+                    </sc-if>
+                  </div>
+                </div>
+
+                <button onClick="{{flip}}" style="position: relative; z-index: 3; height: 58px; flex-shrink: 0; border: 0; border-top: {{c.flipTop}}; background: {{c.flipBg}}; color: {{f.head}}; font-family: {{c.flipFont}}; font-style: {{c.flipStyle}}; font-size: {{c.flipSize}}px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
+                  <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><span aria-hidden="true" class="au-laser" style="position: absolute; top: -1px; left: 26%; right: 26%; height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, #28d3f4 20%, #966cd7 80%, transparent); box-shadow: 0 0 14px rgb(40 211 244 / 0.8);"></span></sc-if>
+                  {{S.reveal}}
+                  <span style="height: 22px; padding: 0 7px; border-radius: 6px; border: 1px solid {{f.chipLine}}; font-family: 'Geist Mono', ui-monospace, monospace; font-style: normal; font-size: 11px; font-weight: 500; color: {{f.text2}}; display: flex; align-items: center;">Space</span>
+                </button>
+
+                <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 20; pointer-events: none; border-radius: {{c.radius}}px; background: linear-gradient({{specAngle}}deg, {{c.spec}} 0%, transparent 28%); opacity: {{specOpacity}}; transition: opacity 300ms ease;"></div>
+                <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 22; pointer-events: none; background: radial-gradient(circle at {{mx}}% {{my}}%, {{c.spot}} 0%, transparent 55%); opacity: {{spotOpacity}}; transition: opacity 200ms ease;"></div>
+                <sc-if value="{{mastered}}" hint-placeholder-val="{{false}}">
+                  <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 23; pointer-events: none; mix-blend-mode: {{c.holoBlend}}; opacity: {{holoOpacity}}; background: repeating-linear-gradient(115deg, rgb(255 120 120 / 0.5) 0%, rgb(255 220 120 / 0.5) 6%, rgb(140 255 170 / 0.5) 12%, rgb(120 220 255 / 0.5) 18%, rgb(190 150 255 / 0.5) 24%, rgb(255 120 120 / 0.5) 30%); background-size: 300% 300%; background-position: {{mx}}% {{my}}%; transition: opacity 300ms ease;"></div>
+                </sc-if>
+              </div>
+            </div>
+
+            <!-- BACK: native language -->
+            <div style="position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: rotateY(180deg);">
+              <div style="width: 440px; height: 628px; box-sizing: border-box; position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: {{c.radius}}px; border: {{c.backBorder}}; background: {{c.backBg}}; box-shadow: {{c.backShadow}}; color: {{b.body}};">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 20px 20px 0 28px;">
+                  <span style="font-size: 12px; font-weight: 550; letter-spacing: 0.08em; text-transform: uppercase; color: {{b.text2}}; display: flex; align-items: center; gap: 8px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{b.accent}}; box-shadow: {{b.dotGlow}};"></span>{{S.inLang}}</span>
+                  <span style="height: 26px; padding: 0 10px; border-radius: 999px; background: {{b.dueBg}}; border: 1px solid {{b.dueLine}}; color: {{b.due}}; font-size: 11.5px; font-weight: 650; display: flex; align-items: center;">{{S.due}}</span>
+                  <button class="au-icon-btn" onClick="{{star}}" aria-label="Star this word" aria-pressed="{{starred}}" style="margin-left: auto; width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{starBorderBack}}; background: {{starBgBack}}; color: {{starColorBack}}; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: {{starGlow}};">
+                    <span class="{{starAnim}}" style="display: inline-flex;"><svg width="18" height="18" viewBox="0 0 24 24" fill="{{starFillBack}}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"></path></svg></span>
+                  </button>
+                </div>
+
+                <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; padding: 12px 30px 0; text-align: center;">
+                  <div class="{{revealCls}}" style="font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{b.displayWeight}}; font-size: 50px; line-height: 1.06; letter-spacing: -0.02em; color: {{b.head}}; text-wrap: balance;">{{L.meaning}}</div>
+                  <div class="{{revealCls2}}" style="margin-top: 10px; display: flex; align-items: center; gap: 10px; color: {{b.text2}}; font-size: 14px;">
+                    <span lang="{{langTag}}" style="font-family: {{v.headFont}}; font-size: 18px; font-weight: 600; color: {{b.head}};">{{L.word}}</span>
+                    <span style="font-family: Geist, system-ui, sans-serif; font-size: 13px;">{{L.reading}}</span>
+                    <button onClick="{{listen}}" aria-label="Listen · {{L.speech}}" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid {{b.accentLine}}; background: {{b.chipBg}}; color: {{b.accent}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
+                  </div>
+                  <sc-if value="{{v.hasHanviet}}" hint-placeholder-val="{{false}}">
+                    <div class="{{revealCls2}}" style="margin-top: 12px; height: 32px; padding: 0 14px; border-radius: 999px; border: 1px dashed {{b.accentLine}}; display: flex; align-items: center; gap: 8px; font-size: 13px; color: {{b.body}};">
+                      <span style="font-size: 11px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: {{b.text3}};">{{S.hanviet}}</span>
+                      <span style="font-family: 'Noto Serif SC', serif; font-size: 16px; color: {{b.head}};">{{hanviet.src}}</span>
+                      <span aria-hidden="true">→</span>
+                      <span style="font-weight: 650; color: {{b.accent}};">{{hanviet.reading}}</span>
+                    </div>
+                  </sc-if>
+
+                  <figure class="{{revealCls3}}" style="margin: 16px 0 0; width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 18px; background: {{b.exBg}}; border: 1px solid {{b.exLine}}; text-align: left;">
+                    <sc-if value="{{v.isJa}}" hint-placeholder-val="{{false}}">
+                      <blockquote lang="ja" style="margin: 0; font-family: {{v.headFont}}; font-size: 18px; line-height: 1.9; color: {{b.head}};"><sc-for list="{{v.exBack}}" as="s" hint-placeholder-count="6"><ruby style="color: {{s.color}}; font-weight: {{s.weight}}; background: {{s.bg}};">{{s.t}}<rt style="font-family: {{v.sansFont}}; font-size: 10px; color: {{b.text2}};">{{s.rt}}</rt></ruby></sc-for></blockquote>
+                    </sc-if>
+                    <sc-if value="{{notJa}}" hint-placeholder-val="{{true}}">
+                      <blockquote lang="{{langTag}}" style="margin: 0; font-family: {{exFont}}; font-style: {{exItalic}}; font-size: 18px; line-height: 1.45; color: {{b.head}};"><sc-for list="{{v.exBack}}" as="s" hint-placeholder-count="3"><span style="font-style: normal; color: {{s.color}}; font-weight: {{s.weight}}; background: {{s.bg}};">{{s.t}}</span></sc-for></blockquote>
+                    </sc-if>
+                    <sc-if value="{{v.hasExReading}}" hint-placeholder-val="{{false}}">
+                      <p style="margin: 4px 0 0; font-size: 12.5px; line-height: 1.45; color: {{b.text2}};">{{L.exReading}}</p>
+                    </sc-if>
+                    <figcaption style="margin-top: 6px; font-size: 13.5px; line-height: 1.5; color: {{b.text2}};">{{L.exTr}}</figcaption>
+                  </figure>
+                  <p class="{{revealCls3}}" style="margin: 12px 2px 0; font-size: 13.5px; line-height: 1.55; color: {{b.body}}; text-align: left; align-self: stretch; text-wrap: pretty;"><span style="font-weight: 650; color: {{b.head}};">{{S.note}} · </span>{{L.note}}</p>
+                  <div class="{{revealCls3}}" style="margin-top: 12px; align-self: stretch; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
+                    <span style="font-size: 11px; font-weight: 550; letter-spacing: 0.08em; text-transform: uppercase; color: {{b.text3}}; margin-right: 4px;">{{S.related}}</span>
+                    <sc-for list="{{L.related}}" as="rw" hint-placeholder-count="3">
+                      <span style="height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid {{b.chipLine}}; background: {{b.chipBg}}; font-size: 12.5px; color: {{b.head}}; display: flex; align-items: center; gap: 5px;"><span lang="{{langTag}}" style="font-family: {{v.sansFont}};">{{rw.w}}</span><span style="color: {{b.text3}}; font-size: 11.5px;">{{rw.p}}</span></span>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{hasForms}}" hint-placeholder-val="{{false}}">
+                    <div class="{{revealCls3}}" style="margin-top: 14px; align-self: stretch; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                      <sc-for list="{{L.forms}}" as="fm" hint-placeholder-count="3">
+                        <div style="padding: 9px 10px; border-radius: 12px; border: 1px solid {{b.chipLine}}; background: {{b.chipBg}}; text-align: left;"><div style="font-size: 10.5px; font-weight: 550; letter-spacing: 0.08em; text-transform: uppercase; color: {{b.text3}};">{{fm.k}}</div><div lang="{{langTag}}" style="margin-top: 3px; font-size: 14px; font-weight: 600; color: {{b.head}};">{{fm.v}}</div></div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <div style="margin-top: auto; padding-bottom: 18px; align-self: stretch; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button style="height: 42px; border-radius: 14px; border: 1px solid {{b.warmLine}}; background: {{b.warmBg}}; color: {{b.warm}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"></path></svg>
+                      {{S.hook}}
+                    </button>
+                    <button style="height: 42px; border-radius: 14px; border: 1px solid {{b.secondLine}}; background: {{b.secondBg}}; color: {{b.second}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path></svg>
+                      {{S.tutor}}
+                    </button>
+                  </div>
+                </div>
+
+                <button onClick="{{flip}}" style="position: relative; height: 54px; flex-shrink: 0; border: 0; border-top: {{c.flipTopBack}}; background: transparent; color: {{b.text2}}; font-family: {{c.flipFont}}; font-style: {{c.flipStyle}}; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg>
+                  {{S.backTo}}
+                </button>
+                <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at {{mxBack}}% {{my}}%, {{c.spotBack}} 0%, transparent 55%); opacity: {{spotOpacity}}; transition: opacity 200ms ease;"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+    <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
+      <sc-if value="{{flipped}}" hint-placeholder-val="{{false}}">
+        <div role="group" aria-label="Bạn nhớ từ này tới đâu?" style="display: flex; gap: 6px; padding: 6px; border-radius: 24px; background: {{gradeTray}}; border: 1px solid {{t.line}}; box-shadow: {{t.surfaceShadow}};">
+          <sc-for list="{{grades}}" as="g" hint-placeholder-count="4">
+            <button class="au-grade" onClick="{{g.pick}}" style="width: 128px; height: 62px; border-radius: 18px; border: 1px solid {{g.border}}; background: {{g.bg}}; color: {{g.color}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; box-shadow: {{g.shadow}}; font-family: inherit;">
+              <span style="display: flex; align-items: center; gap: 7px; font-size: 15px; font-weight: 650;"><span style="width: 7px; height: 7px; border-radius: 50%; background: {{g.dot}};"></span>{{g.label}}</span>
+              <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11.5px; opacity: 0.75;">{{g.key}} · {{g.next}}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{notFlipped}}" hint-placeholder-val="{{true}}">
+        <div style="font-size: 14px; color: {{t.text2}}; display: flex; align-items: center; gap: 10px;">{{S.hint}}<span style="height: 24px; padding: 0 8px; border-radius: 6px; border: 1px solid {{t.lineStrong}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; display: flex; align-items: center;">Space</span></div>
+      </sc-if>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { ...{ flipped: false, flipping: false, dealing: false, revealed: false, hover: false, rx: 0, ryTilt: 0, mx: 50, my: 50, starred: false, starPulse: false, blind: false, playing: false, variant: 0, romaji: true }, pos: 7 };
+  }
+  renderVals() {
+//#TOKENS
+    // Target-language packs: what changes per studied language. Native (explanation + UI) language is per course.
+    const LANG_UI = {
+      vi: { reveal: 'Lật xem nghĩa', backTo: 'Quay lại mặt trước', inLang: 'Nghĩa tiếng Việt', example: 'Ví dụ', note: 'Ghi chú', related: 'Liên quan', forms: 'Biến thể', hook: 'Mẹo nhớ', tutor: 'Hỏi gia sư AI', hint: 'Đọc to trước, rồi lật thẻ', phrases: 'Cụm hay gặp', say: 'Nói thử', due: 'Đến hạn', blind: 'Ẩn phiên âm', hanviet: 'Hán Việt', learnWith: 'học bằng', tiers: { new: 'Mới', learning: 'Đang học', mastered: 'Đã thuộc' } },
+      en: { reveal: 'Reveal meaning', backTo: 'Back to front', inLang: 'In English', example: 'Example', note: 'Note', related: 'Related', forms: 'Forms', hook: 'Memory hook', tutor: 'Ask AI tutor', hint: 'Say it out loud first, then reveal', phrases: 'Common phrases', say: 'Say it', due: 'Due today', blind: 'Hide readings', hanviet: '', learnWith: 'from', tiers: { new: 'New', learning: 'Learning', mastered: 'Mastered' } },
+    };
+    const LANG_NATIVE = { vi: { code: 'VI', name: 'Tiếng Việt' }, en: { code: 'EN', name: 'English' } };
+    const LANGS = {
+      en: {
+        phrases: ['immediate effect', 'immediate action', 'an immediate response'],
+        kind: 'latin', native: 'vi', tier: 'learning', speech: 'en-US', target: { code: 'EN', name: 'English' }, level: 'IELTS · B2', pos: 'Tính từ',
+        article: '', gender: '', wPre: 'im', wStress: 'me', wRest: 'diate', syll: 'im·me·di·ate',
+        ipas: [{ tag: 'UK', ipa: '/ɪˈmiːdiət/' }, { tag: 'US', ipa: '/ɪˈmidiət/' }], genders: [], plural: '',
+        chips: ['Nhấn âm tiết 2'],
+        ex: [{ t: 'The new policy takes ' }, { t: 'immediate', hl: true }, { t: ' effect.' }], exReading: '', exTr: 'Chính sách mới có hiệu lực ngay lập tức.',
+        meaning: 'ngay lập tức', word: 'immediate', reading: '/ɪˈmiːdiət/', hanviet: null,
+        note: 'Hay đi với effect, action, response. Trạng từ: immediately.',
+        related: [{ w: 'immediately', p: 'adv.' }, { w: 'immediacy', p: 'n.' }],
+        forms: [{ k: 'trạng từ', v: 'immediately' }, { k: 'danh từ', v: 'immediacy' }, { k: 'trái nghĩa', v: 'delayed' }],
+      },
+      ko: {
+        phrases: ['결심을 하다', '굳게 결심하다', '-기로 결심하다'],
+        kind: 'ko', native: 'vi', tier: 'learning', speech: 'ko-KR', target: { code: 'KO', name: '한국어' }, level: 'TOPIK II', pos: 'Động từ',
+        hangul: '결심하다', kHl: '결심', kRest: '하다', blocks: [{ h: '결', r: 'gyeol' }, { h: '심', r: 'sim' }, { h: '하', r: 'ha' }, { h: '다', r: 'da' }],
+        romanization: 'gyeolsimhada',
+        chips: ['Động từ 하다', 'Hán tự 決心', 'Phát âm [결씸하다]'],
+        ex: [{ t: '올해는 한국어를 꼭 배우기로 ' }, { t: '결심했어요', hl: true }, { t: '.' }],
+        exReading: 'Olhaeneun hangugeoreul kkok baeugiro gyeolsimhaesseoyo.',
+        exTr: 'Năm nay tôi đã quyết tâm nhất định phải học tiếng Hàn.',
+        meaning: 'quyết tâm', word: '결심하다', reading: 'gyeolsimhada', hanviet: { src: '決心', reading: 'quyết tâm' },
+        note: 'Cấu trúc -기로 결심하다: quyết tâm làm gì. 결심 đọc là [결씸] vì âm căng hoá sau ㄹ.',
+        related: [{ w: '결정하다', p: 'quyết định' }, { w: '다짐하다', p: 'tự hứa' }, { w: '결심', p: 'danh từ' }],
+      },
+      ja: {
+        phrases: ['経験がある', '経験を積む', '経験者'],
+        kind: 'ja', native: 'vi', tier: 'new', speech: 'ja-JP', target: { code: 'JA', name: '日本語' }, level: 'JLPT N3', pos: 'Danh từ · する',
+        chars: [{ b: '経', rt: 'けい' }, { b: '験', rt: 'けん' }],
+        morae: [{ k: 'け', hi: false }, { k: 'い', hi: true }, { k: 'け', hi: true }, { k: 'ん', hi: true }],
+        romaji: 'keiken', accent: 'Heiban ⓪',
+        chips: ['Hán tự 經驗', 'Động từ: 経験する'],
+        ex: [{ t: '日本', rt: 'にほん' }, { t: 'で' }, { t: '働', rt: 'はたら' }, { t: 'いた' }, { t: '経験', rt: 'けいけん', hl: true }, { t: 'があります。' }],
+        exReading: 'Nihon de hataraita keiken ga arimasu.',
+        exTr: 'Tôi có kinh nghiệm làm việc ở Nhật Bản.',
+        meaning: 'kinh nghiệm', word: '経験', reading: 'けいけん · keiken', hanviet: { src: '經驗', reading: 'kinh nghiệm' },
+        note: '〜た経験がある: đã từng làm gì. Âm điệu bằng (heiban): け thấp, các âm sau cao và không hạ.',
+        related: [{ w: '経験する', p: 'trải qua' }, { w: '経験者', p: 'người có kinh nghiệm' }, { w: '体験', p: 'trải nghiệm' }],
+      },
+      zh: {
+        phrases: ['有机会', '抓住机会', '一个好机会'],
+        kind: 'zh', native: 'vi', tier: 'mastered', speech: 'zh-CN', target: { code: 'ZH', name: '中文' }, level: 'HSK 3', pos: 'Danh từ',
+        zchars: [{ b: '机', rt: 'jī', tone: 1 }, { b: '会', rt: 'huì', tone: 4 }],
+        chips: ['Lượng từ 个 gè', 'Phồn thể 機會'],
+        ex: [{ t: '这是一个很好的' }, { t: '机会', hl: true }, { t: '。' }],
+        exReading: 'Zhè shì yí ge hěn hǎo de jīhuì.',
+        exTr: 'Đây là một cơ hội rất tốt.',
+        meaning: 'cơ hội', word: '机会', reading: 'jīhuì', hanviet: { src: '機會', reading: 'cơ hội' },
+        note: 'Lượng từ 个: 一个机会 (yí ge jīhuì). Cụm hay gặp: 抓住机会 zhuāzhù jīhuì — nắm bắt cơ hội.',
+        related: [{ w: '机遇', p: 'jīyù · thời cơ' }, { w: '时机', p: 'shíjī · thời điểm' }],
+      },
+      fr: {
+        phrases: ['prendre une décision', 'une décision difficile'],
+        kind: 'latin', native: 'en', tier: 'new', speech: 'fr-FR', target: { code: 'FR', name: 'Français' }, level: 'DELF B1', pos: 'Noun · feminine',
+        article: 'la', gender: 'f', wPre: 'déci', wStress: 'sion', wRest: '', syll: 'dé·ci·sion',
+        ipas: [{ tag: 'FR', ipa: '/de.si.zjɔ̃/' }], genders: [{ art: 'le', g: 'm' }, { art: 'la', g: 'f' }], plural: 'pl. les décisions',
+        chips: ['-sion → feminine'],
+        ex: [{ t: 'Elle a pris une ' }, { t: 'décision', hl: true }, { t: ' importante.' }], exReading: '', exTr: 'She made an important decision.',
+        meaning: 'decision', word: 'la décision', reading: '/de.si.zjɔ̃/', hanviet: null,
+        note: 'prendre une décision = to make a decision. Nouns ending in -sion are feminine.',
+        related: [{ w: 'décider', p: 'v.' }, { w: 'décisif', p: 'adj.' }],
+        forms: [{ k: 'definite', v: 'la décision' }, { k: 'indefinite', v: 'une décision' }, { k: 'plural', v: 'les décisions' }],
+      },
+      de: {
+        phrases: ['eine Entscheidung treffen', 'die richtige Entscheidung'],
+        kind: 'latin', native: 'en', tier: 'learning', speech: 'de-DE', target: { code: 'DE', name: 'Deutsch' }, level: 'Goethe B1', pos: 'Noun · feminine',
+        article: 'die', gender: 'f', wPre: 'Ent', wStress: 'schei', wRest: 'dung', syll: 'Ent·schei·dung',
+        ipas: [{ tag: 'DE', ipa: '/ɛntˈʃaɪ̯dʊŋ/' }], genders: [{ art: 'der', g: 'm' }, { art: 'die', g: 'f' }, { art: 'das', g: 'n' }], plural: 'pl. die Entscheidungen',
+        chips: ['-ung → always die'],
+        ex: [{ t: 'Wir müssen eine ' }, { t: 'Entscheidung', hl: true }, { t: ' treffen.' }], exReading: '', exTr: 'We have to make a decision.',
+        meaning: 'decision', word: 'die Entscheidung', reading: '/ɛntˈʃaɪ̯dʊŋ/', hanviet: null,
+        note: 'eine Entscheidung treffen = to make a decision. Nouns ending in -ung are always feminine.',
+        related: [{ w: 'entscheiden', p: 'v.' }, { w: 'entscheidend', p: 'adj.' }],
+        forms: [{ k: 'definite', v: 'die Entscheidung' }, { k: 'indefinite', v: 'eine Entscheidung' }, { k: 'plural', v: 'die Entscheidungen' }],
+      },
+      es: {
+        phrases: ['tomar una decisión', 'una decisión difícil'],
+        kind: 'latin', native: 'en', tier: 'mastered', speech: 'es-ES', target: { code: 'ES', name: 'Español' }, level: 'DELE B1', pos: 'Noun · feminine',
+        article: 'la', gender: 'f', wPre: 'deci', wStress: 'sión', wRest: '', syll: 'de·ci·sión',
+        ipas: [{ tag: 'ES', ipa: '/de.θiˈsjon/' }, { tag: 'LatAm', ipa: '/de.siˈsjon/' }], genders: [{ art: 'el', g: 'm' }, { art: 'la', g: 'f' }], plural: 'pl. las decisiones',
+        chips: ['Accent drops in plural'],
+        ex: [{ t: 'Tomé una ' }, { t: 'decisión', hl: true }, { t: ' difícil.' }], exReading: '', exTr: 'I made a difficult decision.',
+        meaning: 'decision', word: 'la decisión', reading: '/de.θiˈsjon/', hanviet: null,
+        note: 'tomar una decisión = to make a decision. The written accent drops in the plural: decisiones.',
+        related: [{ w: 'decidir', p: 'v.' }, { w: 'decisivo', p: 'adj.' }],
+        forms: [{ k: 'definite', v: 'la decisión' }, { k: 'indefinite', v: 'una decisión' }, { k: 'plural', v: 'las decisiones' }],
+      },
+    };
+    const LANG_FONT = { ko: "'Noto Serif KR', serif", ja: "'Noto Serif JP', serif", zh: "'Noto Serif SC', serif", latin: 'Fraunces, Georgia, serif' };
+    const LANG_SANS = { ko: "'Noto Sans KR', sans-serif", ja: "'Noto Sans JP', sans-serif", zh: "'Noto Sans SC', sans-serif", latin: 'inherit' };
+    const TONE_PATH = { 1: 'M3 3H21', 2: 'M3 13L21 3', 3: 'M3 6L10 13L21 3', 4: 'M3 3L21 13' };
+    // Shared view model for a pack: palette-independent parts; caller passes colours.
+    const langView = (code, col, blind, romaji) => {
+      const L = { chars: [], blocks: [], zchars: [], morae: [], ipas: [], genders: [], chips: [], related: [], forms: [], phrases: [], kHl: '', kRest: '', romaji: '', accent: '', article: '', gender: '', wPre: '', wStress: '', wRest: '', syll: '', plural: '', exReading: '', ...(LANGS[code] || LANGS.en) };
+      const S = LANG_UI[L.native];
+      const seg = (list, hl, hlBg) => list.map(x => ({ t: x.t, rt: x.rt || '', color: x.hl ? hl : 'inherit', bg: x.hl ? hlBg : 'none', weight: x.hl ? 700 : 'inherit' }));
+      return {
+        L, S, nativeLang: LANG_NATIVE[L.native],
+        isLatin: L.kind === 'latin', isKo: L.kind === 'ko', isJa: L.kind === 'ja', isZh: L.kind === 'zh', isCjk: L.kind !== 'latin',
+        headFont: LANG_FONT[L.kind] || LANG_FONT.latin, sansFont: LANG_SANS[L.kind] || 'inherit',
+        genderColor: L.gender ? col.gender[L.gender] : 'inherit',
+        genders: (L.genders || []).map(g => ({ art: g.art, label: g.g === 'm' ? 'masc.' : g.g === 'f' ? 'fem.' : 'neut.', color: col.gender[g.g], active: g.g === L.gender, op: g.g === L.gender ? 1 : 0.45, bg: g.g === L.gender ? col.genderSoft[g.g] : 'transparent' })),
+        hasGenders: (L.genders || []).length > 0, hasPlural: !!L.plural,
+        zchars: (L.zchars || []).map(z => ({ ...z, color: col.tone[z.tone], path: TONE_PATH[z.tone] })),
+        morae: (L.morae || []).map((m, i, a) => ({ k: m.k, top: m.hi ? col.pitch : 'transparent', bottom: m.hi ? 'transparent' : col.pitch, left: i > 0 && a[i - 1].hi !== m.hi ? col.pitch : 'transparent' })),
+        exFront: seg(L.ex, col.fHl, col.fHlBg), exBack: seg(L.ex, col.bHl, col.bHlBg),
+        hasHanviet: !!L.hanviet && L.native === 'vi', hasExReading: !!L.exReading && romaji,
+        aidFilter: blind ? 'blur(7px)' : 'none', aidOpacity: blind ? 0.55 : 1,
+        showRomaji: romaji,
+        headSize: L.kind === 'latin' ? ((L.article + L.wPre + L.wStress + L.wRest).length > 13 ? 46 : L.article ? 58 : 66) : L.kind === 'ko' ? 70 : 78,
+      };
+    };
+
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    const s = this.state;
+    const code = 'ko';
+
+    const tiersMain = dark ? {
+      new: { color: '#c3ced5', stress: '#28d3f4', rim: 'linear-gradient(160deg, rgb(255 255 255 / 0.4), rgb(255 255 255 / 0.06) 38%, rgb(255 255 255 / 0.05) 70%, rgb(255 255 255 / 0.22))', glow: '', tint: 'rgb(40 211 244 / 0.16)', aura: { core: 'rgba(40, 211, 244, 0.75)', mid: 'rgba(14, 165, 233, 0.45)', outer: 'rgba(150, 108, 215, 0.25)' } },
+      learning: { color: '#28d3f4', stress: '#7ee6fa', rim: 'linear-gradient(155deg, #7ee6fa, rgb(40 211 244 / 0.2) 40%, rgb(150 108 215 / 0.35) 75%, #b395ea)', glow: ', 0 0 50px -14px rgb(40 211 244 / 0.5)', tint: 'rgb(150 108 215 / 0.2)', aura: { core: 'rgba(150, 108, 215, 0.75)', mid: 'rgba(40, 211, 244, 0.45)', outer: 'rgba(99, 102, 241, 0.2)' } },
+      mastered: { color: '#f5ae39', stress: '#f5ae39', rim: 'conic-gradient(from 200deg, #ffe6a8, #f5ae39, #fff6dc, #7ee6fa, #c9a3ff, #f5ae39, #ffe6a8)', glow: ', 0 0 56px -12px rgb(245 174 57 / 0.55)', tint: 'rgb(245 174 57 / 0.16)', aura: { core: 'rgba(245, 174, 57, 0.7)', mid: 'rgba(237, 83, 80, 0.35)', outer: 'rgba(40, 211, 244, 0.2)' } },
+    } : {
+      new: { color: '#8a8072', stress: '#b4461a', aura: { core: 'rgba(180, 70, 26, 0.35)', mid: 'rgba(184, 134, 43, 0.2)', outer: 'rgba(29, 26, 22, 0.08)' } },
+      learning: { color: '#b4461a', stress: '#b4461a', aura: { core: 'rgba(180, 70, 26, 0.4)', mid: 'rgba(184, 134, 43, 0.22)', outer: 'rgba(29, 26, 22, 0.08)' } },
+      mastered: { color: '#a8781f', stress: '#b4461a', aura: { core: 'rgba(184, 134, 43, 0.55)', mid: 'rgba(180, 70, 26, 0.25)', outer: 'rgba(29, 26, 22, 0.08)' } },
+    };
+    const L0 = LANGS[code] || LANGS.en;
+    const tv = tiersMain[L0.tier];
+    const mastered = L0.tier === 'mastered';
+    const c = dark ? {
+      radius: 34, frontBorder: '1.5px solid transparent', backBorder: '1.5px solid transparent',
+      frontBg: 'linear-gradient(180deg, #0f2430, #0a1a22) padding-box, ' + tv.rim + ' border-box',
+      frontShadow: '0 40px 90px -30px rgb(0 0 0 / 0.9), 0 0 0 1px rgb(0 0 0 / 0.3)' + tv.glow,
+      backBg: 'radial-gradient(ellipse 90% 55% at 50% 18%, ' + tv.tint + ' 0%, transparent 70%) padding-box, radial-gradient(circle at 100% 0%, rgb(150 108 215 / 0.18), transparent 45%) padding-box, linear-gradient(180deg, #0f2430, #0a1a22) padding-box, ' + tv.rim + ' border-box',
+      backShadow: '0 40px 90px -30px rgb(0 0 0 / 0.9)' + tv.glow,
+      stack1: '#0b1d26', stack2: '#0d212b', stackShadow: 'inset 0 0 0 1px rgb(255 255 255 / 0.06)',
+      flipTop: '1px solid rgb(255 255 255 / 0.07)', flipTopBack: '1px solid rgb(255 255 255 / 0.07)', flipBg: 'rgb(255 255 255 / 0.02)', flipFont: 'inherit', flipStyle: 'normal', flipSize: 14,
+      spec: 'rgb(255 255 255 / 0.1)', spot: 'rgb(40 211 244 / 0.14)', spotBack: 'rgb(40 211 244 / 0.1)', holoBlend: 'color-dodge',
+    } : {
+      radius: 22, frontBorder: mastered ? '2px solid transparent' : '0', backBorder: '0',
+      frontBg: mastered ? 'linear-gradient(#fffcf5, #fffcf5) padding-box, ' + t.goldRim + ' border-box' : '#fffcf5',
+      frontShadow: t.cardShadow,
+      backBg: 'radial-gradient(ellipse 80% 50% at 50% 12%, rgb(180 70 26 / 0.22), transparent 70%), #1c2a21',
+      backShadow: 'inset 0 1px 0 rgb(255 255 255 / 0.08), 0 10px 20px -10px rgb(60 40 20 / 0.3), 0 50px 70px -40px rgb(40 30 20 / 0.6)',
+      stack1: '#ebe2d1', stack2: '#f4ede0', stackShadow: 'inset 0 0 0 1px rgb(29 26 22 / 0.06)',
+      flipTop: '1px dashed rgb(29 26 22 / 0.18)', flipTopBack: '1px dashed rgb(239 232 218 / 0.16)', flipBg: 'transparent', flipFont: 'Fraunces, Georgia, serif', flipStyle: 'italic', flipSize: 17,
+      spec: 'rgb(255 255 255 / 0.55)', spot: 'rgb(180 70 26 / 0.07)', spotBack: 'rgb(232 160 117 / 0.1)', holoBlend: 'soft-light',
+    };
+    const f = dark ? {
+      head: '#f1f6f9', body: '#c3ced5', text2: '#99a7b0', text3: '#6f808a', chipBg: 'rgb(255 255 255 / 0.04)', chipLine: 'rgb(255 255 255 / 0.1)',
+      accent: '#28d3f4', accentLine: 'rgb(40 211 244 / 0.35)', stress: tv.stress, stressGlow: '0 0 28px rgb(40 211 244 / 0.5)', stressStyle: 'normal', displayWeight: 440,
+      exBg: 'rgb(255 255 255 / 0.03)', exLine: 'rgb(255 255 255 / 0.07)', watermark: 'rgb(255 255 255 / 0.035)',
+    } : {
+      head: '#1d1a16', body: '#3d372f', text2: '#6b6255', text3: '#8a8072', chipBg: '#f7f1e6', chipLine: 'rgb(29 26 22 / 0.12)',
+      accent: '#b4461a', accentLine: 'rgb(151 64 13 / 0.3)', stress: tv.stress, stressGlow: 'none', stressStyle: 'italic', displayWeight: 380,
+      exBg: 'rgb(29 26 22 / 0.03)', exLine: 'rgb(29 26 22 / 0.08)', watermark: 'rgb(29 26 22 / 0.045)',
+    };
+    const b = dark ? {
+      head: '#f1f6f9', body: '#b5c2ca', text2: '#99a7b0', text3: '#6f808a', chipBg: 'rgb(255 255 255 / 0.04)', chipLine: 'rgb(255 255 255 / 0.09)',
+      accent: '#28d3f4', accentLine: 'rgb(40 211 244 / 0.35)', dotGlow: '0 0 10px #28d3f4', displayWeight: 420,
+      exBg: 'rgb(255 255 255 / 0.035)', exLine: 'rgb(255 255 255 / 0.07)',
+      due: '#f5ae39', dueBg: 'rgb(245 174 57 / 0.12)', dueLine: 'rgb(245 174 57 / 0.3)',
+      warm: '#f5ae39', warmBg: 'rgb(245 174 57 / 0.07)', warmLine: 'rgb(245 174 57 / 0.28)',
+      second: '#c9b3f0', secondBg: 'rgb(150 108 215 / 0.1)', secondLine: 'rgb(150 108 215 / 0.35)',
+    } : {
+      head: '#fbf6ec', body: '#efe8da', text2: '#b7ad9b', text3: '#8f8674', chipBg: 'rgb(239 232 218 / 0.06)', chipLine: 'rgb(239 232 218 / 0.14)',
+      accent: '#e8a075', accentLine: 'rgb(232 160 117 / 0.4)', dotGlow: 'none', displayWeight: 360,
+      exBg: 'rgb(239 232 218 / 0.05)', exLine: 'rgb(239 232 218 / 0.1)',
+      due: '#f0b48a', dueBg: 'rgb(232 160 117 / 0.14)', dueLine: 'rgb(232 160 117 / 0.35)',
+      warm: '#f0c872', warmBg: 'rgb(240 200 114 / 0.08)', warmLine: 'rgb(240 200 114 / 0.3)',
+      second: '#a9d3b2', secondBg: 'rgb(169 211 178 / 0.08)', secondLine: 'rgb(169 211 178 / 0.3)',
+    };
+    const col = dark ? {
+      gender: { m: '#6fb6ff', f: '#ff8aa6', n: '#8fe39a' }, genderSoft: { m: 'rgb(111 182 255 / 0.12)', f: 'rgb(255 138 166 / 0.12)', n: 'rgb(143 227 154 / 0.12)' },
+      tone: { 1: '#7ee6fa', 2: '#8fe39a', 3: '#f5c26b', 4: '#ff8a86' }, pitch: '#28d3f4',
+      fHl: '#7ee6fa', fHlBg: 'linear-gradient(transparent 62%, rgb(40 211 244 / 0.18) 62%)', bHl: '#28d3f4', bHlBg: 'linear-gradient(transparent 62%, rgb(40 211 244 / 0.18) 62%)',
+    } : {
+      gender: { m: '#1f5fb8', f: '#b3264a', n: '#2c6a3d' }, genderSoft: { m: 'rgb(31 95 184 / 0.08)', f: 'rgb(179 38 74 / 0.08)', n: 'rgb(44 106 61 / 0.08)' },
+      tone: { 1: '#1f5fb8', 2: '#2c6a3d', 3: '#a8781f', 4: '#c53637' }, pitch: '#b4461a',
+      fHl: '#b4461a', fHlBg: 'linear-gradient(transparent 62%, rgb(180 70 26 / 0.12) 62%)', bHl: '#f0b48a', bHlBg: 'linear-gradient(transparent 62%, rgb(232 160 117 / 0.2) 62%)',
+    };
+    const v = langView(code, col, s.blind, s.romaji);
+    const L = v.L;
+    const later = (ms, fn) => window.setTimeout(fn, ms);
+    const flip = () => {
+      if (s.flipping) return;
+      const next = !s.flipped;
+      this.setState({ flipped: next, flipping: true, revealed: false });
+      later(640, () => this.setState({ flipping: false, revealed: next }));
+    };
+    const ipaList = L.ipas || [];
+    const variant = Math.min(s.variant, Math.max(ipaList.length - 1, 0));
+    const romajiLabels = { ko: L.native === 'vi' ? 'Phiên âm La-tinh' : 'Romanization', ja: 'Romaji', zh: 'Pinyin' };
+    const card = {
+      v, L, S: v.S, c, f, b, hanviet: L.hanviet || { src: '', reading: '' },
+      aura: tv.aura, tierColor: tv.color, tierDotGlow: dark ? '0 0 10px ' + tv.color : 'none', tierLabel: v.S.tiers[L.tier], mastered,
+      langTag: code === 'zh' ? 'zh-CN' : code, notJa: !v.isJa, hasForms: (L.forms || []).length > 0,
+      exFont: v.isLatin ? 'Fraunces, Georgia, serif' : v.headFont, exItalic: v.isLatin ? 'italic' : 'normal',
+      watermark: v.isKo ? L.kHl[0] : v.isJa ? L.chars[0].b : v.isZh ? L.zchars[0].b : (L.wPre || L.wStress)[0].toUpperCase(),
+      ipa: ipaList.length ? ipaList[variant].ipa : '',
+      ipas: ipaList.map((p, i) => ({ tag: p.tag, on: i === variant ? 'true' : 'false', pick: () => this.setState({ variant: i }),
+        line: i === variant ? f.accentLine : f.chipLine, bg: i === variant ? (dark ? 'rgb(40 211 244 / 0.14)' : 'rgb(180 70 26 / 0.08)') : 'transparent', color: i === variant ? f.accent : f.text2 })),
+      romaji: s.romaji ? 'true' : 'false', romajiText: s.romaji ? (L.romaji || '') : '', romajiColor: s.romaji ? f.accent : 'transparent',
+      romajiLabel: romajiLabels[L.kind] || '',
+      romajiLine: s.romaji ? f.accentLine : f.chipLine, romajiBg: s.romaji ? (dark ? 'rgb(40 211 244 / 0.1)' : 'rgb(180 70 26 / 0.06)') : f.chipBg, romajiBtnColor: s.romaji ? f.accent : f.text2,
+      romajiTrack: s.romaji ? f.accent : f.chipLine, romajiKnob: s.romaji ? 13 : 2, romajiKnobBg: dark ? '#04141c' : '#fffcf5',
+      toggleRomaji: () => this.setState({ romaji: !s.romaji }),
+      dealCls: s.dealing ? (dark ? 'au-deal-a' : 'ip-deal-a') : '',
+      revealCls: s.revealed ? 'au-reveal' : '', revealCls2: s.revealed ? 'au-reveal-2' : '', revealCls3: s.revealed ? 'au-reveal-3' : '',
+      flipped: s.flipped, notFlipped: !s.flipped,
+      mx: s.mx, my: s.my, mxBack: 100 - s.mx,
+      rx: s.rx, ry: (s.flipped ? 180 : 0) + s.ryTilt,
+      rotorTransition: s.dealing ? 'none' : s.flipping ? 'transform 640ms cubic-bezier(.2,.8,.2,1)' : 'transform 280ms cubic-bezier(.22,1,.36,1)',
+      auraOpacity: s.hover ? (dark ? 0.42 : 0.3) : 0, spotOpacity: s.hover ? 1 : 0,
+      specAngle: 150 + (s.mx - 50) * 0.8, specOpacity: s.hover ? 1 : 0.6,
+      holoOpacity: s.hover ? (dark ? 0.5 : 0.35) : (dark ? 0.22 : 0.14),
+      blind: s.blind ? 'true' : 'false', starred: s.starred ? 'true' : 'false', playing: s.playing, notPlaying: !s.playing,
+      blindBg: s.blind ? f.accent : f.chipBg, blindBorder: s.blind ? f.accent : f.chipLine, blindColor: s.blind ? (dark ? '#04141c' : '#fffcf5') : f.head,
+      starBg: s.starred ? (dark ? '#f5ae39' : '#1d1a16') : f.chipBg, starBorder: s.starred ? (dark ? '#ffd88a' : '#1d1a16') : f.chipLine,
+      starColor: s.starred ? (dark ? '#1f1403' : '#f5d58a') : f.head, starFill: s.starred ? 'currentColor' : 'none',
+      starBgBack: s.starred ? (dark ? '#f5ae39' : '#f0c872') : b.chipBg, starBorderBack: s.starred ? (dark ? '#ffd88a' : '#f0c872') : b.chipLine,
+      starColorBack: s.starred ? '#1f1403' : b.head, starFillBack: s.starred ? '#1f1403' : 'none',
+      starGlow: s.starred && dark ? '0 0 22px -2px rgb(245 174 57 / 0.7)' : 'none',
+      starAnim: s.starPulse ? (dark ? 'au-star-pop' : 'ip-star-pop') : '',
+      listenBg: s.playing ? (dark ? 'rgb(40 211 244 / 0.2)' : 'rgb(180 70 26 / 0.12)') : (dark ? 'rgb(40 211 244 / 0.08)' : 'transparent'),
+      flip,
+      enter: () => this.setState({ hover: true }),
+      move: (e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width;
+        const py = (e.clientY - r.top) / r.height;
+        this.setState({ hover: true, mx: px * 100, my: py * 100, rx: -(py - 0.5) * 8, ryTilt: (px - 0.5) * 8 });
+      },
+      leave: () => this.setState({ hover: false, rx: 0, ryTilt: 0, mx: 50, my: 50 }),
+      star: () => { this.setState({ starred: !s.starred, starPulse: true }); later(300, () => this.setState({ starPulse: false })); },
+      toggleBlind: () => this.setState({ blind: !s.blind }),
+      listen: () => { this.setState({ playing: true }); later(1600, () => this.setState({ playing: false })); },
+    };
+
+    const advance = () => {
+      this.setState({ pos: s.pos + 1, flipped: false, flipping: false, dealing: true, revealed: false, starred: false, blind: false, hover: false, rx: 0, ryTilt: 0 });
+      later(600, () => this.setState({ dealing: false }));
+    };
+    const gradeDefs = dark ? [
+      { label: 'Quên', key: '1', next: '1 ph', dot: '#ed5350', color: '#f3b3b2', border: 'rgb(237 83 80 / 0.3)', bg: 'rgb(237 83 80 / 0.08)', shadow: 'none' },
+      { label: 'Khó', key: '2', next: '6 ph', dot: '#f59145', color: '#e5ecf1', border: 'rgb(255 255 255 / 0.08)', bg: 'rgb(255 255 255 / 0.03)', shadow: 'none' },
+      { label: 'Nhớ', key: '3', next: '1 ngày', dot: '#06161f', color: '#04141c', border: '#7ee6fa', bg: '#28d3f4', shadow: '0 12px 30px -10px rgb(40 211 244 / 0.75), inset 0 1px 0 rgb(255 255 255 / 0.5)' },
+      { label: 'Dễ', key: '4', next: '3 ngày', dot: '#75d079', color: '#e5ecf1', border: 'rgb(255 255 255 / 0.08)', bg: 'rgb(255 255 255 / 0.03)', shadow: 'none' },
+    ] : [
+      { label: 'Quên', key: '1', next: '1 ph', dot: '#c53637', color: '#9a2526', border: 'rgb(197 54 55 / 0.25)', bg: 'rgb(197 54 55 / 0.06)', shadow: 'none' },
+      { label: 'Khó', key: '2', next: '6 ph', dot: '#d3721e', color: '#1d1a16', border: 'rgb(29 26 22 / 0.1)', bg: '#fffcf5', shadow: 'none' },
+      { label: 'Nhớ', key: '3', next: '1 ngày', dot: '#f5d58a', color: '#fbf6ec', border: '#1d1a16', bg: '#1d1a16', shadow: '0 14px 28px -14px rgb(29 26 22 / 0.9)' },
+      { label: 'Dễ', key: '4', next: '3 ngày', dot: '#337344', color: '#1d1a16', border: 'rgb(29 26 22 / 0.1)', bg: '#fffcf5', shadow: 'none' },
+    ];
+    const pos = Math.min(s.pos, 24);
+    const rr = (r) => s.romaji ? r : '';
+    return {
+      t, ...card, nativeLang: v.nativeLang,
+      grainId: 'langreview-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: 200, ay: 60, bx: 760, by: 320 },
+      toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      romajiKnobHead: s.romaji ? 16 : 3,
+      position: pos,
+      segments: Array.from({ length: 12 }, (_, i) => {
+        const done = i < Math.floor(pos / 2);
+        const now = i === Math.floor(pos / 2);
+        return { bg: done ? t.accent : now ? t.accentLine : t.track, glow: dark && done ? '0 0 8px rgb(40 211 244 / 0.55)' : 'none', cls: now ? 'au-seg-now' : '' };
+      }),
+      stats: [
+        { n: 24, label: 'đến hạn', color: t.warm },
+        { n: 8, label: 'từ mới', color: t.accentText },
+        { n: 312, label: 'đã thuộc', color: t.textStrong },
+      ],
+      jamo: [
+        { block: '결', parts: [{ j: 'ㄱ', r: rr('g') }, { j: 'ㅕ', r: rr('yeo') }, { j: 'ㄹ', r: rr('l') }] },
+        { block: '심', parts: [{ j: 'ㅅ', r: rr('s') }, { j: 'ㅣ', r: rr('i') }, { j: 'ㅁ', r: rr('m') }] },
+        { block: '하', parts: [{ j: 'ㅎ', r: rr('h') }, { j: 'ㅏ', r: rr('a') }] },
+        { block: '다', parts: [{ j: 'ㄷ', r: rr('d') }, { j: 'ㅏ', r: rr('a') }] },
+      ],
+      gradeTray: dark ? 'rgb(12 30 40 / 0.6)' : 'rgb(255 252 245 / 0.8)',
+      grades: gradeDefs.map(g => ({ ...g, pick: advance })),
+    };
+  }
+}
+</script>
+</body>
+</html>

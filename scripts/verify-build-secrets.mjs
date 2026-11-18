@@ -21,7 +21,13 @@ const PRIVATE_CREDENTIAL_PATTERNS = [
 ];
 
 const publicFirebaseWebApiKeys = new Set();
-const firebaseConfigPath = path.resolve('firebase-applet-config.json');
+const target = process.env.SONFLASH_TARGET?.trim() || 'production';
+const firebaseConfigPath = path.resolve(
+  target === 'staging' ? 'firebase-targets/staging.json' : 'firebase-applet-config.json',
+);
+if (!['production', 'staging'].includes(target)) {
+  throw new Error(`Unsupported SONFLASH_TARGET for secret verification: ${target}`);
+}
 if (fs.existsSync(firebaseConfigPath)) {
   const firebaseConfig = JSON.parse(fs.readFileSync(firebaseConfigPath, 'utf8'));
   if (typeof firebaseConfig.apiKey === 'string' && firebaseConfig.apiKey.length > 0) {
@@ -68,5 +74,5 @@ for (const file of files) {
 }
 
 console.log(
-  `Verified ${files.length} production files: no provider secrets or private credential patterns found.`,
+  `Verified ${files.length} ${target} build files: no provider secrets or private credential patterns found.`,
 );

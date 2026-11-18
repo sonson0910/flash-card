@@ -1,0 +1,1264 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-24 16:48+0700\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en-XA\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: src/components/flashcard/CardBack.tsx:95
+msgctxt "flashcard.status.overdue"
+msgid "Review overdue"
+msgstr ""
+
+#: src/components/flashcard/CardFront.tsx:89
+msgctxt "flashcard.visual-hint.hidden"
+msgid "Visual hint hidden"
+msgstr ""
+
+#: src/components/flashcard/CardFront.tsx:210
+msgctxt "flashcard.read-aloud"
+msgid "Read aloud"
+msgstr ""
+
+#: src/features/cardReport/ReportCardDialog.tsx:103
+msgctxt "cardReport.submit"
+msgid "Send report"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:366
+msgctxt "shell.practice-menu.title"
+msgid "Choose a practice mode"
+msgstr ""
+
+#: src/components/flashcard/CardFront.tsx:204
+msgctxt "flashcard.quiz"
+msgid "Quiz"
+msgstr ""
+
+#: src/components/flashcard/SyllableStressBadge.tsx:63
+msgctxt "flashcard.syllables"
+msgid "Syllables:"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:619
+msgctxt "shell.share.fact-revoke"
+msgid "You can revoke this link at any time."
+msgstr ""
+
+#: src/components/flashcard/CardAiAssistantModal.tsx:244
+msgctxt "flashcard.ai.usage-note"
+msgid "AI-generated · each question uses 1 AI request"
+msgstr ""
+
+#: src/components/flashcard/ActiveRecallPrompt.tsx:137
+msgctxt "flashcard.recall.correct"
+msgid "Correct. Reveal the answer to compare."
+msgstr ""
+
+#: src/components/flashcard/CardMnemonicSection.tsx:54
+msgctxt "flashcard.mnemonic.title"
+msgid "AI Mnemonic · Memory Hook"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:472
+msgctxt "shell.share.cards-count"
+msgid "{count, plural, one {# card} other {# cards}}"
+msgstr ""
+
+#: src/components/flashcard/CardFront.tsx:253
+#: src/components/flashcard/CardFront.tsx:341
+msgctxt "flashcard.reveal-meaning"
+msgid "Reveal meaning"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:341
+msgctxt "shell.share.revoking"
+msgid "Revoking…"
+msgstr ""
+
+#: src/components/flashcard/CardBack.tsx:138
+msgctxt "flashcard.explanation.vietnamese"
+msgid "Explanation in Vietnamese"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:692
+msgctxt "shell.practice-menu.preparing"
+msgid "Preparing…"
+msgstr ""
+
+#: src/components/flashcard/CardAiAssistantModal.tsx:215
+msgctxt "flashcard.ai.formulating"
+msgid "AI is formulating an answer…"
+msgstr ""
+
+#: src/components/flashcard/CardAiAssistantModal.tsx:164
+msgctxt "flashcard.ai.description"
+msgid "Ask questions about usage, nuances & practical examples."
+msgstr ""
+
+#: src/components/AppOverlays.tsx:499
+msgctxt "shell.share.incoming-safeguard"
+msgid "Cards go into a new deck with the same name. Your existing cards and progress stay untouched."
+msgstr ""
+
+#: src/components/flashcard/HangulBreakdown.tsx:12
+msgctxt "flashcard.hangul-breakdown"
+msgid "Hangul breakdown"
+msgstr ""
+
+#: src/components/Flashcard.tsx:538
+msgctxt "flashcard.details.antonyms"
+msgid "Antonyms"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:597
+msgctxt "shell.share.link-label"
+msgid "Share link"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:494
+msgctxt "shell.share.no-sample-preview"
+msgid "A card preview is not available for this shared deck."
+msgstr ""
+
+#: src/components/flashcard/ActiveRecallPrompt.tsx:110
+msgctxt "flashcard.recall.instructions"
+msgid "Recall first, then type your answer to check it."
+msgstr ""
+
+#: src/components/AppOverlays.tsx:341
+msgctxt "shell.share.revoke"
+msgid "Revoke link"
+msgstr ""
+
+#: src/components/flashcard/CardBack.tsx:183
+msgctxt "flashcard.ask-ai-tutor"
+msgid "Ask AI Tutor"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:546
+msgctxt "shell.share.language-pair"
+msgid "{target} → {native}"
+msgstr ""
+
+#: src/components/Flashcard.tsx:565
+msgctxt "flashcard.details.common-mistake"
+msgid "Common Mistake"
+msgstr ""
+
+#: src/components/Flashcard.tsx:367
+msgctxt "flashcard.delete.description"
+msgid "The card will be removed from your library and the change will sync to the shared store."
+msgstr ""
+
+#: src/components/AppOverlays.tsx:617
+msgctxt "shell.share.fact-private"
+msgid "Recipients get their own copy; your progress and review history stay private."
+msgstr ""
+
+#: src/components/flashcard/CardBack.tsx:238
+msgctxt "flashcard.back-to-english"
+msgid "Back to English"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:618
+msgctxt "shell.share.fact-edits"
+msgid "Edits you make later are not pushed to copies already taken."
+msgstr ""
+
+#: src/components/flashcard/CardBack.tsx:207
+msgctxt "flashcard.lexicon-context-description"
+msgid "Examples, collocations & nuances"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:525
+msgctxt "shell.share.adding"
+msgid "Adding…"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:136
+msgctxt "shell.share.incoming-description"
+msgid "Review this shared deck before deciding whether to add it."
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:61
+msgid "cardReport.dialog.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:57
+msgid "cardReport.error.authentication"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:61
+msgid "cardReport.error.configuration"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:65
+msgid "cardReport.error.fallback"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:60
+msgid "cardReport.error.network"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:56
+msgid "cardReport.error.not-found"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:58
+msgid "cardReport.error.permission"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:59
+msgid "cardReport.error.quota"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:50
+msgid "cardReport.error.submit-failed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:62
+msgid "cardReport.error.unknown"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:92
+msgid "cardReport.note.placeholder"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:14
+msgid "cardReport.reason.offensive"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:15
+msgid "cardReport.reason.other"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:11
+msgid "cardReport.reason.wrong-example"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:13
+msgid "cardReport.reason.wrong-image"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:10
+msgid "cardReport.reason.wrong-meaning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/ReportCardDialog.tsx:12
+msgid "cardReport.reason.wrong-pronunciation"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:29
+msgid "cardReport.validation.card-id"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:35
+msgid "cardReport.validation.note-length"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/cardReport/cardReportService.ts:32
+msgid "cardReport.validation.reason"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:296
+msgctxt "shell.share.outgoing-title"
+msgid "Share “{title}”"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:502
+#: src/components/AppOverlays.tsx:622
+msgctxt "shell.share.expires-on"
+msgid "Link expires on {date}"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:465
+#: src/components/AppOverlays.tsx:586
+msgctxt "shell.share.cards"
+msgid "Cards"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:367
+msgctxt "shell.practice-menu.description"
+msgid "Choose a different way to practice with words from your library."
+msgstr ""
+
+#: src/features/cardReport/ReportCardDialog.tsx:99
+msgctxt "cardReport.privacy-hint"
+msgid "Don't include personal information or private content in the note."
+msgstr ""
+
+#: src/components/AppOverlays.tsx:581
+msgctxt "shell.share.updating"
+msgid "Updating this share link…"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:342
+msgctxt "shell.share.done"
+msgid "Done"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardAiAssistantModal.tsx:122
+msgid "flashcard.ai.busy"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardAiAssistantModal.tsx:173
+msgid "flashcard.ai.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardAiAssistantModal.tsx:32
+msgid "flashcard.ai.explain-meaning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardAiAssistantModal.tsx:28
+msgid "flashcard.ai.idioms-collocations"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardAiAssistantModal.tsx:119
+msgid "flashcard.ai.limit"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardAiAssistantModal.tsx:230
+msgid "flashcard.ai.placeholder"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardAiAssistantModal.tsx:226
+msgid "flashcard.ai.question-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardAiAssistantModal.tsx:238
+msgid "flashcard.ai.send"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardAiAssistantModal.tsx:24
+msgid "flashcard.ai.synonym-nuances"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardAiAssistantModal.tsx:121
+msgid "flashcard.ai.usage-limit"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardAiAssistantModal.tsx:20
+msgid "flashcard.ai.work-examples"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardBack.tsx:213
+#: src/components/flashcard/CardFront.tsx:187
+#: src/components/flashcard/CardFront.tsx:188
+msgid "flashcard.audio.check-pronunciation"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardFront.tsx:305
+#: src/components/flashcard/CardFront.tsx:306
+msgid "flashcard.audio.listen-pronunciation"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardBack.tsx:120
+#: src/components/flashcard/CardBack.tsx:306
+#: src/components/flashcard/CardFront.tsx:173
+#: src/components/flashcard/CardFront.tsx:174
+msgid "flashcard.audio.play-pronunciation"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardBack.tsx:212
+#: src/components/flashcard/CardFront.tsx:159
+msgid "flashcard.audio.toggle-speed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardFront.tsx:158
+msgid "flashcard.audio.toggle-speed-detail"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:341
+msgid "flashcard.card.showing-meaning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:341
+msgid "flashcard.card.showing-word"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:341
+msgid "flashcard.card.status"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardFront.tsx:98
+msgid "flashcard.category"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardFront.tsx:216
+msgid "flashcard.deck.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardFront.tsx:209
+msgid "flashcard.definition.listen"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardFront.tsx:210
+msgid "flashcard.definition.practice"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:373
+#: src/components/Flashcard.tsx:605
+#: src/components/Flashcard.tsx:606
+msgid "flashcard.delete.confirm"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:446
+msgid "flashcard.details.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardBack.tsx:161
+msgid "flashcard.dismiss-translation-error"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:615
+#: src/components/Flashcard.tsx:615
+#: src/components/flashcard/CardBack.tsx:127
+#: src/components/flashcard/CardBack.tsx:326
+msgid "flashcard.edit"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:666
+msgid "flashcard.hints.hide"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:667
+msgid "flashcard.hints.hide-content"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:667
+msgid "flashcard.hints.reveal"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:666
+msgid "flashcard.hints.show"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:87
+#: src/components/flashcard/CardFront.tsx:81
+msgid "flashcard.image.illustration"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardImage.tsx:50
+msgid "flashcard.image.loading"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardFront.tsx:82
+msgid "flashcard.image.none"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardImage.tsx:56
+msgid "flashcard.image.none-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardBack.tsx:201
+msgid "flashcard.learning-details-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardBack.tsx:171
+#: src/components/flashcard/CardMnemonicSection.tsx:61
+msgid "flashcard.memory-hook"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardMnemonicSection.tsx:42
+msgid "flashcard.mnemonic.error"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardMnemonicSection.tsx:55
+msgid "flashcard.mnemonic.generate"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardFront.tsx:207
+msgid "flashcard.more-tools"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardFront.tsx:201
+msgid "flashcard.quiz.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ReadingToggle.tsx:89
+msgid "flashcard.reading.toggle-aria"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ReadingToggle.tsx:86
+msgid "flashcard.reading.toggle-furigana"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ReadingToggle.tsx:87
+msgid "flashcard.reading.toggle-pinyin"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ReadingToggle.tsx:84
+msgid "flashcard.reading.toggle-romanization"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ReadingToggle.tsx:28
+msgid "flashcard.reading.verified-pitch"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:124
+msgid "flashcard.recall.answer-placeholder"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:36
+msgid "flashcard.recall.audio-recall"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:112
+msgid "flashcard.recall.check-answer"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:30
+msgid "flashcard.recall.complete-missing-word"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:35
+msgid "flashcard.recall.listen-and-spell"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:29
+msgid "flashcard.recall.missing-vocabulary-word"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:33
+msgid "flashcard.recall.name-what-you-see"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:37
+msgid "flashcard.recall.native-meaning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:93
+msgid "flashcard.recall.no-illustration"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:102
+msgid "flashcard.recall.play-word"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:31
+msgid "flashcard.recall.target-word"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:32
+msgid "flashcard.recall.translate-meaning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:34
+msgid "flashcard.recall.visual-recall"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardBack.tsx:230
+msgid "flashcard.return-to-english-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardFront.tsx:240
+msgid "flashcard.reveal-meaning-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:648
+#: src/components/Flashcard.tsx:649
+msgid "flashcard.star.add"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:648
+#: src/components/Flashcard.tsx:649
+msgid "flashcard.star.remove"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/SyllableStressBadge.tsx:59
+msgid "flashcard.syllables.breakdown"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/SyllableStressBadge.tsx:60
+msgid "flashcard.syllables.help"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/SyllableStressBadge.tsx:80
+msgid "flashcard.syllables.item"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/SyllableStressBadge.tsx:80
+msgid "flashcard.syllables.primary-stress"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardFront.tsx:356
+msgid "flashcard.tier.learning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardFront.tsx:357
+msgid "flashcard.tier.mastered"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardFront.tsx:355
+msgid "flashcard.tier.new"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:66
+msgid "flashcard.translation.failed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/CardBack.tsx:159
+msgid "flashcard.try-again"
+msgstr ""
+
+#: src/components/ui/UndoToast.tsx:154
+msgctxt "shell.undo.action"
+msgid "Undo"
+msgstr ""
+
+#: src/components/flashcard/CardFront.tsx:121
+msgctxt "flashcard.status.needs-practice"
+msgid "Needs practice"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:628
+msgctxt "shell.share.copy-private"
+msgid "This link opens a preview. The recipient decides whether to add a separate copy."
+msgstr ""
+
+#: src/components/flashcard/ActiveRecallPrompt.tsx:132
+msgctxt "flashcard.recall.check"
+msgid "Check"
+msgstr ""
+
+#: src/components/Flashcard.tsx:369
+msgctxt "flashcard.delete.cancel"
+msgid "Keep card"
+msgstr ""
+
+#: src/features/cardReport/ReportCardDialog.tsx:103
+msgctxt "cardReport.submit.busy"
+msgid "Sending…"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:484
+#: src/components/AppOverlays.tsx:501
+#: src/components/AppOverlays.tsx:627
+#: src/components/flashcard/CardBack.tsx:107
+#: src/components/flashcard/CardBack.tsx:320
+msgctxt "flashcard.ai-disclosure"
+msgid "AI-generated content may be incorrect. Please check the meaning."
+msgstr ""
+
+#: src/components/flashcard/CardFront.tsx:177
+#: src/components/flashcard/CardFront.tsx:209
+msgctxt "flashcard.listen"
+msgid "Listen"
+msgstr ""
+
+#: src/components/flashcard/CardAiAssistantModal.tsx:158
+msgctxt "flashcard.ai.tutor-title"
+msgid "AI Tutor"
+msgstr ""
+
+#: src/components/flashcard/ActiveRecallQuiz.tsx:118
+msgctxt "flashcard.quiz.incorrect"
+msgid "Nice try! Flip the card to review the definition."
+msgstr ""
+
+#: src/components/AppOverlays.tsx:494
+msgctxt "shell.share.no-cards"
+msgid "This shared deck has no cards to add."
+msgstr ""
+
+#: src/components/AppOverlays.tsx:365
+msgctxt "shell.practice-menu.kicker"
+msgid "Practice"
+msgstr ""
+
+#: src/components/flashcard/CardFront.tsx:84
+#: src/components/flashcard/CardImage.tsx:58
+msgctxt "flashcard.image.unavailable"
+msgid "Image cue unavailable"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:602
+msgctxt "shell.share.copy-short"
+msgid "Copy"
+msgstr ""
+
+#: src/components/flashcard/CardBack.tsx:101
+msgctxt "flashcard.meaning.vietnamese"
+msgid "Vietnamese meaning"
+msgstr ""
+
+#: src/components/flashcard/CardBack.tsx:351
+msgctxt "flashcard.return-to-english"
+msgid "Return to English"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:291
+msgctxt "shell.share.incoming-kicker"
+msgid "Shared with you"
+msgstr ""
+
+#: src/components/flashcard/CardFront.tsx:212
+#: src/components/flashcard/CardFront.tsx:216
+msgctxt "flashcard.deck.choose"
+msgid "Choose deck"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:467
+msgctxt "shell.share.copy"
+msgid "Your copy"
+msgstr ""
+
+#: src/components/Flashcard.tsx:417
+#: src/components/flashcard/CardFront.tsx:291
+msgctxt "flashcard.cefr-level"
+msgid "CEFR {level}"
+msgstr ""
+
+#: src/components/Flashcard.tsx:487
+msgctxt "flashcard.details.collocations"
+msgid "Common Collocations"
+msgstr ""
+
+#: src/components/flashcard/CardFront.tsx:216
+msgctxt "flashcard.deck.description"
+msgid "Organise “{word}” without leaving the card."
+msgstr ""
+
+#: src/features/cardReport/ReportCardDialog.tsx:55
+msgctxt "cardReport.kicker"
+msgid "Card quality"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:375
+msgctxt "app-overlays.text-practice"
+msgid "Text practice ·"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:593
+msgctxt "shell.share.truncation"
+msgid "This link includes {shared} of {total} cards. Create smaller decks to share the rest."
+msgstr ""
+
+#: src/components/AppOverlays.tsx:483
+msgctxt "shell.share.no-translation"
+msgid "Translation not available"
+msgstr ""
+
+#: src/components/flashcard/ActiveRecallPrompt.tsx:146
+msgctxt "flashcard.recall.reveal"
+msgid "Reveal answer"
+msgstr ""
+
+#: src/components/flashcard/CardHeadword.tsx:43
+msgctxt "flashcard.part-of-speech-prefix"
+msgid "Part of speech:"
+msgstr ""
+
+#: src/components/flashcard/CardMnemonicSection.tsx:61
+msgctxt "flashcard.mnemonic.generating"
+msgid "Generating memory hint…"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:544
+msgctxt "shell.share.languages"
+msgid "Languages"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:405
+msgctxt "app-overlays.practise-your-vocabulary-in-a-bounded-text-conversation"
+msgid "Practise your vocabulary in a bounded text conversation."
+msgstr ""
+
+#: src/features/cardReport/ReportCardDialog.tsx:84
+msgctxt "cardReport.note.optional"
+msgid "optional"
+msgstr ""
+
+#: src/components/flashcard/CardFront.tsx:129
+msgctxt "flashcard.audio.listening"
+msgid "Listening"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:466
+msgctxt "shell.share.category"
+msgid "Category"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:471
+msgctxt "shell.share.words-inside"
+msgid "A few words inside"
+msgstr ""
+
+#: src/components/flashcard/CardBack.tsx:207
+msgctxt "flashcard.lexicon-context"
+msgid "Lexicon context"
+msgstr ""
+
+#: src/components/flashcard/CardAiAssistantModal.tsx:205
+msgctxt "flashcard.ai.question"
+msgid "Q:"
+msgstr ""
+
+#: src/components/flashcard/ActiveRecallPrompt.tsx:113
+msgctxt "flashcard.recall.answer"
+msgid "Your answer"
+msgstr ""
+
+#: src/components/Flashcard.tsx:463
+msgctxt "flashcard.details.example"
+msgid "Example in Context"
+msgstr ""
+
+#: src/components/flashcard/CardFront.tsx:115
+msgctxt "flashcard.status.due"
+msgid "Due for review"
+msgstr ""
+
+#: src/components/flashcard/CardFront.tsx:218
+msgctxt "flashcard.deck.unassigned"
+msgid "Unassigned"
+msgstr ""
+
+#: src/components/flashcard/CardAiAssistantModal.tsx:182
+msgctxt "flashcard.ai.quick-suggestions"
+msgid "Quick Suggestions"
+msgstr ""
+
+#: src/features/cardReport/ReportCardDialog.tsx:58
+msgctxt "cardReport.description"
+msgid "Reporting “{cardWord}”. The card content and your note will be sent to the operator for review."
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/study/ReviewControls.tsx:26
+msgid "review.again"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/study/ReviewControls.tsx:44
+msgid "review.easy"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/study/ReviewControls.tsx:38
+msgid "review.good"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/study/ReviewControls.tsx:32
+msgid "review.hard"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/study/ReviewControls.tsx:72
+msgid "review.prompt"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/study/ReviewControls.tsx:67
+msgid "review.reveal-before-rating"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/study/ReviewControls.tsx:71
+msgid "review.saved"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/study/ReviewControls.tsx:69
+msgid "review.saving"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/study/ReviewControls.tsx:77
+msgid "review.strength"
+msgstr ""
+
+#: src/components/flashcard/CardFront.tsx:110
+msgctxt "flashcard.status.new"
+msgid "New card"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:135
+msgctxt "shell.share.incoming-created"
+msgid "Shared on {date}"
+msgstr ""
+
+#: src/components/flashcard/CardFront.tsx:135
+msgctxt "flashcard.definition.hidden"
+msgid "Definition hidden"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:525
+msgctxt "shell.share.add-count"
+msgid "Add {count} cards"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:301
+msgctxt "shell.share.outgoing-description"
+msgid "Anyone with the link can preview this deck and copy it into their own library."
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:8
+msgid "shell.error-boundary.description.recovery"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:9
+msgid "shell.error-boundary.reload"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:10
+msgid "shell.error-boundary.report-issue"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:7
+msgid "shell.error-boundary.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:369
+msgid "shell.practice-menu.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:295
+#: src/components/AppOverlays.tsx:296
+#: src/components/AppOverlays.tsx:466
+#: src/components/AppOverlays.tsx:577
+msgid "shell.share.all-library"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:615
+msgid "shell.share.behavior"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:304
+msgid "shell.share.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:608
+msgid "shell.share.copy-failed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:601
+msgid "shell.share.copy-link"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:609
+msgid "shell.share.dismiss-copy-error"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:312
+#: src/components/AppOverlays.tsx:463
+msgid "shell.share.dismiss-error"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:291
+#: src/components/AppOverlays.tsx:296
+#: src/components/AppOverlays.tsx:308
+msgid "shell.share.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:600
+msgid "shell.share.link-input"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:475
+msgid "shell.share.sample-vocabulary"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:546
+msgid "shell.share.target-unspecified"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:546
+msgid "shell.share.translation-unspecified"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/ui/UndoToast.tsx:161
+msgid "shell.undo.dismiss"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:472
+msgctxt "shell.share.more-cards"
+msgid "+{count} more"
+msgstr ""
+
+#: src/components/Flashcard.tsx:351
+msgctxt "flashcard.card.meaning-revealed"
+msgid "Vietnamese meaning revealed"
+msgstr ""
+
+#: src/components/flashcard/CardBack.tsx:151
+msgctxt "flashcard.translating"
+msgid "Translating…"
+msgstr ""
+
+#: src/components/flashcard/CardBack.tsx:191
+msgctxt "flashcard.explore-more"
+msgid "Explore more"
+msgstr ""
+
+#: src/components/Flashcard.tsx:351
+msgctxt "flashcard.card.word-revealed"
+msgid "English word revealed"
+msgstr ""
+
+#: src/components/WorkspaceLoadingPanel.tsx:21
+msgctxt "shell.loading.workspace"
+msgid "Loading workspace…"
+msgstr ""
+
+#: src/components/flashcard/CardBack.tsx:153
+msgctxt "flashcard.translate-explanation"
+msgid "Translate explanation"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:404
+msgctxt "app-overlays.text-practice-mission"
+msgid "Text practice mission"
+msgstr ""
+
+#: src/components/Flashcard.tsx:366
+msgctxt "flashcard.delete.title"
+msgid "Delete “{word}”?"
+msgstr ""
+
+#: src/features/cardReport/ReportCardDialog.tsx:84
+msgctxt "cardReport.note.label"
+msgid "Note"
+msgstr ""
+
+#: src/components/Flashcard.tsx:404
+msgctxt "flashcard.details.vocabulary"
+msgid "Vocabulary"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:144
+msgctxt "shell.share.empty-description"
+msgid "Close this dialog and try opening the share link again."
+msgstr ""
+
+#: src/components/Flashcard.tsx:515
+msgctxt "flashcard.details.synonyms"
+msgid "Synonyms"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:525
+msgctxt "shell.share.add-none"
+msgid "No cards to add"
+msgstr ""
+
+#: src/components/flashcard/ActiveRecallQuiz.tsx:74
+msgctxt "flashcard.quiz.heading"
+msgid "Active Recall Quiz · Guess the Meaning"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:140
+msgctxt "shell.share.loading"
+msgid "Preparing the shared deck…"
+msgstr ""
+
+#: src/components/flashcard/CardBack.tsx:88
+#: src/components/flashcard/CardBack.tsx:280
+msgctxt "flashcard.language.vietnamese"
+msgid "Vietnamese"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:602
+msgctxt "shell.share.copied"
+msgid "Copied"
+msgstr ""
+
+#: src/features/cardReport/ReportCardDialog.tsx:73
+msgctxt "cardReport.reason.label"
+msgid "Reason"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:625
+msgctxt "shell.share.privacy-warning"
+msgid "Shared cards may include memory hooks and personal notes. Review them for private information before sharing."
+msgstr ""
+
+#: src/components/AppOverlays.tsx:467
+msgctxt "shell.share.copy-detail"
+msgid "New library deck"
+msgstr ""
+
+#: src/features/cardReport/ReportCardDialog.tsx:68
+msgctxt "cardReport.submitted"
+msgid "Thank you. Your report has been sent for review."
+msgstr ""
+
+#: src/components/flashcard/ActiveRecallQuiz.tsx:118
+msgctxt "flashcard.quiz.correct"
+msgid "Excellent! You recalled it accurately."
+msgstr ""
+
+#: src/components/flashcard/CardBack.tsx:126
+#: src/components/flashcard/CardBack.tsx:324
+msgctxt "flashcard.report"
+msgid "Report incorrect card"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:522
+msgctxt "shell.share.cancel"
+msgid "Cancel"
+msgstr ""
+
+#: src/features/cardReport/ReportCardDialog.tsx:56
+msgctxt "cardReport.title"
+msgid "Report a wrong card"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:144
+msgctxt "shell.share.empty-title"
+msgid "No shared deck to show"
+msgstr ""
+
+#: src/components/ui/UndoToast.tsx:168
+msgctxt "shell.undo.window"
+msgid "Undo is available for {seconds} seconds."
+msgstr ""
+
+#: src/components/flashcard/ActiveRecallPrompt.tsx:137
+msgctxt "flashcard.recall.incorrect"
+msgid "Not quite. Try again or reveal the answer to check."
+msgstr ""
+
+#: src/components/flashcard/ActiveRecallQuiz.tsx:130
+msgctxt "flashcard.quiz.flip-now"
+msgid "Flip card now"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:613
+msgctxt "shell.share.link-copied"
+msgid "Link copied"
+msgstr ""
+
+#: src/components/flashcard/ActiveRecallQuiz.tsx:77
+msgctxt "flashcard.quiz.select-option"
+msgid "Select 1 option"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:650
+msgctxt "shell.share.manage"
+msgid "Manage shared link"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:462
+msgctxt "shell.share.importing"
+msgid "Adding {count} cards to your new deck…"
+msgstr ""

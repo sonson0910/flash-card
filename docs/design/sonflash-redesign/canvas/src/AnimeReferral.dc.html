@@ -1,0 +1,128 @@
+<!--#AHEAD Crystal Star referral-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#ABG-->
+<!--#ANAV-->
+
+  <main style="position: relative; z-index: 3; flex-grow: 1; min-height: 0; padding: 22px 56px 30px; display: grid; grid-template-columns: 720px minmax(0, 1fr); gap: 50px;">
+    <section aria-labelledby="ref-title" style="display: flex; flex-direction: column;">
+      <span style="align-self: flex-start; height: 32px; padding: 0 16px; transform: skewX(-14deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; display: flex; align-items: center;"><span style="transform: skewX(14deg); display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13.5px; letter-spacing: 0.14em; color: #ffffff;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M16 11a4 4 0 1 0-8 0M4 21a8 8 0 0 1 16 0M19 8v6M22 11h-6"></path></svg>INVITE FRIENDS · PARTY UP</span></span>
+      <h1 id="ref-title" style="margin: 16px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 54px; line-height: 1.02; color: {{t.textStrong}};">GIVE 7 DAYS OF PRO,<br><span style="background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 16px rgb(255 42 77 / 0.6));">GET 7 DAYS BACK.</span></h1>
+      <p style="margin: 14px 0 0; max-width: 600px; font-size: 15.5px; line-height: 1.55; color: {{t.body}};">When a friend signs up with your link and finishes their first session, you both get a week of Pro — unlimited AI cards, tutor and streak repair.</p>
+
+      <div style="margin-top: 22px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.14em; color: {{t.text2}};">YOUR INVITE LINK</div>
+      <div style="margin-top: 8px; height: 56px; box-sizing: border-box; padding: 0 6px 0 18px; clip-path: {{t.chamfer}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1.5px {{t.holo}}; display: flex; align-items: center; gap: 10px;">
+        <span style="flex-grow: 1; font-family: {{t.fMono}}; font-size: 16px; color: {{t.text2}};">sonflash.app/i/<span style="font-weight: 700; color: {{t.textStrong}};">khanh-b7</span></span>
+        <button class="nk-lift" style="height: 44px; padding: 0 20px; border: 0; transform: skewX(-12deg); background: {{t.primaryBg}}; color: #ffffff; cursor: pointer;"><span style="display: flex; align-items: center; gap: 8px; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9h11v11H9zM5 15H4V4h11v1"></path></svg>COPY</span></button>
+      </div>
+      <div style="margin-top: 14px; display: flex; gap: 10px;">
+        <sc-for list="{{share}}" as="s" hint-placeholder-count="4">
+          <button class="nk-lift" style="height: 44px; padding: 0 16px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.textStrong}}; display: flex; align-items: center; gap: 10px; font-family: {{t.fBody}}; font-weight: 800; font-size: 14px; cursor: pointer;"><span style="width: 26px; height: 26px; transform: skewX(-10deg); background: {{s.bg}}; color: {{s.fg}}; display: flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{s.icon}}"></path></svg></span>{{s.label}}</button>
+        </sc-for>
+      </div>
+
+      <div style="margin-top: auto; position: relative; padding: 20px 26px 22px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}};">
+        <div style="display: flex; align-items: baseline; justify-content: space-between;">
+          <h2 style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; letter-spacing: 0.04em; color: {{t.textStrong}};">REWARD ROUTE</h2>
+          <span style="font-size: 14px; font-weight: 700; color: {{t.text2}};"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; color: {{t.crimsonText}};">2</span> friends joined · 1 more for a month</span>
+        </div>
+        <div style="position: relative; margin: 26px 20px 0; height: 56px;">
+          <div aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 50%; height: 10px; margin-top: -5px; transform: skewX(-30deg); background: {{t.track}};"></div>
+          <div aria-hidden="true" class="nk-bar" style="position: absolute; left: 0; width: 20%; top: 50%; height: 10px; margin-top: -5px; transform: skewX(-30deg); background: {{t.primaryBg}}; box-shadow: 0 0 14px rgb(255 42 77 / 0.6);"></div>
+          <sc-for list="{{miles}}" as="m" hint-placeholder-count="3">
+            <div style="position: absolute; left: {{m.x}}%; top: 0; width: 50px; height: 56px; margin-left: -25px; filter: {{m.glow}};">
+              <div style="position: absolute; inset: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{m.rim}};"></div>
+              <div style="position: absolute; inset: 3px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{m.fill}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 20px; color: {{m.fg}};">{{m.n}}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="position: relative; margin: 10px 20px 0; height: 44px;">
+          <sc-for list="{{miles}}" as="m" hint-placeholder-count="3">
+            <div style="position: absolute; left: {{m.x}}%; top: 0; width: 160px; margin-left: {{m.lx}}px; text-align: {{m.align}};">
+              <div style="font-weight: 900; font-size: 14.5px; color: {{m.titleColor}};">{{m.reward}}</div>
+              <div style="margin-top: 2px; font-size: 12.5px; color: {{t.text2}};">{{m.need}}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <aside aria-label="Invited friends" style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: flex-end; gap: 10px;">
+        <div class="nk-float" style="width: 130px; height: 128px; flex-shrink: 0;">
+<!--#MASCOT happy-->
+        </div>
+        <div style="position: relative; margin-bottom: 18px; flex-grow: 1; padding: 12px 16px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
+          <div style="margin-top: 3px; font-weight: 900; font-size: 15.5px; line-height: 1.35; color: {{t.textStrong}};">Rủ thêm 1 bạn nữa là cả nhóm lên 1 tháng Pro!</div>
+        </div>
+      </div>
+      <div style="position: relative; flex-grow: 1; min-height: 0; padding: 18px 20px 18px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h2 style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 20px; letter-spacing: 0.04em; color: {{t.textStrong}};">YOUR PARTY</h2>
+          <span style="height: 26px; padding: 0 10px; transform: skewX(-12deg); background: linear-gradient(180deg, #fff0b8, #ffd166); display: flex; align-items: center;"><span style="transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 12.5px; color: #4a2a00;">+14 DAYS EARNED</span></span>
+        </div>
+        <div role="list" style="margin-top: 10px; display: flex; flex-direction: column;">
+          <sc-for list="{{friends}}" as="f" hint-placeholder-count="5">
+            <div role="listitem" style="height: 58px; display: flex; align-items: center; gap: 12px; border-top: {{f.top}};">
+              <span style="width: 38px; height: 42px; flex-shrink: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{f.avatar}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; color: #ffffff;">{{f.init}}</span>
+              <div style="flex-grow: 1; min-width: 0;">
+                <div style="font-weight: 900; font-size: 14.5px; color: {{t.textStrong}};">{{f.name}}</div>
+                <div style="font-size: 12.5px; color: {{t.text2}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{f.sub}}</div>
+              </div>
+              <span style="height: 24px; padding: 0 10px; transform: skewX(-12deg); background: {{f.bg}}; box-shadow: inset 0 0 0 1px {{f.line}}; display: flex; align-items: center;"><span style="transform: skewX(12deg); display: flex; align-items: center; gap: 6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.06em; color: {{f.fg}};"><span style="width: 6px; height: 6px; transform: rotate(45deg); background: currentColor;"></span>{{f.state}}</span></span>
+            </div>
+          </sc-for>
+        </div>
+        <button class="nk-lift" style="margin-top: auto; height: 46px; border: 0; transform: skewX(-12deg); background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; color: {{t.holoText}}; cursor: pointer;"><span style="display: block; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px;">NUDGE PENDING FRIENDS</span></button>
+      </div>
+      <p style="margin: 0; font-size: 12px; line-height: 1.5; color: {{t.text3}};">Rewards unlock when your friend verifies their email and completes one study session. Up to 10 rewarded invites per year. Pro days stack on top of any plan you already have.</p>
+    </aside>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const miles = [
+      { n: 1, x: 0, reward: '7 days of Pro', need: '1 friend · earned', on: true, lx: -20, align: 'left' },
+      { n: 3, x: 40, reward: '1 month of Pro', need: '3 friends', on: false, lx: -80, align: 'center' },
+      { n: 10, x: 100, reward: '1 year of Pro', need: '10 friends', on: false, lx: -140, align: 'right' },
+    ].map((m) => ({
+      ...m,
+      rim: m.on ? t.tier.mastered.rim : m.n === 10 ? 'linear-gradient(180deg, #fff0b8, #ffd166)' : t.lineStrong,
+      fill: m.on ? t.primaryBg : t.panelSolid,
+      fg: m.on ? '#ffffff' : m.n === 10 ? t.goldText : t.text2,
+      glow: m.on ? 'drop-shadow(0 0 12px rgb(255 42 77 / 0.8))' : 'none',
+      titleColor: m.on ? t.textStrong : t.text,
+    }));
+    const S = (state) => state === 'STUDYING'
+      ? { fg: t.holoText, bg: dark ? 'rgb(94 242 255 / 0.12)' : 'rgb(10 125 153 / 0.1)', line: t.panelEdge2 }
+      : state === 'JOINED' ? { fg: t.goldText, bg: dark ? 'rgb(255 209 102 / 0.12)' : 'rgb(138 90 0 / 0.08)', line: 'rgb(255 209 102 / 0.5)' } : { fg: t.text2, bg: 'transparent', line: t.lineStrong };
+    const av = ['linear-gradient(160deg, #ff5470, #b30f33)', 'linear-gradient(160deg, #5ef2ff, #1a6fb0)', 'linear-gradient(160deg, #ffd166, #e07a1f)'];
+    const friends = [
+      ['Minh Anh', 'MA', 'STUDYING', '9-day streak · you both got 7 days'],
+      ['Tuấn', 'TN', 'STUDYING', 'Joined 12 Sep · 7 days each'],
+      ['Linh Phạm', 'LP', 'JOINED', 'Signed up · first session pending'],
+      ['hoa.ng@…', 'H', 'PENDING', 'Invited 2 days ago'],
+      ['Quang', 'Q', 'PENDING', 'Link opened · not signed up'],
+    ].map(([name, init, state, sub], i) => ({ name, init, state, sub, ...S(state), avatar: av[i % 3], top: i ? '1px solid ' + t.line : '0' }));
+    return {
+      t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      nav: nkNav(t, -1), streak: 12,
+      bg: { wings: true },
+      miles, friends,
+      share: [
+        { label: 'Zalo', icon: 'M4 5h16v11H9l-5 4zM8 9h5l-5 4h5', bg: '#0068ff', fg: '#ffffff' },
+        { label: 'Messenger', icon: 'M12 3C7 3 3 6.7 3 11.3c0 2.6 1.3 4.9 3.3 6.4V21l3-1.7c.9.3 1.8.4 2.7.4 5 0 9-3.7 9-8.3S17 3 12 3zM7 13l3.5-3.5 2.5 2 3.5-2L13 13l-2.5-2z', bg: 'linear-gradient(45deg, #0099ff, #ff5280)', fg: '#ffffff' },
+        { label: 'Facebook', icon: 'M15 3h-2a4 4 0 0 0-4 4v3H6v4h3v7h4v-7h3l1-4h-4V7a1 1 0 0 1 1-1h2z', bg: '#1877f2', fg: '#ffffff' },
+        { label: 'Email', icon: 'M3 5h18v14H3zM3 6l9 7 9-7', bg: t.primaryBg, fg: '#ffffff' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

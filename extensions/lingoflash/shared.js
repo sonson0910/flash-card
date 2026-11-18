@@ -6,6 +6,8 @@
   const IMPORT_HASH_KEY = 'lf-import';
   const MAX_TEXT_LENGTH = 80;
   const MAX_CONTEXT_LENGTH = 500;
+  const MAX_SOURCE_URL_LENGTH = 2048;
+  const MAX_PAGE_TITLE_LENGTH = 256;
   const IMPORT_PROTOCOL_VERSION = 3;
   const IMPORT_PROTOCOL_V3 = 3;
   const MAX_ENCODED_IMPORT_LENGTH = 2048;
@@ -15,12 +17,32 @@
   const DECK_METADATA_STORAGE_KEY = 'lingoflash_extension_deck_metadata';
   const DECK_METADATA_GENERATION_STORAGE_KEY = 'lingoflash_extension_deck_metadata_generation';
   const DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY = 'lingoflash_extension_deck_retired_scopes';
+  // Due count follows the exact same session-only, scope-retirement pattern as
+  // deck metadata: it is real study state synced from the signed-in app, never
+  // fabricated, and must not leak a previous account's number after
+  // reconnect/account switch (07.6).
+  const DUE_COUNT_STORAGE_KEY = 'lingoflash_extension_due_count';
+  const DUE_COUNT_RETIRED_SCOPES_STORAGE_KEY = 'lingoflash_extension_due_count_retired_scopes';
+  const MAX_DUE_COUNT = 9_999;
+  // Course locale follows the exact same session-only, scope-retirement
+  // pattern as deck metadata and due count: it is real course state synced
+  // from the signed-in app, never fabricated, and must not leak a previous
+  // account's language pair after reconnect/account switch (07.5). The two
+  // lists below duplicate `COURSE_TARGET_LANGUAGES`/`COURSE_NATIVE_LANGUAGES`
+  // from functions/src/course-profile-contract.ts; this file has no module
+  // system to import from it, so keep both lists in sync with that contract.
+  const COURSE_LOCALE_STORAGE_KEY = 'lingoflash_extension_course_locale';
+  const COURSE_LOCALE_RETIRED_SCOPES_STORAGE_KEY = 'lingoflash_extension_course_locale_retired_scopes';
+  const COURSE_TARGET_LANGUAGES = ['en', 'ko', 'ja', 'zh'];
+  const COURSE_NATIVE_LANGUAGES = ['vi', 'en'];
   const MAX_DECKS = 100;
   const MAX_DECK_NAME_LENGTH = 128;
   const MAX_DECK_SCOPE_LENGTH = 128;
   const MAX_SELECTION_ICON_SITES = 100;
   const MAX_RECENT_LOOKUPS = 10;
   const RECENT_LOOKUP_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+  const THEME_FAMILIES = ['classic', 'crystal'];
+  const COLOR_SCHEMES = ['system', 'dark', 'light'];
   const DEFAULT_SETTINGS = Object.freeze({
     autoSpeak: false,
     bubbleDurationMs: 12_000,
@@ -28,6 +50,11 @@
     quickTranslateSource: 'auto',
     quickTranslateTarget: 'vi',
     selectionIconSites: [],
+    // Appearance mirrors the app's Classic/Crystal Star theme families so the
+    // extension can move onto the same Canvas boards in both (07.1). Purely a
+    // local display preference; never sent anywhere.
+    themeFamily: 'classic',
+    colorScheme: 'system',
   });
 
   const promiseExtensionApi = globalThis.browser ?? null;
@@ -92,6 +119,30 @@
     .trim();
 
   const normalizeContext = value => normalizeSelectedText(value).slice(0, MAX_CONTEXT_LENGTH);
+  const boundedPageTitle = value => normalizeSelectedText(value).slice(0, MAX_PAGE_TITLE_LENGTH);
+
+  // Strip credentials, the query string, and the fragment before this URL
+  // ever leaves the page/worker context. Query and fragment routinely carry
+  // session tokens, auth codes, or tracking identifiers with no value for
+  // "which page did this word come from" but real privacy exposure; origin +
+  // pathname is enough to recognize or revisit the page. http/https only.
+  // The server (`parseCardSourceMetadata`) re-applies the exact same rule, so
+  // this is the write-side sanitization, not the only line of defense.
+  const sanitizeSourceUrl = value => {
+    if (typeof value !== 'string' || !value || value.length > MAX_SOURCE_URL_LENGTH) return '';
+    try {
+      const url = new URL(value);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
+      url.username = '';
+      url.password = '';
+      url.search = '';
+      url.hash = '';
+      const serialized = url.toString();
+      return serialized.length <= MAX_SOURCE_URL_LENGTH ? serialized : '';
+    } catch {
+      return '';
+    }
+  };
 
   const selectionValidation = value => {
     const text = normalizeSelectedText(value);
@@ -124,6 +175,8 @@
       quickTranslateSource: candidate.quickTranslateSource === 'en' ? 'en' : DEFAULT_SETTINGS.quickTranslateSource,
       quickTranslateTarget: candidate.quickTranslateTarget === 'vi' ? 'vi' : DEFAULT_SETTINGS.quickTranslateTarget,
       selectionIconSites: normalizeSelectionIconSites(candidate.selectionIconSites),
+      themeFamily: THEME_FAMILIES.includes(candidate.themeFamily) ? candidate.themeFamily : DEFAULT_SETTINGS.themeFamily,
+      colorScheme: COLOR_SCHEMES.includes(candidate.colorScheme) ? candidate.colorScheme : DEFAULT_SETTINGS.colorScheme,
     };
   };
 
@@ -457,6 +510,252 @@
     return [...seen].reverse();
   };
 
+  const normalizeDueCount = value => Number.isSafeInteger(value) && value >= 0
+    ? Math.min(value, MAX_DUE_COUNT)
+    : null;
+
+  const normalizeDueCountMetadata = value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const scope = normalizeDeckScope(value.scope);
+    const count = normalizeDueCount(value.count);
+    if (!scope || count === null) return null;
+    return { scope, count };
+  };
+
+  // Reuses the deck-metadata retirement pattern so a due count synced under a
+  // previous scope can never resurface after reconnect/account switch.
+  const normalizeRetiredDueCountScopes = normalizeRetiredDeckScopes;
+
+  const normalizeCourseTargetLanguage = value => COURSE_TARGET_LANGUAGES.includes(value) ? value : '';
+  const normalizeCourseNativeLanguage = value => COURSE_NATIVE_LANGUAGES.includes(value) ? value : '';
+
+  const normalizeCourseLocaleMetadata = value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const scope = normalizeDeckScope(value.scope);
+    const nativeLanguage = normalizeCourseNativeLanguage(value.nativeLanguage);
+    const targetLanguage = normalizeCourseTargetLanguage(value.targetLanguage);
+    if (!scope || !nativeLanguage || !targetLanguage) return null;
+    return { scope, nativeLanguage, targetLanguage };
+  };
+
+  // Reuses the deck-metadata retirement pattern so a course locale synced
+  // under a previous scope can never resurface after reconnect/account switch.
+  const normalizeRetiredCourseLocaleScopes = normalizeRetiredDeckScopes;
+
+  // Applies data-i18n* attributes to a static document. Every localizable
+  // element ships its default_locale (vi) copy directly in the markup so the
+  // page is correct even before this runs; this only upgrades it when the
+  // browser's i18n runtime resolves a different UI language (en).
+  // Only writes back when the resolved text actually differs from the
+  // shipped default_locale copy already in the DOM. This keeps rich markup
+  // (e.g. <strong> emphasis) intact for the vi default and for any test/dev
+  // context without a real i18n runtime, while still fully replacing text
+  // (flattening inline markup, an accepted trade-off) when the browser's UI
+  // language resolves a different message.
+  const localizeIfChanged = (current, resolved, apply) => { if (resolved !== current) apply(resolved); };
+  const localizeElement = element => {
+    const dataset = element?.dataset;
+    if (!dataset) return;
+    if (dataset.i18n) {
+      const current = element.textContent;
+      localizeIfChanged(current, t(dataset.i18n, undefined, current), value => { element.textContent = value; });
+    }
+    if (dataset.i18nAriaLabel) {
+      const current = element.getAttribute('aria-label') || '';
+      localizeIfChanged(current, t(dataset.i18nAriaLabel, undefined, current), value => element.setAttribute('aria-label', value));
+    }
+    if (dataset.i18nPlaceholder && 'placeholder' in element) {
+      const current = element.placeholder || '';
+      localizeIfChanged(current, t(dataset.i18nPlaceholder, undefined, current), value => { element.placeholder = value; });
+    }
+    if (dataset.i18nTitle) {
+      const current = element.title || '';
+      localizeIfChanged(current, t(dataset.i18nTitle, undefined, current), value => { element.title = value; });
+    }
+  };
+  // Applies the saved colorScheme (system/dark/light) as a data-scheme
+  // attribute design-tokens.css reads. "system" removes any override so the
+  // prefers-color-scheme media query in design-tokens.css decides.
+  const applyColorScheme = scheme => {
+    const root = globalThis.document?.documentElement;
+    if (!root?.setAttribute) return;
+    if (scheme === 'dark' || scheme === 'light') root.setAttribute('data-scheme', scheme);
+    else root.removeAttribute('data-scheme');
+  };
+
+  // Sets documentElement[data-theme-family] so design-tokens.css can scope its
+  // Crystal Star variable block independently of the light/dark data-scheme
+  // attribute above. Always writes a bounded value, defaulting to classic for
+  // anything outside THEME_FAMILIES.
+  const applyThemeFamily = family => {
+    const root = globalThis.document?.documentElement;
+    if (!root?.setAttribute) return;
+    root.setAttribute('data-theme-family', THEME_FAMILIES.includes(family) ? family : 'classic');
+  };
+
+  const localizeDocument = (root = globalThis.document) => {
+    if (typeof root?.querySelectorAll !== 'function') return;
+    root.querySelectorAll('[data-i18n],[data-i18n-aria-label],[data-i18n-placeholder],[data-i18n-title]').forEach(localizeElement);
+  };
+
+  const i18nApi = () => (globalThis.browser ?? globalThis.chrome)?.i18n ?? null;
+
+  // Set only by `applyCourseUiLocale` below, once a fetched `_locales/{locale}
+  // /messages.json` catalog is ready. `t()` prefers this catalog over the
+  // browser's own UI locale so the popup/options UI can follow the active
+  // course's native language (07.5) without needing a page reload.
+  let localeOverrideCatalog = null;
+  let activeCourseTargetLanguage = '';
+  let courseLocaleMetadataGeneration = 0;
+  let courseLocaleMetadataScope = '';
+  let metadataInvalidationEpoch = 0;
+  const invalidatedCourseLocaleScopes = new Map();
+  let minimumValidCourseLocaleGeneration = 0;
+
+  const normalizeMetadataGeneration = value => Number.isSafeInteger(value) && value > 0 ? value : 0;
+  const normalizeMetadataScope = value => normalizeDeckScope(value);
+  const clearCourseLocaleState = () => {
+    localeOverrideCatalog = null;
+    activeCourseTargetLanguage = '';
+    courseLocaleMetadataGeneration = 0;
+    courseLocaleMetadataScope = '';
+  };
+
+  const courseLocaleResponseIsInvalidated = (generation, scope) => {
+    if (!generation) return false;
+    if (generation < minimumValidCourseLocaleGeneration) return true;
+    const invalidatedScopes = invalidatedCourseLocaleScopes.get(generation);
+    return Boolean(invalidatedScopes?.has('*') || (scope && invalidatedScopes?.has(scope)));
+  };
+
+  // Background retirement messages carry the provider generation and the
+  // retired scope for each channel. A lower generation, or a same-generation
+  // message for a different scope, must never clear a newer popup state.
+  const invalidateExtensionMetadata = message => {
+    if (!message || typeof message !== 'object' || Array.isArray(message)) return false;
+    const generation = normalizeMetadataGeneration(message.generation);
+    const scopes = message.scopes;
+    if (!generation || !scopes || typeof scopes !== 'object' || Array.isArray(scopes)
+      || !Object.prototype.hasOwnProperty.call(scopes, 'locale')) return false;
+    const scope = normalizeMetadataScope(scopes.locale);
+    const currentStateIsNewer = courseLocaleMetadataGeneration > generation
+      || (courseLocaleMetadataGeneration === generation
+        && courseLocaleMetadataScope && scope && courseLocaleMetadataScope !== scope);
+    metadataInvalidationEpoch += 1;
+    minimumValidCourseLocaleGeneration = Math.max(minimumValidCourseLocaleGeneration, generation);
+    const invalidatedScopes = invalidatedCourseLocaleScopes.get(generation) || new Set();
+    invalidatedScopes.add(scope || '*');
+    invalidatedCourseLocaleScopes.set(generation, invalidatedScopes);
+    if (currentStateIsNewer) return false;
+    const shouldClear = generation > courseLocaleMetadataGeneration
+      || !courseLocaleMetadataScope
+      || !scope
+      || courseLocaleMetadataScope === scope;
+    if (shouldClear) clearCourseLocaleState();
+    return shouldClear;
+  };
+
+  // Chrome's own `chrome.i18n.getMessage` resolves `$NAME$` placeholders
+  // against a message's declared `placeholders` map itself; this reimplements
+  // that same substitution so a manually fetched catalog behaves identically.
+  const applyMessageCatalogSubstitutions = (template, placeholders, substitutions) => {
+    if (!placeholders || typeof placeholders !== 'object') return template;
+    const args = substitutions === undefined || substitutions === null
+      ? []
+      : Array.isArray(substitutions) ? substitutions : [substitutions];
+    let result = template;
+    for (const [name, definition] of Object.entries(placeholders)) {
+      const content = String(definition?.content ?? '');
+      const positional = content.match(/^\$(\d)$/);
+      const resolved = positional ? String(args[Number(positional[1]) - 1] ?? '') : content;
+      result = result.replaceAll(new RegExp(`\\$${name}\\$`, 'gi'), resolved);
+    }
+    return result;
+  };
+
+  // Fetches this extension's own bundled `_locales/{locale}/messages.json`.
+  // Always a request for a file the extension ships itself, never a network
+  // call to a third party. Returns null on any failure so the caller safely
+  // keeps today's Chrome-i18n-resolved locale.
+  const loadLocaleMessageCatalog = async locale => {
+    try {
+      const url = extensionApi?.runtime?.getURL?.(`_locales/${locale}/messages.json`);
+      if (!url || typeof fetch !== 'function') return null;
+      const response = await fetch(url);
+      if (!response?.ok) return null;
+      const data = await response.json();
+      return data && typeof data === 'object' && !Array.isArray(data) ? data : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Overrides t()'s message source with the active course's native language,
+  // when the app has told the extension about a signed-in owner's active
+  // course (07.5, GET_COURSE_LOCALE). Returns false — no catalog fetched, no
+  // override applied, today's Chrome-i18n behavior kept exactly as-is —
+  // whenever there is no confirmed course locale, or it already matches the
+  // browser's own resolved UI language.
+  const applyCourseUiLocale = async () => {
+    const requestEpoch = metadataInvalidationEpoch;
+    try {
+      const response = await apiCall(extensionApi.runtime, 'sendMessage', { type: 'GET_COURSE_LOCALE' });
+      const generation = normalizeMetadataGeneration(response?.generation);
+      const scope = normalizeMetadataScope(response?.scope);
+      if ((!generation && requestEpoch !== metadataInvalidationEpoch)
+        || courseLocaleResponseIsInvalidated(generation, scope)) return false;
+      if (generation && courseLocaleMetadataGeneration > generation) return false;
+      if (generation && courseLocaleMetadataGeneration === generation
+        && courseLocaleMetadataScope && scope && courseLocaleMetadataScope !== scope) return false;
+      const nativeLanguage = response?.ok ? normalizeCourseNativeLanguage(response.nativeLanguage) : '';
+      activeCourseTargetLanguage = response?.ok ? normalizeCourseTargetLanguage(response.targetLanguage) : '';
+      if (!nativeLanguage) {
+        localeOverrideCatalog = null;
+        courseLocaleMetadataGeneration = generation;
+        courseLocaleMetadataScope = scope;
+        return false;
+      }
+      const uiLanguage = String(i18nApi()?.getUILanguage?.() || '').toLowerCase().split('-')[0];
+      if (uiLanguage === nativeLanguage) {
+        localeOverrideCatalog = null;
+        courseLocaleMetadataGeneration = generation;
+        courseLocaleMetadataScope = scope;
+        return false;
+      }
+      const catalog = await loadLocaleMessageCatalog(nativeLanguage);
+      if (!catalog
+        || (!generation && requestEpoch !== metadataInvalidationEpoch)
+        || courseLocaleResponseIsInvalidated(generation, scope)) return false;
+      localeOverrideCatalog = catalog;
+      courseLocaleMetadataGeneration = generation;
+      courseLocaleMetadataScope = scope;
+      return true;
+    } catch {
+      clearCourseLocaleState();
+      return false;
+    }
+  };
+
+  const getActiveCourseTargetLanguage = () => activeCourseTargetLanguage;
+
+  // Chrome/Firefox resolve getMessage() against the browser's own UI locale
+  // automatically; outside a real extension runtime (unit tests, Node) this
+  // safely degrades to the caller-supplied fallback so behavior never regresses.
+  const t = (name, substitutions, fallback = '') => {
+    if (localeOverrideCatalog) {
+      const entry = localeOverrideCatalog[name];
+      if (entry && typeof entry.message === 'string' && entry.message) {
+        return applyMessageCatalogSubstitutions(entry.message, entry.placeholders, substitutions);
+      }
+    }
+    try {
+      const resolved = i18nApi()?.getMessage(name, substitutions);
+      return typeof resolved === 'string' && resolved ? resolved : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
   const recentLookupKey = value => `${value.text.toLocaleLowerCase()}::${value.sourceLanguage}->${value.targetLanguage}`;
 
   const readRecentLookupsUnlocked = async () => {
@@ -518,10 +817,19 @@
     MAX_ENCODED_IMPORT_LENGTH,
     MAX_TEXT_LENGTH,
     MAX_CONTEXT_LENGTH,
+    MAX_SOURCE_URL_LENGTH,
+    MAX_PAGE_TITLE_LENGTH,
     SETTINGS_STORAGE_KEY,
     DECK_METADATA_STORAGE_KEY,
     DECK_METADATA_GENERATION_STORAGE_KEY,
     DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY,
+    DUE_COUNT_STORAGE_KEY,
+    DUE_COUNT_RETIRED_SCOPES_STORAGE_KEY,
+    MAX_DUE_COUNT,
+    COURSE_LOCALE_STORAGE_KEY,
+    COURSE_LOCALE_RETIRED_SCOPES_STORAGE_KEY,
+    COURSE_TARGET_LANGUAGES,
+    COURSE_NATIVE_LANGUAGES,
     MAX_DECKS,
     MAX_DECK_NAME_LENGTH,
     MAX_DECK_SCOPE_LENGTH,
@@ -529,6 +837,8 @@
     RECENT_LOOKUPS_STORAGE_KEY,
     MAX_RECENT_LOOKUPS,
     RECENT_LOOKUP_TTL_MS,
+    THEME_FAMILIES,
+    COLOR_SCHEMES,
     DEFAULT_SETTINGS,
     extensionApi,
     transientStorage,
@@ -538,6 +848,8 @@
     deckMetadataStorage,
     normalizeSelectedText,
     normalizeContext,
+    boundedPageTitle,
+    sanitizeSourceUrl,
     selectionValidation,
     normalizeSettings,
     normalizeSelectionIconSites,
@@ -552,6 +864,20 @@
     normalizeDeckCollection,
     normalizeDeckMetadata,
     normalizeRetiredDeckScopes,
+    normalizeDueCount,
+    normalizeDueCountMetadata,
+    normalizeRetiredDueCountScopes,
+    normalizeCourseTargetLanguage,
+    normalizeCourseNativeLanguage,
+    normalizeCourseLocaleMetadata,
+    normalizeRetiredCourseLocaleScopes,
+    t,
+    localizeDocument,
+    applyColorScheme,
+    applyThemeFamily,
+    applyCourseUiLocale,
+    invalidateExtensionMetadata,
+    getActiveCourseTargetLanguage,
     readRecentLookups,
     recordRecentLookup,
     clearRecentLookups,

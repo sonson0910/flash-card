@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-18T03:28:51.989030+00:00",
+  "parentRevision": "e7ab08e418ae1efcae0097afd262a652fa822f07",
+  "problem": "A retained sealed candidate with Firebase CLI15.29.0 cannot satisfy a workflow that installs its historical CLI then requires15.34.0.",
+  "repair": "Use immutable protected workflow checkout and its approved locked CLI, while keeping candidate components and Functions runtime lockfile sealed.",
+  "sourceSha256": {
+    ".github/workflows/deploy-production.yml": "5e46a926dd77c9220eb48001d732e7bca92021f91d51ce58d8e83fce8b5fc042",
+    ".github/workflows/deploy-firestore-rules.yml": "0048b77746918c580aabcb4156add85d2d4b20e9e590a70ed519bcf8de693083",
+    ".github/workflows/deploy-staging.yml": "50335079f371ef2329d088a0c85a1a482f27658b41599a20e942db0e9d9a524a",
+    "scripts/release-workflows.test.mjs": "f9aee1f9fad82c57d0cfd8592df676dc38ba2c0a8714dff830fd52136cd7387d",
+    "docs/runbooks/phase-6-rollout.md": "e970a2aa46fea1d76d55f5e320302200db98cbb09a5f3c362899f78b749e90da"
+  },
+  "retainedCandidate": {
+    "revision": "b715d7f94e0d454d16b590c03c078ac8fc452617",
+    "runId": 35717524621,
+    "candidateSha256": "0db5c2d86ae751427f9493ac1eac88110264e1fc0f7bea78d1d05957508ee5d0",
+    "sealedCliVersion": "15.29.0",
+    "unexpired": true,
+    "currentCanonicalStagingVerification": "passed",
+    "liveStagingDeployment": "pending"
+  },
+  "checks": {
+    "regressionBeforeRepair": {
+      "status": "failed",
+      "tests": 1,
+      "reason": "deployment checkout selects the retained candidate revision rather than the protected workflow revision"
+    },
+    "focusedFinal": {
+      "status": "passed",
+      "files": 6,
+      "passed": 74,
+      "failed": 0,
+      "pending": 0,
+      "durationMs": 2285.939697265625,
+      "suites": 12
+    },
+    "lintTypecheck": "passed",
+    "approvedLocalCliVersion": "15.34.0",
+    "yamlAndBashSyntax": {
+      "status": "passed",
+      "files": 3,
+      "bashSteps": 50
+    },
+    "diffCheck": "passed"
+  },
+  "preserved": [
+    "default-branch and ancestor constraints",
+    "candidate and archive provenance/component digests",
+    "protected targets, approvals, nonce/expiry and credentials",
+    "Functions runtime dependency provenance",
+    "target-specific deploy order and no rebuild hooks"
+  ],
+  "limitations": [
+    "Broader first attempt used the wrong Node runner for four Vitest-only files and failed setup; not PASS. Final six-file Vitest run passes74.",
+    "First repair pass had33PASS/4FAIL in static workflow assertions; corrected quoted-binary assertions and YAML scalar syntax before final checks.",
+    "Main-agent scoped two-pass review; no independent review claimed.",
+    "Exact-head required CI, protected staging/rollback execution and full release remain pending."
+  ]
+}

@@ -2,7 +2,12 @@ import { randomUUID } from 'node:crypto';
 import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { applyLibraryFacetMutation, libraryFacetV2OperationId } from '../src/libraryFacetPersistence.js';
+import { canonicalCard, createCardForOwner } from '../src/cardPersistence.js';
+import {
+  applyLibraryFacetMutation,
+  libraryFacetRestoreOperationId,
+  libraryFacetV2OperationId,
+} from '../src/libraryFacetPersistence.js';
 
 const describeWithEmulator = process.env.FIRESTORE_EMULATOR_HOST ? describe : describe.skip;
 const DATABASE_ID = 'ai-studio-945b4052-4462-4668-8936-277f09f07a37';
@@ -43,6 +48,83 @@ describeWithEmulator('Firestore library facet receipts', () => {
     });
     expect((await owner.collection('library_facet_receipts').doc(request.opId).get()).data()).toMatchObject({
       fingerprint: expect.any(String), result: { categories: { IELTS: 1 }, complete: false },
+    });
+  });
+
+  it('creates a restored card and increments its canonical category facet exactly once', async () => {
+    const ownerId = `facet-restore-${randomUUID()}`;
+    const owner = database.collection('users').doc(ownerId);
+    const operationCreatedAt = new Date().toISOString();
+    const opId = `restore-${randomUUID()}`;
+    const deletedAt = new Date(Date.parse(operationCreatedAt) - 60_000).toISOString();
+    const originalCreatedAt = new Date(Date.parse(deletedAt) - 60_000).toISOString();
+    await owner.collection('profile').doc('library_state').set({ libraryEpoch: 0 });
+    await owner.collection('profile').doc('resource_usage').set({ schemaVersion: 1, cardCount: 0 });
+    await owner.collection('profile').doc('library_facets').set({
+      categories: { Basics: 2 }, complete: true, version: 1, updatedAt: operationCreatedAt,
+    });
+
+    const card = {
+      id: 'untrusted-id',
+      word: 'Restore sample',
+      normalizedWord: 'restore sample',
+      translation: 'mẫu khôi phục',
+      explanation: 'A test restore.',
+      explanationTranslation: 'Bản khôi phục thử nghiệm.',
+      phonetic: '/test/',
+      category: 'Basics',
+      emoji: '📝',
+      audioUrl: null,
+      imageUrl: null,
+      imageSearchQuery: '',
+      bookmarked: false,
+      difficulty: 'unrated',
+      customDeck: null,
+      reviews: 0,
+      interval: 0,
+      easeFactor: 2.5,
+      correctStreak: 0,
+      partOfSpeech: 'noun',
+      cefrLevel: 'A1',
+      exampleSentence: 'A restore sample.',
+      exampleTranslation: 'Một mẫu khôi phục.',
+      collocations: [],
+      synonyms: [],
+      antonyms: [],
+      register: '',
+      commonMistake: '',
+      reviewHistory: [],
+      createdAt: originalCreatedAt,
+    };
+    const canonical = canonicalCard(card);
+    await owner.collection('card_tombstones').doc(String(canonical.id)).set({
+      cardId: canonical.id,
+      opId: `delete-${randomUUID()}`,
+      libraryEpoch: 0,
+      revision: 1,
+      deletedAt,
+    });
+    const options = {
+      maximumCards: 5,
+      libraryEpoch: 0,
+      baseRevision: 0,
+      opId,
+      operationCreatedAt,
+      restore: true as const,
+    };
+
+    await expect(createCardForOwner(database, ownerId, card, options))
+      .resolves.toMatchObject({ created: true, restored: true });
+    await expect(createCardForOwner(database, ownerId, card, options))
+      .resolves.toMatchObject({ created: false });
+
+    expect((await owner.collection('profile').doc('library_facets').get()).data()).toMatchObject({
+      categories: { Basics: 3 }, complete: true, version: 1,
+    });
+    const facetOperationId = libraryFacetRestoreOperationId(opId, operationCreatedAt);
+    expect((await owner.collection('library_facet_receipts').doc(facetOperationId).get()).data()).toMatchObject({
+      opId: facetOperationId,
+      result: { categories: { Basics: 3 }, complete: true },
     });
   });
 });

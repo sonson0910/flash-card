@@ -13,9 +13,11 @@ interface LibraryExportOptions {
 }
 
 interface PreparedSpreadsheet {
-  xlsx: typeof import('@e965/xlsx');
-  workbook: ReturnType<typeof import('@e965/xlsx')['utils']['book_new']>;
+  xlsx: typeof import('@e965/xlsx/dist/xlsx.mini.min');
+  workbook: ReturnType<typeof import('@e965/xlsx/dist/xlsx.mini.min')['utils']['book_new']>;
 }
+
+type XlsxMiniModule = typeof import('@e965/xlsx/dist/xlsx.mini.min');
 
 export function useLibraryExport(options: LibraryExportOptions) {
   const contextRef = useRef({ ...options, generation: 0 });
@@ -35,7 +37,8 @@ export function useLibraryExport(options: LibraryExportOptions) {
         return context.ownerId && !loaded ? null : loaded ?? context.cards;
       },
       prepare: async cards => {
-        const xlsx = await import('@e965/xlsx');
+        const module = await import('@e965/xlsx/dist/xlsx.mini.min') as XlsxMiniModule & { default?: XlsxMiniModule };
+        const xlsx = module.default ?? module;
         const worksheet = xlsx.utils.json_to_sheet(cardsToSpreadsheetRows([...cards]));
         const workbook = xlsx.utils.book_new();
         xlsx.utils.book_append_sheet(workbook, worksheet, 'Flashcards');

@@ -7,6 +7,7 @@ import {
   normalizeCardOperationId,
   prepareCardForCreate,
 } from './cardMutationProtocol';
+import { createLexemeId } from '../features/multilingual/lexemeIdentity';
 
 const card: CardData = {
   id: 'word-quite',
@@ -32,6 +33,40 @@ describe('card mutation protocol', () => {
     });
   });
 
+  it('allows a plain target language without requiring a canonical lexeme tuple', () => {
+    const korean = prepareCardForCreate({
+      ...card,
+      language: 'ko',
+      translationLanguage: 'vi',
+    });
+
+    expect(korean).toMatchObject({ language: 'ko', translationLanguage: 'vi', schemaVersion: 2, revision: 1 });
+    expect(() => prepareCardForCreate({ ...card, lexemeId: 'partial', language: 'ko' })).toThrow(/identity is incomplete/i);
+    expect(() => prepareCardForCreate({ ...card, language: 'ko', senseKey: 'metal' })).toThrow(/identity is incomplete/i);
+    expect(() => prepareCardForCreate({ ...card, language: 'ko', normalizedLemma: 'lead' })).toThrow(/identity is incomplete/i);
+  });
+
+  it('accepts a complete canonical tuple without translation metadata and keeps translation language immutable', () => {
+    const lexemeId = createLexemeId({
+      language: 'ko', normalizedLemma: 'lead', partOfSpeech: 'noun', senseKey: 'metal',
+    });
+    const canonical = prepareCardForCreate({
+      ...card,
+      lexemeId,
+      language: 'ko',
+      normalizedLemma: 'lead',
+      partOfSpeech: 'noun',
+      senseKey: 'metal',
+      translationLanguage: 'vi',
+    });
+
+    expect(canonical.lexemeId).toBe(lexemeId);
+    expect(canonical.translationLanguage).toBe('vi');
+    const patched = applyCardPatch(canonical, { translationLanguage: 'en' }, ['translationLanguage']);
+    expect(patched.translationLanguage).toBe('vi');
+    expect(patched.revision).toBe(2);
+  });
+
   it('applies only the declared field mask and advances the revision', () => {
     const result = applyCardPatch(
       { ...card, schemaVersion: 2, revision: 7, libraryEpoch: 4 },
@@ -49,6 +84,13 @@ describe('card mutation protocol', () => {
       revision: 8,
       libraryEpoch: 4,
     });
+  });
+
+  it('does not allow client patches to change card origin', () => {
+    const original = { ...card, origin: 'ai' as const, schemaVersion: 2 as const, revision: 7, libraryEpoch: 4 };
+    const result = applyCardPatch(original, { origin: 'manual' }, ['origin']);
+    expect(result.origin).toBe('ai');
+    expect(result.revision).toBe(8);
   });
 
   it('persists mnemonic enrichment through the declared mutation mask', () => {

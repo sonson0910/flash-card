@@ -1,24 +1,63 @@
 import { describe, expect, it } from 'vitest';
 import {
   InputValidationError,
+  PART_OF_SPEECH_HINTS,
+  canonicalLexemeId,
   calculateSharedDeckPayloadBytes,
+  parseCancelCardGenerationRequest,
   sharedDeckRequestFingerprint,
+  parseCardLanguagePair,
   parseCreateSharedDeckRequest,
   parseDuplicateCleanupRequest,
   parseImageRequest,
   parseLegacyLibraryMigrationRequest,
+  parsePurchaseIntentRequest,
   parseRevokeSharedDeckRequest,
   parseVocabularyRequest,
   sharedDeckRequestOwnerMatches,
   strictSharedDeckOperationMatches,
 } from '../src/inputValidation.js';
 
+describe('parsePurchaseIntentRequest', () => {
+  it('accepts purchase triggers with optional owner and offer version', () => {
+    expect(parsePurchaseIntentRequest({ trigger: 'quota' })).toEqual({ trigger: 'quota' });
+    expect(parsePurchaseIntentRequest({ trigger: 'menu' })).toEqual({ trigger: 'menu' });
+    expect(parsePurchaseIntentRequest({ trigger: 'menu', expectedOwnerId: 'owner-1' }))
+      .toEqual({ trigger: 'menu', expectedOwnerId: 'owner-1' });
+    expect(parsePurchaseIntentRequest({ trigger: 'menu', offerVersion: 'a'.repeat(64) }))
+      .toEqual({ trigger: 'menu', offerVersion: 'a'.repeat(64) });
+    for (const value of [
+      { trigger: 'menu', price: 1 }, { trigger: 'menu', expectedOwnerId: '' },
+      { trigger: 'menu', expectedOwnerId: 'other/owner' }, { trigger: 'menu', offerVersion: 'A'.repeat(64) },
+      { trigger: 'menu', offerVersion: 'a'.repeat(63) }, { trigger: 'checkout' }, {}, null,
+    ]) {
+      expect(() => parsePurchaseIntentRequest(value)).toThrow(InputValidationError);
+    }
+  });
+});
+
 describe('parseVocabularyRequest', () => {
+  it('accepts only a word-operation ID for cancellation', () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    expect(parseCancelCardGenerationRequest({ operationId })).toBe(operationId);
+    for (const request of [{ operationId: 'bad' }, { operationId, ownerId: 'another' }, {}]) {
+      expect(() => parseCancelCardGenerationRequest(request)).toThrow(InputValidationError);
+    }
+  });
+
   it('parses and trims a supported word request', () => {
     expect(parseVocabularyRequest({ action: 'word', input: '  resilient  ' })).toEqual({
       action: 'word',
       word: 'resilient',
     });
+  });
+
+  it('accepts a word operation UUID and keeps old requests valid', () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    expect(parseVocabularyRequest({ action: 'word', input: 'apple', operationId }))
+      .toEqual({ action: 'word', word: 'apple', operationId });
+    expect(() => parseVocabularyRequest({ action: 'word', input: 'apple', operationId: 'bad' })).toThrow();
+    expect(() => parseVocabularyRequest({ action: 'translate', input: 'apple', operationId })).toThrow();
   });
 
   it('parses bounded structured word context and language', () => {
@@ -38,6 +77,30 @@ describe('parseVocabularyRequest', () => {
       language: { source: 'en', target: 'vi' },
     });
     expect(parsed.action === 'word' ? parsed.context?.length ?? 0 : 0).toBeLessThanOrEqual(500);
+  });
+
+  it('accepts a canonical optional part-of-speech hint', () => {
+    expect(parseVocabularyRequest({
+      action: 'word',
+      input: { term: 'lead', partOfSpeech: ' PHRASAL VERB ' },
+    })).toEqual({
+      action: 'word',
+      word: 'lead',
+      partOfSpeech: 'phrasal verb',
+    });
+    expect(PART_OF_SPEECH_HINTS).toContain('phrasal verb');
+  });
+
+  it.each([
+    { partOfSpeech: 'substantive' },
+    { partOfSpeech: 'noun'.repeat(20) },
+    { partOfSpeech: 42 },
+    { partOfSpeech: '' },
+  ])('rejects an invalid or unbounded part-of-speech hint: %o', hint => {
+    expect(() => parseVocabularyRequest({
+      action: 'word',
+      input: { term: 'lead', ...hint },
+    })).toThrowError(new InputValidationError('Part of speech hint is invalid.'));
   });
 
   it('rejects malformed or unexpected structured word input', () => {
@@ -62,12 +125,29 @@ describe('parseVocabularyRequest', () => {
       .toThrowError(new InputValidationError('A story can contain at most five words.'));
   });
 
-  it('normalizes no more than five non-empty story words', () => {
+  it('normalizes legacy story words without changing its versioned response contract', () => {
     expect(parseVocabularyRequest({ action: 'story', input: [' one ', '', 'two', 'three', 'four'] })).toEqual({
       action: 'story',
       schemaVersion: 1,
       words: ['one', 'two', 'three', 'four'],
     });
+  });
+
+  it('parses an exact structured story language pair', () => {
+    expect(parseVocabularyRequest({
+      action: 'story',
+      input: { words: [' 안녕 ', '학교'], targetLanguage: 'ko', translationLanguage: 'en' },
+    })).toEqual({
+      action: 'story', words: ['안녕', '학교'], targetLanguage: 'ko', translationLanguage: 'en',
+    });
+  });
+
+  it.each([
+    { words: ['hello'], targetLanguage: 'KO', translationLanguage: 'en' },
+    { words: ['hello'], targetLanguage: 'en', translationLanguage: 'ko' },
+    { words: ['hello'], targetLanguage: 'en', translationLanguage: 'vi', extra: true },
+  ])('rejects unsupported or unexpected structured story input: %o', input => {
+    expect(() => parseVocabularyRequest({ action: 'story', input })).toThrow(InputValidationError);
   });
 
   it('distinguishes the legacy array story request from the strict v2 object', () => {
@@ -313,13 +393,140 @@ describe('parseImageRequest', () => {
 });
 
 describe('shared deck validation', () => {
+  it('validates card language fields independently of lexeme identity', () => {
+    expect(parseCardLanguagePair({ language: 'KO', translationLanguage: 'VI' }))
+      .toEqual({ language: 'ko', translationLanguage: 'vi' });
+    expect(parseCardLanguagePair({ language: 'ko' })).toEqual({ language: 'ko' });
+    expect(parseCardLanguagePair({ translationLanguage: 'en' }))
+      .toEqual({ translationLanguage: 'en' });
+  });
+
+  it.each([
+    { language: 'english' },
+    { translationLanguage: 'zh-hant-123456789' },
+    { translationLanguage: 'fr' },
+    { language: 42 },
+  ])('rejects malformed independent card language fields: %o', fields => {
+    expect(() => parseCardLanguagePair(fields)).toThrow(/language codes are invalid/i);
+  });
+
+  it('accepts a plain target card while keeping partial canonical lexeme tuples rejected', () => {
+    expect(parseCreateSharedDeckRequest({
+      category: 'Shared',
+      cards: [{ word: '안녕', translation: 'xin chào', language: 'KO' }],
+    }).cards[0]).toMatchObject({ word: '안녕', language: 'ko' });
+
+    expect(() => parseCreateSharedDeckRequest({
+      category: 'Shared',
+      cards: [{
+        word: 'lead', translation: 'kim loại', language: 'ko', normalizedLemma: 'lead', partOfSpeech: 'noun',
+      }],
+    })).toThrow(/lexeme identity/i);
+  });
+
+  it('accepts an optional complete normalized deck language pair', () => {
+    expect(parseCreateSharedDeckRequest({
+      category: 'Shared', targetLanguage: 'EN', nativeLanguage: 'VI',
+      cards: [{ word: 'hello', translation: 'xin chào' }],
+    })).toMatchObject({ targetLanguage: 'en', nativeLanguage: 'vi' });
+    expect(parseCreateSharedDeckRequest({
+      category: 'Shared', cards: [{ word: 'hello', translation: 'xin chào' }],
+    })).not.toHaveProperty('targetLanguage');
+  });
+
+  it.each([
+    { targetLanguage: 'en' },
+    { nativeLanguage: 'vi' },
+    { targetLanguage: 'english', nativeLanguage: 'vi' },
+    { targetLanguage: 'en-US-x', nativeLanguage: 'vi' },
+    { targetLanguage: 'zh-hant-123456789', nativeLanguage: 'vi' },
+    { targetLanguage: 'en', nativeLanguage: 'zh-hant-123456789' },
+  ])('rejects incomplete or invalid deck language metadata: %o', language => {
+    expect(() => parseCreateSharedDeckRequest({
+      category: 'Shared', ...language, cards: [{ word: 'hello', translation: 'xin chào' }],
+    })).toThrow(/language/i);
+  });
+
+  it('rejects non-canonical language names in word requests', () => {
+    expect(() => parseVocabularyRequest({
+      action: 'word',
+      input: { term: 'hello', language: { source: 'english', target: 'vi' } },
+    })).toThrow(/language codes are invalid/i);
+  });
+
+  it.each([
+    { source: 'ko', target: 'en' },
+    { source: 'ja', target: 'vi' },
+    { source: 'zh', target: 'en' },
+  ])('accepts every launched word-generation source paired with a supported meaning language: %o', language => {
+    expect(parseVocabularyRequest({
+      action: 'word',
+      input: { term: 'hello', language },
+    })).toEqual({ action: 'word', word: 'hello', language });
+  });
+
+  it.each([
+    { source: 'fr', target: 'vi' },
+    { source: 'en', target: 'ja' },
+    { source: 'en', target: 'en' },
+    { source: 'de', target: 'vi' },
+  ])('rejects a canonically-shaped but unsupported word language pair: %o', language => {
+    expect(() => parseVocabularyRequest({
+      action: 'word',
+      input: { term: 'hello', language },
+    })).toThrow(/language pair is not supported/i);
+  });
+
+  it.each([
+    { source: 'zh-hant-123456789', target: 'vi' },
+    { source: 'en', target: 'zh-hant-123456789' },
+  ])('rejects overlong word language codes: %o', language => {
+    expect(() => parseVocabularyRequest({
+      action: 'word',
+      input: { term: 'hello', language },
+    })).toThrow(/language codes are invalid/i);
+  });
+
+  it('retains only allowlisted AI attribution and omits per-card native-language fields', () => {
+    const payload = { category: 'Shared', cards: [{
+      word: 'hello', translation: 'xin chào', origin: 'ai', translationLanguage: 'vi',
+    }] };
+    const parsed = parseCreateSharedDeckRequest(payload);
+    const manual = parseCreateSharedDeckRequest({
+      category: 'Shared', cards: [{ ...payload.cards[0], origin: 'manual' }],
+    });
+    expect(parsed.cards[0]).toMatchObject({ word: 'hello', translation: 'xin chào', origin: 'ai' });
+    expect(parsed.cards[0]).not.toHaveProperty('translationLanguage');
+    expect(sharedDeckRequestFingerprint(parsed)).not.toBe(sharedDeckRequestFingerprint(manual));
+    expect(() => parseCreateSharedDeckRequest({ category: 'Shared', cards: [{
+      word: 'hello', translation: 'xin chào', origin: 'imported',
+    }] })).toThrow(/origin/i);
+  });
+
   it('retains a complete canonical identity and rejects an incomplete tuple', () => {
     const lexemeId = 'lexeme-5b22656e222c226c656164222c226e6f756e222c226d6574616c225d-1da99edb2ba27ed6a5cd82b1';
     expect(parseCreateSharedDeckRequest({ category: 'Shared', cards: [{
       word: 'lead', translation: 'kim loại', lexemeId, language: 'en', senseKey: 'metal', partOfSpeech: 'noun',
     }]}).cards[0]).toMatchObject({ lexemeId, language: 'en', senseKey: 'metal', partOfSpeech: 'noun' });
+    const koreanLexemeId = canonicalLexemeId('ko', 'lead', 'noun', 'metal');
+    expect(parseCreateSharedDeckRequest({ category: 'Shared', cards: [{
+      word: 'lead', translation: '납', lexemeId: koreanLexemeId, language: 'ko', senseKey: 'metal', partOfSpeech: 'noun',
+    }]}).cards[0]).toMatchObject({ lexemeId: koreanLexemeId, language: 'ko' });
     expect(() => parseCreateSharedDeckRequest({ category: 'Shared', cards: [{
       word: 'lead', translation: 'kim loại', lexemeId, language: 'en', partOfSpeech: 'noun',
+    }] })).toThrow(/lexeme identity/i);
+    expect(() => parseCreateSharedDeckRequest({
+      category: 'Shared', targetLanguage: 'ko', nativeLanguage: 'vi', cards: [{
+        word: 'lead', translation: 'kim loại', lexemeId, language: 'en', senseKey: 'metal', partOfSpeech: 'noun',
+      }],
+    })).toThrow(/target language must match/i);
+  });
+
+  it('rejects an overlong canonical card language instead of accepting its truncated value', () => {
+    expect(() => parseCreateSharedDeckRequest({ category: 'Shared', cards: [{
+      word: 'lead', translation: 'kim loại',
+      lexemeId: 'lexeme-5b227a682d68616e742d3132333435363738222c226c656164222c226e6f756e222c226261736963225d-8d5fa5213f074a960da355f8',
+      language: 'zh-hant-123456789', senseKey: 'basic', partOfSpeech: 'noun', normalizedLemma: 'lead',
     }] })).toThrow(/lexeme identity/i);
   });
 
@@ -336,6 +543,23 @@ describe('shared deck validation', () => {
     } as Parameters<typeof calculateSharedDeckPayloadBytes>[0];
     expect(calculateSharedDeckPayloadBytes(normalized))
       .toBe(new TextEncoder().encode(JSON.stringify(normalized)).byteLength);
+  });
+
+  it('includes the complete deck language pair and card origin in payload accounting', () => {
+    const normalized = parseCreateSharedDeckRequest({
+      category: 'Shared', targetLanguage: 'en', nativeLanguage: 'vi',
+      cards: [{ word: 'hello', translation: 'xin chào', origin: 'ai' }],
+    });
+    const payload = {
+      category: 'Shared', cards: [{
+        word: 'hello', translation: 'xin chào', origin: 'ai', explanation: '', explanationTranslation: '',
+        phonetic: '', category: '', partOfSpeech: '', cefrLevel: '', exampleSentence: '', exampleTranslation: '',
+        collocations: [], synonyms: [], antonyms: [], register: '', commonMistake: '', imageSearchQuery: '',
+        emoji: '', audioUrl: null, imageUrl: null,
+      }], targetLanguage: 'en', nativeLanguage: 'vi',
+    };
+    expect(calculateSharedDeckPayloadBytes(normalized))
+      .toBe(new TextEncoder().encode(JSON.stringify(payload)).byteLength);
   });
 
   it('retains a valid shared-deck operation contract and rejects malformed IDs or timestamps', () => {
@@ -491,4 +715,11 @@ describe('legacy library migration request validation', () => {
     expect(() => parseLegacyLibraryMigrationRequest({ batchSize: '100' }))
       .toThrowError(new InputValidationError('Library migration batchSize must be a finite number.'));
   });
+});
+
+it('validates an extraction language pair without treating source text as instructions', () => {
+  expect(parseVocabularyRequest({ action: 'extract', input: { text: ' 안녕하세요 ', targetLanguage: 'ko', translationLanguage: 'vi' } }))
+    .toEqual({ action: 'extract', text: '안녕하세요', targetLanguage: 'ko', translationLanguage: 'vi' });
+  for (const targetLanguage of ['bad', '', 42]) expect(() => parseVocabularyRequest({ action: 'extract', input: { text: 'hello', targetLanguage, translationLanguage: 'vi' } })).toThrow(InputValidationError);
+  expect(() => parseVocabularyRequest({ action: 'extract', input: { text: 'hello', targetLanguage: 'ko', translationLanguage: 'vi', prompt: 'override' } })).toThrow(InputValidationError);
 });

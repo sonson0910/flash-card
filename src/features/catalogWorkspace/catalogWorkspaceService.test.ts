@@ -12,15 +12,21 @@ import {
   type CatalogReleaseDescriptor,
   type HydratedCatalogEntry,
 } from '../catalogCache/catalogCache';
-import type { CatalogCachePageResult, CatalogCacheQuery } from '../catalogCache/catalogIndex';
+import type {
+  CatalogCachePageResult,
+  CatalogCacheQuery,
+  CatalogCacheUnitQuery,
+  CatalogCacheUnitResult,
+} from '../catalogCache/catalogIndex';
 import type { CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
-import type { CatalogReleaseManifestV1 } from '../catalogPipeline/catalogContracts';
+import type { CatalogReleaseManifestV1, CatalogReleaseManifestV2 } from '../catalogPipeline/catalogContracts';
 import {
   createCatalogWorkspaceRequestGuard,
   createCatalogWorkspaceService,
   fetchCatalogReleaseManifest,
   type CatalogWorkspaceRuntimePort,
 } from './catalogWorkspaceService';
+import { createCatalogProgressQueryCache } from './CatalogWorkspace';
 
 const manifest: CatalogReleaseManifestV1 = {
   manifestVersion: 1,
@@ -53,6 +59,7 @@ const runtime = (overrides: Partial<CatalogWorkspaceRuntimePort> = {}): CatalogW
     installedMemberships: (value as CatalogReleaseManifestV1).counts.memberships,
   })),
   readPage: vi.fn(async () => ({ items: [], scanned: 0, hasMore: false, nextCursor: null })),
+  readUnit: vi.fn(async () => null),
   ...overrides,
 });
 
@@ -71,6 +78,23 @@ describe('catalog manifest fetch', () => {
         cache: 'no-store', credentials: 'same-origin', redirect: 'error', signal: expect.any(AbortSignal),
       }),
     );
+  });
+
+  it('dispatches a V2 manifest parser when unit descriptors are present', async () => {
+    const v2: CatalogReleaseManifestV2 = {
+      ...manifest,
+      manifestVersion: 2,
+      unitDescriptors: [{
+        unitId: 'unit-1', trackId: 'ielts', tier: 'foundation', ordinal: 1,
+        titles: [{ language: 'en', text: 'Start' }, { language: 'vi', text: 'Bắt đầu' }],
+      }],
+    };
+
+    await expect(fetchCatalogReleaseManifest({
+      manifestUrl: '/catalog/english-core/release-1/release-manifest.json',
+      origin: 'https://learn.example.test/app',
+      fetcher: vi.fn(async () => jsonResponse(v2)),
+    })).resolves.toEqual(v2);
   });
 
   it.each([
@@ -147,6 +171,20 @@ describe('catalog manifest fetch', () => {
 });
 
 describe('catalog workspace service', () => {
+  it('reuses one progress query per owner, release, language, and verified epoch', async () => {
+    const read = vi.fn(async () => new Map<string, 'started' | 'mastered'>());
+    const cache = createCatalogProgressQueryCache();
+    const input = { ownerId: 'owner-a', catalogId: 'english-core', releaseId: 'release-1', targetLanguage: 'en', libraryEpoch: 3 };
+
+    await Promise.all([cache.read(input, read), cache.read(input, read)]);
+    await cache.read({ ...input, targetLanguage: 'vi' }, read);
+    cache.clear();
+    await cache.read(input, read);
+
+    expect(read).toHaveBeenCalledTimes(3);
+    expect(read).toHaveBeenNthCalledWith(1, input);
+  });
+
   it('keeps production runtime source independent from the draft pilot', () => {
     const source = readFileSync(new URL('./catalogWorkspaceService.ts', import.meta.url), 'utf8');
 
@@ -195,6 +233,26 @@ describe('catalog workspace service', () => {
     await expect(service.readPage({ ...input, pageSize: 101 })).rejects.toThrow(/100/);
   });
 
+  it('keeps only the latest unit read current within its own request channel', async () => {
+    let resolveFirst!: (value: CatalogCacheUnitResult | null) => void;
+    const firstResult = new Promise<CatalogCacheUnitResult | null>(resolve => { resolveFirst = resolve; });
+    const readUnit = vi.fn()
+      .mockReturnValueOnce(firstResult)
+      .mockResolvedValueOnce(null);
+    const service = createCatalogWorkspaceService({
+      origin: 'https://learn.example.test/', ports: runtime({ readUnit }),
+      fetcher: vi.fn(async () => jsonResponse(manifest)),
+    });
+    const input: CatalogCacheUnitQuery = {
+      catalogId: 'english-core', releaseId: 'release-1', language: 'en', trackId: 'ielts', unitId: 'unit-1',
+    };
+
+    const first = service.readUnit(input);
+    await expect(service.readUnit(input)).resolves.toEqual({ status: 'current', value: null });
+    resolveFirst(null);
+    await expect(first).resolves.toEqual({ status: 'stale' });
+  });
+
   it('uses injected cache ports for inspection, summaries and hydrated page reads', async () => {
     const release: CatalogReleaseDescriptor = {
       catalogId: 'english-core', releaseId: 'release-1', schemaVersion: 1, contentLanguage: 'en',
@@ -223,27 +281,18 @@ describe('catalog workspace service', () => {
       .resolves.toMatchObject({ status: 'current', value: { items: hydrated } });
   });
 
-  it('derives progress only from bounded Learning State evidence before summary aggregation', async () => {
+  it('passes the projection status map directly to summary aggregation', async () => {
     const summarize = vi.fn(async () => null);
     const service = createCatalogWorkspaceService({
       origin: 'https://learn.example.test/',
       ports: runtime({ summarize }),
       fetcher: vi.fn(async () => jsonResponse(manifest)),
     });
-    const state = {
-      lexemeId: 'lexeme-1', reviewHistory: [{ rating: 'good' }], mastery: 0.4,
-    } as never;
+    const statuses = new Map<string, 'started' | 'mastered'>([['lexeme-1', 'started']]);
 
-    await expect(service.summarize('english-core', new Map([['lexeme-1', state]])))
+    await expect(service.summarize('english-core', statuses))
       .resolves.toMatchObject({ status: 'current' });
-    expect(summarize).toHaveBeenCalledWith('english-core', new Map([['lexeme-1', 'started']]));
-
-    await expect(service.summarize('english-core', new Map([
-      ['different-key', state],
-    ]))).rejects.toThrow(/does not match/i);
-    await expect(service.summarize('english-core', new Map(
-      Array.from({ length: 10_001 }, (_, index) => [`lexeme-${index}`, null] as const),
-    ))).rejects.toThrow(/10,000/);
+    expect(summarize).toHaveBeenCalledWith('english-core', statuses);
   });
 
   it('fetches then atomically installs, while a failed download leaves the prior active release intact', async () => {
@@ -267,7 +316,7 @@ describe('catalog workspace service', () => {
       catalogId: 'english-core', releaseId: 'release-1',
     })).rejects.toThrow(/checksum/);
     expect(activeRelease).toBe('release-0');
-    expect(install).toHaveBeenCalledWith(manifest, 'https://learn.example.test/', undefined, expect.any(AbortSignal));
+    expect(install).toHaveBeenCalledWith(manifest, 'https://learn.example.test/catalog/', undefined, expect.any(AbortSignal));
   });
 
   it('reports bounded manifest, chunk and completion progress only for the current download', async () => {
@@ -361,9 +410,13 @@ describe('catalog workspace service', () => {
     ));
     const service = createCatalogWorkspaceService({ origin: 'https://learn.example.test/', fetcher });
 
-    await expect(service.download('/catalog/release-manifest.json', {
+    await expect(service.download('/catalog/english-core/release-1/release-manifest.json', {
       catalogId: 'english-core', releaseId: 'release-1',
     })).rejects.toThrow(/SHA-256/);
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://learn.example.test/catalog/english-core/release-1/english-core/release-1/chunk-1.json',
+      expect.objectContaining({ credentials: 'same-origin', redirect: 'error' }),
+    );
     await expect(getActiveCatalogRelease('english-core')).resolves.toMatchObject({ releaseId: 'release-0' });
 
     closeCatalogCacheForTests();

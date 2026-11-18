@@ -1,0 +1,1385 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-24 16:48+0700\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: vi\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: src/components/shell/LibraryManagementMenu.tsx:327
+msgctxt "shell.menu.card-style-standard"
+msgid "Card style: Standard"
+msgstr "Kiểu thẻ: Tiêu chuẩn"
+
+#: src/components/shell/DesktopNavigation.tsx:81
+msgctxt "shell.brand.mark"
+msgid "S"
+msgstr "S"
+
+#: src/components/shell/LibraryManagementMenu.tsx:245
+msgctxt "rewards.title.word-collector"
+msgid "Word Collector"
+msgstr "Người sưu tầm từ vựng"
+
+#: src/components/AppOverlays.tsx:366
+msgctxt "shell.practice-menu.title"
+msgid "Choose a practice mode"
+msgstr "Chọn chế độ luyện tập"
+
+#: src/components/shell/ThemeMenu.tsx:32
+msgctxt "shell.theme.appearance-settings"
+msgid "More appearance options"
+msgstr "Tùy chọn giao diện khác"
+
+#: src/components/AppOverlays.tsx:619
+msgctxt "shell.share.fact-revoke"
+msgid "You can revoke this link at any time."
+msgstr "Bạn có thể thu hồi liên kết này bất cứ lúc nào."
+
+#: src/features/onboarding/OnboardingJourney.tsx:223
+msgctxt "onboarding.goal.none"
+msgid "No specific goal yet"
+msgstr "Chưa có mục tiêu cụ thể"
+
+#: src/features/onboarding/OnboardingJourney.tsx:262
+msgctxt "onboarding.pace.option"
+msgid "{count} cards / day"
+msgstr "{count} thẻ / ngày"
+
+#: src/app/AppViewStage.tsx:108
+msgctxt "shell.loading.today"
+msgid "Preparing today’s learning plan…"
+msgstr "Đang chuẩn bị kế hoạch học hôm nay…"
+
+#: src/components/shell/LibraryManagementMenu.tsx:315
+msgctxt "shell.menu.extension-privacy"
+msgid "Extension privacy"
+msgstr "Quyền riêng tư của tiện ích"
+
+#: src/components/AppOverlays.tsx:472
+msgctxt "shell.share.cards-count"
+msgid "{count, plural, one {# card} other {# cards}}"
+msgstr "{count, plural, other {# thẻ}}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:196
+msgctxt "onboarding.target.title"
+msgid "What are you learning?"
+msgstr "Bạn đang học ngôn ngữ nào?"
+
+#: src/components/AppOverlays.tsx:341
+msgctxt "shell.share.revoking"
+msgid "Revoking…"
+msgstr "Đang thu hồi…"
+
+#: src/components/AppOverlays.tsx:692
+msgctxt "shell.practice-menu.preparing"
+msgid "Preparing…"
+msgstr "Đang chuẩn bị…"
+
+#: src/components/AppOverlays.tsx:499
+msgctxt "shell.share.incoming-safeguard"
+msgid "Cards go into a new deck with the same name. Your existing cards and progress stay untouched."
+msgstr "Thẻ sẽ được thêm vào bộ thẻ mới cùng tên. Các thẻ và tiến độ hiện có của bạn vẫn nguyên vẹn."
+
+#: src/features/courses/CourseGoalsPanel.tsx:50
+#: src/features/courses/CourseGoalsPanel.tsx:93
+#: src/features/onboarding/OnboardingJourney.tsx:236
+msgctxt "course.goal.add.level-label"
+msgid "Level or target (optional)"
+msgstr "Trình độ hoặc mức mục tiêu (không bắt buộc)"
+
+#: src/features/onboarding/OnboardingJourney.tsx:182
+msgctxt "onboarding.language.title"
+msgid "Choose your language"
+msgstr "Chọn ngôn ngữ của bạn"
+
+#: src/components/shell/LibraryManagementMenu.tsx:373
+msgctxt "shell.menu.clear-library"
+msgid "Clear the entire library"
+msgstr "Xóa toàn bộ thư viện"
+
+#: src/components/AppOverlays.tsx:597
+msgctxt "shell.share.link-label"
+msgid "Share link"
+msgstr "Liên kết chia sẻ"
+
+#: src/components/AppOverlays.tsx:494
+msgctxt "shell.share.no-sample-preview"
+msgid "A card preview is not available for this shared deck."
+msgstr "Không có bản xem trước thẻ cho bộ thẻ được chia sẻ này."
+
+#: src/features/courses/CourseGoalsPanel.tsx:30
+msgctxt "course.goal.paused"
+msgid "(paused)"
+msgstr "(đang tạm dừng)"
+
+#: src/components/shell/CourseSwitcherControl.tsx:70
+msgctxt "course.create.native-label"
+msgid "Explain in"
+msgstr "Giải nghĩa bằng"
+
+#: src/components/shell/LibraryManagementMenu.tsx:314
+msgctxt "shell.menu.terms"
+msgid "Terms"
+msgstr "Điều khoản"
+
+#: src/components/AppOverlays.tsx:341
+msgctxt "shell.share.revoke"
+msgid "Revoke link"
+msgstr "Thu hồi liên kết"
+
+#: src/components/AppOverlays.tsx:546
+msgctxt "shell.share.language-pair"
+msgid "{target} → {native}"
+msgstr "{target} → {native}"
+
+#: src/components/AppOverlays.tsx:617
+msgctxt "shell.share.fact-private"
+msgid "Recipients get their own copy; your progress and review history stay private."
+msgstr "Người nhận có bản sao riêng; tiến độ và lịch sử ôn tập của bạn vẫn riêng tư."
+
+#: src/components/shell/ThemeMenu.tsx:31
+msgctxt "shell.theme.classic-light"
+msgid "Ink & Paper"
+msgstr "Ink & Paper"
+
+#: src/features/courses/CourseGoalsPanel.tsx:88
+msgctxt "course.goal.add.kind-label"
+msgid "Goal"
+msgstr "Mục tiêu"
+
+#: src/features/courses/CourseGoalsPanel.tsx:111
+msgctxt "course.goals.back"
+msgid "Back to courses"
+msgstr "Quay lại danh sách khóa học"
+
+#: src/components/shell/AppFooter.tsx:34
+msgctxt "shell.footer.library"
+msgid "LIBRARY:"
+msgstr "THƯ VIỆN:"
+
+#: src/components/AppOverlays.tsx:618
+msgctxt "shell.share.fact-edits"
+msgid "Edits you make later are not pushed to copies already taken."
+msgstr "Các lần chỉnh sửa sau này sẽ không cập nhật vào những bản sao đã nhận."
+
+#: src/components/AppOverlays.tsx:525
+msgctxt "shell.share.adding"
+msgid "Adding…"
+msgstr "Đang thêm…"
+
+#: src/components/shell/LibraryManagementMenu.tsx:309
+msgctxt "shell.account.sign-out"
+msgid "Sign out of cloud sync"
+msgstr "Đăng xuất khỏi đồng bộ đám mây"
+
+#: src/components/AppOverlays.tsx:136
+msgctxt "shell.share.incoming-description"
+msgid "Review this shared deck before deciding whether to add it."
+msgstr "Xem lại bộ thẻ được chia sẻ trước khi quyết định có thêm hay không."
+
+#: src/components/shell/AppFooter.tsx:45
+msgctxt "shell.footer.status"
+msgid "STATUS:"
+msgstr "TRẠNG THÁI:"
+
+#: src/features/onboarding/OnboardingJourney.tsx:178
+#: src/features/onboarding/OnboardingJourney.tsx:279
+msgctxt "onboarding.aha.skip"
+msgid "Skip for now"
+msgstr "Để sau"
+
+#: src/app/AppViewStage.tsx:116
+msgctxt "shell.loading.settings"
+msgid "Preparing appearance settings…"
+msgstr "Đang mở cài đặt giao diện…"
+
+#: src/features/onboarding/OnboardingJourney.tsx:308
+msgctxt "onboarding.finish"
+msgid "Start learning"
+msgstr "Bắt đầu học"
+
+#: src/features/onboarding/OnboardingJourney.tsx:277
+msgctxt "onboarding.aha.subtitle"
+msgid "Five common words to get you started."
+msgstr "Năm từ thông dụng để bạn bắt đầu."
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:41
+#: src/components/shell/CourseSwitcherControl.tsx:41
+msgid "course.action.archive"
+msgstr "Lưu trữ khóa học"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:40
+#: src/components/shell/CourseSwitcherControl.tsx:40
+msgid "course.action.manage-goals"
+msgstr "Quản lý mục tiêu"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:42
+#: src/components/shell/CourseSwitcherControl.tsx:42
+msgid "course.action.reopen"
+msgstr "Mở lại khóa học"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:35
+msgid "course.goal.edit"
+msgstr "Chỉnh sửa mục tiêu"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:16
+msgid "course.goal.kind.business.en"
+msgstr "Tiếng Anh thương mại"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:30
+msgid "course.goal.kind.business.ja"
+msgstr "Tiếng Nhật thương mại"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:23
+msgid "course.goal.kind.business.ko"
+msgstr "Tiếng Hàn thương mại"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:37
+msgid "course.goal.kind.business.zh"
+msgstr "Tiếng Trung thương mại"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:17
+#: src/features/courses/courseGoalCatalog.ts:24
+#: src/features/courses/courseGoalCatalog.ts:31
+#: src/features/courses/courseGoalCatalog.ts:38
+msgid "course.goal.kind.conversation"
+msgstr "Giao tiếp hằng ngày"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:22
+msgid "course.goal.kind.eps-topik"
+msgstr "EPS-TOPIK (xuất khẩu lao động)"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:35
+msgid "course.goal.kind.hsk"
+msgstr "HSK"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:13
+msgid "course.goal.kind.ielts"
+msgstr "IELTS"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:28
+msgid "course.goal.kind.jlpt"
+msgstr "JLPT"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:15
+#: src/features/courses/courseGoalCatalog.ts:29
+#: src/features/courses/courseGoalCatalog.ts:36
+msgid "course.goal.kind.study-abroad"
+msgstr "Du học"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:14
+msgid "course.goal.kind.toeic"
+msgstr "TOEIC"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:21
+msgid "course.goal.kind.topik"
+msgstr "TOPIK"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:15
+#: src/features/courses/courseGoalCatalog.ts:16
+#: src/features/courses/courseGoalCatalog.ts:17
+#: src/features/courses/courseGoalCatalog.ts:22
+#: src/features/courses/courseGoalCatalog.ts:23
+#: src/features/courses/courseGoalCatalog.ts:24
+#: src/features/courses/courseGoalCatalog.ts:29
+#: src/features/courses/courseGoalCatalog.ts:30
+#: src/features/courses/courseGoalCatalog.ts:31
+#: src/features/courses/courseGoalCatalog.ts:36
+#: src/features/courses/courseGoalCatalog.ts:37
+#: src/features/courses/courseGoalCatalog.ts:38
+msgid "course.goal.level-hint.generic"
+msgstr "Trình độ mục tiêu (không bắt buộc)"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:35
+msgid "course.goal.level-hint.hsk"
+msgstr "Trình độ mục tiêu, ví dụ HSK 4"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:13
+msgid "course.goal.level-hint.ielts"
+msgstr "Band mục tiêu, ví dụ 6.5"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:28
+msgid "course.goal.level-hint.jlpt"
+msgstr "Trình độ mục tiêu, ví dụ N3"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:14
+msgid "course.goal.level-hint.toeic"
+msgstr "Điểm mục tiêu, ví dụ 800"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseGoalCatalog.ts:21
+msgid "course.goal.level-hint.topik"
+msgstr "Trình độ mục tiêu, ví dụ TOPIK II"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:37
+msgid "course.goal.pause"
+msgstr "Tạm dừng mục tiêu"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:41
+msgid "course.goal.remove"
+msgstr "Xóa mục tiêu"
+
+#. js-lingui-explicit-id
+#: src/features/courses/CourseGoalsPanel.tsx:37
+msgid "course.goal.resume"
+msgstr "Tiếp tục mục tiêu"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseLanguageLabels.ts:6
+#: src/features/courses/courseLanguageLabels.ts:14
+msgid "course.language.en"
+msgstr "Tiếng Anh"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseLanguageLabels.ts:8
+msgid "course.language.ja"
+msgstr "Tiếng Nhật"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseLanguageLabels.ts:7
+msgid "course.language.ko"
+msgstr "Tiếng Hàn"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseLanguageLabels.ts:13
+msgid "course.language.vi"
+msgstr "Tiếng Việt"
+
+#. js-lingui-explicit-id
+#: src/features/courses/courseLanguageLabels.ts:9
+msgid "course.language.zh"
+msgstr "Tiếng Trung"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:144
+msgid "course.switcher.close"
+msgstr "Đóng"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherControl.tsx:140
+msgid "course.switcher.dialog-label"
+msgstr "Khóa học"
+
+#: src/components/shell/CourseSwitcherControl.tsx:163
+msgctxt "course.switcher.add"
+msgid "Add a language"
+msgstr "Thêm ngôn ngữ"
+
+#: src/components/shell/CourseSwitcherControl.tsx:143
+msgctxt "course.switcher.title"
+msgid "Your courses"
+msgstr "Khóa học của bạn"
+
+#: src/components/AppOverlays.tsx:296
+msgctxt "shell.share.outgoing-title"
+msgid "Share “{title}”"
+msgstr "Chia sẻ “{title}”"
+
+#: src/components/AppOverlays.tsx:502
+#: src/components/AppOverlays.tsx:622
+msgctxt "shell.share.expires-on"
+msgid "Link expires on {date}"
+msgstr "Liên kết hết hạn vào {date}"
+
+#: src/components/AppOverlays.tsx:465
+#: src/components/AppOverlays.tsx:586
+msgctxt "shell.share.cards"
+msgid "Cards"
+msgstr "Thẻ"
+
+#: src/components/AppOverlays.tsx:367
+msgctxt "shell.practice-menu.description"
+msgid "Choose a different way to practice with words from your library."
+msgstr "Chọn một cách khác để luyện tập với các từ trong thư viện của bạn."
+
+#: src/features/onboarding/OnboardingJourney.tsx:283
+msgctxt "onboarding.aha.error"
+msgid "Something went wrong adding cards. You can add them later from the library."
+msgstr "Đã có lỗi khi thêm thẻ. Bạn có thể thêm sau trong thư viện."
+
+#: src/components/shell/CourseSwitcherControl.tsx:132
+msgctxt "course.switcher.switched"
+msgid "Switched to {language}"
+msgstr "Đã chuyển sang {language}"
+
+#: src/components/AppOverlays.tsx:581
+msgctxt "shell.share.updating"
+msgid "Updating this share link…"
+msgstr "Đang cập nhật liên kết chia sẻ…"
+
+#: src/components/AppOverlays.tsx:342
+msgctxt "shell.share.done"
+msgid "Done"
+msgstr "Xong"
+
+#: src/features/onboarding/OnboardingJourney.tsx:278
+msgctxt "onboarding.aha.create"
+msgid "Add 5 starter cards"
+msgstr "Thêm 5 thẻ khởi đầu"
+
+#: src/components/shell/DesktopNavigation.tsx:67
+#: src/components/shell/FloatingMobileNav.tsx:15
+msgctxt "shell.nav.collection"
+msgid "Collection"
+msgstr "Bộ sưu tập"
+
+#. js-lingui-explicit-id
+#: src/app/AppRuntime.tsx:255
+msgid "extension.import.course-mismatch-confirm"
+msgstr "Từ này được lưu cho một ngôn ngữ khác với khoá học hiện tại của bạn. Chuyển sang (hoặc tạo) khoá học phù hợp để lưu từ này?"
+
+#: src/features/onboarding/OnboardingJourney.tsx:288
+msgctxt "onboarding.aha.success"
+msgid "Added {count} cards to your library."
+msgstr "Đã thêm {count} thẻ vào thư viện của bạn."
+
+#: src/components/ui/UndoToast.tsx:154
+msgctxt "shell.undo.action"
+msgid "Undo"
+msgstr "Hoàn tác"
+
+#: src/components/shell/LibraryManagementMenu.tsx:327
+msgctxt "shell.menu.card-style-zen"
+msgid "Card style: Zen Glass"
+msgstr "Kiểu thẻ: Kính Zen"
+
+#: src/components/AppOverlays.tsx:628
+msgctxt "shell.share.copy-private"
+msgid "This link opens a preview. The recipient decides whether to add a separate copy."
+msgstr "Liên kết này mở bản xem trước. Người nhận sẽ tự chọn có thêm bản sao riêng hay không."
+
+#: src/features/onboarding/OnboardingJourney.tsx:289
+msgctxt "onboarding.aha.none-added"
+msgid "No cards were added."
+msgstr "Chưa thêm thẻ nào."
+
+#: src/components/AppOverlays.tsx:484
+#: src/components/AppOverlays.tsx:501
+#: src/components/AppOverlays.tsx:627
+msgctxt "flashcard.ai-disclosure"
+msgid "AI-generated content may be incorrect. Please check the meaning."
+msgstr "Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa."
+
+#: src/components/shell/LibraryManagementMenu.tsx:287
+msgctxt "shell.sync.now"
+msgid "Sync now"
+msgstr "Đồng bộ ngay"
+
+#: src/components/AppOverlays.tsx:494
+msgctxt "shell.share.no-cards"
+msgid "This shared deck has no cards to add."
+msgstr "Bộ thẻ được chia sẻ này không có thẻ nào để thêm."
+
+#: src/components/AppOverlays.tsx:365
+msgctxt "shell.practice-menu.kicker"
+msgid "Practice"
+msgstr "Luyện tập"
+
+#: src/features/onboarding/OnboardingJourney.tsx:281
+msgctxt "onboarding.aha.pending"
+msgid "Adding your cards…"
+msgstr "Đang thêm thẻ của bạn…"
+
+#: src/components/AppOverlays.tsx:602
+msgctxt "shell.share.copy-short"
+msgid "Copy"
+msgstr "Sao chép"
+
+#: src/app/AppRuntime.tsx:559
+#: src/components/shell/CourseSwitcherControl.tsx:110
+msgctxt "course.error.read"
+msgid "Courses could not be loaded."
+msgstr "Không thể tải các khóa học."
+
+#: src/features/courses/CourseGoalsPanel.tsx:102
+msgctxt "course.goal.add.submit"
+msgid "Add goal"
+msgstr "Thêm mục tiêu"
+
+#: src/components/AppOverlays.tsx:291
+msgctxt "shell.share.incoming-kicker"
+msgid "Shared with you"
+msgstr "Được chia sẻ với bạn"
+
+#: src/components/shell/CourseSwitcherControl.tsx:58
+msgctxt "course.create.no-target-left"
+msgid "All supported languages already have a course. Archive one to add another."
+msgstr "Mọi ngôn ngữ được hỗ trợ đều đã có khóa học. Hãy lưu trữ một khóa để thêm khóa khác."
+
+#: src/components/shell/LibraryManagementMenu.tsx:354
+msgctxt "shell.menu.exporting"
+msgid "Exporting library…"
+msgstr "Đang xuất thư viện…"
+
+#: src/components/AppOverlays.tsx:467
+msgctxt "shell.share.copy"
+msgid "Your copy"
+msgstr "Bản sao của bạn"
+
+#: src/features/courses/CourseGoalsPanel.tsx:29
+msgctxt "course.goal.no-detail"
+msgid "No level or date set"
+msgstr "Chưa đặt trình độ hoặc ngày"
+
+#: src/features/onboarding/OnboardingJourney.tsx:243
+msgctxt "settings.course.script"
+msgid "Chinese script"
+msgstr "Chữ Hán"
+
+#: src/features/onboarding/OnboardingJourney.tsx:219
+#: src/features/onboarding/OnboardingJourney.tsx:223
+msgctxt "onboarding.goal.subtitle"
+msgid "Optional. You can add or change this later in the course switcher."
+msgstr "Không bắt buộc. Bạn có thể thêm hoặc đổi sau trong phần chọn khóa học."
+
+#: src/features/onboarding/OnboardingJourney.tsx:258
+msgctxt "onboarding.pace.title"
+msgid "How many cards a day?"
+msgstr "Mỗi ngày bao nhiêu thẻ?"
+
+#: src/components/shell/LibraryManagementMenu.tsx:313
+msgctxt "shell.menu.privacy"
+msgid "Privacy"
+msgstr "Quyền riêng tư"
+
+#: src/components/shell/LibraryManagementMenu.tsx:317
+msgctxt "shell.menu.account-data"
+msgid "Account data"
+msgstr "Dữ liệu tài khoản"
+
+#: src/components/AppOverlays.tsx:375
+msgctxt "app-overlays.text-practice"
+msgid "Text practice ·"
+msgstr "Luyện hội thoại ·"
+
+#: src/components/shell/LibraryManagementMenu.tsx:342
+msgctxt "shell.menu.insights"
+msgid "Learning insights"
+msgstr "Thống kê học tập"
+
+#: src/components/AppOverlays.tsx:593
+msgctxt "shell.share.truncation"
+msgid "This link includes {shared} of {total} cards. Create smaller decks to share the rest."
+msgstr "Liên kết này gồm {shared} trong tổng số {total} thẻ. Hãy tạo các bộ thẻ nhỏ hơn để chia sẻ phần còn lại."
+
+#: src/components/AppOverlays.tsx:483
+msgctxt "shell.share.no-translation"
+msgid "Translation not available"
+msgstr "Chưa có bản dịch"
+
+#: src/features/courses/CourseGoalsPanel.tsx:31
+msgctxt "course.goal.completed"
+msgid "(completed)"
+msgstr "(đã hoàn thành)"
+
+#: src/features/onboarding/OnboardingJourney.tsx:303
+msgctxt "onboarding.reminder.title"
+msgid "Daily reminders"
+msgstr "Nhắc nhở hằng ngày"
+
+#: src/features/courses/CourseGoalsPanel.tsx:113
+msgctxt "course.goals.empty"
+msgid "No goals yet. Studying without one is fine too."
+msgstr "Chưa có mục tiêu nào. Học không cần mục tiêu cũng được."
+
+#: src/components/shell/CourseSwitcherControl.tsx:62
+msgctxt "course.create.target-label"
+msgid "Learn"
+msgstr "Học"
+
+#: src/features/onboarding/OnboardingJourney.tsx:246
+msgctxt "settings.course.script.traditional"
+msgid "Traditional"
+msgstr "Phồn thể"
+
+#: src/features/onboarding/OnboardingJourney.tsx:304
+msgctxt "onboarding.reminder.description"
+msgid "Choose when SonFlash can remind you to review."
+msgstr "Chọn thời điểm SonFlash có thể nhắc bạn ôn tập."
+
+#: src/components/AppOverlays.tsx:544
+msgctxt "shell.share.languages"
+msgid "Languages"
+msgstr "Ngôn ngữ"
+
+#: src/components/AppOverlays.tsx:405
+msgctxt "app-overlays.practise-your-vocabulary-in-a-bounded-text-conversation"
+msgid "Practise your vocabulary in a bounded text conversation."
+msgstr "Luyện từ vựng qua cuộc hội thoại văn bản có giới hạn."
+
+#. js-lingui-explicit-id
+#: src/features/onboarding/OnboardingJourney.tsx:172
+msgid "onboarding.title"
+msgstr "Thiết lập khóa học"
+
+#: src/components/AppOverlays.tsx:466
+msgctxt "shell.share.category"
+msgid "Category"
+msgstr "Chủ đề"
+
+#: src/components/AppOverlays.tsx:471
+msgctxt "shell.share.words-inside"
+msgid "A few words inside"
+msgstr "Một vài từ bên trong"
+
+#: src/features/onboarding/OnboardingJourney.tsx:212
+#: src/features/onboarding/OnboardingJourney.tsx:250
+#: src/features/onboarding/OnboardingJourney.tsx:268
+#: src/features/onboarding/OnboardingJourney.tsx:307
+msgctxt "onboarding.back"
+msgid "Back"
+msgstr "Quay lại"
+
+#: src/app/AppDeferredViews.tsx:35
+msgctxt "shell.loading.library"
+msgid "Loading library"
+msgstr "Đang tải thư viện"
+
+#. js-lingui-explicit-id
+#: src/app/app-runtime-shared.ts:81
+msgid "rewards.reveal.level.frame"
+msgstr "Khung ảnh Crimson Wing"
+
+#. js-lingui-explicit-id
+#: src/app/app-runtime-shared.ts:83
+msgid "rewards.reveal.level.hint"
+msgstr "Lượt gợi ý · tối đa 3"
+
+#. js-lingui-explicit-id
+#: src/app/app-runtime-shared.ts:82
+msgid "rewards.reveal.level.title"
+msgstr "Danh hiệu Word Collector"
+
+#. js-lingui-explicit-id
+#: src/app/app-runtime-shared.ts:56
+msgid "rewards.reveal.streak.badge"
+msgstr "Huy hiệu Web Wanderer"
+
+#: src/features/onboarding/OnboardingJourney.tsx:218
+msgctxt "onboarding.goal.title"
+msgid "Have an exam or goal in mind?"
+msgstr "Bạn có kỳ thi hay mục tiêu nào không?"
+
+#: src/components/shell/CourseSwitcherControl.tsx:76
+msgctxt "course.create.submit"
+msgid "Create course"
+msgstr "Tạo khóa học"
+
+#: src/app/AppViewStage.tsx:100
+msgctxt "shell.loading.paths"
+msgid "Preparing learning paths…"
+msgstr "Đang chuẩn bị các lộ trình học…"
+
+#: src/components/shell/CourseSwitcherControl.tsx:38
+msgctxt "course.status.active"
+msgid "Active course"
+msgstr "Khóa học đang học"
+
+#: src/components/AppOverlays.tsx:135
+msgctxt "shell.share.incoming-created"
+msgid "Shared on {date}"
+msgstr "Đã chia sẻ vào {date}"
+
+#: src/components/AppOverlays.tsx:525
+msgctxt "shell.share.add-count"
+msgid "Add {count} cards"
+msgstr "Thêm {count} thẻ"
+
+#: src/components/shell/ThemeMenu.tsx:31
+msgctxt "shell.theme.classic-dark"
+msgid "Midnight Aurora"
+msgstr "Midnight Aurora"
+
+#: src/components/AppOverlays.tsx:301
+msgctxt "shell.share.outgoing-description"
+msgid "Anyone with the link can preview this deck and copy it into their own library."
+msgstr "Ai có liên kết này đều có thể xem trước bộ thẻ và sao chép vào thư viện riêng."
+
+#: src/App.tsx:87
+msgctxt "shell.loading.app"
+msgid "Loading SonFlash…"
+msgstr "Đang tải SonFlash…"
+
+#. js-lingui-explicit-id
+#: src/app/use-library-mutation-feedback.ts:62
+#: src/app/use-library-mutation-feedback.ts:96
+msgid "shell.card.delete-failed"
+msgstr "Không thể xóa thẻ. Vui lòng thử lại."
+
+#. js-lingui-explicit-id
+#: src/app/app-runtime-error.tsx:11
+#: src/components/AppErrorBoundary.tsx:8
+msgid "shell.error-boundary.description.recovery"
+msgstr "Màn hình này gặp lỗi. Tải lại có thể khôi phục giao diện."
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:9
+msgid "shell.error-boundary.reload"
+msgstr "Tải lại ứng dụng"
+
+#. js-lingui-explicit-id
+#: src/app/app-runtime-error.tsx:15
+#: src/components/AppErrorBoundary.tsx:10
+msgid "shell.error-boundary.report-issue"
+msgstr "Báo cáo sự cố"
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:7
+msgid "shell.error-boundary.title"
+msgstr "Đã xảy ra lỗi."
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:170
+#: src/components/shell/LibraryManagementMenu.tsx:187
+msgid "shell.feedback.account"
+msgstr "Tài khoản"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:162
+#: src/components/shell/AppFeedback.tsx:177
+#: src/components/shell/DesktopNavigation.tsx:61
+#: src/components/shell/LibraryManagementMenu.tsx:188
+#: src/components/shell/LibraryManagementMenu.tsx:203
+msgid "shell.feedback.connecting"
+msgstr "Đang kết nối…"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:174
+msgid "shell.feedback.dismiss-sign-in"
+msgstr "Đóng thông báo đăng nhập"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:200
+msgid "shell.feedback.dismiss-success"
+msgstr "Đóng thông báo thành công"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:212
+msgid "shell.feedback.dismiss-sync"
+msgstr "Đóng trạng thái đồng bộ"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:189
+msgid "shell.feedback.dismiss-system"
+msgstr "Đóng thông báo hệ thống"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:197
+msgid "shell.feedback.done"
+msgstr "Xong"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:186
+msgid "shell.feedback.needs-attention"
+msgstr "Cần chú ý"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:150
+msgid "shell.feedback.notifications"
+msgstr "Thông báo"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:214
+msgid "shell.feedback.retry"
+msgstr "Thử lại"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:215
+msgid "shell.feedback.retry-sync"
+msgstr "Thử đồng bộ lại thư viện"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:157
+#: src/components/shell/DesktopNavigation.tsx:56
+#: src/components/shell/LibraryManagementMenu.tsx:198
+msgid "shell.feedback.session-ended"
+msgstr "Phiên đã kết thúc"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:158
+#: src/components/shell/LibraryManagementMenu.tsx:207
+msgid "shell.feedback.session-ended-detail"
+msgstr "Đăng nhập lại để khôi phục đồng bộ đám mây."
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:161
+#: src/components/shell/AppFeedback.tsx:163
+#: src/components/shell/LibraryManagementMenu.tsx:302
+msgid "shell.feedback.sign-in-again"
+msgstr "Đăng nhập lại"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:176
+#: src/components/shell/AppFeedback.tsx:178
+msgid "shell.feedback.try-sign-in-again"
+msgstr "Thử lại"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:7
+msgid "shell.heading.catalog"
+msgstr "Lộ trình học"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:4
+msgid "shell.heading.landing"
+msgstr "SonFlash — Học từ vựng thông minh"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:13
+msgid "shell.heading.language-drill"
+msgstr "Luyện ngôn ngữ"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:6
+msgid "shell.heading.library"
+msgstr "Thư viện từ vựng"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:15
+msgid "shell.heading.match"
+msgstr "Ghép từ"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:8
+msgid "shell.heading.progress"
+msgstr "Tiến độ học"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:11
+msgid "shell.heading.quiz"
+msgstr "Bài kiểm tra từ vựng"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:9
+msgid "shell.heading.settings"
+msgstr "Cài đặt và giao diện"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:16
+msgid "shell.heading.shadowing"
+msgstr "Luyện bắt chước phát âm"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:12
+msgid "shell.heading.spelling"
+msgstr "Luyện chính tả"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:14
+msgid "shell.heading.story"
+msgstr "Câu chuyện ngữ cảnh"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:10
+msgid "shell.heading.study"
+msgstr "Phiên học"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:5
+msgid "shell.heading.today"
+msgstr "Kế hoạch học hôm nay"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LanguageMenu.tsx:26
+msgid "shell.language.menu"
+msgstr "Ngôn ngữ"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LanguageMenu.tsx:25
+msgid "shell.language.open"
+msgstr "Chọn ngôn ngữ"
+
+#. js-lingui-explicit-id
+#: src/app/AppRuntime.tsx:548
+msgid "shell.learning-workspace"
+msgstr "Không gian học tập"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:89
+msgid "shell.level"
+msgstr "Cấp {level}, {xp} XP"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:89
+#: src/components/shell/DesktopNavigation.tsx:89
+msgid "shell.level.short"
+msgstr "Lv {level}"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryViewModel.ts:120
+msgid "shell.library-count.cached-cloud"
+msgstr "{cached, number} đã lưu tạm / {cloud, number} trên đám mây"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryViewModel.ts:123
+msgid "shell.library-count.cards"
+msgstr "{count, plural, other {# thẻ}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryViewModel.ts:121
+msgid "shell.library-count.cloud-paused"
+msgstr "Đồng bộ đám mây đã tạm dừng"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:274
+msgid "shell.library-menu.label"
+msgstr "Quản lý thư viện"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:223
+#: src/components/shell/LibraryManagementMenu.tsx:227
+msgid "shell.library-menu.trigger"
+msgstr "Quản lý thư viện"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:324
+msgid "shell.library-menu.zen-toggle-description"
+msgstr "Chuyển giữa chế độ Học tiêu chuẩn và chế độ Kính Zen tối giản"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:66
+#: src/components/shell/DesktopNavigation.tsx:66
+#: src/components/shell/FloatingMobileNav.tsx:19
+msgid "shell.nav.paths"
+msgstr "Lộ trình"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:68
+#: src/components/shell/DesktopNavigation.tsx:68
+#: src/components/shell/FloatingMobileNav.tsx:21
+msgid "shell.nav.progress"
+msgstr "Tiến độ"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:65
+#: src/components/shell/DesktopNavigation.tsx:65
+#: src/components/shell/FloatingMobileNav.tsx:18
+msgid "shell.nav.today"
+msgstr "Hôm nay"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:67
+#: src/components/shell/FloatingMobileNav.tsx:16
+msgid "shell.nav.vocabulary"
+msgstr "Từ vựng"
+
+#. js-lingui-explicit-id
+#: src/components/shell/FloatingMobileNav.tsx:23
+msgid "shell.navigation.mobile"
+msgstr "Điều hướng trên di động"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:78
+msgid "shell.navigation.primary"
+msgstr "Điều hướng chính"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:369
+msgid "shell.practice-menu.close"
+msgstr "Đóng menu luyện tập"
+
+#. js-lingui-explicit-id
+#: src/app/app-runtime-error.tsx:10
+msgid "shell.runtime-error.message"
+msgstr "Không thể tải không gian học tập."
+
+#. js-lingui-explicit-id
+#: src/app/app-runtime-error.tsx:12
+#: src/app/AppRuntimeBoundary.tsx:33
+msgid "shell.runtime-error.retry"
+msgstr "Thử tải lại không gian học tập"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:295
+#: src/components/AppOverlays.tsx:296
+#: src/components/AppOverlays.tsx:466
+#: src/components/AppOverlays.tsx:577
+msgid "shell.share.all-library"
+msgstr "Tất cả thẻ trong thư viện"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:615
+msgid "shell.share.behavior"
+msgstr "Cách chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:304
+msgid "shell.share.close"
+msgstr "Đóng hộp thoại chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:608
+msgid "shell.share.copy-failed"
+msgstr "Không thể sao chép liên kết. Hãy tự sao chép hoặc thử lại nút sao chép."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:601
+msgid "shell.share.copy-link"
+msgstr "Sao chép liên kết chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:609
+msgid "shell.share.dismiss-copy-error"
+msgstr "Đóng lỗi sao chép"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:312
+#: src/components/AppOverlays.tsx:463
+msgid "shell.share.dismiss-error"
+msgstr "Đóng thông báo lỗi chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:291
+#: src/components/AppOverlays.tsx:296
+#: src/components/AppOverlays.tsx:308
+msgid "shell.share.kicker"
+msgstr "Chia sẻ bộ thẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:600
+msgid "shell.share.link-input"
+msgstr "Liên kết chia sẻ bộ thẻ từ vựng"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:475
+msgid "shell.share.sample-vocabulary"
+msgstr "Từ vựng mẫu"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:546
+msgid "shell.share.target-unspecified"
+msgstr "Chưa xác định ngôn ngữ cần học"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:546
+msgid "shell.share.translation-unspecified"
+msgstr "Chưa xác định ngôn ngữ dịch"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:88
+msgid "shell.streak"
+msgstr "Chuỗi {count} ngày"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:58
+#: src/components/shell/LibraryManagementMenu.tsx:200
+#: src/components/shell/localized-sync-status.ts:20
+#: src/components/shell/localized-sync-status.ts:21
+msgid "shell.sync.checking"
+msgstr "Đang kiểm tra đám mây…"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:22
+msgid "shell.sync.checking-detail"
+msgstr "Đang xác minh phiên đám mây của bạn."
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:62
+#: src/components/shell/LibraryManagementMenu.tsx:204
+msgid "shell.sync.device"
+msgstr "Trên thiết bị này"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:38
+#: src/components/shell/localized-sync-status.ts:39
+msgid "shell.sync.needs-attention"
+msgstr "Cần chú ý"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:26
+#: src/components/shell/localized-sync-status.ts:27
+msgid "shell.sync.offline"
+msgstr "Ngoại tuyến"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:28
+msgid "shell.sync.offline-detail"
+msgstr "Bạn đang ngoại tuyến. Hãy kết nối lại để tiếp tục học."
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:15
+msgid "shell.sync.online"
+msgstr "Trực tuyến"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:32
+#: src/components/shell/localized-sync-status.ts:33
+msgid "shell.sync.paused"
+msgstr "Đám mây đã tạm dừng"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:34
+msgid "shell.sync.paused-detail"
+msgstr "Không thể cập nhật trực tiếp từ đám mây. Hãy thử lại khi kết nối ổn định hơn."
+
+#. js-lingui-explicit-id
+#: src/app/AppRuntime.tsx:436
+msgid "shell.sync.retry-failed"
+msgstr "Không thể hoàn tất đồng bộ. Các thay đổi vẫn được giữ trên thiết bị này. Hãy thử lại."
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:16
+msgid "shell.sync.saved-detail"
+msgstr "Mọi thay đổi đã được lưu."
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:303
+msgid "shell.sync.sign-in"
+msgstr "Đăng nhập & đồng bộ"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:14
+msgid "shell.sync.synced"
+msgstr "Đã đồng bộ"
+
+#. js-lingui-explicit-id
+#: src/components/shell/ThemeMenu.tsx:30
+msgid "shell.theme.menu"
+msgstr "Giao diện"
+
+#. js-lingui-explicit-id
+#: src/components/shell/ThemeMenu.tsx:29
+msgid "shell.theme.open"
+msgstr "Chọn giao diện"
+
+#. js-lingui-explicit-id
+#: src/components/shell/ThemeMenu.tsx:28
+#: src/components/shell/ThemeMenu.tsx:28
+msgid "shell.theme.quick-toggle"
+msgstr "Chuyển giữa chế độ sáng và tối"
+
+#. js-lingui-explicit-id
+#: src/app/use-library-mutation-feedback.ts:78
+msgid "shell.undo.card-deleted"
+msgstr "Đã xóa thẻ."
+
+#. js-lingui-explicit-id
+#: src/components/ui/UndoToast.tsx:161
+msgid "shell.undo.dismiss"
+msgstr "Đóng thông báo"
+
+#. js-lingui-explicit-id
+#: src/app/use-library-mutation-feedback.ts:83
+#: src/app/use-library-mutation-feedback.ts:87
+msgid "shell.undo.restore-failed"
+msgstr "Không thể khôi phục thẻ này. Hãy kiểm tra thư viện rồi thử lại."
+
+#: src/features/onboarding/OnboardingJourney.tsx:297
+msgctxt "onboarding.aha.quota-note"
+msgid "Your monthly Free card allowance is almost used up, so {count} card(s) were not added."
+msgstr "Hạn mức thẻ miễn phí tháng này của bạn sắp hết, nên {count} thẻ chưa được thêm."
+
+#: src/components/AppOverlays.tsx:472
+msgctxt "shell.share.more-cards"
+msgid "+{count} more"
+msgstr "+{count} thẻ nữa"
+
+#: src/features/onboarding/OnboardingJourney.tsx:183
+msgctxt "onboarding.language.subtitle"
+msgid "This sets the app's interface and the language your explanations will be written in."
+msgstr "Lựa chọn này đặt ngôn ngữ giao diện và ngôn ngữ dùng để giải nghĩa cho bạn."
+
+#: src/app/AppRuntime.tsx:560
+#: src/components/shell/CourseSwitcherControl.tsx:112
+msgctxt "course.action.retry"
+msgid "Retry"
+msgstr "Thử lại"
+
+#: src/app/AppDeferredViews.tsx:53
+msgctxt "shell.loading.practice"
+msgid "Loading practice"
+msgstr "Đang tải bài luyện tập"
+
+#: src/components/AppOverlays.tsx:404
+msgctxt "app-overlays.text-practice-mission"
+msgid "Text practice mission"
+msgstr "Nhiệm vụ luyện hội thoại"
+
+#: src/components/shell/CourseSwitcherControl.tsx:137
+msgctxt "course.switcher.no-active"
+msgid "Choose a course"
+msgstr "Chọn khóa học"
+
+#: src/features/onboarding/OnboardingJourney.tsx:245
+msgctxt "settings.course.script.simplified"
+msgid "Simplified"
+msgstr "Giản thể"
+
+#: src/components/AppOverlays.tsx:144
+msgctxt "shell.share.empty-description"
+msgid "Close this dialog and try opening the share link again."
+msgstr "Đóng hộp thoại này rồi thử mở lại liên kết chia sẻ."
+
+#: src/components/AppOverlays.tsx:525
+msgctxt "shell.share.add-none"
+msgid "No cards to add"
+msgstr "Không có thẻ để thêm"
+
+#: src/components/shell/LibraryManagementMenu.tsx:354
+msgctxt "shell.menu.export"
+msgid "Export library to Excel"
+msgstr "Xuất thư viện sang Excel"
+
+#: src/components/shell/SkipToContentLink.tsx:12
+msgctxt "shell.skip-content"
+msgid "Skip to content"
+msgstr "Chuyển đến nội dung"
+
+#: src/components/AppOverlays.tsx:140
+msgctxt "shell.share.loading"
+msgid "Preparing the shared deck…"
+msgstr "Đang chuẩn bị bộ thẻ được chia sẻ…"
+
+#: src/components/AppOverlays.tsx:602
+msgctxt "shell.share.copied"
+msgid "Copied"
+msgstr "Đã sao chép"
+
+#: src/components/AppOverlays.tsx:625
+msgctxt "shell.share.privacy-warning"
+msgid "Shared cards may include memory hooks and personal notes. Review them for private information before sharing."
+msgstr "Thẻ chia sẻ có thể chứa mẹo ghi nhớ và ghi chú cá nhân. Hãy kiểm tra thông tin riêng tư trước khi chia sẻ."
+
+#: src/features/courses/CourseGoalsPanel.tsx:59
+msgctxt "course.goal.edit.cancel"
+msgid "Cancel"
+msgstr "Hủy"
+
+#: src/app/AppViewStage.tsx:115
+msgctxt "shell.loading.progress"
+msgid "Preparing learning progress…"
+msgstr "Đang chuẩn bị tiến độ học…"
+
+#: src/components/AppOverlays.tsx:467
+msgctxt "shell.share.copy-detail"
+msgid "New library deck"
+msgstr "Bộ thẻ thư viện mới"
+
+#: src/components/shell/CourseSwitcherControl.tsx:37
+msgctxt "course.status.archived"
+msgid "Archived"
+msgstr "Đã lưu trữ"
+
+#: src/features/courses/CourseGoalsPanel.tsx:54
+#: src/features/courses/CourseGoalsPanel.tsx:97
+#: src/features/onboarding/OnboardingJourney.tsx:239
+msgctxt "course.goal.add.date-label"
+msgid "Exam or target date (optional)"
+msgstr "Ngày thi hoặc ngày mục tiêu (không bắt buộc)"
+
+#: src/app/AppRuntime.tsx:562
+msgctxt "course.loading"
+msgid "Preparing your courses…"
+msgstr "Đang chuẩn bị các khóa học của bạn…"
+
+#: src/components/shell/CourseSwitcherControl.tsx:77
+msgctxt "course.create.cancel"
+msgid "Cancel"
+msgstr "Hủy"
+
+#: src/components/AppOverlays.tsx:522
+msgctxt "shell.share.cancel"
+msgid "Cancel"
+msgstr "Hủy"
+
+#: src/components/AppOverlays.tsx:144
+msgctxt "shell.share.empty-title"
+msgid "No shared deck to show"
+msgstr "Không có bộ thẻ chia sẻ để hiển thị"
+
+#: src/features/courses/CourseGoalsPanel.tsx:60
+msgctxt "course.goal.edit.save"
+msgid "Save goal"
+msgstr "Lưu mục tiêu"
+
+#: src/components/ui/UndoToast.tsx:168
+msgctxt "shell.undo.window"
+msgid "Undo is available for {seconds} seconds."
+msgstr "Có thể hoàn tác trong {seconds} giây."
+
+#: src/components/AppOverlays.tsx:613
+msgctxt "shell.share.link-copied"
+msgid "Link copied"
+msgstr "Đã sao chép liên kết"
+
+#: src/components/AppOverlays.tsx:650
+msgctxt "shell.share.manage"
+msgid "Manage shared link"
+msgstr "Quản lý liên kết chia sẻ"
+
+#: src/features/onboarding/OnboardingJourney.tsx:275
+msgctxt "onboarding.aha.title"
+msgid "Let's add your first cards"
+msgstr "Cùng thêm những thẻ đầu tiên"
+
+#: src/app/AppDeferredViews.tsx:23
+#: src/app/AppRuntime.tsx:79
+msgctxt "shell.opening-dialog"
+msgid "Opening dialog"
+msgstr "Đang mở hộp thoại"
+
+#: src/components/shell/ThemeMenu.tsx:31
+msgctxt "shell.theme.crystal-light"
+msgid "Crystal Star: Day"
+msgstr "Crystal Star: Ban ngày"
+
+#: src/components/shell/CourseSwitcherControl.tsx:147
+msgctxt "course.error.generic"
+msgid "That course action did not go through. Please try again."
+msgstr "Thao tác với khóa học chưa thành công. Vui lòng thử lại."
+
+#: src/features/onboarding/OnboardingJourney.tsx:192
+#: src/features/onboarding/OnboardingJourney.tsx:213
+#: src/features/onboarding/OnboardingJourney.tsx:251
+#: src/features/onboarding/OnboardingJourney.tsx:269
+#: src/features/onboarding/OnboardingJourney.tsx:284
+#: src/features/onboarding/OnboardingJourney.tsx:298
+msgctxt "onboarding.continue"
+msgid "Continue"
+msgstr "Tiếp tục"
+
+#: src/components/shell/ThemeMenu.tsx:31
+msgctxt "shell.theme.crystal-dark"
+msgid "Crystal Star: Night"
+msgstr "Crystal Star: Ban đêm"
+
+#: src/components/AppOverlays.tsx:462
+msgctxt "shell.share.importing"
+msgid "Adding {count} cards to your new deck…"
+msgstr "Đang thêm {count} thẻ vào bộ thẻ mới…"
+
+#: src/components/shell/LibraryManagementMenu.tsx:318
+msgctxt "shell.menu.appearance-settings"
+msgid "Appearance settings"
+msgstr "Cài đặt giao diện"

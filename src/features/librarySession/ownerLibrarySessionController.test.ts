@@ -1,23 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { CardData } from '../../types/card';
 import {
   createOwnerLibrarySessionController,
   getLegacyMigrationIssue,
-  type OwnerLibraryCache,
   type OwnerLibrarySessionAdapter,
 } from './ownerLibrarySessionController';
-
-const card = (id: string): CardData => ({
-  id,
-  word: id,
-  translation: id,
-  explanation: '',
-  phonetic: '',
-  emoji: '📝',
-  category: 'Other',
-  audioUrl: null,
-  imageUrl: null,
-});
 
 const deferred = <T,>() => {
   let resolve!: (value: T) => void;
@@ -29,42 +15,16 @@ const deferred = <T,>() => {
   return { promise, resolve, reject };
 };
 
-class MemoryCache implements OwnerLibraryCache {
-  cardsOwnerId: string | null = null;
-  cards: CardData[] = [];
-  decksOwnerId: string | null = null;
-  decks: string[] = [];
-
-  readCards = () => ({ ownerId: this.cardsOwnerId, cards: this.cards });
-  writeCards = (ownerId: string, cards: CardData[]) => {
-    this.cardsOwnerId = ownerId;
-    this.cards = cards;
-  };
-  discardCards = () => { this.cards = []; };
-  readDecks = () => ({ ownerId: this.decksOwnerId, decks: this.decks });
-  writeDecks = (ownerId: string, decks: string[]) => {
-    this.decksOwnerId = ownerId;
-    this.decks = decks;
-  };
-  discardDecks = () => { this.decks = []; };
-}
-
 const fakeAdapter = (): OwnerLibrarySessionAdapter & {
-  emitDecks(ownerId: string, decks: unknown[] | null): void;
+  emitDecks(ownerId: string, profile: unknown | null): void;
   emitDeckError(ownerId: string, error: unknown): void;
   unsubscriptions: string[];
-  queuedCards: Array<{ ownerId: string; epoch: number; cards: CardData[] }>;
-  seededDecks: Array<{ ownerId: string; decks: string[] }>;
 } => {
-  const deckListeners = new Map<string, (decks: unknown[] | null) => void>();
+  const deckListeners = new Map<string, (profile: unknown | null) => void>();
   const deckErrorListeners = new Map<string, (error: unknown) => void>();
   const unsubscriptions: string[] = [];
-  const queuedCards: Array<{ ownerId: string; epoch: number; cards: CardData[] }> = [];
-  const seededDecks: Array<{ ownerId: string; decks: string[] }> = [];
   return {
     available: true,
-    queueCardMigration: async (ownerId, cards, epoch) => { queuedCards.push({ ownerId, cards, epoch }); },
-    seedDeckProfile: async (ownerId, decks) => { seededDecks.push({ ownerId, decks }); },
     subscribeDeckProfile: (ownerId, onDecks, onError) => {
       deckListeners.set(ownerId, onDecks);
       deckErrorListeners.set(ownerId, onError);
@@ -72,135 +32,42 @@ const fakeAdapter = (): OwnerLibrarySessionAdapter & {
     },
     getLegacyMigrationProgress: async () => ({ scanned: 0, complete: true }),
     migrateLegacyCards: async () => ({ migrated: 0, scanned: 0, complete: true }),
-    emitDecks: (ownerId, decks) => deckListeners.get(ownerId)?.(decks),
+    emitDecks: (ownerId, profile) => deckListeners.get(ownerId)?.(profile),
     emitDeckError: (ownerId, error) => deckErrorListeners.get(ownerId)?.(error),
     unsubscriptions,
-    queuedCards,
-    seededDecks,
   };
 };
 
 describe('owner library session controller', () => {
-  it('discards active and pending-adoption cards on explicit clear', async () => {
-    const cache = new MemoryCache();
-    cache.cards = [card('private-card')];
+  it('subscribes to the deck profile and normalizes incoming deck names', async () => {
     const adapter = fakeAdapter();
-    const controller = createOwnerLibrarySessionController({ adapter, cache });
-
-    controller.activate({ ownerId: 'owner-a', libraryEpoch: null, cloudTotal: 0 });
-    expect(controller.getSnapshot().cards).toHaveLength(1);
-
-    controller.discardCards();
-
-    expect(cache.readCards().cards).toEqual([]);
-    expect(controller.getSnapshot().cards).toEqual([]);
+    const controller = createOwnerLibrarySessionController({ adapter });
 
     controller.activate({ ownerId: 'owner-a', libraryEpoch: 7, cloudTotal: 0 });
     await vi.waitFor(() => expect(controller.getSnapshot().status).toBe('ready'));
-    expect(adapter.queuedCards).toEqual([]);
+    adapter.emitDecks('owner-a', { decks: [' IELTS ', 'IELTS'] });
+
+    expect(controller.getSnapshot()).toMatchObject({ ownerId: 'owner-a', decks: ['IELTS'] });
   });
 
-  it('adopts anonymous cards and decks for the authenticated owner', async () => {
-    const cache = new MemoryCache();
-    cache.cards = [card('bonjour')];
-    cache.decks = [' IELTS ', 'IELTS'];
+  it('keeps only valid presets for active deck names', async () => {
     const adapter = fakeAdapter();
-    adapter.getLegacyMigrationProgress = async () => ({ scanned: 3, complete: false });
-    const controller = createOwnerLibrarySessionController({ adapter, cache });
+    const controller = createOwnerLibrarySessionController({ adapter });
 
-    controller.activate({ ownerId: 'owner-a', libraryEpoch: 7, cloudTotal: 5 });
-
+    controller.activate({ ownerId: 'owner-a', libraryEpoch: 7, cloudTotal: 0 });
     await vi.waitFor(() => expect(controller.getSnapshot().status).toBe('ready'));
-    expect(controller.getSnapshot()).toMatchObject({
-      ownerId: 'owner-a',
-      cards: [expect.objectContaining({ id: 'bonjour' })],
+    adapter.emitDecks('owner-a', {
       decks: ['IELTS'],
-      legacyPending: 2,
+      coverPresets: { d_SUVMVFM: 'violet', orphan: 'moss' },
     });
-    expect(adapter.queuedCards).toEqual([{
-      ownerId: 'owner-a', epoch: 7, cards: [expect.objectContaining({ id: 'bonjour' })],
-    }]);
-    expect(adapter.seededDecks).toEqual([{ ownerId: 'owner-a', decks: ['IELTS'] }]);
-    expect(cache.cardsOwnerId).toBe('owner-a');
-    expect(cache.decksOwnerId).toBe('owner-a');
-  });
 
-  it('keeps anonymous cards eligible for adoption after queue failure and reload', async () => {
-    const cache = new MemoryCache();
-    cache.cards = [card('bonjour')];
-    const failedAdapter = fakeAdapter();
-    failedAdapter.queueCardMigration = async () => { throw new Error('offline'); };
-    const failedController = createOwnerLibrarySessionController({ adapter: failedAdapter, cache });
-
-    failedController.activate({ ownerId: 'owner-a', libraryEpoch: 7, cloudTotal: 0 });
-    await vi.waitFor(() => expect(failedController.getSnapshot().status).toBe('error'));
-    expect(cache.cardsOwnerId).toBeNull();
-
-    const retryAdapter = fakeAdapter();
-    const reloaded = createOwnerLibrarySessionController({ adapter: retryAdapter, cache });
-    reloaded.activate({ ownerId: 'owner-a', libraryEpoch: 7, cloudTotal: 0 });
-    await vi.waitFor(() => expect(reloaded.getSnapshot().status).toBe('ready'));
-
-    expect(retryAdapter.queuedCards).toEqual([{
-      ownerId: 'owner-a', epoch: 7, cards: [expect.objectContaining({ id: 'bonjour' })],
-    }]);
-    expect(cache.cardsOwnerId).toBe('owner-a');
-  });
-
-  it('keeps in-flight anonymous cards reserved for their first owner', async () => {
-    const cache = new MemoryCache();
-    cache.cards = [card('bonjour')];
-    const adapter = fakeAdapter();
-    const queued = deferred<void>();
-    adapter.queueCardMigration = (ownerId, cards, epoch) => {
-      adapter.queuedCards.push({ ownerId, cards, epoch });
-      return queued.promise;
-    };
-    const controller = createOwnerLibrarySessionController({ adapter, cache });
-
-    controller.activate({ ownerId: 'owner-a', libraryEpoch: 7, cloudTotal: 0 });
-    expect(adapter.queuedCards).toEqual([{
-      ownerId: 'owner-a', epoch: 7, cards: [expect.objectContaining({ id: 'bonjour' })],
-    }]);
-
-    controller.activate({ ownerId: 'owner-b', libraryEpoch: 8, cloudTotal: 0 });
-    await vi.waitFor(() => expect(controller.getSnapshot().status).toBe('ready'));
-
-    expect(controller.getSnapshot()).toMatchObject({ ownerId: 'owner-b', cards: [] });
-    expect(adapter.queuedCards).toHaveLength(1);
-    expect(cache.cardsOwnerId).toBeNull();
-
-    queued.resolve();
-    await vi.waitFor(() => expect(cache.cardsOwnerId).toBe('owner-a'));
-    expect(cache.cards).toEqual([expect.objectContaining({ id: 'bonjour' })]);
-  });
-
-  it('does not overwrite owner B cache when owner A adoption settles late', async () => {
-    const cache = new MemoryCache();
-    cache.cards = [card('bonjour')];
-    const adapter = fakeAdapter();
-    const queued = deferred<void>();
-    adapter.queueCardMigration = (ownerId, cards, epoch) => {
-      adapter.queuedCards.push({ ownerId, cards, epoch });
-      return queued.promise;
-    };
-    const controller = createOwnerLibrarySessionController({ adapter, cache });
-
-    controller.activate({ ownerId: 'owner-a', libraryEpoch: 7, cloudTotal: 0 });
-    controller.activate({ ownerId: 'owner-b', libraryEpoch: 8, cloudTotal: 0 });
-    cache.writeCards('owner-b', [card('b-card')]);
-
-    queued.resolve();
-    await queued.promise;
-
-    expect(cache.readCards()).toEqual({ ownerId: 'owner-b', cards: [card('b-card')] });
+    expect(controller.getSnapshot().coverPresets).toEqual({ d_SUVMVFM: 'violet' });
   });
 
   it('keeps legacy indexing actionable when createdAt exists but query fields are still missing', async () => {
-    const cache = new MemoryCache();
     const adapter = fakeAdapter();
     adapter.getLegacyMigrationProgress = async () => ({ scanned: 0, complete: false });
-    const controller = createOwnerLibrarySessionController({ adapter, cache });
+    const controller = createOwnerLibrarySessionController({ adapter });
 
     controller.activate({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 1 });
 
@@ -209,10 +76,9 @@ describe('owner library session controller', () => {
   });
 
   it('keeps the empty verification scan actionable after an exact-size batch', async () => {
-    const cache = new MemoryCache();
     const adapter = fakeAdapter();
     adapter.getLegacyMigrationProgress = async () => ({ scanned: 100, complete: false });
-    const controller = createOwnerLibrarySessionController({ adapter, cache });
+    const controller = createOwnerLibrarySessionController({ adapter });
 
     controller.activate({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 100 });
 
@@ -221,11 +87,10 @@ describe('owner library session controller', () => {
   });
 
   it('advances pending progress by scanned cards rather than changed cards', async () => {
-    const cache = new MemoryCache();
     const adapter = fakeAdapter();
     adapter.getLegacyMigrationProgress = async () => ({ scanned: 0, complete: false });
     adapter.migrateLegacyCards = async () => ({ migrated: 0, scanned: 100, complete: false });
-    const controller = createOwnerLibrarySessionController({ adapter, cache });
+    const controller = createOwnerLibrarySessionController({ adapter });
 
     controller.activate({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 101 });
     await vi.waitFor(() => expect(controller.getSnapshot().legacyPending).toBe(101));
@@ -240,7 +105,6 @@ describe('owner library session controller', () => {
   });
 
   it('stops browser retries when legacy maintenance requires an administrator access fix', async () => {
-    const cache = new MemoryCache();
     const adapter = fakeAdapter();
     const permissionDenied = Object.assign(
       new Error('Missing or insufficient permissions.'),
@@ -248,7 +112,7 @@ describe('owner library session controller', () => {
     );
     adapter.getLegacyMigrationProgress = async () => ({ scanned: 0, complete: false });
     adapter.migrateLegacyCards = async () => { throw permissionDenied; };
-    const controller = createOwnerLibrarySessionController({ adapter, cache });
+    const controller = createOwnerLibrarySessionController({ adapter });
 
     controller.activate({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 1 });
     await vi.waitFor(() => expect(controller.getSnapshot().legacyPending).toBe(1));
@@ -294,9 +158,8 @@ describe('owner library session controller', () => {
   });
 
   it('keeps the owner session usable when only the deck profile listener reaches quota', async () => {
-    const cache = new MemoryCache();
     const adapter = fakeAdapter();
-    const controller = createOwnerLibrarySessionController({ adapter, cache });
+    const controller = createOwnerLibrarySessionController({ adapter });
 
     controller.activate({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 0 });
     await vi.waitFor(() => expect(controller.getSnapshot().status).toBe('ready'));
@@ -311,12 +174,11 @@ describe('owner library session controller', () => {
   });
 
   it('keeps one migration in flight when the same owner total is refreshed', async () => {
-    const cache = new MemoryCache();
     const adapter = fakeAdapter();
     const migration = deferred<{ migrated: number; scanned: number; complete: boolean }>();
     adapter.getLegacyMigrationProgress = async () => ({ scanned: 0, complete: false });
     adapter.migrateLegacyCards = () => migration.promise;
-    const controller = createOwnerLibrarySessionController({ adapter, cache });
+    const controller = createOwnerLibrarySessionController({ adapter });
 
     controller.activate({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 2 });
     await vi.waitFor(() => expect(controller.getSnapshot().legacyPending).toBe(2));
@@ -331,7 +193,6 @@ describe('owner library session controller', () => {
   });
 
   it('stops retrying a legacy batch that requires a trusted migration', async () => {
-    const cache = new MemoryCache();
     const adapter = fakeAdapter();
     const identityConflict = Object.assign(
       new Error('Card mutation rejected: identity-conflict.'),
@@ -339,7 +200,7 @@ describe('owner library session controller', () => {
     );
     adapter.getLegacyMigrationProgress = async () => ({ scanned: 0, complete: false });
     adapter.migrateLegacyCards = async () => { throw identityConflict; };
-    const controller = createOwnerLibrarySessionController({ adapter, cache });
+    const controller = createOwnerLibrarySessionController({ adapter });
 
     controller.activate({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 1 });
     await vi.waitFor(() => expect(controller.getSnapshot().legacyPending).toBe(1));
@@ -358,43 +219,35 @@ describe('owner library session controller', () => {
   });
 
   it('isolates owner B from late owner A work and cleans up A subscription', async () => {
-    const cache = new MemoryCache();
-    cache.cardsOwnerId = 'owner-a';
-    cache.cards = [card('a-card')];
-    cache.decksOwnerId = 'owner-a';
-    cache.decks = ['A deck'];
     const adapter = fakeAdapter();
     const aProgress = deferred<{ scanned: number; complete: boolean }>();
     adapter.getLegacyMigrationProgress = ownerId => ownerId === 'owner-a'
       ? aProgress.promise
       : Promise.resolve({ scanned: 1, complete: true as const });
-    const controller = createOwnerLibrarySessionController({ adapter, cache });
+    const controller = createOwnerLibrarySessionController({ adapter });
 
     controller.activate({ ownerId: 'owner-a', libraryEpoch: 1, cloudTotal: 4 });
     controller.activate({ ownerId: 'owner-b', libraryEpoch: 2, cloudTotal: 1 });
-    adapter.emitDecks('owner-a', ['late A deck']);
-    adapter.emitDecks('owner-b', [' B deck ', 'B deck']);
+    adapter.emitDecks('owner-a', { decks: ['late A deck'] });
+    adapter.emitDecks('owner-b', { decks: [' B deck ', 'B deck'] });
     aProgress.resolve({ scanned: 0, complete: false });
 
     await vi.waitFor(() => expect(controller.getSnapshot().status).toBe('ready'));
     expect(adapter.unsubscriptions).toContain('owner-a');
     expect(controller.getSnapshot()).toMatchObject({
-      ownerId: 'owner-b', cards: [], decks: ['B deck'], legacyPending: 0,
+      ownerId: 'owner-b', decks: ['B deck'], legacyPending: 0,
     });
-    expect(cache.cards).toEqual([]);
-    expect(cache.decks).toEqual(['B deck']);
   });
 
   it('stops publication after cleanup', async () => {
-    const cache = new MemoryCache();
     const adapter = fakeAdapter();
     const progress = deferred<{ scanned: number; complete: boolean }>();
     adapter.getLegacyMigrationProgress = () => progress.promise;
-    const controller = createOwnerLibrarySessionController({ adapter, cache });
+    const controller = createOwnerLibrarySessionController({ adapter });
 
     const stop = controller.activate({ ownerId: 'owner-a', libraryEpoch: 1, cloudTotal: 2 });
     stop();
-    adapter.emitDecks('owner-a', ['late']);
+    adapter.emitDecks('owner-a', { decks: ['late'] });
     progress.resolve({ scanned: 0, complete: false });
     await Promise.resolve();
 
@@ -404,18 +257,14 @@ describe('owner library session controller', () => {
   });
 
   it('keeps the active owner isolated and reports adapter failures', async () => {
-    const cache = new MemoryCache();
-    cache.cardsOwnerId = 'owner-a';
-    cache.cards = [card('private-a')];
     const adapter = fakeAdapter();
     adapter.getLegacyMigrationProgress = async () => { throw new Error('offline'); };
     adapter.migrateLegacyCards = async () => { throw new Error('migration failed'); };
-    const controller = createOwnerLibrarySessionController({ adapter, cache });
+    const controller = createOwnerLibrarySessionController({ adapter });
 
     controller.activate({ ownerId: 'owner-b', libraryEpoch: 2, cloudTotal: 4 });
     await vi.waitFor(() => expect(controller.getSnapshot().status).toBe('ready'));
 
-    expect(controller.getSnapshot().cards).toEqual([]);
     expect(controller.getSnapshot()).toMatchObject({
       error: null,
       legacyIssue: {
@@ -425,7 +274,7 @@ describe('owner library session controller', () => {
     });
     await expect(controller.migrateLegacy()).resolves.toMatchObject({ status: 'failed' });
     expect(controller.getSnapshot()).toMatchObject({
-      ownerId: 'owner-b', cards: [], isMigratingLegacy: false, legacyPending: 0,
+      ownerId: 'owner-b', isMigratingLegacy: false, legacyPending: 0,
     });
     expect(controller.getSnapshot()).toMatchObject({
       error: null,

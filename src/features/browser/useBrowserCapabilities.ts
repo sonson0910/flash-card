@@ -5,6 +5,7 @@ import {
   useSyncExternalStore,
   type RefObject,
 } from 'react';
+import { getEffectiveReducedMotion } from '../../lib/motionPreference';
 
 export interface BrowserHeading {
   readonly isConnected: boolean;
@@ -75,7 +76,7 @@ const browserPort: BrowserCapabilitiesPort = {
     observer.observe(target, { attributes: true, attributeFilter: ['class', 'style'] });
     return () => observer.disconnect();
   },
-  getScrollBehavior: () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  getScrollBehavior: () => getEffectiveReducedMotion()
     ? 'auto'
     : 'smooth',
 };

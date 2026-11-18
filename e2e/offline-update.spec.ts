@@ -1,8 +1,8 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures/firebase-emulator';
 import { startOfflineReleaseFixture, type OfflineReleaseFixture } from './offline-release-fixture';
 
 const card = {
-  id: 'release-journey',
+  id: 'word-reliable', schemaVersion: 2, revision: 1,
   word: 'reliable',
   normalizedWord: 'reliable',
   translation: 'đáng tin cậy',
@@ -16,14 +16,6 @@ const card = {
   bookmarked: false,
   difficulty: 'unrated',
   customDeck: null,
-};
-
-const seedReleaseState = async (page: Page) => {
-  await page.addInitScript(initialCard => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify([initialCard]));
-    localStorage.removeItem('lingoflash_cards_owner');
-    localStorage.removeItem('lingoflash_cards_scoped_v1');
-  }, card);
 };
 
 const closeFixture = async (fixture: OfflineReleaseFixture | undefined) => {
@@ -85,14 +77,16 @@ const cachedReleaseAssets = async (page: Page, cacheName: string, mainEntryPath:
   };
 }, { cacheName, mainEntryPath });
 
-test('a waiting release does not reload an active study tab, then close/reopen activates it and rollback redownloads', async ({ page }) => {
+test('a waiting release does not reload an active study tab, then close/reopen activates it and rollback redownloads', async ({ page, seedCards, seedCourseProfile, signIn, blockExternalNetwork }) => {
   const fixture = await startOfflineReleaseFixture();
   let tabB: Page | undefined;
   let reopened: Page | undefined;
   let rollback: Page | undefined;
   try {
-    await seedReleaseState(page);
-    await page.goto(`${fixture.origin}/?view=library`);
+    await seedCourseProfile();
+    await seedCards([card]);
+    await blockExternalNetwork(page, [Number(new URL(fixture.origin).port)]);
+    await signIn(page, `${fixture.origin}/?view=library&locale=en`);
     await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
     await expect(page.getByText('reliable', { exact: true }).first()).toBeVisible();
     await page.getByRole('button', { name: 'Prepare offline', exact: true }).click();
@@ -119,6 +113,7 @@ test('a waiting release does not reload an active study tab, then close/reopen a
     await expect(page.getByRole('heading', { name: 'Meet this word', exact: true })).toBeVisible();
 
     tabB = await page.context().newPage();
+    await blockExternalNetwork(tabB, [Number(new URL(fixture.origin).port)]);
     await tabB.goto(`${fixture.origin}/?view=library`);
     await expect(tabB.getByRole('heading', { name: 'Your library' })).toBeVisible();
     let activeStudyLoads = 0;
@@ -142,6 +137,7 @@ test('a waiting release does not reload an active study tab, then close/reopen a
     tabB = undefined;
 
     reopened = await page.context().newPage();
+    await blockExternalNetwork(reopened, [Number(new URL(fixture.origin).port)]);
     await reopened.goto(`${fixture.origin}/?view=library`);
     await expect(reopened.getByRole('heading', { name: 'Your library' })).toBeVisible();
     await expect(reopened.getByText('reliable', { exact: true }).first()).toBeVisible();
@@ -160,6 +156,7 @@ test('a waiting release does not reload an active study tab, then close/reopen a
     const assetRequestsBeforeRollback = fixture.assetRequestCount();
     fixture.setRelease('A');
     rollback = await reopened.context().newPage();
+    await blockExternalNetwork(rollback, [Number(new URL(fixture.origin).port)]);
     await rollback.goto(`${fixture.origin}/?view=library`);
     await updateWorker(rollback);
     await expect.poll(() => activeShellFingerprint(rollback!)).toBe(releaseB);
@@ -173,6 +170,7 @@ test('a waiting release does not reload an active study tab, then close/reopen a
     reopened = undefined;
     rollback = undefined;
     const afterRollback = await page.context().newPage();
+    await blockExternalNetwork(afterRollback, [Number(new URL(fixture.origin).port)]);
     try {
       await afterRollback.goto(`${fixture.origin}/?view=library`);
       await expect(afterRollback.getByRole('heading', { name: 'Your library' })).toBeVisible();

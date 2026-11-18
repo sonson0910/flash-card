@@ -1,0 +1,90 @@
+<!--#HEAD Session bridge-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#AMBIENT-->
+  <header style="position: relative; z-index: 3; height: 84px; flex-shrink: 0; padding: 0 56px; display: flex; align-items: center; gap: 28px;">
+    <button aria-label="Pause session" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    <ol aria-label="Session progress" style="list-style: none; margin: 0; padding: 0; flex-grow: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+      <sc-for list="{{rail}}" as="r" hint-placeholder-count="4">
+        <li aria-current="{{r.current}}">
+          <div style="height: 6px; border-radius: 6px; background: {{t.track}}; overflow: hidden;"><div style="width: {{r.fill}}%; height: 100%; border-radius: 6px; background: {{r.bar}}; box-shadow: {{r.glow}};"></div></div>
+          <div style="margin-top: 8px; display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: {{r.fg}};"><span>{{r.name}}</span><span style="font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 400;">{{r.meta}}</span></div>
+        </li>
+      </sc-for>
+    </ol>
+    <span title="Sound and haptics on" style="height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid {{t.line}}; color: {{t.text2}}; font-size: 12px; display: flex; align-items: center; gap: 8px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"></path></svg>
+      <span style="display: flex; align-items: center; gap: 2px; height: 14px;"><span class="sf-wave" style="width: 2px; height: 14px; border-radius: 2px; background: {{t.accent}};"></span><span class="sf-wave" style="width: 2px; height: 14px; border-radius: 2px; background: {{t.accent}}; animation-delay: 150ms;"></span><span class="sf-wave" style="width: 2px; height: 14px; border-radius: 2px; background: {{t.accent}}; animation-delay: 300ms;"></span></span>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="3" width="10" height="18" rx="2.5"></rect><path d="M3 9v6M21 9v6"></path></svg>
+    </span>
+  </header>
+
+  <main style="position: relative; z-index: 2; flex-grow: 1; display: grid; grid-template-columns: 1fr 560px 1fr; align-items: center; padding: 0 56px 60px;">
+    <div class="sf-rise" style="justify-self: start;">
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text2}};">Review done · 14 of 14</div>
+      <div style="margin-top: 16px; display: flex; align-items: baseline; gap: 10px;">
+        <span style="font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 96px; line-height: 0.9; letter-spacing: -0.05em; color: {{combo.fg}}; text-shadow: {{combo.glow}};">×6</span>
+      </div>
+      <div style="margin-top: 8px; font-size: 15px; color: {{t.body}};">streak of correct answers</div>
+      <div style="margin-top: 18px; display: flex; gap: 5px;">
+        <sc-for list="{{ticks}}" as="k" hint-placeholder-count="8"><span style="width: 18px; height: 18px; border-radius: 6px; background: {{k.bg}}; box-shadow: {{k.glow}};"></span></sc-for>
+      </div>
+      <div style="margin-top: 22px; height: 34px; width: fit-content; padding: 0 12px; border-radius: 999px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; color: {{t.warm}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">+36 XP · combo bonus ×1.5</div>
+    </div>
+
+    <div style="position: relative; height: 640px; display: flex; align-items: center; justify-content: center;">
+      <div aria-hidden="true" style="position: absolute; width: 440px; height: 440px; border-radius: 50%; background: {{aura}}; filter: blur(70px);"></div>
+      <sc-for list="{{ghosts}}" as="g" hint-placeholder-count="3">
+        <div aria-hidden="true" style="position: absolute; width: 340px; height: 450px; border-radius: {{t.cardRadius}}px; border: {{g.border}}; background: {{g.bg}}; opacity: {{g.o}}; transform: translate({{g.x}}px, {{g.y}}px) rotate({{g.r}}deg) scale({{g.s}}); filter: blur({{g.b}}px);"></div>
+      </sc-for>
+      <div aria-hidden="true" style="position: absolute; left: 380px; top: 360px; width: 260px; height: 3px; border-radius: 3px; background: {{trail}}; transform: rotate(-24deg); filter: blur(1px);"></div>
+      <div aria-hidden="true" style="position: absolute; left: 420px; top: 420px; width: 180px; height: 2px; border-radius: 2px; background: {{trail}}; transform: rotate(-24deg); opacity: 0.6;"></div>
+      <div class="sf-deal-2" style="position: relative; width: 340px; height: 450px; box-sizing: border-box; border-radius: {{t.cardRadius}}px; border: {{card.border}}; background: {{card.bg}}; box-shadow: {{card.shadow}}; padding: 30px 30px; display: flex; flex-direction: column; overflow: hidden; transform: rotate(-2deg);">
+        <span style="width: fit-content; height: 26px; padding: 0 10px; border-radius: 999px; border: 1px solid {{t.line}}; font-size: 11.5px; font-weight: 600; color: {{t.text2}}; display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: #b80000; color: #fff; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;">B</span>From BBC, yesterday</span>
+        <div style="margin-top: auto; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 54px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">re<span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">sil</span>ient</div>
+        <div style="margin-top: 10px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; color: {{t.text2}};">/rɪˈzɪliənt/ · adjective</div>
+        <div style="margin-top: auto; font-size: 13px; color: {{t.text3}};">Tap or press Space to flip</div>
+      </div>
+    </div>
+
+    <div class="sf-rise-2" style="justify-self: end; text-align: right;">
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.accentText}};">Part 2 of 4</div>
+      <h1 style="margin: 12px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 60px; line-height: 1; letter-spacing: -0.04em; color: {{t.textStrong}};"><span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">New</span><br>words</h1>
+      <p style="margin: 14px 0 0; font-size: 15px; line-height: 1.5; color: {{t.body}};">6 words · 4 you met<br>on the web yesterday</p>
+      <div style="margin-top: 22px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text3}};">continues in 2 s · Space to skip</div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    const bar = dark ? 'linear-gradient(90deg, #28d3f4, #966cd7)' : '#b4461a';
+    const R = [['Review', '14/14', 100], ['New words', '0/6', 4], ['Word Match', '60 s', 0], ['Recap', '', 0]];
+    const ghostBg = dark ? 'linear-gradient(180deg, #0f2430, #0a1a22)' : '#fffcf5';
+    const ghostBorder = dark ? '1px solid rgb(126 230 250 / 0.35)' : '1px solid rgb(29 26 22 / 0.12)';
+    return {
+      t, grainId: 'bridge-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: 200, ay: -300, bx: 900, by: 420 },
+      rail: R.map(([name, meta, fill], i) => ({ name, meta, fill, bar,
+        current: i === 1 ? 'step' : 'false',
+        glow: dark && fill ? '0 0 10px rgb(40 211 244 / 0.6)' : 'none',
+        fg: i === 1 ? t.textStrong : i === 0 ? t.text2 : t.text3 })),
+      combo: dark ? { fg: '#f5ae39', glow: '0 0 40px rgb(245 174 57 / 0.55)' } : { fg: '#97400d', glow: 'none' },
+      ticks: Array.from({ length: 8 }, (_, i) => ({
+        bg: i < 6 ? (dark ? '#f5ae39' : '#97400d') : t.track,
+        glow: i < 6 && dark ? '0 0 10px rgb(245 174 57 / 0.55)' : 'none' })),
+      aura: dark ? 'radial-gradient(circle, rgb(40 211 244 / 0.4), rgb(150 108 215 / 0.28) 50%, transparent 70%)' : 'radial-gradient(circle, rgb(180 70 26 / 0.14), transparent 65%)',
+      ghosts: [[240, 190, 14, 0.8, 0.12, 6], [160, 120, 9, 0.88, 0.22, 3], [80, 60, 4, 0.94, 0.36, 1]].map(([x, y, r, s, o, b]) => ({ x, y, r, s, o, b, bg: ghostBg, border: ghostBorder })),
+      trail: dark ? 'linear-gradient(90deg, transparent, rgb(126 230 250 / 0.8))' : 'linear-gradient(90deg, transparent, rgb(180 70 26 / 0.5))',
+      card: dark
+        ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 80% 60% at 100% 0%, rgb(150 108 215 / 0.25), transparent 70%) padding-box, linear-gradient(180deg, #0f2430, #0a1a22) padding-box, ' + t.rimNew + ' border-box', shadow: '0 0 60px -16px rgb(40 211 244 / 0.55), 0 40px 80px -30px rgb(0 0 0 / 0.95)' }
+        : { border: '0', bg: '#fffcf5', shadow: t.cardShadow },
+    };
+  }
+}
+</script>
+</body>
+</html>

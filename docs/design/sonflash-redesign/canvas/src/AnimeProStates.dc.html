@@ -1,0 +1,156 @@
+<!--#AHEAD Crystal Star Pro states-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#ABG-->
+<!--#ANAV-->
+
+  <div role="status" class="nk-slide" style="position: relative; z-index: 4; margin: 4px 56px 0; height: 50px; flex-shrink: 0; box-sizing: border-box; padding: 0 12px 0 0; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1.5px {{t.gold}}; display: flex; align-items: center; gap: 16px;">
+    <span style="height: 100%; padding: 0 22px 0 18px; clip-path: polygon(0 0, 100% 0, calc(100% - 16px) 100%, 0 100%); background: linear-gradient(180deg, #fff0b8, #ffd166); display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; letter-spacing: 0.06em; color: #4a2a00;"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"></path></svg>PRO TRIAL · 5 DAYS LEFT</span>
+    <span style="font-size: 14px; font-weight: 700; color: {{t.text}};">AI cards, tutor, stories and shadowing scores are unlocked until Mon 28 Sep.</span>
+    <div aria-hidden="true" style="margin-left: auto; width: 160px; height: 8px; transform: skewX(-30deg); background: {{t.track}};"><div class="nk-bar" style="width: 28%; height: 100%; background: linear-gradient(90deg, #ffd166, #ff5470);"></div></div>
+    <a href="#" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; color: {{t.crimsonText}}; text-decoration: none; white-space: nowrap;">SEE PLANS →</a>
+    <button aria-label="Dismiss" style="width: 30px; height: 30px; border: 0; background: transparent; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+  </div>
+
+  <main style="position: relative; z-index: 3; padding: 18px 56px 0; display: grid; grid-template-columns: 1.25fr 1fr 1fr; grid-template-rows: 356px 312px; gap: 20px 22px;">
+    <section aria-labelledby="trial-end" style="grid-row: span 2; display: flex; flex-direction: column; gap: 8px;">
+      <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.text2}};">TRIAL ENDS <span style="color: {{t.crimsonText}};">//</span> DAY 7</div>
+      <div class="nk-rise" style="position: relative; flex-grow: 1; filter: drop-shadow(0 0 22px {{t.tier.mastered.soft}});">
+        <div aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; overflow: hidden;"><div class="nk-rim-spin" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: {{t.tier.mastered.rim}};"></div></div>
+        <div aria-hidden="true" style="position: absolute; inset: 3px; clip-path: {{t.chamfer}}; background: {{t.cardFront}};"></div>
+        <div aria-hidden="true" style="position: absolute; right: -40px; top: -30px; width: 360px; height: 240px; opacity: {{t.wingOpacity}}; transform: scaleX(-1);">
+<!--#WINGS-->
+        </div>
+        <div style="position: relative; height: 100%; box-sizing: border-box; padding: 30px 34px 28px; display: flex; flex-direction: column;">
+          <p style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.1em; color: {{t.goldText}};">TODAY IS THE LAST DAY OF YOUR TRIAL</p>
+          <h2 id="trial-end" style="margin: 10px 0 0; max-width: 470px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 34px; line-height: 1.1; color: {{t.textStrong}};">In 7 days you saved <span style="background: {{emGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent;">86 words</span> and read 4 stories.</h2>
+          <p style="margin: 12px 0 0; max-width: 460px; font-size: 15px; line-height: 1.55; color: {{t.body}};">Nothing you learned goes away. Here is what changes tomorrow if you stay on Free.</p>
+          <div style="margin-top: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div style="padding: 16px 18px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+              <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.14em; color: {{t.holoText}};">YOU KEEP</div>
+              <ul style="margin: 10px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px;">
+                <sc-for list="{{keep}}" as="k" hint-placeholder-count="4"><li style="display: flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 700; color: {{t.textStrong}};"><span style="width: 18px; height: 20px; flex-shrink: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(180deg, #7ff6ff, #1aa7c9); display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#031820" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>{{k}}</li></sc-for>
+              </ul>
+            </div>
+            <div style="padding: 16px 18px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}};">
+              <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.14em; color: {{t.text2}};">PAUSES ON FREE</div>
+              <ul style="margin: 10px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px;">
+                <sc-for list="{{lose}}" as="k" hint-placeholder-count="4"><li style="display: flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 700; color: {{t.text2}};"><span style="width: 18px; height: 20px; flex-shrink: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.track}}; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="{{t.text2}}" stroke-width="3.6" stroke-linecap="round"><path d="M6 12h12"></path></svg></span>{{k}}</li></sc-for>
+              </ul>
+            </div>
+          </div>
+          <div style="margin-top: auto; display: flex; align-items: flex-end; gap: 16px;">
+            <div style="flex-grow: 1;">
+              <div style="display: flex; flex-direction: column; gap: 10px; width: 330px;">
+                <button class="nk-lift" style="position: relative; overflow: hidden; height: 54px; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 17px; letter-spacing: 0.04em; cursor: pointer; filter: drop-shadow(0 0 14px rgb(255 42 77 / 0.6));"><span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 60px; background: rgb(255 255 255 / 0.35);"></span><span style="position: relative;">KEEP PRO · 949.000 ₫ / YEAR</span></button>
+                <button class="nk-lift" style="height: 46px; border: 0; transform: skewX(-12deg); background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.secondaryText}}; cursor: pointer;"><span style="display: block; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px;">CONTINUE ON FREE</span></button>
+              </div>
+              <p style="margin: 10px 0 0; font-size: 12.5px; font-weight: 700; color: {{t.text3}};">We never charge automatically after a trial.</p>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center;">
+              <div style="padding: 8px 12px; max-width: 150px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; font-size: 12px; font-weight: 700; line-height: 1.4; color: {{t.text}};"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; letter-spacing: 0.1em; color: {{t.holoText}};">LUMI · LINK</span><br>Thẻ của bạn vẫn ở đây, dù chọn gói nào!</div>
+              <div class="nk-float" style="width: 140px; height: 142px;">
+<!--#MASCOT hint-->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.text2}};">ACCOUNT MENU <span style="color: {{t.crimsonText}};">//</span> PRO</div>
+      <div style="position: relative; flex-grow: 1; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 18px 20px; box-sizing: border-box;">
+        <div role="menu" aria-label="Account" class="nk-pop" style="margin-top: 0; clip-path: {{t.chamferSm}}; background: {{t.panelSolid}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; padding: 12px;">
+          <div style="padding: 2px 6px 10px; border-bottom: 1px solid {{t.line}}; display: flex; align-items: center; gap: 12px;">
+            <span style="position: relative; width: 46px; height: 52px; flex-shrink: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.tier.mastered.rim}}; display: flex; align-items: center; justify-content: center;"><span style="position: absolute; inset: 3px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.cardFront}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 17px; color: {{t.textStrong}};">KB</span></span>
+            <div>
+            <div style="font-weight: 900; font-size: 15px; color: {{t.textStrong}};">Khánh Bùi</div>
+            <div style="margin-top: 4px; display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: {{t.text2}};"><span style="height: 20px; padding: 0 8px; transform: skewX(-12deg); background: linear-gradient(180deg, #fff0b8, #ffd166); display: inline-flex; align-items: center;"><span style="transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 11px; color: #4a2a00;">PRO · ANNUAL</span></span>Renews 23 Sep 2027</div>
+            </div>
+          </div>
+          <sc-for list="{{menu}}" as="m" hint-placeholder-count="4">
+            <button role="menuitem" style="width: 100%; height: 40px; margin-top: 4px; padding: 0 10px; border: 0; clip-path: {{t.chamferSm}}; background: {{m.bg}}; color: {{m.color}}; display: flex; align-items: center; gap: 10px; text-align: left; font-family: {{t.fBody}}; font-size: 14px; font-weight: 700; cursor: pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{m.icon}}"></path></svg><span style="flex-grow: 1;">{{m.label}}</span><span style="font-size: 12px; font-weight: 800; color: {{t.goldText}};">{{m.tag}}</span></button>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.text2}};">DOWNGRADED TO FREE</div>
+      <div style="position: relative; flex-grow: 1; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 24px 24px; box-sizing: border-box; display: flex; flex-direction: column;">
+        <span style="align-self: flex-start; height: 30px; padding: 0 14px; clip-path: {{t.chamferSm}}; background: {{t.tier.new.rim}}; display: flex; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; letter-spacing: 0.08em; color: #031820;">A · FREE PLAN</span>
+        <h3 style="margin: 16px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 28px; line-height: 1.1; color: {{t.textStrong}};">All 1,284 cards are still yours.</h3>
+        <p style="margin: 10px 0 0; font-size: 14.5px; line-height: 1.55; color: {{t.body}};">Reviews, streak and the extension keep working. AI cards are back to 5 a day.</p>
+        <div style="margin-top: auto; display: flex; align-items: center; gap: 16px;">
+          <button class="nk-lift" style="height: 48px; padding: 0 22px; border: 0; transform: skewX(-12deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; color: #ffffff; cursor: pointer;"><span style="display: block; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px;">REVIEW 12 DUE</span></button>
+          <a href="#" style="font-weight: 800; font-size: 14px; color: {{t.goldText}}; text-decoration: none;">Get Pro back →</a>
+        </div>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.text2}};">AI QUOTA <span style="color: {{t.crimsonText}};">//</span> INLINE</div>
+      <div style="position: relative; flex-grow: 1; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 22px 22px; box-sizing: border-box; display: flex; flex-direction: column;">
+        <span style="display: flex; gap: 8px;">
+          <span style="flex-grow: 1; height: 46px; box-sizing: border-box; padding: 0 14px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1.5px {{t.holo}}; display: flex; align-items: center;"><input value="resilient" aria-label="Word to add" style="width: 100%; border: 0; outline: 0; background: transparent; color: {{t.textStrong}}; font-family: {{t.fBody}}; font-weight: 800; font-size: 15px;"></span>
+          <button class="nk-lift" style="height: 46px; padding: 0 16px; border: 0; transform: skewX(-12deg); background: {{t.primaryBg}}; color: #ffffff; cursor: pointer;"><span style="display: flex; align-items: center; gap: 6px; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 14px; white-space: nowrap;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"></path></svg>CREATE WITH AI</span></button>
+        </span>
+        <div style="margin-top: 22px; display: flex; justify-content: space-between; align-items: baseline; font-size: 13.5px;"><span style="font-weight: 700; color: {{t.text2}};"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; color: {{t.textStrong}};">3 of 5</span> AI cards today</span><span style="font-family: {{t.fMono}}; font-size: 12.5px; color: {{t.text3}};">Resets 00:00</span></div>
+        <div role="meter" aria-valuemin="0" aria-valuemax="5" aria-valuenow="3" aria-label="AI cards used today" style="margin-top: 10px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
+          <sc-for list="{{quota}}" as="q" hint-placeholder-count="5"><span style="height: 14px; transform: skewX(-30deg); background: {{q.bg}}; box-shadow: {{q.glow}};"></span></sc-for>
+        </div>
+        <p style="margin: auto 0 0; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">Out of AI cards? You can always add a word by hand. <a href="#" style="font-weight: 800; color: {{t.goldText}}; text-decoration: none;">Pro is unlimited.</a></p>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.text2}};">LOCKED FEATURE <span style="color: {{t.crimsonText}};">//</span> REFERRAL TOAST</div>
+      <div style="position: relative; flex-grow: 1; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; padding: 22px 22px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px;">
+        <button aria-disabled="true" style="height: 64px; padding: 0 14px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text2}}; display: flex; align-items: center; gap: 12px; text-align: left; cursor: not-allowed;">
+          <span style="width: 36px; height: 40px; flex-shrink: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.track}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z"></path></svg></span>
+          <span style="flex-grow: 1; display: flex; flex-direction: column;"><span style="font-weight: 900; font-size: 15px; color: {{t.text}};">Story</span><span style="font-size: 12.5px; color: {{t.text3}};">Free story used this week · next on Mon</span></span>
+          <span style="height: 24px; padding: 0 9px; transform: skewX(-12deg); background: linear-gradient(180deg, #fff0b8, #ffd166); display: flex; align-items: center;"><span style="display: flex; align-items: center; gap: 4px; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 11.5px; color: #4a2a00;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg>PRO</span></span>
+        </button>
+        <div role="status" class="nk-pop" style="position: relative; filter: drop-shadow(0 0 16px rgb(255 209 102 / 0.45));">
+          <div style="clip-path: {{t.chamfer}}; background: linear-gradient(135deg, #fff3c4, #ffd166 40%, #ff5470); padding: 2px;">
+            <div style="clip-path: {{t.chamfer}}; background: {{t.cardFront}}; padding: 14px 14px; display: flex; align-items: center; gap: 12px;">
+              <span style="width: 40px; height: 40px; flex-shrink: 0; filter: drop-shadow(0 0 8px rgb(255 42 77 / 0.7));">
+<!--#STAR5-->
+              </span>
+              <span style="flex-grow: 1; display: flex; flex-direction: column;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 17px; color: {{t.goldText}};">+7 DAYS PRO</span><span style="font-size: 13px; color: {{t.text}};">Minh joined with your link. You both got a week.</span></span>
+              <button aria-label="Dismiss" style="width: 28px; height: 28px; border: 0; background: transparent; color: {{t.text2}}; cursor: pointer;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const hl = dark ? 'rgb(255 255 255 / 0.08)' : 'rgb(13 40 80 / 0.07)';
+    return {
+      t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      nav: nkNav(t, 0), streak: 23,
+      bg: { wings: false },
+      emGrad: dark ? 'linear-gradient(180deg, #ffd166 0%, #ff5470 60%, #ff2a4d 100%)' : 'linear-gradient(180deg, #ff2a4d 0%, #c40f35 60%, #8a0a26 100%)',
+      keep: ['All 1,284 cards & decks', 'Unlimited FSRS reviews', 'Your 23-day streak', 'Chrome extension'],
+      lose: ['AI cards → 5 a day', 'Tutor & stories → 1 a week', 'Shadowing scores', 'Streak freezes'],
+      menu: [
+        { label: 'Manage plan', icon: 'M3 7h18v12H3zM3 11h18', tag: '', bg: hl, color: t.textStrong },
+        { label: 'Invite friends', icon: 'M16 11a4 4 0 1 0-8 0M4 21a8 8 0 0 1 16 0M19 8v6M22 11h-6', tag: '+7 days each', bg: 'transparent', color: t.text },
+        { label: 'Settings', icon: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM4 12h2M18 12h2M12 4v2M12 18v2', tag: '', bg: 'transparent', color: t.text },
+        { label: 'Sign out', icon: 'M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10', tag: '', bg: 'transparent', color: t.text2 },
+      ],
+      quota: [0, 1, 2, 3, 4].map((i) => ({ bg: i < 3 ? t.primaryBg : t.track, glow: i < 3 ? '0 0 10px rgb(255 42 77 / 0.5)' : 'none' })),
+    };
+  }
+}
+</script>
+</body>
+</html>

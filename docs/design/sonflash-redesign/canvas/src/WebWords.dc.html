@@ -1,0 +1,113 @@
+<!--#HEAD Words from the web-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}};">
+<!--#AMBIENT-->
+<!--#NAV-->
+
+  <main style="position: relative; z-index: 2; padding: 30px 56px 0;">
+    <div style="display: flex; align-items: flex-end; gap: 24px;">
+      <div style="flex-grow: 1;">
+        <a href="#" style="font-size: 13px; color: {{t.text2}}; text-decoration: none;">← Vocabulary</a>
+        <h1 style="margin: 10px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 50px; line-height: 1; letter-spacing: -0.035em; color: {{t.textStrong}};">Words you met <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">on the web</span></h1>
+        <p style="margin: 10px 0 0; font-size: 14.5px; color: {{t.body}};">Saved with the SonFlash extension — each one keeps the sentence you found it in.</p>
+      </div>
+      <div role="tablist" aria-label="Filter" style="display: flex; gap: 4px; padding: 4px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
+        <sc-for list="{{tabs}}" as="f" hint-placeholder-count="4">
+          <button role="tab" aria-selected="{{f.on}}" style="height: 34px; padding: 0 14px; border-radius: 999px; border: 0; background: {{f.bg}}; color: {{f.fg}}; font-size: 13px; font-weight: 600; cursor: pointer;">{{f.label}}</button>
+        </sc-for>
+      </div>
+      <button class="sf-press" style="height: 46px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14.5px; font-weight: 650; display: flex; align-items: center; gap: 8px; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Add all 8 to today's session</button>
+    </div>
+
+    <div style="margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px;">
+        <section style="box-sizing: border-box; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; overflow: hidden;">
+          <header style="padding: 16px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid {{t.line}};">
+            <span style="width: 34px; height: 34px; border-radius: 9px; background: {{g1.fav}}; color: #ffffff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{g1.site0}}</span>
+            <div style="min-width: 0; flex-grow: 1;">
+              <div style="font-size: 14.5px; font-weight: 600; color: {{t.textStrong}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{g1.title}}</div>
+              <div style="font-size: 12px; color: {{t.text3}};">{{g1.site}} · {{g1.date}} · {{g1.count}} words</div>
+            </div>
+            <a href="#" aria-label="Open article" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid {{t.line}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4 10 14M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"></path></svg></a>
+          </header>
+          <sc-for list="{{g1.words}}" as="w" hint-placeholder-count="4">
+            <div style="padding: 14px 20px; display: grid; grid-template-columns: 180px 1fr; gap: 16px; border-bottom: 1px solid {{t.navLine}};">
+              <div>
+                <div style="font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-size: 24px; line-height: 1.05; color: {{t.textStrong}};">{{w.a}}<span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">{{w.b}}</span>{{w.c}}</div>
+                <div style="margin-top: 4px; font-size: 13px; color: {{t.accentText}};">{{w.vi}}</div>
+              </div>
+              <div style="min-width: 0;">
+                <p style="margin: 0; font-size: 13px; line-height: 1.5; color: {{t.body}};">“{{w.pre}}<mark style="background: {{hl}}; color: {{t.textStrong}}; padding: 0 3px; border-radius: 3px; font-weight: 600;">{{w.word}}</mark>{{w.post}}”</p>
+                <span style="margin-top: 8px; height: 24px; width: fit-content; padding: 0 9px; border-radius: 999px; border: 1px solid {{w.sLine}}; background: {{w.sBg}}; color: {{w.sFg}}; font-size: 11.5px; font-weight: 600; display: flex; align-items: center; gap: 5px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{w.sFg}};"></span>{{w.status}}</span>
+              </div>
+            </div>
+          </sc-for>
+        </section>
+        <section style="box-sizing: border-box; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; overflow: hidden;">
+          <header style="padding: 16px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid {{t.line}};">
+            <span style="width: 34px; height: 34px; border-radius: 9px; background: {{g2.fav}}; color: #ffffff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{g2.site0}}</span>
+            <div style="min-width: 0; flex-grow: 1;">
+              <div style="font-size: 14.5px; font-weight: 600; color: {{t.textStrong}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{g2.title}}</div>
+              <div style="font-size: 12px; color: {{t.text3}};">{{g2.site}} · {{g2.date}} · {{g2.count}} words</div>
+            </div>
+            <a href="#" aria-label="Open article" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid {{t.line}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4 10 14M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"></path></svg></a>
+          </header>
+          <sc-for list="{{g2.words}}" as="w" hint-placeholder-count="4">
+            <div style="padding: 14px 20px; display: grid; grid-template-columns: 180px 1fr; gap: 16px; border-bottom: 1px solid {{t.navLine}};">
+              <div>
+                <div style="font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-size: 24px; line-height: 1.05; color: {{t.textStrong}};">{{w.a}}<span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">{{w.b}}</span>{{w.c}}</div>
+                <div style="margin-top: 4px; font-size: 13px; color: {{t.accentText}};">{{w.vi}}</div>
+              </div>
+              <div style="min-width: 0;">
+                <p style="margin: 0; font-size: 13px; line-height: 1.5; color: {{t.body}};">“{{w.pre}}<mark style="background: {{hl}}; color: {{t.textStrong}}; padding: 0 3px; border-radius: 3px; font-weight: 600;">{{w.word}}</mark>{{w.post}}”</p>
+                <span style="margin-top: 8px; height: 24px; width: fit-content; padding: 0 9px; border-radius: 999px; border: 1px solid {{w.sLine}}; background: {{w.sBg}}; color: {{w.sFg}}; font-size: 11.5px; font-weight: 600; display: flex; align-items: center; gap: 5px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{w.sFg}};"></span>{{w.status}}</span>
+              </div>
+            </div>
+          </sc-for>
+        </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    const S = {
+      tomorrow: ['In tomorrow\'s session', t.info, t.infoBg, t.infoLine],
+      learning: ['Learning', t.warm, t.warmBg, t.warmLine],
+      known: ['Known', t.ok, t.okBg, t.okLine],
+    };
+    const word = ([a, b, c, vi, pre, w, post, s]) => {
+      const [status, sFg, sBg, sLine] = S[s];
+      return { a, b, c, vi, pre, word: w, post, status, sFg, sBg, sLine };
+    };
+    const G = [
+      ['BBC', '#b80000', 'The flood that rewrote a city’s plans overnight', 'Yesterday', [
+        ['re', 'sil', 'ient', 'kiên cường', 'Coastal towns proved remarkably ', 'resilient', ' after the storm.', 'tomorrow'],
+        ['', 'scru', 'tiny', 'sự giám sát', 'The council now faces growing ', 'scrutiny', ' from residents.', 'tomorrow'],
+        ['im', 'me', 'diate', 'ngay lập tức', 'Groups demanded an ', 'immediate', ' response from the council.', 'learning'],
+        ['em', 'bank', 'ment', 'bờ kè', 'Engineers warned the ', 'embankments', ' were temporary.', 'known'],
+      ]],
+      ['The Guardian', '#052962', 'Oceans are heating faster than models predicted', 'Mon, 21 Sep', [
+        ['un', 'pre', 'cedented', 'chưa từng có', 'An ', 'unprecedented', ' rise in sea temperatures.', 'tomorrow'],
+        ['', 'mit', 'igate', 'giảm thiểu', 'Few measures can ', 'mitigate', ' the damage quickly.', 'tomorrow'],
+        ['', 'thresh', 'old', 'ngưỡng', 'Reefs are past a critical ', 'threshold', '.', 'learning'],
+        ['', 'vol', 'atile', 'biến động', 'Weather patterns grow more ', 'volatile', ' each year.', 'known'],
+      ]],
+    ];
+    return {
+      t, grainId: 'web-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: -220, ay: -240, bx: 980, by: 480 },
+      streak: 12,
+      nav: sfNav(t, 2),
+      toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      hl: dark ? 'rgb(40 211 244 / 0.2)' : 'rgb(180 70 26 / 0.14)',
+      tabs: ['All 8', 'This week', 'Not in a deck', 'Known'].map((label, i) => ({ label, on: i === 0 ? 'true' : 'false', bg: i === 0 ? t.navActiveBg : 'transparent', fg: i === 0 ? t.navActiveText : t.text2 })),
+      ...Object.fromEntries(G.map(([site, fav, title, date, words], i) => ['g' + (i + 1), { site, site0: site[0], fav, title, date, count: words.length, words: words.map(word) }])),
+    };
+  }
+}
+</script>
+</body>
+</html>

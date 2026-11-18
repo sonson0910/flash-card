@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createLexemeId, createTrackMembershipId } from '../multilingual/lexemeIdentity';
 import { SCHEMA_V3_LIMITS, type LexemeV3, type TrackMembershipV3 } from '../multilingual/schemaV3';
-import type { CatalogChunkV1, CatalogReleaseManifestV1 } from '../catalogPipeline/catalogContracts';
+import type {
+  CatalogChunkV1,
+  CatalogReleaseManifestV1,
+  CatalogReleaseManifestV2,
+} from '../catalogPipeline/catalogContracts';
 import type {
   CatalogCacheEntry,
   CatalogChunkReceipt,
@@ -110,11 +114,12 @@ const cacheFake = () => {
   }[] = [];
   let active = 'old-release';
   let begins = 0;
+  let descriptor: CatalogReleaseDescriptor | null = null;
   const handle: CatalogInstallHandle = {
     catalogId: 'english-pilot', releaseId: 'english-release-1', releaseKey: 'new-key', installId: 'install-1',
   };
   const port: CatalogCacheInstallationPort = {
-    begin: async (_descriptor: CatalogReleaseDescriptor) => { begins += 1; return handle; },
+    begin: async (input: CatalogReleaseDescriptor) => { begins += 1; descriptor = input; return handle; },
     stage: async (_handle, receipt, entries, lexemes) => {
       staged.push({ receipt, entries, lexemes });
       return 'staged';
@@ -122,6 +127,7 @@ const cacheFake = () => {
     activate: async () => { active = 'english-release-1'; },
   };
   return {
+    descriptor: () => descriptor,
     port,
     staged,
     active: () => active,
@@ -163,6 +169,45 @@ describe('catalog release delivery', () => {
       provenance: { source: 'licensed-editorial', license: 'CC-BY-4.0', reviewer: 'reviewer-1' },
     });
     expect(cache.active()).toBe('english-release-1');
+  });
+
+  it('dispatches a V2 manifest, preserves lesson groups, and persists unit descriptors with the release', async () => {
+    const fixture = await releaseFixture([chunk(0)]);
+    const manifest: CatalogReleaseManifestV2 = {
+      ...fixture.manifest,
+      manifestVersion: 2,
+      unitDescriptors: [{
+        unitId: 'pilot-1', trackId: 'general', tier: 'foundation', ordinal: 1,
+        titles: [{ language: 'en', text: 'First steps' }, { language: 'vi', text: 'Bước đầu tiên' }],
+      }],
+    };
+    const cache = cacheFake();
+
+    await installCatalogRelease(manifest, { fetchChunk: async () => fixture.bytes[0] }, cache.port);
+
+    expect(cache.descriptor()).toMatchObject({ schemaVersion: 2, unitDescriptors: manifest.unitDescriptors });
+    expect(cache.staged[0].entries[0]).toMatchObject({ lessonGroup: 'pilot-1' });
+  });
+
+  it('rejects a V2 unit with more than twenty memberships before staging', async () => {
+    const fixture = await releaseFixture(Array.from({ length: 21 }, (_, index) => chunk(index)));
+    const manifest: CatalogReleaseManifestV2 = {
+      ...fixture.manifest,
+      manifestVersion: 2,
+      unitDescriptors: [{
+        unitId: 'pilot-1', trackId: 'general', tier: 'foundation', ordinal: 1,
+        titles: [{ language: 'en', text: 'First steps' }, { language: 'vi', text: 'Bước đầu tiên' }],
+      }],
+    };
+    const cache = cacheFake();
+
+    await expect(installCatalogRelease(
+      manifest,
+      { fetchChunk: async path => fixture.bytes[manifest.chunks.find(value => value.path === path)?.ordinal ?? -1] },
+      cache.port,
+    )).rejects.toThrow('exceeds 20 memberships');
+
+    expect(cache.begun()).toBe(0);
   });
 
   it('aborts in-flight chunk requests and stops scheduling after the first failure', async () => {

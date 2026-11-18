@@ -1,6 +1,8 @@
 // Lightweight HTML5 Canvas Confetti Engine (<1.5KB)
 // Zero external libraries, smooth 60fps physics, auto-cleaning
 
+import { getEffectiveReducedMotion } from './motionPreference';
+
 interface Particle {
   x: number;
   y: number;
@@ -28,7 +30,7 @@ export function triggerConfetti(originX = 0.5, originY = 0.6): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
   // Respect reduced motion
-  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  if (getEffectiveReducedMotion()) return;
 
   const canvas = document.createElement('canvas');
   canvas.style.position = 'fixed';

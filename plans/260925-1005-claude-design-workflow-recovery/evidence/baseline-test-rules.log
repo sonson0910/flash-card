@@ -1,0 +1,788 @@
+command=npm run test:rules
+start_utc=2026-09-25T05:00:57.491774+00:00
+
+
+> lingoflash@1.0.0 test:rules
+> ./node_modules/.bin/firebase emulators:exec --only firestore,auth --project demo-lingoflash "vitest run --config vitest.rules.config.ts && npm --prefix functions test -- legacyLibraryMigrationFirestore.integration.test.ts sharedDeckPersistenceFirestore.integration.test.ts libraryFacetPersistenceFirestore.integration.test.ts aiCostLedgerFirestore.integration.test.ts aiQuotaFirestore.integration.test.ts entitlementsFirestore.integration.test.ts purchaseIntentFirestore.integration.test.ts accountDataFirestore.integration.test.ts"
+
+i  emulators: Starting emulators: auth, firestore
+i  emulators: Detected demo project ID "demo-lingoflash", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail.
+i  firestore: Firestore Emulator logging to firestore-debug.log
+✔  firestore: Firestore Emulator was started in standard edition.
+✔  firestore: Firestore Emulator UI websocket is running on 9150.
+i  Running script: vitest run --config vitest.rules.config.ts && npm --prefix functions test -- legacyLibraryMigrationFirestore.integration.test.ts sharedDeckPersistenceFirestore.integration.test.ts libraryFacetPersistenceFirestore.integration.test.ts aiCostLedgerFirestore.integration.test.ts aiQuotaFirestore.integration.test.ts entitlementsFirestore.integration.test.ts purchaseIntentFirestore.integration.test.ts accountDataFirestore.integration.test.ts
+
+ RUN  v3.2.7 /mnt/Projects/startup/flash-card
+
+stderr | firestore.rules.test.ts > Firestore security rules > blocks direct owner mutations while the server migration fence is active
+[2026-09-25T05:01:07.880Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2153 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > blocks direct owner mutations while the server migration fence is active
+[2026-09-25T05:01:07.901Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2154 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L764:24 for 'create' @ L764, false for 'create' @ L860, false for 'update' @ L7, evaluation error at L767:24 for 'update' @ L767, false for 'update' @ L860, false for 'update' @ L7, false for 'update' @ L767, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > blocks direct owner mutations while the server migration fence is active
+[2026-09-25T05:01:07.921Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2155 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L810:32 for 'create' @ L810, false for 'create' @ L860, false for 'update' @ L7, evaluation error at L810:32 for 'update' @ L810, false for 'update' @ L860, false for 'create' @ L7, false for 'create' @ L810, false for 'create' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > blocks direct owner mutations while the server migration fence is active
+[2026-09-25T05:01:07.941Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2156 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L829:32 for 'create' @ L829, false for 'create' @ L860, false for 'update' @ L7, evaluation error at L829:32 for 'update' @ L829, false for 'update' @ L860, false for 'create' @ L7, false for 'create' @ L829, false for 'create' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires the document id and card id to match
+[2026-09-25T05:01:07.984Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2157 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L735:24 for 'create' @ L735, false for 'update' @ L7, false for 'update' @ L739, false for 'create' @ L7, false for 'create' @ L701, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires a matching reservation in the same atomic card create
+[2026-09-25T05:01:08.029Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2158 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L701, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'create' @ L7, false for 'create' @ L701
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires a matching reservation in the same atomic card create
+[2026-09-25T05:01:08.042Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2159 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L735:24 for 'create' @ L735, false for 'update' @ L7, false for 'update' @ L739, false for 'create' @ L7, false for 'create' @ L735
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires a matching reservation in the same atomic card create
+[2026-09-25T05:01:08.069Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb215a error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L735:24 for 'create' @ L735, false for 'update' @ L7, false for 'update' @ L739, false for 'create' @ L7, false for 'create' @ L701, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'create' @ L7, false for 'create' @ L735
+
+stderr | firestore.rules.test.ts > Firestore security rules > retains media and list boundaries for full normalized card payloads
+[2026-09-25T05:01:08.163Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb215d error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > retains media and list boundaries for full normalized card payloads
+[2026-09-25T05:01:08.188Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb215e error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps review history and server review receipts callable-only
+[2026-09-25T05:01:08.245Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2160 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps review history and server review receipts callable-only
+[2026-09-25T05:01:08.267Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2161 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps review history and server review receipts callable-only
+[2026-09-25T05:01:08.280Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2162 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps review history and server review receipts callable-only
+[2026-09-25T05:01:08.294Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2163 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps review history and server review receipts callable-only
+[2026-09-25T05:01:08.310Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2164 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps review history and server review receipts callable-only
+[2026-09-25T05:01:08.324Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2165 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps review history and server review receipts callable-only
+[2026-09-25T05:01:08.337Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2166 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps review history and server review receipts callable-only
+[2026-09-25T05:01:08.347Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2167 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps review history and server review receipts callable-only
+[2026-09-25T05:01:08.363Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2168 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps review history and server review receipts callable-only
+[2026-09-25T05:01:08.375Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2169 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps review history and server review receipts callable-only
+[2026-09-25T05:01:08.389Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb216a error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > bounds canonical descriptive strings and review-history entry shapes
+[2026-09-25T05:01:08.455Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb216d error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > bounds canonical descriptive strings and review-history entry shapes
+[2026-09-25T05:01:08.467Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb216e error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > bounds canonical descriptive strings and review-history entry shapes
+[2026-09-25T05:01:08.486Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb216f error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects an attacker-controlled reservation path even when its payload matches the card
+[2026-09-25T05:01:08.513Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2170 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L735, false for 'update' @ L7, false for 'update' @ L739
+
+stderr | firestore.rules.test.ts > Firestore security rules > blocks an arbitrary legacy id even when the canonical reservation exists
+[2026-09-25T05:01:08.549Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2172 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L701, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'create' @ L7, false for 'create' @ L701
+
+stderr | firestore.rules.test.ts > Firestore security rules > prevents two different card ids from claiming the same normalized word
+[2026-09-25T05:01:08.587Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2174 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L735:24 for 'create' @ L735, false for 'update' @ L7, false for 'update' @ L739, false for 'create' @ L7, false for 'create' @ L701, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L739
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps card reports inaccessible to direct client reads and writes
+[2026-09-25T05:01:08.647Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2177 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'update' @ L7
+
+stderr | firestore.rules.test.ts > Firestore security rules > prevents a card update from changing its reserved normalized identity
+[2026-09-25T05:01:08.688Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb217a error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > prevents an identified card update from changing its word while retaining the reservation identity
+[2026-09-25T05:01:08.723Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb217c error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > prevents changing only the word casing and whitespace when the normalized identity remains valid
+[2026-09-25T05:01:08.763Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb217e error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires a same-transaction reservation when a legacy identity enters v2
+[2026-09-25T05:01:08.797Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2180 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > allows only an existing-card identity repair to create its reservation
+[2026-09-25T05:01:08.884Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2183 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L735:24 for 'create' @ L735, false for 'update' @ L7, false for 'update' @ L739, false for 'create' @ L7, false for 'create' @ L701, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'create' @ L7, false for 'create' @ L735
+
+stderr | firestore.rules.test.ts > Firestore security rules > denies legacy difficulty initialization to hard or good
+[2026-09-25T05:01:08.974Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2187 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L735:24 for 'create' @ L735, false for 'update' @ L7, false for 'update' @ L739, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > denies legacy difficulty initialization to hard or good
+[2026-09-25T05:01:09.010Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2189 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L735:24 for 'create' @ L735, false for 'update' @ L7, false for 'update' @ L739, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'create' @ L7, false for 'create' @ L735, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > denies changing an existing unrated difficulty to good
+[2026-09-25T05:01:09.049Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb218b error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > denies a current card from claiming a missing reservation
+[2026-09-25T05:01:09.097Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb218d error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L735:24 for 'create' @ L735, false for 'update' @ L7, false for 'update' @ L739, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702, false for 'create' @ L7, false for 'create' @ L735
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects a legacy identity entry when normalizedWord does not match the stored word
+[2026-09-25T05:01:09.136Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb218f error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L735:24 for 'create' @ L735, false for 'update' @ L7, false for 'update' @ L739, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > prevents changing a legacy word before a later identity claim
+[2026-09-25T05:01:09.171Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2191 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps reservations immutable after a card is cleared
+[2026-09-25T05:01:09.232Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2195 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L701, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'create' @ L7, false for 'create' @ L701
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps reservations immutable after a card is cleared
+[2026-09-25T05:01:09.237Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2196 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, false for 'update' @ L739
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps reservations immutable after a card is cleared
+[2026-09-25T05:01:09.241Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2197 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, false for 'delete' @ L739
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects unsafe external images and oversized custom deck names
+[2026-09-25T05:01:09.357Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb219e error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects unsafe external images and oversized custom deck names
+[2026-09-25T05:01:09.365Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb219f error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects unknown card fields and invalid bounded-string list entries
+[2026-09-25T05:01:09.400Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21a1 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects unknown card fields and invalid bounded-string list entries
+[2026-09-25T05:01:09.406Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21a2 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects unknown card fields and invalid bounded-string list entries
+[2026-09-25T05:01:09.414Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21a3 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects unknown card fields and invalid bounded-string list entries
+[2026-09-25T05:01:09.422Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21a4 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects unknown card fields and invalid bounded-string list entries
+[2026-09-25T05:01:09.429Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21a5 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects unknown card fields and invalid bounded-string list entries
+[2026-09-25T05:01:09.437Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21a6 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects unknown card fields and invalid bounded-string list entries
+[2026-09-25T05:01:09.446Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21a7 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects unknown card fields and invalid bounded-string list entries
+[2026-09-25T05:01:09.462Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21a8 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > accepts four 100-character vocabulary-list entries and rejects a fifth
+[2026-09-25T05:01:09.502Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21aa error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > accepts four 100-character vocabulary-list entries and rejects a fifth
+[2026-09-25T05:01:09.510Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21ab error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > accepts four 100-character vocabulary-list entries and rejects a fifth
+[2026-09-25T05:01:09.519Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21ac error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires every new card to use the current revision protocol
+[2026-09-25T05:01:09.541Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21ad error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L735:24 for 'create' @ L735, false for 'update' @ L7, false for 'update' @ L739, false for 'create' @ L7, false for 'create' @ L701, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'create' @ L7, false for 'create' @ L735
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires every new card to use the current revision protocol
+[2026-09-25T05:01:09.565Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21af error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L735:24 for 'create' @ L735, false for 'update' @ L7, false for 'update' @ L739, false for 'create' @ L7, false for 'create' @ L701, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L739
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires v2 cards to match the current library epoch once state exists
+[2026-09-25T05:01:09.592Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21b0 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L735:24 for 'create' @ L735, false for 'update' @ L7, false for 'update' @ L739, false for 'create' @ L7, false for 'create' @ L701, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'create' @ L7, false for 'create' @ L735
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires v2 cards to match the current library epoch once state exists
+[2026-09-25T05:01:09.603Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21b1 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L735:24 for 'create' @ L735, false for 'update' @ L7, false for 'update' @ L739, false for 'create' @ L7, false for 'create' @ L701, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'create' @ L7, false for 'create' @ L735
+
+stderr | firestore.rules.test.ts > Firestore security rules > upgrades epoch-zero legacy cards without reviving them after an epoch advance
+[2026-09-25T05:01:09.688Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21b6 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, Property libraryEpoch is undefined on object. for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects a stale offline update after the library epoch advances
+[2026-09-25T05:01:09.821Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21bb error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects a stale offline update after the library epoch advances
+[2026-09-25T05:01:09.829Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21bd error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > allows editing AI cards but prevents changing or removing their origin
+[2026-09-25T05:01:09.882Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21c0 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > allows editing AI cards but prevents changing or removing their origin
+[2026-09-25T05:01:09.890Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21c1 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires current-epoch updates to advance the revision exactly once
+[2026-09-25T05:01:09.923Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21c3 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires current-epoch updates to advance the revision exactly once
+[2026-09-25T05:01:09.931Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21c4 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires current-epoch updates to advance the revision exactly once
+[2026-09-25T05:01:09.938Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21c5 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires an atomic newer tombstone before deleting a current card
+[2026-09-25T05:01:09.974Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21c8 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, evaluation error at L721:24 for 'delete' @ L721, false for 'delete' @ L7, false for 'delete' @ L721
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires an atomic newer tombstone before deleting a current card
+[2026-09-25T05:01:09.990Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21c9 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L701, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'create' @ L7, false for 'create' @ L701
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires an atomic newer tombstone before deleting a current card
+[2026-09-25T05:01:09.997Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21ca error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L701, false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'create' @ L7, false for 'create' @ L701
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires an atomic newer tombstone before deleting a current card
+[2026-09-25T05:01:10.002Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21cb error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, evaluation error at L721:24 for 'delete' @ L721, false for 'delete' @ L7, false for 'delete' @ L721
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps library epoch state monotonic and schema-locked
+[2026-09-25T05:01:10.030Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21cc error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L764:24 for 'create' @ L764, false for 'create' @ L860, false for 'update' @ L7, evaluation error at L767:24 for 'update' @ L767, false for 'update' @ L860, false for 'update' @ L7, false for 'update' @ L767, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps library epoch state monotonic and schema-locked
+[2026-09-25T05:01:10.035Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21cd error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L764, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L767, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps library epoch state monotonic and schema-locked
+[2026-09-25T05:01:10.040Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21ce error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, false for 'delete' @ L772, false for 'delete' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > denies unsupported profile document names even for the owner
+[2026-09-25T05:01:10.059Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21cf error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps supported profile documents on exact owner-scoped schemas
+[2026-09-25T05:01:10.082Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21d0 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L810, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L810, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps supported profile documents on exact owner-scoped schemas
+[2026-09-25T05:01:10.101Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21d2 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L818, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L818, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps supported profile documents on exact owner-scoped schemas
+[2026-09-25T05:01:10.107Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21d3 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L818, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L818, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps supported profile documents on exact owner-scoped schemas
+[2026-09-25T05:01:10.115Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21d4 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L824, false for 'update' @ L7, false for 'update' @ L824
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps supported profile documents on exact owner-scoped schemas
+[2026-09-25T05:01:10.128Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21d5 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L829, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L829, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps supported profile documents on exact owner-scoped schemas
+[2026-09-25T05:01:10.137Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21d6 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L839, false for 'update' @ L7, false for 'update' @ L839
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps supported profile documents on exact owner-scoped schemas
+[2026-09-25T05:01:10.147Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21d7 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L841, false for 'update' @ L7, false for 'update' @ L841
+
+stderr | firestore.rules.test.ts > Firestore security rules > validates every custom deck entry through the maximum profile size
+[2026-09-25T05:01:10.184Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21d8 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L810, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L810, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > validates every custom deck entry through the maximum profile size
+[2026-09-25T05:01:10.193Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21d9 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L810, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L810, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > validates every custom deck entry through the maximum profile size
+[2026-09-25T05:01:10.199Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21da error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L810, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L810, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > validates every custom deck entry through the maximum profile size
+[2026-09-25T05:01:10.204Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21db error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L810, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L810, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > accepts the maximum safe library counters but rejects overflow values
+[2026-09-25T05:01:10.227Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21dc error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L764, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L767, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > accepts the maximum safe library counters but rejects overflow values
+[2026-09-25T05:01:10.247Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21de error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'update' @ L702, false for 'update' @ L7, false for 'update' @ L702
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.265Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21df error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L777, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L777, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.270Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21e0 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L800, false for 'update' @ L7, false for 'update' @ L800
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.307Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21e2 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L777, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L777, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.317Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21e3 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L777, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L777, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.345Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21e5 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L777, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L777, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.350Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21e6 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L777, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L777, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.358Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21e7 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L777, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L777, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.364Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21e8 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L777, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L777, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.370Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21e9 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L777, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L777, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.376Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21ea error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L777, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L777, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.382Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21eb error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L777, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L777, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.388Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21ec error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L800, false for 'update' @ L7, false for 'update' @ L800
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.394Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21ed error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L800, false for 'update' @ L7, false for 'update' @ L800
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.399Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21ee error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L800, false for 'update' @ L7, false for 'update' @ L800
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.405Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21ef error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L800, false for 'update' @ L7, false for 'update' @ L800
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.409Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21f0 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L800, false for 'update' @ L7, false for 'update' @ L800
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.416Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21f1 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L800, false for 'update' @ L7, false for 'update' @ L800
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.423Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21f2 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L800, false for 'update' @ L7, false for 'update' @ L800
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.429Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21f3 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L800, false for 'update' @ L7, false for 'update' @ L800
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.434Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21f4 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L800, false for 'update' @ L7, false for 'update' @ L800
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.451Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21f5 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L777, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L777, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.457Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21f6 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, false for 'delete' @ L777, false for 'delete' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification documents owner-readable but server-write-only
+[2026-09-25T05:01:10.462Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21f7 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, false for 'delete' @ L800
+
+stderr | firestore.rules.test.ts > Firestore security rules > lets only the owner get plan and usage while keeping AI counters server-only
+[2026-09-25T05:01:10.516Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21fb error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L782, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L782, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > lets only the owner get plan and usage while keeping AI counters server-only
+[2026-09-25T05:01:10.531Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21fc error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L787, false for 'update' @ L7, false for 'update' @ L787
+
+stderr | firestore.rules.test.ts > Firestore security rules > lets only the owner get plan and usage while keeping AI counters server-only
+[2026-09-25T05:01:10.539Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21fd error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L795, false for 'update' @ L7, false for 'update' @ L795
+
+stderr | firestore.rules.test.ts > Firestore security rules > lets only the owner get plan and usage while keeping AI counters server-only
+[2026-09-25T05:01:10.547Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21fe error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'update' @ L7
+
+stderr | firestore.rules.test.ts > Firestore security rules > lets only the owner get plan and usage while keeping AI counters server-only
+[2026-09-25T05:01:10.560Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb21ff error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'update' @ L7
+
+stderr | firestore.rules.test.ts > Firestore security rules > lets only the owner get plan and usage while keeping AI counters server-only
+[2026-09-25T05:01:10.568Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2200 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'update' @ L7
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification history owner-readable but server-write-only
+[2026-09-25T05:01:10.594Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2201 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L805, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L805, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification history owner-readable but server-write-only
+[2026-09-25T05:01:10.606Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2203 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L805, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L805, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification history owner-readable but server-write-only
+[2026-09-25T05:01:10.610Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2204 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L805, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L805, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification history owner-readable but server-write-only
+[2026-09-25T05:01:10.615Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2205 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L805, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L805, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification history owner-readable but server-write-only
+[2026-09-25T05:01:10.640Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2207 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L805, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L805, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification history owner-readable but server-write-only
+[2026-09-25T05:01:10.650Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2208 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L805, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L805, false for 'update' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps gamification history owner-readable but server-write-only
+[2026-09-25T05:01:10.654Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2209 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, false for 'delete' @ L805, false for 'delete' @ L860
+
+stderr | firestore.rules.test.ts > Firestore security rules > allows only atomic current-epoch tombstones for a real owner card
+[2026-09-25T05:01:10.681Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb220a error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L746:24 for 'create' @ L746, false for 'update' @ L7, evaluation error at L751:24 for 'update' @ L751, false for 'create' @ L7, false for 'create' @ L746
+
+stderr | firestore.rules.test.ts > Firestore security rules > allows only atomic current-epoch tombstones for a real owner card
+[2026-09-25T05:01:10.750Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb220c error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L746:24 for 'create' @ L746, false for 'update' @ L7, evaluation error at L751:24 for 'update' @ L751, false for 'create' @ L7, false for 'create' @ L746
+
+stderr | firestore.rules.test.ts > Firestore security rules > allows only atomic current-epoch tombstones for a real owner card
+[2026-09-25T05:01:10.763Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb220f error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, evaluation error at L751:24 for 'update' @ L751, false for 'update' @ L7, false for 'update' @ L751
+
+stderr | firestore.rules.test.ts > Firestore security rules > allows only atomic current-epoch tombstones for a real owner card
+[2026-09-25T05:01:10.773Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2210 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, false for 'delete' @ L759
+
+stderr | firestore.rules.test.ts > Firestore security rules > allows a newer tombstone libraryEpoch to reset revision to one
+[2026-09-25T05:01:10.830Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2211 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, evaluation error at L746:24 for 'create' @ L746, false for 'update' @ L7, evaluation error at L751:24 for 'update' @ L751, false for 'delete' @ L7, evaluation error at L721:24 for 'delete' @ L721, false for 'update' @ L7, false for 'update' @ L751, false for 'delete' @ L7, Null value error. for 'delete' @ L721
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires tombstone revision to increase within the same libraryEpoch
+[2026-09-25T05:01:10.877Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2214 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, evaluation error at L751:24 for 'update' @ L751, false for 'update' @ L7, false for 'update' @ L751
+
+stderr | firestore.rules.test.ts > Firestore security rules > requires tombstone revision to increase within the same libraryEpoch
+[2026-09-25T05:01:10.884Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2216 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, evaluation error at L751:24 for 'update' @ L751, false for 'update' @ L7, false for 'update' @ L751
+
+stderr | firestore.rules.test.ts > Firestore security rules > allows public reads of live callable-created shares but keeps them immutable
+[2026-09-25T05:01:10.943Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb221a error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, false for 'update' @ L916
+
+stderr | firestore.rules.test.ts > Firestore security rules > keeps shared-deck ownership metadata server-only
+[2026-09-25T05:01:11.146Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2226 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L903, false for 'update' @ L7, false for 'update' @ L903
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects all direct shared-deck creation and revocation
+[2026-09-25T05:01:11.163Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2227 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L916, false for 'update' @ L7, false for 'update' @ L916
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects all direct shared-deck creation and revocation
+[2026-09-25T05:01:11.180Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2229 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, false for 'delete' @ L916
+
+stderr | firestore.rules.test.ts > Firestore security rules > denies every direct catalog mutation even when the document is published
+[2026-09-25T05:01:11.371Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2231 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L869, false for 'update' @ L7, false for 'update' @ L869
+
+stderr | firestore.rules.test.ts > Firestore security rules > denies every direct catalog mutation even when the document is published
+[2026-09-25T05:01:11.376Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2232 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, false for 'update' @ L869
+
+stderr | firestore.rules.test.ts > Firestore security rules > denies every direct catalog mutation even when the document is published
+[2026-09-25T05:01:11.380Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2233 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, false for 'delete' @ L869
+
+stderr | firestore.rules.test.ts > Firestore security rules > denies every direct catalog mutation even when the document is published
+[2026-09-25T05:01:11.386Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2234 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L875, false for 'update' @ L7, false for 'update' @ L875
+
+stderr | firestore.rules.test.ts > Firestore security rules > denies every direct catalog mutation even when the document is published
+[2026-09-25T05:01:11.392Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2235 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, false for 'update' @ L875
+
+stderr | firestore.rules.test.ts > Firestore security rules > denies every direct catalog mutation even when the document is published
+[2026-09-25T05:01:11.395Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2236 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, false for 'delete' @ L875
+
+stderr | firestore.rules.test.ts > Firestore security rules > allows only the owner to read v3 learning state and denies every client mutation
+[2026-09-25T05:01:11.432Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2239 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L883, false for 'update' @ L7, false for 'update' @ L883
+
+stderr | firestore.rules.test.ts > Firestore security rules > allows only the owner to read v3 learning state and denies every client mutation
+[2026-09-25T05:01:11.436Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb223a error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, false for 'update' @ L883
+
+stderr | firestore.rules.test.ts > Firestore security rules > allows only the owner to read v3 learning state and denies every client mutation
+[2026-09-25T05:01:11.453Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb223c error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L883, false for 'update' @ L7, false for 'update' @ L883
+
+stderr | firestore.rules.test.ts > Firestore security rules > allows only the owner to read v3 learning state and denies every client mutation
+[2026-09-25T05:01:11.475Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb223e error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, false for 'delete' @ L883
+
+stderr | firestore.rules.test.ts > Firestore security rules > denies even a minimal valid learning state from an owner client
+[2026-09-25T05:01:11.492Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb223f error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L883, false for 'update' @ L7, false for 'update' @ L883
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects v3 learning states with forged identities, unknown schemas or fields
+[2026-09-25T05:01:11.509Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2240 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L883, false for 'update' @ L7, false for 'update' @ L883
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects v3 learning states with forged identities, unknown schemas or fields
+[2026-09-25T05:01:11.514Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2241 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L883, false for 'update' @ L7, false for 'update' @ L883
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects v3 learning states with forged identities, unknown schemas or fields
+[2026-09-25T05:01:11.521Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2242 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L883, false for 'update' @ L7, false for 'update' @ L883
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects v3 learning states with forged identities, unknown schemas or fields
+[2026-09-25T05:01:11.525Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2243 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L883, false for 'update' @ L7, false for 'update' @ L883
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects v3 learning states with forged identities, unknown schemas or fields
+[2026-09-25T05:01:11.530Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2244 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L883, false for 'update' @ L7, false for 'update' @ L883
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects unbounded or malformed v3 learning progress structures
+[2026-09-25T05:01:11.551Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2245 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L883, false for 'update' @ L7, false for 'update' @ L883
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects unbounded or malformed v3 learning progress structures
+[2026-09-25T05:01:11.557Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2246 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L883, false for 'update' @ L7, false for 'update' @ L883
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects unbounded or malformed v3 learning progress structures
+[2026-09-25T05:01:11.563Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2247 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L883, false for 'update' @ L7, false for 'update' @ L883
+
+stderr | firestore.rules.test.ts > Firestore security rules > rejects unbounded or malformed v3 learning progress structures
+[2026-09-25T05:01:11.570Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x8fbb2248 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L883, false for 'update' @ L7, false for 'update' @ L883
+
+ ✓ firestore.rules.test.ts (64 tests) 5652ms
+   ✓ Firestore security rules > keeps private cards inaccessible to signed-out users and other accounts  428ms
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.448Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628c0 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, false for 'update' @ L777, false for 'update' @ L860
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.454Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628c1 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, false for 'update' @ L777, false for 'update' @ L860
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.457Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628c2 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, false for 'delete' @ L777, false for 'delete' @ L860
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.462Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628c3 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, false for 'delete' @ L777, false for 'delete' @ L860
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.469Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628c4 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, false for 'update' @ L805, false for 'update' @ L860
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.475Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628c5 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, false for 'update' @ L805, false for 'update' @ L860
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.479Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628c6 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, false for 'delete' @ L805, false for 'delete' @ L860
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.484Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628c7 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, false for 'delete' @ L805, false for 'delete' @ L860
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.488Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628c8 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, false for 'update' @ L800
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.491Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628c9 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'update' @ L7, false for 'update' @ L800
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.495Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628ca error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, false for 'delete' @ L800
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.499Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628cb error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L7, false for 'delete' @ L800
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.520Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628cd error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L777, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L777, false for 'update' @ L860
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.525Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628ce error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L777, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L777, false for 'update' @ L860
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.530Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628cf error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L805, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L805, false for 'update' @ L860
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.533Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628d0 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L805, false for 'create' @ L860, false for 'update' @ L7, false for 'update' @ L805, false for 'update' @ L860
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.537Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628d1 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L800, false for 'update' @ L7, false for 'update' @ L800
+
+stderr | firestore.gamification-diagnostic.rules.test.ts > Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations
+[2026-09-25T05:01:12.542Z]  @firebase/firestore: Firestore (12.14.0): GrpcConnection RPC 'Write' stream 0x39f628d2 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L7, false for 'create' @ L800, false for 'update' @ L7, false for 'update' @ L800
+
+ ✓ firestore.gamification-diagnostic.rules.test.ts (1 test) 568ms
+   ✓ Firestore gamification direct-write boundary > keeps gamification documents owner-readable while denying direct mutations  314ms
+
+ Test Files  2 passed (2)
+      Tests  65 passed (65)
+   Start at  12:01:05
+   Duration  7.18s (transform 125ms, setup 0ms, collect 545ms, tests 6.22s, environment 0ms, prepare 165ms)
+
+
+> test
+> vitest run legacyLibraryMigrationFirestore.integration.test.ts sharedDeckPersistenceFirestore.integration.test.ts libraryFacetPersistenceFirestore.integration.test.ts aiCostLedgerFirestore.integration.test.ts aiQuotaFirestore.integration.test.ts entitlementsFirestore.integration.test.ts purchaseIntentFirestore.integration.test.ts accountDataFirestore.integration.test.ts
+
+
+ RUN  v3.2.7 /mnt/Projects/startup/flash-card/functions
+
+ ✓ test/aiCostLedgerFirestore.integration.test.ts (1 test) 304ms
+ ✓ test/entitlementsFirestore.integration.test.ts (2 tests) 502ms
+   ✓ operator Pro entitlements > grants one fixed window, refuses stacking, audits grant and revoke, then returns to Free  463ms
+ ✓ test/purchaseIntentFirestore.integration.test.ts (1 test) 914ms
+   ✓ purchase intent callables > returns a bounded offer and writes one private pseudonymous event  912ms
+ ✓ test/libraryFacetPersistenceFirestore.integration.test.ts (1 test) 3268ms
+   ✓ Firestore library facet receipts > commits a concurrent operation once and replays its original result  3263ms
+ ✓ test/accountDataFirestore.integration.test.ts (6 tests) 3109ms
+   ✓ account export and deletion > exports only the requesting owner, then purges every pilot collection and late writes  2245ms
+   ✓ account export and deletion > purges a profile write from a second authenticated device with an old token  439ms
+ ✓ test/legacyLibraryMigrationFirestore.integration.test.ts (18 tests) 5066ms
+   ✓ Firestore Admin legacy library migration > discovers ordered pages into a trusted query-v3 manifest without live writes  382ms
+   ✓ Firestore Admin legacy library migration > applies query-v3 behind a durable fence and rolls back with group CAS  543ms
+   ✓ Firestore Admin legacy library migration > rolls back applied groups when final sealing was interrupted  526ms
+   ✓ Firestore Admin legacy library migration > rejects rollback after a post-completion extra identity without mutating live state  327ms
+   ✓ Firestore Admin legacy library migration > recaptures profile metadata after a zero-progress apply retry  578ms
+   ✓ Firestore Admin legacy library migration > round-trips a pre-existing canonical tombstone through apply and rollback  428ms
+   ✓ Firestore Admin legacy library migration > resumes a persisted sealed-backup state without rewriting source backups  525ms
+   ✓ Firestore Admin legacy library migration > preflights every rollback group and restores none after one applied-state conflict  325ms
+   ✓ Firestore Admin legacy library migration > refuses rollback before any restore when an original source backup is missing  328ms
+   ✓ Firestore Admin legacy library migration > keeps a rollback fence after persisted rollback progress is nonzero  380ms
+ ✓ test/aiQuotaFirestore.integration.test.ts (7 tests) 8145ms
+   ✓ Firestore account AI quota > counts 30 completed cards once and refuses the next distinct operation  1344ms
+   ✓ Firestore account AI quota > allows one concurrent reservation, takes over stale work, and ignores the old attempt  2935ms
+   ✓ Firestore account AI quota > admits only one of two distinct concurrent requests at the last card slot  3527ms
+ ❯ test/sharedDeckPersistenceFirestore.integration.test.ts (2 tests | 1 failed) 11579ms
+   ✓ Firestore shared-deck persistence > serializes two first creates through a missing usage document  3273ms
+   × Firestore shared-deck persistence > commits one share for concurrent identical operations 5010ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/sharedDeckPersistenceFirestore.integration.test.ts > Firestore shared-deck persistence > commits one share for concurrent identical operations
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ test/sharedDeckPersistenceFirestore.integration.test.ts:67:3
+     65|   });
+     66|
+     67|   it('commits one share for concurrent identical operations', async ()…
+       |   ^
+     68|     const ownerUid = `shared-deck-idempotency-${randomUUID()}`;
+     69|     const now = Timestamp.now();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 37 passed (38)
+   Start at  12:01:13
+   Duration  13.54s (transform 829ms, setup 0ms, collect 12.49s, tests 32.89s, environment 1ms, prepare 1.67s)
+
+⚠  Script exited unsuccessfully (code 1)
+i  emulators: Shutting down emulators.
+i  firestore: Stopping Firestore Emulator
+i  auth: Stopping Authentication Emulator
+i  hub: Stopping emulator hub
+i  logging: Stopping Logging Emulator
+
+Error: Script "vitest run --config vitest.rules.config.ts && npm --prefix functions test -- legacyLibraryMigrationFirestore.integration.test.ts sharedDeckPersistenceFirestore.integration.test.ts libraryFacetPersistenceFirestore.integration.test.ts aiCostLedgerFirestore.integration.test.ts aiQuotaFirestore.integration.test.ts entitlementsFirestore.integration.test.ts purchaseIntentFirestore.integration.test.ts accountDataFirestore.integration.test.ts" exited with code 1
+
+exit_code=1
+end_utc=2026-09-25T05:01:27.885922+00:00

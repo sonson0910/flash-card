@@ -1,4 +1,5 @@
 export const ENGLISH_CATALOG_ID = 'english-core';
+export const ENGLISH_CATALOG_RELEASE_ID = 'r-261124da6107eb25204587aa';
 
 export type CatalogLanguageAvailability = 'available' | 'unavailable';
 export type CatalogTierId = 'foundation' | 'core' | 'advanced';
@@ -37,30 +38,24 @@ export interface CatalogWorkspaceSelection {
   readonly availability: CatalogLanguageAvailability;
 }
 
-const TIERS: readonly CatalogTierDefinition[] = Object.freeze([
-  Object.freeze({ id: 'foundation', label: 'Foundation', cefrRange: 'A1–A2' }),
-  Object.freeze({ id: 'core', label: 'Core', cefrRange: 'B1–B2' }),
-  Object.freeze({ id: 'advanced', label: 'Advanced', cefrRange: 'C1–C2' }),
-]);
-
 const englishTracks: readonly CatalogTrackDefinition[] = Object.freeze([
   Object.freeze({
     id: 'ielts',
     label: 'IELTS',
-    description: 'Academic and general IELTS vocabulary from foundation to advanced.',
-    tiers: TIERS,
+    description: 'IELTS vocabulary across 15 advanced units.',
+    tiers: Object.freeze([{ id: 'advanced' as const, label: 'Advanced', cefrRange: 'B2–C1' }]),
   }),
   Object.freeze({
     id: 'toeic',
     label: 'TOEIC',
-    description: 'Workplace and everyday TOEIC vocabulary from foundation to advanced.',
-    tiers: TIERS,
+    description: 'Workplace and everyday TOEIC vocabulary across 15 core units.',
+    tiers: Object.freeze([{ id: 'core' as const, label: 'Core', cefrRange: 'B1' }]),
   }),
   Object.freeze({
     id: 'general',
     label: 'General',
-    description: 'General-purpose English vocabulary from foundation to advanced.',
-    tiers: TIERS,
+    description: 'General English vocabulary across 15 foundation units.',
+    tiers: Object.freeze([{ id: 'foundation' as const, label: 'Foundation', cefrRange: 'A2' }]),
   }),
 ]);
 
@@ -69,9 +64,9 @@ export const CATALOG_LANGUAGE_REGISTRY: readonly CatalogLanguageDefinition[] = O
     code: 'en',
     label: 'English',
     nativeLabel: 'English',
-    availability: 'unavailable',
-    catalogId: null,
-    releaseId: null,
+    availability: 'available',
+    catalogId: ENGLISH_CATALOG_ID,
+    releaseId: ENGLISH_CATALOG_RELEASE_ID,
     tracks: englishTracks,
   }),
   Object.freeze({

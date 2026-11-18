@@ -1,0 +1,126 @@
+<!--#HEAD League-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}};">
+<!--#AMBIENT-->
+<!--#NAV-->
+
+  <main style="position: relative; z-index: 2; padding: 26px 56px 0; display: grid; grid-template-columns: 820px minmax(0, 1fr); gap: 48px;">
+    <section aria-labelledby="league-title">
+      <div style="display: flex; align-items: center; gap: 18px;">
+        <span style="width: 64px; height: 64px; box-sizing: border-box; border-radius: 18px; border: {{gem.border}}; background: {{gem.bg}}; box-shadow: {{gem.shadow}}; color: {{gem.fg}}; display: flex; align-items: center; justify-content: center; transform: rotate(-6deg);"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9zM2 9h20M9 3l3 18M15 3l-3 18"></path></svg></span>
+        <div style="flex-grow: 1;">
+          <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text2}};">Weekly league · 20 learners</p>
+          <h1 id="league-title" style="margin: 6px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 42px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">Sapphire <span style="font-style: {{t.emStyle}}; color: {{gem.fg}}; text-shadow: {{gem.glow}};">league</span></h1>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 12px; color: {{t.text2}};">Ends in</div>
+          <div style="margin-top: 2px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 24px; color: {{t.textStrong}};">3 d 14 h</div>
+        </div>
+      </div>
+
+      <div role="table" aria-label="League standings" style="margin-top: 18px; padding: 6px 8px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}};">
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="20">
+          <sc-if value="{{r.zoneTop}}" hint-placeholder-val="{{false}}">
+            <div style="margin: 3px 10px; display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.ok}};"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"></path></svg>Promotion zone — top 5 move up to Ruby<span style="flex-grow: 1; border-top: 1px dashed {{t.okLine}};"></span></div>
+          </sc-if>
+          <sc-if value="{{r.zoneBottom}}" hint-placeholder-val="{{false}}">
+            <div style="margin: 3px 10px; display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.danger}};"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>Drop zone — bottom 5 move to Emerald<span style="flex-grow: 1; border-top: 1px dashed {{t.dangerLine}};"></span></div>
+          </sc-if>
+          <div role="row" aria-current="{{r.current}}" style="height: 27px; padding: 0 10px; border-radius: 9px; border: {{r.border}}; background: {{r.bg}}; box-shadow: {{r.shadow}}; display: flex; align-items: center; gap: 12px; font-size: 13px;">
+            <span role="cell" style="width: 22px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{r.rankColor}};">{{r.rank}}</span>
+            <span aria-hidden="true" style="width: 20px; height: 20px; border-radius: 50%; background: {{r.avatar}}; color: {{t.avatarText}}; font-size: 9.5px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{r.init}}</span>
+            <span role="cell" style="flex-grow: 1; font-weight: {{r.weight}}; color: {{r.nameColor}};">{{r.name}}</span>
+            <sc-if value="{{r.fire}}" hint-placeholder-val="{{false}}"><span style="font-size: 11.5px; color: {{t.warm}};">🔥 {{r.fire}}</span></sc-if>
+            <span role="cell" style="width: 70px; text-align: right; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12.5px; color: {{r.xpColor}};">{{r.xp}} XP</span>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <aside style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="padding: 20px 22px; border-radius: {{t.radius}}px; border: {{you.border}}; background: {{you.bg}}; box-shadow: {{you.shadow}};">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text2}};">Your week</div>
+        <div style="margin-top: 10px; display: flex; align-items: baseline; gap: 12px;">
+          <span style="font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 56px; line-height: 0.9; color: {{t.textStrong}};">#4</span>
+          <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 15px; color: {{t.text2}};">820 XP</span>
+        </div>
+        <div style="margin-top: 14px; font-size: 13.5px; line-height: 1.5; color: {{t.body}};"><span style="color: {{t.textStrong}}; font-weight: 650;">+95 XP</span> passes Minh Anh for #3. One review session is about 120 XP.</div>
+        <div style="margin-top: 12px; height: 8px; border-radius: 8px; background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: 88%; height: 100%; border-radius: 8px; background: {{bar}}; box-shadow: {{barGlow}};"></div></div>
+        <button class="sf-press" style="margin-top: 16px; width: 100%; height: 48px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14.5px; font-weight: 650; cursor: pointer;">Earn XP · start review</button>
+      </div>
+
+      <div style="padding: 20px 22px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}};">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h2 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 22px; color: {{t.textStrong}};">Study with a friend</h2>
+          <span style="height: 24px; padding: 0 9px; border-radius: 999px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; color: {{t.warm}}; font-size: 11.5px; font-weight: 650; display: flex; align-items: center;">Duo streak</span>
+        </div>
+        <div style="margin-top: 16px; display: flex; align-items: center; gap: 14px;">
+          <div style="display: flex;">
+            <span style="width: 46px; height: 46px; border-radius: 50%; border: 3px solid {{duo.ring}}; background: {{t.avatarBg}}; color: {{t.avatarText}}; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center;">KB</span>
+            <span style="margin-left: -12px; width: 46px; height: 46px; border-radius: 50%; border: 3px solid {{duo.ring}}; background: {{duo.second}}; color: {{t.avatarText}}; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center;">MA</span>
+          </div>
+          <div style="flex-grow: 1;">
+            <div style="font-family: Fraunces, Georgia, serif; font-size: 28px; line-height: 1; color: {{t.textStrong}};">9 <span style="font-size: 16px; color: {{t.text2}};">days together</span></div>
+            <div style="margin-top: 4px; font-size: 12.5px; color: {{t.text2}};">Minh Anh studied today · your turn</div>
+          </div>
+        </div>
+        <div style="margin-top: 14px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px;">
+          <sc-for list="{{duoDays}}" as="d" hint-placeholder-count="7"><span style="height: 22px; border-radius: 6px; background: {{d}};"></span></sc-for>
+        </div>
+        <button style="margin-top: 14px; width: 100%; height: 42px; border-radius: 12px; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; box-shadow: {{t.secondaryShadow}}; color: {{t.text}}; font-size: 13.5px; font-weight: 600; cursor: pointer;">Invite another friend</button>
+      </div>
+
+      <p style="margin: 0 4px; font-size: 12px; line-height: 1.55; color: {{t.text3}};">Leagues are just for fun. Only XP from real reviews counts, and you can leave leagues anytime in Settings.</p>
+    </aside>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    const sapphire = dark ? '#6aa8ff' : '#2a4f8f';
+    const people = [
+      ['Hải Đăng', 1340, 21], ['Thảo Vy', 1215, 0], ['Minh Anh', 915, 9], ['You · Khánh', 820, 12], ['Bảo Ngọc', 790, 0],
+      ['Trung', 760, 5], ['Lan Chi', 702, 0], ['Phúc', 655, 14], ['Mai', 610, 0], ['Đức Huy', 580, 3],
+      ['Yến', 540, 0], ['Nam', 505, 7], ['Kim', 470, 0], ['Sơn', 430, 0], ['Hà My', 395, 2],
+      ['Tâm', 330, 0], ['Việt', 260, 0], ['Oanh', 190, 0], ['Long', 120, 0], ['Ánh', 60, 0],
+    ];
+    const av = dark ? ['#1d3a48', '#3a2a63', '#4a3510', '#1f4a2c'] : ['#e8dfcf', '#f1dfae', '#dfe8dc', '#eadbd0'];
+    const rows = people.map(([name, xp, fire], i) => {
+      const me = i === 3, up = i < 5, down = i >= 15;
+      return {
+        rank: i + 1, name, xp: xp.toLocaleString('en-US'), fire: fire ? fire : false,
+        init: name.replace('You · ', '').split(' ').map((w) => w[0]).join('').slice(0, 2),
+        avatar: me ? t.logoBg : av[i % 4],
+        zoneTop: i === 0, zoneBottom: i === 15,
+        current: me ? 'true' : 'false',
+        border: me ? (dark ? '1px solid ' + t.accentLine : '1px solid #1d1a16') : '1px solid transparent',
+        bg: me ? (dark ? 'rgb(40 211 244 / 0.1)' : '#fbf3df') : (up ? t.okBg : down ? t.dangerBg : 'transparent'),
+        shadow: me && dark ? '0 0 22px -8px rgb(40 211 244 / 0.6)' : 'none',
+        weight: me ? 700 : 500, nameColor: me ? t.textStrong : t.text,
+        rankColor: up ? t.ok : down ? t.danger : t.text3, xpColor: me ? t.textStrong : t.text2,
+      };
+    });
+    return {
+      t, grainId: 'league-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: -200, ay: -220, bx: 1000, by: 460 },
+      streak: 12, nav: sfNav(t, 3), toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      rows,
+      gem: dark
+        ? { border: '1.5px solid rgb(106 168 255 / 0.6)', bg: 'radial-gradient(circle at 35% 30%, #1d3a6a, #0b1a33 70%)', shadow: '0 0 34px -6px rgb(106 168 255 / 0.7)', fg: sapphire, glow: '0 0 30px rgb(106 168 255 / 0.55)' }
+        : { border: '1.5px solid #2a4f8f', bg: '#e6ecf5', shadow: '0 0 0 4px #fffcf5, 0 0 0 5px rgb(42 79 143 / 0.3)', fg: sapphire, glow: 'none' },
+      you: dark
+        ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 80% 60% at 100% 0%, rgb(150 108 215 / 0.22), transparent 70%) padding-box, ' + t.cardBg + ' padding-box, ' + t.rimLearning + ' border-box', shadow: '0 20px 40px -20px rgb(0 0 0 / 0.9), 0 0 36px -14px rgb(40 211 244 / 0.5)' }
+        : { border: '1px solid rgb(29 26 22 / 0.08)', bg: t.cardBg, shadow: t.cardShadow },
+      bar: dark ? 'linear-gradient(90deg, #28d3f4, #966cd7)' : '#b4461a',
+      barGlow: dark ? '0 0 14px rgb(40 211 244 / 0.6)' : 'none',
+      duo: { ring: dark ? '#0d212b' : '#fffcf5', second: dark ? '#3a2a63' : '#f1dfae' },
+      duoDays: [1, 1, 1, 1, 1, 1, 0].map((on, i) => on ? (dark ? 'rgb(245 174 57 / ' + (0.35 + i * 0.1) + ')' : 'rgb(151 64 13 / ' + (0.25 + i * 0.1) + ')') : t.track),
+    };
+  }
+}
+</script>
+</body>
+</html>

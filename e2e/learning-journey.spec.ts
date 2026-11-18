@@ -1,10 +1,10 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const cards = [
   'analyse', 'benefit', 'context', 'develop', 'evidence', 'focus',
   'generate', 'hypothesis', 'identify', 'justify', 'knowledge', 'language',
 ].map((word, index) => ({
-  id: `learning-journey-${index}`,
+  id: `word-${word}`, schemaVersion: 2, revision: 1,
   word,
   normalizedWord: word,
   translation: `nghĩa ${index + 1}`,
@@ -20,18 +20,16 @@ const cards = [
   customDeck: null,
 }));
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(initialCards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));
-    localStorage.removeItem('lingoflash_cards_owner');
-    localStorage.removeItem('lingoflash_cards_scoped_v1');
-  }, cards);
+test.beforeEach(async ({ page, seedCards, seedCourseProfile, blockExternalNetwork, signIn }) => {
+  await blockExternalNetwork(page);
+  await seedCourseProfile();
+  await seedCards(cards);
+  await signIn(page, '/?view=today&locale=en');
 });
 
 test('exposes the published listening pilot in the built learner journey', async ({ page }) => {
-  await page.goto('/?view=today');
 
-  await expect(page.getByRole('heading', { name: 'Your daily plan' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Today', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Learn → Immerse → Communicate' })).toBeVisible();
   const listening = page.getByRole('button', { name: 'Immerse: start listening practice' });
   await expect(listening).toBeVisible();
@@ -50,7 +48,6 @@ test('exposes the published listening pilot in the built learner journey', async
 });
 
 test('downloads the published listening pack and reuses cached audio offline', async ({ page }) => {
-  await page.goto('/?view=today');
 
   await page.getByRole('button', { name: 'Immerse: start listening practice' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'break the news' })).toBeVisible();
@@ -81,7 +78,6 @@ test('downloads the published listening pack and reuses cached audio offline', a
 });
 
 test('integrated listening save-to-conversation happy path uses the published pilot', async ({ page }) => {
-  await page.goto('/?view=today');
 
   await page.getByRole('button', { name: 'Immerse: start listening practice' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'break the news' })).toBeVisible();

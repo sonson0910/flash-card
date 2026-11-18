@@ -1,0 +1,20 @@
+/* Loaded only for Crystal Star. Components opt in with these decorative classes. */
+.crystal-ornament { pointer-events: none; }
+.crystal-chamfer { clip-path: var(--nk-chamfer); }
+.crystal-chamfer-sm { clip-path: var(--nk-chamfer-sm); }
+.crystal-starfield { background-image: var(--nk-stars); animation: crystal-starfield-drift 36s linear infinite; }
+.crystal-wing { opacity: var(--nk-wing-opacity, .5); animation: crystal-wing-shimmer 2.8s ease-in-out infinite; }
+.crystal-flare { background: radial-gradient(circle, var(--nk-flare, #fff), transparent 62%); animation: crystal-flare-pulse 1.8s ease-in-out infinite; }
+
+@keyframes crystal-starfield-drift { to { background-position: 240px 180px; } }
+@keyframes crystal-wing-shimmer { 50% { filter: brightness(1.22) saturate(1.12); } }
+@keyframes crystal-flare-pulse { 50% { opacity: .48; transform: scale(1.14); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .crystal-ornament, .crystal-starfield, .crystal-wing, .crystal-flare { animation: none !important; }
+}
+
+html[data-motion="reduced"] .crystal-ornament,
+html[data-motion="reduced"] .crystal-starfield,
+html[data-motion="reduced"] .crystal-wing,
+html[data-motion="reduced"] .crystal-flare { animation: none !important; }

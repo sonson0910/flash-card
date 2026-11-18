@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createTargetAwareCardId } from '../../lib/cardIdentity';
 import type { CardData } from '../../types/card';
 import { planStructuredImportMutation } from './spreadsheetMutation';
 
@@ -57,10 +58,24 @@ describe('structured spreadsheet mutation planning', () => {
       kind: 'create',
       card: {
         id: 'word-serendipity',
+        origin: 'manual',
         normalizedWord: 'serendipity',
         createdAt: '2026-07-26T00:00:00.000Z',
         lastOpenedAt: '2026-07-26T00:00:00.000Z',
       },
+    });
+  });
+
+  it('retains an imported explicit language pair on a new ordinary card', () => {
+    const plan = planStructuredImportMutation({
+      word: '안녕', translation: 'xin chào', explanation: '', phonetic: '', partOfSpeech: 'interjection',
+      category: 'General', emoji: '📝', audioUrl: null, imageUrl: null,
+      language: 'ko', translationLanguage: 'vi',
+    }, null, '2026-07-26T00:00:00.000Z');
+
+    expect(plan).toMatchObject({
+      kind: 'create',
+      card: { id: createTargetAwareCardId('안녕', 'ko'), language: 'ko', translationLanguage: 'vi' },
     });
   });
 });

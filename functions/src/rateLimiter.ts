@@ -75,7 +75,7 @@ export const evaluateRateLimit = (
   };
 };
 
-const budgetDocumentId = (userId: string, scope: string) => createHash('sha256')
+export const budgetDocumentId = (userId: string, scope: string) => createHash('sha256')
   .update(userId)
   .update('\0')
   .update(scope)

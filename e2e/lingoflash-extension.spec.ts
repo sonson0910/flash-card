@@ -90,21 +90,53 @@ test.describe('LingoFlash MV3 extension', () => {
   });
 
   test('rejects stale app-bridge metadata after a generation is cleared', async () => {
+    // Keep the approved app origin and real extension content script, without
+    // loading a deployed app that can publish its own account metadata.
+    await context.route('https://encoded-hangout-433912-h2.web.app/**', route => route.fulfill({
+      contentType: 'text/html', body: '<!doctype html><title>App bridge document</title>',
+    }));
+    await context.addInitScript(() => {
+      window.addEventListener('message', event => {
+        if (event.source === window && event.origin === location.origin
+          && event.data?.source === 'lingoflash-extension-bridge'
+          && event.data?.type === 'LINGOFLASH_EXTENSION_PROVIDER_READY') {
+          (window as Window & { __bridgeReady?: boolean }).__bridgeReady = true;
+        }
+      });
+    });
     const first = await context.newPage();
     await navigate(first, appUrl);
-    const second = await context.newPage();
-    await navigate(second, appUrl);
+    await first.waitForFunction(() => (window as Window & { __bridgeReady?: boolean }).__bridgeReady);
     const popup = await extensionPage();
     const scope = 'opaque_scope_e2e_123456';
+    await popup.evaluate(key => {
+      const state = window as Window & { __deckWrites?: string[][] };
+      state.__deckWrites = [];
+      const browser = globalThis as typeof globalThis & {
+        chrome: { storage: { onChanged: { addListener(callback: (changes: Record<string, { newValue?: { decks?: string[] } }>, area: string) => void): void } } };
+      };
+      browser.chrome.storage.onChanged.addListener((changes, area) => {
+        const decks = changes[key]?.newValue?.decks;
+        if (area === 'session' && decks) state.__deckWrites!.push(decks);
+      });
+    }, metadataKey);
 
     await postMetadata(first, 'LINGOFLASH_EXTENSION_DECK_METADATA', { scope, decks: ['Reading'] });
     await expect.poll(async () => ((await session(popup, metadataKey))[metadataKey] as { decks?: string[] } | undefined)?.decks).toEqual(['Reading']);
+    const second = await context.newPage();
+    await navigate(second, appUrl);
+    await second.waitForFunction(() => (window as Window & { __bridgeReady?: boolean }).__bridgeReady);
     await postMetadata(second, 'LINGOFLASH_EXTENSION_DECK_METADATA', { scope, decks: ['Writing'] });
     await expect.poll(async () => ((await session(popup, metadataKey))[metadataKey] as { decks?: string[] } | undefined)?.decks).toEqual(['Writing']);
-    await postMetadata(first, 'LINGOFLASH_EXTENSION_DECK_METADATA_CLEAR', { scope });
+    await postMetadata(second, 'LINGOFLASH_EXTENSION_DECK_METADATA_CLEAR', { scope });
     await expect.poll(async () => (await session(popup, metadataKey))[metadataKey]).toBeUndefined();
 
     await postMetadata(second, 'LINGOFLASH_EXTENSION_DECK_METADATA', { scope, decks: ['Stale'] });
-    await expect.poll(async () => (await session(popup, metadataKey))[metadataKey]).toBeUndefined();
+    // The same document's relay processes these in order. A successful fresh
+    // scope witnesses completion, so absence cannot pass before Stale is handled.
+    await postMetadata(second, 'LINGOFLASH_EXTENSION_DECK_METADATA', { scope: `${scope}_fresh`, decks: ['Fresh'] });
+    await expect.poll(async () => ((await session(popup, metadataKey))[metadataKey] as { decks?: string[] } | undefined)?.decks).toEqual(['Fresh']);
+    await expect.poll(() => popup.evaluate(() => (window as Window & { __deckWrites?: string[][] }).__deckWrites)).toContainEqual(['Fresh']);
+    expect(await popup.evaluate(() => (window as Window & { __deckWrites?: string[][] }).__deckWrites)).not.toContainEqual(['Stale']);
   });
 });

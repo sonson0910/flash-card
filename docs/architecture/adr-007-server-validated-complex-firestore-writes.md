@@ -32,6 +32,15 @@ and records a server-only operation receipt where retry could otherwise apply a
 mutation twice. After client adapters are in place, Rules deny the corresponding
 direct complex writes while retaining owner reads.
 
+Delete Undo restores through the card-creation callable with an explicit restore
+marker. The transaction validates identity and library epoch, restores the card,
+and increments its category facet only when a card is actually created. Replays
+must not increment facets again or award capture XP/AI usage. An internal restore
+receipt can settle a durable offline operation beyond the public facet-update
+TTL; the public update endpoint retains its existing TTL and future-timestamp
+validation. Clearing the library invalidates old restore operations through the
+library epoch.
+
 Keep custom deck writes on the client because the complete bounded string list
 can be validated in Rules with a delimiter-safe joined representation. Inventory
 existing deck names before narrowing the accepted character set.

@@ -1,0 +1,8 @@
+
+> lingoflash@1.0.0 verify:bundle
+> node scripts/bundle-budget.mjs
+
+Initial JavaScript: 220,300 B raw / 70,081 B gzip
+Initial CSS: 193,970 B raw / 28,741 B gzip
+Total JavaScript: 2,525,729 B raw / 794,399 B gzip
+Bundle budget passed for 100 JavaScript chunks.

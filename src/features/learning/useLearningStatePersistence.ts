@@ -3,33 +3,22 @@ import { applyCardPatchWithConflictRecovery, deleteCardWithConflictRecovery } fr
 import {
   applyReviewViaCallable,
   applyReviewWithConflictRecovery,
+  stableReviewCommand,
   type ReviewApplyResult,
+  type ReviewCommand,
 } from '../../lib/cardReviewRepository';
 import { applySuccessfulPatchMetadata } from '../../lib/cardCreation';
-import {
-  clearMirroredCards,
-  deleteMirroredCardIfNotNewerThan,
-  deleteMirroredCardIfOlderThan,
-  patchMirroredCardBatch,
-  upsertMirroredCardIfNotOlderThan,
-} from '../../lib/cardMirror';
 import { selectMutableCardPatch } from '../../lib/cardMutationProtocol';
 import { isCardDue } from '../../lib/srs';
 import {
-  clearDevicePending,
-  deleteDeviceCardBackupIfNotNewerThan,
-  mergeDeviceCardsStrict,
-  withDevicePendingFlush,
-  saveDeviceCards,
-  type DevicePendingOperation,
-} from '../../lib/deviceSync';
-import {
   applyCardPatchIfCurrent,
+  bulkPatchCards,
   clearLibraryFacets,
+  CardMutationPreconditionError,
+  createCardIfAbsent,
   deriveLibraryFacetOperationId,
   deleteAllCards,
   deleteCardWithTombstone,
-  findCardById,
   getLibraryEpoch,
   incrementLibraryEpoch,
 } from '../../lib/cardRepository';
@@ -39,7 +28,7 @@ import {
   cloudBackoffCacheKey,
   cloudFacetsCacheKey,
   cloudPageCacheKey,
-  cloudStatsCacheKey,
+  removeCloudStatsCaches,
   isQuotaError,
   isRetryableSyncError,
   removeLocalValue,
@@ -47,26 +36,37 @@ import {
 } from '../library/libraryStorage';
 import { planClearFailureRecovery, runEpochProtectedLibraryClear } from '../library/libraryMutationRecovery';
 import type {
+  LearningRestoreConflictReason,
   LearningStateMutation,
   LearningStateMutationResult,
   LearningStatePublication,
 } from './learningStateController';
-import type { LearningPersistenceOptions } from './learningPersistencePort';
+import type {
+  BulkCardFieldPatchOutcome,
+  BulkCardFieldPatchRequest,
+  LearningPersistenceOptions,
+} from './learningPersistencePort';
 import type { LearningStatePersistencePort } from './useLearningState';
 import type { CardData } from '../../types/card';
+import type { ReviewRating } from '../../lib/reviewScheduler';
+
+const BULK_PATCHABLE_FIELDS = ['customDeck', 'bookmarked'] as const;
 
 const resultFor = (
   mutation: LearningStateMutation,
   publication: LearningStatePublication = mutation.publication,
   reviewFinality?: LearningStateMutationResult['reviewFinality'],
+  extras: Pick<LearningStateMutationResult, 'deleteReceipt' | 'restoreFinality' | 'restoreConflictReason' | 'reviewConflictTerminal' | 'xpAwarded' | 'reviewRating' | 'reviewedAt'> = {},
 ): LearningStateMutationResult => ({
   ownerKey: mutation.ownerKey,
   operationId: mutation.operationId,
   publication,
   ...(reviewFinality ? { reviewFinality } : {}),
+  ...extras,
 });
 
-const MAX_RETAINED_REVIEW_RETRIES = 32;
+const MAX_RETAINED_RESTORE_STATS_OPERATIONS = 500;
+const MAX_RETAINED_REVIEW_COMMANDS = 500;
 
 function cacheCloudBackoff(ownerId: string): void {
   writeLocalValue(cloudBackoffCacheKey(ownerId), String(Date.now() + 5 * 60 * 1000));
@@ -74,7 +74,7 @@ function cacheCloudBackoff(ownerId: string): void {
 
 function clearCloudCaches(ownerId: string): void {
   removeLocalValue(cloudPageCacheKey(ownerId));
-  removeLocalValue(cloudStatsCacheKey(ownerId));
+  removeCloudStatsCaches(ownerId);
   removeLocalValue(cloudFacetsCacheKey(ownerId));
 }
 
@@ -104,256 +104,260 @@ const isValidReviewEntry = (value: unknown): value is NonNullable<CardData['revi
 const reviewFieldsFromCard = (card: Extract<ReviewApplyResult, { applied: true }>['card']) =>
   Object.fromEntries(REVIEW_FIELDS.map(field => [field, card[field]]));
 
-const isPermanentReviewConflict = (result: { applied: false; reason: string } | undefined) => result
-  && result.reason !== 'revision-conflict';
+const cardReviewCount = (card: CardData): number => Math.max(
+  card.reviews ?? 0,
+  card.reviewHistory?.length ?? 0,
+);
+
+const cardLastReviewAt = (card: CardData): string | undefined => {
+  const historyReview = card.reviewHistory?.at(-1)?.reviewedAt;
+  const fsrsReview = card.fsrs?.lastReview;
+  if (!historyReview) return fsrsReview;
+  if (!fsrsReview) return historyReview;
+  return Date.parse(fsrsReview) > Date.parse(historyReview) ? fsrsReview : historyReview;
+};
+
+const duplicateReceiptIsOlderThanSource = (
+  source: CardData | undefined,
+  receiptCard: CardData,
+): boolean => {
+  if (!source) return false;
+  if (source.libraryEpoch !== undefined && receiptCard.libraryEpoch !== undefined
+    && source.libraryEpoch !== receiptCard.libraryEpoch) return source.libraryEpoch > receiptCard.libraryEpoch;
+  if (source.revision !== undefined && receiptCard.revision !== undefined
+    && source.libraryEpoch === receiptCard.libraryEpoch
+    && source.revision > receiptCard.revision) return true;
+  if (cardReviewCount(source) > cardReviewCount(receiptCard)) return true;
+  const sourceReviewAt = cardLastReviewAt(source);
+  const receiptReviewAt = cardLastReviewAt(receiptCard);
+  if (!sourceReviewAt || !receiptReviewAt) return false;
+  const sourceTime = Date.parse(sourceReviewAt);
+  const receiptTime = Date.parse(receiptReviewAt);
+  return Number.isFinite(sourceTime) && Number.isFinite(receiptTime) && sourceTime > receiptTime;
+};
+
+const restoreConflictReasonFor = (reason: CardMutationPreconditionError['reason']): LearningRestoreConflictReason => {
+  if (reason === 'deleted') return 'deleted-again';
+  if (reason === 'identity-conflict') return 'unsafe-existing';
+  return 'epoch-changed';
+};
 
 export function useLearningStatePersistence(options: LearningPersistenceOptions): LearningStatePersistencePort {
   const latestRef = useRef(options);
   latestRef.current = options;
-  const retryReviewMutationsRef = useRef(new Map<string, LearningStateMutation>());
-  const retryOwnerRef = useRef(options.ownerId);
-  if (retryOwnerRef.current !== options.ownerId) {
-    retryReviewMutationsRef.current.clear();
-    retryOwnerRef.current = options.ownerId;
+  const restoreStatsOperationsRef = useRef(new Set<string>());
+  const reviewCommandsRef = useRef(new Map<string, ReviewCommand>());
+  const unresolvedReviewCommandKeysRef = useRef(new Set<string>());
+  const reviewCommandOwnerRef = useRef(options.ownerId);
+  if (reviewCommandOwnerRef.current !== options.ownerId) {
+    reviewCommandsRef.current.clear();
+    unresolvedReviewCommandKeysRef.current.clear();
+    reviewCommandOwnerRef.current = options.ownerId;
   }
   const persistenceRef = useRef<LearningStatePersistencePort | null>(null);
 
+  const rememberReviewCommand = (key: string, command: ReviewCommand): ReviewCommand => {
+    const stored = stableReviewCommand(command);
+    if (!reviewCommandsRef.current.has(key) && reviewCommandsRef.current.size >= MAX_RETAINED_REVIEW_COMMANDS) {
+      const evictableKey = [...reviewCommandsRef.current.keys()]
+        .find(candidate => !unresolvedReviewCommandKeysRef.current.has(candidate));
+      if (!evictableKey) {
+        throw new Error('Review retry capacity is full. Try again after an existing review settles.');
+      }
+      reviewCommandsRef.current.delete(evictableKey);
+    }
+    reviewCommandsRef.current.set(key, stored);
+    unresolvedReviewCommandKeysRef.current.add(key);
+    return stored;
+  };
+
   if (!persistenceRef.current) persistenceRef.current = {
+    ownerId: () => latestRef.current.ownerId,
     findCard: cardId => latestRef.current.findCard(cardId),
     persist: async mutation => {
-      if (mutation.operation === 'review') {
-        const retained = retryReviewMutationsRef.current.get(mutation.operationId);
-        if (retained) mutation = retained;
-        else {
-          if (retryReviewMutationsRef.current.size >= MAX_RETAINED_REVIEW_RETRIES) {
-            const oldestOperationId = retryReviewMutationsRef.current.keys().next().value;
-            if (oldestOperationId) retryReviewMutationsRef.current.delete(oldestOperationId);
-          }
-          retryReviewMutationsRef.current.set(mutation.operationId, mutation);
-        }
-      }
       const current = latestRef.current;
       const ownerId = current.ownerId;
       const source = 'cardId' in mutation ? current.findCard(mutation.cardId) : undefined;
 
       if (mutation.operation === 'patch' || mutation.operation === 'review') {
-        if (!source) throw new Error('The card is no longer available for this update.');
-        const queued = mutation.operation === 'review'
-          ? await current.patchDeviceCards(
-            [{ card: { ...source, ...mutation.fields }, fields: mutation.fields }],
-            current.knownLibraryTotal,
-            mutation.operationId,
-            'review',
-          )
-          : await current.patchDeviceCards(
-            [{ card: { ...source, ...mutation.fields }, fields: mutation.fields }],
-            current.knownLibraryTotal,
-            mutation.operationId,
-          );
+        if (mutation.operation === 'patch' && !source) {
+          throw new Error('The card is no longer available for this update.');
+        }
+        if (!ownerId || current.verifiedEpoch === null || !db || !isFirebaseConfigured) {
+          throw new Error('Cloud library storage is not ready yet. Try again in a moment.');
+        }
+        const database = db;
         let publication: LearningStatePublication = mutation.publication;
-        let reviewFinality: LearningStateMutationResult['reviewFinality'] = mutation.operation === 'review'
-          ? 'durably-queued'
-          : undefined;
-        let reviewCommitted = false;
-        let applyOptimisticEffects = mutation.operation !== 'review'
-          || isValidReviewEntry(mutation.fields.reviewHistory?.at(-1));
-        if (ownerId && current.verifiedEpoch !== null && db && isFirebaseConfigured) {
-          const database = db;
-          const pendingPatch = queued.find(operation => operation.type === 'patch');
-          if (!pendingPatch) throw new Error('The patch command could not be queued safely.');
-          const leaseResult = await withDevicePendingFlush(ownerId, false, async lease => {
-          try {
-            await lease.assertOwnership();
-            const fieldMask = pendingPatch.fieldMask ?? mutation.fieldMask;
-            const lastReviewCandidate = mutation.operation === 'review'
-              ? pendingPatch.fields.reviewHistory?.at(-1)
-              : undefined;
+        let reviewFinality: LearningStateMutationResult['reviewFinality'];
+        let xpAwarded: number | undefined;
+        let reviewRating: ReviewRating | undefined;
+        let reviewedAt: string | undefined;
+        let requestedReviewRating: ReviewRating | undefined;
+        let reviewCommandKey: string | undefined;
+        let reviewConflictTerminal = false;
+        let staleDuplicatePublication = false;
+
+        try {
+          let result: ReviewApplyResult | Awaited<ReturnType<typeof applyCardPatchIfCurrent>>;
+          if (mutation.operation === 'review') {
+            const lastReviewCandidate = mutation.fields.reviewHistory?.at(-1);
             const lastReview = isValidReviewEntry(lastReviewCandidate) ? lastReviewCandidate : undefined;
-            let result;
-            if (mutation.operation === 'review') {
-              if (!lastReview) {
-                current.reportError('Review update stayed queued because its history entry is invalid.');
-                applyOptimisticEffects = false;
-              } else {
-                await lease.assertOwnership();
-                result = await applyReviewWithConflictRecovery({
-                  cardId: mutation.cardId,
-                  opId: pendingPatch.opId ?? mutation.operationId,
-                  baseRevision: pendingPatch.baseRevision ?? mutation.baseRevision,
-                  libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
-                  rating: lastReview.rating,
-                  reviewedAt: lastReview.reviewedAt,
-                  fields: pendingPatch.fields,
-                  fieldMask,
-                }, command => applyReviewViaCallable(database, ownerId, command));
-              }
-            } else {
-              await lease.assertOwnership();
-              result = await applyCardPatchWithConflictRecovery({
-                cardId: mutation.cardId,
-                fields: pendingPatch.fields,
-                fieldMask,
-                baseRevision: pendingPatch.baseRevision ?? mutation.baseRevision,
-                libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
-              }, command => applyCardPatchIfCurrent(database, ownerId, command));
+            if (!lastReview) {
+              current.reportError('The review could not be saved because its history entry was invalid.');
+              return resultFor(mutation, { kind: 'patch', cardId: mutation.cardId, fields: {} }, 'conflict', {
+                reviewConflictTerminal: true,
+              });
             }
-            if (result?.applied) {
-              const reviewResult = 'card' in result ? result : null;
-              const patchResult = 'revision' in result ? result : null;
-              if (mutation.operation === 'review' && lastReview && !reviewResult) {
-                throw new Error('The protected review service returned a non-authoritative result.');
-              }
-              const authoritativeFields = reviewResult
-                ? reviewFieldsFromCard(reviewResult.card)
-                : selectMutableCardPatch(pendingPatch.fields, fieldMask);
-              const metadata = {
-                revision: reviewResult?.card.revision ?? patchResult?.revision ?? 0,
-                libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
-                updatedAt: reviewResult?.card.updatedAt ?? new Date().toISOString(),
-              };
-              const advanced = reviewResult
-                ? { ...source, ...authoritativeFields, ...metadata, schemaVersion: 2 as const, id: source.id }
-                : applySuccessfulPatchMetadata(source, pendingPatch.fields, metadata, fieldMask);
-              await lease.assertOwnership();
-              await patchMirroredCardBatch(ownerId, [{
-                cardId: mutation.cardId,
-                fields: { ...authoritativeFields, ...metadata, schemaVersion: 2,
-                  ...(reviewResult
-                    ? { appliedReviewOperationIds: reviewResult.card.appliedReviewOperationIds }
-                    : {}) },
-              }]);
-              if (mutation.operation === 'review') current.addXp(2, `review:${mutation.operationId}`);
-              await lease.assertOwnership();
-              await current.acknowledgeDevicePending([pendingPatch], lease);
-              publication = {
-                kind: 'patch',
-                cardId: mutation.cardId,
-                fields: {
-                  ...authoritativeFields,
-                  ...(reviewResult
-                    ? { appliedReviewOperationIds: reviewResult.card.appliedReviewOperationIds }
-                    : {}),
-                  schemaVersion: advanced.schemaVersion,
-                  revision: advanced.revision,
-                  libraryEpoch: advanced.libraryEpoch,
-                  updatedAt: advanced.updatedAt,
-                },
-              };
-              if (reviewResult?.duplicate) applyOptimisticEffects = false;
-              if (mutation.operation === 'review') { reviewFinality = 'committed'; reviewCommitted = true; }
-            } else if (result?.reason === 'stale-library-epoch' && mutation.operation !== 'review') {
-              applyOptimisticEffects = false;
-              publication = { kind: 'delete', cardId: mutation.cardId };
-              const activeEpoch = await getLibraryEpoch(database, ownerId);
-              await lease.assertOwnership();
-              await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, {
-                libraryEpoch: Math.max(0, activeEpoch - 1),
-                revision: Number.MAX_SAFE_INTEGER,
-              }, lease);
-              await deleteMirroredCardIfOlderThan(ownerId, mutation.cardId, activeEpoch);
-              current.acceptVerifiedEpoch(ownerId, activeEpoch);
-              await lease.assertOwnership();
-              await current.acknowledgeDevicePending([pendingPatch], lease);
-            } else if (result?.reason === 'missing' && mutation.operation !== 'review') {
-              applyOptimisticEffects = false;
-              publication = { kind: 'delete', cardId: mutation.cardId };
-              const maximum = {
-                libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
-                revision: pendingPatch.baseRevision ?? mutation.baseRevision,
-              };
-              await lease.assertOwnership();
-              await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, maximum, lease);
-              await deleteMirroredCardIfNotNewerThan(ownerId, mutation.cardId, maximum);
-              await lease.assertOwnership();
-              await current.acknowledgeDevicePending([pendingPatch], lease);
-              } else if (result) {
-                if (mutation.operation === 'review' && isPermanentReviewConflict(result)) {
-                  applyOptimisticEffects = false;
-                  reviewFinality = 'conflict';
-                  const authoritative = await findCardById(database, ownerId, mutation.cardId);
-                  if (authoritative) {
-                    await lease.assertOwnership();
-                    await mergeDeviceCardsStrict([authoritative], 1, ownerId, lease);
-                    await upsertMirroredCardIfNotOlderThan(ownerId, authoritative);
-                    if (authoritative.libraryEpoch !== undefined) {
-                      current.acceptVerifiedEpoch(ownerId, authoritative.libraryEpoch);
-                    }
-                    publication = {
-                      kind: 'patch',
-                      cardId: mutation.cardId,
-                      fields: {
-                        ...reviewFieldsFromCard(authoritative),
-                        revision: authoritative.revision,
-                        libraryEpoch: authoritative.libraryEpoch,
-                        updatedAt: authoritative.updatedAt,
-                        schemaVersion: authoritative.schemaVersion,
-                        ...(authoritative.appliedReviewOperationIds
-                          ? { appliedReviewOperationIds: authoritative.appliedReviewOperationIds }
-                          : {}),
-                      },
-                    };
-                  } else {
-                    const maximum = {
-                      libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
-                      revision: pendingPatch.baseRevision ?? mutation.baseRevision,
-                    };
-                    await lease.assertOwnership();
-                    await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, maximum, lease);
-                    await deleteMirroredCardIfNotNewerThan(ownerId, mutation.cardId, maximum);
-                    publication = { kind: 'delete', cardId: mutation.cardId };
-                  }
-                  await lease.assertOwnership();
-                  await current.acknowledgeDevicePending([pendingPatch], lease);
-                } else {
-                  current.reportError(result?.reason === 'future-library-epoch'
-                    ? 'Cloud library generation changed. Your local update is still queued while sync state refreshes.'
-                    : 'The card changed again during conflict recovery. Your local update remains safely queued.');
-                }
-              }
-          } catch (cause) {
-            if (mutation.operation === 'review' && cause instanceof ProtectedFunctionError && !cause.retryable) {
-              await lease.assertOwnership();
-              const authoritative = await findCardById(database, ownerId, mutation.cardId);
-              if (authoritative) {
-                await lease.assertOwnership();
-                await mergeDeviceCardsStrict([authoritative], 1, ownerId, lease);
-                await upsertMirroredCardIfNotOlderThan(ownerId, authoritative);
-              } else {
-                const maximum = {
-                  libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
-                  revision: pendingPatch.baseRevision ?? mutation.baseRevision,
-                };
-                await lease.assertOwnership();
-                await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, maximum, lease);
-                await deleteMirroredCardIfNotNewerThan(ownerId, mutation.cardId, maximum);
-              }
-              await lease.assertOwnership();
-              await current.acknowledgeDevicePending([pendingPatch], lease);
-              throw cause;
-            }
-            console.warn('Card update stayed local because cloud sync failed.', cause);
-            current.setCloudUnavailable(true);
+            const commandKey = `${ownerId}\u0000${mutation.operationId}`;
+            reviewCommandKey = commandKey;
+            const initialCommand: ReviewCommand = {
+              cardId: mutation.cardId,
+              opId: mutation.operationId,
+              baseRevision: mutation.baseRevision,
+              libraryEpoch: mutation.libraryEpoch,
+              rating: lastReview.rating,
+              reviewedAt: lastReview.reviewedAt,
+              fields: mutation.fields,
+              fieldMask: mutation.fieldMask,
+            };
+            const command = reviewCommandsRef.current.get(commandKey)
+              ?? rememberReviewCommand(commandKey, initialCommand);
+            requestedReviewRating = command.rating;
+            reviewedAt = command.reviewedAt;
+            unresolvedReviewCommandKeysRef.current.add(commandKey);
+            result = await applyReviewWithConflictRecovery(command, nextCommand => applyReviewViaCallable(
+              database,
+              ownerId,
+              rememberReviewCommand(commandKey, nextCommand),
+            ));
+          } else {
+            result = await applyCardPatchWithConflictRecovery({
+              cardId: mutation.cardId,
+              fields: mutation.fields,
+              fieldMask: mutation.fieldMask,
+              baseRevision: mutation.baseRevision,
+              libraryEpoch: mutation.libraryEpoch,
+            }, command => applyCardPatchIfCurrent(database, ownerId, command));
           }
-          });
-          if (!leaseResult.acquired) current.reportError('Cloud sync is finishing another operation. Your update remains queued.');
+
+          if (result.applied) {
+            const reviewResult = 'card' in result ? result : null;
+            const patchResult = 'revision' in result ? result : null;
+            const publicationSource = latestRef.current.findCard(mutation.cardId) ?? source;
+            const staleDuplicate = Boolean(
+              reviewResult?.duplicate
+              && duplicateReceiptIsOlderThanSource(publicationSource, reviewResult.card),
+            );
+            staleDuplicatePublication = staleDuplicate;
+            const publicationCard = staleDuplicate ? publicationSource : reviewResult?.card;
+            const authoritativeFields = reviewResult
+              ? reviewFieldsFromCard(publicationCard ?? reviewResult.card)
+              : selectMutableCardPatch(mutation.fields, mutation.fieldMask);
+            const metadata = {
+              revision: publicationCard?.revision ?? patchResult?.revision ?? 0,
+              libraryEpoch: publicationCard?.libraryEpoch ?? mutation.libraryEpoch,
+              updatedAt: publicationCard?.updatedAt ?? new Date().toISOString(),
+            };
+            const advanced = reviewResult
+              ? {
+                  ...(publicationSource ?? reviewResult.card),
+                  ...authoritativeFields,
+                  ...metadata,
+                  schemaVersion: 2 as const,
+                  id: mutation.cardId,
+                }
+              : applySuccessfulPatchMetadata(source!, mutation.fields, metadata, mutation.fieldMask);
+            if (mutation.operation === 'review' && reviewResult
+              && (reviewResult.gamification || reviewResult.ceremonyEvents)
+              && latestRef.current.ownerId === ownerId) {
+              current.onReviewOutcome?.({
+                ...(reviewResult.gamification ? { gamification: reviewResult.gamification } : {}),
+                ...(reviewResult.ceremonyEvents ? { ceremonyEvents: reviewResult.ceremonyEvents } : {}),
+              }, mutation.operationId, source ?? reviewResult.card);
+            }
+            publication = {
+              kind: 'patch',
+              cardId: mutation.cardId,
+              fields: {
+                ...authoritativeFields,
+                ...(publicationCard?.appliedReviewOperationIds === undefined
+                  ? {}
+                  : { appliedReviewOperationIds: publicationCard.appliedReviewOperationIds }),
+                schemaVersion: advanced.schemaVersion,
+                revision: advanced.revision,
+                libraryEpoch: advanced.libraryEpoch,
+                updatedAt: advanced.updatedAt,
+              },
+            };
+            if (mutation.operation === 'review') {
+              // A duplicate is the same operation's committed server receipt.
+              reviewFinality = 'committed';
+              if (reviewResult) {
+                xpAwarded = reviewResult.xpAwarded;
+                // A duplicate receipt may return the card after later reviews.
+                // The command rating is the receipt's immutable operation intent.
+                reviewRating = requestedReviewRating;
+              }
+            }
+          } else if (result.reason === 'stale-library-epoch' || result.reason === 'missing') {
+            publication = { kind: 'delete', cardId: mutation.cardId };
+            if (mutation.operation === 'review') {
+              reviewFinality = 'conflict';
+              reviewConflictTerminal = true;
+            }
+            if (result.reason === 'stale-library-epoch') {
+              const activeEpoch = await getLibraryEpoch(database, ownerId);
+              current.acceptVerifiedEpoch(ownerId, activeEpoch);
+            }
+            current.reportError('This card is no longer available in your library.');
+          } else {
+            if (mutation.operation === 'review' && result.reason !== 'revision-conflict') {
+              reviewFinality = 'conflict';
+              reviewConflictTerminal = true;
+            }
+            current.reportError(result.reason === 'future-library-epoch'
+              ? 'Cloud library generation changed. Try again in a moment.'
+              : 'The card changed again just now. Try again.');
+            const rejection = new Error(`Card mutation rejected: ${result.reason}.`);
+            if (reviewConflictTerminal) {
+              (rejection as Error & { reviewConflictTerminal?: boolean }).reviewConflictTerminal = true;
+            }
+            throw rejection;
+          }
+        } catch (cause) {
+          if (mutation.operation === 'review' && reviewConflictTerminal) {
+            if (reviewCommandKey) unresolvedReviewCommandKeysRef.current.delete(reviewCommandKey);
+            if (cause && typeof cause === 'object') {
+              (cause as Error & { reviewConflictTerminal?: boolean }).reviewConflictTerminal = true;
+            }
+          }
+          if (mutation.operation === 'review' && cause instanceof ProtectedFunctionError && !cause.retryable) {
+            if (reviewCommandKey) unresolvedReviewCommandKeysRef.current.delete(reviewCommandKey);
+            (cause as ProtectedFunctionError & { reviewConflictTerminal?: boolean }).reviewConflictTerminal = true;
+            current.reportError('This review could not be saved. Refreshing from the cloud.');
+            current.refreshCloud();
+            throw cause;
+          }
+          console.warn('Card update could not be saved.', cause);
+          current.setCloudUnavailable(true);
+          if (isRetryableSyncError(cause)) {
+            if (isQuotaError(cause) && ownerId) cacheCloudBackoff(ownerId);
+            current.reportError('Cloud is temporarily unavailable. Try again in a moment.');
+          } else {
+            current.reportError('The update could not be saved. Please try again.');
+          }
+          throw cause;
         }
 
-        if (latestRef.current.ownerId !== ownerId || !latestRef.current.canPublishPatch(mutation.cardId)) {
-          retryReviewMutationsRef.current.delete(mutation.operationId);
-          return resultFor(mutation, { kind: 'patch', cardId: mutation.cardId, fields: {} }, reviewFinality);
-        }
-        if (!applyOptimisticEffects) {
-          retryReviewMutationsRef.current.delete(mutation.operationId);
-          return resultFor(mutation, publication, reviewFinality);
-        }
-        if (ownerId && mutation.intent === 'bookmark') {
+        if (mutation.intent === 'bookmark') {
           current.updateCloudStats(stats => ({
             ...stats,
             bookmarked: Math.max(0, stats.bookmarked + (mutation.fields.bookmarked ? 1 : -1)),
           }));
         }
-        if (mutation.intent === 'review' && reviewCommitted) {
-          if (ownerId) {
+        if (mutation.intent === 'review' && (reviewFinality === 'committed' || reviewConflictTerminal)) {
+          if (reviewCommandKey) unresolvedReviewCommandKeysRef.current.delete(reviewCommandKey);
+          if (reviewFinality === 'committed' && !staleDuplicatePublication && source) {
             const previousDifficulty = source.difficulty && source.difficulty !== 'unrated'
               ? source.difficulty
               : 'unrated';
@@ -373,129 +377,176 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                 });
           }
         }
-        retryReviewMutationsRef.current.delete(mutation.operationId);
-        return resultFor(mutation, publication, reviewFinality);
+        return resultFor(mutation, publication, reviewFinality, {
+          ...(reviewConflictTerminal ? { reviewConflictTerminal: true } : {}),
+          ...(xpAwarded === undefined ? {} : { xpAwarded }),
+          ...(reviewRating === undefined ? {} : { reviewRating }),
+          ...(reviewFinality === 'committed' && reviewedAt ? { reviewedAt } : {}),
+        });
       }
 
       if (mutation.operation === 'delete') {
-        let queued: DevicePendingOperation[];
+        if (!ownerId || current.verifiedEpoch === null || !db || !isFirebaseConfigured) {
+          throw new Error('Cloud library storage is not ready yet. Try again in a moment.');
+        }
+        const database = db;
+        const stableSource = source ?? mutation.card;
+        let deleteReceipt: LearningStateMutationResult['deleteReceipt'];
         try {
-          queued = await current.removeDeviceCard(mutation.cardId, {
+          const result = await deleteCardWithConflictRecovery({
+            cardId: mutation.cardId,
+            opId: mutation.operationId,
             libraryEpoch: mutation.libraryEpoch,
-            baseRevisions: { [mutation.cardId]: mutation.baseRevision },
+            baseRevision: mutation.baseRevision,
+          }, command => deleteCardWithTombstone(database, ownerId, command));
+          if (!result.deleted && result.reason !== 'stale-library-epoch') {
+            current.reportError(result.reason === 'future-library-epoch'
+              ? 'Cloud library generation changed. Try deleting again.'
+              : 'The card changed again just now. Try deleting again.');
+            throw new Error(`Delete rejected: ${result.reason}.`);
+          }
+          if (result.deleted) {
+            deleteReceipt = {
+              finality: 'committed',
+              ownerId,
+              operationId: result.tombstone.opId,
+              libraryEpoch: result.tombstone.libraryEpoch,
+              deletedAt: result.tombstone.deletedAt,
+            };
+          } else {
+            const activeEpoch = await getLibraryEpoch(database, ownerId);
+            current.acceptVerifiedEpoch(ownerId, activeEpoch);
+          }
+          if (result.deleted && stableSource && latestRef.current.ownerId === ownerId) {
+            const difficulty = stableSource.difficulty && stableSource.difficulty !== 'unrated' ? stableSource.difficulty : 'unrated';
+            current.updateCloudStats(stats => ({
+              ...stats,
+              total: Math.max(0, stats.total - 1),
+              reviewed: (stableSource.reviews ?? 0) > 0 ? Math.max(0, stats.reviewed - 1) : stats.reviewed,
+              [difficulty]: Math.max(0, stats[difficulty] - 1),
+              bookmarked: stableSource.bookmarked ? Math.max(0, stats.bookmarked - 1) : stats.bookmarked,
+              due: stableSource.nextReviewDate && isCardDue(stableSource) ? Math.max(0, stats.due - 1) : stats.due,
+            }));
+            void current.updateCategoryFacets(
+              { [stableSource.category || 'Other']: -1 },
+              deriveLibraryFacetOperationId(mutation.operationId, 'delete'),
+            );
+          }
+        } catch (cause) {
+          handleFirestoreError(cause, OperationType.DELETE, `users/${ownerId}/cards/${mutation.cardId}`);
+          console.warn('The delete could not be saved.', cause);
+          current.setCloudUnavailable(true);
+          if (isRetryableSyncError(cause)) {
+            if (isQuotaError(cause)) cacheCloudBackoff(ownerId);
+            current.reportError('Cloud is temporarily unavailable. Try deleting again in a moment.');
+          } else {
+            current.reportError('Firebase rejected the delete. The card has been restored on screen.');
+          }
+          throw cause;
+        }
+        return resultFor(mutation, mutation.publication, undefined, { ...(deleteReceipt ? { deleteReceipt } : {}) });
+      }
+
+      if (mutation.operation === 'restore') {
+        const conflict = current.validateRestore(mutation.undoToken);
+        if (conflict) {
+          return resultFor(mutation, mutation.publication, undefined, {
+            restoreFinality: 'conflict',
+            restoreConflictReason: conflict,
+          });
+        }
+        if (current.ownerId !== mutation.undoToken.ownerId) {
+          return resultFor(mutation, mutation.publication, undefined, {
+            restoreFinality: 'conflict',
+            restoreConflictReason: 'owner-changed',
+          });
+        }
+        if (current.verifiedEpoch !== null && current.verifiedEpoch !== mutation.expectedLibraryEpoch) {
+          return resultFor(mutation, mutation.publication, undefined, {
+            restoreFinality: 'conflict',
+            restoreConflictReason: 'epoch-changed',
+          });
+        }
+        if (!ownerId || !db || !isFirebaseConfigured) {
+          throw new Error('Cloud library storage is not ready yet. Try again in a moment.');
+        }
+        const database = db;
+        let created;
+        try {
+          created = await createCardIfAbsent(database, ownerId, mutation.card, {
+            libraryEpoch: mutation.expectedLibraryEpoch,
+            baseRevision: mutation.card.revision ?? 0,
+            opId: mutation.operationId,
+            operationCreatedAt: mutation.operationCreatedAt,
+            restore: true,
           });
         } catch (cause) {
-          console.warn('The delete command could not be stored safely.', cause);
-          throw new Error('The delete could not be stored safely, so the card was left unchanged. Please try again.');
-        }
-        if (ownerId && current.verifiedEpoch !== null && db && isFirebaseConfigured) {
-          const database = db;
-          const pendingDelete = queued.find(operation => operation.type === 'delete');
-          if (!pendingDelete) throw new Error('The delete command could not be queued safely.');
-          const leaseResult = await withDevicePendingFlush(ownerId, false, async lease => {
-          try {
-            await lease.assertOwnership();
-            const result = await deleteCardWithConflictRecovery({
-              cardId: mutation.cardId,
-              opId: pendingDelete.opId ?? mutation.operationId,
-              libraryEpoch: pendingDelete.libraryEpoch ?? mutation.libraryEpoch,
-              baseRevision: pendingDelete.baseRevision ?? mutation.baseRevision,
-            }, command => deleteCardWithTombstone(database, ownerId, command));
-            if (!result.deleted && result.reason !== 'stale-library-epoch') {
-              current.reportError(result.reason === 'future-library-epoch'
-                ? 'Cloud library generation changed. The delete is still queued while sync state refreshes.'
-                : 'The card changed again during delete recovery. The delete remains safely queued.');
-              return resultFor(mutation);
-            }
-            const applyDeleteStats = result.deleted;
-            try {
-              if (result.deleted) {
-                const maximum = {
-                  libraryEpoch: result.tombstone.libraryEpoch,
-                  revision: Math.max(0, result.tombstone.revision - 1),
-                };
-                await lease.assertOwnership();
-                await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, maximum, lease);
-                await deleteMirroredCardIfNotNewerThan(ownerId, mutation.cardId, maximum);
-              } else {
-                const activeEpoch = await getLibraryEpoch(database, ownerId);
-                await lease.assertOwnership();
-                await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, {
-                  libraryEpoch: Math.max(0, activeEpoch - 1),
-                  revision: Number.MAX_SAFE_INTEGER,
-                }, lease);
-                await deleteMirroredCardIfOlderThan(ownerId, mutation.cardId, activeEpoch);
-                current.acceptVerifiedEpoch(ownerId, activeEpoch);
-              }
-            } catch (cause) {
-              console.warn('The local mirror will catch up with the cloud delete on the next sync.', cause);
-              current.reportError('The cloud delete succeeded, but local cleanup remains queued for retry.');
-              return resultFor(mutation);
-            }
-            await lease.assertOwnership();
-            await current.acknowledgeDevicePending(queued, lease);
-            if (applyDeleteStats && source && latestRef.current.ownerId === ownerId) {
-              const difficulty = source.difficulty && source.difficulty !== 'unrated' ? source.difficulty : 'unrated';
-              current.updateCloudStats(stats => ({
-                ...stats,
-                total: Math.max(0, stats.total - 1),
-                reviewed: (source.reviews ?? 0) > 0 ? Math.max(0, stats.reviewed - 1) : stats.reviewed,
-                [difficulty]: Math.max(0, stats[difficulty] - 1),
-                bookmarked: source.bookmarked ? Math.max(0, stats.bookmarked - 1) : stats.bookmarked,
-                due: source.nextReviewDate && isCardDue(source) ? Math.max(0, stats.due - 1) : stats.due,
-              }));
-              void current.updateCategoryFacets(
-                { [source.category || 'Other']: -1 },
-                deriveLibraryFacetOperationId(pendingDelete.opId ?? mutation.operationId, 'delete'),
-              );
-            }
-          } catch (cause) {
-            handleFirestoreError(cause, OperationType.DELETE, `users/${ownerId}/cards/${mutation.cardId}`);
-            if (isRetryableSyncError(cause)) {
-              current.setCloudUnavailable(true);
-              if (isQuotaError(cause)) cacheCloudBackoff(ownerId);
-              current.reportError('The card was deleted locally and queued. It will sync automatically when Firebase is available.');
-            } else {
-              await lease.assertOwnership();
-              await current.acknowledgeDevicePending(queued, lease);
-              throw new Error('Firebase rejected the delete. The card has been restored on screen.');
-            }
+          if (cause instanceof CardMutationPreconditionError) {
+            return resultFor(mutation, mutation.publication, undefined, {
+              restoreFinality: 'conflict',
+              restoreConflictReason: restoreConflictReasonFor(cause.reason),
+            });
           }
-          });
-          if (!leaseResult.acquired) current.reportError('Cloud sync is finishing another operation. The delete remains queued.');
+          throw cause;
         }
-        return resultFor(mutation);
+        const latest = latestRef.current;
+        if (latest.ownerId !== ownerId) {
+          return resultFor(mutation, mutation.publication, undefined, {
+            restoreFinality: 'conflict',
+            restoreConflictReason: 'owner-changed',
+          });
+        }
+        if (latest.verifiedEpoch !== null && latest.verifiedEpoch !== mutation.expectedLibraryEpoch) {
+          return resultFor(mutation, mutation.publication, undefined, {
+            restoreFinality: 'conflict',
+            restoreConflictReason: 'epoch-changed',
+          });
+        }
+        if (!created.created || created.card.id !== mutation.card.id) {
+          return resultFor(mutation, mutation.publication, undefined, {
+            restoreFinality: 'conflict',
+            restoreConflictReason: 'unsafe-existing',
+          });
+        }
+        const publication: LearningStatePublication = { kind: 'restore', card: created.card };
+        const statsOperationKey = `${ownerId}:${mutation.operationId}`;
+        if (!restoreStatsOperationsRef.current.has(statsOperationKey)) {
+          const stableCard = created.card;
+          const difficulty = stableCard.difficulty && stableCard.difficulty !== 'unrated'
+            ? stableCard.difficulty
+            : 'unrated';
+          current.updateCloudStats(stats => ({
+            ...stats,
+            total: stats.total + 1,
+            reviewed: (stableCard.reviews ?? 0) > 0 ? stats.reviewed + 1 : stats.reviewed,
+            [difficulty]: stats[difficulty] + 1,
+            bookmarked: stableCard.bookmarked ? stats.bookmarked + 1 : stats.bookmarked,
+            due: stableCard.nextReviewDate && isCardDue(stableCard) ? stats.due + 1 : stats.due,
+          }));
+          restoreStatsOperationsRef.current.add(statsOperationKey);
+          while (restoreStatsOperationsRef.current.size > MAX_RETAINED_RESTORE_STATS_OPERATIONS) {
+            const oldestOperationKey = restoreStatsOperationsRef.current.values().next().value as string | undefined;
+            if (!oldestOperationKey) break;
+            restoreStatsOperationsRef.current.delete(oldestOperationKey);
+          }
+        }
+        return resultFor(mutation, publication, undefined, { restoreFinality: 'restored' });
       }
 
       if (mutation.operation === 'clear') {
-        if (!ownerId || !db || !isFirebaseConfigured) {
-          await saveDeviceCards([], 0, [], 'replace', null);
-          return resultFor(mutation);
-        }
+        if (!ownerId || !db || !isFirebaseConfigured) return resultFor(mutation);
         current.setMutationPending(true);
         const database = db;
+        let cardDeletionCompleted = false;
         try {
-          const leaseResult = await withDevicePendingFlush(ownerId, false, async lease => {
-          let cardDeletionCompleted = false;
-          try {
-          await lease.assertOwnership();
-          await lease.assertOwnership();
           await runEpochProtectedLibraryClear({
             incrementEpoch: () => incrementLibraryEpoch(database, ownerId),
             onEpochAdvanced: epoch => current.acceptVerifiedEpoch(ownerId, epoch),
-            clearPending: () => clearDevicePending(ownerId),
-            deleteCards: epoch => deleteAllCards(database, ownerId, () => undefined, epoch),
+            deleteCards: epoch => deleteAllCards(database, ownerId, epoch),
           });
           cardDeletionCompleted = true;
-          await lease.assertOwnership();
-          await clearMirroredCards(ownerId).catch(cause => {
-            console.warn('The local mirror will reset on the next sync.', cause);
-          });
-          await lease.assertOwnership();
           await clearLibraryFacets(database, ownerId, mutation.operationId);
           if (latestRef.current.ownerId === ownerId) current.resetCloudState(true);
-          await lease.assertOwnership();
-          await saveDeviceCards([], 0, [], 'replace', ownerId, lease);
           if (latestRef.current.ownerId === ownerId) current.resetCloudPage();
           return resultFor(mutation);
         } catch (cause) {
@@ -504,23 +555,110 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           if (latestRef.current.ownerId === ownerId) {
             current.resetCloudPage();
             current.refreshCloud();
-            current.reportError(recovery.message);
           }
-          if (!recovery.clearLocalView) throw new Error(recovery.message, { cause });
-          if (latestRef.current.ownerId === ownerId) current.resetCloudState(false);
-          await lease.assertOwnership();
-          await saveDeviceCards([], 0, [], 'replace', ownerId, lease);
-          return resultFor(mutation);
-          }
-        });
-          if (!leaseResult.acquired) throw new Error('Cloud sync is finishing another operation. Try clearing the library again in a moment.');
-          return leaseResult.value;
+          if (recovery.clearLocalView && latestRef.current.ownerId === ownerId) current.resetCloudState(false);
+          throw new Error(recovery.message, { cause });
         } finally {
           current.setMutationPending(false);
         }
       }
 
       return resultFor(mutation);
+    },
+    persistBulkPatch: async patches => {
+      const current = latestRef.current;
+      const ownerId = current.ownerId;
+      if (!ownerId || current.verifiedEpoch === null || !db || !isFirebaseConfigured) {
+        throw new Error('Cloud library storage is not ready yet. Try again in a moment.');
+      }
+      const database = db;
+
+      const sources = new Map<string, CardData>();
+      const commands: Array<{
+        cardId: string;
+        baseRevision: number;
+        fields: BulkCardFieldPatchRequest['fields'];
+        fieldMask: readonly (typeof BULK_PATCHABLE_FIELDS)[number][];
+      }> = [];
+      for (const patch of patches) {
+        const source = current.findCard(patch.cardId);
+        if (!source) continue;
+        const fieldMask = BULK_PATCHABLE_FIELDS.filter(
+          field => Object.prototype.hasOwnProperty.call(patch.fields, field),
+        );
+        if (fieldMask.length === 0) continue;
+        sources.set(patch.cardId, source);
+        commands.push({ cardId: patch.cardId, baseRevision: source.revision ?? 0, fields: patch.fields, fieldMask });
+      }
+      if (commands.length === 0) {
+        return patches.map(patch => ({ cardId: patch.cardId, applied: false }));
+      }
+
+      let batch: Awaited<ReturnType<typeof bulkPatchCards>>;
+      try {
+        batch = await bulkPatchCards(database, ownerId, commands);
+      } catch (cause) {
+        console.warn('Bulk card update could not be saved.', cause);
+        current.setCloudUnavailable(true);
+        if (isRetryableSyncError(cause)) {
+          if (isQuotaError(cause)) cacheCloudBackoff(ownerId);
+          current.reportError('Cloud is temporarily unavailable. Try again in a moment.');
+        } else if (cause instanceof CardMutationPreconditionError && cause.reason === 'future-library-epoch') {
+          current.reportError('Cloud library generation changed. Try again in a moment.');
+        } else {
+          current.reportError('The update could not be saved. Please try again.');
+        }
+        throw cause;
+      }
+
+      if (batch.libraryEpoch !== current.verifiedEpoch) {
+        current.acceptVerifiedEpoch(ownerId, batch.libraryEpoch);
+      }
+
+      const commandsById = new Map(commands.map(command => [command.cardId, command]));
+      const resultsById = new Map(batch.outcomes.map(outcome => [outcome.cardId, outcome]));
+      let bookmarkDelta = 0;
+      const outcomes: BulkCardFieldPatchOutcome[] = patches.map(patch => {
+        const command = commandsById.get(patch.cardId);
+        const source = sources.get(patch.cardId);
+        const result = resultsById.get(patch.cardId);
+        if (!command || !source || !result || !result.applied) return { cardId: patch.cardId, applied: false };
+        const metadata = {
+          revision: result.revision,
+          libraryEpoch: batch.libraryEpoch,
+          updatedAt: new Date().toISOString(),
+        };
+        const advanced = applySuccessfulPatchMetadata(source, command.fields, metadata, command.fieldMask);
+        if (Object.prototype.hasOwnProperty.call(command.fields, 'bookmarked')) {
+          bookmarkDelta += command.fields.bookmarked ? 1 : -1;
+        }
+        return {
+          cardId: patch.cardId,
+          applied: true,
+          publication: {
+            kind: 'patch',
+            cardId: patch.cardId,
+            fields: {
+              ...selectMutableCardPatch(command.fields, command.fieldMask),
+              schemaVersion: advanced.schemaVersion,
+              revision: advanced.revision,
+              libraryEpoch: advanced.libraryEpoch,
+              updatedAt: advanced.updatedAt,
+            },
+          },
+        };
+      });
+
+      if (bookmarkDelta !== 0) {
+        current.updateCloudStats(stats => ({
+          ...stats,
+          bookmarked: Math.max(0, stats.bookmarked + bookmarkDelta),
+        }));
+      }
+      if (outcomes.some(outcome => !outcome.applied)) {
+        current.reportError('Some cards could not be updated. Try again.');
+      }
+      return outcomes;
     },
   };
 

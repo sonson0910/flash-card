@@ -1,6 +1,6 @@
 import type { CardData } from '../types/card';
 
-export type RecallMode = 'adaptive' | 'en-to-vi' | 'vi-to-en' | 'image-to-word' | 'listen-to-word' | 'cloze';
+export type RecallMode = 'adaptive' | 'target-to-native' | 'native-to-target' | 'image-to-word' | 'listen-to-word' | 'cloze';
 type ResolvedRecallMode = Exclude<RecallMode, 'adaptive'>;
 
 export interface RecallPrompt {
@@ -12,13 +12,37 @@ export interface RecallPrompt {
   playAudio: boolean;
 }
 
+export interface RecallPromptCopy {
+  missingVocabularyWord: string;
+  completeMissingWord: string;
+  recallTargetWord: string;
+  translateMeaning: string;
+  nameWhatYouSee: string;
+  visualRecall: string;
+  listenAndRecallSpelling: string;
+  audioRecall: string;
+  recallNativeMeaning: string;
+}
+
+const defaultRecallCopy: RecallPromptCopy = {
+  missingVocabularyWord: 'Complete the missing vocabulary word.',
+  completeMissingWord: 'Complete the missing word',
+  recallTargetWord: 'Recall the word',
+  translateMeaning: 'Translate this meaning',
+  nameWhatYouSee: 'Name what you see',
+  visualRecall: 'Visual recall',
+  listenAndRecallSpelling: 'Listen and recall the spelling',
+  audioRecall: 'Audio recall',
+  recallNativeMeaning: 'Recall the meaning',
+};
+
 export function resolveRecallMode(card: CardData, mode: RecallMode): ResolvedRecallMode {
   if (mode !== 'adaptive') return mode;
   const streak = card.correctStreak || 0;
   if (streak >= 3) return 'cloze';
   if (streak === 2) return 'listen-to-word';
-  if (streak === 1) return 'vi-to-en';
-  return 'en-to-vi';
+  if (streak === 1) return 'native-to-target';
+  return 'target-to-native';
 }
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -62,16 +86,16 @@ export function isRecallAnswerCorrect(input: string, expectedAnswer: string): bo
   ));
 }
 
-export function buildRecallPrompt(card: CardData, mode: RecallMode): RecallPrompt {
+export function buildRecallPrompt(card: CardData, mode: RecallMode, copy: RecallPromptCopy = defaultRecallCopy): RecallPrompt {
   const resolvedMode = resolveRecallMode(card, mode);
   if (resolvedMode === 'cloze') {
-    const source = card.exampleSentence || card.explanation || 'Complete the missing vocabulary word.';
+    const source = card.exampleSentence || card.explanation || copy.missingVocabularyWord;
     const promptText = source.replace(
       new RegExp(`(^|[^\\p{L}\\p{N}_])${escapeRegExp(card.word)}(?=$|[^\\p{L}\\p{N}_])`, 'giu'),
       '$1_____',
     );
     return {
-      instruction: 'Complete the missing word',
+      instruction: copy.completeMissingWord,
       promptText: promptText.includes('_____') ? promptText : `${promptText}: _____`,
       answer: card.word,
       supportingText: card.translation,
@@ -79,10 +103,10 @@ export function buildRecallPrompt(card: CardData, mode: RecallMode): RecallPromp
       playAudio: false,
     };
   }
-  if (resolvedMode === 'vi-to-en') {
+  if (resolvedMode === 'native-to-target') {
     return {
-      instruction: 'Recall the English word',
-      promptText: card.translation || 'Translate this meaning',
+      instruction: copy.recallTargetWord,
+      promptText: card.translation || copy.translateMeaning,
       answer: card.word,
       supportingText: card.phonetic,
       showImage: false,
@@ -92,8 +116,8 @@ export function buildRecallPrompt(card: CardData, mode: RecallMode): RecallPromp
 
   if (resolvedMode === 'image-to-word') {
     return {
-      instruction: 'Name what you see',
-      promptText: 'Visual recall',
+      instruction: copy.nameWhatYouSee,
+      promptText: copy.visualRecall,
       answer: card.word,
       supportingText: card.translation,
       showImage: true,
@@ -103,8 +127,8 @@ export function buildRecallPrompt(card: CardData, mode: RecallMode): RecallPromp
 
   if (resolvedMode === 'listen-to-word') {
     return {
-      instruction: 'Listen and recall the spelling',
-      promptText: 'Audio recall',
+      instruction: copy.listenAndRecallSpelling,
+      promptText: copy.audioRecall,
       answer: card.word,
       supportingText: card.translation,
       showImage: false,
@@ -113,7 +137,7 @@ export function buildRecallPrompt(card: CardData, mode: RecallMode): RecallPromp
   }
 
   return {
-    instruction: 'Recall the Vietnamese meaning',
+    instruction: copy.recallNativeMeaning,
     promptText: card.word,
     answer: card.translation,
     supportingText: card.explanation,

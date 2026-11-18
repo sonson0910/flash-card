@@ -1,0 +1,236 @@
+<!--#HEAD Global landing-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}};">
+<!--#AMBIENT-->
+  <header style="position: relative; z-index: 6; height: 84px; padding: 0 64px; display: flex; align-items: center; gap: 36px;">
+    <a href="#" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: {{t.text}};">
+      <span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 10px; background: {{t.logoBg}}; box-shadow: {{t.logoShadow}}; display: flex; align-items: center; justify-content: center; color: {{t.logoText}}; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 19px; font-weight: 500;">S</span>
+      <span style="font-family: Fraunces, Georgia, serif; font-size: 23px; font-weight: 450;">Son<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">Flash</span></span>
+    </a>
+    <nav aria-label="Site" style="display: flex; gap: 28px; font-size: 14.5px; font-weight: 500;">
+      <a href="#" style="color: {{t.text2}}; text-decoration: none;">How it works</a>
+      <a href="#" style="color: {{t.text2}}; text-decoration: none;">Languages</a>
+      <a href="#" style="color: {{t.text2}}; text-decoration: none;">Chrome extension</a>
+      <a href="#" style="color: {{t.text2}}; text-decoration: none;">Pricing</a>
+    </nav>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
+      <div style="position: relative;">
+        <button onClick="{{togglePicker}}" aria-haspopup="listbox" aria-expanded="{{pickerOpen}}" aria-label="Interface language: {{ui.name}}" style="height: 40px; padding: 0 12px 0 11px; border-radius: 999px; border: 1px solid {{pickerLine}}; background: {{t.chipBg}}; color: {{t.text}}; display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color: {{t.text2}};"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"></path></svg>
+          <span style="font-family: {{ui.font}};">{{ui.name}}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color: {{t.text3}};"><path d="m6 9 6 6 6-6"></path></svg>
+        </button>
+        <sc-if value="{{pickerOpen}}" hint-placeholder-val="{{false}}">
+          <div role="listbox" aria-label="Interface language" class="sf-pop" style="position: absolute; right: 0; top: 48px; width: 250px; box-sizing: border-box; padding: 8px; border-radius: 18px; border: {{t.dlgBorder}}; background: {{t.dlgBg}}; box-shadow: {{t.dlgShadow}};">
+            <div style="padding: 6px 10px 8px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: {{t.text3}};">Interface language</div>
+            <sc-for list="{{uiList}}" as="u" hint-placeholder-count="8">
+              <button role="option" aria-selected="{{u.selected}}" onClick="{{u.pick}}" style="width: 100%; height: 38px; padding: 0 10px; border: 0; border-radius: 10px; background: {{u.bg}}; color: {{t.text}}; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left;">
+                <span style="font-family: {{u.font}}; font-size: 14px; font-weight: 600;">{{u.name}}</span>
+                <span style="font-size: 12px; color: {{t.text3}};">{{u.en}}</span>
+                <span style="margin-left: auto; color: {{t.accentText}}; opacity: {{u.check}};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+              </button>
+            </sc-for>
+            <div style="margin: 6px 4px 2px; padding: 8px 8px 4px; border-top: 1px solid {{t.line}}; font-size: 12px; line-height: 1.45; color: {{t.text2}};">Detected from your browser. Card meanings follow the language you choose at sign-up.</div>
+          </div>
+        </sc-if>
+      </div>
+      <button onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+        <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
+      </button>
+      <a href="#" style="height: 44px; padding: 0 14px; display: flex; align-items: center; font-size: 14.5px; font-weight: 600; color: {{t.text}}; text-decoration: none;">Sign in</a>
+      <a href="#" class="sf-press" style="height: 44px; padding: 0 20px; border-radius: {{t.btnRadius}}; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; display: flex; align-items: center; font-size: 14.5px; font-weight: 650; text-decoration: none;">Start free</a>
+    </div>
+  </header>
+
+  <main style="position: relative; z-index: 2; display: grid; grid-template-columns: minmax(0, 1fr) 560px; gap: 40px; padding: 26px 64px 0 96px; height: 610px; box-sizing: border-box;">
+    <section style="display: flex; flex-direction: column; justify-content: center;">
+      <span style="align-self: flex-start; height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>7 languages to learn · meanings in 20+</span>
+      <h1 style="margin: 22px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 92px; line-height: 0.96; letter-spacing: -0.04em; color: {{t.textStrong}};">Read the web.<br>Keep <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">every word.</span></h1>
+      <p style="margin: 24px 0 0; max-width: 560px; font-size: 18px; line-height: 1.6; color: {{t.body}};">Highlight a word on any page — Korean news, a Spanish recipe, a German forum. SonFlash turns it into a card with native audio and a meaning in your own language, then brings it back just before you’d forget.</p>
+      <div style="margin-top: 32px; display: flex; align-items: center; gap: 12px;">
+        <a href="#" class="sf-press" style="height: 58px; padding: 0 28px; border-radius: {{t.btnRadius}}; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; display: flex; align-items: center; font-size: 16px; font-weight: 650; text-decoration: none;">Start learning free</a>
+        <a href="#" class="sf-press" style="height: 58px; padding: 0 22px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; box-shadow: {{t.secondaryShadow}}; color: {{t.text}}; display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; text-decoration: none;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3h4v3a2 2 0 1 0 4 0V3h3v7h-3a2 2 0 1 0 0 4h3v7h-7v-3a2 2 0 1 0-4 0v3H3v-7h3a2 2 0 1 0 0-4H3V3h7z"></path></svg>
+          Add to Chrome
+        </a>
+      </div>
+      <div style="margin-top: 22px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <span style="height: 34px; padding: 0 13px; border-radius: 999px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; color: {{t.warm}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"></path><circle cx="7.5" cy="7.5" r="1.5"></circle></svg>
+          Pro from <span style="font-family: 'Geist Mono', ui-monospace, monospace;">US$4.99</span>/mo
+        </span>
+        <span style="font-size: 13.5px; color: {{t.text3}};">Shown in your currency · priced fairly for your country · reviews free forever</span>
+      </div>
+    </section>
+
+    <section aria-label="Try a card in any language" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;">
+      <div role="tablist" aria-label="Language to learn" style="display: flex; gap: 6px; padding: 5px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
+        <sc-for list="{{tabs}}" as="g" hint-placeholder-count="7">
+          <button role="tab" aria-selected="{{g.selected}}" onClick="{{g.pick}}" title="{{g.en}}" style="height: 34px; padding: 0 11px; border-radius: 999px; border: 0; background: {{g.bg}}; color: {{g.color}}; box-shadow: {{g.shadow}}; font-family: {{g.font}}; font-size: 13.5px; font-weight: 600; cursor: pointer; white-space: nowrap;">{{g.name}}</button>
+        </sc-for>
+      </div>
+
+      <div style="position: relative; width: 560px; height: 500px; display: flex; align-items: center; justify-content: center;">
+        <span aria-hidden="true" class="sf-bob-a" style="position: absolute; z-index: 3; left: 0; top: 70px; height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.floatBg}}; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: {{t.floatShadow}}; display: flex; align-items: center; gap: 8px; font-size: 13px; color: {{t.text}};"><span style="width: 22px; height: 22px; border-radius: 50%; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></span>Native audio · {{L.voice}}</span>
+        <span aria-hidden="true" class="sf-bob-b" style="position: absolute; z-index: 3; right: 0; top: 170px; height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.warmLine}}; background: {{t.floatBg}}; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: {{t.floatShadow}}; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: {{t.warm}};">{{L.level}}</span>
+        <span aria-hidden="true" class="sf-bob-a" style="position: absolute; z-index: 3; left: 12px; bottom: 44px; height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.floatBg}}; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: {{t.floatShadow}}; display: flex; align-items: center; gap: 8px; font-size: 13px; color: {{t.text2}};">Saved from <span style="color: {{t.text}}; font-weight: 600;">{{L.site}}</span></span>
+
+        <div onMouseEnter="{{enter}}" onMouseMove="{{move}}" onMouseLeave="{{leave}}" onClick="{{flip}}" style="position: relative; width: 360px; height: 470px; cursor: pointer;">
+          <div aria-hidden="true" style="position: absolute; inset: -40px; border-radius: 80px; filter: blur(44px); background: {{t.heroAura}}; opacity: {{auraOpacity}}; transition: opacity 400ms ease;"></div>
+          <div style="position: absolute; inset: 0; perspective: 1600px;">
+            <div style="position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateX({{rx}}deg) rotateY({{ry}}deg); transition: {{rotor}};">
+              <div style="position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-sizing: border-box; border-radius: {{t.cardRadius}}px; overflow: hidden; display: flex; flex-direction: column; border: {{front.border}}; background: {{front.bg}}; box-shadow: {{front.shadow}};">
+                <div aria-hidden="true" style="position: relative; height: 170px; flex-shrink: 0; margin: {{t.imgMargin}}; border-radius: {{t.imgRadius}}; overflow: hidden; background: {{t.glyphBg}}; display: flex; align-items: center; justify-content: center;">
+                  <span style="font-family: {{L.font}}; font-size: {{L.glyphSize}}px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; color: {{t.glyphInk}}; white-space: nowrap;">{{L.glyph}}</span>
+                  <span style="position: absolute; left: 16px; top: 14px; height: 26px; padding: 0 10px; border-radius: 999px; background: {{t.badgeBg}}; color: {{t.badgeText}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11.5px; font-weight: 500; display: flex; align-items: center; gap: 6px;">{{L.code}} · <span style="font-family: {{L.font}};">{{L.name}}</span></span>
+                </div>
+                <div style="padding: 14px 28px 0; flex-grow: 1; display: flex; flex-direction: column;">
+                  <div style="font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text2}};">{{L.pos}}</div>
+                  <div lang="{{L.code}}" style="margin-top: 6px; font-family: {{L.font}}; font-optical-sizing: auto; font-weight: {{L.weight}}; font-size: {{L.size}}px; line-height: 1.12; letter-spacing: {{L.track}}; color: {{t.textStrong}}; white-space: nowrap;"><sc-for list="{{L.head}}" as="h" hint-placeholder-count="3"><ruby style="color: {{h.color}}; font-style: {{h.style}}; text-shadow: {{h.glow}}; ruby-position: over; ruby-align: center;">{{h.text}}<rt style="font-family: {{L.font}}; font-size: 15px; font-weight: 500; font-style: normal; letter-spacing: 0.02em; color: {{t.text2}};">{{h.rt}}</rt></ruby></sc-for></div>
+                  <div style="margin-top: 10px; display: flex; align-items: baseline; gap: 10px; font-size: 14px; color: {{t.text2}};"><span style="font-family: 'Geist Mono', ui-monospace, monospace;"><sc-for list="{{L.read}}" as="r" hint-placeholder-count="2"><span style="color: {{r.color}}; font-weight: {{r.weight}};">{{r.text}}</span></sc-for></span><span style="color: {{t.text3}};">{{L.note}}</span></div>
+                  <div style="margin-top: auto; padding: 16px 0 18px; border-top: 1px solid {{t.line}}; display: flex; justify-content: center; font-size: 13.5px; font-weight: 600; color: {{t.text}};">Tap to reveal the meaning</div>
+                </div>
+                <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at {{mx}}% {{my}}%, {{t.spot}} 0%, transparent 55%); opacity: {{spotOpacity}}; transition: opacity 200ms ease; mix-blend-mode: {{t.spotBlend}};"></div>
+              </div>
+              <div style="position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: rotateY(180deg); box-sizing: border-box; border-radius: {{t.cardRadius}}px; overflow: hidden; display: flex; flex-direction: column; justify-content: center; padding: 40px 34px; border: {{back.border}}; background: {{back.bg}}; box-shadow: {{back.shadow}}; color: {{back.text}};">
+                <div style="font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: {{back.muted}};">Meaning · in your language</div>
+                <div style="margin-top: 14px; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 1.05; letter-spacing: -0.02em; color: {{back.title}};">{{L.meaning}}</div>
+                <div style="margin-top: 16px; width: 110px; height: 3px; border-radius: 2px; background: {{back.rule}};"></div>
+                <p lang="{{L.code}}" style="margin: 26px 0 0; font-family: {{L.exFont}}; font-size: 21px; line-height: 1.55; color: {{back.title}};">{{L.ex}}</p>
+                <p style="margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: {{back.muted}};">{{L.exTr}}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <section aria-label="Learners around the world" style="position: relative; z-index: 2; margin: 14px 64px 0 96px; padding-top: 26px; border-top: 1px solid {{t.line}}; display: grid; grid-template-columns: 1.1fr repeat(3, minmax(0, 1fr)); gap: 36px;">
+    <div>
+      <div style="font-family: Fraunces, Georgia, serif; font-size: 40px; font-weight: {{t.displayWeight}}; line-height: 1; letter-spacing: -0.02em; color: {{t.textStrong}};">140+ <span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">countries</span></div>
+      <p style="margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: {{t.text2}};">Any language you speak, any of 7 you learn. Switch courses in one tap.</p>
+    </div>
+    <sc-for list="{{voices}}" as="v" hint-placeholder-count="3">
+      <figure style="margin: 0; display: flex; gap: 14px;">
+        <span aria-hidden="true" style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 14px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500;">{{v.cc}}</span>
+        <div>
+          <blockquote style="margin: 0; font-family: Fraunces, Georgia, serif; font-size: 18px; line-height: 1.35; color: {{t.textStrong}};">“{{v.quote}}”</blockquote>
+          <figcaption style="margin-top: 8px; font-size: 13px; line-height: 1.5; color: {{t.text2}};">{{v.who}}<span style="display: block; color: {{t.accentText}}; font-weight: 600;">{{v.pair}}</span></figcaption>
+        </div>
+      </figure>
+    </sc-for>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"lang":{"editor":"enum","options":["ko","ja","zh","es","fr","de","en"],"default":"ko"},"side":{"editor":"enum","options":["front","back"],"default":"front"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { lang: props.lang ?? 'ko', ui: 'en', picker: false, hover: false, flipped: props.side === 'back', flipping: false, mx: 50, my: 50, rx: 0, ry: 0 };
+  }
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const base = sfTokens(dark);
+    const t = { ...base,
+      floatBg: dark ? 'rgb(12 30 40 / 0.7)' : 'rgb(255 252 245 / 0.92)',
+      floatShadow: dark ? '0 16px 40px -16px rgb(0 0 0 / 0.8)' : '0 10px 24px -14px rgb(60 40 20 / 0.45)',
+      heroAura: dark ? 'radial-gradient(ellipse at 50% 45%, rgb(150 108 215 / 0.8), rgb(40 211 244 / 0.5) 50%, transparent 80%)' : 'radial-gradient(ellipse at 50% 55%, rgb(180 70 26 / 0.35), rgb(214 150 90 / 0.25) 55%, transparent 80%)',
+      spot: dark ? 'rgb(40 211 244 / 0.16)' : 'rgb(255 255 255 / 0.9)', spotBlend: dark ? 'normal' : 'soft-light',
+      glyphBg: dark ? 'radial-gradient(ellipse 70% 90% at 30% 0%, rgb(150 108 215 / 0.35), transparent 70%), radial-gradient(ellipse 70% 90% at 90% 100%, rgb(40 211 244 / 0.22), transparent 70%), #0b1d26' : 'radial-gradient(ellipse 70% 90% at 20% 0%, rgb(180 70 26 / 0.12), transparent 70%), #f3ecdf',
+      glyphInk: dark ? 'rgb(126 230 250 / 0.2)' : 'rgb(29 26 22 / 0.12)',
+      badgeBg: dark ? 'rgb(6 22 31 / 0.7)' : '#1d1a16', badgeText: dark ? '#e5ecf1' : '#fbf6ec',
+    };
+    const s = this.state;
+    const F = {
+      ko: dark ? "'Noto Sans KR', sans-serif" : "'Noto Serif KR', serif",
+      ja: dark ? "'Noto Sans JP', sans-serif" : "'Noto Serif JP', serif",
+      zh: dark ? "'Noto Sans SC', sans-serif" : "'Noto Serif SC', serif",
+      latin: 'Fraunces, Georgia, serif',
+    };
+    const plain = (text) => ({ text, rt: '', color: t.textStrong, style: 'normal', glow: 'none' });
+    const em = (text) => ({ text, rt: '', color: t.emColor, style: t.emStyle, glow: t.emGlow });
+    const fem = dark ? '#f39ac0' : '#a8325e';
+    const art = (text) => ({ text: text + ' ', rt: '', color: fem, style: 'normal', glow: 'none' });
+    const tone2 = dark ? '#f5ae39' : '#9a6a12', tone4 = dark ? '#7ee6fa' : '#1f5f8b';
+    const rd = (text) => [{ text, color: t.text2, weight: 400 }];
+    const LANGS = {
+      ko: { code: 'ko', name: '한국어', en: 'Korean', font: F.ko, exFont: F.ko, weight: 700, size: 60, track: '0', glyph: '결정', glyphSize: 118,
+        head: [plain('결정')], read: rd('gyeol·jeong'), note: 'noun · 決定', pos: 'Noun', level: 'TOPIK II', voice: 'Seoul', site: 'hankyung.com',
+        meaning: 'decision', ex: '빠른 결정이 필요해요.', exTr: 'We need a quick decision.' },
+      ja: { code: 'ja', name: '日本語', en: 'Japanese', font: F.ja, exFont: F.ja, weight: 700, size: 60, track: '0', glyph: '決定', glyphSize: 118,
+        head: [{ ...plain('決'), rt: 'けっ' }, { ...plain('定'), rt: 'てい' }], read: rd('kettei'), note: 'noun · する verb', pos: 'Noun', level: 'JLPT N3', voice: 'Tokyo', site: 'nhk.or.jp',
+        meaning: 'decision', ex: '最終的な決定は明日です。', exTr: 'The final decision is tomorrow.' },
+      zh: { code: 'zh', name: '中文', en: 'Chinese', font: F.zh, exFont: F.zh, weight: 700, size: 60, track: '0', glyph: '决定', glyphSize: 118,
+        head: [plain('决定')], read: [{ text: 'jué', color: tone2, weight: 600 }, { text: 'dìng', color: tone4, weight: 600 }], note: 'tone 2 · tone 4', pos: 'Verb · noun', level: 'HSK 3', voice: 'Mandarin', site: 'zhihu.com',
+        meaning: 'to decide; decision', ex: '我决定明天去。', exTr: 'I’ve decided to go tomorrow.' },
+      es: { code: 'es', name: 'Español', en: 'Spanish', font: F.latin, exFont: F.latin, weight: t.displayWeight, size: 50, track: '-0.02em', glyph: 'decisión', glyphSize: 84,
+        head: [art('la'), plain('deci'), em('sión')], read: rd('/de.siˈsjon/'), note: 'feminine', pos: 'Noun · feminine', level: 'DELE B1', voice: 'Mexico City', site: 'elpais.com',
+        meaning: 'decision', ex: 'Fue una decisión difícil.', exTr: 'It was a hard decision.' },
+      fr: { code: 'fr', name: 'Français', en: 'French', font: F.latin, exFont: F.latin, weight: t.displayWeight, size: 50, track: '-0.02em', glyph: 'décision', glyphSize: 84,
+        head: [art('la'), plain('déci'), em('sion')], read: rd('/de.si.zjɔ̃/'), note: 'feminine', pos: 'Noun · feminine', level: 'DELF B1', voice: 'Paris', site: 'lemonde.fr',
+        meaning: 'decision', ex: 'Une décision rapide s’impose.', exTr: 'A quick decision is needed.' },
+      de: { code: 'de', name: 'Deutsch', en: 'German', font: F.latin, exFont: F.latin, weight: t.displayWeight, size: 38, track: '-0.02em', glyph: 'Entscheidung', glyphSize: 54,
+        head: [art('die'), plain('Ent'), em('schei'), plain('dung')], read: rd('/ɛntˈʃaɪ̯dʊŋ/'), note: 'pl. die Entscheidungen', pos: 'Noun · feminine', level: 'Goethe B1', voice: 'Berlin', site: 'spiegel.de',
+        meaning: 'decision', ex: 'Die Entscheidung fiel schnell.', exTr: 'The decision was made quickly.' },
+      en: { code: 'en', name: 'English', en: 'English', font: F.latin, exFont: F.latin, weight: t.displayWeight, size: 56, track: '-0.03em', glyph: 'decision', glyphSize: 84,
+        head: [plain('De'), em('ci'), plain('sion')], read: rd('/dɪˈsɪʒ.ən/'), note: 'noun', pos: 'Noun', level: 'IELTS 6.0', voice: 'US · UK', site: 'bbc.com',
+        meaning: 'quyết định', ex: 'She made a quick decision.', exTr: 'Cô ấy đã quyết định rất nhanh.' },
+    };
+    const order = ['ko', 'ja', 'zh', 'es', 'fr', 'de', 'en'];
+    const L = LANGS[s.lang];
+    const UI = [
+      { id: 'en', name: 'English', en: '', font: 'Geist, sans-serif' },
+      { id: 'vi', name: 'Tiếng Việt', en: 'Vietnamese', font: 'Geist, sans-serif' },
+      { id: 'es', name: 'Español', en: 'Spanish', font: 'Geist, sans-serif' },
+      { id: 'pt', name: 'Português (BR)', en: 'Portuguese', font: 'Geist, sans-serif' },
+      { id: 'id', name: 'Bahasa Indonesia', en: 'Indonesian', font: 'Geist, sans-serif' },
+      { id: 'de', name: 'Deutsch', en: 'German', font: 'Geist, sans-serif' },
+      { id: 'ja', name: '日本語', en: 'Japanese', font: "'Noto Sans JP', sans-serif" },
+      { id: 'ko', name: '한국어', en: 'Korean', font: "'Noto Sans KR', sans-serif" },
+    ];
+    const ui = UI.find(u => u.id === s.ui);
+    const front = dark
+      ? { border: '1.5px solid transparent', bg: t.cardBg + ' padding-box, ' + t.rimLearning + ' border-box', shadow: '0 50px 100px -40px rgb(0 0 0 / 0.95), 0 0 60px -16px rgb(40 211 244 / 0.55)' }
+      : { border: '0', bg: t.cardBg, shadow: t.cardShadow };
+    const back = dark
+      ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 90% 55% at 50% 10%, rgb(150 108 215 / 0.28), transparent 70%) padding-box, ' + t.cardBg + ' padding-box, ' + t.rimLearning + ' border-box', shadow: front.shadow, text: '#e5ecf1', title: '#f1f6f9', muted: '#99a7b0', rule: '#28d3f4' }
+      : { border: '0', bg: 'radial-gradient(ellipse 80% 50% at 50% 10%, rgb(180 70 26 / 0.22), transparent 70%), #1c2a21', shadow: t.cardShadow, text: '#efe8da', title: '#fbf6ec', muted: '#b7ad9b', rule: '#e8a075' };
+    const later = (ms, fn) => window.setTimeout(fn, ms);
+    return {
+      t, front, back, L, grainId: 'glanding-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: 820, ay: -60, bx: 980, by: 360 },
+      toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      ui, pickerOpen: s.picker, pickerLine: s.picker ? t.accentLine : t.line,
+      togglePicker: () => this.setState({ picker: !s.picker }),
+      uiList: UI.map(u => ({ ...u, selected: u.id === s.ui ? 'true' : 'false', check: u.id === s.ui ? 1 : 0,
+        bg: u.id === s.ui ? t.accentSoft : 'transparent', pick: () => this.setState({ ui: u.id, picker: false }) })),
+      tabs: order.map(id => {
+        const on = id === s.lang;
+        return { name: LANGS[id].name, en: LANGS[id].en, font: LANGS[id].font === F.latin ? 'Geist, sans-serif' : LANGS[id].font,
+          selected: on ? 'true' : 'false', bg: on ? t.primaryBg : 'transparent', color: on ? t.primaryText : t.text2,
+          shadow: on ? t.primaryShadow : 'none', pick: () => this.setState({ lang: id, flipped: false }) };
+      }),
+      mx: s.mx, my: s.my, rx: s.rx, ry: (s.flipped ? 180 : 0) + s.ry,
+      rotor: s.flipping ? 'transform 660ms cubic-bezier(.2,.8,.2,1)' : 'transform 280ms cubic-bezier(.22,1,.36,1)',
+      auraOpacity: s.hover ? 0.55 : 0.3, spotOpacity: s.hover ? 1 : 0,
+      enter: () => this.setState({ hover: true }),
+      move: (e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+        this.setState({ hover: true, mx: px * 100, my: py * 100, rx: -(py - 0.5) * 10, ry: (px - 0.5) * 10 });
+      },
+      leave: () => this.setState({ hover: false, mx: 50, my: 50, rx: 0, ry: 0 }),
+      flip: () => { if (s.flipping) return; this.setState({ flipped: !s.flipped, flipping: true }); later(680, () => this.setState({ flipping: false })); },
+      voices: [
+        { cc: 'VN', quote: 'My K-drama words finally stick.', who: 'Linh, Hà Nội', pair: 'Tiếng Việt → 한국어' },
+        { cc: 'BR', quote: 'I save words from Reddit, then review on the bus.', who: 'Rafael, São Paulo', pair: 'Português → English' },
+        { cc: 'DE', quote: 'Furigana on every card made kanji less scary.', who: 'Jonas, Berlin', pair: 'Deutsch → 日本語' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

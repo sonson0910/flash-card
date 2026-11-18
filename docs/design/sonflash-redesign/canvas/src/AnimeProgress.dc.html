@@ -1,0 +1,181 @@
+<!--#AHEAD Crystal Star progress-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#ABG-->
+<!--#ANAV-->
+
+  <main style="position: relative; z-index: 3; flex-grow: 1; padding: 6px 44px 28px; display: flex; flex-direction: column; min-height: 0;">
+    <div class="nk-rise" style="height: 88px; flex-shrink: 0; display: flex; align-items: flex-end; gap: 22px;">
+      <div>
+        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.16em; color: {{t.crimsonText}};">STUDY DIARY <span style="color: {{t.text3}};">//</span> SINCE 2 JUN 2026</div>
+        <h1 style="margin: 4px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 52px; line-height: 1; letter-spacing: 0.01em; background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / 0.6));">PROGRESS</h1>
+      </div>
+      <p style="margin: 0 0 6px; font-size: 14px; color: {{t.text2}};"><span style="font-family: {{t.fMono}}; font-weight: 600; color: {{t.textStrong}};">2,418</span> reviews · <span style="font-family: {{t.fMono}}; font-weight: 600; color: {{t.textStrong}};">14 h 20 m</span> studied</p>
+      <div style="margin-left: auto; display: flex; align-items: flex-end; gap: 4px;">
+        <div class="nk-float" style="width: 84px; height: 84px; flex-shrink: 0;">
+<!--#MASCOT proud-->
+        </div>
+        <div style="position: relative; margin-bottom: 10px; width: 210px; box-sizing: border-box; padding: 8px 14px 9px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+          <span aria-hidden="true" style="position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
+          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
+          <div style="margin-top: 2px; font-weight: 800; font-size: 13px; line-height: 1.35; color: {{t.textStrong}};">Recall 92%. Nở hoa rồi đó!</div>
+        </div>
+      </div>
+      <div role="group" aria-label="Range" style="margin-bottom: 10px; display: flex; gap: 4px;">
+        <sc-for list="{{ranges}}" as="r" hint-placeholder-count="3">
+          <button aria-pressed="{{r.on}}" onClick="{{r.pick}}" style="height: 36px; padding: 0 16px; border: 0; transform: skewX(-16deg); background: {{r.bg}}; box-shadow: {{r.edge}}; cursor: pointer;"><span style="display: block; transform: skewX(16deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; letter-spacing: 0.06em; color: {{r.color}};">{{r.label}}</span></button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="margin-top: 16px; flex-grow: 1; min-height: 0; display: grid; grid-template-columns: 1fr 410px; grid-template-rows: 1fr 1fr; gap: 18px 22px;">
+      <section class="nk-rise-2" style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 18px 24px 16px; display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <h2 style="margin: 0; display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.14em; color: {{t.holoText}};"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: #5ef2ff; box-shadow: 0 0 8px #5ef2ff;"></span>ACTIVITY</h2>
+          <span style="font-size: 13px; color: {{t.text2}};">Reviews per day, last 26 weeks</span>
+          <span style="margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 12px; color: {{t.text3}};">Less
+            <sc-for list="{{legend}}" as="l" hint-placeholder-count="5"><span style="width: 13px; height: 13px; clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px); background: {{l.bg}};"></span></sc-for>
+            More</span>
+        </div>
+        <div style="margin-top: 14px; display: flex; gap: 10px;">
+          <div style="display: grid; grid-template-rows: repeat(7, 26px); gap: 4px; font-family: {{t.fMono}}; font-size: 11px; color: {{t.text3}}; align-items: center;"><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span><span>Sun</span></div>
+          <div role="img" aria-label="Activity heatmap, 13 days in a row active" style="flex-grow: 1; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; grid-template-rows: repeat(7, 26px); gap: 4px;">
+            <sc-for list="{{heat}}" as="h" hint-placeholder-count="182">
+              <span style="clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px); background: {{h.bg}}; filter: {{h.glow}};"></span>
+            </sc-for>
+          </div>
+        </div>
+        <div style="margin-top: 6px; padding-left: 40px; display: flex; justify-content: space-between; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; color: {{t.text3}};"><span>APR</span><span>MAY</span><span>JUN</span><span>JUL</span><span>AUG</span><span>SEP</span></div>
+      </section>
+
+      <section class="nk-rise-2" style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 18px 22px 16px; display: flex; flex-direction: column;">
+        <h2 style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.14em; color: {{t.crimsonText}};">MASTERY</h2>
+        <div style="margin-top: 10px; display: flex; align-items: center; gap: 20px;">
+          <div style="position: relative; width: 160px; height: 160px; flex-shrink: 0; filter: drop-shadow(0 0 16px rgb(255 42 77 / 0.5));">
+            <svg width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="25 percent mastered">
+              <defs><linearGradient id="{{ringId}}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd166"></stop><stop offset="0.5" stop-color="#ff2a4d"></stop><stop offset="1" stop-color="#7a0820"></stop></linearGradient></defs>
+              <polygon points="80,6 144,43 144,117 80,154 16,117 16,43" fill="none" stroke="{{t.lineStrong}}" stroke-width="1.5"></polygon>
+              <circle cx="80" cy="80" r="58" fill="none" stroke="{{t.track}}" stroke-width="16"></circle>
+              <circle cx="80" cy="80" r="58" fill="none" stroke="#ff8fb6" stroke-width="16" stroke-dasharray="{{ring.learning}} 400" stroke-dashoffset="{{ring.learningOffset}}" transform="rotate(-90 80 80)"></circle>
+              <circle cx="80" cy="80" r="58" fill="none" stroke="url(#{{ringId}})" stroke-width="16" stroke-dasharray="{{ring.mastered}} 400" transform="rotate(-90 80 80)"></circle>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 40px; line-height: 1; color: {{t.textStrong}};">25<span style="font-size: 20px; color: {{t.crimsonText}};">%</span></span>
+              <span style="margin-top: 2px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.14em; color: {{t.text2}};">STARS</span>
+            </div>
+          </div>
+          <ul style="margin: 0; padding: 0; list-style: none; flex-grow: 1; display: flex; flex-direction: column; gap: 12px;">
+            <sc-for list="{{mastery}}" as="m" hint-placeholder-count="3">
+              <li style="display: flex; align-items: center; gap: 10px;"><span style="width: 42px; height: 24px; flex-shrink: 0; clip-path: {{t.chamferSm}}; background: {{m.rim}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; color: #ffffff; text-shadow: 0 1px 0 #7a0820;">{{m.grade}}</span><span style="font-weight: 800; font-size: 14px; color: {{t.text2}};">{{m.label}}</span><span style="margin-left: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; color: {{t.textStrong}};">{{m.value}}</span></li>
+            </sc-for>
+          </ul>
+        </div>
+        <div style="margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div style="padding: 8px 12px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.line}};"><div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.text3}};">RECALL RATE</div><div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; color: {{t.holoText}};">92%</div></div>
+          <div style="padding: 8px 12px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.line}};"><div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.text3}};">BEST STREAK</div><div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; color: {{t.goldText}};">31 DAYS</div></div>
+        </div>
+      </section>
+
+      <section class="nk-rise-3" style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; padding: 18px 24px 14px; display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <h2 style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.14em; color: {{t.crimsonText}};">COMING UP</h2>
+          <span style="font-size: 13px; color: {{t.text2}};">Cards due, next 14 days</span>
+        </div>
+        <div role="img" aria-label="Forecast: 12 due today, 8 tomorrow" style="margin-top: auto; display: grid; grid-template-columns: repeat(14, 1fr); gap: 12px; align-items: end;">
+          <sc-for list="{{forecast}}" as="f" hint-placeholder-count="14">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+              <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; color: {{f.numColor}};">{{f.n}}</span>
+              <span style="width: 100%; height: {{f.h}}px; transform: skewX(-12deg); background: {{f.bg}}; box-shadow: {{f.glow}};"></span>
+              <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: {{f.weight}}; font-size: 12px; letter-spacing: 0.04em; color: {{f.labelColor}};">{{f.d}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section class="nk-rise-3" style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 18px 22px 18px; display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: baseline; gap: 10px;">
+          <h2 style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.14em; color: {{t.goldText}};">NEW STARS</h2>
+          <a href="#" style="margin-left: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.06em; color: {{t.crimsonText}}; text-decoration: none;">ALL 312 →</a>
+        </div>
+        <div style="margin-top: 12px; flex-grow: 1; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 12px;">
+          <sc-for list="{{shelf}}" as="w" hint-placeholder-count="4">
+            <div class="nk-lift" style="position: relative; filter: drop-shadow(0 0 12px rgb(255 42 77 / 0.45));">
+              <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; overflow: hidden;"><div class="nk-rim-spin" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: {{sssRim}};"></div></div>
+              <div style="position: absolute; inset: 2px; clip-path: {{t.chamferSm}}; background: {{t.cardFront}}; padding: 10px 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;">
+                <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 21px; line-height: 1.05; color: {{t.textStrong}};">{{w.word}}</span>
+                <span style="margin-top: 3px; font-size: 13px; font-weight: 700; color: {{t.text2}};">{{w.meaning}}</span>
+                <span aria-hidden="true" style="position: absolute; right: 8px; top: 8px; height: 18px; padding: 0 6px; clip-path: {{t.chamferSm}}; background: {{sssRim}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 10px; color: #ffffff; display: flex; align-items: center;">STAR</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { range: 1 };
+  }
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const heatScale = dark
+      ? ['rgb(255 255 255 / 0.07)', 'rgb(94 242 255 / 0.28)', 'rgb(94 242 255 / 0.6)', '#ff5470', '#ff2a4d']
+      : ['rgb(13 40 80 / 0.08)', 'rgb(10 143 176 / 0.3)', 'rgb(10 143 176 / 0.65)', '#ff5470', '#d1123a'];
+    const seed = (i) => { const x = Math.sin(i * 78.233) * 43758.5453; return x - Math.floor(x); };
+    const circ = 2 * Math.PI * 58;
+    const mastered = circ * 312 / 1228;
+    const learning = circ * 304 / 1228;
+    const heat = Array.from({ length: 182 }, (_, i) => {
+      const week = Math.floor(i / 7);
+      const recent = i >= 182 - 13 - 4 && i < 182 - 4;
+      const future = i >= 182 - 4;
+      let lvl = future ? -1 : recent ? 2 + Math.round(seed(i) * 2) : Math.min(4, Math.floor(seed(i) * (1.5 + week / 9)));
+      if (!recent && !future && seed(i + 99) < 0.28) lvl = 0;
+      return {
+        bg: lvl < 0 ? 'transparent' : heatScale[lvl],
+        glow: lvl >= 3 ? 'drop-shadow(0 0 5px rgb(255 42 77 / 0.6))' : 'none',
+      };
+    });
+    const f = [12, 8, 14, 5, 9, 17, 6, 4, 11, 7, 3, 9, 5, 8];
+    const days = ['Today', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon', 'Tue'];
+    return {
+      t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      nav: nkNav(t, -1), streak: 12,
+      bg: { wings: false },
+      ringId: 'nk-ring-' + (dark ? 'd' : 'l'),
+      sssRim: t.tier.mastered.rim,
+      ranges: ['30 DAYS', '26 WEEKS', 'ALL TIME'].map((label, i) => {
+        const on = this.state.range === i;
+        return { label, on: on ? 'true' : 'false', pick: () => this.setState({ range: i }),
+          bg: on ? t.primaryBg : t.chip, color: on ? '#ffffff' : t.text2, edge: on ? t.primaryGlow : 'inset 0 0 0 1px ' + t.lineStrong };
+      }),
+      legend: heatScale.map(bg => ({ bg })),
+      heat,
+      ring: { mastered: mastered.toFixed(1), learning: learning.toFixed(1), learningOffset: (-mastered).toFixed(1) },
+      mastery: [
+        { grade: 'Star', label: 'Mastered', value: '312', rim: t.tier.mastered.rim },
+        { grade: 'Bloom', label: 'Learning', value: '304', rim: t.tier.learning.rim },
+        { grade: 'Bud', label: 'New', value: '612', rim: t.tier.new.rim },
+      ],
+      forecast: f.map((n, i) => ({
+        n, d: days[i], h: Math.round(n / 17 * 150),
+        bg: i === 0 ? t.primaryBg : i === 1 ? 'linear-gradient(180deg, #ffc2da, #ff8fb6)' : (dark ? 'linear-gradient(180deg, rgb(94 242 255 / 0.5), rgb(94 242 255 / 0.12))' : 'linear-gradient(180deg, rgb(10 143 176 / 0.55), rgb(10 143 176 / 0.15))'),
+        glow: i === 0 ? '0 0 18px rgb(255 42 77 / 0.8)' : 'none',
+        numColor: i === 0 ? t.crimsonText : i === 1 ? t.pinkText : t.text3,
+        labelColor: i === 0 ? t.textStrong : t.text3, weight: i === 0 ? 900 : 700,
+      })),
+      shelf: [
+        { word: 'Instant', meaning: 'Khoảnh khắc' }, { word: 'Nurse', meaning: 'Y tá' },
+        { word: 'Ambition', meaning: 'Hoài bão' }, { word: 'Achieve', meaning: 'Đạt được' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

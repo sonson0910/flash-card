@@ -1,0 +1,117 @@
+<!--#AHEAD Crystal Star web words-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#ABG-->
+<!--#ANAV-->
+
+  <main style="position: relative; z-index: 3; flex-grow: 1; padding: 6px 44px 28px; display: flex; flex-direction: column; min-height: 0;">
+    <div class="nk-rise" style="display: flex; align-items: flex-end; gap: 20px;">
+      <div>
+        <a href="#" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: {{t.text2}}; text-decoration: none;">← VOCABULARY</a>
+        <h1 style="margin: 6px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 46px; line-height: 1; letter-spacing: 0.01em;"><span style="background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820);">WORDS YOU MET</span> <span style="background: linear-gradient(180deg, #9ff9ff, #5ef2ff 50%, #1aa7c9); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 16px rgb(94 242 255 / 0.7));">ON THE WEB</span></h1>
+        <p style="margin: 8px 0 0; font-size: 14px; color: {{t.text2}};">Saved with the SonFlash extension — each one keeps the sentence you found it in.</p>
+      </div>
+      <div style="margin-left: auto; display: flex; align-items: flex-end; gap: 4px;">
+        <div class="nk-float" style="width: 92px; height: 92px; flex-shrink: 0;">
+<!--#MASCOT hint-->
+        </div>
+        <div style="position: relative; margin-bottom: 10px; width: 232px; box-sizing: border-box; padding: 8px 14px 9px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+          <span aria-hidden="true" style="position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
+          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
+          <div style="margin-top: 2px; font-weight: 800; font-size: 13px; line-height: 1.35; color: {{t.textStrong}};">Mình giữ cả câu gốc, để bạn nhớ ngữ cảnh.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nk-rise-2" style="margin-top: 16px; display: flex; align-items: center; gap: 16px;">
+      <div role="tablist" aria-label="Filter" style="display: flex; gap: 6px;">
+        <sc-for list="{{tabs}}" as="f" hint-placeholder-count="4">
+          <button role="tab" aria-selected="{{f.on}}" onClick="{{f.pick}}" style="height: 36px; padding: 0 16px; border: 0; transform: skewX(-16deg); background: {{f.bg}}; box-shadow: {{f.edge}}; cursor: pointer;"><span style="display: block; transform: skewX(16deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.04em; color: {{f.fg}};">{{f.label}}</span></button>
+        </sc-for>
+      </div>
+      <button class="nk-lift" style="position: relative; margin-left: auto; height: 46px; padding: 0 26px; border: 0; transform: skewX(-14deg); background: {{t.primaryBg}}; color: #ffffff; cursor: pointer; overflow: hidden; filter: drop-shadow(0 0 14px rgb(255 42 77 / 0.6));"><span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 44px; background: rgb(255 255 255 / 0.35);"></span><span style="position: relative; display: flex; align-items: center; gap: 8px; transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 16px; letter-spacing: 0.05em;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>ADD ALL 8 TO TODAY'S LESSON</span></button>
+    </div>
+
+    <div style="margin-top: 16px; flex-grow: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 22px;">
+      <sc-for list="{{groups}}" as="g" hint-placeholder-count="2">
+        <section class="{{g.rise}}" style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{g.edge}}; display: flex; flex-direction: column; min-height: 0;">
+          <header style="display: flex; align-items: center; gap: 14px; padding: 16px 20px 14px; border-bottom: 1px solid {{t.line}};">
+            <span style="width: 42px; height: 42px; flex-shrink: 0; clip-path: {{t.chamferSm}}; background: {{g.fav}}; color: #ffffff; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 20px;">{{g.site0}}</span>
+            <div style="min-width: 0; flex-grow: 1;">
+              <div style="font-weight: 900; font-size: 16px; line-height: 1.25; color: {{t.textStrong}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{g.title}}</div>
+              <div style="margin-top: 2px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 12.5px; letter-spacing: 0.06em; color: {{t.text3}};">{{g.site}} · {{g.date}} · {{g.count}} WORDS</div>
+            </div>
+            <a href="#" aria-label="Open article" style="width: 34px; height: 34px; flex-shrink: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4 10 14M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"></path></svg></a>
+          </header>
+          <sc-for list="{{g.words}}" as="w" hint-placeholder-count="4">
+            <div style="position: relative; flex-grow: 1; display: grid; grid-template-columns: 178px 1fr; gap: 16px; align-items: center; padding: 10px 20px; border-bottom: 1px solid {{t.line}};">
+              <span aria-hidden="true" style="position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; background: {{w.rim}};"></span>
+              <div>
+                <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 23px; line-height: 1.05; color: {{t.textStrong}};">{{w.a}}<span style="color: {{t.crimsonText}};">{{w.b}}</span>{{w.c}}</div>
+                <div style="margin-top: 3px; font-size: 13.5px; font-weight: 700; color: {{t.text2}};">{{w.vi}}</div>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px;">
+                <p style="margin: 0; font-size: 14px; line-height: 1.5; color: {{t.body}};">“{{w.pre}}<mark style="padding: 0 4px; background: {{hl}}; color: {{t.textStrong}}; font-weight: 900; box-shadow: inset 0 -2px 0 {{hlLine}};">{{w.word}}</mark>{{w.post}}”</p>
+                <span style="height: 24px; padding: 0 10px 0 4px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.line}}; display: flex; align-items: center; gap: 7px;"><span style="height: 16px; padding: 0 5px; clip-path: {{t.chamferSm}}; background: {{w.rim}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 10px; color: #ffffff; display: flex; align-items: center;">{{w.grade}}</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.08em; color: {{w.sFg}};">{{w.status}}</span></span>
+              </div>
+            </div>
+          </sc-for>
+        </section>
+      </sc-for>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 0 };
+  }
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const S = {
+      tomorrow: ['NEXT LESSON', 'Bud', t.tier.new.rim, t.holoText],
+      learning: ['LEARNING', 'S', t.tier.learning.rim, t.pinkText],
+      known: ['KNOWN', 'STAR', t.tier.mastered.rim, t.goldText],
+    };
+    const word = ([a, b, c, vi, pre, w, post, s]) => {
+      const [status, grade, rim, sFg] = S[s];
+      return { a, b, c, vi, pre, word: w, post, status, grade, rim, sFg };
+    };
+    const G = [
+      ['BBC', 'linear-gradient(180deg, #e0283a, #8a0010)', 'The flood that rewrote a city’s plans overnight', 'YESTERDAY', [
+        ['re', 'sil', 'ient', 'kiên cường', 'Coastal towns proved remarkably ', 'resilient', ' after the storm.', 'tomorrow'],
+        ['', 'scru', 'tiny', 'sự giám sát', 'The council now faces growing ', 'scrutiny', ' from residents.', 'tomorrow'],
+        ['im', 'me', 'diate', 'ngay lập tức', 'Groups demanded an ', 'immediate', ' response from the council.', 'learning'],
+        ['em', 'bank', 'ment', 'bờ kè', 'Engineers warned the ', 'embankments', ' were temporary.', 'known'],
+      ]],
+      ['The Guardian', 'linear-gradient(180deg, #2b5bb8, #052962)', 'Oceans are heating faster than models predicted', 'MON, 21 SEP', [
+        ['un', 'pre', 'cedented', 'chưa từng có', 'An ', 'unprecedented', ' rise in sea temperatures.', 'tomorrow'],
+        ['', 'mit', 'igate', 'giảm thiểu', 'Few measures can ', 'mitigate', ' the damage quickly.', 'tomorrow'],
+        ['', 'thresh', 'old', 'ngưỡng', 'Reefs are past a critical ', 'threshold', '.', 'learning'],
+        ['', 'vol', 'atile', 'biến động', 'Weather patterns grow more ', 'volatile', ' each year.', 'known'],
+      ]],
+    ];
+    return {
+      t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      nav: nkNav(t, 2), streak: 12,
+      bg: { wings: false },
+      hl: dark ? 'rgb(94 242 255 / 0.18)' : 'rgb(94 242 255 / 0.35)',
+      hlLine: dark ? '#5ef2ff' : '#0a8fb0',
+      tabs: ['ALL 8', 'THIS WEEK', 'NOT IN A DECK', 'KNOWN'].map((label, i) => {
+        const on = this.state.tab === i;
+        return { label, on: on ? 'true' : 'false', pick: () => this.setState({ tab: i }),
+          bg: on ? t.primaryBg : t.chip, fg: on ? '#ffffff' : t.text2, edge: on ? t.primaryGlow : 'inset 0 0 0 1px ' + t.lineStrong };
+      }),
+      groups: G.map(([site, fav, title, date, words], i) => ({
+        site, site0: site[0], fav, title, date, count: words.length, words: words.map(word),
+        edge: i === 0 ? t.panelEdge : t.panelEdge2, rise: i === 0 ? 'nk-rise-2' : 'nk-rise-3',
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!--#AHEAD Crystal Star extension popup-->
+<div style="width: 380px; height: 640px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+  <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; overflow: hidden;">
+    <div style="position: absolute; inset: 0; background: {{t.space}};"></div>
+    <div class="nk-starfield" style="position: absolute; inset: 0; background: {{t.stars}};"></div>
+  </div>
+
+  <header style="position: relative; z-index: 2; height: 56px; flex-shrink: 0; padding: 0 16px; display: flex; align-items: center; gap: 9px; box-shadow: inset 0 -1px 0 {{t.panelEdge}};">
+    <span style="width: 24px; height: 24px; filter: drop-shadow(0 0 7px rgb(255 42 77 / 0.7));">
+<!--#STAR5-->
+    </span>
+    <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 19px; color: {{t.textStrong}};">SON<span style="color: {{t.crimsonText}};">FLASH</span></span>
+    <sc-if value="{{isLoop}}" hint-placeholder-val="{{false}}">
+      <span style="height: 26px; padding: 0 9px 0 7px; clip-path: {{t.chamferSm}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="#ffd166"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>12 ngày</span>
+    </sc-if>
+    <sc-if value="{{notLoop}}" hint-placeholder-val="{{true}}">
+      <span style="font-family: {{t.fMono}}; font-size: 11px; color: {{t.text3}};">v1.6.3</span>
+    </sc-if>
+    <a href="#" aria-label="Cài đặt" style="margin-left: auto; width: 36px; height: 36px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg></a>
+  </header>
+
+  <sc-if value="{{showInput}}" hint-placeholder-val="{{true}}">
+    <div style="position: relative; z-index: 2; flex-shrink: 0; padding: 14px 16px 0; display: flex; flex-direction: column; gap: 10px;">
+      <label style="display: block;">
+        <span style="display: flex; justify-content: space-between; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; color: {{t.text2}};">TỪ HOẶC CỤM TỪ<span style="font-family: {{t.fMono}}; font-style: normal; font-weight: 400; letter-spacing: 0; color: {{t.text3}};">{{count}}/80</span></span>
+        <span style="margin-top: 6px; height: 46px; box-sizing: border-box; padding: 0 5px 0 14px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1.5px {{inputEdge}}; display: flex; align-items: center; gap: 8px;">
+          <input value="{{word}}" placeholder="Nhập hoặc dán một từ…" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; color: {{t.textStrong}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 19px;">
+          <button aria-label="Nghe phát âm" style="width: 36px; height: 36px; border: 0; opacity: {{speakOpacity}}; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
+        </span>
+      </label>
+
+      <sc-if value="{{isIdle}}" hint-placeholder-val="{{false}}">
+        <div style="clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 2px 14px;">
+          <div style="height: 44px; display: flex; align-items: center; justify-content: space-between; box-shadow: inset 0 -1px 0 {{t.line}};">
+            <span style="font-size: 13px; font-weight: 800; color: {{t.textStrong}};">Lưu vào deck</span>
+            <span aria-disabled="true" style="display: flex; align-items: center; gap: 7px; font-size: 12px; color: {{t.text3}};"><span class="sf-spin" style="width: 12px; height: 12px; box-sizing: border-box; border: 2px solid {{t.holo}}; border-right-color: transparent; border-radius: 50%;"></span>Đang đồng bộ deck…</span>
+          </div>
+          <div style="height: 44px; display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 13px; font-weight: 800; color: {{t.textStrong}};">Biểu tượng nổi</span>
+            <span style="display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 12px; color: {{t.holoText}};">BẬT<span role="switch" aria-checked="true" style="position: relative; width: 42px; height: 22px; transform: skewX(-14deg); background: linear-gradient(90deg, #5ef2ff, #1aa7c9); box-shadow: 0 0 12px -2px rgb(94 242 255 / 0.7);"><span style="position: absolute; right: 3px; top: 3px; width: 16px; height: 16px; background: {{knob}};"></span></span></span>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="display: grid; grid-template-columns: 1fr 1.25fr; gap: 8px; opacity: {{actionsOpacity}};">
+        <button class="nk-lift" style="height: 52px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{quickEdge}}; color: {{t.secondaryText}}; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; padding: 0 12px; text-align: left;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px;">Dịch nhanh</span><span style="font-size: 11px; color: {{t.text3}};">Miễn phí · không lưu</span></button>
+        <button class="nk-lift" style="height: 52px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.primaryBg}}; color: #ffffff; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; padding: 0 14px; text-align: left;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px;">Dịch + tạo thẻ</span><span style="font-size: 11px; opacity: 0.85;">1 lượt AI · tự lưu</span></button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isSaved}}" hint-placeholder-val="{{true}}">
+    <div style="position: relative; z-index: 2; flex-grow: 1; padding: 10px 16px 0;">
+      <div class="nk-rise" style="position: relative; filter: drop-shadow(0 0 14px {{newTier.soft}});">
+        <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{newTier.rim}};"></div>
+        <div style="position: relative; margin: 2px; clip-path: {{t.chamfer}}; background: {{t.cardFront}}; padding: 14px 16px 14px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="height: 24px; padding: 0 9px 0 7px; clip-path: {{t.chamferSm}}; background: {{newTier.rim}}; display: flex; align-items: center; gap: 5px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; color: #ffffff; text-shadow: 0 1px 0 #0a5a70;">A</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 11px; color: #062630;">New</span></span>
+            <span style="height: 24px; padding: 0 8px; clip-path: {{t.chamferSm}}; background: {{okBg}}; color: {{t.holoText}}; font-size: 11.5px; font-weight: 800; display: flex; align-items: center; gap: 4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Đã lưu vào IELTS</span>
+            <span style="margin-left: auto; font-size: 11px; color: {{t.text3}};">Ôn: ngày mai</span>
+          </div>
+          <div style="margin-top: 10px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 32px; line-height: 1; color: {{t.textStrong}};">Im<span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent;">me</span>diate</div>
+          <div style="margin-top: 5px; font-size: 12.5px; color: {{t.text2}};"><span style="font-family: {{t.fMono}};">/ɪˈmiːdiət/</span> · adjective</div>
+          <div style="margin-top: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 23px; line-height: 1.1; color: {{t.crimsonText}};">ngay lập tức</div>
+          <p style="margin: 6px 0 0; font-size: 12.5px; line-height: 1.5; color: {{t.body}};">“…demanded an <strong style="color: {{t.textStrong}};">immediate</strong> response from the council.”</p>
+          <button class="nk-lift" style="position: relative; margin-top: 12px; width: 100%; height: 46px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 16px; font-weight: 900; letter-spacing: 0.06em; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 40px; background: rgb(255 255 255 / 0.4);"></span>
+            <svg style="position: relative;" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"></path></svg>
+            <span style="position: relative;">ÔN NGAY 3 PHÚT</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isQuick}}" hint-placeholder-val="{{false}}">
+    <div style="position: relative; z-index: 2; flex-grow: 1; padding: 10px 16px 0;">
+      <div class="nk-pop" style="position: relative; filter: drop-shadow(0 0 12px rgb(94 242 255 / 0.35));">
+        <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{newTier.rim}};"></div>
+        <div style="position: relative; margin: 1.5px; clip-path: {{t.chamfer}}; background: {{t.cardFront}}; padding: 12px 16px 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; color: {{t.holoText}};">DỊCH NHANH · CHƯA LƯU</span>
+            <button aria-label="Đóng" style="width: 26px; height: 26px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+          </div>
+          <div style="margin-top: 4px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; line-height: 1; color: {{t.textStrong}};">re<span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent;">sil</span>ient</div>
+          <div style="margin-top: 5px; font-size: 12.5px; color: {{t.text2}};"><span style="font-family: {{t.fMono}};">/rɪˈzɪliənt/</span> · adjective</div>
+          <div style="margin-top: 7px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 21px; line-height: 1.1; color: {{t.crimsonText}};">kiên cường, mau phục hồi</div>
+          <p style="margin: 6px 0 0; font-size: 12.5px; line-height: 1.45; color: {{t.body}};">“Children are often more <strong style="color: {{t.textStrong}};">resilient</strong> than adults.”</p>
+          <div style="margin-top: 11px; display: flex; gap: 8px;">
+            <button class="nk-press" style="flex-grow: 1; height: 40px; border: 0; transform: skewX(-12deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 14px; letter-spacing: 0.04em;"><span style="display: inline-block; transform: skewX(12deg);">LƯU FLASHCARD</span></button>
+            <button style="height: 40px; padding: 0 12px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.textStrong}}; font-size: 12.5px; font-weight: 800; display: flex; align-items: center; gap: 5px;">Deck: IELTS<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isError}}" hint-placeholder-val="{{false}}">
+    <div style="position: relative; z-index: 2; flex-grow: 1; padding: 12px 16px 0; display: flex; flex-direction: column; gap: 10px;">
+      <div role="alert" class="nk-pop" style="position: relative; filter: drop-shadow(0 0 12px rgb(255 42 77 / 0.35));">
+        <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{t.crimsonGrad}};"></div>
+        <div style="position: relative; margin: 1.5px; clip-path: {{t.chamfer}}; background: {{errBg}}; padding: 12px 14px 14px;">
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <div style="width: 78px; height: 80px; flex-shrink: 0; margin: -4px 0 -6px -4px;">
+<!--#MASCOT sad-->
+            </div>
+            <div>
+              <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.crimsonText}};">LUMI · LINK LOST</div>
+              <div style="margin-top: 2px; font-weight: 900; font-size: 15.5px; line-height: 1.3; color: {{t.textStrong}};">Chưa đăng nhập SonFlash</div>
+              <p style="margin: 4px 0 0; font-size: 12px; line-height: 1.45; color: {{t.text2}};">Đăng nhập để tạo flashcard và đồng bộ deck. Dịch nhanh vẫn dùng được.</p>
+            </div>
+          </div>
+          <button class="nk-lift" style="position: relative; margin-top: 12px; width: 100%; height: 44px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 15px; font-weight: 900; letter-spacing: 0.05em;">
+            <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 40px; background: rgb(255 255 255 / 0.4);"></span>
+            <span style="position: relative;">ĐĂNG NHẬP SONFLASH</span>
+          </button>
+        </div>
+      </div>
+      <div role="status" style="height: 46px; box-sizing: border-box; padding: 0 6px 0 14px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 3px 0 0 {{t.hard}}, inset 0 0 0 1px {{t.lineStrong}}; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12.5px; color: {{t.text2}};">
+        <span><strong style="color: {{t.textStrong}};">AI đang bận.</strong> Thử lại sau 30 giây.</span>
+        <button style="height: 34px; padding: 0 14px; border: 0; transform: skewX(-12deg); background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; color: {{t.holoText}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px;"><span style="display: inline-block; transform: skewX(12deg);">THỬ LẠI</span></button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isQuota}}" hint-placeholder-val="{{false}}">
+    <div style="position: relative; z-index: 2; flex-grow: 1; padding: 12px 18px 0; display: flex; flex-direction: column; align-items: center; text-align: center;">
+      <div class="nk-float" style="width: 118px; height: 112px;">
+<!--#MASCOT sleepy-->
+      </div>
+      <div style="margin-top: 6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 26px; line-height: 1.05; color: {{t.textStrong}};">HẾT LƯỢT AI HÔM NAY</div>
+      <div style="margin-top: 10px; width: 100%; display: flex; gap: 2px;">
+        <sc-for list="{{quota}}" as="q" hint-placeholder-count="20">
+          <span style="flex-grow: 1; height: 9px; transform: skewX(-30deg); background: #ff2a4d; box-shadow: 0 0 6px rgb(255 42 77 / 0.6);"></span>
+        </sc-for>
+      </div>
+      <div style="margin-top: 6px; width: 100%; display: flex; justify-content: space-between; font-size: 12px; color: {{t.text2}};"><span><strong style="color: {{t.textStrong}};">20/20</strong> lượt AI đã dùng</span><span>Làm mới lúc 00:00</span></div>
+
+      <div style="margin-top: 12px; width: 100%; box-sizing: border-box; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 12px 16px; text-align: left;">
+        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.crimsonText}};">PRO · 7 NGÀY DÙNG THỬ</div>
+        <div style="margin-top: 4px; font-weight: 900; font-size: 15px; line-height: 1.35; color: {{t.textStrong}};">AI tạo thẻ, AI tutor và dự đoán band không giới hạn lượt.</div>
+        <div style="margin-top: 5px; font-size: 12px; line-height: 1.45; color: {{t.text2}};">Không cần thẻ thanh toán. Hết 7 ngày không tự trừ tiền.</div>
+        <button class="nk-lift" style="position: relative; margin-top: 10px; width: 100%; height: 44px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 15px; font-weight: 900; letter-spacing: 0.06em;">
+          <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 40px; background: rgb(255 255 255 / 0.4);"></span>
+          <span style="position: relative;">DÙNG THỬ PRO 7 NGÀY</span>
+        </button>
+      </div>
+      <button class="nk-lift" style="margin-top: 8px; width: 100%; height: 42px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; color: {{t.secondaryText}}; font-family: {{t.fDisplay}}; font-style: italic; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px;"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: #5ef2ff; box-shadow: 0 0 8px #5ef2ff;"></span>Dịch nhanh vẫn miễn phí</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isLoop}}" hint-placeholder-val="{{false}}">
+    <div style="position: relative; z-index: 2; flex-grow: 1; padding: 14px 16px 0; display: flex; flex-direction: column; gap: 10px;">
+      <div class="nk-pop" style="position: relative; filter: drop-shadow(0 0 14px {{learnTier.soft}});">
+        <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{learnTier.rim}};"></div>
+        <div style="position: relative; margin: 2px; clip-path: {{t.chamfer}}; background: {{t.cardFront}}; padding: 12px 16px 14px;">
+          <span style="display: inline-flex; height: 24px; padding: 0 10px; transform: skewX(-12deg); background: {{t.primaryBg}}; align-items: center;"><span style="transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.06em; color: #ffffff;">ĐÃ THÊM VÀO PHIÊN HỌC NGÀY MAI</span></span>
+          <div style="margin-top: 8px; display: flex; align-items: baseline; gap: 10px;">
+            <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; line-height: 1; color: {{t.textStrong}};">re<span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent;">sil</span>ient</span>
+            <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 18px; color: {{t.crimsonText}};">kiên cường</span>
+          </div>
+          <div style="margin-top: 6px; font-size: 12px; color: {{t.text2}};">Từ bài trên <strong style="color: {{t.textStrong}};">theguardian.com</strong> · câu gốc đã được lưu kèm</div>
+        </div>
+      </div>
+
+      <div style="clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 12px 14px;">
+        <div style="display: flex; justify-content: space-between; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.1em; color: {{t.holoText}};"><span>TUẦN NÀY BẠN NHẶT ĐƯỢC</span><span style="font-family: {{t.fMono}}; font-style: normal; font-weight: 400; letter-spacing: 0; color: {{t.text3}};">T2 – CN</span></div>
+        <div style="margin-top: 6px; display: flex; align-items: flex-end; justify-content: space-between;">
+          <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 34px; line-height: 1; color: {{t.textStrong}};">8 <span style="font-size: 14px; font-weight: 700; color: {{t.text2}};">từ từ web</span></span>
+          <span aria-hidden="true" style="height: 34px; display: flex; align-items: flex-end; gap: 5px;">
+            <sc-for list="{{week}}" as="w" hint-placeholder-count="7"><span style="width: 12px; height: {{w.h}}px; transform: skewX(-12deg); background: {{w.bg}}; box-shadow: {{w.glow}};"></span></sc-for>
+          </span>
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 6px;">
+          <sc-for list="{{sites}}" as="s" hint-placeholder-count="3"><span style="height: 28px; padding: 0 8px 0 4px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; color: {{t.textStrong}};"><span style="width: 20px; height: 20px; background: {{s.bg}}; color: #ffffff; font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center;">{{s.i}}</span>{{s.name}}<span style="font-family: {{t.fMono}}; color: {{t.crimsonText}};">{{s.n}}</span></span></sc-for>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div class="nk-float" style="width: 86px; height: 86px; flex-shrink: 0;">
+<!--#MASCOT happy-->
+        </div>
+        <div style="flex-grow: 1; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 10px 12px;">
+          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 10.5px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
+          <div style="margin-top: 2px; font-size: 13px; line-height: 1.4; font-weight: 700; color: {{t.textStrong}};">Còn <span style="color: {{t.crimsonText}};">3 thẻ</span> nữa là giữ được chuỗi 12 ngày hôm nay.</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{showRecent}}" hint-placeholder-val="{{false}}">
+    <div style="position: relative; z-index: 2; padding: 12px 16px 0;">
+      <sc-if value="{{isIdle}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; align-items: flex-end; gap: 6px; margin-bottom: 8px;">
+          <div class="nk-float" style="width: 112px; height: 118px; flex-shrink: 0;">
+<!--#MASCOT sleepy-->
+          </div>
+          <div style="margin-bottom: 18px; flex-grow: 1; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 9px 12px;">
+            <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 10.5px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
+            <div style="margin-top: 2px; font-size: 12.5px; line-height: 1.4; font-weight: 700; color: {{t.textStrong}};">Bôi đen một từ bất kỳ, mình dịch liền cho!</div>
+          </div>
+        </div>
+      </sc-if>
+      <div style="display: flex; justify-content: space-between; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; color: {{t.text2}};">TRA CỨU GẦN ĐÂY<button style="border: 0; background: transparent; color: {{t.text3}}; font-family: {{t.fBody}}; font-style: normal; font-size: 12px; font-weight: 700; padding: 0;">Xóa</button></div>
+      <div style="margin-top: 7px; display: flex; flex-wrap: wrap; gap: 6px;">
+        <sc-for list="{{recent}}" as="r" hint-placeholder-count="4">
+          <button style="height: 30px; padding: 0 10px; border: 0; transform: skewX(-12deg); background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.textStrong}}; font-size: 12px; font-weight: 700;"><span style="display: inline-block; transform: skewX(12deg);">{{r}}</span></button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="flex-grow: 1;"></div>
+
+  <sc-if value="{{notLoop}}" hint-placeholder-val="{{true}}">
+    <footer style="position: relative; z-index: 2; flex-shrink: 0; padding: 10px 16px 14px; box-shadow: inset 0 1px 0 {{t.lineStrong}}; display: flex; flex-direction: column; gap: 9px;">
+      <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: {{t.text2}};">
+        <span><span style="font-family: {{t.fMono}}; padding: 2px 6px; box-shadow: inset 0 0 0 1px {{t.lineStrong}};">Ctrl Shift L</span> dịch + thêm</span>
+        <span><span style="font-family: {{t.fMono}}; padding: 2px 6px; box-shadow: inset 0 0 0 1px {{t.lineStrong}};">Alt Shift L</span> chỉ dịch</span>
+      </div>
+      <a href="#" style="height: 40px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.textStrong}}; font-family: {{t.fDisplay}}; font-style: italic; font-size: 13.5px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">Mở SonFlash <span style="color: {{t.crimsonText}};">· 12 thẻ đến hạn</span></a>
+    </footer>
+  </sc-if>
+  <sc-if value="{{isLoop}}" hint-placeholder-val="{{false}}">
+    <footer style="position: relative; z-index: 2; flex-shrink: 0; padding: 12px 16px 16px; box-shadow: inset 0 1px 0 {{t.panelEdge}}; display: flex; flex-direction: column; gap: 8px;">
+      <a href="#" class="nk-lift" style="position: relative; height: 52px; overflow: hidden; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 18px; font-weight: 900; letter-spacing: 0.06em; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 44px; background: rgb(255 255 255 / 0.4);"></span>
+        <svg style="position: relative;" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"></path></svg>
+        <span style="position: relative;">ÔN NGAY 3 PHÚT</span>
+      </a>
+      <div style="text-align: center; font-size: 11.5px; color: {{t.text2}};">Mở SonFlash · 3 thẻ đến hạn, gồm 2 từ bạn gặp hôm qua</div>
+    </footer>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"state":{"editor":"enum","options":["idle","quick","saved","error","quota","loop"],"default":"saved"},"$preview":{"width":380,"height":640}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const state = this.props.state ?? 'saved';
+    const word = { idle: '', quick: 'resilient', saved: 'immediate', error: 'immediate' }[state] ?? '';
+    const isLoop = state === 'loop';
+    return {
+      t,
+      isIdle: state === 'idle', isQuick: state === 'quick', isSaved: state === 'saved', isError: state === 'error', isQuota: state === 'quota',
+      isLoop, notLoop: !isLoop,
+      showInput: ['idle', 'quick', 'saved', 'error'].includes(state),
+      showRecent: state === 'idle' || state === 'quick',
+      word, count: word.length,
+      inputEdge: state === 'idle' ? t.holo : t.panelEdge2,
+      speakOpacity: state === 'idle' ? 0.4 : 1,
+      actionsOpacity: state === 'idle' ? 0.55 : 1,
+      quickEdge: state === 'quick' ? t.holo : t.lineStrong,
+      knob: dark ? '#04141c' : '#ffffff',
+      newTier: t.tier.new, learnTier: t.tier.learning,
+      okBg: dark ? 'rgb(94 242 255 / 0.12)' : 'rgb(26 167 201 / 0.12)',
+      errBg: dark ? 'linear-gradient(180deg, rgb(255 42 77 / 0.12), rgb(255 42 77 / 0.02)), #0e111c' : 'linear-gradient(180deg, #fff0f3, #e6f5ff)',
+      quota: Array.from({ length: 20 }, (_, i) => i),
+      recent: ['immediate', 'permanent', 'recharge', 'warden'],
+      week: [1, 0, 2, 1, 3, 1, 0].map((n, i) => ({
+        h: 5 + n * 9,
+        bg: i === 5 ? t.crimson : (n ? 'linear-gradient(180deg, #5ef2ff, #1aa7c9)' : t.track),
+        glow: i === 5 ? '0 0 10px rgb(255 42 77 / 0.8)' : 'none',
+      })),
+      sites: [
+        { name: 'theguardian.com', n: 3, i: 'G', bg: '#052962' },
+        { name: 'bbc.com', n: 2, i: 'B', bg: '#b80000' },
+        { name: 'medium.com', n: 3, i: 'M', bg: '#1a1a1a' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

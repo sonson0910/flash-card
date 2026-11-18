@@ -1,8 +1,15 @@
-import type { Ref } from 'react';
-import { BarChart3, BookOpen, CloudUpload, Flame, House, Loader2, Map, Moon, Sun } from 'lucide-react';
+import type { Ref, ReactNode } from 'react';
+import { Flame } from 'lucide-react';
+import { Trans, useLingui } from '@lingui/react';
+import { msg } from '@lingui/core/macro';
+import { useTheme } from '../../features/theme/ThemeProvider';
 import { isPracticeView, type ShellViewMode, type SyncIdentityViewModel } from './shellTypes';
 import { getShellSyncStatus, type ShellSyncStatusInput } from './shellSyncStatus';
 import { LibraryManagementMenu } from './LibraryManagementMenu';
+import { LanguageMenu } from './LanguageMenu';
+import { ThemeMenu } from './ThemeMenu';
+import { localizeShellSyncStatus } from './localized-sync-status';
+import { CourseSwitcherSlot } from './CourseSwitcherSlot';
 
 export interface DesktopNavigationProps {
   navigationRef?: Ref<HTMLElement>;
@@ -12,198 +19,98 @@ export interface DesktopNavigationProps {
   isDarkMode: boolean;
   isExporting?: boolean;
   isLibraryMutationPending?: boolean;
+  isRetryingSync?: boolean;
+  canSyncNow?: boolean;
+  sessionLost?: boolean;
   libraryCountLabel: string;
+  streak?: number;
+  level?: number;
+  xp?: number;
+  equippedFrameId?: string | null;
+  ownedTitleIds?: readonly string[];
   onOpenLanding?: () => void;
   onOpenToday: () => void;
   onOpenLibrary: () => void;
   onOpenCatalog: () => void;
   onOpenProgress: () => void;
+  onOpenSettings?: () => void;
   onSignIn: () => void | Promise<void>;
   onSignOut: () => void | Promise<void>;
-  onToggleTheme: () => void;
+  onRetrySync?: () => void | Promise<void>;
   onExportLibrary?: () => void | Promise<void>;
   onClearLibrary?: (focusReturnTarget: HTMLButtonElement) => void;
+  onOpenInsights?: (focusReturnTarget: HTMLButtonElement) => void;
 }
 
-export function DesktopNavigation({
-  navigationRef,
-  viewMode,
-  syncIdentity,
-  syncStatus,
-  isDarkMode,
-  isExporting,
-  isLibraryMutationPending,
-  libraryCountLabel,
-  onOpenLanding,
-  onOpenToday,
-  onOpenLibrary,
-  onOpenCatalog,
-  onOpenProgress,
-  onSignIn,
-  onSignOut,
-  onToggleTheme,
-  onExportLibrary,
-  onClearLibrary,
-}: DesktopNavigationProps) {
-  const navigationItemClass = (active: boolean) => `flex min-h-11 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200 cursor-pointer ${
-    active
-      ? 'bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-sm ring-1 ring-[var(--sf-border)]'
-      : 'text-[var(--sf-text-muted)] hover:bg-[var(--sf-surface)] hover:text-[var(--sf-text)]'
-  }`;
-  const status = getShellSyncStatus(syncStatus);
-  const statusTone = status.healthy
-    ? 'text-emerald-700 dark:text-emerald-300'
-    : status.kind === 'needs-attention'
-      ? 'text-rose-700 dark:text-rose-300'
-      : status.busy
-        ? 'text-cyan-700 dark:text-cyan-300'
-        : 'text-amber-700 dark:text-amber-300';
-  return (
-    <nav ref={navigationRef} aria-label="Primary" data-shell-layer="primary" className={`${isPracticeView(viewMode) ? 'hidden' : 'flex'} app-navigation premium-surface !overflow-visible mx-3 mt-3 min-h-16 relative rounded-full px-3 md:mx-6 md:px-5 items-center justify-between flex-shrink-0 z-30 transition-colors`}>
-      <button
-        type="button"
-        onClick={onOpenLanding ?? onOpenToday}
-        data-gsap-brand
-        className="flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-        title="SonFlash Home"
-      >
-        <div className="flex size-8 items-center justify-center overflow-hidden rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] shadow-inner">
-          <img src="/brand/sonflash-logo-192.png?v=3e7aaa58" alt="" className="size-8 object-cover" aria-hidden="true" />
-        </div>
-        <span className="hidden text-xl font-black tracking-[-0.04em] text-[var(--sf-text)] drop-shadow-xs sm:inline pr-1">
-          Son<span className="text-[var(--sf-brand-text)]">Flash</span>
-        </span>
+type NavigationItem = { view: ShellViewMode; classic: ReactNode; crystal: ReactNode; action: () => void };
+
+function CrystalStar() {
+  return <svg viewBox="0 0 100 100" width="36" height="36" aria-hidden="true" className="claude-brand-star"><path d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" fill="#ff5470" /><path d="M50 4 62 36 96 37 69 59 78 91 50 72Z" fill="#7a0820" /></svg>;
+}
+
+export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncStatus, isExporting, isLibraryMutationPending, isRetryingSync, canSyncNow, sessionLost, libraryCountLabel, streak, level, xp, equippedFrameId, ownedTitleIds, onOpenLanding, onOpenToday, onOpenLibrary, onOpenCatalog, onOpenProgress, onOpenSettings, onSignIn, onSignOut, onRetrySync, onExportLibrary, onClearLibrary, onOpenInsights }: DesktopNavigationProps) {
+  const { _ } = useLingui();
+  const { family } = useTheme();
+  const status = localizeShellSyncStatus(getShellSyncStatus(syncStatus), _);
+  const statusAnnouncement = sessionLost
+    ? _(msg({ id: 'shell.feedback.session-ended', message: 'Session ended' }))
+    : syncIdentity.status === 'loading'
+      ? _(msg({ id: 'shell.sync.checking', message: 'Checking cloud…' }))
+      : syncIdentity.status === 'signed-out'
+        ? syncIdentity.isSigningIn
+          ? _(msg({ id: 'shell.feedback.connecting', message: 'Connecting…' }))
+          : _(msg({ id: 'shell.sync.device', message: 'On this device' }))
+        : status.headerLabel;
+  const navigation: NavigationItem[] = [
+    { view: 'today', classic: <Trans {...msg({ id: 'shell.nav.today', message: 'Today' })} />, crystal: <Trans {...msg({ id: 'shell.nav.today', message: 'Today' })} />, action: onOpenToday },
+    { view: 'catalog', classic: <Trans {...msg({ id: 'shell.nav.paths', message: 'Paths' })} />, crystal: <Trans {...msg({ id: 'shell.nav.paths', message: 'Paths' })} />, action: onOpenCatalog },
+    { view: 'library', classic: <Trans {...msg({ id: 'shell.nav.vocabulary', message: 'Vocabulary' })} />, crystal: <Trans {...msg({ context: 'shell.nav.collection', message: 'Collection' })} />, action: onOpenLibrary },
+    { view: 'progress', classic: <Trans {...msg({ id: 'shell.nav.progress', message: 'Progress' })} />, crystal: <Trans {...msg({ id: 'shell.nav.progress', message: 'Progress' })} />, action: onOpenProgress },
+  ];
+  const hasStreak = typeof streak === 'number' && Number.isFinite(streak) && streak >= 0;
+  const hasLevel = typeof level === 'number' && Number.isFinite(level) && level >= 1;
+  const hasXp = typeof xp === 'number' && Number.isFinite(xp) && xp >= 0;
+  const levelStartXp = hasLevel ? 100 * (level - 1) ** 2 : 0;
+  const nextLevelXp = hasLevel ? 100 * level ** 2 : 0;
+  const levelProgress = hasLevel && hasXp ? Math.max(0, Math.min(100, ((xp - levelStartXp) / (nextLevelXp - levelStartXp)) * 100)) : 0;
+
+  return <header data-mobile-course={syncIdentity.status === 'authenticated' ? 'true' : undefined} className={`claude-topbar relative z-30 shrink-0 ${isPracticeView(viewMode) ? 'hidden' : ''}`}>
+    <nav ref={navigationRef} aria-label={_(msg({ id: 'shell.navigation.primary', message: 'Primary navigation' }))} data-shell-layer="primary" className="app-navigation claude-topbar-nav flex h-full items-center">
+    <div className="claude-topbar-inner mx-auto flex w-full max-w-[1440px] items-center">
+      <button type="button" onClick={onOpenLanding ?? onOpenToday} data-gsap-brand aria-label="SonFlash" className="claude-brand shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2">
+        <span className="claude-brand-classic" aria-hidden="true"><Trans {...msg({ context: 'shell.brand.mark', message: 'S' })} /></span><CrystalStar />
+        <span className="claude-brand-name"><span>{family === 'crystal' ? 'SON' : 'Son'}</span><em>{family === 'crystal' ? 'FLASH' : 'Flash'}</em></span>
       </button>
-
-      <div className="hidden items-center gap-1 rounded-full bg-[var(--sf-surface-control)] p-1 lg:flex">
-        {onOpenLanding && (
-          <button
-            type="button"
-            onClick={onOpenLanding}
-            data-shell-active={viewMode === 'landing' ? 'true' : undefined}
-            className={navigationItemClass(viewMode === 'landing')}
-            aria-current={viewMode === 'landing' ? 'page' : undefined}
-            title="Home"
-          >
-            <House size={14} aria-hidden="true" />
-            <span>Home</span>
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={onOpenToday}
-          data-shell-active={viewMode === 'today' ? 'true' : undefined}
-          className={navigationItemClass(viewMode === 'today')}
-          aria-current={viewMode === 'today' ? 'page' : undefined}
-        >
-          <Flame size={14} aria-hidden="true" />
-          <span>Today</span>
-        </button>
-        <button
-          type="button"
-          onClick={onOpenCatalog}
-          data-shell-active={viewMode === 'catalog' ? 'true' : undefined}
-          className={navigationItemClass(viewMode === 'catalog')}
-          aria-current={viewMode === 'catalog' ? 'page' : undefined}
-        >
-          <Map size={14} aria-hidden="true" />
-          <span>Paths</span>
-        </button>
-        <button
-          type="button"
-          onClick={onOpenLibrary}
-          data-shell-active={viewMode === 'library' ? 'true' : undefined}
-          className={navigationItemClass(viewMode === 'library')}
-          aria-current={viewMode === 'library' ? 'page' : undefined}
-        >
-          <BookOpen size={14} aria-hidden="true" />
-          <span>Vocabulary</span>
-        </button>
-        <button
-          type="button"
-          onClick={onOpenProgress}
-          data-shell-active={viewMode === 'progress' ? 'true' : undefined}
-          className={navigationItemClass(viewMode === 'progress')}
-          aria-current={viewMode === 'progress' ? 'page' : undefined}
-        >
-          <BarChart3 size={14} className="stroke-2" aria-hidden="true" />
-          <span>Progress</span>
-        </button>
-      </div>
-
-      <div data-gsap-header-actions className="flex min-h-11 items-center gap-1.5 sm:gap-2.5">
-        <div className="relative flex items-center">
-          {syncIdentity.status === 'loading' ? (
-            <Loader2 className="animate-spin text-slate-400" size={16} aria-label="Loading cloud sync" />
-          ) : syncIdentity.status === 'authenticated' ? (
-            <div className="flex items-center gap-2">
-              <div className="hidden sm:flex flex-col items-end text-right">
-                <span
-                  className={`text-[10px] font-black ${statusTone} uppercase tracking-wider leading-none`}
-                  role="status"
-                  aria-live="polite"
-                  aria-atomic="true"
-                  aria-busy={status.busy}
-                  aria-label={`${status.headerLabel}. ${status.detail}`}
-                  title={status.detail}
-                >
-                  {status.headerLabel}
-                </span>
-                <span className="text-[11px] font-bold text-slate-800 dark:text-white truncate max-w-[90px]" title={syncIdentity.email || ''}>{syncIdentity.displayName || 'Cloud account'}</span>
-              </div>
-              <button type="button" onClick={onSignOut} className="flex items-center justify-center min-w-11 min-h-11 w-11 h-11 rounded-full border border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 hover:bg-rose-500/20 hover:text-rose-700 dark:hover:text-rose-300 transition-all duration-300 hover:scale-105 cursor-pointer shadow-sm overflow-hidden" title="Sign out of cloud sync" aria-label="Sign out of cloud sync">
-                {syncIdentity.photoUrl ? (
-                  <img src={syncIdentity.photoUrl} alt="Avatar" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="font-extrabold text-xs uppercase">{syncIdentity.email?.charAt(0) || 'U'}</span>
-                )}
-              </button>
-            </div>
-          ) : syncIdentity.isConfigured ? (
-            <button
-              type="button"
-              onClick={onSignIn}
-              disabled={syncIdentity.isSigningIn}
-              className="flex min-h-11 items-center gap-1.5 rounded-full bg-[var(--sf-brand)] px-4 py-1.5 text-xs font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/25 transition-all duration-300 hover:scale-[1.04] hover:bg-[var(--sf-brand-hover)] hover:text-white dark:hover:bg-cyan-300 dark:hover:text-[#071014] active:scale-[0.98] cursor-pointer disabled:opacity-60 disabled:cursor-wait"
-              title="Sign in to sync devices"
-            >
-              {syncIdentity.isSigningIn ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <CloudUpload className="size-3.5" aria-hidden="true" />}
-              <span>{syncIdentity.isSigningIn ? 'Connecting…' : <><span className="sm:hidden">Sync</span><span className="hidden sm:inline">Sign in &amp; sync</span></>}</span>
-            </button>
-          ) : (
-            <div className="flex min-h-11 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-white/70" title="Cloud sync is unavailable. Data is saved on this device only.">
-              <CloudUpload className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>On device</span>
-            </div>
-          )}
-        </div>
-
+      <div className="claude-nav-items hidden min-w-0 items-center lg:flex">{navigation.map(item => <button key={item.view} type="button" onClick={item.action} data-shell-active={viewMode === item.view ? 'true' : undefined} aria-current={viewMode === item.view ? 'page' : undefined} className="claude-nav-item"><span>{family === 'crystal' ? item.crystal : item.classic}</span></button>)}</div>
+      <CourseSwitcherSlot signedIn={syncIdentity.status === 'authenticated'} />
+      <div data-gsap-header-actions className="claude-shell-actions ml-auto flex items-center">
+        <ThemeMenu onOpenSettings={onOpenSettings} />
+        {hasStreak && <span className="claude-streak" aria-label={_(msg({ id: 'shell.streak', message: '{count} day streak' }).id, { count: streak })}><Flame size={15} fill="currentColor" aria-hidden="true" />{streak}</span>}
+        {hasLevel && <span className="claude-level" aria-label={hasXp ? _(msg({ id: 'shell.level', message: 'Level {level}, {xp} XP' }).id, { level, xp }) : _(msg({ id: 'shell.level.short', message: 'Lv {level}' }).id, { level })}><Trans {...msg({ id: 'shell.level.short', message: 'Lv {level}' })} values={{ level }} />{hasXp && <span className="claude-level-track" aria-hidden="true"><span style={{ width: `${levelProgress}%` }} /></span>}</span>}
+        <LanguageMenu />
         <LibraryManagementMenu
+          equippedFrameId={equippedFrameId}
+          ownedTitleIds={ownedTitleIds}
           isExporting={isExporting}
           isLibraryMutationPending={isLibraryMutationPending}
+          onOpenSettings={onOpenSettings}
           onExportLibrary={onExportLibrary}
           onClearLibrary={onClearLibrary}
+          onOpenInsights={onOpenInsights}
+          onSignIn={sessionLost || (syncIdentity.status === 'signed-out' && syncIdentity.isConfigured) ? onSignIn : undefined}
+          onSignOut={syncIdentity.status === 'authenticated' && !sessionLost ? onSignOut : undefined}
+          onRetrySync={onRetrySync}
+          isRetryingSync={isRetryingSync}
+          canSyncNow={canSyncNow}
+          sessionLost={sessionLost}
+          syncIdentity={syncIdentity}
+          syncStatus={status}
+          libraryCountLabel={libraryCountLabel}
         />
-
-        <button
-          type="button"
-          onClick={onToggleTheme}
-          className="liquid-control flex size-11 shrink-0 items-center justify-center rounded-full border border-slate-200/90 bg-white/90 text-slate-700 shadow-xs transition-all duration-300 hover:scale-105 hover:border-amber-300/70 hover:text-amber-500 dark:border-white/15 dark:bg-white/[0.06] dark:text-amber-300 dark:hover:border-amber-400/50 dark:hover:bg-amber-400/10 active:scale-95 cursor-pointer"
-          aria-label={isDarkMode ? 'Use light theme' : 'Use dark theme'}
-          title={isDarkMode ? 'Use light theme' : 'Use dark theme'}
-        >
-          {isDarkMode ? (
-            <Sun size={17} aria-hidden="true" />
-          ) : (
-            <Moon size={17} aria-hidden="true" />
-          )}
-        </button>
-
-        <div className="hidden h-9 self-center items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-3 text-xs font-bold shadow-xs backdrop-blur-xl xl:flex dark:border-white/15 dark:bg-white/5">
-          <div className="size-1.5 bg-[var(--sf-brand)] dark:bg-cyan-400 rounded-full animate-pulse" aria-hidden="true" />
-          <span className="text-[11px] font-black text-cyan-800 dark:text-cyan-300 uppercase tracking-wider">{libraryCountLabel}</span>
-        </div>
+        <span className="sr-only" role="status" aria-live="polite" aria-busy={status.busy}>{statusAnnouncement}</span>
+        <span className="sr-only">{libraryCountLabel}</span>
       </div>
+    </div>
     </nav>
-  );
+  </header>;
 }

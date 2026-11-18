@@ -1,0 +1,76 @@
+.onboarding-journey__footer {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: .75rem;
+  min-height: 5.5rem;
+  margin: auto -1.25rem 0;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--sf-border);
+}
+
+.onboarding-journey__footer--sticky {
+  position: sticky;
+  z-index: 10;
+  bottom: 0;
+  background: var(--sf-surface);
+}
+
+.onboarding-journey__goal-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  min-height: 7rem;
+  padding: 1rem;
+  border: 1px solid var(--sf-border);
+  border-radius: 1rem;
+  background: var(--sf-surface-raised);
+  color: var(--sf-text);
+  text-align: left;
+  transition: background-color .2s, border-color .2s;
+}
+
+.onboarding-journey__goal-card:hover { background: var(--sf-surface-muted); }
+.onboarding-journey__goal-card:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
+.onboarding-journey__goal-card[aria-pressed='true'] {
+  border-color: var(--sf-brand);
+  background: var(--sf-surface-raised);
+  color: var(--sf-brand-text);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--sf-brand) 10%, transparent);
+}
+
+.onboarding-journey__goal-grid { display: grid; gap: .75rem; margin-top: 2rem; }
+
+@media (min-width: 640px) {
+  .onboarding-journey__goal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  .onboarding-journey__footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-right: -2rem;
+    margin-left: -2rem;
+    padding-right: 2rem;
+    padding-left: 2rem;
+  }
+
+  .onboarding-journey__goal-card {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    min-height: 15.625rem;
+    padding: 1.375rem 1.25rem;
+  }
+
+  .onboarding-journey__goal-card > span:first-child { width: 3.25rem; height: 3.25rem; }
+}
+
+@media (min-width: 1024px) {
+  .onboarding-journey__footer { margin-right: -3rem; margin-left: -3rem; padding-right: 3rem; padding-left: 3rem; }
+  .onboarding-journey__goal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1280px) {
+  .onboarding-journey__goal-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .onboarding-journey__goal-grid[data-goal-count='6'] { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}

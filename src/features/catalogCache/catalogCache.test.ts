@@ -292,6 +292,29 @@ describe('catalog IndexedDB cache', () => {
     await expect(getActiveCatalogRelease('english-core')).resolves.toMatchObject({ releaseId: 'release-1' });
   });
 
+  it('keeps V2 unit descriptors atomic through activation and rollback', async () => {
+    const v2 = {
+      ...descriptor('release-v2'),
+      schemaVersion: 2,
+      unitDescriptors: [{
+        unitId: 'unit-1', trackId: 'ielts', tier: 'foundation', ordinal: 1,
+        titles: [{ language: 'en', text: 'Start' }, { language: 'vi', text: 'Bắt đầu' }],
+      }],
+    } satisfies CatalogReleaseDescriptor;
+    const first = await beginCatalogInstall(v2);
+    await stageCatalogChunk(first, {
+      chunkId: 'chunk-0001', sha256: 'b'.repeat(64), membershipCount: 1, encodedBytes: 128, lexemeCount: 0,
+    }, [entry('v2', { lessonGroup: 'unit-1' })]);
+    await activateCatalogInstall(first);
+    await installRelease('release-v1');
+
+    await rollbackCatalogRelease('english-core');
+
+    await expect(getActiveCatalogRelease('english-core')).resolves.toMatchObject({
+      releaseId: 'release-v2', unitDescriptors: v2.unitDescriptors,
+    });
+  });
+
   it('purges every generation older than active and previous after a third activation', async () => {
     await installRelease('release-1', entry('one'));
     await installRelease('release-2', entry('two'));

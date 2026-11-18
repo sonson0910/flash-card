@@ -1,0 +1,174 @@
+<!--#AHEAD Crystal Star motion storyboard-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}};">
+<!--#ABG-->
+
+  <header style="position: relative; z-index: 3; padding: 34px 48px 0; display: flex; align-items: flex-end; gap: 28px;">
+    <div style="flex-grow: 1;">
+      <p style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 14px; letter-spacing: 0.16em; color: {{t.crimsonText}};">MOTION SPEC // SHARED ELEMENT</p>
+      <h1 style="margin: 4px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 50px; line-height: 1; background: {{titleGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 {{titleShadow}});">ONE CARD, ONE TRANSFORMATION.</h1>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <sc-for list="{{curves}}" as="c" hint-placeholder-count="2">
+        <div style="width: 200px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{c.edge}}; padding: 10px 12px; display: flex; gap: 10px; align-items: center;">
+          <svg width="46" height="40" viewBox="0 0 46 40" aria-hidden="true"><path d="M3 37 L43 37 M3 37 L3 3" stroke="{{t.lineStrong}}" stroke-width="1.5" fill="none"></path><path d="{{c.path}}" stroke="{{c.color}}" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+          <div><div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; color: {{t.textStrong}};">{{c.name}}</div><div style="font-family: {{t.fMono}}; font-size: 11px; color: {{t.text2}};">{{c.value}}</div></div>
+        </div>
+      </sc-for>
+    </div>
+  </header>
+
+  <div style="position: absolute; z-index: 3; left: 48px; right: 48px; top: 132px; display: grid; grid-template-columns: repeat(4, 1fr); column-gap: 18px; row-gap: 14px;">
+    <div style="{{rowHead}}"><h2 style="{{h2}}"><span style="{{h2dot}}"></span>TODAY → REVIEW</h2><span style="{{h2sub}}">The card the learner tapped is the card they review. No page swap, no reload.</span></div>
+    <figure style="{{fig}}">
+      <div style="{{stage}}">
+        <div style="position: absolute; left: 50%; top: 34px; width: 92px; height: 120px; margin-left: -30px; clip-path: {{t.chamferSm}}; background: {{t.track}}; transform: rotate(8deg);"></div>
+        <div style="position: absolute; left: 50%; top: 30px; width: 92px; height: 120px; margin-left: -52px; clip-path: {{t.chamferSm}}; background: {{t.lineStrong}}; transform: rotate(-4deg);"></div>
+        <div style="position: absolute; left: 50%; top: 26px; width: 92px; height: 120px; margin-left: -46px; clip-path: {{t.chamferSm}}; background: {{learn.rim}};"></div>
+        <div style="position: absolute; left: 50%; bottom: 20px; width: 180px; height: 36px; margin-left: -90px; transform: skewX(-12deg) scale(0.97); background: {{t.primaryBg}}; box-shadow: 0 0 0 6px rgb(255 42 77 / 0.18), {{t.primaryGlow}}; display: flex; align-items: center; justify-content: center;"><span style="transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 14px; color: #ffffff; letter-spacing: 0.06em;">START LESSON</span></div>
+      </div>
+      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">01</span>TAP START</div><div style="{{capSpec}}">0–120 ms · press scale .97 · snap</div></figcaption>
+    </figure>
+
+    <figure style="{{fig}}">
+      <div style="{{stage}}">
+        <div style="position: absolute; left: 34px; top: 88px; width: 64px; height: 84px; clip-path: {{t.chamferSm}}; background: {{learn.rim}}; opacity: 0.18; transform: scale(0.45) rotate(-14deg);"></div>
+        <div style="position: absolute; left: 70px; top: 58px; width: 80px; height: 106px; clip-path: {{t.chamferSm}}; background: {{learn.rim}}; opacity: 0.35; transform: scale(0.7) rotate(-9deg);"></div>
+        <div class="nk-unfold" style="position: absolute; right: 42px; top: 22px; width: 110px; height: 146px; filter: drop-shadow(0 0 14px {{learn.soft}});">
+          <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; background: {{learn.rim}};"></div>
+          <div style="position: absolute; inset: 2px; clip-path: {{t.chamferSm}}; background: {{t.cardFront}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; color: {{t.textStrong}};">im<span style="color: {{t.crimsonText}};">me</span>diate</div>
+        </div>
+        <svg aria-hidden="true" style="position: absolute; left: 40px; top: 40px;" width="200" height="140" viewBox="0 0 200 140"><path d="M10 120 C 60 110, 110 70, 170 20" stroke="{{t.holo}}" stroke-width="2" stroke-dasharray="4 6" fill="none"></path></svg>
+      </div>
+      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">02</span>DEAL · FLIP-IN</div><div style="{{capSpec}}">120–640 ms · scale .4→1, rotate −14°→0 · nk-unfold 520 ms snap</div></figcaption>
+    </figure>
+
+    <figure style="{{fig}}">
+      <div style="{{stage}}">
+        <div class="nk-unfold" style="position: absolute; left: -40px; top: 10px; width: 230px; height: 160px;"><div style="width: 100%; height: 100%; opacity: {{t.wingOpacity}}; transform: rotate(-8deg);">
+<!--#WINGS-->
+        </div></div>
+        <div class="nk-unfold" style="position: absolute; right: -40px; top: 10px; width: 230px; height: 160px;"><div style="width: 100%; height: 100%; opacity: {{t.wingOpacity}}; transform: scaleX(-1) rotate(-8deg);">
+<!--#WINGS-->
+        </div></div>
+        <div style="position: absolute; left: 50%; top: 22px; width: 110px; height: 146px; margin-left: -55px; filter: drop-shadow(0 0 22px {{learn.soft}});">
+          <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; background: {{learn.rim}};"></div>
+          <div style="position: absolute; inset: 2px; clip-path: {{t.chamferSm}}; background: {{t.cardFront}};"></div>
+          <span class="nk-flare" style="position: absolute; left: 58px; top: 40px; width: 44px; height: 44px;"><span style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, {{t.flare}}, transparent);"></span><span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, {{t.flare}}, transparent);"></span></span>
+        </div>
+      </div>
+      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">03</span>WINGS UNFOLD · HOVER</div><div style="{{capSpec}}">wings scale 0→1.15, opacity →{{t.wingOpacity}} · 520 ms snap · tilt ±8° · flare follows cursor</div></figcaption>
+    </figure>
+
+    <figure style="{{fig}}">
+      <div style="{{stage}}">
+        <div class="nk-pillar" style="position: absolute; left: 50%; top: 0; bottom: 0; width: 90px; margin-left: -45px; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.85), transparent); animation-iteration-count: infinite; animation-duration: 1.6s;"></div>
+        <div style="position: absolute; left: 50%; top: 22px; width: 110px; height: 146px; margin-left: -55px; perspective: 500px;">
+          <div style="position: absolute; inset: 0; transform: rotateY(62deg); transform-origin: center; filter: drop-shadow(0 0 16px {{learn.soft}});">
+            <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; background: {{learn.rim}};"></div>
+            <div style="position: absolute; inset: 2px; clip-path: {{t.chamferSm}}; background: {{t.cardBack}};"></div>
+          </div>
+        </div>
+        <span style="position: absolute; right: 14px; top: 14px; font-family: {{t.fMono}}; font-size: 11px; color: {{t.text3}};">rotateY 62°</span>
+      </div>
+      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">04</span>TRANSFORM FLIP</div><div style="{{capSpec}}">Space · pillar flash 800 ms · rotateY 180° 600 ms expo · back face at 300 ms</div></figcaption>
+    </figure>
+
+    <div style="{{rowHead}} margin-top: 6px;"><h2 style="{{h2}}"><span style="{{h2dot}}"></span>REWARD LOOP</h2><span style="{{h2sub}}">Every grade answers back: combo, XP, tier, and Lumi.</span></div>
+    <figure style="{{fig}}">
+      <div style="{{stage}}">
+        <div style="position: absolute; left: 22px; right: 22px; top: 36px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <sc-for list="{{grades}}" as="g" hint-placeholder-count="4">
+            <span class="{{g.cls}}" style="height: 44px; transform: skewX(-12deg); background: {{g.bg}}; box-shadow: {{g.glow}}; display: flex; align-items: center; justify-content: center;"><span style="transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; color: {{g.fg}};">{{g.label}}</span></span>
+          </sc-for>
+        </div>
+        <span style="position: absolute; left: 22px; bottom: 16px; font-family: {{t.fMono}}; font-size: 11px; color: {{t.text3}};">+0 · +120 · +240 · +360 ms</span>
+      </div>
+      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">05</span>GRADES RISE</div><div style="{{capSpec}}">flip end · nk-rise 700 ms expo · stagger 120 ms · keys 1–4</div></figcaption>
+    </figure>
+
+    <figure style="{{fig}}">
+      <div style="{{stage}}">
+        <div class="nk-banner" style="position: absolute; left: 24px; top: 44px; height: 64px; padding: 0 26px; transform: skewX(-16deg); background: {{t.crimsonGrad}}; box-shadow: {{t.primaryGlow}}; display: flex; align-items: center; animation-iteration-count: infinite; animation-duration: 2.4s;">
+          <span style="transform: skewX(16deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 36px; line-height: 1; background: {{t.metalHot}}; -webkit-background-clip: text; background-clip: text; color: transparent;">LOVELY</span>
+        </div>
+        <span class="nk-pop-2" style="position: absolute; right: 30px; top: 120px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 26px; color: {{t.goldText}}; text-shadow: 0 0 14px rgb(255 209 102 / 0.5);">+10 XP</span>
+        <span style="position: absolute; left: 24px; top: 118px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: {{t.text2}};">COMBO ×3</span>
+      </div>
+      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">06</span>COMBO BANNER</div><div style="{{capSpec}}">after GOOD · x −80→6→0 · 520 ms snap · XP pop +140 ms · AGAIN resets</div></figcaption>
+    </figure>
+
+    <figure style="{{fig}}">
+      <div style="{{stage}}">
+        <div class="nk-rim-spin" style="position: absolute; left: 50%; top: 18px; width: 150px; height: 150px; margin-left: -75px; opacity: 0.35; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{sss.rim}};"></div>
+        <div class="nk-pop" style="position: absolute; left: 50%; top: 32px; width: 122px; height: 122px; margin-left: -61px; filter: drop-shadow(0 0 20px rgb(255 42 77 / 0.8));">
+<!--#STAR5-->
+        </div>
+        <span class="nk-stamp" style="position: absolute; left: 50%; top: 76px; margin-left: -40px; width: 80px; text-align: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; line-height: 1; color: #ffffff; text-shadow: 0 3px 0 #7a0820, 0 0 16px rgb(255 209 102 / 0.8);">STAR</span>
+        <span style="position: absolute; left: 16px; bottom: 14px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; color: {{t.text2}};"><span style="color: {{t.pinkText}};">S</span> → <span style="color: {{t.crimsonText}};">STAR</span></span>
+      </div>
+      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">07</span>TIER UP · STAMP</div><div style="{{capSpec}}">stamp scale 2.6→.92→1, rotate −32° · 620 ms, delay 400 · rim spin 6 s</div></figcaption>
+    </figure>
+
+    <figure style="{{fig}}">
+      <div style="{{stage}}">
+        <div class="nk-float" style="position: absolute; left: 12px; bottom: 0; width: 150px; height: 160px;">
+<!--#MASCOT happy-->
+        </div>
+        <div class="nk-pop-2" style="position: absolute; right: 14px; top: 30px; width: 136px; clip-path: {{t.chamferSm}}; background: {{t.panelSolid}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 8px 10px;">
+          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 10px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
+          <div style="margin-top: 2px; font-size: 12.5px; font-weight: 800; line-height: 1.3; color: {{t.textStrong}};">Lovely! Giữ combo nào!</div>
+        </div>
+        <span style="position: absolute; right: 14px; bottom: 14px; font-family: {{t.fMono}}; font-size: 11px; color: {{t.text3}};">idle → happy</span>
+      </div>
+      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">08</span>LUMI REACTS</div><div style="{{capSpec}}">pose swap on grade · crossfade 240 ms · float 3.2 s loop · hint on flip</div></figcaption>
+    </figure>
+  </div>
+
+  <footer style="position: absolute; z-index: 3; left: 48px; right: 48px; bottom: 30px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 14px 22px; display: flex; align-items: center; gap: 22px;">
+    <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; letter-spacing: 0.08em; color: {{t.crimsonText}};">TIMING</span>
+    <sc-for list="{{durations}}" as="d" hint-placeholder-count="5">
+      <span style="display: flex; align-items: baseline; gap: 6px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; color: {{t.textStrong}};">{{d.name}}</span><span style="font-family: {{t.fMono}}; font-size: 12.5px; color: {{t.holoText}};">{{d.ms}}</span></span>
+    </sc-for>
+    <span style="margin-left: auto; max-width: 380px; font-size: 12.5px; line-height: 1.45; color: {{t.text2}};"><strong style="color: {{t.textStrong}};">Reduced motion:</strong> every nk-* animation stops; flip becomes a 120 ms crossfade, wings and pillar are skipped.</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    return {
+      t, bg: { wings: false }, learn: t.tier.learning, sss: t.tier.mastered,
+      titleGrad: dark ? t.metal : 'linear-gradient(180deg, #0d1a33 0%, #0d1a33 45%, #b30f33 62%, #ff2a4d 100%)',
+      titleShadow: dark ? '#7a0820' : 'rgb(255 255 255 / 0.8)',
+      curves: [
+        { name: 'SNAP', value: 'cubic-bezier(.2,1.4,.4,1)', path: 'M3 37 C 12 -12, 20 3, 43 3', color: t.crimson, edge: t.panelEdge },
+        { name: 'EXPO OUT', value: 'cubic-bezier(.16,1,.3,1)', path: 'M3 37 C 10 3, 16 3, 43 3', color: t.holo, edge: t.panelEdge2 },
+      ],
+      rowHead: 'grid-column: 1 / -1; display: flex; align-items: baseline; gap: 14px;',
+      h2: 'margin: 0; display: flex; align-items: center; gap: 8px; font-family: ' + t.fDisplay + '; font-style: italic; font-weight: 900; font-size: 20px; letter-spacing: 0.06em; color: ' + t.textStrong + ';',
+      h2dot: 'width: 10px; height: 10px; transform: rotate(45deg); background: ' + t.crimson + '; box-shadow: 0 0 8px ' + t.crimson + ';',
+      h2sub: 'font-size: 13.5px; color: ' + t.text2 + ';',
+      fig: 'margin: 0; display: flex; flex-direction: column; gap: 8px;',
+      stage: 'position: relative; height: 190px; overflow: hidden; clip-path: ' + t.chamfer + '; background: ' + t.panel + '; box-shadow: inset 0 0 0 1px ' + t.panelEdge2 + ';',
+      cap: 'padding: 0 4px;',
+      capTitle: 'display: flex; align-items: center; gap: 8px; font-family: ' + t.fDisplay + '; font-style: italic; font-weight: 900; font-size: 15px; letter-spacing: 0.04em; color: ' + t.textStrong + ';',
+      num: 'height: 22px; padding: 0 7px; transform: skewX(-12deg); background: ' + t.primaryBg + '; color: #ffffff; font-size: 12px; display: inline-flex; align-items: center;',
+      capSpec: 'margin-top: 3px; font-family: ' + t.fMono + '; font-size: 11.5px; line-height: 1.45; color: ' + t.text2 + ';',
+      grades: [
+        { label: 'AGAIN', bg: t.again, fg: '#ffffff', cls: 'nk-rise', glow: 'none' },
+        { label: 'HARD', bg: t.hard, fg: '#ffffff', cls: 'nk-rise-2', glow: 'none' },
+        { label: 'GOOD', bg: dark ? 'linear-gradient(180deg, #9ff9ff, #5ef2ff 50%, #1aa7c9)' : 'linear-gradient(180deg, #2bc4e0, #0a8fb0)', fg: dark ? '#031820' : '#ffffff', cls: 'nk-rise-3', glow: '0 0 18px -4px rgb(94 242 255 / 0.85)' },
+        { label: 'EASY', bg: t.easy, fg: dark ? '#4a2a00' : '#ffffff', cls: 'nk-rise-3', glow: 'none' },
+      ],
+      durations: [
+        { name: 'press', ms: '120 ms' }, { name: 'fade', ms: '240 ms' }, { name: 'snap', ms: '520 ms' }, { name: 'flip', ms: '600 ms' }, { name: 'ceremony', ms: '800 ms' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

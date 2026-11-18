@@ -36,6 +36,7 @@ export interface FlashcardSpeechMatchOptions {
   readonly cardId: string;
   readonly word: string;
   readonly explanation: string;
+  readonly speechLocale?: string;
   readonly onPronunciationError: (message: string | null) => void;
 }
 
@@ -101,6 +102,7 @@ export function useFlashcardSpeechMatch({
   cardId,
   word,
   explanation,
+  speechLocale = 'en-US',
   onPronunciationError,
 }: FlashcardSpeechMatchOptions): FlashcardSpeechMatchResult {
   const recognitionRef = useRef<SpeechRecognitionSession | null>(null);
@@ -131,7 +133,7 @@ export function useFlashcardSpeechMatch({
   useLayoutEffect(() => {
     invalidateRecognition(true);
     return () => invalidateRecognition(false);
-  }, [cardId, explanation, invalidateRecognition, word]);
+  }, [cardId, explanation, invalidateRecognition, speechLocale, word]);
 
   const startPronunciationCheck = useCallback((
     event: FlashcardSpeechMatchControlEvent,
@@ -158,7 +160,7 @@ export function useFlashcardSpeechMatch({
     }
 
     recognitionRef.current = recognition;
-    recognition.lang = 'en-US';
+    recognition.lang = speechLocale;
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
@@ -222,7 +224,7 @@ export function useFlashcardSpeechMatch({
       if (!clearSession()) return;
       onPronunciationError(startSpeechMessage);
     }
-  }, [cardId, explanation, invalidateRecognition, onPronunciationError, word]);
+  }, [cardId, explanation, invalidateRecognition, onPronunciationError, speechLocale, word]);
 
   return {
     isRecording,

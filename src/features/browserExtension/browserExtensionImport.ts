@@ -1,5 +1,8 @@
+import { COURSE_TARGET_LANGUAGES, type CourseTargetLanguage } from '../../../functions/src/course-profile-contract';
+
 export const BROWSER_EXTENSION_IMPORT_HASH_KEY = 'lf-import';
 export const BROWSER_EXTENSION_IMPORT_STORAGE_KEY = 'lingoflash_browser_extension_import';
+export const BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY = 'lingoflash_browser_extension_import_owner';
 export const BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY = 'lingoflash_browser_extension_draft_import';
 export const BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION = 3;
 export const BROWSER_EXTENSION_IMPORT_LEGACY_DRAFT_PROTOCOL_VERSION = 2;
@@ -11,6 +14,8 @@ export const BROWSER_EXTENSION_IMPORT_CLAIMED_MESSAGE = 'LINGOFLASH_EXTENSION_IM
 export const BROWSER_EXTENSION_IMPORT_MAX_TEXT_LENGTH = 80;
 export const BROWSER_EXTENSION_IMPORT_MAX_CONTEXT_LENGTH = 500;
 export const BROWSER_EXTENSION_IMPORT_MAX_DECK_LENGTH = 128;
+export const BROWSER_EXTENSION_IMPORT_MAX_SOURCE_URL_LENGTH = 2048;
+export const BROWSER_EXTENSION_IMPORT_MAX_PAGE_TITLE_LENGTH = 256;
 export const BROWSER_EXTENSION_IMPORT_MAX_ENCODED_LENGTH = 2048;
 export const BROWSER_EXTENSION_IMPORT_NONCE_PATTERN = /^[A-Za-z0-9_-]{22,64}$/;
 export const BROWSER_EXTENSION_IMPORT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -25,12 +30,30 @@ export interface BrowserExtensionImportIntent {
   mode?: 'silent';
   context?: string;
   requestedDeck?: string;
+  /** Page URL the selection was captured from, already sanitized by the extension. */
+  sourceUrl?: string;
+  /** Page <title> at capture time. */
+  pageTitle?: string;
+  /**
+   * The active course's target language at capture time, when the extension
+   * had one synced (background-core.js `activeCaptureSourceLanguage`).
+   * Absent on an older extension build or when no course locale was ever
+   * synced (signed out, or the app hasn't loaded yet) — callers must treat a
+   * missing value as the extension's original fixed English assumption.
+   */
+  sourceLanguage?: CourseTargetLanguage;
 }
 
 export interface BrowserExtensionImportStorage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
   removeItem(key: string): void;
+}
+
+interface BrowserExtensionImportOwnerBinding {
+  id: string;
+  nonce: string;
+  ownerId: string;
 }
 
 export interface BrowserExtensionImportBrowser {
@@ -112,16 +135,46 @@ const isFreshCreatedAt = (createdAt: number, now: number): boolean =>
   && createdAt <= now + BROWSER_EXTENSION_IMPORT_FUTURE_SKEW_MS
   && now - createdAt <= BROWSER_EXTENSION_IMPORT_MAX_AGE_MS;
 
+/**
+ * Defense in depth on the read side: the extension already sanitizes the
+ * captured URL before it ever leaves the page context, and the server
+ * (`parseCardSourceMetadata`) strips credentials/query/fragment and rejects
+ * non-http(s) schemes again before persistence. This just refuses to carry a
+ * malformed or oversized value further into the app.
+ */
+const sanitizeCapturedSourceUrl = (value: unknown): string => {
+  if (typeof value !== 'string' || !value || value.length > BROWSER_EXTENSION_IMPORT_MAX_SOURCE_URL_LENGTH) return '';
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? value : '';
+  } catch {
+    return '';
+  }
+};
+
 const parseIntentValue = (value: unknown, now: number): BrowserExtensionImportIntent | null => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const candidate = value as Partial<BrowserExtensionImportIntent>;
   const text = normalizeBrowserExtensionImportText(candidate.text);
   if (candidate.context !== undefined && typeof candidate.context !== 'string') return null;
   if (candidate.requestedDeck !== undefined && typeof candidate.requestedDeck !== 'string') return null;
+  if (candidate.sourceUrl !== undefined && typeof candidate.sourceUrl !== 'string') return null;
+  if (candidate.pageTitle !== undefined && typeof candidate.pageTitle !== 'string') return null;
   const context = normalizeBrowserExtensionImportText(candidate.context)
     .slice(0, BROWSER_EXTENSION_IMPORT_MAX_CONTEXT_LENGTH);
   const requestedDeck = normalizeBrowserExtensionImportText(candidate.requestedDeck)
     .slice(0, BROWSER_EXTENSION_IMPORT_MAX_DECK_LENGTH);
+  const sourceUrl = sanitizeCapturedSourceUrl(candidate.sourceUrl);
+  const pageTitle = normalizeBrowserExtensionImportText(candidate.pageTitle)
+    .slice(0, BROWSER_EXTENSION_IMPORT_MAX_PAGE_TITLE_LENGTH);
+  // An unrecognized value is dropped rather than rejecting the whole intent:
+  // this is a soft hint the extension attaches when it knows the active
+  // course's target language (07.5), and a future target language this app
+  // build does not know about yet must not break capture.
+  const sourceLanguage = typeof candidate.sourceLanguage === 'string'
+    && (COURSE_TARGET_LANGUAGES as readonly string[]).includes(candidate.sourceLanguage)
+    ? candidate.sourceLanguage
+    : undefined;
   const isCurrentVersion = candidate.v === BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION;
   const isLegacyDraft = candidate.v === BROWSER_EXTENSION_IMPORT_LEGACY_DRAFT_PROTOCOL_VERSION
     && candidate.mode === undefined;
@@ -143,6 +196,9 @@ const parseIntentValue = (value: unknown, now: number): BrowserExtensionImportIn
     ...(candidate.mode === 'silent' ? { mode: 'silent' as const } : {}),
     ...(isCurrentVersion && context ? { context } : {}),
     ...(isCurrentVersion && requestedDeck ? { requestedDeck } : {}),
+    ...(isCurrentVersion && sourceUrl ? { sourceUrl } : {}),
+    ...(isCurrentVersion && pageTitle ? { pageTitle } : {}),
+    ...(isCurrentVersion && sourceLanguage ? { sourceLanguage } : {}),
   };
 };
 
@@ -209,6 +265,50 @@ export const readPendingBrowserExtensionImport = (
   }
 };
 
+const readOwnerBinding = (storage: BrowserExtensionImportStorage | null): BrowserExtensionImportOwnerBinding | null => {
+  try {
+    const rawValue = storage?.getItem(BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY);
+    if (!rawValue) return null;
+    const value: unknown = JSON.parse(rawValue);
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const binding = value as Partial<BrowserExtensionImportOwnerBinding>;
+    if (typeof binding.id !== 'string'
+      || typeof binding.nonce !== 'string'
+      || typeof binding.ownerId !== 'string'
+      || !binding.ownerId
+      || binding.ownerId.length > 128) return null;
+    return { id: binding.id, nonce: binding.nonce, ownerId: binding.ownerId };
+  } catch {
+    return null;
+  }
+};
+
+export const readPendingBrowserExtensionImportOwner = (
+  storage: BrowserExtensionImportStorage | null,
+  intent: Pick<BrowserExtensionImportIntent, 'id' | 'nonce'>,
+): string | null => {
+  const binding = readOwnerBinding(storage);
+  return binding?.id === intent.id && binding.nonce === intent.nonce ? binding.ownerId : null;
+};
+
+export const writePendingBrowserExtensionImportOwner = (
+  storage: BrowserExtensionImportStorage | null,
+  intent: Pick<BrowserExtensionImportIntent, 'id' | 'nonce'>,
+  ownerId: string,
+): boolean => {
+  if (!intent.nonce || !ownerId || ownerId.length > 128) return false;
+  try {
+    storage?.setItem(BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY, JSON.stringify({
+      id: intent.id,
+      nonce: intent.nonce,
+      ownerId,
+    }));
+    return readPendingBrowserExtensionImportOwner(storage, intent) === ownerId;
+  } catch {
+    return false;
+  }
+};
+
 export const clearPendingBrowserExtensionImport = (
   storage: BrowserExtensionImportStorage | null,
   expectedId?: string,
@@ -234,6 +334,11 @@ export const clearPendingBrowserExtensionImport = (
       if (currentId !== expectedId || (expectedNonce !== undefined && currentNonce !== expectedNonce)) return;
     }
     storage?.removeItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY);
+    const binding = readOwnerBinding(storage);
+    if (!expectedId || (binding?.id === expectedId
+      && (expectedNonce === undefined || binding.nonce === expectedNonce))) {
+      storage?.removeItem(BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY);
+    }
   } catch {
     // Storage is optional.
   }

@@ -1,4 +1,6 @@
 import { readFileSync } from 'node:fs';
+vi.mock('../src/pilotConfig.js', async importOriginal => ({ ...await importOriginal<typeof import('../src/pilotConfig.js')>(), loadPilotConfig: vi.fn(async () => ({ analyticsEnabled: false })) }));
+vi.mock('../src/accountData.js', async importOriginal => ({ ...await importOriginal<typeof import('../src/accountData.js')>(), isAccountDeleting: vi.fn(async () => false) }));
 import type { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Transaction } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { describe, expect, it, vi } from 'vitest';
@@ -51,7 +53,7 @@ describe('service budgets', () => {
 
  it('applies the aggregate review service ceiling before persistence', async () => {
    const consumeBudget = vi.fn(async () => undefined);
-   const applyReviewForOwner = vi.fn(async () => ({ applied: true }));
+   const applyReviewForOwner = vi.fn(async () => ({ applied: true as const, duplicate: false, xpAwarded: 0, card: {} }));
    const handler = createReviewCardHandler(false, { consumeBudget, applyReviewForOwner });
 
    await handler({

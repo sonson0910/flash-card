@@ -64,16 +64,14 @@ describe('AI generation limits', () => {
     const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
     const generateVocabulary = source.slice(
       source.indexOf('export const generateVocabulary'),
-      source.indexOf('export const findVocabularyImage'),
+      source.indexOf('export const cancelCardGeneration'),
     );
 
     expect(generateVocabulary).toMatch(/maxInstances:\s*1/);
-    const budgetCall = generateVocabulary.slice(
-      generateVocabulary.indexOf('await consumeBudget'),
-      generateVocabulary.indexOf('const ai'),
-    );
-    expect(generateVocabulary.match(/await consumeBudget/g)).toHaveLength(1);
-    expect(budgetCall).toMatch(/budget\.message,\s*'gemini',\s*MAX_GEMINI_CALLS_PER_HOUR/);
+    // Word replays avoid model spend; all non-card tools share the allowance boundary.
+    expect(generateVocabulary.match(/await consumeBudget/g)).toHaveLength(2);
+    expect(generateVocabulary.match(/budget\.message,\s*'gemini',\s*MAX_GEMINI_CALLS_PER_HOUR/g)).toHaveLength(2);
+    expect(generateVocabulary).not.toContain('ai.models.generateContent(');
     expect(source).toContain('consumeRateLimitFailClosed');
     expect(source).toContain('consumeOwnerAndServiceBudget');
     expect(source).not.toContain('createMemoryRateLimitStore');

@@ -1,4 +1,6 @@
-export type ScriptScoringPolicy = 'latin' | 'han' | 'kana' | 'hangul' | 'fallback';
+import { detectScriptFamily, type ScriptFamily } from '../languagePacks/scriptDetection';
+
+export type ScriptScoringPolicy = ScriptFamily;
 
 export interface ScriptScore {
   readonly correct: boolean;
@@ -9,13 +11,7 @@ export interface ScriptScore {
 }
 
 export function inferScriptScoringPolicy(expected: unknown): ScriptScoringPolicy {
-  if (typeof expected !== 'string') return 'fallback';
-  const normalized = expected.normalize('NFKC');
-  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(normalized)) return 'kana';
-  if (/\p{Script=Hangul}/u.test(normalized)) return 'hangul';
-  if (/\p{Script=Han}/u.test(normalized)) return 'han';
-  if (/\p{Script=Latin}/u.test(normalized)) return 'latin';
-  return 'fallback';
+  return detectScriptFamily(expected);
 }
 
 const normalizeSpacing = (value: string): string => value.replace(/\s+/gu, ' ').trim();

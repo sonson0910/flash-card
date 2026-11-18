@@ -4,8 +4,8 @@ import {
   hasImageNegativeCache,
   isCloudBackoffActive,
   markImageNegativeCache,
-  readLocalCardCache,
   readLocalJson,
+  removeCloudStatsCaches,
   removeLocalValue,
   waitForInitialMedia,
   writeLocalValue,
@@ -106,24 +106,22 @@ describe('library browser storage safeguards', () => {
     }
   });
 
-  it('removes residual legacy keys when the scoped guest cache is authoritative', () => {
-    const values = new Map<string, string>([
-      ['lingoflash_cards_scoped_v1', JSON.stringify({
-        version: 1,
-        ownerId: null,
-        cards: [{ id: 'scoped-card', word: 'resilient' }],
-      })],
-      ['lingoflash_cards', JSON.stringify([{ id: 'legacy-card', word: 'stale' }])],
-      ['lingoflash_cards_owner', 'stale-owner'],
+  it('clears every course-scoped stats cache for one owner only', () => {
+    const values = new Map([
+      ['lingoflash_cloud_stats_owner-a', 'all'],
+      ['lingoflash_cloud_stats_owner-a_en', 'en'],
+      ['lingoflash_cloud_stats_owner-a_ko', 'ko'],
+      ['lingoflash_cloud_stats_owner-ab_en', 'keep'],
+      ['lingoflash_cloud_page_owner-a', 'keep'],
     ]);
     vi.stubGlobal('localStorage', {
-      getItem: (key: string) => values.get(key) ?? null,
-      setItem: (key: string, value: string) => { values.set(key, value); },
+      get length() { return values.size; },
+      key: (index: number) => [...values.keys()][index] ?? null,
       removeItem: (key: string) => { values.delete(key); },
     });
 
-    expect(readLocalCardCache()).toMatchObject({ ownerId: null, cards: [{ id: 'scoped-card' }] });
-    expect(values.has('lingoflash_cards')).toBe(false);
-    expect(values.has('lingoflash_cards_owner')).toBe(false);
+    removeCloudStatsCaches('owner-a');
+
+    expect([...values.keys()]).toEqual(['lingoflash_cloud_stats_owner-ab_en', 'lingoflash_cloud_page_owner-a']);
   });
 });

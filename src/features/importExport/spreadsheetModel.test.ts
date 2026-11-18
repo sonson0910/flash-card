@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { cardsToSpreadsheetRows, extractFlatWords, parseStructuredCardRows } from './spreadsheetModel';
+import {
+  cardsToSpreadsheetRows,
+  classifyFlatWords,
+  classifyStructuredCardRows,
+  extractFlatWords,
+  parseStructuredCardRows,
+} from './spreadsheetModel';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
+import { getActiveUiLocale, setActiveUiLocale } from '../../i18n/loadCatalog';
 
 describe('spreadsheet import/export model', () => {
   it('normalizes aliases, bounds text, rejects unsafe media and removes duplicates', () => {
@@ -30,11 +37,96 @@ describe('spreadsheet import/export model', () => {
     }])[0]).toMatchObject({ Word: 'apple', Translation: 'táo', 'Part of Speech': 'noun' });
   });
 
+  it('classifies structured rows with their physical source rows', () => {
+    expect(classifyStructuredCardRows([
+      { row: { Word: 'apple', Translation: 'táo' }, sourceRow: 4 },
+      { row: { Word: 'apple', Translation: 'trùng' }, sourceRow: 6 },
+      { row: { Word: 'pear', Translation: '' }, sourceRow: 7 },
+    ])).toEqual([
+      expect.objectContaining({ kind: 'accepted', sourceRow: 4 }),
+      { kind: 'duplicate', word: 'apple', sourceRow: 6 },
+      { kind: 'invalid', word: 'pear', sourceRow: 7 },
+    ]);
+  });
+
+  it('classifies flat duplicates and items beyond the unique-word cap with coordinates', () => {
+    expect(Array.from(classifyFlatWords([
+      { value: ' Apple ', sourceRow: 3, sourceColumn: 2 },
+      { value: 'apple', sourceRow: 5, sourceColumn: 1 },
+      { value: 'pear', sourceRow: 5, sourceColumn: 3 },
+    ], 1))).toEqual([
+      { kind: 'accepted', word: 'Apple', sourceRow: 3, sourceColumn: 2 },
+      { kind: 'duplicate', word: 'apple', sourceRow: 5, sourceColumn: 1 },
+      { kind: 'skipped', word: 'pear', sourceRow: 5, sourceColumn: 3 },
+    ]);
+  });
+
+  it('streams flat classifications without building a candidate array', () => {
+    const classifications = classifyFlatWords([
+      { value: 'apple', sourceRow: 1, sourceColumn: 1 },
+      { value: 'pear', sourceRow: 2, sourceColumn: 1 },
+    ]);
+    expect(Array.isArray(classifications)).toBe(false);
+    expect(Array.from(classifications)).toHaveLength(2);
+  });
+
   it('keeps distinct validated canonical senses of the same word', () => {
     const rows = parseStructuredCardRows([
       { Word: 'lead', Translation: 'kim loại', Language: 'en', 'Part of Speech': 'noun', 'Sense Key': 'metal', 'Lexeme ID': createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'noun', senseKey: 'metal' }) },
       { Word: 'lead', Translation: 'dẫn dắt', Language: 'en', 'Part of Speech': 'verb', 'Sense Key': 'guide', 'Lexeme ID': createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'verb', senseKey: 'guide' }) },
     ]);
     expect(rows).toHaveLength(2);
+  });
+
+  it('round-trips an ordinary explicit language pair without treating it as canonical identity', () => {
+    const [exported] = cardsToSpreadsheetRows([{
+      id: 'hello', word: '안녕', translation: 'xin chào', explanation: '', phonetic: '', emoji: '📝',
+      category: 'General', partOfSpeech: 'interjection', audioUrl: null, imageUrl: null,
+      language: 'ko', translationLanguage: 'vi',
+      source: { url: 'https://private.example/path', title: 'Private source' },
+    }]);
+    expect(exported).not.toHaveProperty('Source');
+    const [row] = parseStructuredCardRows([exported]);
+    expect(row).toMatchObject({ word: '안녕', language: 'ko', translationLanguage: 'vi' });
+  });
+
+  it('accepts language metadata alone but rejects unsafe values and partial canonical tuples', () => {
+    const classifications = classifyStructuredCardRows([
+      { row: { Word: 'hello', Translation: 'xin chào', Language: 'ko' }, sourceRow: 2 },
+      { row: { Word: 'unsafe', Translation: 'không an toàn', Language: 'javascript:alert(1)' }, sourceRow: 3 },
+      { row: { Word: 'partial', Translation: 'một phần', Language: 'ko', 'Sense Key': 'greeting' }, sourceRow: 4 },
+      { row: { Word: 'native', Translation: 'meaning', 'Translation Language': 'de' }, sourceRow: 5 },
+      { row: { Word: 'lemma', Translation: 'bổ đề', 'Normalized Lemma': 'lemma' }, sourceRow: 6 },
+    ]);
+    expect(classifications).toEqual([
+      expect.objectContaining({ kind: 'accepted', row: expect.objectContaining({ language: 'ko' }) }),
+      { kind: 'invalid', word: 'unsafe', sourceRow: 3 },
+      { kind: 'invalid', word: 'partial', sourceRow: 4 },
+      { kind: 'invalid', word: 'native', sourceRow: 5 },
+      { kind: 'invalid', word: 'lemma', sourceRow: 6 },
+    ]);
+  });
+
+  it('round-trips exported cards under Vietnamese UI with stable spreadsheet headers', () => {
+    const previousLocale = getActiveUiLocale();
+    setActiveUiLocale('vi');
+    try {
+      const exported = cardsToSpreadsheetRows([{
+        id: '1', word: 'apple', translation: 'táo', explanation: 'A fruit', phonetic: '/ˈæp.əl/', emoji: '🍎',
+        category: 'Food', partOfSpeech: 'noun', audioUrl: null, imageUrl: null,
+      }]);
+      expect(Object.keys(exported[0])).toEqual([
+        'Lexeme ID', 'Language', 'Translation Language', 'Sense Key', 'Normalized Lemma', 'Word', 'Translation',
+        'Explanation', 'Phonetic', 'Part of Speech', 'Category', 'Emoji', 'Date Added',
+      ]);
+      expect(parseStructuredCardRows(exported)).toEqual([
+        expect.objectContaining({
+          word: 'apple', translation: 'táo', explanation: 'A fruit', phonetic: '/ˈæp.əl/',
+          partOfSpeech: 'noun', category: 'Food', emoji: '🍎',
+        }),
+      ]);
+    } finally {
+      setActiveUiLocale(previousLocale);
+    }
   });
 });

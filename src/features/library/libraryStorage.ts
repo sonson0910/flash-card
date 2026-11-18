@@ -1,20 +1,9 @@
-import { CLOUD_PAGE_SIZE, type CardQueryState } from '../../lib/cardQuery';
 import { isCloudQuotaError, isRetryableCloudError } from '../../lib/cloudError';
 import { withTimeout } from '../../lib/async';
-import { mergeDeviceCards } from '../../lib/deviceSync';
 import type { LibraryStats } from '../../lib/libraryStats';
 import { normalizeCardData } from '../../lib/cardNormalization';
 import { dedupeCardsByNormalizedWord } from '../../lib/cardIdentity';
-import { selectCardsVisibleForSession } from '../../lib/sessionCards';
 import type { CardData } from '../../types/card';
-import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
-import {
-  legacyCardCacheKey,
-  legacyCardOwnerCacheKey,
-  ownerScopedCardCacheKey,
-  parseOwnerScopedCardCache,
-  serializeOwnerScopedCardCache,
-} from './ownerScopedCardCache';
 
 export interface CachedCloudPage {
   queryKey: string;
@@ -34,9 +23,15 @@ export interface CachedCloudStats {
 export const MAX_AI_CARDS_PER_IMPORT = 30;
 
 export const cloudPageCacheKey = (userId: string) => `lingoflash_cloud_page_${userId}`;
-export const cloudStatsCacheKey = (userId: string) => `lingoflash_cloud_stats_${userId}`;
+// Namespaced by course target language so switching the active course never
+// serves another course's cached stats; omitting the language keeps the
+// pre-course-scoping key so existing sign-out/clear cleanup paths still hit it.
+export const cloudStatsCacheKey = (userId: string, targetLanguage?: string | null) =>
+  targetLanguage ? `lingoflash_cloud_stats_${userId}_${targetLanguage}` : `lingoflash_cloud_stats_${userId}`;
 export const cloudFacetsCacheKey = (userId: string) => `lingoflash_cloud_facets_${userId}`;
 export const cloudBackoffCacheKey = (userId: string) => `lingoflash_cloud_backoff_until_${userId}`;
+export const progressEvidenceCachePrefix = (userId: string) =>
+  `sonflash_progress_forecast_${encodeURIComponent(userId)}:`;
 export const IMAGE_NEGATIVE_CACHE_TTL_MS = 6 * 60 * 60 * 1_000;
 export const imageNegativeCacheKey = (ownerId: string | null, cardId: string) =>
   `lingoflash_no_image_v1_${encodeURIComponent(ownerId ?? 'guest')}_${encodeURIComponent(cardId)}`;
@@ -56,6 +51,20 @@ export const removeLocalValue = (key: string): boolean => {
     return true;
   } catch {
     return false;
+  }
+};
+
+// Stats are cached per course, so dropping an owner's stats must sweep every
+// course-scoped key as well as the unscoped one.
+export const removeCloudStatsCaches = (userId: string): void => {
+  const baseKey = cloudStatsCacheKey(userId);
+  try {
+    for (let index = localStorage.length - 1; index >= 0; index--) {
+      const key = localStorage.key(index);
+      if (key === baseKey || key?.startsWith(`${baseKey}_`)) localStorage.removeItem(key);
+    }
+  } catch {
+    // Storage can be unavailable (private mode); there is nothing to clear then.
   }
 };
 
@@ -84,48 +93,6 @@ export const normalizeLocalCards = (value: unknown): CardData[] => Array.isArray
       return [normalizeCardData(raw, typeof raw.id === 'string' && raw.id ? raw.id : `local-${index}`)];
     }))
   : [];
-
-export const readLocalCardCache = (): {
-  ownerId: string | null | undefined;
-  cards: CardData[];
-} => {
-  try {
-    const scoped = parseOwnerScopedCardCache(localStorage.getItem(ownerScopedCardCacheKey));
-    if (scoped) {
-      removeLocalValue(legacyCardCacheKey);
-      removeLocalValue(legacyCardOwnerCacheKey);
-      return { ownerId: scoped.ownerId, cards: normalizeLocalCards(scoped.cards) };
-    }
-    return {
-      ownerId: localStorage.getItem(legacyCardOwnerCacheKey),
-      cards: normalizeLocalCards(readLocalJson<unknown>(legacyCardCacheKey, [])),
-    };
-  } catch {
-    return { ownerId: undefined, cards: [] };
-  }
-};
-
-export const writeLocalCardCache = (
-  cards: readonly CardData[],
-  ownerId: string | null,
-): boolean => {
-  const written = writeLocalValue(
-    ownerScopedCardCacheKey,
-    serializeOwnerScopedCardCache(ownerId, normalizeLocalCards(cards)),
-  );
-  if (written) {
-    removeLocalValue(legacyCardCacheKey);
-    removeLocalValue(legacyCardOwnerCacheKey);
-  }
-  return written;
-};
-
-export const removeLocalCardCache = (): boolean => {
-  const scoped = removeLocalValue(ownerScopedCardCacheKey);
-  const legacyCards = removeLocalValue(legacyCardCacheKey);
-  const legacyOwner = removeLocalValue(legacyCardOwnerCacheKey);
-  return scoped && legacyCards && legacyOwner;
-};
 
 export const isCloudBackoffActive = (userId: string) => {
   try {
@@ -162,53 +129,10 @@ export const markImageNegativeCache = (
 export const clearImageNegativeCache = (ownerId: string | null, cardId: string) =>
   removeLocalValue(imageNegativeCacheKey(ownerId, cardId));
 
-export const persistLocalCardBackup = (
-  cards: CardData[],
-  maximum = CLOUD_PAGE_SIZE,
-  total = cards.length,
-  ownerUserId?: string | null,
-) => {
-  const boundedCards = cards.slice(0, maximum);
-  if (boundedCards.length === 0) return;
-  writeLocalCardCache(boundedCards, ownerUserId ?? null);
-  void mergeDeviceCards(boundedCards, Math.max(total, boundedCards.length), ownerUserId);
-};
-
 export const waitForInitialMedia = (
   mediaPromise: Promise<{ audioUrl: string | null; imageUrl: string | null }>,
   timeoutMs = 2500,
 ) => withTimeout(mediaPromise, timeoutMs).catch(() => null);
-
-export const getBoundedCloudFallback = (
-  userId: string,
-  queryKey: string,
-  page: number,
-  filters: CardQueryState,
-  pageSize: number,
-): { items: CardData[]; total: number; hasNext: boolean } | null => {
-  const cachedValue = readLocalJson<unknown>(cloudPageCacheKey(userId), null);
-  const cachedPage = cachedValue && typeof cachedValue === 'object' && !Array.isArray(cachedValue)
-    ? cachedValue as Partial<CachedCloudPage>
-    : null;
-  if (cachedPage && cachedPage.queryKey === queryKey && cachedPage.page === page
-    && Array.isArray(cachedPage.items) && typeof cachedPage.total === 'number') {
-    const items = normalizeLocalCards(cachedPage.items).slice(0, pageSize);
-    if (items.length > 0) return { items, total: ((page - 1) * pageSize) + items.length, hasNext: false };
-  }
-
-  const isDefaultFirstPage = page === 1 && filters.wordPrefix === ''
-    && !filters.category && (filters.customDeck?.kind ?? 'all') === ALL_PRACTICE_DECK_SCOPE.kind && !filters.difficulty
-    && !filters.partOfSpeech && !filters.bookmarkedOnly && !filters.createdDate;
-  if (!isDefaultFirstPage) return null;
-  const local = readLocalCardCache();
-  if (local.ownerId === undefined) return null;
-  const localBackup = selectCardsVisibleForSession(
-    local.cards,
-    local.ownerId,
-    userId,
-  ).slice(0, pageSize);
-  return localBackup.length > 0 ? { items: localBackup, total: localBackup.length, hasNext: false } : null;
-};
 
 export const isQuotaError = isCloudQuotaError;
 
@@ -221,8 +145,11 @@ const isLibraryStats = (value: unknown): value is LibraryStats => {
     .every(key => typeof source[key] === 'number' && Number.isFinite(source[key]));
 };
 
-export const readCachedCloudStats = (userId: string): { stats: LibraryStats; cachedAt: number | null } | null => {
-  const cached = readLocalJson<unknown>(cloudStatsCacheKey(userId), null);
+export const readCachedCloudStats = (
+  userId: string,
+  targetLanguage?: string | null,
+): { stats: LibraryStats; cachedAt: number | null } | null => {
+  const cached = readLocalJson<unknown>(cloudStatsCacheKey(userId, targetLanguage), null);
   if (isLibraryStats(cached)) return { stats: cached, cachedAt: null };
   if (!cached || typeof cached !== 'object' || Array.isArray(cached)) return null;
   const candidate = cached as Partial<CachedCloudStats>;

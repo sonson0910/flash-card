@@ -44,6 +44,16 @@ The manifest and readiness files are the exact sealed files retained with that
 tuple. The LKG has its own independent tuple and must remain retrievable before
 promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
 
+Deployment tooling comes from the immutable protected-default-branch workflow
+checkout (`github.sha`), independently of the selected candidate revision. Staging,
+production and Rules deployment jobs install that checkout's locked root dependencies without
+lifecycle scripts, verify the approved Firebase CLI version before authentication,
+and invoke its absolute binary path while operating in the verified candidate
+directory. They never install the candidate's historical root development tooling
+or rebuild its files. This keeps retained artifacts deployable after a CLI upgrade;
+the candidate's sealed root manifests remain unchanged as provenance. Functions
+runtime dependencies still come from the candidate's sealed Functions lockfile.
+
 ## 1. Build, seal and retain one candidate
 
 1. Dispatch `Build release candidate` for the reviewed full commit revision. The
@@ -174,7 +184,18 @@ Firebase/Hosting deploy is not evidence. The protected staging workflow must:
 4. emit an immutable deployment receipt binding the candidate run ID, revision,
    candidate SHA-256, manifest/readiness, protected target and HTTPS origin.
 
-Until a successful receipt exists for the selected tuple, do not run or accept the
+To prepare a retained A shell before the native update rehearsal, or restore its
+Hosting shell as R afterward, dispatch this same protected staging workflow with
+`hosting_only=true` and that retained candidate's exact tuple. It verifies the
+candidate, deploys only its sealed Hosting bytes and checks live health/worker bytes.
+It leaves the current Functions, Rules and indexes in place, avoiding deletion of
+newer backend endpoints when the retained shell predates them. Record the workflow
+run, tuple and Hosting-only scope with the A/R observations. This mode issues no
+complete staging deployment receipt and cannot satisfy production's receipt gate.
+Deploy the actual B candidate with `hosting_only=false` (the default); all runtime,
+index, Rules and immutable-receipt gates above remain required for promotion.
+
+Until a successful full deployment receipt exists for the selected B tuple, do not run or accept the
 smoke below, do not promote the candidate, and do not record staging evidence. The browser/manual evidence
 must bind to the immutable deployment receipt as well as the candidate tuple; an
 origin-only or manually deployed result is not evidence.

@@ -3,16 +3,12 @@ import { getShellSyncStatus } from './shellSyncStatus';
 
 describe('shell sync status', () => {
   it('treats owner verification as a quiet loading state instead of a cloud error', () => {
-    const initializingStatus = {
+    expect(getShellSyncStatus({
       isOnline: true,
-      isSyncing: false,
-      pendingCount: 0,
       error: null,
       cloudUnavailable: true,
       isCheckingCloud: true,
-    };
-
-    expect(getShellSyncStatus(initializingStatus)).toMatchObject({
+    })).toMatchObject({
       kind: 'checking',
       headerLabel: 'Checking cloud…',
       footerLabel: 'Checking cloud…',
@@ -22,11 +18,9 @@ describe('shell sync status', () => {
     });
   });
 
-  it('uses Synced and Online only when no local or cloud work is outstanding', () => {
+  it('uses Synced and Online only when no cloud work is outstanding', () => {
     expect(getShellSyncStatus({
       isOnline: true,
-      isSyncing: false,
-      pendingCount: 0,
       error: null,
       cloudUnavailable: false,
     })).toMatchObject({
@@ -37,26 +31,24 @@ describe('shell sync status', () => {
     });
   });
 
-  it('shows queued local changes instead of claiming the account is synced', () => {
+  it('keeps the offline indicator visible while the browser is disconnected', () => {
     expect(getShellSyncStatus({
-      isOnline: true,
-      isSyncing: false,
-      pendingCount: 12,
+      isOnline: false,
       error: null,
       cloudUnavailable: false,
     })).toMatchObject({
-      kind: 'queued',
-      headerLabel: 'Waiting to sync',
-      footerLabel: 'Waiting to sync',
+      kind: 'offline',
+      headerLabel: 'Offline',
+      footerLabel: 'Offline',
       healthy: false,
+      busy: false,
+      canRetry: false,
     });
   });
 
-  it('gives sync errors precedence over connectivity labels', () => {
+  it('gives errors precedence over connectivity labels', () => {
     expect(getShellSyncStatus({
       isOnline: true,
-      isSyncing: false,
-      pendingCount: 2,
       error: 'Cloud access was denied.',
       cloudUnavailable: true,
       isCheckingCloud: true,
@@ -65,21 +57,21 @@ describe('shell sync status', () => {
       headerLabel: 'Needs attention',
       footerLabel: 'Needs attention',
       healthy: false,
+      canRetry: true,
     });
   });
 
   it('distinguishes a dead cloud listener from a healthy online connection', () => {
     expect(getShellSyncStatus({
       isOnline: true,
-      isSyncing: false,
-      pendingCount: 0,
       error: null,
       cloudUnavailable: true,
     })).toMatchObject({
       kind: 'cloud-paused',
       headerLabel: 'Cloud paused',
-      footerLabel: 'Cloud paused, using cache',
+      footerLabel: 'Cloud paused',
       healthy: false,
+      canRetry: true,
     });
   });
 });

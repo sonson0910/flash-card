@@ -1,0 +1,113 @@
+<!--#HEAD Extension loop back to app-->
+<div style="width: 380px; height: 640px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#AMBIENT-->
+  <header style="position: relative; z-index: 2; height: 56px; flex-shrink: 0; padding: 0 16px; display: flex; align-items: center; gap: 9px; border-bottom: 1px solid {{t.navLine}};">
+    <span aria-hidden="true" style="width: 26px; height: 26px; border-radius: 8px; background: {{t.logoBg}}; box-shadow: {{t.logoShadow}}; display: flex; align-items: center; justify-content: center; color: {{t.logoText}}; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 15px;">S</span>
+    <span style="font-family: Fraunces, Georgia, serif; font-size: 18px;">Son<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">Flash</span></span>
+    <span style="margin-left: auto; height: 30px; padding: 0 10px 0 8px; border-radius: 999px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; color: {{t.warm}}; font-size: 12.5px; font-weight: 650; display: flex; align-items: center; gap: 5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>12 ngày</span>
+    <a href="#" aria-label="Cài đặt" style="width: 34px; height: 34px; border-radius: 50%; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg></a>
+  </header>
+
+  <sc-if value="{{isLoop}}" hint-placeholder-val="{{true}}">
+    <div style="position: relative; z-index: 2; flex-grow: 1; padding: 16px 16px 0; display: flex; flex-direction: column; gap: 12px;">
+      <div class="sf-pop" style="box-sizing: border-box; border-radius: {{t.miniR}}px; border: {{card.border}}; background: {{card.bg}}; box-shadow: {{card.shadow}}; padding: 16px 18px;">
+        <span style="height: 24px; width: fit-content; padding: 0 9px; border-radius: 999px; background: {{t.okBg}}; color: {{t.ok}}; font-size: 11.5px; font-weight: 650; display: flex; align-items: center; gap: 5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Đã thêm vào phiên học ngày mai</span>
+        <div style="margin-top: 12px; display: flex; align-items: baseline; gap: 10px;">
+          <span style="font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 32px; line-height: 1; letter-spacing: -0.02em; color: {{t.textStrong}};">re<span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">sil</span>ient</span>
+          <span style="font-family: Fraunces, Georgia, serif; font-size: 17px; color: {{t.accentText}};">kiên cường</span>
+        </div>
+        <div style="margin-top: 8px; font-size: 12px; color: {{t.text2}};">Từ bài trên <span style="color: {{t.text}}; font-weight: 600;">theguardian.com</span> · câu gốc đã được lưu kèm</div>
+      </div>
+
+      <div style="box-sizing: border-box; padding: 14px 16px; border-radius: {{t.miniR}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}};">
+        <div style="display: flex; align-items: baseline; justify-content: space-between;">
+          <span style="font-size: 12px; font-weight: 600; color: {{t.text2}};">Tuần này bạn nhặt được</span>
+          <span style="font-size: 11.5px; color: {{t.text3}};">T2 – CN</span>
+        </div>
+        <div style="margin-top: 6px; display: flex; align-items: flex-end; justify-content: space-between;">
+          <span style="font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 34px; line-height: 1; color: {{t.textStrong}};">8 <span style="font-size: 16px; color: {{t.text2}};">từ từ web</span></span>
+          <span aria-hidden="true" style="display: flex; align-items: flex-end; gap: 4px; height: 34px;">
+            <sc-for list="{{week}}" as="w" hint-placeholder-count="7"><span style="width: 9px; height: {{w.h}}px; border-radius: 3px; background: {{w.bg}};"></span></sc-for>
+          </span>
+        </div>
+        <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px;">
+          <sc-for list="{{sites}}" as="s" hint-placeholder-count="3"><span style="height: 26px; padding: 0 9px 0 5px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; font-size: 12px; color: {{t.text}}; display: flex; align-items: center; gap: 6px;"><span style="width: 16px; height: 16px; border-radius: 50%; background: {{s.bg}}; color: #fff; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{s.i}}</span>{{s.name}}<span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text3}};">{{s.n}}</span></span></sc-for>
+        </div>
+      </div>
+
+      <div style="padding: 11px 13px; border-radius: 14px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; font-size: 12.5px; line-height: 1.45; color: {{t.text}}; display: flex; align-items: center; gap: 10px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="{{t.warm}}" style="flex-shrink: 0;"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>
+        <span>Còn <b style="color: {{t.textStrong}};">3 thẻ</b> nữa là giữ được chuỗi 12 ngày hôm nay.</span>
+      </div>
+    </div>
+    <footer style="position: relative; z-index: 2; flex-shrink: 0; padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 8px;">
+      <a href="#" class="sf-press sf-pulse" style="--sf-pulse: {{pulse}}; height: 52px; border-radius: 14px; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 15px; font-weight: 650; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">Ôn ngay 3 phút<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"></path></svg></a>
+      <div style="text-align: center; font-size: 11.5px; color: {{t.text3}};">Mở SonFlash · 3 thẻ đến hạn, gồm 2 từ bạn gặp hôm qua</div>
+    </footer>
+  </sc-if>
+
+  <sc-if value="{{isQuota}}" hint-placeholder-val="{{false}}">
+    <div style="position: relative; z-index: 2; flex-grow: 1; padding: 16px 16px 0; display: flex; flex-direction: column; gap: 12px;">
+      <div style="box-sizing: border-box; padding: 14px 16px; border-radius: {{t.miniR}}px; border: 1px solid {{t.warnLine}}; background: {{t.warnBg}};">
+        <div style="font-size: 14px; font-weight: 650; line-height: 1.4; color: {{t.textStrong}};">Hôm nay bạn đã dùng 5/5 lượt AI miễn phí</div>
+        <div style="margin-top: 10px; display: flex; gap: 5px;">
+          <sc-for list="{{meter}}" as="m" hint-placeholder-count="5"><span style="flex: 1; height: 7px; border-radius: 4px; background: {{m}};"></span></sc-for>
+        </div>
+        <div style="margin-top: 8px; display: flex; justify-content: space-between; font-size: 11.5px; color: {{t.text2}};"><span>Làm mới lúc 00:00</span><span style="font-family: 'Geist Mono', ui-monospace, monospace;">còn 6 giờ 12 phút</span></div>
+      </div>
+
+      <div>
+        <div style="font-size: 12px; font-weight: 600; color: {{t.text2}};">Vẫn miễn phí, không giới hạn</div>
+        <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px;">
+          <sc-for list="{{free}}" as="f" hint-placeholder-count="3"><div style="display: flex; align-items: center; gap: 9px; font-size: 13px; color: {{t.text}};"><span style="width: 18px; height: 18px; border-radius: 50%; background: {{t.okBg}}; color: {{t.ok}}; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>{{f}}</div></sc-for>
+        </div>
+      </div>
+
+      <div style="position: relative; box-sizing: border-box; padding: 16px 16px 14px; border-radius: {{t.miniR}}px; border: {{pro.border}}; background: {{pro.bg}}; box-shadow: {{pro.shadow}}; overflow: hidden;">
+        <div style="display: flex; align-items: center; gap: 8px;"><span style="font-family: Fraunces, Georgia, serif; font-size: 20px; color: {{t.textStrong}};">SonFlash <span style="font-style: italic; color: {{pro.accent}};">Pro</span></span><span style="margin-left: auto; font-size: 11px; font-weight: 650; padding: 3px 8px; border-radius: 999px; background: {{pro.tagBg}}; color: {{pro.accent}};">7 ngày miễn phí</span></div>
+        <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; color: {{t.body}};">
+          <span>✦ AI tạo thẻ không giới hạn</span><span>✦ AI tutor, Story, chấm điểm Shadowing</span><span>✦ 4 lần giữ streak mỗi tháng</span>
+        </div>
+        <div style="margin-top: 10px; font-size: 12px; color: {{t.text2}};"><b style="font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.textStrong}};">79.000đ</b>/tháng · hoặc <b style="color: {{t.textStrong}};">2.600đ/ngày</b> theo gói năm</div>
+        <div aria-hidden="true" class="sf-sheen" style="position: absolute; inset: 0; pointer-events: none; mix-blend-mode: {{pro.blend}}; background: linear-gradient(115deg, transparent 30%, rgb(255 226 150 / 0.18) 45%, rgb(150 240 255 / 0.12) 52%, transparent 70%); background-size: 260% 100%;"></div>
+      </div>
+    </div>
+    <footer style="position: relative; z-index: 2; flex-shrink: 0; padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 8px;">
+      <button class="sf-press" style="height: 52px; border-radius: 14px; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 15px; font-weight: 650;">Dùng thử Pro 7 ngày</button>
+      <div style="text-align: center; font-size: 11.5px; color: {{t.text3}};">Không cần thẻ · tự về gói Free, không trừ tiền</div>
+    </footer>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"state":{"editor":"enum","options":["loop","quota"],"default":"loop"},"$preview":{"width":380,"height":640}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const state = this.props.state ?? 'loop';
+    const t = { ...sfTokens(dark), miniR: dark ? 20 : 14 };
+    const accent = dark ? '#28d3f4' : '#b4461a';
+    return {
+      t, isLoop: state === 'loop', isQuota: state === 'quota',
+      grainId: 'extloop-grain-' + (dark ? 'd' : 'l') + state, amb: { ax: -260, ay: -300, bx: 120, by: 380 },
+      pulse: dark ? 'rgb(40 211 244 / 0.45)' : 'rgb(29 26 22 / 0.25)',
+      card: dark
+        ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 80% 60% at 100% 0%, rgb(150 108 215 / 0.22), transparent 70%) padding-box, ' + t.cardBg + ' padding-box, ' + t.rimLearning + ' border-box', shadow: '0 20px 40px -20px rgb(0 0 0 / 0.9), 0 0 36px -14px rgb(40 211 244 / 0.5)' }
+        : { border: '0', bg: t.cardBg, shadow: 'inset 0 1px 0 #ffffff, inset 0 0 0 1px rgb(29 26 22 / 0.06), 0 12px 24px -16px rgb(60 40 20 / 0.4)' },
+      week: [1, 0, 2, 1, 3, 1, 0].map((n, i) => ({ h: 6 + n * 9, bg: i === 5 ? accent : (n ? (dark ? 'rgb(40 211 244 / 0.4)' : 'rgb(180 70 26 / 0.35)') : t.track) })),
+      sites: [
+        { name: 'theguardian.com', n: 3, i: 'G', bg: '#052962' },
+        { name: 'bbc.com', n: 2, i: 'B', bg: '#b80000' },
+        { name: 'medium.com', n: 3, i: 'M', bg: '#1a1a1a' },
+      ],
+      meter: [0, 1, 2, 3, 4].map(() => dark ? '#f5ae39' : '#b8862b'),
+      free: ['Dịch nhanh (không lưu)', 'Lưu thẻ thủ công', 'Ôn tập và luyện tập'],
+      pro: dark
+        ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 80% 60% at 100% 0%, rgb(245 174 57 / 0.16), transparent 70%) padding-box, linear-gradient(180deg, #102733, #0a1a22) padding-box, ' + t.goldRim + ' border-box', shadow: '0 0 40px -16px rgb(245 174 57 / 0.55)', accent: '#f5ae39', tagBg: 'rgb(245 174 57 / 0.14)', blend: 'screen' }
+        : { border: '1px solid rgb(184 134 43 / 0.45)', bg: '#fffcf5', shadow: '0 0 0 3px #fffcf5, 0 0 0 4px rgb(184 134 43 / 0.25), 0 14px 24px -16px rgb(60 40 20 / 0.4)', accent: '#8a5a0c', tagBg: 'rgb(184 134 43 / 0.12)', blend: 'multiply' },
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,625 @@
+{
+  "schemaVersion": 1,
+  "parentPublishedRevision": "f1a19eefd06a4eb9bf292a7d0b5a564ae00eab53",
+  "sourceFiles": [
+    {
+      "path": "e2e/gamification-two-device-sync.spec.ts",
+      "sha256": "9f47b42818c50aae5d0a7bb651527f47e12e9a67b3d1bc63f7841fbb537ab596"
+    }
+  ],
+  "latestCompletedCI": {
+    "runId": 39008922519,
+    "headRevision": "f1a19eefd06a4eb9bf292a7d0b5a564ae00eab53",
+    "audit_root": "success",
+    "audit_functions": "success",
+    "verify": "failure",
+    "browserCounts": {
+      "passed": 1871,
+      "flaky": 1,
+      "skipped": 8
+    },
+    "failure": "failOnFlakyTests: initial peer 99 XP assertion begins while courses are still hydrating; retry passed."
+  },
+  "repair": {
+    "scope": "Test initialization only: finish Progress and initial XP hydration for each device before measuring concurrent live synchronization.",
+    "fixtureContract": "signIn waits for the restored Auth UID, not course/profile/view readiness.",
+    "preserved": [
+      "5-second XP assertions",
+      "60-second test timeout",
+      "both devices online before reviewed batch commit",
+      "live XP/reward propagation without navigation",
+      "owner-switch isolation",
+      "all browser projects and failOnFlakyTests"
+    ],
+    "review": "Main-agent scoped source review: no blocking finding. No independent reviewer claimed."
+  },
+  "environment": {
+    "playwright": "1.64.1",
+    "image": "mcr.microsoft.com/playwright:v1.64.1-noble",
+    "imageDigest": "sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf",
+    "services": "Real Auth, Firestore and Functions emulators; one worker; project Linux fontconfig"
+  },
+  "ordinaryRuns": {
+    "unchangedChromium10": {
+      "stats": {
+        "startTime": "2026-10-18T02:09:31.979Z",
+        "duration": 41624.073000000004,
+        "expected": 9,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "rawReportSha256": "9e5762261f93131bbee93c726350591bc7bd6ff6471b97c3a1703b8131ca67be",
+      "cases": [
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3938
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2376
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2276
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2454
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2387
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2425
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "unexpected",
+          "attempts": [
+            {
+              "status": "failed",
+              "retry": 0,
+              "durationMs": 6272
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2440
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2391
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2124
+            }
+          ]
+        }
+      ]
+    },
+    "repairedThreeEngines30": {
+      "stats": {
+        "startTime": "2026-10-18T02:12:06.986Z",
+        "duration": 132445.43,
+        "expected": 30,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "rawReportSha256": "56710e9165c55674bee7c249e9ed1b12ed0cd1254d480fc3aec16646bf017ff1",
+      "cases": [
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 4055
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3224
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3235
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3135
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2801
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2838
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2626
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3136
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3314
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3093
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3359
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2782
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2790
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3218
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3281
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3009
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3025
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3224
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3397
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3325
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 6092
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3396
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3304
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3645
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3617
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3300
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3276
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3203
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3667
+            }
+          ]
+        },
+        {
+          "title": "verified XP and rewards refresh on two signed-in devices without navigation or owner leakage",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3693
+            }
+          ]
+        }
+      ]
+    },
+    "unchangedCoursePreferencesThreeEngines3": {
+      "stats": {
+        "startTime": "2026-10-18T02:14:58.437Z",
+        "duration": 18459.839,
+        "expected": 3,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "rawReportSha256": "c19081e039c78cd3d18151e178f4b12bdb8620e8e73c9cfef66172e4756bb109",
+      "cases": [
+        {
+          "title": "active course and reading preference stay in sync across two signed-in devices",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 7587
+            }
+          ]
+        },
+        {
+          "title": "active course and reading preference stay in sync across two signed-in devices",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3025
+            }
+          ]
+        },
+        {
+          "title": "active course and reading preference stay in sync across two signed-in devices",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3274
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "baselineFailureLimitation": "Local failed initial main-device XP assertion reached Workspace could not load. Trace shows ERR_NETWORK_CHANGED and failed workspace-catalog dynamic import. This is a different observed failure class from CI peer hydration; underlying shared network cause is not established.",
+  "setupFailures": [
+    "First external config resolved Functions source incorrectly under /tmp; cancelled and cleaned, not PASS.",
+    "Second external config failed outside-project Rules guard; not PASS."
+  ],
+  "checks": {
+    "lintTypecheck": {
+      "status": "passed",
+      "command": "npm run lint",
+      "logSha256": "2d3d3c793d5b1c23a11ba05281c36e10f103cd5c98457b531b49fe906adfb667"
+    },
+    "emulatorBuild": {
+      "status": "passed",
+      "logSha256": "0b54476ecf000fd44c74f7c8422bf119e469211015b5a4c47a44e34b2977a462"
+    },
+    "diffCheck": "passed"
+  },
+  "releaseState": {
+    "fullRequiredCIOnRepair": "pending",
+    "merged": false,
+    "candidateDispatched": false,
+    "deployed": false,
+    "stagingPrerequisite": "Real authorized HTTPS browser/App Check/Auth acceptance remains unavailable; no fabricated receipt or bypass.",
+    "proGrant": "Existing audited grant preserved; no repeat or extension."
+  },
+  "privacy": "No raw traces, emulator identities, custom tokens or free-form personal content are published."
+}

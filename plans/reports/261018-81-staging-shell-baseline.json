@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-18T03:41:09.872418+00:00",
+  "parentRevision": "6cafa7ab3c53fe05a2873f25ab2d4358ffdf50e1",
+  "problem": "Old staging has no valid worker; the retained A shell predates18 currently deployed Functions, and a full legacy staging deploy would encounter the CLI non-interactive deletion guard.",
+  "repair": "Explicit hosting_only mode deploys the exact retained shell without runtime/index/Rules changes or a complete staging receipt. Full candidate mode remains the default and is required by production receipt provenance.",
+  "sourceSha256": {
+    ".github/workflows/deploy-staging.yml": "4718302ed3b859a4f7dec46b02cf54b6f19499934ffb270e77a44f090aa724c7",
+    "scripts/release-workflows.test.mjs": "b0e198d57f9b8597a1def30c832403a85de21fd6fd5ca0cdbb75edc3fc993bbe",
+    "docs/runbooks/phase-6-rollout.md": "fbac5ab14a2cc50e91c829cc6b860dd5abcbd3d98b2d3a2d8df042948deed639"
+  },
+  "preflight": {
+    "currentStagingRevision": "8d1ec44e3af7e08e45b90454c887055a902ef7d2",
+    "workerResponseMime": "text/html; charset=utf-8",
+    "retainedCallableEndpoints": 12,
+    "extraLiveEndpoints": 18,
+    "missingRetainedEndpoints": 0,
+    "accountBackup": {
+      "status": "read-back",
+      "documents": 25,
+      "privateMode": "0600",
+      "databaseWrites": 0,
+      "consistency": "per-document snapshots, not a managed database export"
+    },
+    "indexMetadataBackup": {
+      "status": "read-back",
+      "compositeIndexes": 162,
+      "explicitFieldsAndTtl": 15,
+      "privateMode": "0600",
+      "writes": 0
+    },
+    "retainedIndexComparison": {
+      "newCompositeIndexes": 0,
+      "extraIndexesRetainedWithoutForce": 84,
+      "fieldOverridesNeedingChange": 0
+    },
+    "protectedStagingBindingsPresent": true,
+    "emulatorEnvironmentOverridesAbsent": true,
+    "currentLiveGen2Functions": 30
+  },
+  "verification": {
+    "newRegressionBeforeRepair": "failed",
+    "finalFocusedTests": {
+      "status": "passed",
+      "files": 6,
+      "tests": 75,
+      "failed": 0,
+      "pending": 0
+    },
+    "lintTypecheck": "passed",
+    "yamlAndBashSyntax": {
+      "status": "passed",
+      "files": 3,
+      "steps": 50
+    },
+    "diffCheck": "passed",
+    "review": "main-agent two-pass scoped review, no blocking findings; no independent review claimed"
+  },
+  "limitations": [
+    "Previous gcloud schema reads used a different ambient CLI identity and were denied; no credentials changed. Authorized ADC readback was used instead.",
+    "Initial SDK metadata requests failed because this server supports pageSize0 and ListFields requires explicit override/TTL filters; final required snapshots were independently read back.",
+    "A hosting-only run is baseline execution evidence, never complete staging acceptance or promotion authorization.",
+    "No merge or staging/production deployment has occurred; exact new-head CI and real browser/candidate gates remain pending."
+  ]
+}

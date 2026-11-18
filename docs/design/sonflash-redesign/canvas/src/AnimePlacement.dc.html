@@ -1,0 +1,168 @@
+<!--#AHEAD Crystal Star placement-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#ABG-->
+  <header style="position: relative; z-index: 5; height: 84px; flex-shrink: 0; padding: 0 40px; display: flex; align-items: center; gap: 16px;">
+    <button class="nk-lift" aria-label="Close placement check" style="width: 44px; height: 44px; clip-path: {{t.chamferSm}}; border: 0; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; letter-spacing: 0.08em; color: {{t.text2}};">LEVEL CHECK <span style="color: {{t.crimsonText}};">//</span> PLACEMENT CHECK</div>
+    <div role="progressbar" aria-label="Question 3 of 8" aria-valuemin="0" aria-valuemax="8" aria-valuenow="3" style="margin: 0 auto; display: flex; align-items: center; gap: 4px;">
+      <sc-for list="{{segments}}" as="seg" hint-placeholder-count="8">
+        <span style="width: 40px; height: 10px; transform: skewX(-30deg); background: {{seg.bg}}; box-shadow: {{seg.glow}};"></span>
+      </sc-for>
+      <span style="margin-left: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; color: {{t.textStrong}};">3<span style="font-size: 15px; color: {{t.text3}};"> / 8</span></span>
+    </div>
+    <a href="#" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.06em; color: {{t.text2}}; text-decoration: none;">SKIP PLACEMENT ›</a>
+    <button class="nk-lift" onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 44px; height: 44px; clip-path: {{t.chamferSm}}; border: 0; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+      <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
+    </button>
+  </header>
+
+  <main style="position: relative; z-index: 3; flex-grow: 1; min-height: 0; display: grid; grid-template-columns: 1fr 400px; gap: 60px; padding: 8px 64px 30px 110px;">
+    <section style="display: flex; flex-direction: column; min-width: 0;">
+      <div class="nk-rise" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.16em; color: {{t.crimsonText}};">QUESTION 3 OF 8 <span style="color: {{t.text3}};">//</span> ABOUT 2 MINUTES</div>
+      <h1 class="nk-rise" style="margin: 8px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 60px; line-height: 0.98;">
+        <span style="background: {{t.titleMetal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: {{t.titleShadow}};">FIND YOUR</span>
+        <span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 22px rgb(255 42 77 / 0.8));">STARTING LEVEL.</span>
+      </h1>
+      <p class="nk-rise-2" style="margin: 10px 0 0; font-size: 16px; color: {{t.body}};">No score, no pressure. We only use this to skip words you already know.</p>
+
+      <div class="nk-rise-2" style="position: relative; margin-top: 22px; filter: drop-shadow(0 0 20px {{t.tier.new.soft}});">
+        <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{t.tier.new.rim}};"></div>
+        <div style="position: relative; margin: 3px; clip-path: {{t.chamfer}}; background: {{t.cardFront}}; padding: 18px 26px; display: flex; align-items: center; gap: 18px; overflow: hidden;">
+          <div aria-hidden="true" class="nk-beam" style="position: absolute; right: 18%; top: -60%; width: 80px; height: 220%; transform: rotate(22deg); background: linear-gradient(90deg, transparent, {{t.beam}}, transparent); filter: blur(3px);"></div>
+          <span style="position: relative; height: 30px; padding: 0 10px; clip-path: {{t.chamferSm}}; background: {{t.tier.new.rim}}; display: flex; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 17px; color: #ffffff; text-shadow: 0 2px 0 #0a4a5e;">?</span>
+          <span style="position: relative; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 56px; line-height: 1; color: {{t.textStrong}};">re<span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 14px rgb(255 42 77 / 0.6));">luc</span>tant</span>
+          <span style="position: relative; font-family: {{t.fMono}}; font-size: 16px; color: {{t.body}};">/rɪˈlʌk.tənt/</span>
+          <button class="nk-lift" onClick="{{listen}}" aria-label="Listen" style="position: relative; margin-left: auto; width: 50px; height: 50px; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <sc-if value="{{playing}}" hint-placeholder-val="{{false}}">
+              <span aria-hidden="true" style="display: flex; align-items: center; gap: 2px; height: 16px;">
+                <span class="sf-wave" style="width: 3px; height: 100%; background: currentColor;"></span>
+                <span class="sf-wave" style="width: 3px; height: 100%; background: currentColor; animation-delay: 120ms;"></span>
+                <span class="sf-wave" style="width: 3px; height: 100%; background: currentColor; animation-delay: 240ms;"></span>
+              </span>
+            </sc-if>
+            <sc-if value="{{notPlaying}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></sc-if>
+          </button>
+        </div>
+      </div>
+
+      <p style="margin: 22px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.12em; color: {{t.holoText}};">WHAT DOES IT MEAN?</p>
+      <div role="radiogroup" aria-label="Meaning of reluctant" style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <sc-for list="{{options}}" as="o" hint-placeholder-count="4">
+          <button class="nk-lift" role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="position: relative; height: 64px; border: 0; padding: 0 18px; clip-path: {{t.chamfer}}; background: {{o.bg}}; box-shadow: inset 0 0 0 {{o.edgeW}}px {{o.edge}}; color: {{o.color}}; display: flex; align-items: center; gap: 14px; text-align: left; cursor: pointer; font-family: inherit;">
+            <span style="width: 32px; height: 32px; flex-shrink: 0; clip-path: {{t.chamferSm}}; background: {{o.keyBg}}; color: {{o.keyColor}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 16px; display: flex; align-items: center; justify-content: center;">{{o.key}}</span>
+            <span style="font-weight: 900; font-size: 17px;">{{o.text}}</span>
+            <sc-if value="{{o.showMark}}" hint-placeholder-val="{{false}}"><span class="nk-pop" style="margin-left: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 14px; letter-spacing: 0.08em; color: {{o.markColor}};">{{o.mark}}</span></sc-if>
+          </button>
+        </sc-for>
+      </div>
+
+      <div style="margin-top: 22px; display: flex; align-items: center; gap: 20px;">
+        <button class="nk-lift" style="position: relative; height: 58px; padding: 0 30px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 19px; letter-spacing: 0.06em; display: flex; align-items: center; gap: 12px; cursor: pointer; filter: drop-shadow(0 0 16px rgb(255 42 77 / 0.6));">
+          <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 60px; background: rgb(255 255 255 / 0.4);"></span>
+          <span style="position: relative;">NEXT QUESTION</span>
+          <span style="position: relative; height: 22px; padding: 0 7px; background: rgb(0 0 0 / 0.22); font-family: {{t.fMono}}; font-style: normal; font-weight: 500; font-size: 11px; letter-spacing: 0; display: flex; align-items: center;">Enter</span>
+        </button>
+        <a href="#" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.04em; color: {{t.text2}}; text-decoration: none;">I'm not sure</a>
+      </div>
+    </section>
+
+    <aside aria-label="Estimated level" style="display: flex; flex-direction: column; gap: 14px; min-width: 0;">
+      <div class="nk-rise-2" style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 18px 20px 18px;">
+        <div style="display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.14em; color: {{t.crimsonText}};">YOUR LEVEL SO FAR</div>
+        <div style="margin-top: 2px; font-size: 13px; color: {{t.text2}};">Sharpens with every answer</div>
+        <ol style="list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px;">
+          <sc-for list="{{ladder}}" as="l" hint-placeholder-count="4">
+            <li style="position: relative; filter: {{l.glow}};">
+              <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; background: {{l.rim}};"></div>
+              <div style="position: relative; margin: {{l.inset}}px; clip-path: {{t.chamferSm}}; background: {{l.bg}}; height: {{l.h}}px; padding: 0 14px; display: flex; align-items: center; gap: 14px;">
+                <span style="width: 46px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; color: {{l.codeColor}};">{{l.code}}</span>
+                <span style="display: flex; flex-direction: column; min-width: 0;">
+                  <span style="font-weight: 900; font-size: 15px; color: {{l.nameColor}};">{{l.name}}</span>
+                  <span style="font-size: 12.5px; color: {{t.text3}};">{{l.note}}</span>
+                </span>
+                <span style="margin-left: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; letter-spacing: 0.08em; color: {{l.tagColor}};">{{l.tag}}</span>
+              </div>
+            </li>
+          </sc-for>
+        </ol>
+        <div style="margin-top: 14px; display: flex; align-items: center; gap: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; color: {{t.text2}};">
+          <span style="flex-grow: 1; height: 10px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><span style="display: block; width: {{confidence}}%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / 0.7); transition: width 600ms {{t.snap}};"></span></span>
+          {{confidence}}% CONFIDENT
+        </div>
+      </div>
+
+      <div style="margin-top: auto; display: flex; align-items: flex-end; gap: 10px;">
+        <div class="nk-float" style="width: 180px; height: 186px; flex-shrink: 0;">
+<!--#MASCOT $-->
+        </div>
+        <div class="nk-rise-3" style="position: relative; margin-bottom: 20px; flex-grow: 1; box-sizing: border-box; padding: 12px 14px 14px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+          <span aria-hidden="true" style="position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
+          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
+          <div style="margin-top: 3px; font-weight: 900; font-size: 15px; line-height: 1.3; color: {{t.textStrong}};">{{lumiLine}}</div>
+          <div style="margin-top: 3px; font-size: 12.5px; line-height: 1.45; color: {{t.text2}};">{{lumiSub}}</div>
+        </div>
+      </div>
+    </aside>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { picked: 0, playing: false };
+  }
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = { ...nkTokens(dark),
+      titleMetal: dark ? 'linear-gradient(180deg, #ffffff 0%, #ffe3ea 46%, #ff8fa3 54%, #ffffff 100%)' : 'linear-gradient(180deg, #13306b 0%, #1f4d9c 46%, #0d1a33 54%, #1f4d9c 100%)',
+      titleShadow: dark ? 'drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / 0.6))' : 'drop-shadow(0 3px 0 rgb(255 255 255 / 0.9))' };
+    const s = this.state;
+    const later = (ms, fn) => window.setTimeout(fn, ms);
+    const CORRECT = 0;
+    const texts = ['miễn cưỡng, không sẵn lòng', 'nhiệt tình, háo hức', 'đáng tin cậy', 'kiên nhẫn'];
+    const right = s.picked === CORRECT;
+    const options = texts.map((text, i) => {
+      const on = s.picked === i;
+      const good = on && i === CORRECT;
+      const bad = on && i !== CORRECT;
+      return {
+        key: String(i + 1), text, checked: on ? 'true' : 'false',
+        pick: () => this.setState({ picked: i }),
+        bg: good ? 'linear-gradient(90deg, rgb(94 242 255 / 0.22), ' + (dark ? 'rgb(14 17 28 / 0.9)' : 'rgb(238 249 255 / 0.9)') + ')' : bad ? 'linear-gradient(90deg, rgb(255 42 77 / 0.2), ' + (dark ? 'rgb(14 17 28 / 0.9)' : 'rgb(238 249 255 / 0.9)') + ')' : t.panel,
+        edge: good ? '#5ef2ff' : bad ? '#ff2a4d' : t.lineStrong, edgeW: on ? 2 : 1,
+        color: on ? t.textStrong : t.text,
+        keyBg: good ? 'linear-gradient(180deg, #7ff6ff, #1aa7c9)' : bad ? t.primaryBg : t.chip,
+        keyColor: good ? '#031820' : bad ? '#ffffff' : t.text2,
+        showMark: on, mark: good ? 'CORRECT' : 'NOT QUITE', markColor: good ? t.holoText : t.crimsonText,
+      };
+    });
+    const levels = [['A2', 'Elementary', 'Daily routines, short texts'], ['B1', 'Intermediate', 'Work, travel, opinions'], ['B2', 'Upper-intermediate', 'IELTS 6.0 – 6.5 range'], ['C1', 'Advanced', 'Nuance, academic writing']];
+    const current = right ? 1 : 0;
+    return {
+      t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      bg: { wings: true },
+      options,
+      confidence: right ? 52 : 34,
+      ladder: levels.map(([code, name, note], i) => {
+        if (i === current) return { code, name, note, tag: 'LIKELY', rim: t.tier.learning.rim, inset: 2, h: 60, bg: t.cardFront, glow: 'drop-shadow(0 0 16px ' + t.tier.learning.soft + ')', codeColor: t.crimsonText, nameColor: t.textStrong, tagColor: t.crimsonText };
+        const past = i < current;
+        return { code, name, note, tag: past ? 'CLEARED' : '', rim: past ? t.panelEdge2 : t.line, inset: 1, h: 52, bg: t.panelSolid, glow: 'none', codeColor: past ? t.holoText : t.text3, nameColor: past ? t.text2 : t.text3, tagColor: t.holoText };
+      }),
+      lumiSrc: t.lumi[right ? 'happy' : 'hint'],
+      lumiLine: right ? 'Chuẩn! Trình độ B1 sáng dần lên.' : 'Không sao, cứ chọn theo cảm giác.',
+      lumiSub: right ? 'Mình sẽ bỏ qua những từ bạn đã biết.' : 'Không tính điểm, không áp lực đâu.',
+      playing: s.playing, notPlaying: !s.playing,
+      listen: () => { this.setState({ playing: true }); later(1600, () => this.setState({ playing: false })); },
+      segments: Array.from({ length: 8 }, (_, i) => ({
+        bg: i < 2 ? 'linear-gradient(90deg, #5ef2ff, #9fe9ff)' : i === 2 ? '#ff2a4d' : t.track,
+        glow: i === 2 ? '0 0 14px rgb(255 42 77 / 0.9)' : i < 2 ? '0 0 8px rgb(94 242 255 / 0.5)' : 'none',
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

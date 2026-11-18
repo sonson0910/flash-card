@@ -1,0 +1,23 @@
+.app-loading {
+  display: flex;
+  width: 100%;
+  height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  background: var(--sf-canvas);
+}
+
+.app-runtime-retry {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 50;
+  min-height: 44px;
+  padding: 0 1rem;
+  border-radius: 0.75rem;
+  background: var(--sf-brand);
+  color: var(--sf-on-brand);
+}
+
+:root { --font-display: Fraunces, Georgia, serif; --sf-font-display: Fraunces, Georgia, serif; --sf-button-radius: 999px; --sf-card-radius: 20px; --sf-chamfer: none; }
+:root[data-theme-family=crystal] { --font-display: Kanit, Nunito, sans-serif; --sf-font-display: Kanit, Nunito, sans-serif; --sf-button-radius: 0; --sf-card-radius: 0; --sf-chamfer: var(--nk-chamfer); }

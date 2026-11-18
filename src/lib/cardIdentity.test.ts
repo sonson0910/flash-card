@@ -2,10 +2,15 @@ import { describe, expect, it } from 'vitest';
 import {
   createCardIdentityReservation,
   createCardIdentityReservationId,
+  createTargetAwareCardId,
+  createTargetAwareCardIdentityReservationId,
   createWordCardId,
   cardLogicalKey,
   dedupeCardsByNormalizedWord,
+  effectiveCardTargetLanguage,
+  isCardLanguageCode,
   isCardIdentityReservationForWord,
+  normalizeCardLanguage,
   normalizeCardWord,
 } from './cardIdentity';
 import { createLexemeId } from '../features/multilingual/lexemeIdentity';
@@ -107,6 +112,40 @@ describe('card identity', () => {
     const forged = { ...noun, id: 'forged', lexemeId: 'lexeme-forged' };
     expect(cardLogicalKey(noun)).toBe(`lexeme:${lexemeId}`);
     expect(cardLogicalKey(forged)).toBe('lead');
+  });
+
+  it('keeps English ids and reservations byte-compatible while scoping non-English targets', () => {
+    const legacyReservation = createCardIdentityReservation(' Chance ');
+    expect(createTargetAwareCardId('Chance', 'en')).toBe(createWordCardId('Chance'));
+    expect(createCardIdentityReservation('Chance', 'EN')).toEqual(legacyReservation);
+    expect(createCardIdentityReservationId('Chance', 'en')).toBe(createCardIdentityReservationId('Chance'));
+
+    const korean = createCardIdentityReservation('bank', 'KO');
+    const japanese = createCardIdentityReservation('bank', 'ja');
+    expect(korean.cardId).not.toBe(japanese.cardId);
+    expect(korean.targetLanguage).toBe('ko');
+    expect(createTargetAwareCardIdentityReservationId('bank', 'ko'))
+      .not.toBe(createTargetAwareCardIdentityReservationId('bank', 'ja'));
+    expect(isCardIdentityReservationForWord(korean, 'bank', 'ko')).toBe(true);
+    expect(isCardIdentityReservationForWord(korean, 'bank', 'ja')).toBe(false);
+    expect(isCardIdentityReservationForWord(korean, 'bank')).toBe(false);
+  });
+
+  it('keeps same-spelling cards separate by non-English target', () => {
+    const english = { id: 'english', word: 'bank' };
+    const korean = { id: 'korean', word: 'bank', language: 'ko' };
+    const japanese = { id: 'japanese', word: 'bank', language: 'ja' };
+
+    expect(cardLogicalKey(english)).toBe('bank');
+    expect(cardLogicalKey(korean)).toBe('target:ko:bank');
+    expect(cardLogicalKey(japanese)).toBe('target:ja:bank');
+    expect(new Set([cardLogicalKey(english), cardLogicalKey(korean), cardLogicalKey(japanese)]).size).toBe(3);
+    expect(effectiveCardTargetLanguage({ language: undefined })).toBe('en');
+    expect(effectiveCardTargetLanguage({ language: 'english' })).toBeNull();
+    expect(cardLogicalKey({ id: 'malformed', word: 'bank', language: 'english' })).toBe('');
+    expect(isCardLanguageCode('ko')).toBe(true);
+    expect(isCardLanguageCode('KO')).toBe(false);
+    expect(normalizeCardLanguage(' KO ')).toBe('ko');
   });
 
   it('uses the Functions/rules-compatible canonical lexeme vector without a module cycle', () => {

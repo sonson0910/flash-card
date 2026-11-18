@@ -1,5 +1,5 @@
 export const firestoreDailyReadLimitMessage =
-  "Firebase's daily read limit has been reached. Changes stay safe on this device until the quota resets.";
+  "Firebase's daily read limit has been reached. Please try again after it resets.";
 
 const errorField = (error: unknown, field: 'code' | 'message'): string => {
   if (!error || typeof error !== 'object' || !(field in error)) return '';

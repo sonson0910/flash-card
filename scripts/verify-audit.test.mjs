@@ -44,6 +44,29 @@ const highVulnerabilityReport = JSON.stringify({
   },
 });
 
+const picomatchAdvisoryReport = nodes => JSON.stringify({
+  auditReportVersion: 2,
+  vulnerabilities: {
+    picomatch: {
+      name: 'picomatch',
+      severity: 'high',
+      nodes,
+      via: [{
+        source: 1,
+        name: 'picomatch',
+        title: 'picomatch vulnerable to ReDoS through single-branch repeated extglobs',
+        url: 'https://github.com/advisories/GHSA-fc5q-39xc-vjpf',
+        severity: 'high',
+        range: '<=4.0.7',
+      }],
+    },
+    vitest: { name: 'vitest', severity: 'high', nodes: ['node_modules/vitest'], via: ['picomatch'] },
+  },
+  metadata: {
+    vulnerabilities: { info: 0, low: 0, moderate: 0, high: 2, critical: 0, total: 2 },
+  },
+});
+
 function runAuditScenario(
   scenario,
   timeoutMs = 5_000,
@@ -70,6 +93,12 @@ if (scenario === 'timeout') {
   process.exitCode = 1;
 } else if (scenario === 'vulnerability') {
   console.log(${JSON.stringify(highVulnerabilityReport)});
+  process.exitCode = 1;
+} else if (scenario === 'accepted-dev-advisory') {
+  console.log(${JSON.stringify(picomatchAdvisoryReport(['node_modules/picomatch']))});
+  process.exitCode = 1;
+} else if (scenario === 'accepted-advisory-in-runtime') {
+  console.log(${JSON.stringify(picomatchAdvisoryReport(['node_modules/picomatch', 'node_modules/firebase']))});
   process.exitCode = 1;
 } else {
   console.log(${JSON.stringify(successReport)});
@@ -163,6 +192,16 @@ describe('dependency audit preflight', () => {
     assert.equal(calls.length, 1);
   });
 
+  it('accepts an unpatched advisory only while every affected install is dev-only', () => {
+    const accepted = runAuditScenario('accepted-dev-advisory', 5_000, 5_000, 'root');
+    assert.equal(accepted.result.status, 0, accepted.result.stderr);
+    assert.match(accepted.result.stderr, /accepted dev-only advisories without a patched release: picomatch GHSA-fc5q-39xc-vjpf/);
+
+    const runtime = runAuditScenario('accepted-advisory-in-runtime', 5_000, 5_000, 'root');
+    assert.notEqual(runtime.result.status, 0);
+    assert.match(runtime.result.stderr, /blocking advisories: picomatch GHSA-fc5q-39xc-vjpf/);
+  });
+
   it('enforces one timeout budget for the whole preflight', () => {
     const { calls, elapsedMs, result } = runAuditScenario('timeout', 750);
 
@@ -193,7 +232,7 @@ describe('dependency audit preflight', () => {
       'npm ci --prefix functions --no-audit --no-fund',
     );
     const browserInstallIndex = qualityWorkflow.indexOf(
-      'npx playwright install --with-deps chromium firefox webkit',
+      'npx playwright install --with-deps chromium webkit',
     );
     const fullCiIndex = qualityWorkflow.indexOf('npm run verify:ci');
     const rootAuditJobIndex = qualityWorkflow.indexOf('  audit_root:');

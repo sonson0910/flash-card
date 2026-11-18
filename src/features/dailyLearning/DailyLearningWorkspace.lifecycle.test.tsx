@@ -1,3 +1,7 @@
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
+i18n.load('en', {}); i18n.activate('en');
+import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
@@ -158,22 +162,23 @@ describe('DailyLearningWorkspace audio lifecycle', () => {
     const container = installMinimalReactDom();
     const root = createRoot(container as unknown as Element);
     const audio = { pause: vi.fn(), play: vi.fn(() => Promise.resolve()) };
-    vi.stubGlobal('Audio', vi.fn(() => audio));
+    vi.stubGlobal('Audio', vi.fn(function () { return audio; }));
 
     try {
       await act(async () => {
-        root.render(createElement(DailyLearningWorkspace, {
+        root.render(createElement(I18nProvider, { i18n }, createElement(DailyLearningWorkspace, {
+        languageProfile: ENGLISH_TO_VIETNAMESE_PROFILE, streak: 0, studyXpHistory: [], openWeeklyRecap: () => undefined, onVerifiedPracticeOutcome: () => undefined,
           ownerId: null,
           isOffline: false,
           initialLesson: 'listening',
           loadPracticePool: vi.fn(async () => [card('first', 'first word'), card('second', 'second word')]),
-          reviewCard: vi.fn(async () => ({ status: 'published' as const, result: {} as never })),
+          reviewCard: vi.fn(async () => ({ status: 'published' as const, result: { applied: true, duplicate: false, xpAwarded: 2, card: {} } as never })),
           openLesson: vi.fn(),
           openVocabulary: vi.fn(),
           openPaths: vi.fn(),
           continueReview: vi.fn(),
           openMorePractice: vi.fn(),
-        }));
+        })));
         await flushReact();
       });
       expect(textContent(container)).toContain('first word');

@@ -1,26 +1,44 @@
 import { Volume2 } from 'lucide-react';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react';
+
+
+
+import { voiceForActiveCourseCard } from '../../lib/courseVoicePreference';
+import { speechLocaleFor } from '../../lib/speechLocale';
+import { resolveLanguagePackId } from '../../features/languagePacks/registry';
+import { useCourseSession } from '../../features/courses/CourseGate';
+import type { CardData } from '../../types/card';
 import React, { useEffect, useMemo, useRef } from 'react';
 import { parseSyllables, type SyllablePart } from '../../lib/syllableParser';
 import { triggerHaptic } from '../../lib/haptics';
 import { playWordAudio, type WordAudioPlayback } from '../../lib/audio';
 
 interface SyllableStressBadgeProps {
-  word: string;
-  phonetic?: string;
+  card: CardData;
   className?: string;
+  onDarkSurface?: boolean;
 }
 
 export const SyllableStressBadge = React.memo(function SyllableStressBadge({
-  word,
-  phonetic,
+  card,
   className = '',
+  onDarkSurface = false,
 }: SyllableStressBadgeProps) {
+  const { _, i18n } = useLingui();
+  const { model: courseModel } = useCourseSession();
+  const { word, phonetic } = card;
+  const targetLanguage = card.language || 'en';
+  // English-only: the vowel-cluster heuristic and IPA stress markers below
+  // only model English syllabification. Non-English packs get a reading
+  // toggle (romanization/furigana/pinyin) instead, rendered by CardHeadword.
+  const isEnglishPack = resolveLanguagePackId(card.language) === 'en';
   const analysis = useMemo(() => parseSyllables(word, phonetic), [word, phonetic]);
   const playbackRef = useRef<WordAudioPlayback | null>(null);
 
   useEffect(() => () => playbackRef.current?.cancel(), [word]);
 
-  if (!analysis.hasMultipleSyllables || analysis.syllables.length <= 1) {
+  if (!isEnglishPack || !analysis.hasMultipleSyllables || analysis.syllables.length <= 1) {
     return null;
   }
 
@@ -29,17 +47,20 @@ export const SyllableStressBadge = React.memo(function SyllableStressBadge({
     triggerHaptic('light');
 
     playbackRef.current?.cancel();
-    playbackRef.current = playWordAudio(syllable.text, null, { speed: 0.75 });
+    playbackRef.current = playWordAudio(syllable.text, null, {
+      speed: 0.75, speechLocale: speechLocaleFor(card),
+      voice: voiceForActiveCourseCard(card, courseModel.activeCourse),
+    });
   };
 
   return (
     <div
       className={`mt-2 flex flex-wrap items-center gap-1.5 ${className}`}
-      aria-label={`Syllable breakdown for ${word}`}
-      title="Syllables & Stress. Tap a syllable to hear its pronunciation."
+      aria-label={i18n._(msg({ id: 'flashcard.syllables.breakdown', message: 'Syllable breakdown for {word}' }).id, { word })}
+      title={_(msg({ id: 'flashcard.syllables.help', message: 'Syllables & Stress. Tap a syllable to hear its pronunciation.' }))}
     >
-      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400 mr-0.5">
-        Syllables:
+      <span className={`text-[10px] font-black uppercase tracking-[0.14em] mr-0.5 ${onDarkSurface ? 'text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}>
+        <Trans {...msg({ context: 'flashcard.syllables', message: 'Syllables:' })} />
       </span>
       <div className="flex flex-wrap items-center gap-1.5">
         {analysis.syllables.map((syl, idx) => {
@@ -51,12 +72,12 @@ export const SyllableStressBadge = React.memo(function SyllableStressBadge({
               data-card-control
               onPointerDown={e => e.stopPropagation()}
               onClick={e => speakSyllable(e, syl)}
-              className={`group relative flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-100/70 px-2.5 py-0.5 text-xs transition-all duration-200 cursor-pointer dark:border-white/10 dark:bg-white/5 hover:border-cyan-400/40 hover:bg-white/10 active:scale-95 ${
+              className={`group relative flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs transition-all duration-200 cursor-pointer hover:border-cyan-400/40 active:scale-95 ${onDarkSurface ? 'border-white/20 bg-white/10 hover:bg-white/15' : 'border-slate-200/80 bg-slate-100/70 dark:border-white/10 dark:bg-white/5 hover:bg-white/10'} ${
                 isStressed
-                  ? 'text-cyan-600 dark:text-cyan-300 font-extrabold'
-                  : 'text-slate-600 dark:text-slate-400 font-medium'
+                  ? onDarkSurface ? 'text-cyan-200 font-extrabold' : 'text-cyan-600 dark:text-cyan-300 font-extrabold'
+                  : onDarkSurface ? 'text-slate-100 font-medium' : 'text-slate-600 dark:text-slate-400 font-medium'
               }`}
-              title={isStressed ? `Primary stress: ${syl.text}` : `Syllable: ${syl.text}`}
+              title={isStressed ? i18n._(msg({ id: 'flashcard.syllables.primary-stress', message: 'Primary stress: {syllable}' }).id, { syllable: syl.text }) : i18n._(msg({ id: 'flashcard.syllables.item', message: 'Syllable: {syllable}' }).id, { syllable: syl.text })}
             >
               <span className="inline-flex items-center">
                 {isStressed && (
@@ -65,7 +86,7 @@ export const SyllableStressBadge = React.memo(function SyllableStressBadge({
                     aria-hidden="true"
                   />
                 )}
-                <span className={isStressed ? 'drop-shadow-[0_0_8px_rgba(6,182,212,0.85)]' : undefined}>{syl.text}</span>
+                <span lang={targetLanguage} className={isStressed ? 'drop-shadow-[0_0_8px_rgba(6,182,212,0.85)]' : undefined}>{syl.text}</span>
               </span>
               <Volume2
                 size={10}

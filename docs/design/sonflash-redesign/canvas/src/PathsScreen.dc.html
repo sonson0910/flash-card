@@ -1,0 +1,126 @@
+<!--#HEAD Paths-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}};">
+<!--#AMBIENT-->
+<!--#NAV-->
+  <main style="position: relative; z-index: 2; padding: 34px 56px 0;">
+    <h1 style="margin: 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">Paths</h1>
+    <p style="margin: 10px 0 0; font-size: 14px; color: {{t.text2}};">Guided word sets, ordered so each word builds on the one before.</p>
+
+    <div style="margin-top: 28px; display: grid; grid-template-columns: 640px minmax(0, 1fr); gap: 28px;">
+      <section aria-label="Current path" style="position: relative; height: 610px; box-sizing: border-box; border-radius: {{t.radius}}px; overflow: hidden; border: {{hero.border}}; background: {{hero.bg}}; box-shadow: {{hero.shadow}}; color: {{hero.text}}; display: flex; flex-direction: column; padding: 32px 34px;">
+        <svg aria-hidden="true" width="100%" height="100%" style="position: absolute; inset: 0; pointer-events: none; opacity: {{hero.grain}}; mix-blend-mode: overlay;"><filter id="{{heroGrainId}}"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"></feTurbulence></filter><rect width="100%" height="100%" filter="url(#{{heroGrainId}})"></rect></svg>
+        <div style="position: relative; display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{hero.muted}};">
+          <span style="width: 7px; height: 7px; border-radius: 50%; background: {{hero.dot}}; box-shadow: {{hero.dotGlow}};"></span>Continue · Unit 4 of 12
+        </div>
+        <h2 style="position: relative; margin: 18px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 68px; line-height: 0.98; letter-spacing: -0.03em; color: {{hero.title}}; text-shadow: {{hero.titleShadow}};">IELTS <span style="font-style: italic;">core</span></h2>
+        <p style="position: relative; margin: 14px 0 0; max-width: 440px; font-size: 16px; line-height: 1.55; color: {{hero.body}};">The 120 words that show up most across IELTS reading and listening. This unit: <span style="color: {{hero.title}}; font-weight: 600;">Time &amp; change.</span></p>
+
+        <div style="position: relative; margin-top: 26px; display: flex; flex-wrap: wrap; gap: 8px;">
+          <sc-for list="{{unitWords}}" as="w" hint-placeholder-count="8">
+            <span style="height: 34px; padding: 0 13px; border-radius: 999px; border: 1px solid {{w.border}}; background: {{w.bg}}; color: {{w.color}}; font-family: Fraunces, Georgia, serif; font-size: 16px; display: flex; align-items: center; gap: 7px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{w.dot}};"></span>{{w.word}}</span>
+          </sc-for>
+        </div>
+
+        <div style="position: relative; margin-top: auto;">
+          <div aria-label="Units" style="display: flex; align-items: center; gap: 6px;">
+            <sc-for list="{{units}}" as="u" hint-placeholder-count="12">
+              <span style="flex: 1; height: 6px; border-radius: 6px; background: {{u.bg}}; box-shadow: {{u.glow}};"></span>
+            </sc-for>
+          </div>
+          <div style="margin-top: 12px; display: flex; justify-content: space-between; font-size: 13px; color: {{hero.muted}};"><span><span style="font-family: 'Geist Mono', ui-monospace, monospace; color: {{hero.title}};">34</span> of 120 words</span><span>About 9 days left at your pace</span></div>
+          <div style="margin-top: 22px; display: flex; gap: 10px;">
+            <button class="sf-press" style="height: 54px; padding: 0 24px; border-radius: {{t.btnRadius}}; border: 0; background: {{hero.ctaBg}}; color: {{hero.ctaText}}; box-shadow: {{hero.ctaShadow}}; font-size: 15px; font-weight: 650; cursor: pointer;">Continue unit 4</button>
+            <button class="sf-press" style="height: 54px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 1px solid {{hero.ghostLine}}; background: transparent; color: {{hero.title}}; font-size: 15px; font-weight: 600; cursor: pointer;">See all units</button>
+          </div>
+        </div>
+      </section>
+
+      <section aria-label="More paths">
+        <div style="display: flex; align-items: baseline; justify-content: space-between;">
+          <h2 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 26px; color: {{t.textStrong}};">Your shelf</h2>
+          <a href="#" style="font-size: 13px; font-weight: 600; color: {{t.accentText}}; text-decoration: none;">Browse catalog →</a>
+        </div>
+        <div style="margin-top: 18px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px;">
+          <sc-for list="{{books}}" as="b" hint-placeholder-count="6">
+            <a href="#" class="sf-lift" style="position: relative; height: 272px; box-sizing: border-box; border-radius: {{b.radius}}; overflow: hidden; text-decoration: none; border: {{b.border}}; background: {{b.bg}}; box-shadow: {{b.shadow}}; color: {{b.text}}; display: flex; flex-direction: column; padding: 20px 18px 16px 26px;">
+              <span aria-hidden="true" style="position: absolute; left: 0; top: 0; bottom: 0; width: 10px; background: {{b.spine}};"></span>
+              <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{b.muted}};">{{b.kind}}</span>
+              <span style="margin-top: 10px; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-size: 30px; font-weight: {{t.displayWeight}}; line-height: 1.02; letter-spacing: -0.02em; color: {{b.title}};">{{b.name}}</span>
+              <span style="margin-top: 8px; font-size: 13px; line-height: 1.45; color: {{b.muted}};">{{b.blurb}}</span>
+              <span style="margin-top: auto; display: flex; align-items: center; gap: 10px;">
+                <span style="flex-grow: 1; height: 4px; border-radius: 4px; background: {{b.track}}; overflow: hidden;"><span style="display: block; width: {{b.pct}}%; height: 100%; background: {{b.fill}};"></span></span>
+                <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11.5px; color: {{b.muted}};">{{b.count}}</span>
+              </span>
+            </a>
+          </sc-for>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    const hero = dark ? {
+      border: '1.5px solid transparent',
+      bg: 'radial-gradient(ellipse 70% 60% at 85% 10%, rgb(150 108 215 / 0.55), transparent 70%) padding-box, radial-gradient(ellipse 80% 60% at 10% 100%, rgb(40 211 244 / 0.35), transparent 70%) padding-box, linear-gradient(160deg, #0f2733, #081820) padding-box, ' + t.rimLearning + ' border-box',
+      shadow: '0 40px 90px -40px rgb(0 0 0 / 0.9), 0 0 60px -20px rgb(40 211 244 / 0.4)',
+      text: '#e5ecf1', title: '#f5fbfd', titleShadow: '0 0 40px rgb(126 230 250 / 0.35)', body: '#c3ced5', muted: '#99a7b0',
+      dot: '#28d3f4', dotGlow: '0 0 10px #28d3f4', grain: 0.12,
+      ctaBg: '#28d3f4', ctaText: '#04141c', ctaShadow: '0 16px 40px -14px rgb(40 211 244 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.5)', ghostLine: 'rgb(255 255 255 / 0.18)',
+      unitDone: '#28d3f4', unitNow: 'rgb(40 211 244 / 0.45)', unitTodo: 'rgb(255 255 255 / 0.12)',
+      chipBg: 'rgb(255 255 255 / 0.06)', chipLine: 'rgb(255 255 255 / 0.12)', chipText: '#e5ecf1', chipDone: '#28d3f4', chipTodo: 'rgb(255 255 255 / 0.25)',
+    } : {
+      border: '0',
+      bg: 'radial-gradient(ellipse 80% 70% at 80% 0%, rgb(255 255 255 / 0.1), transparent 60%), #2f5a3a',
+      shadow: 'inset 0 0 0 1px rgb(0 0 0 / 0.15), inset 0 1px 0 rgb(255 255 255 / 0.15), 0 2px 4px rgb(60 40 20 / 0.2), 0 40px 60px -30px rgb(40 50 30 / 0.55)',
+      text: '#efe8da', title: '#f4e2b0', titleShadow: '0 1px 0 rgb(0 0 0 / 0.25)', body: '#dfe6d6', muted: '#b9c7b3',
+      dot: '#f4e2b0', dotGlow: 'none', grain: 0.35,
+      ctaBg: '#f4e2b0', ctaText: '#1f3524', ctaShadow: '0 12px 24px -12px rgb(0 0 0 / 0.5)', ghostLine: 'rgb(244 226 176 / 0.4)',
+      unitDone: '#f4e2b0', unitNow: 'rgb(244 226 176 / 0.5)', unitTodo: 'rgb(255 255 255 / 0.14)',
+      chipBg: 'rgb(255 255 255 / 0.07)', chipLine: 'rgb(244 226 176 / 0.25)', chipText: '#efe8da', chipDone: '#f4e2b0', chipTodo: 'rgb(255 255 255 / 0.25)',
+    };
+    const words = [['immediate', 1], ['instant', 1], ['permanent', 1], ['temporary', 1], ['frequent', 0], ['gradual', 0], ['sudden', 0], ['eventual', 0]];
+    const bookDefs = [
+      { kind: 'Specialist', name: 'TACN', blurb: 'Technical English for engineering and IT.', count: '112 / 170', pct: 66, hue: 'terracotta' },
+      { kind: 'Topic', name: 'Deep learning', blurb: 'Words from ML papers and courses.', count: '41 / 96', pct: 43, hue: 'ink' },
+      { kind: 'Everyday', name: 'Daily English', blurb: 'The words you hear every single day.', count: '188 / 240', pct: 78, hue: 'ochre' },
+      { kind: 'Career', name: 'Business & law', blurb: 'Contracts, meetings, negotiation.', count: '0 / 180', pct: 0, hue: 'moss' },
+      { kind: 'Exam', name: 'TOEIC 600', blurb: 'High-frequency workplace vocabulary.', count: '0 / 300', pct: 0, hue: 'violet' },
+      { kind: 'Topic', name: 'Travel', blurb: 'Airports, hotels, asking the way.', count: '26 / 90', pct: 29, hue: 'teal' },
+    ];
+    const lightCloth = { terracotta: '#9c3d17', ink: '#23201b', ochre: '#a4731f', moss: '#2f5a3a', violet: '#4a3d5e', teal: '#1f5157' };
+    const darkHue = { terracotta: 'rgb(237 83 80 / 0.4)', ink: 'rgb(40 211 244 / 0.35)', ochre: 'rgb(245 174 57 / 0.4)', moss: 'rgb(117 208 121 / 0.3)', violet: 'rgb(150 108 215 / 0.5)', teal: 'rgb(40 211 244 / 0.45)' };
+    return {
+      t, hero, grainId: 'paths-grain-' + (dark ? 'd' : 'l'), heroGrainId: 'paths-hero-' + (dark ? 'd' : 'l'),
+      amb: { ax: 300, ay: -200, bx: 1000, by: 420 },
+      streak: 12,
+      nav: sfNav(t, 1),
+      toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      unitWords: words.map(([word, done]) => ({ word, border: hero.chipLine, bg: hero.chipBg, color: hero.chipText, dot: done ? hero.chipDone : hero.chipTodo })),
+      units: Array.from({ length: 12 }, (_, i) => ({
+        bg: i < 3 ? hero.unitDone : i === 3 ? hero.unitNow : hero.unitTodo,
+        glow: dark && i < 3 ? '0 0 8px rgb(40 211 244 / 0.5)' : 'none',
+      })),
+      books: bookDefs.map(b => dark ? {
+        ...b, radius: '18px', border: '1px solid rgb(255 255 255 / 0.08)',
+        bg: 'radial-gradient(ellipse 90% 70% at 100% 0%, ' + darkHue[b.hue] + ', transparent 70%), linear-gradient(180deg, #0f2430, #0a1a22)',
+        shadow: '0 24px 50px -28px rgb(0 0 0 / 0.9)', spine: darkHue[b.hue], text: '#e5ecf1', title: '#f1f6f9', muted: '#99a7b0',
+        track: 'rgb(255 255 255 / 0.1)', fill: '#28d3f4',
+      } : {
+        ...b, radius: '6px 16px 16px 6px', border: '0',
+        bg: 'radial-gradient(ellipse 80% 60% at 90% 0%, rgb(255 255 255 / 0.12), transparent 60%), ' + lightCloth[b.hue],
+        shadow: 'inset 0 0 0 1px rgb(0 0 0 / 0.15), inset 0 1px 0 rgb(255 255 255 / 0.15), 0 2px 3px rgb(60 40 20 / 0.2), 0 24px 34px -22px rgb(60 40 20 / 0.6)',
+        spine: 'linear-gradient(90deg, rgb(0 0 0 / 0.25), rgb(255 255 255 / 0.08), rgb(0 0 0 / 0.15))', text: '#efe8da', title: '#f4e2b0', muted: 'rgb(239 232 218 / 0.75)',
+        track: 'rgb(255 255 255 / 0.18)', fill: '#f4e2b0',
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

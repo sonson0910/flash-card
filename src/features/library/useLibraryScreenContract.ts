@@ -1,5 +1,7 @@
 import { useRef, type RefObject } from 'react';
+import { useLingui } from '@lingui/react';
 import type { CardData } from '../../types/card';
+import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
 import type {
   LibraryCatalogActions,
   LibraryCatalogModel,
@@ -16,10 +18,12 @@ import type {
 } from '../librarySession/useLibrarySession';
 import type { PracticeStudyStartOptions } from '../practice/usePracticeSession';
 import { existingCardRevealState } from './libraryPresentation';
+import type { CoverPreset } from './customDecks';
 import {
   buildLibraryViewModel,
   type LibraryStatsViewModel,
 } from './libraryViewModel';
+import type { ReviewActivity } from '../gamification/verifiedGamificationClient';
 import type { LibraryScreenActions, LibraryScreenModel } from './LibraryScreen';
 import {
   resolveAiGenerationAccess,
@@ -30,7 +34,11 @@ export interface LibraryScreenWorkspaceInput {
   catalog: { model: LibraryCatalogModel; actions: LibraryCatalogActions };
   session: { model: LibrarySessionModel; actions: LibrarySessionActions };
   intake: { model: IntakeSharingSessionModel; actions: IntakeSharingSessionActions };
-  learning: { actions: LearningWorkspaceActions };
+  learning: {
+    actions: Pick<LearningWorkspaceActions, 'toggleBookmark' | 'assignDeck' | 'updateCard' | 'bulkPatchCards'> & {
+      deleteCard(cardId: string): Promise<boolean | void>;
+    };
+  };
 }
 
 export interface LibraryScreenLibraryInput {
@@ -38,6 +46,7 @@ export interface LibraryScreenLibraryInput {
   knownTotal: number;
   usesCloudPagination: boolean;
   customDecks: string[];
+  customDeckCoverPresets?: Record<string, CoverPreset>;
   pageSize: number;
 }
 
@@ -46,6 +55,9 @@ export interface LibraryScreenGamificationInput {
   level: number;
   xp: number;
   xpHistory: Record<string, number>;
+  reviewActivityByLanguage?: Readonly<Record<string, ReviewActivity>>;
+  targetLanguage?: string;
+  rewardTimeZone?: string;
 }
 
 export interface LibraryScreenUiInput {
@@ -54,13 +66,15 @@ export interface LibraryScreenUiInput {
   aiGenerationRuntime?: AiGenerationRuntime;
   libraryHeadingRef?: RefObject<HTMLHeadingElement | null>;
   fileInputRef?: RefObject<HTMLInputElement | null>;
+  languageProfile?: LanguageProfile;
 }
 
 export interface LibraryScreenCommandInput {
   startStudy(request?: PracticeStudyStartOptions): Promise<void>;
   openCardCreator(): void;
+  openPaths(): void;
   changeNewDeckInput(value: string): void;
-  createCustomDeck(name: string): Promise<void>;
+  createCustomDeck(name: string, preset?: CoverPreset): Promise<void>;
   deleteCustomDeck(name: string): Promise<void>;
 }
 
@@ -127,6 +141,8 @@ export function buildLibraryScreenContract({
     hasNextCloudPage: cloud.hasNext,
     knownLibraryTotal: library.knownTotal,
     xpHistory: gamification.xpHistory,
+    reviewActivity: gamification.targetLanguage ? gamification.reviewActivityByLanguage?.[gamification.targetLanguage] : undefined,
+    rewardTimeZone: gamification.rewardTimeZone,
   });
   const libraryCount = view.counts.total;
   const visibleLibraryCount = view.counts.visible;
@@ -162,6 +178,7 @@ export function buildLibraryScreenContract({
       importProgress: intake.model.importProgress,
       groupedCards: view.groupedCards,
       customDecks: library.customDecks,
+      customDeckCoverPresets: library.customDeckCoverPresets,
       totalPages: view.counts.totalPages,
       hasNextCloudPage: cloud.hasNext,
       libraryCount,
@@ -187,6 +204,7 @@ export function buildLibraryScreenContract({
       activeDate: query.date,
       availableDates: view.availableDates,
       customDecks: library.customDecks,
+      customDeckCoverPresets: library.customDeckCoverPresets,
       newDeckInput: ui.newDeckInput,
       activeCustomDeck: query.deck,
       cards: library.cards,
@@ -194,6 +212,8 @@ export function buildLibraryScreenContract({
       sortedCategories: view.sortedCategories,
       categoryCounts: view.categoryCounts,
       activeCategory: query.category,
+      languageProfile: ui.languageProfile ?? ENGLISH_TO_VIETNAMESE_PROFILE,
+      ownerId,
     },
   };
 
@@ -209,25 +229,22 @@ export function buildLibraryScreenContract({
       deleteCard: learning.actions.deleteCard,
       toggleBookmark: learning.actions.toggleBookmark,
       assignDeck: learning.actions.assignDeck,
+      bulkPatchCards: learning.actions.bulkPatchCards,
       updateCard: learning.actions.updateCard,
       changePage: catalog.actions.goToPage,
       clearFilters: () => catalog.actions.replaceQuery(existingCardRevealState()),
     },
     tools: {
+      openPaths: commands.openPaths,
       importCards: event => { void intake.actions.importFile(event.target.files?.[0] ?? null); },
       importFile: file => { void intake.actions.importFile(file); },
       generateCard: async (event, options?: CardGenerationOptions) => {
         event.preventDefault();
+        commands.openCardCreator();
         const requestedDeck = options?.requestedDeck
           ?? (query.deck.kind === 'deck' ? query.deck.name : undefined);
-        await intake.actions.generate(requestedDeck
-          ? {
-            ...options,
-            requestedDeck,
-            requestedDeckAvailable: options?.requestedDeckAvailable
-              ?? ((deck: string) => library.customDecks.includes(deck)),
-          }
-          : options);
+        if (requestedDeck) intake.actions.cardCreator.updateDraft({ deck: requestedDeck });
+        await intake.actions.cardCreator.generatePreview();
       },
       changeWordInput: intake.actions.changeDraft,
       changeSearch: catalog.actions.changeSearch,
@@ -273,12 +290,14 @@ export function buildLibraryScreenContract({
 
 export function createLibraryScreenContractBuilder() {
   let previousInput: LibraryScreenContractInput | null = null;
+  let previousLocale: string | null = null;
   let previousContract: LibraryScreenContract | null = null;
   return {
-    build(input: LibraryScreenContractInput): LibraryScreenContract {
+    build(input: LibraryScreenContractInput, locale = 'en'): LibraryScreenContract {
       if (
         previousInput
         && previousContract
+        && previousLocale === locale
         && previousInput.workspace === input.workspace
         && previousInput.library === input.library
         && previousInput.gamification === input.gamification
@@ -288,6 +307,7 @@ export function createLibraryScreenContractBuilder() {
         return previousContract;
       }
       previousInput = input;
+      previousLocale = locale;
       previousContract = buildLibraryScreenContract(input);
       return previousContract;
     },
@@ -297,7 +317,8 @@ export function createLibraryScreenContractBuilder() {
 export function useLibraryScreenContract(
   input: LibraryScreenContractInput,
 ): LibraryScreenContract {
+  const { i18n } = useLingui();
   const builderRef = useRef<ReturnType<typeof createLibraryScreenContractBuilder> | null>(null);
   if (builderRef.current === null) builderRef.current = createLibraryScreenContractBuilder();
-  return builderRef.current.build(input);
+  return builderRef.current.build(input, i18n.locale);
 }

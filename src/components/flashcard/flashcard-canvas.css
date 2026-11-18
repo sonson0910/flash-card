@@ -1,0 +1,167 @@
+/* Card-only finish for the Aurora/Atelier and Crystal Star references. */
+
+.flashcard-hover-wings {
+  --flashcard-wing-opacity: 0;
+  opacity: var(--flashcard-wing-opacity);
+  transform: translateZ(0);
+  transition:
+    opacity 320ms var(--ease-out-expo),
+    transform 420ms var(--ease-out-expo);
+}
+
+.flashcard-wing {
+  position: absolute;
+  top: 5%;
+  bottom: 5%;
+  width: 58%;
+  border: 1px solid color-mix(in srgb, var(--flashcard-wing-color, var(--sf-second)) 70%, transparent);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--flashcard-wing-color, var(--sf-second)) 50%, transparent), transparent 58%);
+  box-shadow: 0 0 34px -12px var(--flashcard-wing-color, var(--sf-second));
+  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--flashcard-wing-color, var(--sf-second)) 45%, transparent));
+  opacity: 0.9;
+  transition:
+    opacity 320ms var(--ease-out-expo),
+    transform 420ms var(--ease-out-expo);
+}
+
+.flashcard-wing-left {
+  left: -17%;
+  transform: rotate(-16deg) scale(0.56);
+  transform-origin: right center;
+  clip-path: polygon(100% 0, 38% 8%, 0 50%, 38% 92%, 100% 100%);
+}
+
+.flashcard-wing-right {
+  right: -17%;
+  transform: rotate(16deg) scale(0.56);
+  transform-origin: left center;
+  clip-path: polygon(0 0, 62% 8%, 100% 50%, 62% 92%, 0 100%);
+}
+
+.flashcard-shell[data-card-tier="new"] {
+  --flashcard-wing-color: var(--sf-second);
+}
+
+.flashcard-shell[data-card-tier="learning"] {
+  --flashcard-wing-color: var(--sf-brand);
+}
+
+.flashcard-shell[data-card-tier="mastered"] {
+  --flashcard-wing-color: var(--sf-reward);
+}
+
+/* Crystal Star uses the two crystal wings shown by AnimeReview/AnimeReveal. */
+:root[data-theme-family="crystal"] .flashcard-hover-wings {
+  --flashcard-wing-opacity: 0;
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell:hover .flashcard-hover-wings,
+:root[data-theme-family="crystal"] .flashcard-shell:focus-within .flashcard-hover-wings,
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-hovered="true"] .flashcard-hover-wings {
+  --flashcard-wing-opacity: var(--nk-wing-opacity, 0.5);
+  transform: scale(1.04);
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell:hover .flashcard-wing-left,
+:root[data-theme-family="crystal"] .flashcard-shell:focus-within .flashcard-wing-left,
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-hovered="true"] .flashcard-wing-left {
+  transform: rotate(0deg) scale(1);
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell:hover .flashcard-wing-right,
+:root[data-theme-family="crystal"] .flashcard-shell:focus-within .flashcard-wing-right,
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-hovered="true"] .flashcard-wing-right {
+  transform: rotate(0deg) scale(1);
+}
+
+:root[data-theme-family="crystal"] .flashcard-wing {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--flashcard-wing-color) 58%, transparent), color-mix(in srgb, var(--sf-second) 18%, transparent) 48%, transparent 78%);
+}
+
+:root[data-theme-family="crystal"].dark .flashcard-wing {
+  border-color: color-mix(in srgb, var(--flashcard-wing-color) 78%, white 12%);
+  filter: drop-shadow(0 0 20px color-mix(in srgb, var(--flashcard-wing-color) 62%, transparent));
+}
+
+:root[data-theme-family="crystal"]:not(.dark) .flashcard-wing {
+  border-color: color-mix(in srgb, var(--flashcard-wing-color) 58%, #0d1a33 18%);
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--flashcard-wing-color) 34%, transparent));
+}
+
+/* The Zen slab is still a tiered card even though its surface is glass. */
+.flashcard-shell[data-card-tier] .zen-glass-slab {
+  border-color: color-mix(in srgb, var(--flashcard-wing-color, var(--sf-brand)) 60%, transparent);
+  box-shadow: var(--flashcard-tier-shadow, 0 26px 56px -30px var(--sf-shadow)), var(--sf-panel-shadow);
+}
+
+.flashcard-canvas-specular {
+  position: absolute;
+  inset: 0;
+  z-index: 21;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(150deg, rgb(255 255 255 / 0.12), transparent 30%);
+  opacity: 0.62;
+  transition: opacity 240ms ease, background-position 240ms ease;
+}
+
+.flashcard-tier-rim {
+  display: none;
+}
+
+:root[data-theme-family="crystal"] .flashcard-tier-rim {
+  position: absolute;
+  inset: 0;
+  z-index: 24;
+  display: block;
+  pointer-events: none;
+  border: 2px solid transparent;
+  border-radius: inherit;
+  background: var(--flashcard-tier-rim) border-box;
+  -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0.82;
+}
+
+.flashcard-shell:hover .flashcard-canvas-specular,
+.flashcard-shell[data-card-hovered="true"] .flashcard-canvas-specular {
+  opacity: 0.92;
+}
+
+:root[data-theme-family="crystal"] .flashcard-canvas-specular {
+  background: linear-gradient(150deg, rgb(255 255 255 / 0.2), transparent 28%);
+  mix-blend-mode: screen;
+}
+
+.flashcard-shell [data-audio-waves="active"] {
+  contain: layout paint;
+}
+
+.flashcard-shell [data-card-effect="blind-image"] {
+  transition: filter 500ms ease, transform 400ms var(--ease-out-expo);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flashcard-hover-wings,
+  .flashcard-wing,
+  .flashcard-canvas-specular,
+  .flashcard-tier-rim,
+  .flashcard-shell [data-card-effect="blind-image"] {
+    transition: none !important;
+  }
+
+  .flashcard-hover-wings {
+    display: none;
+  }
+}
+
+html[data-motion="reduced"] .flashcard-hover-wings,
+html[data-motion="reduced"] .flashcard-wing {
+  transition: none !important;
+}
+
+html[data-motion="reduced"] .flashcard-hover-wings {
+  display: none;
+}

@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "LingoFlash — Translate & Save",
-  "short_name": "LingoFlash",
+  "default_locale": "vi",
+  "name": "SonFlash — Translate & Save",
+  "short_name": "SonFlash",
   "version": "1.6.4",
-  "description": "Translate selected text inline, or create and save one LingoFlash flashcard with one AI request.",
+  "description": "Translate selected text inline, or create and save one SonFlash flashcard with one AI request.",
   "permissions": [
     "activeTab",
     "alarms",
@@ -34,7 +35,7 @@
     }
   ],
   "action": {
-    "default_title": "LingoFlash — Dịch nhanh / tạo flashcard",
+    "default_title": "SonFlash — Dịch nhanh / tạo flashcard",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",
@@ -53,7 +54,7 @@
         "default": "Ctrl+Shift+L",
         "mac": "Command+Shift+L"
       },
-      "description": "Dịch bằng AI một lần, tạo flashcard và thêm vào LingoFlash"
+      "description": "Dịch bằng AI một lần, tạo flashcard và thêm vào SonFlash"
     },
     "translate-only-selection": {
       "suggested_key": {

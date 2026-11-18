@@ -1,0 +1,102 @@
+<!--#HEAD UI locales specimen-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#AMBIENT-->
+  <header style="position: relative; z-index: 2; padding: 34px 48px 0; display: flex; align-items: flex-end; gap: 24px;">
+    <div>
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.accentText}};">Interface languages · specimen</div>
+      <h1 style="margin: 8px 0 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 44px; line-height: 1; letter-spacing: -0.02em; color: {{t.textStrong}};">One screen, <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">seven locales</span></h1>
+    </div>
+    <p style="margin: 0 0 4px auto; max-width: 470px; font-size: 14px; line-height: 1.55; color: {{t.text2}};">The Today header, main button and a toast, rendered from the same message keys. Every string comes from a catalog; nothing is concatenated in code.</p>
+  </header>
+
+  <section aria-label="Locales" style="position: relative; z-index: 2; margin: 26px 48px 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px; align-items: stretch;">
+    <sc-for list="{{cols}}" as="c" hint-placeholder-count="7">
+      <article lang="{{c.tag}}" style="box-sizing: border-box; padding: 14px 14px 16px; border-radius: 18px; border: {{c.border}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; display: flex; flex-direction: column; font-family: {{c.font}}; line-height: {{c.lh}};">
+        <div style="display: flex; align-items: center; gap: 6px; font-family: Geist, sans-serif; line-height: 1.2;">
+          <span style="height: 22px; padding: 0 7px; border-radius: 6px; background: {{c.tagBg}}; color: {{c.tagText}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; display: flex; align-items: center;">{{c.tag}}</span>
+          <span style="font-family: {{c.font}}; font-size: 13px; font-weight: 700; color: {{t.textStrong}};">{{c.name}}</span>
+        </div>
+        <div style="margin-top: 4px; font-size: 11px; font-family: Geist, sans-serif; color: {{t.text3}};">{{c.note}}</div>
+
+        <div style="margin-top: 14px; font-size: 10.5px; font-weight: 700; letter-spacing: {{c.eyebrowTrack}}; text-transform: {{c.eyebrowCase}}; color: {{t.accentText}};">{{c.eyebrow}}</div>
+        <div style="margin-top: 4px; font-family: {{c.display}}; font-size: 30px; font-weight: {{c.displayWeight}}; line-height: 1.1; color: {{t.textStrong}};">{{c.title}}</div>
+        <div style="margin-top: 6px; font-size: 13px; color: {{t.body}};">{{c.sub}}</div>
+
+        <button class="sf-press" style="margin-top: 14px; align-self: stretch; min-height: 46px; box-sizing: border-box; padding: 9px 10px; border: 0; border-radius: {{t.btnRadius}}; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-family: {{c.font}}; font-size: 14px; font-weight: 650; line-height: 1.25; text-align: center;">{{c.cta}}</button>
+
+        <div style="margin-top: 12px; padding: 10px 11px; border-radius: 12px; border: 1px solid {{t.okLine}}; background: {{t.okBg}}; color: {{t.textStrong}}; font-size: 12.5px; display: flex; gap: 8px; align-items: flex-start;">
+          <span style="flex-shrink: 0; margin-top: 2px; width: 16px; height: 16px; border-radius: 50%; background: {{t.ok}}; color: {{t.pageSolid}}; display: flex; align-items: center; justify-content: center;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+          <span>{{c.toast}}</span>
+        </div>
+
+        <dl style="margin: 14px 0 0; padding-top: 12px; border-top: 1px dashed {{t.lineStrong}}; display: grid; gap: 8px; font-size: 12px;">
+          <div><dt style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; color: {{t.text3}};">plural · 1 / 5</dt><dd style="margin: 1px 0 0; color: {{t.text}};">{{c.plural}}</dd></div>
+          <div><dt style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; color: {{t.text3}};">date · full</dt><dd style="margin: 1px 0 0; color: {{t.text}};">{{c.date}}</dd></div>
+          <div><dt style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; color: {{t.text3}};">number · price</dt><dd style="margin: 1px 0 0; font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.text}};">{{c.num}}</dd></div>
+        </dl>
+      </article>
+    </sc-for>
+  </section>
+
+  <section aria-label="Rules" style="position: relative; z-index: 2; margin: auto 48px 34px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px;">
+    <sc-for list="{{rules}}" as="r" hint-placeholder-count="5">
+      <div style="padding: 14px 16px; border-radius: 16px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="width: 22px; height: 22px; border-radius: 7px; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px;">{{r.n}}</span>
+          <span style="font-size: 14px; font-weight: 650; color: {{t.textStrong}};">{{r.title}}</span>
+        </div>
+        <p style="margin: 8px 0 0; font-size: 12.5px; line-height: 1.5; color: {{t.text2}};">{{r.body}}</p>
+        <code style="margin-top: 8px; display: block; padding: 7px 9px; border-radius: 8px; background: {{t.codeBg}}; color: {{t.text}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; line-height: 1.45; white-space: pre-wrap;">{{r.code}}</code>
+      </div>
+    </sc-for>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = { ...sfTokens(dark),
+      okLine: dark ? 'rgb(117 208 121 / 0.32)' : 'rgb(51 115 68 / 0.25)',
+      okBg: dark ? 'rgb(117 208 121 / 0.1)' : 'rgb(51 115 68 / 0.07)',
+      ok: dark ? '#75d079' : '#337344', pageSolid: dark ? '#06161f' : '#fffcf5',
+      codeBg: dark ? 'rgb(0 0 0 / 0.28)' : 'rgb(29 26 22 / 0.05)',
+    };
+    const latin = { font: "Geist, 'Segoe UI', system-ui, sans-serif", display: 'Fraunces, Georgia, serif', displayWeight: t.displayWeight, lh: 1.45, eyebrowCase: 'uppercase', eyebrowTrack: '0.08em' };
+    const cjk = (f) => ({ font: `'${f}', Geist, sans-serif`, display: `'${f}', sans-serif`, displayWeight: 700, lh: 1.7, eyebrowCase: 'none', eyebrowTrack: '0.02em' });
+    const plain = { border: '1px solid ' + t.line, tagBg: t.accentSoft, tagText: t.accentText };
+    const pseudo = { border: '1.5px dashed ' + (dark ? 'rgb(245 174 57 / 0.55)' : 'rgb(151 64 13 / 0.45)'), tagBg: t.warmBg, tagText: t.warm };
+    const cols = [
+      { ...latin, ...plain, tag: 'en', name: 'English', note: 'Source catalog', eyebrow: 'Wed · Korean course', title: 'Today', sub: '12 cards due · about 8 min',
+        cta: 'Start today’s session', toast: 'Saved to your Korean course', plural: '1 card · 5 cards', date: 'Wednesday, September 23, 2026', num: '12,480.5 · $4.99' },
+      { ...latin, ...plain, tag: 'vi', name: 'Tiếng Việt', note: 'Diacritics stack — keep line height', eyebrow: 'Thứ Tư · Khóa tiếng Hàn', title: 'Hôm nay', sub: '12 thẻ đến hạn · khoảng 8 phút',
+        cta: 'Bắt đầu buổi học hôm nay', toast: 'Đã lưu vào khóa tiếng Hàn', plural: '1 thẻ · 5 thẻ', date: 'Thứ Tư, 23 tháng 9, 2026', num: '12.480,5 · 79.000 ₫' },
+      { ...latin, ...plain, tag: 'de', name: 'Deutsch', note: '~35% longer — button wraps', eyebrow: 'Mi. · Koreanischkurs', title: 'Heute', sub: '12 Karten fällig · etwa 8 Min.',
+        cta: 'Heutige Lerneinheit starten', toast: 'In deinem Koreanischkurs gespeichert', plural: '1 Karte · 5 Karten', date: 'Mittwoch, 23. September 2026', num: '12.480,5 · 4,99 €' },
+      { ...cjk('Noto Sans JP'), ...plain, tag: 'ja', name: '日本語', note: 'No plural, no word spaces', eyebrow: '水曜日 · 韓国語コース', title: '今日', sub: '復習カード12枚 · 約8分',
+        cta: '今日の学習を始める', toast: '韓国語コースに保存しました', plural: '1枚 · 5枚', date: '2026年9月23日水曜日', num: '12,480.5 · ¥780' },
+      { ...cjk('Noto Sans KR'), ...plain, tag: 'ko', name: '한국어', note: 'Counters, not plurals', eyebrow: '수요일 · 일본어 코스', title: '오늘', sub: '복습할 카드 12장 · 약 8분',
+        cta: '오늘 학습 시작하기', toast: '일본어 코스에 저장했어요', plural: '카드 1장 · 카드 5장', date: '2026년 9월 23일 수요일', num: '12,480.5 · ₩6,900' },
+      { ...latin, ...plain, tag: 'es', name: 'Español', note: 'Inverted marks, long dates', eyebrow: 'Mié. · Curso de coreano', title: 'Hoy', sub: '12 tarjetas pendientes · unos 8 min',
+        cta: 'Empezar la sesión de hoy', toast: 'Guardado en tu curso de coreano', plural: '1 tarjeta · 5 tarjetas', date: 'miércoles, 23 de septiembre de 2026', num: '12.480,5 · 4,99 €' },
+      { ...latin, ...pseudo, tag: 'en-XA', name: 'Pseudo', note: '+40% length, accents, brackets', eyebrow: '[Ŵéđ · Ķőŕéåñ çőüŕşé ~~]', title: '[Ŧőđåý ~]', sub: '[12 çåŕđş đüé · åƀőüţ 8 ɱíñ ~~~~]',
+        cta: '[Šţåŕţ ţőđåý’ş şéşşíőñ ~~~~~~]', toast: '[Šåvéđ ţő ýőüŕ Ķőŕéåñ çőüŕşé ~~~~~~]', plural: '[1 çåŕđ · 5 çåŕđş ~~]', date: '[Ŵéđñéşđåý, Šéþţéɱƀéŕ 23, 2026 ~~~]', num: '12,480.5 · $4.99' },
+    ];
+    return {
+      t, grainId: 'locales-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: 900, ay: -240, bx: -200, by: 520 },
+      cols,
+      rules: [
+        { n: '1', title: 'Let text set the width', body: 'Buttons hug their label and may wrap to two lines. No fixed widths, no truncation on actions.', code: 'min-height: 46px;\nwidth: auto;' },
+        { n: '2', title: 'ICU plurals', body: 'English and German need one/other; Vietnamese, Japanese and Korean have a single form; Russian and Arabic need more.', code: '{n, plural,\n one {# card} other {# cards}}' },
+        { n: '3', title: 'Format with Intl', body: 'Dates, numbers and prices come from the locale. Never build them with string concatenation.', code: 'new Intl.DateTimeFormat(\n locale, { dateStyle: "full" })' },
+        { n: '4', title: 'CJK typesetting', body: 'Noto Sans JP / KR / SC fallbacks, line height 1.7 for body text, no letter-spacing, no italics.', code: ':lang(ja) { line-height: 1.7 }' },
+        { n: '5', title: 'Case is Latin-only', body: 'Uppercase eyebrows only for Latin scripts. Use locale-aware case so Turkish i becomes İ.', code: ':lang(ja) .eyebrow {\n text-transform: none }' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

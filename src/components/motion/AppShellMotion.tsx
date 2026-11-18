@@ -1,4 +1,7 @@
 import { useEffect, type RefObject } from 'react';
+import { useReducedMotion } from '../../lib/motionPreference';
+
+// The shared hook also follows `(prefers-reduced-motion: reduce)`.
 
 interface AppShellMotionProps {
   appShellRef: RefObject<HTMLDivElement | null>;
@@ -77,13 +80,13 @@ export function AppShellMotion({
   viewMode,
   viewStageRef,
 }: AppShellMotionProps) {
+  const reducedMotion = useReducedMotion();
   useEffect(() => {
     const viewStage = viewStageRef.current;
     if (!viewStage) return;
     const currentNavigation = () => appShellRef.current?.querySelector<HTMLElement>('nav.app-navigation') ?? navigationRef.current;
     const navigation = currentNavigation();
 
-    const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     const isInitialEntrance = navigation?.dataset.motionState !== 'ready';
     const animations: Animation[] = [];
     let cancelSettlement: (() => void) | undefined;
@@ -161,7 +164,7 @@ export function AppShellMotion({
     cancelSettlement = settleShellAnimations(animations, finish);
 
     return () => finish();
-  }, [appShellRef, navigationRef, viewMode, viewStageRef]);
+  }, [appShellRef, navigationRef, reducedMotion, viewMode, viewStageRef]);
 
   return null;
 }

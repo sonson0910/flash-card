@@ -2,6 +2,7 @@ import { Fragment, type ReactNode } from 'react';
 
 interface RichVietnameseExplanationProps {
   value: string;
+  lang?: string;
 }
 
 const sectionLeadPattern = /\s+(?=\*\*(?:Cách|Giải thích|Lưu ý|Ví dụ|Bản dịch|Dịch)[^*]*\*\*)/giu;
@@ -38,7 +39,7 @@ function isBlockStart(line: string) {
   return /^(?:>|[-*]\s+|\d+[.)]\s+|#{1,4}\s+)/.test(line.trim());
 }
 
-export function RichVietnameseExplanation({ value }: RichVietnameseExplanationProps) {
+export function RichVietnameseExplanation({ value, lang = 'vi' }: RichVietnameseExplanationProps) {
   const lines = normalizeGeneratedMarkdown(value).split('\n');
   const blocks: ReactNode[] = [];
 
@@ -120,7 +121,7 @@ export function RichVietnameseExplanation({ value }: RichVietnameseExplanationPr
 
   return (
     <div
-      lang="vi"
+      lang={lang}
       data-rich-vietnamese-explanation
       className="w-full space-y-3 break-words text-left [overflow-wrap:anywhere]"
     >

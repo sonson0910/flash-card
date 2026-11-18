@@ -1,9 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { act, createElement } from 'react';
+import { createRoot } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
 import type { CardIntakeControllerPort } from './cardIntakeController';
-import { createCardIntakeBindingOwner } from './useCardIntake';
+import { createCardIntakeBindingOwner, useCardIntake, type UseCardIntakeResult } from './useCardIntake';
 
 const card = (word: string): CardData => ({
   id: `word-${word}`,
@@ -38,9 +40,39 @@ const createPort = () => {
     })),
     persistCards: vi.fn(async (cards: readonly CardData[]) =>
       cards.map((value: CardData) => ({ card: value, created: true }))),
+    createConfirmedCatalogCards: vi.fn(async cards => ({
+      status: 'completed' as const, cards, createdCount: cards.length, reusedCount: 0,
+    })),
     applyMedia: vi.fn(async () => undefined),
   };
   return port;
+};
+
+const installMinimalReactDom = () => {
+  const documentLike: Record<string, unknown> = {
+    nodeType: 9,
+    activeElement: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    defaultView: globalThis,
+  };
+  const container = {
+    nodeType: 1,
+    ownerDocument: documentLike,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    nodeName: 'DIV',
+    tagName: 'DIV',
+    namespaceURI: 'http://www.w3.org/1999/xhtml',
+  };
+  documentLike.documentElement = container;
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  vi.stubGlobal('window', globalThis);
+  vi.stubGlobal('document', documentLike);
+  vi.stubGlobal('HTMLIFrameElement', class HTMLIFrameElement {});
+  vi.stubGlobal('HTMLElement', class HTMLElement {});
+  vi.stubGlobal('Node', class Node {});
+  return container as unknown as Element;
 };
 
 describe('useCardIntake binding owner', () => {
@@ -66,13 +98,13 @@ describe('useCardIntake binding owner', () => {
     const actions = owner.actions;
 
     await actions.generate();
-    expect(first.generateCard).toHaveBeenCalledWith({ term: 'apple', language: expect.any(Object) });
+    expect(first.generateCard).toHaveBeenCalledWith({ term: 'apple', language: expect.any(Object), operationId: expect.any(String) });
 
     owner.replace({ ports: { cards: second, draft: secondDraft } });
     expect(owner.actions).toBe(actions);
     expect(owner.getSnapshot().draft).toBe('banana');
     await actions.generate();
-    expect(second.generateCard).toHaveBeenCalledWith({ term: 'banana', language: expect.any(Object) });
+    expect(second.generateCard).toHaveBeenCalledWith({ term: 'banana', language: expect.any(Object), operationId: expect.any(String) });
     expect(first.generateCard).toHaveBeenCalledTimes(1);
   });
 
@@ -129,6 +161,65 @@ describe('useCardIntake binding owner', () => {
 
     expect(owner.getSnapshot()).toMatchObject({ draft: '', isSubmitting: false, error: null });
     expect(port.applyMedia).not.toHaveBeenCalled();
+  });
+
+  it('aborts and refunds an in-flight card-creator generation when replacing its controller', async () => {
+    const oldPort = createPort();
+    const nextPort = createPort();
+    const generation = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();
+    vi.mocked(oldPort.generateCard).mockReturnValue(generation.promise);
+    oldPort.cancelGeneration = vi.fn(async () => undefined);
+    const owner = createCardIntakeBindingOwner({ ports: { cards: oldPort } });
+    owner.actions.cardCreator.open();
+    owner.actions.cardCreator.updateDraft({ word: 'apple' });
+    const pending = owner.actions.cardCreator.generatePreview();
+    await vi.waitFor(() => expect(oldPort.generateCard).toHaveBeenCalledOnce());
+    const request = vi.mocked(oldPort.generateCard).mock.calls[0][0];
+
+    owner.replace({ ports: { cards: nextPort } });
+
+    expect(request.signal?.aborted).toBe(true);
+    expect(oldPort.cancelGeneration).toHaveBeenCalledTimes(1);
+    expect(oldPort.cancelGeneration).toHaveBeenCalledWith(request.operationId);
+    generation.resolve({ card: card('apple'), mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }) });
+    await expect(pending).resolves.toEqual({ status: 'cancelled' });
+  });
+
+  it('does not render an outgoing owner preview during the owner-switch effect gap', async () => {
+    const ownerAPort = createPort();
+    const ownerBPort = createPort();
+    let latest: UseCardIntakeResult | null = null;
+    const renders: Array<{ ownerKey: string; preview: string | null }> = [];
+
+    function Harness({ ownerKey }: { ownerKey: string }) {
+      latest = useCardIntake({
+        ownerKey,
+        ports: { cards: ownerKey === 'owner-a' ? ownerAPort : ownerBPort },
+      });
+      renders.push({ ownerKey, preview: latest.model.cardCreator.preview?.word ?? null });
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => {
+        root.render(createElement(Harness, { ownerKey: 'owner-a' }));
+      });
+      act(() => {
+        latest!.actions.cardCreator.createManualDraft({ word: 'apple', translation: 'táo' });
+      });
+      expect(latest!.model.cardCreator.preview?.word).toBe('apple');
+
+      renders.length = 0;
+      await act(async () => {
+        root.render(createElement(Harness, { ownerKey: 'owner-b' }));
+      });
+
+      expect(renders.filter(render => render.ownerKey === 'owner-b').every(render => render.preview === null)).toBe(true);
+    } finally {
+      await act(async () => { root.unmount(); });
+      vi.unstubAllGlobals();
+    }
   });
 
   it('disposes the owned controller and suppresses its pending media task', async () => {

@@ -1,156 +1,139 @@
 import * as Dialog from '@radix-ui/react-dialog';
-import { CheckCircle2, RotateCcw, Sparkles, Trophy, X } from 'lucide-react';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react';
+import { CalendarDays, CheckCircle2, RotateCcw, Sparkles, Trophy, X } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Lumi } from '../../components/lumi/Lumi';
+import { CountUp } from '../../components/motion/CountUp';
+import { GsapEntrance } from '../../components/motion/GsapEntrance';
+import { formatNumber } from '../../lib/format';
+import { triggerHaptic } from '../../lib/haptics';
+import { playRewardSound } from '../../lib/interactionSounds';
+import { readLumiEnabled } from '../settings/lumi-preference';
+import { useTheme } from '../theme/ThemeProvider';
 import type { CardData } from '../../types/card';
+import { loadTomorrowDueCount } from './session-recap-service';
+import './practice-board.css';
 import type { StudyReviewSummary } from './practiceSessionLifecycle';
 
 interface SessionRecapModalProps {
   open: boolean;
   onClose: () => void;
+  onViewWeeklyRecap?: () => void;
   onRetryWeak?: () => void;
   totalCards: number;
   goodCount: number;
   againCount: number;
   xpEarned: number;
   weakCards: CardData[];
+  targetLanguage?: string;
   summary?: StudyReviewSummary;
 }
 
-export function SessionRecapModal({
-  open,
-  onClose,
-  onRetryWeak,
-  totalCards,
-  goodCount,
-  againCount,
-  xpEarned,
-  weakCards,
-  summary,
-}: SessionRecapModalProps) {
+export function SessionRecapModal({ open, onClose, onViewWeeklyRecap, onRetryWeak, totalCards, goodCount, againCount, xpEarned, weakCards, targetLanguage, summary }: SessionRecapModalProps) {
+  const { _ } = useLingui();
+  const { family } = useTheme();
   const saved = summary?.saved ?? goodCount + againCount;
+  const complete = totalCards > 0 && saved === totalCards;
   const accuracy = saved > 0 ? Math.round((goodCount / saved) * 100) : 0;
+  const isCrystal = family === 'crystal';
+  const showLumi = isCrystal && readLumiEnabled();
+
+  // The session-finale cue: fires once when the recap is actually reached (this component
+  // only mounts/opens at the end of a real session), not on every re-render while it stays open.
+  useEffect(() => {
+    if (!open || !complete) return;
+    playRewardSound();
+    triggerHaptic('success');
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fire once per recap arrival, not per prop change
+  }, [open, complete]);
 
   return (
     <Dialog.Root open={open} onOpenChange={openState => !openState && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs" />
-        <Dialog.Content
-          className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl outline-none sm:p-7"
-          aria-describedby="session-recap-description"
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm" />
+        <Dialog.Content asChild aria-describedby="session-recap-description">
+        {/* GSAP's entrance tween takes exclusive ownership of this element's `transform`
+            inline style while it animates (see GsapEntrance.tsx), which would clobber a
+            centering transform placed on the same node for the brief window before its
+            onComplete clears the animated props. Centering lives on this non-animated
+            wrapper instead, so GSAP only ever controls the inner box's own transform. */}
+        <div className="practice-recap-frame fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2">
+        <GsapEntrance
+          variant="result"
+          data-session-recap="true"
+          className="practice-recap-board block max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-2xl outline-none sm:p-7 [html[data-theme-family=crystal]_&]:crystal-chamfer"
         >
-          <div className="flex items-start justify-between gap-4">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-x-10 top-0 h-24 bg-[radial-gradient(ellipse_at_top,var(--sf-surface-raised),transparent_70%)] opacity-70" />
+          <div className="relative flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/20">
-                <Trophy size={24} />
+              <div className="relative flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/20 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm [html[data-theme-family=crystal]_&]:from-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:to-rose-500">
+                <Trophy size={24} aria-hidden="true" />
+                {showLumi && <Lumi pose="proud" size={58} className="pointer-events-none absolute -bottom-2 -right-3 max-w-none drop-shadow-md" />}
               </div>
               <div>
-                <Dialog.Title className="text-xl font-black text-[var(--sf-text)] sm:text-2xl">
-                  {saved === totalCards && totalCards > 0 ? 'Session Complete!' : 'Session summary'}
-                </Dialog.Title>
-                <Dialog.Description id="session-recap-description" className="text-xs text-[var(--sf-text-muted)]">
-                  Recalling a word once does not mean you have mastered it.
-                </Dialog.Description>
+                <Dialog.Title className="font-display text-2xl font-black tracking-tight text-[var(--sf-text)] sm:text-3xl [html[data-theme-family=crystal]_&]:font-black [html[data-theme-family=crystal]_&]:italic">{complete ? <Trans {...msg({ context: 'recap.title', message: 'Session complete' })} /> : <Trans {...msg({ context: 'recap.summary-title', message: 'Session summary' })} />}</Dialog.Title>
+                <Dialog.Description id="session-recap-description" className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'recap.description', message: 'Here is what you strengthened today.' })} /></Dialog.Description>
               </div>
             </div>
-            <Dialog.Close
-              className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"
-              aria-label="Close recap"
-            >
-              <X size={18} />
-            </Dialog.Close>
+            <Dialog.Close className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm" aria-label={_(msg({ id: 'recap.close', message: 'Close recap' }))}><X size={18} aria-hidden="true" /></Dialog.Close>
           </div>
 
-          {/* Stats Grid */}
-          <div className="mt-6 grid grid-cols-3 gap-2.5 text-center">
-            <div className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3">
-              <span className="block text-[11px] font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">
-                Reviewed
-              </span>
-              <span className="mt-1 block text-2xl font-black tabular-nums text-[var(--sf-text)]">
-                {saved} / {totalCards}
-              </span>
-            </div>
-            <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-3">
-              <span className="block text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                Recalled this session
-              </span>
-              <span className="mt-1 block text-2xl font-black tabular-nums text-emerald-600 dark:text-emerald-300">
-                {accuracy}%
-              </span>
-            </div>
-            <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-3">
-              <span className="block text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                Session XP
-              </span>
-              <span className="mt-1 block text-2xl font-black tabular-nums text-amber-600 dark:text-amber-300">
-                +{xpEarned}
-              </span>
-            </div>
+          <div className="relative mt-6 grid grid-cols-3 gap-2.5 text-center sm:gap-3">
+            <Stat label={<Trans {...msg({ context: 'recap.reviewed', message: 'Reviewed' })} />} value={<CountUp to={saved} />} />
+            <Stat label={<Trans {...msg({ context: 'recap.retained', message: 'Retained' })} />} value={<><CountUp to={accuracy} suffix="%" /><span aria-hidden="true">%</span></>} tone="success" />
+            <Stat label={<Trans {...msg({ context: 'recap.xp-earned', message: 'XP earned' })} />} value={<><span aria-hidden="true">+</span><CountUp to={xpEarned} /></>} tone="warm" />
           </div>
 
-          {/* Breakdown summary */}
-          {summary && <p className="mt-4 text-sm text-[var(--sf-text-muted)]" role="status">
-            Skipped: {summary.skipped} · Not started: {summary.remaining} · Saving: {summary.pending} · Save failed: {summary.failed}
-          </p>}
-          <div className="mt-4 space-y-2 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3.5 text-xs font-semibold">
-            <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-              <span className="flex items-center gap-1.5">
-                <CheckCircle2 size={14} />
-                <span>Recalled this session (Good / Easy)</span>
-              </span>
-              <span className="font-bold tabular-nums">{goodCount} words</span>
-            </div>
-            <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
-              <span className="flex items-center gap-1.5">
-                <RotateCcw size={14} />
-                <span>Needs Review (Again / Hard)</span>
-              </span>
-              <span className="font-bold tabular-nums">{againCount} words</span>
-            </div>
+          {summary && <p className="relative mt-3 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'recap.progress-breakdown', message: 'Saved: {saved} / {total} · Skipped: {skipped} · Not started: {remaining} · Saving: {pending} · Failed: {failed}' })} values={{ ...summary, total: totalCards }} /></p>}
+
+          <div className="relative mt-4 grid gap-2 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3.5 text-sm font-semibold [html[data-theme-family=crystal]_&]:crystal-chamfer-sm sm:grid-cols-2">
+            <div className="flex items-center justify-between gap-3 text-emerald-700 dark:text-emerald-300"><span className="flex items-center gap-1.5"><CheckCircle2 size={16} aria-hidden="true" /><span><Trans {...msg({ context: 'recap.mastered', message: 'Remembered' })} /></span></span><span className="font-bold tabular-nums text-[var(--sf-text)]"><Trans {...msg({ context: 'recap.word-count', message: '{count, plural, one {# word} other {# words}}' })} values={{ count: goodCount }} /></span></div>
+            <div className="flex items-center justify-between gap-3 text-rose-700 dark:text-rose-300"><span className="flex items-center gap-1.5"><RotateCcw size={16} aria-hidden="true" /><span><Trans {...msg({ context: 'recap.needs-review', message: 'To revisit' })} /></span></span><span className="font-bold tabular-nums text-[var(--sf-text)]"><Trans {...msg({ context: 'recap.word-count', message: '{count, plural, one {# word} other {# words}}' })} values={{ count: againCount }} /></span></div>
           </div>
 
-          {/* Weak cards preview if any */}
-          {weakCards.length > 0 && (
-            <div className="mt-4">
-              <p className="mb-2 text-[11px] font-black uppercase tracking-wider text-[var(--sf-text-muted)]">
-                Words to reinforce ({weakCards.length})
-              </p>
-              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1 scrollbar-none">
-                {weakCards.map(card => (
-                  <span
-                    key={card.id}
-                    className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-600 dark:text-rose-300"
-                  >
-                    {card.word}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+          {weakCards.length > 0 && <div className="relative mt-4"><p className="mb-2 text-[11px] font-black uppercase tracking-wider text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'recap.words-to-reinforce', message: 'Words to reinforce ({count})' })} values={{ count: formatNumber(weakCards.length) }} /></p><div className="flex max-h-24 flex-wrap gap-1.5 overflow-y-auto pr-1 scrollbar-none">{weakCards.map(card => <span key={card.id} lang={card.language ?? 'en'} className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-200 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">{card.word}</span>)}</div></div>}
 
-          {/* Action buttons */}
-          <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
-            {weakCards.length > 0 && onRetryWeak && (
-              <button
-                type="button"
-                onClick={onRetryWeak}
-                disabled={Boolean(summary?.pending)}
-                className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-4 text-xs font-bold text-white shadow-md transition-all hover:opacity-90 active:scale-[0.98]"
-              >
-                <RotateCcw size={15} />
-                <span>Retry {weakCards.length} weak words</span>
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 text-xs font-bold text-[var(--sf-on-brand)] shadow-md transition-all hover:bg-[var(--sf-brand-hover)] active:scale-[0.98]"
-            >
-              <Sparkles size={15} />
-              <span>Close recap</span>
-            </button>
+          <TomorrowDue key={targetLanguage ?? 'all'} targetLanguage={targetLanguage} />
+
+          <div className="relative mt-6 flex flex-col gap-2.5 sm:flex-row">
+            {weakCards.length > 0 && onRetryWeak && <button type="button" onClick={onRetryWeak} disabled={Boolean(summary?.pending)} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 text-sm font-bold text-rose-700 transition-all hover:bg-rose-500/20 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-rose-200 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><RotateCcw size={16} aria-hidden="true" /><Trans {...msg({ context: 'recap.retry-weak', message: 'Review {count, plural, one {# word} other {# words}}' })} values={{ count: weakCards.length }} /></button>}
+            {onViewWeeklyRecap && <button type="button" onClick={onViewWeeklyRecap} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 text-sm font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><CalendarDays size={16} aria-hidden="true" /><Trans {...msg({ context: 'recap.weekly', message: 'View weekly recap' })} /></button>}
+            <button type="button" onClick={onClose} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 text-sm font-bold text-[var(--sf-on-brand)] shadow-md transition-all hover:bg-[var(--sf-brand-hover)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><Sparkles size={16} aria-hidden="true" /><Trans {...msg({ context: 'recap.continue', message: 'Continue learning' })} /></button>
           </div>
+        </GsapEntrance>
+        </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
   );
+}
+
+function TomorrowDue({ targetLanguage }: { targetLanguage?: string }) {
+  const request = useRef<Promise<number> | null>(null);
+  const [result, setResult] = useState<{ status: 'loading' | 'ready' | 'error'; count?: number }>({ status: 'loading' });
+
+  useEffect(() => {
+    request.current ??= loadTomorrowDueCount(targetLanguage);
+    let active = true;
+    void request.current.then(
+      count => { if (active) setResult({ status: 'ready', count }); },
+      () => { if (active) setResult({ status: 'error' }); },
+    );
+    return () => { active = false; };
+  }, [targetLanguage]);
+
+  return <div className="relative mt-4 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3.5 text-sm text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm" aria-live="polite">
+    <span className="font-semibold"><Trans {...msg({ context: 'recap.tomorrow', message: 'Tomorrow' })} /></span>
+    <span className="ml-2 text-[var(--sf-text-muted)]">
+      {result.status === 'loading' && <Trans {...msg({ context: 'recap.tomorrow-loading', message: 'Checking cards due…' })} />}
+      {result.status === 'error' && <Trans {...msg({ context: 'recap.tomorrow-error', message: 'Count unavailable' })} />}
+      {result.status === 'ready' && <Trans {...msg({ context: 'recap.tomorrow-count', message: '{count, plural, one {# card due} other {# cards due}}' })} values={{ count: result.count ?? 0 }} />}
+    </span>
+  </div>;
+}
+
+function Stat({ label, value, tone }: { label: ReactNode; value: ReactNode; tone?: 'success' | 'warm' }) {
+  const toneClass = tone === 'success' ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : tone === 'warm' ? 'border-amber-400/30 bg-amber-500/10 text-amber-700 dark:text-amber-300' : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)]';
+  return <div className={`rounded-2xl border p-3 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm ${toneClass}`}><span className="block text-[11px] font-bold uppercase tracking-wider opacity-80">{label}</span><span className="mt-1 block font-display text-2xl font-black tabular-nums sm:text-3xl">{value}</span></div>;
 }

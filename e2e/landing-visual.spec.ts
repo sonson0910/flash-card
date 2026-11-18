@@ -1,0 +1,351 @@
+import AxeBuilder from '@axe-core/playwright';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
+
+const themes = [
+  { family: 'classic', mode: 'light' },
+  { family: 'classic', mode: 'dark' },
+  { family: 'crystal', mode: 'light' },
+  { family: 'crystal', mode: 'dark' },
+] as const;
+const locales = [{ name: 'en', path: '/' }, { name: 'vi', path: '/vi/' }] as const;
+const viewports = [{ name: 'desktop', width: 1440, height: 900 }, { name: 'mobile', width: 390, height: 844 }] as const;
+
+async function expectAccessibleAndContained(page: Page, label: string) {
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow, `${label} has horizontal overflow`).toBeLessThanOrEqual(1);
+  const clipped = await page.locator('a:visible, button:visible, summary:visible').evaluateAll(elements => elements.map(element => {
+    const box = element.getBoundingClientRect();
+    return { label: element.getAttribute('aria-label') || element.textContent?.trim(), left: box.left, right: box.right };
+  }).filter(control => control.left < -1 || control.right > window.innerWidth + 1));
+  expect(clipped, `${label} has horizontally clipped controls`).toEqual([]);
+
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  const blocking = results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical');
+  expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
+}
+
+async function expectReducedMotion(page: Page, label: string) {
+  const animatedNames = await page.evaluate(() => document.getAnimations()
+    .filter(animation => Number(animation.effect?.getComputedTiming().duration ?? 0) > 1)
+    .map(animation => animation.effect instanceof KeyframeEffect && animation.effect.target instanceof Element
+      ? getComputedStyle(animation.effect.target).animationName
+      : 'unnamed'));
+  expect(animatedNames, `${label} starts motion despite reduced-motion preference`).toEqual([]);
+}
+
+for (const theme of themes) for (const locale of locales) for (const viewport of viewports) {
+  test(`${theme.family} ${theme.mode} ${locale.name} landing is visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
+    const name = `landing-${locale.name}-${theme.family}-${theme.mode}-${viewport.name}`;
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
+    await page.addInitScript(({ family, mode }) => {
+      localStorage.setItem('sonflash_theme_family', family);
+      localStorage.setItem('lingoflash_theme', mode);
+      localStorage.setItem('sonflash_theme_follow_system', 'false');
+      localStorage.setItem('sonflash_reduced_motion', 'true');
+      localStorage.setItem('sonflash_lumi_enabled', 'true');
+    }, theme);
+    await page.goto(locale.path);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('data-theme-family', theme.family);
+    if (theme.mode === 'dark') await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+    else await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+    if (theme.family === 'crystal') await expect(page.locator('#sonflash-crystal-theme')).toHaveAttribute('href', '/theme-crystal.css');
+
+    await expect(page.getByRole('link', { name: 'English' }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Tiếng Việt' }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /privacy|quyền riêng tư/i }).last()).toBeVisible();
+    await expect(page.getByRole('link', { name: /terms|điều khoản/i }).last()).toBeVisible();
+    await expect(page.getByText(/18\+|18 tuổi trở lên|aged 18 and over/i)).toBeVisible();
+    await expect(page.locator('main')).not.toContainText(/249[.,]?000|949[.,]?000|student.*50%|7-day.*trial|reverse.*trial/i);
+    if (viewport.name === 'mobile') {
+      const menuIcon = page.locator('.landing-header summary > svg').first();
+      await expect(menuIcon).toBeVisible();
+      const iconBox = await menuIcon.boundingBox();
+      expect(iconBox?.width).toBeGreaterThanOrEqual(18);
+      expect(iconBox?.height).toBeGreaterThanOrEqual(18);
+    }
+    if (theme.family === 'classic') {
+      const pronunciation = page.locator('.landing-demo-pronunciation');
+      if (viewport.name === 'desktop') await expect(pronunciation).toBeVisible();
+      else await expect(pronunciation).toBeHidden();
+    }
+    await expectAccessibleAndContained(page, name);
+    await expectReducedMotion(page, name);
+    await expect(page.locator('.landing-atmospheres')).toHaveCount(0);
+    await expect(page.locator('video[data-hero-video]')).toHaveCount(0);
+    await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true, animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
+    if (theme.family === 'classic' && viewport.name === 'desktop') {
+      const screenshot = testInfo.outputPath(`${name}-actual.png`);
+      await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide' });
+      await testInfo.attach('Classic landing', { path: screenshot, contentType: 'image/png' });
+    }
+  });
+}
+
+for (const mode of ['light', 'dark'] as const) for (const reducedMotion of ['reduce', 'no-preference'] as const) {
+  test(`Classic ${mode} sample card exposes only its active face with ${reducedMotion} motion`, async ({ page }, testInfo) => {
+    await page.emulateMedia({ colorScheme: mode, reducedMotion });
+    await page.addInitScript(({ mode, reducedMotion }) => {
+      localStorage.setItem('sonflash_theme_family', 'classic');
+      localStorage.setItem('lingoflash_theme', mode);
+      localStorage.setItem('sonflash_theme_follow_system', 'false');
+      localStorage.setItem('sonflash_reduced_motion', String(reducedMotion === 'reduce'));
+    }, { mode, reducedMotion });
+    await page.goto('/');
+    const card = page.locator('.landing-card [role="button"]');
+    await expect(card).toHaveAccessibleName('Tap to reveal the meaning');
+    const front = card.locator(':scope > div').first();
+    const back = card.locator(':scope > div').last();
+    await expect(front).toBeVisible();
+    await expect(back).toBeHidden();
+    await expect(front.getByText('immediate', { exact: true })).toBeVisible();
+    await card.focus();
+    await page.keyboard.press('Enter');
+    await expect(card).toHaveAttribute('aria-pressed', 'true');
+    await expect(front).toBeHidden();
+    await expect(back).toBeVisible();
+    await expect(back).toContainText('happening or done without delay');
+    await testInfo.attach('Sample card meaning', { body: await card.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
+    await page.keyboard.press('Space');
+    await expect(card).toHaveAttribute('aria-pressed', 'false');
+    await expect(front).toBeVisible();
+    await expect(back).toBeHidden();
+    await testInfo.attach('Sample card word', { body: await card.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
+  });
+}
+
+test('Crystal landing keeps a usable menu until the full navigation fits', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'crystal');
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+  });
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-theme-family', 'crystal');
+  const navigation = page.locator('.landing-header > nav');
+  const menu = page.locator('.landing-header details');
+
+  for (const width of [1024, 1279]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(menu).toBeVisible();
+    await expect(navigation).toBeHidden();
+  }
+  for (const width of [1280, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(navigation).toBeVisible();
+    await expect(menu).toBeHidden();
+    await expectAccessibleAndContained(page, `Crystal navigation at ${width}px`);
+  }
+});
+
+test('narrow landing menus retain each theme’s desktop destinations', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('sonflash_theme_family')) {
+      localStorage.setItem('sonflash_theme_family', 'classic');
+    }
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+  });
+  await page.goto('/');
+  const menu = page.locator('.landing-header details');
+  await menu.locator('summary').click();
+  await expect(menu.getByRole('link', { name: 'How it works' })).toBeVisible();
+  await expect(menu.getByRole('link', { name: 'Chrome extension' })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Paths' })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Curriculum' })).toHaveCount(0);
+  await menu.getByRole('link', { name: 'Chrome extension' }).click();
+  await expect(menu).not.toHaveAttribute('open');
+
+  await page.evaluate(() => localStorage.setItem('sonflash_theme_family', 'crystal'));
+  await page.reload();
+  await menu.locator('summary').click();
+  await expect(menu.getByRole('button', { name: 'Curriculum' })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Vocabulary' })).toBeVisible();
+  await expect(menu.getByRole('link', { name: 'Extension' })).toBeVisible();
+  await expect(menu.getByRole('link', { name: 'Languages' })).toBeVisible();
+  await expect(menu.getByRole('link', { name: 'Pricing & access' })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Paths' })).toHaveCount(0);
+});
+
+test('light landing paints its heading before its illustration without CJK fonts or video', async ({ page }, testInfo) => {
+  const requested: string[] = [];
+  let releaseIllustration = () => {};
+  let illustrationRequested = false;
+  const illustrationGate = new Promise<void>(resolve => { releaseIllustration = resolve; });
+  await page.route(/\/assets\/anime-immediate[^/]*\.jpg$/, async route => {
+    illustrationRequested = true;
+    await illustrationGate;
+    await route.continue();
+  });
+  await page.addInitScript(() => {
+    const entries: PerformanceEntry[] = [];
+    new PerformanceObserver(list => entries.push(...list.getEntries())).observe({ type: 'largest-contentful-paint', buffered: true });
+    (window as Window & { __landingLcpEntries?: PerformanceEntry[] }).__landingLcpEntries = entries;
+    localStorage.setItem('sonflash_theme_family', 'classic');
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+  });
+  page.on('request', request => requested.push(request.url()));
+  await page.bringToFront();
+  try {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect.poll(() => illustrationRequested).toBe(true);
+    await page.waitForFunction(() => (window as Window & { __landingLcpEntries?: PerformanceEntry[] }).__landingLcpEntries?.some(entry => (entry as PerformanceEntry & { element?: Element }).element?.id === 'landing-heading'), undefined, { timeout: 5_000 });
+    const lcp = await page.evaluate(() => {
+      const entry = (window as Window & { __landingLcpEntries?: PerformanceEntry[] }).__landingLcpEntries?.at(-1) as (PerformanceEntry & { loadTime?: number; size?: number; url?: string }) | undefined;
+      return { loadTime: entry?.loadTime, size: entry?.size, url: entry?.url };
+    });
+    expect(lcp.size, 'heading paint must have visible area before the illustration loads').toBeGreaterThan(0);
+    expect(lcp.url, 'paint before the pending illustration must be a text candidate').toBe('');
+    expect(lcp.loadTime, 'text paint must not wait for the illustration').toBe(0);
+    releaseIllustration();
+    await page.locator('.landing-card img').first().evaluate(image => (image as HTMLImageElement).decode());
+    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    const settled = await page.evaluate(() => (window as Window & { __landingLcpEntries?: PerformanceEntry[] }).__landingLcpEntries?.map(entry => {
+      const paint = entry as PerformanceEntry & { loadTime?: number; renderTime?: number; size?: number; url?: string };
+      return { loadTime: paint.loadTime, renderTime: paint.renderTime, size: paint.size, url: paint.url };
+    }));
+    await testInfo.attach('landing-paint-with-delayed-illustration', { body: JSON.stringify(settled), contentType: 'application/json' });
+    expect(requested.filter(url => /noto-sans-cjk|cjk-font|\.(?:av1|mp4)(?:\?|$)/i.test(url))).toEqual([]);
+  } finally {
+    releaseIllustration();
+  }
+});
+
+test('Crystal light keeps text as the final LCP after Lumi loads', async ({ page }, testInfo: TestInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.addInitScript(() => {
+    const entries: PerformanceEntry[] = [];
+    new PerformanceObserver(list => entries.push(...list.getEntries())).observe({ type: 'largest-contentful-paint', buffered: true });
+    (window as Window & { __crystalLcpEntries?: PerformanceEntry[] }).__crystalLcpEntries = entries;
+    localStorage.setItem('sonflash_theme_family', 'crystal');
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+    localStorage.setItem('sonflash_lumi_enabled', 'true');
+  });
+  await page.bringToFront();
+  await page.goto('/');
+  const lumi = page.locator('[data-lumi-pose="hero"]');
+  await expect(lumi).toBeVisible();
+  await page.waitForFunction(() => {
+    const image = document.querySelector<HTMLImageElement>('[data-lumi-pose="hero"]');
+    return image?.complete && image.naturalWidth > 0;
+  });
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  await page.waitForFunction(() => (window as Window & { __crystalLcpEntries?: PerformanceEntry[] }).__crystalLcpEntries?.length, undefined, { timeout: 5_000 });
+  const entries = await page.evaluate(() => (window as Window & { __crystalLcpEntries?: PerformanceEntry[] }).__crystalLcpEntries?.map(entry => {
+    const lcp = entry as PerformanceEntry & { element?: Element; loadTime?: number; size?: number; url?: string };
+    return { loadTime: lcp.loadTime, size: lcp.size, tag: lcp.element?.tagName, url: lcp.url };
+  }) ?? []);
+  const lumiGeometry = await lumi.evaluate(element => {
+    const image = element as HTMLImageElement;
+    const rect = image.getBoundingClientRect();
+    const style = getComputedStyle(image);
+    return { computedHeight: style.height, computedWidth: style.width, height: rect.height, naturalHeight: image.naturalHeight, naturalWidth: image.naturalWidth, width: rect.width };
+  });
+  await testInfo.attach('crystal-light-lcp', { body: JSON.stringify({ entries, lumiGeometry }), contentType: 'application/json' });
+  const finalEntry = entries.at(-1);
+  expect(finalEntry?.size, 'final Crystal LCP must have visible area').toBeGreaterThan(0);
+  expect(finalEntry?.url, `final Crystal LCP must remain a text candidate after Lumi loads: ${JSON.stringify({ entries, lumiGeometry })}`).toBe('');
+  expect(finalEntry?.loadTime, 'final text LCP must not wait for a resource load').toBe(0);
+});
+
+test('saved Crystal Lumi preference hides the landing companion', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'crystal');
+    localStorage.setItem('lingoflash_theme', 'dark');
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+    localStorage.setItem('sonflash_lumi_enabled', 'false');
+  });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.locator('[data-lumi-pose="hero"]')).not.toBeVisible();
+});
+
+test('Crystal Lumi only enters the hero where it preserves the headline and card', async ({ page }, testInfo: TestInfo) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'crystal');
+    localStorage.setItem('lingoflash_theme', 'dark');
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+    localStorage.setItem('sonflash_lumi_enabled', 'true');
+  });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.locator('[data-lumi-pose="hero"]')).not.toBeVisible();
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(page.locator('[data-lumi-pose="hero"]')).not.toBeVisible();
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const headline = page.getByRole('heading', { level: 1 });
+  // CrystalLandingHero (LandingPage.tsx) groups three demo articles under one
+  // "Sample English vocabulary cards" (plural) stage — .crystal-demo-left
+  // ("Spelling") and .crystal-demo-main ("Instant") — not the single
+  // "Sample English vocabulary card" flip-card that ClassicLandingHero
+  // renders for non-crystal themes. .crystal-hero-lumi sits at `left: -14%`
+  // of the stage (landing-page.css), closest to .crystal-demo-left.
+  const cardStage = page.getByLabel('Sample English vocabulary cards');
+  // Each demo article also renders its meaning in lowercase (e.g. "spelling"),
+  // which getByText's default substring match would also catch — scope to the
+  // <strong> word element specifically, matching LandingPage.tsx's markup.
+  const cardLeftWord = cardStage.locator('.crystal-demo-left strong');
+  const cardMainWord = cardStage.locator('.crystal-demo-main strong');
+  const lumi = page.locator('[data-lumi-pose="hero"]');
+  await expect(headline).toBeVisible();
+  await expect(cardStage).toBeVisible();
+  await expect(cardLeftWord).toBeVisible();
+  await expect(cardMainWord).toBeVisible();
+  await expect(lumi).toBeVisible();
+  const [headlineTextBox, cardLeftBox, cardMainBox, lumiBox] = await Promise.all([
+    headline.evaluate(element => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      const rect = range.getBoundingClientRect();
+      return { right: rect.right };
+    }),
+    cardLeftWord.boundingBox(),
+    cardMainWord.boundingBox(),
+    lumi.boundingBox(),
+  ]);
+  expect(lumiBox).not.toBeNull();
+  const lumiRight = lumiBox!.x + lumiBox!.width;
+  expect(lumiBox!.x, 'Lumi must not cover the hero headline at 1440px').toBeGreaterThanOrEqual(headlineTextBox.right);
+  expect(cardLeftBox).not.toBeNull();
+  expect(cardMainBox).not.toBeNull();
+  expect(lumiRight, 'Lumi must not cover the left demo card at 1440px').toBeLessThanOrEqual(cardLeftBox!.x);
+  expect(lumiRight, 'Lumi must not cover the main demo card at 1440px').toBeLessThanOrEqual(cardMainBox!.x);
+  const screenshot = testInfo.outputPath('landing-crystal-dark-1440.png');
+  await page.screenshot({ path: screenshot });
+  await testInfo.attach('landing-crystal-dark-1440', { path: screenshot, contentType: 'image/png' });
+});
+
+
+test('desktop dark landing retains every atmosphere when motion is enabled', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'no-preference' });
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'classic');
+    localStorage.setItem('lingoflash_theme', 'dark');
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+    localStorage.setItem('sonflash_reduced_motion', 'false');
+  });
+  await page.goto('/');
+  const controls = page.locator('.landing-atmospheres button');
+  const videos = page.locator('video[data-hero-video]');
+  await expect(controls).toHaveCount(4);
+  await expect(videos).toHaveCount(4);
+  for (let index = 0; index < 4; index += 1) {
+    await controls.nth(index).click();
+    await expect(controls.nth(index)).toHaveAttribute('aria-pressed', 'true');
+    await expect(videos.nth(index)).toHaveJSProperty('autoplay', true);
+    await expect(videos.nth(index).locator('source')).toHaveCount(2);
+  }
+});

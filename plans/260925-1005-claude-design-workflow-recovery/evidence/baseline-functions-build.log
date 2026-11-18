@@ -1,0 +1,10 @@
+command=npm --prefix functions run build
+start_utc=2026-09-25T05:00:16.708469+00:00
+
+
+> build
+> tsc
+
+
+exit_code=0
+end_utc=2026-09-25T05:00:17.174443+00:00
