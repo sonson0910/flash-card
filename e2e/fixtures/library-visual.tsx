@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { useEffect, useRef, useState } from 'react';
 import '../../src/index.css';
+import '../../src/styles/app-bootstrap.css';
 import { ThemeProvider } from '../../src/features/theme/ThemeProvider';
 import { AppOverlays } from '../../src/components/AppOverlays';
 import { EditCardDialog } from '../../src/features/cardEdit/EditCardDialog';

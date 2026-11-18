@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import '../../src/index.css';
+import '../../src/styles/app-bootstrap.css';
 import { SessionRecapModal } from '../../src/features/practice/SessionRecapModal';
 import { UndoToast, type UndoToastItem } from '../../src/components/ui/UndoToast';
 

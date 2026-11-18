@@ -50,8 +50,9 @@ test.describe('WebWords page', () => {
     ]);
     await blockExternalNetwork(page);
     await signIn(page, '/?view=today&locale=en');
-    const englishStrip = page.getByText('2 words saved from the web').locator('xpath=ancestor::aside');
-    await expect(englishStrip).toBeVisible();
+    const englishStrip = page.locator('[data-today-words]');
+    await expect(englishStrip).toContainText('2 saved words');
+    await expect(englishStrip).toContainText('luminous');
     const englishImage = testInfo.outputPath('today-web-words-english.png');
     await englishStrip.screenshot({ path: englishImage, animations: 'disabled' });
     await testInfo.attach('English WebWords preview', { path: englishImage, contentType: 'image/png' });
@@ -59,9 +60,10 @@ test.describe('WebWords page', () => {
     await page.locator('.claude-course-switcher-trigger').click();
     await page.getByRole('dialog', { name: 'Courses' }).getByRole('button', { name: /Korean.*Vietnamese/ }).click();
     await expect(page.locator('.claude-course-switcher-trigger')).toHaveText(/Korean/);
-    const koreanStrip = page.getByText('1 word saved from the web').locator('xpath=ancestor::aside');
-    await expect(koreanStrip).toBeVisible();
-    await expect(page.getByText('2 words saved from the web')).toHaveCount(0);
+    const koreanStrip = page.locator('[data-today-words]');
+    await expect(koreanStrip).toContainText('1 saved word');
+    await expect(koreanStrip).toContainText('결심');
+    await expect(koreanStrip).not.toContainText('luminous');
     const koreanImage = testInfo.outputPath('today-web-words-korean.png');
     await koreanStrip.screenshot({ path: koreanImage, animations: 'disabled' });
     await testInfo.attach('Korean WebWords preview', { path: koreanImage, contentType: 'image/png' });
@@ -113,10 +115,10 @@ test.describe('WebWords page', () => {
     await page.addInitScript(() => { localStorage.setItem('lingoflash_theme', 'light'); });
     await signIn(page, '/?view=today&locale=en');
 
-    const strip = page.getByText(/word.*saved from the web/i);
-    await expect(strip).toBeVisible();
+    const strip = page.locator('[data-today-words]');
+    await expect(strip).toContainText(/saved words? ·/);
 
-    await page.getByRole('button', { name: 'Review web words' }).click();
+    await strip.getByRole('button', { name: 'See all with their sentences' }).click();
     await expect(page).toHaveURL(/webWords=1/);
     const workspace = page.getByRole('region', { name: 'Web words' });
     await expect(workspace).toBeVisible();
@@ -151,7 +153,7 @@ test.describe('WebWords page', () => {
     await blockExternalNetwork(page);
     await signIn(page, '/?view=today&locale=en');
 
-    await page.getByRole('button', { name: 'Review web words' }).click();
+    await page.locator('[data-today-words]').getByRole('button', { name: 'See all with their sentences' }).click();
     const workspace = page.getByRole('region', { name: 'Web words' });
     await workspace.getByRole('checkbox', { name: /selected-latest/i }).check();
     await workspace.getByRole('button', { name: 'Add to today' }).click();

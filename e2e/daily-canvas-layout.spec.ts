@@ -34,15 +34,25 @@ for (const theme of themes) for (const viewport of viewports) {
     await signIn(page, '/?view=today&locale=en');
     const start = page.locator('[data-primary-learning-action]');
     await expect(start).toBeEnabled();
-    await expect(page.locator('.today-stage-rail > li')).toHaveCount(4);
-    await expect(page.locator('.today-ready-web-words > aside')).toBeVisible();
+    // Classic phones follow the MobileToday board (card stack and tiles); every other
+    // layout shows the four-stage session rail and the words panel.
+    const phoneStack = theme.family === 'classic' && viewport.width < 768;
+    if (phoneStack) {
+      await expect(page.locator('[data-today-preview]')).toBeVisible();
+      await expect(page.locator('.today-tile')).toHaveCount(2);
+      await expect(page.locator('.today-stage-rail')).toHaveCount(0);
+    }
+    else {
+      await expect(page.locator('.today-stage-rail > li')).toHaveCount(4);
+      await expect(page.locator('[data-today-words]')).toBeVisible();
+      const stages = await page.locator('.today-stage-rail > li').evaluateAll(elements => elements.map(element => {
+        const box = element.getBoundingClientRect();
+        return { x: box.x, y: box.y };
+      }));
+      expect(Math.max(...stages.map(stage => stage.y)) - Math.min(...stages.map(stage => stage.y))).toBeLessThanOrEqual(1);
+      expect(stages[3].x).toBeGreaterThan(stages[0].x);
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-    const stages = await page.locator('.today-stage-rail > li').evaluateAll(elements => elements.map(element => {
-      const box = element.getBoundingClientRect();
-      return { x: box.x, y: box.y };
-    }));
-    expect(Math.max(...stages.map(stage => stage.y)) - Math.min(...stages.map(stage => stage.y))).toBeLessThanOrEqual(1);
-    expect(stages[3].x).toBeGreaterThan(stages[0].x);
     if (theme.family === 'crystal') {
       const lumi = page.locator('[data-today-lumi] img');
       await expect(lumi).toBeVisible();
@@ -95,7 +105,8 @@ for (const family of ['classic', 'crystal'] as const) {
     }, family);
     await signIn(page, '/?view=today&locale=vi');
     await expect(page.locator('[data-primary-learning-action]')).toBeEnabled();
-    await expect(page.locator('.today-stage-rail > li')).toHaveCount(4);
+    if (family === 'classic') await expect(page.locator('[data-today-preview]')).toBeVisible();
+    else await expect(page.locator('.today-stage-rail > li')).toHaveCount(4);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     await page.screenshot({ path: testInfo.outputPath('today-vi.png'), fullPage: true, animations: 'disabled' });
     await page.goto('/?view=today&lesson=placement&locale=vi');

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import '../../src/index.css';
+import '../../src/styles/app-bootstrap.css';
 import { AnimeReveal, type AnimeRevealEventKind, type AnimeRevealSourcePayload } from '../../src/features/rewards/AnimeReveal';
 import { ThemeProvider } from '../../src/features/theme/ThemeProvider';
 import { I18nProvider, useUiLocale } from '../../src/i18n/I18nProvider';

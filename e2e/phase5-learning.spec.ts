@@ -73,10 +73,10 @@ test(dailyPlanTest, async ({ page, signIn }) => {
   test.setTimeout(60_000);
   await signIn(page, '/?view=today');
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+  await expect(page.locator('#daily-today-heading')).toBeVisible();
   await expect(page.getByRole('status').filter({ hasText: 'Your plan is ready.' })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.activeElement === document.body)).toBe(true);
-  await expect(page.getByRole('heading', { level: 1, name: /12 items ready to remember/ })).toBeVisible();
+  await expect(page.getByText('12 cards planned', { exact: true })).toBeVisible();
   for (const label of ['Today', 'Paths', 'Vocabulary', 'Progress']) {
     await expect(page.getByRole('button', { name: label, exact: true }).first()).toBeVisible();
   }
@@ -104,7 +104,7 @@ test(dailyPlanTest, async ({ page, signIn }) => {
   await page.getByRole('button', { name: 'Close story' }).click();
   await page.getByRole('button', { name: 'Today', exact: true }).first().click();
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeFocused();
+  await expect(page.locator('#daily-today-heading')).toBeFocused();
   await expect(page.locator('[data-app-view-stage]')).toHaveCSS('transform', 'none');
   const recognition = page.getByRole('button', { name: /Recognition/ });
   await recognition.scrollIntoViewIfNeeded();
@@ -124,7 +124,7 @@ test(dailyPlanTest, async ({ page, signIn }) => {
   await expect(page.getByText('Question 2 of 12', { exact: true }).first()).toBeVisible({ timeout: 15_000 });
 
   await page.goBack();
-  await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+  await expect(page.locator('#daily-today-heading')).toBeVisible();
 });
 
 test(practiceAnswerTest, async ({ page, signIn }) => {
@@ -256,7 +256,7 @@ test('placement is diagnostic and Progress is a real URL-backed lazy workspace',
 
 test('Today and legacy Vocabulary routes satisfy serious WCAG checks', async ({ page, signIn }) => {
   await signIn(page, '/?view=today');
-  await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+  await expect(page.locator('#daily-today-heading')).toBeVisible();
   const today = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(today.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([]);
 
@@ -286,7 +286,7 @@ test('Today reflows at 320px with 200% text without horizontal loss', async ({ p
   await page.setViewportSize({ width: 320, height: 640 });
   await signIn(page, '/?view=today');
   await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
-  await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+  await expect(page.locator('#daily-today-heading')).toBeVisible();
   await expect(page.getByRole('button', { name: /Recognition/ })).toBeVisible();
   const navButtons = page.locator('[role="navigation"][aria-label="Primary"] button:visible');
   for (let index = 0; index < await navButtons.count(); index += 1) {

@@ -67,12 +67,17 @@ async function expectAccessibleAndContained(page: Page, screen: string) {
   expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
 }
 
+// Today greets by time of day and names the weekday and week; mask those
+// clock-derived labels so the goldens stay stable from one day to the next.
+const clockLabels = '.today-hero-line:first-child, .today-compact-date, .today-crystal-kicker > p';
+
 async function attachScreen(page: Page, testInfo: TestInfo, name: string) {
   await expect(page).toHaveScreenshot(`${name}.png`, {
     fullPage: true,
     animations: 'disabled',
     caret: 'hide',
     maxDiffPixelRatio: 0.01,
+    mask: [page.locator(clockLabels)],
   });
   const screenshot = testInfo.outputPath(`${name}.png`);
   await page.screenshot({ path: screenshot, fullPage: true });
@@ -121,12 +126,12 @@ for (const theme of themes) {
       if (theme.mode === 'dark') await expect(root).toHaveClass(/\bdark\b/);
       else await expect(root).not.toHaveClass(/\bdark\b/);
 
-      await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+      await expect(page.locator('#daily-today-heading')).toBeVisible();
       await expect(page.getByRole('button', { name: /Recognition/ })).toBeVisible();
       const streakChip = page.getByRole('button', { name: '3 study days' });
       await expect(streakChip).toBeVisible();
       if (viewport.name === 'mobile') {
-        const action = await page.getByRole('button', { name: "Start today's session" }).boundingBox();
+        const action = await page.locator('[data-primary-learning-action]').boundingBox();
         const dock = await page.locator('.claude-mobile-nav').boundingBox();
         expect(action && dock && action.y + action.height <= dock.y, 'Today action remains above the mobile dock').toBe(true);
       }

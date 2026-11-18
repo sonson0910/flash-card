@@ -252,13 +252,15 @@ for (const theme of themes) {
       }, theme);
 
       await signIn(page, '/?view=today&locale=en');
-      await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
-      await expect(page.getByRole('heading', { level: 1, name: `${cards.length} items ready to remember.` })).toBeVisible();
+      await expect(page.locator('#daily-today-heading')).toBeVisible();
+      // Desktop states the planned size in the session card, the phone composition in the
+      // heading and Crystal in its lede; each reads the same real plan count.
+      await expect(page.getByText(new RegExp(`^${cards.length} (cards planned|words ready to remember\\.|cards are waiting)`)).first()).toBeVisible();
       await page.evaluate(() => {
         let seed = 0x51f1a5;
         Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 0x100000000);
       });
-      await page.getByRole('button', { name: "Start today's session" }).click();
+      await page.locator('[data-primary-learning-action]').click();
 
       // Review: the plan's 6 due cards. Captures the answering ("front") and
       // feedback ("back") states of the same first question.
@@ -331,7 +333,7 @@ for (const theme of themes) {
       await expectAccessibleAndContained(page, 'Recap');
       await attachScreen(page, testInfo, `${label}-recap`);
       await page.getByRole('button', { name: 'Continue learning' }).click();
-      await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
+      await expect(page.locator('#daily-today-heading')).toBeVisible();
       await expect(page).not.toHaveURL(/[?&]lesson=session(?:&|$)/);
     });
   }

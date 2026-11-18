@@ -70,7 +70,7 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
   // under it) is already gone by then.
   await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
   await signInInPlace(page);
-  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
+  await expect(page.locator('#daily-today-heading')).toBeVisible();
   await page.getByRole('button', { name: 'More practice' }).click();
   await expect(page.getByRole('dialog', { name: 'Choose a practice mode' })).toBeVisible();
   await page.evaluate(() => {
@@ -176,7 +176,7 @@ test('failed runtime import restores landing and retries with a fresh runtime en
   // is needed or possible (the button is already gone).
   await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
   await signInInPlace(page);
-  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
+  await expect(page.locator('#daily-today-heading')).toBeVisible();
   expect(documentRequests).toBe(2);
   const runtimeRequests = requests.filter(url => initialRuntimeScript.test(url) || retryRuntimeScript.test(url));
   const retryRequestIndex = runtimeRequests.findIndex(url => retryRuntimeScript.test(url));

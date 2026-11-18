@@ -199,8 +199,8 @@ test('a prepared shell recovers the cached learner workspace during an app-serve
       await page.context().setOffline(true);
       expect(await page.evaluate(() => navigator.onLine)).toBe(false);
       await expect(page.getByText("You're offline. Reconnect to start today's session.", { exact: true })).toBeVisible();
-      await expect(page.getByRole('button', { name: "Start today's session", exact: true }).and(page.locator(':enabled'))).toHaveCount(0);
-      if (browserName === 'chromium') await expect(page.getByRole('button', { name: "Start today's session", exact: true })).toBeDisabled();
+      await expect(page.getByRole('button', { name: /^Start today's session/ }).and(page.locator(':enabled'))).toHaveCount(0);
+      if (browserName === 'chromium') await expect(page.getByRole('button', { name: /^Start today's session/ })).toBeDisabled();
     }
     expect(successfulBackendResponses).toEqual([]);
 

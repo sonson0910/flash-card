@@ -29,7 +29,7 @@ test.beforeEach(async ({ page, seedCards, seedCourseProfile, blockExternalNetwor
 
 test('exposes the published listening pilot in the built learner journey', async ({ page }) => {
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Today', exact: true })).toBeVisible();
+  await expect(page.locator('#daily-today-heading')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Learn → Immerse → Communicate' })).toBeVisible();
   const listening = page.getByRole('button', { name: 'Immerse: start listening practice' });
   await expect(listening).toBeVisible();

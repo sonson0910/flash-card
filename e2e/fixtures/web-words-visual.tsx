@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { useEffect, useState } from 'react';
 import '../../src/index.css';
+import '../../src/styles/app-bootstrap.css';
 import { ThemeProvider } from '../../src/features/theme/ThemeProvider';
 import { WebWordsPage } from '../../src/features/webWords/WebWordsPage';
 import { I18nProvider, useUiLocale } from '../../src/i18n/I18nProvider';
