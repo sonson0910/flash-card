@@ -575,9 +575,13 @@ test('library query state deep-links and responds to browser history without dro
   await expect(page.getByRole('combobox', { name: 'Filter by memory status' })).toHaveValue('hard');
   // Signed-in sessions render a native date picker (the cloud date filter)
   // instead of the label-based <select> used for anonymous/local sessions,
-  // seeded with today's date since the deep-linked label is "Today".
-  const now = new Date();
-  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  // seeded with today's date since the deep-linked label is "Today". "Today" is the browser's
+  // local day, which differs from the test runner's near midnight when the browser runs in
+  // another time zone (for example a remote browser server on UTC).
+  const todayIso = await page.evaluate(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  });
   await expect(page.locator('input[type="date"][aria-label="Filter cloud cards by date created"]')).toHaveValue(todayIso);
   await expect(page.getByRole('switch', { name: 'Show starred cards only' })).toHaveAttribute('aria-checked', 'true');
   await expect(page.getByText('Page 2 / 2')).toBeVisible();

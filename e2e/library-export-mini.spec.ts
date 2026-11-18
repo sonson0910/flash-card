@@ -2,7 +2,9 @@ import { readdirSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 
 test('spreadsheet export downloads an XLSX through the browser', async ({ page }) => {
-  const miniChunk = readdirSync('dist/assets').find(name => /^xlsx\.mini\.min-[\w-]+\.js$/.test(name));
+  // Same directory the preview server serves (see vite.config.ts build.outDir).
+  const buildDir = process.env.SONFLASH_BUILD_OUT_DIR || 'dist';
+  const miniChunk = readdirSync(`${buildDir}/assets`).find(name => /^xlsx\.mini\.min-[\w-]+\.js$/.test(name));
   expect(miniChunk).toBeDefined();
 
   await page.goto('/?view=landing');

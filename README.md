@@ -182,7 +182,16 @@ Ubuntu 24.04 environment used by Quality CI. A different host OS can select
 different fallback fonts. On Linux, a version-matched Playwright Noble container
 can run the browser server with a read-only project mount; bind it to loopback
 and pass its WebSocket URL through `PW_TEST_CONNECT_WS_ENDPOINT` to the emulator
-runner. Keep credentials and browser profiles outside the container. The
+runner. [`scripts/e2e-noble-browser-server.sh`](./scripts/e2e-noble-browser-server.sh)
+does this with Docker (`start` prints the endpoint, `stop` removes the container):
+
+```bash
+PW_TEST_CONNECT_WS_ENDPOINT="$(scripts/e2e-noble-browser-server.sh start)" \
+  npm run test:e2e -- e2e/library-visual.spec.ts --project=chromium --project=webkit
+scripts/e2e-noble-browser-server.sh stop
+```
+
+Keep credentials and browser profiles outside the container. The
 [typography regression](./e2e/self-hosted-typography.spec.ts) checks the registered
 body font on Landing, workspace and Settings; changed goldens still require
 visual review followed by an ordinary run without snapshot updates.
