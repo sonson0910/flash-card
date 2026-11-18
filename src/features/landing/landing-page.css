@@ -46,6 +46,7 @@ html[data-theme-family="crystal"] .landing-card > div:last-child { clip-path: po
    nothing the Largest Contentful Paint heuristic recognizes as text, so it
    never competes against page images for LCP no matter how small they are. */
 .crystal-copy h1 { margin: 28px 0 0; font-family: var(--sf-font-display, Geist, sans-serif); font-size: 112px; font-style: italic; font-weight: 900; line-height: .92; letter-spacing: -.01em; text-transform: uppercase; background: linear-gradient(180deg, #2a1040 0%, #150a28 45%, #b30f33 60%, #ff2a4d 100%); -webkit-background-clip: text; background-clip: text; color: #ff2a4d; -webkit-text-fill-color: transparent; filter: drop-shadow(0 5px 0 #7a0820) drop-shadow(0 0 30px rgb(255 42 77 / .6)); }
+html.dark .crystal-copy h1 { background-image: linear-gradient(180deg, #ffffff 0%, #ffe3ea 45%, #ff8fa3 60%, #ffffff 100%); color: #ffe3ea; }
 .crystal-tagline { margin: 28px 0 0; max-width: 570px; color: var(--sf-text); font-family: var(--sf-font-display, Geist, sans-serif); font-size: clamp(1.5rem, 2.3vw, 2rem); font-style: italic; font-weight: 800; line-height: 1.2; }
 .crystal-description { max-width: 530px; margin-top: 16px; color: var(--sf-text-muted); font-size: 1rem; line-height: 1.65; }
 .crystal-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 32px; }

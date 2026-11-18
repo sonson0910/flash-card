@@ -114,6 +114,11 @@ msgctxt "flashcard.hangul-breakdown"
 msgid "Hangul breakdown"
 msgstr "Phân tích âm tiết Hangul"
 
+#: src/components/AppOverlays.tsx:199
+msgctxt "app-overlays.text-practice.offline"
+msgid "Reconnect to start text practice."
+msgstr "Kết nối lại mạng để bắt đầu luyện hội thoại."
+
 #: src/components/Flashcard.tsx:538
 msgctxt "flashcard.details.antonyms"
 msgid "Antonyms"
@@ -783,6 +788,11 @@ msgctxt "flashcard.meaning.vietnamese"
 msgid "Vietnamese meaning"
 msgstr "Nghĩa tiếng Việt"
 
+#: src/components/AppOverlays.tsx:375
+msgctxt "app-overlays.text-practice.title"
+msgid "Text practice"
+msgstr "Luyện hội thoại"
+
 #: src/components/flashcard/CardBack.tsx:351
 msgctxt "flashcard.return-to-english"
 msgid "Return to English"
@@ -825,11 +835,6 @@ msgctxt "cardReport.kicker"
 msgid "Card quality"
 msgstr "Chất lượng thẻ"
 
-#: src/components/AppOverlays.tsx:375
-msgctxt "app-overlays.text-practice"
-msgid "Text practice ·"
-msgstr "Luyện hội thoại ·"
-
 #: src/components/AppOverlays.tsx:593
 msgctxt "shell.share.truncation"
 msgid "This link includes {shared} of {total} cards. Create smaller decks to share the rest."
@@ -844,6 +849,11 @@ msgstr "Chưa có bản dịch"
 msgctxt "flashcard.recall.reveal"
 msgid "Reveal answer"
 msgstr "Hiện đáp án"
+
+#: src/components/AppOverlays.tsx:201
+msgctxt "app-overlays.text-practice.description"
+msgid "Use your vocabulary in a bounded six-turn text mission."
+msgstr "Dùng từ vựng của bạn trong một nhiệm vụ hội thoại gồm sáu lượt."
 
 #: src/components/flashcard/CardHeadword.tsx:43
 msgctxt "flashcard.part-of-speech-prefix"
@@ -864,6 +874,11 @@ msgstr "Ngôn ngữ"
 msgctxt "app-overlays.practise-your-vocabulary-in-a-bounded-text-conversation"
 msgid "Practise your vocabulary in a bounded text conversation."
 msgstr "Luyện từ vựng qua cuộc hội thoại văn bản có giới hạn."
+
+#: src/components/AppOverlays.tsx:202
+msgctxt "app-overlays.text-practice.needs-card"
+msgid "Add a vocabulary card with a word and meaning first."
+msgstr "Hãy thêm một thẻ từ vựng có từ và nghĩa trước."
 
 #: src/features/cardReport/ReportCardDialog.tsx:84
 msgctxt "cardReport.note.optional"
@@ -974,6 +989,11 @@ msgstr "Đánh giá mức độ ghi nhớ"
 msgctxt "flashcard.status.new"
 msgid "New card"
 msgstr "Thẻ mới"
+
+#: src/components/AppOverlays.tsx:375
+msgctxt "app-overlays.text-practice.duration"
+msgid "6 turns"
+msgstr "6 lượt"
 
 #: src/components/AppOverlays.tsx:135
 msgctxt "shell.share.incoming-created"
@@ -1201,6 +1221,11 @@ msgstr "Bộ thẻ thư viện mới"
 msgctxt "cardReport.submitted"
 msgid "Thank you. Your report has been sent for review."
 msgstr "Cảm ơn bạn. Báo cáo đã được gửi để xem xét."
+
+#: src/components/AppOverlays.tsx:197
+msgctxt "app-overlays.text-practice.signed-out"
+msgid "Sign in to practise with your vocabulary."
+msgstr "Đăng nhập để luyện tập với từ vựng của bạn."
 
 #: src/components/flashcard/ActiveRecallQuiz.tsx:118
 msgctxt "flashcard.quiz.correct"

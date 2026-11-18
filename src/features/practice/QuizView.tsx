@@ -3,7 +3,6 @@ import { Trans, useLingui } from "@lingui/react";
 import {
   CheckCircle2,
   ChevronRight,
-  ImageOff,
   Trophy,
   X,
   XCircle,
@@ -224,34 +223,27 @@ export function QuizView({
             className="relative mb-6 grid gap-5 text-[var(--sf-text)] lg:grid-cols-[minmax(19rem,.78fr)_minmax(26rem,1.22fr)] lg:items-center lg:gap-8"
             aria-labelledby="quiz-question-heading"
           >
-            <div className="absolute right-4 top-4 z-10 max-w-40 break-words rounded-xl bg-[var(--sf-brand)] px-2.5 py-1 text-center text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)]">
-              {question.card.category}
-            </div>
-            {isSupportedImageUrl(question.card.imageUrl) ? (
-              <div className="absolute left-6 top-6 z-10 size-16 overflow-hidden rounded-2xl shadow-md">
-                <img
-                  src={question.card.imageUrl!}
-                  alt={_(
-                    msg({
-                      id: "practice.quiz.illustration-alt",
-                      message: "Illustration for {word}",
-                    }),
-                    { word: question.card.word },
-                  )}
-                  width={80}
-                  height={80}
-                  className="h-full w-full object-cover"
-                />
+            <div data-quiz-question-panel className="crystal-chamfer relative flex min-h-64 w-full flex-col justify-end rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-6 pt-24 shadow-[var(--sf-panel-shadow)] sm:min-h-80 sm:p-8 sm:pt-28">
+              <div className="absolute right-4 top-4 z-10 max-w-40 break-words rounded-xl bg-[var(--sf-brand)] px-2.5 py-1 text-center text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)]">
+                {question.card.category}
               </div>
-            ) : (
-              <div
-                className="absolute left-6 top-6 z-10 flex size-16 items-center justify-center rounded-2xl bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)]"
-                aria-hidden="true"
-              >
-                <ImageOff size={28} />
-              </div>
-            )}
-            <div data-quiz-question-panel className="crystal-chamfer flex min-h-64 w-full flex-col justify-end rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-6 pt-24 shadow-[var(--sf-panel-shadow)] sm:min-h-80 sm:p-8 sm:pt-28">
+              {isSupportedImageUrl(question.card.imageUrl) && (
+                <div className="absolute left-6 top-6 z-10 size-16 overflow-hidden rounded-2xl shadow-md">
+                  <img
+                    src={question.card.imageUrl!}
+                    alt={_(
+                      msg({
+                        id: "practice.quiz.illustration-alt",
+                        message: "Illustration for {word}",
+                      }),
+                      { word: question.card.word },
+                    )}
+                    width={80}
+                    height={80}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              )}
               <span className="mb-2 block font-display text-xs font-bold uppercase tracking-[.12em] text-[var(--sf-text-muted)]">
                 <Trans
                   {...msg({ context: 'practice.question-progress', message: 'Question {current} / {total}' })}

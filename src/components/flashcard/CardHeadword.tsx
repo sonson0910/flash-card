@@ -20,8 +20,8 @@ function renderLuminescentPhonetic(phonetic?: string | null, onDarkSurface = fal
   return (
     <>
       {before}
-      <span className={`font-black drop-shadow-[0_0_6px_rgba(6,182,212,0.8)] ${onDarkSurface ? 'text-cyan-200' : 'text-cyan-800 dark:text-cyan-300'}`}>
-        <span className={onDarkSurface ? 'text-cyan-200' : 'text-cyan-800 dark:text-cyan-200'} aria-hidden="true">{'ˈ'}</span>
+      <span className={`font-black ${onDarkSurface ? 'text-cyan-200 drop-shadow-[0_0_6px_rgba(6,182,212,0.8)]' : 'text-[var(--sf-brand-text)]'}`}>
+        <span aria-hidden="true">{'ˈ'}</span>
         {stressedSyl}
       </span>
       {rest}
@@ -47,8 +47,8 @@ export function CardHeadword({ card, variant = 'standard' }: CardHeadwordProps) 
       {isEnglish && <div className="mt-1.5 flex items-center gap-2">
         <span className={variant === 'zen'
           ? 'inline-flex items-center gap-1.5 font-mono text-sm text-white/70'
-          : 'inline-flex items-center gap-1.5 font-mono text-xs font-medium text-slate-500 dark:text-slate-400'}>
-          <AudioLines size={13} className="shrink-0 text-cyan-500 dark:text-cyan-400" aria-hidden="true" />
+          : 'inline-flex items-center gap-1.5 font-mono text-xs font-medium text-[var(--sf-text-muted)]'}>
+          <AudioLines size={13} className="shrink-0 text-[var(--sf-brand)]" aria-hidden="true" />
           <span lang={targetLanguage}>{renderLuminescentPhonetic(phonetic, variant !== 'standard')}</span>
         </span>
       </div>}

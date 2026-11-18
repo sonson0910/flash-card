@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type R
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { AlertTriangle, Check, Copy, Link2, Loader2, Share2, ShieldCheck, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, Copy, Link2, Loader2, MessagesSquare, Share2, ShieldCheck, Trash2, X } from 'lucide-react';
 import type { SharedDeckIncomingPreview, SharedDeckLanguagePair, SharedDeckOutgoingPreview, SharedDeckTruncation } from '../features/sharing/sharedDeckSessionController';
 import { cn } from '../lib/cn';
 import { copyTextToClipboard } from '../lib/recoverableActions';
@@ -194,12 +194,12 @@ export function AppOverlays({
   const [isTextPracticeOpen, setIsTextPracticeOpen] = useState(false);
   const textPracticeAvailable = canStartTextPractice(cards, ownerId, isOffline);
   const textPracticeDescription = !ownerId
-    ? 'Sign in to practise with your vocabulary.'
+    ? _(msg({ context: 'app-overlays.text-practice.signed-out', message: 'Sign in to practise with your vocabulary.' }))
     : isOffline
-      ? 'Reconnect to start text practice.'
+      ? _(msg({ context: 'app-overlays.text-practice.offline', message: 'Reconnect to start text practice.' }))
       : textPracticeAvailable
-        ? 'Use your vocabulary in a bounded six-turn text mission.'
-        : 'Add a vocabulary card with a word and meaning first.';
+        ? _(msg({ context: 'app-overlays.text-practice.description', message: 'Use your vocabulary in a bounded six-turn text mission.' }))
+        : _(msg({ context: 'app-overlays.text-practice.needs-card', message: 'Add a vocabulary card with a word and meaning first.' }));
   const activeListenPracticeHandoff = listenPracticeHandoff
     && listenPracticeHandoff.ownerId === ownerId
     && canStartTextPractice(listenPracticeHandoff.cards, ownerId, isOffline)
@@ -372,7 +372,7 @@ export function AppOverlays({
 
               <div className="space-y-2 px-5 py-5 sm:px-7">
                 <PracticeModeChoices practiceCards={practiceCards} visibleLibraryCount={visibleLibraryCount} practiceAction={practiceAction} actions={practiceActions} onRun={runPracticeAction} />
-                <button type="button" disabled={!textPracticeAvailable} onClick={() => { setIsPracticeMenuOpen(false); setIsTextPracticeOpen(true); }} className="min-h-11 rounded-xl border p-3"><Trans {...msg({ context: 'app-overlays.text-practice', message: 'Text practice ·' })} />{textPracticeDescription}</button>
+                <PracticeChoice icon={MessagesSquare} title={_(msg({ context: 'app-overlays.text-practice.title', message: 'Text practice' }))} duration={_(msg({ context: 'app-overlays.text-practice.duration', message: '6 turns' }))} description={textPracticeDescription} disabled={!textPracticeAvailable || practiceAction !== null} onClick={() => { setIsPracticeMenuOpen(false); setIsTextPracticeOpen(true); }} />
               </div>
             </GsapEntrance>
           </Dialog.Content>

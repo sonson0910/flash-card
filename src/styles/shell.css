@@ -33,7 +33,7 @@ html[data-theme-family=classic]:not(.dark) .claude-nav-item[data-shell-active=tr
 .claude-app-shell .app-footer-bar { display: none; }
 
 /* Active sessions own the viewport while the regular app navigation stays mounted. */
-.claude-app-shell:has(:is([data-session-shell="bridge"], [aria-labelledby="daily-lesson-heading"], [data-session-shell="placement"], [data-active-daily-match])) :is(.claude-topbar, .claude-mobile-nav) { display: none; }
+.claude-app-shell:has(:is([data-session-shell="bridge"], [aria-labelledby="daily-lesson-heading"], [data-session-shell="placement"], [data-active-daily-match])) :is(.claude-topbar, .claude-mobile-nav, [data-offline-readiness]) { display: none; }
 .claude-app-shell:has(:is([data-session-shell="bridge"], [aria-labelledby="daily-lesson-heading"], [data-session-shell="placement"], [data-active-daily-match])) .claude-workspace-inner { max-width: none; padding: 0; }
 
 html[data-theme-family=crystal] .claude-app-shell { font-family: Nunito, sans-serif; background: var(--sf-canvas); }

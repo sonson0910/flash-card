@@ -114,6 +114,11 @@ msgctxt "flashcard.hangul-breakdown"
 msgid "Hangul breakdown"
 msgstr "Hangul breakdown"
 
+#: src/components/AppOverlays.tsx:199
+msgctxt "app-overlays.text-practice.offline"
+msgid "Reconnect to start text practice."
+msgstr "Reconnect to start text practice."
+
 #: src/components/Flashcard.tsx:538
 msgctxt "flashcard.details.antonyms"
 msgid "Antonyms"
@@ -783,6 +788,11 @@ msgctxt "flashcard.meaning.vietnamese"
 msgid "Vietnamese meaning"
 msgstr "Vietnamese meaning"
 
+#: src/components/AppOverlays.tsx:375
+msgctxt "app-overlays.text-practice.title"
+msgid "Text practice"
+msgstr "Text practice"
+
 #: src/components/flashcard/CardBack.tsx:351
 msgctxt "flashcard.return-to-english"
 msgid "Return to English"
@@ -825,11 +835,6 @@ msgctxt "cardReport.kicker"
 msgid "Card quality"
 msgstr "Card quality"
 
-#: src/components/AppOverlays.tsx:375
-msgctxt "app-overlays.text-practice"
-msgid "Text practice ·"
-msgstr "Text practice ·"
-
 #: src/components/AppOverlays.tsx:593
 msgctxt "shell.share.truncation"
 msgid "This link includes {shared} of {total} cards. Create smaller decks to share the rest."
@@ -844,6 +849,11 @@ msgstr "Translation not available"
 msgctxt "flashcard.recall.reveal"
 msgid "Reveal answer"
 msgstr "Reveal answer"
+
+#: src/components/AppOverlays.tsx:201
+msgctxt "app-overlays.text-practice.description"
+msgid "Use your vocabulary in a bounded six-turn text mission."
+msgstr "Use your vocabulary in a bounded six-turn text mission."
 
 #: src/components/flashcard/CardHeadword.tsx:43
 msgctxt "flashcard.part-of-speech-prefix"
@@ -864,6 +874,11 @@ msgstr "Languages"
 msgctxt "app-overlays.practise-your-vocabulary-in-a-bounded-text-conversation"
 msgid "Practise your vocabulary in a bounded text conversation."
 msgstr "Practise your vocabulary in a bounded text conversation."
+
+#: src/components/AppOverlays.tsx:202
+msgctxt "app-overlays.text-practice.needs-card"
+msgid "Add a vocabulary card with a word and meaning first."
+msgstr "Add a vocabulary card with a word and meaning first."
 
 #: src/features/cardReport/ReportCardDialog.tsx:84
 msgctxt "cardReport.note.optional"
@@ -974,6 +989,11 @@ msgstr "Rate memory strength"
 msgctxt "flashcard.status.new"
 msgid "New card"
 msgstr "New card"
+
+#: src/components/AppOverlays.tsx:375
+msgctxt "app-overlays.text-practice.duration"
+msgid "6 turns"
+msgstr "6 turns"
 
 #: src/components/AppOverlays.tsx:135
 msgctxt "shell.share.incoming-created"
@@ -1201,6 +1221,11 @@ msgstr "New library deck"
 msgctxt "cardReport.submitted"
 msgid "Thank you. Your report has been sent for review."
 msgstr "Thank you. Your report has been sent for review."
+
+#: src/components/AppOverlays.tsx:197
+msgctxt "app-overlays.text-practice.signed-out"
+msgid "Sign in to practise with your vocabulary."
+msgstr "Sign in to practise with your vocabulary."
 
 #: src/components/flashcard/ActiveRecallQuiz.tsx:118
 msgctxt "flashcard.quiz.correct"

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLingui } from '@lingui/react';
 import { msg } from '@lingui/core/macro';
 import { formatNumber } from '../../lib/format';
@@ -122,6 +122,16 @@ export function ActivityHeatmap({ entries, reviewActivity, rangeDays, todayKey, 
   }, [entries, locale, rangeDays, reviewActivity, todayKey]);
   const isReviewActivity = Boolean(reviewActivity);
   const interactive = Boolean(onDaySelect);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [hasEarlierWeeks, setHasEarlierWeeks] = useState(false);
+  // On narrow screens the grid is wider than its card. Open on the latest weeks
+  // (today's column) and fade the leading edge so older weeks read as scrollable.
+  useLayoutEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    scroller.scrollLeft = scroller.scrollWidth;
+    setHasEarlierWeeks(scroller.scrollLeft > 0);
+  }, [weeks.length, interactive]);
 
   return <div className="w-full space-y-4">
     <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -135,7 +145,7 @@ export function ActivityHeatmap({ entries, reviewActivity, rangeDays, todayKey, 
         <span>{_(msg({ id: 'stats.more', message: 'More' }))}</span>
       </div>
     </div>
-    <div className="w-full overflow-x-auto pb-2 scrollbar-none" tabIndex={0} aria-label={_(msg({ id: 'stats.study-activity', message: 'Study activity' }))}>
+    <div ref={scrollerRef} onScroll={event => setHasEarlierWeeks(event.currentTarget.scrollLeft > 0)} className={`w-full overflow-x-auto pb-2 scrollbar-none ${hasEarlierWeeks ? '[mask-image:linear-gradient(to_right,transparent,#000_2.5rem)]' : ''}`} tabIndex={0} aria-label={_(msg({ id: 'stats.study-activity', message: 'Study activity' }))}>
       <section className="grid min-w-max grid-cols-[auto_1fr] gap-2" aria-label={_(msg({ id: 'stats.study-activity', message: 'Study activity' }))}>
         <div className="mt-5 flex flex-col gap-1.5 pr-1 text-right text-[10px] font-semibold text-[var(--sf-text-muted)]">
           {labels.map(label => <span key={label} className={`flex items-center justify-end ${interactive ? 'h-6' : 'h-3.5'}`}>{label}</span>)}

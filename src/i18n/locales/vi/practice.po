@@ -58,7 +58,7 @@ msgctxt "rich-story-view.check-understanding"
 msgid "Check understanding"
 msgstr "Kiểm tra khả năng hiểu"
 
-#: src/features/practice/QuizView.tsx:174
+#: src/features/practice/QuizView.tsx:173
 msgctxt "practice.results.keep-practising"
 msgid "Keep practising until the difficult words feel automatic."
 msgstr "Hãy tiếp tục luyện đến khi các từ khó trở nên tự nhiên."
@@ -164,7 +164,7 @@ msgctxt "practice.story.vocabulary-subtitle"
 msgid "A story built from your own vocabulary"
 msgstr "Câu chuyện được tạo từ từ vựng của bạn"
 
-#: src/features/practice/QuizView.tsx:140
+#: src/features/practice/QuizView.tsx:139
 msgctxt "practice.quiz.results-subtitle"
 msgid "Your vocabulary review results"
 msgstr "Kết quả ôn từ vựng của bạn"
@@ -184,7 +184,7 @@ msgctxt "languagePractice.ja.title"
 msgid "Type the reading"
 msgstr "Gõ cách đọc"
 
-#: src/features/practice/QuizView.tsx:156
+#: src/features/practice/QuizView.tsx:155
 #: src/features/practice/SpellingView.tsx:167
 msgctxt "practice.results.accuracy"
 msgid "Accuracy"
@@ -195,7 +195,7 @@ msgctxt "study-view.i-ve-reviewed-it-start-recall"
 msgid "I’ve reviewed it — start recall"
 msgstr "Tôi đã xem từ — bắt đầu nhớ lại"
 
-#: src/features/practice/QuizView.tsx:212
+#: src/features/practice/QuizView.tsx:211
 #: src/features/practice/SpellingView.tsx:208
 msgctxt "practice.score"
 msgid "Score: {score} / {total}"
@@ -216,7 +216,7 @@ msgctxt "practice.match.verification-failed"
 msgid "We could not verify your result. Your completed pairs are still here."
 msgstr "Không thể xác minh kết quả. Các cặp bạn đã hoàn thành vẫn còn đây."
 
-#: src/features/practice/QuizView.tsx:287
+#: src/features/practice/QuizView.tsx:279
 #: src/features/practice/SpellingView.tsx:271
 msgctxt "practice.feedback.incorrect-prefix"
 msgid "Incorrect. The correct answer is"
@@ -227,7 +227,7 @@ msgctxt "languagePractice.zh.instruction"
 msgid "Choose the tone for every pinyin syllable."
 msgstr "Chọn thanh điệu cho từng âm tiết pinyin."
 
-#: src/features/practice/QuizView.tsx:390
+#: src/features/practice/QuizView.tsx:382
 #: src/features/practice/SpellingView.tsx:355
 msgctxt "practice.actions.next"
 msgid "Next"
@@ -360,7 +360,7 @@ msgctxt "languagePractice.en.title"
 msgid "Spell the word"
 msgstr "Viết từ vựng"
 
-#: src/features/practice/QuizView.tsx:185
+#: src/features/practice/QuizView.tsx:184
 #: src/features/practice/SpellingView.tsx:181
 #: src/features/practice/StoryView.tsx:144
 msgctxt "practice.actions.try-again"
@@ -402,7 +402,7 @@ msgctxt "practice.story.translation-language"
 msgid "{languageName} translation"
 msgstr "Bản dịch {languageName}"
 
-#: src/features/practice/QuizView.tsx:257
+#: src/features/practice/QuizView.tsx:249
 #: src/features/practice/SpellingView.tsx:229
 msgctxt "practice.question-progress"
 msgid "Question {current} / {total}"
@@ -413,7 +413,7 @@ msgctxt "study.recall-mode.cloze"
 msgid "Fill the sentence"
 msgstr "Điền vào câu"
 
-#: src/features/practice/QuizView.tsx:170
+#: src/features/practice/QuizView.tsx:169
 msgctxt "practice.results.good"
 msgid "Great work. This vocabulary is becoming secure."
 msgstr "Làm tốt lắm. Bạn đang nhớ từ vựng chắc hơn."
@@ -443,7 +443,7 @@ msgctxt "practice.match.verified-xp"
 msgid "Verified +{awardedXp} XP"
 msgstr "Đã xác minh +{awardedXp} XP"
 
-#: src/features/practice/QuizView.tsx:299
+#: src/features/practice/QuizView.tsx:291
 msgctxt "practice.quiz.choose-answer"
 msgid "Choose one answer"
 msgstr "Chọn một đáp án"
@@ -453,7 +453,7 @@ msgctxt "languagePractice.progress"
 msgid "Item {current} of {total}"
 msgstr "Câu {current} trên {total}"
 
-#: src/features/practice/QuizView.tsx:295
+#: src/features/practice/QuizView.tsx:287
 #: src/features/practice/SpellingView.tsx:277
 #: src/features/practice/StudyView.tsx:422
 msgctxt "practice.learn-first"
@@ -555,7 +555,7 @@ msgctxt "rich-story-view.an-ephemeral-ai-generated-lesson-from-your-vocabulary"
 msgid "An ephemeral AI-generated lesson from your vocabulary"
 msgstr "Bài học tạm thời do AI tạo từ vốn từ của bạn"
 
-#: src/features/practice/QuizView.tsx:209
+#: src/features/practice/QuizView.tsx:208
 #: src/features/practice/SpellingView.tsx:205
 #: src/features/practice/StudyView.tsx:393
 #: src/features/practice/WordMatchView.tsx:289
@@ -725,7 +725,7 @@ msgid "practice.error.timeout"
 msgstr "Chuẩn bị hoạt động này mất quá lâu. Kiểm tra kết nối rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:282
+#: src/features/practice/QuizView.tsx:274
 #: src/features/practice/SpellingView.tsx:266
 msgid "practice.feedback.correct"
 msgstr "Đúng rồi."
@@ -846,17 +846,17 @@ msgid "practice.quiz.illustration-alt"
 msgstr "Minh họa cho {word}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:102
+#: src/features/practice/QuizView.tsx:101
 msgid "practice.quiz.native-to-target-question"
 msgstr "Từ {targetLanguageName} nào tương ứng với {translation}?"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:401
+#: src/features/practice/QuizView.tsx:393
 msgid "practice.quiz.progress"
 msgstr "Tiến độ bài kiểm tra"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:94
+#: src/features/practice/QuizView.tsx:93
 msgid "practice.quiz.target-to-native-question"
 msgstr "{word} có nghĩa là gì trong {nativeLanguageName}?"
 
@@ -992,7 +992,7 @@ msgctxt "practice.story.context"
 msgid "Context story"
 msgstr "Câu chuyện ngữ cảnh"
 
-#: src/features/practice/QuizView.tsx:136
+#: src/features/practice/QuizView.tsx:135
 msgctxt "practice.quiz.complete"
 msgid "Quiz complete"
 msgstr "Hoàn thành bài kiểm tra"
@@ -1012,7 +1012,7 @@ msgstr "Đang tải bài luyện ngôn ngữ…"
 msgid "recap.close"
 msgstr "Đóng phần tổng kết"
 
-#: src/features/practice/QuizView.tsx:166
+#: src/features/practice/QuizView.tsx:165
 msgctxt "practice.results.perfect"
 msgid "Perfect. You answered every question correctly."
 msgstr "Hoàn hảo. Bạn đã trả lời đúng mọi câu hỏi."
@@ -1032,7 +1032,7 @@ msgstr "Đọc cảnh {number} bằng tiếng Anh"
 msgid "rich-story-view.target-phrases-from-your-vocabulary"
 msgstr "Cụm từ cần luyện từ vốn từ của bạn"
 
-#: src/features/practice/QuizView.tsx:147
+#: src/features/practice/QuizView.tsx:146
 #: src/features/practice/SpellingView.tsx:158
 msgctxt "practice.results.correct-answers"
 msgid "Correct answers"
@@ -1068,7 +1068,7 @@ msgstr "Hoàn thành bài luyện"
 msgid "shadowing-view.practice-target"
 msgstr "Nội dung cần luyện"
 
-#: src/features/practice/QuizView.tsx:193
+#: src/features/practice/QuizView.tsx:192
 #: src/features/practice/SpellingView.tsx:189
 msgctxt "practice.actions.back-to-library"
 msgid "Back to library"
@@ -1225,7 +1225,7 @@ msgctxt "practice.shadowing.start-copy"
 msgid "Tap the microphone and read the sentence."
 msgstr "Chạm vào micrô và đọc câu."
 
-#: src/features/practice/QuizView.tsx:384
+#: src/features/practice/QuizView.tsx:376
 #: src/features/practice/SpellingView.tsx:349
 msgctxt "practice.actions.saving-result"
 msgid "Saving result…"
@@ -1241,18 +1241,18 @@ msgctxt "recap.xp-earned"
 msgid "XP earned"
 msgstr "XP nhận được"
 
-#: src/features/practice/QuizView.tsx:207
+#: src/features/practice/QuizView.tsx:206
 #: src/features/practice/SpellingView.tsx:203
 msgctxt "practice.actions.exit"
 msgid "Exit"
 msgstr "Thoát"
 
-#: src/features/practice/QuizView.tsx:363
+#: src/features/practice/QuizView.tsx:355
 msgctxt "practice.feedback.correct-answer"
 msgid "The correct answer is"
 msgstr "Đáp án đúng là"
 
-#: src/features/practice/QuizView.tsx:356
+#: src/features/practice/QuizView.tsx:348
 msgctxt "practice.feedback.correct-short"
 msgid "Correct"
 msgstr "Đúng"
@@ -1262,7 +1262,7 @@ msgctxt "languagePractice.action.exit"
 msgid "Exit"
 msgstr "Thoát"
 
-#: src/features/practice/QuizView.tsx:387
+#: src/features/practice/QuizView.tsx:379
 #: src/features/practice/SpellingView.tsx:352
 msgctxt "practice.actions.view-results"
 msgid "View results"

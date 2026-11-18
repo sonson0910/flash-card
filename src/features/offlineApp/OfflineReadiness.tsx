@@ -302,16 +302,18 @@ export function OfflineReadiness({
     || status === 'unsupported';
 
   return (
+    // One compact row: the banner stays available on every workspace view without
+    // pushing a phone's primary learning action below the fold.
     <section
       data-offline-readiness="true"
       aria-labelledby="offline-readiness-heading"
-      className="mb-5 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)]/80 p-4 shadow-sm"
+      className="mb-4 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)]/80 px-4 py-2.5 shadow-sm"
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 id="offline-readiness-heading" className="text-sm font-black uppercase tracking-[0.08em]">Offline access</h2>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 id="offline-readiness-heading" className="text-xs font-black uppercase tracking-[0.08em]">Offline access</h2>
           {status === 'idle' || status === 'error' ? (
-            <p className="mt-1 text-sm text-[var(--sf-muted)]">app files, up to 4 MiB</p>
+            <p className="text-xs text-[var(--sf-text-muted)]">app files, up to 4 MiB</p>
           ) : null}
         </div>
         {status !== 'unsupported' ? (
@@ -319,13 +321,14 @@ export function OfflineReadiness({
             type="button"
             disabled={actionDisabled}
             onClick={() => { void handlePrepare(); }}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--sf-brand)] px-4 py-2 text-sm font-bold text-[var(--sf-on-brand)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-65"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-[var(--sf-brand)] px-4 py-2 text-sm font-bold text-[var(--sf-on-brand)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-65"
           >
             {status === 'preparing' ? 'Preparing offline…' : actionLabel}
           </button>
         ) : null}
       </div>
-      <p role="status" aria-live="polite" aria-atomic="true" aria-busy={status === 'preparing'} className="mt-2 text-sm text-[var(--sf-muted)]">
+      {/* The idle hint repeats the heading and button, so it is announced but not shown. */}
+      <p role="status" aria-live="polite" aria-atomic="true" aria-busy={status === 'preparing'} className={status === 'idle' ? 'sr-only' : 'mt-1 text-xs text-[var(--sf-text-muted)]'}>
         {message}
       </p>
     </section>

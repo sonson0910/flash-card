@@ -1158,3 +1158,10 @@
 @media (prefers-reduced-motion: reduce) {
   .library-word-card { transition: none; }
 }
+
+/* Crystal adds the Lumi hint beside the title, so its desktop heading needs a
+   fourth column; otherwise "Create card" wraps onto its own full-width row.
+   Narrow layouts keep the hint on its own row. */
+@media (min-width: 901px) {
+  :root[data-theme-family="crystal"] .library-canvas-heading { grid-template-columns: auto minmax(0, 1fr) minmax(18rem, 19.5rem) auto; }
+}

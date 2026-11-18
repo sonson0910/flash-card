@@ -53,7 +53,7 @@ msgctxt "onboarding.pace.option"
 msgid "{count} cards / day"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:108
+#: src/app/AppViewStage.tsx:111
 msgctxt "shell.loading.today"
 msgid "Preparing today’s learning plan…"
 msgstr ""
@@ -86,6 +86,11 @@ msgstr ""
 #: src/components/AppOverlays.tsx:499
 msgctxt "shell.share.incoming-safeguard"
 msgid "Cards go into a new deck with the same name. Your existing cards and progress stay untouched."
+msgstr ""
+
+#: src/components/AppOverlays.tsx:199
+msgctxt "app-overlays.text-practice.offline"
+msgid "Reconnect to start text practice."
 msgstr ""
 
 #: src/features/courses/CourseGoalsPanel.tsx:50
@@ -196,7 +201,7 @@ msgctxt "onboarding.aha.skip"
 msgid "Skip for now"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:116
+#: src/app/AppViewStage.tsx:119
 msgctxt "shell.loading.settings"
 msgid "Preparing appearance settings…"
 msgstr ""
@@ -455,7 +460,7 @@ msgid "Collection"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:255
+#: src/app/AppRuntime.tsx:256
 msgid "extension.import.course-mismatch-confirm"
 msgstr ""
 
@@ -516,7 +521,12 @@ msgctxt "shell.share.copy-short"
 msgid "Copy"
 msgstr ""
 
-#: src/app/AppRuntime.tsx:559
+#: src/components/AppOverlays.tsx:375
+msgctxt "app-overlays.text-practice.title"
+msgid "Text practice"
+msgstr ""
+
+#: src/app/AppRuntime.tsx:568
 #: src/components/shell/CourseSwitcherControl.tsx:110
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -578,11 +588,6 @@ msgctxt "shell.menu.account-data"
 msgid "Account data"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:375
-msgctxt "app-overlays.text-practice"
-msgid "Text practice ·"
-msgstr ""
-
 #: src/components/shell/LibraryManagementMenu.tsx:342
 msgctxt "shell.menu.insights"
 msgid "Learning insights"
@@ -606,6 +611,11 @@ msgstr ""
 #: src/features/onboarding/OnboardingJourney.tsx:303
 msgctxt "onboarding.reminder.title"
 msgid "Daily reminders"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:201
+msgctxt "app-overlays.text-practice.description"
+msgid "Use your vocabulary in a bounded six-turn text mission."
 msgstr ""
 
 #: src/features/courses/CourseGoalsPanel.tsx:113
@@ -636,6 +646,11 @@ msgstr ""
 #: src/components/AppOverlays.tsx:405
 msgctxt "app-overlays.practise-your-vocabulary-in-a-bounded-text-conversation"
 msgid "Practise your vocabulary in a bounded text conversation."
+msgstr ""
+
+#: src/components/AppOverlays.tsx:202
+msgctxt "app-overlays.text-practice.needs-card"
+msgid "Add a vocabulary card with a word and meaning first."
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -696,7 +711,7 @@ msgctxt "course.create.submit"
 msgid "Create course"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:100
+#: src/app/AppViewStage.tsx:103
 msgctxt "shell.loading.paths"
 msgid "Preparing learning paths…"
 msgstr ""
@@ -704,6 +719,11 @@ msgstr ""
 #: src/components/shell/CourseSwitcherControl.tsx:38
 msgctxt "course.status.active"
 msgid "Active course"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:375
+msgctxt "app-overlays.text-practice.duration"
+msgid "6 turns"
 msgstr ""
 
 #: src/components/AppOverlays.tsx:135
@@ -921,7 +941,7 @@ msgid "shell.language.open"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:548
+#: src/app/AppRuntime.tsx:557
 msgid "shell.learning-workspace"
 msgstr ""
 
@@ -1144,7 +1164,7 @@ msgid "shell.sync.paused-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:436
+#: src/app/AppRuntime.tsx:437
 msgid "shell.sync.retry-failed"
 msgstr ""
 
@@ -1210,7 +1230,7 @@ msgctxt "onboarding.language.subtitle"
 msgid "This sets the app's interface and the language your explanations will be written in."
 msgstr ""
 
-#: src/app/AppRuntime.tsx:560
+#: src/app/AppRuntime.tsx:569
 #: src/components/shell/CourseSwitcherControl.tsx:112
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -1276,7 +1296,7 @@ msgctxt "course.goal.edit.cancel"
 msgid "Cancel"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:115
+#: src/app/AppViewStage.tsx:118
 msgctxt "shell.loading.progress"
 msgid "Preparing learning progress…"
 msgstr ""
@@ -1291,6 +1311,11 @@ msgctxt "course.status.archived"
 msgid "Archived"
 msgstr ""
 
+#: src/components/AppOverlays.tsx:197
+msgctxt "app-overlays.text-practice.signed-out"
+msgid "Sign in to practise with your vocabulary."
+msgstr ""
+
 #: src/features/courses/CourseGoalsPanel.tsx:54
 #: src/features/courses/CourseGoalsPanel.tsx:97
 #: src/features/onboarding/OnboardingJourney.tsx:239
@@ -1298,7 +1323,7 @@ msgctxt "course.goal.add.date-label"
 msgid "Exam or target date (optional)"
 msgstr ""
 
-#: src/app/AppRuntime.tsx:562
+#: src/app/AppRuntime.tsx:571
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr ""
@@ -1344,7 +1369,7 @@ msgid "Let's add your first cards"
 msgstr ""
 
 #: src/app/AppDeferredViews.tsx:23
-#: src/app/AppRuntime.tsx:79
+#: src/app/AppRuntime.tsx:80
 msgctxt "shell.opening-dialog"
 msgid "Opening dialog"
 msgstr ""

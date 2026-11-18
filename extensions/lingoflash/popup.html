@@ -125,15 +125,17 @@
       <button class="link-button" id="web-words-loop-action" type="button" data-i18n="webWordsLoopAction">Xem trong SonFlash</button>
     </section>
 
-    <section class="shortcuts" data-i18n-aria-label="shortcutsLabel" aria-label="Phím tắt">
-      <div class="shortcut-row"><span data-i18n="shortcutSaveRow">Dịch + thêm</span><kbd id="save-shortcut-value">Ctrl/⌘ + Shift + L</kbd></div>
-      <div class="shortcut-row"><span data-i18n="shortcutTranslateRow">Chỉ dịch</span><kbd id="translate-shortcut-value">Alt/⌥ + Shift + L</kbd></div>
-      <button class="link-button shortcut-settings-button" id="open-shortcuts" type="button" data-i18n="shortcutConfigure">Cấu hình phím tắt</button>
-    </section>
+    <div class="popup-dock">
+      <section class="shortcuts" data-i18n-aria-label="shortcutsLabel" aria-label="Phím tắt">
+        <div class="shortcut-row"><span data-i18n="shortcutSaveRow">Dịch + thêm</span><kbd id="save-shortcut-value">Ctrl/⌘ + Shift + L</kbd></div>
+        <div class="shortcut-row"><span data-i18n="shortcutTranslateRow">Chỉ dịch</span><kbd id="translate-shortcut-value">Alt/⌥ + Shift + L</kbd></div>
+        <button class="link-button shortcut-settings-button" id="open-shortcuts" type="button" data-i18n="shortcutConfigure">Cấu hình phím tắt</button>
+      </section>
 
-    <footer>
-      <button class="link-button" id="open-app" type="button"><span id="open-app-label" data-i18n="openAppLink">Đăng nhập</span><span id="due-count-suffix" hidden></span></button>
-    </footer>
+      <footer>
+        <button class="link-button" id="open-app" type="button"><span id="open-app-label" data-i18n="openAppLink">Đăng nhập</span><span id="due-count-suffix" hidden></span></button>
+      </footer>
+    </div>
   </main>
   <script src="shared.js"></script>
   <script src="popup.js"></script>

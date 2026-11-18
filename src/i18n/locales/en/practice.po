@@ -58,7 +58,7 @@ msgctxt "rich-story-view.check-understanding"
 msgid "Check understanding"
 msgstr "Check understanding"
 
-#: src/features/practice/QuizView.tsx:174
+#: src/features/practice/QuizView.tsx:173
 msgctxt "practice.results.keep-practising"
 msgid "Keep practising until the difficult words feel automatic."
 msgstr "Keep practising until the difficult words feel automatic."
@@ -164,7 +164,7 @@ msgctxt "practice.story.vocabulary-subtitle"
 msgid "A story built from your own vocabulary"
 msgstr "A story built from your own vocabulary"
 
-#: src/features/practice/QuizView.tsx:140
+#: src/features/practice/QuizView.tsx:139
 msgctxt "practice.quiz.results-subtitle"
 msgid "Your vocabulary review results"
 msgstr "Your vocabulary review results"
@@ -184,7 +184,7 @@ msgctxt "languagePractice.ja.title"
 msgid "Type the reading"
 msgstr "Type the reading"
 
-#: src/features/practice/QuizView.tsx:156
+#: src/features/practice/QuizView.tsx:155
 #: src/features/practice/SpellingView.tsx:167
 msgctxt "practice.results.accuracy"
 msgid "Accuracy"
@@ -195,7 +195,7 @@ msgctxt "study-view.i-ve-reviewed-it-start-recall"
 msgid "I’ve reviewed it — start recall"
 msgstr "I’ve reviewed it — start recall"
 
-#: src/features/practice/QuizView.tsx:212
+#: src/features/practice/QuizView.tsx:211
 #: src/features/practice/SpellingView.tsx:208
 msgctxt "practice.score"
 msgid "Score: {score} / {total}"
@@ -216,7 +216,7 @@ msgctxt "practice.match.verification-failed"
 msgid "We could not verify your result. Your completed pairs are still here."
 msgstr "We could not verify your result. Your completed pairs are still here."
 
-#: src/features/practice/QuizView.tsx:287
+#: src/features/practice/QuizView.tsx:279
 #: src/features/practice/SpellingView.tsx:271
 msgctxt "practice.feedback.incorrect-prefix"
 msgid "Incorrect. The correct answer is"
@@ -227,7 +227,7 @@ msgctxt "languagePractice.zh.instruction"
 msgid "Choose the tone for every pinyin syllable."
 msgstr "Choose the tone for every pinyin syllable."
 
-#: src/features/practice/QuizView.tsx:390
+#: src/features/practice/QuizView.tsx:382
 #: src/features/practice/SpellingView.tsx:355
 msgctxt "practice.actions.next"
 msgid "Next"
@@ -360,7 +360,7 @@ msgctxt "languagePractice.en.title"
 msgid "Spell the word"
 msgstr "Spell the word"
 
-#: src/features/practice/QuizView.tsx:185
+#: src/features/practice/QuizView.tsx:184
 #: src/features/practice/SpellingView.tsx:181
 #: src/features/practice/StoryView.tsx:144
 msgctxt "practice.actions.try-again"
@@ -402,7 +402,7 @@ msgctxt "practice.story.translation-language"
 msgid "{languageName} translation"
 msgstr "{languageName} translation"
 
-#: src/features/practice/QuizView.tsx:257
+#: src/features/practice/QuizView.tsx:249
 #: src/features/practice/SpellingView.tsx:229
 msgctxt "practice.question-progress"
 msgid "Question {current} / {total}"
@@ -413,7 +413,7 @@ msgctxt "study.recall-mode.cloze"
 msgid "Fill the sentence"
 msgstr "Fill the sentence"
 
-#: src/features/practice/QuizView.tsx:170
+#: src/features/practice/QuizView.tsx:169
 msgctxt "practice.results.good"
 msgid "Great work. This vocabulary is becoming secure."
 msgstr "Great work. This vocabulary is becoming secure."
@@ -443,7 +443,7 @@ msgctxt "practice.match.verified-xp"
 msgid "Verified +{awardedXp} XP"
 msgstr "Verified +{awardedXp} XP"
 
-#: src/features/practice/QuizView.tsx:299
+#: src/features/practice/QuizView.tsx:291
 msgctxt "practice.quiz.choose-answer"
 msgid "Choose one answer"
 msgstr "Choose one answer"
@@ -453,7 +453,7 @@ msgctxt "languagePractice.progress"
 msgid "Item {current} of {total}"
 msgstr "Item {current} of {total}"
 
-#: src/features/practice/QuizView.tsx:295
+#: src/features/practice/QuizView.tsx:287
 #: src/features/practice/SpellingView.tsx:277
 #: src/features/practice/StudyView.tsx:422
 msgctxt "practice.learn-first"
@@ -555,7 +555,7 @@ msgctxt "rich-story-view.an-ephemeral-ai-generated-lesson-from-your-vocabulary"
 msgid "An ephemeral AI-generated lesson from your vocabulary"
 msgstr "An ephemeral AI-generated lesson from your vocabulary"
 
-#: src/features/practice/QuizView.tsx:209
+#: src/features/practice/QuizView.tsx:208
 #: src/features/practice/SpellingView.tsx:205
 #: src/features/practice/StudyView.tsx:393
 #: src/features/practice/WordMatchView.tsx:289
@@ -725,7 +725,7 @@ msgid "practice.error.timeout"
 msgstr "Preparing this activity took too long. Check your connection and try again."
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:282
+#: src/features/practice/QuizView.tsx:274
 #: src/features/practice/SpellingView.tsx:266
 msgid "practice.feedback.correct"
 msgstr "Correct answer."
@@ -846,17 +846,17 @@ msgid "practice.quiz.illustration-alt"
 msgstr "Illustration for {word}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:102
+#: src/features/practice/QuizView.tsx:101
 msgid "practice.quiz.native-to-target-question"
 msgstr "Which {targetLanguageName} word matches {translation}?"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:401
+#: src/features/practice/QuizView.tsx:393
 msgid "practice.quiz.progress"
 msgstr "Quiz progress"
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:94
+#: src/features/practice/QuizView.tsx:93
 msgid "practice.quiz.target-to-native-question"
 msgstr "What does {word} mean in {nativeLanguageName}?"
 
@@ -992,7 +992,7 @@ msgctxt "practice.story.context"
 msgid "Context story"
 msgstr "Context story"
 
-#: src/features/practice/QuizView.tsx:136
+#: src/features/practice/QuizView.tsx:135
 msgctxt "practice.quiz.complete"
 msgid "Quiz complete"
 msgstr "Quiz complete"
@@ -1012,7 +1012,7 @@ msgstr "Loading this language exercise…"
 msgid "recap.close"
 msgstr "Close recap"
 
-#: src/features/practice/QuizView.tsx:166
+#: src/features/practice/QuizView.tsx:165
 msgctxt "practice.results.perfect"
 msgid "Perfect. You answered every question correctly."
 msgstr "Perfect. You answered every question correctly."
@@ -1032,7 +1032,7 @@ msgstr "Read scene {number} in English"
 msgid "rich-story-view.target-phrases-from-your-vocabulary"
 msgstr "Target phrases from your vocabulary"
 
-#: src/features/practice/QuizView.tsx:147
+#: src/features/practice/QuizView.tsx:146
 #: src/features/practice/SpellingView.tsx:158
 msgctxt "practice.results.correct-answers"
 msgid "Correct answers"
@@ -1068,7 +1068,7 @@ msgstr "Drill complete"
 msgid "shadowing-view.practice-target"
 msgstr "Practice target"
 
-#: src/features/practice/QuizView.tsx:193
+#: src/features/practice/QuizView.tsx:192
 #: src/features/practice/SpellingView.tsx:189
 msgctxt "practice.actions.back-to-library"
 msgid "Back to library"
@@ -1225,7 +1225,7 @@ msgctxt "practice.shadowing.start-copy"
 msgid "Tap the microphone and read the sentence."
 msgstr "Tap the microphone and read the sentence."
 
-#: src/features/practice/QuizView.tsx:384
+#: src/features/practice/QuizView.tsx:376
 #: src/features/practice/SpellingView.tsx:349
 msgctxt "practice.actions.saving-result"
 msgid "Saving result…"
@@ -1241,18 +1241,18 @@ msgctxt "recap.xp-earned"
 msgid "XP earned"
 msgstr "XP earned"
 
-#: src/features/practice/QuizView.tsx:207
+#: src/features/practice/QuizView.tsx:206
 #: src/features/practice/SpellingView.tsx:203
 msgctxt "practice.actions.exit"
 msgid "Exit"
 msgstr "Exit"
 
-#: src/features/practice/QuizView.tsx:363
+#: src/features/practice/QuizView.tsx:355
 msgctxt "practice.feedback.correct-answer"
 msgid "The correct answer is"
 msgstr "The correct answer is"
 
-#: src/features/practice/QuizView.tsx:356
+#: src/features/practice/QuizView.tsx:348
 msgctxt "practice.feedback.correct-short"
 msgid "Correct"
 msgstr "Correct"
@@ -1262,7 +1262,7 @@ msgctxt "languagePractice.action.exit"
 msgid "Exit"
 msgstr "Exit"
 
-#: src/features/practice/QuizView.tsx:387
+#: src/features/practice/QuizView.tsx:379
 #: src/features/practice/SpellingView.tsx:352
 msgctxt "practice.actions.view-results"
 msgid "View results"

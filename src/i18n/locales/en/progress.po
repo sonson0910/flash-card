@@ -69,7 +69,7 @@ msgid "stats.achievements"
 msgstr "Achievements"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:129
+#: src/components/stats/ActivityHeatmap.tsx:139
 msgid "stats.active-days"
 msgstr "active days"
 
@@ -79,7 +79,7 @@ msgid "stats.activity-description"
 msgstr "XP from completed learning activity across your account."
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:150
+#: src/components/stats/ActivityHeatmap.tsx:160
 msgid "stats.activity-unavailable"
 msgstr "Activity unavailable before coverage began"
 
@@ -194,7 +194,7 @@ msgid "stats.days"
 msgstr "days"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:132
+#: src/components/stats/ActivityHeatmap.tsx:142
 msgid "stats.heatmap-legend"
 msgstr "Less to more study activity"
 
@@ -229,7 +229,7 @@ msgid "stats.legend.label"
 msgstr "Badge status legend"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:133
+#: src/components/stats/ActivityHeatmap.tsx:143
 msgid "stats.less"
 msgstr "Less"
 
@@ -264,7 +264,7 @@ msgid "stats.memory-strength"
 msgstr "Memory strength"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:135
+#: src/components/stats/ActivityHeatmap.tsx:145
 msgid "stats.more"
 msgstr "More"
 
@@ -284,7 +284,7 @@ msgid "stats.not-reviewed"
 msgstr "Not reviewed"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:150
+#: src/components/stats/ActivityHeatmap.tsx:160
 msgid "stats.outside-selected-range"
 msgstr "Outside selected range"
 
@@ -329,7 +329,7 @@ msgid "stats.reviewed"
 msgstr "Reviewed"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:150
+#: src/components/stats/ActivityHeatmap.tsx:160
 #: src/components/stats/StatsCharts.tsx:51
 msgid "stats.reviews"
 msgstr "reviews"
@@ -370,8 +370,8 @@ msgid "stats.star-keeper-description"
 msgstr "Help fifty words shine as mastered."
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:138
-#: src/components/stats/ActivityHeatmap.tsx:139
+#: src/components/stats/ActivityHeatmap.tsx:148
+#: src/components/stats/ActivityHeatmap.tsx:149
 msgid "stats.study-activity"
 msgstr "Study activity"
 
@@ -401,12 +401,12 @@ msgid "stats.tier-star"
 msgstr "Star"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:130
+#: src/components/stats/ActivityHeatmap.tsx:140
 msgid "stats.total-reviews"
 msgstr "reviews"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:130
+#: src/components/stats/ActivityHeatmap.tsx:140
 msgid "stats.total-xp"
 msgstr "total XP"
 

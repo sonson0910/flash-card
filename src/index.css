@@ -43,6 +43,12 @@
   --font-sans: "Geist Variable", "Geist", "SF Pro Display", "Segoe UI", sans-serif;
 }
 
+/* `font-serif` is the theme's display face: Fraunces for classic, Kanit for Crystal. */
+@theme inline {
+  --font-serif: var(--sf-font-display);
+  --font-display: var(--sf-font-display);
+}
+
 @layer base {
   :root {
     --motion-fast: 140ms;
@@ -51,12 +57,16 @@
     --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   }
 
+  /* Gradient canvases are sized to the element box; keep both boxes at least
+     viewport-tall so short pages never show the gradient's repeat seam. */
   html {
+    min-height: 100%;
     overscroll-behavior: contain;
     background: var(--sf-canvas);
   }
 
   body {
+    min-height: 100dvh;
     margin: 0;
     color: var(--sf-text);
     background: var(--sf-canvas);
