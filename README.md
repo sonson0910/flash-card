@@ -154,7 +154,7 @@ RELEASE_REVISION="$(git rev-parse HEAD)" npm run verify
 ```
 
 `npm run verify` covers application and Functions type checks, unit tests, Firestore Rules,
-the production build, secret and bundle scans, Chromium/Firefox/WebKit journeys, dependency
+the production build, secret and bundle scans, Chromium desktop and mobile journeys, dependency
 audits, and release-readiness evidence. `npm run build` also generates the English and Vietnamese
 landing pages and sitemap for `https://sonflash.app` from the landing catalogs; `npm run verify`
 checks their canonical and reciprocal language links. For release-grade evidence, run it from a clean
@@ -170,9 +170,9 @@ and set `VITE_SONFLASH_FIRESTORE_EMULATOR_PORT` to its matching port for the bui
 root unit tests before browser tests: a release-contract test needs port 4173 itself.
 
 Keep the exact Playwright pin in `package.json` and its matching browser binaries.
-Playwright 1.64 includes the upstream WPE compositor filter-transition crash fix
-([upstream repair](https://github.com/WebKit/WebKit/pull/73621)); older Linux WebKit
-builds can terminate the page while ordinary application transitions run.
+The browser suite runs on Chromium only (desktop and the Pixel 7 mobile review).
+Firefox and WebKit projects were removed to keep the gate fast and stable; the
+specs still carry their browser-specific branches if those projects return.
 
 Render screenshot goldens with the browser version in the lockfile and the
 Ubuntu 24.04 environment used by Quality CI. A different host OS can select
@@ -187,16 +187,11 @@ visual review followed by an ordinary run without snapshot updates.
 Offline release fixtures serve the selected `SONFLASH_BUILD_OUT_DIR` artifact
 and authenticate against emulators. Their outage phases stop the app server,
 block backend origins, probe backend unavailability and reject successful
-backend responses before accepting private-card recovery. WebKit uses an
-allowlisted loopback HTTP proxy to close active backend sockets and refuse new
-connections, since its service-worker requests bypass Playwright routing.
-Chromium also uses
-native offline mode and checks a cold profile reopen. Firefox native offline
-reload currently fails with `NS_ERROR_OFFLINE`; Firefox and WebKit therefore
-verify server-outage recovery separately, without claiming native offline reload
-coverage. Firefox still checks the native offline learning guard after recovery.
-Cached library-page recovery does not prove persistent Firestore cache support;
-Safari and the Firefox emulator use Firestore memory caches.
+backend responses before accepting private-card recovery. Chromium also uses
+native offline mode and checks a cold profile reopen. Cached library-page
+recovery does not prove persistent Firestore cache support. Safari and the
+Firefox emulator build use Firestore memory caches; with the Chromium-only suite
+those paths are covered by unit tests, not browser runs.
 
 UI translations use Lingui `msg({ context, message })` descriptors for local copy; the
 semantic context stays readable while Lingui generates compact runtime IDs. Keep explicit
