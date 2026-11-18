@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({ fetchWebWordsPage: vi.fn() }));
 vi.mock('../../lib/firebase', () => ({ db: {} }));
 vi.mock('./webWordsQuery', () => ({ fetchWebWordsPage: mocks.fetchWebWordsPage }));
 
-import { STRIP_PREVIEW_COUNT, useWebWordsPreviewCount } from './useWebWordsPreviewCount';
+import { WEB_WORDS_PREVIEW_COUNT, useWebWordsPreview } from './useWebWordsPreview';
 
 const installMinimalReactDom = () => {
   const documentLike: Record<string, unknown> = {
@@ -38,10 +38,10 @@ it('uses the active owner and course language pair, ignoring a retired request r
   const second = new Promise<{ items: readonly unknown[]; scannedCount: number }>(resolve => { resolveSecond = resolve; });
   mocks.fetchWebWordsPage.mockReturnValueOnce(first).mockReturnValueOnce(second);
 
-  const captured: { current: ReturnType<typeof useWebWordsPreviewCount> | null } = { current: null };
+  const captured: { current: ReturnType<typeof useWebWordsPreview> | null } = { current: null };
   const root = createRoot(installMinimalReactDom());
   function Harness({ ownerId, targetLanguage, translationLanguage }: { ownerId: string | null; targetLanguage: string | null; translationLanguage: string | null }) {
-    captured.current = useWebWordsPreviewCount(ownerId, targetLanguage, translationLanguage);
+    captured.current = useWebWordsPreview(ownerId, targetLanguage, translationLanguage);
     return null;
   }
 
@@ -50,14 +50,14 @@ it('uses the active owner and course language pair, ignoring a retired request r
   await act(async () => { resolveFirst({ items: [{ id: 'english-card' }], scannedCount: 1 }); await Promise.resolve(); });
 
   expect(mocks.fetchWebWordsPage).toHaveBeenNthCalledWith(1, expect.objectContaining({
-    ownerId: 'owner-a', targetLanguage: 'en', translationLanguage: 'vi', pageSize: STRIP_PREVIEW_COUNT, detectHasNext: false,
+    ownerId: 'owner-a', targetLanguage: 'en', translationLanguage: 'vi', pageSize: WEB_WORDS_PREVIEW_COUNT, detectHasNext: false,
   }));
   expect(mocks.fetchWebWordsPage).toHaveBeenNthCalledWith(2, expect.objectContaining({
-    ownerId: 'owner-a', targetLanguage: 'en', translationLanguage: 'en', pageSize: STRIP_PREVIEW_COUNT, detectHasNext: false,
+    ownerId: 'owner-a', targetLanguage: 'en', translationLanguage: 'en', pageSize: WEB_WORDS_PREVIEW_COUNT, detectHasNext: false,
   }));
-  expect(captured.current).toEqual({ count: 0, isAtCap: false });
+  expect(captured.current).toEqual({ items: [], isAtCap: false });
 
-  await act(async () => { resolveSecond({ items: [{ id: 'korean-card' }], scannedCount: STRIP_PREVIEW_COUNT }); await Promise.resolve(); });
-  await act(async () => { await vi.waitFor(() => expect(captured.current).toEqual({ count: 1, isAtCap: true })); });
+  await act(async () => { resolveSecond({ items: [{ id: 'korean-card' }], scannedCount: WEB_WORDS_PREVIEW_COUNT }); await Promise.resolve(); });
+  await act(async () => { await vi.waitFor(() => expect(captured.current).toEqual({ items: [{ id: 'korean-card' }], isAtCap: true })); });
   await act(async () => root.unmount());
 });

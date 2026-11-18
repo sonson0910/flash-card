@@ -27,8 +27,8 @@ export interface DailyPlanPresentation {
   readonly isShort: boolean;
 }
 
-/** The stored counter advances on read; show it only after actual XP activity today. */
-const isoDayInTimeZone = (date: Date, timeZone?: string): string => {
+/** Calendar day (yyyy-mm-dd) of `date` in the learner's reward timezone. */
+export const isoDayInTimeZone = (date: Date, timeZone?: string): string => {
   const format = (zone: string) => new Intl.DateTimeFormat('en-US', {
     timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
   }).formatToParts(date);
@@ -38,6 +38,7 @@ const isoDayInTimeZone = (date: Date, timeZone?: string): string => {
   return `${value('year')}-${value('month')}-${value('day')}`;
 };
 
+/** The stored counter advances on read; show it only after actual XP activity today. */
 export const evidencedStudyStreak = (
   streak: number,
   xpHistory: readonly { readonly date: string; readonly XP: number }[],
@@ -65,6 +66,24 @@ export interface TodayRecommendationPresentation {
   readonly reason: string;
 }
 
+export interface TodayLearnerFacts {
+  readonly name?: string;
+  readonly xp?: number;
+  /** The active course goal; the label is already localized. */
+  readonly goal?: { readonly label: string; readonly level: string | null; readonly targetDate: string | null };
+}
+
+export interface TodaySessionWord {
+  readonly id: string;
+  readonly word: string;
+  readonly translation: string;
+  readonly reason: 'due' | 'weak' | 'new';
+  readonly language?: string;
+  readonly translationLanguage?: string;
+  readonly sourceUrl?: string;
+  readonly sourceContext?: string;
+}
+
 export interface TodayScreenModel {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
   readonly status: 'loading' | 'empty' | 'caught-up' | 'ready' | 'offline' | 'error';
@@ -90,8 +109,20 @@ export interface TodayScreenModel {
     readonly id: 'review' | 'new' | 'match' | 'recap';
     readonly count: number;
     readonly skipped: boolean;
+    /** Cards in this stage that were captured from the web. */
+    readonly webCount?: number;
   }[];
   readonly placementAvailable: boolean;
+  /** Facts about the signed-in learner; each one is shown only when present. */
+  readonly learner?: TodayLearnerFacts;
+  /** The run of study days from verified XP history, used for the streak line. */
+  readonly studyRun?: { readonly studiedToday: boolean; readonly days: number };
+  /** Verified XP of recent study days, oldest first, used to estimate sessions to the next level. */
+  readonly recentStudyXp?: readonly number[];
+  /** Words planned for today's session, in plan order (a bounded slice). */
+  readonly sessionWords?: readonly TodaySessionWord[];
+  /** Planned cards that were captured from the web. */
+  readonly sessionWebWordCount?: number;
   /**
    * Present when the loaded pool has cards but none are due, weak or new; the
    * plan takes every new card, so the only way forward is adding vocabulary.

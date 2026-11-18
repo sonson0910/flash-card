@@ -26,6 +26,7 @@ import { evidencedStudyStreak } from '../features/dailyLearning/dailyLearningPre
 import { CourseProvider, readyCourseSessionForOwner, useCourseSession, type CourseGateValue } from '../features/courses/CourseGate';
 import { activeCourseNativeLanguage, activeCourseTargetLanguage, languageProfileForCourse } from '../features/courses/courseLanguageProfile';
 import type { CourseTargetLanguage } from '../features/courses/courseModel';
+import { goalKindLabel } from '../features/courses/courseGoalCatalog';
 import { createSharedDeckCoursePort, resolveShareCourseAction } from '../features/sharing/shareCourseMatching';
 import { OnboardingGate } from '../features/onboarding/OnboardingGate';
 import { useOnboardingLibraryState } from '../features/onboarding/useOnboardingLibraryState';
@@ -486,6 +487,14 @@ export default function AppRuntime({
     error: cloud.error,
   }) : 'ready';
   const overview = libraryScreen.model.overview;
+  const activeGoal = activeCourse?.goals.find(goal => goal.status === 'active') ?? null;
+  const activeGoalLabel = activeGoal && activeCourse ? goalKindLabel(activeCourse.targetLanguage, activeGoal.kind) : null;
+  const learnerName = user?.displayName?.trim();
+  const todayLearner = {
+    ...(learnerName ? { name: learnerName } : {}),
+    ...(courseScopeReady && user ? { xp: overview.xp } : {}),
+    ...(activeGoal ? { goal: { label: activeGoalLabel ? _(activeGoalLabel) : activeGoal.kind, level: activeGoal.level, targetDate: activeGoal.targetDate } } : {}),
+  };
   const libraryNavigation = libraryScreen.navigation;
   const libraryCountLabel = courseScopeReady ? libraryNavigation.libraryCountLabel : '';
 
@@ -564,6 +573,7 @@ export default function AppRuntime({
               {...viewStageLearningProps(library, learning, setNotice)}
               {...viewStageStatsProps(stats, cloud, overview)}
               rewardTimeZone={stats.rewardTimeZone}
+              learner={todayLearner}
               viewMode={viewMode}
               ownerId={currentOwnerId}
               database={isFirebaseConfigured ? db : null}

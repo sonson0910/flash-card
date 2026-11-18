@@ -70,9 +70,11 @@ import type {
   PlacementScreenModel,
   SessionBridgeModel,
   SessionBridgeStat,
+  TodayLearnerFacts,
   TodayScreenModel,
 } from './dailyLearningPresentation';
-import { evidencedStudyStreak } from './dailyLearningPresentation';
+import { evidencedStudyStreak, isoDayInTimeZone } from './dailyLearningPresentation';
+import { studyRun } from './todayScreenFacts';
 import { subscribeToActiveSessionNewStagePromotions } from './webWordsSessionPriority';
 
 const LessonScreen = lazy(() => import('./LessonScreen').then(module => ({ default: module.LessonScreen })));
@@ -215,6 +217,8 @@ export interface DailyLearningWorkspaceProps {
   readonly streak: number;
   readonly studyXpHistory: readonly { readonly date: string; readonly XP: number }[];
   readonly rewardTimeZone?: string;
+  /** Signed-in learner facts for the Today header (name, verified XP, active goal). */
+  readonly learner?: TodayLearnerFacts;
   readonly loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
   readonly reviewCard: (cardId: string, rating: ReviewRatingValue, operationId: string, source?: CardData) => Promise<LearningStateOutcome>;
   readonly openLesson: (mode: DailyLessonMode | null) => void;
@@ -394,6 +398,7 @@ export default function DailyLearningWorkspace({
   streak,
   studyXpHistory,
   rewardTimeZone,
+  learner,
   loadPracticePool,
   reviewCard,
   openLesson,
@@ -1293,10 +1298,13 @@ export default function DailyLearningWorkspace({
     ? buildSessionStagePlan(plan, activePool.cards, () => 0, { targetLanguage, translationLanguage })
     : null;
   const todayPreviewCard = plan?.items[0]?.card ?? (matchOnlySession ? todayStagePlan?.match.cards[0] : undefined);
+  const isWebCapture = (card: CardData) => Boolean(card.source?.url);
+  const todayStreak = evidencedStudyStreak(streak, studyXpHistory, undefined, rewardTimeZone);
+  const todayRun = studyRun(studyXpHistory, isoDayInTimeZone(new Date(), rewardTimeZone), todayStreak);
 
   const todayModel: TodayScreenModel = {
     headingRef,
-    streak: evidencedStudyStreak(streak, studyXpHistory, undefined, rewardTimeZone),
+    streak: todayStreak,
     courseLabel: `${courseLanguageNames.of(languageProfile.source.code) || languageProfile.source.displayName} ← ${courseLanguageNames.of(languageProfile.target.code) || languageProfile.target.displayName}`,
     status: dailyTodayStatus(activePool.status, plan, currentPairCards.length > 0, matchOnlySession, isOffline),
     isOffline,
@@ -1317,11 +1325,27 @@ export default function DailyLearningWorkspace({
     } } : {}),
     ...(todayStagePlan ? { sessionStages: [
       { id: 'review' as const, count: todayStagePlan.review.length, skipped: todayStagePlan.review.length === 0 },
-      { id: 'new' as const, count: todayStagePlan.fresh.length, skipped: todayStagePlan.fresh.length === 0 },
+      { id: 'new' as const, count: todayStagePlan.fresh.length, skipped: todayStagePlan.fresh.length === 0, webCount: todayStagePlan.fresh.filter(item => isWebCapture(item.card)).length },
       { id: 'match' as const, count: todayStagePlan.match.cards.length, skipped: todayStagePlan.match.skipReason !== null },
       { id: 'recap' as const, count: 0, skipped: false },
     ] } : {}),
     placementAvailable: availablePlacement.status === 'ready',
+    ...(learner ? { learner } : {}),
+    studyRun: todayRun,
+    recentStudyXp: studyXpHistory.slice(-14).map(entry => entry.XP),
+    ...(plan ? {
+      sessionWords: plan.items.slice(0, 5).map(item => ({
+        id: item.card.id,
+        word: item.card.word,
+        translation: item.card.translation,
+        reason: item.reason,
+        ...(item.card.language ? { language: item.card.language } : {}),
+        ...(item.card.translationLanguage ? { translationLanguage: item.card.translationLanguage } : {}),
+        ...(item.card.source?.url ? { sourceUrl: item.card.source.url } : {}),
+        ...(item.card.source?.context ? { sourceContext: item.card.source.context } : {}),
+      })),
+      sessionWebWordCount: plan.items.filter(item => isWebCapture(item.card)).length,
+    } : {}),
     ...(recommendation ? {
       recommendation: {
         activityId: recommendation.activityId,

@@ -1,5 +1,4 @@
 import { Trans } from '@lingui/react';
-import { Suspense, lazy } from 'react';
 import { useState } from 'react';
 import {
   Brain,
@@ -25,10 +24,9 @@ import { readLumiEnabled } from '../settings/lumi-preference';
 import './daily-learning-canvas.css';
 import './today-caught-up.css';
 import type { LessonMode, TodayScreenActions, TodayScreenModel } from './dailyLearningPresentation';
+import { TodayReadyHero } from './TodayReadyHero';
 
-const WebWordsTodayStrip = lazy(() =>
-  import('../webWords/WebWordsTodayStrip').then(module => ({ default: module.WebWordsTodayStrip })),
-);
+export { sessionStageContent } from './TodayReadyHero';
 
 interface TodayScreenProps {
   readonly model: TodayScreenModel;
@@ -50,7 +48,7 @@ const additionalLessonModes = [
 ] as const satisfies ReadonlyArray<{ id: LessonMode; label: ReturnType<typeof msg>; description: ReturnType<typeof msg>; Icon: React.ComponentType<{ size?: number; className?: string }> }>;
 
 const primaryButton = 'brand-action shimmer-sweep min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100';
-const secondaryButton = 'min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 font-bold text-slate-800 dark:text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
+const secondaryButton = 'min-h-11 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-2.5 font-bold text-[var(--sf-text)] transition-all duration-200 hover:border-[var(--sf-brand)] hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 const headingClass = 'text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl';
 
 function PageHeading({ model }: Pick<TodayScreenProps, 'model'>) {
@@ -69,11 +67,11 @@ function RecommendedNext({ model, actions }: TodayScreenProps) {
   const modeLabel = _([...featuredLessonModes, ...additionalLessonModes].find(mode => mode.id === recommendation.mode)!.label);
 
   return (
-    <section data-recommended-next="true" aria-labelledby="recommended-next-heading" className="liquid-glass rounded-[28px] border border-cyan-500/30 bg-cyan-500/5 p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
+    <section data-recommended-next="true" aria-labelledby="recommended-next-heading" className="liquid-glass rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <Sparkles size={14} className="text-cyan-700 dark:text-cyan-400" aria-hidden="true" />
+            <Sparkles size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" />
             <p className="premium-kicker uppercase tracking-[0.14em]"><Trans {...msg({ context: 'today-screen.adaptive-suggestion', message: 'Adaptive suggestion' })} /></p>
           </div>
           <h2 id="recommended-next-heading" className="mt-1 text-xl font-black tracking-tight"><Trans {...msg({ context: 'today-screen.recommended-next', message: 'Recommended next' })} /></h2>
@@ -86,166 +84,6 @@ function RecommendedNext({ model, actions }: TodayScreenProps) {
           onClick={actions.startRecommended}
           className={`${primaryButton} w-full text-sm sm:w-auto`}
         ><Trans {...msg({ context: 'today-screen.start-recommended-lesson', message: 'Start recommended lesson' })} /></button>
-      </div>
-    </section>
-  );
-}
-
-export const sessionStageContent = {
-  review: {
-    label: msg({ id: 'session.stage.review', message: 'Review' }),
-    description: msg({ id: 'session.stage.review.description', message: 'Review the words that are due or need another pass.' }),
-  },
-  new: {
-    label: msg({ id: 'session.stage.new', message: 'New words' }),
-    description: msg({ id: 'session.stage.new.description', message: 'Meet a few new words for the first time.' }),
-  },
-  match: {
-    label: msg({ id: 'session.stage.match', message: 'Word match' }),
-    description: msg({ id: 'session.stage.match.description', message: 'Match target words to their meanings for a quick bonus round.' }),
-  },
-  recap: {
-    label: msg({ id: 'session.stage.recap', message: 'Recap' }),
-    description: msg({ id: 'session.stage.recap.description', message: 'See what you strengthened today.' }),
-  },
-} as const;
-
-type ReadyStage = NonNullable<TodayScreenModel['sessionStages']>[number];
-
-function PreviewCard({ card }: { readonly card: NonNullable<TodayScreenModel['previewCard']> }) {
-  const { _ } = useLingui();
-  return (
-    <article className="today-preview-card" data-today-preview="true" aria-label={`${card.word}: ${card.translation}`}>
-      {card.imageUrl
-        ? <img src={card.imageUrl} alt="" className="today-preview-image" loading="lazy" />
-        : <span className="today-preview-image today-preview-image--empty" aria-hidden="true"><Sparkles size={22} /></span>}
-      <div className="today-preview-copy">
-        <p className="today-preview-label">{_(msg({ id: 'today.plan.preview', message: 'From your plan' }))}</p>
-        <p className="today-preview-word" lang={card.language}>{card.word}</p>
-        <p className="today-preview-translation" lang={card.translationLanguage}>{card.translation}</p>
-        {(card.phonetic || card.category) && (
-          <p className="today-preview-meta">
-            {card.phonetic && <span>{card.phonetic}</span>}
-            {card.phonetic && card.category && <span aria-hidden="true"> · </span>}
-            {card.category && <span>{card.category}</span>}
-          </p>
-        )}
-      </div>
-    </article>
-  );
-}
-
-function ReadyMetric({ count, label, detail }: { readonly count: number; readonly label: React.ReactNode; readonly detail?: React.ReactNode }) {
-  return (
-    <div className="today-ready-metric">
-      <strong>{count}</strong>
-      <span>{label}</span>
-      {detail && <small>{detail}</small>}
-    </div>
-  );
-}
-
-function StageRail({ model }: Pick<TodayScreenProps, 'model'>) {
-  const { _ } = useLingui();
-  const plan = model.plan;
-  if (!plan) return null;
-  const stages: readonly ReadyStage[] = model.sessionStages ?? [
-    { id: 'review', count: plan.due + plan.weak, skipped: plan.due + plan.weak === 0 },
-    { id: 'new', count: plan.fresh, skipped: plan.fresh === 0 },
-    { id: 'match', count: 0, skipped: true },
-    { id: 'recap', count: 0, skipped: false },
-  ];
-
-  return (
-    <ol className="today-stage-rail" aria-label={_(msg({ id: 'today.plan.order', message: 'Daily plan order' }))}>
-      {stages.map((stage, index) => {
-        const content = sessionStageContent[stage.id];
-        return (
-          <li key={stage.id} className={`today-stage${stage.skipped ? ' today-stage--skipped' : ''}`} data-stage-id={stage.id} data-stage-count={stage.count}>
-            <span className="today-stage-index" aria-hidden="true">0{index + 1}</span>
-            <div className="today-stage-copy">
-              <div className="today-stage-heading">
-                <p>{_(content.label)}</p>
-                {stage.skipped
-                  ? <span className="today-stage-status">{_(msg({ id: 'today.stage.skipped', message: 'Skipped' }))}</span>
-                  : stage.id === 'recap'
-                    ? <span className="today-stage-status">{_(msg({ id: 'today.stage.ready', message: 'Ready' }))}</span>
-                    : <span className="today-stage-count">{_({ ...msg({ id: 'today.stage.session-count', message: '{count, plural, one {# card} other {# cards}}' }), values: { count: stage.count } })}</span>}
-              </div>
-              <p className="today-stage-description sr-only">{_(content.description)}</p>
-              {stage.id === 'review' && <p className="today-stage-breakdown">{_({ ...msg({ id: 'today.stage.due.count', message: '{count, plural, one {# due} other {# due}}' }), values: { count: plan.due } })} · {_({ ...msg({ id: 'today.stage.weak.count', message: '{count, plural, one {# weak} other {# weak}}' }), values: { count: plan.weak } })}</p>}
-              {stage.id === 'new' && <p className="today-stage-breakdown">{_({ ...msg({ id: 'today.stage.fresh.count', message: '{count, plural, one {# new} other {# new}}' }), values: { count: plan.fresh } })}</p>}
-            </div>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
-function PlanSummary({ model, actions, showLumi }: TodayScreenProps & { readonly showLumi: boolean }) {
-  const { _ } = useLingui();
-  const { family } = useTheme();
-  const isCrystal = family === 'crystal';
-  const { plan } = model;
-  const [target, setTarget] = useState<5 | 10 | 15>(10);
-  if (!plan) return null;
-  const reviewCount = plan.due + plan.weak;
-  const readyCount = plan.total || model.sessionStages?.find(stage => stage.id === 'match' && !stage.skipped)?.count || 0;
-  const readyText = _({ ...msg({ id: 'today.canvas.ready', message: '{count, plural, one {item ready to remember.} other {items ready to remember.}}' }), values: { count: readyCount } });
-
-  const assignHeading = (heading: HTMLHeadingElement | null) => {
-    if (model.headingRef) model.headingRef.current = heading;
-  };
-
-  return (
-    <section aria-labelledby="daily-today-heading" className={`today-ready${isCrystal ? ' today-ready--crystal' : ''}`} data-today-ready="true">
-      {isCrystal && <span aria-hidden="true" className="crystal-starfield today-ready-starfield pointer-events-none absolute inset-0 opacity-70 motion-reduce:animate-none" />}
-      <div className="today-ready-layout">
-        <div className="today-ready-hero">
-          <div className="today-ready-kicker">
-            <span><Sparkles size={14} aria-hidden="true" />{_(msg({ id: 'today.plan.kicker', message: 'Daily focus' }))}</span>
-            {plan.isShort && <span className="today-ready-chip">{_(msg({ id: 'today.plan.short-chip', message: 'Short plan' }))}</span>}
-          </div>
-          <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="today-ready-title focus-visible:outline-2 focus-visible:outline-offset-2" aria-label={`${_(msg({ id: 'today.title', message: 'Today' }))}: ${readyCount} ${readyText}`}>
-            <span className="today-ready-total" aria-hidden="true">{readyCount}</span>
-            <span className="today-ready-title-text" aria-hidden="true">{readyText}</span>
-          </h1>
-          <p className="today-ready-subtitle">{_(msg({ id: 'today.plan.subtitle', message: 'Build memory in the right order.' }))}</p>
-          <p className="today-ready-message" role="status" aria-live="polite">{model.message}</p>
-          {plan.isShort && <p className="today-ready-short">{_(msg({ id: 'today.plan.short-description', message: 'There are fewer than 10 eligible cards today. You can still complete this shorter plan.' }))}</p>}
-        </div>
-        <div className="today-ready-session">
-          <StageRail model={model} />
-          <fieldset className="flex flex-wrap gap-2"><legend>{_(msg({ id: 'today.plan.length', message: 'Practice length' }))}</legend>{([5, 10, 15] as const).map(size => <button key={size} type="button" aria-pressed={target === size} onClick={() => setTarget(size)} className={secondaryButton}>{size}</button>)}<button type="button" disabled={model.isOffline} onClick={() => actions.startDailyPlan(target)} className={secondaryButton}>{_(msg({ id: 'today.plan.sized-start', message: 'Start selected practice' }))}</button></fieldset>
-          <button
-            type="button"
-            data-primary-learning-action="true"
-            disabled={model.isOffline}
-            onClick={actions.startSession}
-            className={`${primaryButton} today-ready-cta`}
-          >
-            {_(msg({ id: 'today.plan.start-session', message: "Start today's session" }))}
-          </button>
-        </div>
-        <aside className="today-ready-side">
-          <div className="today-ready-metrics" data-today-metrics="true" aria-label={_(msg({ id: 'today.metrics.label', message: 'Today plan counts' }))}>
-            <ReadyMetric
-              count={reviewCount}
-              label={_(sessionStageContent.review.label)}
-              detail={<>{_({ ...msg({ id: 'today.stage.due.count', message: '{count, plural, one {# due} other {# due}}' }), values: { count: plan.due } })} · {_({ ...msg({ id: 'today.stage.weak.count', message: '{count, plural, one {# weak} other {# weak}}' }), values: { count: plan.weak } })}</>}
-            />
-            <ReadyMetric count={plan.fresh} label={_(sessionStageContent.new.label)} detail={_({ ...msg({ id: 'today.stage.fresh.count', message: '{count, plural, one {# new} other {# new}}' }), values: { count: plan.fresh } })} />
-            <ReadyMetric count={readyCount} label={_(msg({ id: 'today.metrics.total', message: 'Total' }))} />
-          </div>
-          {model.previewCard && <PreviewCard card={model.previewCard} />}
-        </aside>
-        {isCrystal && showLumi && (
-          <div className="today-ready-lumi" data-today-lumi="hero">
-            <Lumi pose="idle" size={180} eager className="crystal-ornament" />
-            <p><span>{_(msg({ id: 'today.lumi.name', message: 'LUMI' }))}</span>{_(msg({ id: 'today.lumi.ready', message: 'Lumi is ready to study with you.' }))}</p>
-          </div>
-        )}
       </div>
     </section>
   );
@@ -334,6 +172,7 @@ function CaughtUpPanel({ model, actions, showLumi }: TodayScreenProps & { readon
 
 function PracticeModes({ model, actions }: Pick<TodayScreenProps, 'model' | 'actions'>) {
   const { _ } = useLingui();
+  const [target, setTarget] = useState<5 | 10 | 15>(10);
   return (
     <section aria-labelledby="practice-mode-heading" className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -347,6 +186,13 @@ function PracticeModes({ model, actions }: Pick<TodayScreenProps, 'model' | 'act
         </div>
         <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-11 rounded-full px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 cursor-pointer">{_(msg({ id: 'today.practice.more', message: 'More practice' }))}</button>
       </div>
+      {model.plan && (
+        <fieldset className="today-length">
+          <legend>{_(msg({ id: 'today.plan.length', message: 'Practice length' }))}</legend>
+          {([5, 10, 15] as const).map(size => <button key={size} type="button" aria-pressed={target === size} onClick={() => setTarget(size)} className={secondaryButton}>{size}</button>)}
+          <button type="button" disabled={model.isOffline} onClick={() => actions.startDailyPlan(target)} className={secondaryButton}>{_(msg({ id: 'today.plan.sized-start', message: 'Start selected practice' }))}</button>
+        </fieldset>
+      )}
       <div className="mt-5 grid grid-cols-1 gap-3 border-t border-[var(--sf-border)] pt-5 sm:grid-cols-3">
           {featuredLessonModes.map((mode) => (
             <button
@@ -397,15 +243,17 @@ function PracticeModes({ model, actions }: Pick<TodayScreenProps, 'model' | 'act
   );
 }
 
-function StreakChip({ streak }: Pick<TodayScreenProps['model'], 'streak'>) {
+const streakChipClass = 'liquid-control crystal-chamfer-sm inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-bold text-[var(--sf-text)] transition-transform hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none';
+
+function StreakChip({ streak, className = streakChipClass }: Pick<TodayScreenProps['model'], 'streak'> & { readonly className?: string }) {
   const { _ } = useLingui();
   if (streak === undefined || streak < 1) return null;
 
   return (
     <Dialog.Root>
       <Dialog.Trigger asChild>
-        <button type="button" className="liquid-control crystal-chamfer-sm inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-bold text-[var(--sf-text)] transition-transform hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none">
-          <Flame size={16} className="text-orange-500" aria-hidden="true" />
+        <button type="button" className={className}>
+          <Flame size={16} className="today-streak-flame text-orange-500" aria-hidden="true" />
           {_({ ...msg({ id: 'today.streak.chip', message: '{count, plural, one {# study day} other {# study days}}' }), values: { count: streak } })}
         </button>
       </Dialog.Trigger>
@@ -579,18 +427,19 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
   }
 
   return (
-    <section aria-labelledby="daily-today-heading" className="daily-canvas daily-canvas-today mx-auto max-w-6xl space-y-5 sm:space-y-6">
-      <header className="today-ready-context">
-        <p className="premium-kicker uppercase tracking-[0.16em]">{_(msg({ id: 'today.kicker', message: 'Daily learning' }))}</p>
-        <div className="mt-1 flex flex-wrap items-center gap-2"><p className="text-sm font-bold text-[var(--sf-brand-text)]">{model.courseLabel ?? _(msg({ id: 'today.course.fallback', message: 'Your current course' }))}</p><StreakChip streak={model.streak} /></div>
-      </header>
-      {model.isOffline && <p className="rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite">{_(msg({ id: 'today.offline', message: "You're offline. Reconnect to start today's session." }))}</p>}
-      <div className="today-ready-board">
-        <PlanSummary model={model} actions={actions} showLumi={showLumi} />
-        <div className="today-ready-web-words">
-          <Suspense fallback={null}><WebWordsTodayStrip ownerId={ownerId ?? null} targetLanguage={targetLanguage ?? null} translationLanguage={translationLanguage ?? null} /></Suspense>
-        </div>
-      </div>
+    <div className="today-ready-page">
+      {model.isOffline && <p className="today-offline-note" role="status" aria-live="polite">{_(msg({ id: 'today.offline', message: "You're offline. Reconnect to start today's session." }))}</p>}
+      <TodayReadyHero
+        model={model}
+        actions={actions}
+        ownerId={ownerId}
+        targetLanguage={targetLanguage}
+        translationLanguage={translationLanguage}
+        isCrystal={family === 'crystal'}
+        showLumi={showLumi}
+        streakChip={<StreakChip streak={model.streak} className="today-chip today-chip--button" />}
+      />
+      <div className="daily-canvas daily-canvas-today today-below mx-auto max-w-6xl space-y-5 sm:space-y-6">
       <RecommendedNext model={model} actions={actions} />
       <LearningJourney model={model} actions={actions} />
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]">
@@ -604,6 +453,7 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
           </aside>
         )}
       </div>
-    </section>
+      </div>
+    </div>
   );
 }

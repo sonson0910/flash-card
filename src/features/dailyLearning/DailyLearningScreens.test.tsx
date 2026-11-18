@@ -138,7 +138,8 @@ describe('TodayScreen', () => {
     expect(html).toContain('aria-labelledby="daily-today-heading"');
     expect(html).toContain('<h1');
     expect(html).toContain('Today');
-    expect(html).toContain('Today: 12 items ready to remember.');
+    expect(html).toContain('12 cards planned');
+    expect(html).toContain('<em>8 minutes</em> today.');
     expect(html).toContain('4 due');
     expect(html).toContain('3 weak');
     expect(html).toContain('5 new');
@@ -160,7 +161,7 @@ describe('TodayScreen', () => {
   });
 
   it('uses the real preview card and planned stage counts without inventing progress metrics', () => {
-    const html = renderToStaticMarkup(<TodayScreen model={{
+    const model: TodayScreenModel = {
       ...readyToday,
       previewCard: {
         word: 'serendipity',
@@ -177,16 +178,50 @@ describe('TodayScreen', () => {
         { id: 'match', count: 4, skipped: false },
         { id: 'recap', count: 0, skipped: false },
       ],
-    }} actions={todayActions} />);
+    };
+    const desktop = renderToStaticMarkup(<TodayScreen model={model} actions={todayActions} />);
+    expect(desktop).toContain('data-stage-id="match" data-stage-count="4"');
+    expect(desktop).toContain('data-stage-id="recap" data-stage-count="0"');
+    // 12 review/new cards at 2 XP each plus the Word Match completion award.
+    expect(desktop).toContain('Up to +44 XP when you finish');
+    expect(desktop).toContain('starts your study streak');
+    expect(desktop).not.toContain('Level ');
+    expect(desktop).not.toContain('data-today-preview="true"');
+    for (const html of [desktop]) {
+      expect(html).not.toContain('IELTS');
+      expect(html).not.toContain('league');
+    }
 
-    expect(html).toContain('data-today-preview="true"');
-    expect(html).toContain('serendipity');
-    expect(html).toContain('sự tình cờ thú vị');
-    expect(html).toContain('data-stage-id="match" data-stage-count="4"');
-    expect(html).toContain('data-stage-id="recap" data-stage-count="0"');
-    expect(html).not.toContain('IELTS');
-    expect(html).not.toContain('XP');
-    expect(html).not.toContain('league');
+    vi.stubGlobal('window', { matchMedia: () => ({ matches: true, addEventListener: () => undefined, removeEventListener: () => undefined }) });
+    try {
+      const phone = renderToStaticMarkup(<TodayScreen model={model} actions={todayActions} />);
+      expect(phone).toContain('data-today-preview="true"');
+      expect(phone).toContain('serendipity');
+      expect(phone).toContain('sự tình cờ thú vị');
+      expect(phone).toContain('/ˌserənˈdipitē/');
+      expect(phone).toContain('<em>remember.</em>');
+      expect(phone).not.toContain('IELTS');
+      expect(phone).not.toContain('league');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('shows level progress and the streak promise only from real learner facts', () => {
+    const html = renderToStaticMarkup(<TodayScreen model={{
+      ...readyToday,
+      streak: 3,
+      studyRun: { studiedToday: false, days: 3 },
+      learner: { name: 'Khanh', xp: 2_340, goal: { label: 'IELTS Academic', level: '7.0', targetDate: null } },
+      recentStudyXp: [40, 0, 40],
+    }} actions={todayActions} />);
+    expect(html).toContain('Khanh.');
+    expect(html).toContain('IELTS Academic · target 7.0');
+    expect(html).toContain('makes it a 4-day streak');
+    expect(html).toContain('Level 5 · <b>2,340</b> / 2,500 XP');
+    expect(html).toContain('Level 6 after ≈ 4 sessions');
+    expect(html).toContain('aria-valuenow="82"');
+    expect(html).toContain('Just review instead');
   });
 
   it('keeps the Crystal ready state visibly anchored by Lumi and all four stages', () => {
@@ -249,8 +284,8 @@ describe('TodayScreen', () => {
     expect(caughtUp).toBe(false);
     expect(html).toContain('data-primary-learning-action="true"');
     expect(html).not.toContain('data-today-caught-up="true"');
-    expect(html).toContain('aria-label="Today: 4 items ready to remember."');
-    expect(html).toContain('class="today-ready-total" aria-hidden="true">4</span>');
+    expect(html).toContain('4 cards planned');
+    expect(html).toContain('<em>2 minutes</em> today.');
     expect(html).toContain('data-stage-id="match" data-stage-count="4"');
   });
 
@@ -347,7 +382,7 @@ describe('TodayScreen', () => {
     [{ status: 'empty', isOffline: false, message: 'Add vocabulary to make a plan.', plan: null, placementAvailable: false } satisfies TodayScreenModel, 'Add vocabulary'],
     [{ status: 'error', isOffline: false, message: 'The plan could not be prepared.', plan: null, placementAvailable: false } satisfies TodayScreenModel, 'Try again'],
     [{ ...readyToday, status: 'offline', isOffline: true, message: 'Using your saved practice pool.' } satisfies TodayScreenModel, "You&#x27;re offline. Reconnect to start today&#x27;s session."],
-    [{ ...readyToday, plan: { total: 7, due: 3, weak: 2, fresh: 2, isShort: true }, message: 'A shorter plan is ready.' } satisfies TodayScreenModel, 'Short plan'],
+    [{ ...readyToday, plan: { total: 7, due: 3, weak: 2, fresh: 2, isShort: true }, message: 'A shorter plan is ready.' } satisfies TodayScreenModel, 'fewer than 10 eligible cards'],
   ])('renders the %s outcome honestly', (model, expected) => {
     const html = renderToStaticMarkup(<TodayScreen model={model} actions={todayActions} />);
     expect(html).toContain(expected);
@@ -799,7 +834,7 @@ describe('daily learning presentation boundaries', () => {
     i18n.activate(locale);
     try {
       const html = renderToStaticMarkup(<TodayScreen model={readyToday} actions={todayActions} />);
-      expect(html).toContain(`aria-label="${i18n._('today.title')}: 12 ${i18n._('today.canvas.ready', { count: 12 })}"`);
+      expect(html).toContain(i18n._('today.hero.session-size', { count: 12 }));
       expect(html).toContain('data-primary-learning-action="true"');
       if (locale === 'vi') expect(html).not.toContain('12 items are sequenced');
       if (locale === 'en-XA') expect(html).toContain('[');

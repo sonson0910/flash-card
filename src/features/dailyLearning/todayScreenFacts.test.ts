@@ -1,0 +1,114 @@
+import { describe, expect, it } from 'vitest';
+import {
+  dayPeriod,
+  daysUntil,
+  greetingName,
+  isoWeekNumber,
+  levelProgress,
+  runDayNumber,
+  sessionMinutes,
+  sessionXpCeiling,
+  sessionsToNextLevel,
+  sourceSite,
+  stageMinutes,
+  studyRun,
+} from './todayScreenFacts';
+
+describe('todayScreenFacts', () => {
+  it('estimates whole minutes per stage and skips empty stages', () => {
+    expect(stageMinutes({ id: 'review', count: 14, skipped: false })).toBe(5);
+    expect(stageMinutes({ id: 'new', count: 6, skipped: false })).toBe(4);
+    expect(stageMinutes({ id: 'match', count: 6, skipped: false })).toBe(1);
+    expect(stageMinutes({ id: 'recap', count: 0, skipped: false })).toBe(1);
+    expect(stageMinutes({ id: 'review', count: 0, skipped: true })).toBe(0);
+    expect(sessionMinutes([
+      { id: 'review', count: 14, skipped: false },
+      { id: 'new', count: 6, skipped: false },
+      { id: 'match', count: 6, skipped: false },
+      { id: 'recap', count: 0, skipped: false },
+    ])).toBe(11);
+  });
+
+  it('names the part of the day from the local hour', () => {
+    expect(dayPeriod(new Date(2026, 10, 18, 7))).toBe('morning');
+    expect(dayPeriod(new Date(2026, 10, 18, 13))).toBe('afternoon');
+    expect(dayPeriod(new Date(2026, 10, 18, 22))).toBe('evening');
+    expect(dayPeriod(new Date(2026, 10, 18, 2))).toBe('evening');
+  });
+
+  it('computes ISO weeks across year boundaries', () => {
+    expect(isoWeekNumber(new Date(2026, 8, 15))).toBe(38);
+    expect(isoWeekNumber(new Date(2027, 0, 1))).toBe(53);
+    expect(isoWeekNumber(new Date(2026, 0, 1))).toBe(1);
+  });
+
+  it('counts days until a goal date and ignores invalid or past dates', () => {
+    const now = new Date(2026, 10, 18, 9);
+    expect(daysUntil('2026-11-20', now)).toBe(2);
+    expect(daysUntil('2026-11-18', now)).toBe(0);
+    expect(daysUntil('2026-11-01', now)).toBeNull();
+    expect(daysUntil('next week', now)).toBeNull();
+  });
+
+  it('follows the verified level curve', () => {
+    expect(levelProgress(0)).toMatchObject({ level: 1, start: 0, next: 100, remaining: 100, percent: 0 });
+    expect(levelProgress(30)).toMatchObject({ level: 1, percent: 30 });
+    expect(levelProgress(2_340)).toMatchObject({ level: 5, start: 1_600, next: 2_500, remaining: 160 });
+  });
+
+  it('estimates sessions to the next level only with enough study history', () => {
+    expect(sessionsToNextLevel(100, [{ XP: 30 }])).toBeNull();
+    expect(sessionsToNextLevel(100, [{ XP: 30 }, { XP: 0 }, { XP: 20 }])).toBe(4);
+    expect(sessionsToNextLevel(0, [{ XP: 30 }, { XP: 20 }])).toBeNull();
+  });
+
+  it('caps the session XP at the server award rules', () => {
+    expect(sessionXpCeiling([
+      { id: 'review', count: 14, skipped: false },
+      { id: 'new', count: 6, skipped: false },
+      { id: 'match', count: 6, skipped: false },
+      { id: 'recap', count: 0, skipped: false },
+    ])).toBe(60);
+    expect(sessionXpCeiling([
+      { id: 'review', count: 3, skipped: false },
+      { id: 'new', count: 0, skipped: true },
+      { id: 'match', count: 0, skipped: true },
+    ])).toBe(6);
+  });
+
+  it('reads the current study run from verified day history', () => {
+    const history = [
+      { date: '2026-11-14', XP: 10 },
+      { date: '2026-11-16', XP: 4 },
+      { date: '2026-11-17', XP: 6 },
+      { date: '2026-11-18', XP: 0 },
+    ];
+    expect(studyRun(history, '2026-11-18')).toEqual({ studiedToday: false, days: 2 });
+    expect(runDayNumber(studyRun(history, '2026-11-18'))).toBe(3);
+    expect(studyRun([...history, { date: '2026-11-18', XP: 2 }], '2026-11-18')).toEqual({ studiedToday: true, days: 3 });
+    expect(runDayNumber({ studiedToday: true, days: 3 })).toBe(3);
+    expect(studyRun(history, '2026-11-20')).toEqual({ studiedToday: false, days: 0 });
+    expect(runDayNumber(studyRun([], '2026-11-20'))).toBe(1);
+    expect(studyRun([{ date: '2026-03-01', XP: 1 }, { date: '2026-02-28', XP: 1 }], '2026-03-02').days).toBe(2);
+  });
+
+  it('counts the run from the server streak once today is evidenced', () => {
+    const onlyToday = [{ date: '2026-11-18', XP: 4 }];
+    expect(studyRun(onlyToday, '2026-11-18', 3)).toEqual({ studiedToday: true, days: 3 });
+    expect(runDayNumber(studyRun(onlyToday, '2026-11-18', 3))).toBe(3);
+    expect(studyRun([{ date: '2026-11-17', XP: 4 }], '2026-11-18', 3)).toEqual({ studiedToday: false, days: 1 });
+  });
+
+  it('greets by the whole display name only when it fits', () => {
+    expect(greetingName('  Nguyễn Khánh ')).toBe('Nguyễn Khánh');
+    expect(greetingName('')).toBeNull();
+    expect(greetingName(undefined)).toBeNull();
+    expect(greetingName('A display name that is far too long to greet by')).toBeNull();
+  });
+
+  it('reads a display hostname from a captured URL', () => {
+    expect(sourceSite('https://www.bbc.com/news/article')).toBe('bbc.com');
+    expect(sourceSite('not a url')).toBeNull();
+    expect(sourceSite(undefined)).toBeNull();
+  });
+});

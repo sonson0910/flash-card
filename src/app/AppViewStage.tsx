@@ -13,6 +13,7 @@ import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
 import { Trans } from '@lingui/react';
 import { WorkspaceLoadingPanel } from '../components/WorkspaceLoadingPanel';
 import type { DailyLearningWorkspaceProps } from '../features/dailyLearning/DailyLearningWorkspace';
+import type { TodayLearnerFacts } from '../features/dailyLearning/dailyLearningPresentation';
 import { TEXT_CONVERSATION_LIMITS } from '../features/conversation/textConversationModel';
 import type { LearningStateOutcome } from '../features/learning/learningStateController';
 
@@ -69,6 +70,8 @@ interface AppViewStageProps {
   readonly isStatsLoading: boolean;
   readonly statsError: string | null;
   readonly rewardTimeZone?: string;
+  /** Signed-in learner facts for the Today header. */
+  readonly learner?: TodayLearnerFacts;
   readonly loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
   readonly reviewCard: (cardId: string, rating: ReviewRatingValue, operationId?: string, source?: CardData) => Promise<LearningStateOutcome>;
   readonly catalogCards: readonly CardData[];
@@ -93,7 +96,7 @@ interface AppViewStageProps {
 const fallback = (message: ReactNode) => <WorkspaceLoadingPanel>{message}</WorkspaceLoadingPanel>;
 
 export function AppViewStage({
-  viewMode, ownerId, database, verifiedLibraryEpoch, languageProfile, isOffline, isDarkMode, headingRef, focusIntent, stats, cloudStats, cloudStatsTargetLanguage, streak, isStatsLoading, statsError, rewardTimeZone, loadPracticePool, reviewCard,
+  viewMode, ownerId, database, verifiedLibraryEpoch, languageProfile, isOffline, isDarkMode, headingRef, focusIntent, stats, cloudStats, cloudStatsTargetLanguage, streak, isStatsLoading, statsError, rewardTimeZone, learner, loadPracticePool, reviewCard,
   catalogCards, adoptCatalogCards, notifyCatalog,
   openVocabulary, openPaths, continueReview, continueCatalogUnit, openMorePractice, openWeeklyRecap, onVerifiedPracticeOutcome, weeklyRecapRequestOwnerId, weeklyRecapRequestSettled, onWeeklyRecapRequestConsumed, onPracticePhrase, onListenScopeChange, libraryContent, practiceContent,
 }: AppViewStageProps) {
@@ -106,7 +109,7 @@ export function AppViewStage({
       else window.history.replaceState({}, '', location);
     };
     return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.today', message: 'Preparing today’s learning plan…' })} />)}><div className="async-content-enter" data-async-content="today"><DailyLearningWorkspace
-      ownerId={ownerId} languageProfile={languageProfile} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson} streak={streak} studyXpHistory={stats.xpChartData} rewardTimeZone={rewardTimeZone}
+      ownerId={ownerId} languageProfile={languageProfile} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson} streak={streak} studyXpHistory={stats.xpChartData} rewardTimeZone={rewardTimeZone} {...(learner ? { learner } : {})}
       loadPracticePool={loadPracticePool} reviewCard={(cardId, rating, operationId, source) => reviewCard(cardId, rating, operationId, source)}
       openLesson={openLesson} openVocabulary={openVocabulary} openPaths={openPaths} continueReview={continueReview} openMorePractice={openMorePractice} openWeeklyRecap={openWeeklyRecap} onVerifiedPracticeOutcome={onVerifiedPracticeOutcome}
       adoptCatalogCards={adoptCatalogCards} onPracticePhrase={onPracticePhrase} onListenScopeChange={onListenScopeChange}
