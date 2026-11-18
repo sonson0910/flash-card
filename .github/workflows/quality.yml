@@ -79,7 +79,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm ci --prefix functions --no-audit --no-fund
 
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - run: python3 scripts/extract-release-archive.test.py
       - run: npm run verify:ci
         env:

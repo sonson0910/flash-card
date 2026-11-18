@@ -232,7 +232,7 @@ describe('dependency audit preflight', () => {
       'npm ci --prefix functions --no-audit --no-fund',
     );
     const browserInstallIndex = qualityWorkflow.indexOf(
-      'npx playwright install --with-deps chromium',
+      'npx playwright install --with-deps chromium webkit',
     );
     const fullCiIndex = qualityWorkflow.indexOf('npm run verify:ci');
     const rootAuditJobIndex = qualityWorkflow.indexOf('  audit_root:');
