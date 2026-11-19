@@ -13,7 +13,6 @@ describe('landing asset delivery contract', () => {
     expect(landingSource).toContain('data-hero-video');
     expect(landingSource).toContain('muted');
     expect(landingSource).toContain('playsInline');
-    expect(landingSource).toContain('train-window.webp');
     expect(landingSource).not.toContain('cloudfront.net');
     expect(landingSource).not.toContain('figma.site');
   });
@@ -85,11 +84,11 @@ describe('landing asset delivery contract', () => {
   });
 
   it('defers non-critical landing imagery instead of loading everything eagerly', () => {
-    expect(landingSource).toMatch(/src=\{trainWindow\}\s+width=\{2752\}\s+height=\{1536\}[\s\S]{0,120}loading="lazy"[\s\S]{0,80}fetchPriority="low"/);
     expect(landingSource).toMatch(/src=\{animeSpelling\}\s+width=\{1000\}\s+height=\{667\}[\s\S]{0,40}loading="lazy"/);
     expect(landingSource).toMatch(/src=\{animeImmediate\}\s+width=\{1000\}\s+height=\{667\}[\s\S]{0,40}loading="lazy"/);
-    // The most prominent collage card and the header mark stay eager/high-priority for LCP.
-    expect(landingSource).toMatch(/src=\{sonflashLogo\}\s+width=\{36\}\s+height=\{36\}[\s\S]{0,100}fetchPriority="high"/);
+    // The most prominent collage card stays eager/high-priority for LCP; the header mark is text, so it needs no request.
+    expect(landingSource).toMatch(/<span className="landing-classic-mark" aria-hidden="true"><Trans \{\.\.\.msg\(\{ context: 'landing\.brand\.mark', message: 'S' \}\)\} \/><\/span>/);
+    expect(landingSource).not.toContain('sonflashLogo');
     expect(landingSource).toMatch(/src=\{animeInstant\}\s+width=\{1000\}\s+height=\{667\}[\s\S]{0,40}fetchPriority="high"/);
   });
 

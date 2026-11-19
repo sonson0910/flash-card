@@ -410,8 +410,8 @@ test('installs both Canvas context-menu actions with the localized SonFlash labe
 
   const menus = worker.calls.filter(call => call.type === 'contextMenus.create').map(call => call.details);
   assert.deepEqual(menus.map(menu => menu.id), ['lingoflash-translate-only', 'lingoflash-translate-save']);
-  assert.equal(menus[0].title, 'SonFlash: Dịch nhanh “%s” — không lưu');
-  assert.equal(menus[1].title, 'SonFlash: Dịch + thêm “%s” vào thư viện');
+  assert.equal(menus[0].title, 'SonFlash: Dịch “%s”');
+  assert.equal(menus[1].title, 'SonFlash: Dịch + tạo flashcard');
   assert.deepEqual(menus.map(menu => [...menu.contexts]), [['selection'], ['selection']]);
 });
 
@@ -2114,6 +2114,31 @@ test('propagates detected language and autoSpeak to the injected renderer', asyn
   assert.equal(renderCall?.details.args[0].autoSpeak, true);
   assert.equal(renderCall?.details.args[0].speechLocale, 'fr-FR');
   assert.equal(history?.[0]?.sourceLanguage, 'fr');
+});
+
+test('passes the saved theme family and colour scheme to the injected renderer', async () => {
+  const worker = await createWorkerContext({
+    storageEntries: [['lingoflash_extension_settings', {
+      autoSpeak: false,
+      bubbleDurationMs: 12_000,
+      recentLookupsEnabled: true,
+      quickTranslateSource: 'auto',
+      quickTranslateTarget: 'vi',
+      themeFamily: 'crystal',
+      colorScheme: 'light',
+    }]],
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => [[['kiên cường']], null, 'en'],
+    }),
+  });
+
+  await sendRuntimeMessage(worker, { type: 'TRANSLATE_SELECTION', text: 'resilient' });
+  const renderCall = worker.calls.find(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'translated');
+
+  assert.equal(renderCall?.details.args[0].themeFamily, 'crystal');
+  assert.equal(renderCall?.details.args[0].colorScheme, 'light');
 });
 
 test('treats a renderer acknowledgement failure as an inline fallback', async () => {

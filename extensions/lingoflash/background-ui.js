@@ -170,15 +170,15 @@
     };
     const svgIconInPage = kind => {
       if (typeof document.createElementNS !== 'function') return null;
-      const paths = kind === 'volume'
-        ? ['M11 5 6 9H3v6h3l5 4V5Z', 'm15.5 8.5 3 3-3 3', 'M15.5 5.5a7 7 0 0 1 0 11']
+      const paths = kind === 'play'
+        ? ['M8 5.5v13l11-6.5z']
         : ['M6 6l12 12', 'M18 6 6 18'];
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('viewBox', '0 0 24 24');
-      svg.setAttribute('width', '14');
-      svg.setAttribute('height', '14');
-      svg.setAttribute('fill', 'none');
-      svg.setAttribute('stroke', 'currentColor');
+      svg.setAttribute('width', kind === 'play' ? '12' : '14');
+      svg.setAttribute('height', kind === 'play' ? '12' : '14');
+      svg.setAttribute('fill', kind === 'play' ? 'currentColor' : 'none');
+      svg.setAttribute('stroke', kind === 'play' ? 'none' : 'currentColor');
       svg.setAttribute('stroke-width', '2');
       svg.setAttribute('stroke-linecap', 'round');
       svg.setAttribute('stroke-linejoin', 'round');
@@ -221,7 +221,7 @@
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'speak';
-      const icon = svgIconInPage('volume');
+      const icon = svgIconInPage('play');
       if (icon) button.append(icon);
       else button.textContent = bt('recentSpeakLabel', undefined, 'Nghe');
       button.title = label;
@@ -232,29 +232,99 @@
       button.onclick = () => { speakTextInPage(text, lang, button, label); };
       return button;
     };
+    // The bubble follows the extension's saved look (Classic or Crystal Star,
+    // light or dark); "system" resolves against the page's colour scheme.
+    const family = payload.themeFamily === 'crystal' ? 'crystal' : 'classic';
+    let prefersDark = false;
+    try { prefersDark = Boolean(globalThis.matchMedia?.('(prefers-color-scheme: dark)')?.matches); } catch {}
+    const scheme = payload.colorScheme === 'dark' || payload.colorScheme === 'light' ? payload.colorScheme : (prefersDark ? 'dark' : 'light');
+    const bubbleWidth = family === 'crystal' ? 440 : 380;
     let host = document.getElementById(id);
     if (!host) {
       host = document.createElement('div');
       host.id = id;
-      host.style.cssText = 'all:initial;position:fixed;z-index:2147483647;width:min(360px,calc(100vw - 24px));pointer-events:auto';
       host.attachShadow({ mode: 'open' });
       document.documentElement.append(host);
     }
     const root = host.shadowRoot;
     if (!root) return { ok: false, error: 'Inline result host has no shadow root.' };
+    host.style.cssText = `all:initial;position:fixed;z-index:2147483647;width:min(${bubbleWidth}px,calc(100vw - 24px));pointer-events:auto`;
     root.replaceChildren();
     const style = document.createElement('style');
-    style.textContent = '*{box-sizing:border-box}.c{border:1px solid rgba(103,232,249,0.22);border-radius:18px;padding:15px 16px;color:#f8fafc;background:rgba(7,17,31,0.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 24px 60px -12px rgba(2,6,23,0.75),0 0 24px rgba(34,211,238,0.08);font:500 13px/1.45 system-ui,-apple-system,BlinkMacSystemFont,sans-serif;animation:sf-fade .18s cubic-bezier(0.16,1,0.3,1) forwards;max-height:calc(100vh - 24px);overflow:auto;overscroll-behavior:contain}@keyframes sf-fade{from{opacity:0;transform:translateY(4px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}.h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.b{color:#67e8f9;font-size:10px;font-weight:800;letter-spacing:.12em}.source-line,.example-line{display:flex;align-items:center;gap:7px}.example-line{align-items:flex-start}.example-line .e{min-width:0}.s{color:#94a3b8;font-size:12px;margin-top:2px;overflow-wrap:anywhere}.speak{border:1px solid rgba(103,232,249,0.25);border-radius:8px;padding:3px 7px;color:#a5f3fc;background:rgba(8,47,73,0.35);cursor:pointer;font-size:11px;display:inline-flex;align-items:center;gap:4px;transition:all .15s ease}.speak:hover{border-color:#67e8f9;background:rgba(14,116,144,0.4);transform:translateY(-1px)}.speak[data-speech-state="playing"]{color:#facc15;border-color:#facc15}.speak[data-speech-state="ended"]{color:#86efac;border-color:#86efac}.speak[data-speech-state="error"]{color:#fca5a5;border-color:#fca5a5}.speak:disabled{cursor:not-allowed;opacity:.45;transform:none}.speak:focus-visible,.x:focus-visible{outline:2px solid #67e8f9;outline-offset:2px}.speech-help{color:#fbbf24;font-size:11px;margin-top:5px}.m{display:inline-block;color:#a5f3fc;background:rgba(22,78,99,0.45);border:1px solid rgba(103,232,249,0.18);border-radius:999px;padding:3px 9px;margin-top:6px;font-size:10px;font-weight:700}.x{border:0;background:rgba(255,255,255,0.05);color:#94a3b8;font:700 16px/1 sans-serif;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease}.x:hover{background:rgba(255,255,255,0.15);color:#f8fafc;transform:scale(1.08)}.t{font-size:20px;font-weight:800;margin-top:10px;color:#f8fafc;letter-spacing:-0.02em}.p{color:#67e8f9;margin-top:3px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}.e{color:#cbd5e1;margin-top:8px;font-size:12px;line-height:1.45}.e a{color:#67e8f9;text-decoration:underline}.ok{color:#86efac;margin-top:10px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px}.ok[data-tone="existing"]{color:#fde68a;background:rgba(250,204,21,0.1);padding:6px 9px;border-radius:8px;border:1px solid rgba(250,204,21,0.25)}.err{color:#fca5a5;margin-top:10px;background:rgba(239,68,68,0.1);padding:8px 10px;border-radius:8px;border:1px solid rgba(248,113,113,0.2)}.err[data-tone="quota"]{color:#fde68a;background:rgba(250,204,21,0.1);border-color:rgba(250,204,21,0.25)}.quota-note{color:#94a3b8;margin-top:6px;font-size:11px}.load{color:#cbd5e1;margin-top:11px;display:flex;align-items:center}.spin{display:inline-block;width:14px;height:14px;border:2px solid #164e63;border-top-color:#67e8f9;border-radius:50%;margin-right:8px;vertical-align:-2px;animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}@media (prefers-reduced-motion: reduce){.spin{animation:none}.c{animation:none}.x{transition:none}.speak{transition:none}}';
+    style.textContent = [
+      '*{box-sizing:border-box}',
+      '.frame{position:relative;--sf-font-display:"Fraunces",Georgia,"Times New Roman",serif;--sf-font-body:"Geist","Segoe UI",system-ui,-apple-system,sans-serif;--sf-font-mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;--display-weight:440;--radius:20px;--border:1.5px solid transparent;--bg:radial-gradient(ellipse 80% 60% at 100% 0%,rgb(150 108 215/.25),transparent 70%) padding-box,linear-gradient(180deg,#0f2430,#0a1a22) padding-box,linear-gradient(155deg,#7ee6fa,rgb(40 211 244/.2) 40%,rgb(150 108 215/.35) 75%,#b395ea) border-box;--shadow:0 30px 60px -20px rgb(6 22 31/.55),0 0 40px -12px rgb(40 211 244/.45);--caret-bg:#0f2430;--caret-line:1.5px solid #7ee6fa;--text:#e5ecf1;--strong:#f1f6f9;--body:#b5c2ca;--text2:#99a7b0;--text3:#6f808a;--line:rgb(255 255 255/.08);--chip:rgb(255 255 255/.04);--accent:#28d3f4;--accent-text:#7ee6fa;--accent-soft:rgb(40 211 244/.12);--accent-line:rgb(40 211 244/.35);--primary-bg:#28d3f4;--primary-text:#04141c;--primary-shadow:0 16px 40px -14px rgb(40 211 244/.8),inset 0 1px 0 rgb(255 255 255/.5);--ok:#9be09e;--ok-bg:rgb(117 208 121/.12);--ok-line:rgb(117 208 121/.32);--danger:#ff8a86;--danger-bg:rgb(237 83 80/.12);--danger-line:rgb(237 83 80/.35);--warn:#f7c46e;--warn-bg:rgb(245 174 57/.1);--warn-line:rgb(245 174 57/.32)}',
+      '.frame[data-scheme="light"]{--display-weight:380;--radius:14px;--border:1px solid rgb(29 26 22/.1);--bg:#fffcf5;--shadow:0 2px 4px rgb(60 40 20/.08),0 30px 50px -24px rgb(60 40 20/.45);--caret-bg:#fffcf5;--caret-line:1px solid rgb(29 26 22/.1);--text:#1d1a16;--strong:#1d1a16;--body:#3d372f;--text2:#6b6255;--text3:#8a8072;--line:rgb(29 26 22/.1);--chip:#fbf8f2;--accent:#b4461a;--accent-text:#97400d;--accent-soft:rgb(180 70 26/.08);--accent-line:rgb(151 64 13/.25);--primary-bg:#1d1a16;--primary-text:#fbf6ec;--primary-shadow:0 14px 28px -14px rgb(29 26 22/.9);--ok:#2c6a3d;--ok-bg:rgb(51 115 68/.09);--ok-line:rgb(51 115 68/.25);--danger:#b3261e;--danger-bg:rgb(197 54 55/.07);--danger-line:rgb(197 54 55/.25);--warn:#8a5a0c;--warn-bg:rgb(184 134 43/.1);--warn-line:rgb(184 134 43/.3)}',
+      '.frame[data-family="crystal"]{--sf-font-display:"Kanit","Nunito",system-ui,sans-serif;--sf-font-body:"Nunito",system-ui,sans-serif;--radius:0;--border:2px solid transparent;--bg:linear-gradient(180deg,#121624 0%,#080a12 100%) padding-box,linear-gradient(150deg,#ffe3f1,#ff8fb6 35%,#ff5470 65%,#5ef2ff) border-box;--shadow:none;--text:#f3f5fa;--strong:#ffffff;--body:#d6dbe6;--text2:#aab3c5;--text3:#7a8397;--line:rgb(255 255 255/.1);--line-strong:rgb(255 255 255/.22);--chip:rgb(255 255 255/.06);--accent:#5ef2ff;--accent-text:#ff6b85;--holo:#5ef2ff;--accent-soft:rgb(94 242 255/.12);--accent-line:rgb(94 242 255/.4);--primary-bg:linear-gradient(180deg,#ff5470 0%,#ff2a4d 45%,#b30f33 100%);--primary-text:#ffffff;--primary-shadow:0 0 30px -4px rgb(255 42 77/.85);--ok:#5ef2ff;--ok-bg:rgb(94 242 255/.12);--ok-line:rgb(94 242 255/.4);--danger:#ff6b85;--danger-bg:rgb(255 42 77/.12);--danger-line:rgb(255 84 112/.45);--warn:#ffd166;--warn-bg:rgb(255 209 102/.1);--warn-line:rgb(255 209 102/.35);filter:drop-shadow(0 30px 40px rgb(0 0 0/.35)) drop-shadow(0 0 18px rgb(255 143 182/.55))}',
+      '.frame[data-family="crystal"][data-scheme="light"]{--bg:linear-gradient(180deg,#f2faff 0%,#d9eeff 100%) padding-box,linear-gradient(150deg,#ffe3f1,#ff8fb6 35%,#ff5470 65%,#5ef2ff) border-box;--text:#0d1a33;--strong:#081329;--body:#243553;--text2:#3f5272;--text3:#627392;--line:rgb(13 40 80/.12);--line-strong:rgb(13 40 80/.24);--chip:rgb(226 244 255/.9);--accent:#0a7d99;--accent-text:#c40f35;--holo:#0a7d99;--accent-soft:rgb(26 167 201/.12);--accent-line:rgb(26 167 201/.45);--primary-bg:linear-gradient(180deg,#ff5470 0%,#e0173f 50%,#a30c2d 100%);--primary-shadow:0 12px 28px -8px rgb(224 23 63/.6);--ok:#0a7d99;--ok-bg:rgb(26 167 201/.12);--ok-line:rgb(26 167 201/.45);--danger:#c40f35;--danger-bg:rgb(224 23 63/.08);--danger-line:rgb(224 23 63/.3);--warn:#8a5a00;--warn-bg:rgb(255 209 102/.18);--warn-line:rgb(138 90 0/.3);filter:drop-shadow(0 30px 40px rgb(20 70 130/.25)) drop-shadow(0 0 18px rgb(255 143 182/.55))}',
+      '.caret{position:absolute;left:24px;top:-7px;z-index:1;width:14px;height:14px;transform:rotate(45deg);background:var(--caret-bg);border-left:var(--caret-line);border-top:var(--caret-line)}',
+      '.frame[data-family="crystal"] .caret{top:-9px;width:20px;height:12px;transform:none;border:0;background:#ff8fb6;clip-path:polygon(50% 0,100% 100%,0 100%)}',
+      '.caret[hidden]{display:none}',
+      '.c{position:relative;border:var(--border);border-radius:var(--radius);background:var(--bg);box-shadow:var(--shadow);color:var(--text);font:400 13px/1.45 var(--sf-font-body);-webkit-font-smoothing:antialiased;animation:sf-fade .18s cubic-bezier(0.16,1,0.3,1) forwards;max-height:calc(100vh - 24px);overflow:auto;overscroll-behavior:contain}',
+      '.frame[data-family="crystal"] .c{clip-path:polygon(18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%,0 18px)}',
+      '@keyframes sf-fade{from{opacity:0;transform:translateY(4px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}',
+      '.body{padding:18px 20px 16px}.frame[data-family="crystal"] .body{padding:16px 20px 14px}',
+      '.h{display:flex;align-items:center;gap:10px}.info{min-width:0;flex:1 1 auto}',
+      '.source-line,.example-line{display:flex;align-items:center;gap:10px}.example-line{align-items:flex-start;gap:8px}.example-line .e{min-width:0;flex:1 1 auto;margin-top:0}',
+      '.s{min-width:0;color:var(--strong);font-family:var(--sf-font-display);font-size:34px;font-weight:var(--display-weight);line-height:1;letter-spacing:-.02em;overflow-wrap:anywhere}',
+      '.frame[data-family="crystal"] .s{font-style:italic;font-weight:900;letter-spacing:0}',
+      '.speak{flex:none;width:34px;height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--accent-line);border-radius:50%;background:var(--accent-soft);color:var(--accent-text);cursor:pointer;font:600 12px/1 var(--sf-font-body);transition:transform .15s ease,background-color .15s ease,border-color .15s ease}',
+      '.example-line .speak{width:28px;height:28px}',
+      '.frame[data-family="crystal"] .speak{border:0;border-radius:0;background:var(--primary-bg);color:#ffffff;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}',
+      '.speak:hover{transform:translateY(-1px)}',
+      '.speak[data-speech-state="playing"]{border-color:var(--warn);color:var(--warn)}.speak[data-speech-state="ended"]{border-color:var(--ok);color:var(--ok)}.speak[data-speech-state="error"]{border-color:var(--danger);color:var(--danger)}',
+      '.speak:disabled{cursor:not-allowed;opacity:.45;transform:none}',
+      '.speak[data-kind="action"]{width:auto;height:42px;padding:0 16px;border:0;border-radius:12px;background:var(--primary-bg);color:var(--primary-text);box-shadow:var(--primary-shadow);font-size:13.5px;font-weight:650;clip-path:none}',
+      '.frame[data-family="crystal"] .speak[data-kind="action"]{border-radius:0;font-family:var(--sf-font-display);font-style:italic;font-weight:900;letter-spacing:.04em;text-transform:uppercase;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}',
+      '.speak:focus-visible,.x:focus-visible,.e a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}',
+      '.speech-help{color:var(--warn);font-size:11.5px;margin-top:6px}',
+      '.x{flex:none;margin-left:auto;align-self:flex-start;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--text3);display:flex;align-items:center;justify-content:center;cursor:pointer;font:700 16px/1 var(--sf-font-body);transition:background-color .15s ease,color .15s ease}',
+      '.x:hover{background:var(--chip);color:var(--strong)}',
+      '.frame[data-family="crystal"] .x{width:30px;height:30px;border-radius:0;background:var(--chip);color:var(--text2);clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}',
+      '.p{margin-top:6px;color:var(--text2);font-family:var(--sf-font-mono);font-size:12.5px}',
+      '.t{margin-top:12px;color:var(--accent-text);font-family:var(--sf-font-display);font-size:26px;font-weight:var(--display-weight);line-height:1.15;overflow-wrap:anywhere}',
+      '.frame[data-family="crystal"] .t{margin-top:10px;font-style:italic;font-weight:800}',
+      '.e{margin-top:6px;color:var(--body);font-size:13.5px;line-height:1.5}.e a{color:var(--accent-text);text-decoration:underline}',
+      '.example{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--chip)}',
+      '.example .e{color:var(--text2);font-size:12.5px}.example .e + .e{margin-top:4px}',
+      '.frame[data-family="crystal"] .example{border:0;border-radius:0;box-shadow:inset 3px 0 0 var(--holo);clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}',
+      '.ai-note{margin-top:10px;color:var(--text3);font-size:11.5px;line-height:1.4}',
+      '.f{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 20px 16px;border-top:1px solid var(--line)}',
+      '.frame[data-family="crystal"] .f{border-top:0;box-shadow:inset 0 1px 0 var(--line)}',
+      '.ok{min-height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--ok-line);border-radius:999px;background:var(--ok-bg);color:var(--ok);font-size:12.5px;font-weight:650}',
+      '.ok:not([data-tone="translated"])::before{content:"";width:9px;height:5px;margin:-3px 2px 0 0;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg)}',
+      '.ok[data-tone="existing"]{border-color:var(--warn-line);background:var(--warn-bg);color:var(--warn)}',
+      '.ok[data-tone="translated"]{border-color:var(--line);background:var(--chip);color:var(--text2)}',
+      '.frame[data-family="crystal"] .ok{border:0;border-radius:0;box-shadow:inset 0 0 0 1px var(--ok-line);font-family:var(--sf-font-display);font-style:italic;font-weight:800;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}',
+      '.meta{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right}',
+      '.b{color:var(--text3);font-family:var(--sf-font-mono);font-size:11px;letter-spacing:.02em}',
+      '.m{color:var(--accent-text);font-size:10.5px;font-weight:700;letter-spacing:.08em}',
+      '.frame[data-family="crystal"] .m{color:var(--holo);font-family:var(--sf-font-display);font-style:italic;font-weight:800;letter-spacing:.1em}',
+      '.err{margin-top:12px;padding:10px 12px;border:1px solid var(--danger-line);border-radius:12px;background:var(--danger-bg);color:var(--danger);font-size:13px}',
+      '.err[data-tone="quota"]{border-color:var(--warn-line);background:var(--warn-bg);color:var(--warn)}',
+      '.frame[data-family="crystal"] .err{border:0;border-radius:0;box-shadow:inset 3px 0 0 currentColor}',
+      '.quota-note{margin-top:8px;color:var(--text2);font-size:12px}',
+      '.load{margin-top:12px;display:flex;align-items:center;color:var(--text2);font-size:13px}',
+      '.spin{display:inline-block;width:14px;height:14px;margin-right:8px;border:2px solid var(--accent-soft);border-top-color:var(--accent);border-radius:50%;animation:r .8s linear infinite}',
+      '@keyframes r{to{transform:rotate(360deg)}}',
+      '@media (prefers-reduced-motion: reduce){.spin{animation:none}.c{animation:none}.x{transition:none}.speak{transition:none}}',
+    ].join('');
+    const frame = document.createElement('div'); frame.className = 'frame';
+    frame.dataset.family = family; frame.dataset.scheme = scheme;
+    const caret = document.createElement('span'); caret.className = 'caret'; caret.setAttribute('aria-hidden', 'true');
     const card = document.createElement('section'); card.className = 'c'; card.setAttribute('role', 'status'); card.setAttribute('aria-live', 'polite');
+    const body = document.createElement('div'); body.className = 'body';
+    const foot = document.createElement('div'); foot.className = 'f';
+    const meta = document.createElement('div'); meta.className = 'meta';
     const head = document.createElement('div'); head.className = 'h';
-    const info = document.createElement('div');
+    const info = document.createElement('div'); info.className = 'info';
     const brand = document.createElement('div'); brand.className = 'b'; brand.textContent = payload.version ? bt('bubbleBrand', [payload.version], `SONFLASH v${payload.version}`) : bt('bubbleBrandNoVersion', undefined, 'SONFLASH');
     const source = document.createElement('div'); source.className = 's'; source.textContent = payload.text || '';
     const sourceLine = document.createElement('div'); sourceLine.className = 'source-line';
     const sourceFallback = payload.text || bt('bubbleDefaultWordFallback', undefined, 'từ đã chọn');
     const sourceSpeaker = speechButtonInPage(payload.text || '', bt('bubbleSpeakSelectionLabel', [sourceFallback], `Nghe phát âm ${sourceFallback}`), payload.speechLocale);
     sourceLine.append(source, sourceSpeaker);
-    info.append(brand, sourceLine);
+    info.append(sourceLine);
     if (!speechSupportedInPage()) {
       const speechHelp = document.createElement('div');
       speechHelp.id = speechStatusId;
@@ -264,32 +334,39 @@
       speechHelp.textContent = bt('bubbleSpeechUnsupported', undefined, 'Trình duyệt này không hỗ trợ phát âm.');
       info.append(speechHelp);
     }
-    if (payload.modeLabel) { const mode = document.createElement('span'); mode.className = 'm'; mode.textContent = payload.modeLabel; info.append(mode); }
+    if (payload.modeLabel) { const mode = document.createElement('span'); mode.className = 'm'; mode.textContent = payload.modeLabel; meta.append(mode); }
+    meta.append(brand);
     const close = document.createElement('button'); close.className = 'x'; close.type = 'button'; close.setAttribute('aria-label', bt('bubbleCloseAriaLabel', undefined, 'Đóng kết quả SonFlash'));
     const closeIcon = svgIconInPage('close');
     if (closeIcon) close.append(closeIcon);
     else close.textContent = 'Đóng';
     close.onclick = () => host.remove();
-    head.append(info, close); card.append(head);
+    head.append(info, close); body.append(head);
     if (String(payload.status).startsWith('loading')) {
       const line = document.createElement('div'); line.className = 'load'; line.setAttribute('role', 'status'); line.setAttribute('aria-live', 'polite');
       const spinner = document.createElement('span'); spinner.className = 'spin'; spinner.setAttribute('aria-hidden', 'true');
-      line.append(spinner, document.createTextNode(payload.status === 'loading-save' ? bt('bubbleLoadingSave', undefined, 'Đang tạo và lưu flashcard…') : bt('bubbleLoadingTranslate', undefined, 'Đang dịch nhanh…'))); card.append(line);
+      line.append(spinner, document.createTextNode(payload.status === 'loading-save' ? bt('bubbleLoadingSave', undefined, 'Đang tạo và lưu flashcard…') : bt('bubbleLoadingTranslate', undefined, 'Đang dịch nhanh…'))); body.append(line);
     } else if (['translated','created','existing'].includes(payload.status)) {
-      const text = document.createElement('div'); text.className = 't'; text.textContent = payload.translation || bt('bubbleResult', undefined, 'Đã xử lý'); card.append(text);
-      if (payload.aiGenerated) { const disclosure = document.createElement('div'); disclosure.className = 'e'; disclosure.textContent = bt('bubbleAiDisclosure', undefined, 'Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa.'); card.append(disclosure); }
-      if (payload.phonetic) { const p = document.createElement('div'); p.className = 'p'; p.textContent = payload.phonetic; card.append(p); }
-      if (payload.explanation) { const e = document.createElement('div'); e.className = 'e'; e.textContent = payload.explanation; card.append(e); }
-      if (payload.exampleSentence) {
-        const exampleLine = document.createElement('div'); exampleLine.className = 'example-line';
-        const e = document.createElement('div'); e.className = 'e'; e.textContent = bt('bubbleExamplePrefix', [payload.exampleSentence], `Ví dụ: ${payload.exampleSentence}`);
-        exampleLine.append(e, speechButtonInPage(payload.exampleSentence, bt('bubbleSpeakExampleLabel', undefined, 'Nghe phát âm câu ví dụ'), payload.speechLocale));
-        card.append(exampleLine);
+      if (payload.phonetic) { const p = document.createElement('div'); p.className = 'p'; p.textContent = payload.phonetic; body.append(p); }
+      const text = document.createElement('div'); text.className = 't'; text.textContent = payload.translation || bt('bubbleResult', undefined, 'Đã xử lý'); body.append(text);
+      if (payload.explanation) { const e = document.createElement('div'); e.className = 'e'; e.textContent = payload.explanation; body.append(e); }
+      if (payload.exampleSentence || payload.exampleTranslation) {
+        const example = document.createElement('div'); example.className = 'example';
+        if (payload.exampleSentence) {
+          const exampleLine = document.createElement('div'); exampleLine.className = 'example-line';
+          const e = document.createElement('div'); e.className = 'e'; e.textContent = bt('bubbleExamplePrefix', [payload.exampleSentence], `Ví dụ: ${payload.exampleSentence}`);
+          exampleLine.append(e, speechButtonInPage(payload.exampleSentence, bt('bubbleSpeakExampleLabel', undefined, 'Nghe phát âm câu ví dụ'), payload.speechLocale));
+          example.append(exampleLine);
+        }
+        if (payload.exampleTranslation) { const e = document.createElement('div'); e.className = 'e'; e.textContent = bt('bubbleExampleTranslationPrefix', [payload.exampleTranslation], `Dịch ví dụ: ${payload.exampleTranslation}`); example.append(e); }
+        body.append(example);
       }
-      if (payload.exampleTranslation) { const e = document.createElement('div'); e.className = 'e'; e.textContent = bt('bubbleExampleTranslationPrefix', [payload.exampleTranslation], `Dịch ví dụ: ${payload.exampleTranslation}`); card.append(e); }
+      if (payload.aiGenerated) { const disclosure = document.createElement('div'); disclosure.className = 'ai-note'; disclosure.textContent = bt('bubbleAiDisclosure', undefined, 'Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa.'); body.append(disclosure); }
       const ok = document.createElement('div'); ok.className = 'ok';
       if (payload.status === 'existing') ok.dataset.tone = 'existing';
-      ok.textContent = payload.status === 'translated' ? bt('bubbleTranslatedOnly', undefined, 'Chỉ dịch • không lưu • không dùng quota AI') : payload.status === 'existing' ? bt('bubbleExisting', undefined, 'Đã có trong thư viện') : bt('bubbleCreated', undefined, 'Đã thêm vào thư viện'); card.append(ok);
+      else if (payload.status === 'translated') ok.dataset.tone = 'translated';
+      ok.textContent = (payload.status === 'translated' ? bt('bubbleTranslatedOnly', undefined, 'Chỉ dịch • không lưu • không dùng quota AI') : payload.status === 'existing' ? bt('bubbleExisting', undefined, 'Đã có trong thư viện') : bt('bubbleCreated', undefined, 'Đã thêm vào thư viện'));
+      foot.append(ok);
     } else {
       const isQuota = payload.status === 'error' && isQuotaMessageInPage(payload.message);
       const e = document.createElement('div'); e.className = payload.status === 'auth-required' ? 'e' : 'err';
@@ -303,13 +380,12 @@
           }
         } catch {}
       } else e.textContent = payload.message || bt('bubbleGenericError', undefined, 'Không thể xử lý. Hãy thử lại.');
-      card.append(e);
+      body.append(e);
       if (isQuota) {
         const note = document.createElement('div'); note.className = 'quota-note'; note.textContent = bt('bubbleQuotaNote', undefined, 'Dịch nhanh vẫn miễn phí, không dùng lượt AI.');
-        card.append(note);
+        body.append(note);
         const openApp = document.createElement('button');
-        openApp.type = 'button'; openApp.className = 'speak'; openApp.textContent = bt('bubbleQuotaAction', undefined, 'Mở SonFlash · Nâng cấp Pro');
-        openApp.style.marginTop = '8px';
+        openApp.type = 'button'; openApp.className = 'speak'; openApp.dataset.kind = 'action'; openApp.textContent = bt('bubbleQuotaAction', undefined, 'Mở SonFlash · Nâng cấp Pro');
         openApp.onclick = () => {
           const runtime = (globalThis.browser ?? globalThis.chrome)?.runtime;
           if (!runtime?.sendMessage) return;
@@ -317,11 +393,10 @@
           if (globalThis.browser?.runtime) void runtime.sendMessage(message);
           else runtime.sendMessage(message, () => {});
         };
-        card.append(openApp);
+        foot.append(openApp);
       } else if (payload.status === 'error' && typeof payload.retryId === 'string') {
         const retry = document.createElement('button');
-        retry.type = 'button'; retry.className = 'speak'; retry.textContent = bt('bubbleRetry', undefined, 'Thử lại từ này');
-        retry.style.marginTop = '8px';
+        retry.type = 'button'; retry.className = 'speak'; retry.dataset.kind = 'action'; retry.textContent = bt('bubbleRetry', undefined, 'Thử lại từ này');
         retry.onclick = () => {
           const runtime = (globalThis.browser ?? globalThis.chrome)?.runtime;
           if (!runtime?.sendMessage) return;
@@ -342,19 +417,25 @@
             }
           } catch (error) { finish({ error: error?.message }); }
         };
-        card.append(retry);
+        foot.append(retry);
       }
     }
-    root.append(style, card);
+    foot.append(meta);
+    card.append(body, foot);
+    frame.append(caret, card);
+    root.append(style, frame);
     if (payload.autoSpeak && ['translated', 'created', 'existing'].includes(payload.status)) {
       speakTextInPage(payload.text || '', payload.speechLocale, sourceSpeaker, `Nghe phát âm ${payload.text || 'từ đã chọn'}`);
     }
-    const a = payload.anchor, vw = Math.max(document.documentElement.clientWidth, innerWidth || 0), vh = Math.max(document.documentElement.clientHeight, innerHeight || 0);
-    host.style.left = `${a ? Math.min(Math.max(12, Number(a.left)||12), Math.max(12,vw-372)) : Math.max(12,vw-372)}px`;
+    const a = payload.anchor, vw = Math.max(document.documentElement.clientWidth || 0, innerWidth || 0), vh = Math.max(document.documentElement.clientHeight || 0, innerHeight || 0);
+    host.style.left = `${a ? Math.min(Math.max(12, Number(a.left)||12), Math.max(12,vw-bubbleWidth-12)) : Math.max(12,vw-bubbleWidth-12)}px`;
     const measuredHeight = Number(card.getBoundingClientRect?.().height) || 190;
     const cardHeight = Math.min(measuredHeight, Math.max(0, vh - 24));
     const desiredTop = a ? (Number(a.bottom) || 0) + 10 : 16;
-    host.style.top = `${Math.min(Math.max(12, desiredTop), Math.max(12, vh - cardHeight - 12))}px`;
+    const top = Math.min(Math.max(12, desiredTop), Math.max(12, vh - cardHeight - 12));
+    host.style.top = `${top}px`;
+    // The caret points back at the selection only while the bubble sits directly below it.
+    caret.hidden = !(a && top === desiredTop);
     const duration = Number.isSafeInteger(payload.bubbleDurationMs) ? Math.max(0, payload.bubbleDurationMs) : 12_000;
     if (duration > 0 && ['translated','created','existing'].includes(payload.status)) setTimeout(() => host.isConnected && host.remove(), duration);
     return { ok: true };

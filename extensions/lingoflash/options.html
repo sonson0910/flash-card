@@ -12,28 +12,68 @@
   <main class="settings-shell">
     <header class="options-nav">
       <span class="brand-mark" aria-hidden="true">S</span>
+      <svg class="brand-star" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,52.0 38.2,35.7 50.0,4.0" fill="#ff5470"></polygon><polygon points="50.0,52.0 50.0,4.0 61.8,35.7" fill="#7a0820"></polygon><polygon points="50.0,52.0 61.8,35.7 95.7,37.2" fill="#ff5470"></polygon><polygon points="50.0,52.0 95.7,37.2 69.2,58.2" fill="#7a0820"></polygon><polygon points="50.0,52.0 69.2,58.2 78.2,90.8" fill="#ff5470"></polygon><polygon points="50.0,52.0 78.2,90.8 50.0,72.2" fill="#7a0820"></polygon><polygon points="50.0,52.0 50.0,72.2 21.8,90.8" fill="#ff5470"></polygon><polygon points="50.0,52.0 21.8,90.8 30.8,58.2" fill="#7a0820"></polygon><polygon points="50.0,52.0 30.8,58.2 4.3,37.2" fill="#ff5470"></polygon><polygon points="50.0,52.0 4.3,37.2 38.2,35.7" fill="#7a0820"></polygon></svg>
       <span class="brand-name">Son<span>Flash</span></span>
       <span class="brand-context" data-i18n="optionsEyebrow">Tiện ích Chrome</span>
+      <span class="brand-version" id="extension-version"></span>
     </header>
 
     <section class="options-hero" aria-labelledby="options-heading">
-      <p class="eyebrow">SETTINGS // MY SETUP</p>
-      <h1 id="options-heading" data-i18n="optionsHeading">Cài đặt</h1>
-      <p class="intro" data-i18n="optionsIntro">Tùy chỉnh trải nghiệm trên trình duyệt. Khi chọn tạo flashcard, extension có thể gửi thêm một câu ngữ cảnh gần vùng chọn (tối đa 500 ký tự) tới SonFlash/Gemini. Các lựa chọn này chỉ lưu trong bộ nhớ cài đặt của extension.</p>
+      <div class="hero-copy">
+      <p class="eyebrow" data-i18n="optionsCrystalEyebrow">SETTINGS // MY SETUP</p>
+      <h1 id="options-heading"><span data-i18n="optionsHeadingLead">Cài</span> <em data-i18n="optionsHeadingAccent">đặt</em></h1>
+      <p class="intro" data-i18n="optionsIntro">Tuỳ chỉnh cách SonFlash dịch và lưu từ trên mọi trang bạn đọc.</p>
+      <p class="context-note" data-i18n="optionsContextNote">Khi chọn tạo flashcard, extension có thể gửi thêm một câu ngữ cảnh gần vùng chọn (tối đa 500 ký tự) tới SonFlash/Gemini. Các lựa chọn này chỉ lưu trong bộ nhớ cài đặt của extension.</p>
+      </div>
+      <div class="lumi-link">
+        <p class="lumi-bubble"><span data-i18n="optionsLumiLabel">LUMI · LINK</span><span data-i18n="optionsLumiLine">Trang nào được cấp quyền, mình sẽ đứng chờ ở đó.</span></p>
+        <span class="lumi-mascot" aria-hidden="true"></span>
+      </div>
     </section>
 
     <form id="settings-form">
       <div class="settings-grid">
         <div class="settings-column">
           <fieldset>
-            <legend data-i18n="optionsDisplaySoundLegend">Hiển thị và âm thanh</legend>
+            <legend data-i18n="optionsDisplaySoundLegend">Hiển thị &amp; âm thanh</legend>
             <label class="check-row">
               <input id="auto-speak" type="checkbox">
-              <span><strong data-i18n="optionsAutoSpeakTitle">Tự động phát âm</strong><small data-i18n="optionsAutoSpeakHint">Tắt mặc định. Trình duyệt có thể yêu cầu thao tác người dùng để phát âm.</small></span>
+              <span><strong data-i18n="optionsAutoSpeakTitle">Tự đọc phát âm</strong><small data-i18n="optionsAutoSpeakHint">Phát âm ngay khi bong bóng hiện ra</small></span>
             </label>
             <label class="field-row" for="bubble-duration">
-              <span><strong data-i18n="optionsBubbleDurationTitle">Thời gian giữ kết quả</strong><small data-i18n="optionsBubbleDurationHint">Đặt 0 để chỉ đóng khi bấm nút đóng.</small></span>
+              <span><strong data-i18n="optionsBubbleDurationTitle">Thời gian hiện bong bóng</strong><small data-i18n="optionsBubbleDurationHint">0 = chỉ đóng thủ công</small></span>
               <span class="input-with-unit"><input id="bubble-duration" type="number" min="0" max="60000" step="1000" inputmode="numeric"><span>ms</span></span>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend data-i18n="optionsFloatingLegend">Biểu tượng nổi</legend>
+            <p class="field-help" data-i18n="optionsFloatingHelp">Hiện nút S cạnh chữ bạn bôi đen, chỉ trên các trang đã cấp quyền.</p>
+            <div class="site-add-row">
+              <label class="sr-only" for="selection-icon-site" data-i18n="optionsSiteInputLabel">Website cho phép floating icon</label>
+              <input id="selection-icon-site" type="url" data-i18n-placeholder="optionsSiteInputPlaceholder" placeholder="https://example.com/article">
+              <button id="add-selection-icon-site" class="secondary-button" type="button" data-i18n="optionsAddSite">Cấp quyền</button>
+            </div>
+            <p id="selection-icon-status" class="status" role="status" aria-live="polite"></p>
+            <p id="selection-icon-empty" class="empty-state" data-i18n="optionsSiteEmpty">Chưa cấp quyền cho website nào.</p>
+            <ul id="selection-icon-sites" class="site-list" data-i18n-aria-label="optionsSiteInputLabel" aria-label="Website đã cấp quyền"></ul>
+          </fieldset>
+        </div>
+
+        <div class="settings-column">
+          <fieldset>
+            <legend data-i18n="optionsHistoryLegend">Lịch sử &amp; dịch</legend>
+            <label class="check-row">
+              <input id="recent-lookups-enabled" type="checkbox">
+              <span><strong data-i18n="optionsRecentEnabledTitle">Lưu tra cứu gần đây</strong><small data-i18n="optionsRecentEnabledHint">Tối đa 10 mục trong phiên duyệt hiện tại.</small></span>
+            </label>
+            <label class="field-row" for="quick-translate-source">
+              <span><strong data-i18n="optionsSourceLanguageTitle">Ngôn ngữ nguồn</strong><small data-i18n="optionsSourceLanguageHint">Tự nhận diện hoặc cố định tiếng Anh</small></span>
+              <select id="quick-translate-source"><option value="auto" data-i18n="optionsSourceAuto">Tự động</option><option value="en">English</option></select>
+            </label>
+            <label class="field-row" for="quick-translate-target">
+              <span><strong data-i18n="optionsTargetLanguageTitle">Ngôn ngữ đích</strong><small data-i18n="optionsTargetLanguageHint">Hiện chỉ hỗ trợ tiếng Việt</small></span>
+              <select id="quick-translate-target"><option value="vi">Tiếng Việt</option></select>
             </label>
           </fieldset>
 
@@ -50,37 +90,6 @@
               <label class="scheme-option"><input type="radio" name="color-scheme" id="scheme-dark" value="dark"><span data-i18n="optionsSchemeDark">Tối</span></label>
               <label class="scheme-option"><input type="radio" name="color-scheme" id="scheme-light" value="light"><span data-i18n="optionsSchemeLight">Sáng</span></label>
             </div>
-          </fieldset>
-
-          <fieldset>
-            <legend data-i18n="optionsFloatingLegend">Floating selection icon (thử nghiệm)</legend>
-            <p class="field-help" data-i18n="optionsFloatingHelp">Tính năng tắt mặc định. Chỉ website bạn cấp quyền mới nhận icon; extension không gửi hoặc lưu text cho đến khi người dùng bấm icon.</p>
-            <div class="site-add-row">
-              <label class="sr-only" for="selection-icon-site" data-i18n="optionsSiteInputLabel">Website cho phép floating icon</label>
-              <input id="selection-icon-site" type="url" data-i18n-placeholder="optionsSiteInputPlaceholder" placeholder="https://example.com/article">
-              <button id="add-selection-icon-site" class="secondary-button" type="button" data-i18n="optionsAddSite">Cấp quyền và thêm</button>
-            </div>
-            <p id="selection-icon-status" class="status" role="status" aria-live="polite"></p>
-            <p id="selection-icon-empty" class="empty-state" data-i18n="optionsSiteEmpty">Chưa cấp quyền cho website nào.</p>
-            <ul id="selection-icon-sites" class="site-list" data-i18n-aria-label="optionsSiteInputLabel" aria-label="Website đã cấp quyền"></ul>
-          </fieldset>
-        </div>
-
-        <div class="settings-column">
-          <fieldset>
-            <legend data-i18n="optionsHistoryLegend">Lịch sử và dịch nhanh</legend>
-            <label class="check-row">
-              <input id="recent-lookups-enabled" type="checkbox">
-              <span><strong data-i18n="optionsRecentEnabledTitle">Lưu tra cứu gần đây</strong><small data-i18n="optionsRecentEnabledHint">Tối đa 10 mục trong phiên duyệt hiện tại.</small></span>
-            </label>
-            <label class="field-row" for="quick-translate-source">
-              <span><strong data-i18n="optionsSourceLanguageTitle">Ngôn ngữ nguồn</strong><small data-i18n="optionsSourceLanguageHint">Tự nhận diện giúp dịch linh hoạt hơn.</small></span>
-              <select id="quick-translate-source"><option value="auto" data-i18n="optionsSourceAuto">Tự nhận diện</option><option value="en">English</option></select>
-            </label>
-            <label class="field-row" for="quick-translate-target">
-              <span><strong data-i18n="optionsTargetLanguageTitle">Ngôn ngữ đích</strong></span>
-              <select id="quick-translate-target"><option value="vi">Tiếng Việt</option></select>
-            </label>
           </fieldset>
         </div>
       </div>

@@ -452,7 +452,7 @@
     if (typeof tabId!=='number') return {ok:false,error:'Không tìm thấy tab để hiển thị kết quả.'};
     try {
       const settings = await readSettings();
-      const result = await apiCall(extensionApi.scripting,'executeScript',{target:{tabId},func:renderInlineBubble,args:[{version:VERSION,...payload,bubbleDurationMs:settings.bubbleDurationMs,autoSpeak:settings.autoSpeak}]});
+      const result = await apiCall(extensionApi.scripting,'executeScript',{target:{tabId},func:renderInlineBubble,args:[{version:VERSION,...payload,bubbleDurationMs:settings.bubbleDurationMs,autoSpeak:settings.autoSpeak,themeFamily:settings.themeFamily,colorScheme:settings.colorScheme}]});
       const renderResult = Array.isArray(result) ? result[0]?.result : result;
       if (renderResult?.ok !== true) {
         return {ok:false,error:renderResult?.error || 'Không thể xác nhận kết quả đã hiển thị trên trang.'};
@@ -1042,7 +1042,7 @@
     return {url};
   };
   const invocationError = async (tabId,e,text='') => show(tabId,{status:'error',text,message:e instanceof Error?e.message:String(e)});
-  const installMenus = () => { if (!extensionApi.contextMenus) return; void (async()=>{ try{await apiCall(extensionApi.contextMenus,'removeAll');}catch{} try{await apiCall(extensionApi.contextMenus,'create',{id:CONTEXT_TRANSLATE_ID,title:t('contextMenuTranslateOnly',undefined,'SonFlash: Dịch nhanh “%s” — không lưu'),contexts:['selection']}); await apiCall(extensionApi.contextMenus,'create',{id:CONTEXT_SAVE_ID,title:t('contextMenuTranslateSave',undefined,'SonFlash: Dịch + thêm “%s” vào thư viện'),contexts:['selection']});}catch{} })(); };
+  const installMenus = () => { if (!extensionApi.contextMenus) return; void (async()=>{ try{await apiCall(extensionApi.contextMenus,'removeAll');}catch{} try{await apiCall(extensionApi.contextMenus,'create',{id:CONTEXT_TRANSLATE_ID,title:t('contextMenuTranslateOnly',undefined,'SonFlash: Dịch “%s”'),contexts:['selection']}); await apiCall(extensionApi.contextMenus,'create',{id:CONTEXT_SAVE_ID,title:t('contextMenuTranslateSave',undefined,'SonFlash: Dịch + tạo flashcard'),contexts:['selection']});}catch{} })(); };
   extensionApi.runtime?.onInstalled?.addListener(() => { installMenus(); void sweepExpiredJobs(); void syncSelectionIconRegistration().catch(() => undefined); });
   extensionApi.runtime?.onStartup?.addListener(() => { installMenus(); void sweepExpiredJobs(); void syncSelectionIconRegistration().catch(() => undefined); });
   installMenus();

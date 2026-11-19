@@ -28,6 +28,10 @@ const courseUiLocaleReady = applyCourseUiLocale()
   .then(changed => { if (changed) localizeDocument(document); })
   .catch(() => undefined);
 
+const extensionVersion = document.getElementById('extension-version');
+const manifestVersion = extensionApi?.runtime?.getManifest?.()?.version;
+if (extensionVersion && manifestVersion) extensionVersion.textContent = `v${manifestVersion}`;
+
 const form = document.getElementById('settings-form');
 const autoSpeak = document.getElementById('auto-speak');
 const bubbleDuration = document.getElementById('bubble-duration');
@@ -81,14 +85,19 @@ const renderSelectionIconSites = sites => {
   for (const pattern of values) {
     const row = document.createElement('li');
     row.className = 'site-row';
+    const tile = document.createElement('span');
+    tile.className = 'site-tile';
+    tile.setAttribute('aria-hidden', 'true');
+    tile.textContent = (pattern.replace(/^[a-z*]+:\/\//i, '').replace(/^(\*\.|www\.)/i, '').charAt(0) || '•').toUpperCase();
     const label = document.createElement('span');
+    label.className = 'site-host';
     label.textContent = pattern;
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.textContent = t('optionsSiteRemove', undefined, 'Tắt');
     remove.setAttribute('aria-label', t('optionsSiteRemoveAriaLabel', [pattern], `Tắt floating icon cho ${pattern}`));
     remove.addEventListener('click', () => { void removeSelectionIconSite(pattern, remove); });
-    row.append(label, remove);
+    row.append(tile, label, remove);
     selectionIconSitesList.append(row);
   }
 };

@@ -10,7 +10,9 @@ import {
   Menu,
   Moon,
   MousePointerClick,
+  Play,
   Puzzle,
+  Star,
   Sun,
   ToggleLeft,
   X,
@@ -28,13 +30,12 @@ import goldenHourAv1 from "../../assets/landing/golden-hour.av1.mp4";
 import goldenHourH264 from "../../assets/landing/golden-hour.h264.mp4";
 import quietDawnAv1 from "../../assets/landing/quiet-dawn.av1.mp4";
 import quietDawnH264 from "../../assets/landing/quiet-dawn.h264.mp4";
-import sonflashLogo from "../../assets/landing/sonflash-logo-80.png";
 import stillWaterAv1 from "../../assets/landing/still-water.av1.mp4";
 import stillWaterH264 from "../../assets/landing/still-water.h264.mp4";
-import trainWindow from "../../assets/landing/train-window.webp";
 import animeSpelling from "../../assets/landing/anime-spelling.jpg";
 import animeImmediate from "../../assets/landing/anime-immediate.jpg";
 import animeInstant from "../../assets/landing/anime-instant.jpg";
+import { CrystalWings } from "./CrystalWings";
 import "./landing-page.css";
 
 interface LandingPageProps {
@@ -62,7 +63,12 @@ export const landingMeta = {
   }),
 };
 
-const sampleHeadword = 'immediate';
+// The sample card is learner content, not interface copy, so it stays in its own languages.
+const sampleHeadword = { before: 'Im', stress: 'me', after: 'diate' } as const;
+const sampleDefinition = 'Happening or done without delay; acting or occurring at once.';
+const sampleMeaning = 'Ngay lập tức';
+const sampleExample = { before: 'The new policy takes ', highlight: 'immediate', after: ' effect.' } as const;
+const sampleExampleTranslation = 'Chính sách mới có hiệu lực ngay lập tức.';
 const samplePronunciation = '/ɪˈmiːdiət/';
 const desktopNavItemClass = "inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2";
 const mobileNavItemClass = "rounded-xl px-4 py-3 font-bold hover:bg-[var(--sf-surface-muted)] focus-visible:outline-2";
@@ -130,6 +136,24 @@ const learningFlow = [
         {...msg({ context: 'landing.flow.practice.description', message: 'Review, listen, spell, or speak when that is the useful next step.' })}
       />
     ),
+  },
+];
+
+const classicFeatures = [
+  {
+    id: "timing",
+    title: <Trans {...msg({ context: 'landing.features.timing.title', message: 'At the right moment' })} />,
+    description: <Trans {...msg({ context: 'landing.features.timing.description', message: 'A memory model schedules each word just before you would forget it, so a few minutes a day is enough.' })} />,
+  },
+  {
+    id: "senses",
+    title: <Trans {...msg({ context: 'landing.features.senses.title', message: 'Every sense at once' })} />,
+    description: <Trans {...msg({ context: 'landing.features.senses.description', message: 'Picture, native audio, stressed syllable and a Vietnamese meaning on one card.' })} />,
+  },
+  {
+    id: "capture",
+    title: <Trans {...msg({ context: 'landing.features.capture.title', message: 'Save from anywhere' })} />,
+    description: <Trans {...msg({ context: 'landing.features.capture.description', message: 'Highlight a word on any page in Chrome and it becomes a card in one click.' })} />,
   },
 ];
 
@@ -233,7 +257,7 @@ const pricingFaq = [
   },
 ];
 
-function LocaleLinks({ compact = false }: { readonly compact?: boolean }) {
+function LocaleLinks() {
   const setUiLocale = useSetUiLocale();
   const { _ } = useLingui();
   const selectLocale = (locale: UiLocale) => {
@@ -249,9 +273,9 @@ function LocaleLinks({ compact = false }: { readonly compact?: boolean }) {
       aria-label={_(
         msg({ id: "landing.language.label", message: "Interface language" }),
       )}
-      className={`flex items-center gap-1 ${compact ? "text-xs" : "text-sm font-semibold"}`}
+      className="flex items-center gap-1 text-sm font-semibold"
     >
-      <Globe2 size={compact ? 14 : 16} aria-hidden="true" />
+      <Globe2 size={16} aria-hidden="true" />
       <a
         href="/"
         lang="en"
@@ -281,38 +305,53 @@ const crystalDemoWords = {
   instant: { word: 'Instant', ipa: '/ˈɪnstənt/' },
 } as const;
 
+const crystalRibbonItems = [
+  { id: 'spaced-review', label: <Trans {...msg({ context: 'landing.ribbon.spaced-review', message: 'Spaced review' })} /> },
+  { id: 'context-first', label: <Trans {...msg({ context: 'landing.ribbon.context-first', message: 'Context first' })} /> },
+  { id: 'pronunciation', label: <Trans {...msg({ context: 'landing.ribbon.pronunciation', message: 'Pronunciation practice' })} /> },
+  { id: 'chrome-extension', label: <Trans {...msg({ context: 'landing.ribbon.chrome-extension', message: 'Chrome extension' })} /> },
+  { id: 'tiers', label: <Trans {...msg({ context: 'landing.ribbon.tiers', message: 'Bud → Bloom → Star' })} /> },
+  { id: 'learn-at-your-pace', label: <Trans {...msg({ context: 'landing.ribbon.learn-at-your-pace', message: 'Learn at your pace' })} /> },
+];
+
 function CrystalLandingHero({ onEnterApp, onSignIn, user, showLumi }: Pick<LandingPageProps, 'onEnterApp' | 'onSignIn' | 'user'> & { readonly showLumi: boolean }) {
   const { _ } = useLingui();
+  // Lumi first paints small and grows once loaded, so the headline stays the largest paint.
+  const [lumiRevealed, setLumiRevealed] = useState(false);
+  const revealLumi = () => requestAnimationFrame(() => requestAnimationFrame(() => setLumiRevealed(true)));
   return <section className="crystal-landing-hero" aria-labelledby="landing-heading">
     <div className="crystal-copy">
-      <span className="crystal-badge"><Trans {...msg({ context: 'landing.hero.crystal-badge', message: 'Crystal Star' })} /></span>
+      <span className="crystal-badge"><span><Trans {...msg({ context: 'landing.hero.crystal-badge', message: 'New · Crystal Star' })} /></span></span>
       <h1 id="landing-heading">SonFlash</h1>
-      <p className="crystal-tagline"><Trans {...msg({ context: 'landing.hero.title', message: 'Remember words.<0/>Use them when it matters.' })} components={{ 0: <br /> }} /></p>
+      <p className="crystal-tagline"><Trans {...msg({ context: 'landing.hero.title', message: 'Remember words.<0/><1>Use them when it matters.</1>' })} components={{ 0: <br />, 1: <span /> }} /></p>
       <p className="crystal-description"><Trans {...msg({ context: 'landing.hero.description', message: 'Build an English vocabulary you can reach for with context, spaced review, and active recall.' })} /></p>
       <div className="crystal-actions">
-        <button type="button" onClick={onEnterApp} className="crystal-primary"><Trans {...msg({ context: 'landing.hero.start', message: 'Start learning' })} /> <ArrowRight size={18} aria-hidden="true" /></button>
+        <button type="button" onClick={onEnterApp} className="crystal-primary"><span className="crystal-shine" aria-hidden="true" /><span><Trans {...msg({ context: 'landing.hero.start', message: 'Start learning' })} /></span> <Play size={18} fill="currentColor" strokeWidth={0} aria-hidden="true" /></button>
         {onSignIn && !user && <button type="button" onClick={() => void onSignIn()} className="crystal-secondary"><Trans {...msg({ context: 'landing.hero.sign-in', message: 'Sign in to sync' })} /></button>}
       </div>
+      <p className="crystal-proof"><span aria-hidden="true" /><Trans {...msg({ context: 'landing.hero.proof.extension', message: '<0>Chrome</0> extension, free' })} components={{ 0: <strong /> }} /></p>
     </div>
     <div className="crystal-card-stage" aria-label={_(msg({ id: 'landing.demo.cards.label', message: 'Sample English vocabulary cards' }))}>
-      <div className="crystal-flare" aria-hidden="true" />
-      <article className="crystal-demo-card crystal-demo-left" aria-hidden="true"><img src={animeSpelling} width={1000} height={667} alt="" loading="lazy" decoding="async" /><span><i><Trans {...msg({ context: 'landing.demo.grade.bud', message: 'Bud' })} /></i>{' '}<Trans {...msg({ context: 'landing.demo.tier.new', message: 'New' })} /></span><strong>{crystalDemoWords.spelling.word}</strong><small>{crystalDemoWords.spelling.ipa}</small><b><Trans {...msg({ context: 'landing.demo.meaning.spelling', message: 'spelling' })} /></b></article>
-      <article className="crystal-demo-card crystal-demo-right" aria-hidden="true"><img src={animeImmediate} width={1000} height={667} alt="" loading="lazy" decoding="async" /><span><i><Trans {...msg({ context: 'landing.demo.grade.bloom', message: 'Bloom' })} /></i>{' '}<Trans {...msg({ context: 'landing.demo.tier.learning', message: 'Learning' })} /></span><strong>{crystalDemoWords.immediate.word}</strong><small>{crystalDemoWords.immediate.ipa}</small><b><Trans {...msg({ context: 'landing.demo.meaning.immediate', message: 'without delay' })} /></b></article>
-      <article className="crystal-demo-card crystal-demo-main"><img src={animeInstant} width={1000} height={667} alt="" decoding="async" fetchPriority="high" /><span><i><Trans {...msg({ context: 'landing.demo.grade.star', message: 'Star' })} /></i>{' '}<Trans {...msg({ context: 'landing.demo.tier.mastered', message: 'Mastered' })} /></span><strong>{crystalDemoWords.instant.word}</strong><small>{crystalDemoWords.instant.ipa}</small><b><Trans {...msg({ context: 'landing.demo.meaning.instant', message: 'a moment' })} /></b></article>
-      {showLumi && <Lumi pose="hero" eager className="crystal-hero-lumi" />}
+      <div className="crystal-stage-wings" aria-hidden="true"><CrystalWings /></div>
+      <span className="crystal-hero-flare" aria-hidden="true"><span /><span /><span /></span>
+      <div className="crystal-card-deck">
+        <article className="crystal-demo-card crystal-demo-left" data-tier="new" aria-hidden="true"><span className="crystal-demo-rim" aria-hidden="true" /><div className="crystal-demo-face"><div className="crystal-demo-art"><img src={animeSpelling} width={1000} height={667} alt="" loading="lazy" decoding="async" /><span><i><Trans {...msg({ context: 'landing.demo.grade.bud', message: 'Bud' })} /></i>{' '}<Trans {...msg({ context: 'landing.demo.tier.new', message: 'New' })} /></span></div><strong>{crystalDemoWords.spelling.word}</strong><small>{crystalDemoWords.spelling.ipa}</small><b><Trans {...msg({ context: 'landing.demo.meaning.spelling', message: 'spelling' })} /></b></div></article>
+        <article className="crystal-demo-card crystal-demo-right" data-tier="learning" aria-hidden="true"><span className="crystal-demo-rim" aria-hidden="true" /><div className="crystal-demo-face"><div className="crystal-demo-art"><img src={animeImmediate} width={1000} height={667} alt="" loading="lazy" decoding="async" /><span><i><Trans {...msg({ context: 'landing.demo.grade.bloom', message: 'Bloom' })} /></i>{' '}<Trans {...msg({ context: 'landing.demo.tier.learning', message: 'Learning' })} /></span></div><strong>{crystalDemoWords.immediate.word}</strong><small>{crystalDemoWords.immediate.ipa}</small><b><Trans {...msg({ context: 'landing.demo.meaning.immediate', message: 'without delay' })} /></b></div></article>
+        <article className="crystal-demo-card crystal-demo-main" data-tier="mastered"><span className="crystal-demo-rim" aria-hidden="true" /><div className="crystal-demo-face"><div className="crystal-demo-art"><img src={animeInstant} width={1000} height={667} alt="" decoding="async" fetchPriority="high" /><span><i><Trans {...msg({ context: 'landing.demo.grade.star', message: 'Star' })} /></i>{' '}<Trans {...msg({ context: 'landing.demo.tier.mastered', message: 'Mastered' })} /></span></div><strong>{crystalDemoWords.instant.word}</strong><small>{crystalDemoWords.instant.ipa}</small><b><Trans {...msg({ context: 'landing.demo.meaning.instant', message: 'a moment' })} /></b></div></article>
+      </div>
+      {showLumi && <Lumi pose="hero" eager className="crystal-hero-lumi" data-revealed={lumiRevealed ? 'true' : undefined} onLoad={revealLumi} />}
     </div>
-    <div className="crystal-ribbon" aria-hidden="true"><span><Trans {...msg({ context: 'landing.ribbon.spaced-review', message: 'Spaced review' })} /></span><span><Trans {...msg({ context: 'landing.ribbon.context-first', message: 'Context first' })} /></span><span><Trans {...msg({ context: 'landing.ribbon.learn-at-your-pace', message: 'Learn at your pace' })} /></span><span><Trans {...msg({ context: 'landing.ribbon.chrome-extension', message: 'Chrome extension' })} /></span></div>
+    <div className="crystal-ribbon" aria-hidden="true">
+      <div className="crystal-ribbon-track">
+        {[0, 1].map((copy) => crystalRibbonItems.map((item) => <span key={`${copy}-${item.id}`}><Star size={16} fill="currentColor" strokeWidth={0} />{item.label}</span>))}
+      </div>
+    </div>
   </section>;
 }
 
 function ClassicLandingHero({
   onEnterApp,
-  showLumi,
-  actionClass,
-}: Pick<LandingPageProps, 'onEnterApp'> & {
-  readonly showLumi: boolean;
-  readonly actionClass: string;
-}) {
+}: Pick<LandingPageProps, 'onEnterApp'>) {
   const { _ } = useLingui();
   const reduceMotion = useReducedMotion();
   const [flipped, setFlipped] = useState(false);
@@ -327,152 +366,163 @@ function ClassicLandingHero({
     ? _(msg({ id: 'landing.demo.flip.hide', message: 'Show the word again' }))
     : _(msg({ id: 'landing.demo.reveal-prompt', message: 'Tap to reveal the meaning' }));
   return (
-    <div className="landing-hero grid flex-1 items-center gap-12 py-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,.72fr)] lg:py-10">
-      <div className="landing-copy max-w-3xl">
-        <p className="mb-5 inline-flex rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-1 text-sm font-bold text-[var(--sf-brand-text)]">
-          <Trans
-            {...msg({ context: 'landing.hero.eyebrow', message: 'English for Vietnamese speakers' })}
-          />
-        </p>
-        <h1
-          id="landing-heading"
-          className="font-serif-hero text-balance text-[clamp(3.5rem,8vw,7.6rem)] leading-[.88] tracking-[-.055em]"
-        >
-          <Trans
-            {...msg({ context: 'landing.classic-hero.title', message: 'Words<0/>that <1>stay.</1>' })}
-            components={{ 0: <br />, 1: <em /> }}
-          />
-        </h1>
-        <p className="mt-7 max-w-xl text-pretty text-base leading-7 text-[var(--sf-text-muted)] sm:text-lg">
-          <Trans
-            {...msg({ context: 'landing.hero.description', message: 'Build an English vocabulary you can reach for with context, spaced review, and active recall.' })}
-          />
-        </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={onEnterApp}
-            className="brand-action inline-flex min-h-12 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-6 font-black text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer"
-          >
-            <Trans {...msg({ context: 'landing.classic-hero.start', message: 'Start learning free' })} />
-            <ArrowRight size={18} aria-hidden="true" />
-          </button>
-          <a href="#extension" className={`${actionClass} inline-flex items-center`}>
-            <Puzzle size={18} aria-hidden="true" />
-            <span className="ml-2"><Trans {...msg({ context: 'landing.classic-hero.extension', message: 'Explore Chrome extension' })} /></span>
-          </a>
+    <>
+      <div className="landing-hero">
+        <div className="landing-copy">
+          <p className="landing-eyebrow">
+            <span aria-hidden="true" />
+            <Trans
+              {...msg({ context: 'landing.hero.eyebrow', message: 'English for Vietnamese speakers' })}
+            />
+          </p>
+          <h1 id="landing-heading" className="landing-classic-title">
+            <Trans
+              {...msg({ context: 'landing.classic-hero.title', message: 'Words<0/>that <1>stay.</1>' })}
+              components={{ 0: <br />, 1: <em /> }}
+            />
+          </h1>
+          <p className="landing-classic-lead">
+            <Trans
+              {...msg({ context: 'landing.classic-hero.description', message: 'Every word you meet becomes a card with a picture, its real pronunciation and a Vietnamese meaning. SonFlash brings it back just before you would forget it.' })}
+            />
+          </p>
+          <div className="landing-classic-actions">
+            <button
+              type="button"
+              onClick={onEnterApp}
+              className="landing-primary-action brand-action"
+            >
+              <Trans {...msg({ context: 'landing.classic-hero.start', message: 'Start learning free' })} />
+            </button>
+            <a href="#extension" className="landing-secondary-action">
+              <Puzzle size={18} aria-hidden="true" />
+              <Trans {...msg({ context: 'landing.classic-hero.add-to-chrome', message: 'Add to Chrome' })} />
+            </a>
+          </div>
+          <p className="landing-fine-print">
+            <Trans {...msg({ context: 'landing.classic-hero.fine-print', message: 'Free to start · Web and Chrome · No credit card' })} />
+          </p>
         </div>
-      </div>
-      <aside
-        className="landing-card relative mx-auto w-full max-w-md lg:justify-self-end"
-        aria-label={_(
-          msg({
-            id: 'landing.demo.label',
-            message: 'Sample English vocabulary card',
-          }),
-        )}
-      >
-        <div
-          className="absolute -inset-8 -z-10 rounded-full bg-[color-mix(in_srgb,var(--sf-brand)_18%,transparent)] blur-3xl"
-          aria-hidden="true"
-        />
-        {showLumi && (
-          <Lumi
-            pose="hero"
-            className="crystal-ornament pointer-events-none absolute -bottom-12 -left-[13rem] z-10 hidden h-[420px] w-[154px] max-w-none object-contain min-[1440px]:block"
-          />
-        )}
-        <span className="landing-demo-pronunciation" aria-hidden="true">
-          <span>▶</span> {samplePronunciation}
-        </span>
-        <div style={{ perspective: reduceMotion ? 'none' : '1600px' }}>
-          <div
-            role="button"
-            tabIndex={0}
-            aria-pressed={flipped}
-            aria-label={flipLabel}
-            data-flipped={flipped ? 'true' : undefined}
-            onClick={toggleFlip}
-            onKeyDown={handleFlipKeyDown}
-            style={{
-              position: 'relative',
-              transformStyle: 'preserve-3d',
-              transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-              transition: reduceMotion ? 'none' : 'transform 640ms cubic-bezier(.2,.8,.2,1)',
-            }}
-            className="cursor-pointer rounded-[2rem] focus-visible:outline-2 focus-visible:outline-offset-4"
-          >
+        <aside
+          className="landing-card"
+          aria-label={_(
+            msg({
+              id: 'landing.demo.label',
+              message: 'Sample English vocabulary card',
+            }),
+          )}
+        >
+          <span className="landing-demo-pronunciation landing-float-chip" aria-hidden="true">
+            <span><Play size={10} fill="currentColor" strokeWidth={0} /></span>
+            <span lang="en">{samplePronunciation}</span>
+          </span>
+          <span className="landing-float-chip landing-float-chip-review" aria-hidden="true">
+            <Trans {...msg({ context: 'landing.demo.next-review', message: 'Next review in 3 days' })} />
+          </span>
+          <span className="landing-float-chip landing-float-chip-source" aria-hidden="true">
+            <Trans
+              {...msg({ context: 'landing.demo.saved-from', message: 'Saved from <0>bbc.com</0>' })}
+              components={{ 0: <strong /> }}
+            />
+          </span>
+          <div className="landing-card-stage" style={{ perspective: reduceMotion ? 'none' : '1600px' }}>
+            <div className="landing-card-aura" aria-hidden="true" />
             <div
+              role="button"
+              tabIndex={0}
+              aria-pressed={flipped}
+              aria-label={flipLabel}
+              data-flipped={flipped ? 'true' : undefined}
+              onClick={toggleFlip}
+              onKeyDown={handleFlipKeyDown}
               style={{
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-                visibility: flipped ? 'hidden' : 'visible',
-                // The rotation's easing reaches its half turn after about 83ms.
-                transition: reduceMotion ? 'none' : 'visibility 0s 83ms',
+                position: 'relative',
+                transformStyle: 'preserve-3d',
+                transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                transition: reduceMotion ? 'none' : 'transform 660ms cubic-bezier(.2,.8,.2,1)',
               }}
-              className="crystal-chamfer relative overflow-hidden rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-card-bg)] p-3 shadow-[0_28px_70px_-35px_var(--sf-shadow)]"
+              className="landing-card-flip"
             >
-              <div className="rounded-[1.45rem] bg-[var(--sf-surface-raised)] px-6 py-7 sm:px-8">
-                <img
-                  src={animeImmediate}
-                  width={1000}
-                  height={667}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  className="mb-5 h-28 w-full rounded-2xl object-cover"
-                />
-                <p className="text-xs font-black uppercase tracking-[.16em] text-[var(--sf-text-muted)]">
-                  <Trans {...msg({ context: 'landing.demo.part-of-speech', message: 'Adjective' })} />
-                </p>
-                <p
-                  lang="en"
-                  className="mt-5 font-serif-hero text-5xl leading-none tracking-tight sm:text-6xl"
-                >
-                  {sampleHeadword}
-                </p>
-                <p className="mt-3 font-mono text-sm text-[var(--sf-text-muted)]">
-                  {samplePronunciation}
-                </p>
-                <p className="mt-8 border-t border-[var(--sf-border)] pt-5 text-center text-sm font-bold text-[var(--sf-brand-text)]">
-                  <Trans {...msg({ id: 'landing.demo.reveal-prompt', message: 'Tap to reveal the meaning' })} />
-                </p>
+              <div
+                style={{
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  visibility: flipped ? 'hidden' : 'visible',
+                  // The rotation's easing reaches its half turn after about 83ms.
+                  transition: reduceMotion ? 'none' : 'visibility 0s 83ms',
+                }}
+                className="landing-card-face landing-card-front"
+              >
+                <div className="landing-card-image">
+                  <img
+                    src={animeImmediate}
+                    width={1000}
+                    height={667}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+                <div className="landing-card-body">
+                  <p className="landing-card-kicker">
+                    <Trans {...msg({ context: 'landing.demo.part-of-speech', message: 'Adjective' })} />
+                  </p>
+                  <p lang="en" className="landing-card-word">
+                    {sampleHeadword.before}<em>{sampleHeadword.stress}</em>{sampleHeadword.after}
+                  </p>
+                  <p lang="en" className="landing-card-definition">{sampleDefinition}</p>
+                  <p className="landing-card-prompt">
+                    <Trans {...msg({ id: 'landing.demo.reveal-prompt', message: 'Tap to reveal the meaning' })} />
+                  </p>
+                </div>
               </div>
-            </div>
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-                transform: 'rotateY(180deg)',
-                visibility: flipped ? 'visible' : 'hidden',
-                transition: reduceMotion ? 'none' : 'visibility 0s 83ms',
-              }}
-              className="crystal-chamfer overflow-hidden rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-card-bg)] p-3 shadow-[0_28px_70px_-35px_var(--sf-shadow)]"
-            >
-              <div className="flex h-full flex-col justify-center rounded-[1.45rem] bg-[var(--sf-surface-raised)] px-6 py-7 sm:px-8">
-                <p className="font-bold">
-                  <Trans
-                    {...msg({ context: 'landing.demo.meaning', message: 'happening or done without delay' })}
-                  />
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  transform: 'rotateY(180deg)',
+                  visibility: flipped ? 'visible' : 'hidden',
+                  transition: reduceMotion ? 'none' : 'visibility 0s 83ms',
+                }}
+                className="landing-card-face landing-card-back"
+              >
+                <p className="landing-card-kicker">
+                  <Trans {...msg({ context: 'landing.demo.back-language', message: 'Vietnamese' })} />
                 </p>
-                <p className={sectionLeadClass}>
-                  <Trans
-                    {...msg({ context: 'landing.demo.example', message: 'The new policy takes immediate effect.' })}
-                  />
+                <p lang="vi" className="landing-card-meaning">{sampleMeaning}</p>
+                <span className="landing-card-rule" aria-hidden="true" />
+                <p lang="en" className="landing-card-example">
+                  {sampleExample.before}<span>{sampleExample.highlight}</span>{sampleExample.after}
                 </p>
-                <p className="mt-6 text-sm font-semibold text-[var(--sf-brand-text)]">
-                  <Trans
-                    {...msg({ context: 'landing.demo.caption', message: 'One clear card, ready for the next review.' })}
-                  />
-                </p>
+                <p lang="vi" className="landing-card-example-translation">{sampleExampleTranslation}</p>
               </div>
             </div>
           </div>
-        </div>
-      </aside>
-    </div>
+        </aside>
+      </div>
+      <section
+        id="how-it-works"
+        className="landing-classic-features"
+        aria-labelledby="classic-features-heading"
+      >
+        <h2 id="classic-features-heading" className="sr-only">
+          <Trans {...msg({ context: 'landing.features.title', message: 'Keep the words you meet.' })} />
+        </h2>
+        <ol>
+          {classicFeatures.map((item, index) => (
+            <li key={item.id}>
+              <span aria-hidden="true">{index + 1}</span>
+              <div>
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </>
   );
 }
 
@@ -540,7 +590,7 @@ export function LandingPage({
   return (
     <div className="landing-canvas min-h-[100svh] overflow-x-clip bg-[var(--sf-canvas)] text-[var(--sf-text)] selection:bg-[var(--sf-brand)] selection:text-[var(--sf-on-brand)]">
       <main>
-        {!user && accountDeletionStarted && <p role="status" className="mx-auto max-w-[92rem] px-5 pt-5 text-sm text-emerald-700 dark:text-emerald-300 sm:px-8 lg:px-12"><Trans {...msg({ id: 'account.data.delete.started', message: 'We could not confirm whether account deletion finished. If you can still sign in later, contact support.' })} /></p>}
+        {!user && accountDeletionStarted && <p role="status" className="mx-auto max-w-[92rem] px-5 pt-5 text-sm text-[var(--sf-success)] sm:px-8 lg:px-12"><Trans {...msg({ id: 'account.data.delete.started', message: 'We could not confirm whether account deletion finished. If you can still sign in later, contact support.' })} /></p>}
         {!user && accountDeletionCacheWarning && <p role="alert" className="mx-auto max-w-[92rem] px-5 pt-5 text-sm text-[var(--sf-danger)] sm:px-8 lg:px-12"><Trans {...msg({ id: 'account.data.delete.cache-warning', message: 'SonFlash couldn\'t clear saved account data from this device. Clear SonFlash site data in your browser.' })} /></p>}
         <section
           id="top"
@@ -581,41 +631,23 @@ export function LandingPage({
             ))}
             <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--sf-canvas)_0%,color-mix(in_srgb,var(--sf-canvas)_84%,transparent)_50%,color-mix(in_srgb,var(--sf-canvas)_30%,transparent)_100%)]" />
           </div>
-          <img
-            src={trainWindow}
-            width={2752}
-            height={1536}
-            alt=""
-            aria-hidden="true"
-            loading="lazy"
-            decoding="async"
-            fetchPriority="low"
-            className="train-bob pointer-events-none absolute inset-0 size-full object-cover opacity-[.04] [html.dark_&]:opacity-0"
-          />
+          {family === "crystal" && <div className="crystal-backdrop" aria-hidden="true"><span className="crystal-beam" /><span className="crystal-beam" /><div className="crystal-backdrop-wings"><CrystalWings /></div><div className="crystal-backdrop-wings crystal-backdrop-wings-end"><CrystalWings /></div></div>}
+          <div className="landing-ambient" aria-hidden="true"><span /><span /></div>
+          <div className="landing-grain" aria-hidden="true" />
           <div
             className="crystal-starfield pointer-events-none absolute inset-0 opacity-0 [html[data-theme-family=crystal]_&]:opacity-30"
             aria-hidden="true"
           />
           <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[92rem] flex-col px-5 py-5 sm:px-8 lg:px-12">
-            <header className="landing-header flex items-center justify-between gap-3">
+            <header className="landing-header flex items-center gap-3">
               <a
                 href="#top"
                 aria-label="SonFlash"
                 className="flex min-h-11 items-center gap-2.5 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4"
               >
-                <img
-                  src={sonflashLogo}
-                  width={36}
-                  height={36}
-                  alt=""
-                  decoding="async"
-                  fetchPriority="high"
-                  className="landing-classic-mark size-9 rounded-lg object-cover"
-                />
+                <span className="landing-classic-mark" aria-hidden="true"><Trans {...msg({ context: 'landing.brand.mark', message: 'S' })} /></span>
                 <svg className="landing-crystal-mark" viewBox="0 0 100 100" width="36" height="36" aria-hidden="true"><path d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" fill="#ff5470"/><path d="M50 4 62 36 96 37 69 59 78 91 50 72Z" fill="#7a0820"/></svg>
-                <span className="landing-classic-brand font-serif-hero text-2xl font-bold tracking-tight text-[var(--sf-brand-text)]">
-                  <Trans {...msg({ context: 'landing.brand.plain', message: 'SonFlash' })} />
-                </span>
+                <span className="landing-classic-brand" aria-hidden="true"><Trans {...msg({ context: 'landing.brand.classic-wordmark', message: 'Son<0>Flash</0>' })} components={{ 0: <em /> }} /></span>
                 <span className="landing-crystal-brand" aria-hidden="true"><Trans {...msg({ context: 'landing.brand.crystal-wordmark', message: 'SON<0>FLASH</0>' })} components={{ 0: <em /> }} /></span>
               </a>
               <nav
@@ -625,7 +657,7 @@ export function LandingPage({
                     message: "Landing navigation",
                   }),
                 )}
-                className="hidden items-center gap-1 xl:flex"
+                className="landing-desktop-nav hidden items-center gap-1 xl:flex"
               >
                 <a
                   href="#how-it-works"
@@ -682,14 +714,13 @@ export function LandingPage({
                   </a>
                 </>}
               </nav>
-              <div className="hidden items-center gap-2 md:flex">
+              <div className="landing-header-actions ml-auto hidden items-center gap-3 md:flex">
                 <button type="button" className="landing-theme-toggle" onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')} aria-label={_(msg({ id: 'shell.theme.quick-toggle', message: 'Switch light and dark mode' }))}>{mode === 'dark' ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}</button>
-                <LocaleLinks compact />
                 {onSignIn && !user && (
                   <button
                     type="button"
                     onClick={() => void onSignIn()}
-                    className="min-h-11 rounded-lg px-3 text-sm font-bold hover:text-[var(--sf-brand-text)] focus-visible:outline-2"
+                    className="landing-sign-in min-h-11 rounded-lg px-4 text-[14.5px] font-semibold hover:text-[var(--sf-brand-text)] focus-visible:outline-2"
                   >
                     <Trans {...msg({ context: 'landing.nav.sign-in', message: 'Sign in' })} />
                   </button>
@@ -697,14 +728,16 @@ export function LandingPage({
                 <button
                   type="button"
                   onClick={onEnterApp}
-                  className="brand-action min-h-11 rounded-xl bg-[var(--sf-brand)] px-4 text-sm font-black text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                  className="landing-header-start brand-action min-h-11 rounded-xl bg-[var(--sf-brand)] px-5 text-[14.5px] font-black text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
                 >
-                  <Trans {...msg({ context: 'landing.hero.start', message: 'Start learning' })} />
+                  {family === "classic"
+                    ? <Trans {...msg({ context: 'landing.nav.start-free', message: 'Start free' })} />
+                    : <Trans {...msg({ context: 'landing.hero.start', message: 'Start learning' })} />}
                 </button>
               </div>
               <details
                 ref={mobileNavRef}
-                className="group relative xl:hidden"
+                className="group relative max-md:ml-auto xl:hidden"
                 onKeyDown={(event) => {
                   if (event.key === "Escape" && event.currentTarget.open) {
                     event.preventDefault();
@@ -822,7 +855,7 @@ export function LandingPage({
             </header>
             {family === "crystal"
               ? <CrystalLandingHero onEnterApp={onEnterApp} onSignIn={onSignIn} user={user} showLumi={showLumi} />
-              : <ClassicLandingHero onEnterApp={onEnterApp} showLumi={showLumi} actionClass={actionClass} />}
+              : <ClassicLandingHero onEnterApp={onEnterApp} />}
             {videoEnabled ? (
             <fieldset className="landing-atmospheres mb-3 border-l border-[var(--sf-border)] pl-4">
               <legend className="mb-2 text-xs font-bold text-[var(--sf-text-muted)]">
@@ -848,12 +881,12 @@ export function LandingPage({
             ) : <p role="status" className="sr-only"><Trans {...msg({ context: 'landing.atmosphere.static', message: 'Static atmosphere is enabled for this device or motion preference.' })} /></p>}
           </div>
         </section>
-        <section
+        {family === "crystal" && <section
           id="how-it-works"
           className="mx-auto max-w-7xl px-5 pb-8 sm:px-8 lg:px-12"
-          aria-labelledby="classic-features-heading"
+          aria-labelledby="landing-flow-heading"
         >
-          <h2 id="classic-features-heading" className="sr-only">
+          <h2 id="landing-flow-heading" className="sr-only">
             <Trans {...msg({ context: 'landing.features.title', message: 'Keep the words you meet.' })} />
           </h2>
           <ol className="grid gap-5 border-t border-[var(--sf-border)] pt-6 sm:grid-cols-3">
@@ -867,7 +900,7 @@ export function LandingPage({
               </li>
             ))}
           </ol>
-        </section>
+        </section>}
         <section
           id="extension"
           aria-labelledby="extension-heading"
@@ -1161,7 +1194,7 @@ export function LandingPage({
               {...msg({ context: 'landing.footer.description', message: 'for intentional vocabulary learning.' })}
             />
           </p>
-          <LocaleLinks compact />
+          <LocaleLinks />
           <p className="flex flex-wrap gap-x-4 gap-y-2">
             <a href="/privacy.html" className="rounded underline focus-visible:outline-2 focus-visible:outline-offset-2">
               <Trans {...msg({ context: 'landing.footer.privacy', message: 'Privacy Policy' })} />

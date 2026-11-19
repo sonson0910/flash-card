@@ -35,10 +35,10 @@ test('landing frame stays still and pointer clicks do not move focus', async ({ 
   await page.goto('/?view=landing');
   await page.mouse.move(0, 0);
 
-  const trainFrame = page.locator('.train-bob');
+  const cardFrame = page.locator('.landing-card-stage');
   const framePositions: number[] = [];
   for (let sample = 0; sample < 8; sample += 1) {
-    framePositions.push(await trainFrame.evaluate(element => element.getBoundingClientRect().top));
+    framePositions.push(await cardFrame.evaluate(element => element.getBoundingClientRect().top));
     await page.waitForTimeout(200);
   }
   expect(new Set(framePositions.map(position => position.toFixed(1))).size).toBe(1);
