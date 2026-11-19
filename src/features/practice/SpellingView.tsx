@@ -217,7 +217,7 @@ export function SpellingView({
               if (currentIndex > 0 && !checked)
                 questionHeadingRef.current?.focus();
             }}
-            className="crystal-chamfer relative mx-auto mb-6 flex min-h-[25rem] w-full max-w-2xl flex-col items-center justify-center overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-5 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] sm:p-8"
+            className="crystal-chamfer relative mx-auto mb-6 flex min-h-[25rem] w-full max-w-2xl flex-col items-center justify-center overflow-hidden rounded-[28px] border border-[var(--sf-border)] surface-glass p-5 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] sm:p-8"
             aria-labelledby="spelling-question-heading"
           >
             <div className="absolute right-4 top-4 max-w-40 break-words rounded-xl bg-[var(--sf-brand)] px-2.5 py-1 text-center text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)]">
@@ -306,7 +306,7 @@ export function SpellingView({
                   }),
                   { targetLanguage: targetLanguageName },
                 )}
-                className={`min-h-16 w-full rounded-xl border-2 bg-[var(--sf-surface-raised)] p-4 text-center text-2xl font-bold tracking-[.22em] text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 ${checked ? (correct ? "border-emerald-500 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400" : "border-rose-500 bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400") : "border-[var(--sf-border)]"}`}
+                className={`min-h-16 w-full rounded-xl border-2 bg-[var(--sf-surface-raised)] p-4 text-center text-2xl font-bold tracking-[.22em] text-[var(--sf-text)] placeholder:text-base placeholder:font-semibold placeholder:tracking-normal focus-visible:outline-2 focus-visible:outline-offset-2 ${checked ? (correct ? "border-emerald-500 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400" : "border-rose-500 bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400") : "border-[var(--sf-border)]"}`}
               />
             </form>
             {checked && (

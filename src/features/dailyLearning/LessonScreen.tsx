@@ -188,7 +188,7 @@ export function LessonScreen({ model, actions }: LessonScreenProps) {
   if (model.status === 'introduction') return <Introduction model={model} actions={actions} />;
   if (model.status === 'guided') return <GuidedPractice model={model} actions={actions} />;
   if (model.status === 'complete') return <section aria-labelledby="daily-lesson-heading" className="lesson-complete-canvas daily-canvas" data-learning-canvas="lesson-complete">
-    <div className="lesson-complete-card crystal-chamfer relative overflow-hidden rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-7 shadow-[var(--sf-panel-shadow)] sm:p-10">
+    <div className="lesson-complete-card crystal-chamfer relative overflow-hidden rounded-[32px] border border-[var(--sf-border)] surface-glass p-7 shadow-[var(--sf-panel-shadow)] sm:p-10">
       {showLumi && <Lumi pose="proud" size={88} className="crystal-ornament mx-auto mb-2" />}
       <p className="premium-kicker uppercase tracking-[.16em]">{_(msg({ id: 'daily.lesson.session-complete-kicker', message: 'Session complete' }))}</p>
       <h1 id="daily-lesson-heading" ref={model.headingRef} tabIndex={-1} className="mt-3 text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl">{_(msg({ id: 'daily.lesson.complete', message: 'Lesson complete' }))}</h1>
@@ -214,7 +214,7 @@ export function LessonScreen({ model, actions }: LessonScreenProps) {
     </div>
     <p className="sr-only" role="status">{model.liveMessage}</p>
     <div className="lesson-flow">
-      <GsapEntrance variant="step" animationKey={current} className="lesson-card crystal-chamfer relative overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-5 shadow-[var(--sf-panel-shadow)] sm:p-8" data-lesson-card="true">
+      <GsapEntrance variant="step" animationKey={current} className="lesson-card crystal-chamfer relative overflow-hidden rounded-[28px] border border-[var(--sf-border)] surface-glass p-5 shadow-[var(--sf-panel-shadow)] sm:p-8" data-lesson-card="true">
         <form className="lesson-form" onSubmit={submit} onCompositionStart={imeSubmitGuard.onCompositionStart} onCompositionEnd={imeSubmitGuard.onCompositionEnd} onKeyDown={event => { if (imeSubmitGuard.shouldBlockKeyDown(event.nativeEvent)) event.preventDefault(); }}>
           {family === 'crystal' && <span className="crystal-flare lesson-card-flare absolute -right-20 -top-20 size-44 opacity-25" aria-hidden="true" />}
           <div className="lesson-card-meta"><span className="lesson-card-mode">{model.modeLabel}</span><span className="lesson-card-instruction">{_(msg({ id: 'daily.lesson.prompt', message: 'Prompt' }))}</span></div>
@@ -227,7 +227,7 @@ export function LessonScreen({ model, actions }: LessonScreenProps) {
         </form>
         {model.feedback && model.status !== 'answering' && <GsapEntrance variant="feedback" animationKey={current} data-lesson-feedback="true"><Feedback model={model} actions={actions} /></GsapEntrance>}
       </GsapEntrance>
-      <aside className="lesson-guidance crystal-chamfer border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-4 text-center shadow-[var(--sf-panel-shadow)]">
+      <aside className="lesson-guidance crystal-chamfer border border-[var(--sf-border)] surface-glass p-4 text-center shadow-[var(--sf-panel-shadow)]">
         {showLumi && <><Lumi pose="thinking" size={104} className="crystal-ornament mx-auto" /><p className="mt-3 font-display text-xs font-black uppercase tracking-[.12em] text-[var(--sf-brand-text)]">{_(msg({ id: 'daily.lesson.lumi-label', message: 'Lumi is here' }))}</p></>}
         <p className={`${showLumi ? 'mt-2' : ''} text-sm leading-6 text-[var(--sf-text-muted)]`}>{_(msg({ id: 'daily.lesson.lumi-copy', message: 'Take your time. One clear answer at a time.' }))}</p>
       </aside>

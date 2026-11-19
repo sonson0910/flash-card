@@ -281,8 +281,8 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
           </div>
         )}
 
-        <p className="mt-4 max-w-md text-[11px] font-medium leading-relaxed text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'shadowing-view.the-browser-checks-whether-the-intended-words-were-recognised-it-', message: 'The browser checks whether the intended words were recognised; it does not assess individual sounds, phonemes, or accent.' })} /></p>
-        <p className="mt-2 max-w-md text-[11px] font-medium leading-relaxed text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'shadowing-view.pronunciation-assessment-is-unavailable-in-this-build-browser-tra', message: 'Pronunciation assessment is unavailable in this build; browser transcript matching remains available.' })} /></p>
+        <p className="mx-auto mt-4 max-w-md text-[11px] font-medium leading-relaxed text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'shadowing-view.the-browser-checks-whether-the-intended-words-were-recognised-it-', message: 'The browser checks whether the intended words were recognised; it does not assess individual sounds, phonemes, or accent.' })} /></p>
+        <p className="mx-auto mt-2 max-w-md text-[11px] font-medium leading-relaxed text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'shadowing-view.pronunciation-assessment-is-unavailable-in-this-build-browser-tra', message: 'Pronunciation assessment is unavailable in this build; browser transcript matching remains available.' })} /></p>
 
         {speechError && (
           <p className="mt-4 rounded-xl border border-rose-400/30 bg-rose-500/10 p-3 text-xs font-semibold text-rose-600 dark:text-rose-300">

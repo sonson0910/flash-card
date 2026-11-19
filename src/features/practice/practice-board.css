@@ -137,12 +137,12 @@
     var(--sf-surface) !important;
   box-shadow: 0 28px 86px -34px var(--sf-shadow), inset 0 1px rgb(255 255 255 / .16) !important;
 }
-.practice-recap-board > div:nth-of-type(2) > div {
+.practice-recap-board > [data-recap-stats] > div {
   min-height: 92px;
   border-color: var(--practice-line, var(--sf-border));
   box-shadow: inset 0 1px rgb(255 255 255 / .14);
 }
-.practice-recap-board > div:nth-of-type(3) {
+.practice-recap-board > [data-recap-breakdown] {
   border-color: var(--practice-line, var(--sf-border));
   background: color-mix(in srgb, var(--sf-surface-raised) 88%, transparent);
   box-shadow: inset 0 1px rgb(255 255 255 / .12);
@@ -182,8 +182,8 @@
      max-height/padding on the board. */
   .practice-recap-frame { width: calc(100% - 1rem); }
   .practice-recap-board { max-height: calc(100dvh - 1rem); padding: 16px; }
-  .practice-recap-board > div:nth-of-type(2) { gap: 6px; }
-  .practice-recap-board > div:nth-of-type(2) > div { min-height: 76px; padding: 9px; }
+  .practice-recap-board > [data-recap-stats] { gap: 6px; }
+  .practice-recap-board > [data-recap-stats] > div { min-height: 76px; padding: 9px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .practice-board *, .practice-board *::before, .practice-board *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }

@@ -1,7 +1,5 @@
 /* Loaded only for Crystal Star. Components opt in with these decorative classes. */
 .crystal-ornament { pointer-events: none; }
-.crystal-chamfer { clip-path: var(--nk-chamfer); }
-.crystal-chamfer-sm { clip-path: var(--nk-chamfer-sm); }
 .crystal-starfield { background-image: var(--nk-stars); animation: crystal-starfield-drift 36s linear infinite; }
 .crystal-wing { opacity: var(--nk-wing-opacity, .5); animation: crystal-wing-shimmer 2.8s ease-in-out infinite; }
 .crystal-flare { background: radial-gradient(circle, var(--nk-flare, #fff), transparent 62%); animation: crystal-flare-pulse 1.8s ease-in-out infinite; }

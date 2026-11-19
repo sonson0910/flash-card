@@ -68,7 +68,7 @@ function Question({ model, actions, showLumi }: { readonly model: Extract<Placem
         </fieldset>
         <div className="placement-action-row mt-6"><button type="button" disabled={!model.selectedId} onClick={actions.submitAnswer} className={`${primaryClass} placement-submit w-full sm:w-auto`}>{_(msg({ id: 'daily.placement.submit', message: 'Submit answer' }))}</button></div>
       </main>
-      <aside className="placement-guidance crystal-chamfer border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-5 shadow-[var(--sf-panel-shadow)]">
+      <aside className="placement-guidance crystal-chamfer border border-[var(--sf-border)] surface-glass p-5 shadow-[var(--sf-panel-shadow)]">
         <p className="placement-guidance-kicker font-display text-xs font-black uppercase tracking-[.14em] text-[var(--sf-brand-text)]">{_(msg({ id: 'daily.placement.diagnostic', message: 'Diagnostic' }))}</p>
         {showLumi && <Lumi pose="hint" size={104} className="crystal-ornament placement-lumi mx-auto" />}
         <p className="mt-3 text-lg font-black">{_(msg({ id: 'daily.placement.lumi-label', message: 'Lumi’s note' }))}</p>
@@ -85,7 +85,7 @@ export function PlacementScreen({ model, actions }: PlacementScreenProps) {
   const showLumi = family === 'crystal' && readLumiEnabled();
   if (model.status === 'loading') return <Shell model={model} actions={actions}><div aria-busy="true" className="placement-status-panel skeleton-sheen mt-6 min-h-52 rounded-[28px] border border-[var(--sf-border)]" role="status"><span className="sr-only">{model.message}</span></div></Shell>;
   if (model.status === 'intro') return <Shell model={model} actions={actions}>
-    <div className="placement-intro-panel crystal-chamfer relative mt-6 overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8">
+    <div className="placement-intro-panel crystal-chamfer relative mt-6 overflow-hidden rounded-[28px] border border-[var(--sf-border)] surface-glass p-6 shadow-[var(--sf-panel-shadow)] sm:p-8">
       <Compass className="placement-intro-mark absolute right-6 top-6 text-[var(--sf-brand-text)] opacity-30" size={80} aria-hidden="true" />
       <p className="placement-panel-kicker premium-kicker uppercase tracking-[.14em]">{_(msg({ id: 'daily.placement.diagnostic', message: 'Diagnostic' }))}</p>
       <h2 className="mt-2 max-w-xl text-3xl font-black tracking-tight">{_(msg({ id: 'daily.placement.intro-title', message: 'Find your starting level.' }))}</h2>
@@ -96,7 +96,7 @@ export function PlacementScreen({ model, actions }: PlacementScreenProps) {
   </Shell>;
   if (model.status === 'question') return <Shell model={model} actions={actions}><Question model={model} actions={actions} showLumi={showLumi} /></Shell>;
   if (model.status === 'insufficient') return <Shell model={model} actions={actions}>
-    <div className="placement-status-panel placement-insufficient crystal-chamfer mt-6 rounded-[28px] border border-[var(--sf-reward)] bg-[color-mix(in_srgb,var(--sf-reward)_10%,var(--sf-surface))] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8" role="status">
+    <div className="placement-status-panel placement-insufficient crystal-chamfer mt-6 rounded-[28px] border border-[var(--sf-reward)] bg-[color-mix(in_srgb,var(--sf-reward)_10%,var(--sf-surface))] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8 [--sf-chamfer-edge:var(--sf-reward)]" role="status">
       <CircleHelp size={28} className="text-[var(--sf-reward)]" aria-hidden="true" />
       <h2 className="mt-3 text-2xl font-black tracking-tight">{_(msg({ id: 'daily.placement.insufficient-title', message: 'Not enough evidence' }))}</h2>
       <p className="mt-3 text-[var(--sf-text-muted)]">{model.message}</p>
@@ -106,7 +106,7 @@ export function PlacementScreen({ model, actions }: PlacementScreenProps) {
     <div className="placement-action-row mt-5 flex flex-wrap gap-3"><button type="button" onClick={actions.openPaths} className={primaryClass}>{_(msg({ id: 'daily.placement.open-paths', message: 'Open Paths' }))}</button><button type="button" onClick={actions.exit} className={buttonClass}>{_(msg({ id: 'daily.placement.back-to-today', message: 'Back to Today' }))}</button></div>
   </Shell>;
   if (model.status === 'error') return <Shell model={model} actions={actions}>
-    <div className="placement-status-panel placement-error crystal-chamfer mt-6 rounded-[28px] border border-[var(--sf-danger)] bg-[color-mix(in_srgb,var(--sf-danger)_10%,var(--sf-surface))] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8" role="alert">
+    <div className="placement-status-panel placement-error crystal-chamfer mt-6 rounded-[28px] border border-[var(--sf-danger)] bg-[color-mix(in_srgb,var(--sf-danger)_10%,var(--sf-surface))] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8 [--sf-chamfer-edge:var(--sf-danger)]" role="alert">
       <h2 className="text-2xl font-black tracking-tight">{_(msg({ id: 'daily.placement.error-title', message: 'Placement check needs attention' }))}</h2>
       <p className="mt-3 text-[var(--sf-text-muted)]">{model.message}</p>
       <button type="button" onClick={actions.retry} className={`${primaryClass} mt-5`}>{_(msg({ id: 'daily.placement.retry', message: 'Try again' }))}</button>
@@ -114,7 +114,7 @@ export function PlacementScreen({ model, actions }: PlacementScreenProps) {
   </Shell>;
   return <Shell model={model} actions={actions}>
     <div className="placement-result-layout mt-6">
-      <div className="placement-result-panel crystal-chamfer relative overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8" role="status">
+      <div className="placement-result-panel crystal-chamfer relative overflow-hidden rounded-[28px] border border-[var(--sf-border)] surface-glass p-6 shadow-[var(--sf-panel-shadow)] sm:p-8" role="status">
         <span className="placement-result-flare crystal-flare absolute -right-20 -top-20 size-44 opacity-25" aria-hidden="true" />
         <div className="relative">
           <p className="premium-kicker uppercase tracking-[.14em]">{_(msg({ id: 'daily.placement.result-kicker', message: 'Recommended path' }))}</p>
@@ -124,7 +124,7 @@ export function PlacementScreen({ model, actions }: PlacementScreenProps) {
           <p className="mt-4 max-w-2xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">{_(msg({ id: 'daily.placement.result-note', message: 'This is a diagnostic guide, not an official exam score. It does not change your review history, mastery, XP, or path access.' }))}</p>
         </div>
       </div>
-      <div className="placement-result-summary crystal-chamfer mt-4 border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-5"><p className="placement-guidance-kicker font-display text-xs font-black uppercase tracking-[.14em] text-[var(--sf-brand-text)]">{_(msg({ id: 'daily.placement.diagnostic', message: 'Diagnostic' }))}</p><p className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]">{_(msg({ id: 'daily.placement.lumi-copy', message: 'There is no score here. Choose what feels most familiar.' }))}</p></div>
+      <div className="placement-result-summary crystal-chamfer mt-4 border border-[var(--sf-border)] surface-glass p-5"><p className="placement-guidance-kicker font-display text-xs font-black uppercase tracking-[.14em] text-[var(--sf-brand-text)]">{_(msg({ id: 'daily.placement.diagnostic', message: 'Diagnostic' }))}</p><p className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]">{_(msg({ id: 'daily.placement.lumi-copy', message: 'There is no score here. Choose what feels most familiar.' }))}</p></div>
     </div>
     <div className="placement-action-row mt-5 flex flex-wrap gap-3"><button type="button" onClick={actions.openPaths} className={primaryClass}>{_(msg({ id: 'daily.placement.open-paths', message: 'Open Paths' }))}</button><button type="button" onClick={actions.exit} className={buttonClass}>{_(msg({ id: 'daily.placement.back-to-today', message: 'Back to Today' }))}</button></div>
   </Shell>;

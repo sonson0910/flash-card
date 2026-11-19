@@ -106,7 +106,7 @@ function PlainStoryView({
           role="status"
           aria-live="polite"
           aria-atomic="true"
-          className="crystal-chamfer mx-auto flex min-h-72 w-full max-w-lg flex-col items-center justify-center rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] shadow-[var(--sf-panel-shadow)] focus-visible:outline-2"
+          className="crystal-chamfer mx-auto flex min-h-72 w-full max-w-lg flex-col items-center justify-center rounded-[28px] border border-[var(--sf-border)] surface-glass shadow-[var(--sf-panel-shadow)] focus-visible:outline-2"
         >
           <Loader2
             size={48}
@@ -177,7 +177,7 @@ function PlainStoryView({
             </div>
           </div>
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,.42fr)] lg:items-start">
-            <article className="crystal-chamfer rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8">
+            <article className="crystal-chamfer rounded-[28px] border border-[var(--sf-border)] surface-glass p-6 shadow-[var(--sf-panel-shadow)] sm:p-8">
               <span className="mb-3 block text-xs font-bold text-[var(--sf-brand-text)]">
                 <Trans
                   {...msg({ context: 'practice.story.target-language', message: '{languageName}' })}
@@ -191,7 +191,7 @@ function PlainStoryView({
                 {story.story}
               </p>
             </article>
-            <aside className="crystal-chamfer rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-5 shadow-[var(--sf-panel-shadow)]">
+            <aside className="crystal-chamfer rounded-[28px] border border-[var(--sf-border)] surface-glass p-5 shadow-[var(--sf-panel-shadow)]">
               <span className="mb-3 block text-xs font-bold text-[var(--sf-brand-text)]">
                 <Trans
                   {...msg({ context: 'practice.story.translation-language', message: '{languageName} translation' })}

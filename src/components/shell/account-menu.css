@@ -305,7 +305,8 @@ html[data-theme-family="crystal"] .claude-app-shell .account-menu-panel {
 html[data-theme-family="crystal"] .account-menu-surface {
   min-height: 100%;
   padding: 8px;
-  background: var(--sf-dialog-bg, var(--sf-surface));
+  /* The Crystal dialog fill is a translucent gradient; the opaque surface under it keeps the page from showing through. */
+  background: var(--sf-dialog-bg), var(--sf-surface);
   clip-path: var(--nk-chamfer, polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%));
 }
 

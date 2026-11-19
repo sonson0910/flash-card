@@ -240,26 +240,6 @@
     border-radius: 0;
     clip-path: var(--nk-chamfer);
   }
-  :root[data-theme-family="crystal"] .flashcard-shell [data-card-tier-label] {
-    clip-path: var(--nk-chamfer-sm);
-    border-color: transparent;
-    background: var(--sf-second);
-    color: #04060c;
-    font-family: "Kanit", "Nunito", sans-serif;
-    font-style: italic;
-  }
-  :root[data-theme-family="crystal"]:not(.dark) .flashcard-shell [data-card-tier-label] {
-    --sf-brand-text: #9d0d2b;
-  }
-  :root[data-theme-family="crystal"] .flashcard-shell [data-reveal-meaning] {
-    clip-path: var(--nk-chamfer-sm);
-    border: 0;
-    background: linear-gradient(105deg, #ff8fa4, var(--sf-brand) 35%, #ff5470);
-    color: var(--sf-on-brand);
-    font-family: "Kanit", "Nunito", sans-serif;
-    font-style: italic;
-    font-size: 0.875rem;
-  }
   :root[data-theme-family="crystal"] .flashcard-shell[data-card-tier="new"] {
     --flashcard-tier-shadow: 0 20px 46px -28px var(--sf-second);
   }
@@ -436,4 +416,27 @@ html[data-motion="reduced"] :is(.flashcard-face, .flashcard-back) {
 html[data-motion="reduced"] .flashcard-holo,
 html[data-save-data="true"] .flashcard-holo {
   display: none;
+}
+
+/* Crystal label and reveal button. They sit outside the components layer because the utilities on these
+   elements (text, border and background) would otherwise win and leave grey text on the neon fill. */
+:root[data-theme-family="crystal"] .flashcard-shell [data-card-tier-label] {
+  clip-path: var(--nk-chamfer-sm);
+  border-color: transparent;
+  background: var(--sf-second);
+  color: #04060c;
+  font-family: "Kanit", "Nunito", sans-serif;
+  font-style: italic;
+}
+:root[data-theme-family="crystal"]:not(.dark) .flashcard-shell [data-card-tier-label] {
+  --sf-brand-text: #9d0d2b;
+}
+:root[data-theme-family="crystal"] .flashcard-shell [data-reveal-meaning] {
+  clip-path: var(--nk-chamfer-sm);
+  border: 0;
+  background: linear-gradient(105deg, #ff8fa4, var(--sf-brand) 35%, #ff5470);
+  color: var(--sf-on-brand);
+  font-family: "Kanit", "Nunito", sans-serif;
+  font-style: italic;
+  font-size: 0.875rem;
 }

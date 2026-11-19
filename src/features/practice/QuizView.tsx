@@ -115,7 +115,7 @@ export function QuizView({
         <GsapEntrance
           animationKey="quiz-results"
           variant="result"
-          className="crystal-chamfer w-full max-w-2xl rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-6 text-center text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] sm:p-8"
+          className="crystal-chamfer w-full max-w-2xl rounded-[28px] border border-[var(--sf-border)] surface-glass p-6 text-center text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] sm:p-8"
           aria-labelledby="quiz-results-heading"
         >
           <div
@@ -223,7 +223,7 @@ export function QuizView({
             className="relative mb-6 grid gap-5 text-[var(--sf-text)] lg:grid-cols-[minmax(19rem,.78fr)_minmax(26rem,1.22fr)] lg:items-center lg:gap-8"
             aria-labelledby="quiz-question-heading"
           >
-            <div data-quiz-question-panel className="crystal-chamfer relative flex min-h-64 w-full flex-col justify-end rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-6 pt-24 shadow-[var(--sf-panel-shadow)] sm:min-h-80 sm:p-8 sm:pt-28">
+            <div data-quiz-question-panel className="crystal-chamfer relative flex min-h-64 w-full flex-col justify-end rounded-[28px] border border-[var(--sf-border)] surface-glass p-6 pt-24 shadow-[var(--sf-panel-shadow)] sm:min-h-80 sm:p-8 sm:pt-28">
               <div className="absolute right-4 top-4 z-10 max-w-40 break-words rounded-xl bg-[var(--sf-brand)] px-2.5 py-1 text-center text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)]">
                 {question.card.category}
               </div>

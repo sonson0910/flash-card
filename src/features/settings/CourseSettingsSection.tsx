@@ -99,7 +99,7 @@ export function CourseSettingsSection() {
     setSaveError(saved ? null : 'pace');
   };
 
-  return <section aria-labelledby="settings-course" className="settings-panel rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-4 shadow-[0_22px_56px_-38px_var(--sf-shadow)] sm:p-6">
+  return <section aria-labelledby="settings-course" className="settings-panel rounded-[28px] border border-[var(--sf-border)] surface-glass p-4 shadow-[0_22px_56px_-38px_var(--sf-shadow)] sm:p-6">
     <div className="flex items-start gap-3">
       <span className="grid size-10 place-items-center rounded-xl bg-[var(--sf-surface-control)] text-[var(--sf-brand-text)]"><BookOpen size={20} aria-hidden="true" /></span>
       <div>

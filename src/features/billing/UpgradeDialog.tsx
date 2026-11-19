@@ -89,7 +89,7 @@ export function UpgradeDialog({ open, onOpenChange, trigger }: {
         </header>
         <div className="space-y-4 px-5 py-5 sm:px-7">
         {loading && <p role="status" className="text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'billing.upgrade.loading', message: 'Loading plan details…' })} /></p>}
-        {offer && <article className="rounded-2xl border border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-surface))] p-5 shadow-[var(--sf-panel-shadow)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+        {offer && <article className="rounded-2xl border border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-surface))] p-5 shadow-[var(--sf-panel-shadow)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm [--sf-chamfer-edge:var(--sf-brand)]">
           <p className="text-sm font-semibold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'billing.upgrade.offer.duration', message: 'Pro · {days, plural, one {# day} other {# days}}' })} values={{ days: offer.proDurationDays }} /></p>
           {offer.displayPriceVnd !== null && <p className="mt-2 font-serif text-4xl font-bold tracking-tight text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:font-display">{formatNumber(offer.displayPriceVnd)} ₫</p>}
           <p className="mt-3 flex gap-2 text-sm text-[var(--sf-text-muted)]"><Check size={17} className="shrink-0 text-[var(--sf-brand-text)]" /><Trans {...msg({ context: 'billing.upgrade.offer.cards', message: '{count, plural, one {# AI card} other {# AI cards}} per month' })} values={{ count: offer.proMonthlyAiCards }} /></p>

@@ -66,7 +66,7 @@
 
 :root[data-theme-family='crystal'] .catalog-canvas :is(h1, h2, h3) { font-family: Kanit, Nunito, sans-serif; font-style: italic; font-weight: 900; letter-spacing: .015em; }
 :root[data-theme-family='crystal'] .catalog-heading h1 { background: linear-gradient(180deg, #fff, #ffe3ea 46%, #ff8fa3 52%, #fff); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 16px rgb(255 42 77 / .55)); }
-:root[data-theme-family='crystal'] .catalog-current-path { --path-ink: #f3f5fa; --path-title: #ff8fa3; --path-muted: #c4cbd6; --path-accent: #5ef2ff; border: 0 !important; clip-path: var(--nk-chamfer); background: radial-gradient(ellipse 60% 60% at 90% 8%, rgb(179 15 51 / .48), transparent 70%), radial-gradient(ellipse 70% 65% at 6% 95%, rgb(16 60 120 / .52), transparent 70%), linear-gradient(160deg, #121828, #070910) !important; box-shadow: inset 0 0 0 2px var(--sf-brand), 0 0 28px rgb(255 42 77 / .36) !important; }
+:root[data-theme-family='crystal'] .catalog-current-path { --path-ink: #f3f5fa; --path-title: #ff8fa3; --path-muted: #c4cbd6; --path-accent: #5ef2ff; border: 0 !important; clip-path: var(--nk-chamfer); background: linear-gradient(135deg, transparent 12.2px, var(--sf-brand) 12.2px 14.6px, transparent 14.6px) left top / 36px 36px no-repeat, linear-gradient(315deg, transparent 12.2px, var(--sf-brand) 12.2px 14.6px, transparent 14.6px) right bottom / 36px 36px no-repeat, radial-gradient(ellipse 60% 60% at 90% 8%, rgb(179 15 51 / .48), transparent 70%), radial-gradient(ellipse 70% 65% at 6% 95%, rgb(16 60 120 / .52), transparent 70%), linear-gradient(160deg, #121828, #070910) !important; box-shadow: inset 0 0 0 2px var(--sf-brand), 0 0 28px rgb(255 42 77 / .36) !important; }
 :root[data-theme-family='crystal'] .catalog-current-path h2 { text-transform: uppercase; }
 :root[data-theme-family='crystal'] .catalog-feature-words li { border-radius: 0; clip-path: var(--nk-chamfer-sm); }
 :root[data-theme-family='crystal'] .catalog-feature-segments li.complete { box-shadow: 0 0 8px rgb(94 242 255 / .6); }
@@ -86,6 +86,22 @@
 :root[data-theme-family='crystal'] .catalog-personal-paths > div:last-child ol li > span:first-child { clip-path: var(--nk-chamfer-sm); border: 0; border-radius: 0; background: linear-gradient(180deg, #ff5470, #b30f33); }
 :root[data-theme-family='crystal'] .catalog-personal-paths > div:first-child .premium-kicker { color: #ff2a4d; }
 
+/* Crystal light: the journey hero and the shelf books are pale glass panels with a crimson edge, not night panels. */
+:root[data-theme-family='crystal']:not(.dark) .catalog-heading h1 { background: linear-gradient(180deg, #0d1a33 0%, #0d1a33 44%, #a30c2d 56%, #7a0820 100%); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 2px 0 rgb(255 255 255 / .8)) drop-shadow(0 0 14px rgb(255 84 112 / .26)); }
+:root[data-theme-family='crystal']:not(.dark) .catalog-current-path { --path-ink: #0d1a33; --path-title: #c4123a; --path-muted: #3f5272; --path-accent: #0b7f96; background: linear-gradient(135deg, transparent 12.2px, #c4123a 12.2px 14.6px, transparent 14.6px) left top / 36px 36px no-repeat, linear-gradient(315deg, transparent 12.2px, #c4123a 12.2px 14.6px, transparent 14.6px) right bottom / 36px 36px no-repeat, radial-gradient(ellipse 60% 60% at 90% 8%, rgb(255 143 182 / .38), transparent 70%), radial-gradient(ellipse 70% 65% at 6% 95%, rgb(94 242 255 / .26), transparent 70%), linear-gradient(160deg, #f4faff, #d6ecff) !important; box-shadow: inset 0 0 0 2px #c4123a, 0 0 28px rgb(255 42 77 / .22) !important; }
+:root[data-theme-family='crystal']:not(.dark) .catalog-current-path h2 { background: linear-gradient(180deg, #0d1a33 0%, #0d1a33 44%, #a30c2d 56%, #7a0820 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 2px 0 rgb(255 255 255 / .8)) drop-shadow(0 0 14px rgb(255 84 112 / .26)); }
+:root[data-theme-family='crystal']:not(.dark) .catalog-feature-words li { border-color: rgb(13 40 80 / .16); background: rgb(255 255 255 / .62); }
+:root[data-theme-family='crystal']:not(.dark) .catalog-track-card { background: radial-gradient(ellipse 90% 70% at 100% 0%, rgb(255 42 77 / .13), transparent 70%), linear-gradient(160deg, #f6fbff, #dcefff) !important; box-shadow: inset 0 0 0 1px rgb(13 40 80 / .14), 0 15px 35px -30px rgb(13 40 80 / .5) !important; color: #0d1a33; }
+:root[data-theme-family='crystal']:not(.dark) .catalog-track-card:nth-child(2) { background: radial-gradient(ellipse 90% 70% at 100% 0%, rgb(94 242 255 / .26), transparent 70%), linear-gradient(160deg, #f6fbff, #dcefff) !important; }
+:root[data-theme-family='crystal']:not(.dark) .catalog-track-card:nth-child(3) { background: radial-gradient(ellipse 90% 70% at 100% 0%, rgb(245 174 57 / .24), transparent 70%), linear-gradient(160deg, #f6fbff, #dcefff) !important; }
+:root[data-theme-family='crystal']:not(.dark) .catalog-track-card > span:nth-child(2) > span:first-child, :root[data-theme-family='crystal']:not(.dark) .catalog-track-card > span:nth-child(5) strong { color: #0d1a33; }
+:root[data-theme-family='crystal']:not(.dark) .catalog-track-card > span:nth-child(3) { color: #3f5272; }
+:root[data-theme-family='crystal'] .catalog-track-card > span:nth-child(4) > span { background: #ff5470; }
+:root[data-theme-family='crystal'] .catalog-track-card:nth-child(2) > span:nth-child(4) > span { background: #1aa7c9; }
+:root[data-theme-family='crystal'] .catalog-track-card:nth-child(3) > span:nth-child(4) > span { background: #f5ae39; }
+:root[data-theme-family='crystal']:not(.dark) .catalog-track-card > span:nth-child(2) > span:last-child:not(:first-child) { border-color: rgb(13 40 80 / .2); background: rgb(255 255 255 / .7); color: #0d1a33; }
+:root[data-theme-family='crystal']:not(.dark) .catalog-track-card > span:nth-child(4) { background: rgb(13 40 80 / .14); }
+:root[data-theme-family='crystal']:not(.dark) .catalog-track-card > span:nth-child(5) { color: #3f5272; }
 @media (max-width: 1100px) { .catalog-feature-grid { grid-template-columns: 1fr; } }
 @media (max-width: 639px) {
   .catalog-heading h1 { font-size: 2.75rem !important; }

@@ -67,7 +67,7 @@ export function SessionRecapModal({ open, onClose, onViewWeeklyRecap, onRetryWea
           <div aria-hidden="true" className="pointer-events-none absolute inset-x-10 top-0 h-24 bg-[radial-gradient(ellipse_at_top,var(--sf-surface-raised),transparent_70%)] opacity-70" />
           <div className="relative flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="relative flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/20 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm [html[data-theme-family=crystal]_&]:from-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:to-rose-500">
+              <div className="relative flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/20 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm [--sf-chamfer-fill:linear-gradient(var(--tw-gradient-stops))] [html[data-theme-family=crystal]_&]:from-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:to-rose-500">
                 <Trophy size={24} aria-hidden="true" />
                 {showLumi && <Lumi pose="proud" size={58} className="pointer-events-none absolute -bottom-2 -right-3 max-w-none drop-shadow-md" />}
               </div>
@@ -79,7 +79,7 @@ export function SessionRecapModal({ open, onClose, onViewWeeklyRecap, onRetryWea
             <Dialog.Close className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm" aria-label={_(msg({ id: 'recap.close', message: 'Close recap' }))}><X size={18} aria-hidden="true" /></Dialog.Close>
           </div>
 
-          <div className="relative mt-6 grid grid-cols-3 gap-2.5 text-center sm:gap-3">
+          <div data-recap-stats className="relative mt-6 grid grid-cols-3 gap-2.5 text-center sm:gap-3">
             <Stat label={<Trans {...msg({ context: 'recap.reviewed', message: 'Reviewed' })} />} value={<CountUp to={saved} />} />
             <Stat label={<Trans {...msg({ context: 'recap.retained', message: 'Retained' })} />} value={<><CountUp to={accuracy} suffix="%" /><span aria-hidden="true">%</span></>} tone="success" />
             <Stat label={<Trans {...msg({ context: 'recap.xp-earned', message: 'XP earned' })} />} value={<><span aria-hidden="true">+</span><CountUp to={xpEarned} /></>} tone="warm" />
@@ -87,7 +87,7 @@ export function SessionRecapModal({ open, onClose, onViewWeeklyRecap, onRetryWea
 
           {summary && <p className="relative mt-3 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'recap.progress-breakdown', message: 'Saved: {saved} / {total} · Skipped: {skipped} · Not started: {remaining} · Saving: {pending} · Failed: {failed}' })} values={{ ...summary, total: totalCards }} /></p>}
 
-          <div className="relative mt-4 grid gap-2 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3.5 text-sm font-semibold [html[data-theme-family=crystal]_&]:crystal-chamfer-sm sm:grid-cols-2">
+          <div data-recap-breakdown className="relative mt-4 grid gap-2 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3.5 text-sm font-semibold [html[data-theme-family=crystal]_&]:crystal-chamfer-sm sm:grid-cols-2">
             <div className="flex items-center justify-between gap-3 text-emerald-700 dark:text-emerald-300"><span className="flex items-center gap-1.5"><CheckCircle2 size={16} aria-hidden="true" /><span><Trans {...msg({ context: 'recap.mastered', message: 'Remembered' })} /></span></span><span className="font-bold tabular-nums text-[var(--sf-text)]"><Trans {...msg({ context: 'recap.word-count', message: '{count, plural, one {# word} other {# words}}' })} values={{ count: goodCount }} /></span></div>
             <div className="flex items-center justify-between gap-3 text-rose-700 dark:text-rose-300"><span className="flex items-center gap-1.5"><RotateCcw size={16} aria-hidden="true" /><span><Trans {...msg({ context: 'recap.needs-review', message: 'To revisit' })} /></span></span><span className="font-bold tabular-nums text-[var(--sf-text)]"><Trans {...msg({ context: 'recap.word-count', message: '{count, plural, one {# word} other {# words}}' })} values={{ count: againCount }} /></span></div>
           </div>

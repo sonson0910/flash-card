@@ -258,7 +258,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
     }
 
     return <button key={tile.id} type="button" onClick={() => handleTileClick(tile)} lang={language}
-      className={`flex min-h-15 items-center justify-between rounded-xl border bg-[var(--sf-surface-glass)] px-4 py-3 text-left text-base font-semibold shadow-[var(--sf-panel-shadow)] transition-[border-color,background-color,box-shadow,transform] active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none sm:min-h-16 sm:rounded-2xl sm:text-lg ${
+      className={`flex min-h-15 items-center justify-between rounded-xl border surface-glass px-4 py-3 text-left text-base font-semibold shadow-[var(--sf-panel-shadow)] transition-[border-color,background-color,box-shadow,transform] active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none sm:min-h-16 sm:rounded-2xl sm:text-lg ${
         isMismatched
           ? 'border-rose-400 bg-rose-500/20 text-rose-600 dark:text-rose-300 motion-safe:animate-shake'
           : isSelected
@@ -303,7 +303,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
         <>
           <div className="grid w-full items-center gap-5 sm:grid-cols-[minmax(0,1fr)_11rem_minmax(0,1fr)] sm:gap-10">
             <div className="grid gap-2.5 sm:gap-3">{tiles.filter(tile => tile.type === 'word').map(renderTile)}</div>
-            <div className="order-first mx-auto flex size-32 flex-col items-center justify-center rounded-full border-4 border-[color-mix(in_srgb,var(--sf-brand)_32%,var(--sf-border))] bg-[var(--sf-surface-glass)] text-center shadow-[var(--sf-panel-shadow)] sm:order-none sm:size-40">
+            <div className="order-first mx-auto flex size-32 flex-col items-center justify-center rounded-full border-4 border-[color-mix(in_srgb,var(--sf-brand)_32%,var(--sf-border))] surface-glass text-center shadow-[var(--sf-panel-shadow)] sm:order-none sm:size-40">
               <Timer size={18} className="mb-1 text-[var(--sf-brand-text)]" aria-hidden="true" />
               <span className={`font-mono text-4xl font-black tabular-nums ${timeLeft <= 10 ? 'text-rose-500 motion-safe:animate-pulse' : 'text-[var(--sf-brand-text)]'}`}><Trans {...msg({ context: 'practice.match.seconds', message: '{seconds}s' })} values={{ seconds: timeLeft }} /></span>
               <span className="mt-1 text-[10px] font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'practice.match.pairs', message: 'Pairs' })} /></span>
@@ -314,7 +314,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
           <p className="mt-5 text-center text-xs text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'practice.match.instruction', message: 'Choose a word in {targetLanguageName}, then its meaning in {nativeLanguageName}.' })} values={{ targetLanguageName, nativeLanguageName }} /></p>
         </>
       ) : isVictory ? (
-        <div className="mx-auto w-full max-w-xl rounded-[28px] border border-emerald-400/40 bg-[var(--sf-surface-glass)] p-6 text-center shadow-[var(--sf-panel-shadow)] sm:p-8 crystal-chamfer">
+        <div className="mx-auto w-full max-w-xl rounded-[28px] border border-emerald-400/40 surface-glass p-6 text-center shadow-[var(--sf-panel-shadow)] sm:p-8 crystal-chamfer">
           <div className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-lg shadow-[var(--sf-shadow)]">
             <Trophy size={32} />
           </div>
@@ -397,7 +397,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
           </div>
         </div>
       ) : (
-        <div className="mx-auto w-full max-w-xl rounded-[28px] border border-rose-400/30 bg-[var(--sf-surface-glass)] p-6 text-center shadow-[var(--sf-panel-shadow)] sm:p-8 crystal-chamfer">
+        <div className="mx-auto w-full max-w-xl rounded-[28px] border border-rose-400/30 surface-glass p-6 text-center shadow-[var(--sf-panel-shadow)] sm:p-8 crystal-chamfer">
           <div className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-rose-500/15 text-rose-500">
             <Timer size={32} />
           </div>
