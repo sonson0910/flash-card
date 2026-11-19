@@ -79,6 +79,9 @@ const PACE_TAG: Readonly<Record<DailyPace, MessageDescriptor>> = {
   20: msg({ context: 'onboarding.pace.tag.intense', message: 'Intense' }),
 };
 
+/** Steps whose content can run past a phone screen; their footer stays on screen while it scrolls. */
+const STICKY_FOOTER_STEPS: ReadonlySet<OnboardingStepId> = new Set(['goal', 'exam', 'level', 'script']);
+
 const LEVEL_LABEL: Readonly<Record<StartingTier, MessageDescriptor>> = {
   foundation: msg({ context: 'onboarding.level.foundation', message: 'Foundation' }),
   core: msg({ context: 'onboarding.level.core', message: 'Core' }),
@@ -634,7 +637,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
       <div className="onb-body" data-lumi={showLumi}>
         {showLumi && <LumiGuide step={step} />}
         <main className="onb-main" data-layout={layout}><div className="onb-content">{content}</div></main>
-        {footer && <div className={`onboarding-journey__footer onb-footer${step === 'goal' || step === 'exam' ? ' onboarding-journey__footer--sticky' : ''}`} style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>{footer}</div>}
+        {footer && <div className={`onboarding-journey__footer onb-footer${STICKY_FOOTER_STEPS.has(step) ? ' onboarding-journey__footer--sticky' : ''}`} style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>{footer}</div>}
       </div>
     </div>
   </div>;

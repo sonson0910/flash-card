@@ -1231,6 +1231,7 @@ html[data-theme-family='crystal'] .onb-trial-word-text { font-style: italic; fon
   min-height: 76px;
   flex-direction: row;
   align-items: center;
+  justify-content: flex-start;
   gap: 16px;
   padding: 14px 56px 14px 16px;
   text-align: left;
