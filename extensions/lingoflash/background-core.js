@@ -888,7 +888,7 @@
       const inline=await show(s.sourceTabId,{status:'translated',modeLabel:'DỊCH NHANH • GOOGLE',text:s.text,anchor:s.anchor,translation:bounded(translated.text,1024),speechLocale:speechLocaleForLanguage(translated.sourceLanguage),
         sourceLanguage:translated.sourceLanguage,translationLanguage:settings.quickTranslateTarget,romanization:translated.romanization||'',context:bounded(s.context,500),pageLanguage:s.pageLanguage||'',
         ...(saveId?{saveId}:{})});
-      return {text:s.text,translation:translated.text,sourceLanguage:translated.sourceLanguage,inlineShown:inline.ok};
+      return {text:s.text,translation:translated.text,sourceLanguage:translated.sourceLanguage,romanization:translated.romanization||'',inlineShown:inline.ok};
     }
     catch(e){ await show(s.sourceTabId,{status:'error',modeLabel:'DỊCH NHANH • FREE',text:s.text,anchor:s.anchor,message:e instanceof Error?e.message:'Không thể dịch đoạn này.'}); throw e; }
   };

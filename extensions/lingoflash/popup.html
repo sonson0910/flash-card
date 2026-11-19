@@ -22,10 +22,16 @@
       </a>
     </header>
 
+    <p id="language-banner" class="language-banner" hidden>
+      <svg class="language-banner-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3c2.4 2.5 3.6 5.5 3.6 9s-1.2 6.5-3.6 9c-2.4-2.5-3.6-5.5-3.6-9s1.2-6.5 3.6-9z"></path></svg>
+      <span id="language-banner-text" class="language-banner-text"></span>
+      <span id="language-banner-meta" class="language-banner-meta"></span>
+    </p>
     <form id="selection-form">
       <div class="label-row">
         <label for="selection" data-i18n="selectionLabel">Từ hoặc cụm từ</label>
         <span id="character-count">0/80</span>
+        <span id="meanings-language" class="meanings-language" hidden></span>
       </div>
       <div class="selection-field">
         <textarea id="selection" maxlength="80" rows="1" spellcheck="false"
@@ -36,6 +42,13 @@
         </button>
       </div>
       <p id="speech-support-status" class="speech-support-status" role="status" aria-live="polite" hidden></p>
+      <div id="course-route" class="course-route" hidden>
+        <span class="course-route-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></span>
+        <span class="course-route-copy">
+          <span id="course-route-title" class="course-route-title"></span>
+          <span id="course-route-pair" class="course-route-pair"></span>
+        </span>
+      </div>
 
       <div class="config-grid">
         <div class="config-field">
@@ -80,6 +93,10 @@
         <div class="result-explanation" id="result-explanation"></div>
         <div class="result-example" id="result-example"></div>
         <div class="result-example-translation" id="result-example-translation"></div>
+      </div>
+      <div class="result-language-note" id="result-language-note" hidden>
+        <p class="result-language-note-title" id="result-language-note-title"></p>
+        <p class="result-language-note-body" id="result-language-note-body"></p>
       </div>
       <div class="result-actions" id="result-actions">
         <button class="result-btn" id="result-speak" type="button" aria-describedby="speech-support-status">

@@ -2148,6 +2148,8 @@ test('gives the in-page translation its reading, page context and detected langu
   const query = new URL(requests[0]).searchParams;
 
   assert.equal(response.ok, true);
+  assert.equal(response.romanization, 'gyeoljeong');
+  assert.equal(response.sourceLanguage, 'ko');
   assert.deepEqual(query.getAll('dt'), ['t', 'rm']);
   assert.equal(payload.translation, 'quyết định');
   assert.equal(payload.romanization, 'gyeoljeong');
