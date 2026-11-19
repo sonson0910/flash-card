@@ -1,43 +1,206 @@
 .landing-canvas { font-family: var(--font-sans); }
 .landing-header { min-height: 84px; }
-.landing-header > a .font-serif-hero { font-family: Fraunces, Georgia, serif; font-weight: 500; }
-.landing-hero { max-width: 1280px; margin-inline: auto; }
-.landing-copy h1 { font-family: Fraunces, Georgia, serif; font-weight: 450; }
-.landing-copy > p:first-child { letter-spacing: .01em; }
-.landing-card > div:last-child { border-radius: 28px; }
-.landing-demo-pronunciation { position: absolute; z-index: 1; top: 27%; left: -5.5rem; display: inline-flex; align-items: center; gap: .45rem; min-height: 2.5rem; padding: 0 .9rem; border-radius: 999px; background: var(--sf-surface-raised); box-shadow: var(--sf-panel-shadow); color: var(--sf-text-muted); font-family: ui-monospace, monospace; font-size: .75rem; white-space: nowrap; }
-.landing-demo-pronunciation > span { display: grid; width: 1.25rem; height: 1.25rem; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--sf-brand) 12%, transparent); color: var(--sf-brand-text); font-size: .55rem; }
-.landing-atmospheres { border-left: 0; padding-left: 0; }
-html[data-theme-family="classic"] .landing-canvas { background-image: radial-gradient(circle at 74% 40%, color-mix(in srgb, var(--sf-brand) 9%, transparent), transparent 27%); }
-html[data-theme-family="classic"] .landing-hero { min-height: 600px; padding: 40px 48px 0; }
-html[data-theme-family="classic"] .landing-copy h1 { font-size: clamp(4.5rem, 8vw, 7.2rem); line-height: .91; letter-spacing: -.055em; }
-html[data-theme-family="classic"] .landing-copy h1 em, html[data-theme-family="classic"] .landing-copy h1 i { color: var(--sf-brand-text); }
-html[data-theme-family="classic"] .landing-card > div:last-child img { height: 180px; }
-html[data-theme-family="crystal"] .landing-header { font-family: var(--sf-font-display, Geist, sans-serif); font-style: italic; letter-spacing: .02em; }
-html[data-theme-family="crystal"] .landing-header .brand-action { text-transform: uppercase; letter-spacing: .055em; }
 .landing-header :is(a, button) { white-space: nowrap; }
 .landing-header summary { list-style: none; }
 .landing-header summary::marker { content: ""; }
 .landing-header summary::-webkit-details-marker { display: none; }
 .landing-header summary > svg { width: 19px; height: 19px; flex: none; }
+.landing-atmospheres { border-left: 0; padding-left: 0; }
+
+/* Classic hero (Midnight Aurora and Ink & Paper), ported from the LandingScreen board. */
+html[data-theme-family="classic"] .landing-canvas {
+  --landing-body: color-mix(in srgb, var(--sf-text) 59%, var(--sf-text-muted));
+  --landing-warm: var(--sf-brand-text);
+  --landing-btn-radius: 999px;
+  --landing-card-radius: 20px;
+  --landing-display-weight: 380;
+  --landing-primary-bg: var(--sf-text);
+  --landing-primary-shadow: 0 14px 28px -14px color-mix(in srgb, var(--sf-text) 90%, transparent);
+  --landing-secondary-shadow: 0 1px 2px color-mix(in srgb, var(--sf-shadow) 27%, transparent);
+  --landing-float-bg: color-mix(in srgb, var(--sf-surface) 92%, transparent);
+  --landing-float-shadow: 0 10px 24px -14px color-mix(in srgb, var(--sf-shadow) 100%, transparent);
+  --landing-accent-soft: color-mix(in srgb, var(--sf-brand) 8%, transparent);
+  --landing-accent-line: color-mix(in srgb, var(--sf-brand-text) 25%, transparent);
+  --landing-warm-line: color-mix(in srgb, var(--sf-brand-text) 22%, transparent);
+}
+html[data-theme-family="classic"].dark .landing-canvas {
+  --landing-body: color-mix(in srgb, var(--sf-text) 37%, var(--sf-text-muted));
+  --landing-warm: var(--sf-reward);
+  --landing-btn-radius: 16px;
+  --landing-card-radius: 30px;
+  --landing-display-weight: 440;
+  --landing-primary-bg: var(--sf-brand);
+  --landing-primary-shadow: 0 16px 40px -14px color-mix(in srgb, var(--sf-brand) 80%, transparent), inset 0 1px 0 rgb(255 255 255 / .5);
+  --landing-secondary-shadow: none;
+  --landing-float-bg: color-mix(in srgb, var(--sf-surface) 70%, transparent);
+  --landing-float-shadow: 0 16px 40px -16px rgb(0 0 0 / .8);
+  --landing-accent-soft: color-mix(in srgb, var(--sf-brand) 12%, transparent);
+  --landing-accent-line: color-mix(in srgb, var(--sf-brand) 35%, transparent);
+  --landing-warm-line: color-mix(in srgb, var(--sf-reward) 28%, transparent);
+}
+
+.landing-ambient, .landing-grain { position: absolute; inset: 0; pointer-events: none; }
+.landing-ambient { overflow: hidden; }
+.landing-ambient > span { position: absolute; display: none; border-radius: 50%; filter: blur(120px); }
+html[data-theme-family="classic"].dark .landing-ambient > span { display: block; }
+.landing-ambient > span:first-child { top: -60px; left: calc(50% + 100px); width: 560px; height: 560px; background: color-mix(in srgb, var(--sf-second) 40%, transparent); }
+.landing-ambient > span:last-child { top: 360px; left: calc(50% + 260px); width: 520px; height: 520px; background: color-mix(in srgb, var(--sf-brand) 34%, transparent); }
+html[data-theme-family="classic"]:not(.dark) .landing-ambient { background-image: radial-gradient(color-mix(in srgb, var(--sf-text) 8%, transparent) 1px, transparent 1.2px); background-size: 28px 28px; -webkit-mask-image: radial-gradient(ellipse 60% 70% at 60% 45%, #000 10%, transparent 75%); mask-image: radial-gradient(ellipse 60% 70% at 60% 45%, #000 10%, transparent 75%); }
+.landing-grain { opacity: var(--sf-grain-opacity); mix-blend-mode: var(--sf-grain-blend); background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3e%3cfilter id='g'%3e%3cfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3e%3cfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .2 0 0 0 .9 0'/%3e%3c/filter%3e%3crect width='100%25' height='100%25' filter='url(%23g)'/%3e%3c/svg%3e"); }
+html.dark .landing-grain { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3e%3cfilter id='g'%3e%3cfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3e%3cfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/%3e%3c/filter%3e%3crect width='100%25' height='100%25' filter='url(%23g)'/%3e%3c/svg%3e"); }
+html[data-theme-family="crystal"] :is(.landing-ambient, .landing-grain) { display: none; }
+
+.landing-classic-mark { display: grid; flex: none; width: 32px; height: 32px; place-items: center; border-radius: 10px; background: var(--sf-text); color: var(--sf-on-brand); font: italic 500 19px/1 var(--sf-font-display); }
+html.dark .landing-classic-mark { background: linear-gradient(145deg, var(--sf-brand-text), var(--sf-brand) 45%, var(--sf-second)); box-shadow: 0 0 20px -4px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
+.landing-classic-brand { color: var(--sf-text); font: 450 23px/1 var(--sf-font-display); }
+.landing-classic-brand em, .landing-classic-title em, .landing-card-word em { color: var(--sf-brand); font-style: italic; }
+html.dark :is(.landing-classic-brand, .landing-classic-title, .landing-card-word) em { font-style: normal; }
+html.dark :is(.landing-classic-title, .landing-card-word) em { text-shadow: 0 0 36px color-mix(in srgb, var(--sf-brand) 50%, transparent); }
+html[data-theme-family="classic"] .landing-desktop-nav { margin-left: 24px; }
+html[data-theme-family="classic"] .landing-desktop-nav :is(a, button) { min-height: 44px; padding-inline: 12px; color: var(--sf-text-muted); font-size: 14.5px; font-weight: 500; }
+html[data-theme-family="classic"] .landing-desktop-nav :is(a, button):hover { color: var(--sf-text); }
+.landing-theme-toggle { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid var(--sf-border); border-radius: 50%; background: var(--sf-surface-control); color: var(--sf-text); }
+html[data-theme-family="classic"] .landing-theme-toggle { width: 40px; height: 40px; background: var(--sf-surface-raised); color: var(--sf-text-muted); }
+html[data-theme-family="classic"] .landing-sign-in { color: var(--sf-text); }
+html[data-theme-family="classic"] .landing-header-start { height: 44px; padding-inline: 20px; border-radius: var(--landing-btn-radius); background: var(--landing-primary-bg); box-shadow: var(--landing-primary-shadow); color: var(--sf-on-brand); font-weight: 650; }
+
+html[data-theme-family="classic"] .landing-hero { display: grid; flex: 1; grid-template-columns: minmax(0, 1fr) 560px; gap: 40px; width: 100%; max-width: 1376px; height: 600px; margin-inline: auto; padding: 40px 16px 0 48px; box-sizing: border-box; }
+.landing-copy { display: flex; min-width: 0; flex-direction: column; justify-content: center; }
+.landing-eyebrow { display: inline-flex; align-self: flex-start; align-items: center; gap: 8px; height: 32px; padding: 0 14px; border: 1px solid var(--landing-accent-line); border-radius: 999px; background: var(--landing-accent-soft); color: var(--sf-brand-text); font-size: 13px; font-weight: 600; }
+.landing-eyebrow > span { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.landing-classic-title { margin: 22px 0 0; color: var(--sf-text); font-family: var(--sf-font-display); font-optical-sizing: auto; font-size: 104px; font-weight: var(--landing-display-weight); line-height: .95; letter-spacing: -.04em; }
+.landing-classic-lead { max-width: 540px; margin: 26px 0 0; color: var(--landing-body); font-size: 18px; line-height: 1.6; text-wrap: pretty; }
+.landing-classic-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 34px; }
+.landing-primary-action, .landing-secondary-action { display: inline-flex; align-items: center; height: 58px; border-radius: var(--landing-btn-radius); cursor: pointer; transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease; }
+.landing-primary-action { padding: 0 28px; border: 0; background: var(--landing-primary-bg); box-shadow: var(--landing-primary-shadow); color: var(--sf-on-brand); font-size: 16px; font-weight: 650; }
+.landing-secondary-action { gap: 10px; padding: 0 22px; border: 1px solid var(--sf-border); background: var(--sf-surface-control); box-shadow: var(--landing-secondary-shadow); color: var(--sf-text); font-size: 15px; font-weight: 600; }
+.landing-primary-action:hover, .landing-secondary-action:hover { transform: translateY(-1px); }
+.landing-secondary-action:hover { border-color: var(--sf-brand); }
+:is(.landing-primary-action, .landing-secondary-action):focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 3px; }
+.landing-fine-print { margin: 22px 0 0; color: var(--sf-text-muted); font-size: 13.5px; }
+
+.landing-card { position: relative; display: flex; min-width: 0; align-items: center; justify-content: center; }
+.landing-float-chip { position: absolute; z-index: 3; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border: 1px solid var(--sf-border); border-radius: 999px; background: var(--landing-float-bg); box-shadow: var(--landing-float-shadow); color: var(--sf-text); font-size: 13px; white-space: nowrap; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.landing-demo-pronunciation { top: 110px; left: 0; }
+.landing-demo-pronunciation > span:first-child { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; background: var(--landing-accent-soft); color: var(--sf-brand-text); }
+.landing-demo-pronunciation > span:last-child { font-family: "Geist Mono", ui-monospace, monospace; }
+.landing-float-chip-review { top: 190px; right: 0; border-color: var(--landing-warm-line); color: var(--landing-warm); font-weight: 600; }
+.landing-float-chip-source { bottom: 60px; left: 20px; color: var(--sf-text-muted); }
+.landing-float-chip-source strong { color: var(--sf-text); font-weight: 600; }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="reduced"]) .landing-float-chip { animation: landing-chip-bob 6s ease-in-out infinite; }
+  html:not([data-motion="reduced"]) .landing-float-chip-review { animation-delay: -3s; }
+}
+@keyframes landing-chip-bob { 50% { transform: translateY(-6px); } }
+.landing-card-stage { position: relative; width: 380px; height: 520px; }
+.landing-card-aura { position: absolute; inset: -40px; border-radius: 80px; background: radial-gradient(ellipse at 50% 55%, color-mix(in srgb, var(--sf-brand) 35%, transparent), color-mix(in srgb, var(--sf-confetti-4) 25%, transparent) 55%, transparent 80%); opacity: .3; filter: blur(44px); transition: opacity 400ms ease; }
+html.dark .landing-card-aura { background: radial-gradient(ellipse at 50% 45%, color-mix(in srgb, var(--sf-second) 80%, transparent), color-mix(in srgb, var(--sf-brand) 50%, transparent) 50%, transparent 80%); }
+.landing-card-stage:hover .landing-card-aura { opacity: .55; }
+.landing-card-flip { height: 100%; border-radius: var(--landing-card-radius); cursor: pointer; }
+.landing-card-flip:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 4px; }
+.landing-card-face { display: flex; height: 100%; box-sizing: border-box; flex-direction: column; overflow: hidden; border-radius: var(--landing-card-radius); background: var(--sf-card-bg); box-shadow: inset 0 1px 0 #fff, inset 0 0 0 1px color-mix(in srgb, var(--sf-text) 6%, transparent), 0 10px 20px -10px color-mix(in srgb, var(--sf-shadow) 60%, transparent), 0 50px 70px -40px color-mix(in srgb, var(--sf-shadow) 150%, transparent); }
+html.dark .landing-card-face { border: 1.5px solid transparent; background: var(--sf-card-bg) padding-box, var(--sf-rim-learning) border-box; box-shadow: 0 50px 100px -40px rgb(0 0 0 / .95), 0 0 60px -16px color-mix(in srgb, var(--sf-brand) 55%, transparent); }
+.landing-card-image { height: 240px; flex: none; margin: 12px 12px 0; overflow: hidden; border-radius: 10px; }
+.landing-card-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
+html.dark .landing-card-image { margin: 0; border-radius: 0; }
+html.dark .landing-card-image img { -webkit-mask-image: linear-gradient(to bottom, #000 42%, transparent 100%); mask-image: linear-gradient(to bottom, #000 42%, transparent 100%); }
+.landing-card-body { display: flex; flex: 1; flex-direction: column; padding: 8px 28px 0; }
+.landing-card-kicker { margin: 0; color: var(--sf-text-muted); font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
+.landing-card-word { margin: 4px 0 0; color: var(--sf-text); font-family: var(--sf-font-display); font-optical-sizing: auto; font-size: 58px; font-weight: var(--landing-display-weight); line-height: 1; letter-spacing: -.03em; }
+.landing-card-definition { margin: 14px 0 0; color: var(--landing-body); font-size: 15px; line-height: 1.55; }
+.landing-card-prompt { margin: auto 0 0; padding: 16px 0 18px; border-top: 1px solid var(--sf-border); color: var(--sf-text); font-size: 13.5px; font-weight: 600; text-align: center; }
+.landing-card-back { --back-text: color-mix(in srgb, var(--sf-on-brand) 94%, var(--sf-text)); --back-title: var(--sf-on-brand); --back-muted: color-mix(in srgb, var(--sf-on-brand) 66%, var(--sf-text)); --back-rule: var(--sf-confetti-4); --back-hl: color-mix(in srgb, var(--sf-confetti-4) 70%, var(--sf-on-brand)); justify-content: center; padding: 40px 34px; background: radial-gradient(ellipse 80% 50% at 50% 10%, color-mix(in srgb, var(--sf-brand) 22%, transparent), transparent 70%), color-mix(in srgb, var(--sf-success) 18%, var(--sf-text)); color: var(--back-text); }
+html.dark .landing-card-back { --back-text: var(--sf-text); --back-title: var(--sf-text); --back-muted: var(--sf-text-muted); --back-rule: var(--sf-brand); --back-hl: var(--sf-brand-text); background: radial-gradient(ellipse 90% 55% at 50% 10%, color-mix(in srgb, var(--sf-second) 28%, transparent), transparent 70%) padding-box, var(--sf-card-bg) padding-box, var(--sf-rim-learning) border-box; }
+.landing-card-back .landing-card-kicker { color: var(--back-muted); }
+.landing-card-meaning { margin: 14px 0 0; color: var(--back-title); font-family: var(--sf-font-display); font-optical-sizing: auto; font-size: 56px; font-weight: var(--landing-display-weight); line-height: 1.05; letter-spacing: -.02em; }
+.landing-card-rule { width: 110px; height: 3px; margin-top: 16px; border-radius: 2px; background: var(--back-rule); }
+.landing-card-example { margin: 26px 0 0; color: var(--back-text); font-family: var(--sf-font-display); font-size: 20px; font-style: italic; line-height: 1.45; }
+.landing-card-example span { color: var(--back-hl); font-style: normal; }
+.landing-card-example-translation { margin: 8px 0 0; color: var(--back-muted); font-size: 14px; }
+
+.landing-classic-features { width: calc(100% - 64px); max-width: 1312px; margin: 22px 16px 0 48px; padding-top: 30px; border-top: 1px solid var(--sf-border); box-sizing: border-box; }
+.landing-classic-features ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin: 0; padding: 0; list-style: none; }
+.landing-classic-features li { display: flex; gap: 16px; }
+.landing-classic-features li > span { display: flex; flex: none; width: 44px; height: 44px; align-items: center; justify-content: center; box-sizing: border-box; border: 1px solid var(--sf-border); border-radius: 14px; background: var(--sf-surface-raised); color: var(--sf-brand-text); font: italic 400 20px/1 var(--sf-font-display); }
+.landing-classic-features h3 { margin: 0; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 22px; font-weight: var(--landing-display-weight); line-height: 1.25; }
+.landing-classic-features p { margin: 6px 0 0; color: var(--sf-text-muted); font-size: 14.5px; line-height: 1.55; }
+
+@media (min-width: 1024px) { .landing-header { padding-inline: 16px; } }
+@media (min-width: 1024px) and (max-width: 1379px) { html[data-theme-family="classic"] .landing-hero { grid-template-columns: minmax(0, 1fr) 470px; gap: 24px; padding-left: 16px; } .landing-classic-title { font-size: clamp(80px, 7.4vw, 104px); } .landing-classic-features { width: calc(100% - 32px); margin-left: 16px; } }
+@media (max-width: 1023px) {
+  html[data-theme-family="classic"] .landing-hero { grid-template-columns: minmax(0, 1fr); gap: 48px; height: auto; padding: 32px 0 0; }
+  .landing-classic-title { font-size: clamp(64px, 11vw, 104px); }
+  .landing-card { min-height: 560px; }
+  .landing-classic-features { width: 100%; margin: 48px 0 0; }
+}
+@media (max-width: 767px) { .landing-classic-features ol { grid-template-columns: minmax(0, 1fr); gap: 24px; } }
+@media (max-width: 639px) {
+  .landing-header { min-height: 64px; }
+  html[data-theme-family="classic"] .landing-hero { gap: 36px; padding-top: 24px; }
+  .landing-classic-title { font-size: clamp(56px, 17vw, 72px); }
+  .landing-classic-lead { margin-top: 20px; font-size: 16px; }
+  .landing-classic-actions { margin-top: 26px; }
+  .landing-primary-action, .landing-secondary-action { height: 52px; }
+  .landing-card { min-height: 0; }
+  .landing-float-chip { display: none; }
+  .landing-card-stage { width: min(100%, 320px); height: 440px; }
+  .landing-card-image { height: 190px; }
+  .landing-card-body { padding-inline: 22px; }
+  .landing-card-word { font-size: 48px; }
+  .landing-card-meaning { font-size: 44px; }
+  .landing-card-back { padding: 32px 26px; }
+  .landing-classic-features { margin-top: 36px; padding-top: 24px; }
+  .landing-atmospheres { margin-top: 8px; }
+}
+
+/* Crystal Star hero, ported from the AnimeLanding board. Stage offsets match the board: the
+   stage starts at x=720 like the board's right column, 56px lower than the board section. */
+html[data-theme-family="crystal"] .landing-canvas {
+  --wing-deep: color-mix(in srgb, var(--sf-brand-hover) 68%, #000);
+  --wing-mid: color-mix(in srgb, var(--sf-brand) 70%, var(--sf-brand-hover));
+  --wing-light: color-mix(in srgb, var(--sf-brand) 80%, #fff);
+  --wing-edge: color-mix(in srgb, var(--sf-brand) 30%, #fff);
+  --crystal-cta-bg: linear-gradient(180deg, var(--sf-brand) 0%, color-mix(in srgb, var(--sf-brand) 55%, var(--sf-brand-hover)) 50%, var(--sf-brand-hover) 100%);
+  --crystal-ribbon-bg: linear-gradient(180deg, var(--wing-light) 0%, var(--sf-brand) 45%, var(--sf-brand-hover) 100%);
+  --crystal-body: color-mix(in srgb, var(--sf-text) 55%, var(--sf-text-muted));
+  --crystal-card-front: linear-gradient(180deg, color-mix(in srgb, var(--sf-canvas) 45%, #fff), var(--sf-canvas));
+  --crystal-holo: color-mix(in srgb, var(--sf-second) 45%, var(--sf-text));
+  --crystal-pink: color-mix(in srgb, var(--sf-brand-text) 70%, var(--sf-text));
+  --crystal-beam: rgb(255 255 255 / .5);
+}
+html[data-theme-family="crystal"].dark .landing-canvas {
+  --crystal-body: color-mix(in srgb, var(--sf-text) 60%, var(--sf-text-muted));
+  --crystal-card-front: var(--sf-card-bg);
+  --crystal-holo: var(--sf-second);
+  --crystal-pink: color-mix(in srgb, var(--sf-brand-text) 65%, var(--sf-text));
+  --crystal-beam: rgb(255 255 255 / .08);
+}
+.crystal-backdrop { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background: radial-gradient(ellipse 50% 40% at 70% 20%, rgb(255 190 215 / .55), transparent 70%), radial-gradient(ellipse 45% 40% at 20% 80%, color-mix(in srgb, var(--sf-brand) 18%, transparent), transparent 70%), linear-gradient(115deg, #a9dcff 0%, #c7ebff 24%, #b5e6ff 46%, #c9f6f4 66%, #9fd6ff 88%, #b8e4ff 100%); }
+html.dark .crystal-backdrop { background: radial-gradient(ellipse 55% 45% at 18% 18%, rgb(16 42 92 / .55), transparent 70%), radial-gradient(ellipse 50% 45% at 85% 72%, rgb(10 50 110 / .5), transparent 70%), radial-gradient(ellipse 45% 35% at 62% 8%, color-mix(in srgb, var(--sf-brand-hover) 30%, transparent), transparent 70%), radial-gradient(ellipse 40% 30% at 30% 95%, color-mix(in srgb, var(--wing-deep) 35%, transparent), transparent 70%), var(--sf-canvas); }
+.crystal-backdrop::before { position: absolute; inset: 0; content: ""; background: var(--nk-stars); }
+.crystal-beam { position: absolute; top: -20%; left: 18%; width: 160px; height: 140%; transform: rotate(24deg); background: linear-gradient(90deg, transparent, var(--crystal-beam), transparent); filter: blur(4px); }
+.crystal-beam + .crystal-beam { left: 58%; width: 90px; filter: blur(3px); }
+.crystal-backdrop-wings { position: absolute; bottom: -120px; left: -150px; width: 640px; height: 430px; opacity: var(--nk-wing-opacity); transform: rotate(-12deg); filter: drop-shadow(0 0 30px color-mix(in srgb, var(--sf-brand) 55%, transparent)); }
+:is(.crystal-backdrop-wings, .crystal-stage-wings) svg { display: block; overflow: visible; }
+
+html[data-theme-family="crystal"] .landing-header { min-height: 80px; gap: 30px; font-family: var(--sf-font-display, Geist, sans-serif); font-style: italic; letter-spacing: .02em; transform: translateY(-20px); }
+html[data-theme-family="crystal"] .landing-desktop-nav { gap: 28px; margin-left: 20px; }
+html[data-theme-family="crystal"] .landing-desktop-nav :is(a, button) { min-height: 44px; padding-inline: 0; color: var(--sf-text-muted); font-size: 15px; font-weight: 700; letter-spacing: .06em; }
+html[data-theme-family="crystal"] .landing-desktop-nav :is(a, button):hover { color: var(--sf-text); }
+html[data-theme-family="crystal"] .landing-theme-toggle { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); }
+html[data-theme-family="crystal"] .landing-sign-in { padding-inline: 8px; color: var(--sf-text); font-size: 15px; font-weight: 700; }
+html[data-theme-family="crystal"] .landing-header-start { height: 44px; padding-inline: 22px; background: var(--crystal-cta-bg); box-shadow: none; color: #fff; font-size: 15px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .landing-crystal-mark,.landing-crystal-brand { display: none; }
 html[data-theme-family="crystal"] .landing-classic-mark,html[data-theme-family="crystal"] .landing-classic-brand { display: none; }
-html[data-theme-family="crystal"] .landing-crystal-mark { display: block; filter: drop-shadow(0 0 10px rgb(255 42 77 / .7)); }
-html[data-theme-family="crystal"] .landing-crystal-brand { display: inline; color: var(--sf-text); font: italic 900 26px Kanit,Nunito,sans-serif; letter-spacing: .01em; }
-html[data-theme-family="crystal"] .landing-crystal-brand em { color: var(--sf-brand-text); }
-.landing-theme-toggle { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid var(--sf-border); border-radius: 50%; background: var(--sf-surface-control); color: var(--sf-text); }
-html[data-theme-family="crystal"] .landing-theme-toggle { border-radius: 0; clip-path: var(--nk-chamfer-sm); }
-html[data-theme-family="crystal"] .landing-copy h1 { font-family: var(--sf-font-display, Geist, sans-serif); font-style: italic; font-weight: 900; text-shadow: 0 5px 0 color-mix(in srgb, var(--sf-brand-hover) 80%, #7a0820); }
-html[data-theme-family="crystal"] .landing-card > div:last-child { clip-path: polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px); border-radius: 0; }
-@media (min-width: 1024px) { .landing-header { padding-inline: 16px; } .landing-hero { grid-template-columns: minmax(0, 1fr) 500px !important; gap: 56px; } .landing-card { max-width: 380px; } }
-@media (max-width: 639px) { .landing-header { min-height: 64px; } html[data-theme-family="classic"] .landing-hero { min-height: 0; padding: 24px 0 0; } .landing-copy h1 { font-size: clamp(3.5rem, 18vw, 5.5rem) !important; } .landing-card { max-width: 320px; } .landing-demo-pronunciation { display: none; } html[data-theme-family="classic"] .landing-card > div:last-child img { height: 144px; } .landing-atmospheres { margin-top: 8px; } }
+html[data-theme-family="crystal"] .landing-crystal-mark { display: block; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--sf-brand) 70%, transparent)); }
+html[data-theme-family="crystal"] .landing-crystal-brand { display: inline; color: var(--sf-text); font: italic 900 26px var(--sf-font-display); letter-spacing: .01em; }
+html[data-theme-family="crystal"] .landing-crystal-brand em { color: var(--sf-brand-text); font-style: inherit; }
+html[data-theme-family="crystal"] .landing-atmospheres { display: none; }
 
-/* Direct port of AnimeLanding's full-bleed Crystal Star composition. */
-.crystal-landing-hero { position: relative; flex: none; width: calc(100% + 96px); height: calc(100svh - 84px); min-height: 760px; margin-inline: -48px; display: grid; grid-template-columns: 640px minmax(0, 1fr); align-items: start; overflow: hidden; padding: 32px 0 76px 80px; }
-.crystal-landing-hero::before { position: absolute; inset: 0 -8vw; z-index: -2; content: ""; background: radial-gradient(ellipse at 74% 38%, color-mix(in srgb, var(--sf-brand) 38%, transparent), transparent 28%), radial-gradient(ellipse at 36% 105%, color-mix(in srgb, var(--sf-brand-hover) 38%, transparent), transparent 35%), var(--sf-canvas); }
-.crystal-landing-hero::after { position: absolute; inset: 0; z-index: -1; content: ""; opacity: .58; background-image: radial-gradient(circle at 12% 14%, #fff 0 1px, transparent 1.5px), radial-gradient(circle at 53% 9%, #fff 0 2px, transparent 3px), radial-gradient(circle at 88% 25%, #fff 0 1px, transparent 1.5px), radial-gradient(circle at 70% 78%, #fff 0 1px, transparent 1.5px); }
+.crystal-landing-hero { position: relative; flex: none; width: calc(100% + 96px); height: calc(100svh - 100px); min-height: 760px; margin-inline: -48px; display: grid; grid-template-columns: 640px minmax(0, 1fr); align-items: start; overflow: hidden; padding: 36px 0 0 80px; box-sizing: border-box; }
 .crystal-copy { position: relative; z-index: 2; max-width: 620px; padding: 0; }
-.crystal-badge { display: inline-flex; padding: 8px 18px; transform: skewX(-16deg); background: var(--sf-brand); color: var(--sf-on-brand); font: 800 italic .78rem/1 var(--font-sans); letter-spacing: .14em; text-transform: uppercase; }
+.crystal-badge { display: inline-flex; height: 32px; align-items: center; padding: 0 18px; transform: skewX(-16deg); background: var(--crystal-cta-bg); }
+.crystal-badge > span { transform: skewX(16deg); color: #fff; font: italic 800 13px/1 var(--sf-font-display); letter-spacing: .16em; text-transform: uppercase; }
 /* `color` carries a solid fallback (and keeps this headline a real, opaque
    text node) while `-webkit-text-fill-color: transparent` — not `color` —
    punches the actual hole for the gradient clip to show through, so the
@@ -45,46 +208,58 @@ html[data-theme-family="crystal"] .landing-card > div:last-child { clip-path: po
    background-clip: text. A fully `color: transparent` headline paints
    nothing the Largest Contentful Paint heuristic recognizes as text, so it
    never competes against page images for LCP no matter how small they are. */
-.crystal-copy h1 { margin: 28px 0 0; font-family: var(--sf-font-display, Geist, sans-serif); font-size: 112px; font-style: italic; font-weight: 900; line-height: .92; letter-spacing: -.01em; text-transform: uppercase; background: linear-gradient(180deg, #2a1040 0%, #150a28 45%, #b30f33 60%, #ff2a4d 100%); -webkit-background-clip: text; background-clip: text; color: #ff2a4d; -webkit-text-fill-color: transparent; filter: drop-shadow(0 5px 0 #7a0820) drop-shadow(0 0 30px rgb(255 42 77 / .6)); }
+.crystal-copy h1 { margin: 18px 0 0; font-family: var(--sf-font-display, Geist, sans-serif); font-size: 112px; font-style: italic; font-weight: 900; line-height: .92; letter-spacing: -.01em; text-transform: uppercase; background: linear-gradient(180deg, #2a1040 0%, #150a28 45%, var(--sf-brand-hover) 60%, var(--sf-brand) 100%); -webkit-background-clip: text; background-clip: text; color: var(--sf-brand); -webkit-text-fill-color: transparent; filter: drop-shadow(0 5px 0 var(--wing-deep)) drop-shadow(0 0 30px color-mix(in srgb, var(--sf-brand) 60%, transparent)); }
 html.dark .crystal-copy h1 { background-image: linear-gradient(180deg, #ffffff 0%, #ffe3ea 45%, #ff8fa3 60%, #ffffff 100%); color: #ffe3ea; }
-.crystal-tagline { margin: 28px 0 0; max-width: 570px; color: var(--sf-text); font-family: var(--sf-font-display, Geist, sans-serif); font-size: clamp(1.5rem, 2.3vw, 2rem); font-style: italic; font-weight: 800; line-height: 1.2; }
-.crystal-description { max-width: 530px; margin-top: 16px; color: var(--sf-text-muted); font-size: 1rem; line-height: 1.65; }
-.crystal-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 32px; }
-.crystal-primary, .crystal-secondary { min-height: 58px; padding: 0 28px; border: 0; clip-path: polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px); font-family: var(--sf-font-display, Geist, sans-serif); font-size: 1rem; font-style: italic; font-weight: 900; letter-spacing: .045em; text-transform: uppercase; cursor: pointer; }
-.crystal-primary { display: inline-flex; align-items: center; gap: 10px; background: var(--sf-brand); color: var(--sf-on-brand); box-shadow: 0 12px 28px -12px var(--sf-brand); }
-.crystal-secondary { color: var(--sf-text); background: color-mix(in srgb, var(--sf-surface) 86%, transparent); box-shadow: inset 0 0 0 1px var(--sf-border); }
+.crystal-tagline { max-width: 560px; margin: 22px 0 0; color: var(--sf-text); font: italic 700 30px/1.22 var(--sf-font-display, Geist, sans-serif); }
+.crystal-tagline > span { color: var(--sf-brand-text); }
+.crystal-description { max-width: 520px; margin: 16px 0 0; color: var(--crystal-body); font-size: 16.5px; line-height: 1.6; }
+.crystal-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 32px; }
+.crystal-primary, .crystal-secondary { position: relative; display: inline-flex; align-items: center; height: 62px; border: 0; overflow: hidden; clip-path: var(--nk-chamfer); font-family: var(--sf-font-display, Geist, sans-serif); font-style: italic; cursor: pointer; }
+.crystal-primary { gap: 12px; padding: 0 40px; background: var(--crystal-cta-bg); color: #fff; font-size: 21px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+.crystal-primary > :not(.crystal-shine) { position: relative; }
+.crystal-shine { position: absolute; top: 0; bottom: 0; left: 0; width: 60px; background: rgb(255 255 255 / .4); opacity: 0; transform: translateX(-80px) skewX(-20deg); }
+@media (prefers-reduced-motion: no-preference) { html:not([data-motion="reduced"]) .crystal-shine { opacity: 1; animation: crystal-cta-shine 3.2s ease-in-out infinite; } }
+@keyframes crystal-cta-shine { 0%, 55% { transform: translateX(-80px) skewX(-20deg); } 100% { transform: translateX(420px) skewX(-20deg); } }
+.crystal-secondary { padding: 0 28px; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text); font-size: 18px; font-weight: 700; letter-spacing: .04em; }
+:is(.crystal-primary, .crystal-secondary):focus-visible { outline: 2px solid var(--sf-text); outline-offset: 3px; }
+.crystal-proof { display: inline-flex; align-items: center; gap: 8px; height: 36px; margin: 30px 0 0; padding: 0 14px; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text-muted); font-size: 14px; font-weight: 700; }
+.crystal-proof > span { width: 8px; height: 8px; transform: rotate(45deg); background: var(--sf-second); box-shadow: 0 0 8px var(--sf-second); }
+.crystal-proof strong { color: var(--sf-text); font-weight: 900; }
+
 .crystal-card-stage { position: relative; align-self: stretch; min-height: 610px; }
-.crystal-card-stage::before, .crystal-card-stage::after { position: absolute; content: ""; pointer-events: none; }
-.crystal-card-stage::before { top: 34px; right: -70px; width: 390px; height: 480px; opacity: .66; background: linear-gradient(130deg, transparent 27%, color-mix(in srgb, var(--sf-brand) 74%, transparent) 28% 43%, transparent 44%), linear-gradient(162deg, transparent 24%, color-mix(in srgb, var(--sf-brand-hover) 84%, transparent) 25% 49%, transparent 50%), linear-gradient(116deg, transparent 38%, color-mix(in srgb, var(--sf-brand) 52%, transparent) 39% 64%, transparent 65%); clip-path: polygon(48% 0,62% 20%,100% 6%,78% 45%,100% 72%,61% 60%,44% 100%,32% 64%,0 77%,23% 43%,0 21%,37% 28%); }
-.crystal-card-stage::after { bottom: -50px; left: 10%; width: 250px; height: 155px; opacity: .58; background: linear-gradient(55deg, transparent 32%, var(--sf-brand) 33% 47%, transparent 48%), linear-gradient(112deg, transparent 24%, var(--sf-brand-hover) 25% 43%, transparent 44%); clip-path: polygon(0 100%,14% 22%,29% 100%,44% 36%,58% 100%,76% 0,100% 100%); }
-.crystal-flare { position: absolute; top: 10%; left: 50%; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--sf-brand) 50%, transparent), transparent 68%); filter: blur(18px); }
-.crystal-demo-card { position: absolute; width: 230px; height: 310px; padding: 18px; overflow: hidden; clip-path: polygon(18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%,0 18px); background: linear-gradient(145deg, #11182b, #070b15); box-shadow: inset 0 0 0 3px var(--sf-brand), 0 24px 35px -18px #000; color: #fff; display: flex; flex-direction: column; }
-.crystal-demo-card::before { display: none; }
-.crystal-demo-card > img { position: absolute; top: 3px; right: 3px; left: 3px; width: calc(100% - 6px); height: 46%; object-fit: cover; clip-path: polygon(0 0,100% 0,100% 80%,0 100%); }
-.crystal-demo-card span, .crystal-demo-card strong, .crystal-demo-card small, .crystal-demo-card b { position: relative; }
-.crystal-demo-card span { align-self: flex-start; padding: 5px 9px; margin-top: 2px; background: var(--sf-brand); font-size: .62rem; font-weight: 900; text-transform: uppercase; }
-.crystal-demo-card span i { margin-right: 4px; color: #fff; font-style: italic; font-size: .84rem; }
-.crystal-demo-card strong { margin-top: auto; font-family: var(--sf-font-display, Geist, sans-serif); font-size: 2rem; font-style: italic; line-height: 1; }
-.crystal-demo-card small { margin-top: 6px; color: #bac7d8; font-family: ui-monospace, monospace; }
-.crystal-demo-card b { margin-top: auto; color: #ff90a3; font-family: var(--sf-font-display, Geist, sans-serif); font-size: 1.12rem; font-style: italic; }
-.crystal-demo-left { top: 29%; left: 18%; transform: rotate(-14deg); opacity: .9; }
-.crystal-demo-right { top: 25%; right: 2%; transform: rotate(14deg); opacity: .9; }
-.crystal-demo-main { z-index: 2; top: 14%; left: 57%; transform: translateX(-50%); box-shadow: inset 0 0 0 3px #ffe28c, 0 30px 45px -18px #000; }
-/* At 1440px (the smallest width this shows at — see the display:none rule
-   below) .crystal-card-stage is 720px, headline text ends at ~643px in the
-   viewport, and .crystal-demo-left's rotated bounding box starts at ~815.5px
-   — a ~172px gap. The original 225px width didn't fit either side at
-   `left: -14%`; shrunk to fit both with a margin. */
-.crystal-hero-lumi { position: absolute; z-index: 3; bottom: 50px; left: -8%; width: 140px; height: 355px; max-width: none; object-fit: contain; filter: drop-shadow(0 12px 18px rgb(0 0 0 / .6)); }
-.crystal-ribbon { position: absolute; right: -5%; bottom: 14px; left: -5%; display: flex; justify-content: center; gap: clamp(20px, 5vw, 76px); height: 58px; padding: 0 36px; overflow: hidden; transform: skewY(-1.5deg); background: var(--sf-brand); box-shadow: 0 0 32px color-mix(in srgb, var(--sf-brand) 65%, transparent); color: var(--sf-on-brand); font-family: var(--sf-font-display, Geist, sans-serif); font-size: .9rem; font-style: italic; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; align-items: center; white-space: nowrap; }
-html[data-theme-family="crystal"] .landing-atmospheres { display: none; }
-html[data-theme-family="crystal"] .landing-header { transform: translateY(-20px); }
-@media (min-width: 1280px) and (max-width: 1439px) { html[data-theme-family="crystal"] .landing-header { gap: 6px; padding-inline: 0; } html[data-theme-family="crystal"] .landing-header nav :is(a, button) { padding-inline: 6px; font-size: .78rem; } html[data-theme-family="crystal"] .landing-header .brand-action { padding-inline: 10px; font-size: .78rem; } }
-/* Below 1440px the hero grid has too little width for Lumi to sit beside the
-   headline/demo card without overlapping either — hide it rather than
-   shrinking it further. This wins over any width/height rule for
-   `.crystal-hero-lumi` at a narrower breakpoint since none of those set
-   `display`, so they never need their own size overrides. */
-@media (max-width: 1399px) { .crystal-hero-lumi { display: none; } }
-@media (max-width: 900px) { .crystal-landing-hero { width: 100%; height: auto; min-height: 720px; margin: 0; grid-template-columns: 1fr; row-gap: 28px; padding: 42px 0 76px; } .crystal-card-stage { min-height: 330px; margin-top: 0; overflow: hidden; } .crystal-demo-card { width: 160px; height: 215px; padding: 12px; } .crystal-demo-card strong { font-size: 1.45rem; } .crystal-demo-left { left: 18%; } .crystal-demo-right { right: 4%; } .crystal-demo-main { left: 57%; } }
-@media (max-width: 639px) { .crystal-landing-hero { min-height: 720px; padding-bottom: 72px; } .crystal-copy { min-width: 0; padding-left: 0; } .crystal-copy h1 { max-width: 100%; font-size: clamp(3rem, 16vw, 4rem); overflow-wrap: anywhere; } .crystal-tagline { font-size: 1.35rem; } .crystal-description { max-width: 21rem; font-size: .93rem; } .crystal-actions { display: grid; grid-template-columns: 1fr; max-width: 18rem; margin-top: 20px; } .crystal-primary, .crystal-secondary { width: 100%; min-height: 48px; padding-inline: 14px; font-size: .78rem; white-space: nowrap; justify-content: center; } .crystal-card-stage { min-width: 0; min-height: 290px; overflow: hidden; } .crystal-demo-card { width: 142px; height: 205px; } .crystal-demo-left { left: 2%; } .crystal-demo-main { left: 57%; } .crystal-demo-right { display: none; } .crystal-ribbon { justify-content: flex-start; gap: 30px; font-size: .72rem; } }
+.crystal-stage-wings { position: absolute; top: -46px; left: -130px; width: 960px; height: 640px; filter: drop-shadow(0 0 40px color-mix(in srgb, var(--sf-brand) 65%, transparent)); }
+.crystal-hero-flare { position: absolute; top: -26px; left: 470px; width: 180px; height: 180px; }
+.crystal-hero-flare > span { position: absolute; }
+.crystal-hero-flare > span:nth-child(1) { top: 50%; right: 0; left: 0; height: 3px; margin-top: -1.5px; background: linear-gradient(90deg, transparent, #fff, transparent); }
+.crystal-hero-flare > span:nth-child(2) { top: 0; bottom: 0; left: 50%; width: 3px; margin-left: -1.5px; background: linear-gradient(180deg, transparent, #fff, transparent); }
+.crystal-hero-flare > span:nth-child(3) { top: 50%; left: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #fff; box-shadow: 0 0 22px 8px color-mix(in srgb, var(--wing-light) 80%, transparent); }
+.crystal-card-deck { position: absolute; top: 94px; left: 130px; width: 600px; height: 420px; }
+.crystal-demo-card { --tier-rim: var(--sf-rim-new); --tier-soft: color-mix(in srgb, var(--sf-second) 50%, transparent); --tier-text: var(--crystal-holo); position: absolute; top: 60px; left: 0; z-index: 1; width: 230px; height: 320px; transform: rotate(-14deg); filter: drop-shadow(0 26px 30px rgb(0 0 0 / .45)) drop-shadow(0 0 20px var(--tier-soft)); }
+.crystal-demo-card[data-tier="learning"] { --tier-rim: var(--sf-rim-learning); --tier-soft: color-mix(in srgb, var(--wing-edge) 55%, transparent); --tier-text: var(--crystal-pink); }
+.crystal-demo-card[data-tier="mastered"] { --tier-rim: var(--sf-gold-rim); --tier-soft: color-mix(in srgb, var(--sf-brand) 60%, transparent); --tier-text: var(--sf-brand-text); }
+.crystal-demo-card::before { position: absolute; inset: 0; content: ""; clip-path: var(--nk-chamfer); background: var(--tier-rim); }
+.crystal-demo-right { top: 60px; left: 330px; z-index: 2; transform: rotate(14deg); }
+.crystal-demo-main { top: 0; left: 165px; z-index: 3; transform: none; }
+.crystal-demo-face { position: absolute; inset: 3px; display: flex; flex-direction: column; overflow: hidden; clip-path: var(--nk-chamfer); background: var(--crystal-card-front); }
+.crystal-demo-art { position: relative; height: 150px; flex: none; overflow: hidden; clip-path: polygon(0 0, 100% 0, 100% 80%, 0 100%); }
+.crystal-demo-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.crystal-demo-art > span { position: absolute; top: 12px; left: 12px; display: flex; height: 28px; align-items: center; gap: 6px; padding: 0 10px; clip-path: var(--nk-chamfer-sm); background: var(--tier-rim); color: var(--sf-on-brand); font: italic 700 11px/1 var(--sf-font-display); }
+.crystal-demo-art > span i { color: #fff; font-size: 16px; font-weight: 900; text-shadow: 0 2px 0 var(--wing-deep); }
+.crystal-demo-face > strong { padding: 4px 16px 0; color: var(--sf-text); font: italic 900 32px/1.05 var(--sf-font-display); }
+.crystal-demo-face > small { margin-top: 2px; padding: 0 16px; color: var(--sf-text-muted); font: 12px/1.3 "Geist Mono", ui-monospace, monospace; }
+.crystal-demo-face > b { margin-top: auto; padding: 0 16px 16px; color: var(--tier-text); font: italic 800 19px/1.2 var(--sf-font-display); }
+.crystal-hero-lumi { position: absolute; z-index: 5; top: 103px; left: -70px; width: 210px; height: 571px; max-width: none; object-fit: contain; object-position: 50% 100%; -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 99%); mask-image: linear-gradient(180deg, #000 80%, transparent 99%); filter: drop-shadow(0 0 16px color-mix(in srgb, var(--sf-second) 35%, transparent)); transform: scale(.3); transform-origin: 50% 100%; transition: transform 700ms var(--nk-snap); }
+.crystal-hero-lumi[data-revealed] { transform: none; }
+.crystal-ribbon { position: absolute; right: -40px; bottom: 28px; left: -40px; z-index: 5; display: flex; height: 64px; align-items: center; overflow: hidden; transform: skewY(-1.5deg); background: var(--crystal-ribbon-bg); box-shadow: 0 0 40px -6px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
+.crystal-ribbon-track { display: flex; flex: none; white-space: nowrap; }
+.crystal-ribbon-track > span { display: flex; align-items: center; gap: 18px; padding: 0 18px; color: #fff; font: italic 800 19px/1 var(--sf-font-display); letter-spacing: .06em; }
+.crystal-ribbon-track svg { flex: none; color: var(--sf-reward); }
+@media (prefers-reduced-motion: no-preference) { html:not([data-motion="reduced"]) .crystal-ribbon-track { animation: crystal-ribbon-marquee 48s linear infinite; } }
+@keyframes crystal-ribbon-marquee { to { transform: translateX(-50%); } }
+@media (min-width: 1280px) and (max-width: 1439px) { html[data-theme-family="crystal"] .landing-header { gap: 6px; padding-inline: 0; } html[data-theme-family="crystal"] .landing-desktop-nav { gap: 14px; margin-left: 8px; } html[data-theme-family="crystal"] .landing-header nav :is(a, button) { font-size: .78rem; } html[data-theme-family="crystal"] .landing-header .brand-action { padding-inline: 10px; font-size: .78rem; } }
+/* Below 1400px the hero grid has too little width for Lumi to sit beside the
+   headline and demo cards without overlapping either, so it is hidden. */
+@media (max-width: 1399px) { .crystal-hero-lumi { display: none; } .crystal-card-deck { left: 40px; transform: scale(.86); transform-origin: top left; } }
+@media (max-width: 1279px) { .crystal-landing-hero { grid-template-columns: 520px minmax(0, 1fr); padding-left: 48px; } .crystal-copy h1 { font-size: 96px; } .crystal-card-deck { left: 0; transform: scale(.7); } .crystal-stage-wings { left: -220px; transform: scale(.75); transform-origin: top left; } }
+@media (max-width: 900px) { .crystal-landing-hero { width: 100%; height: auto; min-height: 720px; margin: 0; grid-template-columns: 1fr; row-gap: 28px; padding: 42px 0 104px; } .crystal-card-stage { min-height: 330px; margin-top: 0; overflow: hidden; } .crystal-card-deck { top: 4px; left: 50%; transform: translateX(-50%) scale(.72); transform-origin: top center; } .crystal-stage-wings { top: -40px; left: 50%; transform: translateX(-50%) scale(.6); transform-origin: top center; } .crystal-hero-flare { display: none; } }
+@media (max-width: 639px) { .crystal-landing-hero { min-height: 720px; padding-bottom: 96px; } .crystal-copy { min-width: 0; padding-left: 0; } .crystal-copy h1 { max-width: 100%; font-size: clamp(3rem, 16vw, 4rem); overflow-wrap: anywhere; } .crystal-tagline { font-size: 1.35rem; } .crystal-description { max-width: 21rem; font-size: .93rem; } .crystal-actions { display: grid; grid-template-columns: 1fr; max-width: 18rem; margin-top: 20px; } .crystal-primary, .crystal-secondary { width: 100%; height: 52px; padding-inline: 14px; font-size: .95rem; white-space: nowrap; justify-content: center; } .crystal-proof { margin-top: 20px; } .crystal-card-stage { min-width: 0; min-height: 270px; overflow: hidden; } .crystal-card-deck { transform: translateX(-50%) scale(.56); } .crystal-ribbon { bottom: 20px; height: 52px; } .crystal-ribbon-track > span { gap: 12px; padding: 0 12px; font-size: 14px; } }

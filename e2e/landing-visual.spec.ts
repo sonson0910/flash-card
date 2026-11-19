@@ -101,13 +101,13 @@ for (const mode of ['light', 'dark'] as const) for (const reducedMotion of ['red
     const back = card.locator(':scope > div').last();
     await expect(front).toBeVisible();
     await expect(back).toBeHidden();
-    await expect(front.getByText('immediate', { exact: true })).toBeVisible();
+    await expect(front.getByText('Immediate', { exact: true })).toBeVisible();
     await card.focus();
     await page.keyboard.press('Enter');
     await expect(card).toHaveAttribute('aria-pressed', 'true');
     await expect(front).toBeHidden();
     await expect(back).toBeVisible();
-    await expect(back).toContainText('happening or done without delay');
+    await expect(back).toContainText('Ngay lập tức');
     await testInfo.attach('Sample card meaning', { body: await card.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
     await page.keyboard.press('Space');
     await expect(card).toHaveAttribute('aria-pressed', 'false');
