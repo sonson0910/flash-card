@@ -38,7 +38,7 @@ const webWordsStateFixturePlugin = (): Plugin => ({
       export function useWebWordsPage() {
         const status = new URLSearchParams(location.search).get('state') || 'loading';
         return { state: {
-          status, groups: [], filters: { site: null, day: null, tier: null }, availableSites: [], availableDays: [],
+          status, groups: [], filters: { site: null, day: null, tier: null }, availableSites: [], availableDays: [], statusScopeCount: 0,
           hasNext: false, isLoadingMore: false, selectedCardIds: new Set(), addToTodayStatus: 'idle',
         }, actions };
       }
@@ -148,15 +148,20 @@ for (const theme of themes) for (const viewport of viewports) {
 
     const workspace = page.getByRole('region', { name: 'Web words' });
     await expect(workspace).toBeVisible();
-    await expect(workspace.getByText('Words captured while reading the web.')).toBeVisible();
+    await expect(workspace.getByText('Saved with the SonFlash extension — each one keeps the sentence you found it in.')).toBeVisible();
+    await expect(workspace.getByRole('heading', { level: 1, name: 'Words you met on the web' })).toBeVisible();
     await expect(workspace.getByLabel('Site')).toBeVisible();
     await expect(workspace.getByLabel('Day')).toBeVisible();
     await expect(workspace.getByLabel('Status')).toBeVisible();
     await expect(workspace.getByText('The flood that rewrote a city’s plans overnight')).toBeVisible();
     await expect(workspace.getByText('Oceans are heating faster than models predicted')).toBeVisible();
-    await expect(workspace.getByText('resilient', { exact: true })).toBeVisible();
+    // Each word shows once as the row's term and once marked inside its saved sentence.
+    await expect(workspace.getByText('resilient', { exact: true })).toHaveCount(2);
+    await expect(workspace.getByText('resilient', { exact: true }).first()).toBeVisible();
     await expect(workspace.getByText('unprecedented', { exact: true })).toBeVisible();
     await expect(workspace.getByText('The resilient community rebuilt the bridge after the flood.')).toBeVisible();
+    await expect(workspace.locator('mark', { hasText: 'resilient' })).toBeVisible();
+    await expect(workspace.locator('mark', { hasText: 'Unprecedented' })).toBeVisible();
     await expect(workspace.getByRole('checkbox')).toHaveCount(4);
     await workspace.getByRole('checkbox', { name: 'Select resilient' }).check();
     await expect(workspace.getByRole('button', { name: 'Add to today' })).toBeVisible();

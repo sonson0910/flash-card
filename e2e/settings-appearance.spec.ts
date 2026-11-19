@@ -95,14 +95,19 @@ test('Lumi, motion and sound settings persist after reload', async ({ page, sign
 test('reminder schedule saves to the signed-in owner and loads after reload', async ({ page, signIn, seedCourseProfile }) => {
   await seedCourseProfile();
   await signIn(page, '/?view=settings&locale=en');
+  const sections = page.getByRole('navigation', { name: 'Settings sections' });
+  await sections.getByRole('button', { name: 'Reminders' }).click();
+  await expect(sections.getByRole('button', { name: 'Reminders' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('heading', { level: 1, name: 'A nudge, not a nag.' })).toBeVisible();
   const reminders = page.getByRole('region', { name: 'Study reminders' });
   await expect(reminders.getByRole('button', { name: 'Save reminders' })).toBeEnabled();
-  await reminders.getByLabel('Send at').fill('09:30');
+  await reminders.getByLabel('Send at').selectOption('09:30');
   await reminders.getByLabel('Sun', { exact: true }).uncheck();
   await reminders.getByRole('button', { name: 'Save reminders' }).click();
   await expect(reminders.getByRole('status')).toHaveText('Reminder settings saved.');
 
   await page.reload();
+  await sections.getByRole('button', { name: 'Reminders' }).click();
   await expect(reminders.getByLabel('Send at')).toHaveValue('09:30');
   await expect(reminders.getByLabel('Sun', { exact: true })).not.toBeChecked();
 });
@@ -183,18 +188,23 @@ for (const theme of [
         const bounds = element.getBoundingClientRect();
         const row = element.closest('label')!.getBoundingClientRect();
         const target = document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
-        return { width: bounds.width, height: bounds.height, rowHeight: row.height, reachable: target === element, appearance: getComputedStyle(element).appearance };
+        return { width: bounds.width, height: bounds.height, rowHeight: row.height, reachable: target === element, appearance: getComputedStyle(element).appearance, compact: Boolean(element.closest('.ss-sound-tile')) };
       });
       expect(switchGeometry.rowHeight).toBeGreaterThanOrEqual(44);
       expect(switchGeometry.reachable).toBe(true);
       expect(switchGeometry.appearance).toBe('none');
       if (theme.family === 'classic') {
-        expect(switchGeometry.width).toBe(42);
-        expect(switchGeometry.height).toBe(24);
+        // Study-sound tiles use the board's compact track; preference rows keep the full one.
+        expect([switchGeometry.width, switchGeometry.height]).toEqual(switchGeometry.compact ? [36, 20] : [42, 24]);
+        const rowSwitch = await stage.getByRole('switch').first().evaluate(element => {
+          const bounds = element.getBoundingClientRect();
+          return [bounds.width, bounds.height];
+        });
+        expect(rowSwitch).toEqual([42, 24]);
       }
       await page.screenshot({ path: test.info().outputPath(`settings-controls-${theme.family}-${theme.mode}-${locale}-${width}.png`) });
       const result = await new AxeBuilder({ page }).withRules(['color-contrast', 'aria-required-attr', 'button-name', 'landmark-one-main']).analyze();
-      expect(result.violations.map(violation => violation.id)).toEqual([]);
+      expect(result.violations.map(violation => `${violation.id}: ${violation.nodes.map(node => node.target.join(' ')).join(', ')}`)).toEqual([]);
     });
   }
 }

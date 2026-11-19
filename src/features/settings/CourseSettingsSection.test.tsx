@@ -32,12 +32,12 @@ describe('CourseSettingsSection', () => {
     const html = renderToStaticMarkup(<I18nProvider i18n={i18n}><CourseContext.Provider value={value}><CourseSettingsSection /></CourseContext.Provider></I18nProvider>);
 
     expect(html).toContain('App language');
-    expect(html).toMatch(/data-settings-active-course[^>]*>.*Active course.*Chinese.*Vietnamese.*HSK.*HSK 4.*2026-12-01/);
-    expect(html).toContain('Meaning language');
-    expect(html).toMatch(/data-settings-course-language[^>]*>.*App language.*Meaning language/);
+    expect(html).toMatch(/data-settings-active-course[^>]*>.*Active.*Chinese.*Vietnamese.*HSK.*HSK 4.*2026-12-01/);
+    expect(html).toContain('Meanings and explanations in');
+    expect(html).toMatch(/data-settings-course-language[^>]*>.*App language.*Meanings and explanations in.*name="settings-meaning-language"/);
     expect(html).toContain('Applies to new cards. Existing card meanings do not change.');
     expect(html).toContain('Daily pace');
-    expect(html).toMatch(/data-settings-course-preferences[^>]*>.*Daily pace.*Show romanization/);
+    expect(html).toMatch(/data-settings-course-preferences[^>]*>.*Show romanization.*Daily pace/);
     expect(html).toContain('Show romanization');
     expect(html).toContain('role="switch"');
     expect(html).toMatch(/<label[^>]*>.*Show romanization.*role="switch"/);
@@ -63,7 +63,7 @@ describe('CourseSettingsSection', () => {
     expect(html).not.toContain('data-settings-active-course');
     expect(html).toContain('Archived courses');
     expect(html).toContain('Japanese');
-    expect(html).not.toContain('Meaning language');
+    expect(html).not.toContain('Meanings and explanations in');
     expect(html).not.toContain('Daily pace');
     expect(html).not.toContain('Show romanization');
     expect(html).not.toContain('Chinese script');

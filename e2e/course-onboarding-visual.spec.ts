@@ -147,9 +147,12 @@ for (const theme of themes) for (const viewport of viewports) {
     await expectScreen(page, testInfo, `course-goals-${theme.family}-${theme.mode}-${viewport.name}`);
 
     await page.goto('/?view=settings&locale=en');
-    const settings = page.getByRole('heading', { name: 'Course and learning' }).locator('xpath=ancestor::section');
+    const settingsSections = page.getByRole('navigation', { name: 'Settings sections' });
+    await settingsSections.getByRole('button', { name: 'Language & courses' }).click();
+    await expect(settingsSections.getByRole('button', { name: 'Language & courses' })).toHaveAttribute('aria-current', 'page');
+    const settings = page.getByRole('region', { name: 'Language & courses' });
     await expect(settings).toBeVisible();
-    await expect(settings.getByText('Meaning language')).toBeVisible();
+    await expect(settings.getByText('Meanings and explanations in')).toBeVisible();
     await expect(settings.getByText('Daily pace')).toBeVisible();
     await expect(settings.getByRole('switch')).toBeChecked();
     await expect(settings.getByText('Applies to new cards. Existing card meanings do not change.')).toBeVisible();
@@ -168,16 +171,16 @@ for (const theme of themes) for (const viewport of viewports) {
         expect(activeCourseBox.y, 'active course stays above course preferences on desktop').toBeLessThan(coursePreferencesBox.y);
       } else {
         expect(activeCourseBox.y, 'active course stays before language controls on mobile').toBeLessThan(courseLanguageBox.y);
-        expect(courseLanguageBox.y, 'language controls stay before preferences on mobile').toBeLessThan(coursePreferencesBox.y);
+        // Course preferences live inside the active course card, so the card carries them ahead of the language controls.
+        expect(coursePreferencesBox.y, 'course preferences stay inside the active course card on mobile').toBeGreaterThan(activeCourseBox.y);
+        expect(coursePreferencesBox.y + coursePreferencesBox.height, 'course preferences stay inside the active course card on mobile').toBeLessThanOrEqual(activeCourseBox.y + activeCourseBox.height);
+        expect(coursePreferencesBox.y + coursePreferencesBox.height, 'course preferences come before the language controls on mobile').toBeLessThanOrEqual(courseLanguageBox.y);
       }
     }
     for (const control of await settings.locator('select').all()) {
       expect((await expectBox(control, 'course settings select')).height, 'settings selects meet the 44px touch target').toBeGreaterThanOrEqual(44);
     }
-    const appearance = page.getByRole('heading', { name: 'Appearance' }).locator('xpath=ancestor::section');
-    const coursePosition = await settings.boundingBox();
-    const appearancePosition = await appearance.boundingBox();
-    expect(coursePosition && appearancePosition && coursePosition.y < appearancePosition.y).toBeTruthy();
+    await expect(page.getByRole('heading', { level: 1, name: 'Language & courses' })).toBeVisible();
     await expectScreen(page, testInfo, `course-settings-${theme.family}-${theme.mode}-${viewport.name}`);
     // Compared last so a changed screen still leaves every later capture to review.
     expect(onboardingScreenshot.image).toMatchSnapshot(`${onboardingScreenshot.name}.png`);

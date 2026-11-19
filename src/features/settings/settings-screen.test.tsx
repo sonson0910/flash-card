@@ -22,4 +22,13 @@ describe('SettingsScreen', () => {
       expect(html).toContain(`data-theme-preview="${preview}"`);
     }
   });
+
+  it('opens the requested section with one page heading and marks it current in the section menu', () => {
+    const html = renderToStaticMarkup(<I18nProvider i18n={i18n}><ThemeProvider><SettingsScreen initialSection="sounds" /></ThemeProvider></I18nProvider>);
+    expect(html).toContain('aria-label="Settings sections"');
+    expect(html).toMatch(/aria-current="page"[^>]*>.*?Sounds &amp; haptics/);
+    expect(html.match(/<h1/g)).toHaveLength(1);
+    expect(html).toContain('Study sounds');
+    expect(html).not.toContain('data-theme-preview');
+  });
 });

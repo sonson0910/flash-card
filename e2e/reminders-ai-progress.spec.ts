@@ -12,14 +12,18 @@ test('reminder settings state the unavailable delivery channels for a signed-in 
   await seedCourseProfile();
   await blockExternalNetwork(page);
   await signIn(page, '/?view=settings&locale=en');
+  await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Reminders' }).click();
 
   const reminders = page.getByRole('region', { name: 'Study reminders' });
   await expect(reminders.getByLabel('Send at')).toBeVisible();
   await expect(reminders.getByRole('switch', { name: /Browser push/ })).toBeDisabled();
   await expect(reminders.getByText(/Push needs a supported browser and configured web push key\.|Browser notifications are blocked\. Allow them in your browser settings to turn on push\./)).toBeVisible();
-  await expect(reminders.getByRole('switch', { name: /Sunday email recap/ })).toBeDisabled();
+  await expect(reminders.getByRole('switch', { name: /Weekly digest/ })).toBeDisabled();
   await expect(reminders.getByText('Weekly email delivery is not available yet. You can turn off an existing recap, but new recaps cannot be enabled.')).toBeVisible();
-  await expect(reminders.getByText('The browser extension badge shows due cards separately; it is read only.')).toBeVisible();
+  const badge = reminders.locator('[data-reminder-badge]');
+  await expect(badge).toContainText('Extension badge');
+  await expect(badge).toContainText('Read only');
+  await expect(badge.getByRole('switch')).toHaveCount(0);
 });
 
 test('a signed-in owner can return from the AI creator and sees the tutor allowance limit before Gemini', async ({ page, db, testUser, seedCards, seedCourseProfile, signIn, blockExternalNetwork }) => {

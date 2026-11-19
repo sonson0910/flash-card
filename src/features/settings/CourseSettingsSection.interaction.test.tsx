@@ -67,6 +67,7 @@ const findButtons = (node: unknown): Tree[] => {
   const value = node as Tree;
   return [...(value.type === 'button' ? [value] : []), ...findButtons(value.props?.children)];
 };
+const findReopenButton = (node: unknown) => findButtons(node).find(button => Boolean(find(button.props?.children, child => child.props?.message === 'Reopen')));
 const render = () => { hooks.cursor = 0; return CourseSettingsSection(); };
 const flush = () => new Promise(resolve => { setTimeout(resolve, 0); });
 
@@ -154,12 +155,12 @@ describe('CourseSettingsSection preference writes', () => {
     session.model.profile = { courses: [archivedCourse] } as never;
     reopenCourse.mockResolvedValueOnce({ ok: false }).mockResolvedValueOnce({ ok: true });
     let tree = render();
-    (findButtons(tree).at(-1)?.props?.onClick as () => void)();
+    (findReopenButton(tree)?.props?.onClick as () => void)();
     await flush();
     tree = render();
     expect(find(tree, value => value.type === 'p' && value.props?.role === 'alert')).toBeDefined();
 
-    (findButtons(tree).at(-1)?.props?.onClick as () => void)();
+    (findReopenButton(tree)?.props?.onClick as () => void)();
     await flush();
     expect(reopenCourse).toHaveBeenCalledTimes(2);
   });

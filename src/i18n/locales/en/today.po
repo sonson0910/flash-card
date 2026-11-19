@@ -2232,3 +2232,91 @@ msgstr "Nothing due right now. Your words are blooming!"
 msgctxt "progress.subtitle.reviewed"
 msgid "{count, plural, one {<0>#</0> card reviewed} other {<0>#</0> cards reviewed}}"
 msgstr "{count, plural, one {<0>#</0> card reviewed} other {<0>#</0> cards reviewed}}"
+
+#: src/features/webWords/WebWordsPage.tsx:232
+msgctxt "webWords.lumi.tag"
+msgid "Lumi · Link"
+msgstr "Lumi · Link"
+
+#: src/features/webWords/WebWordsPage.tsx:233
+msgctxt "webWords.lumi.text"
+msgid "I keep the whole sentence, so you remember the context."
+msgstr "I keep the whole sentence, so you remember the context."
+
+#: src/features/webWords/WebWordsPage.tsx:89
+#: src/features/webWords/WebWordsPage.tsx:204
+msgctxt "webWords.chip.learning"
+msgid "Learning"
+msgstr "Learning"
+
+#: src/features/webWords/WebWordsPage.tsx:202
+msgctxt "webWords.tab.all"
+msgid "All {count}"
+msgstr "All {count}"
+
+#: src/features/webWords/WebWordsPage.tsx:199
+msgctxt "webWords.back.default"
+msgid "Back"
+msgstr "Back"
+
+#: src/features/webWords/WebWordsPage.tsx:274
+msgctxt "webWords.actions.add-selected-to-session"
+msgid "Add to today’s session"
+msgstr "Add to today’s session"
+
+#: src/features/webWords/WebWordsPage.tsx:275
+msgctxt "webWords.actions.add-all-to-session"
+msgid "Add all {count} to today’s session"
+msgstr "Add all {count} to today’s session"
+
+#: src/features/webWords/WebWordsPage.tsx:195
+msgctxt "webWords.back.library"
+msgid "Vocabulary"
+msgstr "Vocabulary"
+
+#: src/features/webWords/WebWordsPage.tsx:90
+#: src/features/webWords/WebWordsPage.tsx:205
+msgctxt "webWords.chip.known"
+msgid "Known"
+msgstr "Known"
+
+#: src/features/webWords/WebWordsPage.tsx:227
+msgctxt "webWords.page.description"
+msgid "Saved with the SonFlash extension — each one keeps the sentence you found it in."
+msgstr "Saved with the SonFlash extension — each one keeps the sentence you found it in."
+
+#: src/features/webWords/WebWordsPage.tsx:196
+msgctxt "webWords.back.today"
+msgid "Today"
+msgstr "Today"
+
+#: src/features/webWords/WebWordsPage.tsx:125
+msgctxt "webWords.group.open"
+msgid "Open {title} in a new tab"
+msgstr "Open {title} in a new tab"
+
+#: src/features/webWords/WebWordsPage.tsx:121
+msgctxt "webWords.group.word-count"
+msgid "{count, plural, one {# word} other {# words}}"
+msgstr "{count, plural, one {# word} other {# words}}"
+
+#: src/features/webWords/WebWordsPage.tsx:226
+msgctxt "webWords.page.heading"
+msgid "<0>Words you met</0> <1>on the web</1>"
+msgstr "<0>Words you met</0> <1>on the web</1>"
+
+#: src/features/webWords/WebWordsPage.tsx:198
+msgctxt "webWords.back.settings"
+msgid "Settings"
+msgstr "Settings"
+
+#: src/features/webWords/WebWordsPage.tsx:197
+msgctxt "webWords.back.progress"
+msgid "Progress"
+msgstr "Progress"
+
+#: src/features/webWords/WebWordsPage.tsx:88
+#: src/features/webWords/WebWordsPage.tsx:203
+msgctxt "webWords.chip.new"
+msgid "New"
+msgstr "New"

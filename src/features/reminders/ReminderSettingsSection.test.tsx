@@ -3,7 +3,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const owner = vi.hoisted(() => ({ id: 'owner-a' as string | null, onChange: undefined as ((ownerId: string | null) => void) | undefined }));
-const reminders = vi.hoisted(() => ({ load: vi.fn(), save: vi.fn(), canOfferPush: vi.fn() }));
+const reminders = vi.hoisted(() => ({ load: vi.fn(), save: vi.fn(), canOfferPush: vi.fn(), dueCount: vi.fn() }));
 
 vi.mock('@lingui/react', () => ({
   Trans: ({ message }: { message: string }) => message,
@@ -18,6 +18,7 @@ vi.mock('../session/ownerSessionPort', () => ({
 vi.mock('./reminderService', () => ({
   canOfferBrowserPush: reminders.canOfferPush,
   defaultReminderSettings: () => ({ days: [1], sendAtLocal: '08:00', timezone: 'UTC', locale: 'en', quietHours: null, onlyIfNotStudiedToday: true, channels: { push: false, emailDigest: false } }),
+  loadReminderDueCount: reminders.dueCount,
   loadReminderSettings: reminders.load,
   saveReminderSettings: reminders.save,
 }));
@@ -49,6 +50,7 @@ const installMinimalReactDom = () => {
     removeAttribute(name: string) { this.attributes.delete(name); }
     getAttribute(name: string) { return this.attributes.get(name) ?? null; }
     get disabled() { return this.disabledValue; }
+    get options() { return this.childNodes.filter((child): child is ElementNode => child.nodeName === 'OPTION'); }
     set disabled(value: boolean) { this.disabledValue = value; }
     addEventListener() {}
     removeEventListener() {}
@@ -87,20 +89,20 @@ const find = (container: ReturnType<typeof installMinimalReactDom>, tagName: str
 };
 const inputWithValue = (container: ReturnType<typeof installMinimalReactDom>, value: string) => {
   const visit = (node: typeof container): typeof container | undefined => {
-    if (node.tagName === 'INPUT' && node.value === value) return node;
+    if ((node.tagName === 'INPUT' || node.tagName === 'SELECT') && (node.value === value || reactProps(node)?.value === value)) return node;
     return node.childNodes.filter((child): child is typeof container => child.nodeType === 1).map(visit).find(Boolean);
   };
   return visit(container);
 };
 const reactProps = (element: ReturnType<typeof installMinimalReactDom>) => {
   const key = Object.keys(element).find(name => name.startsWith('__reactProps$'));
-  return key ? (element as unknown as Record<string, { disabled?: boolean }>)[key] : undefined;
+  return key ? (element as unknown as Record<string, { disabled?: boolean; value?: unknown }>)[key] : undefined;
 };
 const unmount = ({ root }: Mounted) => act(() => root.unmount());
 
 beforeEach(() => {
   owner.id = 'owner-a'; owner.onChange = undefined;
-  reminders.load.mockReset(); reminders.save.mockReset(); reminders.canOfferPush.mockReset().mockResolvedValue(false);
+  reminders.load.mockReset(); reminders.save.mockReset(); reminders.canOfferPush.mockReset().mockResolvedValue(false); reminders.dueCount.mockReset().mockResolvedValue(3);
   vi.unstubAllEnvs();
 });
 afterEach(() => vi.unstubAllGlobals());
