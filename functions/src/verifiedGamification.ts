@@ -1,7 +1,16 @@
 import type { DocumentData, DocumentReference, Firestore, Transaction } from 'firebase-admin/firestore';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
+import { parseAchievementRecords, parseAchievements } from './achievement-rules.js';
+import { backfilledAchievements, evaluateAchievements, isLateHour, loadAchievementBaseline } from './achievements.js';
 import { InputValidationError } from './inputValidation.js';
+import { nextStudyTime, parseStudyTime } from './study-time-rules.js';
+import { isCourseLanguage, nextWordWeeks, parseWordWeeks } from './word-week-rules.js';
+import {
+  STREAK_MILESTONE_XP, STREAK_REWARD_RUN, advanceStreak, initialStreakState, isStreakChangeWorthShowing, parseStreakState,
+  type StreakChange,
+} from './streak-rules.js';
+import { shiftStudyDay, weekStartOf } from './study-day-rules.js';
 import { CREATE_CARD_XP, REVIEW_CARD_XP } from './xp-rules.js';
 
 const VERIFIED_SCHEMA_VERSION = 1;
@@ -13,6 +22,11 @@ const MAX_REVIEW_ACTIVITY_LANGUAGES = 16;
 const MAX_REVIEW_ACTIVITY_COUNTER = Number.MAX_SAFE_INTEGER;
 const DAILY_GOALS_FIELD = 'dailyGoalsV1';
 const DAILY_GOALS_DAYS = 8;
+const STREAK_FIELD = 'streakV1';
+const ACHIEVEMENTS_FIELD = 'achievementsV1';
+const STUDY_TIME_FIELD = 'studyTimeV1';
+const WORD_WEEKS_FIELD = 'wordWeeksV1';
+const WEB_WANDERER_BADGE = 'web-wanderer';
 
 type ActionKind = 'review' | 'create' | 'quiz' | 'spelling' | 'match';
 type RewardEvent = 'streak' | 'levelup';
@@ -25,6 +39,25 @@ export type VerifiedGamificationAction = {
   rating?: 'again' | 'hard' | 'good' | 'easy';
   resultXp?: number;
   cardId?: string;
+  /** Facts about the reviewed card that only the review path holds. */
+  reviewedCard?: {
+    /** The card had never been reviewed. */
+    firstReview: boolean;
+    /** Rated Easy for the first time: not Easy now and no Easy in its history. */
+    firstEasy: boolean;
+    /** The card had no review evidence at all, so this review starts it. */
+    started: boolean;
+    /** This review made the card mastered. */
+    mastered: boolean;
+    /** Server-bounded times of every review in the card's history, this one included. */
+    reviewTimesMs: number[];
+  };
+  /** Correct answers of a verified spelling session. */
+  correctAnswers?: number;
+  /** Server time the completed practice session started. */
+  practiceStartedAt?: Date;
+  /** Cards in the completed practice session. */
+  practiceCards?: number;
 };
 
 export type VerifiedGamificationOutcome = {
@@ -36,6 +69,9 @@ export type VerifiedGamificationOutcome = {
   rewardTimeZone: string;
   xpAwarded?: number;
   reviewActivity?: VerifiedReviewActivity;
+  streakChange?: StreakChange;
+  /** Study time credited to this review or practice completion, in milliseconds. */
+  studyTimeMs?: number;
 };
 
 export type PreparedVerifiedGamification = {
@@ -192,11 +228,6 @@ const reviewActivityOutcome = (activity: ReviewActivity | undefined, language: u
   return coverageStartedOn && days ? { targetLanguage: language, coverageStartedOn, days } : undefined;
 };
 
-const previousDay = (day: string): string => {
-  const [year, month, date] = day.split('-').map(Number);
-  return new Date(Date.UTC(year, month - 1, date - 1)).toISOString().slice(0, 10);
-};
-
 const dayOffset = (day: string, offset: number): string => {
   const [year, month, date] = day.split('-').map(Number);
   return new Date(Date.UTC(year, month - 1, date + offset)).toISOString().slice(0, 10);
@@ -209,6 +240,16 @@ const isPlainMap = (value: unknown): value is Record<string, unknown> => isRecor
   && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 
 const isCount = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) >= 0;
+
+// Study days with at least one verified review in any course language. Read tolerantly: it only
+// seeds the best streak once, so a malformed map contributes nothing instead of failing.
+const reviewedDaysOf = (value: unknown): string[] => {
+  if (!isPlainMap(value) || !isPlainMap(value.daysByLanguage)) return [];
+  return Object.values(value.daysByLanguage).flatMap(days => (isPlainMap(days)
+    ? Object.entries(days).filter(([day, counters]) => isLocalDay(day) && isPlainMap(counters)
+      && isCount(counters.reviewed) && counters.reviewed > 0).map(([day]) => day)
+    : []));
+};
 
 // Daily goal progress per study day: cards that earned review XP and completed Word Matches.
 // The map is display-only and written only here, so a malformed stored value starts over
@@ -256,6 +297,17 @@ const replacingMergePatch = (stored: unknown, next: Record<string, unknown>): Do
 };
 
 const levelForXp = (xp: number) => Math.floor(Math.sqrt(xp / 100)) + 1;
+
+// Reviews whose time falls in the Monday week of `studyDay` in the account's time zone.
+const reviewsInWeekOf = (timesMs: unknown, studyDay: string, timeZone: string): number => {
+  if (!Array.isArray(timesMs)) return 0;
+  const weekStart = weekStartOf(studyDay);
+  const weekEnd = shiftStudyDay(weekStart, 6);
+  return timesMs.filter(time => typeof time === 'number' && Number.isFinite(time)).filter(time => {
+    const day = dayInTimeZone(new Date(time), timeZone);
+    return day >= weekStart && day <= weekEnd;
+  }).length;
+};
 
 const xpFor = (action: VerifiedGamificationAction): number => {
   if (action.kind === 'review') return REVIEW_CARD_XP;
@@ -320,34 +372,83 @@ export async function prepareVerifiedGamification(
     action.kind === 'match' ? 1 : 0,
   );
   const xp = counter(stats.verifiedXp);
-  const nextXp = xp + xpAwarded;
-  if (!Number.isSafeInteger(nextXp)) throw new InputValidationError('Verified XP exceeds its limit.');
   const oldLevel = levelForXp(xp);
-  const level = levelForXp(nextXp);
+  const crossesRewardLevel = (gain: number) => gain > 0 && oldLevel < 13 && levelForXp(xp + gain) >= 13;
   const lastDay = typeof stats.lastVerifiedStudyDay === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(stats.lastVerifiedStudyDay)
     ? stats.lastVerifiedStudyDay
     : null;
   const streak = counter(stats.verifiedStreak);
-  const nextStreak = action.kind !== 'review' || studyDay <= (lastDay ?? '')
-    ? streak
-    : lastDay === previousDay(studyDay) ? streak + 1 : 1;
-  const streakThreshold = streak < 30 && nextStreak >= 30;
-  const levelThreshold = hasXpAward && oldLevel < 13 && level >= 13;
-  let rewards: Record<string, unknown> = {};
-  if (streakThreshold || levelThreshold) {
-    const rewardsSnapshot = await transaction.get(refs.rewards);
-    const rewardsData = rewardsSnapshot.data();
-    rewards = rewardsSnapshot.exists && isRecord(rewardsData) ? rewardsData : {};
-  }
-  const receipts = isRecord(rewards.receipts) ? rewards.receipts : {};
-  const events: RewardEvent[] = [];
+  // The rewards document is read at most once: to fold the legacy freeze into the streak record on
+  // an account's first action after streak records began, or when a reward threshold is crossed.
+  const loaded: { rewards?: Record<string, unknown> } = {};
+  const readRewards = async (): Promise<Record<string, unknown>> => {
+    if (!loaded.rewards) {
+      const rewardsSnapshot = await transaction.get(refs.rewards);
+      const rewardsData = rewardsSnapshot.data();
+      loaded.rewards = rewardsSnapshot.exists && isRecord(rewardsData) ? rewardsData : {};
+    }
+    return loaded.rewards;
+  };
   const rewardsPatch: DocumentData = {};
+  let streakState = parseStreakState(stats[STREAK_FIELD]);
+  if (!streakState) {
+    // The record is display-only, so an unusable stored value starts over instead of failing the action.
+    if (stats[STREAK_FIELD] !== undefined) console.warn('Stored streak record was unusable and starts over.');
+    const legacyRewards = stats[STREAK_FIELD] === undefined && statsSnapshot.exists ? await readRewards() : {};
+    streakState = initialStreakState({
+      run: streak,
+      lastStudyDay: lastDay,
+      today: studyDay,
+      reviewedDays: reviewedDaysOf(stats.reviewActivityV1),
+      legacyFreezes: counter(legacyRewards.streakFreezes),
+      rewardReceiptHeld: isRecord(legacyRewards.receipts) && legacyRewards.receipts[STREAK_REWARD_RECEIPT] === true,
+    });
+    if (Object.hasOwn(legacyRewards, 'streakFreezes')) rewardsPatch.streakFreezes = FieldValue.delete();
+  }
+  // Achievements are recorded from the first evaluation on. That one evaluation reads a baseline;
+  // an unusable stored record is rebuilt the same way, keeping every valid badge and title record.
+  let achievementsBase = parseAchievements(stats[ACHIEVEMENTS_FIELD]);
+  let achievementsRebuilt = false;
+  let webWandererHeld = false;
+  if (!achievementsBase) {
+    if (stats[ACHIEVEMENTS_FIELD] !== undefined) console.warn('Stored achievements record was unusable and is rebuilt.');
+    const baseline = await loadAchievementBaseline(database, transaction, ownerId, statsSnapshot.exists ? refs.history : undefined);
+    if (baseline) {
+      const heldRewards = statsSnapshot.exists ? await readRewards() : {};
+      webWandererHeld = (isRecord(heldRewards.receipts) && heldRewards.receipts[STREAK_REWARD_RECEIPT] === true)
+        || (Array.isArray(heldRewards.unlockedBadgeIds) && heldRewards.unlockedBadgeIds.includes(WEB_WANDERER_BADGE));
+      const storedVersion = isRecord(stats[ACHIEVEMENTS_FIELD]) ? counter(stats[ACHIEVEMENTS_FIELD].catalogVersion) : 0;
+      achievementsBase = backfilledAchievements(studyDay, baseline, parseAchievementRecords(stats[ACHIEVEMENTS_FIELD]), storedVersion);
+      achievementsRebuilt = true;
+    }
+  }
+  const isReview = action.kind === 'review';
+  const streakInput = {
+    state: streakState, run: streak, lastStudyDay: lastDay, today: studyDay,
+    review: isReview, earnedXp: isReview && hasXpAward, grantsRewardFreeze: false,
+  };
+  let streakAdvance = advanceStreak(streakInput);
+  const streakThreshold = isReview && streakAdvance.previousRun < STREAK_REWARD_RUN && streakAdvance.run >= STREAK_REWARD_RUN;
+  const rewards = streakThreshold || crossesRewardLevel(xpAwarded) ? await readRewards() : loaded.rewards ?? {};
+  const receipts = isRecord(rewards.receipts) ? rewards.receipts : {};
+  const grantsStreakReward = streakThreshold && receipts[STREAK_REWARD_RECEIPT] !== true;
+  if (grantsStreakReward) streakAdvance = advanceStreak({ ...streakInput, grantsRewardFreeze: true });
+  // Milestone XP is granted with the 30-day receipt, so it can never be granted twice.
+  const milestoneXp = grantsStreakReward && streakAdvance.change.milestone === STREAK_REWARD_RUN
+    ? STREAK_MILESTONE_XP[STREAK_REWARD_RUN] ?? 0
+    : 0;
+  const xpGained = xpAwarded + milestoneXp;
+  const nextXp = xp + xpGained;
+  if (!Number.isSafeInteger(nextXp)) throw new InputValidationError('Verified XP exceeds its limit.');
+  const level = levelForXp(nextXp);
+  const nextStreak = streakAdvance.run;
+  const levelThreshold = crossesRewardLevel(xpGained);
+  const events: RewardEvent[] = [];
   const rewardReceiptsPatch: DocumentData = {};
-  if (streakThreshold && receipts[STREAK_REWARD_RECEIPT] !== true) {
+  if (grantsStreakReward) {
     events.push('streak');
     rewardReceiptsPatch[STREAK_REWARD_RECEIPT] = true;
-    rewardsPatch.streakFreezes = Math.min(counter(rewards.streakFreezes) + 1, 1);
-    rewardsPatch.unlockedBadgeIds = Array.from(new Set([...(Array.isArray(rewards.unlockedBadgeIds) ? rewards.unlockedBadgeIds : []), 'web-wanderer']));
+    rewardsPatch.unlockedBadgeIds = Array.from(new Set([...(Array.isArray(rewards.unlockedBadgeIds) ? rewards.unlockedBadgeIds : []), WEB_WANDERER_BADGE]));
   }
   if (levelThreshold && receipts[LEVEL_REWARD_RECEIPT] !== true) {
     events.push('levelup');
@@ -356,6 +457,64 @@ export async function prepareVerifiedGamification(
     rewardsPatch.ownedFrameIds = Array.from(new Set([...(Array.isArray(rewards.ownedFrameIds) ? rewards.ownedFrameIds : []), CRIMSON_WING_FRAME]));
     rewardsPatch.ownedTitleIds = Array.from(new Set([...(Array.isArray(rewards.ownedTitleIds) ? rewards.ownedTitleIds : []), 'word-collector']));
   }
+  const grantsReceipt = Object.keys(rewardReceiptsPatch).length > 0;
+  const heldStreak = webWandererHeld ? STREAK_REWARD_RUN : 0;
+  const achievements = achievementsBase ? evaluateAchievements({
+    stored: achievementsBase,
+    rebuilt: achievementsRebuilt,
+    signals: {
+      studyDay,
+      xpGained,
+      firstReview: isReview && action.reviewedCard?.firstReview === true,
+      firstEasy: isReview && action.reviewedCard?.firstEasy === true,
+      lateReview: isReview && xpAwarded > 0 && isLateHour(action.receivedAt, timeZone),
+      correctAnswers: action.kind === 'spelling' && isCount(action.correctAnswers) ? action.correctAnswers : 0,
+    },
+    before: { verifiedXp: xp, streak: Math.max(streak, streakState.best, heldStreak) },
+    after: { verifiedXp: nextXp, streak: Math.max(nextStreak, streakAdvance.state.best, heldStreak) },
+  }) : undefined;
+  // Coverage of the study time and weekly word records began with the account's first verified action.
+  const fromFirstAction = !statsSnapshot.exists || (xp === 0 && stats.lastVerifiedStudyDay == null);
+  // Study time is credited to reviews and practice completions; creating a card is not counted.
+  const storedStudyTime = parseStudyTime(stats[STUDY_TIME_FIELD]);
+  if (!storedStudyTime && stats[STUDY_TIME_FIELD] !== undefined) console.warn('Stored study time was unusable and starts over.');
+  const studyTime = action.kind === 'create' ? undefined : nextStudyTime({
+    stored: storedStudyTime,
+    seed: {
+      lastActionAtMs: lastVerifiedReviewAt instanceof Timestamp ? lastVerifiedReviewAt.toMillis() : null,
+      fromFirstAction,
+    },
+    action: {
+      atMs: action.receivedAt.getTime(),
+      studyDay,
+      ...(isReview ? {} : {
+        practice: {
+          startedAtMs: action.practiceStartedAt instanceof Date && Number.isFinite(action.practiceStartedAt.getTime())
+            ? action.practiceStartedAt.getTime() : null,
+          cards: isCount(action.practiceCards) ? action.practiceCards : 0,
+        },
+      }),
+    },
+  });
+  // Weekly words count reviews in a course language, from facts only the review path holds.
+  const storedWordWeeks = parseWordWeeks(stats[WORD_WEEKS_FIELD]);
+  if (!storedWordWeeks && stats[WORD_WEEKS_FIELD] !== undefined) console.warn('Stored weekly words were unusable and start over.');
+  const reviewedCard = isReview ? action.reviewedCard : undefined;
+  const wordWeeks = reviewedCard && isCourseLanguage(action.targetLanguage) ? nextWordWeeks({
+    stored: storedWordWeeks,
+    fromFirstAction,
+    review: {
+      studyDay,
+      language: action.targetLanguage,
+      cardId: action.cardId!,
+      started: reviewedCard.started === true,
+      mastered: reviewedCard.mastered === true,
+      reviewsThisWeek: reviewsInWeekOf(reviewedCard.reviewTimesMs, studyDay, timeZone),
+    },
+  }) : undefined;
+  const streakChange: StreakChange | undefined = isReview && isStreakChangeWorthShowing(streakAdvance.change)
+    ? { ...streakAdvance.change, ...(milestoneXp > 0 ? { milestoneXp } : {}) }
+    : undefined;
   const hasRewardsPatch = Object.keys(rewardsPatch).length > 0;
   const activityOutcome = reviewActivityOutcome(activity, action.targetLanguage);
   return {
@@ -363,6 +522,8 @@ export async function prepareVerifiedGamification(
       xp: nextXp, level, streak: nextStreak, studyDay, events, rewardTimeZone: timeZone,
       ...(action.kind === 'review' ? { xpAwarded } : {}),
       ...(activityOutcome ? { reviewActivity: activityOutcome } : {}),
+      ...(streakChange ? { streakChange } : {}),
+      ...(studyTime ? { studyTimeMs: studyTime.creditMs } : {}),
     },
     statsRef: refs.stats,
     rewardsRef: hasRewardsPatch ? refs.rewards : undefined,
@@ -380,8 +541,12 @@ export async function prepareVerifiedGamification(
         ? { lastVerifiedReviewAt: Timestamp.fromDate(action.receivedAt) } : {}),
       ...(activity ? { reviewActivityV1: activity } : {}),
       [DAILY_GOALS_FIELD]: replacingMergePatch(stats[DAILY_GOALS_FIELD], dailyGoals),
+      [STREAK_FIELD]: replacingMergePatch(stats[STREAK_FIELD], { ...streakAdvance.state }),
+      ...(achievements?.patch ? { [ACHIEVEMENTS_FIELD]: achievements.patch } : {}),
+      ...(studyTime ? { [STUDY_TIME_FIELD]: replacingMergePatch(stats[STUDY_TIME_FIELD], { ...studyTime.state }) } : {}),
+      ...(wordWeeks ? { [WORD_WEEKS_FIELD]: replacingMergePatch(stats[WORD_WEEKS_FIELD], { ...wordWeeks }) } : {}),
     },
-    ...(hasXpAward ? { historyRef: refs.history, historyPatch: { verifiedByDayV1: { [studyDay]: FieldValue.increment(xpAwarded) } } } : {}),
+    ...(xpGained > 0 ? { historyRef: refs.history, historyPatch: { verifiedByDayV1: { [studyDay]: FieldValue.increment(xpGained) } } } : {}),
     hasXpAward,
     ...(hasXpAward && reviewXpAwardRef ? {
       reviewXpAwardRef,
@@ -391,9 +556,10 @@ export async function prepareVerifiedGamification(
         expiresAt: new Date(action.receivedAt.getTime() + 7 * 24 * 60 * 60 * 1000),
       },
     } : {}),
+    // A fold-only patch deletes the legacy freeze and nothing else; an empty receipts map is never
+    // written, because a merge write would replace the stored receipts with it.
     rewardsPatch: hasRewardsPatch ? {
-      schemaVersion: VERIFIED_SCHEMA_VERSION,
-      receipts: rewardReceiptsPatch,
+      ...(grantsReceipt ? { schemaVersion: VERIFIED_SCHEMA_VERSION, receipts: rewardReceiptsPatch } : {}),
       ...rewardsPatch,
     } : undefined,
   };

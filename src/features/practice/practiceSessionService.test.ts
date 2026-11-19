@@ -57,4 +57,23 @@ describe('firebasePracticeSessionService', () => {
     expect(runtime.httpsCallable).toHaveBeenCalledWith({ region: 'asia-southeast1' }, 'completePracticeSessionV1');
     expect(runtime.callable).toHaveBeenCalledWith(request);
   });
+
+  it('keeps the credited study time and drops a malformed one without failing the session', async () => {
+    const outcome = { xp: 45, level: 1, streak: 3, studyDay: '2026-11-19', events: [], rewardTimeZone: 'Asia/Ho_Chi_Minh' };
+    const request = {
+      sessionId: 'practice-quiz-b', completionId: 'practice-complete-b', answers: { responses: { 'card-a': 'táo' } },
+    };
+    runtime.callable.mockResolvedValueOnce({ data: {
+      sessionId: 'practice-quiz-b', correct: 1, total: 1, awardedXp: 5, outcome: { ...outcome, studyTimeMs: 45_000 },
+    } });
+    await expect(firebasePracticeSessionService.complete(request)).resolves.toMatchObject({
+      outcome: { ...outcome, studyTimeMs: 45_000 },
+    });
+
+    runtime.callable.mockResolvedValueOnce({ data: {
+      sessionId: 'practice-quiz-b', correct: 1, total: 1, awardedXp: 5, outcome: { ...outcome, studyTimeMs: 'long' },
+    } });
+    const completed = await firebasePracticeSessionService.complete(request);
+    expect(completed.outcome).toEqual(outcome);
+  });
 });

@@ -308,9 +308,12 @@ export async function completePracticeSessionV1(
     const expiresAt = asDate(data.expiresAt);
     if (!expiresAt || expiresAt.getTime() <= now.getTime()) throw new InputValidationError('Practice session has expired.');
     if (data.game !== 'quiz' && data.game !== 'spelling' && data.game !== 'match') throw new InputValidationError('Practice session game is invalid.');
-    const result = score(data.game, sessionCards(data), parsed.answers);
+    const cards = sessionCards(data);
+    const result = score(data.game, cards, parsed.answers);
+    const startedAt = asDate(data.createdAt);
     const prepared = await prepareVerifiedGamification(database, transaction, ownerId, {
-      kind: data.game, receivedAt: now, timeZone: parsed.timeZone, resultXp: result.awardedXp,
+      kind: data.game, receivedAt: now, timeZone: parsed.timeZone, resultXp: result.awardedXp, correctAnswers: result.correct,
+      ...(startedAt ? { practiceStartedAt: startedAt } : {}), practiceCards: cards.length,
     });
     const response: CompletePracticeSessionV1Response = { sessionId: parsed.sessionId, ...result, outcome: commitVerifiedGamification(transaction, prepared) };
     transaction.set(reference, {

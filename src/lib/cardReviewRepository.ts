@@ -4,6 +4,7 @@ import { normalizeCardData } from './cardNormalization';
 import { app as firebaseApp, getSonFlashFunctions, isFirebaseConfigured, protectedFunctionsCapability } from './firebase';
 import { ProtectedFunctionError, runProtectedFunction } from './protectedFunctionsCapability';
 import { scheduleReview, type ReviewRating } from './reviewScheduler';
+import { parseStreakChange } from '../../functions/src/streak-rules';
 import type {
   CeremonyEvent,
   ReviewGamificationOutcome,
@@ -147,10 +148,15 @@ const parseGamification = (value: unknown): AuthoritativeGamification => {
   if (events.some(event => event === 'tierup')) throw new Error('Invalid review response.');
   const reviewActivity = source.reviewActivity === undefined ? undefined : parseReviewActivity(source.reviewActivity);
   const rewardTimeZone = parseRewardTimeZone(source.rewardTimeZone);
+  // Display-only keys: a malformed value is dropped instead of failing the review.
+  const streakChange = parseStreakChange(source.streakChange);
+  const studyTimeMs = isSafeNonNegativeInteger(source.studyTimeMs) ? Number(source.studyTimeMs) : undefined;
   return {
     xp: Number(source.xp), streak: Number(source.streak), level: Number(source.level), studyDay: source.studyDay, events,
     ...(reviewActivity ? { reviewActivity } : {}),
     ...(rewardTimeZone ? { rewardTimeZone } : {}),
+    ...(streakChange ? { streakChange } : {}),
+    ...(studyTimeMs === undefined ? {} : { studyTimeMs }),
   };
 };
 
