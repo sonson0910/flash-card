@@ -60,8 +60,8 @@ test('a signed-in owner can return from the AI creator and sees the tutor allowa
   await card.getByRole('button', { name: /reveal.*meaning/i }).click();
   const askTutor = card.getByRole('button', { name: 'Ask AI Tutor' });
   await askTutor.click();
-  const tutor = page.getByRole('dialog', { name: /AI Tutor.*focus/i });
-  await tutor.getByRole('button', { name: /3 Work examples/ }).click();
+  const tutor = page.getByRole('dialog', { name: /Ask about focus/i });
+  await tutor.getByRole('button', { name: /3 work examples/i }).click();
   await expect(tutor.getByText('AI Tutor limit reached. Try again when your daily allowance resets.')).toBeVisible({ timeout: 15_000 });
   await tutor.getByRole('button', { name: 'Close AI tutor' }).click();
   await expect(tutor).toBeHidden();

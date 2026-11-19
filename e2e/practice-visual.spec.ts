@@ -154,7 +154,8 @@ for (const theme of themes) for (const viewport of viewports) {
     const name = `practice-dialog-${theme.family}-${theme.mode}-${viewport.name}`;
     await page.goto(`${fixtureOrigin}${fixturePath}?view=dialog&locale=en`);
     await expect(page.locator('[data-practice-visual-view="dialog"]')).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole('heading', { name: 'Choose a practice mode' })).toBeVisible();
+    // The narrow bottom sheet shortens the dialog title to "Practice".
+    await expect(page.getByRole('heading', { name: viewport.width < 640 ? 'Practice' : 'Choose a practice mode', exact: true })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme-family', theme.family);
     if (theme.mode === 'dark') await expect(page.locator('html')).toHaveClass(/\bdark\b/);
     else await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
