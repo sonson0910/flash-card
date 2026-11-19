@@ -43,7 +43,7 @@ msgctxt "shell.share.fact-revoke"
 msgid "You can revoke this link at any time."
 msgstr ""
 
-#: src/components/flashcard/CardAiAssistantModal.tsx:255
+#: src/components/flashcard/CardAiAssistantModal.tsx:264
 msgctxt "flashcard.ai.usage-note"
 msgid "AI-generated · each question uses 1 AI request"
 msgstr ""
@@ -85,12 +85,12 @@ msgctxt "shell.practice-menu.preparing"
 msgid "Preparing…"
 msgstr ""
 
-#: src/components/flashcard/CardAiAssistantModal.tsx:225
+#: src/components/flashcard/CardAiAssistantModal.tsx:234
 msgctxt "flashcard.ai.formulating"
 msgid "AI is formulating an answer…"
 msgstr ""
 
-#: src/components/flashcard/CardAiAssistantModal.tsx:181
+#: src/components/flashcard/CardAiAssistantModal.tsx:190
 msgctxt "flashcard.ai.description"
 msgid "Ask questions about usage, nuances & practical examples."
 msgstr ""
@@ -125,7 +125,7 @@ msgctxt "shell.share.no-sample-preview"
 msgid "A card preview is not available for this shared deck."
 msgstr ""
 
-#: src/components/flashcard/CardAiAssistantModal.tsx:167
+#: src/components/flashcard/CardAiAssistantModal.tsx:173
 msgctxt "flashcard.ai.kicker"
 msgid "AI tutor"
 msgstr ""
@@ -316,7 +316,7 @@ msgctxt "shell.share.cards"
 msgid "Cards"
 msgstr ""
 
-#: src/components/flashcard/CardAiAssistantModal.tsx:168
+#: src/components/flashcard/CardAiAssistantModal.tsx:174
 msgctxt "flashcard.ai.kicker-lumi"
 msgid "Lumi · AI tutor"
 msgstr ""
@@ -347,7 +347,7 @@ msgid "flashcard.ai.busy"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardAiAssistantModal.tsx:184
+#: src/components/flashcard/CardAiAssistantModal.tsx:193
 msgid "flashcard.ai.close"
 msgstr ""
 
@@ -367,17 +367,17 @@ msgid "flashcard.ai.limit"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardAiAssistantModal.tsx:239
+#: src/components/flashcard/CardAiAssistantModal.tsx:248
 msgid "flashcard.ai.placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardAiAssistantModal.tsx:235
+#: src/components/flashcard/CardAiAssistantModal.tsx:244
 msgid "flashcard.ai.question-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardAiAssistantModal.tsx:247
+#: src/components/flashcard/CardAiAssistantModal.tsx:256
 msgid "flashcard.ai.send"
 msgstr ""
 
@@ -945,7 +945,7 @@ msgctxt "flashcard.lexicon-context"
 msgid "Lexicon context"
 msgstr ""
 
-#: src/components/flashcard/CardAiAssistantModal.tsx:214
+#: src/components/flashcard/CardAiAssistantModal.tsx:223
 msgctxt "flashcard.ai.question"
 msgid "Q:"
 msgstr ""
@@ -971,7 +971,7 @@ msgctxt "flashcard.deck.unassigned"
 msgid "Unassigned"
 msgstr ""
 
-#: src/components/flashcard/CardAiAssistantModal.tsx:191
+#: src/components/flashcard/CardAiAssistantModal.tsx:200
 msgctxt "flashcard.ai.quick-suggestions"
 msgid "Quick Suggestions"
 msgstr ""
@@ -1147,7 +1147,7 @@ msgstr ""
 msgid "shell.undo.dismiss"
 msgstr ""
 
-#: src/components/flashcard/CardAiAssistantModal.tsx:171
+#: src/components/flashcard/CardAiAssistantModal.tsx:177
 msgctxt "flashcard.ai.ask-about"
 msgid "Ask about <0>{word}</0>"
 msgstr ""

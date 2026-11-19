@@ -1,8 +1,8 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { ArrowUp, Sparkles, X } from 'lucide-react';
-import { useEffect, useRef, useState, type FormEvent, type RefObject } from 'react';
+import { ArrowRight, Sparkles, X } from 'lucide-react';
+import { Fragment, useEffect, useRef, useState, type FormEvent, type RefObject } from 'react';
 import type { CardData } from '../../types/card';
 import { currentOwnerId, observeOwner } from '../../features/session/ownerSessionPort';
 import { askCardTutor, type CardTutorTurn } from '../../lib/gemini';
@@ -140,7 +140,13 @@ export function CardAiAssistantModal({
   };
 
   const phonetic = card.phonetic.trim().replace(/^\/+|\/+$/g, '');
+  const partOfSpeech = card.partOfSpeech?.trim() ?? '';
   const translation = card.translation.trim();
+  const senseParts = [
+    phonetic ? <span key="ipa" className="card-tutor-ipa">/{phonetic}/</span> : null,
+    partOfSpeech ? <span key="pos" lang={card.language || 'en'}>{partOfSpeech}</span> : null,
+    translation ? <span key="meaning" lang={card.translationLanguage || 'vi'} className="card-tutor-meaning">{translation}</span> : null,
+  ].filter(part => part !== null);
   const lastQuestion = activeQuestion || turns.at(-1)?.label || turns.at(-1)?.question || '';
 
   return (
@@ -170,11 +176,14 @@ export function CardAiAssistantModal({
                 <Dialog.Title className="overlay-dialog-title">
                   <Trans {...msg({ context: 'flashcard.ai.ask-about', message: 'Ask about <0>{word}</0>' })} values={{ word: card.word }} components={{ 0: <span lang={card.language || 'en'} className="card-tutor-word" /> }} />
                 </Dialog.Title>
-                {phonetic || translation ? (
+                {senseParts.length > 0 ? (
                   <p className="overlay-dialog-sub card-tutor-sense">
-                    {phonetic ? <span className="card-tutor-ipa">/{phonetic}/</span> : null}
-                    {phonetic && translation ? <span aria-hidden="true"> · </span> : null}
-                    {translation ? <span lang={card.translationLanguage || 'vi'} className="card-tutor-meaning">{translation}</span> : null}
+                    {senseParts.map((part, index) => (
+                      <Fragment key={part.key}>
+                        {index > 0 ? <span aria-hidden="true"> · </span> : null}
+                        {part}
+                      </Fragment>
+                    ))}
                   </p>
                 ) : null}
                 <Dialog.Description id={`ai-assistant-description-${card.id}`} className="sr-only">
@@ -246,7 +255,7 @@ export function CardAiAssistantModal({
                   className="card-tutor-send"
                   aria-label={_(msg({ id: 'flashcard.ai.send', message: 'Send question' }))}
                 >
-                  <span aria-hidden="true" className="card-tutor-send-surface"><ArrowUp /></span>
+                  <span aria-hidden="true" className="card-tutor-send-surface"><ArrowRight /></span>
                 </button>
               </form>
             </div>

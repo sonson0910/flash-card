@@ -43,7 +43,7 @@ msgctxt "shell.share.fact-revoke"
 msgid "You can revoke this link at any time."
 msgstr "Bạn có thể thu hồi liên kết này bất cứ lúc nào."
 
-#: src/components/flashcard/CardAiAssistantModal.tsx:255
+#: src/components/flashcard/CardAiAssistantModal.tsx:264
 msgctxt "flashcard.ai.usage-note"
 msgid "AI-generated · each question uses 1 AI request"
 msgstr "Do AI tạo · mỗi câu hỏi dùng 1 yêu cầu AI"
@@ -85,12 +85,12 @@ msgctxt "shell.practice-menu.preparing"
 msgid "Preparing…"
 msgstr "Đang chuẩn bị…"
 
-#: src/components/flashcard/CardAiAssistantModal.tsx:225
+#: src/components/flashcard/CardAiAssistantModal.tsx:234
 msgctxt "flashcard.ai.formulating"
 msgid "AI is formulating an answer…"
 msgstr "AI đang soạn câu trả lời…"
 
-#: src/components/flashcard/CardAiAssistantModal.tsx:181
+#: src/components/flashcard/CardAiAssistantModal.tsx:190
 msgctxt "flashcard.ai.description"
 msgid "Ask questions about usage, nuances & practical examples."
 msgstr "Hỏi về cách dùng, sắc thái và ví dụ thực tế."
@@ -125,7 +125,7 @@ msgctxt "shell.share.no-sample-preview"
 msgid "A card preview is not available for this shared deck."
 msgstr "Không có bản xem trước thẻ cho bộ thẻ được chia sẻ này."
 
-#: src/components/flashcard/CardAiAssistantModal.tsx:167
+#: src/components/flashcard/CardAiAssistantModal.tsx:173
 msgctxt "flashcard.ai.kicker"
 msgid "AI tutor"
 msgstr "Gia sư AI"
@@ -316,7 +316,7 @@ msgctxt "shell.share.cards"
 msgid "Cards"
 msgstr "Thẻ"
 
-#: src/components/flashcard/CardAiAssistantModal.tsx:168
+#: src/components/flashcard/CardAiAssistantModal.tsx:174
 msgctxt "flashcard.ai.kicker-lumi"
 msgid "Lumi · AI tutor"
 msgstr "Lumi · Gia sư AI"
@@ -347,7 +347,7 @@ msgid "flashcard.ai.busy"
 msgstr "AI đang bận. Vui lòng thử lại sau vài giây!"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardAiAssistantModal.tsx:184
+#: src/components/flashcard/CardAiAssistantModal.tsx:193
 msgid "flashcard.ai.close"
 msgstr "Đóng gia sư AI"
 
@@ -367,17 +367,17 @@ msgid "flashcard.ai.limit"
 msgstr "Đã đạt giới hạn AI Tutor. Hãy thử lại khi hạn mức hằng ngày của bạn được đặt lại."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardAiAssistantModal.tsx:239
+#: src/components/flashcard/CardAiAssistantModal.tsx:248
 msgid "flashcard.ai.placeholder"
 msgstr "Hỏi mọi điều về “{word}”…"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardAiAssistantModal.tsx:235
+#: src/components/flashcard/CardAiAssistantModal.tsx:244
 msgid "flashcard.ai.question-label"
 msgstr "Đặt câu hỏi về từ này"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardAiAssistantModal.tsx:247
+#: src/components/flashcard/CardAiAssistantModal.tsx:256
 msgid "flashcard.ai.send"
 msgstr "Gửi câu hỏi"
 
@@ -945,7 +945,7 @@ msgctxt "flashcard.lexicon-context"
 msgid "Lexicon context"
 msgstr "Ngữ cảnh từ vựng"
 
-#: src/components/flashcard/CardAiAssistantModal.tsx:214
+#: src/components/flashcard/CardAiAssistantModal.tsx:223
 msgctxt "flashcard.ai.question"
 msgid "Q:"
 msgstr "Hỏi:"
@@ -971,7 +971,7 @@ msgctxt "flashcard.deck.unassigned"
 msgid "Unassigned"
 msgstr "Chưa phân bộ"
 
-#: src/components/flashcard/CardAiAssistantModal.tsx:191
+#: src/components/flashcard/CardAiAssistantModal.tsx:200
 msgctxt "flashcard.ai.quick-suggestions"
 msgid "Quick Suggestions"
 msgstr "Gợi ý nhanh"
@@ -1147,7 +1147,7 @@ msgstr "Chưa xác định ngôn ngữ dịch"
 msgid "shell.undo.dismiss"
 msgstr "Đóng thông báo"
 
-#: src/components/flashcard/CardAiAssistantModal.tsx:171
+#: src/components/flashcard/CardAiAssistantModal.tsx:177
 msgctxt "flashcard.ai.ask-about"
 msgid "Ask about <0>{word}</0>"
 msgstr "Hỏi về <0>{word}</0>"

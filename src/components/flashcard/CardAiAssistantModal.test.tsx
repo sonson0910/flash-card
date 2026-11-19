@@ -303,6 +303,28 @@ describe('CardAiAssistantModal request lifecycle', () => {
     expect(treeText(next.render())).not.toContain('AI is currently busy');
   });
 
+  it('lists the pronunciation, part of speech and meaning that the card has under the title', () => {
+    const view = CardAiAssistantModal({
+      card: { ...card('card-a', 'immediate'), phonetic: '/ɪˈmiːdiət/', partOfSpeech: 'adjective', translation: 'ngay lập tức' },
+      open: true,
+      onOpenChange: vi.fn(),
+    });
+    let sense: Tree | undefined;
+    walk(view, element => {
+      if (!sense && typeof element.props?.className === 'string' && element.props.className.includes('card-tutor-sense')) sense = element;
+    });
+
+    expect(treeText(sense)).toBe('/ɪˈmiːdiət/ · adjective · ngay lập tức');
+
+    resetHooks();
+    const withoutPartOfSpeech = CardAiAssistantModal({ card: card('card-b', 'focus'), open: true, onOpenChange: vi.fn() });
+    let shortSense: Tree | undefined;
+    walk(withoutPartOfSpeech, element => {
+      if (!shortSense && typeof element.props?.className === 'string' && element.props.className.includes('card-tutor-sense')) shortSense = element;
+    });
+    expect(treeText(shortSense)).toBe('meaning');
+  });
+
   it('restores focus to its opener after Radix releases the dialog focus scope', () => {
     const focus = vi.fn();
     const view = CardAiAssistantModal({
