@@ -447,6 +447,10 @@
   html[data-theme-family=crystal] .profile-gate__field > label,
   html[data-theme-family=crystal] .profile-gate__fact dt { letter-spacing: .06em; text-transform: uppercase; }
 
+  html[data-theme-family=crystal] .profile-gate__control,
+  html[data-theme-family=crystal] .profile-gate__tile,
+  html[data-theme-family=crystal] .profile-gate__fact dd { text-transform: uppercase; }
+
   html[data-theme-family=crystal] .profile-gate__control {
     border-color: transparent;
     background-color: var(--sf-surface-raised);
