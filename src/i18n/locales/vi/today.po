@@ -383,7 +383,7 @@ msgstr "Thoát kiểm tra xếp trình độ"
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/PlacementScreen.tsx:112
 msgid "daily.placement.headline.accent"
-msgstr "trình độ xuất phát."
+msgstr "trình độ khởi đầu của bạn."
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/PlacementScreen.tsx:112

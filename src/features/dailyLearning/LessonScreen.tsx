@@ -46,7 +46,7 @@ function TopBar({ model, actions, title }: LessonScreenProps & { readonly title:
   const total = Math.max(1, model.progress.total);
   const current = Math.min(total, Math.max(0, model.progress.current));
   return <>
-    <header className="lesson-topbar">
+    <div className="lesson-topbar">
       <button type="button" onClick={actions.exit} aria-label={i18n._(msg({ id: 'daily.lesson.exit', message: 'Exit lesson' }).id)} className="lesson-round lesson-exit"><X size={18} aria-hidden="true" /></button>
       <div className="lesson-topbar-title min-w-0">{title}</div>
       <div className="lesson-progress" role="progressbar" aria-label={i18n._(msg({ id: 'daily.lesson.progress-label', message: 'Lesson progress' }).id)} aria-valuemin={0} aria-valuemax={total} aria-valuenow={current}>
@@ -55,7 +55,7 @@ function TopBar({ model, actions, title }: LessonScreenProps & { readonly title:
       </div>
       <span className="lesson-count font-mono tabular-nums" aria-hidden="true"><strong>{current}</strong><span> / {total}</span></span>
       <div className="lesson-topbar-actions"><ThemeMenu /></div>
-    </header>
+    </div>
   </>;
 }
 

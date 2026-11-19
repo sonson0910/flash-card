@@ -921,6 +921,7 @@ html[data-theme-family='crystal'] .placement-fact { border: 0; border-radius: 0;
 @media (max-width: 760px) {
   .lesson-canvas,
   .placement-canvas { padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px)); }
+  .lesson-canvas[data-session-shell='lesson'] { padding-inline: 0; }
   .lesson-topbar { display: grid; height: auto; grid-template-columns: 44px minmax(0, 1fr) auto auto; gap: 10px 12px; padding: 12px 16px 4px; }
   .lesson-topbar .lesson-progress { grid-column: 1 / -1; grid-row: 2; width: 100%; margin: 0; }
   .lesson-segments { width: 100%; }
@@ -928,9 +929,9 @@ html[data-theme-family='crystal'] .placement-fact { border: 0; border-radius: 0;
   .lesson-title-context { display: none; }
   .placement-skip { grid-row: 1; grid-column: 3; }
   .placement-progress-spacer { display: none; }
-  .lesson-stages { margin-top: 8px; padding: 0; }
-  .lesson-stages ol { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; padding: 2px 16px; scrollbar-width: none; }
-  .lesson-stages ol::-webkit-scrollbar { display: none; }
+  .lesson-stages { margin-top: 8px; padding: 0 16px; }
+  .lesson-stages ol { justify-content: flex-start; }
+  .lesson-stage-chip { height: 28px; padding: 0 10px; font-size: 12px; }
   .lesson-stage { width: calc(100% - 32px); margin: 0 auto; padding-top: 20px; }
   .lesson-card,
   html[data-theme-family='crystal'] .lesson-card { padding: 22px 18px 20px; }
