@@ -192,5 +192,48 @@ test('extension in-page renderer captures a Korean selection with Vietnamese qui
   await expect(result).toContainText('Chỉ dịch • không lưu • không dùng quota AI');
   await expect(host.getByRole('button', { name: 'Nghe phát âm 결정' })).toBeVisible();
   await expect(host.getByRole('button', { name: 'Đóng kết quả SonFlash' })).toBeVisible();
+  await expect(result).not.toContainText('Lưu vào');
   await attach(page, testInfo, 'extension-in-page-korean-vietnamese-translation');
 });
+
+const languageBubbleThemes = [
+  { family: 'classic', scheme: 'dark' },
+  { family: 'classic', scheme: 'light' },
+  { family: 'crystal', scheme: 'dark' },
+  { family: 'crystal', scheme: 'light' },
+] as const;
+
+for (const { family, scheme } of languageBubbleThemes) {
+  test(`extension in-page renderer shows a Korean course word in ${family} ${scheme}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 1200, height: 760 });
+    await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
+    await page.setContent('<body style="margin:0;background:#ffffff;color:#16181d"><main lang="ko" style="max-width:720px;margin:96px 0 0 150px;font:18px/1.9 sans-serif"><h1>기준금리 동결에 시장은 안도… 하반기 전망은 엇갈려</h1><p>중앙은행이 기준금리를 동결하기로 <mark id="selected-word">결정</mark>하면서 금융시장은 일단 안도하는 분위기다.</p></main></body>');
+    await page.addScriptTag({ path: join(extensionRoot, 'background-ui.js') });
+    const selection = await page.evaluate(() => {
+      const selectedWord = document.getElementById('selected-word');
+      if (!selectedWord?.firstChild) throw new Error('Korean selection fixture is unavailable.');
+      const range = document.createRange();
+      range.selectNodeContents(selectedWord);
+      window.getSelection()?.removeAllRanges();
+      window.getSelection()?.addRange(range);
+      return (window as any).LingoFlashExtensionUi.captureSelectionFromPage();
+    });
+    expect(selection.pageLanguage).toBe('ko');
+
+    await page.evaluate(payload => (window as any).LingoFlashExtensionUi.renderInlineBubble(payload), {
+      status: 'translated', text: selection.text, translation: 'quyết định', sourceLanguage: 'ko', translationLanguage: 'vi',
+      pageLanguage: selection.pageLanguage, romanization: 'gyeoljeong', context: selection.context, speechLocale: 'ko-KR',
+      courseLanguage: 'ko', nativeLanguage: 'vi', saveId: 'visual_save', modeLabel: 'DỊCH NHANH • GOOGLE', version: '1.6.4',
+      themeFamily: family, colorScheme: scheme, anchor: selection.anchor, bubbleDurationMs: 0,
+    });
+    const host = page.locator('#lingoflash-inline-translation-host');
+    const result = host.getByRole('status').filter({ hasText: 'quyết định' });
+    await expect(result).toContainText('Trang bằng 한국어 · tự nhận diện');
+    await expect(result).toContainText('gyeoljeong');
+    await expect(result).toContainText('Trong bài:');
+    await expect(host.getByRole('button', { name: 'Lưu vào 한국어' })).toBeVisible();
+    await expect(result).toContainText('Tiếng Việt');
+    await expect(host.locator('.s')).toHaveAttribute('lang', 'ko');
+    await attach(page, testInfo, `extension-in-page-language-${family}-${scheme}`);
+  });
+}

@@ -2116,6 +2116,110 @@ test('propagates detected language and autoSpeak to the injected renderer', asyn
   assert.equal(history?.[0]?.sourceLanguage, 'fr');
 });
 
+const koreanTranslateWorker = (options = {}) => createWorkerContext({
+  storageEntries: [['lingoflash_extension_settings', {
+    autoSpeak: false,
+    bubbleDurationMs: 12_000,
+    recentLookupsEnabled: true,
+    quickTranslateSource: 'auto',
+    quickTranslateTarget: 'vi',
+  }]],
+  executeScriptCaptureResult: {
+    text: '결정', anchor: { left: 10, bottom: 20 }, context: '중앙은행이 기준금리를 동결하기로 결정하면서', pageLanguage: 'ko',
+  },
+  fetchImpl: async url => {
+    options.requests?.push(String(url));
+    return { ok: true, json: async () => [[['quyết định', '결정', null, null, 10], [null, null, 'quyết định', 'gyeoljeong']], null, 'ko'] };
+  },
+});
+const syncKoreanCourse = (worker, targetLanguage = 'ko') => sendRuntimeMessage(worker, {
+  type: 'SYNC_COURSE_LOCALE',
+  payload: { scope: 'opaque_scope_ko_123456', nativeLanguage: 'vi', targetLanguage },
+}, { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+const translatedRender = worker => worker.calls.find(call => call.type === 'scripting.executeScript'
+  && call.details.args?.[0]?.status === 'translated')?.details.args[0];
+
+test('gives the in-page translation its reading, page context and detected language', async () => {
+  const requests = [];
+  const worker = await koreanTranslateWorker({ requests });
+
+  const response = await sendRuntimeMessage(worker, { type: 'TRANSLATE_SELECTION', text: '결정' });
+  const payload = translatedRender(worker);
+  const query = new URL(requests[0]).searchParams;
+
+  assert.equal(response.ok, true);
+  assert.deepEqual(query.getAll('dt'), ['t', 'rm']);
+  assert.equal(payload.translation, 'quyết định');
+  assert.equal(payload.romanization, 'gyeoljeong');
+  assert.equal(payload.sourceLanguage, 'ko');
+  assert.equal(payload.translationLanguage, 'vi');
+  assert.equal(payload.pageLanguage, 'ko');
+  assert.equal(payload.context, '중앙은행이 기준금리를 동결하기로 결정하면서');
+  // No confirmed course: the bubble names none and offers no save.
+  assert.equal(payload.courseLanguage, undefined);
+  assert.equal(payload.saveId, undefined);
+});
+
+test('offers an in-page save only when the selection is in the confirmed course language', async () => {
+  const matching = await koreanTranslateWorker();
+  await syncKoreanCourse(matching);
+  await sendRuntimeMessage(matching, { type: 'TRANSLATE_SELECTION', text: '결정' });
+  const offered = translatedRender(matching);
+  assert.equal(offered.courseLanguage, 'ko');
+  assert.equal(offered.nativeLanguage, 'vi');
+  assert.match(offered.saveId, /\S/);
+  const receipt = matching.storageValues.get('lingoflash_inline_save_7');
+  assert.equal(receipt?.id, offered.saveId);
+  assert.equal(receipt?.text, '결정');
+  assert.equal(receipt?.courseLanguage, 'ko');
+
+  const otherCourse = await koreanTranslateWorker();
+  await syncKoreanCourse(otherCourse, 'ja');
+  await sendRuntimeMessage(otherCourse, { type: 'TRANSLATE_SELECTION', text: '결정' });
+  const notOffered = translatedRender(otherCourse);
+  assert.equal(notOffered.courseLanguage, 'ja');
+  assert.equal(notOffered.saveId, undefined);
+  assert.equal(otherCourse.storageValues.has('lingoflash_inline_save_7'), false);
+});
+
+test('saves from the in-page bubble only with its one-time id, from its own tab, into the same course', async () => {
+  const worker = await koreanTranslateWorker();
+  await syncKoreanCourse(worker);
+  await sendRuntimeMessage(worker, { type: 'TRANSLATE_SELECTION', text: '결정' });
+  const { saveId } = translatedRender(worker);
+
+  const noTab = await sendRuntimeMessage(worker, { type: 'INLINE_SELECTION_ADD', id: saveId });
+  assert.equal(noTab.ok, false);
+  const wrongId = await sendRuntimeMessage(worker, { type: 'INLINE_SELECTION_ADD', id: 'forged' }, { tab: { id: 7 } });
+  assert.equal(wrongId.ok, false);
+  assert.match(wrongId.error, /hết hạn/);
+  const otherTab = await sendRuntimeMessage(worker, { type: 'INLINE_SELECTION_ADD', id: saveId }, { tab: { id: 8 } });
+  assert.equal(otherTab.ok, false);
+
+  const saved = await sendRuntimeMessage(worker, { type: 'INLINE_SELECTION_ADD', id: saveId, text: 'ignored' }, { tab: { id: 7 } });
+  assert.equal(saved.ok, true);
+  const job = [...worker.storageValues.entries()].find(([key]) => key.startsWith('lingoflash_quick_add_job_'))?.[1];
+  assert.equal(job?.text, '결정');
+  assert.equal(job?.sourceLanguage, 'ko');
+  assert.equal(worker.storageValues.has('lingoflash_inline_save_7'), false);
+
+  const replay = await sendRuntimeMessage(worker, { type: 'INLINE_SELECTION_ADD', id: saveId }, { tab: { id: 7 } });
+  assert.equal(replay.ok, false);
+});
+
+test('refuses an in-page save after the active course changed', async () => {
+  const worker = await koreanTranslateWorker();
+  await syncKoreanCourse(worker);
+  await sendRuntimeMessage(worker, { type: 'TRANSLATE_SELECTION', text: '결정' });
+  const { saveId } = translatedRender(worker);
+  await syncKoreanCourse(worker, 'ja');
+
+  const refused = await sendRuntimeMessage(worker, { type: 'INLINE_SELECTION_ADD', id: saveId }, { tab: { id: 7 } });
+  assert.equal(refused.ok, false);
+  assert.match(refused.error, /Khóa học đang dùng đã thay đổi/);
+  assert.equal([...worker.storageValues.keys()].some(key => key.startsWith('lingoflash_quick_add_job_')), false);
+});
+
 test('passes the saved theme family and colour scheme to the injected renderer', async () => {
   const worker = await createWorkerContext({
     storageEntries: [['lingoflash_extension_settings', {

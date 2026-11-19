@@ -121,12 +121,20 @@
       right: Number(value.right) || 0, bottom: Number(value.bottom) || 0,
       width: Number(value.width) || 0, height: Number(value.height) || 0,
     } : null;
+    // The language the page declares for the selected text (its nearest
+    // lang attribute), as a bare primary subtag; empty when none is declared.
+    const pageLanguageInPage = node => {
+      const element = node?.nodeType === 1 ? node : node?.parentElement;
+      const declared = element?.closest?.('[lang]')?.getAttribute?.('lang') || '';
+      const match = /^([a-z]{2,3})(?:-|$)/i.exec(declared.trim());
+      return match ? match[1].toLowerCase() : '';
+    };
     const active = document.activeElement;
     if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
       if (isHidden(active)) return { text: '', anchor: null, context: '' };
       const start = active.selectionStart, end = active.selectionEnd;
       if (typeof start === 'number' && typeof end === 'number' && end > start) {
-        return { text: active.value.slice(start, end), anchor: rect(active.getBoundingClientRect()), context: '' };
+        return { text: active.value.slice(start, end), anchor: rect(active.getBoundingClientRect()), context: '', pageLanguage: pageLanguageInPage(active) };
       }
     }
     const selection = globalThis.getSelection?.();
@@ -136,7 +144,7 @@
     if (!text || hasHiddenAncestorInPage(range.commonAncestorContainer)) {
       return { text: '', anchor: null, context: '' };
     }
-    return { text, anchor: rect(range.getBoundingClientRect()), context: contextInPage(range, text) };
+    return { text, anchor: rect(range.getBoundingClientRect()), context: contextInPage(range, text), pageLanguage: pageLanguageInPage(range.commonAncestorContainer) };
   };
 
   const renderInlineBubble = payload => {
@@ -170,16 +178,21 @@
     };
     const svgIconInPage = kind => {
       if (typeof document.createElementNS !== 'function') return null;
-      const paths = kind === 'play'
-        ? ['M8 5.5v13l11-6.5z']
-        : ['M6 6l12 12', 'M18 6 6 18'];
+      const icons = {
+        play: ['M8 5.5v13l11-6.5z'],
+        close: ['M6 6l12 12', 'M18 6 6 18'],
+        globe: ['M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18z', 'M3 12h18', 'M12 3c2.4 2.5 3.6 5.5 3.6 9s-1.2 6.5-3.6 9c-2.4-2.5-3.6-5.5-3.6-9s1.2-6.5 3.6-9z'],
+        plus: ['M12 5v14', 'M5 12h14'],
+      };
+      const paths = icons[kind] || icons.close;
+      const size = kind === 'play' ? '12' : kind === 'globe' ? '13' : '14';
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('viewBox', '0 0 24 24');
-      svg.setAttribute('width', kind === 'play' ? '12' : '14');
-      svg.setAttribute('height', kind === 'play' ? '12' : '14');
+      svg.setAttribute('width', size);
+      svg.setAttribute('height', size);
       svg.setAttribute('fill', kind === 'play' ? 'currentColor' : 'none');
       svg.setAttribute('stroke', kind === 'play' ? 'none' : 'currentColor');
-      svg.setAttribute('stroke-width', '2');
+      svg.setAttribute('stroke-width', kind === 'plus' ? '2.4' : '2');
       svg.setAttribute('stroke-linecap', 'round');
       svg.setAttribute('stroke-linejoin', 'round');
       svg.setAttribute('aria-hidden', 'true');
@@ -248,6 +261,28 @@
       slot.append(image);
       return slot;
     };
+    // Language-pack courses (Korean, Japanese, Chinese) get the language
+    // board's treatment: the word in a CJK face with its language tagged, the
+    // detected language above it and "Save to <course>" in the footer. Only
+    // languages the extension really knows are shown: the confirmed active
+    // course, Google's detection of the selection and the page's own lang.
+    const languageCodeInPage = value => {
+      const match = /^([a-z]{2,3})(?:[-_]|$)/i.exec(String(value || '').trim());
+      return match ? match[1].toLowerCase() : '';
+    };
+    const autonymInPage = code => {
+      try {
+        const name = new Intl.DisplayNames([code], { type: 'language' }).of(code);
+        if (typeof name === 'string' && name && name.toLowerCase() !== code) return name.charAt(0).toLocaleUpperCase(code) + name.slice(1);
+      } catch {}
+      return code;
+    };
+    const courseLanguage = ['en', 'ko', 'ja', 'zh'].includes(payload.courseLanguage) ? payload.courseLanguage : '';
+    const nativeLanguage = ['vi', 'en'].includes(payload.nativeLanguage) ? payload.nativeLanguage : '';
+    const languageMode = ['ko', 'ja', 'zh'].includes(courseLanguage);
+    const detectedLanguage = languageCodeInPage(payload.sourceLanguage);
+    const pageLanguage = languageCodeInPage(payload.pageLanguage);
+    const wordLanguage = detectedLanguage || (languageMode ? courseLanguage : '');
     const setSpeechState = (button, state, label) => {
       if (button.dataset) button.dataset.speechState = state;
       else button.setAttribute('data-speech-state', state);
@@ -348,6 +383,15 @@
       '.frame[data-family="crystal"] .example{border:0;border-radius:0;box-shadow:inset 3px 0 0 var(--holo);clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}',
       '.ai-note{margin-top:10px;color:var(--text3);font-size:11.5px;line-height:1.4}',
       '.body,.f{position:relative}',
+      '.frame{--font-ko:"Noto Sans KR","Noto Sans CJK KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;--font-ja:"Noto Sans JP","Noto Sans CJK JP","Hiragino Sans","Yu Gothic",sans-serif;--font-zh:"Noto Sans SC","Noto Sans CJK SC","PingFang SC","Microsoft YaHei",sans-serif}',
+      '.frame [lang|="ko"]{font-family:var(--font-ko)}.frame [lang|="ja"]{font-family:var(--font-ja)}.frame [lang|="zh"]{font-family:var(--font-zh)}',
+      '.s:is([lang|="ko"],[lang|="ja"],[lang|="zh"]){font-size:36px;font-weight:700;font-style:normal;letter-spacing:0}',
+      '.frame[data-family="crystal"] .s:is([lang|="ko"],[lang|="ja"],[lang|="zh"]){font-style:normal;font-weight:900}',
+      '.lang-line{display:flex;align-items:center;gap:6px;margin-bottom:8px;color:var(--accent-text);font-size:11.5px;font-weight:600;line-height:1.3}.lang-line svg{flex:none}.lang-line strong{font-weight:700}',
+      '.frame[data-family="crystal"] .lang-line{color:var(--holo);font-family:var(--sf-font-display);font-style:italic;font-weight:800;letter-spacing:.04em}',
+      '.ctx{color:var(--text2)}.q{color:var(--strong);font-weight:500}.q strong{font-weight:800}',
+      '.n{color:var(--text3);font-size:11px;line-height:1.3}',
+      '.speak[data-kind="action"]{gap:7px}',
       '.wings{position:absolute;inset:0;overflow:hidden;pointer-events:none}',
       '.wings svg{position:absolute;right:-80px;top:-60px;width:300px;height:200px;overflow:visible;opacity:.18;transform:scaleX(-1) rotate(-10deg)}',
       '.lumi{flex:none;width:46px;height:46px;margin:-6px -6px -8px 0;background:var(--chip);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}',
@@ -383,10 +427,24 @@
     const info = document.createElement('div'); info.className = 'info';
     const brand = document.createElement('div'); brand.className = 'b'; brand.textContent = payload.version ? bt('bubbleBrand', [payload.version], `SONFLASH v${payload.version}`) : bt('bubbleBrandNoVersion', undefined, 'SONFLASH');
     const source = document.createElement('div'); source.className = 's'; source.textContent = payload.text || '';
+    if (wordLanguage) source.setAttribute('lang', wordLanguage);
     const sourceLine = document.createElement('div'); sourceLine.className = 'source-line';
     const sourceFallback = payload.text || bt('bubbleDefaultWordFallback', undefined, 'từ đã chọn');
     const sourceSpeaker = speechButtonInPage(payload.text || '', bt('bubbleSpeakSelectionLabel', [sourceFallback], `Nghe phát âm ${sourceFallback}`), payload.speechLocale);
     sourceLine.append(source, sourceSpeaker);
+    const lineLanguage = pageLanguage && pageLanguage === detectedLanguage ? pageLanguage : detectedLanguage;
+    if (languageMode && lineLanguage && payload.status === 'translated') {
+      const languageLine = document.createElement('div'); languageLine.className = 'lang-line';
+      const globe = svgIconInPage('globe');
+      if (globe) languageLine.append(globe);
+      const name = document.createElement('strong'); name.setAttribute('lang', lineLanguage); name.textContent = autonymInPage(lineLanguage);
+      languageLine.append(
+        document.createTextNode(`${lineLanguage === pageLanguage ? bt('bubblePageLanguage', undefined, 'Trang bằng') : bt('bubbleSelectionLanguage', undefined, 'Đoạn chọn bằng')} `),
+        name,
+        document.createTextNode(` · ${bt('bubbleDetected', undefined, 'tự nhận diện')}`),
+      );
+      info.append(languageLine);
+    }
     info.append(sourceLine);
     if (!speechSupportedInPage()) {
       const speechHelp = document.createElement('div');
@@ -397,8 +455,7 @@
       speechHelp.textContent = bt('bubbleSpeechUnsupported', undefined, 'Trình duyệt này không hỗ trợ phát âm.');
       info.append(speechHelp);
     }
-    if (payload.modeLabel) { const mode = document.createElement('span'); mode.className = 'm'; mode.textContent = payload.modeLabel; meta.append(mode); }
-    meta.append(brand);
+
     const close = document.createElement('button'); close.className = 'x'; close.type = 'button'; close.setAttribute('aria-label', bt('bubbleCloseAriaLabel', undefined, 'Đóng kết quả SonFlash'));
     const closeIcon = svgIconInPage('close');
     if (closeIcon) close.append(closeIcon);
@@ -410,9 +467,38 @@
       const spinner = document.createElement('span'); spinner.className = 'spin'; spinner.setAttribute('aria-hidden', 'true');
       line.append(spinner, document.createTextNode(payload.status === 'loading-save' ? bt('bubbleLoadingSave', undefined, 'Đang tạo và lưu flashcard…') : bt('bubbleLoadingTranslate', undefined, 'Đang dịch nhanh…'))); body.append(line);
     } else if (['translated','created','existing'].includes(payload.status)) {
-      if (payload.phonetic) { const p = document.createElement('div'); p.className = 'p'; p.textContent = payload.phonetic; body.append(p); }
+      const romanization = typeof payload.romanization === 'string' ? payload.romanization.trim() : '';
+      const reading = payload.phonetic || (romanization && romanization.toLowerCase() !== String(payload.text || '').trim().toLowerCase() ? romanization : '');
+      if (reading) { const p = document.createElement('div'); p.className = 'p'; p.textContent = reading; body.append(p); }
       const text = document.createElement('div'); text.className = 't'; text.textContent = payload.translation || bt('bubbleResult', undefined, 'Đã xử lý'); body.append(text);
       if (payload.explanation) { const e = document.createElement('div'); e.className = 'e'; e.textContent = payload.explanation; body.append(e); }
+      const pageContext = payload.status === 'translated' && typeof payload.context === 'string' ? payload.context.replace(/\s+/g, ' ').trim() : '';
+      if (pageContext) {
+        const word = String(payload.text || '').trim();
+        const index = word ? pageContext.indexOf(word) : -1;
+        // A short window around the word, trimmed to whole words where the
+        // text has spaces, as the boards quote it.
+        let start = index < 0 ? 0 : Math.max(0, index - 24);
+        let end = index < 0 ? Math.min(pageContext.length, 96) : Math.min(pageContext.length, index + word.length + 24);
+        if (index >= 0 && start > 0) { const space = pageContext.indexOf(' ', start); if (space >= 0 && space < index) start = space + 1; }
+        if (index >= 0 && end < pageContext.length) { const space = pageContext.lastIndexOf(' ', end); if (space > index + word.length) end = space; }
+        const excerpt = document.createElement('span'); excerpt.className = 'q';
+        if (wordLanguage) excerpt.setAttribute('lang', wordLanguage);
+        if (index < 0) excerpt.append(document.createTextNode(`${pageContext.slice(start, end)}${end < pageContext.length ? '…' : ''}`));
+        else {
+          const strong = document.createElement('strong'); strong.textContent = pageContext.slice(index, index + word.length);
+          excerpt.append(
+            document.createTextNode(`${start > 0 ? '…' : ''}${pageContext.slice(start, index)}`),
+            strong,
+            document.createTextNode(`${pageContext.slice(index + word.length, end)}${end < pageContext.length ? '…' : ''}`),
+          );
+        }
+        const contextBox = document.createElement('div'); contextBox.className = 'example';
+        const contextLine = document.createElement('div'); contextLine.className = 'e ctx';
+        contextLine.append(document.createTextNode(`${bt('bubbleInArticle', undefined, 'Trong bài:')} “`), excerpt, document.createTextNode('”'));
+        contextBox.append(contextLine);
+        body.append(contextBox);
+      }
       if (payload.exampleSentence || payload.exampleTranslation) {
         const example = document.createElement('div'); example.className = 'example';
         if (payload.exampleSentence) {
@@ -425,11 +511,60 @@
         body.append(example);
       }
       if (payload.aiGenerated) { const disclosure = document.createElement('div'); disclosure.className = 'ai-note'; disclosure.textContent = bt('bubbleAiDisclosure', undefined, 'Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa.'); body.append(disclosure); }
-      const ok = document.createElement('div'); ok.className = 'ok';
-      if (payload.status === 'existing') ok.dataset.tone = 'existing';
-      else if (payload.status === 'translated') ok.dataset.tone = 'translated';
-      ok.textContent = (payload.status === 'translated' ? bt('bubbleTranslatedOnly', undefined, 'Chỉ dịch • không lưu • không dùng quota AI') : payload.status === 'existing' ? bt('bubbleExisting', undefined, 'Đã có trong thư viện') : bt('bubbleCreated', undefined, 'Đã thêm vào thư viện'));
-      foot.append(ok);
+      // A quick translation can be saved from the bubble when a course is
+      // confirmed and the selection is in that course's language. The click
+      // must come from the user: the shadow root is open, so a page script
+      // could otherwise press the button and spend an AI request.
+      const saveOffered = payload.status === 'translated' && Boolean(courseLanguage)
+        && typeof payload.saveId === 'string' && Boolean(payload.saveId) && Boolean(String(payload.text || '').trim());
+      if (saveOffered) {
+        const save = document.createElement('button');
+        save.type = 'button'; save.className = 'speak'; save.dataset.kind = 'action'; save.dataset.role = 'save';
+        const renderSaveLabel = () => {
+          const parts = [];
+          const icon = svgIconInPage('plus');
+          if (icon) parts.push(icon);
+          if (languageMode) {
+            const name = document.createElement('span'); name.setAttribute('lang', courseLanguage); name.textContent = autonymInPage(courseLanguage);
+            parts.push(document.createTextNode(`${bt('bubbleSaveTo', undefined, 'Lưu vào')} `), name);
+          } else parts.push(document.createTextNode(bt('bubbleSaveFlashcard', undefined, 'Lưu flashcard')));
+          save.replaceChildren(...parts);
+        };
+        renderSaveLabel();
+        let saveError = null;
+        save.onmousedown = event => event?.preventDefault?.();
+        save.onclick = event => {
+          if (event?.isTrusted !== true || save.disabled) return;
+          const runtime = (globalThis.browser ?? globalThis.chrome)?.runtime;
+          if (!runtime?.sendMessage) return;
+          save.disabled = true;
+          save.textContent = bt('bubbleSaving', undefined, 'Đang bắt đầu lưu…');
+          const finish = response => {
+            // On success the background replaces this bubble with the save's progress.
+            if (response?.ok === true) return;
+            save.disabled = false;
+            renderSaveLabel();
+            if (!saveError) {
+              saveError = document.createElement('div'); saveError.className = 'err'; saveError.setAttribute('role', 'alert');
+              body.append(saveError);
+            }
+            saveError.textContent = response?.error || runtime.lastError?.message || bt('bubbleSaveFailed', undefined, 'Không thể lưu từ này. Hãy thử lại.');
+          };
+          try {
+            const message = { type: 'INLINE_SELECTION_ADD', id: payload.saveId };
+            if (globalThis.browser?.runtime) void runtime.sendMessage(message).then(finish, error => finish({ error: error?.message }));
+            else runtime.sendMessage(message, finish);
+          } catch (error) { finish({ error: error?.message }); }
+        };
+        foot.append(save);
+        meta.dataset.save = 'true';
+      } else {
+        const ok = document.createElement('div'); ok.className = 'ok';
+        if (payload.status === 'existing') ok.dataset.tone = 'existing';
+        else if (payload.status === 'translated') ok.dataset.tone = 'translated';
+        ok.textContent = (payload.status === 'translated' ? bt('bubbleTranslatedOnly', undefined, 'Chỉ dịch • không lưu • không dùng quota AI') : payload.status === 'existing' ? bt('bubbleExisting', undefined, 'Đã có trong thư viện') : bt('bubbleCreated', undefined, 'Đã thêm vào thư viện'));
+        foot.append(ok);
+      }
     } else {
       const isQuota = payload.status === 'error' && isQuotaMessageInPage(payload.message);
       const e = document.createElement('div'); e.className = payload.status === 'auth-required' ? 'e' : 'err';
@@ -482,6 +617,23 @@
         };
         foot.append(retry);
       }
+    }
+    if (meta.dataset.save === 'true') {
+      // Beside the Save button the boards name the language of the meanings
+      // for a language course, and the AI request a save costs otherwise.
+      const meaningsLanguage = languageCodeInPage(payload.translationLanguage) || nativeLanguage;
+      if (languageMode && meaningsLanguage) {
+        const meanings = document.createElement('div'); meanings.className = 'n';
+        const name = document.createElement('span'); name.setAttribute('lang', meaningsLanguage); name.textContent = autonymInPage(meaningsLanguage);
+        meanings.append(document.createTextNode(bt('bubbleMeaningsIn', undefined, 'Nghĩa bằng')), document.createElement('br'), name);
+        meta.append(meanings);
+      } else {
+        const cost = document.createElement('div'); cost.className = 'b'; cost.textContent = bt('bubbleSaveCost', undefined, '1 lượt AI');
+        meta.append(cost);
+      }
+    } else {
+      if (payload.modeLabel) { const mode = document.createElement('span'); mode.className = 'm'; mode.textContent = payload.modeLabel; meta.append(mode); }
+      meta.append(brand);
     }
     foot.append(meta);
     if (family === 'crystal') {
