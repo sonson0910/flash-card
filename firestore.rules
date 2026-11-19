@@ -42,6 +42,25 @@ service cloud.firestore {
         && (valueCount < 4 || (values[3] is string && values[3].size() <= 100));
     }
 
+    // Up to 8 distinct learner tags, each 1-32 characters with no surrounding
+    // whitespace, comma or line break (the server's card schema runs the same
+    // pattern). Rules cannot loop and per-index checks cost about 25
+    // expressions a tag, so the list is joined with a comma, which no tag may
+    // contain: one pattern checks every piece and the count, and splitting
+    // the joined text back must give the stored list exactly, which rejects a
+    // tag that smuggles a comma in and any element that is not a string
+    // (join turns a number into text).
+    function isValidCardTags(tags) {
+      return tags is list
+        && tags.toSet().size() == tags.size()
+        && (tags.size() == 0 || isValidJoinedCardTags(tags.join(','), tags));
+    }
+
+    function isValidJoinedCardTags(joined, tags) {
+      return joined.matches('^[^\\s,]([^,\\r\\n]{0,30}[^\\s,])?(,[^\\s,]([^,\\r\\n]{0,30}[^\\s,])?){0,7}$')
+        && joined.split(',') == tags;
+    }
+
     function isValidCurrentPublicSharedDeck(data) {
       return data.keys().hasAll(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion'])
         && data.keys().hasOnly(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion', 'targetLanguage', 'nativeLanguage'])
@@ -672,6 +691,10 @@ service cloud.firestore {
     // untouched group's individual guards are skipped entirely once the
     // group-level check is false; a touched group still runs the exact
     // same per-field validators as before.
+    // isValidCardUpdate rejects any change to the keys it keeps immutable
+    // (origin, lexemeId, language, translationLanguage, senseKey,
+    // normalizedLemma, ...) before calling this, so those keys need no checks
+    // here; every gate below costs expressions on every card update.
     function isValidChangedCardFields(data, changed) {
       let fields = data.keys();
       let audioUrl = data.get('audioUrl', null);
@@ -680,22 +703,11 @@ service cloud.firestore {
       let wordFamily = data.get('wordFamily', null);
       let fsrs = data.get('fsrs', null);
       return (
-        !changed.hasAny(['id', 'origin', 'word', 'normalizedWord', 'normalizedLemma', 'lexemeId', 'senseKey'])
+        !changed.hasAny(['id', 'word', 'normalizedWord'])
         || (
           (!changed.hasAny(['id']) || isBoundedText(data.get('id', ''), 128))
-          && (!changed.hasAny(['origin']) || data.get('origin', '') in ['ai', 'manual'])
           && (!changed.hasAny(['word']) || isBoundedText(data.get('word', ''), 256))
           && (!changed.hasAny(['normalizedWord']) || isBoundedText(data.get('normalizedWord', ''), 256))
-          && (!changed.hasAny(['normalizedLemma']) || isBoundedText(data.get('normalizedLemma', ''), 256))
-          && (!changed.hasAny(['lexemeId']) || isBoundedText(data.get('lexemeId', ''), 128))
-          && (!changed.hasAny(['senseKey']) || isBoundedText(data.get('senseKey', ''), 128))
-        )
-      )
-      && (
-        !changed.hasAny(['language', 'translationLanguage'])
-        || (
-          (!changed.hasAny(['language']) || isValidStoredCardLanguage(data.get('language', '')))
-          && (!changed.hasAny(['translationLanguage']) || isValidStoredTranslationLanguage(data.get('translationLanguage', '')))
         )
       )
       && (
@@ -728,11 +740,10 @@ service cloud.firestore {
         )
       )
       && (
-        !changed.hasAny(['nextReviewDate', 'difficulty', 'bookmarked', 'reviews', 'interval', 'easeFactor', 'correctStreak'])
+        !changed.hasAny(['nextReviewDate', 'difficulty', 'reviews', 'interval', 'easeFactor', 'correctStreak'])
         || (
           (!changed.hasAny(['nextReviewDate']) || isOptionalBoundedText(data, 'nextReviewDate', 128))
           && (!changed.hasAny(['difficulty']) || data.get('difficulty', '') in ['easy', 'good', 'hard', 'unrated'])
-          && (!changed.hasAny(['bookmarked']) || data.get('bookmarked', false) is bool)
           && (!changed.hasAny(['reviews']) || (data.get('reviews', 0) is int && data.get('reviews', 0) >= 0 && data.get('reviews', 0) <= 9007199254740991))
           && (!changed.hasAny(['interval']) || (data.get('interval', 0) is number && data.get('interval', 0) >= 0 && data.get('interval', 0) <= 9007199254740991))
           && (!changed.hasAny(['easeFactor']) || (data.get('easeFactor', 0) is number && data.get('easeFactor', 0) >= 0 && data.get('easeFactor', 0) <= 5))
@@ -760,6 +771,19 @@ service cloud.firestore {
           && (!changed.hasAny(['antonyms']) || !fields.hasAny(['antonyms']) || isValidBoundedStringList(data.antonyms))
           && (!changed.hasAny(['reviewHistory']) || !fields.hasAny(['reviewHistory']) || isValidReviewHistory(data.reviewHistory))
           && (!changed.hasAny(['fsrs']) || fsrs == null || isValidCardFsrs(fsrs))
+        )
+      )
+      // The learner's own labels: star, tags and difficulty. Scheduling never
+      // reads learnerDifficulty, so it is deliberately not in the scheduling
+      // guard of canPatchOwnedCard. Starring sits here rather than with the
+      // review counters so a star toggle opens a three-key group.
+      && (
+        !changed.hasAny(['bookmarked', 'tags', 'learnerDifficulty'])
+        || (
+          (!changed.hasAny(['bookmarked']) || data.get('bookmarked', false) is bool)
+          && (!changed.hasAny(['tags']) || !fields.hasAny(['tags']) || isValidCardTags(data.tags))
+          && (!changed.hasAny(['learnerDifficulty']) || data.get('learnerDifficulty', null) == null
+            || data.get('learnerDifficulty', null) in ['easy', 'medium', 'hard'])
         )
       );
     }
@@ -801,13 +825,15 @@ service cloud.firestore {
           'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
           'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
           'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
-          'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'masteredAt', 'japanesePitchAccent', 'source'
+          'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'masteredAt', 'japanesePitchAccent', 'source',
+          'tags', 'learnerDifficulty', 'translationAlternatives'
         ])
         && (!removedCanonicalKey || isCanonical)
-        // Server-owned origin, capture, mastery, pitch and canonical lexeme
-        // identity cannot be introduced, removed or changed by a client update.
+        // Server-owned origin, capture, mastery, pitch, AI meaning alternatives
+        // and canonical lexeme identity cannot be introduced, removed or
+        // changed by a client update.
         && !changed.hasAny([
-          'origin', 'source', 'masteredAt', 'japanesePitchAccent',
+          'origin', 'source', 'masteredAt', 'japanesePitchAccent', 'translationAlternatives',
           'lexemeId', 'language', 'translationLanguage', 'senseKey', 'normalizedLemma'
         ])
         // language/translationLanguage are immutable after creation (the

@@ -2715,6 +2715,112 @@ describe('Firestore security rules', () => {
       }));
     });
 
+    it('allows setting, replacing and clearing learner tags in one write', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-tags';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, validCard(cardId));
+      const card = doc(owner, `users/owner/cards/${cardId}`);
+      await assertSucceeds(updateDoc(card, { tags: ['news', 'B2', 'phrasal verb'], revision: 2 }));
+      await assertSucceeds(updateDoc(card, { tags: Array.from({ length: 8 }, (_, index) => `tag ${index}`), revision: 3 }));
+      await assertSucceeds(updateDoc(card, { tags: ['📚'.repeat(32)], revision: 4 }));
+      await assertSucceeds(updateDoc(card, { tags: [], revision: 5 }));
+      await assertSucceeds(updateDoc(card, { tags: deleteField(), revision: 6 }));
+    });
+
+    it('rejects tags beyond the limits', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-tags-invalid';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, validCard(cardId));
+      const card = doc(owner, `users/owner/cards/${cardId}`);
+      const notDenied: Array<{ tags: unknown; outcome: string | undefined }> = [];
+      for (const tags of [
+        Array.from({ length: 9 }, (_, index) => `tag ${index}`),
+        ['x'.repeat(33)],
+        ['📚'.repeat(33)],
+        ['a,b'],
+        ['news', 'a,b'],
+        ['line\nbreak'],
+        [' padded'],
+        ['padded '],
+        [''],
+        [7],
+        ['news', 7],
+        [true],
+        [null],
+        [{ name: 'news' }],
+        ['news', 'news'],
+        'news',
+      ]) {
+        const outcome = await updateDoc(card, { tags, revision: 2 })
+          .then(() => 'allowed', (error: { code?: string }) => error.code);
+        if (outcome !== 'permission-denied') notDenied.push({ tags, outcome });
+      }
+      expect(notDenied).toEqual([]);
+    });
+
+    it('allows the learner difficulty label and its clearing but keeps the scheduler field locked', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-learner-difficulty';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, { ...validCard(cardId), difficulty: 'good' });
+      const card = doc(owner, `users/owner/cards/${cardId}`);
+      await assertSucceeds(updateDoc(card, { learnerDifficulty: 'easy', revision: 2 }));
+      await assertSucceeds(updateDoc(card, { learnerDifficulty: 'hard', revision: 3 }));
+      await assertSucceeds(updateDoc(card, { learnerDifficulty: null, revision: 4 }));
+      await assertFails(updateDoc(card, { learnerDifficulty: 'good', revision: 5 }));
+      await assertFails(updateDoc(card, { learnerDifficulty: 'Medium', revision: 5 }));
+      await assertFails(updateDoc(card, { difficulty: 'medium', revision: 5 }));
+      await assertFails(updateDoc(card, { difficulty: 'easy', revision: 5 }));
+    });
+
+    it('never lets a client add or change AI meaning alternatives', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const plainId = 'edit-sheet-alternatives-plain';
+      const aiId = 'edit-sheet-alternatives-ai';
+      await seedCurrentCard(testEnvironment, 'owner', plainId, validCard(plainId));
+      await seedCurrentCard(testEnvironment, 'owner', aiId, { ...validCard(aiId), word: 'lead', normalizedWord: 'lead', origin: 'ai', translationAlternatives: ['dẫn dắt'] });
+      await assertFails(updateDoc(doc(owner, `users/owner/cards/${plainId}`), { translationAlternatives: ['chào'], revision: 2 }));
+      await assertFails(updateDoc(doc(owner, `users/owner/cards/${aiId}`), { translationAlternatives: ['lãnh đạo'], revision: 2 }));
+      await assertFails(updateDoc(doc(owner, `users/owner/cards/${aiId}`), { translationAlternatives: deleteField(), revision: 2 }));
+    });
+
+    it('accepts an older client patch on a card that already holds the new fields', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-old-client';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, {
+        ...validCard(cardId), word: 'lead', normalizedWord: 'lead', origin: 'ai',
+        tags: ['news'], learnerDifficulty: 'medium', translationAlternatives: ['dẫn dắt'],
+      });
+      await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+        category: 'Business', bookmarked: true, customDeck: 'IELTS', revision: 2,
+      }));
+    });
+
+    it('accepts one editor save that changes tags, learner difficulty, meaning, deck and star together', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-labels-together';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, {
+        ...validCard(cardId), word: 'lead', normalizedWord: 'lead', origin: 'ai', translationAlternatives: ['dẫn dắt'],
+        tags: ['news'], learnerDifficulty: 'easy', bookmarked: false, customDeck: null,
+      });
+      await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), {
+        translation: 'chì',
+        customDeck: 'IELTS',
+        bookmarked: true,
+        tags: Array.from({ length: 8 }, (_, index) => `${'x'.repeat(24)} tag ${index}`),
+        learnerDifficulty: 'hard',
+        revision: 2,
+        updatedAt: serverTimestamp(),
+      }));
+    });
+
+    it('accepts a boolean star and rejects any other star value', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-star-type';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, { ...validCard(cardId), bookmarked: false });
+      await assertFails(updateDoc(doc(owner, `users/owner/cards/${cardId}`), { bookmarked: 'yes', revision: 2 }));
+      await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), { bookmarked: true, revision: 2 }));
+    });
+
     it('rejects a direct client update to word/normalizedWord, confirming the headword rename callable is required', async () => {
       const owner = testEnvironment.authenticatedContext('owner').firestore();
       const cardId = 'edit-sheet-word-lock';
