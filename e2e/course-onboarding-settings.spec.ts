@@ -242,7 +242,13 @@ test('a new signed-in learner advances from language selection to a target choic
   const words = dialog.getByRole('list', { name: 'Your first 5 cards' }).getByRole('listitem');
   await expect(words).toHaveCount(5);
   const grades = dialog.getByRole('group', { name: 'Did you know this word?' });
-  for (const answer of ['Got it', 'Forgot', 'Got it', 'Got it', 'Forgot']) {
+  await grades.getByRole('button', { name: 'Got it' }).click();
+  // Onboarding is a dialog; a tap on the card face must still turn the card it hosts.
+  const secondCard = dialog.getByRole('group', { name: / flashcard/ });
+  await expect(secondCard).toHaveAccessibleName(/Showing the English word/);
+  await secondCard.locator('[data-flashcard-stage]').click({ position: { x: 16, y: 120 } });
+  await expect(secondCard).toHaveAccessibleName(/meaning/);
+  for (const answer of ['Forgot', 'Got it', 'Got it', 'Forgot']) {
     await grades.getByRole('button', { name: answer }).click();
   }
   await expect(dialog.getByRole('heading', { name: 'You knew 3 of 5.' })).toBeVisible();

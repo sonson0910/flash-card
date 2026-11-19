@@ -61,6 +61,18 @@ export interface FlashcardProps {
   imagePriority?: boolean;
 }
 
+/**
+ * True when a pointer gesture began on one of the card's own controls, or in a dialog opened from
+ * the card (React delivers a portalled dialog's events to the card). A dialog that hosts the card
+ * itself, such as onboarding, does not count: tapping the face there still turns the card.
+ */
+const startsOnCardControl = (target: EventTarget, card: Element): boolean => {
+  if (!(target instanceof Element)) return false;
+  if (target.closest('[data-card-control], button, a, input, select, textarea, summary')) return true;
+  const dialog = target.closest('[role="dialog"]');
+  return dialog !== null && !dialog.contains(card);
+};
+
 export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditDelete, onToggleBookmark, customDecks = [], onAssignDeck, onUpdateCard, onEditOpenChange, editorContext, initialSide = 'front', imagePriority = false }: FlashcardProps) {
   const { _, i18n } = useLingui();
   const { model: courseModel } = useCourseSession();
@@ -202,7 +214,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
 
   const handleCardPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     const target = event.target;
-    const startedOnControl = target instanceof Element && Boolean(target.closest('[data-card-control], button, a, input, select, textarea, summary, [role="dialog"]'));
+    const startedOnControl = startsOnCardControl(target, event.currentTarget);
     if (startedOnControl && focusAfterFlipRef.current) {
       // A later control interaction supersedes the flip's pending focus move.
       focusAfterFlipRef.current = null;
@@ -226,7 +238,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
       event.defaultPrevented
       || gestureRef.current.moved
       || gestureRef.current.startedOnControl
-      || (target instanceof Element && target.closest('[data-card-control], button, a, input, select, textarea, summary, [role="dialog"]'))
+      || startsOnCardControl(target, event.currentTarget)
     ) return;
     showCardSide(isFlipped ? 'front' : 'back');
   };
