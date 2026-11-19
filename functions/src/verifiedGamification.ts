@@ -2,6 +2,10 @@ import type { DocumentData, DocumentReference, Firestore, Transaction } from 'fi
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
 import { InputValidationError } from './inputValidation.js';
+import {
+  STREAK_MILESTONE_XP, STREAK_REWARD_RUN, advanceStreak, initialStreakState, isStreakChangeWorthShowing, parseStreakState,
+  type StreakChange,
+} from './streak-rules.js';
 import { CREATE_CARD_XP, REVIEW_CARD_XP } from './xp-rules.js';
 
 const VERIFIED_SCHEMA_VERSION = 1;
@@ -13,6 +17,7 @@ const MAX_REVIEW_ACTIVITY_LANGUAGES = 16;
 const MAX_REVIEW_ACTIVITY_COUNTER = Number.MAX_SAFE_INTEGER;
 const DAILY_GOALS_FIELD = 'dailyGoalsV1';
 const DAILY_GOALS_DAYS = 8;
+const STREAK_FIELD = 'streakV1';
 
 type ActionKind = 'review' | 'create' | 'quiz' | 'spelling' | 'match';
 type RewardEvent = 'streak' | 'levelup';
@@ -36,6 +41,7 @@ export type VerifiedGamificationOutcome = {
   rewardTimeZone: string;
   xpAwarded?: number;
   reviewActivity?: VerifiedReviewActivity;
+  streakChange?: StreakChange;
 };
 
 export type PreparedVerifiedGamification = {
@@ -192,11 +198,6 @@ const reviewActivityOutcome = (activity: ReviewActivity | undefined, language: u
   return coverageStartedOn && days ? { targetLanguage: language, coverageStartedOn, days } : undefined;
 };
 
-const previousDay = (day: string): string => {
-  const [year, month, date] = day.split('-').map(Number);
-  return new Date(Date.UTC(year, month - 1, date - 1)).toISOString().slice(0, 10);
-};
-
 const dayOffset = (day: string, offset: number): string => {
   const [year, month, date] = day.split('-').map(Number);
   return new Date(Date.UTC(year, month - 1, date + offset)).toISOString().slice(0, 10);
@@ -209,6 +210,16 @@ const isPlainMap = (value: unknown): value is Record<string, unknown> => isRecor
   && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 
 const isCount = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) >= 0;
+
+// Study days with at least one verified review in any course language. Read tolerantly: it only
+// seeds the best streak once, so a malformed map contributes nothing instead of failing.
+const reviewedDaysOf = (value: unknown): string[] => {
+  if (!isPlainMap(value) || !isPlainMap(value.daysByLanguage)) return [];
+  return Object.values(value.daysByLanguage).flatMap(days => (isPlainMap(days)
+    ? Object.entries(days).filter(([day, counters]) => isLocalDay(day) && isPlainMap(counters)
+      && isCount(counters.reviewed) && counters.reviewed > 0).map(([day]) => day)
+    : []));
+};
 
 // Daily goal progress per study day: cards that earned review XP and completed Word Matches.
 // The map is display-only and written only here, so a malformed stored value starts over
@@ -320,33 +331,65 @@ export async function prepareVerifiedGamification(
     action.kind === 'match' ? 1 : 0,
   );
   const xp = counter(stats.verifiedXp);
-  const nextXp = xp + xpAwarded;
-  if (!Number.isSafeInteger(nextXp)) throw new InputValidationError('Verified XP exceeds its limit.');
   const oldLevel = levelForXp(xp);
-  const level = levelForXp(nextXp);
+  const crossesRewardLevel = (gain: number) => gain > 0 && oldLevel < 13 && levelForXp(xp + gain) >= 13;
   const lastDay = typeof stats.lastVerifiedStudyDay === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(stats.lastVerifiedStudyDay)
     ? stats.lastVerifiedStudyDay
     : null;
   const streak = counter(stats.verifiedStreak);
-  const nextStreak = action.kind !== 'review' || studyDay <= (lastDay ?? '')
-    ? streak
-    : lastDay === previousDay(studyDay) ? streak + 1 : 1;
-  const streakThreshold = streak < 30 && nextStreak >= 30;
-  const levelThreshold = hasXpAward && oldLevel < 13 && level >= 13;
-  let rewards: Record<string, unknown> = {};
-  if (streakThreshold || levelThreshold) {
-    const rewardsSnapshot = await transaction.get(refs.rewards);
-    const rewardsData = rewardsSnapshot.data();
-    rewards = rewardsSnapshot.exists && isRecord(rewardsData) ? rewardsData : {};
-  }
-  const receipts = isRecord(rewards.receipts) ? rewards.receipts : {};
-  const events: RewardEvent[] = [];
+  // The rewards document is read at most once: to fold the legacy freeze into the streak record on
+  // an account's first action after streak records began, or when a reward threshold is crossed.
+  const loaded: { rewards?: Record<string, unknown> } = {};
+  const readRewards = async (): Promise<Record<string, unknown>> => {
+    if (!loaded.rewards) {
+      const rewardsSnapshot = await transaction.get(refs.rewards);
+      const rewardsData = rewardsSnapshot.data();
+      loaded.rewards = rewardsSnapshot.exists && isRecord(rewardsData) ? rewardsData : {};
+    }
+    return loaded.rewards;
+  };
   const rewardsPatch: DocumentData = {};
+  let streakState = parseStreakState(stats[STREAK_FIELD]);
+  if (!streakState) {
+    // The record is display-only, so an unusable stored value starts over instead of failing the action.
+    if (stats[STREAK_FIELD] !== undefined) console.warn('Stored streak record was unusable and starts over.');
+    const legacyRewards = stats[STREAK_FIELD] === undefined && statsSnapshot.exists ? await readRewards() : {};
+    streakState = initialStreakState({
+      run: streak,
+      lastStudyDay: lastDay,
+      today: studyDay,
+      reviewedDays: reviewedDaysOf(stats.reviewActivityV1),
+      legacyFreezes: counter(legacyRewards.streakFreezes),
+      rewardReceiptHeld: isRecord(legacyRewards.receipts) && legacyRewards.receipts[STREAK_REWARD_RECEIPT] === true,
+    });
+    if (Object.hasOwn(legacyRewards, 'streakFreezes')) rewardsPatch.streakFreezes = FieldValue.delete();
+  }
+  const isReview = action.kind === 'review';
+  const streakInput = {
+    state: streakState, run: streak, lastStudyDay: lastDay, today: studyDay,
+    review: isReview, earnedXp: isReview && hasXpAward, grantsRewardFreeze: false,
+  };
+  let streakAdvance = advanceStreak(streakInput);
+  const streakThreshold = isReview && streakAdvance.previousRun < STREAK_REWARD_RUN && streakAdvance.run >= STREAK_REWARD_RUN;
+  const rewards = streakThreshold || crossesRewardLevel(xpAwarded) ? await readRewards() : loaded.rewards ?? {};
+  const receipts = isRecord(rewards.receipts) ? rewards.receipts : {};
+  const grantsStreakReward = streakThreshold && receipts[STREAK_REWARD_RECEIPT] !== true;
+  if (grantsStreakReward) streakAdvance = advanceStreak({ ...streakInput, grantsRewardFreeze: true });
+  // Milestone XP is granted with the 30-day receipt, so it can never be granted twice.
+  const milestoneXp = grantsStreakReward && streakAdvance.change.milestone === STREAK_REWARD_RUN
+    ? STREAK_MILESTONE_XP[STREAK_REWARD_RUN] ?? 0
+    : 0;
+  const xpGained = xpAwarded + milestoneXp;
+  const nextXp = xp + xpGained;
+  if (!Number.isSafeInteger(nextXp)) throw new InputValidationError('Verified XP exceeds its limit.');
+  const level = levelForXp(nextXp);
+  const nextStreak = streakAdvance.run;
+  const levelThreshold = crossesRewardLevel(xpGained);
+  const events: RewardEvent[] = [];
   const rewardReceiptsPatch: DocumentData = {};
-  if (streakThreshold && receipts[STREAK_REWARD_RECEIPT] !== true) {
+  if (grantsStreakReward) {
     events.push('streak');
     rewardReceiptsPatch[STREAK_REWARD_RECEIPT] = true;
-    rewardsPatch.streakFreezes = Math.min(counter(rewards.streakFreezes) + 1, 1);
     rewardsPatch.unlockedBadgeIds = Array.from(new Set([...(Array.isArray(rewards.unlockedBadgeIds) ? rewards.unlockedBadgeIds : []), 'web-wanderer']));
   }
   if (levelThreshold && receipts[LEVEL_REWARD_RECEIPT] !== true) {
@@ -356,6 +399,10 @@ export async function prepareVerifiedGamification(
     rewardsPatch.ownedFrameIds = Array.from(new Set([...(Array.isArray(rewards.ownedFrameIds) ? rewards.ownedFrameIds : []), CRIMSON_WING_FRAME]));
     rewardsPatch.ownedTitleIds = Array.from(new Set([...(Array.isArray(rewards.ownedTitleIds) ? rewards.ownedTitleIds : []), 'word-collector']));
   }
+  const grantsReceipt = Object.keys(rewardReceiptsPatch).length > 0;
+  const streakChange: StreakChange | undefined = isReview && isStreakChangeWorthShowing(streakAdvance.change)
+    ? { ...streakAdvance.change, ...(milestoneXp > 0 ? { milestoneXp } : {}) }
+    : undefined;
   const hasRewardsPatch = Object.keys(rewardsPatch).length > 0;
   const activityOutcome = reviewActivityOutcome(activity, action.targetLanguage);
   return {
@@ -363,6 +410,7 @@ export async function prepareVerifiedGamification(
       xp: nextXp, level, streak: nextStreak, studyDay, events, rewardTimeZone: timeZone,
       ...(action.kind === 'review' ? { xpAwarded } : {}),
       ...(activityOutcome ? { reviewActivity: activityOutcome } : {}),
+      ...(streakChange ? { streakChange } : {}),
     },
     statsRef: refs.stats,
     rewardsRef: hasRewardsPatch ? refs.rewards : undefined,
@@ -380,8 +428,9 @@ export async function prepareVerifiedGamification(
         ? { lastVerifiedReviewAt: Timestamp.fromDate(action.receivedAt) } : {}),
       ...(activity ? { reviewActivityV1: activity } : {}),
       [DAILY_GOALS_FIELD]: replacingMergePatch(stats[DAILY_GOALS_FIELD], dailyGoals),
+      [STREAK_FIELD]: replacingMergePatch(stats[STREAK_FIELD], { ...streakAdvance.state }),
     },
-    ...(hasXpAward ? { historyRef: refs.history, historyPatch: { verifiedByDayV1: { [studyDay]: FieldValue.increment(xpAwarded) } } } : {}),
+    ...(xpGained > 0 ? { historyRef: refs.history, historyPatch: { verifiedByDayV1: { [studyDay]: FieldValue.increment(xpGained) } } } : {}),
     hasXpAward,
     ...(hasXpAward && reviewXpAwardRef ? {
       reviewXpAwardRef,
@@ -391,9 +440,10 @@ export async function prepareVerifiedGamification(
         expiresAt: new Date(action.receivedAt.getTime() + 7 * 24 * 60 * 60 * 1000),
       },
     } : {}),
+    // A fold-only patch deletes the legacy freeze and nothing else; an empty receipts map is never
+    // written, because a merge write would replace the stored receipts with it.
     rewardsPatch: hasRewardsPatch ? {
-      schemaVersion: VERIFIED_SCHEMA_VERSION,
-      receipts: rewardReceiptsPatch,
+      ...(grantsReceipt ? { schemaVersion: VERIFIED_SCHEMA_VERSION, receipts: rewardReceiptsPatch } : {}),
       ...rewardsPatch,
     } : undefined,
   };

@@ -346,9 +346,11 @@ describe('review persistence', () => {
         fields: scheduleReviewTransition(stored, 'easy', new Date('2026-08-24T00:00:00.000Z')),
       });
       const result = await applyReviewForOwner(test.database, 'owner', request);
+      // The card earns its review XP; the first 30-day milestone adds its one-time bonus to the total.
       expect(result.xpAwarded).toBe(2);
       expect(result.gamification).toMatchObject({
-        xp: 14_401, level: 13, streak: 30, events: ['streak', 'levelup'], rewardTimeZone: 'UTC',
+        xp: 14_501, level: 13, streak: 30, events: ['streak', 'levelup'], rewardTimeZone: 'UTC',
+        streakChange: { freezesUsed: 0, freezesEarned: 1, milestone: 30, milestoneXp: 100 },
         reviewActivity: {
           targetLanguage: 'en', coverageStartedOn: '2026-09-27',
           days: { '2026-09-27': { reviewed: 1, again: 0, hard: 0, good: 0, easy: 1 } },

@@ -37,6 +37,14 @@ const harness = (documents: Record<string, DocumentData> = {}) => {
 
 const awardPath = (cardId: string, studyDay: string) => `users/owner/review_xp_awards/${reviewXpAwardId(cardId, studyDay)}`;
 
+// The streak record of an account that has already had a verified action since streak records began.
+const settledStreak = (overrides: Record<string, unknown> = {}) => ({
+  coverageStartedOn: '2026-03-01', freezes: 0, refilledWeek: '2026-03-02', best: 5, bestCountedFrom: '2026-02-20',
+  days: {}, milestones: {}, repair: null, lastRepairedOn: null, ...overrides,
+});
+
+const isDeleteSentinel = (value: unknown) => value instanceof FieldValue && value.isEqual(FieldValue.delete());
+
 const action = (overrides = {}) => ({
   kind: 'review' as const,
   receivedAt: new Date('2026-03-08T10:30:00.000Z'),
@@ -82,7 +90,7 @@ describe('verified gamification', () => {
     const newer = Timestamp.fromDate(new Date('2026-03-08T11:00:00.000Z'));
     const test = harness({ 'users/owner/profile/stats': {
       verifiedXp: 4, verifiedStreak: 1, lastVerifiedStudyDay: '2026-03-08', rewardTimeZone: 'UTC',
-      lastVerifiedReviewAt: newer,
+      lastVerifiedReviewAt: newer, streakV1: settledStreak(),
     } });
     const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({ timeZone: 'UTC' }));
     expect(prepared.statsPatch).not.toHaveProperty('lastVerifiedReviewAt');
@@ -227,17 +235,29 @@ describe('verified gamification', () => {
     expect(days).toHaveProperty('2026-03-08');
   });
 
-  it('grants both threshold rewards in one rewards read and caps inventory', async () => {
+  it('grants both threshold rewards in one rewards read, caps inventory and holds the 30-day freeze in the streak record', async () => {
     const test = harness({
       'users/owner/profile/stats': { verifiedXp: 14_399, verifiedStreak: 29, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC' },
       'users/owner/profile/rewards': { streakFreezes: 1, hintTokens: 3 },
     });
     const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({ timeZone: 'UTC' }));
-    expect(prepared.outcome).toMatchObject({ xp: 14_401, level: 13, streak: 30, events: ['streak', 'levelup'] });
+    // The card earns 2 XP and the first 30-day milestone adds 100 once.
+    expect(prepared.outcome).toMatchObject({
+      xp: 14_501, level: 13, streak: 30, xpAwarded: 2, events: ['streak', 'levelup'],
+      streakChange: { freezesUsed: 0, freezesEarned: 1, milestone: 30, milestoneXp: 100 },
+    });
+    // The legacy freeze fold and both thresholds share one rewards read.
     expect(test.reads).toEqual(['users/owner/profile/stats', awardPath('word-focus', '2026-03-08'), 'users/owner/profile/rewards']);
     commitVerifiedGamification(test.transaction, prepared);
     expect(test.writes.map(write => write.path)).toEqual(['users/owner/profile/stats', 'users/owner/profile/xp_history', awardPath('word-focus', '2026-03-08'), 'users/owner/profile/rewards']);
-    expect(test.writes[3].data).toMatchObject({ streakFreezes: 1, hintTokens: 3 });
+    expect(test.writes[1].data.verifiedByDayV1['2026-03-08'].isEqual(FieldValue.increment(102))).toBe(true);
+    expect(test.writes[3].data).toMatchObject({
+      hintTokens: 3, unlockedBadgeIds: ['web-wanderer'], receipts: { 'streak-30-v1': true, 'level-13-v1': true },
+    });
+    expect(isDeleteSentinel(test.writes[3].data.streakFreezes)).toBe(true);
+    expect(test.writes[0].data.streakV1).toMatchObject({
+      freezes: 2, best: 30, milestones: { 7: null, 14: null, 30: '2026-03-08' }, days: { '2026-03-08': 'studied' },
+    });
   });
 
   it('does not replay a threshold ceremony with its fixed receipt', async () => {
@@ -265,6 +285,209 @@ describe('verified gamification', () => {
     expect(test.writes).toEqual([{ path: 'users/owner/profile/rewards', data: { equippedFrameId: 'crimson-wing' } }]);
   });
 
+  describe('streak record', () => {
+    const statsPath = 'users/owner/profile/stats';
+    const rewardsPath = 'users/owner/profile/rewards';
+    const utc = (iso: string) => action({ timeZone: 'UTC', receivedAt: new Date(iso) });
+    const run = async (documents: Record<string, DocumentData>, verifiedAction = utc('2026-03-08T10:30:00.000Z')) => {
+      const test = harness(documents);
+      const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', verifiedAction);
+      commitVerifiedGamification(test.transaction, prepared);
+      return { ...test, prepared, streakV1: test.writes[0].data.streakV1 as Record<string, unknown> };
+    };
+
+    it('starts a new account record on its first review without another read', async () => {
+      const result = await run({});
+      expect(result.reads).toEqual([statsPath, awardPath('word-focus', '2026-03-08')]);
+      expect(result.streakV1).toEqual({
+        coverageStartedOn: '2026-03-08', freezes: 2, refilledWeek: '2026-03-02', best: 1, bestCountedFrom: '2026-03-08',
+        days: { '2026-03-08': 'studied' }, milestones: {}, repair: null, lastRepairedOn: null,
+      });
+      expect(result.prepared.outcome.streakChange).toEqual({ freezesUsed: 0, freezesEarned: 0, freezesRefilled: 2 });
+    });
+
+    it('folds the legacy freeze and the best streak evidence in once, with one rewards read and one field delete', async () => {
+      const result = await run({
+        [statsPath]: {
+          verifiedXp: 40, verifiedStreak: 3, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC',
+          reviewActivityV1: {
+            coverageStartedOnByLanguage: { en: '2026-03-01', ko: '2026-03-04' },
+            daysByLanguage: {
+              en: { '2026-03-01': { reviewed: 2, again: 0, hard: 0, good: 2, easy: 0 }, '2026-03-02': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 }, '2026-03-03': { reviewed: 1, again: 1, hard: 0, good: 0, easy: 0 } },
+              ko: { '2026-03-04': { reviewed: 1, again: 0, hard: 0, good: 0, easy: 1 } },
+            },
+          },
+        },
+        [rewardsPath]: { streakFreezes: 1, hintTokens: 2, receipts: { 'streak-30-v1': true } },
+      }, action({ kind: 'create', timeZone: 'UTC' }));
+      expect(result.reads).toEqual([statsPath, rewardsPath]);
+      expect(result.writes.map(write => write.path)).toEqual([statsPath, 'users/owner/profile/xp_history', rewardsPath]);
+      expect(Object.keys(result.writes[2].data)).toEqual(['streakFreezes']);
+      expect(isDeleteSentinel(result.writes[2].data.streakFreezes)).toBe(true);
+      // Reviews on 1-4 March in two languages join the stored 3-day run of 5-7 March: best 7.
+      expect(result.streakV1).toEqual({
+        coverageStartedOn: '2026-03-08', freezes: 1, refilledWeek: null, best: 7, bestCountedFrom: '2026-03-01',
+        days: {}, milestones: { 7: null, 30: null }, repair: null, lastRepairedOn: null,
+      });
+      expect(result.prepared.outcome).toMatchObject({ streak: 3 });
+      expect(result.prepared.outcome).not.toHaveProperty('streakChange');
+    });
+
+    it('does not write the rewards document when the folded account has no legacy freeze', async () => {
+      const result = await run({
+        [statsPath]: { verifiedXp: 40, verifiedStreak: 1, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC' },
+        [rewardsPath]: { hintTokens: 1 },
+      });
+      expect(result.reads).toEqual([statsPath, awardPath('word-focus', '2026-03-08'), rewardsPath]);
+      expect(result.writes.map(write => write.path)).toEqual([statsPath, 'users/owner/profile/xp_history', awardPath('word-focus', '2026-03-08')]);
+    });
+
+    it('adds no read or write to a review once the record exists', async () => {
+      const result = await run({ [statsPath]: {
+        verifiedXp: 40, verifiedStreak: 5, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC', streakV1: settledStreak(),
+      } });
+      expect(result.reads).toEqual([statsPath, awardPath('word-focus', '2026-03-08')]);
+      expect(result.writes.map(write => write.path)).toEqual([statsPath, 'users/owner/profile/xp_history', awardPath('word-focus', '2026-03-08')]);
+      expect(result.prepared.outcome).toMatchObject({ streak: 6 });
+      expect(result.prepared.outcome).not.toHaveProperty('streakChange');
+    });
+
+    it('starts an unusable stored record over without reading rewards or failing the review', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      try {
+        const result = await run({ [statsPath]: {
+          verifiedXp: 40, verifiedStreak: 5, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC', streakV1: 'corrupt',
+        }, [rewardsPath]: { streakFreezes: 1 } });
+        expect(result.reads).toEqual([statsPath, awardPath('word-focus', '2026-03-08')]);
+        expect(result.prepared.outcome).toMatchObject({ streak: 6 });
+        expect(result.streakV1).toMatchObject({ coverageStartedOn: '2026-03-08', best: 6, days: { '2026-03-08': 'studied' } });
+        expect(warn).toHaveBeenCalledWith('Stored streak record was unusable and starts over.');
+      } finally {
+        warn.mockRestore();
+      }
+    });
+
+    it('spends one held freeze per missed day and keeps the run', async () => {
+      const result = await run({ [statsPath]: {
+        verifiedXp: 40, verifiedStreak: 9, lastVerifiedStudyDay: '2026-03-05', rewardTimeZone: 'UTC',
+        streakV1: settledStreak({ freezes: 2, best: 9, days: { '2026-03-05': 'studied' } }),
+      } });
+      expect(result.prepared.outcome).toMatchObject({ streak: 10, streakChange: { freezesUsed: 2, freezesEarned: 0 } });
+      expect(result.streakV1).toMatchObject({
+        freezes: 0, best: 10, days: { '2026-03-05': 'studied', '2026-03-06': 'frozen', '2026-03-07': 'frozen', '2026-03-08': 'studied' },
+      });
+    });
+
+    it('ends a run the freezes cannot bridge and opens a repair that the returning review starts', async () => {
+      const result = await run({ [statsPath]: {
+        verifiedXp: 40, verifiedStreak: 23, lastVerifiedStudyDay: '2026-03-04', rewardTimeZone: 'UTC',
+        streakV1: settledStreak({ freezes: 1, best: 23 }),
+      } });
+      expect(result.prepared.outcome).toMatchObject({ streak: 1, streakChange: { freezesUsed: 1, freezesEarned: 0, repairOffered: true } });
+      // The freeze covered 5 March; the run ended on 6 March, so the repair can finish until 8 March ends.
+      expect(result.streakV1).toMatchObject({
+        freezes: 0, best: 23, days: { '2026-03-05': 'frozen', '2026-03-08': 'studied' },
+        repair: { runLength: 23, lastStudiedOn: '2026-03-04', endedOn: '2026-03-06', deadline: '2026-03-08', cardsDone: 1, cardsNeeded: 20 },
+      });
+    });
+
+    it('completes a repair on the twentieth XP review, restores the run and earns a crossed freeze', async () => {
+      const result = await run({ [statsPath]: {
+        verifiedXp: 40, verifiedStreak: 1, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC',
+        streakV1: settledStreak({
+          best: 26, days: { '2026-03-04': 'studied', '2026-03-07': 'studied' },
+          repair: { runLength: 26, lastStudiedOn: '2026-03-04', endedOn: '2026-03-05', deadline: '2026-03-07', cardsDone: 19, cardsNeeded: 20 },
+        }),
+      } }, utc('2026-03-07T20:00:00.000Z'));
+      // Back on the deadline day: finishing on 7 March repairs 5 and 6 March and restores 26 + 1.
+      expect(result.prepared.outcome).toMatchObject({ streak: 27, streakChange: { freezesUsed: 0, freezesEarned: 0, repaired: true } });
+      expect(result.streakV1).toMatchObject({
+        repair: null, lastRepairedOn: '2026-03-07', best: 27,
+        days: { '2026-03-04': 'studied', '2026-03-05': 'repaired', '2026-03-06': 'repaired', '2026-03-07': 'studied' },
+      });
+
+      const crossing = await run({ [statsPath]: {
+        verifiedXp: 40, verifiedStreak: 1, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC',
+        streakV1: settledStreak({
+          best: 26, days: { '2026-03-07': 'studied' },
+          repair: { runLength: 26, lastStudiedOn: '2026-03-05', endedOn: '2026-03-06', deadline: '2026-03-08', cardsDone: 19, cardsNeeded: 20 },
+        }),
+      } });
+      // The run continues to 2 on 8 March, then the repair restores 26 + 2 = 28 and earns the freeze at 28.
+      expect(crossing.prepared.outcome).toMatchObject({ streak: 28, streakChange: { freezesUsed: 0, freezesEarned: 1, repaired: true } });
+      expect(crossing.streakV1).toMatchObject({ freezes: 1, days: { '2026-03-06': 'repaired', '2026-03-07': 'studied', '2026-03-08': 'studied' } });
+    });
+
+    it('counts only XP-earning reviews toward a repair', async () => {
+      const repair = { runLength: 26, lastStudiedOn: '2026-03-05', endedOn: '2026-03-06', deadline: '2026-03-08', cardsDone: 19, cardsNeeded: 20 };
+      const result = await run({
+        [statsPath]: {
+          verifiedXp: 40, verifiedStreak: 2, lastVerifiedStudyDay: '2026-03-08', rewardTimeZone: 'UTC',
+          streakV1: settledStreak({ repair, days: { '2026-03-07': 'studied', '2026-03-08': 'studied' } }),
+        },
+        [awardPath('word-focus', '2026-03-08')]: {
+          schemaVersion: 1, ownerId: 'owner', cardId: 'word-focus', studyDay: '2026-03-08', xpAwarded: 2, expiresAt: new Date('2026-03-15T00:00:00.000Z'),
+        },
+      });
+      expect(result.prepared.outcome).toMatchObject({ streak: 2, xpAwarded: 0 });
+      expect(result.streakV1).toMatchObject({ repair });
+      expect(result.prepared.outcome).not.toHaveProperty('streakChange');
+    });
+
+    it('tops freezes up on the first review of a week, once', async () => {
+      const stats = {
+        verifiedXp: 40, verifiedStreak: 3, lastVerifiedStudyDay: '2026-03-08', rewardTimeZone: 'UTC',
+        streakV1: settledStreak({ freezes: 0, refilledWeek: '2026-03-02' }),
+      };
+      const monday = await run({ [statsPath]: stats }, utc('2026-03-09T08:00:00.000Z'));
+      expect(monday.prepared.outcome).toMatchObject({ streak: 4, streakChange: { freezesUsed: 0, freezesEarned: 0, freezesRefilled: 2 } });
+      expect(monday.streakV1).toMatchObject({ freezes: 2, refilledWeek: '2026-03-09' });
+      const again = await run({ [statsPath]: { ...stats, lastVerifiedStudyDay: '2026-03-09', streakV1: settledStreak({ freezes: 1, refilledWeek: '2026-03-09' }) } }, action({
+        timeZone: 'UTC', cardId: 'another-card', receivedAt: new Date('2026-03-09T09:00:00.000Z'),
+      }));
+      expect(again.streakV1).toMatchObject({ freezes: 1, refilledWeek: '2026-03-09' });
+      expect(again.prepared.outcome).not.toHaveProperty('streakChange');
+    });
+
+    it('expires a closed repair window on any action without moving the run', async () => {
+      const result = await run({ [statsPath]: {
+        verifiedXp: 40, verifiedStreak: 1, lastVerifiedStudyDay: '2026-03-06', rewardTimeZone: 'UTC',
+        streakV1: settledStreak({
+          repair: { runLength: 9, lastStudiedOn: '2026-03-03', endedOn: '2026-03-05', deadline: '2026-03-07', cardsDone: 4, cardsNeeded: 20 },
+        }),
+      } }, action({ kind: 'create', timeZone: 'UTC' }));
+      expect(result.prepared.outcome).toMatchObject({ streak: 1 });
+      expect(result.streakV1).toMatchObject({ repair: null });
+    });
+
+    it('never grants milestone XP without granting the 30-day receipt', async () => {
+      const result = await run({
+        [statsPath]: {
+          verifiedXp: 900, verifiedStreak: 29, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC',
+          streakV1: settledStreak({ best: 29, milestones: { 7: null, 14: null } }),
+        },
+        [rewardsPath]: { receipts: { 'streak-30-v1': true } },
+      });
+      expect(result.prepared.outcome).toMatchObject({ xp: 902, streak: 30, events: [], streakChange: { milestone: 30 } });
+      expect(result.prepared.outcome.streakChange).not.toHaveProperty('milestoneXp');
+      expect(result.reads).toEqual([statsPath, awardPath('word-focus', '2026-03-08'), rewardsPath]);
+    });
+
+    it('keeps the newest 14 day marks and deletes older stored marks under the merge write', async () => {
+      const days = Object.fromEntries(Array.from({ length: 14 }, (_, index) => [
+        new Date(Date.UTC(2026, 1, 22 + index)).toISOString().slice(0, 10), 'studied',
+      ]));
+      const result = await run({ [statsPath]: {
+        verifiedXp: 40, verifiedStreak: 14, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC',
+        streakV1: settledStreak({ best: 14, days, milestones: { 7: '2026-02-28', 14: '2026-03-07' } }),
+      } });
+      const marks = result.streakV1.days as Record<string, unknown>;
+      expect(isDeleteSentinel(marks['2026-02-22'])).toBe(true);
+      expect(Object.keys(marks).filter(day => !isDeleteSentinel(marks[day]))).toHaveLength(14);
+      expect(marks['2026-03-08']).toBe('studied');
+    });
+  });
+
   describe('daily goal counters', () => {
     const isDelete = (value: unknown) => value instanceof FieldValue && value.isEqual(FieldValue.delete());
     const withoutDeletes = (value: unknown): unknown => typeof value === 'object' && value !== null && !(value instanceof FieldValue)
@@ -273,6 +496,7 @@ describe('verified gamification', () => {
     const counters = (studiedCards: number, matchWins: number) => ({ studiedCards, matchWins });
     const stored = (dailyGoalsV1: unknown) => ({ 'users/owner/profile/stats': {
       verifiedXp: 40, verifiedStreak: 1, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC', dailyGoalsV1,
+      streakV1: settledStreak(),
     } });
 
     it('grants the XP amounts from the shared rules', async () => {

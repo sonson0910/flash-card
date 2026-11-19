@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { parseStreakChange, parseStreakState, repairOfferFor, streakStatus, type StreakStateV1 } from '../src/streak-rules';
+import {
+  advanceStreak, initialStreakState, parseStreakChange, parseStreakState, repairOfferFor, streakStatus, type StreakStateV1,
+} from '../src/streak-rules';
 import { shiftStudyDay, studyDaysBetween, weekStartOf } from '../src/study-day-rules';
 
 const record = (fields: Partial<StreakStateV1> = {}): StreakStateV1 => ({
@@ -93,5 +95,84 @@ describe('parseStreakChange', () => {
     expect(parseStreakChange({ freezesUsed: 0, freezesEarned: 0, milestone: 21, milestoneXp: 100 }))
       .toEqual({ freezesUsed: 0, freezesEarned: 0 });
     expect(parseStreakChange({ freezesUsed: 1 })).toBeUndefined();
+  });
+});
+
+describe('advanceStreak', () => {
+  const advance = (fields: Partial<Parameters<typeof advanceStreak>[0]>) => advanceStreak({
+    state: record(), run: 5, lastStudyDay: '2026-11-18', today: '2026-11-19', review: true, earnedXp: true, grantsRewardFreeze: false,
+    ...fields,
+  });
+
+  it('agrees with the projection for every gap and freeze count', () => {
+    for (let run = 1; run <= 40; run += 1) {
+      for (let held = 0; held <= 2; held += 1) {
+        for (let gap = 0; gap <= 5; gap += 1) {
+          const state = record({ freezes: held, refilledWeek: '2026-11-30' });
+          const lastStudyDay = '2026-11-20';
+          const today = shiftStudyDay(lastStudyDay, gap + 1);
+          const projected = streakStatus({ run, lastStudyDay, today, state });
+          const applied = advance({ state, run, lastStudyDay, today });
+          expect(applied.change.freezesUsed).toBe(projected.freezesUsedNow);
+          if (projected.status === 'ended') {
+            expect(applied.run).toBe(1);
+            // The returning review is the first card toward the repair the projection showed.
+            expect(applied.state.repair).toEqual(projected.repair ? { ...projected.repair, cardsDone: 1 } : null);
+          } else {
+            expect(applied.run).toBe(run + 1);
+            expect(projected.length).toBe(run);
+          }
+        }
+      }
+    }
+  });
+
+  it('earns a freeze at each multiple of 7 up to the cap, and the 30-day reward freeze', () => {
+    expect(advance({ run: 6 }).change).toMatchObject({ freezesEarned: 1, milestone: 7 });
+    expect(advance({ run: 13, state: record({ freezes: 2 }) }).change).toMatchObject({ freezesEarned: 0, milestone: 14 });
+    expect(advance({ run: 29, grantsRewardFreeze: true }).change).toMatchObject({ freezesEarned: 1, milestone: 30 });
+    expect(advance({ run: 29 }).change).toMatchObject({ freezesEarned: 0, milestone: 30 });
+  });
+
+  it('records a milestone once, so a later run never records it again', () => {
+    const state = record({ best: 9, milestones: { 7: '2026-11-01' } });
+    expect(advance({ run: 6, state }).change).not.toHaveProperty('milestone');
+    expect(advance({ run: 6, state }).state.milestones).toEqual({ 7: '2026-11-01' });
+  });
+
+  it('leaves a same-day review, an earlier day and other actions without a run change', () => {
+    expect(advance({ today: '2026-11-18' })).toMatchObject({ run: 5, previousRun: 5, change: { freezesUsed: 0, freezesEarned: 0 } });
+    expect(advance({ today: '2026-11-17' })).toMatchObject({ run: 5, state: record() });
+    expect(advance({ review: false, today: '2026-11-25' })).toMatchObject({ run: 5, state: record() });
+  });
+
+  it('does not offer a repair within 30 days of the last one', () => {
+    const applied = advance({ run: 12, lastStudyDay: '2026-11-15', state: record({ lastRepairedOn: '2026-11-01' }) });
+    expect(applied).toMatchObject({ run: 1, state: { repair: null } });
+    expect(applied.change).not.toHaveProperty('repairOffered');
+  });
+});
+
+describe('initialStreakState', () => {
+  const initial = (fields: Partial<Parameters<typeof initialStreakState>[0]>) => initialStreakState({
+    run: 0, lastStudyDay: null, today: '2026-11-19', reviewedDays: [], legacyFreezes: 0, rewardReceiptHeld: false, ...fields,
+  });
+
+  it('never sets best below the current run, and starts coverage today', () => {
+    expect(initial({ run: 12, lastStudyDay: '2026-11-18' })).toMatchObject({
+      best: 12, bestCountedFrom: '2026-11-07', coverageStartedOn: '2026-11-19', milestones: { 7: null },
+    });
+  });
+
+  it('takes the longest run from reviewed days in every language, ignoring malformed days', () => {
+    expect(initial({
+      run: 1, lastStudyDay: '2026-11-18',
+      reviewedDays: ['2026-10-01', '2026-10-02', '2026-10-03', '2026-10-02', 'yesterday', '2026-11-17', '2026-11-16'],
+    })).toMatchObject({ best: 3, bestCountedFrom: '2026-10-01' });
+  });
+
+  it('caps the folded freeze, marks a held 30-day reward and bounds a corrupt run counter', () => {
+    expect(initial({ legacyFreezes: 7, rewardReceiptHeld: true })).toMatchObject({ freezes: 2, milestones: { 30: null } });
+    expect(initial({ run: Number.MAX_SAFE_INTEGER, lastStudyDay: '2026-11-18' }).best).toBe(Number.MAX_SAFE_INTEGER);
   });
 });

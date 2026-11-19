@@ -220,3 +220,208 @@ export const parseStreakChange = (value: unknown): StreakChange | undefined => {
     ...(value.repaired === true ? { repaired: true as const } : {}),
   };
 };
+
+/** The run length whose first crossing grants the streak reward receipt, its badge and one freeze. */
+export const STREAK_REWARD_RUN = 30;
+// Bounds day arithmetic on a corrupt run counter; no real run is a century long.
+const MAX_RUN_SPAN_DAYS = 36_600;
+
+const milestoneKey = (length: StreakMilestone) => String(length) as `${StreakMilestone}`;
+
+/** True when a review changed something the learner should be told about. */
+export const isStreakChangeWorthShowing = (change: StreakChange): boolean => change.freezesUsed > 0
+  || change.freezesEarned > 0 || (change.freezesRefilled ?? 0) > 0 || change.milestone !== undefined
+  || change.repairOffered === true || change.repaired === true;
+
+export interface InitialStreakInput {
+  /** `verifiedStreak` before this action. */
+  readonly run: number;
+  /** `lastVerifiedStudyDay` before this action. */
+  readonly lastStudyDay: string | null;
+  readonly today: string;
+  /** Days with a verified review, from the stored review activity of every course language. */
+  readonly reviewedDays: readonly string[];
+  /** `rewards.streakFreezes`, folded into the record once and then deleted. */
+  readonly legacyFreezes: number;
+  /** The 30-day reward receipt is already held. */
+  readonly rewardReceiptHeld: boolean;
+}
+
+/**
+ * The record an account gets on its first verified action after streak records began. Best is the
+ * longest run the stored evidence shows (never below the current run), every milestone at or below
+ * it counts as reached on an unknown day, and no freeze is granted for 7-day steps already passed.
+ */
+export const initialStreakState = (input: InitialStreakInput): StreakStateV1 => {
+  const reviewed = new Set(input.reviewedDays.filter(isStudyDay));
+  const sorted = [...reviewed].sort();
+  let best = 0;
+  let current = 0;
+  let previous: string | null = null;
+  for (const day of sorted) {
+    current = previous !== null && studyDaysBetween(previous, day) === 1 ? current + 1 : 1;
+    best = Math.max(best, current);
+    previous = day;
+  }
+  let earliest: string | null = sorted[0] ?? null;
+  const run = isCount(input.run) ? input.run : 0;
+  if (input.lastStudyDay !== null && isStudyDay(input.lastStudyDay) && run >= 1) {
+    const span = Math.min(run, MAX_RUN_SPAN_DAYS);
+    const runStart = shiftStudyDay(input.lastStudyDay, 1 - span);
+    let length = run;
+    for (let day = shiftStudyDay(runStart, -1); reviewed.has(day); day = shiftStudyDay(day, -1)) length += 1;
+    for (let day = shiftStudyDay(input.lastStudyDay, 1); reviewed.has(day); day = shiftStudyDay(day, 1)) length += 1;
+    best = Math.max(best, length);
+    if (earliest === null || runStart < earliest) earliest = runStart;
+  }
+  const milestones: Partial<Record<`${StreakMilestone}`, string | null>> = {};
+  for (const length of STREAK_MILESTONES) if (length <= best) milestones[milestoneKey(length)] = null;
+  if (input.rewardReceiptHeld) milestones[milestoneKey(STREAK_REWARD_RUN as StreakMilestone)] = null;
+  return {
+    coverageStartedOn: input.today,
+    freezes: isCount(input.legacyFreezes) ? Math.min(input.legacyFreezes, STREAK_FREEZE_CAP) : 0,
+    refilledWeek: null,
+    best,
+    bestCountedFrom: earliest ?? input.today,
+    days: {},
+    milestones,
+    repair: null,
+    lastRepairedOn: null,
+  };
+};
+
+export interface StreakAdvanceInput {
+  readonly state: StreakStateV1;
+  /** `verifiedStreak` before this action. */
+  readonly run: number;
+  /** `lastVerifiedStudyDay` before this action. */
+  readonly lastStudyDay: string | null;
+  /** This action's study day in the account's reward time zone. */
+  readonly today: string;
+  /** A review accepted by the server. Other actions only expire a repair offer whose window closed. */
+  readonly review: boolean;
+  /** The review earned XP: the first review of this card today. Only these count toward a repair. */
+  readonly earnedXp: boolean;
+  /** This action grants the 30-day reward receipt, which adds one freeze. */
+  readonly grantsRewardFreeze: boolean;
+}
+
+export interface StreakAdvance {
+  readonly state: StreakStateV1;
+  /** `verifiedStreak` after this action. */
+  readonly run: number;
+  /** The length crossings count from: the old run, the repaired run, or 0 when a new run started. */
+  readonly previousRun: number;
+  readonly change: StreakChange;
+}
+
+const keepNewestMarks = (days: Record<string, StreakDayMark>): Record<string, StreakDayMark> => Object.fromEntries(
+  Object.entries(days).sort(([left], [right]) => (left < right ? 1 : left > right ? -1 : 0)).slice(0, STREAK_DAY_MARKS_KEPT),
+);
+
+/**
+ * Applies one verified action to the streak. Missed days each use one held freeze; a gap the
+ * freezes cannot bridge ends the run and may open a repair offer; XP-earning reviews inside the
+ * window complete it. Crossings then earn freezes and record milestones, and the first review of
+ * a week tops freezes up. Pure: the caller writes the result inside the stats write.
+ */
+export const advanceStreak = (input: StreakAdvanceInput): StreakAdvance => {
+  const { today } = input;
+  const storedRun = isCount(input.run) ? input.run : 0;
+  const offer = input.state.repair && today > input.state.repair.deadline ? null : input.state.repair;
+  const settled = offer === input.state.repair ? input.state : { ...input.state, repair: null };
+  const last = input.lastStudyDay !== null && isStudyDay(input.lastStudyDay) ? input.lastStudyDay : null;
+  if (!input.review || (last !== null && today < last)) {
+    return { state: settled, run: storedRun, previousRun: storedRun, change: { freezesUsed: 0, freezesEarned: 0 } };
+  }
+  const days: Record<string, StreakDayMark> = { ...settled.days };
+  let freezes = settled.freezes;
+  let repair = offer;
+  let lastRepairedOn = settled.lastRepairedOn;
+  let run: number;
+  let previousRun: number;
+  let freezesUsed = 0;
+  let repairOffered = false;
+  let repaired = false;
+  if (last !== null && today === last) {
+    run = storedRun;
+    previousRun = storedRun;
+  } else if (last === null || storedRun < 1) {
+    run = 1;
+    previousRun = 0;
+  } else {
+    const missed = studyDaysBetween(last, today) - 1;
+    const covered = Math.min(missed, freezes);
+    for (let offset = 1; offset <= covered; offset += 1) days[shiftStudyDay(last, offset)] = 'frozen';
+    freezes -= covered;
+    freezesUsed = covered;
+    if (missed <= covered) {
+      run = storedRun + 1;
+      previousRun = storedRun;
+    } else {
+      run = 1;
+      previousRun = 0;
+      repair = repairOfferFor(storedRun, last, shiftStudyDay(last, covered + 1), today, lastRepairedOn);
+      repairOffered = repair !== null;
+    }
+  }
+  if (repair && input.earnedXp) {
+    const cardsDone = Math.min(repair.cardsDone + 1, repair.cardsNeeded);
+    if (cardsDone < repair.cardsNeeded) {
+      repair = { ...repair, cardsDone };
+    } else {
+      for (let day = repair.endedOn; day < today; day = shiftStudyDay(day, 1)) days[day] ??= 'repaired';
+      previousRun = repair.runLength;
+      run = Math.min(repair.runLength + run, Number.MAX_SAFE_INTEGER);
+      repair = null;
+      lastRepairedOn = today;
+      repaired = true;
+    }
+  }
+  let freezesEarned = 0;
+  const earn = (count: number) => {
+    const next = Math.min(STREAK_FREEZE_CAP, freezes + Math.max(0, count));
+    if (next > freezes) {
+      freezesEarned += next - freezes;
+      freezes = next;
+    }
+  };
+  earn(Math.floor(run / STREAK_FREEZE_EARN_EVERY_DAYS) - Math.floor(previousRun / STREAK_FREEZE_EARN_EVERY_DAYS));
+  if (input.grantsRewardFreeze && previousRun < STREAK_REWARD_RUN && run >= STREAK_REWARD_RUN) earn(1);
+  let freezesRefilled = 0;
+  let refilledWeek = settled.refilledWeek;
+  if (STREAK_FREEZE_WEEKLY_TOP_UP > 0 && refilledWeek !== weekStartOf(today)) {
+    const next = Math.max(freezes, Math.min(STREAK_FREEZE_WEEKLY_TOP_UP, STREAK_FREEZE_CAP));
+    freezesRefilled = next - freezes;
+    freezes = next;
+    refilledWeek = weekStartOf(today);
+  }
+  const milestones: Partial<Record<`${StreakMilestone}`, string | null>> = { ...settled.milestones };
+  let milestone: StreakMilestone | undefined;
+  for (const length of STREAK_MILESTONES) {
+    if (previousRun < length && run >= length && !Object.hasOwn(milestones, milestoneKey(length))) {
+      milestones[milestoneKey(length)] = today;
+      milestone = length;
+    }
+  }
+  const best = Math.max(settled.best, run);
+  for (const length of STREAK_MILESTONES) {
+    if (length <= best && !Object.hasOwn(milestones, milestoneKey(length))) milestones[milestoneKey(length)] = null;
+  }
+  days[today] = 'studied';
+  return {
+    state: {
+      ...settled, freezes, refilledWeek, best, days: keepNewestMarks(days), milestones, repair, lastRepairedOn,
+    },
+    run,
+    previousRun,
+    change: {
+      freezesUsed,
+      freezesEarned,
+      ...(freezesRefilled > 0 ? { freezesRefilled } : {}),
+      ...(milestone !== undefined ? { milestone } : {}),
+      ...(repairOffered ? { repairOffered: true as const } : {}),
+      ...(repaired ? { repaired: true as const } : {}),
+    },
+  };
+};
