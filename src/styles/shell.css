@@ -120,6 +120,23 @@ html[data-theme-family=crystal]:not(.dark) .claude-mobile-nav-item[data-shell-ac
   .claude-topbar[data-mobile-course] .claude-course-switcher-trigger > .truncate { max-width: 0; }
 }
 .claude-app-shell[data-view=study] .claude-workspace-inner,.claude-app-shell[data-view=quiz] .claude-workspace-inner,.claude-app-shell[data-view=spelling] .claude-workspace-inner,.claude-app-shell[data-view=story] .claude-workspace-inner,.claude-app-shell[data-view=match] .claude-workspace-inner,.claude-app-shell[data-view=shadowing] .claude-workspace-inner { max-width: none; padding: 0; }
+/* My files fills what the header, the offline card and (below 1024px) the floating bar leave, as the
+   upload boards draw it. The shell sizes the page here, so its viewport-based minimum height is lifted,
+   and the page and the offline card line up with the header's gutters. */
+.claude-app-shell[data-view=files] .claude-workspace-inner { --sf-files-gutter: 56px; display: flex; flex-direction: column; max-width: none; padding: 0; }
+html[data-theme-family=crystal] .claude-app-shell[data-view=files] .claude-workspace-inner { --sf-files-gutter: 44px; padding: 0; }
+.claude-app-shell[data-view=files] :is([data-app-view-stage], [data-async-content=files]) { display: flex; flex: 1 1 auto; flex-direction: column; }
+.claude-app-shell[data-view=files] .sf-files { flex: 1 1 auto; min-height: 0; padding-inline: var(--sf-files-gutter); }
+.claude-app-shell[data-view=files] [data-offline-readiness] { margin: 14px var(--sf-files-gutter) 0; }
+@media (max-width: 1279px) {
+  .claude-app-shell[data-view=files] .claude-workspace-inner,html[data-theme-family=crystal] .claude-app-shell[data-view=files] .claude-workspace-inner { --sf-files-gutter: 24px; }
+}
+@media (max-width: 1023px) {
+  .claude-app-shell[data-view=files] .claude-workspace-inner,html[data-theme-family=crystal] .claude-app-shell[data-view=files] .claude-workspace-inner { --sf-files-gutter: 20px; padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 640px) {
+  .claude-app-shell[data-view=files] .claude-workspace-inner,html[data-theme-family=crystal] .claude-app-shell[data-view=files] .claude-workspace-inner { --sf-files-gutter: 16px; }
+}
 
 /* Statistics and achievements are rendered only inside the loaded application. */
 @keyframes chart-line-reveal {
