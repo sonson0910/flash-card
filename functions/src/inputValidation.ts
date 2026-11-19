@@ -5,6 +5,7 @@ import {
   type CourseTargetLanguage,
 } from './course-profile-contract.js';
 import { createHash } from 'node:crypto';
+import { ownStorageImageOwner } from './ownFileImageUrl.js';
 
 export class InputValidationError extends Error {
   constructor(message: string) {
@@ -453,6 +454,15 @@ const SHARED_IMAGE_HOSTS = new Set([
   'images.unsplash.com',
   'upload.wikimedia.org',
 ]);
+/**
+ * A photo the owner uploaded to their own files stays private: its download
+ * token would let anyone holding the public link fetch it, so the shared copy
+ * of that card carries no image instead of failing the whole share.
+ */
+const sharedCardImageUrl = (value: unknown): string | null =>
+  typeof value === 'string' && ownStorageImageOwner(value) !== null
+    ? null
+    : trustedHttpsUrl(value, SHARED_IMAGE_HOSTS, 'image');
 const SHARED_AUDIO_HOSTS = new Set([
   'api.dictionaryapi.dev',
   'ssl.gstatic.com',
@@ -793,7 +803,7 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
       imageSearchQuery: boundedText(card.imageSearchQuery, 120),
       emoji: boundedText(card.emoji, 64),
       audioUrl: trustedHttpsUrl(card.audioUrl, SHARED_AUDIO_HOSTS, 'audio'),
-      imageUrl: trustedHttpsUrl(card.imageUrl, SHARED_IMAGE_HOSTS, 'image'),
+      imageUrl: sharedCardImageUrl(card.imageUrl),
       ...(mnemonic ? { mnemonic } : {}),
       ...(wordFamily ? { wordFamily } : {}),
     };

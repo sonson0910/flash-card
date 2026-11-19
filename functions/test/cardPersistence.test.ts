@@ -21,6 +21,7 @@ import {
   renameCardHeadwordForOwner,
 } from '../src/cardPersistence.js';
 import { createHash } from 'node:crypto';
+import { OWN_STORAGE_BUCKETS, ownStorageImageOwner } from '../src/ownFileImageUrl.js';
 import { libraryFacetRestoreOperationId } from '../src/libraryFacetPersistence.js';
 import {
   toCardAllocationHttpsError,
@@ -897,6 +898,43 @@ describe('card persistence', () => {
     })).toThrow(/imageUrl/i);
   });
 
+  describe('photos from the learner files', () => {
+    const ownPhoto = (ownerId: string, bucket = 'encoded-hangout-433912-h2.firebasestorage.app') =>
+      `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/users%2F${ownerId}%2Ffiles%2FAbCdEfGhIjKlMnOpQrSt?alt=media&token=0b0f1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d`;
+
+    it('lists the same buckets as the app config targets', () => {
+      const config = JSON.parse(readFileSync(new URL('../../firebase-applet-config.json', import.meta.url), 'utf8')) as {
+        targets: Record<string, { storageBucket: string }>;
+      };
+      expect([...OWN_STORAGE_BUCKETS].sort()).toEqual(Object.values(config.targets).map(target => target.storageBucket).sort());
+    });
+
+    it('accepts an owner photo on create and keeps it on a stored card', () => {
+      expect(parseCreateCardRequest({ expectedOwnerId: 'owner', card: { ...card, imageUrl: ownPhoto('owner') } }).card.imageUrl)
+        .toBe(ownPhoto('owner'));
+      expect(canonicalCard({ ...card, imageUrl: ownPhoto('owner', 'sonflash-staging-20260906.firebasestorage.app') }).imageUrl)
+        .toBe(ownPhoto('owner', 'sonflash-staging-20260906.firebasestorage.app'));
+      expect(ownStorageImageOwner(ownPhoto('owner'))).toBe('owner');
+    });
+
+    it('rejects another learner photo, another bucket or folder, and the storage host at large', () => {
+      expect(() => parseCreateCardRequest({ expectedOwnerId: 'owner', card: { ...card, imageUrl: ownPhoto('someone-else') } }))
+        .toThrow(/imageUrl/i);
+      expect(() => canonicalCard({ ...card, imageUrl: ownPhoto('someone-else') }, { imageOwnerId: 'owner' })).toThrow(/imageUrl/i);
+      for (const imageUrl of [
+        ownPhoto('owner', 'other-project.appspot.com'),
+        ownPhoto('owner').replace('%2Ffiles%2F', '%2Fprivate%2F'),
+        ownPhoto('owner').replace('?alt=media&token=', '?token='),
+        `${ownPhoto('owner')}#x`,
+        ownPhoto('owner').replace('firebasestorage.googleapis.com', 'storage.googleapis.com'),
+        'https://firebasestorage.googleapis.com/v0/b/encoded-hangout-433912-h2.firebasestorage.app/o/anything',
+      ]) {
+        expect(ownStorageImageOwner(imageUrl), imageUrl).toBeNull();
+        expect(() => canonicalCard({ ...card, imageUrl }), imageUrl).toThrow(/imageUrl/i);
+      }
+    });
+  });
+
   it('keeps direct client allocation denied after callable wiring', () => {
     const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
     expect(rules).toMatch(/match \/users\/\{userId\}\/cards\/\{cardId\}[\s\S]*?allow create: if false;/);
@@ -926,6 +964,69 @@ describe('card persistence', () => {
     expect(canonicalCard({ ...card, origin: 'ai' }).origin).toBe('ai');
     expect(canonicalCard({ ...card, origin: 'manual' }).origin).toBe('manual');
     expect(() => canonicalCard({ ...card, origin: 'imported' })).toThrow(/origin/i);
+  });
+
+  it('accepts and emits bounded learner tags and difficulty, keeping stored empty values', () => {
+    const tagged = canonicalCard({ ...card, tags: ['news', 'B2', 'phrasal verb'], learnerDifficulty: 'medium' });
+    expect(tagged).toMatchObject({ tags: ['news', 'B2', 'phrasal verb'], learnerDifficulty: 'medium' });
+    expect(canonicalCard({ ...card, tags: [], learnerDifficulty: null })).toMatchObject({ tags: [], learnerDifficulty: null });
+    const plain = canonicalCard(card);
+    expect(plain).not.toHaveProperty('tags');
+    expect(plain).not.toHaveProperty('learnerDifficulty');
+    expect(canonicalCard({ ...card, tags: Array.from({ length: 8 }, (_, index) => `t${index}`) }).tags).toHaveLength(8);
+    expect(canonicalCard({ ...card, tags: ['x'.repeat(32)] }).tags).toEqual(['x'.repeat(32)]);
+    // Length is counted in code points, as the Rules regex engine counts it.
+    expect(canonicalCard({ ...card, tags: ['📚'.repeat(32)] }).tags).toEqual(['📚'.repeat(32)]);
+  });
+
+  it('rejects tags beyond the limits and difficulty outside the learner labels', () => {
+    for (const tags of [
+      Array.from({ length: 9 }, (_, index) => `t${index}`),
+      ['x'.repeat(33)],
+      ['📚'.repeat(33)],
+      ['a,b'],
+      ['line\nbreak'],
+      [' padded'],
+      ['padded\t'],
+      [''],
+      [7],
+      ['news', 'news'],
+      'news',
+    ]) {
+      expect(() => canonicalCard({ ...card, tags })).toThrow(/tags/);
+    }
+    for (const learnerDifficulty of ['good', 'unrated', 'Easy', 1]) {
+      expect(() => canonicalCard({ ...card, learnerDifficulty })).toThrow(/learnerDifficulty/);
+    }
+    // The scheduler's own field keeps its legacy values only.
+    expect(() => canonicalCard({ ...card, difficulty: 'medium' })).toThrow(/difficulty/i);
+  });
+
+  it('keeps AI meaning alternatives only on AI cards, bounded and distinct from the meaning', () => {
+    const aiCard = { ...card, origin: 'ai', translation: 'dẫn dắt' };
+    expect(canonicalCard({ ...aiCard, translationAlternatives: ['lãnh đạo', 'Dẫn dắt', 'lãnh đạo'] }).translationAlternatives)
+      .toEqual(['lãnh đạo']);
+    expect(canonicalCard({ ...aiCard, translationAlternatives: ['lãnh đạo', 'chỉ huy', 'chì'] }).translationAlternatives)
+      .toEqual(['lãnh đạo', 'chỉ huy', 'chì']);
+    expect(canonicalCard({ ...aiCard, translationAlternatives: [] }).translationAlternatives).toEqual([]);
+    expect(canonicalCard(aiCard)).not.toHaveProperty('translationAlternatives');
+    expect(() => canonicalCard({ ...card, origin: 'manual', translationAlternatives: ['lãnh đạo'] })).toThrow(/translationAlternatives/);
+    expect(() => canonicalCard({ ...card, translationAlternatives: ['lãnh đạo'] })).toThrow(/translationAlternatives/);
+    expect(() => canonicalCard({ ...aiCard, translationAlternatives: ['a', 'b', 'c', 'd'] })).toThrow(/translationAlternatives/);
+    expect(() => canonicalCard({ ...aiCard, translationAlternatives: ['x'.repeat(257)] })).toThrow(/translationAlternatives/);
+    expect(() => canonicalCard({ ...aiCard, translationAlternatives: ['  '] })).toThrow(/translationAlternatives/);
+  });
+
+  it('carries the new card fields through a create request', () => {
+    const request = parseCreateCardRequest({
+      expectedOwnerId: 'owner',
+      card: { ...card, origin: 'ai', tags: ['news'], learnerDifficulty: 'hard', translationAlternatives: ['lãnh đạo'] },
+    });
+    expect(request.card).toMatchObject({ tags: ['news'], learnerDifficulty: 'hard', translationAlternatives: ['lãnh đạo'] });
+    expect(() => parseCreateCardRequest({
+      expectedOwnerId: 'owner',
+      card: { ...card, origin: 'manual', translationAlternatives: ['lãnh đạo'] },
+    })).toThrow(/translationAlternatives/);
   });
 
   it('strips a client supplied mastery timestamp from a create candidate', () => {
