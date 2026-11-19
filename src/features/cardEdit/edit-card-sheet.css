@@ -725,6 +725,16 @@
     display: none;
   }
 
+  /* Desktop shows the draft on the review backdrop; the edit dialog shows none. */
+  .edit-sheet-mobile-preview {
+    display: none;
+  }
+
+  .edit-sheet--dialog .edit-sheet-textarea {
+    resize: none;
+    field-sizing: content;
+  }
+
   .edit-sheet-header {
     padding: 22px 22px 16px 26px;
   }
@@ -964,6 +974,35 @@
 :root[data-theme-family="crystal"] .edit-sheet-mobile-preview-word {
   font-style: italic;
   font-weight: 900;
+}
+
+/* Crystal draft card: holo rim from brand to second, meaning in the second hue. */
+:root[data-theme-family="crystal"] .edit-sheet-preview-card {
+  border: 2px solid transparent;
+  background:
+    var(--sf-card-bg, var(--sf-surface)) padding-box,
+    linear-gradient(160deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 30%, transparent) 45%, var(--sf-second)) border-box;
+  box-shadow: 0 0 40px -12px color-mix(in srgb, var(--sf-brand) 55%, transparent);
+}
+
+:root[data-theme-family="crystal"] .edit-sheet-preview-kicker {
+  color: var(--sf-brand-text);
+}
+
+:root[data-theme-family="crystal"] .edit-sheet-preview-meaning p {
+  color: var(--sf-second);
+  font-family: var(--sf-font-display);
+  font-style: italic;
+  font-weight: 800;
+}
+
+:root[data-theme-family="crystal"]:not(.dark) .edit-sheet-preview-meaning p {
+  color: var(--sf-brand-text);
+}
+
+:root[data-theme-family="crystal"].dark .edit-sheet-dirty {
+  background: var(--sf-reward);
+  color: var(--sf-on-brand);
 }
 
 @media (min-width: 768px) {
