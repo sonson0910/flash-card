@@ -98,27 +98,28 @@ html[data-theme-family=crystal] .claude-workspace-inner { padding-left: 44px; pa
 /* AnimeMobile (Crystal) uses a full-width four-tab rail; classic floats it below (MobileToday). */
 .claude-mobile-nav { height: calc(78px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 8px 16px calc(20px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--sf-border); background: var(--sf-surface); box-shadow: inset 0 1px 0 var(--sf-edge-highlight); }
 .claude-mobile-nav-item { min-width: 0; min-height: 45px; border-radius: 12px; color: var(--sf-text-muted); font-size: 10.5px; font-weight: 700; line-height: 1.15; }
-.claude-mobile-nav-item > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.claude-mobile-nav-item > span:not(.claude-mobile-nav-icon) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .claude-mobile-nav-item:hover { color: var(--sf-text); background: var(--sf-surface-raised); }
 .claude-mobile-nav-item[data-shell-active=true] { color: var(--sf-text); background: var(--sf-surface-raised); }
 /* MobileToday: classic floats a rounded glass tab bar above the page; the active tab tints a
-   pill behind its icon instead of filling the whole tab. */
+   pill behind its icon instead of filling the whole tab. The icon is either a bare svg or a
+   .claude-mobile-nav-icon wrapper around it. */
 :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav { left: 14px; right: 14px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); height: 68px; gap: 0; padding: 0; border: 1px solid var(--sf-border); border-radius: 22px; background: color-mix(in srgb, var(--sf-surface) 94%, transparent); box-shadow: 0 12px 30px -16px var(--sf-shadow); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
 :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-mobile-nav { background: color-mix(in srgb, var(--sf-surface) 72%, transparent); box-shadow: 0 20px 40px -20px rgb(0 0 0 / .9); }
 :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item { gap: 4px; border-radius: 22px; font-size: 11px; font-weight: 600; }
-:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item > svg { box-sizing: content-box; width: 18px; height: 18px; padding: 5px 13px; border-radius: 14px; }
+:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item > :is(svg, .claude-mobile-nav-icon) { display: grid; place-items: center; box-sizing: content-box; width: 18px; height: 18px; padding: 5px 13px; border-radius: 14px; }
 :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item:hover { background: transparent; }
-:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item:hover > svg { background: color-mix(in srgb, var(--sf-text) 6%, transparent); }
+:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item:hover > :is(svg, .claude-mobile-nav-icon) { background: color-mix(in srgb, var(--sf-text) 6%, transparent); }
 :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item[data-shell-active=true] { color: var(--sf-text); background: transparent; }
-:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item[data-shell-active=true] > svg { background: color-mix(in srgb, var(--sf-brand) 12%, transparent); }
-:is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-mobile-nav-item[data-shell-active=true] > svg { background: color-mix(in srgb, var(--sf-brand) 16%, transparent); }
+:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item[data-shell-active=true] > :is(svg, .claude-mobile-nav-icon) { background: color-mix(in srgb, var(--sf-brand) 12%, transparent); }
+:is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-mobile-nav-item[data-shell-active=true] > :is(svg, .claude-mobile-nav-icon) { background: color-mix(in srgb, var(--sf-brand) 16%, transparent); }
 @media (prefers-reduced-transparency: reduce) {
   :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav { background: var(--sf-surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 html[data-theme-family=crystal] .claude-mobile-nav { border-top: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--sf-surface) 92%, transparent), color-mix(in srgb, var(--sf-canvas) 98%, transparent)); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sf-brand) 55%, transparent); }
 html[data-theme-family=crystal]:not(.dark) .claude-mobile-nav { background: linear-gradient(180deg, rgb(236 248 255 / .94), rgb(212 236 255 / .98)); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sf-brand-hover) 55%, transparent); }
 html[data-theme-family=crystal] .claude-mobile-nav-item { border-radius: 0; transform: skewX(-14deg); font: italic 700 10.5px/1 var(--sf-font-display); letter-spacing: .06em; text-transform: uppercase; }
-html[data-theme-family=crystal] .claude-mobile-nav-item > svg,html[data-theme-family=crystal] .claude-mobile-nav-item > span { transform: skewX(14deg); }
+html[data-theme-family=crystal] .claude-mobile-nav-item > :is(svg, span) { transform: skewX(14deg); }
 html[data-theme-family=crystal] .claude-mobile-nav-item:hover { background: color-mix(in srgb, var(--sf-text) 6%, transparent); }
 html[data-theme-family=crystal] .claude-mobile-nav-item[data-shell-active=true] { color: #fff; background: var(--shell-crimson); box-shadow: 0 0 18px -2px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
 
