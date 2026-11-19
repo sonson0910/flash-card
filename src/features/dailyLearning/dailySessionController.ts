@@ -1,5 +1,5 @@
 import type { ReviewRatingValue } from '../../types/card';
-import type { LearningStateOutcome } from '../learning/learningStateController';
+import type { LearningStateOutcome, LearningStatePublication } from '../learning/learningStateController';
 import type { Exercise, ExerciseAnswer } from './exerciseEngine';
 import {
   createLessonState,
@@ -10,7 +10,7 @@ import {
 } from './lessonReducer';
 
 export type DailySessionPersistenceResult =
-  | { readonly status: 'advanced' | 'completed'; readonly xpAwarded: number }
+  | { readonly status: 'advanced' | 'completed'; readonly xpAwarded: number; readonly publication?: LearningStatePublication }
   | { readonly status: 'stale-session' | 'not-ready' }
   | { readonly status: 'failed'; readonly error: string };
 
@@ -86,7 +86,11 @@ export function createDailySessionController({
         });
         if (next === snapshot) return { status: 'stale-session' };
         publish(next);
-        return { status: next.phase === 'completed' ? 'completed' : 'advanced', xpAwarded: outcome.result.xpAwarded };
+        return {
+          status: next.phase === 'completed' ? 'completed' : 'advanced',
+          xpAwarded: outcome.result.xpAwarded,
+          ...(outcome.result.publication ? { publication: outcome.result.publication } : {}),
+        };
       } catch (error) {
         if (generation !== sessionGeneration || !snapshot) return { status: 'stale-session' };
         const message = errorMessage(error);

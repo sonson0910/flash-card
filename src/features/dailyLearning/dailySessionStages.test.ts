@@ -5,6 +5,7 @@ import { cardsForLanguagePair } from '../practice/practiceModel';
 import {
   answersForStage,
   applyRatingToStats,
+  applyTierChangeToStats,
   longestCorrectRun,
   MAX_SESSION_ANSWERS,
   buildSessionStagePlan,
@@ -255,6 +256,32 @@ describe('applyRatingToStats', () => {
     for (let index = 0; index < MAX_SESSION_ANSWERS + 5; index += 1) stats = applyRatingToStats(stats, `c${index}`, 'good', 0, 'review');
     expect(stats.answers).toHaveLength(MAX_SESSION_ANSWERS);
   });
+
+  it('keeps promotions recorded earlier when a later rating lands', () => {
+    const promoted = applyTierChangeToStats(emptyDailySessionStats, 'a', 'new', 'learning');
+    expect(applyRatingToStats(promoted, 'b', 'good', 0, 'review').promotions).toEqual([{ cardId: 'a', from: 'new', to: 'learning' }]);
+  });
+});
+
+describe('applyTierChangeToStats', () => {
+  it('records a card only when its committed review raised its tier', () => {
+    expect(applyTierChangeToStats(emptyDailySessionStats, 'a', 'learning', 'learning')).toBe(emptyDailySessionStats);
+    expect(applyTierChangeToStats(emptyDailySessionStats, 'a', 'mastered', 'learning')).toBe(emptyDailySessionStats);
+    expect(applyTierChangeToStats(emptyDailySessionStats, 'a', 'new', 'learning').promotions).toEqual([{ cardId: 'a', from: 'new', to: 'learning' }]);
+  });
+
+  it('keeps the tier a card started the session with across repeat reviews', () => {
+    let stats = applyTierChangeToStats(emptyDailySessionStats, 'a', 'new', 'learning');
+    stats = applyTierChangeToStats(stats, 'a', 'learning', 'mastered');
+    expect(stats.promotions).toEqual([{ cardId: 'a', from: 'new', to: 'mastered' }]);
+  });
+
+  it('drops a card that fell back to its starting tier later in the session', () => {
+    let stats = applyTierChangeToStats(emptyDailySessionStats, 'a', 'learning', 'mastered');
+    stats = applyTierChangeToStats(stats, 'b', 'new', 'learning');
+    stats = applyTierChangeToStats(stats, 'a', 'mastered', 'learning');
+    expect(stats.promotions).toEqual([{ cardId: 'b', from: 'new', to: 'learning' }]);
+  });
 });
 
 it('sends completed Match pairs in frozen challenge order across retries', () => {
@@ -334,6 +361,22 @@ describe('session pointer storage', () => {
       stats: { ...emptyDailySessionStats, answers: [{ stage: 'match', correct: true }] as never },
     })));
     expect(readDailySessionPointer('owner-1')).toBeNull();
+  });
+
+  it('round-trips promoted card ids and rejects a malformed promotion list', () => {
+    const promotions = [{ cardId: 'a', from: 'new' as const, to: 'learning' as const }];
+    writeDailySessionPointer(pointer({ stats: { ...emptyDailySessionStats, promotions } }));
+    expect(readDailySessionPointer('owner-1')?.stats.promotions).toEqual(promotions);
+    globalThis.sessionStorage.setItem('sonflash:daily-session:owner-1', JSON.stringify(pointer({
+      stats: { ...emptyDailySessionStats, promotions: [{ cardId: 'a', from: 'new', to: 'legend' }] as never },
+    })));
+    expect(readDailySessionPointer('owner-1')).toBeNull();
+  });
+
+  it('reads a pointer saved before promotions were tracked', () => {
+    const { promotions: _promotions, ...legacyStats } = emptyDailySessionStats;
+    globalThis.sessionStorage.setItem('sonflash:daily-session:owner-1', JSON.stringify(pointer({ stats: legacyStats })));
+    expect(readDailySessionPointer('owner-1')?.stats.promotions).toBeUndefined();
   });
 
   it('reads null for malformed stored JSON instead of throwing', () => {

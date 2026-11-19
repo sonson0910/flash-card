@@ -4,6 +4,8 @@ import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import type { CardData, ReviewRatingValue } from '../../types/card';
 import type { LearningStateOutcome } from '../learning/learningStateController';
+import { getLibraryCardTier } from '../library/libraryViewModel';
+import type { SessionRecapPromotion } from '../practice/SessionRecapModal';
 import type { LanguageProfile } from '../language/languageProfile';
 import { triggerHaptic } from '../../lib/haptics';
 import { firebasePracticeSessionService, practiceTimeZone, type PracticeGamificationOutcome, type PracticeSessionChallenge } from '../practice/practiceSessionService';
@@ -32,6 +34,7 @@ import {
   emptyDailySessionStats,
   answersForStage,
   applyRatingToStats,
+  applyTierChangeToStats,
   longestCorrectRun,
   firstOutstandingStage,
   logicalIdsOf,
@@ -1216,9 +1219,16 @@ export default function DailyLearningWorkspace({
     const recordReview = (result: Awaited<ReturnType<typeof session.rate>>, operationId: string | undefined, cardId: string, rating: ReviewRatingValue) => {
       if (!operationId || recordedReviewOperationIdsRef.current.has(operationId) || !isCurrentLessonScope() || (result.status !== 'advanced' && result.status !== 'completed')) return;
       recordedReviewOperationIdsRef.current.add(operationId);
-      setMultiStage(current => (isCurrentSession(current)
-        ? { ...current, stats: applyRatingToStats(current.stats, cardId, rating, result.xpAwarded, current.phase.kind === 'lesson' ? current.phase.stage : undefined) }
-        : current));
+      const before = dailyCardsRef.current.find(card => card.id === cardId);
+      const reviewed = before && result.publication?.kind === 'patch' && result.publication.cardId === cardId
+        ? { ...before, ...result.publication.fields }
+        : undefined;
+      setMultiStage(current => {
+        if (!isCurrentSession(current)) return current;
+        const rated = applyRatingToStats(current.stats, cardId, rating, result.xpAwarded, current.phase.kind === 'lesson' ? current.phase.stage : undefined);
+        const stats = before && reviewed ? applyTierChangeToStats(rated, cardId, getLibraryCardTier(before), getLibraryCardTier(reviewed)) : rated;
+        return { ...current, stats };
+      });
     };
     const feedback = activeLesson.feedback;
     const stage = currentStep?.stage ?? 'review';
@@ -1333,6 +1343,12 @@ export default function DailyLearningWorkspace({
         return card ? [card] : [];
       })
     : [];
+  const sessionPromotions: SessionRecapPromotion[] = activeMultiStage
+    ? (activeMultiStage.stats.promotions ?? []).flatMap(promotion => {
+        const card = dailyCardsRef.current.find(candidate => candidate.id === promotion.cardId);
+        return card ? [{ card, from: promotion.from, to: promotion.to }] : [];
+      })
+    : [];
   const sessionTotalCards = committedReviewCount;
   const sessionXpEarned = activeMultiStage
     ? (activeMultiStage.stats.reviewXp ?? 0) + activeMultiStage.stats.matchXp
@@ -1421,6 +1437,10 @@ export default function DailyLearningWorkspace({
           xpEarned={sessionXpEarned}
           weakCards={weakCards}
           targetLanguage={targetLanguage}
+          promotions={sessionPromotions}
+          {...(todayStreak > 0 ? { streakDays: todayStreak } : {})}
+          {...(activeMultiStage.stats.answers ? { bestRun: longestCorrectRun(activeMultiStage.stats.answers) } : {})}
+          returnsToToday
         />
       </Suspense>
     )}

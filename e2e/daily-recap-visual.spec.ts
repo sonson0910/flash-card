@@ -115,7 +115,8 @@ for (const theme of themes) {
         else await expect(root).not.toHaveClass(/\bdark\b/);
         if (theme.family === 'crystal') await expect(page.locator('#sonflash-crystal-theme')).toHaveAttribute('href', '/theme-crystal.css');
         await expect(recap.getByRole('heading', { name: locale.title })).toBeVisible();
-        await expect(recap.locator('[data-count-up]')).toHaveText(['12', '83', '175']);
+        await expect(recap.locator('[data-count-up]')).toHaveText(theme.family === 'crystal' ? ['83', '175', '12'] : ['12', '83', '175']);
+        await expect(recap.getByText(locale.code === 'vi' ? '8 thẻ đến hạn' : '8 cards due', { exact: true })).toBeVisible();
         await expectAccessibleAndContained(page, `${theme.family} ${theme.mode} ${viewport.name} ${locale.code}`);
         await attachRecap(page, testInfo, `${theme.family}-${theme.mode}-${viewport.name}-${locale.code}-recap`);
         if (locale.code === 'en') await expect(recap).toHaveScreenshot(`daily-recap-${theme.family}-${theme.mode}-${viewport.name}.png`);

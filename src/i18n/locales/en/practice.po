@@ -18,10 +18,20 @@ msgctxt "rich-story-view.retell-in-your-own-words"
 msgid "Retell in your own words"
 msgstr "Retell in your own words"
 
+#: src/features/practice/SessionRecapModal.tsx:349
+msgctxt "recap.what-next"
+msgid "What next"
+msgstr "What next"
+
 #: src/features/practice/WordMatchView.tsx:330
 msgctxt "practice.match.verifying-reward"
 msgid "Verifying your result…"
 msgstr "Verifying your result…"
+
+#: src/features/practice/SessionRecapModal.tsx:358
+msgctxt "recap.weekly-detail"
+msgid "Your last 7 days"
+msgstr "Your last 7 days"
 
 #: src/features/practice/WordMatchView.tsx:352
 msgctxt "practice.match.retry-verification"
@@ -63,6 +73,16 @@ msgctxt "practice.results.keep-practising"
 msgid "Keep practising until the difficult words feel automatic."
 msgstr "Keep practising until the difficult words feel automatic."
 
+#: src/features/practice/SessionRecapModal.tsx:261
+msgctxt "recap.remembered-count"
+msgid "{count} remembered"
+msgstr "{count} remembered"
+
+#: src/features/practice/SessionRecapModal.tsx:102
+msgctxt "recap.tier.new"
+msgid "New"
+msgstr "New"
+
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:252
 msgctxt "languagePractice.zh.tones"
 msgid "Pinyin tones"
@@ -72,6 +92,11 @@ msgstr "Pinyin tones"
 msgctxt "languagePractice.ko.instruction"
 msgid "Build the Hangul word from its meaning."
 msgstr "Build the Hangul word from its meaning."
+
+#: src/features/practice/SessionRecapModal.tsx:304
+msgctxt "recap.cheer"
+msgid "All done!"
+msgstr "All done!"
 
 #: src/features/practice/StoryView.tsx:118
 msgctxt "practice.story.creating-progress"
@@ -83,20 +108,16 @@ msgctxt "study.recall-mode"
 msgid "Recall mode"
 msgstr "Recall mode"
 
-#: src/features/practice/SessionRecapModal.tsx:101
+#: src/features/practice/SessionRecapModal.tsx:358
+#: src/features/practice/SessionRecapModal.tsx:406
 msgctxt "recap.weekly"
 msgid "View weekly recap"
 msgstr "View weekly recap"
 
-#: src/features/practice/SessionRecapModal.tsx:84
-msgctxt "recap.retained"
-msgid "Retained"
-msgstr "Retained"
-
-#: src/features/practice/SessionRecapModal.tsx:91
-msgctxt "recap.mastered"
-msgid "Remembered"
-msgstr "Remembered"
+#: src/features/practice/SessionRecapModal.tsx:353
+msgctxt "recap.card-count"
+msgid "{count, plural, one {# card} other {# cards}}"
+msgstr "{count, plural, one {# card} other {# cards}}"
 
 #: src/features/practice/ShadowingView.tsx:284
 msgctxt "shadowing-view.the-browser-checks-whether-the-intended-words-were-recognised-it-"
@@ -123,6 +144,11 @@ msgctxt "practice.loading.story"
 msgid "Loading story"
 msgstr "Loading story"
 
+#: src/features/practice/SessionRecapModal.tsx:130
+msgctxt "recap.card-levels"
+msgid "{count, plural, one {+# level} other {+# levels}}"
+msgstr "{count, plural, one {+# level} other {+# levels}}"
+
 #: src/features/practice/WordMatchView.tsx:395
 #: src/features/practice/WordMatchView.tsx:425
 msgctxt "practice.match.back"
@@ -138,11 +164,6 @@ msgstr "Adaptive difficulty"
 msgctxt "languagePractice.en.pack"
 msgid "English pack"
 msgstr "English pack"
-
-#: src/features/practice/SessionRecapModal.tsx:76
-msgctxt "recap.description"
-msgid "Here is what you strengthened today."
-msgstr "Here is what you strengthened today."
 
 #: src/features/practice/WordMatchView.tsx:371
 msgctxt "practice.match.retry-new-round"
@@ -190,6 +211,11 @@ msgctxt "practice.results.accuracy"
 msgid "Accuracy"
 msgstr "Accuracy"
 
+#: src/features/practice/SessionRecapModal.tsx:262
+msgctxt "recap.revisit-count"
+msgid "{count} to revisit"
+msgstr "{count} to revisit"
+
 #: src/features/practice/StudyView.tsx:446
 msgctxt "study-view.i-ve-reviewed-it-start-recall"
 msgid "I’ve reviewed it — start recall"
@@ -206,10 +232,15 @@ msgctxt "languagePractice.action.next"
 msgid "Next"
 msgstr "Next"
 
-#: src/features/practice/SessionRecapModal.tsx:88
+#: src/features/practice/SessionRecapModal.tsx:256
 msgctxt "recap.progress-breakdown"
 msgid "Saved: {saved} / {total} · Skipped: {skipped} · Not started: {remaining} · Saving: {pending} · Failed: {failed}"
 msgstr "Saved: {saved} / {total} · Skipped: {skipped} · Not started: {remaining} · Saving: {pending} · Failed: {failed}"
+
+#: src/features/practice/SessionRecapModal.tsx:243
+msgctxt "recap.back-today"
+msgid "Back to Today"
+msgstr "Back to Today"
 
 #: src/features/practice/WordMatchView.tsx:345
 msgctxt "practice.match.verification-failed"
@@ -221,6 +252,11 @@ msgstr "We could not verify your result. Your completed pairs are still here."
 msgctxt "practice.feedback.incorrect-prefix"
 msgid "Incorrect. The correct answer is"
 msgstr "Incorrect. The correct answer is"
+
+#: src/features/practice/SessionRecapModal.tsx:314
+msgctxt "recap.best-run-detail"
+msgid "Remembered in a row"
+msgstr "Remembered in a row"
 
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:217
 msgctxt "languagePractice.zh.instruction"
@@ -248,6 +284,11 @@ msgctxt "practice.spelling.complete"
 msgid "Complete"
 msgstr "Complete"
 
+#: src/features/practice/SessionRecapModal.tsx:98
+msgctxt "recap.grade.new"
+msgid "Bud"
+msgstr "Bud"
+
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:288
 msgctxt "languagePractice.ko.physicalKeyboard"
 msgid "Physical keyboard: type the 2-set keys shown on each button."
@@ -257,6 +298,11 @@ msgstr "Physical keyboard: type the 2-set keys shown on each button."
 msgctxt "languagePractice.zh.missingTones"
 msgid "This card needs verified pinyin tone data before it can be practised."
 msgstr "This card needs verified pinyin tone data before it can be practised."
+
+#: src/features/practice/SessionRecapModal.tsx:353
+msgctxt "recap.review-misses"
+msgid "Review misses"
+msgstr "Review misses"
 
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:330
 msgctxt "languagePractice.results.try-again"
@@ -314,12 +360,6 @@ msgctxt "practice.loading.study"
 msgid "Loading study session"
 msgstr "Loading study session"
 
-#: src/features/practice/SessionRecapModal.tsx:91
-#: src/features/practice/SessionRecapModal.tsx:92
-msgctxt "recap.word-count"
-msgid "{count, plural, one {# word} other {# words}}"
-msgstr "{count, plural, one {# word} other {# words}}"
-
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:304
 msgctxt "languagePractice.action.check"
 msgid "Check"
@@ -330,10 +370,20 @@ msgctxt "study.recall-mode.listen-to-word"
 msgid "Listen → Word"
 msgstr "Listen → Word"
 
+#: src/features/practice/SessionRecapModal.tsx:263
+msgctxt "recap.retry-missed"
+msgid "{count, plural, one {Retry the missed word} other {Retry the # missed words}}"
+msgstr "{count, plural, one {Retry the missed word} other {Retry the # missed words}}"
+
 #: src/features/practice/rich-story-view.tsx:204
 msgctxt "rich-story-view.grammar-transformation"
 msgid "Grammar transformation:"
 msgstr "Grammar transformation:"
+
+#: src/features/practice/SessionRecapModal.tsx:324
+msgctxt "recap.words"
+msgid "Words"
+msgstr "Words"
 
 #: src/features/practice/WordMatchView.tsx:325
 msgctxt "practice.match.complete-copy"
@@ -349,6 +399,11 @@ msgstr "Correct"
 msgctxt "practice.shadowing.listen"
 msgid "Listen"
 msgstr "Listen"
+
+#: src/features/practice/SessionRecapModal.tsx:397
+msgctxt "recap.next-review"
+msgid "Next review"
+msgstr "Next review"
 
 #: src/features/practice/StudyView.tsx:389
 msgctxt "study-view.summary"
@@ -372,7 +427,7 @@ msgctxt "practice.loading.language-drill"
 msgid "Loading language drill"
 msgstr "Loading language drill"
 
-#: src/features/practice/SessionRecapModal.tsx:130
+#: src/features/practice/SessionRecapModal.tsx:92
 msgctxt "recap.tomorrow-error"
 msgid "Count unavailable"
 msgstr "Count unavailable"
@@ -392,10 +447,16 @@ msgctxt "practice.match.new-round"
 msgid "New round"
 msgstr "New round"
 
-#: src/features/practice/SessionRecapModal.tsx:127
+#: src/features/practice/SessionRecapModal.tsx:362
+#: src/features/practice/SessionRecapModal.tsx:397
 msgctxt "recap.tomorrow"
 msgid "Tomorrow"
 msgstr "Tomorrow"
+
+#: src/features/practice/SessionRecapModal.tsx:287
+msgctxt "recap.streak-day"
+msgid "Day {count}"
+msgstr "Day {count}"
 
 #: src/features/practice/StoryView.tsx:197
 msgctxt "practice.story.translation-language"
@@ -423,12 +484,12 @@ msgctxt "languagePractice.feedback.correct"
 msgid "Correct."
 msgstr "Correct."
 
-#: src/features/practice/SessionRecapModal.tsx:102
+#: src/features/practice/SessionRecapModal.tsx:244
 msgctxt "recap.continue"
 msgid "Continue learning"
 msgstr "Continue learning"
 
-#: src/features/practice/SessionRecapModal.tsx:75
+#: src/features/practice/SessionRecapModal.tsx:240
 msgctxt "recap.title"
 msgid "Session complete"
 msgstr "Session complete"
@@ -459,6 +520,11 @@ msgstr "Item {current} of {total}"
 msgctxt "practice.learn-first"
 msgid "I don't know this — learn first"
 msgstr "I don't know this — learn first"
+
+#: src/features/practice/SessionRecapModal.tsx:99
+msgctxt "recap.grade.learning"
+msgid "Bloom"
+msgstr "Bloom"
 
 #: src/features/practice/PracticeScreen.tsx:166
 msgctxt "practice.loading.shadowing"
@@ -520,6 +586,11 @@ msgstr "Hangul answer"
 msgid "languagePractice.zh.placeholder"
 msgstr "Hanzi answer"
 
+#: src/features/practice/SessionRecapModal.tsx:122
+msgctxt "recap.card-move"
+msgid "Moved from {from} to {to}"
+msgstr "Moved from {from} to {to}"
+
 #: src/features/practice/SpellingView.tsx:328
 msgctxt "practice.spelling.answer-is"
 msgid "The answer is"
@@ -529,6 +600,11 @@ msgstr "The answer is"
 msgctxt "practice.story.generation-stopped"
 msgid "Story generation stopped"
 msgstr "Story generation stopped"
+
+#: src/features/practice/SessionRecapModal.tsx:334
+msgctxt "recap.cards-up"
+msgid "Cards glowed up"
+msgstr "Cards glowed up"
 
 #: src/features/practice/ShadowingView.tsx:231
 msgctxt "shadowing-view.practice-clip-sentence"
@@ -540,15 +616,21 @@ msgctxt "languagePractice.ko.final-correction"
 msgid "Final consonant: {typed} makes a different word. Delete it and choose {expected}."
 msgstr "Final consonant: {typed} makes a different word. Delete it and choose {expected}."
 
-#: src/features/practice/SessionRecapModal.tsx:100
-msgctxt "recap.retry-weak"
-msgid "Review {count, plural, one {# word} other {# words}}"
-msgstr "Review {count, plural, one {# word} other {# words}}"
+#: src/features/practice/SessionRecapModal.tsx:317
+#: src/features/practice/SessionRecapModal.tsx:393
+msgctxt "recap.streak"
+msgid "Streak"
+msgstr "Streak"
 
 #: src/features/practice/WordMatchView.tsx:364
 msgctxt "practice.match.new-round-failed"
 msgid "We could not start a new verified round. Check your connection and try again."
 msgstr "We could not start a new verified round. Check your connection and try again."
+
+#: src/features/practice/SessionRecapModal.tsx:318
+msgctxt "recap.streak-detail"
+msgid "Days in a row"
+msgstr "Days in a row"
 
 #: src/features/practice/rich-story-view.tsx:148
 msgctxt "rich-story-view.an-ephemeral-ai-generated-lesson-from-your-vocabulary"
@@ -573,7 +655,7 @@ msgctxt "study.recall-mode.target-to-native"
 msgid "{targetLanguage} → {nativeLanguage}"
 msgstr "{targetLanguage} → {nativeLanguage}"
 
-#: src/features/practice/SessionRecapModal.tsx:129
+#: src/features/practice/SessionRecapModal.tsx:91
 msgctxt "recap.tomorrow-loading"
 msgid "Checking cards due…"
 msgstr "Checking cards due…"
@@ -593,6 +675,11 @@ msgctxt "study.card-count"
 msgid "{current} / {total} saved"
 msgstr "{current} / {total} saved"
 
+#: src/features/practice/SessionRecapModal.tsx:389
+msgctxt "recap.experience"
+msgid "Experience"
+msgstr "Experience"
+
 #: src/features/practice/WordMatchView.tsx:308
 msgctxt "practice.match.seconds"
 msgid "{seconds}s"
@@ -603,7 +690,7 @@ msgctxt "practice.loading.spelling"
 msgid "Loading spelling practice"
 msgstr "Loading spelling practice"
 
-#: src/features/practice/SessionRecapModal.tsx:131
+#: src/features/practice/SessionRecapModal.tsx:93
 msgctxt "recap.tomorrow-count"
 msgid "{count, plural, one {# card due} other {# cards due}}"
 msgstr "{count, plural, one {# card due} other {# cards due}}"
@@ -622,6 +709,16 @@ msgstr "Korean pack · 한국어"
 msgctxt "languagePractice.results.close"
 msgid "Back to library"
 msgstr "Back to library"
+
+#: src/features/practice/SessionRecapModal.tsx:372
+msgctxt "recap.headline"
+msgid "{count, plural, one {<0>#</0> word, <1>locked in.</1>} other {<0>#</0> words, <1>locked in.</1>}}"
+msgstr "{count, plural, one {<0>#</0> word, <1>locked in.</1>} other {<0>#</0> words, <1>locked in.</1>}}"
+
+#: src/features/practice/SessionRecapModal.tsx:260
+msgctxt "recap.description-remembered"
+msgid "You remembered {good} of {total}."
+msgstr "You remembered {good} of {total}."
 
 #. js-lingui-explicit-id
 #: src/features/practice/usePracticeGames.ts:100
@@ -972,7 +1069,7 @@ msgstr "Creating your story."
 msgid "practice.story.ready"
 msgstr "Your story is ready."
 
-#: src/features/practice/SessionRecapModal.tsx:92
+#: src/features/practice/SessionRecapModal.tsx:340
 msgctxt "recap.needs-review"
 msgid "To revisit"
 msgstr "To revisit"
@@ -981,6 +1078,11 @@ msgstr "To revisit"
 msgctxt "practice.shadowing.success"
 msgid "Nice pronunciation"
 msgstr "Nice pronunciation"
+
+#: src/features/practice/SessionRecapModal.tsx:393
+msgctxt "recap.streak-today"
+msgid "+1 today"
+msgstr "+1 today"
 
 #: src/features/practice/WordMatchView.tsx:338
 msgctxt "practice.match.verified-no-xp"
@@ -992,12 +1094,17 @@ msgctxt "practice.story.context"
 msgid "Context story"
 msgstr "Context story"
 
+#: src/features/practice/SessionRecapModal.tsx:322
+msgctxt "recap.xp-session"
+msgid "This session"
+msgstr "This session"
+
 #: src/features/practice/QuizView.tsx:135
 msgctxt "practice.quiz.complete"
 msgid "Quiz complete"
 msgstr "Quiz complete"
 
-#: src/features/practice/SessionRecapModal.tsx:75
+#: src/features/practice/SessionRecapModal.tsx:241
 msgctxt "recap.summary-title"
 msgid "Session summary"
 msgstr "Session summary"
@@ -1008,9 +1115,19 @@ msgid "Loading this language exercise…"
 msgstr "Loading this language exercise…"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:79
+#: src/features/practice/SessionRecapModal.tsx:377
+msgid "recap.cards-up-label"
+msgstr "Words that moved up a level"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:251
 msgid "recap.close"
 msgstr "Close recap"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:384
+msgid "recap.recall-split"
+msgstr "{good} remembered, {again} to revisit"
 
 #: src/features/practice/QuizView.tsx:165
 msgctxt "practice.results.perfect"
@@ -1043,6 +1160,11 @@ msgctxt "languagePractice.ja.sentence.instruction"
 msgid "Choose the missing word."
 msgstr "Choose the missing word."
 
+#: src/features/practice/SessionRecapModal.tsx:259
+msgctxt "recap.description-promoted"
+msgid "You remembered {good} of {total}, and {promoted, plural, one {# word} other {# words}} moved up a level."
+msgstr "You remembered {good} of {total}, and {promoted, plural, one {# word} other {# words}} moved up a level."
+
 #: src/features/practice/StudyView.tsx:428
 msgctxt "study-view.take-a-moment-to-review-the-card-before-recall-practice"
 msgid "Take a moment to review the card before recall practice."
@@ -1067,6 +1189,16 @@ msgstr "Drill complete"
 #: src/features/practice/ShadowingView.tsx:223
 msgid "shadowing-view.practice-target"
 msgstr "Practice target"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:246
+msgid "shell.theme.quick-toggle"
+msgstr "Switch light and dark mode"
+
+#: src/features/practice/SessionRecapModal.tsx:383
+msgctxt "recap.recall"
+msgid "Recall"
+msgstr "Recall"
 
 #: src/features/practice/QuizView.tsx:192
 #: src/features/practice/SpellingView.tsx:189
@@ -1135,15 +1267,25 @@ msgctxt "practice.match.starting-new-round"
 msgid "Starting new round…"
 msgstr "Starting new round…"
 
+#: src/features/practice/SessionRecapModal.tsx:103
+msgctxt "recap.tier.learning"
+msgid "Learning"
+msgstr "Learning"
+
+#: src/features/practice/SessionRecapModal.tsx:313
+msgctxt "recap.best-run"
+msgid "Best combo"
+msgstr "Best combo"
+
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:176
 msgctxt "languagePractice.zh.pack"
 msgid "Chinese pack · 中文"
 msgstr "Chinese pack · 中文"
 
-#: src/features/practice/SessionRecapModal.tsx:83
-msgctxt "recap.reviewed"
-msgid "Reviewed"
-msgstr "Reviewed"
+#: src/features/practice/SessionRecapModal.tsx:394
+msgctxt "recap.streak-note"
+msgid "A day counts once you earn XP."
+msgstr "A day counts once you earn XP."
 
 #: src/features/practice/PracticeScreen.tsx:153
 msgctxt "practice.loading.match"
@@ -1190,6 +1332,12 @@ msgctxt "practice.story.create-another"
 msgid "Create another story"
 msgstr "Create another story"
 
+#: src/features/practice/SessionRecapModal.tsx:100
+#: src/features/practice/SessionRecapModal.tsx:202
+msgctxt "recap.grade.mastered"
+msgid "Star"
+msgstr "Star"
+
 #: src/features/practice/ShadowingView.tsx:308
 msgctxt "practice.shadowing.listening"
 msgid "Listening…"
@@ -1215,6 +1363,11 @@ msgctxt "languagePractice.ko.keyboard"
 msgid "Hangul block keyboard"
 msgstr "Hangul block keyboard"
 
+#: src/features/practice/SessionRecapModal.tsx:104
+msgctxt "recap.tier.mastered"
+msgid "Mastered"
+msgstr "Mastered"
+
 #: src/features/practice/rich-story-view.tsx:140
 msgctxt "rich-story-view.try-again"
 msgid "Try again"
@@ -1231,12 +1384,17 @@ msgctxt "practice.actions.saving-result"
 msgid "Saving result…"
 msgstr "Saving result…"
 
+#: src/features/practice/SessionRecapModal.tsx:309
+msgctxt "recap.accuracy"
+msgid "Accuracy"
+msgstr "Accuracy"
+
 #: src/features/practice/StoryView.tsx:183
 msgctxt "practice.story.target-language"
 msgid "{languageName}"
 msgstr "{languageName}"
 
-#: src/features/practice/SessionRecapModal.tsx:85
+#: src/features/practice/SessionRecapModal.tsx:321
 msgctxt "recap.xp-earned"
 msgid "XP earned"
 msgstr "XP earned"
@@ -1273,12 +1431,12 @@ msgctxt "practice.shadowing.accuracy"
 msgid "Accuracy: {score}%"
 msgstr "Accuracy: {score}%"
 
+#: src/features/practice/SessionRecapModal.tsx:310
+msgctxt "recap.remembered-of"
+msgid "{good} of {total} remembered"
+msgstr "{good} of {total} remembered"
+
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:303
 msgctxt "languagePractice.action.hint"
 msgid "Hint"
 msgstr "Hint"
-
-#: src/features/practice/SessionRecapModal.tsx:95
-msgctxt "recap.words-to-reinforce"
-msgid "Words to reinforce ({count})"
-msgstr "Words to reinforce ({count})"
