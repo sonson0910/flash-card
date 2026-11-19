@@ -153,6 +153,11 @@ msgctxt "landing.nav.chrome-extension"
 msgid "Chrome extension"
 msgstr ""
 
+#: src/features/landing/LandingPage.tsx:326
+msgctxt "landing.hero.crystal-tagline"
+msgid "Break through your vocabulary limits. Every card is a crystal, <0>blooming into a Star.</0>"
+msgstr ""
+
 #: src/features/landing/LandingPage.tsx:224
 msgctxt "landing.pricing.row.extension"
 msgid "Chrome extension"
@@ -208,11 +213,6 @@ msgstr ""
 #: src/features/landing/LandingPage.tsx:314
 msgctxt "landing.ribbon.learn-at-your-pace"
 msgid "Learn at your pace"
-msgstr ""
-
-#: src/features/landing/LandingPage.tsx:326
-msgctxt "landing.hero.title"
-msgid "Remember words.<0/><1>Use them when it matters.</1>"
 msgstr ""
 
 #: src/features/landing/LandingPage.tsx:1102

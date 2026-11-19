@@ -323,7 +323,7 @@ function CrystalLandingHero({ onEnterApp, onSignIn, user, showLumi }: Pick<Landi
     <div className="crystal-copy">
       <span className="crystal-badge"><span><Trans {...msg({ context: 'landing.hero.crystal-badge', message: 'New · Crystal Star' })} /></span></span>
       <h1 id="landing-heading">SonFlash</h1>
-      <p className="crystal-tagline"><Trans {...msg({ context: 'landing.hero.title', message: 'Remember words.<0/><1>Use them when it matters.</1>' })} components={{ 0: <br />, 1: <span /> }} /></p>
+      <p className="crystal-tagline"><Trans {...msg({ context: 'landing.hero.crystal-tagline', message: 'Break through your vocabulary limits. Every card is a crystal, <0>blooming into a Star.</0>' })} components={{ 0: <span /> }} /></p>
       <p className="crystal-description"><Trans {...msg({ context: 'landing.hero.description', message: 'Build an English vocabulary you can reach for with context, spaced review, and active recall.' })} /></p>
       <div className="crystal-actions">
         <button type="button" onClick={onEnterApp} className="crystal-primary"><span className="crystal-shine" aria-hidden="true" /><span><Trans {...msg({ context: 'landing.hero.start', message: 'Start learning' })} /></span> <Play size={18} fill="currentColor" strokeWidth={0} aria-hidden="true" /></button>
