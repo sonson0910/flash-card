@@ -92,15 +92,22 @@
 
     <div id="state-card" class="state-card" role="alert" hidden>
       <span class="state-icon" id="state-icon" aria-hidden="true"></span>
+      <span class="state-mascot" aria-hidden="true"></span>
       <div class="state-body">
+        <p class="state-eyebrow" aria-hidden="true" data-i18n="stateSignInEyebrow">LUMI · LINK LOST</p>
         <p class="state-title" id="state-title"></p>
         <p class="state-desc" id="state-desc"></p>
         <p class="state-note" id="state-note" hidden></p>
-        <div class="state-actions" id="state-actions"></div>
       </div>
+      <div class="state-actions" id="state-actions"></div>
     </div>
 
     <p id="status" class="status" role="status" aria-live="polite"></p>
+
+    <div class="lumi-tip">
+      <span class="lumi-tip-mascot" aria-hidden="true"></span>
+      <p class="lumi-tip-bubble"><span class="lumi-tip-label" aria-hidden="true" data-i18n="popupLumiLabel">LUMI · LINK</span><span data-i18n="popupLumiTip">Bôi đen một từ bất kỳ, mình dịch liền cho!</span></p>
+    </div>
 
     <section id="recent-lookups" class="recent-lookups" aria-labelledby="recent-lookups-heading" hidden>
       <div class="recent-heading">

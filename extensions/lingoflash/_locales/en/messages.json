@@ -198,5 +198,8 @@
   "stateQuotaAction": { "message": "Open SonFlash · Upgrade to Pro" },
   "stateErrorTitle": { "message": "Couldn't create or save this flashcard" },
   "stateErrorAction": { "message": "Retry" },
-  "errorRetryQuickAdd": { "message": "Couldn't retry. Select the word again in the extension." }
+  "errorRetryQuickAdd": { "message": "Couldn't retry. Select the word again in the extension." },
+  "stateSignInEyebrow": { "message": "LUMI · LINK LOST" },
+  "popupLumiLabel": { "message": "LUMI · LINK" },
+  "popupLumiTip": { "message": "Highlight any word and I will translate it right away!" }
 }

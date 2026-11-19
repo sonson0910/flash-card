@@ -198,5 +198,8 @@
   "stateQuotaAction": { "message": "Mở SonFlash · Nâng cấp Pro" },
   "stateErrorTitle": { "message": "Không thể tạo hoặc lưu flashcard này" },
   "stateErrorAction": { "message": "Thử lại" },
-  "errorRetryQuickAdd": { "message": "Không thể thử lại. Hãy chọn lại từ trong extension." }
+  "errorRetryQuickAdd": { "message": "Không thể thử lại. Hãy chọn lại từ trong extension." },
+  "stateSignInEyebrow": { "message": "LUMI · LINK LOST" },
+  "popupLumiLabel": { "message": "LUMI · LINK" },
+  "popupLumiTip": { "message": "Bôi đen một từ bất kỳ, mình dịch liền cho!" }
 }

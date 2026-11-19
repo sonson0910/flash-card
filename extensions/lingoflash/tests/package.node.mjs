@@ -13,6 +13,8 @@ const expectedFiles = [
   'app-bridge.js',
   'assets/crystal-wings.svg',
   'assets/lumi-hint.webp',
+  'assets/lumi-sad.webp',
+  'assets/lumi-sleepy.webp',
   'background-core.js',
   'background-ui.js',
   'background.js',
