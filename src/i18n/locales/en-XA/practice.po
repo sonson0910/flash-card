@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/features/practice/rich-story-view.tsx:216
+#: src/features/practice/rich-story-view.tsx:86
 msgctxt "rich-story-view.retell-in-your-own-words"
 msgid "Retell in your own words"
 msgstr ""
@@ -23,7 +23,12 @@ msgctxt "recap.what-next"
 msgid "What next"
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:330
+#: src/features/practice/StoryView.tsx:518
+msgctxt "practice.story.gloss"
+msgid "Lumi gloss"
+msgstr ""
+
+#: src/features/practice/WordMatchView.tsx:367
 msgctxt "practice.match.verifying-reward"
 msgid "Verifying your result…"
 msgstr ""
@@ -33,42 +38,72 @@ msgctxt "recap.weekly-detail"
 msgid "Your last 7 days"
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:352
+#: src/features/practice/WordMatchView.tsx:389
 msgctxt "practice.match.retry-verification"
 msgid "Retry verification"
 msgstr ""
 
-#: src/features/practice/ShadowingView.tsx:266
+#: src/features/practice/SpellingView.tsx:311
+msgctxt "practice.spelling.speed-slow"
+msgid "0.75× slow"
+msgstr ""
+
+#: src/features/practice/StoryView.tsx:332
+msgctxt "practice.story.tip"
+msgid "{count, plural, one {Tap the highlighted word for its meaning. Finish the story to review it.} other {Tap any highlighted word for its meaning. Finish the story to review all # in one go.}}"
+msgstr ""
+
+#: src/features/practice/ShadowingView.tsx:411
 msgctxt "practice.shadowing.you-said"
 msgid "You said:"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:179
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:182
 msgctxt "languagePractice.ko.title"
 msgid "Build the syllable blocks"
 msgstr ""
 
-#: src/features/practice/rich-story-view.tsx:219
+#: src/features/practice/rich-story-view.tsx:89
 msgctxt "rich-story-view.this-draft-stays-on-this-screen-and-is-not-submitted"
 msgid "This draft stays on this screen and is not submitted."
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:301
+#: src/features/practice/SpellingView.tsx:152
+msgctxt "practice.spelling.legend.correct"
+msgid "Correct"
+msgstr ""
+
+#: src/features/practice/QuizView.tsx:484
+msgctxt "practice.quiz.not-quite"
+msgid "Not quite."
+msgstr ""
+
+#: src/features/practice/ShadowingView.tsx:238
+msgctxt "practice.shadowing.close"
+msgid "Close shadowing practice"
+msgstr ""
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:308
 msgctxt "languagePractice.feedback.incorrect"
 msgid "Try this card again in the next round."
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:358
+#: src/features/practice/WordMatchView.tsx:310
+msgctxt "practice.match.mode"
+msgid "Word match"
+msgstr ""
+
+#: src/features/practice/WordMatchView.tsx:395
 msgctxt "practice.match.no-reward"
 msgid "This round did not award XP."
 msgstr ""
 
-#: src/features/practice/rich-story-view.tsx:184
+#: src/features/practice/rich-story-view.tsx:44
 msgctxt "rich-story-view.check-understanding"
 msgid "Check understanding"
 msgstr ""
 
-#: src/features/practice/QuizView.tsx:173
+#: src/features/practice/QuizView.tsx:267
 msgctxt "practice.results.keep-practising"
 msgid "Keep practising until the difficult words feel automatic."
 msgstr ""
@@ -83,12 +118,12 @@ msgctxt "recap.tier.new"
 msgid "New"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:252
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:255
 msgctxt "languagePractice.zh.tones"
 msgid "Pinyin tones"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:213
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:216
 msgctxt "languagePractice.ko.instruction"
 msgid "Build the Hangul word from its meaning."
 msgstr ""
@@ -98,7 +133,12 @@ msgctxt "recap.cheer"
 msgid "All done!"
 msgstr ""
 
-#: src/features/practice/StoryView.tsx:118
+#: src/features/practice/WordMatchView.tsx:338
+msgctxt "practice.match.pairs-matched"
+msgid "pairs matched"
+msgstr ""
+
+#: src/features/practice/StoryView.tsx:393
 msgctxt "practice.story.creating-progress"
 msgid "Creating your story…"
 msgstr ""
@@ -114,14 +154,39 @@ msgctxt "recap.weekly"
 msgid "View weekly recap"
 msgstr ""
 
+#: src/features/practice/SpellingView.tsx:234
+msgctxt "practice.spelling.mode-detail"
+msgid "listen and type"
+msgstr ""
+
 #: src/features/practice/SessionRecapModal.tsx:354
 msgctxt "recap.card-count"
 msgid "{count, plural, one {# card} other {# cards}}"
 msgstr ""
 
-#: src/features/practice/ShadowingView.tsx:284
+#: src/features/practice/WordMatchView.tsx:306
+msgctxt "practice.match.close"
+msgid "Close word match"
+msgstr ""
+
+#: src/features/practice/ShadowingView.tsx:339
+msgctxt "practice.shadowing.match-take"
+msgid "% match · take {take}"
+msgstr ""
+
+#: src/features/practice/StoryView.tsx:140
+msgctxt "practice.story.review-now"
+msgid "Review now"
+msgstr ""
+
+#: src/features/practice/ShadowingView.tsx:423
 msgctxt "shadowing-view.the-browser-checks-whether-the-intended-words-were-recognised-it-"
 msgid "The browser checks whether the intended words were recognised; it does not assess individual sounds, phonemes, or accent."
+msgstr ""
+
+#: src/features/practice/SpellingView.tsx:153
+msgctxt "practice.spelling.legend.wrong"
+msgid "Wrong letter"
 msgstr ""
 
 #: src/features/practice/StudyView.tsx:413
@@ -129,17 +194,27 @@ msgctxt "study.swipe.good"
 msgid "GOOD 👍"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:218
+#: src/features/practice/ShadowingView.tsx:305
+msgctxt "practice.shadowing.model-voice"
+msgid "Spoken by your browser voice. Tap play to hear it."
+msgstr ""
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:284
+msgctxt "languagePractice.ko.block-formula"
+msgid "Each block = 초성 initial + 중성 vowel + 종성 final"
+msgstr ""
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:221
 msgctxt "languagePractice.en.instruction"
 msgid "Type the vocabulary word for this meaning."
 msgstr ""
 
-#: src/features/practice/rich-story-view.tsx:210
+#: src/features/practice/rich-story-view.tsx:74
 msgctxt "rich-story-view.check-grammar"
 msgid "Check grammar"
 msgstr ""
 
-#: src/features/practice/PracticeScreen.tsx:177
+#: src/features/practice/PracticeScreen.tsx:181
 msgctxt "practice.loading.story"
 msgid "Loading story"
 msgstr ""
@@ -149,8 +224,8 @@ msgctxt "recap.card-levels"
 msgid "{count, plural, one {+# level} other {+# levels}}"
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:395
-#: src/features/practice/WordMatchView.tsx:425
+#: src/features/practice/WordMatchView.tsx:432
+#: src/features/practice/WordMatchView.tsx:462
 msgctxt "practice.match.back"
 msgid "Back"
 msgstr ""
@@ -160,37 +235,68 @@ msgctxt "study.recall-mode.adaptive"
 msgid "Adaptive difficulty"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:177
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:180
 msgctxt "languagePractice.en.pack"
 msgid "English pack"
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:371
+#: src/features/practice/SpellingView.tsx:479
+msgctxt "practice.spelling.words-right"
+msgid "{score} of {answered} words right"
+msgstr ""
+
+#: src/features/practice/StoryView.tsx:352
+msgctxt "practice.story.mode"
+msgid "Story"
+msgstr ""
+
+#: src/features/practice/ShadowingView.tsx:392
+msgctxt "practice.shadowing.try-again"
+msgid "Try again"
+msgstr ""
+
+#: src/features/practice/WordMatchView.tsx:408
 msgctxt "practice.match.retry-new-round"
 msgid "Retry new round"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:328
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:336
 msgctxt "languagePractice.results.score"
 msgid "{correct} of {total} correct"
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:405
+#: src/features/practice/ShadowingView.tsx:363
+msgctxt "practice.shadowing.legend-missed"
+msgid "Missed"
+msgstr ""
+
+#: src/features/practice/QuizView.tsx:79
+#: src/features/practice/StoryView.tsx:83
+msgctxt "practice.card-state.mastered"
+msgid "Mastered"
+msgstr ""
+
+#: src/features/practice/WordMatchView.tsx:442
 msgctxt "practice.match.time-up"
 msgid "Time is up"
 msgstr ""
 
-#: src/features/practice/StoryView.tsx:174
-msgctxt "practice.story.vocabulary-subtitle"
-msgid "A story built from your own vocabulary"
+#: src/features/practice/SpellingView.tsx:483
+msgctxt "practice.spelling.letter-key"
+msgid "Letter key"
 msgstr ""
 
-#: src/features/practice/QuizView.tsx:139
+#: src/features/practice/QuizView.tsx:296
+msgctxt "practice.quiz.mode"
+msgid "Quiz"
+msgstr ""
+
+#: src/features/practice/QuizView.tsx:233
 msgctxt "practice.quiz.results-subtitle"
 msgid "Your vocabulary review results"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:215
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:218
 msgctxt "languagePractice.ja.instruction"
 msgid "Read the word, then type it in Japanese."
 msgstr ""
@@ -200,13 +306,19 @@ msgctxt "study-view.meet-this-word"
 msgid "Meet this word"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:180
+#: src/features/practice/WordMatchView.tsx:266
+msgctxt "practice.match.matched"
+msgid "Matched"
+msgstr ""
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:183
 msgctxt "languagePractice.ja.title"
 msgid "Type the reading"
 msgstr ""
 
-#: src/features/practice/QuizView.tsx:155
-#: src/features/practice/SpellingView.tsx:167
+#: src/features/practice/QuizView.tsx:249
+#: src/features/practice/SpellingView.tsx:201
+#: src/features/practice/SpellingView.tsx:475
 msgctxt "practice.results.accuracy"
 msgid "Accuracy"
 msgstr ""
@@ -216,18 +328,23 @@ msgctxt "recap.revisit-count"
 msgid "{count} to revisit"
 msgstr ""
 
+#: src/features/practice/ShadowingView.tsx:278
+msgctxt "shadowing-view.practice-card-sentence"
+msgid "Practice card sentence"
+msgstr ""
+
 #: src/features/practice/StudyView.tsx:446
 msgctxt "study-view.i-ve-reviewed-it-start-recall"
 msgid "I’ve reviewed it — start recall"
 msgstr ""
 
-#: src/features/practice/QuizView.tsx:211
-#: src/features/practice/SpellingView.tsx:208
+#: src/features/practice/QuizView.tsx:311
+#: src/features/practice/SpellingView.tsx:258
 msgctxt "practice.score"
 msgid "Score: {score} / {total}"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:304
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:312
 msgctxt "languagePractice.action.next"
 msgid "Next"
 msgstr ""
@@ -242,13 +359,13 @@ msgctxt "recap.back-today"
 msgid "Back to Today"
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:345
+#: src/features/practice/WordMatchView.tsx:382
 msgctxt "practice.match.verification-failed"
 msgid "We could not verify your result. Your completed pairs are still here."
 msgstr ""
 
-#: src/features/practice/QuizView.tsx:279
-#: src/features/practice/SpellingView.tsx:271
+#: src/features/practice/QuizView.tsx:407
+#: src/features/practice/SpellingView.tsx:350
 msgctxt "practice.feedback.incorrect-prefix"
 msgid "Incorrect. The correct answer is"
 msgstr ""
@@ -258,28 +375,38 @@ msgctxt "recap.best-run-detail"
 msgid "Remembered in a row"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:217
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:220
 msgctxt "languagePractice.zh.instruction"
 msgid "Choose the tone for every pinyin syllable."
 msgstr ""
 
-#: src/features/practice/QuizView.tsx:382
-#: src/features/practice/SpellingView.tsx:355
+#: src/features/practice/SpellingView.tsx:305
+msgctxt "practice.spelling.speed-normal"
+msgid "1× normal"
+msgstr ""
+
+#: src/features/practice/QuizView.tsx:507
+#: src/features/practice/SpellingView.tsx:442
 msgctxt "practice.actions.next"
 msgid "Next"
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:418
+#: src/features/practice/WordMatchView.tsx:455
 msgctxt "practice.match.try-again"
 msgid "Try again"
 msgstr ""
 
-#: src/features/practice/rich-story-view.tsx:119
-msgctxt "rich-story-view.context-story"
-msgid "Context story"
+#: src/features/practice/StoryView.tsx:91
+msgctxt "practice.story.due-now"
+msgid "due now"
 msgstr ""
 
-#: src/features/practice/SpellingView.tsx:147
+#: src/features/practice/ShadowingView.tsx:361
+msgctxt "practice.shadowing.legend-clear"
+msgid "Clear"
+msgstr ""
+
+#: src/features/practice/SpellingView.tsx:181
 msgctxt "practice.spelling.complete"
 msgid "Complete"
 msgstr ""
@@ -289,12 +416,17 @@ msgctxt "recap.grade.new"
 msgid "Bud"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:288
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:295
 msgctxt "languagePractice.ko.physicalKeyboard"
 msgid "Physical keyboard: type the 2-set keys shown on each button."
 msgstr "[Physïcâl këybøârd: typë thë 2-sët këys shøwn øn ëâch buttøn.]"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:250
+#: src/features/practice/StoryView.tsx:353
+msgctxt "practice.story.mode-detail"
+msgid "written from your words"
+msgstr ""
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:253
 msgctxt "languagePractice.zh.missingTones"
 msgid "This card needs verified pinyin tone data before it can be practised."
 msgstr ""
@@ -304,14 +436,19 @@ msgctxt "recap.review-misses"
 msgid "Review misses"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:330
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:338
 msgctxt "languagePractice.results.try-again"
 msgid "Try again"
 msgstr ""
 
-#: src/features/practice/rich-story-view.tsx:153
-msgctxt "rich-story-view.read-the-scenes"
-msgid "Read the scenes"
+#: src/features/practice/ShadowingView.tsx:402
+msgctxt "practice.shadowing.next-short"
+msgid "Next"
+msgstr ""
+
+#: src/features/practice/SpellingView.tsx:454
+msgctxt "practice.spelling.reveal"
+msgid "Reveal"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -324,12 +461,17 @@ msgstr ""
 msgid "flashcard.audio.play-pronunciation"
 msgstr ""
 
-#: src/features/practice/SpellingView.tsx:151
+#: src/features/practice/ShadowingView.tsx:299
+msgctxt "practice.shadowing.model"
+msgid "Model"
+msgstr ""
+
+#: src/features/practice/SpellingView.tsx:185
 msgctxt "practice.spelling.results-subtitle"
 msgid "Your spelling practice results"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:175
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:178
 msgctxt "languagePractice.ja.pack"
 msgid "Japanese pack · 日本語"
 msgstr ""
@@ -339,7 +481,17 @@ msgctxt "practice.loading.quiz"
 msgid "Loading quiz"
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:314
+#: src/features/practice/StoryView.tsx:507
+msgctxt "practice.story.lumi.tap"
+msgid "Tap a highlighted word to see what it means."
+msgstr ""
+
+#: src/features/practice/SpellingView.tsx:332
+msgctxt "practice.spelling.character-count"
+msgid "{count, plural, one {# character} other {# characters}}"
+msgstr ""
+
+#: src/features/practice/WordMatchView.tsx:351
 msgctxt "practice.match.instruction"
 msgid "Choose a word in {targetLanguageName}, then its meaning in {nativeLanguageName}."
 msgstr ""
@@ -349,18 +501,12 @@ msgctxt "study.shortcuts"
 msgid "Study shortcuts"
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:287
-#: src/features/practice/WordMatchView.tsx:298
-msgctxt "practice.match.title"
-msgid "Word match · 60 seconds"
-msgstr ""
-
 #: src/features/practice/PracticeScreen.tsx:47
 msgctxt "practice.loading.study"
 msgid "Loading study session"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:304
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:312
 msgctxt "languagePractice.action.check"
 msgid "Check"
 msgstr ""
@@ -375,7 +521,7 @@ msgctxt "recap.retry-missed"
 msgid "{count, plural, one {Retry the missed word} other {Retry the # missed words}}"
 msgstr ""
 
-#: src/features/practice/rich-story-view.tsx:204
+#: src/features/practice/rich-story-view.tsx:68
 msgctxt "rich-story-view.grammar-transformation"
 msgid "Grammar transformation:"
 msgstr ""
@@ -385,19 +531,24 @@ msgctxt "recap.words"
 msgid "Words"
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:325
+#: src/features/practice/QuizView.tsx:314
+msgctxt "practice.quiz.streak"
+msgid "{count} in a row"
+msgstr ""
+
+#: src/features/practice/WordMatchView.tsx:362
 msgctxt "practice.match.complete-copy"
 msgid "You matched all {pairCount} pairs in {seconds} seconds."
 msgstr ""
 
-#: src/features/practice/SpellingView.tsx:322
+#: src/features/practice/SpellingView.tsx:413
 msgctxt "practice.spelling.correct"
 msgid "Correct"
 msgstr ""
 
-#: src/features/practice/ShadowingView.tsx:213
-msgctxt "practice.shadowing.listen"
-msgid "Listen"
+#: src/features/practice/SpellingView.tsx:449
+msgctxt "practice.spelling.check"
+msgid "Check"
 msgstr ""
 
 #: src/features/practice/SessionRecapModal.tsx:398
@@ -405,24 +556,34 @@ msgctxt "recap.next-review"
 msgid "Next review"
 msgstr ""
 
+#: src/features/practice/ShadowingView.tsx:316
+msgctxt "practice.shadowing.take-recording"
+msgid "Take {take} · recording"
+msgstr ""
+
 #: src/features/practice/StudyView.tsx:389
 msgctxt "study-view.summary"
 msgid "Summary"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:182
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:185
 msgctxt "languagePractice.en.title"
 msgid "Spell the word"
 msgstr ""
 
-#: src/features/practice/QuizView.tsx:184
-#: src/features/practice/SpellingView.tsx:181
-#: src/features/practice/StoryView.tsx:144
+#: src/features/practice/ShadowingView.tsx:317
+msgctxt "practice.shadowing.take"
+msgid "Take {take}"
+msgstr ""
+
+#: src/features/practice/QuizView.tsx:278
+#: src/features/practice/SpellingView.tsx:215
+#: src/features/practice/StoryView.tsx:417
 msgctxt "practice.actions.try-again"
 msgid "Try again"
 msgstr ""
 
-#: src/features/practice/PracticeScreen.tsx:130
+#: src/features/practice/PracticeScreen.tsx:134
 msgctxt "practice.loading.language-drill"
 msgid "Loading language drill"
 msgstr ""
@@ -432,17 +593,17 @@ msgctxt "recap.tomorrow-error"
 msgid "Count unavailable"
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:322
+#: src/features/practice/WordMatchView.tsx:359
 msgctxt "practice.match.complete-title"
 msgid "Pairs complete"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:250
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:253
 msgctxt "languagePractice.loadError"
 msgid "This language exercise could not load. Please try again."
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:386
+#: src/features/practice/WordMatchView.tsx:423
 msgctxt "practice.match.new-round"
 msgid "New round"
 msgstr ""
@@ -458,18 +619,28 @@ msgctxt "recap.xp-unit"
 msgid "XP"
 msgstr ""
 
+#: src/features/practice/SpellingView.tsx:316
+msgctxt "practice.spelling.meaning-hint"
+msgid "Meaning hint:"
+msgstr ""
+
 #: src/features/practice/SessionRecapModal.tsx:288
 msgctxt "recap.streak-day"
 msgid "Day {count}"
 msgstr ""
 
-#: src/features/practice/StoryView.tsx:197
+#: src/features/practice/WordMatchView.tsx:290
+msgctxt "practice.match.not-a-pair"
+msgid "Not a pair"
+msgstr ""
+
+#: src/features/practice/StoryView.tsx:488
 msgctxt "practice.story.translation-language"
 msgid "{languageName} translation"
 msgstr ""
 
-#: src/features/practice/QuizView.tsx:249
-#: src/features/practice/SpellingView.tsx:229
+#: src/features/practice/QuizView.tsx:375
+#: src/features/practice/SpellingView.tsx:282
 msgctxt "practice.question-progress"
 msgid "Question {current} / {total}"
 msgstr ""
@@ -479,14 +650,34 @@ msgctxt "study.recall-mode.cloze"
 msgid "Fill the sentence"
 msgstr ""
 
-#: src/features/practice/QuizView.tsx:169
+#: src/features/practice/practice-board-parts.tsx:81
+msgctxt "practice.topbar.kicker"
+msgid "Practice"
+msgstr ""
+
+#: src/features/practice/QuizView.tsx:263
 msgctxt "practice.results.good"
 msgid "Great work. This vocabulary is becoming secure."
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:301
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:308
 msgctxt "languagePractice.feedback.correct"
 msgid "Correct."
+msgstr ""
+
+#: src/features/practice/StoryView.tsx:93
+msgctxt "practice.story.due-in"
+msgid "{days, plural, one {due in # day} other {due in # days}}"
+msgstr ""
+
+#: src/features/practice/SpellingView.tsx:233
+msgctxt "practice.spelling.mode"
+msgid "Spelling"
+msgstr ""
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:310
+msgctxt "languagePractice.footer.progress"
+msgid "Word {current} of {total}"
 msgstr ""
 
 #: src/features/practice/SessionRecapModal.tsx:245
@@ -499,28 +690,28 @@ msgctxt "recap.title"
 msgid "Session complete"
 msgstr ""
 
-#: src/features/practice/rich-story-view.tsx:222
-msgctxt "rich-story-view.create-another-story"
-msgid "Create another story"
-msgstr ""
-
-#: src/features/practice/WordMatchView.tsx:337
+#: src/features/practice/WordMatchView.tsx:374
 msgctxt "practice.match.verified-xp"
 msgid "Verified +{awardedXp} XP"
 msgstr ""
 
-#: src/features/practice/QuizView.tsx:291
+#: src/features/practice/QuizView.tsx:418
 msgctxt "practice.quiz.choose-answer"
 msgid "Choose one answer"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:236
+#: src/features/practice/WordMatchView.tsx:291
+msgctxt "practice.match.selected"
+msgid "Selected"
+msgstr ""
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:239
 msgctxt "languagePractice.progress"
 msgid "Item {current} of {total}"
 msgstr ""
 
-#: src/features/practice/QuizView.tsx:287
-#: src/features/practice/SpellingView.tsx:277
+#: src/features/practice/QuizView.tsx:459
+#: src/features/practice/SpellingView.tsx:468
 #: src/features/practice/StudyView.tsx:422
 msgctxt "practice.learn-first"
 msgid "I don't know this — learn first"
@@ -531,64 +722,69 @@ msgctxt "recap.grade.learning"
 msgid "Bloom"
 msgstr ""
 
-#: src/features/practice/PracticeScreen.tsx:166
+#: src/features/practice/PracticeScreen.tsx:170
 msgctxt "practice.loading.shadowing"
 msgid "Loading shadowing practice"
 msgstr ""
 
-#: src/features/practice/rich-story-view.tsx:176
+#: src/features/practice/rich-story-view.tsx:36
 msgctxt "rich-story-view.target-phrases"
 msgid "Target phrases"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:240
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:243
 msgid "languagePractice.action.listen"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:250
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:253
 msgid "languagePractice.action.retry"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:242
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:245
 msgid "languagePractice.action.slow"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:227
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:230
 msgid "languagePractice.en.placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:222
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:225
 msgid "languagePractice.ja.placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:296
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:303
 msgid "languagePractice.ja.sentence.choices"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:220
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:223
 msgid "languagePractice.ja.sentence.placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:268
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:271
 msgid "languagePractice.ko.emptyBlocks"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:224
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:227
 msgid "languagePractice.ko.placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:226
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:229
 msgid "languagePractice.zh.placeholder"
+msgstr ""
+
+#: src/features/practice/StoryView.tsx:503
+msgctxt "practice.story.lumi.meaning"
+msgid "“{word}” means {meaning}."
 msgstr ""
 
 #: src/features/practice/SessionRecapModal.tsx:122
@@ -596,12 +792,17 @@ msgctxt "recap.card-move"
 msgid "Moved from {from} to {to}"
 msgstr ""
 
-#: src/features/practice/SpellingView.tsx:328
+#: src/features/practice/SpellingView.tsx:417
 msgctxt "practice.spelling.answer-is"
 msgid "The answer is"
 msgstr ""
 
-#: src/features/practice/StoryView.tsx:134
+#: src/features/practice/StoryView.tsx:562
+msgctxt "practice.story.review-all"
+msgid "{count, plural, one {Review this word} other {Review these # words}}"
+msgstr ""
+
+#: src/features/practice/StoryView.tsx:407
 msgctxt "practice.story.generation-stopped"
 msgid "Story generation stopped"
 msgstr ""
@@ -611,14 +812,24 @@ msgctxt "recap.cards-up"
 msgid "Cards glowed up"
 msgstr ""
 
-#: src/features/practice/ShadowingView.tsx:231
+#: src/features/practice/StoryView.tsx:500
+msgctxt "practice.story.lumi.label"
+msgid "Lumi · Narrator"
+msgstr ""
+
+#: src/features/practice/ShadowingView.tsx:283
 msgctxt "shadowing-view.practice-clip-sentence"
 msgid "Practice clip sentence"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:279
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:286
 msgctxt "languagePractice.ko.final-correction"
 msgid "Final consonant: {typed} makes a different word. Delete it and choose {expected}."
+msgstr ""
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:312
+msgctxt "languagePractice.key.enter"
+msgid "Enter"
 msgstr ""
 
 #: src/features/practice/SessionRecapModal.tsx:318
@@ -627,7 +838,7 @@ msgctxt "recap.streak"
 msgid "Streak"
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:364
+#: src/features/practice/WordMatchView.tsx:401
 msgctxt "practice.match.new-round-failed"
 msgid "We could not start a new verified round. Check your connection and try again."
 msgstr ""
@@ -637,22 +848,38 @@ msgctxt "recap.streak-detail"
 msgid "Days in a row"
 msgstr ""
 
-#: src/features/practice/rich-story-view.tsx:148
-msgctxt "rich-story-view.an-ephemeral-ai-generated-lesson-from-your-vocabulary"
-msgid "An ephemeral AI-generated lesson from your vocabulary"
+#: src/features/practice/StoryView.tsx:440
+msgctxt "practice.story.read-time"
+msgid "{minutes} min read"
 msgstr ""
 
-#: src/features/practice/QuizView.tsx:208
-#: src/features/practice/SpellingView.tsx:205
+#: src/features/practice/ShadowingView.tsx:325
+msgctxt "practice.shadowing.levels-denied"
+msgid "Microphone levels are off because access was not allowed. Your words are still checked."
+msgstr ""
+
+#: src/features/practice/QuizView.tsx:304
+#: src/features/practice/SpellingView.tsx:251
 #: src/features/practice/StudyView.tsx:393
-#: src/features/practice/WordMatchView.tsx:289
+#: src/features/practice/WordMatchView.tsx:343
 msgctxt "study.combo"
 msgid "Combo ×{count}"
 msgstr ""
 
-#: src/features/practice/rich-story-view.tsx:137
-msgctxt "rich-story-view.story-generation-stopped"
-msgid "Story generation stopped"
+#: src/features/practice/SpellingView.tsx:330
+msgctxt "practice.spelling.letter-count"
+msgid "{count, plural, one {# letter} other {# letters}}"
+msgstr ""
+
+#: src/features/practice/QuizView.tsx:204
+#: src/features/practice/SpellingView.tsx:148
+msgctxt "practice.quiz.lumi.almost"
+msgid "Almost!"
+msgstr ""
+
+#: src/features/practice/QuizView.tsx:203
+msgctxt "practice.quiz.lumi.right"
+msgid "That's it!"
 msgstr ""
 
 #: src/features/practice/StudyView.tsx:399
@@ -670,7 +897,7 @@ msgctxt "study.recall-mode.image-to-word"
 msgid "Image → Word"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:286
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:293
 msgctxt "languagePractice.ko.backspace"
 msgid "Delete"
 msgstr ""
@@ -685,12 +912,7 @@ msgctxt "recap.experience"
 msgid "Experience"
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:308
-msgctxt "practice.match.seconds"
-msgid "{seconds}s"
-msgstr ""
-
-#: src/features/practice/PracticeScreen.tsx:107
+#: src/features/practice/PracticeScreen.tsx:108
 msgctxt "practice.loading.spelling"
 msgid "Loading spelling practice"
 msgstr ""
@@ -705,12 +927,12 @@ msgctxt "study.recall-mode.native-to-target"
 msgid "{nativeLanguage} → {targetLanguage}"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:174
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:177
 msgctxt "languagePractice.ko.pack"
 msgid "Korean pack · 한국어"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:331
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:339
 msgctxt "languagePractice.results.close"
 msgid "Back to library"
 msgstr ""
@@ -720,121 +942,136 @@ msgctxt "recap.headline"
 msgid "{count, plural, one {<0>#</0> word, <1>locked in.</1>} other {<0>#</0> words, <1>locked in.</1>}}"
 msgstr ""
 
+#: src/features/practice/WordMatchView.tsx:334
+msgctxt "practice.match.left"
+msgid "left"
+msgstr ""
+
+#: src/features/practice/QuizView.tsx:444
+msgctxt "practice.quiz.your-answer"
+msgid "Your answer"
+msgstr ""
+
 #: src/features/practice/SessionRecapModal.tsx:261
 msgctxt "recap.description-remembered"
 msgid "You remembered {good} of {total}."
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:100
+#: src/features/practice/usePracticeGames.ts:103
 msgid "practice.error.account-daily-spend"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:101
+#: src/features/practice/usePracticeGames.ts:104
 msgid "practice.error.ai-card-quota"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:102
+#: src/features/practice/usePracticeGames.ts:105
 msgid "practice.error.ai-daily-allowance"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:308
+#: src/features/practice/usePracticeGames.ts:315
 msgid "practice.error.complete"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:107
+#: src/features/practice/usePracticeGames.ts:110
 msgid "practice.error.configuration"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:490
+#: src/features/practice/usePracticeGames.ts:520
 msgid "practice.error.language-drill-card-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:592
+#: src/features/practice/usePracticeGames.ts:623
 msgid "practice.error.match-card-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:108
+#: src/features/practice/usePracticeGames.ts:111
 msgid "practice.error.network"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:103
+#: src/features/practice/usePracticeGames.ts:106
 msgid "practice.error.operation-in-flight"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:106
+#: src/features/practice/usePracticeGames.ts:109
 msgid "practice.error.permission"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:267
+#: src/features/practice/usePracticeGames.ts:274
 msgid "practice.error.prepare"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:346
+#: src/features/practice/usePracticeGames.ts:353
 msgid "practice.error.quiz-card-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:104
+#: src/features/practice/usePracticeGames.ts:107
 msgid "practice.error.quota"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:99
+#: src/features/practice/usePracticeGames.ts:102
 msgid "practice.error.service-daily-cap"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:650
+#: src/features/practice/usePracticeGames.ts:681
 msgid "practice.error.shadowing-no-cards"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:105
+#: src/features/practice/usePracticeGames.ts:108
 msgid "practice.error.sign-in"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:424
+#: src/features/practice/usePracticeGames.ts:432
 msgid "practice.error.spelling-card-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:111
+#: src/features/practice/usePracticeGames.ts:114
 msgid "practice.error.story"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:549
+#: src/features/practice/usePracticeGames.ts:580
 msgid "practice.error.story-no-cards"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:96
-#: src/features/practice/usePracticeGames.ts:266
+#: src/features/practice/usePracticeGames.ts:99
+#: src/features/practice/usePracticeGames.ts:273
 msgid "practice.error.timeout"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:274
-#: src/features/practice/SpellingView.tsx:266
+#: src/features/practice/QuizView.tsx:402
+#: src/features/practice/SpellingView.tsx:345
 msgid "practice.feedback.correct"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:281
+#: src/features/practice/WordMatchView.tsx:307
 msgid "practice.match.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/WordMatchView.tsx:321
+msgid "practice.match.seconds-left"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -943,135 +1180,179 @@ msgid "practice.mode.story.unavailable"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:235
+#: src/features/practice/QuizView.tsx:345
 msgid "practice.quiz.illustration-alt"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:101
+#: src/features/practice/QuizView.tsx:177
 msgid "practice.quiz.native-to-target-question"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:393
+#: src/features/practice/QuizView.tsx:298
 msgid "practice.quiz.progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:93
+#: src/features/practice/QuizView.tsx:332
+msgid "practice.quiz.prompt-card"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:169
 msgid "practice.quiz.target-to-native-question"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/rich-story-view.tsx:198
-#: src/features/practice/rich-story-view.tsx:212
+#: src/features/practice/rich-story-view.tsx:60
+#: src/features/practice/rich-story-view.tsx:79
 msgid "practice.rich-story.correct"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/rich-story-view.tsx:110
-msgid "practice.rich-story.generating-story"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/practice/rich-story-view.tsx:212
+#: src/features/practice/rich-story-view.tsx:80
 msgid "practice.rich-story.grammar-retry"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/rich-story-view.tsx:198
+#: src/features/practice/rich-story-view.tsx:61
 msgid "practice.rich-story.not-quite"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/rich-story-view.tsx:91
-#: src/features/practice/rich-story-view.tsx:96
-msgid "practice.rich-story.speech-playback-is-unavailable-read-the-english-text-below"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/practice/rich-story-view.tsx:110
+#: src/features/practice/StoryView.tsx:325
 msgid "practice.rich-story.story-ready"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:176
+#: src/features/practice/ShadowingView.tsx:239
 msgid "practice.shadowing.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:113
+#: src/features/practice/ShadowingView.tsx:434
+msgid "practice.shadowing.coach-body"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:432
+msgid "practice.shadowing.coach-result"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:433
+msgid "practice.shadowing.coach-start"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:145
 msgid "practice.shadowing.error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:129
+#: src/features/practice/ShadowingView.tsx:345
+msgid "practice.shadowing.match-meter"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:174
 msgid "practice.shadowing.microphone-error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:330
+#: src/features/practice/ShadowingView.tsx:400
 msgid "practice.shadowing.next"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:211
+#: src/features/practice/ShadowingView.tsx:295
 msgid "practice.shadowing.play-pronunciation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:318
+#: src/features/practice/ShadowingView.tsx:385
 msgid "practice.shadowing.previous"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:302
+#: src/features/practice/ShadowingView.tsx:243
+msgid "practice.shadowing.progress"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:372
 msgid "practice.shadowing.start-reading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:302
+#: src/features/practice/ShadowingView.tsx:372
 msgid "practice.shadowing.stop-recording"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:70
+#: src/features/practice/ShadowingView.tsx:102
 msgid "practice.shadowing.unsupported"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:303
+#: src/features/practice/ShadowingView.tsx:288
+msgid "practice.shadowing.waves"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/SpellingView.tsx:400
 msgid "practice.spelling.answer-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:296
+#: src/features/practice/SpellingView.tsx:393
 msgid "practice.spelling.answer-placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:238
+#: src/features/practice/SpellingView.tsx:292
 msgid "practice.spelling.play-pronunciation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:366
+#: src/features/practice/SpellingView.tsx:236
 msgid "practice.spelling.progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:91
+#: src/features/practice/SpellingView.tsx:302
+msgid "practice.spelling.speed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StoryView.tsx:328
 msgid "practice.story.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:55
+#: src/features/practice/StoryView.tsx:323
 msgid "practice.story.creating"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:56
+#: src/features/practice/StoryView.tsx:122
+msgid "practice.story.listen-word"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StoryView.tsx:329
+msgid "practice.story.reading-context-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StoryView.tsx:326
 msgid "practice.story.ready"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StoryView.tsx:241
+msgid "practice.story.speech-unavailable"
 msgstr ""
 
 #: src/features/practice/SessionRecapModal.tsx:341
@@ -1079,9 +1360,14 @@ msgctxt "recap.needs-review"
 msgid "To revisit"
 msgstr ""
 
-#: src/features/practice/ShadowingView.tsx:278
+#: src/features/practice/ShadowingView.tsx:416
 msgctxt "practice.shadowing.success"
 msgid "Nice pronunciation"
+msgstr ""
+
+#: src/features/practice/ShadowingView.tsx:241
+msgctxt "practice.shadowing.mode"
+msgid "Shadowing"
 msgstr ""
 
 #: src/features/practice/SessionRecapModal.tsx:394
@@ -1089,14 +1375,14 @@ msgctxt "recap.streak-today"
 msgid "+1 today"
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:338
+#: src/features/practice/WordMatchView.tsx:375
 msgctxt "practice.match.verified-no-xp"
 msgid "Result verified"
 msgstr ""
 
-#: src/features/practice/StoryView.tsx:97
-msgctxt "practice.story.context"
-msgid "Context story"
+#: src/features/practice/ShadowingView.tsx:242
+msgctxt "practice.shadowing.mode-detail"
+msgid "say it after me"
 msgstr ""
 
 #: src/features/practice/SessionRecapModal.tsx:323
@@ -1104,9 +1390,19 @@ msgctxt "recap.xp-session"
 msgid "This session"
 msgstr ""
 
-#: src/features/practice/QuizView.tsx:135
+#: src/features/practice/ShadowingView.tsx:326
+msgctxt "practice.shadowing.levels-unavailable"
+msgid "This browser cannot show microphone levels. Your words are still checked."
+msgstr ""
+
+#: src/features/practice/QuizView.tsx:229
 msgctxt "practice.quiz.complete"
 msgid "Quiz complete"
+msgstr ""
+
+#: src/features/practice/ShadowingView.tsx:314
+msgctxt "practice.shadowing.your-take"
+msgid "Your take"
 msgstr ""
 
 #: src/features/practice/SessionRecapModal.tsx:242
@@ -1114,9 +1410,14 @@ msgctxt "recap.summary-title"
 msgid "Session summary"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:250
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:253
 msgctxt "languagePractice.loading"
 msgid "Loading this language exercise…"
+msgstr ""
+
+#: src/features/practice/ShadowingView.tsx:362
+msgctxt "practice.shadowing.legend-close"
+msgid "Close"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -1134,33 +1435,28 @@ msgstr ""
 msgid "recap.recall-split"
 msgstr ""
 
-#: src/features/practice/QuizView.tsx:165
+#: src/features/practice/QuizView.tsx:259
 msgctxt "practice.results.perfect"
 msgid "Perfect. You answered every question correctly."
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/rich-story-view.tsx:116
-msgid "rich-story-view.close-story"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/practice/rich-story-view.tsx:164
+#: src/features/practice/StoryView.tsx:466
 msgid "rich-story-view.read-scene"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/rich-story-view.tsx:177
+#: src/features/practice/rich-story-view.tsx:37
 msgid "rich-story-view.target-phrases-from-your-vocabulary"
 msgstr ""
 
-#: src/features/practice/QuizView.tsx:146
-#: src/features/practice/SpellingView.tsx:158
+#: src/features/practice/QuizView.tsx:240
+#: src/features/practice/SpellingView.tsx:192
 msgctxt "practice.results.correct-answers"
 msgid "Correct answers"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:211
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:214
 msgctxt "languagePractice.ja.sentence.instruction"
 msgid "Choose the missing word."
 msgstr ""
@@ -1175,7 +1471,7 @@ msgctxt "study-view.take-a-moment-to-review-the-card-before-recall-practice"
 msgid "Take a moment to review the card before recall practice."
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:408
+#: src/features/practice/WordMatchView.tsx:445
 msgctxt "practice.match.time-up-copy"
 msgid "You matched {matchesCount} of {pairCount} pairs."
 msgstr ""
@@ -1185,17 +1481,29 @@ msgctxt "study.swipe.again"
 msgid "AGAIN 👎"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:327
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:335
 msgctxt "languagePractice.results.title"
 msgid "Drill complete"
 msgstr ""
 
+#: src/features/practice/QuizView.tsx:81
+#: src/features/practice/StoryView.tsx:85
+msgctxt "practice.card-state.learning"
+msgid "Learning"
+msgstr ""
+
+#: src/features/practice/ShadowingView.tsx:277
+msgctxt "shadowing-view.practice-target-word"
+msgid "Practice target word"
+msgstr ""
+
 #. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:223
+#: src/features/practice/ShadowingView.tsx:266
 msgid "shadowing-view.practice-target"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/practice/practice-board-parts.tsx:111
 #: src/features/practice/SessionRecapModal.tsx:247
 msgid "shell.theme.quick-toggle"
 msgstr ""
@@ -1205,13 +1513,13 @@ msgctxt "recap.recall"
 msgid "Recall"
 msgstr ""
 
-#: src/features/practice/QuizView.tsx:192
-#: src/features/practice/SpellingView.tsx:189
+#: src/features/practice/QuizView.tsx:286
+#: src/features/practice/SpellingView.tsx:223
 msgctxt "practice.actions.back-to-library"
 msgid "Back to library"
 msgstr ""
 
-#: src/features/practice/ShadowingView.tsx:285
+#: src/features/practice/ShadowingView.tsx:424
 msgctxt "shadowing-view.pronunciation-assessment-is-unavailable-in-this-build-browser-tra"
 msgid "Pronunciation assessment is unavailable in this build; browser transcript matching remains available."
 msgstr ""
@@ -1267,9 +1575,14 @@ msgstr ""
 msgid "study.shortcut.star-play-speak"
 msgstr ""
 
-#: src/features/practice/WordMatchView.tsx:385
+#: src/features/practice/WordMatchView.tsx:422
 msgctxt "practice.match.starting-new-round"
 msgid "Starting new round…"
+msgstr ""
+
+#: src/features/practice/StoryView.tsx:530
+msgctxt "practice.story.words-heading"
+msgid "Words in this story"
 msgstr ""
 
 #: src/features/practice/SessionRecapModal.tsx:103
@@ -1277,12 +1590,17 @@ msgctxt "recap.tier.learning"
 msgid "Learning"
 msgstr ""
 
+#: src/features/practice/WordMatchView.tsx:311
+msgctxt "practice.match.mode-detail"
+msgid "60-second run"
+msgstr ""
+
 #: src/features/practice/SessionRecapModal.tsx:314
 msgctxt "recap.best-run"
 msgid "Best combo"
 msgstr ""
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:176
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:179
 msgctxt "languagePractice.zh.pack"
 msgid "Chinese pack · 中文"
 msgstr ""
@@ -1292,582 +1610,24 @@ msgctxt "recap.streak-note"
 msgid "A day counts once you earn XP."
 msgstr ""
 
-#: src/features/practice/PracticeScreen.tsx:153
-msgctxt "practice.loading.match"
-msgid "Loading word match"
-msgstr ""
-
-#: src/features/practice/StoryView.tsx:169
-msgctxt "practice.story.reading-context"
-msgid "Reading in context"
-msgstr ""
-
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:181
-msgctxt "languagePractice.zh.title"
-msgid "Hear the tones"
-msgstr ""
-
-#: src/features/practice/WordMatchView.tsx:309
-msgctxt "practice.match.pairs"
-msgid "Pairs"
-msgstr ""
-
-#: src/features/practice/rich-story-view.tsx:163
-msgctxt "rich-story-view.scene"
-msgid "Scene"
-msgstr ""
-
-#: src/features/practice/rich-story-view.tsx:165
-msgctxt "rich-story-view.read-aloud"
-msgid "Read aloud"
-msgstr ""
-
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:178
-msgctxt "languagePractice.ja.sentence.title"
-msgid "Complete the sentence"
-msgstr ""
-
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:292
-msgctxt "languagePractice.answer.label"
-msgid "Your answer"
-msgstr ""
-
-#: src/features/practice/StoryView.tsx:216
-msgctxt "practice.story.create-another"
-msgid "Create another story"
-msgstr ""
-
-#: src/features/practice/SessionRecapModal.tsx:100
-#: src/features/practice/SessionRecapModal.tsx:203
-msgctxt "recap.grade.mastered"
-msgid "Star"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:308
-msgctxt "practice.shadowing.listening"
-msgid "Listening…"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:201
-msgctxt "practice.shadowing.focus-word"
-msgid "Focus word"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:181
-msgctxt "practice.shadowing.title"
-msgid "Shadowing · say it after me"
-msgstr ""
-
-#: src/features/practice/rich-story-view.tsx:125
-msgctxt "rich-story-view.creating-your-story"
-msgid "Creating your story…"
-msgstr ""
-
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:267
-msgctxt "languagePractice.ko.keyboard"
-msgid "Hangul block keyboard"
-msgstr ""
-
-#: src/features/practice/SessionRecapModal.tsx:104
-msgctxt "recap.tier.mastered"
-msgid "Mastered"
-msgstr ""
-
-#: src/features/practice/rich-story-view.tsx:140
-msgctxt "rich-story-view.try-again"
-msgid "Try again"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:308
-msgctxt "practice.shadowing.start-copy"
-msgid "Tap the microphone and read the sentence."
-msgstr ""
-
-#: src/features/practice/QuizView.tsx:376
-#: src/features/practice/SpellingView.tsx:349
-msgctxt "practice.actions.saving-result"
-msgid "Saving result…"
-msgstr ""
-
-#: src/features/practice/SessionRecapModal.tsx:310
-msgctxt "recap.accuracy"
-msgid "Accuracy"
-msgstr ""
-
-#: src/features/practice/StoryView.tsx:183
-msgctxt "practice.story.target-language"
-msgid "{languageName}"
-msgstr ""
-
-#: src/features/practice/SessionRecapModal.tsx:322
-msgctxt "recap.xp-earned"
-msgid "XP earned"
-msgstr ""
-
-#: src/features/practice/QuizView.tsx:206
-#: src/features/practice/SpellingView.tsx:203
-msgctxt "practice.actions.exit"
-msgid "Exit"
-msgstr ""
-
-#: src/features/practice/QuizView.tsx:355
-msgctxt "practice.feedback.correct-answer"
-msgid "The correct answer is"
-msgstr ""
-
-#: src/features/practice/QuizView.tsx:348
-msgctxt "practice.feedback.correct-short"
-msgid "Correct"
-msgstr ""
-
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:233
-msgctxt "languagePractice.action.exit"
-msgid "Exit"
-msgstr ""
-
-#: src/features/practice/QuizView.tsx:379
-#: src/features/practice/SpellingView.tsx:352
-msgctxt "practice.actions.view-results"
-msgid "View results"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:274
-msgctxt "practice.shadowing.accuracy"
-msgid "Accuracy: {score}%"
-msgstr ""
-
-#: src/features/practice/SessionRecapModal.tsx:311
-msgctxt "recap.remembered-of"
-msgid "{good} of {total} remembered"
-msgstr ""
-
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:303
-msgctxt "languagePractice.action.hint"
-msgid "Hint"
-msgstr ""
-
-#: src/features/practice/StoryView.tsx:518
-msgctxt "practice.story.gloss"
-msgid "Lumi gloss"
-msgstr ""
-
-#: src/features/practice/SpellingView.tsx:311
-msgctxt "practice.spelling.speed-slow"
-msgid "0.75× slow"
-msgstr ""
-
-#: src/features/practice/StoryView.tsx:332
-msgctxt "practice.story.tip"
-msgid "{count, plural, one {Tap the highlighted word for its meaning. Finish the story to review it.} other {Tap any highlighted word for its meaning. Finish the story to review all # in one go.}}"
-msgstr ""
-
-#: src/features/practice/SpellingView.tsx:152
-msgctxt "practice.spelling.legend.correct"
-msgid "Correct"
-msgstr ""
-
-#: src/features/practice/QuizView.tsx:484
-msgctxt "practice.quiz.not-quite"
-msgid "Not quite."
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:238
-msgctxt "practice.shadowing.close"
-msgid "Close shadowing practice"
-msgstr ""
-
-#: src/features/practice/WordMatchView.tsx:310
-msgctxt "practice.match.mode"
-msgid "Word match"
-msgstr ""
-
-#: src/features/practice/WordMatchView.tsx:338
-msgctxt "practice.match.pairs-matched"
-msgid "pairs matched"
-msgstr ""
-
-#: src/features/practice/SpellingView.tsx:234
-msgctxt "practice.spelling.mode-detail"
-msgid "listen and type"
-msgstr ""
-
-#: src/features/practice/WordMatchView.tsx:306
-msgctxt "practice.match.close"
-msgid "Close word match"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:339
-msgctxt "practice.shadowing.match-take"
-msgid "% match · take {take}"
-msgstr ""
-
-#: src/features/practice/SessionRecapModal.tsx:84
-msgctxt "recap.retained"
-msgid "Retained"
-msgstr ""
-
-#: src/features/practice/StoryView.tsx:140
-msgctxt "practice.story.review-now"
-msgid "Review now"
-msgstr ""
-
-#: src/features/practice/SessionRecapModal.tsx:91
-msgctxt "recap.mastered"
-msgid "Remembered"
-msgstr ""
-
-#: src/features/practice/SpellingView.tsx:153
-msgctxt "practice.spelling.legend.wrong"
-msgid "Wrong letter"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:305
-msgctxt "practice.shadowing.model-voice"
-msgid "Spoken by your browser voice. Tap play to hear it."
-msgstr ""
-
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:284
-msgctxt "languagePractice.ko.block-formula"
-msgid "Each block = 초성 initial + 중성 vowel + 종성 final"
-msgstr ""
-
-#: src/features/practice/SpellingView.tsx:479
-msgctxt "practice.spelling.words-right"
-msgid "{score} of {answered} words right"
-msgstr ""
-
-#: src/features/practice/SessionRecapModal.tsx:76
-msgctxt "recap.description"
-msgid "Here is what you strengthened today."
-msgstr ""
-
-#: src/features/practice/StoryView.tsx:352
-msgctxt "practice.story.mode"
-msgid "Story"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:392
-msgctxt "practice.shadowing.try-again"
-msgid "Try again"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:363
-msgctxt "practice.shadowing.legend-missed"
-msgid "Missed"
-msgstr ""
-
-#: src/features/practice/QuizView.tsx:79
-#: src/features/practice/StoryView.tsx:83
-msgctxt "practice.card-state.mastered"
-msgid "Mastered"
-msgstr ""
-
-#: src/features/practice/SpellingView.tsx:483
-msgctxt "practice.spelling.letter-key"
-msgid "Letter key"
-msgstr ""
-
-#: src/features/practice/QuizView.tsx:296
-msgctxt "practice.quiz.mode"
-msgid "Quiz"
-msgstr ""
-
-#: src/features/practice/WordMatchView.tsx:266
-msgctxt "practice.match.matched"
-msgid "Matched"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:278
-msgctxt "shadowing-view.practice-card-sentence"
-msgid "Practice card sentence"
-msgstr ""
-
-#: src/features/practice/SpellingView.tsx:305
-msgctxt "practice.spelling.speed-normal"
-msgid "1× normal"
-msgstr ""
-
-#: src/features/practice/StoryView.tsx:91
-msgctxt "practice.story.due-now"
-msgid "due now"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:361
-msgctxt "practice.shadowing.legend-clear"
-msgid "Clear"
-msgstr ""
-
-#: src/features/practice/StoryView.tsx:353
-msgctxt "practice.story.mode-detail"
-msgid "written from your words"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:402
-msgctxt "practice.shadowing.next-short"
-msgid "Next"
-msgstr ""
-
-#: src/features/practice/SpellingView.tsx:454
-msgctxt "practice.spelling.reveal"
-msgid "Reveal"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:299
-msgctxt "practice.shadowing.model"
-msgid "Model"
-msgstr ""
-
-#: src/features/practice/StoryView.tsx:507
-msgctxt "practice.story.lumi.tap"
-msgid "Tap a highlighted word to see what it means."
-msgstr ""
-
-#: src/features/practice/SpellingView.tsx:332
-msgctxt "practice.spelling.character-count"
-msgid "{count, plural, one {# character} other {# characters}}"
-msgstr ""
-
-#: src/features/practice/SessionRecapModal.tsx:91
-#: src/features/practice/SessionRecapModal.tsx:92
-msgctxt "recap.word-count"
-msgid "{count, plural, one {# word} other {# words}}"
-msgstr ""
-
-#: src/features/practice/QuizView.tsx:314
-msgctxt "practice.quiz.streak"
-msgid "{count} in a row"
-msgstr ""
-
-#: src/features/practice/SpellingView.tsx:449
-msgctxt "practice.spelling.check"
-msgid "Check"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:316
-msgctxt "practice.shadowing.take-recording"
-msgid "Take {take} · recording"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:317
-msgctxt "practice.shadowing.take"
-msgid "Take {take}"
-msgstr ""
-
-#: src/features/practice/SpellingView.tsx:316
-msgctxt "practice.spelling.meaning-hint"
-msgid "Meaning hint:"
-msgstr ""
-
-#: src/features/practice/WordMatchView.tsx:290
-msgctxt "practice.match.not-a-pair"
-msgid "Not a pair"
-msgstr ""
-
-#: src/features/practice/practice-board-parts.tsx:81
-msgctxt "practice.topbar.kicker"
-msgid "Practice"
-msgstr ""
-
-#: src/features/practice/StoryView.tsx:93
-msgctxt "practice.story.due-in"
-msgid "{days, plural, one {due in # day} other {due in # days}}"
-msgstr ""
-
-#: src/features/practice/SpellingView.tsx:233
-msgctxt "practice.spelling.mode"
-msgid "Spelling"
-msgstr ""
-
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:310
-msgctxt "languagePractice.footer.progress"
-msgid "Word {current} of {total}"
-msgstr ""
-
-#: src/features/practice/WordMatchView.tsx:291
-msgctxt "practice.match.selected"
-msgid "Selected"
-msgstr ""
-
-#: src/features/practice/StoryView.tsx:503
-msgctxt "practice.story.lumi.meaning"
-msgid "“{word}” means {meaning}."
-msgstr ""
-
-#: src/features/practice/StoryView.tsx:562
-msgctxt "practice.story.review-all"
-msgid "{count, plural, one {Review this word} other {Review these # words}}"
-msgstr ""
-
-#: src/features/practice/StoryView.tsx:500
-msgctxt "practice.story.lumi.label"
-msgid "Lumi · Narrator"
-msgstr ""
-
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:312
-msgctxt "languagePractice.key.enter"
-msgid "Enter"
-msgstr ""
-
-#: src/features/practice/SessionRecapModal.tsx:100
-msgctxt "recap.retry-weak"
-msgid "Review {count, plural, one {# word} other {# words}}"
-msgstr ""
-
-#: src/features/practice/StoryView.tsx:440
-msgctxt "practice.story.read-time"
-msgid "{minutes} min read"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:325
-msgctxt "practice.shadowing.levels-denied"
-msgid "Microphone levels are off because access was not allowed. Your words are still checked."
-msgstr ""
-
-#: src/features/practice/SpellingView.tsx:330
-msgctxt "practice.spelling.letter-count"
-msgid "{count, plural, one {# letter} other {# letters}}"
-msgstr ""
-
-#: src/features/practice/QuizView.tsx:204
-#: src/features/practice/SpellingView.tsx:148
-msgctxt "practice.quiz.lumi.almost"
-msgid "Almost!"
-msgstr ""
-
-#: src/features/practice/QuizView.tsx:203
-msgctxt "practice.quiz.lumi.right"
-msgid "That's it!"
-msgstr ""
-
-#: src/features/practice/WordMatchView.tsx:334
-msgctxt "practice.match.left"
-msgid "left"
-msgstr ""
-
-#: src/features/practice/QuizView.tsx:444
-msgctxt "practice.quiz.your-answer"
-msgid "Your answer"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:321
-msgid "practice.match.seconds-left"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/practice/QuizView.tsx:332
-msgid "practice.quiz.prompt-card"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:434
-msgid "practice.shadowing.coach-body"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:432
-msgid "practice.shadowing.coach-result"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:433
-msgid "practice.shadowing.coach-start"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:345
-msgid "practice.shadowing.match-meter"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:243
-msgid "practice.shadowing.progress"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/practice/ShadowingView.tsx:288
-msgid "practice.shadowing.waves"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:302
-msgid "practice.spelling.speed"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:122
-msgid "practice.story.listen-word"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:329
-msgid "practice.story.reading-context-title"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/practice/StoryView.tsx:241
-msgid "practice.story.speech-unavailable"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:241
-msgctxt "practice.shadowing.mode"
-msgid "Shadowing"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:242
-msgctxt "practice.shadowing.mode-detail"
-msgid "say it after me"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:326
-msgctxt "practice.shadowing.levels-unavailable"
-msgid "This browser cannot show microphone levels. Your words are still checked."
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:314
-msgctxt "practice.shadowing.your-take"
-msgid "Your take"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:362
-msgctxt "practice.shadowing.legend-close"
-msgid "Close"
-msgstr ""
-
-#: src/features/practice/QuizView.tsx:81
-#: src/features/practice/StoryView.tsx:85
-msgctxt "practice.card-state.learning"
-msgid "Learning"
-msgstr ""
-
-#: src/features/practice/ShadowingView.tsx:277
-msgctxt "shadowing-view.practice-target-word"
-msgid "Practice target word"
-msgstr ""
-
-#: src/features/practice/StoryView.tsx:530
-msgctxt "practice.story.words-heading"
-msgid "Words in this story"
-msgstr ""
-
-#: src/features/practice/WordMatchView.tsx:311
-msgctxt "practice.match.mode-detail"
-msgid "60-second run"
-msgstr ""
-
 #: src/features/practice/SpellingView.tsx:459
 msgctxt "practice.spelling.skip"
 msgid "Skip"
 msgstr ""
 
-#: src/features/practice/SessionRecapModal.tsx:83
-msgctxt "recap.reviewed"
-msgid "Reviewed"
-msgstr ""
-
 #: src/features/practice/SpellingView.tsx:154
 msgctxt "practice.spelling.legend.missing"
 msgid "Missing letter"
+msgstr ""
+
+#: src/features/practice/PracticeScreen.tsx:157
+msgctxt "practice.loading.match"
+msgid "Loading word match"
+msgstr ""
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:184
+msgctxt "languagePractice.zh.title"
+msgid "Hear the tones"
 msgstr ""
 
 #: src/features/practice/QuizView.tsx:77
@@ -1881,9 +1641,40 @@ msgctxt "practice.quiz.lumi.ask"
 msgid "Which one fits?"
 msgstr ""
 
+#: src/features/practice/StoryView.tsx:470
+msgctxt "rich-story-view.read-aloud"
+msgid "Read aloud"
+msgstr ""
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:181
+msgctxt "languagePractice.ja.sentence.title"
+msgid "Complete the sentence"
+msgstr ""
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:299
+msgctxt "languagePractice.answer.label"
+msgid "Your answer"
+msgstr ""
+
+#: src/features/practice/StoryView.tsx:375
+msgctxt "practice.story.create-another"
+msgid "Create another story"
+msgstr ""
+
 #: src/features/practice/SpellingView.tsx:146
 msgctxt "practice.spelling.lumi.listen"
 msgid "Listen, then type it"
+msgstr ""
+
+#: src/features/practice/SessionRecapModal.tsx:100
+#: src/features/practice/SessionRecapModal.tsx:203
+msgctxt "recap.grade.mastered"
+msgid "Star"
+msgstr ""
+
+#: src/features/practice/ShadowingView.tsx:356
+msgctxt "practice.shadowing.listening"
+msgid "Listening…"
 msgstr ""
 
 #: src/features/practice/SpellingView.tsx:245
@@ -1891,14 +1682,55 @@ msgctxt "practice.spelling.accuracy-so-far"
 msgid "{percent}% accuracy"
 msgstr ""
 
+#: src/features/practice/ShadowingView.tsx:251
+msgctxt "practice.shadowing.focus-word"
+msgid "Focus word"
+msgstr ""
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:270
+msgctxt "languagePractice.ko.keyboard"
+msgid "Hangul block keyboard"
+msgstr ""
+
 #: src/features/practice/SpellingView.tsx:147
 msgctxt "practice.spelling.lumi.right"
 msgid "Spot on!"
 msgstr ""
 
+#: src/features/practice/SessionRecapModal.tsx:104
+msgctxt "recap.tier.mastered"
+msgid "Mastered"
+msgstr ""
+
+#: src/features/practice/ShadowingView.tsx:357
+msgctxt "practice.shadowing.start-copy"
+msgid "Tap the microphone and read the sentence."
+msgstr ""
+
+#: src/features/practice/QuizView.tsx:501
+#: src/features/practice/SpellingView.tsx:436
+msgctxt "practice.actions.saving-result"
+msgid "Saving result…"
+msgstr ""
+
+#: src/features/practice/SessionRecapModal.tsx:310
+msgctxt "recap.accuracy"
+msgid "Accuracy"
+msgstr ""
+
 #: src/features/practice/practice-board-parts.tsx:139
 msgctxt "practice.key.enter"
 msgid "Enter"
+msgstr ""
+
+#: src/features/practice/StoryView.tsx:431
+msgctxt "practice.story.target-language"
+msgid "{languageName}"
+msgstr ""
+
+#: src/features/practice/SessionRecapModal.tsx:322
+msgctxt "recap.xp-earned"
+msgid "XP earned"
 msgstr ""
 
 #: src/features/practice/QuizView.tsx:87
@@ -1911,9 +1743,36 @@ msgctxt "practice.lumi.label"
 msgid "Lumi · Link"
 msgstr ""
 
+#: src/features/practice/QuizView.tsx:294
+#: src/features/practice/SpellingView.tsx:231
+msgctxt "practice.actions.exit"
+msgid "Exit"
+msgstr ""
+
 #: src/features/practice/StoryView.tsx:436
 msgctxt "practice.story.word-count"
 msgid "{count} of your words"
+msgstr ""
+
+#: src/features/practice/QuizView.tsx:450
+msgctxt "practice.feedback.correct-short"
+msgid "Correct"
+msgstr ""
+
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:236
+msgctxt "languagePractice.action.exit"
+msgid "Exit"
+msgstr ""
+
+#: src/features/practice/QuizView.tsx:504
+#: src/features/practice/SpellingView.tsx:439
+msgctxt "practice.actions.view-results"
+msgid "View results"
+msgstr ""
+
+#: src/features/practice/SessionRecapModal.tsx:311
+msgctxt "recap.remembered-of"
+msgid "{good} of {total} remembered"
 msgstr ""
 
 #: src/features/practice/StoryView.tsx:365
@@ -1921,7 +1780,7 @@ msgctxt "practice.story.listen"
 msgid "Listen"
 msgstr ""
 
-#: src/features/practice/SessionRecapModal.tsx:95
-msgctxt "recap.words-to-reinforce"
-msgid "Words to reinforce ({count})"
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:311
+msgctxt "languagePractice.action.hint"
+msgid "Hint"
 msgstr ""
