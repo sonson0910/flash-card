@@ -139,7 +139,10 @@ for (const theme of themes) {
       await attachScreen(page, testInfo, `${theme.family}-${theme.mode}-${viewport.name}-today`);
 
       await streakChip.click();
-      await expect(page.getByRole('dialog', { name: 'Your study rhythm' })).toBeVisible();
+      const streakDialog = page.getByRole('dialog', { name: 'Your streak is safe.' });
+      await expect(streakDialog).toBeVisible();
+      await expect(streakDialog.getByRole('list', { name: 'This week' }).getByRole('listitem')).toHaveCount(7);
+      await expect(streakDialog.locator('li[aria-current="date"]')).toHaveAttribute('data-state', 'done');
       await expectAccessibleAndContained(page, 'Study streak');
       await attachScreen(page, testInfo, `${theme.family}-${theme.mode}-${viewport.name}-streak`);
       await page.getByRole('button', { name: 'Close streak details' }).click();

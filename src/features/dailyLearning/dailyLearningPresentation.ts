@@ -1,5 +1,6 @@
 import type { ReactNode, RefObject } from 'react';
 import type { HapticStyle } from '../../lib/haptics';
+import type { StudyWeekDay } from './todayScreenFacts';
 
 export type LessonMode =
   | 'recognition'
@@ -119,6 +120,8 @@ export interface TodayScreenModel {
   readonly studyRun?: { readonly studiedToday: boolean; readonly days: number };
   /** Verified XP of recent study days, oldest first, used to estimate sessions to the next level. */
   readonly recentStudyXp?: readonly number[];
+  /** Monday to Sunday of the current reward-time-zone week, for the streak details. */
+  readonly studyWeek?: readonly StudyWeekDay[];
   /** Words planned for today's session, in plan order (a bounded slice). */
   readonly sessionWords?: readonly TodaySessionWord[];
   /** Planned cards that were captured from the web. */
@@ -246,17 +249,50 @@ export interface SessionBridgeStat {
   readonly value: string;
 }
 
+export interface SessionBridgeRailStage {
+  readonly id: SessionBridgeStageId;
+  readonly label: string;
+  readonly completed: boolean;
+  readonly current: boolean;
+  /** Committed and planned items, e.g. "6/6"; empty for the recap. */
+  readonly meta: string;
+}
+
+export interface SessionBridgePreviewCard {
+  readonly word: string;
+  readonly translation: string;
+  readonly phonetic: string;
+  readonly category: string;
+  readonly language: string;
+  readonly translationLanguage?: string;
+  readonly partOfSpeech?: string;
+  /** Host name of the page the word was captured from. */
+  readonly sourceSite?: string;
+  readonly exampleSentence?: string;
+}
+
 export interface SessionBridgeModel {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
   readonly completedStage: SessionBridgeStageId;
   readonly nextStage: SessionBridgeStageId;
+  /** The finished stage and its committed count, e.g. "Review done · 6 of 6". */
   readonly completedLabel: string;
   readonly nextLabel: string;
+  /** The upcoming part in the four-part session, e.g. "Part 2 of 4". */
+  readonly stepLabel: string;
   readonly nextDescription: string;
+  /** What the upcoming part holds, e.g. "5 words · 2 from the web". */
+  readonly nextSummary?: string;
+  /** Shown when the combo is hidden; the combo already carries the committed count. */
   readonly stats: readonly SessionBridgeStat[];
+  /** The longest run of remembered cards in the finished stage. */
   readonly comboCount: number;
-  readonly stages: readonly { id: SessionBridgeStageId; label: string; completed: boolean; current: boolean }[];
-  readonly previewCard?: { word: string; translation: string; phonetic: string; category: string; language: string };
+  /** The finished stage's last answers, oldest first: true when the card was remembered. */
+  readonly recentAnswers: readonly boolean[];
+  /** Verified XP awarded so far in this session. */
+  readonly xpEarned: number;
+  readonly stages: readonly SessionBridgeRailStage[];
+  readonly previewCard?: SessionBridgePreviewCard;
   /** Set when the upcoming stage has no eligible content and will be skipped automatically. */
   readonly skipReason?: string;
   /** True when the upcoming stage has real content the learner may voluntarily bypass. */

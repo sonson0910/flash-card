@@ -12,6 +12,7 @@ import {
   sourceSite,
   stageMinutes,
   studyRun,
+  studyWeek,
 } from './todayScreenFacts';
 
 describe('todayScreenFacts', () => {
@@ -110,5 +111,33 @@ describe('todayScreenFacts', () => {
     expect(sourceSite('https://www.bbc.com/news/article')).toBe('bbc.com');
     expect(sourceSite('not a url')).toBeNull();
     expect(sourceSite(undefined)).toBeNull();
+  });
+  it('marks the Monday-to-Sunday week from verified XP and the current run', () => {
+    // 2026-11-19 is a Thursday.
+    const history = [
+      { date: '2026-11-16', XP: 12 },
+      { date: '2026-11-18', XP: 6 },
+      { date: '2026-11-19', XP: 4 },
+    ];
+    const week = studyWeek(history, '2026-11-19', studyRun(history, '2026-11-19'));
+    expect(week.map(day => day.date)).toEqual(['2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20', '2026-11-21', '2026-11-22']);
+    expect(week.map(day => day.state)).toEqual(['done', 'missed', 'done', 'done', 'future', 'future', 'future']);
+    expect(week.filter(day => day.isToday).map(day => day.date)).toEqual(['2026-11-19']);
+    expect(week.reduce((total, day) => total + day.xp, 0)).toBe(22);
+  });
+
+  it('keeps today open until the learner studies and trusts the server run over a short history', () => {
+    const notYet = studyWeek([{ date: '2026-11-18', XP: 6 }], '2026-11-19', { studiedToday: false, days: 1 });
+    expect(notYet.map(day => day.state)).toEqual(['missed', 'missed', 'done', 'today', 'future', 'future', 'future']);
+    const longRun = studyWeek([{ date: '2026-11-19', XP: 30 }], '2026-11-19', { studiedToday: true, days: 3 });
+    expect(longRun.map(day => day.state)).toEqual(['missed', 'done', 'done', 'done', 'future', 'future', 'future']);
+    expect(longRun.map(day => day.xp)).toEqual([0, 0, 0, 30, 0, 0, 0]);
+  });
+
+  it('reads legacy day keys and starts the week on Monday for a Sunday', () => {
+    const legacy = new Date(2026, 10, 22).toDateString();
+    const week = studyWeek([{ date: legacy, XP: 5 }], '2026-11-22', { studiedToday: true, days: 1 });
+    expect(week[0].date).toBe('2026-11-16');
+    expect(week[6]).toEqual({ date: '2026-11-22', state: 'done', isToday: true, xp: 5 });
   });
 });
