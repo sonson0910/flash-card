@@ -914,6 +914,11 @@
 }
 
 @media (max-width: 760px) {
+  /* The card fills the phone width, so the card behind it would push the dialog sideways. */
+  .weekly-recap-card::after {
+    display: none;
+  }
+
   .weekly-recap-dialog {
     width: min(calc(100vw - 1rem), 74rem);
     max-height: calc(100dvh - 1rem);
