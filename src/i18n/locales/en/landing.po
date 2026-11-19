@@ -371,6 +371,11 @@ msgctxt "landing.methods.context.title"
 msgid "See the meaning in context"
 msgstr "See the meaning in context"
 
+#: src/features/landing/LandingPage.tsx:648
+msgctxt "landing.brand.mark"
+msgid "S"
+msgstr "S"
+
 #: src/features/landing/LandingPage.tsx:145
 msgctxt "landing.features.timing.title"
 msgid "At the right moment"

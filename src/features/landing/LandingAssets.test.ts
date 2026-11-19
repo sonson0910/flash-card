@@ -87,7 +87,8 @@ describe('landing asset delivery contract', () => {
     expect(landingSource).toMatch(/src=\{animeSpelling\}\s+width=\{1000\}\s+height=\{667\}[\s\S]{0,40}loading="lazy"/);
     expect(landingSource).toMatch(/src=\{animeImmediate\}\s+width=\{1000\}\s+height=\{667\}[\s\S]{0,40}loading="lazy"/);
     // The most prominent collage card stays eager/high-priority for LCP; the header mark is text, so it needs no request.
-    expect(landingSource).toContain('<span className="landing-classic-mark" aria-hidden="true">S</span>');
+    expect(landingSource).toMatch(/<span className="landing-classic-mark" aria-hidden="true"><Trans \{\.\.\.msg\(\{ context: 'landing\.brand\.mark', message: 'S' \}\)\} \/><\/span>/);
+    expect(landingSource).not.toContain('sonflashLogo');
     expect(landingSource).toMatch(/src=\{animeInstant\}\s+width=\{1000\}\s+height=\{667\}[\s\S]{0,40}fetchPriority="high"/);
   });
 

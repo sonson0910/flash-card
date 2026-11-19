@@ -645,7 +645,7 @@ export function LandingPage({
                 aria-label="SonFlash"
                 className="flex min-h-11 items-center gap-2.5 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4"
               >
-                <span className="landing-classic-mark" aria-hidden="true">S</span>
+                <span className="landing-classic-mark" aria-hidden="true"><Trans {...msg({ context: 'landing.brand.mark', message: 'S' })} /></span>
                 <svg className="landing-crystal-mark" viewBox="0 0 100 100" width="36" height="36" aria-hidden="true"><path d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" fill="#ff5470"/><path d="M50 4 62 36 96 37 69 59 78 91 50 72Z" fill="#7a0820"/></svg>
                 <span className="landing-classic-brand" aria-hidden="true"><Trans {...msg({ context: 'landing.brand.classic-wordmark', message: 'Son<0>Flash</0>' })} components={{ 0: <em /> }} /></span>
                 <span className="landing-crystal-brand" aria-hidden="true"><Trans {...msg({ context: 'landing.brand.crystal-wordmark', message: 'SON<0>FLASH</0>' })} components={{ 0: <em /> }} /></span>
