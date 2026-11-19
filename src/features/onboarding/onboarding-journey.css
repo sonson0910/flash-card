@@ -591,7 +591,7 @@ html:not([data-theme-family='crystal']).dark .onb-countdown {
   border: 1.5px solid transparent;
   background:
     radial-gradient(ellipse 80% 60% at 100% 0%, color-mix(in srgb, var(--sf-second) 30%, transparent), transparent 70%) padding-box,
-    linear-gradient(var(--sf-surface-raised), var(--sf-surface-raised)) padding-box,
+    var(--onb-card-on-layer) padding-box,
     var(--onb-rim) border-box;
   box-shadow: var(--onb-card-on-shadow);
 }
@@ -893,6 +893,7 @@ html[data-theme-family='crystal'] :is(.onb-option, .onboarding-journey__goal-car
 html[data-theme-family='crystal'] :is(.onb-option, .onboarding-journey__goal-card):focus-visible { outline-offset: -5px; }
 html[data-theme-family='crystal'] [aria-pressed='true'] :is(.onb-option-name, .onb-goal-title, .onb-pace-number) { color: white; }
 html[data-theme-family='crystal'] [aria-pressed='true'] :is(.onb-option-sub, .onb-goal-description, .onb-option-tag) { color: rgb(255 255 255 / .86); }
+html[data-theme-family='crystal'] .onb-pace-card[aria-pressed='true'] .onb-pace-tag { background: color-mix(in srgb, white 20%, transparent); color: white; }
 
 html[data-theme-family='crystal'] :is(.onb-option-name, .onb-goal-title, .onb-pace-number) { font-family: var(--sf-font-display); font-style: italic; font-weight: 900; }
 html[data-theme-family='crystal'] .onb-goal-title { font-size: 26px; line-height: 1.05; }
