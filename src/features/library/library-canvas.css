@@ -13,11 +13,21 @@
 .library-canvas-kicker {
   margin: 0;
   color: var(--sf-brand-text);
-  font-family: var(--font-display, inherit);
+  font-family: var(--sf-font-display);
   font-size: .72rem;
   font-weight: 800;
   letter-spacing: .14em;
   text-transform: uppercase;
+}
+
+/* Classic boards carry no eyebrow above the title; Crystal restyles it below. */
+:root:not([data-theme-family="crystal"]) .library-canvas-kicker {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .library-canvas-kicker-decks,
@@ -30,29 +40,37 @@
 }
 
 .library-canvas-title h2 {
-  margin: .25rem 0 0;
+  margin: 0;
   color: var(--sf-text);
-  font-family: Fraunces, Georgia, serif;
-  font-size: clamp(2.75rem, 5vw, 3.25rem);
-  font-weight: 400;
-  letter-spacing: -.04em;
-  line-height: 1;
+  font-family: var(--sf-font-display);
+  font-size: clamp(2.5rem, 5vw, 3.25rem);
+  font-weight: 380;
+  letter-spacing: -.03em;
+  line-height: 1.05;
+}
+
+:root.dark .library-canvas-title h2 {
+  font-weight: 440;
 }
 
 .library-canvas-summary {
-  margin: .6rem 0 0;
-  color: var(--sf-text-muted);
-  font-size: .88rem;
+  margin: .5rem 0 0;
+  color: color-mix(in srgb, var(--sf-text) 60%, var(--sf-text-muted));
+  font-size: .875rem;
+}
+
+:root.dark .library-canvas-summary {
+  color: color-mix(in srgb, var(--sf-text) 40%, var(--sf-text-muted));
 }
 
 .library-canvas-summary > span:first-child {
   color: var(--sf-text);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono, ui-monospace, monospace);
 }
 
 .library-canvas-summary strong {
   color: var(--sf-brand-text);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .library-canvas-search {
@@ -65,7 +83,7 @@
   gap: .6rem;
   padding: 0 .75rem 0 1rem;
   border: 1px solid var(--sf-border);
-  border-radius: var(--sf-input-radius, 14px);
+  border-radius: 999px;
   background: var(--sf-surface-control);
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sf-text) 4%, transparent);
   color: var(--sf-text-muted);
@@ -92,8 +110,12 @@
   padding: 0 .35rem;
   border: 1px solid var(--sf-border);
   border-radius: .35rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono, ui-monospace, monospace);
   font-size: .7rem;
+}
+
+:root.dark .library-canvas-search {
+  border-radius: 14px;
 }
 
 .library-canvas-create,
@@ -103,13 +125,22 @@
   align-items: center;
   gap: .5rem;
   border: 0;
-  border-radius: var(--sf-button-radius, .85rem);
-  padding: 0 1.2rem;
-  background: var(--sf-brand);
+  border-radius: 999px;
+  padding: 0 1.25rem 0 1rem;
+  /* Ink & Paper's primary action is ink; Midnight Aurora's is the brand cyan. */
+  background: var(--sf-text);
   color: var(--sf-on-brand);
-  font-weight: 800;
+  font-size: .875rem;
+  font-weight: 650;
   white-space: nowrap;
-  box-shadow: var(--sf-panel-shadow);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--sf-text) 20%, transparent), 0 12px 24px -16px color-mix(in srgb, var(--sf-text) 70%, transparent);
+}
+
+:root.dark .library-canvas-create,
+:root.dark .library-canvas-study {
+  border-radius: 16px;
+  background: var(--sf-brand);
+  box-shadow: 0 10px 30px -12px color-mix(in srgb, var(--sf-brand) 70%, transparent);
 }
 
 .library-canvas-create:hover,
@@ -151,44 +182,89 @@
 
 .library-canvas-rail button,
 .library-canvas-view-toggle button {
-  min-height: 2rem;
+  min-height: 2.125rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: .38rem;
+  gap: .4rem;
   border: 1px solid var(--sf-border);
-  border-radius: .65rem;
+  border-radius: 10px;
   padding: 0 .75rem;
-  background: var(--sf-surface-control);
+  background: transparent;
   color: var(--sf-text-muted);
-  font-size: .8rem;
-  font-weight: 700;
+  font-size: .8125rem;
+  font-weight: 550;
   white-space: nowrap;
   cursor: pointer;
 }
 
 .library-canvas-decks button {
+  min-height: 2.375rem;
   border-radius: 999px;
+  padding: 0 .875rem;
+  font-size: .84375rem;
+  font-weight: 600;
 }
 
 .library-canvas-rail button:hover,
 .library-canvas-view-toggle button:hover {
-  border-color: var(--sf-brand);
+  border-color: color-mix(in srgb, var(--sf-text) 28%, transparent);
   color: var(--sf-text);
 }
 
 .library-canvas-rail button.is-active,
 .library-canvas-view-toggle button.is-active {
-  border-color: color-mix(in srgb, var(--sf-brand) 65%, var(--sf-border));
-  background: var(--sf-brand);
+  border-color: transparent;
+  background: var(--sf-text);
   color: var(--sf-on-brand);
 }
 
+:root.dark .library-canvas-rail button.is-active,
+:root.dark .library-canvas-view-toggle button.is-active {
+  background: color-mix(in srgb, var(--sf-text) 10%, transparent);
+  color: var(--sf-text);
+}
+
+:root.dark .library-canvas-decks button.is-active {
+  background: color-mix(in srgb, var(--sf-text) 8%, transparent);
+}
+
+.library-canvas-rail button:focus-visible,
+.library-canvas-view-toggle button:focus-visible {
+  outline: 2px solid var(--sf-brand);
+  outline-offset: 2px;
+}
+
 .library-canvas-decks small {
-  opacity: .7;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .7rem;
+  opacity: .65;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: .71875rem;
   font-weight: 500;
+}
+
+/* Status dots on the filter chips (classic). */
+:root:not([data-theme-family="crystal"]) .library-canvas-filters button[data-library-filter]:not([data-library-filter="starred"])::before {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: var(--library-filter-dot, var(--sf-text));
+  content: '';
+}
+
+:root:not([data-theme-family="crystal"]) .library-canvas-filters button.is-active[data-library-filter="all"]::before {
+  background: currentColor;
+}
+
+.library-canvas-filters [data-library-filter="due"] { --library-filter-dot: var(--sf-brand-text); }
+.library-canvas-filters [data-library-filter="new"] { --library-filter-dot: transparent; }
+.library-canvas-filters [data-library-filter="learning"] { --library-filter-dot: var(--sf-success); }
+.library-canvas-filters [data-library-filter="mastered"] { --library-filter-dot: var(--sf-reward); }
+:root.dark .library-canvas-filters [data-library-filter="learning"] { --library-filter-dot: var(--sf-brand); }
+
+:root.dark:not([data-theme-family="crystal"]) .library-canvas-filters button[data-library-filter]:not([data-library-filter="all"], [data-library-filter="new"], [data-library-filter="starred"])::before {
+  box-shadow: 0 0 8px var(--library-filter-dot);
 }
 
 .library-canvas-rail-divider {
@@ -202,11 +278,18 @@
 .library-canvas-view-toggle {
   display: flex;
   flex: none;
-  gap: .2rem;
+  gap: 2px;
+  border: 1px solid var(--sf-border);
+  border-radius: 12px;
+  padding: 3px;
+  background: var(--sf-surface-control);
 }
 
 .library-canvas-view-toggle button {
   width: 2.375rem;
+  min-height: 2rem;
+  border: 0;
+  border-radius: 9px;
   padding: 0;
 }
 
@@ -235,7 +318,7 @@
 }
 
 .library-canvas-actions > button {
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   display: inline-flex;
   align-items: center;
   gap: .4rem;
@@ -254,8 +337,12 @@
   opacity: .55;
 }
 
+/* Study stays the primary action inside the toolbar row: ink on paper,
+   on-brand text over the dark-theme brand fill. */
 .library-canvas-actions .library-canvas-study {
   border: 0;
+  background: var(--sf-text);
+  color: var(--sf-on-brand);
 }
 
 .library-canvas-collection-tools {
@@ -354,29 +441,53 @@
 .library-canvas-card-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 1.25rem 1.25rem;
-  margin-top: 1.15rem;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
   perspective: 1100px;
 }
 
+/* Ink & Paper: paper cards lifted by a warm hairline shadow. */
 .library-word-card {
+  --library-card-text-3: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface));
+  --library-card-body: color-mix(in srgb, var(--sf-text) 60%, var(--sf-text-muted));
   position: relative;
+  display: flex;
   min-width: 0;
   height: 17rem;
+  flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--sf-border);
-  border-radius: var(--sf-card-radius, 1rem);
+  border: 0;
+  border-radius: 16px;
   background: var(--sf-card-bg, var(--sf-surface));
   color: var(--sf-text);
-  box-shadow: var(--sf-panel-shadow);
+  box-shadow:
+    inset 0 1px 0 var(--sf-surface),
+    inset 0 0 0 1px color-mix(in srgb, var(--sf-text) 6%, transparent),
+    0 1px 2px color-mix(in srgb, var(--sf-text) 8%, transparent),
+    0 16px 30px -20px color-mix(in srgb, var(--sf-text) 40%, transparent);
   cursor: pointer;
   transition: transform .18s ease, box-shadow .18s ease, filter .22s ease;
 }
 
+/* Midnight Aurora: a 1.5px tier rim drawn as a border-box gradient. */
+:root.dark .library-word-card {
+  --library-card-text-3: color-mix(in srgb, var(--sf-text-muted) 70%, var(--sf-surface));
+  --library-card-body: color-mix(in srgb, var(--sf-text) 40%, var(--sf-text-muted));
+  border: 1.5px solid transparent;
+  border-radius: 22px;
+  background:
+    var(--sf-card-bg, var(--sf-surface)) padding-box,
+    var(--library-card-rim, linear-gradient(var(--sf-border), var(--sf-border))) border-box;
+  box-shadow: 0 24px 50px -28px rgb(0 0 0 / .9), var(--library-card-glow, 0 0 0 0 transparent);
+}
+
+:root.dark .library-word-card--new { --library-card-rim: var(--sf-rim-new); }
+:root.dark .library-word-card--learning { --library-card-rim: var(--sf-rim-learning); --library-card-glow: 0 0 36px -14px color-mix(in srgb, var(--sf-brand) 50%, transparent); }
+:root.dark .library-word-card--mastered { --library-card-rim: var(--sf-gold-rim); --library-card-glow: 0 0 40px -14px color-mix(in srgb, var(--sf-reward) 50%, transparent); }
+
 .library-word-card:hover,
 .library-word-card:focus-visible {
   transform: translateY(-4px) rotate(var(--library-card-rotation, 0deg));
-  box-shadow: 0 18px 36px -28px var(--sf-shadow), 0 0 0 2px color-mix(in srgb, var(--sf-brand) 35%, transparent);
 }
 
 .library-word-card:focus-visible {
@@ -384,12 +495,48 @@
   outline-offset: 3px;
 }
 
+/* Cover tones cycle per category: teal / violet / amber in Midnight Aurora,
+   sage / paper / peach in Ink & Paper. */
 .library-word-cover {
+  --library-cover-accent: var(--sf-success);
+  --library-cover-fill: color-mix(in srgb, var(--sf-success) 12%, var(--sf-surface));
   position: relative;
   height: 7.25rem;
   flex-shrink: 0;
   overflow: hidden;
-  background: color-mix(in srgb, var(--sf-second) 18%, var(--sf-surface-raised));
+  margin: 10px 10px 0;
+  border-radius: 9px;
+  background: var(--library-cover-fill);
+}
+
+.library-word-cover--violet {
+  --library-cover-accent: var(--sf-text-muted);
+  --library-cover-fill: color-mix(in srgb, color-mix(in srgb, var(--sf-reward) 30%, var(--sf-text)) 12%, var(--sf-surface));
+}
+
+.library-word-cover--amber {
+  --library-cover-accent: var(--sf-brand);
+  --library-cover-fill: color-mix(in srgb, var(--sf-brand) 14%, var(--sf-surface));
+}
+
+:root.dark .library-word-cover {
+  --library-cover-tone: var(--sf-brand);
+  --library-cover-accent: var(--sf-brand);
+  margin: 0;
+  border-radius: 0;
+  background:
+    radial-gradient(120% 95% at 22% 0%, color-mix(in srgb, var(--library-cover-tone) 35%, transparent), transparent 72%),
+    linear-gradient(to bottom, color-mix(in srgb, var(--library-cover-tone) 10%, var(--sf-surface)) 45%, transparent);
+}
+
+:root.dark .library-word-cover--violet {
+  --library-cover-tone: var(--sf-second);
+  --library-cover-accent: color-mix(in srgb, var(--sf-second) 70%, var(--sf-text));
+}
+
+:root.dark .library-word-cover--amber {
+  --library-cover-tone: var(--sf-reward);
+  --library-cover-accent: var(--sf-reward);
 }
 
 .library-word-cover img {
@@ -399,31 +546,43 @@
   object-fit: cover;
 }
 
+:root.dark .library-word-cover img {
+  -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent);
+  mask-image: linear-gradient(to bottom, #000 45%, transparent);
+}
+
 .library-word-cover > span:not(.library-filter-mark) {
   position: absolute;
-  right: .3rem;
-  bottom: -2.4rem;
-  color: color-mix(in srgb, var(--sf-brand) 20%, transparent);
-  font-family: var(--font-display, serif);
-  font-size: 9rem;
+  right: 10px;
+  bottom: -2.125rem;
+  color: color-mix(in srgb, var(--library-cover-accent) 24%, transparent);
+  font-family: var(--sf-font-display);
+  font-size: 9.375rem;
+  font-style: italic;
+  font-weight: 400;
   line-height: 1;
+  pointer-events: none;
+}
+
+:root.dark .library-word-cover > span:not(.library-filter-mark) {
+  color: color-mix(in srgb, var(--library-cover-accent) 30%, transparent);
 }
 
 .library-word-cover small {
   position: absolute;
-  left: .85rem;
-  bottom: .7rem;
-  color: var(--sf-text);
-  font-size: .66rem;
-  font-weight: 800;
-  letter-spacing: .1em;
+  left: 14px;
+  bottom: 12px;
+  color: var(--library-cover-accent);
+  font-size: .6875rem;
+  font-weight: 600;
+  letter-spacing: .08em;
   text-transform: uppercase;
 }
 
 .library-word-cover b {
   position: absolute;
-  top: .65rem;
-  left: .65rem;
+  top: 10px;
+  left: 10px;
   z-index: 1;
   display: inline-flex;
   align-items: center;
@@ -436,34 +595,79 @@
 }
 
 .library-word-due {
-  left: 4rem !important;
-  background: var(--sf-brand) !important;
-  color: var(--sf-on-brand) !important;
+  height: 24px;
+  box-sizing: border-box;
+  gap: 5px !important;
+  border: 1px solid color-mix(in srgb, var(--sf-brand-text) 25%, transparent);
+  padding: 0 9px 0 8px !important;
+  font-size: .6875rem;
+  font-weight: 650;
+}
+
+:root.dark .library-word-due {
+  border-color: color-mix(in srgb, var(--sf-brand-text) 35%, transparent);
+  background: color-mix(in srgb, var(--sf-surface) 60%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.library-word-due > span[aria-hidden] {
+  width: 5px;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: currentColor;
+  color: transparent;
+  font-size: 0;
+}
+
+:root.dark .library-word-due > span[aria-hidden] {
+  background: var(--sf-brand-text);
+  box-shadow: 0 0 6px var(--sf-brand-text);
 }
 
 .library-word-star {
-  top: .65rem;
-  right: .65rem;
-  left: auto !important;
-  color: var(--sf-reward);
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  width: 26px;
+  height: 26px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  padding: 6px;
+  background: var(--sf-brand);
+  color: var(--sf-on-brand);
+}
+
+:root.dark .library-word-star {
+  background: var(--sf-reward);
+  color: var(--sf-on-brand);
+  box-shadow: 0 0 14px -2px color-mix(in srgb, var(--sf-reward) 70%, transparent);
 }
 
 .library-word-body {
-  position: relative;
-  z-index: 1;
+  position: static;
   display: flex;
-  min-height: 9.75rem;
+  min-height: 0;
+  flex: 1;
   flex-direction: column;
-  padding: .55rem 1rem 1rem;
-  background: var(--sf-card-bg, var(--sf-surface));
+  padding: 12px 16px 16px;
+  background: transparent;
+}
+
+:root.dark .library-word-body {
+  padding: 4px 18px 18px;
 }
 
 .library-word-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 0;
   overflow: hidden;
   color: var(--sf-text-muted);
-  font-size: .65rem;
-  font-weight: 800;
+  font-size: .6875rem;
+  font-weight: 550;
   letter-spacing: .07em;
   text-overflow: ellipsis;
   text-transform: uppercase;
@@ -472,35 +676,82 @@
 
 .library-word-meta i {
   display: inline-block;
-  width: .42rem;
-  height: .42rem;
+  width: 7px;
+  height: 7px;
+  flex: none;
+  box-sizing: border-box;
   border-radius: 50%;
-  background: var(--sf-second);
+  margin-right: 2px;
+  background: var(--sf-success);
 }
 
-.library-word-card--learning .library-word-meta i {
-  background: var(--sf-brand);
+.library-word-card--new .library-word-meta i {
+  border: 1.5px dashed var(--sf-text-muted);
+  background: transparent;
 }
 
 .library-word-card--mastered .library-word-meta i {
+  background: conic-gradient(var(--sf-reward), color-mix(in srgb, var(--sf-reward) 50%, var(--sf-surface)), var(--sf-reward));
+}
+
+:root.dark .library-word-card--new .library-word-meta i {
+  border: 1.5px solid color-mix(in srgb, var(--sf-text) 75%, var(--sf-text-muted));
+}
+
+:root.dark .library-word-card--learning .library-word-meta i {
+  background: var(--sf-brand);
+  box-shadow: 0 0 8px var(--sf-brand);
+}
+
+:root.dark .library-word-card--mastered .library-word-meta i {
   background: var(--sf-reward);
+  box-shadow: 0 0 8px var(--sf-reward);
 }
 
 .library-word-body h3 {
   overflow: hidden;
-  margin: .45rem 0 0;
+  margin: 6px 0 0;
   color: var(--sf-text);
-  font-family: var(--font-display, Fraunces, Georgia, serif);
-  font-size: 1.7rem;
-  line-height: 1;
+  font-family: var(--sf-font-display);
+  font-size: 1.875rem;
+  font-weight: 380;
+  letter-spacing: -.02em;
+  line-height: 1.15;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+:root.dark .library-word-body h3 {
+  font-weight: 440;
+}
+
+/* The stressed syllable: italic terracotta on paper, tier colour at night. */
+.library-word-stress {
+  color: var(--sf-brand);
+  font-style: italic;
+}
+
+:root.dark .library-word-stress {
+  color: var(--sf-brand);
+  font-style: normal;
+}
+
+:root.dark .library-word-card--learning .library-word-stress {
+  color: var(--sf-brand-text);
+}
+
+:root.dark .library-word-card--mastered .library-word-stress {
+  color: var(--sf-reward);
+}
+
 .library-word-body code {
-  margin-top: .35rem;
-  color: var(--sf-text-muted);
-  font-size: .68rem;
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--library-card-text-3);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: .75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .library-word-translation-row {
@@ -521,19 +772,24 @@
 }
 
 .library-word-translation {
-  color: var(--sf-text);
-  font-size: .78rem;
+  color: var(--library-card-body);
+  font-size: .8125rem;
 }
 
 .library-word-translation-row > span {
   flex-shrink: 0;
-  color: var(--sf-text-muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .65rem;
+  color: var(--library-card-text-3);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: .71875rem;
+  text-transform: lowercase;
+}
+
+.library-word-translation-row > span.is-due {
+  color: var(--sf-brand-text);
 }
 
 .library-word-grade {
-  font-family: Kanit, Nunito, system-ui, sans-serif;
+  font-family: var(--sf-font-display);
   font-style: italic;
   font-weight: 900;
   letter-spacing: .04em;
@@ -555,25 +811,38 @@
   color: var(--sf-reward);
 }
 
+/* The whole card opens the detail view: the real button stretches over it. */
 .library-word-open {
-  width: fit-content;
-  margin-top: .4rem;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   border: 0;
+  border-radius: inherit;
   padding: 0;
   background: transparent;
-  color: var(--sf-brand-text);
-  font-size: .7rem;
-  font-weight: 800;
-  text-decoration: underline;
-  text-underline-offset: .18rem;
+  color: transparent;
   cursor: pointer;
+}
+
+.library-word-open > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.library-word-open:focus-visible {
+  outline: 3px solid var(--sf-brand-text);
+  outline-offset: -3px;
 }
 
 .library-word-controls {
   position: absolute;
   top: .5rem;
   right: .45rem;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   align-items: center;
   gap: .2rem;
@@ -916,6 +1185,18 @@
   color: #fff;
 }
 
+:root[data-theme-family="crystal"] .library-canvas-rail button:not(.is-active),
+:root[data-theme-family="crystal"] .library-canvas-view-toggle button:not(.is-active) {
+  background: var(--sf-surface-control);
+}
+
+:root[data-theme-family="crystal"] .library-canvas-view-toggle {
+  gap: .2rem;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
 :root[data-theme-family="crystal"] .library-word-card {
   --library-card-rotation: 0deg;
   border: 0;
@@ -975,6 +1256,7 @@
 :root[data-theme-family="crystal"] .library-word-cover {
   height: 7.25rem;
   margin: 2px 2px 0;
+  border-radius: 0;
   background: var(--sf-surface-raised);
 }
 
@@ -1010,6 +1292,8 @@
 }
 
 :root[data-theme-family="crystal"] .library-word-due {
+  left: 4rem;
+  border: 0;
   background: linear-gradient(180deg, #ff5470, #b30f33) !important;
 }
 
@@ -1017,6 +1301,75 @@
   background: transparent !important;
   color: #ffd166;
   filter: drop-shadow(0 0 8px rgb(255 209 102 / .8));
+}
+
+:root[data-theme-family="crystal"] .library-word-body {
+  padding: 12px 16px 16px;
+}
+
+:root[data-theme-family="crystal"] .library-word-cover {
+  --library-cover-tone: var(--sf-second);
+  --library-cover-accent: var(--sf-second);
+  background:
+    radial-gradient(120% 95% at 22% 0%, color-mix(in srgb, var(--library-cover-tone) 30%, transparent), transparent 72%),
+    color-mix(in srgb, var(--library-cover-tone) 10%, var(--sf-surface-raised));
+}
+
+:root[data-theme-family="crystal"] .library-word-cover--violet {
+  --library-cover-tone: var(--sf-brand);
+  --library-cover-accent: var(--sf-brand-text);
+}
+
+:root[data-theme-family="crystal"] .library-word-cover--amber {
+  --library-cover-tone: var(--sf-reward);
+  --library-cover-accent: var(--sf-reward);
+}
+
+:root[data-theme-family="crystal"] .library-word-cover > span:not(.library-filter-mark) {
+  bottom: -1.75rem;
+  color: color-mix(in srgb, var(--library-cover-tone) 32%, transparent);
+  font-size: 8.5rem;
+  font-weight: 900;
+}
+
+:root[data-theme-family="crystal"] .library-word-cover small {
+  font-family: var(--sf-font-display);
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+:root[data-theme-family="crystal"] .library-word-meta {
+  color: var(--sf-success);
+  font-weight: 800;
+}
+
+:root[data-theme-family="crystal"] .library-word-card--learning .library-word-meta,
+:root[data-theme-family="crystal"] .library-word-card--mastered .library-word-meta {
+  color: var(--sf-brand-text);
+}
+
+:root[data-theme-family="crystal"] .library-word-meta i {
+  display: none;
+}
+
+:root[data-theme-family="crystal"] .library-word-meta span[aria-hidden] {
+  font-size: 0;
+}
+
+:root[data-theme-family="crystal"] .library-word-meta span[aria-hidden]::before {
+  color: var(--sf-text-muted);
+  font-size: .6875rem;
+  content: '//';
+}
+
+:root[data-theme-family="crystal"] .library-word-card .library-word-stress {
+  color: var(--sf-brand);
+  font-style: inherit;
+}
+
+:root[data-theme-family="crystal"] .library-word-due > span[aria-hidden] {
+  display: none;
 }
 
 :root[data-theme-family="crystal"] .library-canvas-empty {
@@ -1063,10 +1416,13 @@
 
 @media (max-width: 720px) {
   .library-canvas-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+  .library-word-card { height: auto; min-height: 15rem; }
   .library-word-body { min-height: 7.7rem; padding: .7rem; }
-  .library-word-body h3 { font-size: 1.35rem; }
-  .library-word-cover { height: 6rem; }
-  .library-word-due { top: 2.4rem; left: .65rem !important; }
+  :root.dark .library-word-body { padding: .35rem .75rem .75rem; }
+  .library-word-body h3 { font-size: 1.5rem; }
+  .library-word-cover { height: 6rem; margin: 6px 6px 0; }
+  .library-word-cover > span:not(.library-filter-mark) { font-size: 7rem; bottom: -1.5rem; }
+  :root[data-theme-family="crystal"] .library-word-due { top: 2.4rem; left: .65rem; }
   .library-word-star { display: none; }
   .library-word-controls { top: .2rem; right: .2rem; display: grid; grid-template-columns: repeat(2, 2.75rem); opacity: 1; }
   .library-word-controls button,
@@ -1122,8 +1478,9 @@
   margin-top: .45rem;
 }
 
-.library-canvas-collection--list .library-word-open {
-  margin-top: .25rem;
+.library-canvas-collection--list .library-word-cover {
+  margin: 0;
+  border-radius: 0;
 }
 
 .library-canvas-collection--list .library-word-controls {

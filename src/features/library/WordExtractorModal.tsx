@@ -1,13 +1,14 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { i18n, type MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
-import { Check, Loader2, Plus, Sparkles, X } from 'lucide-react';
+import { Check, Loader2, Sparkles, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { normalizeCardWord } from '../../lib/cardIdentity';
 import { extractVocabulary } from '../../lib/gemini';
 import { getProtectedFunctionUserMessage, ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import type { CardData } from '../../types/card';
 import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
+import './library-dialog-overlays.css';
 
 export interface ExtractedWordItem {
   word: string;
@@ -193,38 +194,50 @@ export function WordExtractorContent({
     }
   };
 
-  return (
-    <div
-      className="library-dialog-canvas max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-2xl outline-none"
-      aria-busy={isLoading}
+  const passageWordCount = inputText.trim() ? inputText.trim().split(/\s+/u).length : 0;
+  const hasResults = scopedExtractedWords.length > 0;
+  const ownedCount = scopedExtractedWords.filter(item => existingWordKeys.has(normalizeCardWord(item.word))).length;
+  const extractButton = (variant: 'primary' | 'link') => (
+    <button
+      type="button"
+      onClick={handleExtract}
+      disabled={isLoading || !inputText.trim()}
+      className={variant === 'primary' ? 'library-dialog-button library-dialog-button--primary' : 'library-dialog-link word-extractor-rerun'}
     >
-      <header className="flex items-start justify-between gap-4 border-b border-[var(--sf-border)] px-5 py-5 sm:px-7">
+      {isLoading ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Sparkles size={16} aria-hidden="true" />}
+      <span>{isLoading
+        ? translate(msg({ id: 'library.extract.loading', message: 'AI is analyzing the text…' }))
+        : translate(msg({ id: 'library.extract.submit', message: 'Extract vocabulary' }))}</span>
+    </button>
+  );
+
+  return (
+    <div className="word-extractor" aria-busy={isLoading}>
+      <header className="library-dialog-header">
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--sf-text-muted)]">
+          <p className="library-dialog-kicker">
             {translate(msg({ id: 'library.extract.eyebrow', message: 'Word extractor' }))}
           </p>
-          <div>
-            <Dialog.Title className="mt-1 font-display text-3xl font-semibold tracking-tight text-[var(--sf-text)]">
-              {translate(msg({ id: 'library.extract.title', message: 'Scan text' }))}
-            </Dialog.Title>
-            <Dialog.Description className="mt-1 text-sm leading-6 text-[var(--sf-text-muted)]">
-              {translate(msg({ id: 'library.extract.description', message: 'Paste a passage and SonFlash pulls out words worth learning.' }))}
-            </Dialog.Description>
-          </div>
+          <Dialog.Title className="library-dialog-title">
+            {translate(msg({ id: 'library.extract.title', message: 'Scan text' }))}
+          </Dialog.Title>
+          <Dialog.Description className="library-dialog-description">
+            {translate(msg({ id: 'library.extract.description', message: 'Paste a passage and SonFlash pulls out words worth learning.' }))}
+          </Dialog.Description>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] transition-colors hover:border-[var(--sf-brand)] hover:text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+          className="library-dialog-icon-button"
           aria-label={translate(msg({ id: 'library.close', message: 'Close' }))}
         >
-          <X size={16} />
+          <X size={16} aria-hidden="true" />
         </button>
       </header>
 
-      <div className="space-y-4 px-5 py-5 sm:px-7">
-        <div>
-          <label htmlFor="extractor-input" className="mb-2 block text-xs font-bold uppercase tracking-[0.12em] text-[var(--sf-text-muted)]">
+      <div className="library-dialog-body word-extractor-body">
+        <div className="word-extractor-passage">
+          <label htmlFor="extractor-input" className="sr-only">
             {translate(msg({ id: 'library.extract.input-label', message: 'Text to scan' }))}
           </label>
           <textarea
@@ -234,45 +247,30 @@ export function WordExtractorContent({
             onChange={e => setInputText(e.target.value)}
             placeholder={translate(msg({ id: 'library.extract.input-placeholder', message: 'Paste a paragraph, email, reading passage or book page here…' }))}
             rows={5}
-            className="w-full rounded-[14px] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-4 text-sm leading-7 text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-hidden focus:ring-2 focus:ring-[var(--sf-brand)]/20"
+            className="word-extractor-input"
           />
+          {passageWordCount > 0 && (
+            <span className="word-extractor-count" aria-hidden="true">
+              {translate(msg({ id: 'library.extract.word-count', message: '{count, plural, one {# word} other {# words}}' }), { count: passageWordCount })}
+            </span>
+          )}
         </div>
 
         {isScopeCurrent && error !== null && (
-          <p role="alert" className="rounded-[14px] border border-rose-400/30 bg-rose-500/10 p-3 text-sm font-medium text-rose-700 dark:text-rose-200">
+          <p role="alert" className="library-dialog-error">
             {extractionFailureMessage(error)}
           </p>
         )}
 
-        <button
-          type="button"
-          onClick={handleExtract}
-          disabled={isLoading || !inputText.trim()}
-          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-5 text-sm font-semibold text-[var(--sf-on-brand)] shadow-[var(--sf-shadow)] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:opacity-50"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 size={18} className="animate-spin" />
-              <span>{translate(msg({ id: 'library.extract.loading', message: 'AI is analyzing the text…' }))}</span>
-            </>
-          ) : (
-            <>
-              <Sparkles size={18} />
-              <span>{translate(msg({ id: 'library.extract.submit', message: 'Extract vocabulary' }))}</span>
-            </>
-          )}
-        </button>
-
-        {/* Extracted Words Result List */}
-        {scopedExtractedWords.length > 0 && (
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-[var(--sf-text)]">
-                {translate(msg({ id: 'library.extract.found', message: 'Found {count, plural, one {# word} other {# words}}' }), { count: scopedExtractedWords.length })}
-                {existingWordKeys.size > 0 && scopedExtractedWords.some(item => existingWordKeys.has(normalizeCardWord(item.word)))
-                  ? <span className="ml-2 text-xs font-normal text-[var(--sf-text-muted)]">{translate(msg({ id: 'library.extract.already-owned', message: '{count, plural, one {# already in your library} other {# already in your library}}' }), { count: scopedExtractedWords.filter(item => existingWordKeys.has(normalizeCardWord(item.word))).length })}</span>
+        {hasResults && (
+          <div className="word-extractor-results">
+            <div className="word-extractor-results-head">
+              <p>
+                <strong>{translate(msg({ id: 'library.extract.found', message: 'Found {count, plural, one {# word} other {# words}}' }), { count: scopedExtractedWords.length })}</strong>
+                {ownedCount > 0
+                  ? <span>{translate(msg({ id: 'library.extract.already-owned', message: '{count, plural, one {# already in your library} other {# already in your library}}' }), { count: ownedCount })}</span>
                   : null}
-              </span>
+              </p>
               <button
                 type="button"
                 onClick={() => {
@@ -280,7 +278,7 @@ export function WordExtractorContent({
                   else setSelectedWords(new Set(selectableWords.map(w => w.word)));
                 }}
                 disabled={selectableWords.length === 0}
-                className="text-xs font-semibold text-[var(--sf-brand-text)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+                className="library-dialog-link word-extractor-toggle"
               >
                 {allSelectableWordsSelected
                   ? translate(msg({ id: 'library.extract.deselect-all', message: 'Clear selection' }))
@@ -288,10 +286,13 @@ export function WordExtractorContent({
               </button>
             </div>
 
-            <div className="grid max-h-64 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+            <div className="word-extractor-grid">
               {scopedExtractedWords.map((item, i) => {
                 const isExisting = existingWordKeys.has(normalizeCardWord(item.word));
                 const isSelected = importableSelectedWords.includes(item);
+                const tag = isExisting
+                  ? translate(msg({ id: 'library.extract.in-library', message: 'In library' }))
+                  : item.cefrLevel || item.partOfSpeech;
                 return (
                   <button
                     key={i}
@@ -300,47 +301,38 @@ export function WordExtractorContent({
                     disabled={isExisting}
                     aria-disabled={isExisting}
                     aria-pressed={isSelected}
-                    className={`flex w-full items-start gap-3 rounded-[14px] border p-3 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] ${
-                      isSelected
-                        ? 'border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,var(--sf-surface))]'
-                        : `border-[var(--sf-border)] bg-[var(--sf-surface-raised)] ${isExisting ? 'opacity-50' : 'opacity-70'}`
-                    }`}
+                    className={`word-extractor-row${isSelected ? ' is-selected' : ''}${isExisting ? ' is-owned' : ''}`}
                   >
-                    <div
-                      className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border ${
-                        isSelected
-                          ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)]'
-                          : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'
-                      }`}
-                    >
-                      {isSelected && <Check size={13} />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span lang={languageProfile.source.code} className="font-display text-base font-semibold text-[var(--sf-text)]">{item.word}</span>
-                        {item.cefrLevel
-                          ? <span className="rounded-md bg-[var(--sf-surface-muted)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--sf-text-muted)]">{item.cefrLevel}</span>
-                          : <span lang={languageProfile.source.code} className="rounded-md bg-[var(--sf-surface-muted)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--sf-text-muted)]">{isExisting ? translate(msg({ id: 'library.extract.in-library', message: 'In library' })) : item.partOfSpeech}</span>}
-                      </div>
-                      <p lang={languageProfile.target.code} className="text-xs text-[var(--sf-text-muted)] mt-0.5">{item.translation}</p>
-                    </div>
+                    <span className="word-extractor-check" aria-hidden="true">
+                      {isSelected && <Check size={13} strokeWidth={3} />}
+                    </span>
+                    <span lang={languageProfile.source.code} className="word-extractor-word">{item.word}</span>
+                    <span lang={languageProfile.target.code} className="word-extractor-meaning">{item.translation}</span>
+                    {tag ? <span lang={isExisting || item.cefrLevel ? undefined : languageProfile.source.code} className="word-extractor-tag">{tag}</span> : null}
                   </button>
                 );
               })}
             </div>
-
-            <button
-              type="button"
-              onClick={handleAddAllSelected}
-              disabled={importableSelectedWords.length === 0}
-              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 text-sm font-semibold text-[var(--sf-on-brand)] shadow-[var(--sf-shadow)] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:opacity-50"
-            >
-              <Plus size={16} />
-              <span>{translate(msg({ id: 'library.extract.create-selected', message: 'Create {count, plural, one {# flashcard} other {# flashcards}}' }), { count: importableSelectedWords.length })}</span>
-            </button>
           </div>
         )}
       </div>
+
+      <footer className="library-dialog-footer word-extractor-footer">
+        {hasResults ? extractButton('link') : <span />}
+        <button type="button" onClick={onClose} className="library-dialog-button library-dialog-button--secondary">
+          {translate(msg({ id: 'common.cancel', message: 'Cancel' }))}
+        </button>
+        {hasResults ? (
+          <button
+            type="button"
+            onClick={handleAddAllSelected}
+            disabled={importableSelectedWords.length === 0}
+            className="library-dialog-button library-dialog-button--primary"
+          >
+            <span>{translate(msg({ id: 'library.extract.save-selected', message: 'Save {count, plural, one {# card} other {# cards}}' }), { count: importableSelectedWords.length })}</span>
+          </button>
+        ) : extractButton('primary')}
+      </footer>
     </div>
   );
 }
@@ -352,9 +344,9 @@ export function WordExtractorModal({ open, onOpenChange, onImportWords, onImport
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm" />
+        <Dialog.Overlay className="library-dialog-overlay" />
         <Dialog.Content
-          className="fixed inset-x-4 top-1/2 z-50 mx-auto w-auto max-w-2xl -translate-y-1/2 focus:outline-none sm:inset-x-6"
+          className="library-dialog-frame library-dialog-frame--extract"
           onCloseAutoFocus={event => {
             if (!restoreFocusRef?.current) return;
             event.preventDefault();

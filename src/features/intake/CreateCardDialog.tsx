@@ -17,6 +17,7 @@ import type {
   ManualCardDraft,
 } from './card-creator-model';
 import './create-card-dialog.css';
+import { splitStressedWord } from '../library/libraryCardFace';
 
 export interface CreateCardDeckOption {
   value: string;
@@ -290,6 +291,7 @@ function CardPreview({
   const initial = Array.from(card.word.trim())[0]?.toLocaleLowerCase() || '·';
   const family = cardFamily(card);
   const isManual = card.origin === 'manual';
+  const stressed = card.word ? splitStressedWord(card.word, card.phonetic, card.language || 'en') : null;
   return (
     <section className="create-card-dialog__preview" aria-labelledby="create-card-preview-title">
       <div className="create-card-dialog__cover" aria-hidden="true">
@@ -301,7 +303,7 @@ function CardPreview({
           <span className="create-card-dialog__edit-note">{isManual ? <Trans {...msg({ id: 'library.create-card.preview.edit-manual', message: 'Edit your card details below' })} /> : <Trans {...msg({ id: 'library.create-card.preview.edit-generated', message: 'Edit the generated details below' })} />}</span>
         </div>
         <div className="create-card-dialog__headword-row">
-          <h3 id="create-card-preview-title" lang={card.language || 'en'}>{card.word || '—'}</h3>
+          <h3 id="create-card-preview-title" lang={card.language || 'en'}>{stressed ? <>{stressed.before}<span className="create-card-dialog__stress">{stressed.stressed}</span>{stressed.after}</> : card.word || '—'}</h3>
           {card.word && <button type="button" className="create-card-dialog__audio" onClick={onPlay} aria-label={translate(CREATE_CARD_MESSAGES.playPronunciation, { word: card.word })}><Volume2 size={15} aria-hidden="true" /></button>}
         </div>
         <div className="create-card-dialog__meta">

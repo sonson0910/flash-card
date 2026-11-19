@@ -480,8 +480,9 @@ describe('DeckDeletionDialog', () => {
       </AlertDialog.Root>,
     );
 
-    expect(html).toContain('Delete “IELTS” deck?');
-    expect(html).toContain('2 cards will become unassigned');
+    expect(html).toContain('Delete “IELTS”?');
+    expect(html).toMatch(/its <code>2<\/code> cards stay in your library and move to <strong>Unassigned<\/strong>/);
+    expect(html).toContain('Review schedules and mastery are kept for every card.');
     expect(html).toContain('Keep deck');
     expect(html).toContain('Delete deck');
   });

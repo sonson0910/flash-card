@@ -12,17 +12,22 @@
   inset: 50% auto auto 50%;
   z-index: 101;
   display: flex;
-  width: min(720px, calc(100vw - 2rem));
+  width: min(620px, calc(100vw - 2rem));
   max-height: calc(100dvh - 2rem);
   transform: translate(-50%, -50%);
   flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--sf-border);
-  border-radius: 26px;
+  border-radius: 18px;
   background: var(--sf-dialog-bg, var(--sf-surface));
   color: var(--sf-text);
-  box-shadow: 0 28px 70px -38px var(--sf-shadow);
+  box-shadow: inset 0 1px 0 var(--sf-surface), 0 2px 6px color-mix(in srgb, var(--sf-text) 8%, transparent), 0 50px 90px -40px color-mix(in srgb, var(--sf-text) 55%, transparent);
   outline: none;
+}
+
+:root.dark .create-card-dialog {
+  border-radius: 26px;
+  box-shadow: 0 50px 100px -30px rgb(0 0 0 / .85);
 }
 
 .create-card-dialog__ornament {
@@ -42,7 +47,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.35rem 1.4rem 1.05rem 1.65rem;
+  padding: 22px 22px 18px 26px;
   border-bottom: 1px solid var(--sf-border);
 }
 
@@ -52,25 +57,25 @@
   align-items: center;
   gap: .4rem;
   margin: 0;
-  color: var(--sf-text-muted);
-  font-family: var(--font-display, Fraunces, Georgia, serif);
-  font-size: .72rem;
+  color: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface));
+  font-size: .71875rem;
   font-style: normal;
-  font-weight: 800;
-  letter-spacing: .14em;
+  font-weight: 600;
+  letter-spacing: .08em;
   text-transform: uppercase;
 }
-.create-card-dialog__kicker span { color: var(--sf-brand-text); font-size: .55rem; }
+.create-card-dialog__kicker span { display: none; color: var(--sf-brand-text); font-size: .55rem; }
 .create-card-dialog__title {
-  margin: .28rem 0 0;
+  margin: 4px 0 0;
   color: var(--sf-text);
-  font-family: Fraunces, Georgia, serif;
-  font-size: 1.9rem;
-  font-weight: 620;
-  letter-spacing: -.03em;
-  line-height: 1.08;
+  font-family: var(--sf-font-display);
+  font-size: 1.75rem;
+  font-weight: 380;
+  letter-spacing: -.02em;
+  line-height: 1.12;
 }
-.create-card-dialog__description { margin: .35rem 0 0; color: var(--sf-text-muted); font-size: .86rem; line-height: 1.5; }
+:root.dark .create-card-dialog__title { font-weight: 440; }
+.create-card-dialog__description { margin: 6px 0 0; color: var(--sf-text-muted); font-size: .875rem; line-height: 1.5; }
 .create-card-dialog__close {
   display: inline-flex;
   width: 2.75rem;
@@ -81,22 +86,23 @@
   justify-content: center;
   border: 1px solid var(--sf-border);
   border-radius: 50%;
-  background: var(--sf-surface-control);
+  background: var(--sf-surface);
   color: var(--sf-text-muted);
 }
+:root.dark .create-card-dialog__close { background: var(--sf-surface-control); }
 .create-card-dialog__close:hover:not(:disabled) { border-color: var(--sf-brand); color: var(--sf-text); }
 .create-card-dialog__close:disabled { cursor: wait; opacity: .55; }
 
 .create-card-dialog__form { display: flex; min-height: 0; flex: 1; flex-direction: column; }
-.create-card-dialog__body { min-height: 0; flex: 1; overflow-y: auto; padding: 1.2rem 1.65rem 1.35rem; }
+.create-card-dialog__body { min-height: 0; flex: 1; overflow-y: auto; padding: 20px 26px 22px; }
 .create-card-dialog__input-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: .75rem; }
 .create-card-dialog__input-grid label,
 .create-card-dialog__manual-grid label,
 .create-card-dialog__save-row label { display: flex; min-width: 0; flex-direction: column; gap: .4rem; }
 .create-card-dialog__label {
-  color: var(--sf-text-muted);
-  font-size: .72rem;
-  font-weight: 750;
+  color: color-mix(in srgb, var(--sf-text) 70%, var(--sf-text-muted));
+  font-size: .8125rem;
+  font-weight: 600;
 }
 .create-card-dialog__label em { color: var(--sf-text-muted); font-size: .68rem; font-style: normal; font-weight: 500; }
 .create-card-dialog__field {
@@ -106,23 +112,27 @@
   align-items: center;
   gap: .5rem;
   padding: 0 .85rem;
-  border: 1px solid var(--sf-border);
-  border-radius: .8rem;
-  background: var(--sf-surface-control);
+  border: 1px solid color-mix(in srgb, var(--sf-text) 14%, transparent);
+  border-radius: 10px;
+  background: var(--sf-surface);
   color: var(--sf-text);
 }
-.create-card-dialog__field--active { border-color: color-mix(in srgb, var(--sf-brand) 70%, var(--sf-border)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--sf-brand) 16%, transparent); }
+:root.dark .create-card-dialog__field { border-color: var(--sf-border); background: var(--sf-surface-control); }
+/* One focus ring on the field box; the bare input inside draws none. */
+.create-card-dialog__field:focus-within { border-color: var(--sf-text); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-text) 12%, transparent); }
+:root.dark .create-card-dialog__field:focus-within { border-color: var(--sf-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-brand) 18%, transparent); }
 .create-card-dialog input,
 .create-card-dialog textarea,
 .create-card-dialog select { box-sizing: border-box; border: 1px solid var(--sf-border); background: var(--sf-surface-control); color: var(--sf-text); font: inherit; outline: none; }
 .create-card-dialog__field input { width: 100%; border: 0; background: transparent; }
-.create-card-dialog__field:first-child input { font-family: Fraunces, Georgia, serif; font-size: 1.15rem; }
+.create-card-dialog .create-card-dialog__field input:focus-visible { outline: 0; }
+.create-card-dialog__field--active input { font-family: var(--sf-font-display); font-size: 1.1875rem; }
 .create-card-dialog input::placeholder,
 .create-card-dialog textarea::placeholder { color: var(--sf-text-muted); opacity: .85; }
 .create-card-dialog input:focus-visible,
 .create-card-dialog textarea:focus-visible,
 .create-card-dialog select:focus-visible,
-.create-card-dialog button:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 3px; }
+.create-card-dialog button:focus-visible { outline: 2px solid var(--sf-brand-text); outline-offset: 3px; }
 .create-card-dialog input:disabled,
 .create-card-dialog textarea:disabled,
 .create-card-dialog select:disabled { cursor: wait; opacity: .65; }
@@ -142,7 +152,8 @@
   font-weight: 700;
 }
 .create-card-dialog__pos button:hover { color: var(--sf-text); background: var(--sf-surface-raised); }
-.create-card-dialog__pos button.is-selected { background: var(--sf-surface-raised); color: var(--sf-text); box-shadow: inset 0 0 0 1px var(--sf-border); }
+.create-card-dialog__pos button.is-selected { background: var(--sf-text); color: var(--sf-on-brand); box-shadow: none; }
+:root.dark .create-card-dialog__pos button.is-selected { background: color-mix(in srgb, var(--sf-text) 12%, transparent); color: var(--sf-text); }
 .create-card-dialog__pos button > span { display: inline-block; }
 
 .create-card-dialog__preview {
@@ -151,17 +162,23 @@
   gap: 1rem;
   margin-top: 1rem;
   padding: 1rem;
-  border: 1px solid color-mix(in srgb, var(--sf-brand) 66%, var(--sf-border));
-  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--sf-text) 8%, transparent);
+  border-radius: 14px;
   background: var(--sf-card-bg, var(--sf-surface));
-  box-shadow: 0 18px 36px -28px var(--sf-shadow);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--sf-text) 6%, transparent), 0 16px 30px -22px color-mix(in srgb, var(--sf-text) 40%, transparent);
+}
+:root.dark:not([data-theme-family="crystal"]) .create-card-dialog__preview {
+  border: 1px solid transparent;
+  background: var(--sf-card-bg) padding-box, var(--sf-rim-learning) border-box;
+  box-shadow: 0 0 36px -14px color-mix(in srgb, var(--sf-brand) 45%, transparent);
 }
 .create-card-dialog__cover {
   position: relative;
   display: flex;
-  width: 7rem;
-  min-height: 9.35rem;
-  flex: 0 0 7rem;
+  width: 8rem;
+  height: 11rem;
+  flex: 0 0 8rem;
+  align-self: flex-start;
   align-items: flex-end;
   justify-content: flex-start;
   overflow: hidden;
@@ -169,22 +186,27 @@
   background: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--sf-second) 55%, transparent), transparent 60%), linear-gradient(160deg, color-mix(in srgb, var(--sf-second) 30%, var(--sf-surface)), color-mix(in srgb, var(--sf-brand) 30%, var(--sf-surface)));
 }
 .create-card-dialog__cover img { width: 100%; height: 100%; object-fit: cover; }
-.create-card-dialog__cover span { padding: 0 .8rem .1rem; color: color-mix(in srgb, var(--sf-text) 88%, transparent); font-family: Fraunces, Georgia, serif; font-size: 6.5rem; font-style: italic; line-height: .8; }
+.create-card-dialog__cover span { padding: 0 .8rem .1rem; color: color-mix(in srgb, var(--sf-text) 88%, transparent); font-family: var(--sf-font-display); font-size: 6.5rem; font-style: italic; line-height: .8; }
+:root:not(.dark):not([data-theme-family="crystal"]) .create-card-dialog__cover { background: linear-gradient(160deg, color-mix(in srgb, var(--sf-reward) 18%, var(--sf-surface)), color-mix(in srgb, var(--sf-reward) 34%, var(--sf-surface))); }
+:root:not(.dark):not([data-theme-family="crystal"]) .create-card-dialog__cover span { color: var(--sf-brand); }
 .create-card-dialog__preview-content { min-width: 0; flex: 1; }
 .create-card-dialog__preview-heading { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
 .create-card-dialog__ai-badge { display: inline-flex; align-items: center; gap: .3rem; color: var(--sf-brand-text); font-size: .7rem; font-weight: 800; }
 .create-card-dialog__edit-note { color: var(--sf-text-muted); font-size: .7rem; }
 .create-card-dialog__headword-row { display: flex; align-items: center; gap: .6rem; margin-top: .35rem; }
-.create-card-dialog__headword-row h3 { min-width: 0; overflow: hidden; margin: 0; color: var(--sf-text); font-family: Fraunces, Georgia, serif; font-size: 2rem; font-weight: 620; letter-spacing: -.03em; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+.create-card-dialog__headword-row h3 { min-width: 0; overflow: hidden; margin: 0; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 2.25rem; font-weight: 380; letter-spacing: -.02em; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+.create-card-dialog__stress { color: var(--sf-brand); font-style: italic; }
+:root.dark .create-card-dialog__stress { color: var(--sf-brand); font-style: normal; }
+html[data-theme-family="crystal"] .create-card-dialog__stress { font-style: inherit; }
 .create-card-dialog__audio { display: inline-grid; width: 2.75rem; height: 2.75rem; flex: none; place-items: center; border: 1px solid color-mix(in srgb, var(--sf-brand) 55%, var(--sf-border)); border-radius: 50%; background: color-mix(in srgb, var(--sf-brand) 12%, transparent); color: var(--sf-brand-text); }
-.create-card-dialog__meta { display: flex; align-items: center; gap: .45rem; margin-top: .2rem; color: var(--sf-text-muted); font-family: ui-monospace, monospace; font-size: .72rem; }
+.create-card-dialog__meta { display: flex; align-items: center; gap: .45rem; margin-top: .2rem; color: var(--sf-text-muted); font-family: var(--font-mono, ui-monospace, monospace); font-size: .72rem; }
 .create-card-dialog__meta > span::before { content: '·'; margin-right: .45rem; }
 .create-card-dialog__meta > span + label::before { content: '·'; margin-right: .45rem; }
 .create-card-dialog__meta > label { display: flex; align-items: center; }
-.create-card-dialog__meta input { width: 8.5rem; min-width: 0; min-height: 2.75rem; padding: 0; border: 0; background: transparent; color: var(--sf-text-muted); font-family: ui-monospace, monospace; font-size: .72rem; }
+.create-card-dialog__meta input { width: 8.5rem; min-width: 0; min-height: 2.75rem; padding: 0; border: 0; background: transparent; color: var(--sf-text-muted); font-family: var(--font-mono, ui-monospace, monospace); font-size: .72rem; }
 .create-card-dialog__meta input.create-card-dialog__cefr-input { width: 3.25rem; }
 .create-card-dialog__preview-meaning { display: block; margin-top: .45rem; }
-.create-card-dialog__preview-meaning input { width: 100%; min-height: 2.75rem; padding: 0; border: 0; background: transparent; color: var(--sf-brand-text); font-family: Fraunces, Georgia, serif; font-size: 1.28rem; font-weight: 600; }
+.create-card-dialog__preview-meaning input { width: 100%; min-height: 2.75rem; padding: 0; border: 0; background: transparent; color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 1.5rem; font-weight: 400; }
 .create-card-dialog__preview-explanation { display: block; margin-top: .35rem; }
 .create-card-dialog__preview-explanation textarea { width: 100%; min-height: 2.75rem; resize: vertical; padding: 0; border: 0; background: transparent; color: var(--sf-text); font-size: .8rem; font-style: italic; line-height: 1.45; }
 .create-card-dialog__examples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; margin-top: .55rem; }
@@ -203,7 +225,7 @@
 .create-card-dialog__manual { margin-top: 1rem; padding: 1rem; border: 1px solid var(--sf-border); border-radius: 1rem; background: var(--sf-surface-raised); }
 .create-card-dialog__section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .create-card-dialog__section-kicker { margin: 0; color: var(--sf-brand-text); font-size: .68rem; font-weight: 800; letter-spacing: .14em; }
-.create-card-dialog__section-heading h3 { margin: .2rem 0 0; font-family: Fraunces, Georgia, serif; font-size: 1.4rem; }
+.create-card-dialog__section-heading h3 { margin: .2rem 0 0; font-family: var(--sf-font-display); font-size: 1.4rem; font-weight: 400; }
 .create-card-dialog__text-button,
 .create-card-dialog__manual-link { min-height: 2.75rem; border: 0; background: transparent; color: var(--sf-brand-text); font-size: .78rem; font-weight: 800; text-decoration: underline; text-underline-offset: .16rem; }
 .create-card-dialog__manual-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-top: .9rem; }
@@ -224,9 +246,10 @@
 
 .create-card-dialog__empty-preview { display: flex; min-height: 8rem; align-items: center; justify-content: center; gap: .55rem; margin-top: 1rem; padding: 1rem; border: 1px dashed var(--sf-border); border-radius: 1rem; color: var(--sf-text-muted); font-size: .8rem; text-align: center; }
 .create-card-dialog__empty-preview svg { flex: none; color: var(--sf-brand-text); }
-.create-card-dialog__save-row { display: flex; align-items: flex-end; gap: .65rem; margin-top: 1rem; }
-.create-card-dialog__save-row select { min-width: 9rem; min-height: 2.75rem; padding: 0 .7rem; border-radius: .65rem; font-size: .8rem; }
-.create-card-dialog__save-row p { margin: 0 0 .5rem auto; color: var(--sf-text-muted); font-size: .76rem; }
+.create-card-dialog__save-row { display: flex; align-items: center; gap: .65rem; margin-top: 1rem; }
+.create-card-dialog__save-row label { align-items: center; flex-direction: row; gap: 10px; }
+.create-card-dialog__save-row select { min-width: 6.5rem; min-height: 2.75rem; padding: 0 2rem 0 .8rem; border-radius: 10px; appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: calc(100% - 15px) 52%, calc(100% - 11px) 52%; background-repeat: no-repeat; background-size: 4px 4px; font-size: .8125rem; font-weight: 550; }
+.create-card-dialog__save-row p { margin: 0 0 0 auto; color: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface)); font-size: .78rem; }
 .create-card-dialog__save-row strong { color: var(--sf-brand-text); }
 .create-card-dialog__notice { display: flex; align-items: flex-start; gap: .5rem; margin-top: .9rem; padding: .7rem .8rem; border: 1px solid var(--sf-danger); border-radius: .65rem; background: color-mix(in srgb, var(--sf-danger) 10%, var(--sf-surface)); color: var(--sf-danger); font-size: .78rem; line-height: 1.45; }
 .create-card-dialog__notice svg { flex: none; margin-top: .08rem; }
@@ -240,9 +263,12 @@
 .create-card-dialog__request-count svg { color: var(--sf-brand-text); }
 .create-card-dialog__manual-link { margin-left: auto; text-decoration: none; }
 .create-card-dialog__secondary,
-.create-card-dialog__primary { display: inline-flex; min-height: 2.75rem; align-items: center; justify-content: center; gap: .45rem; padding: 0 1.1rem; border-radius: .85rem; font-size: .84rem; font-weight: 750; }
-.create-card-dialog__secondary { margin-left: auto; border: 1px solid var(--sf-border); background: var(--sf-surface-control); color: var(--sf-text); }
-.create-card-dialog__primary { border: 0; background: var(--sf-brand); color: var(--sf-on-brand); box-shadow: var(--sf-panel-shadow); }
+.create-card-dialog__primary { display: inline-flex; min-height: 2.75rem; align-items: center; justify-content: center; gap: .45rem; padding: 0 1.25rem; border-radius: 999px; font-size: .9375rem; font-weight: 600; }
+.create-card-dialog__secondary { margin-left: auto; border: 1px solid var(--sf-border); background: var(--sf-surface); color: var(--sf-text); }
+:root.dark .create-card-dialog__secondary { background: var(--sf-surface-control); }
+/* Ink & Paper's primary action is ink; Midnight Aurora's is the brand cyan. */
+.create-card-dialog__primary { border: 0; background: var(--sf-text); color: var(--sf-on-brand); font-weight: 650; box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--sf-text) 80%, transparent); }
+:root.dark .create-card-dialog__primary { background: var(--sf-brand); box-shadow: 0 10px 30px -12px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
 .create-card-dialog__secondary:disabled,
 .create-card-dialog__primary:disabled { cursor: not-allowed; opacity: .55; }
 .create-card-dialog__spinner-label { display: inline-flex; align-items: center; gap: .4rem; }
@@ -252,43 +278,44 @@
 html[data-theme-family="crystal"] .create-card-dialog {
   border: 0;
   border-radius: 0;
-  background: linear-gradient(155deg, #ff5470, rgb(255 42 77 / .3) 28%, rgb(94 242 255 / .3) 72%, #5ef2ff);
-  filter: drop-shadow(0 0 34px rgb(255 42 77 / .28)) drop-shadow(0 28px 42px rgb(0 0 0 / .65));
+  background: linear-gradient(155deg, color-mix(in srgb, var(--sf-brand) 78%, white), color-mix(in srgb, var(--sf-brand) 30%, transparent) 28%, color-mix(in srgb, var(--sf-second) 30%, transparent) 72%, var(--sf-second));
+  filter: drop-shadow(0 0 34px color-mix(in srgb, var(--sf-brand) 28%, transparent)) drop-shadow(0 28px 42px rgb(0 0 0 / .65));
   padding: 2px;
 }
 html[data-theme-family="crystal"] .create-card-dialog__form { background: var(--sf-dialog-bg); clip-path: var(--nk-chamfer); }
 html[data-theme-family="crystal"] .create-card-dialog__header { border-bottom: 0; background: var(--sf-dialog-bg); padding: 1.2rem 1.25rem .9rem 1.45rem; }
-html[data-theme-family="crystal"] .create-card-dialog__ornament { display: block; background: linear-gradient(90deg, #ff5470, #ff2a4d 58%, #5ef2ff); box-shadow: 0 0 12px rgb(255 42 77 / .75); }
+html[data-theme-family="crystal"] .create-card-dialog__ornament { display: block; background: linear-gradient(90deg, color-mix(in srgb, var(--sf-brand) 78%, white), var(--sf-brand) 58%, var(--sf-second)); box-shadow: 0 0 12px color-mix(in srgb, var(--sf-brand) 75%, transparent); }
 html[data-theme-family="crystal"] .create-card-dialog__ornament--top { top: 0; left: 1.6rem; width: 7.5rem; }
-html[data-theme-family="crystal"] .create-card-dialog__ornament--bottom { right: 1.6rem; bottom: 0; width: 4.5rem; background: #5ef2ff; box-shadow: 0 0 10px rgb(94 242 255 / .8); }
+html[data-theme-family="crystal"] .create-card-dialog__ornament--bottom { right: 1.6rem; bottom: 0; width: 4.5rem; background: var(--sf-second); box-shadow: 0 0 10px color-mix(in srgb, var(--sf-second) 80%, transparent); }
 html[data-theme-family="crystal"] .create-card-dialog__kicker,
 html[data-theme-family="crystal"] .create-card-dialog__title,
-html[data-theme-family="crystal"] .create-card-dialog__section-kicker { font-family: Kanit, Nunito, sans-serif; font-style: italic; }
-html[data-theme-family="crystal"] .create-card-dialog__kicker { color: var(--sf-brand-text); font-size: .76rem; letter-spacing: .16em; }
-html[data-theme-family="crystal"] .create-card-dialog__kicker span { color: var(--sf-brand-text); }
+html[data-theme-family="crystal"] .create-card-dialog__section-kicker { font-family: var(--sf-font-display); font-style: italic; }
+html[data-theme-family="crystal"] .create-card-dialog__kicker { color: var(--sf-brand-text); font-size: .76rem; font-weight: 800; letter-spacing: .16em; }
+html[data-theme-family="crystal"] .create-card-dialog__kicker span { display: inline; color: var(--sf-brand-text); }
 html[data-theme-family="crystal"] .create-card-dialog__title { font-size: 2rem; font-weight: 900; letter-spacing: .01em; }
 html[data-theme-family="crystal"] .create-card-dialog__field,
 html[data-theme-family="crystal"] .create-card-dialog__pos > div,
 html[data-theme-family="crystal"] .create-card-dialog__preview,
 html[data-theme-family="crystal"] .create-card-dialog__manual,
 html[data-theme-family="crystal"] .create-card-dialog__empty-preview { border-radius: 0; clip-path: var(--nk-chamfer-sm); }
-html[data-theme-family="crystal"] .create-card-dialog__field:first-child input,
+html[data-theme-family="crystal"] .create-card-dialog__field--active input,
 html[data-theme-family="crystal"] .create-card-dialog__headword-row h3,
 html[data-theme-family="crystal"] .create-card-dialog__preview-meaning input,
-html[data-theme-family="crystal"] .create-card-dialog__section-heading h3 { font-family: Kanit, Nunito, sans-serif; font-style: italic; font-weight: 900; }
+html[data-theme-family="crystal"] .create-card-dialog__section-heading h3 { font-family: var(--sf-font-display); font-style: italic; font-weight: 900; }
+html[data-theme-family="crystal"] .create-card-dialog__pos button.is-selected { background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 78%, white), var(--sf-brand) 45%, color-mix(in srgb, var(--sf-brand) 62%, black)); color: white; }
 html[data-theme-family="crystal"] .create-card-dialog__pos button,
 html[data-theme-family="crystal"] .create-card-dialog__secondary,
-html[data-theme-family="crystal"] .create-card-dialog__primary { border-radius: 0; clip-path: var(--nk-chamfer-sm); font-family: Kanit, Nunito, sans-serif; font-style: italic; letter-spacing: .04em; }
+html[data-theme-family="crystal"] .create-card-dialog__primary { border-radius: 0; clip-path: var(--nk-chamfer-sm); font-family: var(--sf-font-display); font-style: italic; letter-spacing: .04em; }
 html[data-theme-family="crystal"] .create-card-dialog__pos button { transform: skewX(-12deg); }
 html[data-theme-family="crystal"] .create-card-dialog__pos button > span { transform: skewX(12deg); }
 html[data-theme-family="crystal"] .create-card-dialog__preview { border: 0; box-shadow: inset 0 0 0 1px var(--sf-brand), 0 18px 36px -28px var(--sf-shadow); }
 html[data-theme-family="crystal"] .create-card-dialog__preview-heading,
-html[data-theme-family="crystal"] .create-card-dialog__regeneration-heading { font-family: Kanit, Nunito, sans-serif; font-style: italic; }
+html[data-theme-family="crystal"] .create-card-dialog__regeneration-heading { font-family: var(--sf-font-display); font-style: italic; }
 html[data-theme-family="crystal"] .create-card-dialog__ai-badge { text-transform: uppercase; letter-spacing: .12em; }
 html[data-theme-family="crystal"] .create-card-dialog__cover { border-radius: 0; clip-path: var(--nk-chamfer-sm); }
 html[data-theme-family="crystal"] .create-card-dialog__close,
 html[data-theme-family="crystal"] .create-card-dialog__audio { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); }
-html[data-theme-family="crystal"] .create-card-dialog__primary { background: linear-gradient(180deg, #ff5470, #ff2a4d 45%, #b30f33); color: #fff; filter: drop-shadow(0 0 14px rgb(255 42 77 / .6)); }
+html[data-theme-family="crystal"] .create-card-dialog__primary { background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 78%, white), var(--sf-brand) 45%, color-mix(in srgb, var(--sf-brand) 62%, black)); color: white; filter: drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 60%, transparent)); }
 html[data-theme-family="crystal"] .create-card-dialog__footer { border-top-color: var(--sf-border); }
 
 @media (max-width: 620px) {
@@ -316,3 +343,24 @@ html[data-theme-family="crystal"] .create-card-dialog__footer { border-top-color
 }
 
 html[data-motion="reduced"] .create-card-dialog__spinner-label svg { animation: none; }
+
+/* The draft reads as a card: its fields stay editable but draw no box until hovered or focused. */
+.create-card-dialog__preview :is(.create-card-dialog__examples, .create-card-dialog__family-fields) :is(input, textarea) { border: 1px solid transparent; border-radius: 6px; background: transparent; padding: .2rem .35rem; margin-left: -.35rem; }
+.create-card-dialog__preview :is(.create-card-dialog__examples, .create-card-dialog__family-fields) :is(input, textarea):hover:not(:disabled) { border-color: var(--sf-border); }
+.create-card-dialog__preview :is(.create-card-dialog__examples, .create-card-dialog__family-fields) :is(input, textarea):focus-visible { border-color: var(--sf-border); background: var(--sf-surface); outline-offset: 1px; }
+.create-card-dialog__examples { grid-template-columns: 1fr; gap: 0; margin-top: .35rem; }
+.create-card-dialog__examples label > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.create-card-dialog__examples label:first-child textarea { color: var(--sf-text); font-size: .875rem; font-style: italic; }
+.create-card-dialog__examples label + label textarea { color: var(--sf-text-muted); font-size: .78rem; }
+.create-card-dialog__examples textarea { resize: none; field-sizing: content; min-height: 2.75rem; }
+.create-card-dialog__family { display: flex; align-items: center; flex-wrap: wrap; gap: 0 .5rem; margin-top: .2rem; }
+.create-card-dialog__family legend { float: left; margin-right: .25rem; color: var(--sf-text-muted); font-size: .8125rem; font-weight: 500; }
+.create-card-dialog__family legend::after { content: ':'; }
+.create-card-dialog__family-fields { margin-top: 0; gap: 0 .25rem; }
+.create-card-dialog__family-fields label { flex: 0 1 8rem; }
+.create-card-dialog__family-fields label > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.create-card-dialog__family-fields input { color: var(--sf-text-muted); font-size: .8125rem; }
+.create-card-dialog__preview-explanation textarea { color: var(--sf-text-muted); font-style: normal; resize: none; field-sizing: content; }
+.create-card-dialog__preview-meaning { margin-top: .1rem; }
+.create-card-dialog__meta { margin-top: 0; }
+.create-card-dialog__meta input { width: 8rem; }

@@ -105,7 +105,7 @@ export function DeckCreationDialog({
         >
           <header className="library-dialog-header">
             <div>
-              <p className="library-dialog-kicker"><Trans {...msg({ context: 'library.deck.dialog-kicker', message: 'Deck studio' })} /></p>
+              <p className="library-dialog-kicker library-dialog-kicker--crystal-only"><Trans {...msg({ context: 'library.deck.dialog-kicker', message: 'Deck studio' })} /></p>
               <Dialog.Title className="library-dialog-title"><Trans {...msg({ context: 'library.deck.dialog-title', message: 'New deck' })} /></Dialog.Title>
               <Dialog.Description className="library-dialog-description">
                 <Trans {...msg({ context: 'library.deck.dialog-description', message: 'Group words by exam, trip, book — anything you like.' })} />
@@ -150,6 +150,21 @@ export function DeckCreationDialog({
               ) : null}
             </label>
 
+            <div className="library-dialog-suggestions" aria-label={i18n._(msg({ id: 'library.deck.suggestions', message: 'Deck name suggestions' }))}>
+              <span><Trans {...msg({ context: 'library.deck.try', message: 'Try' })} /></span>
+              {deckSuggestions.map(suggestion => (
+                <button
+                  key={suggestion.id}
+                  type="button"
+                  onClick={() => onChange(suggestion.message ?? '')}
+                  disabled={isWorking || isSuccess}
+                  className="library-dialog-chip"
+                >
+                  {i18n._(suggestion)}
+                </button>
+              ))}
+            </div>
+
             <fieldset className="library-deck-cover-picker" disabled={isWorking || isSuccess}>
               <legend><Trans {...msg({ context: 'library.deck.cover-label', message: 'Cover' })} /></legend>
               <div aria-label={i18n._(msg({ id: 'library.deck.cover-options', message: 'Deck cover' }))}>
@@ -176,21 +191,6 @@ export function DeckCreationDialog({
                 ))}
               </div>
             </fieldset>
-
-            <div className="library-dialog-suggestions" aria-label={i18n._(msg({ id: 'library.deck.suggestions', message: 'Deck name suggestions' }))}>
-              <span><Trans {...msg({ context: 'library.deck.try', message: 'Try' })} /></span>
-              {deckSuggestions.map(suggestion => (
-                <button
-                  key={suggestion.id}
-                  type="button"
-                  onClick={() => onChange(suggestion.message ?? '')}
-                  disabled={isWorking || isSuccess}
-                  className="library-dialog-chip"
-                >
-                  {i18n._(suggestion)}
-                </button>
-              ))}
-            </div>
 
             {isWorking ? (
               <p className="library-dialog-status" role="status" aria-live="polite">
@@ -290,7 +290,7 @@ export function LibraryClearDialog({
           <GsapEntrance animationKey={open} variant="result" data-motion-dialog="true" className="library-dialog-frame library-dialog-frame--danger">
           <header className="library-dialog-header">
             <div className="library-dialog-heading-with-icon">
-              <span className="library-dialog-danger-icon" aria-hidden="true"><AlertTriangle size={22} /></span>
+              <span className="library-dialog-danger-icon library-dialog-danger-icon--solid" aria-hidden="true"><AlertTriangle size={22} /></span>
               <div>
                 <p className="library-dialog-kicker library-dialog-kicker--danger"><Trans {...msg({ context: 'library.clear.kicker', message: 'Danger zone' })} /></p>
                 <AlertDialog.Title className="library-dialog-title"><Trans {...msg({ context: 'library.clear.title', message: 'Clear the entire library?' })} /></AlertDialog.Title>
@@ -307,7 +307,8 @@ export function LibraryClearDialog({
 
           <div className="library-dialog-body library-dialog-body--danger">
             <AlertDialog.Description className="library-dialog-description library-dialog-description--body">
-              <Trans {...msg({ context: 'library.clear.description', message: 'This permanently deletes every card, deck and review history on all your synced devices. It can’t be undone.' })} />
+              <Trans {...msg({ context: 'library.clear.description-scope', message: 'This permanently deletes every card, deck and review history on all your synced devices.' })} />{' '}
+              <strong className="library-dialog-emphasis"><Trans {...msg({ context: 'library.clear.irreversible', message: 'It can’t be undone.' })} /></strong>
             </AlertDialog.Description>
 
             {counts.length > 0 ? (
@@ -319,7 +320,7 @@ export function LibraryClearDialog({
             {onExport ? (
               <div className="library-dialog-export-row">
                 <span><Trans {...msg({ context: 'library.clear.export-copy', message: 'Keep a copy first — export everything.' })} /></span>
-                <button type="button" onClick={onExport} disabled={isWorking || isSuccess} className="library-dialog-button library-dialog-button--secondary">
+                <button type="button" onClick={onExport} disabled={isWorking || isSuccess} className="library-dialog-button library-dialog-button--secondary library-dialog-button--compact">
                   <Download size={15} aria-hidden="true" />
                   <Trans {...msg({ context: 'library.clear.export', message: 'Export' })} />
                 </button>
@@ -332,17 +333,21 @@ export function LibraryClearDialog({
                 <Trans {...msg({ context: 'library.clear.success', message: 'Your library was cleared.' })} />
               </p>
             ) : (
-              <label className="library-dialog-field" htmlFor="library-clear-confirmation">
-                <span><Trans {...msg({ context: 'library.clear.confirm-label', message: 'Type {token} to confirm' })} values={{ token: confirmationToken }} /></span>
-                <input
-                  id="library-clear-confirmation"
-                  value={confirmation}
-                  onChange={event => setConfirmation(event.target.value)}
-                  disabled={isWorking}
-                  autoComplete="off"
-                  spellCheck={false}
-                  aria-invalid={status === 'failure'}
-                />
+              <label className="library-dialog-field library-dialog-field--token" htmlFor="library-clear-confirmation">
+                <span className="library-dialog-field-label"><Trans {...msg({ context: 'library.clear.confirm-label', message: 'Type {token} to confirm' })} values={{ token: <strong>{confirmationToken}</strong> }} /></span>
+                <span className="library-dialog-field-control">
+                  <input
+                    id="library-clear-confirmation"
+                    value={confirmation}
+                    onChange={event => setConfirmation(event.target.value)}
+                    disabled={isWorking}
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder=" "
+                    aria-invalid={status === 'failure'}
+                  />
+                  {canConfirm ? <Check size={16} className="library-dialog-field-check" aria-hidden="true" /> : null}
+                </span>
               </label>
             )}
 
@@ -429,7 +434,14 @@ export function LibraryInsightsDialog({
   const isLoading = phase === 'loading';
   const hasStats = phase === 'ready' && stats !== null;
   const maxCategory = hasStats ? Math.max(1, ...stats.categoryChart.map(item => item.value)) : 1;
-  const maxDifficulty = hasStats ? Math.max(1, ...stats.difficultyChart.map(item => item.value)) : 1;
+  const difficultyTotal = hasStats ? stats.difficultyChart.reduce((sum, item) => sum + Math.max(0, item.value), 0) : 0;
+  const difficultyShares = hasStats ? stats.difficultyChart.map(item => (difficultyTotal > 0 ? Math.max(0, item.value) / difficultyTotal : 0)) : [];
+  let difficultyCursor = 0;
+  const difficultyRing = difficultyShares.map((share, index) => {
+    const start = difficultyCursor;
+    difficultyCursor += share * 100;
+    return `var(--library-difficulty-${index % 3}) ${start.toFixed(2)}% ${difficultyCursor.toFixed(2)}%`;
+  }).join(', ');
   const maxXp = hasStats ? Math.max(1, ...stats.xpChartData.map(item => item.XP)) : 1;
 
   return (
@@ -486,9 +498,12 @@ export function LibraryInsightsDialog({
                   <section className="library-insights-panel" aria-labelledby="library-insights-difficulty-title">
                     <h3 id="library-insights-difficulty-title"><Trans {...msg({ context: 'library.insights.difficulty', message: 'Difficulty' })} /></h3>
                     {stats.difficultyChart.length === 0 ? <p className="library-dialog-muted"><Trans {...msg({ context: 'library.insights.no-difficulty', message: 'No review ratings yet.' })} /></p> : (
-                      <ul className="library-insights-bars">
-                        {stats.difficultyChart.map(item => <li key={item.name}><div><span>{item.name}</span><strong>{formatNumber(item.value)}</strong></div><span className="library-insights-track library-insights-track--warm"><span style={{ width: `${Math.round((item.value / maxDifficulty) * 100)}%` }} /></span></li>)}
-                      </ul>
+                      <div className="library-insights-difficulty">
+                        <span className="library-insights-donut" aria-hidden="true" style={{ background: difficultyTotal > 0 ? `conic-gradient(${difficultyRing})` : undefined }} />
+                        <ul className="library-insights-legend">
+                          {stats.difficultyChart.map((item, index) => <li key={item.name} data-difficulty-index={index % 3}><span>{item.name}</span><strong>{formatNumber(item.value)}</strong><small>{Math.round((difficultyShares[index] ?? 0) * 100)}%</small></li>)}
+                        </ul>
+                      </div>
                     )}
                   </section>
                 </div>

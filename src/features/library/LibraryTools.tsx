@@ -4,6 +4,8 @@ import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import {
+  AlertTriangle,
+  ArrowRight,
   Award,
   BookOpen,
   Calendar,
@@ -29,6 +31,7 @@ import type { CardData } from '../../types/card';
 import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
 import { PART_OF_SPEECH_OPTIONS } from '../../lib/cardQuery';
 import { formatNumber } from '../../lib/format';
+import './library-dialog-overlays.css';
 import { createImeSubmitGuard } from '../../lib/imeSubmitGuard';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import { ALL_PRACTICE_DECK_SCOPE, type PracticeDeckScope } from '../../lib/practiceScope';
@@ -124,9 +127,9 @@ const partOfSpeechMessages = {
   phrase: msg({ id: 'library.part-of-speech.phrase', message: 'Phrase' }),
 } satisfies Record<(typeof PART_OF_SPEECH_OPTIONS)[number]['value'], ReturnType<typeof msg>>;
 
-const assistantButtonClass = 'flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/90 dark:border-white/10 dark:bg-white/5 px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:bg-slate-200 dark:hover:bg-white/10 hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer';
+const assistantButtonClass = 'flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-brand-text)] cursor-pointer';
 const filterLabelClass = 'mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--sf-text-muted)]';
-const filterSelectClass = 'min-h-11 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]';
+const filterSelectClass = 'min-h-11 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] focus:border-[var(--sf-brand)]';
 
 type DeckDeletionOwnerId = string | null | undefined;
 type DeckDeletionIntent = { name: string; ownerId: DeckDeletionOwnerId };
@@ -151,9 +154,9 @@ export function SpreadsheetImportStatus({
 }) {
   if (progress) {
     return (
-      <div role="status" aria-live="polite" className="mt-3 rounded-xl border border-cyan-300/50 bg-cyan-50/80 px-3 py-2 text-xs font-semibold text-cyan-900 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-100">
-        <span className="block font-black"><Trans {...msg({ context: 'library.import.progress', message: 'Importing {current, number} of {total, number}' })} values={{ current: progress.current, total: progress.total }} /></span>
-        <span className="mt-0.5 block truncate text-[11px] opacity-80"><Trans {...msg({ context: 'library.import.current-word', message: 'Current word: {word}' })} values={{ word: progress.word }} /></span>
+      <div role="status" aria-live="polite" className="mt-3 rounded-xl border border-[color-mix(in_srgb,var(--sf-brand)_40%,var(--sf-border))] bg-[color-mix(in_srgb,var(--sf-brand)_9%,transparent)] px-3 py-2 text-xs font-semibold text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+        <span className="block font-bold"><Trans {...msg({ context: 'library.import.progress', message: 'Importing {current, number} of {total, number}' })} values={{ current: progress.current, total: progress.total }} /></span>
+        <span className="mt-0.5 block truncate text-[11px] text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'library.import.current-word', message: 'Current word: {word}' })} values={{ word: progress.word }} /></span>
         <progress className="mt-2 h-1.5 w-full overflow-hidden rounded-full accent-[var(--sf-brand)]" value={progress.current} max={progress.total}>
           {progress.current} / {progress.total}
         </progress>
@@ -168,17 +171,17 @@ export function SpreadsheetImportStatus({
     <div
       role={isWarning ? 'alert' : 'status'}
       aria-live={isWarning ? 'assertive' : 'polite'}
-      className={`mt-3 rounded-xl border px-3 py-2 text-xs font-semibold ${
+      className={`mt-3 rounded-xl border px-3 py-2 text-xs font-semibold text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm ${
         isWarning
-          ? 'border-amber-300/60 bg-amber-50/85 text-amber-950 dark:border-amber-300/20 dark:bg-amber-300/10 dark:text-amber-100'
-          : 'border-emerald-300/60 bg-emerald-50/85 text-emerald-950 dark:border-emerald-300/20 dark:bg-emerald-300/10 dark:text-emerald-100'
+          ? 'border-[color-mix(in_srgb,var(--sf-reward)_45%,var(--sf-border))] bg-[color-mix(in_srgb,var(--sf-reward)_10%,transparent)]'
+          : 'border-[color-mix(in_srgb,var(--sf-success)_45%,var(--sf-border))] bg-[color-mix(in_srgb,var(--sf-success)_10%,transparent)]'
       }`}
     >
-      <span className="block font-black">{result.status === 'completed' ? <Trans {...msg({ context: 'library.import.complete', message: 'Import complete' })} /> : result.status === 'partial' ? <Trans {...msg({ context: 'library.import.partial', message: 'Import partly complete' })} /> : <Trans {...msg({ context: 'library.import.failed', message: 'Import failed' })} />}</span>
+      <span className="block font-bold">{result.status === 'completed' ? <Trans {...msg({ context: 'library.import.complete', message: 'Import complete' })} /> : result.status === 'partial' ? <Trans {...msg({ context: 'library.import.partial', message: 'Import partly complete' })} /> : <Trans {...msg({ context: 'library.import.failed', message: 'Import failed' })} />}</span>
       <span className="mt-1 block text-[11px] leading-relaxed">
         <Trans {...msg({ context: 'library.import.summary', message: '{created, plural, one {# created} other {# created}} · {reused, plural, one {# already present} other {# already present}} · {failed, plural, one {# failed} other {# failed}} · {skipped, plural, one {# skipped} other {# skipped}}' })} values={{ created: summary.created, reused: summary.reused, failed: summary.failed, skipped: summary.skipped }} />
       </span>
-      <span className="mt-1 block text-[11px] leading-relaxed opacity-85">
+      <span className="mt-1 block text-[11px] leading-relaxed text-[var(--sf-text-muted)]">
         {result.status === 'completed' ? (
           <Trans {...msg({ context: 'library.import.completed-guidance', message: 'Your new and existing cards are ready in the library.' })} />
         ) : result.status === 'partial' ? (
@@ -251,7 +254,7 @@ export function DeckCreationForm({
           onChange={event => onChange(event.target.value)}
           placeholder={i18n._(msg({ id: "library-tools.ielts-travel", message: "IELTS, Travel…" }))}
           disabled={isCreating}
-          className="min-h-11 min-w-0 flex-1 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none disabled:cursor-wait disabled:opacity-70"
+          className="min-h-11 min-w-0 flex-1 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-70"
         />
         <button
           type="submit"
@@ -263,7 +266,7 @@ export function DeckCreationForm({
           <span>{isCreating ? 'Creating…' : 'Create'}</span>
         </button>
       </form>
-      {error ? <p role="alert" className="mt-2 text-xs font-semibold leading-relaxed text-rose-700 dark:text-rose-300">{error}</p> : null}
+      {error ? <p role="alert" className="mt-2 text-xs font-semibold leading-relaxed text-[var(--sf-danger)]">{error}</p> : null}
     </div>
   );
 }
@@ -279,6 +282,7 @@ export function restoreDeckDeletionFocus(
 export function DeckDeletionDialogContent({
   deckName,
   assignedCardCount,
+  unassignedCardCount,
   onConfirm,
   restoreFocusRef,
   isDeleting = false,
@@ -286,50 +290,89 @@ export function DeckDeletionDialogContent({
 }: {
   deckName: string;
   assignedCardCount: number;
+  /** Cards already unassigned; omitted when the local list is not the full library. */
+  unassignedCardCount?: number;
   onConfirm: () => void;
   restoreFocusRef?: RefObject<HTMLButtonElement | null>;
   isDeleting?: boolean;
   error?: boolean;
 }) {
-  const assignmentMessage = <Trans {...msg({ context: 'library.deck.delete-assignment', message: '{count, plural, one {# card will become unassigned.} other {# cards will become unassigned.}}' })} values={{ count: assignedCardCount }} />;
   return (
     <>
-      <AlertDialog.Overlay className="fixed inset-0 z-50 bg-slate-950/72 backdrop-blur-xs" />
+      <AlertDialog.Overlay className="library-dialog-overlay library-dialog-overlay--danger" />
       <AlertDialog.Content
-        className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl outline-none"
+        className="library-dialog-frame library-dialog-frame--deck-delete"
         onCloseAutoFocus={event => restoreDeckDeletionFocus(event, restoreFocusRef)}
         onEscapeKeyDown={event => {
           if (isDeleting) event.preventDefault();
         }}
       >
-        <div className="flex items-start gap-3">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-rose-400/35 bg-rose-500/10 text-rose-700 dark:text-rose-200" aria-hidden="true"><Trash2 size={20} /></span>
-          <div>
-            <AlertDialog.Title className="text-balance font-display text-2xl font-black tracking-tight"><Trans {...msg({ context: 'library.deck.delete-title', message: 'Delete “{deckName}” deck?' })} values={{ deckName }} /></AlertDialog.Title>
-            <AlertDialog.Description className="mt-2 text-pretty text-sm leading-relaxed text-[var(--sf-text-muted)]">
-              {assignmentMessage} <Trans {...msg({ context: 'library.deck.delete-description', message: 'The cards stay in your library, but the deck itself will be permanently removed.' })} />
-            </AlertDialog.Description>
+        <header className="library-dialog-header">
+          <div className="library-dialog-heading-with-icon">
+            <span className="library-dialog-danger-icon" aria-hidden="true"><Trash2 size={20} /></span>
+            <div>
+              <p className="library-dialog-kicker"><Trans {...msg({ context: 'library.deck.delete-kicker', message: 'Delete deck' })} /></p>
+              <AlertDialog.Title className="library-dialog-title"><Trans {...msg({ context: 'library.deck.delete-dialog-title', message: 'Delete “{deckName}”?' })} values={{ deckName }} /></AlertDialog.Title>
+            </div>
           </div>
+          <AlertDialog.Cancel
+            className="library-dialog-icon-button"
+            aria-label={i18n._(msg({ id: 'library.close', message: 'Close' }))}
+            disabled={isDeleting}
+          >
+            <X size={17} aria-hidden="true" />
+          </AlertDialog.Cancel>
+        </header>
+
+        <div className="library-dialog-body">
+          <AlertDialog.Description className="library-dialog-description library-dialog-description--body">
+            <Trans
+              {...msg({ context: 'library.deck.delete-effect', message: '{count, plural, one {The deck goes away, but its <0>#</0> card stays in your library and moves to <1>Unassigned</1>. Nothing you have learned is lost.} other {The deck goes away, but its <0>#</0> cards stay in your library and move to <1>Unassigned</1>. Nothing you have learned is lost.}}' })}
+              values={{ count: assignedCardCount }}
+              components={{ 0: <code />, 1: <strong /> }}
+            />
+          </AlertDialog.Description>
+          <div className="library-deck-transfer">
+            <div>
+              <span>{deckName}</span>
+              <strong><s>{formatNumber(assignedCardCount)}</s></strong>
+              <small><Trans {...msg({ context: 'library.deck.removed-caption', message: 'deck removed' })} /></small>
+            </div>
+            <ArrowRight size={16} aria-hidden="true" />
+            <div>
+              <span><Trans {...msg({ context: 'library.deck.unassigned', message: 'Unassigned' })} /></span>
+              {typeof unassignedCardCount === 'number' ? (
+                <>
+                  <strong>{formatNumber(unassignedCardCount + assignedCardCount)}</strong>
+                  <small><Trans {...msg({ context: 'library.deck.unassigned-sum', message: '{current} + {moved, plural, one {# card} other {# cards}}' })} values={{ current: formatNumber(unassignedCardCount), moved: assignedCardCount }} /></small>
+                </>
+              ) : (
+                <>
+                  <strong>+{formatNumber(assignedCardCount)}</strong>
+                  <small><Trans {...msg({ context: 'library.deck.unassigned-incoming', message: '{count, plural, one {card moves here} other {cards move here}}' })} values={{ count: assignedCardCount }} /></small>
+                </>
+              )}
+            </div>
+          </div>
+          <p className="library-dialog-footnote"><Trans {...msg({ context: 'library.deck.progress-kept', message: 'Review schedules and mastery are kept for every card.' })} /></p>
+          {error ? <p role="alert" className="library-dialog-error"><AlertTriangle size={15} aria-hidden="true" /><Trans {...msg({ id: 'library.deck.delete-error', message: 'Could not finish deleting this deck. Refreshing the latest cloud state; try again.' })} /></p> : null}
         </div>
-        <div className="mt-5 grid grid-cols-2 gap-3 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 text-xs">
-          <div><span className="block text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'library.deck.removed', message: 'Deck removed' })} /></span><strong className="mt-1 block font-display text-xl text-[var(--sf-text)]">{deckName}</strong></div>
-          <div><span className="block text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'library.deck.unassigned', message: 'Unassigned' })} /></span><strong className="mt-1 block font-display text-xl text-[var(--sf-text)]"><Trans {...msg({ context: 'library.deck.cards-kept', message: '{count, plural, one {# card kept} other {# cards kept}}' })} values={{ count: assignedCardCount }} /></strong></div>
-        </div>
-        {error ? <p role="alert" className="mt-4 rounded-xl border border-rose-300/70 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-800 dark:border-rose-300/25 dark:bg-rose-300/10 dark:text-rose-200"><Trans {...msg({ id: 'library.deck.delete-error', message: 'Could not finish deleting this deck. Refreshing the latest cloud state; try again.' })} /></p> : null}
-        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <AlertDialog.Cancel disabled={isDeleting} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-2 text-sm font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-50"><Trans {...msg({ context: 'library.deck.keep', message: 'Keep deck' })} /></AlertDialog.Cancel>
+
+        <footer className="library-dialog-footer">
+          <AlertDialog.Cancel disabled={isDeleting} className="library-dialog-button library-dialog-button--secondary"><Trans {...msg({ context: 'library.deck.keep', message: 'Keep deck' })} /></AlertDialog.Cancel>
           <AlertDialog.Action
             disabled={isDeleting}
+            aria-busy={isDeleting}
             onClick={event => {
               event.preventDefault();
               if (!isDeleting) onConfirm();
             }}
-            className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-rose-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-rose-800 disabled:cursor-wait disabled:opacity-70"
+            className="library-dialog-button library-dialog-button--danger"
           >
-            {isDeleting ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : null}
+            {isDeleting ? <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : null}
             {isDeleting ? <Trans {...msg({ context: 'library.deck.deleting', message: 'Deleting…' })} /> : error ? <Trans {...msg({ context: 'library.deck.delete-again', message: 'Try deleting again' })} /> : <Trans {...msg({ context: 'library.deck.delete', message: 'Delete deck' })} />}
           </AlertDialog.Action>
-        </div>
+        </footer>
       </AlertDialog.Content>
     </>
   );
@@ -338,6 +381,7 @@ export function DeckDeletionDialogContent({
 export function DeckDeletionDialog({
   deckName,
   assignedCardCount,
+  unassignedCardCount,
   open,
   onOpenChange,
   onConfirm,
@@ -347,6 +391,7 @@ export function DeckDeletionDialog({
 }: {
   deckName: string;
   assignedCardCount: number;
+  unassignedCardCount?: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
@@ -360,6 +405,7 @@ export function DeckDeletionDialog({
         <DeckDeletionDialogContent
           deckName={deckName}
           assignedCardCount={assignedCardCount}
+          unassignedCardCount={unassignedCardCount}
           onConfirm={onConfirm}
           restoreFocusRef={restoreFocusRef}
           isDeleting={isDeleting}
@@ -636,7 +682,7 @@ export function LibraryTools({
                 spellCheck={false}
                 placeholder={i18n._(msg({ id: 'library.create.word-placeholder', message: 'Type an English word (e.g. serendipity)…' }))}
                 disabled={isLoading}
-                className={`min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2.5 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none disabled:cursor-wait ${
+                className={`min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2.5 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-wait ${
                   isLoading ? 'border-[var(--sf-brand)]' : ''
                 }`}
               />
@@ -645,7 +691,7 @@ export function LibraryTools({
               <div
                 role="status"
                 aria-live="polite"
-                className="mt-2 flex items-center justify-between px-1 text-[10px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-300"
+                className="mt-2 flex items-center justify-between px-1 text-[10px] font-black uppercase tracking-wider text-[var(--sf-brand-text)]"
               >
                 <span><Trans {...msg({ context: 'library.create.analysing', message: 'AI is analysing' })} /></span>
                 <span><Trans {...msg({ context: 'library.create.building', message: 'Building your card' })} /></span>
@@ -660,7 +706,7 @@ export function LibraryTools({
               value={validGenerationDeck}
               onChange={event => setGenerationDeck(event.target.value)}
               disabled={isLoading}
-              className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-sm font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-70"
+              className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-sm font-semibold text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] focus:border-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-70"
             >
               <option value=""><Trans {...msg({ context: 'library-tools.unassigned', message: 'Unassigned' })} /></option>
               {customDecks.map(deck => <option key={deck} value={deck}>{deck}</option>)}
@@ -673,7 +719,7 @@ export function LibraryTools({
             data-color-role="primary"
             disabled={!canSubmitWord}
             aria-describedby="smart-card-generation-help"
-              className="shimmer-sweep brand-action flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--sf-brand)] py-3 text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
+              className="shimmer-sweep brand-action flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--sf-brand)] py-3 text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)] shadow-md shadow-[0_10px_24px_-14px_var(--sf-brand)] transition-[background-color,box-shadow,transform] duration-300 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
           >
             {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
             <span>
@@ -783,7 +829,7 @@ export function LibraryTools({
                 value={searchQuery}
                 onChange={event => setSearchQuery(event.target.value)}
                 placeholder={i18n._(msg({ id: 'library.filters.search-placeholder', message: 'Search English words…' }))}
-                className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] py-2 pl-9 pr-8 text-xs font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none"
+                className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] py-2 pl-9 pr-8 text-xs font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
               />
               {searchQuery && (
                 <button
@@ -802,33 +848,33 @@ export function LibraryTools({
                 type="button"
                 data-color-role="reward"
                 onClick={() => setShowStarredOnly(!showStarredOnly)}
-                className={`flex min-h-11 items-center justify-center gap-2 rounded-full border px-3 text-xs font-bold transition-all duration-200 cursor-pointer ${
+                className={`flex min-h-11 items-center justify-center gap-2 rounded-full border px-3 text-xs font-bold transition-colors duration-200 cursor-pointer ${
                   showStarredOnly
-                    ? 'border-amber-400/80 bg-amber-500/15 text-amber-500 dark:text-amber-300 shadow-xs'
-                    : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-amber-400/40 hover:text-amber-400'
+                    ? 'border-[color-mix(in_srgb,var(--sf-reward)_70%,transparent)] bg-[color-mix(in_srgb,var(--sf-reward)_15%,transparent)] text-[var(--sf-reward)] shadow-xs'
+                    : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-[color-mix(in_srgb,var(--sf-reward)_40%,transparent)] hover:text-[var(--sf-reward)]'
                 }`}
                 role="switch"
                 aria-checked={showStarredOnly}
                 aria-label={i18n._(msg({ id: 'library.filters.starred-label', message: 'Show starred cards only' }))}
               >
-                <Star size={13} className={showStarredOnly ? 'fill-amber-400 text-amber-400' : ''} />
+                <Star size={13} className={showStarredOnly ? 'fill-[var(--sf-reward)] text-[var(--sf-reward)]' : ''} />
                 <span><Trans {...msg({ context: 'library.filters.starred', message: 'Starred' })} /></span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                className={`flex min-h-11 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-bold transition-all duration-200 cursor-pointer ${
+                className={`flex min-h-11 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-bold transition-colors duration-200 cursor-pointer ${
                   activeAdvancedFilterCount > 0 || showAdvancedFilters
-                    ? 'border-cyan-400/60 bg-cyan-500/15 text-cyan-500 dark:text-cyan-300 shadow-xs'
-                    : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-cyan-400/40 hover:text-cyan-400'
+                    ? 'border-[color-mix(in_srgb,var(--sf-brand)_60%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_15%,transparent)] text-[var(--sf-brand-text)] shadow-xs'
+                    : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-[color-mix(in_srgb,var(--sf-brand)_40%,transparent)] hover:text-[var(--sf-brand-text)]'
                 }`}
                 aria-expanded={showAdvancedFilters}
               >
                 <SlidersHorizontal size={13} />
                 <span><Trans {...msg({ context: 'library.filters.more', message: 'More' })} /></span>
                 {activeAdvancedFilterCount > 0 && (
-                  <span className="flex size-4 items-center justify-center rounded-full bg-cyan-400 text-[9px] font-black text-[#071014]">
+                  <span className="flex size-4 items-center justify-center rounded-full bg-[var(--sf-brand)] text-[9px] font-black text-[var(--sf-on-brand)]">
                     {activeAdvancedFilterCount}
                   </span>
                 )}
@@ -894,7 +940,7 @@ export function LibraryTools({
                         aria-label={i18n._(msg({ id: 'library.filters.cloud-date-label', message: 'Filter cloud cards by date created' }))}
                         value={activeDate === 'All' ? '' : dateLabelToQueryDate(activeDate) || ''}
                         onChange={event => setActiveDate(event.target.value || 'All')}
-                        className="min-h-11 min-w-0 flex-1 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]"
+                        className="min-h-11 min-w-0 flex-1 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] focus:border-[var(--sf-brand)]"
                       />
                       <button
                         type="button"
@@ -962,7 +1008,7 @@ export function LibraryTools({
                 {customDecks.map(deck => (
                   <div
                     key={deck}
-                    className={`flex min-h-11 items-center rounded-xl border pl-2.5 pr-1 text-xs font-bold transition-all ${
+                    className={`flex min-h-11 items-center rounded-xl border pl-2.5 pr-1 text-xs font-bold transition-colors ${
                       activeCustomDeck.kind === 'deck' && activeCustomDeck.name === deck
                         ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-xs'
                         : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
@@ -974,7 +1020,7 @@ export function LibraryTools({
                       onClick={() => setActiveCustomDeck({ kind: 'deck', name: deck })}
                       className="flex min-h-11 min-w-11 items-center gap-1.5 py-1"
                     >
-                      <span className={`grid size-5 place-items-center rounded-md text-[10px] text-white library-deck-cover--${normalizeCoverPreset(customDeckCoverPresets[customDeckCoverKey(deck)])}`} aria-hidden="true">{deckMonogram(deck)}</span>
+                      <span className={`grid size-5 place-items-center rounded-md text-[10px] text-[var(--ld-cover-ink,var(--sf-on-brand))] library-deck-cover--${normalizeCoverPreset(customDeckCoverPresets[customDeckCoverKey(deck)])}`} aria-hidden="true">{deckMonogram(deck)}</span>
                       <span className="max-w-28 truncate">{deck}</span>
                       {(!authenticated || (activeCustomDeck.kind === 'deck' && activeCustomDeck.name === deck)) && (
                         <span className="text-[10px] opacity-70">
@@ -989,7 +1035,7 @@ export function LibraryTools({
                         setDeckDeletionError(false);
                         setDeckPendingDeletion({ name: deck, ownerId: ownerIdRef.current });
                       }}
-                      className="ml-1 flex size-11 items-center justify-center rounded-md text-inherit opacity-60 hover:bg-rose-600 hover:text-white hover:opacity-100"
+                      className="ml-1 flex size-11 items-center justify-center rounded-md text-inherit opacity-60 hover:bg-[var(--sf-danger)] hover:text-[var(--sf-on-brand)] hover:opacity-100"
                       title={i18n._(msg({ id: 'library.deck.delete-this', message: 'Delete this deck' }))}
                       aria-label={i18n._(msg({ id: 'library.deck.delete-action', message: 'Delete {deck} deck' }).id, { deck })}
                     >
@@ -1013,10 +1059,10 @@ export function LibraryTools({
                     type="button"
                     aria-pressed={activeCategory === category}
                     onClick={() => setActiveCategory(category)}
-                    className={`flex min-h-11 min-w-11 items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-all ${
+                    className={`flex min-h-11 min-w-11 items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-colors ${
                       activeCategory === category
                         ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-xs'
-                        : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-cyan-400/40 hover:text-[var(--sf-text)]'
+                        : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-[color-mix(in_srgb,var(--sf-brand)_40%,transparent)] hover:text-[var(--sf-text)]'
                     }`}
                   >
                     <span>{category === 'All' ? <Trans {...msg({ id: 'library.categories.all', message: 'All' })} /> : category}</span>
@@ -1037,6 +1083,7 @@ export function LibraryTools({
       <DeckDeletionDialog
         deckName={currentPendingDeletion?.name ?? ''}
         assignedCardCount={pendingDeckCardCount}
+        unassignedCardCount={authenticated ? undefined : cards.filter(card => !card.customDeck).length}
         open={currentPendingDeletion !== null}
         onOpenChange={open => {
           if (!open && !isDeletingDeck) {
@@ -1110,10 +1157,10 @@ function DeckButton({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`flex min-h-11 min-w-11 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer ${
+      className={`flex min-h-11 min-w-11 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors duration-200 cursor-pointer ${
         active
-          ? 'border-cyan-400/80 bg-cyan-400 text-[#071014] font-extrabold shadow-sm shadow-cyan-500/20 scale-[1.02]'
-          : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-cyan-400/50 hover:text-[var(--sf-text)]'
+          ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] font-extrabold shadow-sm scale-[1.02]'
+          : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-[color-mix(in_srgb,var(--sf-brand)_50%,transparent)] hover:text-[var(--sf-text)]'
       }`}
     >
       {icon}

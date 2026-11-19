@@ -115,7 +115,7 @@ for (const mode of ['light', 'dark'] as const) {
     await expectAccessibleAndContained(page, `Crystal ${mode} clear dialog without backdrop blur`);
     await testInfo.attach(`crystal-${mode}-clear-without-blur`, { body: await page.screenshot(), contentType: 'image/png' });
     await gotoFixture(page, 'locale=en&dialog=import-error');
-    await page.addStyleTag({ content: '.spreadsheet-import-overlay { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }' });
+    await page.addStyleTag({ content: '.library-dialog-overlay { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }' });
     const importDialog = page.getByRole('dialog');
     await expect(importDialog).toHaveCSS('background-color', mode === 'light' ? 'rgb(230, 245, 255)' : 'rgb(14, 17, 28)');
     await expect(importDialog).toHaveCSS('background-image', /linear-gradient/);
@@ -177,7 +177,7 @@ for (const theme of themes) for (const viewport of viewports) {
 }
 
 const otherDialogViews = [
-  ['edit', 'Edit card'], ['edit-review', 'Edit card'], ['deck-delete', /Delete “IELTS” deck/],
+  ['edit', 'Edit card'], ['edit-review', 'Edit card'], ['deck-delete', /Delete “IELTS”/],
   // AppOverlays.tsx's share dialog title is now dynamic: outgoing shows
   // `Share "{category}"` (shell.share.outgoing-title), incoming shows the
   // category name alone as the heading (with a "Shared with you" kicker
@@ -232,7 +232,12 @@ for (const theme of themes) for (const viewport of viewports) for (const [group,
       if (dialog === 'edit' || dialog === 'edit-review') {
         const backdropPreview = page.locator('[data-edit-preview-backdrop]');
         const sheetPreview = page.locator('[data-edit-preview]');
-        if (viewport.name === 'desktop') {
+        if (dialog === 'edit') {
+          // From the library the editor is a centred dialog with no card behind it.
+          await expect(backdropPreview).toHaveCount(0);
+          if (viewport.name === 'desktop') await expect(sheetPreview).toBeHidden();
+          else await expect(sheetPreview).toBeVisible();
+        } else if (viewport.name === 'desktop') {
           await expect(backdropPreview).toBeVisible();
           await expect(sheetPreview).toBeHidden();
           const previewLayer = await backdropPreview.evaluate(element => Number(getComputedStyle(element).zIndex));

@@ -109,7 +109,7 @@ describe('library dialog overlays', () => {
       />,
     );
     expect(idle).toContain('12');
-    expect(idle).toContain('Type DELETE to confirm');
+    expect(idle).toContain('Type <strong>DELETE</strong> to confirm');
     expect(idle).toContain('Export');
     expect(idle).toContain('disabled=""');
 

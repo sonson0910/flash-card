@@ -310,7 +310,7 @@ test('a deck can be created, reloaded, and deleted from Library', async ({ page,
 
   const deleteDeck = page.getByRole('button', { name: 'Delete Weekend words deck' });
   await deleteDeck.click();
-  const confirmation = page.getByRole('alertdialog', { name: 'Delete “Weekend words” deck?' });
+  const confirmation = page.getByRole('alertdialog', { name: 'Delete “Weekend words”?' });
   await expect(confirmation).toBeVisible();
   await confirmation.getByRole('button', { name: 'Keep deck' }).click();
   await expect(page.getByRole('button', { name: 'Weekend words', exact: true })).toBeVisible();
