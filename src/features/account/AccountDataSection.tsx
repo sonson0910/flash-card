@@ -83,7 +83,7 @@ export function AccountDataSection({ open, onOpenChange, onExportLibrary }: {
           <input id="account-delete-confirmation" value={confirmation} onChange={event => setConfirmation(event.target.value)} className="min-h-11 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 text-[var(--sf-text)] outline-none focus-visible:border-[var(--sf-danger)]" />
           <button type="button" disabled={!confirmationMatches || busy !== null} onClick={() => void remove()} className="min-h-11 rounded-xl bg-[var(--sf-danger)] px-4 font-bold text-white disabled:opacity-50 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">{busy === 'delete' ? <Trans {...msg({ context: 'account.data.delete.busy', message: 'Deleting…' })} /> : <Trans {...msg({ context: 'account.data.delete.confirm', message: 'Confirm permanent deletion' })} />}</button>
         </div>}
-        {notice && <p role="status" className="text-sm text-emerald-700 dark:text-emerald-300">{notice}</p>}
+        {notice && <p role="status" className="text-sm text-[var(--sf-success)]">{notice}</p>}
         {error && <p role="alert" className="text-sm text-[var(--sf-danger)]">{error}</p>}
         <Dialog.Close disabled={busy === 'delete'} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 font-semibold [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><Trans {...msg({ id: 'account.dialog.close', message: 'Close' })} /></Dialog.Close>
         </div>
