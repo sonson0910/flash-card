@@ -275,7 +275,7 @@ export function LessonScreen({ model, actions }: LessonScreenProps) {
     ? <label htmlFor="daily-lesson-answer" className="lesson-instruction">{model.answer.label}</label>
     : <span className="lesson-instruction" aria-hidden="true">{model.answer.kind === 'choice' ? _(msg({ id: 'daily.lesson.choose-answer', message: 'Choose one answer' })) : _(msg({ id: 'daily.lesson.build-sentence', message: 'Build the sentence' }))}</span>;
   const submitButton = answering && <button type="submit" onPointerDown={() => { pointerSubmit.current = true; setTimeout(() => { pointerSubmit.current = false; }, 0); }} disabled={!model.canSubmit} className="lesson-primary lesson-submit">
-    {_(msg({ id: 'daily.lesson.submit', message: 'Submit answer' }))}<kbd className="lesson-kbd font-mono" aria-hidden="true">Enter</kbd>
+    {_(msg({ id: 'daily.lesson.submit', message: 'Submit answer' }))}<kbd className="lesson-kbd font-mono" aria-hidden="true">{_(msg({ id: 'daily.lesson.enter-key', message: 'Enter' }))}</kbd>
   </button>;
   const canAskForGuidance = Boolean(model.card && actions.requestGuidance && (model.status === 'answering' || model.status === 'feedback'));
   const showAudio = model.mode === 'listening' && model.canPlayAudio;

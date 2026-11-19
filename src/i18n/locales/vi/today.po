@@ -122,6 +122,11 @@ msgid "daily.lesson.correct-answer"
 msgstr "Đáp án đúng:"
 
 #. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:278
+msgid "daily.lesson.enter-key"
+msgstr "Enter"
+
+#. js-lingui-explicit-id
 #: src/features/dailyLearning/LessonScreen.tsx:50
 msgid "daily.lesson.exit"
 msgstr "Thoát bài học"
