@@ -6,6 +6,7 @@ import { budgetDocumentId } from './rateLimiter.js';
 import {
   revokeSharedDeckAtomically, SharedDeckMigrationRequiredError, SharedDeckUsageStateError,
 } from './sharedDeckPersistence.js';
+import { configuredAccountFileObjects, exportedFileRows, type FileObjectStore } from './userFiles.js';
 
 const HOUR = 3_600_000;
 export const ACCOUNT_RATE_SCOPES = [
@@ -16,7 +17,7 @@ export const ACCOUNT_RATE_SCOPES = [
   'practice-session-complete', 'reward-frame-equip',
   'clear-library-page', 'card-headword-rename', 'bulk-card-mutation', 'course-profile',
   'reminder-settings', 'push-token-revoke', 'push-session-end', 'ai-card-cancel', 'ai-tutor-turn',
-  'account-profile',
+  'account-profile', 'file-prepare', 'file-list', 'file-update', 'file-delete',
 ] as const;
 
 const jsonValue = (value: unknown): unknown => {
@@ -37,7 +38,7 @@ export async function exportAccountData(database: Firestore, uid: string, key: s
   const pid = analyticsPseudonym(uid, key);
   const [profile, entitlements, paymentReceipts, catalogProgress, aiUsage, aiDaily, xpStreams, reviewReceipts, reviewXpAwards, cardCreateReceipts, practiceSessions,
     reminderState, reminderReceipts, pushTokens, pushTokenSessionCutoffs, pushTokenOwners,
-    mail, reports, events] = await Promise.all([
+    mail, reports, events, fileRows] = await Promise.all([
     rows(owner.collection('profile')), rows(owner.collection('entitlements')),
     rows(owner.collection('payment_receipts')), rows(owner.collection('catalog_progress')),
     rows(owner.collection('ai_usage')), rows(owner.collection('ai_daily')),
@@ -52,11 +53,12 @@ export async function exportAccountData(database: Firestore, uid: string, key: s
     rows(database.collection('mail').where('ownerId', '==', uid)),
     rows(database.collection('card_reports').where('uid', '==', uid)),
     database.collection('analytics_events').where('pid', '==', pid).count().get(),
+    exportedFileRows(database, uid),
   ]);
   return jsonValue({ exportedAt: new Date(), profile, entitlements, paymentReceipts, catalogProgress, aiUsage, aiDaily,
     xpStreams, reviewReceipts, reviewXpAwards, cardCreateReceipts, practiceSessions,
     reminderState, reminderReceipts, pushTokens, pushTokenSessionCutoffs, pushTokenOwners,
-    mail, cardReports: reports,
+    mail, cardReports: reports, files: fileRows.files, fileUsage: fileRows.fileUsage,
     analyticsEventCount: events.data().count });
 }
 
@@ -126,8 +128,11 @@ async function deleteOwnedPushRegistrations(database: Firestore, uid: string): P
   }
 }
 
-export async function purgeAccountData(database: Firestore, uid: string, pid: string): Promise<void> {
+export async function purgeAccountData(database: Firestore, uid: string, pid: string,
+  fileObjects: FileObjectStore | null = configuredAccountFileObjects()): Promise<void> {
   await deleteOwnedPushRegistrations(database, uid);
+  // Stored uploads go before their records, so a failed purge is retried with the records intact.
+  if (fileObjects) await fileObjects.deleteOwnerObjects(uid);
   await database.recursiveDelete(database.collection('users').doc(uid));
   await deleteQuery(database, database.collection('ai_cost_ledger').where('uid', '==', uid));
   await deleteQuery(database, database.collection('card_reports').where('uid', '==', uid));
