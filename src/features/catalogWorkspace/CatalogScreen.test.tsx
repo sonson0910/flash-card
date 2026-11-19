@@ -37,9 +37,9 @@ const readyModel: CatalogScreenModel = {
   ],
   selectedTier: 'foundation',
   tiers: [
-    { id: 'foundation', label: 'Foundation', description: 'Build essential language', cefrRange: 'A1–A2', total: 100, started: 24, mastered: 8, state: 'in-progress' },
-    { id: 'core', label: 'Core', description: 'Grow confident range', cefrRange: 'B1–B2', total: 100, started: 0, mastered: 0, state: 'available' },
-    { id: 'advanced', label: 'Advanced', description: 'Handle precise language', cefrRange: 'C1–C2', total: 100, started: 0, mastered: 0, state: 'locked' },
+    { id: 'foundation', label: 'Foundation', description: 'Build essential language', total: 100, started: 24, mastered: 8, state: 'in-progress' },
+    { id: 'core', label: 'Core', description: 'Grow confident range', total: 100, started: 0, mastered: 0, state: 'available' },
+    { id: 'advanced', label: 'Advanced', description: 'Handle precise language', total: 100, started: 0, mastered: 0, state: 'locked' },
   ],
   filters: {
     term: '',
@@ -155,7 +155,8 @@ describe('CatalogScreen', () => {
     expect(html).toMatch(/8 of [\d,]+ words mastered/);
     expect(html).toContain('In progress');
     expect(html).toContain('Locked');
-    expect(html).toContain('Foundation · A1–A2 · Selected');
+    expect(html).toContain('Foundation · Selected');
+    expect(html).not.toMatch(/A1–A2|B1–B2|C1–C2/);
     expect(html).toContain('class="paths-book-name">IELTS</span>');
     expect(html).toContain('class="paths-hero-title-accent">Foundation</em>');
     expect(html).toContain('a careful study of something');

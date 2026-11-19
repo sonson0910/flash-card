@@ -113,7 +113,7 @@ function CatalogReadyFixture() {
   const currentUnitId = selectedUnitId ?? 'ielts\\u0000analysis-basics';
   const actions = { selectMode() {}, selectLanguage() {}, selectTrack() {}, selectTier() {}, selectPathUnit(trackId, unitId) { setSelectedUnitId(trackId + '\\u0000' + unitId); setConfirmationUnitId(null); }, openNextUnitPreview() { setSelectedUnitId('ielts\\u0000analysis-basics'); setConfirmationUnitId('ielts\\u0000analysis-basics'); }, prepareSelectedUnit() { setConfirmationUnitId(currentUnitId); }, confirmSelectedUnit() {}, changeTerm() {}, changeCefr() {}, changeTopic() {}, changePartOfSpeech() {}, changeSkill() {}, resetFilters() {}, download() {}, retry() {}, loadMore() {}, addToLibrary() {}, openVocabulary() {}, continueReview() {} };
   return <main className="min-h-screen p-4 sm:p-8"><CatalogScreen model={{
-    status: { kind: 'ready', isOnline: false, message: 'Reviewed catalog reviewed-visual-1 is ready on this device.' },
+    status: { kind: 'ready', isOnline: false, message: 'The reviewed catalog is ready on this device.' },
     selectedLanguage: 'en', uiLocale: locale, languages: [{ code: 'en', label: 'English', nativeLabel: 'English', isAvailable: true }, { code: 'ja', label: 'Japanese', nativeLabel: '日本語', isAvailable: false }],
     selectedTrack: 'ielts', tracks, selectedTier: 'advanced', tiers: catalogTiersFromSummary(summary, 'ielts'), filters: catalogFiltersFromSummary(summary, 'ielts'),
     pathUnits: projectCatalogPathUnits(summary), selectedPathUnitId: selectedUnitId,
@@ -569,7 +569,7 @@ test('approved reviewed catalog selects all 45 real units without horizontal cli
   await seedCourseProfile();
   await signIn(page, '/?view=catalog&locale=en');
   await page.getByRole('button', { name: 'Check for reviewed catalog' }).click();
-  await expect(page.getByText('Reviewed catalog r-261124da6107eb25204587aa is ready on this device.')).toBeVisible();
+  await expect(page.getByText('The reviewed catalog is ready on this device.')).toBeVisible();
 
   const shelf = page.locator('.catalog-shelf').filter({ has: page.getByRole('heading', { name: 'Your shelf' }) });
   const reviewedUnitTitles = new Set<string>();

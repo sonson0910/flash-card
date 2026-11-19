@@ -67,7 +67,6 @@ export interface CatalogTierPresentation {
   id: 'foundation' | 'core' | 'advanced';
   label: string;
   description: string;
-  cefrRange?: string;
   total: number;
   started: number;
   mastered: number;

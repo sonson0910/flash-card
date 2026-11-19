@@ -230,7 +230,7 @@ msgstr "Vocabulary could not be read safely."
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogWorkspace.tsx:105
 msgid "catalog.workspace.ready"
-msgstr "Reviewed catalog {releaseId} is ready on this device."
+msgstr "The reviewed catalog is ready on this device."
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogWorkspace.tsx:111
@@ -243,7 +243,7 @@ msgid "catalog.workspace.release-missing-online"
 msgstr "No reviewed catalog release is installed. You can check the same-origin release channel."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.test.tsx:356
+#: src/features/catalogWorkspace/CatalogScreen.test.tsx:357
 #: src/features/catalogWorkspace/CatalogWorkspace.tsx:124
 msgid "catalog.workspace.result-summary"
 msgstr "Showing {count, number}{more} {track} {tier} {count, plural, one {word} other {words}}."

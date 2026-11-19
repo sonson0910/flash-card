@@ -102,7 +102,7 @@ const pathUnitKey = (unit: CatalogPathUnitProgress['unit']): string => `${unit.t
 
 const copy = {
   checking: msg({ id: 'catalog.workspace.checking', message: 'Checking this device for a reviewed catalog…' }),
-  ready: msg({ id: 'catalog.workspace.ready', message: 'Reviewed catalog {releaseId} is ready on this device.' }),
+  ready: msg({ id: 'catalog.workspace.ready', message: 'The reviewed catalog is ready on this device.' }),
   personalWithCards: msg({ id: 'catalog.workspace.personal-with-cards', message: 'Your path is built from {count, number} cards already in your library.' }),
   personalEmpty: msg({ id: 'catalog.workspace.personal-empty', message: 'Add your first vocabulary cards to start a personal path.' }),
   personalUnavailable: msg({ id: 'catalog.workspace.personal-unavailable', message: 'Your library summary is unavailable for this course. Open vocabulary to see your cards.' }),
@@ -268,10 +268,10 @@ export default function CatalogWorkspace({
     ? (personalLibrary === null ? null : personalLibrary.total)
     : null;
 
-  const readyStatus = useCallback((releaseId: string): WorkspaceStatusState => ({
+  const readyStatus = useCallback((): WorkspaceStatusState => ({
     kind: 'ready',
     isOnline,
-    messageKey: 'ready', messageValues: { releaseId },
+    messageKey: 'ready',
   }), [isOnline]);
 
   const inspect = useCallback(async () => {
@@ -333,7 +333,7 @@ export default function CatalogWorkspace({
       setConfirmationUnitId(null);
       setContinueError(null);
       setProgressAvailable(inspection.progressAvailable);
-      setStatus(readyStatus(nextSummary.release.releaseId));
+      setStatus(readyStatus());
     } catch (error) {
       if (!mounted.current) return;
       setIsLoadingPage(false);
@@ -356,7 +356,7 @@ export default function CatalogWorkspace({
       setHydrated(previous => append ? [...previous, ...page.value.items] : page.value.items);
       setNextCursor(page.value.nextCursor);
       setHasMore(page.value.hasMore);
-      setStatus(readyStatus(summary.release.releaseId));
+      setStatus(readyStatus());
     } catch (error) {
       if (!mounted.current || pageGeneration.current !== pageToken) return;
       setStatus(catalogErrorState(error, isOnline, 'vocabularyReadError'));
