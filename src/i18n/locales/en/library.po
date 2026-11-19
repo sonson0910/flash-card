@@ -714,7 +714,8 @@ msgstr "Close clear library dialog"
 
 #. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:99
-#: src/features/intake/CreateCardDialog.tsx:56
+#: src/features/intake/CreateCardDialog.tsx:60
+#: src/features/intake/CreateCardDialog.tsx:1093
 #: src/features/library/AiDialogueModal.tsx:156
 #: src/features/library/LibraryDialogOverlays.tsx:116
 #: src/features/library/LibraryTools.tsx:320
@@ -723,423 +724,567 @@ msgid "library.close"
 msgstr "Close"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:91
-#: src/features/intake/CreateCardDialog.tsx:772
-#: src/features/intake/CreateCardDialog.tsx:778
+#: src/features/intake/CreateCardDialog.tsx:95
+#: src/features/intake/CreateCardDialog.tsx:1060
+#: src/features/intake/CreateCardDialog.tsx:1091
+#: src/features/intake/CreateCardDialog.tsx:1099
 msgid "library.create-card.add-manually"
 msgstr "Add manually"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:61
+#: src/features/intake/CreateCardDialog.tsx:65
 msgid "library.create-card.audio"
 msgstr "Play pronunciation for {word}"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:64
-#: src/features/intake/CreateCardDialog.tsx:323
+#: src/features/intake/CreateCardDialog.tsx:68
+#: src/features/intake/CreateCardDialog.tsx:445
 msgid "library.create-card.cefr"
 msgstr "CEFR level"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:65
+#: src/features/intake/CreateCardDialog.tsx:69
 msgid "library.create-card.cefr-placeholder"
 msgstr "CEFR"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:43
+#: src/features/intake/CreateCardDialog.tsx:47
 msgid "library.create-card.context"
 msgstr "Context sentence"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:44
+#: src/features/intake/CreateCardDialog.tsx:48
 msgid "library.create-card.context-placeholder"
 msgstr "Add a sentence to guide the draft"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:88
+#: src/features/intake/CreateCardDialog.tsx:92
 msgid "library.create-card.deck-reason.plan-limit"
 msgstr "Plan limit"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:67
-#: src/features/intake/CreateCardDialog.tsx:347
+#: src/features/intake/CreateCardDialog.tsx:71
+#: src/features/intake/CreateCardDialog.tsx:469
 msgid "library.create-card.definition"
 msgstr "Definition"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:54
-#: src/features/intake/CreateCardDialog.tsx:639
+#: src/features/intake/CreateCardDialog.tsx:58
+#: src/features/intake/CreateCardDialog.tsx:887
 msgid "library.create-card.description.ai"
 msgstr "SonFlash drafts the card — you decide what stays."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:55
-#: src/features/intake/CreateCardDialog.tsx:639
+#: src/features/intake/CreateCardDialog.tsx:59
+#: src/features/intake/CreateCardDialog.tsx:887
 msgid "library.create-card.description.manual"
 msgstr "Add the details you already know, then save the card."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:83
+#: src/features/intake/CreateCardDialog.tsx:87
 msgid "library.create-card.drafting"
 msgstr "Drafting your card with AI…"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:90
+#: src/features/intake/CreateCardDialog.tsx:94
 msgid "library.create-card.duplicate"
 msgstr "A card for {word} already exists in your library. Choose another word or close this dialog."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:84
-#: src/features/intake/CreateCardDialog.tsx:750
+#: src/features/intake/CreateCardDialog.tsx:88
+#: src/features/intake/CreateCardDialog.tsx:1030
 msgid "library.create-card.empty-preview"
 msgstr "Your generated card preview will appear here."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:102
+#: src/features/intake/CreateCardDialog.tsx:149
+msgid "library.create-card.error.attempts-exhausted"
+msgstr "This AI request has used all of its retries. Trying again starts a new request."
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:133
 msgid "library.create-card.error.authentication"
 msgstr "Sign in again to create an AI card. Your word is still here."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:104
+#: src/features/intake/CreateCardDialog.tsx:135
 msgid "library.create-card.error.configuration"
 msgstr "The AI service is not ready for this app. Try again later."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:110
+#: src/features/intake/CreateCardDialog.tsx:141
 msgid "library.create-card.error.deck-unavailable"
 msgstr "Deck “{deck}” is no longer available. Choose another deck and try again."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:111
+#: src/features/intake/CreateCardDialog.tsx:142
 msgid "library.create-card.error.default"
 msgstr "The card could not be created. Your word is still here; try again."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:109
+#: src/features/intake/CreateCardDialog.tsx:140
 msgid "library.create-card.error.duplicate"
 msgstr "This card is already in your library."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:112
+#: src/features/intake/CreateCardDialog.tsx:143
 msgid "library.create-card.error.empty-word"
 msgstr "Enter a word or phrase to create a card."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:113
+#: src/features/intake/CreateCardDialog.tsx:144
 msgid "library.create-card.error.generate-deck"
 msgstr "Choose an available deck before generating the card."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:107
+#: src/features/intake/CreateCardDialog.tsx:138
 msgid "library.create-card.error.generation"
 msgstr "The AI service could not create this card. Your word is still here; try again."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:106
+#: src/features/intake/CreateCardDialog.tsx:137
 msgid "library.create-card.error.invalid"
 msgstr "Check the card details and try again."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:115
+#: src/features/intake/CreateCardDialog.tsx:146
 msgid "library.create-card.error.manual-deck"
 msgstr "Choose an available deck before saving the card."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:114
+#: src/features/intake/CreateCardDialog.tsx:145
 msgid "library.create-card.error.manual-fields"
 msgstr "Enter a word and meaning before saving the manual card."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:103
+#: src/features/intake/CreateCardDialog.tsx:148
+msgid "library.create-card.error.offline"
+msgstr "You’re offline. Reconnect to generate a card, or add it manually."
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:134
 msgid "library.create-card.error.permission"
 msgstr "The AI service rejected this request. Sign in again and try once more."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:100
+#: src/features/intake/CreateCardDialog.tsx:131
 msgid "library.create-card.error.quota"
 msgstr "Your AI card allowance is used up. Add this card manually or try again when it resets."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:116
+#: src/features/intake/CreateCardDialog.tsx:147
 msgid "library.create-card.error.regenerate-selection"
 msgstr "Choose at least one detail to regenerate."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:108
+#: src/features/intake/CreateCardDialog.tsx:139
 msgid "library.create-card.error.save"
 msgstr "The card could not be saved. Your draft is still here; try again."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:105
+#: src/features/intake/CreateCardDialog.tsx:136
 msgid "library.create-card.error.timeout"
 msgstr "The AI service took too long to respond. Your word is still here; try again."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:101
+#: src/features/intake/CreateCardDialog.tsx:132
 msgid "library.create-card.error.unavailable"
 msgstr "The AI service is unavailable. Your word is still here; try again."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:68
-#: src/features/intake/CreateCardDialog.tsx:361
+#: src/features/intake/CreateCardDialog.tsx:72
+#: src/features/intake/CreateCardDialog.tsx:484
 msgid "library.create-card.example"
 msgstr "Example"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:70
+#: src/features/intake/CreateCardDialog.tsx:74
 msgid "library.create-card.example-sentence"
 msgstr "Example sentence"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:72
+#: src/features/intake/CreateCardDialog.tsx:76
 msgid "library.create-card.example-translation"
 msgstr "Example translation"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:69
+#: src/features/intake/CreateCardDialog.tsx:73
 msgid "library.create-card.examples"
 msgstr "Examples"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:98
-#: src/features/intake/CreateCardDialog.tsx:781
+#: src/features/intake/CreateCardDialog.tsx:102
+#: src/features/intake/CreateCardDialog.tsx:1102
 msgid "library.create-card.generate-preview"
 msgstr "Generate preview"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:94
+#: src/features/intake/CreateCardDialog.tsx:98
 msgid "library.create-card.generating"
 msgstr "Generating…"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:51
-#: src/features/intake/CreateCardDialog.tsx:636
+#: src/features/intake/CreateCardDialog.tsx:55
+#: src/features/intake/CreateCardDialog.tsx:884
 msgid "library.create-card.kicker.ai"
 msgstr "NEW CARD"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:52
-#: src/features/intake/CreateCardDialog.tsx:636
+#: src/features/intake/CreateCardDialog.tsx:56
+#: src/features/intake/CreateCardDialog.tsx:884
 msgid "library.create-card.kicker.manual"
 msgstr "MANUAL CARD"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:75
-#: src/features/intake/CreateCardDialog.tsx:736
+#: src/features/intake/CreateCardDialog.tsx:79
+#: src/features/intake/CreateCardDialog.tsx:1016
 msgid "library.create-card.manual-details"
 msgstr "MANUAL DETAILS"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:66
-#: src/features/intake/CreateCardDialog.tsx:335
+#: src/features/intake/CreateCardDialog.tsx:70
+#: src/features/intake/CreateCardDialog.tsx:457
 msgid "library.create-card.meaning"
 msgstr "Meaning"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:41
+#: src/features/intake/CreateCardDialog.tsx:45
 msgid "library.create-card.optional"
 msgstr "optional"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:45
-#: src/features/intake/CreateCardDialog.tsx:681
+#: src/features/intake/CreateCardDialog.tsx:49
+#: src/features/intake/CreateCardDialog.tsx:965
 msgid "library.create-card.part-of-speech"
 msgstr "Part of speech"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:49
+#: src/features/intake/CreateCardDialog.tsx:53
 msgid "library.create-card.pos.adjective"
 msgstr "adjective"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:50
+#: src/features/intake/CreateCardDialog.tsx:54
 msgid "library.create-card.pos.adverb"
 msgstr "adverb"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:46
+#: src/features/intake/CreateCardDialog.tsx:50
 msgid "library.create-card.pos.auto"
 msgstr "Auto"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:47
+#: src/features/intake/CreateCardDialog.tsx:51
 msgid "library.create-card.pos.noun"
 msgstr "noun"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:48
+#: src/features/intake/CreateCardDialog.tsx:52
 msgid "library.create-card.pos.verb"
 msgstr "verb"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:81
+#: src/features/intake/CreateCardDialog.tsx:85
 msgid "library.create-card.preparing"
 msgstr "SonFlash is preparing your card…"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:57
-#: src/features/intake/CreateCardDialog.tsx:302
+#: src/features/intake/CreateCardDialog.tsx:61
+#: src/features/intake/CreateCardDialog.tsx:424
 msgid "library.create-card.preview.ai-draft"
 msgstr "AI draft"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:59
-#: src/features/intake/CreateCardDialog.tsx:303
+#: src/features/intake/CreateCardDialog.tsx:63
+#: src/features/intake/CreateCardDialog.tsx:425
 msgid "library.create-card.preview.edit-generated"
 msgstr "Edit the generated details below"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:60
-#: src/features/intake/CreateCardDialog.tsx:303
+#: src/features/intake/CreateCardDialog.tsx:64
+#: src/features/intake/CreateCardDialog.tsx:425
 msgid "library.create-card.preview.edit-manual"
 msgstr "Edit your card details below"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:58
-#: src/features/intake/CreateCardDialog.tsx:302
+#: src/features/intake/CreateCardDialog.tsx:62
+#: src/features/intake/CreateCardDialog.tsx:424
 msgid "library.create-card.preview.manual-draft"
 msgstr "Manual draft"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:62
-#: src/features/intake/CreateCardDialog.tsx:311
+#: src/features/intake/CreateCardDialog.tsx:66
+#: src/features/intake/CreateCardDialog.tsx:433
 msgid "library.create-card.pronunciation"
 msgstr "Pronunciation"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:63
+#: src/features/intake/CreateCardDialog.tsx:67
 msgid "library.create-card.pronunciation-placeholder"
 msgstr "/pronunciation/"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:89
-#: src/features/intake/CreateCardDialog.tsx:763
+#: src/features/intake/CreateCardDialog.tsx:93
+#: src/features/intake/CreateCardDialog.tsx:1043
 msgid "library.create-card.ready-after-saving"
 msgstr "Ready after saving"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:93
-#: src/features/intake/CreateCardDialog.tsx:779
+#: src/features/intake/CreateCardDialog.tsx:97
+#: src/features/intake/CreateCardDialog.tsx:1100
 msgid "library.create-card.regenerate"
 msgstr "Regenerate"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:78
+#: src/features/intake/CreateCardDialog.tsx:82
 msgid "library.create-card.regenerate-group"
 msgstr "Regenerate selected card details"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:80
-#: src/features/intake/CreateCardDialog.tsx:720
+#: src/features/intake/CreateCardDialog.tsx:84
+#: src/features/intake/CreateCardDialog.tsx:1000
 msgid "library.create-card.regenerate-hint"
 msgstr "Each completed generation uses one AI request"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:79
-#: src/features/intake/CreateCardDialog.tsx:720
+#: src/features/intake/CreateCardDialog.tsx:83
+#: src/features/intake/CreateCardDialog.tsx:1000
 msgid "library.create-card.regenerate-selected"
 msgstr "Regenerate selected details"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:95
+#: src/features/intake/CreateCardDialog.tsx:99
 msgid "library.create-card.regenerating"
 msgstr "Regenerating…"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:92
-#: src/features/intake/CreateCardDialog.tsx:777
+#: src/features/intake/CreateCardDialog.tsx:96
+#: src/features/intake/CreateCardDialog.tsx:1098
 msgid "library.create-card.request-count"
 msgstr "{count, plural, one {# AI request completed} other {# AI requests completed}}"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:82
+#: src/features/intake/CreateCardDialog.tsx:86
 msgid "library.create-card.reserving"
 msgstr "Reserving your AI request…"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:97
-#: src/features/intake/CreateCardDialog.tsx:781
-#: src/features/intake/CreateCardDialog.tsx:781
+#: src/features/intake/CreateCardDialog.tsx:101
+#: src/features/intake/CreateCardDialog.tsx:1089
+#: src/features/intake/CreateCardDialog.tsx:1102
+#: src/features/intake/CreateCardDialog.tsx:1102
 msgid "library.create-card.save"
 msgstr "Save card"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:85
+#: src/features/intake/CreateCardDialog.tsx:89
 msgid "library.create-card.save-to"
 msgstr "Save to"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:96
+#: src/features/intake/CreateCardDialog.tsx:100
 msgid "library.create-card.saving"
 msgstr "Saving…"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:53
-#: src/features/intake/CreateCardDialog.tsx:637
+#: src/features/intake/CreateCardDialog.tsx:123
+msgid "library.create-card.stream.announce-done"
+msgstr "Card ready. Review it, then save."
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:122
+msgid "library.create-card.stream.announce-step"
+msgstr "{step} ready, {ready} of {total}"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:117
+#: src/features/intake/CreateCardDialog.tsx:1088
+msgid "library.create-card.stream.cancel"
+msgstr "Cancel"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:105
+msgid "library.create-card.stream.deck"
+msgstr "Deck · {deck}"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:128
+msgid "library.create-card.stream.failed-partial"
+msgstr "Generation stopped before the card was finished. The details shown were not checked."
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:113
+msgid "library.create-card.stream.finding-image"
+msgstr "Finding an image…"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:104
+msgid "library.create-card.stream.kicker"
+msgstr "AI is writing your card"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:114
+msgid "library.create-card.stream.no-image"
+msgstr "No image yet"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:119
+msgid "library.create-card.stream.not-checked"
+msgstr "Not checked"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:115
+msgid "library.create-card.stream.note"
+msgstr "You can edit any field as soon as it appears — the AI keeps writing the rest."
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:1066
+msgid "library.create-card.stream.ready"
+msgstr "<0>{ready} of {total}</0> ready"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:116
+msgid "library.create-card.stream.ready-text"
+msgstr "{ready} of {total} ready"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:120
+msgid "library.create-card.stream.reconnecting"
+msgstr "Reconnecting…"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:121
+msgid "library.create-card.stream.slow"
+msgstr "Still writing — this is taking longer than usual."
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:110
+msgid "library.create-card.stream.state.active"
+msgstr "in progress"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:109
+msgid "library.create-card.stream.state.done"
+msgstr "done"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:112
+msgid "library.create-card.stream.state.stopped"
+msgstr "stopped"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:111
+msgid "library.create-card.stream.state.waiting"
+msgstr "waiting"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:107
+msgid "library.create-card.stream.step.headword"
+msgstr "Headword & stress"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:108
+msgid "library.create-card.stream.step.image"
+msgstr "Image"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:106
+msgid "library.create-card.stream.steps"
+msgstr "Progress"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:126
+msgid "library.create-card.stream.stopped-counted"
+msgstr "Stopped. This request still counts."
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:125
+msgid "library.create-card.stream.stopped-partial"
+msgstr "Stopped. Part of the card had already arrived, so this request still counts."
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:124
+msgid "library.create-card.stream.stopped-refunded"
+msgstr "Stopped. This request was not counted."
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:127
+msgid "library.create-card.stream.stopped-unknown"
+msgstr "Generation stopped."
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:118
+#: src/features/intake/CreateCardDialog.tsx:1095
+msgid "library.create-card.stream.try-again"
+msgstr "Try again"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:57
+#: src/features/intake/CreateCardDialog.tsx:885
 msgid "library.create-card.title"
 msgstr "Add a word"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:71
-#: src/features/intake/CreateCardDialog.tsx:374
+#: src/features/intake/CreateCardDialog.tsx:75
+#: src/features/intake/CreateCardDialog.tsx:497
 msgid "library.create-card.translation"
 msgstr "Translation"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:86
+#: src/features/intake/CreateCardDialog.tsx:90
 msgid "library.create-card.unassigned"
 msgstr "Unassigned"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:87
+#: src/features/intake/CreateCardDialog.tsx:91
 msgid "library.create-card.unavailable"
 msgstr "Unavailable"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:77
-#: src/features/intake/CreateCardDialog.tsx:737
+#: src/features/intake/CreateCardDialog.tsx:81
+#: src/features/intake/CreateCardDialog.tsx:1017
 msgid "library.create-card.use-ai-draft"
 msgstr "Use AI draft"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:42
+#: src/features/intake/CreateCardDialog.tsx:46
 msgid "library.create-card.word"
 msgstr "Word or phrase"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:73
-#: src/features/intake/CreateCardDialog.tsx:388
+#: src/features/intake/CreateCardDialog.tsx:77
+#: src/features/intake/CreateCardDialog.tsx:512
 msgid "library.create-card.word-family"
 msgstr "Word family"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:74
+#: src/features/intake/CreateCardDialog.tsx:78
 msgid "library.create-card.word-family-field"
 msgstr "Word family {part}"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:123
+#: src/features/intake/CreateCardDialog.tsx:156
 msgid "library.create-card.word-family.adjective"
 msgstr "adjective"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:124
+#: src/features/intake/CreateCardDialog.tsx:157
 msgid "library.create-card.word-family.adverb"
 msgstr "adverb"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:121
+#: src/features/intake/CreateCardDialog.tsx:154
 msgid "library.create-card.word-family.noun"
 msgstr "noun"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:122
+#: src/features/intake/CreateCardDialog.tsx:155
 msgid "library.create-card.word-family.verb"
 msgstr "verb"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:76
-#: src/features/intake/CreateCardDialog.tsx:736
+#: src/features/intake/CreateCardDialog.tsx:80
+#: src/features/intake/CreateCardDialog.tsx:1016
 msgid "library.create-card.your-card"
 msgstr "Your card"
 

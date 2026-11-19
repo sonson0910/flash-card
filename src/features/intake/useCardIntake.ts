@@ -111,6 +111,8 @@ export function createCardIntakeBindingOwner(
       generatePreview: () => controller.cardCreator.generatePreview(),
       updatePreview: patch => controller.cardCreator.updatePreview(patch),
       regenerate: fields => controller.cardCreator.regenerate(fields),
+      stopGeneration: () => controller.cardCreator.stopGeneration(),
+      retryGeneration: () => controller.cardCreator.retryGeneration(),
       createManualDraft: fields => controller.cardCreator.createManualDraft(fields),
       save: () => controller.cardCreator.save(),
       cancel: () => controller.cardCreator.cancel(),
