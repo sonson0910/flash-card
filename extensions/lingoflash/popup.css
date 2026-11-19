@@ -1379,3 +1379,130 @@ footer .link-button {
   box-shadow: 0 0 6px var(--popup-crystal-holo);
 }
 :root[data-theme-family="crystal"] .state-card[data-state="quota"] .state-actions { margin-top: 10px; width: 100%; flex: none; }
+
+/* Language courses (Korean, Japanese, Chinese) follow the language board:
+ * the course chip in its own script, the page or selection language, where
+ * a save goes, and CJK words set in a CJK face. Fonts are the system's own
+ * CJK faces; none are bundled with the extension. */
+:root {
+  --popup-font-ko: "Noto Sans KR", "Noto Sans CJK KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --popup-font-ja: "Noto Sans JP", "Noto Sans CJK JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --popup-font-zh: "Noto Sans SC", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+:root .shell [lang|="ko"] { font-family: var(--popup-font-ko); }
+:root .shell [lang|="ja"] { font-family: var(--popup-font-ja); }
+:root .shell [lang|="zh"] { font-family: var(--popup-font-zh); }
+:root .shell :is(.result-word, #selection, .recent-text):is([lang|="ko"], [lang|="ja"], [lang|="zh"]) { font-style: normal; letter-spacing: 0; }
+:root .shell .result-word:is([lang|="ko"], [lang|="ja"], [lang|="zh"]) { font-weight: 700; }
+
+.target-language-label[data-course="language"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 3px 12px 3px 4px;
+  border: 1px solid var(--sf-line);
+  background: var(--sf-chip-bg);
+  color: var(--sf-text-strong);
+  font-size: 13px;
+  font-weight: 700;
+}
+.course-chip-code {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent-text);
+  font: 600 11px var(--sf-font-mono);
+}
+
+.language-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  margin: 0 0 12px;
+  padding: 7px 12px;
+  border: 1px solid var(--sf-accent-line);
+  border-radius: 10px;
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent-text);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+.language-banner[data-tone="warn"] { border-color: var(--sf-warn-line); background: var(--sf-warn-bg); color: var(--sf-warn); }
+.language-banner-icon { flex: none; }
+.language-banner-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.language-banner-meta { flex: none; margin-left: auto; color: var(--sf-text-2); font: 500 11px var(--sf-font-mono); }
+
+.meanings-language { min-width: 0; overflow: hidden; color: var(--sf-text-3); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+
+.course-route {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--sf-line);
+  border-radius: 12px;
+  background: var(--sf-secondary-bg);
+}
+.shell:has(#state-card:not([hidden])) .course-route { display: none; }
+.course-route-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent-text);
+}
+.course-route-copy { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.course-route-title { color: var(--sf-text); font-size: 12.5px; font-weight: 650; }
+.course-route-pair { overflow: hidden; color: var(--sf-text-2); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.course-route-arrow { color: var(--sf-text-3); }
+
+.result-card[data-course="language"]:not([data-status]) .result-badge,
+:root[data-theme-family="crystal"] .result-card[data-course="language"]:not([data-status]) .result-badge {
+  height: auto;
+  padding: 0;
+  border: 0;
+  clip-path: none;
+  background: none;
+  color: var(--sf-text-3);
+  font-weight: 500;
+}
+.result-card[data-course="language"] .result-example { color: var(--sf-text-strong); font-style: normal; font-size: 14px; }
+.result-card[data-course="language"] .result-example strong { font-weight: 800; }
+.result-language-note {
+  order: 7;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--sf-warn-line);
+  border-radius: 12px;
+  background: var(--sf-warn-bg);
+}
+.result-language-note-title { margin: 0; color: var(--sf-warn); font-size: 13px; font-weight: 700; }
+.result-language-note-body { margin: 3px 0 0; color: var(--sf-body); font-size: 12px; line-height: 1.45; }
+
+:root[data-theme-family="crystal"] .target-language-label[data-course="language"],
+:root[data-theme-family="crystal"] .language-banner,
+:root[data-theme-family="crystal"] .course-route,
+:root[data-theme-family="crystal"] .result-language-note {
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--sf-chamfer-sm);
+  box-shadow: inset 0 0 0 1px var(--popup-crystal-holo-edge);
+}
+:root[data-theme-family="crystal"] .course-chip-code,
+:root[data-theme-family="crystal"] .course-route-icon { border-radius: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+:root[data-theme-family="crystal"] .language-banner { color: var(--popup-crystal-holo); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .02em; }
+:root[data-theme-family="crystal"] .language-banner[data-tone="warn"],
+:root[data-theme-family="crystal"] .result-language-note { box-shadow: inset 0 0 0 1px var(--sf-warn-line); color: var(--sf-warn); }
+:root[data-theme-family="crystal"] .result-language-note-title { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; }
+:root[data-theme-family="crystal"] .course-route-title { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; }
+:root[data-theme-family="crystal"] .result-word:is([lang|="ko"], [lang|="ja"], [lang|="zh"]) { font-weight: 900; }

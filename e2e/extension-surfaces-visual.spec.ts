@@ -35,24 +35,35 @@ async function startExtensionServer() {
 test.beforeAll(startExtensionServer);
 test.afterAll(() => new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())));
 
-async function mockChrome(page: Page, theme: typeof themes[number]) {
-  await page.addInitScript(({ family, scheme }) => {
+type CourseFixture = {
+  targetLanguage: 'en' | 'ko' | 'ja';
+  selection?: { text: string; pageLanguage?: string };
+  translate?: { translation: string; sourceLanguage: string; romanization?: string };
+  dueCount?: number;
+  recent?: Array<{ text: string; translation: string; sourceLanguage: string; kind: 'create' | 'translate' }>;
+};
+const englishCourse: CourseFixture = { targetLanguage: 'en' };
+
+async function mockChrome(page: Page, theme: typeof themes[number], course: CourseFixture = englishCourse) {
+  await page.addInitScript(({ family, scheme, course }) => {
     const settings = {
       autoSpeak: false, bubbleDurationMs: 0, recentLookupsEnabled: true,
       quickTranslateSource: 'auto', quickTranslateTarget: 'vi', selectionIconSites: [],
       themeFamily: family, colorScheme: scheme,
     };
-    const respond = (message: { type?: string }) => {
-      if (message.type === 'GET_SELECTION') return { ok: true, text: '' };
+    const respond = (message: { type?: string; text?: string }) => {
+      if (message.type === 'GET_SELECTION') return { ok: true, text: '', ...course.selection };
       if (message.type === 'GET_DECKS') return { ok: true, decks: [] };
       if (message.type === 'GET_ACTIVE_SITE') return { ok: true, pattern: 'https://example.test/*', enabled: false };
       if (message.type === 'GET_SHORTCUTS') return { ok: true, saveShortcut: 'Ctrl+Shift+L', translateShortcut: 'Alt+Shift+L' };
       if (message.type === 'GET_RECENT_LOOKUPS') return {
         ok: true,
-        items: [{ text: 'resilient', translation: 'kiên cường', sourceLanguage: 'en', targetLanguage: 'vi', kind: 'create', status: 'created', timestamp: 0 }],
+        items: (course.recent ?? [{ text: 'resilient', translation: 'kiên cường', sourceLanguage: 'en', kind: 'create' }])
+          .map(item => ({ ...item, targetLanguage: 'vi', status: item.kind === 'create' ? 'created' : 'translated', timestamp: 0 })),
       };
-      if (message.type === 'GET_COURSE_LOCALE') return { ok: true, nativeLanguage: 'vi', targetLanguage: 'ko' };
-      if (message.type === 'GET_DUE_COUNT') return { ok: false };
+      if (message.type === 'GET_COURSE_LOCALE') return { ok: true, nativeLanguage: 'vi', targetLanguage: course.targetLanguage };
+      if (message.type === 'GET_DUE_COUNT') return typeof course.dueCount === 'number' ? { ok: true, count: course.dueCount } : { ok: false };
+      if (message.type === 'TRANSLATE_SELECTION' && course.translate) return { ok: true, text: message.text, inlineShown: true, ...course.translate };
       if (message.type === 'ADD_SELECTION') return { ok: true, id: 'visual-capture' };
       return { ok: true };
     };
@@ -71,7 +82,7 @@ async function mockChrome(page: Page, theme: typeof themes[number]) {
       storage: { sync: storage, local: storage, session: storage },
       permissions: { request: (_value: unknown, callback: (value: boolean) => void) => callback(true), remove: (_value: unknown, callback: (value: boolean) => void) => callback(true) },
     };
-  }, theme);
+  }, { ...theme, course });
 }
 
 async function emitPopupState(page: Page, state: typeof popupStates[number]) {
@@ -108,7 +119,7 @@ for (const theme of themes) {
     for (const state of popupStates) {
       await page.goto(`${origin}/popup.html`);
       await expect(page.locator('html')).toHaveAttribute('data-theme-family', theme.family);
-      await expect(page.locator('#target-language-label')).toHaveText('Tiếng Hàn');
+      await expect(page.locator('#target-language-label')).toHaveText('Tiếng Anh');
       await emitPopupState(page, state);
       if (state === 'loading') await expect(page.locator('#status')).toContainText('Đang tạo flashcard');
       if (state === 'created' || state === 'existing') await expect(page.locator('#result-card')).toBeVisible();
@@ -129,6 +140,87 @@ for (const theme of themes) {
   });
 }
 
+const koreanCourse: CourseFixture = {
+  targetLanguage: 'ko',
+  selection: { text: '결정', pageLanguage: 'ko' },
+  dueCount: 18,
+  recent: [
+    { text: '확인', translation: 'xác nhận', sourceLanguage: 'ko', kind: 'create' },
+    { text: '준비', translation: 'chuẩn bị', sourceLanguage: 'ko', kind: 'translate' },
+  ],
+};
+
+for (const theme of themes) {
+  test(`extension popup shows a Korean course in ${theme.family} ${theme.scheme}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 380, height: 640 });
+    await page.emulateMedia({ colorScheme: theme.scheme, reducedMotion: 'reduce' });
+    await mockChrome(page, theme, koreanCourse);
+    await page.goto(`${origin}/popup.html`);
+    await expect(page.locator('html')).toHaveAttribute('data-theme-family', theme.family);
+    await expect(page.locator('#target-language-label')).toHaveText('ko한국어');
+    await expect(page.locator('#target-language-label')).toHaveAttribute('aria-label', 'Ngôn ngữ đích: Tiếng Hàn');
+    await expect(page.locator('#language-banner')).toContainText('Ngôn ngữ trang: 한국어');
+    await expect(page.locator('#meanings-language')).toHaveText('Nghĩa bằng Tiếng Việt');
+    await expect(page.locator('#course-route')).toContainText('Lưu vào khóa Tiếng Hàn');
+    await expect(page.locator('#due-count-suffix')).toHaveText('18 thẻ 한국어 đến hạn');
+    await expect(page.locator('#selection')).toHaveAttribute('lang', 'ko');
+    // The popup selects the loaded text for quick retyping; clear that so the
+    // capture shows the board's resting field.
+    await page.locator('#selection').evaluate((field: HTMLTextAreaElement) => { field.setSelectionRange(0, 0); field.blur(); });
+    await attach(page, testInfo, `extension-popup-language-${theme.family}-${theme.scheme}-detected`);
+
+    await page.locator('#selection-form').evaluate((form: HTMLFormElement) => form.requestSubmit());
+    await expect(page.locator('#status')).toContainText('Đã bắt đầu tạo');
+    await page.evaluate(() => {
+      for (const listener of (window as any).__extensionListeners) listener({ type: 'QUICK_ADD_STATUS', payload: {
+        id: 'visual-capture', status: 'created', text: '결정', translation: 'quyết định', phonetic: 'gyeol·jeong',
+        exampleSentence: '빠른 결정이 필요해요.', exampleTranslation: 'Cần một quyết định nhanh.', sourceLanguage: 'ko', inlineShown: true,
+      } });
+    });
+    await expect(page.locator('#result-badge')).toHaveText('Đã lưu vào 한국어');
+    await expect(page.locator('#result-word')).toHaveAttribute('lang', 'ko');
+    await expect(page.locator('#result-example strong')).toHaveText('결정');
+    await attach(page, testInfo, `extension-popup-language-${theme.family}-${theme.scheme}-saved`);
+  });
+
+  test(`extension popup flags a selection outside the course language in ${theme.family} ${theme.scheme}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 380, height: 640 });
+    await page.emulateMedia({ colorScheme: theme.scheme, reducedMotion: 'reduce' });
+    await mockChrome(page, theme, {
+      ...koreanCourse,
+      selection: { text: 'rendez-vous', pageLanguage: '' },
+      translate: { translation: 'cuộc hẹn', sourceLanguage: 'fr' },
+    });
+    await page.goto(`${origin}/popup.html`);
+    await expect(page.locator('#selection')).toHaveValue('rendez-vous');
+    await page.locator('#translate-button').click();
+    await expect(page.locator('#language-banner')).toHaveAttribute('data-tone', 'warn');
+    await expect(page.locator('#language-banner')).toContainText('Đoạn chọn bằng Français');
+    await expect(page.locator('#result-language-note')).toContainText('Có vẻ là Français');
+    await expect(page.locator('#result-save')).toHaveText('+ Lưu vào 한국어');
+    await attach(page, testInfo, `extension-popup-language-${theme.family}-${theme.scheme}-mismatch`);
+  });
+
+  test(`extension popup shows a Japanese reading in ${theme.family} ${theme.scheme}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 380, height: 640 });
+    await page.emulateMedia({ colorScheme: theme.scheme, reducedMotion: 'reduce' });
+    await mockChrome(page, theme, {
+      targetLanguage: 'ja',
+      selection: { text: '締め切り', pageLanguage: 'ja' },
+      translate: { translation: 'hạn chót', sourceLanguage: 'ja', romanization: 'Shimekiri' },
+      dueCount: 9,
+      recent: [],
+    });
+    await page.goto(`${origin}/popup.html`);
+    await expect(page.locator('#language-banner')).toContainText('Ngôn ngữ trang: 日本語');
+    await page.locator('#translate-button').click();
+    await expect(page.locator('#result-badge')).toHaveText('Chưa lưu');
+    await expect(page.locator('#result-phonetic')).toHaveText('Shimekiri');
+    await expect(page.locator('#result-save')).toHaveText('+ Lưu vào 日本語');
+    await attach(page, testInfo, `extension-popup-language-${theme.family}-${theme.scheme}-reading`);
+  });
+}
+
 test('extension in-page renderer captures result and quota states', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.setContent('<main><h1>Article title</h1><p>A resilient community rebuilt the bridge.</p></main>');
@@ -143,6 +235,26 @@ test('extension in-page renderer captures result and quota states', async ({ pag
     await attach(page, testInfo, `extension-in-page-${name}`);
   }
 });
+
+for (const scheme of ['light', 'dark'] as const) {
+  test(`extension in-page renderer draws the Crystal Star wings and Lumi in ${scheme}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 1200, height: 760 });
+    await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
+    await page.setContent('<main><h1>The flood that rewrote a city’s plans overnight</h1><p>Neighbourhood groups demanded an immediate response from the council.</p></main>');
+    await page.addScriptTag({ path: join(extensionRoot, 'background-ui.js') });
+    await page.evaluate(payload => (window as any).LingoFlashExtensionUi.renderInlineBubble(payload), {
+      status: 'created', text: 'immediate', translation: 'ngay lập tức', phonetic: '/ɪˈmiːdiət/', explanation: 'Xảy ra hoặc được thực hiện ngay, không chậm trễ.',
+      exampleSentence: 'Neighbourhood groups demanded an immediate response.', exampleTranslation: 'Các nhóm dân cư yêu cầu phản hồi ngay lập tức.',
+      modeLabel: 'TẠO + LƯU • 1 AI REQUEST', version: '1.6.4', themeFamily: 'crystal', colorScheme: scheme, anchor: { left: 196, bottom: 364 }, bubbleDurationMs: 0,
+    });
+    const host = page.locator('#lingoflash-inline-translation-host');
+    await expect(host).toBeVisible();
+    await expect(host.locator('.wings svg polygon').first()).toBeAttached();
+    await expect(host.locator('.lumi img')).toHaveJSProperty('complete', true);
+    await expect(host.locator('.lumi img')).not.toHaveJSProperty('naturalWidth', 0);
+    await attach(page, testInfo, `extension-in-page-crystal-${scheme}`);
+  });
+}
 
 test('extension in-page renderer captures a Korean selection with Vietnamese quick translation', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -172,5 +284,48 @@ test('extension in-page renderer captures a Korean selection with Vietnamese qui
   await expect(result).toContainText('Chỉ dịch • không lưu • không dùng quota AI');
   await expect(host.getByRole('button', { name: 'Nghe phát âm 결정' })).toBeVisible();
   await expect(host.getByRole('button', { name: 'Đóng kết quả SonFlash' })).toBeVisible();
+  await expect(result).not.toContainText('Lưu vào');
   await attach(page, testInfo, 'extension-in-page-korean-vietnamese-translation');
 });
+
+const languageBubbleThemes = [
+  { family: 'classic', scheme: 'dark' },
+  { family: 'classic', scheme: 'light' },
+  { family: 'crystal', scheme: 'dark' },
+  { family: 'crystal', scheme: 'light' },
+] as const;
+
+for (const { family, scheme } of languageBubbleThemes) {
+  test(`extension in-page renderer shows a Korean course word in ${family} ${scheme}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 1200, height: 760 });
+    await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
+    await page.setContent('<body style="margin:0;background:#ffffff;color:#16181d"><main lang="ko" style="max-width:720px;margin:96px 0 0 150px;font:18px/1.9 sans-serif"><h1>기준금리 동결에 시장은 안도… 하반기 전망은 엇갈려</h1><p>중앙은행이 기준금리를 동결하기로 <mark id="selected-word">결정</mark>하면서 금융시장은 일단 안도하는 분위기다.</p></main></body>');
+    await page.addScriptTag({ path: join(extensionRoot, 'background-ui.js') });
+    const selection = await page.evaluate(() => {
+      const selectedWord = document.getElementById('selected-word');
+      if (!selectedWord?.firstChild) throw new Error('Korean selection fixture is unavailable.');
+      const range = document.createRange();
+      range.selectNodeContents(selectedWord);
+      window.getSelection()?.removeAllRanges();
+      window.getSelection()?.addRange(range);
+      return (window as any).LingoFlashExtensionUi.captureSelectionFromPage();
+    });
+    expect(selection.pageLanguage).toBe('ko');
+
+    await page.evaluate(payload => (window as any).LingoFlashExtensionUi.renderInlineBubble(payload), {
+      status: 'translated', text: selection.text, translation: 'quyết định', sourceLanguage: 'ko', translationLanguage: 'vi',
+      pageLanguage: selection.pageLanguage, romanization: 'gyeoljeong', context: selection.context, speechLocale: 'ko-KR',
+      courseLanguage: 'ko', nativeLanguage: 'vi', saveId: 'visual_save', modeLabel: 'DỊCH NHANH • GOOGLE', version: '1.6.4',
+      themeFamily: family, colorScheme: scheme, anchor: selection.anchor, bubbleDurationMs: 0,
+    });
+    const host = page.locator('#lingoflash-inline-translation-host');
+    const result = host.getByRole('status').filter({ hasText: 'quyết định' });
+    await expect(result).toContainText('Trang bằng 한국어 · tự nhận diện');
+    await expect(result).toContainText('gyeoljeong');
+    await expect(result).toContainText('Trong bài:');
+    await expect(host.getByRole('button', { name: 'Lưu vào 한국어' })).toBeVisible();
+    await expect(result).toContainText('Tiếng Việt');
+    await expect(host.locator('.s')).toHaveAttribute('lang', 'ko');
+    await attach(page, testInfo, `extension-in-page-language-${family}-${scheme}`);
+  });
+}

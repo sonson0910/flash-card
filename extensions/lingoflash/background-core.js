@@ -19,6 +19,8 @@
   const TRANSLATE_COMMAND_ID = 'translate-only-selection';
   const JOB_KEY_PREFIX = 'lingoflash_quick_add_job_';
   const RETRY_KEY_PREFIX = 'lingoflash_quick_add_retry_';
+  const INLINE_SAVE_KEY_PREFIX = 'lingoflash_inline_save_';
+  const INLINE_SAVE_TTL_MS = 30 * 60_000;
   const JOB_ALARM_PREFIX = 'lingoflash_quick_add_timeout_';
   // Keep the background job alive through the bridge's full two-attempt AI
   // budget, including all bounded pre-submit waits and final cleanup.
@@ -112,6 +114,25 @@
       && Number.isSafeInteger(receipt.expiresAt) && receipt.expiresAt > Date.now() ? receipt : null;
   };
   const clearRetry = async tabId => { try { await apiCall(transientStorage, 'remove', retryKey(tabId)); } catch {} };
+  // A quick translation shown in a page can offer "Save" once. The bubble only
+  // holds an opaque id; the text and course stay here, so a save request can
+  // only ever save the word this tab was shown, into the course it named.
+  const inlineSaveKey = tabId => `${INLINE_SAVE_KEY_PREFIX}${tabId}`;
+  const issueInlineSave = async (tabId, text, courseLanguage) => {
+    if (!Number.isSafeInteger(tabId) || !courseLanguage) return '';
+    const id = createIntentId();
+    try {
+      await apiCall(transientStorage, 'set', { [inlineSaveKey(tabId)]: { id, text, courseLanguage, expiresAt: Date.now() + INLINE_SAVE_TTL_MS } });
+      return id;
+    } catch { return ''; }
+  };
+  const takeInlineSave = async (tabId, id) => {
+    const stored = (await apiCall(transientStorage, 'get', inlineSaveKey(tabId)))?.[inlineSaveKey(tabId)];
+    if (!stored || typeof id !== 'string' || stored.id !== id || typeof stored.text !== 'string'
+      || !Number.isSafeInteger(stored.expiresAt) || stored.expiresAt <= Date.now()) return null;
+    try { await apiCall(transientStorage, 'remove', inlineSaveKey(tabId)); } catch {}
+    return stored;
+  };
   const readJob = async id => (await apiCall(transientStorage,'get',key(id)))?.[key(id)] ?? null;
   const removeJob = async id => {
     try {
@@ -356,6 +377,15 @@
     const metadata = await readCourseLocaleMetadata();
     return metadata && metadata.scope === confirmedCourseLocaleScope ? metadata.targetLanguage : 'en';
   };
+  // The confirmed active course, or null while no app session has confirmed
+  // one. The in-page bubble names it; it never guesses a course.
+  const confirmedCourseLocale = async () => {
+    if (!confirmedCourseLocaleScope) return null;
+    try {
+      const metadata = await readCourseLocaleMetadata();
+      return metadata && metadata.scope === confirmedCourseLocaleScope ? metadata : null;
+    } catch { return null; }
+  };
   const clearAlarm = async id => { try { await apiCall(extensionApi.alarms,'clear',alarmName(id)); } catch {} };
   const closeTab = async id => { if (typeof id==='number') try { await apiCall(extensionApi.tabs,'remove',id); } catch {} };
   const cleanup = job => {
@@ -452,7 +482,9 @@
     if (typeof tabId!=='number') return {ok:false,error:'Không tìm thấy tab để hiển thị kết quả.'};
     try {
       const settings = await readSettings();
-      const result = await apiCall(extensionApi.scripting,'executeScript',{target:{tabId},func:renderInlineBubble,args:[{version:VERSION,...payload,bubbleDurationMs:settings.bubbleDurationMs,autoSpeak:settings.autoSpeak,themeFamily:settings.themeFamily,colorScheme:settings.colorScheme}]});
+      const course = await confirmedCourseLocale();
+      const courseFields = course ? {courseLanguage:course.targetLanguage,nativeLanguage:course.nativeLanguage} : {};
+      const result = await apiCall(extensionApi.scripting,'executeScript',{target:{tabId},func:renderInlineBubble,args:[{version:VERSION,...courseFields,...payload,bubbleDurationMs:settings.bubbleDurationMs,autoSpeak:settings.autoSpeak,themeFamily:settings.themeFamily,colorScheme:settings.colorScheme}]});
       const renderResult = Array.isArray(result) ? result[0]?.result : result;
       if (renderResult?.ok !== true) {
         return {ok:false,error:renderResult?.error || 'Không thể xác nhận kết quả đã hiển thị trên trang.'};
@@ -494,18 +526,19 @@
   const activeTab = async () => { const tabs=await apiCall(extensionApi.tabs,'query',{active:true,currentWindow:true}); return Array.isArray(tabs)?tabs[0]??null:null; };
   const capture = async (tabId,supplied='') => {
     const direct=selectionValidation(supplied);
-    if (typeof tabId !== 'number') return {text:direct.ok?direct.text:'',anchor:null,context:''};
+    if (typeof tabId !== 'number') return {text:direct.ok?direct.text:'',anchor:null,context:'',pageLanguage:''};
     try {
       const r=await apiCall(extensionApi.scripting,'executeScript',{target:{tabId},func:captureSelectionFromPage});
       const capturedText=Array.isArray(r)?r[0]?.result?.text??'':'';
       const captured=selectionValidation(capturedText);
+      const pageLanguage=normalizeDetectedLanguage(Array.isArray(r)?r[0]?.result?.pageLanguage:'').replace(/^auto$/,'');
       if (!direct.ok) {
-        return {text:captured.ok?captured.text:'',anchor:Array.isArray(r)?r[0]?.result?.anchor??null:null,context:Array.isArray(r)?r[0]?.result?.context??'':''};
+        return {text:captured.ok?captured.text:'',anchor:Array.isArray(r)?r[0]?.result?.anchor??null:null,context:Array.isArray(r)?r[0]?.result?.context??'':'',pageLanguage:captured.ok?pageLanguage:''};
       }
       const sameSelection=captured.ok && captured.text===direct.text;
-      return {text:direct.text,anchor:sameSelection&&Array.isArray(r)?r[0]?.result?.anchor??null:null,context:sameSelection&&Array.isArray(r)?r[0]?.result?.context??'':''};
+      return {text:direct.text,anchor:sameSelection&&Array.isArray(r)?r[0]?.result?.anchor??null:null,context:sameSelection&&Array.isArray(r)?r[0]?.result?.context??'':'',pageLanguage:sameSelection?pageLanguage:''};
     } catch {
-      return {text:direct.ok?direct.text:'',anchor:null,context:''};
+      return {text:direct.ok?direct.text:'',anchor:null,context:'',pageLanguage:''};
     }
   };
   const tabPageInfo = async tab => {
@@ -524,7 +557,7 @@
     if (typeof tab?.id!=='number') throw new Error('Không tìm thấy tab đang hoạt động.');
     const c=await capture(tab.id,suppliedText), v=selectionValidation(c.text); if (!v.ok) throw new Error(v.error);
     const {sourceUrl,pageTitle}=await tabPageInfo(tab);
-    return {sourceTabId:tab.id,text:v.text,anchor:c.anchor,context:c.context || '',sourceUrl,pageTitle};
+    return {sourceTabId:tab.id,text:v.text,anchor:c.anchor,context:c.context || '',pageLanguage:c.pageLanguage || '',sourceUrl,pageTitle};
   };
 
   const appOriginIsValid = sender => {
@@ -810,7 +843,10 @@
   const googleTranslate = async text => {
     const settings = await readSettings();
     const u=new URL('https://translate.googleapis.com/translate_a/single');
-    u.search=new URLSearchParams({client:'gtx',sl:settings.quickTranslateSource,tl:settings.quickTranslateTarget,dt:'t',q:text}).toString();
+    // dt=rm adds a transliteration chunk ([null,null,target,source]) after the
+    // translated chunks; the source half is the reading of a Korean, Japanese
+    // or Chinese selection.
+    u.search=new URLSearchParams([['client','gtx'],['sl',settings.quickTranslateSource],['tl',settings.quickTranslateTarget],['dt','t'],['dt','rm'],['q',text]]).toString();
     const controller = typeof globalThis.AbortController === 'function' ? new globalThis.AbortController() : null;
     let timeoutId = null;
     const timeout = new Promise((_, reject) => {
@@ -830,7 +866,8 @@
         const p=await response.json(), chunks=Array.isArray(p?.[0])?p[0]:[];
         const t=chunks.map(x=>Array.isArray(x)&&typeof x[0]==='string'?x[0]:'').join('').trim();
         if (!t) throw new Error('Google Translate trả về kết quả trống.');
-        return { text: t, sourceLanguage: normalizeDetectedLanguage(p?.[2]) || settings.quickTranslateSource || 'auto' };
+        const reading=chunks.find(x=>Array.isArray(x)&&x[0]==null&&typeof x[3]==='string'&&x[3].trim());
+        return { text: t, sourceLanguage: normalizeDetectedLanguage(p?.[2]) || settings.quickTranslateSource || 'auto', romanization: reading ? bounded(reading[3],256) : '' };
       })();
       return await Promise.race([request, timeout]);
     } finally {
@@ -843,8 +880,15 @@
       const translated=await googleTranslate(s.text);
       const settings=await readSettings();
       await recordRecentLookup({text:s.text,translation:translated.text,sourceLanguage:translated.sourceLanguage,targetLanguage:settings.quickTranslateTarget,kind:'translate',status:'translated',timestamp:Date.now()});
-      const inline=await show(s.sourceTabId,{status:'translated',modeLabel:'DỊCH NHANH • GOOGLE',text:s.text,anchor:s.anchor,translation:bounded(translated.text,1024),speechLocale:speechLocaleForLanguage(translated.sourceLanguage)});
-      return {text:s.text,translation:translated.text,sourceLanguage:translated.sourceLanguage,inlineShown:inline.ok};
+      // Offer "Save" in the page only for a confirmed course whose language
+      // the selection is in; anything else stays a translation, as before.
+      const course=await confirmedCourseLocale();
+      const detected=String(translated.sourceLanguage||'').split('-')[0];
+      const saveId=course && detected===course.targetLanguage ? await issueInlineSave(s.sourceTabId,s.text,course.targetLanguage) : '';
+      const inline=await show(s.sourceTabId,{status:'translated',modeLabel:'DỊCH NHANH • GOOGLE',text:s.text,anchor:s.anchor,translation:bounded(translated.text,1024),speechLocale:speechLocaleForLanguage(translated.sourceLanguage),
+        sourceLanguage:translated.sourceLanguage,translationLanguage:settings.quickTranslateTarget,romanization:translated.romanization||'',context:bounded(s.context,500),pageLanguage:s.pageLanguage||'',
+        ...(saveId?{saveId}:{})});
+      return {text:s.text,translation:translated.text,sourceLanguage:translated.sourceLanguage,romanization:translated.romanization||'',inlineShown:inline.ok};
     }
     catch(e){ await show(s.sourceTabId,{status:'error',modeLabel:'DỊCH NHANH • FREE',text:s.text,anchor:s.anchor,message:e instanceof Error?e.message:'Không thể dịch đoạn này.'}); throw e; }
   };
@@ -947,7 +991,7 @@
         if (!translated.text) try { translated = await googleTranslate(job.text); } catch {}
         const t=bounded(translated.text,256);
         await recordRecentLookup({text:job.text,translation:t,sourceLanguage:translated.sourceLanguage,targetLanguage:'vi',kind:'create',status:r.status,timestamp:Date.now()});
-        const displayed = await show(job.sourceTabId,{status:r.status,modeLabel:'TẠO + LƯU • 1 AI REQUEST',text:job.text,anchor:job.anchor,translation:t,speechLocale:speechLocaleForLanguage(translated.sourceLanguage),phonetic:r.phonetic,explanation:r.explanation,exampleSentence:r.exampleSentence,exampleTranslation:r.exampleTranslation,aiGenerated:r.aiGenerated});
+        const displayed = await show(job.sourceTabId,{status:r.status,modeLabel:'TẠO + LƯU • 1 AI REQUEST',text:job.text,anchor:job.anchor,translation:t,speechLocale:speechLocaleForLanguage(translated.sourceLanguage),sourceLanguage:translated.sourceLanguage,phonetic:r.phonetic,explanation:r.explanation,exampleSentence:r.exampleSentence,exampleTranslation:r.exampleTranslation,aiGenerated:r.aiGenerated});
         inlineShown = displayed.ok;
         notifyPopupStatus({
           id: job.id,
@@ -1085,7 +1129,7 @@
 
   const handle = async (m,sender) => {
     const type=m&&typeof m==='object'?m.type:'';
-    if(type==='GET_SELECTION'){const t=await activeTab(),c=await capture(t?.id);return{ok:true,text:c.text};}
+    if(type==='GET_SELECTION'){const t=await activeTab(),c=await capture(t?.id);return{ok:true,text:c.text,pageLanguage:c.text?c.pageLanguage||'':''};}
     if(type==='TRANSLATE_SELECTION'){const t=await activeTab();return{ok:true,...await translateOnly({tabId:t?.id,suppliedText:m.text??''})};}
     if(type==='RETRY_QUICK_ADD'){
       // The in-page bubble is a content script and always has sender.tab. The
@@ -1098,6 +1142,17 @@
       const receipt=await readRetry(tabId);
       if(!receipt || receipt.id!==m.id) throw new Error('Lượt thử lại đã hết hạn. Hãy chọn lại từ.');
       return {ok:true,...await quickAdd({tabId,retryReceipt:receipt})};
+    }
+    if(type==='INLINE_SELECTION_ADD'){
+      // Sent only by the Save button of a quick translation drawn in this tab.
+      // It names the one-time id issued with that translation; the word and
+      // course come from the stored receipt, never from the message.
+      if(typeof sender?.tab?.id!=='number') throw new Error('Không tìm thấy tab nguồn để lưu.');
+      const receipt=await takeInlineSave(sender.tab.id,m.id);
+      if(!receipt) throw new Error('Lượt lưu này đã hết hạn. Hãy chọn lại từ.');
+      const course=await confirmedCourseLocale();
+      if(!course || course.targetLanguage!==receipt.courseLanguage) throw new Error('Khóa học đang dùng đã thay đổi. Hãy chọn lại từ.');
+      return {ok:true,...await quickAdd({tabId:sender.tab.id,suppliedText:receipt.text})};
     }
     if(type==='ADD_SELECTION'){const t=await activeTab();return{ok:true,...await quickAdd({tabId:t?.id,suppliedText:m.text??'',requestedDeck:m.requestedDeck})};}
     if(type==='OPEN_APP')return{ok:true,...await openApp(typeof m.target==='string'?m.target:undefined)};

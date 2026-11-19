@@ -61,3 +61,14 @@ test('ports Crystal Star chamfered corners onto the card shell, inputs and butto
   assert.match(css, /:root\[data-theme-family="crystal"\][^{]*\.secondary-button[^{]*\{[^}]*clip-path:\s*var\(--sf-chamfer-sm\)/);
   assert.doesNotMatch(css, /^fieldset\s*\{[^}]*clip-path/m);
 });
+
+test('options footer keeps the privacy link and adds a shortcuts link that opens the browser shortcuts page', () => {
+  assert.match(html, /browser-extension-privacy\.html[^>]*data-i18n="optionsPrivacyLink"/);
+  assert.match(html, /<button id="open-shortcuts" class="footer-link" type="button" data-i18n="optionsShortcutsLink">/);
+  assert.ok(html.indexOf('optionsPrivacyLink') < html.indexOf('optionsShortcutsLink'));
+  assert.ok(html.indexOf('optionsShortcutsLink') < html.indexOf('id="save-settings"'));
+  assert.match(source, /type: 'OPEN_SHORTCUTS'/);
+  assert.match(source, /type: 'GET_SHORTCUTS'/);
+  assert.match(source, /shortcutSettingsAvailable === false/);
+  assert.match(css, /\.footer-link\[hidden\] \{ display: none; \}/);
+});

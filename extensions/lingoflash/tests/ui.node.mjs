@@ -297,6 +297,24 @@ test('themes the bubble from the saved family and scheme, resolving system to th
   assert.equal(systemFrame?.dataset?.scheme, 'light');
 });
 
+test('draws the Crystal Star wings and footer Lumi from inlined art, never from an extension file', () => {
+  const crystal = renderBubbleForToneAssertions({ status: 'created', text: 'resilient', translation: 'bền bỉ', themeFamily: 'crystal', colorScheme: 'dark' });
+  const wings = crystal.nodes.find(node => node.className === 'wings');
+  const lumi = crystal.nodes.find(node => node.className === 'lumi');
+  const lumiImage = lumi?.children.find(node => node.tagName === 'IMG');
+  assert.equal(crystal.result?.ok, true);
+  assert.equal(wings?.attributes['aria-hidden'], 'true');
+  assert.ok(wings?.children[0]?.tagName === 'SVG' && wings.children[0].children.some(node => node.tagName === 'POLYGON'));
+  assert.equal(lumi?.attributes['aria-hidden'], 'true');
+  assert.match(lumiImage?.src ?? '', /^data:image\/webp;base64,/);
+  assert.equal(lumiImage?.alt, '');
+  assert.equal(typeof lumiImage?.onerror, 'function');
+  assert.doesNotMatch(uiSource, /chrome-extension:|runtime\.getURL|assets\/lumi/);
+
+  const classic = renderBubbleForToneAssertions({ status: 'created', text: 'resilient', translation: 'bền bỉ', themeFamily: 'classic', colorScheme: 'dark' });
+  assert.equal(classic.nodes.some(node => node.className === 'wings' || node.className === 'lumi'), false);
+});
+
 test('gives a duplicate (existing) card a distinct amber badge tone, never the created tone', () => {
   const { result, nodes } = renderBubbleForToneAssertions({ status: 'existing', text: 'resilient', translation: 'bền bỉ' });
   const badge = nodes.find(node => node.className === 'ok');
@@ -603,4 +621,106 @@ test('caps context scanning and never returns more than 500 characters', () => {
 
   assert.equal(result.text, 'resilient');
   assert.ok(result.context.length <= 500);
+});
+
+const renderLanguageBubble = payload => {
+  class FakeNode {
+    constructor(tagName = '') {
+      this.tagName = tagName.toUpperCase();
+      this.children = [];
+      this.style = {};
+      this.dataset = {};
+      this.attributes = {};
+      this.isConnected = true;
+      this.textContent = '';
+      this.disabled = false;
+    }
+    setAttribute(name, value) { this.attributes[name] = String(value); }
+    append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
+    attachShadow() { this.shadowRoot = new FakeNode(); return this.shadowRoot; }
+    remove() { this.isConnected = false; }
+  }
+  const sent = [];
+  const isolated = {
+    Array, Intl, Math, Number, Object, String, URL,
+    document: {
+      documentElement: new FakeNode('html'),
+      getElementById: () => null,
+      createElement: tagName => new FakeNode(tagName),
+      createElementNS: (_namespace, tagName) => new FakeNode(tagName),
+      createTextNode: text => Object.assign(new FakeNode('#text'), { textContent: String(text) }),
+    },
+    chrome: { runtime: { sendMessage: (message, callback) => { sent.push(message); callback?.({ ok: true }); } } },
+    innerWidth: 1280,
+    innerHeight: 720,
+    speechSynthesis: { speak() {}, cancel() {} },
+    SpeechSynthesisUtterance: class { constructor(text) { this.text = text; } },
+  };
+  isolated.globalThis = isolated;
+  vm.createContext(isolated);
+  const sourceContext = { globalThis: {} };
+  vm.createContext(sourceContext);
+  vm.runInContext(uiSource, sourceContext, { filename: 'background-ui.js' });
+  const renderer = vm.runInContext(`(${sourceContext.globalThis.LingoFlashExtensionUi.renderInlineBubble.toString()})`, isolated);
+  const result = renderer({ bubbleDurationMs: 0, ...payload });
+  const collect = node => [node, ...(node.children ?? []).flatMap(collect), ...(node.shadowRoot ? collect(node.shadowRoot) : [])];
+  const nodes = collect(isolated.document.documentElement);
+  const text = node => node.children.length ? node.children.map(text).join('') : node.textContent;
+  return { result, nodes, sent, text };
+};
+
+const koreanTranslation = {
+  status: 'translated', text: '결정', translation: 'quyết định', courseLanguage: 'ko', nativeLanguage: 'vi',
+  sourceLanguage: 'ko', translationLanguage: 'vi', pageLanguage: 'ko', romanization: 'gyeoljeong',
+  context: '중앙은행이 기준금리를 동결하기로 결정하면서 금융시장은 일단 안도하는 분위기다.',
+};
+
+test('shows a language-course translation with its language, reading, page context and course', () => {
+  const { result, nodes, text } = renderLanguageBubble({ ...koreanTranslation, saveId: 'save_1' });
+  const word = nodes.find(node => node.className === 's');
+  const languageLine = nodes.find(node => node.className === 'lang-line');
+  const reading = nodes.find(node => node.className === 'p');
+  const context = nodes.find(node => node.className === 'q');
+  const save = nodes.find(node => node.dataset?.role === 'save');
+  const meanings = nodes.find(node => node.className === 'n');
+
+  assert.equal(result?.ok, true);
+  assert.equal(word?.attributes.lang, 'ko');
+  assert.equal(text(languageLine), 'Trang bằng 한국어 · tự nhận diện');
+  assert.equal(reading?.textContent, 'gyeoljeong');
+  assert.equal(context?.children.find(node => node.tagName === 'STRONG')?.textContent, '결정');
+  assert.equal(text(context), koreanTranslation.context);
+  assert.equal(text(save), 'Lưu vào 한국어');
+  assert.equal(text(meanings), 'Nghĩa bằngTiếng Việt');
+  assert.equal(nodes.some(node => node.className === 'ok'), false);
+});
+
+test('sends the in-page save only for a real click, with the one-time id and never the word', () => {
+  const { nodes, sent } = renderLanguageBubble({ ...koreanTranslation, saveId: 'save_1' });
+  const save = nodes.find(node => node.dataset?.role === 'save');
+
+  save.onclick({ isTrusted: false });
+  assert.deepEqual(sent, []);
+  save.onclick({ isTrusted: true });
+  assert.equal(sent.length, 1);
+  assert.equal(JSON.stringify(sent[0]), JSON.stringify({ type: 'INLINE_SELECTION_ADD', id: 'save_1' }));
+});
+
+test('keeps the plain translated badge when the background offers no save', () => {
+  const { nodes, text } = renderLanguageBubble({ ...koreanTranslation, sourceLanguage: 'fr', pageLanguage: '' });
+  assert.equal(nodes.some(node => node.dataset?.role === 'save'), false);
+  assert.equal(nodes.find(node => node.className === 'ok')?.textContent, 'Chỉ dịch • không lưu • không dùng quota AI');
+  assert.equal(text(nodes.find(node => node.className === 'lang-line')), 'Đoạn chọn bằng Français · tự nhận diện');
+
+  const english = renderLanguageBubble({ status: 'translated', text: 'immediate', translation: 'ngay lập tức', courseLanguage: 'en', nativeLanguage: 'vi', sourceLanguage: 'en', saveId: 'save_2' });
+  assert.equal(english.text(english.nodes.find(node => node.dataset?.role === 'save')), 'Lưu flashcard');
+  assert.equal(english.nodes.find(node => node.className === 'meta')?.children[0]?.textContent, '1 lượt AI');
+  assert.equal(english.nodes.some(node => node.className === 'lang-line'), false);
+
+  const quoted = renderLanguageBubble({
+    status: 'translated', text: 'immediate', translation: 'ngay lập tức',
+    context: 'Residents and neighbourhood groups demanded an immediate response from the council, and the mayor promised a plan.',
+  });
+  assert.equal(quoted.text(quoted.nodes.find(node => node.className === 'q')), '…groups demanded an immediate response from the…');
 });

@@ -606,6 +606,7 @@
   // course's native language (07.5) without needing a page reload.
   let localeOverrideCatalog = null;
   let activeCourseTargetLanguage = '';
+  let activeCourseNativeLanguage = '';
   let courseLocaleMetadataGeneration = 0;
   let courseLocaleMetadataScope = '';
   let metadataInvalidationEpoch = 0;
@@ -617,6 +618,7 @@
   const clearCourseLocaleState = () => {
     localeOverrideCatalog = null;
     activeCourseTargetLanguage = '';
+    activeCourseNativeLanguage = '';
     courseLocaleMetadataGeneration = 0;
     courseLocaleMetadataScope = '';
   };
@@ -709,6 +711,7 @@
         && courseLocaleMetadataScope && scope && courseLocaleMetadataScope !== scope) return false;
       const nativeLanguage = response?.ok ? normalizeCourseNativeLanguage(response.nativeLanguage) : '';
       activeCourseTargetLanguage = response?.ok ? normalizeCourseTargetLanguage(response.targetLanguage) : '';
+      activeCourseNativeLanguage = activeCourseTargetLanguage ? nativeLanguage : '';
       if (!nativeLanguage) {
         localeOverrideCatalog = null;
         courseLocaleMetadataGeneration = generation;
@@ -737,6 +740,20 @@
   };
 
   const getActiveCourseTargetLanguage = () => activeCourseTargetLanguage;
+  const getActiveCourseNativeLanguage = () => activeCourseNativeLanguage;
+
+  // A language's own name for itself ("한국어", "Français"), for showing which
+  // language a word or course is in. Falls back to the code where the browser
+  // has no display name for it.
+  const languageAutonym = value => {
+    const code = /^([a-z]{2,3})(?:[-_]|$)/i.exec(String(value || '').trim())?.[1]?.toLowerCase() || '';
+    if (!code) return '';
+    try {
+      const name = new Intl.DisplayNames([code], { type: 'language' }).of(code);
+      if (typeof name === 'string' && name && name.toLowerCase() !== code) return name.charAt(0).toLocaleUpperCase(code) + name.slice(1);
+    } catch {}
+    return code;
+  };
 
   // Chrome/Firefox resolve getMessage() against the browser's own UI locale
   // automatically; outside a real extension runtime (unit tests, Node) this
@@ -878,6 +895,8 @@
     applyCourseUiLocale,
     invalidateExtensionMetadata,
     getActiveCourseTargetLanguage,
+    getActiveCourseNativeLanguage,
+    languageAutonym,
     readRecentLookups,
     recordRecentLookup,
     clearRecentLookups,

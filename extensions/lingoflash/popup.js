@@ -13,6 +13,8 @@ const {
   applyCourseUiLocale,
   invalidateExtensionMetadata,
   getActiveCourseTargetLanguage,
+  getActiveCourseNativeLanguage,
+  languageAutonym,
   readSettings,
 } = globalThis.LingoFlashExtension;
 
@@ -74,12 +76,24 @@ const stateTitle = document.getElementById('state-title');
 const stateDesc = document.getElementById('state-desc');
 const stateNote = document.getElementById('state-note');
 const stateActions = document.getElementById('state-actions');
+const languageBanner = document.getElementById('language-banner');
+const languageBannerText = document.getElementById('language-banner-text');
+const languageBannerMeta = document.getElementById('language-banner-meta');
+const meaningsLanguage = document.getElementById('meanings-language');
+const courseRoute = document.getElementById('course-route');
+const courseRouteTitle = document.getElementById('course-route-title');
+const courseRoutePair = document.getElementById('course-route-pair');
+const resultLanguageNote = document.getElementById('result-language-note');
+const resultLanguageNoteTitle = document.getElementById('result-language-note-title');
+const resultLanguageNoteBody = document.getElementById('result-language-note-body');
 let activeQuickAddId = null;
 let lastRetryId = null;
 let isBusy = false;
 let selectionIconSite = null;
 let selectionInputTouched = false;
 let decksReady = false;
+let lastDueCount = null;
+let selectionPageLanguage = '';
 const pendingQuickAddStatuses = new Map();
 const speechRequestIds = new WeakMap();
 const METADATA_INVALIDATED_MESSAGE = 'LINGOFLASH_EXTENSION_METADATA_INVALIDATED';
@@ -131,6 +145,28 @@ const TARGET_LANGUAGE_LABELS = {
   zh: ['targetLanguageChinese', 'Tiếng Trung'],
 };
 
+// Korean, Japanese and Chinese courses get the language board's popup: the
+// course named in its own script, the page or selection language, where a
+// save goes, and readings. The English course keeps the standard popup.
+const LANGUAGE_COURSES = new Set(['ko', 'ja', 'zh']);
+const primaryLanguage = value => /^([a-z]{2,3})(?:[-_]|$)/i.exec(String(value || '').trim())?.[1]?.toLowerCase() || '';
+const activeLanguageCourse = () => {
+  const course = getActiveCourseTargetLanguage();
+  return LANGUAGE_COURSES.has(course) ? course : '';
+};
+const makeSpan = (className, text, lang = '') => {
+  const span = document.createElement('span');
+  if (className) span.className = className;
+  span.textContent = text;
+  if (lang) span.setAttribute('lang', lang);
+  return span;
+};
+const setLanguageAttribute = (element, language) => {
+  if (!element) return;
+  if (language) element.setAttribute('lang', language);
+  else element.removeAttribute('lang');
+};
+
 const renderTargetLanguageLabel = targetLanguage => {
   if (!targetLanguageLabel) return;
   const [key, fallback] = TARGET_LANGUAGE_LABELS[targetLanguage] || [];
@@ -138,12 +174,93 @@ const renderTargetLanguageLabel = targetLanguage => {
     targetLanguageLabel.hidden = true;
     targetLanguageLabel.textContent = '';
     targetLanguageLabel.removeAttribute('aria-label');
+    delete targetLanguageLabel.dataset.course;
     return;
   }
   const language = t(key, undefined, fallback);
-  targetLanguageLabel.textContent = language;
+  if (LANGUAGE_COURSES.has(targetLanguage)) {
+    // The course chip: its code and its name in its own script.
+    targetLanguageLabel.replaceChildren(
+      makeSpan('course-chip-code', targetLanguage),
+      makeSpan('course-chip-name', languageAutonym(targetLanguage), targetLanguage),
+    );
+    targetLanguageLabel.dataset.course = 'language';
+  } else {
+    targetLanguageLabel.textContent = language;
+    delete targetLanguageLabel.dataset.course;
+  }
   targetLanguageLabel.setAttribute('aria-label', t('targetLanguageBadgeAria', [language], `Ngôn ngữ đích: ${language}`));
   targetLanguageLabel.hidden = false;
+};
+
+const hideLanguageBanner = () => {
+  if (!languageBanner) return;
+  languageBanner.hidden = true;
+  delete languageBanner.dataset.tone;
+};
+
+// Names the language of the selected text: the page's own declared language
+// when it has one, else Google's detection after a quick translation. A
+// language other than the course's is flagged, never silently accepted.
+const renderLanguageBanner = (language, source) => {
+  const course = activeLanguageCourse();
+  if (!languageBanner || !course || !language) {
+    hideLanguageBanner();
+    return;
+  }
+  const name = languageAutonym(language);
+  if (languageBannerText) {
+    languageBannerText.textContent = source === 'page'
+      ? t('languageBannerPage', [name], `Ngôn ngữ trang: ${name}`)
+      : t('languageBannerSelection', [name], `Đoạn chọn bằng ${name}`);
+  }
+  const matches = language === course;
+  if (languageBannerMeta) {
+    const courseName = languageAutonym(course);
+    languageBannerMeta.textContent = matches
+      ? t('languageBannerAuto', undefined, 'tự nhận diện')
+      : t('languageBannerNotCourse', [courseName], `không phải ${courseName}`);
+  }
+  languageBanner.dataset.tone = matches ? 'info' : 'warn';
+  languageBanner.hidden = false;
+};
+
+const renderDueSuffix = () => {
+  if (!dueCountSuffix || !Number.isSafeInteger(lastDueCount)) return;
+  const course = activeLanguageCourse();
+  dueCountSuffix.textContent = course
+    ? t('dueCountInCourse', [lastDueCount, languageAutonym(course)], `${lastDueCount} thẻ ${languageAutonym(course)} đến hạn`)
+    : t('dueCountBadge', [lastDueCount], `${lastDueCount} thẻ đến hạn`);
+};
+
+const renderCourseChrome = () => {
+  renderTargetLanguageLabel(getActiveCourseTargetLanguage());
+  const course = activeLanguageCourse();
+  const native = course ? getActiveCourseNativeLanguage() : '';
+  setLanguageAttribute(selectionInput, course);
+  if (characterCount) characterCount.hidden = Boolean(course);
+  if (meaningsLanguage) {
+    meaningsLanguage.hidden = !native;
+    meaningsLanguage.textContent = native
+      ? t('meaningsInLanguage', [languageAutonym(native)], `Nghĩa bằng ${languageAutonym(native)}`)
+      : '';
+  }
+  if (courseRoute) {
+    courseRoute.hidden = !course;
+    if (course) {
+      const [key, fallback] = TARGET_LANGUAGE_LABELS[course];
+      const courseName = t(key, undefined, fallback);
+      if (courseRouteTitle) courseRouteTitle.textContent = t('courseRouteTitle', [courseName], `Lưu vào khóa ${courseName}`);
+      if (courseRoutePair) {
+        courseRoutePair.replaceChildren(
+          makeSpan('', languageAutonym(course), course),
+          ...(native ? [makeSpan('course-route-arrow', ' ← '), makeSpan('', languageAutonym(native), native)] : []),
+        );
+      }
+    }
+  }
+  if (!course) hideLanguageBanner();
+  renderDueSuffix();
 };
 
 const clearDeckMetadataView = () => {
@@ -158,6 +275,7 @@ const clearDeckMetadataView = () => {
 };
 
 const clearDueCountView = () => {
+  lastDueCount = null;
   if (dueCountSuffix) {
     dueCountSuffix.hidden = true;
     dueCountSuffix.textContent = '';
@@ -188,11 +306,28 @@ const handleMetadataInvalidation = message => {
   if (Object.prototype.hasOwnProperty.call(scopes, 'locale')) {
     invalidateExtensionMetadata?.(message);
     localizeDocument(document);
-    renderTargetLanguageLabel(getActiveCourseTargetLanguage());
+    renderCourseChrome();
   }
 };
 
-const renderResultCard = ({ word = '', translation = '', phonetic = '', explanation = '', example = '', exampleTranslation = '', sourceLanguage = '', speechLocale = '', canSave = false, status = '' } = {}) => {
+// The example sentence with the saved word in bold, built from text spans
+// (never innerHTML), as the language board shows it.
+const renderEmphasizedExample = (element, sentence, word) => {
+  const index = word ? sentence.indexOf(word) : -1;
+  if (index < 0) {
+    element.replaceChildren(makeSpan('', sentence));
+    return;
+  }
+  const strong = document.createElement('strong');
+  strong.textContent = sentence.slice(index, index + word.length);
+  element.replaceChildren(
+    ...(index > 0 ? [makeSpan('', sentence.slice(0, index))] : []),
+    strong,
+    ...(index + word.length < sentence.length ? [makeSpan('', sentence.slice(index + word.length))] : []),
+  );
+};
+
+const renderResultCard = ({ word = '', translation = '', phonetic = '', romanization = '', explanation = '', example = '', exampleTranslation = '', sourceLanguage = '', speechLocale = '', canSave = false, status = '' } = {}) => {
   if (!resultCard) return;
   if (!translation) {
     resultCard.hidden = true;
@@ -206,33 +341,72 @@ const renderResultCard = ({ word = '', translation = '', phonetic = '', explanat
   // never visually confused (data-status drives the CSS in popup.css).
   if (status) resultCard.dataset.status = status;
   else delete resultCard.dataset.status;
+  const course = activeLanguageCourse();
+  const courseName = course ? languageAutonym(course) : '';
+  const wordLanguage = primaryLanguage(sourceLanguage) || course;
+  if (course) resultCard.dataset.course = 'language';
+  else delete resultCard.dataset.course;
   if (resultBadge) {
     const [key, fallback] = RESULT_BADGE_KEYS[status] || [];
-    resultBadge.textContent = key ? t(key, undefined, fallback) : t('resultBadge', undefined, 'Kết quả');
+    resultBadge.textContent = course && status === 'created'
+      ? t('resultBadgeSavedTo', [courseName], `Đã lưu vào ${courseName}`)
+      : course && !status
+        ? t('resultBadgeNotSaved', undefined, 'Chưa lưu')
+        : key ? t(key, undefined, fallback) : t('resultBadge', undefined, 'Kết quả');
   }
-  if (resultWord) resultWord.textContent = word;
+  if (resultWord) {
+    resultWord.textContent = word;
+    setLanguageAttribute(resultWord, wordLanguage);
+  }
   if (resultTranslation) resultTranslation.textContent = translation;
-  const hasDetails = Boolean(phonetic || explanation || example || exampleTranslation);
+  // A reading: the AI card's phonetic, else Google's transliteration of a
+  // non-Latin word (never shown when it would only repeat the word).
+  const reading = phonetic || (romanization && romanization.trim().toLowerCase() !== word.trim().toLowerCase() ? romanization.trim() : '');
+  const hasDetails = Boolean(reading || explanation || example || exampleTranslation);
   if (resultDetails) {
     resultDetails.hidden = !hasDetails;
     if (resultPhonetic) {
-      resultPhonetic.textContent = phonetic;
-      resultPhonetic.hidden = !phonetic;
+      resultPhonetic.textContent = reading;
+      resultPhonetic.hidden = !reading;
     }
     if (resultExplanation) {
       resultExplanation.textContent = explanation;
       resultExplanation.hidden = !explanation;
     }
     if (resultExample) {
-      resultExample.textContent = example ? t('resultExamplePrefix', [example], `Ví dụ: ${example}`) : '';
+      if (course && example) renderEmphasizedExample(resultExample, example, word);
+      else resultExample.textContent = example ? t('resultExamplePrefix', [example], `Ví dụ: ${example}`) : '';
+      setLanguageAttribute(resultExample, course && example ? wordLanguage : '');
       resultExample.hidden = !example;
     }
     if (resultExampleTranslation) {
-      resultExampleTranslation.textContent = exampleTranslation ? t('resultExampleTranslationPrefix', [exampleTranslation], `Dịch ví dụ: ${exampleTranslation}`) : '';
+      resultExampleTranslation.textContent = !exampleTranslation ? ''
+        : course ? exampleTranslation
+          : t('resultExampleTranslationPrefix', [exampleTranslation], `Dịch ví dụ: ${exampleTranslation}`);
       resultExampleTranslation.hidden = !exampleTranslation;
     }
   }
+  // A quick translation in another language than the course: say so, and
+  // that saving still goes to the active course (the only course the
+  // extension knows), rather than letting the save button imply otherwise.
+  const mismatch = Boolean(course && !status && wordLanguage && wordLanguage !== course);
+  if (resultLanguageNote) {
+    resultLanguageNote.hidden = !mismatch;
+    if (resultLanguageNoteTitle) {
+      resultLanguageNoteTitle.textContent = mismatch
+        ? t('resultLanguageMismatchTitle', [languageAutonym(wordLanguage)], `Có vẻ là ${languageAutonym(wordLanguage)}`)
+        : '';
+    }
+    if (resultLanguageNoteBody) {
+      resultLanguageNoteBody.textContent = mismatch
+        ? t('resultLanguageMismatchBody', [courseName], `Khóa đang học là ${courseName}. Nếu lưu, từ này sẽ vào khóa đó.`)
+        : '';
+    }
+  }
   if (resultSave) {
+    resultSave.textContent = course
+      ? t('resultSaveTo', [courseName], `+ Lưu vào ${courseName}`)
+      : t('resultSaveButton', undefined, '+ Lưu Flashcard');
     resultSave.hidden = !canSave;
     resultSave.onclick = () => {
       selectionInput.value = word;
@@ -568,6 +742,8 @@ const loadSelection = async () => {
     const text = normalizeSelectedText(response.text);
     if (text && !selectionInputTouched && !selectionInput.value.trim()) {
       selectionInput.value = text;
+      selectionPageLanguage = primaryLanguage(response.pageLanguage);
+      renderLanguageBanner(selectionPageLanguage, 'page');
       const validation = selectionValidation(text);
       const activeElement = document.activeElement;
       const canClaimFocus = !activeElement || activeElement === document.body || activeElement === selectionInput;
@@ -657,6 +833,7 @@ const renderRecentLookups = items => {
     const text = document.createElement('div');
     text.className = 'recent-text';
     text.textContent = item.text;
+    setLanguageAttribute(text, primaryLanguage(item.sourceLanguage));
     const translation = document.createElement('div');
     translation.className = 'recent-translation';
     translation.textContent = item.translation;
@@ -791,8 +968,10 @@ const runMode = async type => {
       } else {
         setStatus(t('statusTranslateShown', undefined, 'Đã dịch. Kết quả đang hiển thị trên trang.'), 'success');
       }
+      const detected = primaryLanguage(response.sourceLanguage);
+      if (detected) renderLanguageBanner(detected, detected === selectionPageLanguage ? 'page' : 'selection');
       if (response.translation) {
-        renderResultCard({ word: validation.text, translation: response.translation, sourceLanguage: response.sourceLanguage, speechLocale: response.speechLocale, canSave: true });
+        renderResultCard({ word: validation.text, translation: response.translation, romanization: response.romanization, sourceLanguage: response.sourceLanguage, speechLocale: response.speechLocale, canSave: true });
       }
       setBusy(false);
     } else {
@@ -821,6 +1000,9 @@ translateButton.addEventListener('click', () => {
 
 selectionInput.addEventListener('input', () => {
   selectionInputTouched = true;
+  // The banner described the captured selection; typed text has no known language yet.
+  selectionPageLanguage = '';
+  hideLanguageBanner();
   setStatus();
   if (resultCard) resultCard.hidden = true;
   hideStateCard();
@@ -898,15 +1080,18 @@ const loadDueCount = async () => {
       return;
     }
     if (response?.ok && Number.isSafeInteger(response.count) && response.count >= 0) {
-      dueCountSuffix.textContent = t('dueCountBadge', [response.count], `${response.count} thẻ đến hạn`);
+      lastDueCount = response.count;
+      renderDueSuffix();
       dueCountSuffix.hidden = false;
       setOpenAppLabel(true);
     } else {
+      lastDueCount = null;
       dueCountSuffix.hidden = true;
       dueCountSuffix.textContent = '';
       setOpenAppLabel(false);
     }
   } catch {
+    lastDueCount = null;
     dueCountSuffix.hidden = true;
     dueCountSuffix.textContent = '';
     setOpenAppLabel(false);
@@ -914,7 +1099,7 @@ const loadDueCount = async () => {
 };
 
 void courseUiLocaleReady.then(() => {
-  renderTargetLanguageLabel(getActiveCourseTargetLanguage());
+  renderCourseChrome();
   return Promise.all([
     loadSelection(), loadShortcuts(), loadRecentLookups(), loadDecks(), loadSelectionIconSite(), loadDueCount(),
   ]);

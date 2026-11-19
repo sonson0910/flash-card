@@ -121,12 +121,20 @@
       right: Number(value.right) || 0, bottom: Number(value.bottom) || 0,
       width: Number(value.width) || 0, height: Number(value.height) || 0,
     } : null;
+    // The language the page declares for the selected text (its nearest
+    // lang attribute), as a bare primary subtag; empty when none is declared.
+    const pageLanguageInPage = node => {
+      const element = node?.nodeType === 1 ? node : node?.parentElement;
+      const declared = element?.closest?.('[lang]')?.getAttribute?.('lang') || '';
+      const match = /^([a-z]{2,3})(?:-|$)/i.exec(declared.trim());
+      return match ? match[1].toLowerCase() : '';
+    };
     const active = document.activeElement;
     if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
       if (isHidden(active)) return { text: '', anchor: null, context: '' };
       const start = active.selectionStart, end = active.selectionEnd;
       if (typeof start === 'number' && typeof end === 'number' && end > start) {
-        return { text: active.value.slice(start, end), anchor: rect(active.getBoundingClientRect()), context: '' };
+        return { text: active.value.slice(start, end), anchor: rect(active.getBoundingClientRect()), context: '', pageLanguage: pageLanguageInPage(active) };
       }
     }
     const selection = globalThis.getSelection?.();
@@ -136,7 +144,7 @@
     if (!text || hasHiddenAncestorInPage(range.commonAncestorContainer)) {
       return { text: '', anchor: null, context: '' };
     }
-    return { text, anchor: rect(range.getBoundingClientRect()), context: contextInPage(range, text) };
+    return { text, anchor: rect(range.getBoundingClientRect()), context: contextInPage(range, text), pageLanguage: pageLanguageInPage(range.commonAncestorContainer) };
   };
 
   const renderInlineBubble = payload => {
@@ -170,16 +178,21 @@
     };
     const svgIconInPage = kind => {
       if (typeof document.createElementNS !== 'function') return null;
-      const paths = kind === 'play'
-        ? ['M8 5.5v13l11-6.5z']
-        : ['M6 6l12 12', 'M18 6 6 18'];
+      const icons = {
+        play: ['M8 5.5v13l11-6.5z'],
+        close: ['M6 6l12 12', 'M18 6 6 18'],
+        globe: ['M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18z', 'M3 12h18', 'M12 3c2.4 2.5 3.6 5.5 3.6 9s-1.2 6.5-3.6 9c-2.4-2.5-3.6-5.5-3.6-9s1.2-6.5 3.6-9z'],
+        plus: ['M12 5v14', 'M5 12h14'],
+      };
+      const paths = icons[kind] || icons.close;
+      const size = kind === 'play' ? '12' : kind === 'globe' ? '13' : '14';
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('viewBox', '0 0 24 24');
-      svg.setAttribute('width', kind === 'play' ? '12' : '14');
-      svg.setAttribute('height', kind === 'play' ? '12' : '14');
+      svg.setAttribute('width', size);
+      svg.setAttribute('height', size);
       svg.setAttribute('fill', kind === 'play' ? 'currentColor' : 'none');
       svg.setAttribute('stroke', kind === 'play' ? 'none' : 'currentColor');
-      svg.setAttribute('stroke-width', '2');
+      svg.setAttribute('stroke-width', kind === 'plus' ? '2.4' : '2');
       svg.setAttribute('stroke-linecap', 'round');
       svg.setAttribute('stroke-linejoin', 'round');
       svg.setAttribute('aria-hidden', 'true');
@@ -190,6 +203,86 @@
       });
       return svg;
     };
+    // Crystal Star art, inlined so the bubble never loads an extension file
+    // into the page (the extension declares no web_accessible_resources).
+    // The wings are the board's polygon art drawn as inline SVG; Lumi is a
+    // small decorative image that simply disappears where a page's
+    // content-security policy blocks data: images.
+    const crystalWingsInPage = () => {
+      if (typeof document.createElementNS !== 'function') return null;
+      const ns = 'http://www.w3.org/2000/svg';
+      const feathers = [
+        ['300,300 307.5,279.3 262.2,265 255.5,239.4 202,247.6 193.8,226.3 141.8,230.2 132,213.3 65.1,214.5 159,248.7', '300,300 159,248.7 65.1,214.5 164,271.6 294.7,314.5'],
+        ['300,300 318.4,281.6 288.7,253.9 295.4,222.6 244.8,215.7 248.4,187.5 201,177.5 201.5,152.4 157.2,139.4 154.6,117.3 94.9,94.9 177,177', '300,300 177,177 94.9,94.9 170.7,203.8 287.1,312.9'],
+        ['300,300 321.9,292.9 305.2,248.4 322.2,227.1 281.6,190.3 294.1,170.5 258.1,132.2 266,113.9 222.7,62.2 253.6,157.3', '300,300 253.6,157.3 222.7,62.2 237.8,175.6 284.7,305'],
+        ['300,300 317.7,303.1 324.4,248.8 342.8,239.9 331.5,182.3 344.9,172.5 334.7,103 320.8,181.8', '300,300 320.8,181.8 334.7,103 303.1,188.9 287.6,297.8'],
+        ['300,300 297,283.3 246.4,294.9 232.4,281.5 184.8,310.2 171.6,301.5 112.9,333 187.7,319.8', '300,300 187.7,319.8 112.9,333 199.7,333.2 302.1,311.7'],
+        ['300,300 311.5,308 333.2,273.2 348.9,273.2 358.9,230.2 371.4,227.9 386,177.1 351.6,226.3', '300,300 351.6,226.3 386,177.1 337,225.2 292,294.4'],
+      ];
+      const star = [
+        '300,300 285.7,280.3 300,242',
+        '300,300 300,242 314.3,280.3',
+        '300,300 314.3,280.3 355.2,282.1',
+        '300,300 355.2,282.1 323.2,307.5',
+        '300,300 323.2,307.5 334.1,346.9',
+        '300,300 334.1,346.9 300,324.4',
+        '300,300 300,324.4 265.9,346.9',
+        '300,300 265.9,346.9 276.8,307.5',
+        '300,300 276.8,307.5 244.8,282.1',
+        '300,300 244.8,282.1 285.7,280.3',
+      ];
+      const svg = document.createElementNS(ns, 'svg');
+      svg.setAttribute('viewBox', '0 0 600 400');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.setAttribute('focusable', 'false');
+      const shape = (tagName, points, attributes) => {
+        const element = document.createElementNS(ns, tagName);
+        element.setAttribute('points', points);
+        Object.entries(attributes).forEach(([name, value]) => element.setAttribute(name, value));
+        svg.append(element);
+      };
+      feathers.forEach(([blade, shade]) => {
+        shape('polygon', blade, { fill: '#e0173f' });
+        shape('polygon', shade, { fill: '#7a0820' });
+        shape('polyline', shade.split(' ').slice(0, 3).join(' '), { fill: 'none', stroke: '#ffc2cf', 'stroke-width': '1.4', 'stroke-linejoin': 'round', opacity: '0.8' });
+      });
+      star.forEach((points, index) => shape('polygon', points, { fill: index % 2 ? '#7a0820' : '#ff5470' }));
+      return svg;
+    };
+    const crystalLumiInPage = () => {
+      const slot = document.createElement('span');
+      slot.className = 'lumi';
+      slot.setAttribute('aria-hidden', 'true');
+      const image = document.createElement('img');
+      image.alt = '';
+      image.draggable = false;
+      image.onerror = () => slot.remove();
+      image.src = 'data:image/webp;base64,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';
+      slot.append(image);
+      return slot;
+    };
+    // Language-pack courses (Korean, Japanese, Chinese) get the language
+    // board's treatment: the word in a CJK face with its language tagged, the
+    // detected language above it and "Save to <course>" in the footer. Only
+    // languages the extension really knows are shown: the confirmed active
+    // course, Google's detection of the selection and the page's own lang.
+    const languageCodeInPage = value => {
+      const match = /^([a-z]{2,3})(?:[-_]|$)/i.exec(String(value || '').trim());
+      return match ? match[1].toLowerCase() : '';
+    };
+    const autonymInPage = code => {
+      try {
+        const name = new Intl.DisplayNames([code], { type: 'language' }).of(code);
+        if (typeof name === 'string' && name && name.toLowerCase() !== code) return name.charAt(0).toLocaleUpperCase(code) + name.slice(1);
+      } catch {}
+      return code;
+    };
+    const courseLanguage = ['en', 'ko', 'ja', 'zh'].includes(payload.courseLanguage) ? payload.courseLanguage : '';
+    const nativeLanguage = ['vi', 'en'].includes(payload.nativeLanguage) ? payload.nativeLanguage : '';
+    const languageMode = ['ko', 'ja', 'zh'].includes(courseLanguage);
+    const detectedLanguage = languageCodeInPage(payload.sourceLanguage);
+    const pageLanguage = languageCodeInPage(payload.pageLanguage);
+    const wordLanguage = detectedLanguage || (languageMode ? courseLanguage : '');
     const setSpeechState = (button, state, label) => {
       if (button.dataset) button.dataset.speechState = state;
       else button.setAttribute('data-speech-state', state);
@@ -289,6 +382,20 @@
       '.example .e{color:var(--text2);font-size:12.5px}.example .e + .e{margin-top:4px}',
       '.frame[data-family="crystal"] .example{border:0;border-radius:0;box-shadow:inset 3px 0 0 var(--holo);clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}',
       '.ai-note{margin-top:10px;color:var(--text3);font-size:11.5px;line-height:1.4}',
+      '.body,.f{position:relative}',
+      '.frame{--font-ko:"Noto Sans KR","Noto Sans CJK KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;--font-ja:"Noto Sans JP","Noto Sans CJK JP","Hiragino Sans","Yu Gothic",sans-serif;--font-zh:"Noto Sans SC","Noto Sans CJK SC","PingFang SC","Microsoft YaHei",sans-serif}',
+      '.frame [lang|="ko"]{font-family:var(--font-ko)}.frame [lang|="ja"]{font-family:var(--font-ja)}.frame [lang|="zh"]{font-family:var(--font-zh)}',
+      '.s:is([lang|="ko"],[lang|="ja"],[lang|="zh"]){font-size:36px;font-weight:700;font-style:normal;letter-spacing:0}',
+      '.frame[data-family="crystal"] .s:is([lang|="ko"],[lang|="ja"],[lang|="zh"]){font-style:normal;font-weight:900}',
+      '.lang-line{display:flex;align-items:center;gap:6px;margin-bottom:8px;color:var(--accent-text);font-size:11.5px;font-weight:600;line-height:1.3}.lang-line svg{flex:none}.lang-line strong{font-weight:700}',
+      '.frame[data-family="crystal"] .lang-line{color:var(--holo);font-family:var(--sf-font-display);font-style:italic;font-weight:800;letter-spacing:.04em}',
+      '.ctx{color:var(--text2)}.q{color:var(--strong);font-weight:500}.q strong{font-weight:800}',
+      '.n{color:var(--text3);font-size:11px;line-height:1.3}',
+      '.speak[data-kind="action"]{gap:7px}',
+      '.wings{position:absolute;inset:0;overflow:hidden;pointer-events:none}',
+      '.wings svg{position:absolute;right:-80px;top:-60px;width:300px;height:200px;overflow:visible;opacity:.18;transform:scaleX(-1) rotate(-10deg)}',
+      '.lumi{flex:none;width:46px;height:46px;margin:-6px -6px -8px 0;background:var(--chip);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}',
+      '.lumi img{display:block;width:100%;height:100%;object-fit:contain;object-position:50% 100%;-webkit-mask-image:linear-gradient(180deg,#000 80%,transparent 99%);mask-image:linear-gradient(180deg,#000 80%,transparent 99%);filter:drop-shadow(0 0 16px rgb(94 242 255/.35));pointer-events:none}',
       '.f{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 20px 16px;border-top:1px solid var(--line)}',
       '.frame[data-family="crystal"] .f{border-top:0;box-shadow:inset 0 1px 0 var(--line)}',
       '.ok{min-height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--ok-line);border-radius:999px;background:var(--ok-bg);color:var(--ok);font-size:12.5px;font-weight:650}',
@@ -320,10 +427,24 @@
     const info = document.createElement('div'); info.className = 'info';
     const brand = document.createElement('div'); brand.className = 'b'; brand.textContent = payload.version ? bt('bubbleBrand', [payload.version], `SONFLASH v${payload.version}`) : bt('bubbleBrandNoVersion', undefined, 'SONFLASH');
     const source = document.createElement('div'); source.className = 's'; source.textContent = payload.text || '';
+    if (wordLanguage) source.setAttribute('lang', wordLanguage);
     const sourceLine = document.createElement('div'); sourceLine.className = 'source-line';
     const sourceFallback = payload.text || bt('bubbleDefaultWordFallback', undefined, 'từ đã chọn');
     const sourceSpeaker = speechButtonInPage(payload.text || '', bt('bubbleSpeakSelectionLabel', [sourceFallback], `Nghe phát âm ${sourceFallback}`), payload.speechLocale);
     sourceLine.append(source, sourceSpeaker);
+    const lineLanguage = pageLanguage && pageLanguage === detectedLanguage ? pageLanguage : detectedLanguage;
+    if (languageMode && lineLanguage && payload.status === 'translated') {
+      const languageLine = document.createElement('div'); languageLine.className = 'lang-line';
+      const globe = svgIconInPage('globe');
+      if (globe) languageLine.append(globe);
+      const name = document.createElement('strong'); name.setAttribute('lang', lineLanguage); name.textContent = autonymInPage(lineLanguage);
+      languageLine.append(
+        document.createTextNode(`${lineLanguage === pageLanguage ? bt('bubblePageLanguage', undefined, 'Trang bằng') : bt('bubbleSelectionLanguage', undefined, 'Đoạn chọn bằng')} `),
+        name,
+        document.createTextNode(` · ${bt('bubbleDetected', undefined, 'tự nhận diện')}`),
+      );
+      info.append(languageLine);
+    }
     info.append(sourceLine);
     if (!speechSupportedInPage()) {
       const speechHelp = document.createElement('div');
@@ -334,8 +455,7 @@
       speechHelp.textContent = bt('bubbleSpeechUnsupported', undefined, 'Trình duyệt này không hỗ trợ phát âm.');
       info.append(speechHelp);
     }
-    if (payload.modeLabel) { const mode = document.createElement('span'); mode.className = 'm'; mode.textContent = payload.modeLabel; meta.append(mode); }
-    meta.append(brand);
+
     const close = document.createElement('button'); close.className = 'x'; close.type = 'button'; close.setAttribute('aria-label', bt('bubbleCloseAriaLabel', undefined, 'Đóng kết quả SonFlash'));
     const closeIcon = svgIconInPage('close');
     if (closeIcon) close.append(closeIcon);
@@ -347,9 +467,38 @@
       const spinner = document.createElement('span'); spinner.className = 'spin'; spinner.setAttribute('aria-hidden', 'true');
       line.append(spinner, document.createTextNode(payload.status === 'loading-save' ? bt('bubbleLoadingSave', undefined, 'Đang tạo và lưu flashcard…') : bt('bubbleLoadingTranslate', undefined, 'Đang dịch nhanh…'))); body.append(line);
     } else if (['translated','created','existing'].includes(payload.status)) {
-      if (payload.phonetic) { const p = document.createElement('div'); p.className = 'p'; p.textContent = payload.phonetic; body.append(p); }
+      const romanization = typeof payload.romanization === 'string' ? payload.romanization.trim() : '';
+      const reading = payload.phonetic || (romanization && romanization.toLowerCase() !== String(payload.text || '').trim().toLowerCase() ? romanization : '');
+      if (reading) { const p = document.createElement('div'); p.className = 'p'; p.textContent = reading; body.append(p); }
       const text = document.createElement('div'); text.className = 't'; text.textContent = payload.translation || bt('bubbleResult', undefined, 'Đã xử lý'); body.append(text);
       if (payload.explanation) { const e = document.createElement('div'); e.className = 'e'; e.textContent = payload.explanation; body.append(e); }
+      const pageContext = payload.status === 'translated' && typeof payload.context === 'string' ? payload.context.replace(/\s+/g, ' ').trim() : '';
+      if (pageContext) {
+        const word = String(payload.text || '').trim();
+        const index = word ? pageContext.indexOf(word) : -1;
+        // A short window around the word, trimmed to whole words where the
+        // text has spaces, as the boards quote it.
+        let start = index < 0 ? 0 : Math.max(0, index - 24);
+        let end = index < 0 ? Math.min(pageContext.length, 96) : Math.min(pageContext.length, index + word.length + 24);
+        if (index >= 0 && start > 0) { const space = pageContext.indexOf(' ', start); if (space >= 0 && space < index) start = space + 1; }
+        if (index >= 0 && end < pageContext.length) { const space = pageContext.lastIndexOf(' ', end); if (space > index + word.length) end = space; }
+        const excerpt = document.createElement('span'); excerpt.className = 'q';
+        if (wordLanguage) excerpt.setAttribute('lang', wordLanguage);
+        if (index < 0) excerpt.append(document.createTextNode(`${pageContext.slice(start, end)}${end < pageContext.length ? '…' : ''}`));
+        else {
+          const strong = document.createElement('strong'); strong.textContent = pageContext.slice(index, index + word.length);
+          excerpt.append(
+            document.createTextNode(`${start > 0 ? '…' : ''}${pageContext.slice(start, index)}`),
+            strong,
+            document.createTextNode(`${pageContext.slice(index + word.length, end)}${end < pageContext.length ? '…' : ''}`),
+          );
+        }
+        const contextBox = document.createElement('div'); contextBox.className = 'example';
+        const contextLine = document.createElement('div'); contextLine.className = 'e ctx';
+        contextLine.append(document.createTextNode(`${bt('bubbleInArticle', undefined, 'Trong bài:')} “`), excerpt, document.createTextNode('”'));
+        contextBox.append(contextLine);
+        body.append(contextBox);
+      }
       if (payload.exampleSentence || payload.exampleTranslation) {
         const example = document.createElement('div'); example.className = 'example';
         if (payload.exampleSentence) {
@@ -362,11 +511,60 @@
         body.append(example);
       }
       if (payload.aiGenerated) { const disclosure = document.createElement('div'); disclosure.className = 'ai-note'; disclosure.textContent = bt('bubbleAiDisclosure', undefined, 'Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa.'); body.append(disclosure); }
-      const ok = document.createElement('div'); ok.className = 'ok';
-      if (payload.status === 'existing') ok.dataset.tone = 'existing';
-      else if (payload.status === 'translated') ok.dataset.tone = 'translated';
-      ok.textContent = (payload.status === 'translated' ? bt('bubbleTranslatedOnly', undefined, 'Chỉ dịch • không lưu • không dùng quota AI') : payload.status === 'existing' ? bt('bubbleExisting', undefined, 'Đã có trong thư viện') : bt('bubbleCreated', undefined, 'Đã thêm vào thư viện'));
-      foot.append(ok);
+      // A quick translation can be saved from the bubble when a course is
+      // confirmed and the selection is in that course's language. The click
+      // must come from the user: the shadow root is open, so a page script
+      // could otherwise press the button and spend an AI request.
+      const saveOffered = payload.status === 'translated' && Boolean(courseLanguage)
+        && typeof payload.saveId === 'string' && Boolean(payload.saveId) && Boolean(String(payload.text || '').trim());
+      if (saveOffered) {
+        const save = document.createElement('button');
+        save.type = 'button'; save.className = 'speak'; save.dataset.kind = 'action'; save.dataset.role = 'save';
+        const renderSaveLabel = () => {
+          const parts = [];
+          const icon = svgIconInPage('plus');
+          if (icon) parts.push(icon);
+          if (languageMode) {
+            const name = document.createElement('span'); name.setAttribute('lang', courseLanguage); name.textContent = autonymInPage(courseLanguage);
+            parts.push(document.createTextNode(`${bt('bubbleSaveTo', undefined, 'Lưu vào')} `), name);
+          } else parts.push(document.createTextNode(bt('bubbleSaveFlashcard', undefined, 'Lưu flashcard')));
+          save.replaceChildren(...parts);
+        };
+        renderSaveLabel();
+        let saveError = null;
+        save.onmousedown = event => event?.preventDefault?.();
+        save.onclick = event => {
+          if (event?.isTrusted !== true || save.disabled) return;
+          const runtime = (globalThis.browser ?? globalThis.chrome)?.runtime;
+          if (!runtime?.sendMessage) return;
+          save.disabled = true;
+          save.textContent = bt('bubbleSaving', undefined, 'Đang bắt đầu lưu…');
+          const finish = response => {
+            // On success the background replaces this bubble with the save's progress.
+            if (response?.ok === true) return;
+            save.disabled = false;
+            renderSaveLabel();
+            if (!saveError) {
+              saveError = document.createElement('div'); saveError.className = 'err'; saveError.setAttribute('role', 'alert');
+              body.append(saveError);
+            }
+            saveError.textContent = response?.error || runtime.lastError?.message || bt('bubbleSaveFailed', undefined, 'Không thể lưu từ này. Hãy thử lại.');
+          };
+          try {
+            const message = { type: 'INLINE_SELECTION_ADD', id: payload.saveId };
+            if (globalThis.browser?.runtime) void runtime.sendMessage(message).then(finish, error => finish({ error: error?.message }));
+            else runtime.sendMessage(message, finish);
+          } catch (error) { finish({ error: error?.message }); }
+        };
+        foot.append(save);
+        meta.dataset.save = 'true';
+      } else {
+        const ok = document.createElement('div'); ok.className = 'ok';
+        if (payload.status === 'existing') ok.dataset.tone = 'existing';
+        else if (payload.status === 'translated') ok.dataset.tone = 'translated';
+        ok.textContent = (payload.status === 'translated' ? bt('bubbleTranslatedOnly', undefined, 'Chỉ dịch • không lưu • không dùng quota AI') : payload.status === 'existing' ? bt('bubbleExisting', undefined, 'Đã có trong thư viện') : bt('bubbleCreated', undefined, 'Đã thêm vào thư viện'));
+        foot.append(ok);
+      }
     } else {
       const isQuota = payload.status === 'error' && isQuotaMessageInPage(payload.message);
       const e = document.createElement('div'); e.className = payload.status === 'auth-required' ? 'e' : 'err';
@@ -420,7 +618,35 @@
         foot.append(retry);
       }
     }
+    if (meta.dataset.save === 'true') {
+      // Beside the Save button the boards name the language of the meanings
+      // for a language course, and the AI request a save costs otherwise.
+      const meaningsLanguage = languageCodeInPage(payload.translationLanguage) || nativeLanguage;
+      if (languageMode && meaningsLanguage) {
+        const meanings = document.createElement('div'); meanings.className = 'n';
+        const name = document.createElement('span'); name.setAttribute('lang', meaningsLanguage); name.textContent = autonymInPage(meaningsLanguage);
+        meanings.append(document.createTextNode(bt('bubbleMeaningsIn', undefined, 'Nghĩa bằng')), document.createElement('br'), name);
+        meta.append(meanings);
+      } else {
+        const cost = document.createElement('div'); cost.className = 'b'; cost.textContent = bt('bubbleSaveCost', undefined, '1 lượt AI');
+        meta.append(cost);
+      }
+    } else {
+      if (payload.modeLabel) { const mode = document.createElement('span'); mode.className = 'm'; mode.textContent = payload.modeLabel; meta.append(mode); }
+      meta.append(brand);
+    }
     foot.append(meta);
+    if (family === 'crystal') {
+      foot.append(crystalLumiInPage());
+      const wings = crystalWingsInPage();
+      if (wings) {
+        const wingsLayer = document.createElement('div');
+        wingsLayer.className = 'wings';
+        wingsLayer.setAttribute('aria-hidden', 'true');
+        wingsLayer.append(wings);
+        card.append(wingsLayer);
+      }
+    }
     card.append(body, foot);
     frame.append(caret, card);
     root.append(style, frame);

@@ -102,6 +102,8 @@ const createPopupContext = async ({
   // Defaults to today's behavior: no confirmed course locale synced yet, so
   // applyCourseUiLocale() finds nothing to override (07.5).
   courseLocaleResponse = { ok: true, nativeLanguage: null, targetLanguage: null },
+  selectionResponse = { ok: true, text: 'resilient' },
+  translateResponse = { ok: true, text: 'resilient', translation: 'bền bỉ' },
 } = {}) => {
   const ids = [
     'selection', 'requested-deck', 'character-count', 'translate-button', 'add-button', 'speak-selection', 'speech-support-status', 'status',
@@ -112,6 +114,9 @@ const createPopupContext = async ({
     'result-phonetic', 'result-explanation', 'result-example', 'result-example-translation', 'result-actions', 'result-speak', 'result-save', 'deck-status',
     'due-count-suffix', 'open-app-label', 'target-language-label',
     'state-card', 'state-icon', 'state-title', 'state-desc', 'state-note', 'state-actions',
+    'language-banner', 'language-banner-text', 'language-banner-meta', 'meanings-language',
+    'course-route', 'course-route-title', 'course-route-pair',
+    'result-language-note', 'result-language-note-title', 'result-language-note-body',
   ];
   const elements = new Map(ids.map(id => [id, new FakeElement()]));
   const runtimeMessages = [];
@@ -133,7 +138,7 @@ const createPopupContext = async ({
       runtimeMessages.push(message);
       if (message.type === 'GET_SELECTION') {
         if (selectionPending) return new Promise(resolve => { resolveSelection = resolve; });
-        return Promise.resolve({ ok: true, text: 'resilient' });
+        return Promise.resolve(selectionResponse);
       }
       if (message.type === 'GET_SHORTCUTS') return Promise.resolve({ ok: true, ...shortcuts, shortcutSettingsAvailable });
       if (message.type === 'GET_ACTIVE_SITE') return Promise.resolve(activeSite ?? { ok: true });
@@ -148,7 +153,7 @@ const createPopupContext = async ({
       }
       if (message.type === 'TRANSLATE_SELECTION') {
         if (translatePending) return new Promise(resolve => { resolveTranslate = resolve; });
-        return Promise.resolve({ ok: true, text: 'resilient', translation: 'bền bỉ', inlineShown: translateInlineShown });
+        return Promise.resolve({ ...translateResponse, inlineShown: translateInlineShown });
       }
       if (message.type === 'ADD_SELECTION') {
         return Promise.resolve({ ok: true, id: 'job_123456789', text: 'resilient' });
@@ -711,10 +716,12 @@ test('follows the active course native language for popup text once GET_COURSE_L
   assert.ok(popup.runtimeMessages.some(message => message.type === 'GET_COURSE_LOCALE'));
   assert.ok(popup.fetchCalls.some(url => String(url).includes('_locales/en/messages.json')));
 
-  const expectedEnglishText = loadMessages('en').dueCountBadge.message.replace('$COUNT$', '12');
+  const expectedEnglishText = loadMessages('en').dueCountInCourse.message.replace('$COUNT$', '12').replace('$LANGUAGE$', '한국어');
   assert.equal(popup.elements.get('due-count-suffix').textContent, expectedEnglishText);
-  assert.notEqual(popup.elements.get('due-count-suffix').textContent, '12 thẻ đến hạn');
-  assert.equal(popup.elements.get('target-language-label').textContent, 'Korean');
+  assert.notEqual(popup.elements.get('due-count-suffix').textContent, '12 thẻ 한국어 đến hạn');
+  // A language course shows a chip in the course's own script; its
+  // accessible name still follows the native-language catalog.
+  assert.equal(popup.elements.get('target-language-label').textContent, 'ko한국어');
   assert.equal(popup.elements.get('target-language-label').attributes['aria-label'], 'Target language: Korean');
 });
 
@@ -723,7 +730,14 @@ test('shows the scoped target-language label only when a valid course locale is 
     courseLocaleResponse: { ok: true, nativeLanguage: 'vi', targetLanguage: 'ja' },
   });
   assert.equal(synced.elements.get('target-language-label').hidden, false);
-  assert.equal(synced.elements.get('target-language-label').textContent, 'Tiếng Nhật');
+  assert.equal(synced.elements.get('target-language-label').textContent, 'ja日本語');
+  assert.equal(synced.elements.get('target-language-label').attributes['aria-label'], 'Ngôn ngữ đích: Tiếng Nhật');
+
+  const english = await createPopupContext({
+    courseLocaleResponse: { ok: true, nativeLanguage: 'vi', targetLanguage: 'en' },
+  });
+  assert.equal(english.elements.get('target-language-label').textContent, 'Tiếng Anh');
+  assert.equal(english.elements.get('target-language-label').children.length, 0);
 
   const unavailable = await createPopupContext();
   assert.equal(unavailable.elements.get('target-language-label').hidden, true);
@@ -742,7 +756,13 @@ test('never fetches a locale catalog when the synced course native language alre
   });
   assert.ok(popup.runtimeMessages.some(message => message.type === 'GET_COURSE_LOCALE'));
   assert.equal(popup.fetchCalls.length, 0);
-  assert.equal(popup.elements.get('due-count-suffix').textContent, '12 thẻ đến hạn');
+  assert.equal(popup.elements.get('due-count-suffix').textContent, '12 thẻ 한국어 đến hạn');
+
+  const english = await createPopupContext({
+    dueCount: 12,
+    courseLocaleResponse: { ok: true, nativeLanguage: 'vi', targetLanguage: 'en' },
+  });
+  assert.equal(english.elements.get('due-count-suffix').textContent, '12 thẻ đến hạn');
 });
 
 test('keeps today\'s due-count text when no course locale has ever been synced (07.5)', async () => {
@@ -872,4 +892,115 @@ test('marks the floating icon toggle unavailable on a protected page instead of 
   assert.equal(popup.elements.get('selection-icon-toggle').disabled, true);
   assert.equal(popup.elements.get('selection-icon-toggle').textContent, 'Không khả dụng');
   assert.equal(popup.elements.get('selection-icon-status').dataset.tone, 'unavailable');
+});
+
+const koreanCourse = { ok: true, nativeLanguage: 'vi', targetLanguage: 'ko' };
+
+test('shows a language course with the page language, the meanings language and where a save goes', async () => {
+  const popup = await createPopupContext({
+    courseLocaleResponse: koreanCourse,
+    selectionResponse: { ok: true, text: '결정', pageLanguage: 'ko' },
+  });
+  const element = id => popup.elements.get(id);
+
+  assert.equal(element('selection').value, '결정');
+  assert.equal(element('selection').attributes.lang, 'ko');
+  assert.equal(element('language-banner').hidden, false);
+  assert.equal(element('language-banner').dataset.tone, 'info');
+  assert.equal(element('language-banner-text').textContent, 'Ngôn ngữ trang: 한국어');
+  assert.equal(element('language-banner-meta').textContent, 'tự nhận diện');
+  assert.equal(element('character-count').hidden, true);
+  assert.equal(element('meanings-language').hidden, false);
+  assert.equal(element('meanings-language').textContent, 'Nghĩa bằng Tiếng Việt');
+  assert.equal(element('course-route').hidden, false);
+  assert.equal(element('course-route-title').textContent, 'Lưu vào khóa Tiếng Hàn');
+  assert.equal(element('course-route-pair').textContent, '한국어 ← Tiếng Việt');
+
+  element('selection').value = '준비';
+  element('selection').dispatch('input');
+  assert.equal(element('language-banner').hidden, true);
+});
+
+test('keeps the standard popup for the English course', async () => {
+  const popup = await createPopupContext({
+    courseLocaleResponse: { ok: true, nativeLanguage: 'vi', targetLanguage: 'en' },
+    selectionResponse: { ok: true, text: 'resilient', pageLanguage: 'en' },
+  });
+  assert.equal(popup.elements.get('language-banner').hidden, true);
+  assert.equal(popup.elements.get('course-route').hidden, true);
+  assert.equal(popup.elements.get('character-count').hidden, false);
+  assert.equal(popup.elements.get('meanings-language').hidden, true);
+
+  popup.elements.get('translate-button').dispatch('click');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(popup.elements.get('result-badge').textContent, 'Kết quả');
+  assert.equal(popup.elements.get('result-save').textContent, '+ Lưu Flashcard');
+});
+
+test('renders a language-course quick translation with its reading and the course it saves to', async () => {
+  const popup = await createPopupContext({
+    courseLocaleResponse: koreanCourse,
+    selectionResponse: { ok: true, text: '결정', pageLanguage: 'ko' },
+    translateResponse: { ok: true, text: '결정', translation: 'quyết định', sourceLanguage: 'ko', romanization: 'gyeoljeong' },
+  });
+  const element = id => popup.elements.get(id);
+
+  element('translate-button').dispatch('click');
+  await new Promise(resolve => setImmediate(resolve));
+
+  assert.equal(element('result-card').dataset.course, 'language');
+  assert.equal(element('result-word').attributes.lang, 'ko');
+  assert.equal(element('result-badge').textContent, 'Chưa lưu');
+  assert.equal(element('result-phonetic').textContent, 'gyeoljeong');
+  assert.equal(element('result-phonetic').hidden, false);
+  assert.equal(element('result-save').hidden, false);
+  assert.equal(element('result-save').textContent, '+ Lưu vào 한국어');
+  assert.equal(element('result-language-note').hidden, true);
+  assert.equal(element('language-banner-text').textContent, 'Ngôn ngữ trang: 한국어');
+});
+
+test('flags a quick translation that is not in the course language and says where a save would go', async () => {
+  const popup = await createPopupContext({
+    courseLocaleResponse: koreanCourse,
+    selectionResponse: { ok: true, text: 'rendez-vous', pageLanguage: '' },
+    translateResponse: { ok: true, text: 'rendez-vous', translation: 'cuộc hẹn', sourceLanguage: 'fr' },
+  });
+  const element = id => popup.elements.get(id);
+
+  element('translate-button').dispatch('click');
+  await new Promise(resolve => setImmediate(resolve));
+
+  assert.equal(element('language-banner').dataset.tone, 'warn');
+  assert.equal(element('language-banner-text').textContent, 'Đoạn chọn bằng Français');
+  assert.equal(element('language-banner-meta').textContent, 'không phải 한국어');
+  assert.equal(element('result-language-note').hidden, false);
+  assert.equal(element('result-language-note-title').textContent, 'Có vẻ là Français');
+  assert.equal(element('result-language-note-body').textContent, 'Khóa đang học là 한국어. Nếu lưu, từ này sẽ vào khóa đó.');
+  assert.equal(element('result-phonetic').hidden, true);
+  // Today's behaviour stays: the save is still offered, now naming its course.
+  assert.equal(element('result-save').hidden, false);
+  assert.equal(element('result-save').textContent, '+ Lưu vào 한국어');
+});
+
+test('shows a saved language-course card with the course badge and the word emphasized in its example', async () => {
+  const popup = await createPopupContext({ courseLocaleResponse: koreanCourse, selectionResponse: { ok: true, text: '결정' } });
+  const element = id => popup.elements.get(id);
+
+  element('selection-form').dispatch('submit', { preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
+  popup.runtimeListeners[0]({
+    type: 'QUICK_ADD_STATUS',
+    payload: {
+      id: 'job_123456789', status: 'created', inlineShown: true, text: '결정',
+      translation: 'quyết định', phonetic: 'gyeol·jeong', exampleSentence: '빠른 결정이 필요해요.',
+      exampleTranslation: 'Cần một quyết định nhanh.', sourceLanguage: 'ko',
+    },
+  });
+
+  assert.equal(element('result-badge').textContent, 'Đã lưu vào 한국어');
+  assert.equal(element('result-phonetic').textContent, 'gyeol·jeong');
+  assert.equal(element('result-example').attributes.lang, 'ko');
+  assert.equal(element('result-example').textContent, '빠른 결정이 필요해요.');
+  assert.equal(element('result-example').children.find(child => child.tagName === 'STRONG')?.textContent, '결정');
+  assert.equal(element('result-example-translation').textContent, 'Cần một quyết định nhanh.');
 });
