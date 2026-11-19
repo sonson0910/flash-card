@@ -6,6 +6,8 @@
     --pg-edge: var(--sf-border);
     --pg-success-text: color-mix(in srgb, var(--sf-success) 82%, var(--sf-text));
     --pg-warning-text: color-mix(in srgb, var(--sf-reward) 45%, var(--sf-text));
+    --pg-warning-line: color-mix(in srgb, var(--sf-reward) 45%, transparent);
+    --pg-warning-edge: color-mix(in srgb, var(--sf-reward) 60%, transparent);
     display: flex;
     min-height: 100dvh;
     flex-direction: column;
@@ -233,7 +235,7 @@
   }
 
   .profile-gate__note--warning {
-    border-color: color-mix(in srgb, var(--sf-reward) 45%, transparent);
+    border-color: var(--pg-warning-line);
     background-color: color-mix(in srgb, var(--sf-reward) 12%, var(--sf-surface));
   }
 
@@ -282,9 +284,9 @@
   .profile-gate__fact {
     margin: 0;
     padding: 10px 14px;
-    border: 1px solid color-mix(in srgb, var(--sf-reward) 45%, transparent);
+    border: 1px solid var(--pg-warning-line);
     border-radius: 999px;
-    --sf-chamfer-edge: color-mix(in srgb, var(--sf-reward) 60%, transparent);
+    --sf-chamfer-edge: var(--pg-warning-edge);
   }
 
   .profile-gate__fact dt { color: var(--sf-text-muted); font-size: 11px; font-weight: 700; }
@@ -332,9 +334,9 @@
   .profile-gate__tile--next span { color: var(--sf-brand-text); }
 
   .profile-gate__tile--warning {
-    border-color: color-mix(in srgb, var(--sf-reward) 45%, transparent);
+    border-color: var(--pg-warning-line);
     background-color: color-mix(in srgb, var(--sf-reward) 12%, var(--sf-surface));
-    --sf-chamfer-edge: color-mix(in srgb, var(--sf-reward) 60%, transparent);
+    --sf-chamfer-edge: var(--pg-warning-edge);
   }
 
   .profile-gate__tile--warning strong,
@@ -392,7 +394,11 @@
   html[data-theme-family=crystal]:not(.dark) .profile-gate {
     --pg-accent: color-mix(in srgb, var(--sf-success) 60%, var(--sf-text));
     --pg-success-text: color-mix(in srgb, var(--sf-success) 60%, var(--sf-text));
-    --pg-warning-text: color-mix(in srgb, var(--sf-reward) 30%, var(--sf-text));
+    /* The light reward colour is a pale yellow: it stays the outline, and the label mixes it with the
+       light theme's orange and the text colour to reach AA on the pale panels. */
+    --pg-warning-text: color-mix(in srgb, color-mix(in srgb, var(--sf-reward) 40%, var(--sf-rating-hard)) 55%, var(--sf-text));
+    --pg-warning-line: var(--sf-reward);
+    --pg-warning-edge: var(--sf-reward);
   }
 
   html[data-theme-family=crystal] .profile-gate__pill {
@@ -424,6 +430,7 @@
   }
 
   html[data-theme-family=crystal] .profile-gate__title { text-shadow: 0 0 18px color-mix(in srgb, var(--sf-brand) 45%, transparent); }
+
   html[data-theme-family=crystal] .profile-gate__panel { box-shadow: none; }
 
   html[data-theme-family=crystal] .profile-gate__field > label,
@@ -444,7 +451,8 @@
   }
 
   html[data-theme-family=crystal] .profile-gate__note--warning {
-    border-color: color-mix(in srgb, var(--sf-reward) 45%, transparent);
+    border-color: var(--pg-warning-line);
+    --sf-chamfer-edge: var(--pg-warning-edge);
     background-color: color-mix(in srgb, var(--sf-reward) 12%, transparent);
   }
 
