@@ -9,7 +9,7 @@
  * This module stays free of React and copy so the navigation hook can read
  * section ids without loading the settings chunk.
  */
-export const SETTINGS_SECTIONS = ['appearance', 'language', 'reminders', 'sounds', 'data'] as const;
+export const SETTINGS_SECTIONS = ['appearance', 'language', 'reminders', 'sounds', 'files', 'data'] as const;
 export type SettingsSectionId = typeof SETTINGS_SECTIONS[number];
 
 export const DEFAULT_SETTINGS_SECTION: SettingsSectionId = 'appearance';

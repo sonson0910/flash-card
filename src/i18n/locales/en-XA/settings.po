@@ -13,12 +13,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/features/settings/settings-screen.tsx:174
+#: src/features/settings/settings-screen.tsx:182
 msgctxt "settings.data.open"
 msgid "Open data & export"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:230
+#: src/features/settings/settings-screen.tsx:249
 msgctxt "settings.reminders.page-title"
 msgid "A nudge, <0>not a nag.</0>"
 msgstr ""
@@ -33,12 +33,12 @@ msgctxt "settings.voice"
 msgid "Voice"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:156
+#: src/features/settings/settings-screen.tsx:164
 msgctxt "settings.sounds.title"
 msgid "Sounds & <0>haptics</0>"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:134
+#: src/features/settings/settings-screen.tsx:142
 msgctxt "settings.theme.crystal.description"
 msgid "A sparkling study space with Lumi."
 msgstr ""
@@ -53,7 +53,7 @@ msgctxt "settings.reminders.daily"
 msgid "Daily reminder"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:132
+#: src/features/settings/settings-screen.tsx:140
 msgctxt "settings.theme.midnight.description"
 msgid "A deep, calm night palette."
 msgstr ""
@@ -68,7 +68,7 @@ msgctxt "settings.course.meaning-language.scope"
 msgid "Applies to new cards. Existing card meanings do not change."
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:192
+#: src/features/settings/settings-screen.tsx:210
 msgctxt "settings.menu.reminders"
 msgid "Reminders"
 msgstr ""
@@ -113,7 +113,7 @@ msgctxt "settings.course.ui-language"
 msgid "App language"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:230
+#: src/features/settings/settings-screen.tsx:249
 msgctxt "settings.reminders.description"
 msgid "We remind you once a day, only when cards are waiting."
 msgstr ""
@@ -128,12 +128,12 @@ msgctxt "settings.reminders.lumi.text"
 msgid "I only call you once a day, when cards are due."
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:136
+#: src/features/settings/settings-screen.tsx:144
 msgctxt "settings.crystal-mode.label"
 msgid "Crystal Star mode"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:131
+#: src/features/settings/settings-screen.tsx:139
 msgctxt "settings.theme.label"
 msgid "Theme"
 msgstr ""
@@ -153,12 +153,12 @@ msgctxt "settings.reminders.days"
 msgid "Review days"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:194
+#: src/features/settings/settings-screen.tsx:213
 msgctxt "settings.menu.data"
 msgid "Data & export"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:84
+#: src/features/settings/settings-screen.tsx:92
 msgctxt "settings.sound.label"
 msgid "Study sounds"
 msgstr ""
@@ -173,7 +173,7 @@ msgctxt "settings.voice.automatic"
 msgid "Automatic"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:143
+#: src/features/settings/settings-screen.tsx:151
 msgctxt "settings.follow-system.label"
 msgid "Follow system"
 msgstr ""
@@ -188,7 +188,12 @@ msgctxt "settings.reminders.preview.title"
 msgid "Live preview"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:133
+#: src/features/settings/settings-screen.tsx:192
+msgctxt "settings.files.title"
+msgid "Storage & <0>files</0>"
+msgstr ""
+
+#: src/features/settings/settings-screen.tsx:141
 msgctxt "settings.theme.paper"
 msgid "Ink & Paper"
 msgstr ""
@@ -198,7 +203,7 @@ msgctxt "settings.course.keyboard.ko-help"
 msgid "Korean 2-set (두벌식): add Korean in your device keyboard settings, or use the on-screen keys in Korean practice."
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:146
+#: src/features/settings/settings-screen.tsx:154
 msgctxt "settings.focus-mode.description"
 msgid "Hide combo banners while studying."
 msgstr ""
@@ -218,9 +223,14 @@ msgctxt "settings.reminders.preview.mail-unknown"
 msgid "cards ready for review"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:167
+#: src/features/settings/settings-screen.tsx:175
 msgctxt "settings.data.title"
 msgid "Data & <0>export</0>"
+msgstr ""
+
+#: src/features/settings/settings-screen.tsx:191
+msgctxt "settings.files.description"
+msgid "Your uploads and the storage they use."
 msgstr ""
 
 #: src/features/reminders/ReminderSettingsSection.tsx:162
@@ -233,7 +243,7 @@ msgctxt "settings.course.keyboard"
 msgid "Keyboard"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:169
+#: src/features/settings/settings-screen.tsx:177
 msgctxt "settings.data.eyebrow"
 msgid "Your account data"
 msgstr ""
@@ -268,7 +278,7 @@ msgctxt "settings.reminders.email.title"
 msgid "Weekly digest"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:145
+#: src/features/settings/settings-screen.tsx:153
 msgctxt "settings.lumi.label"
 msgid "Lumi"
 msgstr ""
@@ -288,17 +298,17 @@ msgctxt "settings.reminders.channels"
 msgid "Channels"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:190
+#: src/features/settings/settings-screen.tsx:208
 msgctxt "settings.menu.appearance"
 msgid "Appearance"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:191
+#: src/features/settings/settings-screen.tsx:209
 msgctxt "settings.menu.language"
 msgid "Language & courses"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:88
+#: src/features/settings/settings-screen.tsx:96
 msgctxt "settings.haptics.label"
 msgid "Haptics"
 msgstr ""
@@ -308,12 +318,12 @@ msgctxt "settings.reminders.loading"
 msgid "Loading reminders…"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:229
+#: src/features/settings/settings-screen.tsx:248
 msgctxt "settings.language.description"
 msgid "The app speaks one language. Each course teaches another."
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:138
+#: src/features/settings/settings-screen.tsx:146
 msgctxt "settings.crystal-mode.day"
 msgid "Prism Day"
 msgstr ""
@@ -333,27 +343,27 @@ msgctxt "settings.reminders.push"
 msgid "Browser push"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:127
+#: src/features/settings/settings-screen.tsx:135
 msgctxt "settings.title"
 msgid "Make your study space <0>yours</0>"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:134
+#: src/features/settings/settings-screen.tsx:142
 msgctxt "settings.theme.crystal"
 msgid "Crystal Star"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:141
+#: src/features/settings/settings-screen.tsx:149
 msgctxt "settings.display.title"
 msgid "Display"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:166
+#: src/features/settings/settings-screen.tsx:174
 msgctxt "settings.data.description"
 msgid "Download what you have saved, or delete your account."
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:145
+#: src/features/settings/settings-screen.tsx:153
 msgctxt "settings.lumi.description"
 msgid "Show your Crystal Star study companion."
 msgstr ""
@@ -373,17 +383,17 @@ msgctxt "settings.reminders.push.description"
 msgid "One notification with the due count"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:173
+#: src/features/settings/settings-screen.tsx:181
 msgctxt "settings.data.row.description"
 msgid "Download your account data as a file, or permanently delete your account."
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:146
+#: src/features/settings/settings-screen.tsx:154
 msgctxt "settings.focus-mode.label"
 msgid "Focus mode"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:129
+#: src/features/settings/settings-screen.tsx:137
 msgctxt "settings.appearance.title"
 msgid "Appearance"
 msgstr ""
@@ -393,7 +403,7 @@ msgctxt "settings.reminders.sign-in"
 msgid "Sign in to set reminders."
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:218
+#: src/features/settings/settings-screen.tsx:237
 msgctxt "settings.kicker"
 msgid "Settings"
 msgstr ""
@@ -403,7 +413,7 @@ msgctxt "settings.reminders.preview.body-none"
 msgid "Nothing is due right now, so no reminder is sent."
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:137
+#: src/features/settings/settings-screen.tsx:145
 msgctxt "settings.crystal-mode.night"
 msgid "Starry Night"
 msgstr ""
@@ -413,7 +423,7 @@ msgctxt "settings.course.script.traditional"
 msgid "Traditional"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:144
+#: src/features/settings/settings-screen.tsx:152
 msgctxt "settings.reduced-motion.label"
 msgid "Reduced motion"
 msgstr ""
@@ -423,12 +433,12 @@ msgctxt "settings.reminders.save"
 msgid "Save reminders"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:229
+#: src/features/settings/settings-screen.tsx:248
 msgctxt "settings.language.title"
 msgid "Language & <0>courses</0>"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:193
+#: src/features/settings/settings-screen.tsx:211
 msgctxt "settings.menu.sounds"
 msgid "Sounds & haptics"
 msgstr ""
@@ -436,6 +446,11 @@ msgstr ""
 #: src/features/settings/CourseSettingsSection.tsx:167
 msgctxt "settings.course.active-badge"
 msgid "Active"
+msgstr ""
+
+#: src/features/settings/settings-screen.tsx:212
+msgctxt "settings.menu.files"
+msgid "Storage & files"
 msgstr ""
 
 #: src/features/reminders/ReminderSettingsSection.tsx:229
@@ -510,12 +525,12 @@ msgid "settings.course.ui-language.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:87
+#: src/features/settings/settings-screen.tsx:95
 msgid "settings.haptics.preview"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:217
+#: src/features/settings/settings-screen.tsx:236
 msgid "settings.menu.label"
 msgstr ""
 
@@ -550,7 +565,7 @@ msgid "settings.reminders.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:83
+#: src/features/settings/settings-screen.tsx:91
 msgid "settings.sound.preview"
 msgstr ""
 
@@ -574,12 +589,12 @@ msgstr ""
 msgid "settings.voice.unsupported"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:144
+#: src/features/settings/settings-screen.tsx:152
 msgctxt "settings.reduced-motion.description"
 msgid "Limit movement and animated effects."
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:155
+#: src/features/settings/settings-screen.tsx:163
 msgctxt "settings.sounds.description"
 msgid "Feedback while you study, on this device."
 msgstr ""
@@ -594,7 +609,7 @@ msgctxt "settings.voice.description"
 msgid "Read words aloud with a voice on this device"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:126
+#: src/features/settings/settings-screen.tsx:134
 msgctxt "settings.description"
 msgid "Choose a look and tune the details that help you focus."
 msgstr ""
@@ -624,7 +639,7 @@ msgctxt "settings.course.meaning-language.title"
 msgid "Meanings and explanations in"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:143
+#: src/features/settings/settings-screen.tsx:151
 msgctxt "settings.follow-system.description"
 msgid "Match your device’s light or dark setting."
 msgstr ""
@@ -634,12 +649,12 @@ msgctxt "settings.reminders.push-unavailable"
 msgid "Push needs a supported browser and configured web push key."
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:132
+#: src/features/settings/settings-screen.tsx:140
 msgctxt "settings.theme.midnight"
 msgid "Midnight Aurora"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:173
+#: src/features/settings/settings-screen.tsx:181
 msgctxt "settings.data.row.title"
 msgid "Export or delete"
 msgstr ""
@@ -649,9 +664,9 @@ msgctxt "settings.reminders.preview.mail-count"
 msgid "{count, plural, one {card ready for review} other {cards ready for review}}"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:148
-#: src/features/settings/settings-screen.tsx:158
-#: src/features/settings/settings-screen.tsx:212
+#: src/features/settings/settings-screen.tsx:156
+#: src/features/settings/settings-screen.tsx:166
+#: src/features/settings/settings-screen.tsx:231
 msgctxt "settings.sounds.eyebrow"
 msgid "Sounds & haptics"
 msgstr ""
@@ -671,7 +686,7 @@ msgctxt "course.error.generic"
 msgid "That course action did not go through. Please try again."
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:133
+#: src/features/settings/settings-screen.tsx:141
 msgctxt "settings.theme.paper.description"
 msgid "A warm, bright reading surface."
 msgstr ""
