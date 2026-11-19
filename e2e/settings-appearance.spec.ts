@@ -204,7 +204,7 @@ for (const theme of [
       }
       await page.screenshot({ path: test.info().outputPath(`settings-controls-${theme.family}-${theme.mode}-${locale}-${width}.png`) });
       const result = await new AxeBuilder({ page }).withRules(['color-contrast', 'aria-required-attr', 'button-name', 'landmark-one-main']).analyze();
-      expect(result.violations.map(violation => violation.id)).toEqual([]);
+      expect(result.violations.map(violation => `${violation.id}: ${violation.nodes.map(node => node.target.join(' ')).join(', ')}`)).toEqual([]);
     });
   }
 }
