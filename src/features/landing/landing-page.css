@@ -64,7 +64,7 @@ html[data-theme-family="classic"] .landing-theme-toggle { width: 40px; height: 4
 html[data-theme-family="classic"] .landing-sign-in { color: var(--sf-text); }
 html[data-theme-family="classic"] .landing-header-start { height: 44px; padding-inline: 20px; border-radius: var(--landing-btn-radius); background: var(--landing-primary-bg); box-shadow: var(--landing-primary-shadow); color: var(--sf-on-brand); font-weight: 650; }
 
-html[data-theme-family="classic"] .landing-hero { display: grid; flex: 1; grid-template-columns: minmax(0, 1fr) 560px; gap: 40px; width: 100%; max-width: 1376px; height: 600px; margin-inline: auto; padding: 40px 16px 0 48px; box-sizing: border-box; }
+html[data-theme-family="classic"] .landing-hero { display: grid; flex: none; grid-template-columns: minmax(0, 1fr) 560px; gap: 40px; width: 100%; max-width: 1376px; height: 600px; margin-inline: auto; padding: 40px 16px 0 48px; box-sizing: border-box; }
 .landing-copy { display: flex; min-width: 0; flex-direction: column; justify-content: center; }
 .landing-eyebrow { display: inline-flex; align-self: flex-start; align-items: center; gap: 8px; height: 32px; padding: 0 14px; border: 1px solid var(--landing-accent-line); border-radius: 999px; background: var(--landing-accent-soft); color: var(--sf-brand-text); font-size: 13px; font-weight: 600; }
 .landing-eyebrow > span { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
@@ -125,7 +125,7 @@ html.dark .landing-card-back { --back-text: var(--sf-text); --back-title: var(--
 .landing-classic-features h3 { margin: 0; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 22px; font-weight: var(--landing-display-weight); line-height: 1.25; }
 .landing-classic-features p { margin: 6px 0 0; color: var(--sf-text-muted); font-size: 14.5px; line-height: 1.55; }
 
-@media (min-width: 1024px) { .landing-header { padding-inline: 16px; } }
+@media (min-width: 1024px) { .landing-header { padding-inline: 16px; } html[data-theme-family="classic"] .landing-header { margin-top: -20px; } }
 @media (min-width: 1024px) and (max-width: 1379px) { html[data-theme-family="classic"] .landing-hero { grid-template-columns: minmax(0, 1fr) 470px; gap: 24px; padding-left: 16px; } .landing-classic-title { font-size: clamp(80px, 7.4vw, 104px); } .landing-classic-features { width: calc(100% - 32px); margin-left: 16px; } }
 @media (max-width: 1023px) {
   html[data-theme-family="classic"] .landing-hero { grid-template-columns: minmax(0, 1fr); gap: 48px; height: auto; padding: 32px 0 0; }
@@ -181,6 +181,8 @@ html.dark .crystal-backdrop { background: radial-gradient(ellipse 55% 45% at 18%
 .crystal-beam { position: absolute; top: -20%; left: 18%; width: 160px; height: 140%; transform: rotate(24deg); background: linear-gradient(90deg, transparent, var(--crystal-beam), transparent); filter: blur(4px); }
 .crystal-beam + .crystal-beam { left: 58%; width: 90px; filter: blur(3px); }
 .crystal-backdrop-wings { position: absolute; bottom: -120px; left: -150px; width: 640px; height: 430px; opacity: var(--nk-wing-opacity); transform: rotate(-12deg); filter: drop-shadow(0 0 30px color-mix(in srgb, var(--sf-brand) 55%, transparent)); }
+.crystal-backdrop-wings-end { top: -60px; right: -150px; bottom: auto; left: auto; transform: scaleX(-1) rotate(-18deg); }
+@media (max-width: 900px) { .crystal-backdrop-wings-end { display: none; } }
 :is(.crystal-backdrop-wings, .crystal-stage-wings) svg { display: block; overflow: visible; }
 
 html[data-theme-family="crystal"] .landing-header { min-height: 80px; gap: 30px; font-family: var(--sf-font-display, Geist, sans-serif); font-style: italic; letter-spacing: .02em; transform: translateY(-20px); }
@@ -234,10 +236,13 @@ html.dark .crystal-copy h1 { background-image: linear-gradient(180deg, #ffffff 0
 .crystal-hero-flare > span:nth-child(2) { top: 0; bottom: 0; left: 50%; width: 3px; margin-left: -1.5px; background: linear-gradient(180deg, transparent, #fff, transparent); }
 .crystal-hero-flare > span:nth-child(3) { top: 50%; left: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #fff; box-shadow: 0 0 22px 8px color-mix(in srgb, var(--wing-light) 80%, transparent); }
 .crystal-card-deck { position: absolute; top: 94px; left: 130px; width: 600px; height: 420px; }
-.crystal-demo-card { --tier-rim: var(--sf-rim-new); --tier-soft: color-mix(in srgb, var(--sf-second) 50%, transparent); --tier-text: var(--crystal-holo); position: absolute; top: 60px; left: 0; z-index: 1; width: 230px; height: 320px; transform: rotate(-14deg); filter: drop-shadow(0 26px 30px rgb(0 0 0 / .45)) drop-shadow(0 0 20px var(--tier-soft)); }
+.crystal-demo-card { --tier-rim: var(--sf-rim-new); --tier-soft: color-mix(in srgb, var(--sf-second) 50%, transparent); --tier-text: var(--crystal-holo); position: absolute; top: 60px; left: 0; z-index: 1; width: 230px; height: 320px; transform: rotate(-14deg); }
 .crystal-demo-card[data-tier="learning"] { --tier-rim: var(--sf-rim-learning); --tier-soft: color-mix(in srgb, var(--wing-edge) 55%, transparent); --tier-text: var(--crystal-pink); }
 .crystal-demo-card[data-tier="mastered"] { --tier-rim: var(--sf-gold-rim); --tier-soft: color-mix(in srgb, var(--sf-brand) 60%, transparent); --tier-text: var(--sf-brand-text); }
-.crystal-demo-card::before { position: absolute; inset: 0; content: ""; clip-path: var(--nk-chamfer); background: var(--tier-rim); }
+/* The drop shadows sit on a rim layer beside the face, not on the card: a filter
+   on an ancestor inflates the art images' LCP area past the headline's. */
+.crystal-demo-rim { position: absolute; inset: 0; filter: drop-shadow(0 26px 30px rgb(0 0 0 / .45)) drop-shadow(0 0 20px var(--tier-soft)); }
+.crystal-demo-rim::before { position: absolute; inset: 0; content: ""; clip-path: var(--nk-chamfer); background: var(--tier-rim); }
 .crystal-demo-right { top: 60px; left: 330px; z-index: 2; transform: rotate(14deg); }
 .crystal-demo-main { top: 0; left: 165px; z-index: 3; transform: none; }
 .crystal-demo-face { position: absolute; inset: 3px; display: flex; flex-direction: column; overflow: hidden; clip-path: var(--nk-chamfer); background: var(--crystal-card-front); }
@@ -248,7 +253,7 @@ html.dark .crystal-copy h1 { background-image: linear-gradient(180deg, #ffffff 0
 .crystal-demo-face > strong { padding: 4px 16px 0; color: var(--sf-text); font: italic 900 32px/1.05 var(--sf-font-display); }
 .crystal-demo-face > small { margin-top: 2px; padding: 0 16px; color: var(--sf-text-muted); font: 12px/1.3 "Geist Mono", ui-monospace, monospace; }
 .crystal-demo-face > b { margin-top: auto; padding: 0 16px 16px; color: var(--tier-text); font: italic 800 19px/1.2 var(--sf-font-display); }
-.crystal-hero-lumi { position: absolute; z-index: 5; top: 103px; left: -70px; width: 210px; height: 571px; max-width: none; object-fit: contain; object-position: 50% 100%; -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 99%); mask-image: linear-gradient(180deg, #000 80%, transparent 99%); filter: drop-shadow(0 0 16px color-mix(in srgb, var(--sf-second) 35%, transparent)); transform: scale(.3); transform-origin: 50% 100%; transition: transform 700ms var(--nk-snap); }
+.crystal-hero-lumi { position: absolute; z-index: 5; top: 130px; left: -70px; width: 200px; height: 544px; max-width: none; object-fit: contain; object-position: 50% 100%; -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 99%); mask-image: linear-gradient(180deg, #000 80%, transparent 99%); filter: drop-shadow(0 0 16px color-mix(in srgb, var(--sf-second) 35%, transparent)); transform: scale(.3); transform-origin: 50% 100%; transition: transform 700ms var(--nk-snap); }
 .crystal-hero-lumi[data-revealed] { transform: none; }
 .crystal-ribbon { position: absolute; right: -40px; bottom: 28px; left: -40px; z-index: 5; display: flex; height: 64px; align-items: center; overflow: hidden; transform: skewY(-1.5deg); background: var(--crystal-ribbon-bg); box-shadow: 0 0 40px -6px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
 .crystal-ribbon-track { display: flex; flex: none; white-space: nowrap; }
