@@ -595,7 +595,7 @@
 
 /* ----- Crystal Star ----- */
 
-:root[data-theme-family="crystal"] .weekly-recap-card {
+[data-family="crystal"] .weekly-recap-card {
   --weekly-recap-card-bg: #fff6f8;
   --weekly-recap-card-bg-end: #f1ecfb;
   --weekly-recap-card-text: #0d1a33;
@@ -623,11 +623,11 @@
   box-shadow: inset 0 0 28px rgb(255 42 77 / .16);
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card::after {
+[data-family="crystal"] .weekly-recap-card::after {
   display: none;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card--crystal::before {
+[data-family="crystal"] .weekly-recap-card--crystal::before {
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -637,12 +637,12 @@
     linear-gradient(0deg, rgb(255 209 102 / .55), transparent 3px);
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__stack {
+[data-family="crystal"] .weekly-recap-card__stack {
   display: none;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__kicker,
-:root[data-theme-family="crystal"] .weekly-recap-card__header .weekly-recap-card__range {
+[data-family="crystal"] .weekly-recap-card__kicker,
+[data-family="crystal"] .weekly-recap-card__header .weekly-recap-card__range {
   color: var(--weekly-recap-card-text);
   font-family: var(--sf-font-display);
   font-style: italic;
@@ -650,17 +650,17 @@
   letter-spacing: .12em;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__header .weekly-recap-card__range::before {
+[data-family="crystal"] .weekly-recap-card__header .weekly-recap-card__range::before {
   color: var(--weekly-recap-card-accent);
   content: '//' / '';
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__header,
-:root[data-theme-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__hero-metric {
+[data-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__header,
+[data-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__hero-metric {
   padding-right: 6rem;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__companion {
+[data-family="crystal"] .weekly-recap-card__companion {
   position: absolute;
   z-index: 2;
   top: 2.6rem;
@@ -671,15 +671,15 @@
   pointer-events: none;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__hero-metric strong,
-:root[data-theme-family="crystal"] .weekly-recap-card__hero-metric span,
-:root[data-theme-family="crystal"] .weekly-recap-card__metrics dd {
+[data-family="crystal"] .weekly-recap-card__hero-metric strong,
+[data-family="crystal"] .weekly-recap-card__hero-metric span,
+[data-family="crystal"] .weekly-recap-card__metrics dd {
   font-family: var(--sf-font-display);
   font-style: italic;
   font-weight: 900;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__hero-metric strong {
+[data-family="crystal"] .weekly-recap-card__hero-metric strong {
   width: fit-content;
   background: linear-gradient(180deg, #0d1a33 0%, #0d1a33 46%, #a30c2d 100%);
   -webkit-background-clip: text;
@@ -690,49 +690,49 @@
   line-height: .9;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__hero-metric span {
+[data-family="crystal"] .weekly-recap-card__hero-metric span {
   font-size: clamp(1.1rem, 2.4vw, 1.4rem);
   letter-spacing: .02em;
   text-transform: uppercase;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__hero-metric em {
+[data-family="crystal"] .weekly-recap-card__hero-metric em {
   font-style: inherit;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__metrics > div {
+[data-family="crystal"] .weekly-recap-card__metrics > div {
   border-radius: 0;
   clip-path: var(--nk-chamfer-sm);
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__metrics dt {
+[data-family="crystal"] .weekly-recap-card__metrics dt {
   font-style: italic;
   font-weight: 800;
   letter-spacing: .1em;
   text-transform: uppercase;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__metrics > div:nth-child(1) dd { color: #8a5a00; }
-:root[data-theme-family="crystal"] .weekly-recap-card__metrics > div:nth-child(2) dd { color: #0b6f85; }
+[data-family="crystal"] .weekly-recap-card__metrics > div:nth-child(1) dd { color: #8a5a00; }
+[data-family="crystal"] .weekly-recap-card__metrics > div:nth-child(2) dd { color: #0b6f85; }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__heatmap-cell {
+[data-family="crystal"] .weekly-recap-card__heatmap-cell {
   border-radius: 0;
   clip-path: polygon(14% 0, 100% 0, 86% 100%, 0 100%);
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__heatmap-day small {
+[data-family="crystal"] .weekly-recap-card__heatmap-day small {
   font-style: italic;
   font-weight: 800;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__milestones {
+[data-family="crystal"] .weekly-recap-card__milestones {
   position: relative;
   min-height: 3.75rem;
   border-color: color-mix(in srgb, var(--weekly-recap-card-accent) 40%, var(--weekly-recap-card-line));
   padding: 1rem 0 0 5.9rem;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__garden {
+[data-family="crystal"] .weekly-recap-card__garden {
   position: absolute;
   left: 0;
   bottom: 0;
@@ -743,7 +743,7 @@
   height: 2.75rem;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__garden i {
+[data-family="crystal"] .weekly-recap-card__garden i {
   display: block;
   width: 1.2rem;
   border: 1px solid currentColor;
@@ -752,9 +752,9 @@
   color: #1aa7c9;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-card__garden i:nth-child(1) { height: 1.35rem; }
-:root[data-theme-family="crystal"] .weekly-recap-card__garden i:nth-child(2) { height: 2.15rem; background: linear-gradient(145deg, rgb(255 84 112 / .86), rgb(255 42 77 / .2)); color: #e0173f; }
-:root[data-theme-family="crystal"] .weekly-recap-card__garden i:nth-child(3) { height: 1.7rem; background: linear-gradient(145deg, rgb(255 235 154 / .9), rgb(255 189 89 / .2)); color: #c99400; }
+[data-family="crystal"] .weekly-recap-card__garden i:nth-child(1) { height: 1.35rem; }
+[data-family="crystal"] .weekly-recap-card__garden i:nth-child(2) { height: 2.15rem; background: linear-gradient(145deg, rgb(255 84 112 / .86), rgb(255 42 77 / .2)); color: #e0173f; }
+[data-family="crystal"] .weekly-recap-card__garden i:nth-child(3) { height: 1.7rem; background: linear-gradient(145deg, rgb(255 235 154 / .9), rgb(255 189 89 / .2)); color: #c99400; }
 
 :root[data-theme-family="crystal"].dark .weekly-recap-card {
   --weekly-recap-card-bg: #1a1424;
@@ -782,9 +782,9 @@
 :root[data-theme-family="crystal"].dark .weekly-recap-card__garden i:nth-child(2) { color: #ff5470; }
 :root[data-theme-family="crystal"].dark .weekly-recap-card__garden i:nth-child(3) { color: #ffdd75; }
 
-:root[data-theme-family="crystal"] .weekly-recap-controls__kicker,
-:root[data-theme-family="crystal"] .weekly-recap-controls__selection legend,
-:root[data-theme-family="crystal"] .weekly-recap-controls__caption > label {
+[data-family="crystal"] .weekly-recap-controls__kicker,
+[data-family="crystal"] .weekly-recap-controls__selection legend,
+[data-family="crystal"] .weekly-recap-controls__caption > label {
   color: var(--sf-brand-text);
   font-family: var(--sf-font-display);
   font-style: italic;
@@ -792,11 +792,11 @@
   letter-spacing: .16em;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-controls__kicker-separator::before {
+[data-family="crystal"] .weekly-recap-controls__kicker-separator::before {
   content: '//' / '';
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-controls__intro h1 {
+[data-family="crystal"] .weekly-recap-controls__intro h1 {
   max-width: 13ch;
   font-family: var(--sf-font-display);
   font-size: clamp(2.4rem, 4.4vw, 3.6rem);
@@ -807,7 +807,7 @@
   text-transform: uppercase;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-controls__intro h1 em {
+[data-family="crystal"] .weekly-recap-controls__intro h1 em {
   display: block;
   color: var(--sf-brand-text);
   font-style: inherit;
@@ -828,13 +828,13 @@
   filter: drop-shadow(0 0 14px rgb(255 42 77 / .45));
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-controls__selection label,
-:root[data-theme-family="crystal"] .weekly-recap-controls__actions button {
+[data-family="crystal"] .weekly-recap-controls__selection label,
+[data-family="crystal"] .weekly-recap-controls__actions button {
   border-radius: 0;
   clip-path: polygon(.6rem 0, 100% 0, calc(100% - .6rem) 100%, 0 100%);
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-controls__selection label {
+[data-family="crystal"] .weekly-recap-controls__selection label {
   border-color: rgb(13 26 51 / .16);
   background: rgb(214 220 240 / .7);
   padding: 0 1.1rem;
@@ -842,7 +842,7 @@
   font-weight: 700;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-controls__selection label.is-selected {
+[data-family="crystal"] .weekly-recap-controls__selection label.is-selected {
   border-color: rgb(13 26 51 / .24);
   background: rgb(200 208 234 / .9);
   color: var(--sf-text);
@@ -858,7 +858,7 @@
   background: rgb(255 42 77 / .1);
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-controls__caption textarea {
+[data-family="crystal"] .weekly-recap-controls__caption textarea {
   border-radius: 0;
   background: rgb(255 255 255 / .72);
   clip-path: var(--nk-chamfer-sm);
@@ -868,7 +868,7 @@
   background: rgb(255 255 255 / .04);
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-controls__actions button {
+[data-family="crystal"] .weekly-recap-controls__actions button {
   min-height: 3.25rem;
   border: 0;
   background: #ffffff;
@@ -886,14 +886,14 @@
   color: #ffffff;
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-controls__actions .brand-action,
+[data-family="crystal"] .weekly-recap-controls__actions .brand-action,
 :root[data-theme-family="crystal"].dark .weekly-recap-controls__actions .brand-action {
   background: linear-gradient(180deg, #ff5470, #e0173f 52%, #a30c2d);
   color: #ffffff;
   filter: drop-shadow(0 0 14px rgb(255 42 77 / .5));
 }
 
-:root[data-theme-family="crystal"] .weekly-recap-controls__actions .brand-action:hover:not(:disabled) {
+[data-family="crystal"] .weekly-recap-controls__actions .brand-action:hover:not(:disabled) {
   background: linear-gradient(180deg, #ff6b85, #ff2a4d 52%, #b30f33);
   color: #ffffff;
 }
@@ -942,16 +942,16 @@
     inset: .9rem -.6rem -.7rem .9rem;
   }
 
-  :root[data-theme-family="crystal"] .weekly-recap-card {
+  [data-family="crystal"] .weekly-recap-card {
     border-radius: 0;
   }
 
-  :root[data-theme-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__header,
-  :root[data-theme-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__hero-metric {
+  [data-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__header,
+  [data-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__hero-metric {
     padding-right: 4.6rem;
   }
 
-  :root[data-theme-family="crystal"] .weekly-recap-card__companion {
+  [data-family="crystal"] .weekly-recap-card__companion {
     top: 2.35rem;
     right: .35rem;
     width: 5.25rem;

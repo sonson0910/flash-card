@@ -76,7 +76,7 @@ export function StreakChip({ streak, run, week, className }: StreakChipProps) {
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="streak-dialog-overlay" />
-        <Dialog.Content className="streak-dialog">
+        <Dialog.Content className="streak-dialog" data-family={family}>
           <span className="streak-dialog-rim" aria-hidden="true" />
           <Dialog.Close className="streak-dialog-close" aria-label={_(msg({ id: 'today.streak.close', message: 'Close streak details' }))}>
             <X size={15} strokeWidth={2.2} aria-hidden="true" />

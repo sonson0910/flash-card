@@ -103,7 +103,7 @@ export function WeeklyRecapScreen({
   const bestDayLabel = data.bestDay
     ? `${data.bestDay.dateKey} · ${formatNumber(data.bestDay.xp)} XP`
     : '—';
-  return <div className="weekly-recap-screen">
+  return <div className="weekly-recap-screen" data-family={isCrystal ? 'crystal' : 'classic'}>
     <section className={`weekly-recap-card${isCrystal ? ' weekly-recap-card--crystal' : ''}${showLumi ? ' weekly-recap-card--with-companion' : ''}`} aria-label={_(weeklyRecapCopy.title)}>
       {isCrystal && <span className="weekly-recap-card__stack" aria-hidden="true" />}
       {showLumi && <Lumi pose="proud" size={104} className="weekly-recap-card__companion" />}

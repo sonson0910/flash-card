@@ -124,7 +124,7 @@
 .session-bridge :is(button, a):focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 3px; }
 
 /* Crystal Star: AnimeBridge. */
-html[data-theme-family="crystal"] .session-bridge {
+.session-bridge[data-family="crystal"] {
   --cb-text-strong: #fff; --cb-text2: #aab3c5; --cb-text3: #7a8397; --cb-body: #d6dbe6; --cb-holo: #5ef2ff; --cb-crimson: #ff6b85;
   --cb-chip: rgb(255 255 255 / .06); --cb-line-strong: rgb(255 255 255 / .22); --cb-track: rgb(255 255 255 / .1);
   --cb-panel: linear-gradient(160deg, rgb(22 26 40 / .9), rgb(8 10 18 / .94)); --cb-card-front: linear-gradient(180deg, #121624 0%, #080a12 100%);
@@ -142,142 +142,142 @@ html[data-theme-family="crystal"]:not(.dark) .session-bridge {
   --cb-title-metal: linear-gradient(180deg, #13306b 0%, #1f4d9c 46%, #0d1a33 54%, #1f4d9c 100%); --cb-title-shadow: drop-shadow(0 4px 0 rgb(255 255 255 / .9));
   background: radial-gradient(ellipse 50% 40% at 70% 20%, rgb(255 190 215 / .55), transparent 70%), radial-gradient(ellipse 45% 40% at 20% 80%, rgb(255 84 112 / .18), transparent 70%), linear-gradient(115deg, #a9dcff 0%, #c7ebff 24%, #b5e6ff 46%, #c9f6f4 66%, #9fd6ff 88%, #b8e4ff 100%);
 }
-html[data-theme-family="crystal"] .session-bridge::before { background: var(--nk-stars), repeating-linear-gradient(100deg, transparent 0 46px, rgb(255 255 255 / .04) 46px 48px, transparent 48px 120px); }
+.session-bridge[data-family="crystal"]::before { background: var(--nk-stars), repeating-linear-gradient(100deg, transparent 0 46px, rgb(255 255 255 / .04) 46px 48px, transparent 48px 120px); }
 
-html[data-theme-family="crystal"] .session-bridge-header { height: 96px; gap: 22px; padding: 0 40px; }
-html[data-theme-family="crystal"] :is(.session-bridge-exit, .session-bridge-theme) { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); color: var(--cb-text-strong); }
-html[data-theme-family="crystal"] .session-bridge-rail { display: flex; justify-content: center; gap: 14px; margin: 0 auto; }
-html[data-theme-family="crystal"] .session-bridge-rail li { display: flex; flex: 0 1 196px; flex-direction: column; gap: 7px; color: var(--cb-text3); }
-html[data-theme-family="crystal"] .session-bridge-rail li[data-completed] { color: var(--cb-text2); }
-html[data-theme-family="crystal"] .session-bridge-rail li[aria-current="step"] { color: var(--cb-crimson); }
-html[data-theme-family="crystal"] .session-bridge-rail-track { height: 12px; border-radius: 0; background: var(--cb-track); transform: skewX(-30deg); }
-html[data-theme-family="crystal"] .session-bridge-rail-track > span { border-radius: 0; }
-html[data-theme-family="crystal"] .session-bridge-rail li[data-completed] .session-bridge-rail-track > span { background: linear-gradient(90deg, #5ef2ff, #9fe9ff); box-shadow: 0 0 10px rgb(94 242 255 / .6); }
-html[data-theme-family="crystal"] .session-bridge-rail li[aria-current="step"] .session-bridge-rail-track { box-shadow: 0 0 0 1px rgb(255 42 77 / .6); }
-html[data-theme-family="crystal"] .session-bridge-rail li[aria-current="step"] .session-bridge-rail-track > span { width: 5%; background: #ff2a4d; box-shadow: 0 0 12px rgb(255 42 77 / .9); }
-html[data-theme-family="crystal"] .session-bridge-rail-row { align-items: baseline; margin: 0; font-family: var(--cb-display); font-style: italic; }
-html[data-theme-family="crystal"] .session-bridge-rail-label { font-size: 15px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
-html[data-theme-family="crystal"] .session-bridge-rail-number { display: inline; }
-html[data-theme-family="crystal"] .session-bridge-rail-meta { color: var(--cb-text3); font-family: inherit; font-size: 13px; font-weight: 700; }
-html[data-theme-family="crystal"] .session-bridge-feedback { height: 44px; padding: 0 14px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); color: var(--cb-holo); }
-html[data-theme-family="crystal"] .session-bridge-wave > span { width: 3px; border-radius: 0; background: currentColor; }
+[data-family="crystal"] .session-bridge-header { height: 96px; gap: 22px; padding: 0 40px; }
+[data-family="crystal"] :is(.session-bridge-exit, .session-bridge-theme) { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); color: var(--cb-text-strong); }
+[data-family="crystal"] .session-bridge-rail { display: flex; justify-content: center; gap: 14px; margin: 0 auto; }
+[data-family="crystal"] .session-bridge-rail li { display: flex; flex: 0 1 196px; flex-direction: column; gap: 7px; color: var(--cb-text3); }
+[data-family="crystal"] .session-bridge-rail li[data-completed] { color: var(--cb-text2); }
+[data-family="crystal"] .session-bridge-rail li[aria-current="step"] { color: var(--cb-crimson); }
+[data-family="crystal"] .session-bridge-rail-track { height: 12px; border-radius: 0; background: var(--cb-track); transform: skewX(-30deg); }
+[data-family="crystal"] .session-bridge-rail-track > span { border-radius: 0; }
+[data-family="crystal"] .session-bridge-rail li[data-completed] .session-bridge-rail-track > span { background: linear-gradient(90deg, #5ef2ff, #9fe9ff); box-shadow: 0 0 10px rgb(94 242 255 / .6); }
+[data-family="crystal"] .session-bridge-rail li[aria-current="step"] .session-bridge-rail-track { box-shadow: 0 0 0 1px rgb(255 42 77 / .6); }
+[data-family="crystal"] .session-bridge-rail li[aria-current="step"] .session-bridge-rail-track > span { width: 5%; background: #ff2a4d; box-shadow: 0 0 12px rgb(255 42 77 / .9); }
+[data-family="crystal"] .session-bridge-rail-row { align-items: baseline; margin: 0; font-family: var(--cb-display); font-style: italic; }
+[data-family="crystal"] .session-bridge-rail-label { font-size: 15px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+[data-family="crystal"] .session-bridge-rail-number { display: inline; }
+[data-family="crystal"] .session-bridge-rail-meta { color: var(--cb-text3); font-family: inherit; font-size: 13px; font-weight: 700; }
+[data-family="crystal"] .session-bridge-feedback { height: 44px; padding: 0 14px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); color: var(--cb-holo); }
+[data-family="crystal"] .session-bridge-wave > span { width: 3px; border-radius: 0; background: currentColor; }
 
-html[data-theme-family="crystal"] .session-bridge-main { grid-template-columns: 380px minmax(0, 1fr) 400px; gap: 20px; padding: 0 56px 30px 64px; }
-html[data-theme-family="crystal"] .session-bridge-result { display: flex; height: 100%; flex-direction: column; justify-self: stretch; }
-html[data-theme-family="crystal"] .session-bridge-eyebrow { margin-top: 40px; color: var(--cb-holo); font-family: var(--cb-display); font-size: 14px; font-style: italic; font-weight: 800; letter-spacing: .16em; }
-html[data-theme-family="crystal"] .session-bridge-combo { height: 170px; flex-direction: row; align-items: center; gap: 16px; margin-top: 10px; padding: 16px 0 0 58px; }
-html[data-theme-family="crystal"] .session-bridge-combo-banner { position: absolute; top: 26px; right: 20px; left: -10px; display: block; height: 110px; background: linear-gradient(90deg, rgb(179 15 51 / .95), rgb(255 42 77 / .85) 60%, rgb(255 42 77 / 0)); box-shadow: 0 0 40px -6px rgb(255 42 77 / .7); transform: skewX(-16deg); }
-html[data-theme-family="crystal"] .session-bridge-combo strong { position: relative; background: linear-gradient(180deg, #fff 0%, #ffe3ea 48%, #ffb3c2 52%, #fff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: var(--cb-display); font-size: 92px; font-style: italic; font-weight: 900; line-height: 1; letter-spacing: 0; text-shadow: none; filter: drop-shadow(0 4px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / .8)); }
-html[data-theme-family="crystal"] .session-bridge-combo-label { position: relative; max-width: 9rem; margin: 0; color: #ffe3ea; font-family: var(--cb-display); font-size: 13px; font-style: italic; font-weight: 700; letter-spacing: .14em; line-height: 1.3; text-transform: uppercase; text-shadow: 0 2px 0 #7a0820; }
-html[data-theme-family="crystal"] .session-bridge-stat strong { background: var(--cb-title-metal); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: var(--cb-display); font-style: italic; font-weight: 900; letter-spacing: 0; filter: var(--cb-title-shadow); }
-html[data-theme-family="crystal"] .session-bridge-stat span { color: var(--cb-body); }
-html[data-theme-family="crystal"] .session-bridge-ticks { gap: 6px; margin-top: 6px; padding-left: 6px; }
-html[data-theme-family="crystal"] .session-bridge-ticks li { width: 32px; height: 12px; border-radius: 0; background: var(--cb-track); transform: skewX(-30deg); }
-html[data-theme-family="crystal"] .session-bridge-ticks li[data-correct] { background: linear-gradient(90deg, #ffd166, #ff8a3d); box-shadow: 0 0 10px rgb(255 209 102 / .6); }
-html[data-theme-family="crystal"] .session-bridge-xp { margin-top: 14px; padding: 0 16px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: linear-gradient(180deg, #fff0b8, #ffd166); color: #4a2a00; font-family: var(--cb-display); font-size: 16px; font-style: italic; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
-html[data-theme-family="crystal"] .session-bridge-companion { display: flex; align-items: flex-end; gap: 8px; margin-top: auto; }
-html[data-theme-family="crystal"] .session-bridge-lumi { flex: none; width: 170px; height: auto; filter: drop-shadow(0 0 18px rgb(255 42 77 / .45)); }
-html[data-theme-family="crystal"] .session-bridge-speech { position: relative; display: flex; flex: 1; flex-direction: column; gap: 3px; margin-bottom: 18px; padding: 11px 14px 13px; clip-path: var(--nk-chamfer); background: var(--cb-panel); box-shadow: inset 0 0 0 1px rgb(94 242 255 / .4); }
-html[data-theme-family="crystal"] .session-bridge-speech::before { position: absolute; top: 12px; bottom: 12px; left: 0; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d); content: ''; }
-html[data-theme-family="crystal"] .session-bridge-speech-name { color: var(--cb-holo); font-family: var(--cb-display); font-size: 12px; font-style: italic; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-html[data-theme-family="crystal"] .session-bridge-speech strong { color: var(--cb-text-strong); font-size: 15px; font-weight: 900; line-height: 1.3; }
-html[data-theme-family="crystal"] .session-bridge-speech span:last-child { color: var(--cb-text2); font-size: 12.5px; line-height: 1.4; }
+[data-family="crystal"] .session-bridge-main { grid-template-columns: 380px minmax(0, 1fr) 400px; gap: 20px; padding: 0 56px 30px 64px; }
+[data-family="crystal"] .session-bridge-result { display: flex; height: 100%; flex-direction: column; justify-self: stretch; }
+[data-family="crystal"] .session-bridge-eyebrow { margin-top: 40px; color: var(--cb-holo); font-family: var(--cb-display); font-size: 14px; font-style: italic; font-weight: 800; letter-spacing: .16em; }
+[data-family="crystal"] .session-bridge-combo { height: 170px; flex-direction: row; align-items: center; gap: 16px; margin-top: 10px; padding: 16px 0 0 58px; }
+[data-family="crystal"] .session-bridge-combo-banner { position: absolute; top: 26px; right: 20px; left: -10px; display: block; height: 110px; background: linear-gradient(90deg, rgb(179 15 51 / .95), rgb(255 42 77 / .85) 60%, rgb(255 42 77 / 0)); box-shadow: 0 0 40px -6px rgb(255 42 77 / .7); transform: skewX(-16deg); }
+[data-family="crystal"] .session-bridge-combo strong { position: relative; background: linear-gradient(180deg, #fff 0%, #ffe3ea 48%, #ffb3c2 52%, #fff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: var(--cb-display); font-size: 92px; font-style: italic; font-weight: 900; line-height: 1; letter-spacing: 0; text-shadow: none; filter: drop-shadow(0 4px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / .8)); }
+[data-family="crystal"] .session-bridge-combo-label { position: relative; max-width: 9rem; margin: 0; color: #ffe3ea; font-family: var(--cb-display); font-size: 13px; font-style: italic; font-weight: 700; letter-spacing: .14em; line-height: 1.3; text-transform: uppercase; text-shadow: 0 2px 0 #7a0820; }
+[data-family="crystal"] .session-bridge-stat strong { background: var(--cb-title-metal); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: var(--cb-display); font-style: italic; font-weight: 900; letter-spacing: 0; filter: var(--cb-title-shadow); }
+[data-family="crystal"] .session-bridge-stat span { color: var(--cb-body); }
+[data-family="crystal"] .session-bridge-ticks { gap: 6px; margin-top: 6px; padding-left: 6px; }
+[data-family="crystal"] .session-bridge-ticks li { width: 32px; height: 12px; border-radius: 0; background: var(--cb-track); transform: skewX(-30deg); }
+[data-family="crystal"] .session-bridge-ticks li[data-correct] { background: linear-gradient(90deg, #ffd166, #ff8a3d); box-shadow: 0 0 10px rgb(255 209 102 / .6); }
+[data-family="crystal"] .session-bridge-xp { margin-top: 14px; padding: 0 16px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: linear-gradient(180deg, #fff0b8, #ffd166); color: #4a2a00; font-family: var(--cb-display); font-size: 16px; font-style: italic; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+[data-family="crystal"] .session-bridge-companion { display: flex; align-items: flex-end; gap: 8px; margin-top: auto; }
+[data-family="crystal"] .session-bridge-lumi { flex: none; width: 170px; height: auto; filter: drop-shadow(0 0 18px rgb(255 42 77 / .45)); }
+[data-family="crystal"] .session-bridge-speech { position: relative; display: flex; flex: 1; flex-direction: column; gap: 3px; margin-bottom: 18px; padding: 11px 14px 13px; clip-path: var(--nk-chamfer); background: var(--cb-panel); box-shadow: inset 0 0 0 1px rgb(94 242 255 / .4); }
+[data-family="crystal"] .session-bridge-speech::before { position: absolute; top: 12px; bottom: 12px; left: 0; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d); content: ''; }
+[data-family="crystal"] .session-bridge-speech-name { color: var(--cb-holo); font-family: var(--cb-display); font-size: 12px; font-style: italic; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+[data-family="crystal"] .session-bridge-speech strong { color: var(--cb-text-strong); font-size: 15px; font-weight: 900; line-height: 1.3; }
+[data-family="crystal"] .session-bridge-speech span:last-child { color: var(--cb-text2); font-size: 12.5px; line-height: 1.4; }
 
-html[data-theme-family="crystal"] .session-bridge-preview { height: min(660px, calc(100dvh - 126px)); }
-html[data-theme-family="crystal"] .session-bridge-aura { width: 560px; height: 560px; background: radial-gradient(circle, rgb(94 242 255 / .45), rgb(255 42 77 / .25) 50%, transparent 70%); filter: blur(50px); opacity: .55; }
-html[data-theme-family="crystal"] .session-bridge-ghosts > span { width: 330px; height: 440px; margin: -220px 0 0 -165px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer); background: var(--cb-card-front) padding-box; box-shadow: inset 0 0 0 2px #5ef2ff; }
-html[data-theme-family="crystal"] .session-bridge-ghosts > span:nth-child(1) { opacity: .14; transform: translate(-150px, 96px) rotate(-12deg) scale(.8); }
-html[data-theme-family="crystal"] .session-bridge-ghosts > span:nth-child(2) { opacity: .26; transform: translate(-100px, 64px) rotate(-8deg) scale(.88); }
-html[data-theme-family="crystal"] .session-bridge-ghosts > span:nth-child(3) { opacity: .42; transform: translate(-50px, 32px) rotate(-4deg) scale(.94); }
-html[data-theme-family="crystal"] .session-bridge-trails > span:nth-child(1) { width: 300px; height: 4px; margin: 150px 0 0 -330px; border-radius: 0; background: linear-gradient(90deg, transparent, #5ef2ff); box-shadow: 0 0 12px #5ef2ff; }
-html[data-theme-family="crystal"] .session-bridge-trails > span:nth-child(2) { width: 220px; height: 3px; margin: 100px 0 0 -310px; border-radius: 0; background: linear-gradient(90deg, transparent, #ff5470); opacity: 1; filter: blur(1px); }
-html[data-theme-family="crystal"] .session-bridge-card { width: 330px; height: 440px; transform: none; filter: drop-shadow(0 30px 40px rgb(0 0 0 / .45)) drop-shadow(0 0 22px var(--cb-rim-soft)); }
-html[data-theme-family="crystal"] .session-bridge-card-face { padding: 25px 27px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer); background: transparent; box-shadow: none; isolation: isolate; }
-html[data-theme-family="crystal"] .session-bridge-card-face::before { position: absolute; z-index: -1; inset: 0; clip-path: var(--nk-chamfer); background: var(--cb-rim); content: ''; }
-html[data-theme-family="crystal"] .session-bridge-card-face::after { position: absolute; z-index: -1; inset: 3px; clip-path: var(--nk-chamfer); background: var(--cb-card-front); content: ''; }
-html[data-theme-family="crystal"] .session-bridge-card-back::after { background: var(--cb-card-back); }
-html[data-theme-family="crystal"] .session-bridge-card-category { height: 30px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); color: var(--cb-text2); font-size: 12.5px; font-weight: 800; }
-html[data-theme-family="crystal"] .session-bridge-card-site { width: 18px; height: 18px; border-radius: 0; background: #b30f33; color: #fff; font-size: 11px; font-weight: 900; }
-html[data-theme-family="crystal"] .session-bridge-card-kind { display: block; margin-top: auto; color: var(--cb-crimson); font-family: var(--cb-display); font-size: 13px; font-style: italic; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-html[data-theme-family="crystal"] .session-bridge-card-kind span { color: var(--cb-text3); }
-html[data-theme-family="crystal"] .session-bridge-card-kind + .session-bridge-card-word { margin-top: 2px; }
-html[data-theme-family="crystal"] .session-bridge-card-word { color: var(--cb-text-strong); font-family: var(--cb-display); font-size: 58px; font-style: italic; font-weight: 900; line-height: 1.02; letter-spacing: 0; }
-html[data-theme-family="crystal"] .session-bridge-card-phonetic { margin-top: 8px; color: var(--cb-body); font-size: 14px; }
-html[data-theme-family="crystal"] .session-bridge-card-hint { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 14px; border-top: 1px solid var(--cb-line-strong); color: var(--cb-text2); font-family: var(--cb-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-html[data-theme-family="crystal"] .session-bridge-card-hint kbd { display: inline-flex; height: 22px; align-items: center; padding: 0 7px; background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); font-family: var(--sb-mono); font-size: 11px; font-style: normal; font-weight: 500; letter-spacing: 0; text-transform: none; }
-html[data-theme-family="crystal"] .session-bridge-card-back .session-bridge-card-kind { margin-top: 0; color: var(--cb-holo); }
-html[data-theme-family="crystal"] .session-bridge-card-translation { color: var(--cb-text-strong); font-family: var(--cb-display); font-size: 40px; font-style: italic; font-weight: 900; line-height: 1.1; }
-html[data-theme-family="crystal"] .session-bridge-card-example { color: var(--cb-body); }
-html[data-theme-family="crystal"] .session-bridge-finale { color: var(--cb-holo); }
+[data-family="crystal"] .session-bridge-preview { height: min(660px, calc(100dvh - 126px)); }
+[data-family="crystal"] .session-bridge-aura { width: 560px; height: 560px; background: radial-gradient(circle, rgb(94 242 255 / .45), rgb(255 42 77 / .25) 50%, transparent 70%); filter: blur(50px); opacity: .55; }
+[data-family="crystal"] .session-bridge-ghosts > span { width: 330px; height: 440px; margin: -220px 0 0 -165px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer); background: var(--cb-card-front) padding-box; box-shadow: inset 0 0 0 2px #5ef2ff; }
+[data-family="crystal"] .session-bridge-ghosts > span:nth-child(1) { opacity: .14; transform: translate(-150px, 96px) rotate(-12deg) scale(.8); }
+[data-family="crystal"] .session-bridge-ghosts > span:nth-child(2) { opacity: .26; transform: translate(-100px, 64px) rotate(-8deg) scale(.88); }
+[data-family="crystal"] .session-bridge-ghosts > span:nth-child(3) { opacity: .42; transform: translate(-50px, 32px) rotate(-4deg) scale(.94); }
+[data-family="crystal"] .session-bridge-trails > span:nth-child(1) { width: 300px; height: 4px; margin: 150px 0 0 -330px; border-radius: 0; background: linear-gradient(90deg, transparent, #5ef2ff); box-shadow: 0 0 12px #5ef2ff; }
+[data-family="crystal"] .session-bridge-trails > span:nth-child(2) { width: 220px; height: 3px; margin: 100px 0 0 -310px; border-radius: 0; background: linear-gradient(90deg, transparent, #ff5470); opacity: 1; filter: blur(1px); }
+[data-family="crystal"] .session-bridge-card { width: 330px; height: 440px; transform: none; filter: drop-shadow(0 30px 40px rgb(0 0 0 / .45)) drop-shadow(0 0 22px var(--cb-rim-soft)); }
+[data-family="crystal"] .session-bridge-card-face { padding: 25px 27px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer); background: transparent; box-shadow: none; isolation: isolate; }
+[data-family="crystal"] .session-bridge-card-face::before { position: absolute; z-index: -1; inset: 0; clip-path: var(--nk-chamfer); background: var(--cb-rim); content: ''; }
+[data-family="crystal"] .session-bridge-card-face::after { position: absolute; z-index: -1; inset: 3px; clip-path: var(--nk-chamfer); background: var(--cb-card-front); content: ''; }
+[data-family="crystal"] .session-bridge-card-back::after { background: var(--cb-card-back); }
+[data-family="crystal"] .session-bridge-card-category { height: 30px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); color: var(--cb-text2); font-size: 12.5px; font-weight: 800; }
+[data-family="crystal"] .session-bridge-card-site { width: 18px; height: 18px; border-radius: 0; background: #b30f33; color: #fff; font-size: 11px; font-weight: 900; }
+[data-family="crystal"] .session-bridge-card-kind { display: block; margin-top: auto; color: var(--cb-crimson); font-family: var(--cb-display); font-size: 13px; font-style: italic; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+[data-family="crystal"] .session-bridge-card-kind span { color: var(--cb-text3); }
+[data-family="crystal"] .session-bridge-card-kind + .session-bridge-card-word { margin-top: 2px; }
+[data-family="crystal"] .session-bridge-card-word { color: var(--cb-text-strong); font-family: var(--cb-display); font-size: 58px; font-style: italic; font-weight: 900; line-height: 1.02; letter-spacing: 0; }
+[data-family="crystal"] .session-bridge-card-phonetic { margin-top: 8px; color: var(--cb-body); font-size: 14px; }
+[data-family="crystal"] .session-bridge-card-hint { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 14px; border-top: 1px solid var(--cb-line-strong); color: var(--cb-text2); font-family: var(--cb-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+[data-family="crystal"] .session-bridge-card-hint kbd { display: inline-flex; height: 22px; align-items: center; padding: 0 7px; background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); font-family: var(--sb-mono); font-size: 11px; font-style: normal; font-weight: 500; letter-spacing: 0; text-transform: none; }
+[data-family="crystal"] .session-bridge-card-back .session-bridge-card-kind { margin-top: 0; color: var(--cb-holo); }
+[data-family="crystal"] .session-bridge-card-translation { color: var(--cb-text-strong); font-family: var(--cb-display); font-size: 40px; font-style: italic; font-weight: 900; line-height: 1.1; }
+[data-family="crystal"] .session-bridge-card-example { color: var(--cb-body); }
+[data-family="crystal"] .session-bridge-finale { color: var(--cb-holo); }
 
-html[data-theme-family="crystal"] .session-bridge-next { max-width: none; justify-self: stretch; text-align: left; }
-html[data-theme-family="crystal"] .session-bridge-step { color: var(--cb-crimson); font-family: var(--cb-display); font-size: 15px; font-style: italic; font-weight: 800; letter-spacing: .16em; }
-html[data-theme-family="crystal"] .session-bridge #session-bridge-heading { margin-top: 8px; font-family: var(--cb-display); font-size: 108px; font-style: italic; font-weight: 900; line-height: .9; letter-spacing: 0; text-transform: uppercase; }
-html[data-theme-family="crystal"] .session-bridge #session-bridge-heading em { background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent; font-style: italic; text-shadow: none; filter: drop-shadow(0 0 24px rgb(255 42 77 / .85)); }
-html[data-theme-family="crystal"] .session-bridge #session-bridge-heading > span { background: var(--cb-title-metal); -webkit-background-clip: text; background-clip: text; color: transparent; filter: var(--cb-title-shadow); }
-html[data-theme-family="crystal"] :is(.session-bridge-summary, .session-bridge-description) { margin-top: 16px; color: var(--cb-body); font-size: 18px; }
-html[data-theme-family="crystal"] .session-bridge-skip-reason { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); color: var(--cb-body); }
-html[data-theme-family="crystal"] .session-bridge-actions { justify-content: flex-start; margin-top: 26px; }
-html[data-theme-family="crystal"] .session-bridge-actions button { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); font-family: var(--cb-display); font-size: 16px; font-style: italic; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
-html[data-theme-family="crystal"] .session-bridge-primary { background: linear-gradient(180deg, #ff5470 0%, #e0173f 50%, #a30c2d 100%); color: #fff; box-shadow: none; filter: drop-shadow(0 0 14px rgb(255 42 77 / .6)); }
-html[data-theme-family="crystal"] .session-bridge-secondary { background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); color: var(--cb-text-strong); }
+[data-family="crystal"] .session-bridge-next { max-width: none; justify-self: stretch; text-align: left; }
+[data-family="crystal"] .session-bridge-step { color: var(--cb-crimson); font-family: var(--cb-display); font-size: 15px; font-style: italic; font-weight: 800; letter-spacing: .16em; }
+[data-family="crystal"] #session-bridge-heading { margin-top: 8px; font-family: var(--cb-display); font-size: 108px; font-style: italic; font-weight: 900; line-height: .9; letter-spacing: 0; text-transform: uppercase; }
+[data-family="crystal"] #session-bridge-heading em { background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent; font-style: italic; text-shadow: none; filter: drop-shadow(0 0 24px rgb(255 42 77 / .85)); }
+[data-family="crystal"] #session-bridge-heading > span { background: var(--cb-title-metal); -webkit-background-clip: text; background-clip: text; color: transparent; filter: var(--cb-title-shadow); }
+[data-family="crystal"] :is(.session-bridge-summary, .session-bridge-description) { margin-top: 16px; color: var(--cb-body); font-size: 18px; }
+[data-family="crystal"] .session-bridge-skip-reason { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); color: var(--cb-body); }
+[data-family="crystal"] .session-bridge-actions { justify-content: flex-start; margin-top: 26px; }
+[data-family="crystal"] .session-bridge-actions button { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); font-family: var(--cb-display); font-size: 16px; font-style: italic; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+[data-family="crystal"] .session-bridge-primary { background: linear-gradient(180deg, #ff5470 0%, #e0173f 50%, #a30c2d 100%); color: #fff; box-shadow: none; filter: drop-shadow(0 0 14px rgb(255 42 77 / .6)); }
+[data-family="crystal"] .session-bridge-secondary { background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); color: var(--cb-text-strong); }
 
 /* Between tablet and the board width the side columns shrink first. */
 @media (max-width: 1279px) {
   .session-bridge-header { padding: 0 32px; gap: 20px; }
   .session-bridge-main { grid-template-columns: minmax(0, 1fr) 440px minmax(0, 1fr); padding: 0 32px 40px; }
-  html[data-theme-family="crystal"] .session-bridge-main { grid-template-columns: 300px minmax(0, 1fr) 320px; padding: 0 32px 30px; }
-  html[data-theme-family="crystal"] .session-bridge #session-bridge-heading { font-size: 84px; }
-  html[data-theme-family="crystal"] .session-bridge-lumi { width: 130px; }
+  [data-family="crystal"] .session-bridge-main { grid-template-columns: 300px minmax(0, 1fr) 320px; padding: 0 32px 30px; }
+  [data-family="crystal"] #session-bridge-heading { font-size: 84px; }
+  [data-family="crystal"] .session-bridge-lumi { width: 130px; }
 }
 
 /* Phone: one column; the card keeps the board proportions at a smaller size. */
 @media (max-width: 760px) {
-  .session-bridge-header, html[data-theme-family="crystal"] .session-bridge-header { height: auto; gap: 12px; padding: 14px 16px 6px; }
-  .session-bridge-feedback, html[data-theme-family="crystal"] .session-bridge-feedback { display: none; }
-  html[data-theme-family="crystal"] .session-bridge-rail { gap: 8px; }
+  .session-bridge-header, [data-family="crystal"] .session-bridge-header { height: auto; gap: 12px; padding: 14px 16px 6px; }
+  .session-bridge-feedback, [data-family="crystal"] .session-bridge-feedback { display: none; }
+  [data-family="crystal"] .session-bridge-rail { gap: 8px; }
   .session-bridge-rail-row { font-size: 11px; }
-  .session-bridge-rail-meta, .session-bridge-rail-number, html[data-theme-family="crystal"] .session-bridge-rail-number { display: none; }
-  html[data-theme-family="crystal"] .session-bridge-rail-label { font-size: 11px; letter-spacing: .02em; }
-  html[data-theme-family="crystal"] .session-bridge-rail-track { height: 8px; }
-  .session-bridge-main, html[data-theme-family="crystal"] .session-bridge-main { display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 16px 28px; }
-  .session-bridge-result, html[data-theme-family="crystal"] .session-bridge-result { height: auto; }
-  html[data-theme-family="crystal"] .session-bridge-eyebrow { margin-top: 4px; }
+  .session-bridge-rail-meta, .session-bridge-rail-number, [data-family="crystal"] .session-bridge-rail-number { display: none; }
+  [data-family="crystal"] .session-bridge-rail-label { font-size: 11px; letter-spacing: .02em; }
+  [data-family="crystal"] .session-bridge-rail-track { height: 8px; }
+  .session-bridge-main, [data-family="crystal"] .session-bridge-main { display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 16px 28px; }
+  .session-bridge-result, [data-family="crystal"] .session-bridge-result { height: auto; }
+  [data-family="crystal"] .session-bridge-eyebrow { margin-top: 4px; }
   .session-bridge-combo strong, .session-bridge-stat strong { font-size: 64px; }
-  html[data-theme-family="crystal"] .session-bridge-combo { height: 110px; padding: 6px 0 0 44px; }
-  html[data-theme-family="crystal"] .session-bridge-combo-banner { top: 14px; height: 80px; }
-  html[data-theme-family="crystal"] .session-bridge-combo strong { font-size: 64px; }
+  [data-family="crystal"] .session-bridge-combo { height: 110px; padding: 6px 0 0 44px; }
+  [data-family="crystal"] .session-bridge-combo-banner { top: 14px; height: 80px; }
+  [data-family="crystal"] .session-bridge-combo strong { font-size: 64px; }
   .session-bridge-ticks { margin-top: 12px; }
   .session-bridge-xp { margin-top: 14px; }
-  html[data-theme-family="crystal"] .session-bridge-companion { position: absolute; top: 0; right: 0; margin: 0; }
-  html[data-theme-family="crystal"] .session-bridge-speech { display: none; }
-  html[data-theme-family="crystal"] .session-bridge-lumi { width: 96px; }
+  [data-family="crystal"] .session-bridge-companion { position: absolute; top: 0; right: 0; margin: 0; }
+  [data-family="crystal"] .session-bridge-speech { display: none; }
+  [data-family="crystal"] .session-bridge-lumi { width: 96px; }
   .session-bridge-result { position: relative; }
-  .session-bridge-preview, html[data-theme-family="crystal"] .session-bridge-preview { height: 400px; min-height: 0; }
+  .session-bridge-preview, [data-family="crystal"] .session-bridge-preview { height: 400px; min-height: 0; }
   .session-bridge-aura { width: 300px; height: 300px; }
   .session-bridge-card { width: 270px; height: 360px; }
-  html[data-theme-family="crystal"] .session-bridge-card { width: 270px; height: 360px; }
+  [data-family="crystal"] .session-bridge-card { width: 270px; height: 360px; }
   .session-bridge-card-face { padding: 24px; }
   .session-bridge-card-word { font-size: 44px; }
-  html[data-theme-family="crystal"] .session-bridge-card-word { font-size: 44px; }
+  [data-family="crystal"] .session-bridge-card-word { font-size: 44px; }
   .session-bridge-ghosts > span { width: 270px; height: 360px; margin: -180px 0 0 -135px; }
-  html[data-theme-family="crystal"] .session-bridge-ghosts > span { width: 270px; height: 360px; margin: -180px 0 0 -135px; }
+  [data-family="crystal"] .session-bridge-ghosts > span { width: 270px; height: 360px; margin: -180px 0 0 -135px; }
   .session-bridge-ghosts > span:nth-child(1) { transform: translate(60px, 30px) rotate(10deg) scale(.86); }
   .session-bridge-ghosts > span:nth-child(2) { transform: translate(40px, 20px) rotate(6deg) scale(.9); }
   .session-bridge-ghosts > span:nth-child(3) { transform: translate(20px, 10px) rotate(3deg) scale(.95); }
-  html[data-theme-family="crystal"] .session-bridge-ghosts > span:nth-child(1) { transform: translate(-60px, 30px) rotate(-10deg) scale(.86); }
-  html[data-theme-family="crystal"] .session-bridge-ghosts > span:nth-child(2) { transform: translate(-40px, 20px) rotate(-6deg) scale(.9); }
-  html[data-theme-family="crystal"] .session-bridge-ghosts > span:nth-child(3) { transform: translate(-20px, 10px) rotate(-3deg) scale(.95); }
+  [data-family="crystal"] .session-bridge-ghosts > span:nth-child(1) { transform: translate(-60px, 30px) rotate(-10deg) scale(.86); }
+  [data-family="crystal"] .session-bridge-ghosts > span:nth-child(2) { transform: translate(-40px, 20px) rotate(-6deg) scale(.9); }
+  [data-family="crystal"] .session-bridge-ghosts > span:nth-child(3) { transform: translate(-20px, 10px) rotate(-3deg) scale(.95); }
   .session-bridge-trails { display: none; }
-  .session-bridge-next, html[data-theme-family="crystal"] .session-bridge-next { max-width: none; justify-self: stretch; text-align: left; }
+  .session-bridge-next, [data-family="crystal"] .session-bridge-next { max-width: none; justify-self: stretch; text-align: left; }
   .session-bridge #session-bridge-heading { font-size: 48px; }
-  html[data-theme-family="crystal"] .session-bridge #session-bridge-heading { font-size: 64px; }
+  [data-family="crystal"] #session-bridge-heading { font-size: 64px; }
   .session-bridge-actions { justify-content: stretch; }
   .session-bridge-actions button { flex: 1 1 auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .session-bridge-card, html[data-theme-family="crystal"] .session-bridge-card { transform: none; }
+  .session-bridge-card, [data-family="crystal"] .session-bridge-card { transform: none; }
   .session-bridge-card-rotor { transition: none; }
   .session-bridge-wave > span { animation: none; }
 }

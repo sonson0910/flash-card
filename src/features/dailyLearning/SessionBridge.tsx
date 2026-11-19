@@ -74,7 +74,7 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
   };
 
   return (
-    <section aria-labelledby="session-bridge-heading" className="session-bridge" data-session-shell="bridge" onKeyDown={flipFromKeyboard}>
+    <section aria-labelledby="session-bridge-heading" className="session-bridge" data-family={family} data-session-shell="bridge" onKeyDown={flipFromKeyboard}>
       <header className="session-bridge-header">
         <button type="button" onClick={actions.exit} className="session-bridge-exit" aria-label={_(msg({ id: 'session.bridge.exit', message: 'Exit session' }))}>
           <X size={16} aria-hidden="true" />
