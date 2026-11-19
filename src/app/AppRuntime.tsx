@@ -29,6 +29,9 @@ import type { CourseTargetLanguage } from '../features/courses/courseModel';
 import { goalKindLabel } from '../features/courses/courseGoalCatalog';
 import { createSharedDeckCoursePort, resolveShareCourseAction } from '../features/sharing/shareCourseMatching';
 import { OnboardingGate } from '../features/onboarding/OnboardingGate';
+import { AccountProfileProvider } from '../features/profileCompletion/AccountProfileContext';
+import { ProfileCompletionGate } from '../features/profileCompletion/ProfileCompletionGate';
+import { useAccountProfileGate } from '../features/profileCompletion/useAccountProfileGate';
 import { useOnboardingLibraryState } from '../features/onboarding/useOnboardingLibraryState';
 import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
 import type { LearningCeremony } from './useAppLearningCoordination';
@@ -160,6 +163,8 @@ export default function AppRuntime({
   const identityOwnerId = identitySession.owner?.id ?? null;
   const identityOwnerRef = useRef(identityOwnerId);
   identityOwnerRef.current = identityOwnerId;
+  // A signed-in owner reaches the app only after the server holds a completed account profile.
+  const accountProfile = useAccountProfileGate(identityOwnerId);
   const [storedError, setStoredError] = useState<string | null>(null);
   const [error, setError] = useOwnerScopedMessage(identityOwnerId, identityOwnerRef, storedError, setStoredError);
   const [isRetryingSync, setIsRetryingSync] = useState(false);
@@ -236,7 +241,8 @@ export default function AppRuntime({
   // default, so the very first render before that report lands is correct.
   const [courseSession, setCourseSession] = useState<CourseGateValue | null>(null);
   const currentCourseSession = readyCourseSessionForOwner(courseSession, identityOwnerId);
-  const courseScopeReady = identitySession.status === 'anonymous' || !!(identityOwnerId && currentCourseSession);
+  const courseScopeReady = identitySession.status === 'anonymous'
+    || !!(identityOwnerId && currentCourseSession && accountProfile.status === 'complete');
   const activeCourse = currentCourseSession?.model.activeCourse ?? null;
   const languageProfile = languageProfileForCourse(activeCourse);
   const targetLanguage = languageProfile.source.code;
@@ -501,6 +507,17 @@ export default function AppRuntime({
   return (
     <CourseProvider ownerId={currentOwnerId}>
     <CourseSessionBridge onSnapshot={setCourseSession} />
+    {identityOwnerId && (accountProfile.status === 'required' || accountProfile.status === 'restricted' || accountProfile.status === 'error') ? (
+      <ProfileCompletionGate
+        key={identityOwnerId}
+        screen={accountProfile.status}
+        submit={accountProfile.submit}
+        retry={accountProfile.retry}
+        returnLabel={_(APP_VIEW_HEADINGS[viewMode])}
+        onSignOut={handleSignOut}
+      />
+    ) : (
+    <AccountProfileProvider profile={accountProfile.profile}>
     <div ref={appShellRef} data-view={viewMode} className={`app-canvas claude-app-shell min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
       <SkipToContentLink />
       <OnboardingGate ownerId={currentOwnerId} suppress={!courseScopeReady || viewMode === 'landing' || shellSyncStatus.isCheckingCloud}
@@ -682,6 +699,8 @@ export default function AppRuntime({
         viewStageRef={viewStageRef}
       />
     </div>
+    </AccountProfileProvider>
+    )}
     </CourseProvider>
   );
 }

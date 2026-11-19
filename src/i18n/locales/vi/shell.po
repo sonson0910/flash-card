@@ -19,6 +19,7 @@ msgid "Card style: Standard"
 msgstr "Kiểu thẻ: Tiêu chuẩn"
 
 #: src/components/shell/DesktopNavigation.tsx:81
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:73
 msgctxt "shell.brand.mark"
 msgid "S"
 msgstr "S"
@@ -43,12 +44,12 @@ msgctxt "shell.share.fact-revoke"
 msgid "You can revoke this link at any time."
 msgstr "Bạn có thể thu hồi liên kết này bất cứ lúc nào."
 
-#: src/features/onboarding/OnboardingJourney.tsx:223
+#: src/features/onboarding/OnboardingJourney.tsx:225
 msgctxt "onboarding.goal.none"
 msgid "No specific goal yet"
 msgstr "Chưa có mục tiêu cụ thể"
 
-#: src/features/onboarding/OnboardingJourney.tsx:262
+#: src/features/onboarding/OnboardingJourney.tsx:264
 msgctxt "onboarding.pace.option"
 msgid "{count} cards / day"
 msgstr "{count} thẻ / ngày"
@@ -68,7 +69,7 @@ msgctxt "shell.share.cards-count"
 msgid "{count, plural, one {# card} other {# cards}}"
 msgstr "{count, plural, other {# thẻ}}"
 
-#: src/features/onboarding/OnboardingJourney.tsx:196
+#: src/features/onboarding/OnboardingJourney.tsx:198
 msgctxt "onboarding.target.title"
 msgid "What are you learning?"
 msgstr "Bạn đang học ngôn ngữ nào?"
@@ -95,12 +96,12 @@ msgstr "Kết nối lại mạng để bắt đầu luyện hội thoại."
 
 #: src/features/courses/CourseGoalsPanel.tsx:50
 #: src/features/courses/CourseGoalsPanel.tsx:93
-#: src/features/onboarding/OnboardingJourney.tsx:236
+#: src/features/onboarding/OnboardingJourney.tsx:238
 msgctxt "course.goal.add.level-label"
 msgid "Level or target (optional)"
 msgstr "Trình độ hoặc mức mục tiêu (không bắt buộc)"
 
-#: src/features/onboarding/OnboardingJourney.tsx:182
+#: src/features/onboarding/OnboardingJourney.tsx:184
 msgctxt "onboarding.language.title"
 msgid "Choose your language"
 msgstr "Chọn ngôn ngữ của bạn"
@@ -195,8 +196,8 @@ msgctxt "shell.footer.status"
 msgid "STATUS:"
 msgstr "TRẠNG THÁI:"
 
-#: src/features/onboarding/OnboardingJourney.tsx:178
-#: src/features/onboarding/OnboardingJourney.tsx:279
+#: src/features/onboarding/OnboardingJourney.tsx:180
+#: src/features/onboarding/OnboardingJourney.tsx:281
 msgctxt "onboarding.aha.skip"
 msgid "Skip for now"
 msgstr "Để sau"
@@ -206,12 +207,12 @@ msgctxt "shell.loading.settings"
 msgid "Preparing appearance settings…"
 msgstr "Đang mở cài đặt giao diện…"
 
-#: src/features/onboarding/OnboardingJourney.tsx:308
+#: src/features/onboarding/OnboardingJourney.tsx:310
 msgctxt "onboarding.finish"
 msgid "Start learning"
 msgstr "Bắt đầu học"
 
-#: src/features/onboarding/OnboardingJourney.tsx:277
+#: src/features/onboarding/OnboardingJourney.tsx:279
 msgctxt "onboarding.aha.subtitle"
 msgid "Five common words to get you started."
 msgstr "Năm từ thông dụng để bạn bắt đầu."
@@ -428,7 +429,7 @@ msgctxt "shell.practice-menu.description"
 msgid "Choose a different way to practice with words from your library."
 msgstr "Chọn một cách khác để luyện tập với các từ trong thư viện của bạn."
 
-#: src/features/onboarding/OnboardingJourney.tsx:283
+#: src/features/onboarding/OnboardingJourney.tsx:285
 msgctxt "onboarding.aha.error"
 msgid "Something went wrong adding cards. You can add them later from the library."
 msgstr "Đã có lỗi khi thêm thẻ. Bạn có thể thêm sau trong thư viện."
@@ -448,7 +449,7 @@ msgctxt "shell.share.done"
 msgid "Done"
 msgstr "Xong"
 
-#: src/features/onboarding/OnboardingJourney.tsx:278
+#: src/features/onboarding/OnboardingJourney.tsx:280
 msgctxt "onboarding.aha.create"
 msgid "Add 5 starter cards"
 msgstr "Thêm 5 thẻ khởi đầu"
@@ -460,11 +461,11 @@ msgid "Collection"
 msgstr "Bộ sưu tập"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:256
+#: src/app/AppRuntime.tsx:262
 msgid "extension.import.course-mismatch-confirm"
 msgstr "Từ này được lưu cho một ngôn ngữ khác với khoá học hiện tại của bạn. Chuyển sang (hoặc tạo) khoá học phù hợp để lưu từ này?"
 
-#: src/features/onboarding/OnboardingJourney.tsx:288
+#: src/features/onboarding/OnboardingJourney.tsx:290
 msgctxt "onboarding.aha.success"
 msgid "Added {count} cards to your library."
 msgstr "Đã thêm {count} thẻ vào thư viện của bạn."
@@ -484,7 +485,7 @@ msgctxt "shell.share.copy-private"
 msgid "This link opens a preview. The recipient decides whether to add a separate copy."
 msgstr "Liên kết này mở bản xem trước. Người nhận sẽ tự chọn có thêm bản sao riêng hay không."
 
-#: src/features/onboarding/OnboardingJourney.tsx:289
+#: src/features/onboarding/OnboardingJourney.tsx:291
 msgctxt "onboarding.aha.none-added"
 msgid "No cards were added."
 msgstr "Chưa thêm thẻ nào."
@@ -511,7 +512,7 @@ msgctxt "shell.practice-menu.kicker"
 msgid "Practice"
 msgstr "Luyện tập"
 
-#: src/features/onboarding/OnboardingJourney.tsx:281
+#: src/features/onboarding/OnboardingJourney.tsx:283
 msgctxt "onboarding.aha.pending"
 msgid "Adding your cards…"
 msgstr "Đang thêm thẻ của bạn…"
@@ -526,7 +527,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr "Luyện hội thoại"
 
-#: src/app/AppRuntime.tsx:568
+#: src/app/AppRuntime.tsx:585
 #: src/components/shell/CourseSwitcherControl.tsx:110
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -562,18 +563,18 @@ msgctxt "course.goal.no-detail"
 msgid "No level or date set"
 msgstr "Chưa đặt trình độ hoặc ngày"
 
-#: src/features/onboarding/OnboardingJourney.tsx:243
+#: src/features/onboarding/OnboardingJourney.tsx:245
 msgctxt "settings.course.script"
 msgid "Chinese script"
 msgstr "Chữ Hán"
 
-#: src/features/onboarding/OnboardingJourney.tsx:219
-#: src/features/onboarding/OnboardingJourney.tsx:223
+#: src/features/onboarding/OnboardingJourney.tsx:221
+#: src/features/onboarding/OnboardingJourney.tsx:225
 msgctxt "onboarding.goal.subtitle"
 msgid "Optional. You can add or change this later in the course switcher."
 msgstr "Không bắt buộc. Bạn có thể thêm hoặc đổi sau trong phần chọn khóa học."
 
-#: src/features/onboarding/OnboardingJourney.tsx:258
+#: src/features/onboarding/OnboardingJourney.tsx:260
 msgctxt "onboarding.pace.title"
 msgid "How many cards a day?"
 msgstr "Mỗi ngày bao nhiêu thẻ?"
@@ -608,7 +609,7 @@ msgctxt "course.goal.completed"
 msgid "(completed)"
 msgstr "(đã hoàn thành)"
 
-#: src/features/onboarding/OnboardingJourney.tsx:303
+#: src/features/onboarding/OnboardingJourney.tsx:305
 msgctxt "onboarding.reminder.title"
 msgid "Daily reminders"
 msgstr "Nhắc nhở hằng ngày"
@@ -628,12 +629,12 @@ msgctxt "course.create.target-label"
 msgid "Learn"
 msgstr "Học"
 
-#: src/features/onboarding/OnboardingJourney.tsx:246
+#: src/features/onboarding/OnboardingJourney.tsx:248
 msgctxt "settings.course.script.traditional"
 msgid "Traditional"
 msgstr "Phồn thể"
 
-#: src/features/onboarding/OnboardingJourney.tsx:304
+#: src/features/onboarding/OnboardingJourney.tsx:306
 msgctxt "onboarding.reminder.description"
 msgid "Choose when SonFlash can remind you to review."
 msgstr "Chọn thời điểm SonFlash có thể nhắc bạn ôn tập."
@@ -654,7 +655,7 @@ msgid "Add a vocabulary card with a word and meaning first."
 msgstr "Hãy thêm một thẻ từ vựng có từ và nghĩa trước."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:172
+#: src/features/onboarding/OnboardingJourney.tsx:174
 msgid "onboarding.title"
 msgstr "Thiết lập khóa học"
 
@@ -668,13 +669,265 @@ msgctxt "shell.share.words-inside"
 msgid "A few words inside"
 msgstr "Một vài từ bên trong"
 
-#: src/features/onboarding/OnboardingJourney.tsx:212
-#: src/features/onboarding/OnboardingJourney.tsx:250
-#: src/features/onboarding/OnboardingJourney.tsx:268
-#: src/features/onboarding/OnboardingJourney.tsx:307
+#: src/features/onboarding/OnboardingJourney.tsx:214
+#: src/features/onboarding/OnboardingJourney.tsx:252
+#: src/features/onboarding/OnboardingJourney.tsx:270
+#: src/features/onboarding/OnboardingJourney.tsx:309
 msgctxt "onboarding.back"
 msgid "Back"
 msgstr "Quay lại"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:94
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:145
+msgid "profile-completion.account-access"
+msgstr "Truy cập tài khoản"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:171
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:307
+msgid "profile-completion.birth-year"
+msgstr "Năm sinh"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:57
+msgid "profile-completion.birth-year.format"
+msgstr "Nhập năm sinh gồm bốn chữ số, ví dụ 1994."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:58
+msgid "profile-completion.birth-year.future"
+msgstr "Năm sinh không thể ở tương lai."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:59
+msgid "profile-completion.birth-year.implausible"
+msgstr "Hãy kiểm tra năm sinh. Năm này quá xa trong quá khứ."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:316
+msgid "profile-completion.birth-year.placeholder"
+msgstr "YYYY"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:60
+msgid "profile-completion.birth-year.rejected"
+msgstr "Hãy kiểm tra năm sinh rồi thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:365
+msgid "profile-completion.consent"
+msgstr "Tôi từ 18 tuổi trở lên và đồng ý với <terms>Điều khoản</terms> và <privacy>Chính sách quyền riêng tư</privacy>."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:372
+msgid "profile-completion.consent.required"
+msgstr "Bắt buộc trước khi tiếp tục."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:219
+msgid "profile-completion.details.eyebrow"
+msgstr "Hoàn tất đăng ký"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:220
+msgid "profile-completion.details.title"
+msgstr "Thông tin tài khoản của bạn"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:64
+msgid "profile-completion.error.consent-outdated"
+msgstr "Điều khoản hoặc chính sách quyền riêng tư đã thay đổi. Hãy tải lại trang để xem lại."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:147
+msgid "profile-completion.error.lede"
+msgstr "Hãy kiểm tra kết nối rồi thử lại. Chưa có gì bị thay đổi."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:65
+msgid "profile-completion.error.rate-limited"
+msgstr "Bạn đã thử quá nhiều lần. Hãy đợi một lúc rồi thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:150
+msgid "profile-completion.error.retry"
+msgstr "Thử lại"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:66
+msgid "profile-completion.error.save-failed"
+msgstr "Chưa lưu được thông tin của bạn. Hãy kiểm tra kết nối rồi thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:146
+msgid "profile-completion.error.title"
+msgstr "Chưa kiểm tra được tài khoản của bạn."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:213
+msgid "profile-completion.eyebrow"
+msgstr "Hoàn tất đăng ký · một lần"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:107
+msgid "profile-completion.help"
+msgstr "Cần trợ giúp?"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:215
+msgid "profile-completion.lede"
+msgstr "Thiết lập thông tin ngôn ngữ đi cùng tài khoản của bạn."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:328
+msgid "profile-completion.locale"
+msgstr "Ngôn ngữ ứng dụng"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:334
+msgid "profile-completion.native-language"
+msgstr "Tiếng mẹ đẻ"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:376
+msgid "profile-completion.note"
+msgstr "Chúng tôi chỉ giữ năm sinh để xác nhận yêu cầu từ 18 tuổi. Năm sinh có trong tệp tải dữ liệu tài khoản và bị xóa khi bạn xóa tài khoản."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:187
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:224
+msgid "profile-completion.outcomes.eyebrow"
+msgstr "Quay lại + kết quả"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:235
+msgid "profile-completion.outcomes.next"
+msgstr "Tiếp theo"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:194
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:231
+msgid "profile-completion.outcomes.return"
+msgstr "Quay lại"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:48
+msgid "profile-completion.outcomes.title"
+msgstr "Luôn thấy rõ bước tiếp theo."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:49
+msgid "profile-completion.outcomes.title.crystal"
+msgstr "Giữ rõ hành động tiếp theo."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:175
+msgid "profile-completion.restricted.account"
+msgstr "Tài khoản"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:172
+msgid "profile-completion.restricted.birth-year"
+msgstr "Chưa đáp ứng yêu cầu"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:161
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:167
+msgid "profile-completion.restricted.eyebrow"
+msgstr "Giới hạn độ tuổi"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:190
+msgid "profile-completion.restricted.gate"
+msgstr "Kiểm tra độ tuổi"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:191
+msgid "profile-completion.restricted.gate-detail"
+msgstr "Không thể tiếp tục tạo tài khoản."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:163
+msgid "profile-completion.restricted.lede"
+msgstr "Năm sinh chưa đáp ứng yêu cầu độ tuổi hiện tại của tài khoản."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:180
+msgid "profile-completion.restricted.note"
+msgstr "Năm sinh của bạn không được lưu. Nếu bạn nhập nhầm, hãy liên hệ hỗ trợ."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:176
+msgid "profile-completion.restricted.paused"
+msgstr "Tạm dừng tạo tài khoản"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:183
+msgid "profile-completion.restricted.return"
+msgstr "Quay lại đăng nhập"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:195
+msgid "profile-completion.restricted.return-detail"
+msgstr "Đăng nhập"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:168
+msgid "profile-completion.restricted.status"
+msgstr "Trạng thái tài khoản"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:44
+msgid "profile-completion.restricted.title"
+msgstr "Chúng tôi chưa thể tạo tài khoản này."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:45
+msgid "profile-completion.restricted.title.crystal"
+msgstr "Tạm dừng tạo tài khoản"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:209
+msgid "profile-completion.return.footer"
+msgstr "Vị trí quay lại · {location}"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:52
+msgid "profile-completion.return.preserved"
+msgstr "Đã giữ vị trí quay lại · {location}"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:53
+msgid "profile-completion.return.preserved.crystal"
+msgstr "Điểm quay lại · {location}"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:236
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:382
+msgid "profile-completion.save"
+msgstr "Lưu và tiếp tục"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:381
+msgid "profile-completion.saving"
+msgstr "Đang lưu…"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:98
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:151
+msgid "profile-completion.sign-out"
+msgstr "Đăng xuất"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:40
+msgid "profile-completion.title"
+msgstr "Cá nhân hóa SonFlash của bạn."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:41
+msgid "profile-completion.title.crystal"
+msgstr "Cá nhân hóa ngay"
 
 #: src/app/AppDeferredViews.tsx:35
 msgctxt "shell.loading.library"
@@ -701,7 +954,7 @@ msgstr "Danh hiệu Word Collector"
 msgid "rewards.reveal.streak.badge"
 msgstr "Huy hiệu Web Wanderer"
 
-#: src/features/onboarding/OnboardingJourney.tsx:218
+#: src/features/onboarding/OnboardingJourney.tsx:220
 msgctxt "onboarding.goal.title"
 msgid "Have an exam or goal in mind?"
 msgstr "Bạn có kỳ thi hay mục tiêu nào không?"
@@ -941,7 +1194,7 @@ msgid "shell.language.open"
 msgstr "Chọn ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:557
+#: src/app/AppRuntime.tsx:574
 msgid "shell.learning-workspace"
 msgstr "Không gian học tập"
 
@@ -1229,7 +1482,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Không thể cập nhật trực tiếp từ đám mây. Hãy thử lại khi kết nối ổn định hơn."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:437
+#: src/app/AppRuntime.tsx:443
 msgid "shell.sync.retry-failed"
 msgstr "Không thể hoàn tất đồng bộ. Các thay đổi vẫn được giữ trên thiết bị này. Hãy thử lại."
 
@@ -1280,7 +1533,7 @@ msgstr "Đóng thông báo"
 msgid "shell.undo.restore-failed"
 msgstr "Không thể khôi phục thẻ này. Hãy kiểm tra thư viện rồi thử lại."
 
-#: src/features/onboarding/OnboardingJourney.tsx:297
+#: src/features/onboarding/OnboardingJourney.tsx:299
 msgctxt "onboarding.aha.quota-note"
 msgid "Your monthly Free card allowance is almost used up, so {count} card(s) were not added."
 msgstr "Hạn mức thẻ miễn phí tháng này của bạn sắp hết, nên {count} thẻ chưa được thêm."
@@ -1290,12 +1543,12 @@ msgctxt "shell.share.more-cards"
 msgid "+{count} more"
 msgstr "+{count} thẻ nữa"
 
-#: src/features/onboarding/OnboardingJourney.tsx:183
+#: src/features/onboarding/OnboardingJourney.tsx:185
 msgctxt "onboarding.language.subtitle"
 msgid "This sets the app's interface and the language your explanations will be written in."
 msgstr "Lựa chọn này đặt ngôn ngữ giao diện và ngôn ngữ dùng để giải nghĩa cho bạn."
 
-#: src/app/AppRuntime.tsx:569
+#: src/app/AppRuntime.tsx:586
 #: src/components/shell/CourseSwitcherControl.tsx:112
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -1316,7 +1569,7 @@ msgctxt "course.switcher.no-active"
 msgid "Choose a course"
 msgstr "Chọn khóa học"
 
-#: src/features/onboarding/OnboardingJourney.tsx:245
+#: src/features/onboarding/OnboardingJourney.tsx:247
 msgctxt "settings.course.script.simplified"
 msgid "Simplified"
 msgstr "Giản thể"
@@ -1383,12 +1636,12 @@ msgstr "Đăng nhập để luyện tập với từ vựng của bạn."
 
 #: src/features/courses/CourseGoalsPanel.tsx:54
 #: src/features/courses/CourseGoalsPanel.tsx:97
-#: src/features/onboarding/OnboardingJourney.tsx:239
+#: src/features/onboarding/OnboardingJourney.tsx:241
 msgctxt "course.goal.add.date-label"
 msgid "Exam or target date (optional)"
 msgstr "Ngày thi hoặc ngày mục tiêu (không bắt buộc)"
 
-#: src/app/AppRuntime.tsx:571
+#: src/app/AppRuntime.tsx:588
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr "Đang chuẩn bị các khóa học của bạn…"
@@ -1428,13 +1681,13 @@ msgctxt "shell.share.manage"
 msgid "Manage shared link"
 msgstr "Quản lý liên kết chia sẻ"
 
-#: src/features/onboarding/OnboardingJourney.tsx:275
+#: src/features/onboarding/OnboardingJourney.tsx:277
 msgctxt "onboarding.aha.title"
 msgid "Let's add your first cards"
 msgstr "Cùng thêm những thẻ đầu tiên"
 
 #: src/app/AppDeferredViews.tsx:23
-#: src/app/AppRuntime.tsx:80
+#: src/app/AppRuntime.tsx:83
 msgctxt "shell.opening-dialog"
 msgid "Opening dialog"
 msgstr "Đang mở hộp thoại"
@@ -1449,12 +1702,12 @@ msgctxt "course.error.generic"
 msgid "That course action did not go through. Please try again."
 msgstr "Thao tác với khóa học chưa thành công. Vui lòng thử lại."
 
-#: src/features/onboarding/OnboardingJourney.tsx:192
-#: src/features/onboarding/OnboardingJourney.tsx:213
-#: src/features/onboarding/OnboardingJourney.tsx:251
-#: src/features/onboarding/OnboardingJourney.tsx:269
-#: src/features/onboarding/OnboardingJourney.tsx:284
-#: src/features/onboarding/OnboardingJourney.tsx:298
+#: src/features/onboarding/OnboardingJourney.tsx:194
+#: src/features/onboarding/OnboardingJourney.tsx:215
+#: src/features/onboarding/OnboardingJourney.tsx:253
+#: src/features/onboarding/OnboardingJourney.tsx:271
+#: src/features/onboarding/OnboardingJourney.tsx:286
+#: src/features/onboarding/OnboardingJourney.tsx:300
 msgctxt "onboarding.continue"
 msgid "Continue"
 msgstr "Tiếp tục"
