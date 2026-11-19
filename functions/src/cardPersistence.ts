@@ -108,9 +108,18 @@ const CARD_FIELDS = new Set([
   'easeFactor', 'correctStreak', 'fsrs', 'reviewHistory', 'partOfSpeech', 'cefrLevel',
   'exampleSentence', 'exampleTranslation', 'collocations', 'synonyms', 'antonyms',
   'register', 'commonMistake', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'masteredAt', 'japanesePitchAccent', 'source',
+  'tags', 'learnerDifficulty', 'translationAlternatives',
 ]);
 
 const CARD_DIFFICULTIES = new Set(['easy', 'good', 'hard', 'unrated']);
+/** The learner's own label. Scheduling, plans and statistics never read it. */
+const LEARNER_DIFFICULTIES = new Set(['easy', 'medium', 'hard']);
+const MAX_CARD_TAGS = 8;
+const MAX_CARD_TAG_LENGTH = 32;
+// No surrounding whitespace, comma or line break, so a tag survives a
+// spreadsheet round trip and matches the Rules check of the same field.
+const CARD_TAG_PATTERN = /^[^\s,](?:[^,\r\n]*[^\s,])?$/;
+const MAX_TRANSLATION_ALTERNATIVES = 3;
 const REVIEW_RATINGS = new Set(['again', 'hard', 'good', 'easy']);
 const AUDIO_HOSTS = new Set(['api.dictionaryapi.dev', 'ssl.gstatic.com']);
 const IMAGE_HOSTS = new Set(['images.pexels.com', 'images.unsplash.com', 'upload.wikimedia.org']);
@@ -172,6 +181,51 @@ const boundedStringList = (value: unknown, field: string): string[] => {
     throw new InputValidationError(`Card field "${field}" is invalid.`);
   }
   return value.map(item => requiredText(item, field, 100));
+};
+
+const parseCardTags = (value: unknown): string[] | undefined => {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value) || value.length > MAX_CARD_TAGS) {
+    throw new InputValidationError('Card field "tags" is invalid.');
+  }
+  if (value.some(tag => typeof tag !== 'string' || tag.length > MAX_CARD_TAG_LENGTH || !CARD_TAG_PATTERN.test(tag))
+    || new Set(value).size !== value.length) {
+    throw new InputValidationError('Card field "tags" is invalid.');
+  }
+  return [...value] as string[];
+};
+
+const parseLearnerDifficulty = (value: unknown): string | null | undefined => {
+  if (value === undefined || value === null) return value;
+  if (typeof value !== 'string' || !LEARNER_DIFFICULTIES.has(value)) {
+    throw new InputValidationError('Card field "learnerDifficulty" is invalid.');
+  }
+  return value;
+};
+
+/**
+ * Other meanings the AI suggested when it wrote the card. Only an AI card
+ * can carry them; entries equal to the card's meaning or to each other are
+ * dropped so the editor never offers the meaning it already shows.
+ */
+const parseTranslationAlternatives = (
+  value: unknown,
+  origin: unknown,
+  translation: string,
+): string[] | undefined => {
+  if (value === undefined) return undefined;
+  if (origin !== 'ai' || !Array.isArray(value) || value.length > MAX_TRANSLATION_ALTERNATIVES) {
+    throw new InputValidationError('Card field "translationAlternatives" is invalid.');
+  }
+  const seen = new Set([translation.toLocaleLowerCase()]);
+  return value.flatMap(item => {
+    const text = requiredText(item, 'translationAlternatives', 256);
+    if (!text) throw new InputValidationError('Card field "translationAlternatives" is invalid.');
+    const key = text.toLocaleLowerCase();
+    if (seen.has(key)) return [];
+    seen.add(key);
+    return [text];
+  });
 };
 
 const boundedReviewOperationIds = (value: unknown): string[] => {
@@ -419,6 +473,10 @@ export const canonicalCard = (value: unknown, { allowMasteredAt = false, deriveJ
     ? verifiedPitch
     : undefined;
   const cardSource = parseCardSourceMetadata(source.source);
+  const translation = boundedText(source.translation, 'translation', 256);
+  const tags = parseCardTags(source.tags);
+  const learnerDifficulty = parseLearnerDifficulty(source.learnerDifficulty);
+  const translationAlternatives = parseTranslationAlternatives(source.translationAlternatives, source.origin, translation);
   const result: CardRecord = {
     id: hasCanonicalIdentity ? lexemeId as string : targetAwareCardId(identity, effectiveLanguage ?? 'en'),
     ...(source.origin === undefined ? {} : { origin: source.origin }),
@@ -427,7 +485,8 @@ export const canonicalCard = (value: unknown, { allowMasteredAt = false, deriveJ
     ...(effectiveLanguage === undefined ? {} : { language: effectiveLanguage }),
     ...(translationLanguage === undefined ? {} : { translationLanguage }),
     ...(hasCanonicalIdentity ? { lexemeId, senseKey, normalizedLemma: normalizedLemma || suppliedIdentity } : {}),
-    translation: boundedText(source.translation, 'translation', 256),
+    translation,
+    ...(translationAlternatives === undefined ? {} : { translationAlternatives }),
     explanation: boundedText(source.explanation, 'explanation', 2_048),
     explanationTranslation: boundedText(source.explanationTranslation, 'explanationTranslation', 2_048),
     phonetic,
@@ -441,6 +500,8 @@ export const canonicalCard = (value: unknown, { allowMasteredAt = false, deriveJ
     ...(japanesePitchAccent ? { japanesePitchAccent } : {}),
     bookmarked: source.bookmarked === undefined ? false : source.bookmarked,
     customDeck,
+    ...(tags === undefined ? {} : { tags }),
+    ...(learnerDifficulty === undefined ? {} : { learnerDifficulty }),
     difficulty,
     reviews: nonNegativeInteger(source.reviews, 'reviews', 0),
     interval: nonNegativeNumber(source.interval, 'interval', 0),

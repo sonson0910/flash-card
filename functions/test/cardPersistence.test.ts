@@ -928,6 +928,65 @@ describe('card persistence', () => {
     expect(() => canonicalCard({ ...card, origin: 'imported' })).toThrow(/origin/i);
   });
 
+  it('accepts and emits bounded learner tags and difficulty, keeping stored empty values', () => {
+    const tagged = canonicalCard({ ...card, tags: ['news', 'B2', 'phrasal verb'], learnerDifficulty: 'medium' });
+    expect(tagged).toMatchObject({ tags: ['news', 'B2', 'phrasal verb'], learnerDifficulty: 'medium' });
+    expect(canonicalCard({ ...card, tags: [], learnerDifficulty: null })).toMatchObject({ tags: [], learnerDifficulty: null });
+    const plain = canonicalCard(card);
+    expect(plain).not.toHaveProperty('tags');
+    expect(plain).not.toHaveProperty('learnerDifficulty');
+    expect(canonicalCard({ ...card, tags: Array.from({ length: 8 }, (_, index) => `t${index}`) }).tags).toHaveLength(8);
+    expect(canonicalCard({ ...card, tags: ['x'.repeat(32)] }).tags).toEqual(['x'.repeat(32)]);
+  });
+
+  it('rejects tags beyond the limits and difficulty outside the learner labels', () => {
+    for (const tags of [
+      Array.from({ length: 9 }, (_, index) => `t${index}`),
+      ['x'.repeat(33)],
+      ['a,b'],
+      ['line\nbreak'],
+      [' padded'],
+      [''],
+      [7],
+      ['news', 'news'],
+      'news',
+    ]) {
+      expect(() => canonicalCard({ ...card, tags })).toThrow(/tags/);
+    }
+    for (const learnerDifficulty of ['good', 'unrated', 'Easy', 1]) {
+      expect(() => canonicalCard({ ...card, learnerDifficulty })).toThrow(/learnerDifficulty/);
+    }
+    // The scheduler's own field keeps its legacy values only.
+    expect(() => canonicalCard({ ...card, difficulty: 'medium' })).toThrow(/difficulty/i);
+  });
+
+  it('keeps AI meaning alternatives only on AI cards, bounded and distinct from the meaning', () => {
+    const aiCard = { ...card, origin: 'ai', translation: 'dẫn dắt' };
+    expect(canonicalCard({ ...aiCard, translationAlternatives: ['lãnh đạo', 'Dẫn dắt', 'lãnh đạo'] }).translationAlternatives)
+      .toEqual(['lãnh đạo']);
+    expect(canonicalCard({ ...aiCard, translationAlternatives: ['lãnh đạo', 'chỉ huy', 'chì'] }).translationAlternatives)
+      .toEqual(['lãnh đạo', 'chỉ huy', 'chì']);
+    expect(canonicalCard({ ...aiCard, translationAlternatives: [] }).translationAlternatives).toEqual([]);
+    expect(canonicalCard(aiCard)).not.toHaveProperty('translationAlternatives');
+    expect(() => canonicalCard({ ...card, origin: 'manual', translationAlternatives: ['lãnh đạo'] })).toThrow(/translationAlternatives/);
+    expect(() => canonicalCard({ ...card, translationAlternatives: ['lãnh đạo'] })).toThrow(/translationAlternatives/);
+    expect(() => canonicalCard({ ...aiCard, translationAlternatives: ['a', 'b', 'c', 'd'] })).toThrow(/translationAlternatives/);
+    expect(() => canonicalCard({ ...aiCard, translationAlternatives: ['x'.repeat(257)] })).toThrow(/translationAlternatives/);
+    expect(() => canonicalCard({ ...aiCard, translationAlternatives: ['  '] })).toThrow(/translationAlternatives/);
+  });
+
+  it('carries the new card fields through a create request', () => {
+    const request = parseCreateCardRequest({
+      expectedOwnerId: 'owner',
+      card: { ...card, origin: 'ai', tags: ['news'], learnerDifficulty: 'hard', translationAlternatives: ['lãnh đạo'] },
+    });
+    expect(request.card).toMatchObject({ tags: ['news'], learnerDifficulty: 'hard', translationAlternatives: ['lãnh đạo'] });
+    expect(() => parseCreateCardRequest({
+      expectedOwnerId: 'owner',
+      card: { ...card, origin: 'manual', translationAlternatives: ['lãnh đạo'] },
+    })).toThrow(/translationAlternatives/);
+  });
+
   it('strips a client supplied mastery timestamp from a create candidate', () => {
     expect(canonicalCard({ ...card, masteredAt: '2020-01-01T00:00:00.000Z' })).not.toHaveProperty('masteredAt');
     expect(canonicalCard({ ...card, masteredAt: '2020-01-01T00:00:00.000Z' }, { allowMasteredAt: true }))

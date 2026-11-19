@@ -181,6 +181,22 @@ describe('review persistence', () => {
     });
   });
 
+  it('reviews a card that carries learner tags, difficulty and AI meaning alternatives and returns them', async () => {
+    const tagged = {
+      ...baseCard(), origin: 'ai', tags: ['news', 'B2'], learnerDifficulty: 'hard', translationAlternatives: ['tiêu điểm'],
+    };
+    const test = harness(tagged);
+    const result = await applyReviewForOwner(test.database, 'owner', reviewRequest());
+    expect(result).toMatchObject({
+      applied: true,
+      card: { tags: ['news', 'B2'], learnerDifficulty: 'hard', translationAlternatives: ['tiêu điểm'] },
+    });
+    // The review writes scheduling only; the learner's own fields are never rewritten.
+    expect(test.writes[0]!.data).not.toHaveProperty('tags');
+    expect(test.writes[0]!.data).not.toHaveProperty('learnerDifficulty');
+    expect(test.writes[0]!.data).not.toHaveProperty('translationAlternatives');
+  });
+
   it('updates the canonical lexeme projection from the server review result', async () => {
     const lexemeId = canonicalLexemeId();
     const stored = {
