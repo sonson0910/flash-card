@@ -318,7 +318,7 @@
 }
 
 .library-canvas-actions > button {
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   display: inline-flex;
   align-items: center;
   gap: .4rem;
@@ -337,8 +337,12 @@
   opacity: .55;
 }
 
+/* Study stays the primary action inside the toolbar row: ink on paper,
+   on-brand text over the dark-theme brand fill. */
 .library-canvas-actions .library-canvas-study {
   border: 0;
+  background: var(--sf-text);
+  color: var(--sf-on-brand);
 }
 
 .library-canvas-collection-tools {
