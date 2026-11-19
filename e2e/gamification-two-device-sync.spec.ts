@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures/firebase-emulator';
+import { completeAccountProfileThroughCallable, expect, test } from './fixtures/firebase-emulator';
 
 const dayAgo = (now: number, days: number) => new Date(now - days * 86_400_000).toISOString().slice(0, 10);
 const chartDate = (day: string) => new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' })
@@ -79,6 +79,7 @@ test('verified XP and rewards refresh on two signed-in devices without navigatio
     switched.set(db.doc(`users/${secondOwnerId}/profile/courses`), { courses: [], activeCourseId: null });
     await switched.commit();
     const secondOwnerToken = await adminAuth.createCustomToken(secondOwnerId);
+    await completeAccountProfileThroughCallable({ uid: secondOwnerId, customToken: secondOwnerToken });
     await page.evaluate(async token => {
       await window.__SONFLASH_TEST__!.signInWithCustomToken(token);
     }, secondOwnerToken);

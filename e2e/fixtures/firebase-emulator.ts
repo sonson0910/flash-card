@@ -86,6 +86,72 @@ export interface EmulatorTestUser {
   customToken: string;
 }
 
+/**
+ * Wire constants of functions/src/account-profile-contract.ts
+ * (CURRENT_TERMS_VERSION / CURRENT_PRIVACY_VERSION), kept as literals for the
+ * same reason as the course enums below. When either policy date moves, the
+ * callable answers `failed-precondition` and the fixture fails with a message
+ * naming these constants.
+ */
+const ACCOUNT_TERMS_VERSION = '2026-10-01';
+const ACCOUNT_PRIVACY_VERSION = '2026-11-19';
+const FUNCTIONS_REGION = 'asia-southeast1';
+
+export interface AccountProfileSeed {
+  readonly birthYear?: number;
+  readonly uiLocale?: 'en' | 'vi';
+  readonly nativeLanguage?: 'vi' | 'en';
+}
+
+/**
+ * Completes the account profile of an emulator user through the real
+ * `completeAccountProfile` callable, exactly as the profile step in the app
+ * does: the custom token is exchanged for an ID token at the Auth emulator and
+ * the callable runs in the Functions emulator, which validates the request and
+ * writes users/{uid}/profile/account itself. Every signed-in spec passes the
+ * app's profile gate this way; nothing writes the record around the server.
+ */
+export async function completeAccountProfileThroughCallable(
+  user: Pick<EmulatorTestUser, 'uid' | 'customToken'>,
+  profile: AccountProfileSeed = {},
+): Promise<unknown> {
+  const exchange = await fetch(
+    `http://${FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=e2e-emulator`,
+    { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: user.customToken, returnSecureToken: true }) },
+  );
+  const { idToken } = await exchange.json() as { idToken?: string };
+  if (!exchange.ok || !idToken) throw new Error(`[e2e/fixtures/firebase-emulator] Auth emulator token exchange failed (${exchange.status}).`);
+
+  const uiLocale = profile.uiLocale ?? 'en';
+  const response = await fetch(
+    `http://${FUNCTIONS_EMULATOR_HOST}/${EMULATOR_PROJECT_ID}/${FUNCTIONS_REGION}/completeAccountProfile`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${idToken}` },
+      body: JSON.stringify({
+        data: {
+          ownerId: user.uid,
+          birthYear: profile.birthYear ?? 1990,
+          uiLocale,
+          // The profile step defaults the native language from the app
+          // language the same way (defaultNativeLanguageFor), so a seeded
+          // owner starts course onboarding in the state an untouched form gives.
+          nativeLanguage: profile.nativeLanguage ?? (uiLocale === 'en' ? 'en' : 'vi'),
+          consent: { accepted: true, termsVersion: ACCOUNT_TERMS_VERSION, privacyVersion: ACCOUNT_PRIVACY_VERSION },
+        },
+      }),
+    },
+  );
+  const body = await response.json() as { result?: unknown; error?: { status?: string; message?: string } };
+  if (!response.ok || body.error) {
+    throw new Error(
+      `[e2e/fixtures/firebase-emulator] completeAccountProfile failed (${response.status} ${body.error?.status ?? ''}). `
+      + 'If the terms or privacy date changed, update ACCOUNT_TERMS_VERSION / ACCOUNT_PRIVACY_VERSION.',
+    );
+  }
+  return body.result;
+}
+
 const MISSING_HOOK_MESSAGE = [
   '[e2e/fixtures/firebase-emulator] window.__SONFLASH_TEST__.signInWithCustomToken is not available.',
   'src/lib/firebase.ts only installs this hook once VITE_SONFLASH_E2E_EMULATOR=true AND the app has',
@@ -132,6 +198,13 @@ export interface SeedCourseProfileOptions {
 }
 
 interface EmulatorFixtures {
+  /**
+   * 'complete' (default): the test user completes the account profile through
+   * the real callable before the test starts, so the app opens past the
+   * profile step. 'none': the user starts without a profile record; use it
+   * in specs that exercise the profile step itself.
+   */
+  accountProfile: 'complete' | 'none';
   db: Firestore;
   adminAuth: Auth;
   testUser: EmulatorTestUser;
@@ -155,6 +228,8 @@ export const test = base.extend<EmulatorFixtures, EmulatorWorkerFixtures>({
     await deleteApp(app);
   }, { scope: 'worker' }],
 
+  accountProfile: ['complete', { option: true }],
+
   adminAuth: async ({ adminApp }, use) => {
     await use(getAuth(adminApp));
   },
@@ -167,7 +242,7 @@ export const test = base.extend<EmulatorFixtures, EmulatorWorkerFixtures>({
   // emulator through firebase-admin (never through the browser, never
   // against production). Deleted again after the test so emulator state does
   // not leak across specs in the same run.
-  testUser: async ({ adminAuth }, use, testInfo) => {
+  testUser: async ({ adminAuth, accountProfile }, use, testInfo) => {
     const uid = `e2e-${randomUUID()}`;
     const email = `${uid}@e2e.sonflash.test`;
     await adminAuth.createUser({
@@ -176,6 +251,7 @@ export const test = base.extend<EmulatorFixtures, EmulatorWorkerFixtures>({
       displayName: testInfo.title.slice(0, 60) || 'E2E test user',
     });
     const customToken = await adminAuth.createCustomToken(uid);
+    if (accountProfile === 'complete') await completeAccountProfileThroughCallable({ uid, customToken });
     await use({ uid, email, customToken });
     await adminAuth.deleteUser(uid).catch(() => undefined);
   },

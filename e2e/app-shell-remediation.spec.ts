@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures/firebase-emulator';
+import { completeAccountProfileThroughCallable, expect, test } from './fixtures/firebase-emulator';
 
 const emptyStateTestTitle = 'Today and Progress empty states expose concrete next actions without initial autofocus';
 const emptyExtractorTestTitle = 'empty Library Scan a text restores focus after close';
@@ -418,6 +418,7 @@ for (const [title, sharedCards] of [
     const recipientId = `${testUser.uid}-recipient`;
     await adminAuth.createUser({ uid: recipientId });
     const token = await adminAuth.createCustomToken(recipientId);
+    await completeAccountProfileThroughCallable({ uid: recipientId, customToken: token });
     await db.collection('users').doc(recipientId).collection('profile').doc('courses').set({
       courses: [], activeCourseId: null,
     });
@@ -491,6 +492,7 @@ test(meaningLanguageMismatchShareTestTitle, async ({
   const recipientId = `${testUser.uid}-meaning-language-recipient`;
   await adminAuth.createUser({ uid: recipientId });
   const token = await adminAuth.createCustomToken(recipientId);
+  await completeAccountProfileThroughCallable({ uid: recipientId, customToken: token });
   await db.collection('users').doc(recipientId).collection('profile').doc('courses').set({
     activeCourseId: 'course-ko',
     courses: [{
