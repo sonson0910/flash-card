@@ -39,11 +39,14 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Body and mono faces follow the theme's font tokens (src/styles/app-bootstrap.css): Geist for
+   classic, Nunito for Crystal. They stay emitted as variables because feature styles read them. */
 @theme {
-  --font-sans: "Geist Variable", "Geist", "SF Pro Display", "Segoe UI", sans-serif;
+  --font-sans: var(--sf-font-body);
+  --font-mono: var(--sf-font-mono);
 }
 
-/* `font-serif` is the theme's display face: Fraunces for classic, Kanit for Crystal. */
+/* `font-serif` and `font-display` are the theme's display face: Fraunces for classic, Kanit for Crystal. */
 @theme inline {
   --font-serif: var(--sf-font-display);
   --font-display: var(--sf-font-display);
@@ -115,20 +118,23 @@
     background: var(--sf-canvas);
   }
 
+  /* Paper grain from the board's AMBIENT partial: warm ink noise multiplied on Ink & Paper,
+     faint white noise overlaid on Midnight Aurora. */
   .app-canvas::before {
     position: fixed;
     inset: 0;
     pointer-events: none;
     content: "";
     z-index: 1;
-    opacity: 0.12;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3e%3cfilter id='n'%3e%3cfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='3' stitchTiles='stitch'/%3e%3c/filter%3e%3crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3e%3c/svg%3e");
+    opacity: 0.2;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3e%3cfilter id='n'%3e%3cfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3e%3cfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .2 0 0 0 .9 0'/%3e%3c/filter%3e%3crect width='100%25' height='100%25' filter='url(%23n)'/%3e%3c/svg%3e");
     mix-blend-mode: multiply;
   }
 
   .dark .app-canvas::before {
-    opacity: 0.14;
-    mix-blend-mode: screen;
+    opacity: 0.07;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3e%3cfilter id='n'%3e%3cfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3e%3cfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/%3e%3c/filter%3e%3crect width='100%25' height='100%25' filter='url(%23n)'/%3e%3c/svg%3e");
+    mix-blend-mode: overlay;
   }
 
   .ambient-orb {
@@ -577,7 +583,9 @@
 }
 
 /* Tablet-class devices have a much smaller compositing budget than desktops.
-   Their wide viewport used to select the full desktop effect stack on iPad. */
+   Their wide viewport used to select the full desktop effect stack on iPad. Flashcard card looks
+   ([data-card-look]) keep their own opaque surface and tier rim; only plain glass is flattened.
+   The card-look filter sits in :where() so it adds no specificity over the Zen slab rules. */
 @media (max-width: 1180px), (hover: none), (pointer: coarse) {
   .ambient-orb,
   .app-canvas::before {
@@ -588,13 +596,18 @@
   .liquid-glass,
   .liquid-control,
   .liquid-content-dock,
-  .flashcard-panel,
+  .flashcard-panel:where(:not([data-card-look])),
   .zen-glass-slab,
-  .dark .flashcard-panel,
+  .dark .flashcard-panel:where(:not([data-card-look])),
   .dark .zen-glass-slab {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     background: var(--sf-surface);
+  }
+
+  .flashcard-panel[data-card-look] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   .zen-glass-slab,
@@ -606,7 +619,7 @@
   .dark .liquid-glass,
   .dark .liquid-control,
   .dark .liquid-content-dock,
-  .dark .flashcard-panel,
+  .dark .flashcard-panel:where(:not([data-card-look])),
   .dark .zen-glass-slab {
     background: var(--sf-surface);
   }
@@ -617,10 +630,15 @@ html[data-save-data="true"] .app-canvas::before {
   display: none;
 }
 
-html[data-save-data="true"] :is(.premium-surface, .liquid-glass, .liquid-control, .liquid-content-dock, .flashcard-panel, .zen-glass-slab) {
+html[data-save-data="true"] :is(.premium-surface, .liquid-glass, .liquid-control, .liquid-content-dock, .flashcard-panel:where(:not([data-card-look])), .zen-glass-slab) {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   background: var(--sf-surface);
+}
+
+html[data-save-data="true"] .flashcard-panel[data-card-look] {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 html[data-save-data="true"] .zen-glass-slab {
@@ -632,7 +650,7 @@ html[data-save-data="true"] .zen-glass-slab {
   .liquid-glass,
   .liquid-control,
   .liquid-content-dock,
-  .flashcard-panel,
+  .flashcard-panel:where(:not([data-card-look])),
   .zen-glass-slab {
     background: var(--sf-surface);
   }
@@ -645,7 +663,7 @@ html[data-save-data="true"] .zen-glass-slab {
   .dark .liquid-glass,
   .dark .liquid-control,
   .dark .liquid-content-dock,
-  .dark .flashcard-panel,
+  .dark .flashcard-panel:where(:not([data-card-look])),
   .dark .zen-glass-slab {
     background: var(--sf-surface);
   }
@@ -656,13 +674,18 @@ html[data-save-data="true"] .zen-glass-slab {
   .liquid-glass,
   .liquid-control,
   .liquid-content-dock,
-  .flashcard-panel,
+  .flashcard-panel:where(:not([data-card-look])),
   .zen-glass-slab,
-  .dark .flashcard-panel,
+  .dark .flashcard-panel:where(:not([data-card-look])),
   .dark .zen-glass-slab {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     background: var(--sf-surface);
+  }
+
+  .flashcard-panel[data-card-look] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   .zen-glass-slab,
@@ -674,7 +697,7 @@ html[data-save-data="true"] .zen-glass-slab {
   .dark .liquid-glass,
   .dark .liquid-control,
   .dark .liquid-content-dock,
-  .dark .flashcard-panel,
+  .dark .flashcard-panel:where(:not([data-card-look])),
   .dark .zen-glass-slab {
     background: var(--sf-surface);
   }
