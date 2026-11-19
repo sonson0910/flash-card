@@ -7,7 +7,7 @@ import type {
   UpdateCourseInput,
   UpdateGoalInput,
 } from './courseModel';
-import type { CoursePort, CourseProfileSource } from './coursePort';
+import type { CoursePort, CourseProfileSource, CreatedCourseIds } from './coursePort';
 
 export type CourseSessionStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -23,7 +23,8 @@ export interface CourseSessionSnapshot {
 
 export interface CourseSessionActions {
   retry(): Promise<void>;
-  createCourse(input: CreateCourseInput): Promise<{ ok: true } | { ok: false; error: CourseError }>;
+  /** On success, `created` names the new course and its goals so a caller can address them at once. */
+  createCourse(input: CreateCourseInput): Promise<{ ok: true; created?: CreatedCourseIds | null } | { ok: false; error: CourseError }>;
   updateCourse(courseId: string, input: UpdateCourseInput): Promise<{ ok: true } | { ok: false; error: CourseError }>;
   archiveCourse(courseId: string): Promise<{ ok: true } | { ok: false; error: CourseError }>;
   reopenCourse(courseId: string): Promise<{ ok: true } | { ok: false; error: CourseError }>;
@@ -215,7 +216,12 @@ export function createCourseSessionController(
       if (owner !== null && !retryableCreate) {
         retryableCreates.set(owner, [...ownerRetryableCreates, request]);
       }
-      const result = await mutate((port, owner) => port.createCourse(owner, request));
+      let created: CreatedCourseIds | null = null;
+      const result = await mutate(async (port, owner) => {
+        const response = await port.createCourse(owner, request);
+        created = response.created;
+        return response.profile;
+      });
       if (owner !== null) {
         const remaining = (retryableCreates.get(owner) ?? [])
           .filter(candidate => !sameCreateInput(candidate, request));
@@ -223,7 +229,7 @@ export function createCourseSessionController(
         if (remaining.length) retryableCreates.set(owner, remaining);
         else retryableCreates.delete(owner);
       }
-      return result;
+      return result.ok ? { ok: true, created } : result;
     },
     updateCourse: (courseId, input) => mutate((port, owner) => port.updateCourse(owner, courseId, input)),
     archiveCourse: courseId => mutate((port, owner) => port.archiveCourse(owner, courseId)),

@@ -15,7 +15,7 @@ import {
   parseCourseProfile,
   type CourseProfile,
 } from './courseModel';
-import type { CoursePort, CourseProfileRead } from './coursePort';
+import type { CoursePort, CourseProfileRead, CreatedCourseIds } from './coursePort';
 
 type CourseCallable = (name: string, payload: unknown) => Promise<unknown>;
 
@@ -46,6 +46,32 @@ const errorDetails = (error: unknown): Record<string, unknown> => {
   if (!isRecord(error)) return {};
   if (isRecord(error.details)) return error.details;
   return {};
+};
+
+/**
+ * The ids of the course and goals a create produced. The server names them in `created`; a server
+ * one release older does not, and then the same ids are read from the returned profile, which is
+ * exact because target languages are unique per profile and goal kinds unique per course. Either
+ * way only ids the returned profile holds are reported.
+ */
+const createdCourseIds = (
+  profile: CourseProfile,
+  input: ReturnType<typeof normalizeCreateCourseInput>,
+  reported: unknown,
+): CreatedCourseIds | null => {
+  const reportedCourseId = isRecord(reported) && typeof reported.courseId === 'string' ? reported.courseId : null;
+  const course = profile.courses.find(candidate => reportedCourseId === null
+    ? candidate.targetLanguage === input.targetLanguage
+    : candidate.id === reportedCourseId && candidate.targetLanguage === input.targetLanguage);
+  if (!course) return null;
+  const reportedGoals = isRecord(reported) && Array.isArray(reported.goals) ? reported.goals : [];
+  const goals = input.goals.flatMap(requested => {
+    const named = reportedGoals.find(entry => isRecord(entry) && entry.kind === requested.kind);
+    const goal = course.goals.find(candidate => candidate.kind === requested.kind
+      && (!isRecord(named) || candidate.id === named.id));
+    return goal ? [{ kind: goal.kind, id: goal.id }] : [];
+  });
+  return { courseId: course.id, goals };
 };
 
 const courseErrorCodes = new Set([
@@ -101,18 +127,19 @@ export function createFirebaseCourseAdapter({
     return parseCourseProfile(source);
   };
 
-  const invokeMutation = async (
+  const invokeCallable = async <T>(
     ownerId: string | null,
     name: string,
     payload: unknown,
-  ): Promise<CourseProfile> => {
+    parse: (value: unknown) => T,
+  ): Promise<T> => {
     const owner = requireOwner(ownerId);
     requireDatabase();
     assertCurrentOwner(owner);
     try {
       const result = await call(name, payload);
       assertCurrentOwner(owner);
-      return parseCallableProfile(result);
+      return parse(result);
     } catch (error) {
       assertCurrentOwner(owner);
       if (error instanceof CourseError) throw error;
@@ -123,6 +150,9 @@ export function createFirebaseCourseAdapter({
       throw new CourseError('cloud-write-failed', 'The cloud course operation failed.', {}, error);
     }
   };
+
+  const invokeMutation = (ownerId: string | null, name: string, payload: unknown): Promise<CourseProfile> =>
+    invokeCallable(ownerId, name, payload, parseCallableProfile);
 
   const load = async (ownerId: string | null): Promise<CourseProfileRead> => {
     const owner = requireOwner(ownerId);
@@ -186,9 +216,12 @@ export function createFirebaseCourseAdapter({
     subscribe,
     createCourse: async (ownerId, input) => {
       const normalized = normalizeCreateCourseInput(input);
-      return invokeMutation(ownerId, 'createCourse', {
+      return invokeCallable(ownerId, 'createCourse', {
         ownerId: ownerId === null ? null : assertOwnerId(ownerId),
         input: normalized,
+      }, value => {
+        const profile = parseCallableProfile(value);
+        return { profile, created: createdCourseIds(profile, normalized, isRecord(value) ? value.created : undefined) };
       });
     },
     updateCourse: async (ownerId, courseId, input) => {

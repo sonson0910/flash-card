@@ -4,6 +4,7 @@ import {
   applyCourseProfileMutation,
   CourseProfileOwnerMismatchError,
   CourseProfileStoredDataError,
+  createdCourseIds,
   parseCourseProfileMutationRequest,
 } from '../src/course-profile-persistence.js';
 import {
@@ -182,6 +183,34 @@ describe('course profile persistence', () => {
         ownerId: 'owner',
         input: { targetLanguage: 'ko', nativeLanguage: 'vi', operationId: 'course-create-ko-2' },
       }), { createId: deterministicIds(), now })).rejects.toMatchObject({ reason: 'course-exists' });
+  });
+
+  it('reports the created course and goal ids from the returned profile, also on a replay', async () => {
+    const request = parseCourseProfileMutationRequest('createCourse', {
+      ownerId: 'owner',
+      input: {
+        targetLanguage: 'ko', nativeLanguage: 'vi', operationId: 'course-create-ko-1',
+        goals: [{ kind: 'topik-2', level: '3' }, { kind: 'conversation' }],
+      },
+    });
+    const first = harness();
+    const created = await applyCourseProfileMutation(first.database, 'owner', request, { createId: deterministicIds(), now });
+    const expected = {
+      courseId: 'course-create-ko-1',
+      goals: [{ kind: 'topik-2', id: 'goal-1' }, { kind: 'conversation', id: 'goal-2' }],
+    };
+    expect(createdCourseIds(created, request)).toEqual(expected);
+    expect(first.transaction.get).toHaveBeenCalledTimes(1);
+    expect(first.writes).toHaveLength(1);
+
+    const replay = harness(created);
+    const replayed = await applyCourseProfileMutation(replay.database, 'owner', request, {
+      createId: () => 'never-used', now,
+    });
+    expect(createdCourseIds(replayed, request)).toEqual(expected);
+    expect(createdCourseIds(created, parseCourseProfileMutationRequest('setActiveCourse', {
+      ownerId: 'owner', courseId: 'course-create-ko-1',
+    }))).toBeNull();
   });
 
   it('activates the requested course even after a competing create forces a transaction retry', async () => {
