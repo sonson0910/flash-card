@@ -434,7 +434,14 @@ export function LibraryInsightsDialog({
   const isLoading = phase === 'loading';
   const hasStats = phase === 'ready' && stats !== null;
   const maxCategory = hasStats ? Math.max(1, ...stats.categoryChart.map(item => item.value)) : 1;
-  const maxDifficulty = hasStats ? Math.max(1, ...stats.difficultyChart.map(item => item.value)) : 1;
+  const difficultyTotal = hasStats ? stats.difficultyChart.reduce((sum, item) => sum + Math.max(0, item.value), 0) : 0;
+  const difficultyShares = hasStats ? stats.difficultyChart.map(item => (difficultyTotal > 0 ? Math.max(0, item.value) / difficultyTotal : 0)) : [];
+  let difficultyCursor = 0;
+  const difficultyRing = difficultyShares.map((share, index) => {
+    const start = difficultyCursor;
+    difficultyCursor += share * 100;
+    return `var(--library-difficulty-${index % 3}) ${start.toFixed(2)}% ${difficultyCursor.toFixed(2)}%`;
+  }).join(', ');
   const maxXp = hasStats ? Math.max(1, ...stats.xpChartData.map(item => item.XP)) : 1;
 
   return (
@@ -491,9 +498,12 @@ export function LibraryInsightsDialog({
                   <section className="library-insights-panel" aria-labelledby="library-insights-difficulty-title">
                     <h3 id="library-insights-difficulty-title"><Trans {...msg({ context: 'library.insights.difficulty', message: 'Difficulty' })} /></h3>
                     {stats.difficultyChart.length === 0 ? <p className="library-dialog-muted"><Trans {...msg({ context: 'library.insights.no-difficulty', message: 'No review ratings yet.' })} /></p> : (
-                      <ul className="library-insights-bars">
-                        {stats.difficultyChart.map(item => <li key={item.name}><div><span>{item.name}</span><strong>{formatNumber(item.value)}</strong></div><span className="library-insights-track library-insights-track--warm"><span style={{ width: `${Math.round((item.value / maxDifficulty) * 100)}%` }} /></span></li>)}
-                      </ul>
+                      <div className="library-insights-difficulty">
+                        <span className="library-insights-donut" aria-hidden="true" style={{ background: difficultyTotal > 0 ? `conic-gradient(${difficultyRing})` : undefined }} />
+                        <ul className="library-insights-legend">
+                          {stats.difficultyChart.map((item, index) => <li key={item.name} data-difficulty-index={index % 3}><span>{item.name}</span><strong>{formatNumber(item.value)}</strong><small>{Math.round((difficultyShares[index] ?? 0) * 100)}%</small></li>)}
+                        </ul>
+                      </div>
                     )}
                   </section>
                 </div>
