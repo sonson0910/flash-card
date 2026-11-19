@@ -341,8 +341,9 @@ button.practice-recap-chip:hover { filter: brightness(1.08); }
   background: radial-gradient(ellipse at 50% 10%, color-mix(in srgb, var(--sf-brand) 17%, transparent), transparent 64%), radial-gradient(ellipse at 72% 48%, rgb(68 141 255 / .13), transparent 70%);
 }
 :root[data-theme-family='crystal'] .practice-board :is(h1, h2, h3) { font-family: var(--sf-font-display, Kanit, sans-serif); font-style: italic; }
-:root[data-theme-family='crystal'] .practice-board:not(.practice-stage) :is(article, aside, [aria-labelledby$='question-heading']),
-:root[data-theme-family='crystal'] .practice-board :is(article, aside, [aria-labelledby$='question-heading']) { clip-path: var(--sf-chamfer, none); }
+/* The story page is an unframed reading column that hosts the word meaning sheet; clipping it cuts the sheet off. */
+:root[data-theme-family='crystal'] .practice-board:not(.practice-stage) :is(article:not(.practice-story__article), aside, [aria-labelledby$='question-heading']),
+:root[data-theme-family='crystal'] .practice-board :is(article:not(.practice-story__article), aside, [aria-labelledby$='question-heading']) { clip-path: var(--sf-chamfer, none); }
 @media (max-width: 640px) {
   .practice-board:not(.practice-stage) { min-height: auto; padding-inline: 12px; }
   .practice-board:not(.practice-stage)::before { inset-inline: 0; top: 36px; height: 230px; }
