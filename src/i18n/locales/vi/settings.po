@@ -13,12 +13,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/features/settings/settings-screen.tsx:174
+#: src/features/settings/settings-screen.tsx:182
 msgctxt "settings.data.open"
 msgid "Open data & export"
 msgstr "Mở dữ liệu & xuất"
 
-#: src/features/settings/settings-screen.tsx:230
+#: src/features/settings/settings-screen.tsx:249
 msgctxt "settings.reminders.page-title"
 msgid "A nudge, <0>not a nag.</0>"
 msgstr "Nhắc khẽ, <0>không làm phiền.</0>"
@@ -33,12 +33,12 @@ msgctxt "settings.voice"
 msgid "Voice"
 msgstr "Giọng nói"
 
-#: src/features/settings/settings-screen.tsx:156
+#: src/features/settings/settings-screen.tsx:164
 msgctxt "settings.sounds.title"
 msgid "Sounds & <0>haptics</0>"
 msgstr "Âm thanh & <0>rung</0>"
 
-#: src/features/settings/settings-screen.tsx:134
+#: src/features/settings/settings-screen.tsx:142
 msgctxt "settings.theme.crystal.description"
 msgid "A sparkling study space with Lumi."
 msgstr "Không gian học lấp lánh cùng Lumi."
@@ -53,7 +53,7 @@ msgctxt "settings.reminders.daily"
 msgid "Daily reminder"
 msgstr "Nhắc hằng ngày"
 
-#: src/features/settings/settings-screen.tsx:132
+#: src/features/settings/settings-screen.tsx:140
 msgctxt "settings.theme.midnight.description"
 msgid "A deep, calm night palette."
 msgstr "Bảng màu đêm sâu lắng, êm dịu."
@@ -68,7 +68,7 @@ msgctxt "settings.course.meaning-language.scope"
 msgid "Applies to new cards. Existing card meanings do not change."
 msgstr "Chỉ áp dụng cho thẻ mới. Nghĩa của thẻ hiện có không thay đổi."
 
-#: src/features/settings/settings-screen.tsx:192
+#: src/features/settings/settings-screen.tsx:210
 msgctxt "settings.menu.reminders"
 msgid "Reminders"
 msgstr "Nhắc nhở"
@@ -113,7 +113,7 @@ msgctxt "settings.course.ui-language"
 msgid "App language"
 msgstr "Ngôn ngữ ứng dụng"
 
-#: src/features/settings/settings-screen.tsx:230
+#: src/features/settings/settings-screen.tsx:249
 msgctxt "settings.reminders.description"
 msgid "We remind you once a day, only when cards are waiting."
 msgstr "Mỗi ngày nhắc một lần, chỉ khi có thẻ đang chờ."
@@ -128,12 +128,12 @@ msgctxt "settings.reminders.lumi.text"
 msgid "I only call you once a day, when cards are due."
 msgstr "Mình chỉ gọi bạn một lần mỗi ngày, khi có thẻ đến hạn."
 
-#: src/features/settings/settings-screen.tsx:136
+#: src/features/settings/settings-screen.tsx:144
 msgctxt "settings.crystal-mode.label"
 msgid "Crystal Star mode"
 msgstr "Chế độ Crystal Star"
 
-#: src/features/settings/settings-screen.tsx:131
+#: src/features/settings/settings-screen.tsx:139
 msgctxt "settings.theme.label"
 msgid "Theme"
 msgstr "Chủ đề"
@@ -153,12 +153,12 @@ msgctxt "settings.reminders.days"
 msgid "Review days"
 msgstr "Ngày ôn tập"
 
-#: src/features/settings/settings-screen.tsx:194
+#: src/features/settings/settings-screen.tsx:213
 msgctxt "settings.menu.data"
 msgid "Data & export"
 msgstr "Dữ liệu & xuất"
 
-#: src/features/settings/settings-screen.tsx:84
+#: src/features/settings/settings-screen.tsx:92
 msgctxt "settings.sound.label"
 msgid "Study sounds"
 msgstr "Âm thanh học tập"
@@ -173,7 +173,7 @@ msgctxt "settings.voice.automatic"
 msgid "Automatic"
 msgstr "Tự động"
 
-#: src/features/settings/settings-screen.tsx:143
+#: src/features/settings/settings-screen.tsx:151
 msgctxt "settings.follow-system.label"
 msgid "Follow system"
 msgstr "Theo hệ thống"
@@ -188,7 +188,12 @@ msgctxt "settings.reminders.preview.title"
 msgid "Live preview"
 msgstr "Xem trước"
 
-#: src/features/settings/settings-screen.tsx:133
+#: src/features/settings/settings-screen.tsx:192
+msgctxt "settings.files.title"
+msgid "Storage & <0>files</0>"
+msgstr "Lưu trữ & <0>tệp</0>"
+
+#: src/features/settings/settings-screen.tsx:141
 msgctxt "settings.theme.paper"
 msgid "Ink & Paper"
 msgstr "Ink & Paper"
@@ -198,7 +203,7 @@ msgctxt "settings.course.keyboard.ko-help"
 msgid "Korean 2-set (두벌식): add Korean in your device keyboard settings, or use the on-screen keys in Korean practice."
 msgstr "Bàn phím tiếng Hàn 2-set (두벌식): hãy thêm tiếng Hàn trong cài đặt bàn phím của thiết bị, hoặc dùng các phím trên màn hình khi luyện tiếng Hàn."
 
-#: src/features/settings/settings-screen.tsx:146
+#: src/features/settings/settings-screen.tsx:154
 msgctxt "settings.focus-mode.description"
 msgid "Hide combo banners while studying."
 msgstr "Ẩn biểu ngữ chuỗi khi học."
@@ -218,10 +223,15 @@ msgctxt "settings.reminders.preview.mail-unknown"
 msgid "cards ready for review"
 msgstr "thẻ đến hạn ôn tập"
 
-#: src/features/settings/settings-screen.tsx:167
+#: src/features/settings/settings-screen.tsx:175
 msgctxt "settings.data.title"
 msgid "Data & <0>export</0>"
 msgstr "Dữ liệu & <0>xuất</0>"
+
+#: src/features/settings/settings-screen.tsx:191
+msgctxt "settings.files.description"
+msgid "Your uploads and the storage they use."
+msgstr "Tệp bạn tải lên và dung lượng chúng dùng."
 
 #: src/features/reminders/ReminderSettingsSection.tsx:162
 msgctxt "settings.reminders.timezone"
@@ -233,7 +243,7 @@ msgctxt "settings.course.keyboard"
 msgid "Keyboard"
 msgstr "Bàn phím"
 
-#: src/features/settings/settings-screen.tsx:169
+#: src/features/settings/settings-screen.tsx:177
 msgctxt "settings.data.eyebrow"
 msgid "Your account data"
 msgstr "Dữ liệu tài khoản"
@@ -268,7 +278,7 @@ msgctxt "settings.reminders.email.title"
 msgid "Weekly digest"
 msgstr "Bản tin hằng tuần"
 
-#: src/features/settings/settings-screen.tsx:145
+#: src/features/settings/settings-screen.tsx:153
 msgctxt "settings.lumi.label"
 msgid "Lumi"
 msgstr "Lumi"
@@ -288,17 +298,17 @@ msgctxt "settings.reminders.channels"
 msgid "Channels"
 msgstr "Kênh nhắc"
 
-#: src/features/settings/settings-screen.tsx:190
+#: src/features/settings/settings-screen.tsx:208
 msgctxt "settings.menu.appearance"
 msgid "Appearance"
 msgstr "Giao diện"
 
-#: src/features/settings/settings-screen.tsx:191
+#: src/features/settings/settings-screen.tsx:209
 msgctxt "settings.menu.language"
 msgid "Language & courses"
 msgstr "Ngôn ngữ & khóa học"
 
-#: src/features/settings/settings-screen.tsx:88
+#: src/features/settings/settings-screen.tsx:96
 msgctxt "settings.haptics.label"
 msgid "Haptics"
 msgstr "Rung phản hồi"
@@ -308,12 +318,12 @@ msgctxt "settings.reminders.loading"
 msgid "Loading reminders…"
 msgstr "Đang tải lời nhắc…"
 
-#: src/features/settings/settings-screen.tsx:229
+#: src/features/settings/settings-screen.tsx:248
 msgctxt "settings.language.description"
 msgid "The app speaks one language. Each course teaches another."
 msgstr "Ứng dụng dùng một ngôn ngữ. Mỗi khóa học dạy một ngôn ngữ khác."
 
-#: src/features/settings/settings-screen.tsx:138
+#: src/features/settings/settings-screen.tsx:146
 msgctxt "settings.crystal-mode.day"
 msgid "Prism Day"
 msgstr "Prism Day"
@@ -333,27 +343,27 @@ msgctxt "settings.reminders.push"
 msgid "Browser push"
 msgstr "Thông báo đẩy trên trình duyệt"
 
-#: src/features/settings/settings-screen.tsx:127
+#: src/features/settings/settings-screen.tsx:135
 msgctxt "settings.title"
 msgid "Make your study space <0>yours</0>"
 msgstr "Tạo không gian học của <0>riêng bạn</0>"
 
-#: src/features/settings/settings-screen.tsx:134
+#: src/features/settings/settings-screen.tsx:142
 msgctxt "settings.theme.crystal"
 msgid "Crystal Star"
 msgstr "Crystal Star"
 
-#: src/features/settings/settings-screen.tsx:141
+#: src/features/settings/settings-screen.tsx:149
 msgctxt "settings.display.title"
 msgid "Display"
 msgstr "Hiển thị"
 
-#: src/features/settings/settings-screen.tsx:166
+#: src/features/settings/settings-screen.tsx:174
 msgctxt "settings.data.description"
 msgid "Download what you have saved, or delete your account."
 msgstr "Tải xuống những gì bạn đã lưu, hoặc xóa tài khoản."
 
-#: src/features/settings/settings-screen.tsx:145
+#: src/features/settings/settings-screen.tsx:153
 msgctxt "settings.lumi.description"
 msgid "Show your Crystal Star study companion."
 msgstr "Hiển thị bạn đồng hành Lumi trong Crystal Star."
@@ -373,17 +383,17 @@ msgctxt "settings.reminders.push.description"
 msgid "One notification with the due count"
 msgstr "Một thông báo kèm số thẻ đến hạn"
 
-#: src/features/settings/settings-screen.tsx:173
+#: src/features/settings/settings-screen.tsx:181
 msgctxt "settings.data.row.description"
 msgid "Download your account data as a file, or permanently delete your account."
 msgstr "Tải dữ liệu tài khoản về dưới dạng tệp, hoặc xóa vĩnh viễn tài khoản."
 
-#: src/features/settings/settings-screen.tsx:146
+#: src/features/settings/settings-screen.tsx:154
 msgctxt "settings.focus-mode.label"
 msgid "Focus mode"
 msgstr "Chế độ tập trung"
 
-#: src/features/settings/settings-screen.tsx:129
+#: src/features/settings/settings-screen.tsx:137
 msgctxt "settings.appearance.title"
 msgid "Appearance"
 msgstr "Giao diện"
@@ -393,7 +403,7 @@ msgctxt "settings.reminders.sign-in"
 msgid "Sign in to set reminders."
 msgstr "Đăng nhập để đặt lời nhắc."
 
-#: src/features/settings/settings-screen.tsx:218
+#: src/features/settings/settings-screen.tsx:237
 msgctxt "settings.kicker"
 msgid "Settings"
 msgstr "Cài đặt"
@@ -403,7 +413,7 @@ msgctxt "settings.reminders.preview.body-none"
 msgid "Nothing is due right now, so no reminder is sent."
 msgstr "Hiện chưa có thẻ đến hạn nên sẽ không gửi lời nhắc."
 
-#: src/features/settings/settings-screen.tsx:137
+#: src/features/settings/settings-screen.tsx:145
 msgctxt "settings.crystal-mode.night"
 msgid "Starry Night"
 msgstr "Starry Night"
@@ -413,7 +423,7 @@ msgctxt "settings.course.script.traditional"
 msgid "Traditional"
 msgstr "Phồn thể"
 
-#: src/features/settings/settings-screen.tsx:144
+#: src/features/settings/settings-screen.tsx:152
 msgctxt "settings.reduced-motion.label"
 msgid "Reduced motion"
 msgstr "Giảm chuyển động"
@@ -423,12 +433,12 @@ msgctxt "settings.reminders.save"
 msgid "Save reminders"
 msgstr "Lưu lời nhắc"
 
-#: src/features/settings/settings-screen.tsx:229
+#: src/features/settings/settings-screen.tsx:248
 msgctxt "settings.language.title"
 msgid "Language & <0>courses</0>"
 msgstr "Ngôn ngữ & <0>khóa học</0>"
 
-#: src/features/settings/settings-screen.tsx:193
+#: src/features/settings/settings-screen.tsx:211
 msgctxt "settings.menu.sounds"
 msgid "Sounds & haptics"
 msgstr "Âm thanh & rung"
@@ -437,6 +447,11 @@ msgstr "Âm thanh & rung"
 msgctxt "settings.course.active-badge"
 msgid "Active"
 msgstr "Đang học"
+
+#: src/features/settings/settings-screen.tsx:212
+msgctxt "settings.menu.files"
+msgid "Storage & files"
+msgstr "Lưu trữ & tệp"
 
 #: src/features/reminders/ReminderSettingsSection.tsx:229
 msgctxt "common.retry"
@@ -510,12 +525,12 @@ msgid "settings.course.ui-language.label"
 msgstr "Ngôn ngữ ứng dụng"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:87
+#: src/features/settings/settings-screen.tsx:95
 msgid "settings.haptics.preview"
 msgstr "Thử rung phản hồi"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:217
+#: src/features/settings/settings-screen.tsx:236
 msgid "settings.menu.label"
 msgstr "Các mục cài đặt"
 
@@ -550,7 +565,7 @@ msgid "settings.reminders.title"
 msgstr "Lời nhắc học"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:83
+#: src/features/settings/settings-screen.tsx:91
 msgid "settings.sound.preview"
 msgstr "Phát thử âm thanh học tập"
 
@@ -574,12 +589,12 @@ msgstr "Giọng đã lưu không khả dụng. Đang dùng lựa chọn tự đ�
 msgid "settings.voice.unsupported"
 msgstr "Giọng nói trên thiết bị không khả dụng."
 
-#: src/features/settings/settings-screen.tsx:144
+#: src/features/settings/settings-screen.tsx:152
 msgctxt "settings.reduced-motion.description"
 msgid "Limit movement and animated effects."
 msgstr "Giảm chuyển động và hiệu ứng động."
 
-#: src/features/settings/settings-screen.tsx:155
+#: src/features/settings/settings-screen.tsx:163
 msgctxt "settings.sounds.description"
 msgid "Feedback while you study, on this device."
 msgstr "Phản hồi khi học, trên thiết bị này."
@@ -594,7 +609,7 @@ msgctxt "settings.voice.description"
 msgid "Read words aloud with a voice on this device"
 msgstr "Đọc to từ bằng giọng có trên thiết bị này"
 
-#: src/features/settings/settings-screen.tsx:126
+#: src/features/settings/settings-screen.tsx:134
 msgctxt "settings.description"
 msgid "Choose a look and tune the details that help you focus."
 msgstr "Chọn phong cách và điều chỉnh chi tiết giúp bạn tập trung."
@@ -624,7 +639,7 @@ msgctxt "settings.course.meaning-language.title"
 msgid "Meanings and explanations in"
 msgstr "Nghĩa và giải thích bằng"
 
-#: src/features/settings/settings-screen.tsx:143
+#: src/features/settings/settings-screen.tsx:151
 msgctxt "settings.follow-system.description"
 msgid "Match your device’s light or dark setting."
 msgstr "Theo chế độ sáng hoặc tối của thiết bị."
@@ -634,12 +649,12 @@ msgctxt "settings.reminders.push-unavailable"
 msgid "Push needs a supported browser and configured web push key."
 msgstr "Thông báo đẩy cần trình duyệt được hỗ trợ và khóa web push đã cấu hình."
 
-#: src/features/settings/settings-screen.tsx:132
+#: src/features/settings/settings-screen.tsx:140
 msgctxt "settings.theme.midnight"
 msgid "Midnight Aurora"
 msgstr "Midnight Aurora"
 
-#: src/features/settings/settings-screen.tsx:173
+#: src/features/settings/settings-screen.tsx:181
 msgctxt "settings.data.row.title"
 msgid "Export or delete"
 msgstr "Xuất hoặc xóa"
@@ -649,9 +664,9 @@ msgctxt "settings.reminders.preview.mail-count"
 msgid "{count, plural, one {card ready for review} other {cards ready for review}}"
 msgstr "{count, plural, other {thẻ đến hạn ôn tập}}"
 
-#: src/features/settings/settings-screen.tsx:148
-#: src/features/settings/settings-screen.tsx:158
-#: src/features/settings/settings-screen.tsx:212
+#: src/features/settings/settings-screen.tsx:156
+#: src/features/settings/settings-screen.tsx:166
+#: src/features/settings/settings-screen.tsx:231
 msgctxt "settings.sounds.eyebrow"
 msgid "Sounds & haptics"
 msgstr "Âm thanh & rung"
@@ -671,7 +686,7 @@ msgctxt "course.error.generic"
 msgid "That course action did not go through. Please try again."
 msgstr "Thao tác với khóa học không thành công. Hãy thử lại."
 
-#: src/features/settings/settings-screen.tsx:133
+#: src/features/settings/settings-screen.tsx:141
 msgctxt "settings.theme.paper.description"
 msgid "A warm, bright reading surface."
 msgstr "Trang đọc sáng và ấm áp."

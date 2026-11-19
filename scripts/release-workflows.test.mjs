@@ -79,6 +79,10 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('--revision "${{ inputs.revision }}"');
     expect(workflow).not.toContain('--revision "${{ github.sha }}"');
     expect(workflow).toContain('artifacts/release-candidate-manifest.json');
+    // Every sealed component must travel with the candidate, or verification downstream fails.
+    for (const component of ['firestore.rules', 'firestore.indexes.json', 'storage.rules', 'firebase.json']) {
+      expect(workflow).toMatch(new RegExp(`^ {12}${component.replaceAll('.', '\\.')}$`, 'm'));
+    }
     expect(workflow).not.toContain('npm run build:release');
     expect(functionsPackage.scripts.preinstall).not.toMatch(/\.\.[/\\]/);
   });

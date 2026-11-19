@@ -81,7 +81,8 @@ export async function runE2eFunctionsEmulator({ rootDir = projectRoot, extraArgs
       exitCode = await new Promise((resolve, reject) => {
         child = spawn(firebaseBin, [
           'emulators:exec', ...(config ? ['--config', config] : []),
-          '--only', 'firestore,auth,functions', '--project', 'demo-lingoflash', command,
+          // Storage serves learner uploads and fires the trigger that settles them.
+          '--only', 'firestore,auth,functions,storage', '--project', 'demo-lingoflash', command,
         ], { stdio: 'inherit', cwd: rootDir, detached: process.platform !== 'win32' });
         child.once('error', reject);
         child.once('exit', code => resolve(code ?? 1));

@@ -17,6 +17,7 @@ const COMPONENT_PATHS = Object.freeze({
   rootLock: { path: 'package-lock.json', type: 'file' },
   firestoreRules: { path: 'firestore.rules', type: 'file' },
   firestoreIndexes: { path: 'firestore.indexes.json', type: 'file' },
+  storageRules: { path: 'storage.rules', type: 'file' },
   firebaseConfig: { path: 'firebase.json', type: 'file' },
   firebaseAppletConfig: { path: 'firebase-applet-config.json', type: 'file' },
   readiness: { path: 'artifacts/phase6-readiness.json', type: 'file' },
@@ -123,6 +124,13 @@ export function validateFirebaseDeploymentConfig(config, {
   }
   if (!FIRESTORE_DATABASE_ID.test(firestoreTarget.database)) {
     throw new Error('Firebase deployment config requires one valid explicit Firestore database ID.');
+  }
+  // Storage is optional, but a Storage target may only deploy the sealed rules file.
+  if (config.storage !== undefined) {
+    const storageTarget = requireSingleDeploymentTarget(config.storage, 'Storage');
+    if (storageTarget.rules !== COMPONENT_PATHS.storageRules.path) {
+      throw new Error('Firebase deployment config Storage Rules path must be the sealed rules file.');
+    }
   }
   if (expectedFirestoreDatabaseId !== undefined) {
     if (!FIRESTORE_DATABASE_ID.test(expectedFirestoreDatabaseId)) {
@@ -440,7 +448,7 @@ export function verifyReleaseArtifact({
 
 const stripHooks = value => {
   const copy = structuredClone(value);
-  const targets = [copy.functions, copy.firestore, copy.hosting].flat().filter(Boolean);
+  const targets = [copy.functions, copy.firestore, copy.hosting, copy.storage].flat().filter(Boolean);
   for (const target of targets) {
     if (target && typeof target === 'object' && !Array.isArray(target)) {
       delete target.predeploy;

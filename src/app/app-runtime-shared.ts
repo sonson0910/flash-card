@@ -1,7 +1,9 @@
 import { msg } from '@lingui/core/macro';
 import type { I18n } from '@lingui/core';
 import type { Dispatch, SetStateAction } from 'react';
-import type { CourseNativeLanguage, CourseTargetLanguage } from '../features/courses/courseModel';
+import type { Course, CourseNativeLanguage, CourseTargetLanguage } from '../features/courses/courseModel';
+import { TARGET_LANGUAGE_LABEL } from '../features/courses/courseLanguageLabels';
+import type { FileCourseOption } from '../features/files/FilesWorkspace';
 import { getLibraryCardTier } from '../features/library/libraryViewModel';
 import type { AnimeRevealEventKind, AnimeRevealSourcePayload } from '../features/rewards/AnimeReveal';
 import type { SharedDeckIncomingPreview } from '../features/sharing/sharedDeckSessionController';
@@ -164,9 +166,14 @@ export const studyShortcut = (event: {
   return event.key === 'ArrowLeft' ? 'previous' : null;
 };
 
+/** The courses a stored file can be attached to: the active ones, named by the language they teach (one course per language). */
+export const fileCourseOptions = (courses: readonly Course[], translate: I18n['_']): FileCourseOption[] => courses
+  .filter(course => course.status === 'active')
+  .map(course => ({ id: course.id, label: translate(TARGET_LANGUAGE_LABEL[course.targetLanguage]) }));
+
 /** Views that render their own `<h1>` (and take the heading focus) skip the shell's screen-reader heading. */
 export const shouldShowViewHeading = (viewMode: string): boolean =>
-  !['catalog', 'today', 'progress', 'settings', 'web-words'].includes(viewMode);
+  !['catalog', 'today', 'progress', 'settings', 'web-words', 'files'].includes(viewMode);
 
 export const desktopNavigationActions = <T, S>(setViewMode: (view: T) => void, openSettings: (section: S) => void) => ({
   onOpenLanding: () => setViewMode('landing' as T),
@@ -180,6 +187,7 @@ export const desktopNavigationActions = <T, S>(setViewMode: (view: T) => void, o
 export const viewStageNavigationActions = <T>(setViewMode: (view: T) => void) => ({
   openVocabulary: () => setViewMode('library' as T),
   openPaths: () => setViewMode('catalog' as T),
+  openFiles: () => setViewMode('files' as T),
 });
 
 export const practiceOverlayActions = <T extends {

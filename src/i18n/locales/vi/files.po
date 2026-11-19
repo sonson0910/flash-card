@@ -5,7 +5,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: @lingui/cli\n"
-"Language: en-XA\n"
+"Language: vi\n"
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "PO-Revision-Date: \n"
@@ -14,910 +14,910 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:335
+#: src/features/files/FilesWorkspace.tsx:344
 msgid "files.check.another"
-msgstr ""
+msgstr "Chọn tệp khác"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:318
+#: src/features/files/FilesWorkspace.tsx:327
 msgid "files.check.attention"
-msgstr ""
+msgstr "Cần xem lại"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:334
+#: src/features/files/FilesWorkspace.tsx:343
 msgid "files.check.back"
-msgstr ""
+msgstr "Quay lại"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:347
+#: src/features/files/FilesWorkspace.tsx:356
 msgid "files.check.continue"
-msgstr ""
+msgstr "Tiếp tục"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:329
+#: src/features/files/FilesWorkspace.tsx:338
 msgid "files.check.footnote"
-msgstr ""
+msgstr "Bước kiểm tra ở đây chỉ để phản hồi nhanh. Hệ thống mới là bên quyết định cuối cùng về loại tệp, dung lượng, gói và quyền sở hữu."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:316
+#: src/features/files/FilesWorkspace.tsx:325
 msgid "files.check.passed"
-msgstr ""
+msgstr "Đạt"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:47
 msgid "files.check.plan"
-msgstr ""
+msgstr "Gói"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:88
 msgid "files.check.plan-action"
-msgstr ""
+msgstr "Gửi để hệ thống kiểm tra"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:53
 msgid "files.check.plan-chip"
-msgstr ""
+msgstr "Kiểm tra gói"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:86
 msgid "files.check.plan-failed"
-msgstr ""
+msgstr "Hệ thống cần xác nhận gói của bạn"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:87
 msgid "files.check.plan-failed-detail"
-msgstr ""
+msgstr "Không tải được hạn mức lưu trữ ở đây, nên hệ thống sẽ quyết định."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:68
 msgid "files.check.plan-pending"
-msgstr ""
+msgstr "Đang kiểm tra với hệ thống"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:69
 msgid "files.check.plan-pending-detail"
-msgstr ""
+msgstr "Gói và hạn mức lưu trữ của bạn do hệ thống xác nhận."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:70
 msgid "files.check.plan-row"
-msgstr ""
+msgstr "Đang kiểm tra gói"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:317
+#: src/features/files/FilesWorkspace.tsx:326
 msgid "files.check.service"
-msgstr ""
+msgstr "Hệ thống quyết định"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:46
 msgid "files.check.size"
-msgstr ""
+msgstr "Dung lượng"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:83
 msgid "files.check.size-action"
-msgstr ""
+msgstr "Chọn tệp nhỏ hơn"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:52
 msgid "files.check.size-chip"
-msgstr ""
+msgstr "Kiểm tra dung lượng"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:291
+#: src/features/files/FilesWorkspace.tsx:300
 msgid "files.check.size-empty"
-msgstr ""
+msgstr "Tệp này trống hoặc không đọc được."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:81
 msgid "files.check.size-failed"
-msgstr ""
+msgstr "Tệp quá lớn"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:82
 msgid "files.check.size-failed-detail"
-msgstr ""
+msgstr "Gói của bạn nhận tệp tối đa {limit}."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:63
 msgid "files.check.size-pending"
-msgstr ""
+msgstr "Đang kiểm tra dung lượng tệp"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:64
 msgid "files.check.size-pending-detail"
-msgstr ""
+msgstr "Dung lượng tệp được so với gói của bạn trước khi gửi."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:65
 msgid "files.check.size-row"
-msgstr ""
+msgstr "Đang kiểm tra dung lượng"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:297
+#: src/features/files/FilesWorkspace.tsx:306
 msgid "files.check.title"
-msgstr ""
+msgstr "Kiểm tra trước khi gửi"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:45
 msgid "files.check.type"
-msgstr ""
+msgstr "Loại tệp"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:78
 msgid "files.check.type-action"
-msgstr ""
+msgstr "Chọn tệp khác"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:51
 msgid "files.check.type-chip"
-msgstr ""
+msgstr "Kiểm tra loại tệp"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:76
 msgid "files.check.type-failed"
-msgstr ""
+msgstr "Loại tệp không được hỗ trợ"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:77
 msgid "files.check.type-failed-detail"
-msgstr ""
+msgstr "Hãy chọn tệp PDF, EPUB, PNG, JPEG hoặc WebP."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:58
 msgid "files.check.type-pending"
-msgstr ""
+msgstr "Đang kiểm tra loại tệp"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:59
 msgid "files.check.type-pending-detail"
-msgstr ""
+msgstr "Có thể tải lên tệp PDF, EPUB và hình ảnh."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:60
 msgid "files.check.type-row"
-msgstr ""
+msgstr "Đang kiểm tra loại tệp"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:317
+#: src/features/files/FilesWorkspace.tsx:326
 msgid "files.check.waiting"
-msgstr ""
+msgstr "Đang chờ"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:790
+#: src/features/files/FilesWorkspace.tsx:799
 msgid "files.delete.confirm"
-msgstr ""
+msgstr "Xóa"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:767
+#: src/features/files/FilesWorkspace.tsx:776
 msgid "files.delete.detail"
-msgstr ""
+msgstr "<0>{name}</0> sẽ bị xóa khỏi Tệp của tôi sau khi bạn xác nhận."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:769
+#: src/features/files/FilesWorkspace.tsx:778
 msgid "files.delete.failed"
-msgstr ""
+msgstr "Không xóa được tệp. Hãy thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:772
+#: src/features/files/FilesWorkspace.tsx:781
 msgid "files.delete.keep"
-msgstr ""
+msgstr "Giữ tệp"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:765
+#: src/features/files/FilesWorkspace.tsx:774
 msgid "files.delete.title"
-msgstr ""
+msgstr "Xóa tệp này?"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:108
 msgid "files.error.canceled"
-msgstr ""
+msgstr "Đã hủy tải lên."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:109
 msgid "files.error.network"
-msgstr ""
+msgstr "Chưa tải lên xong. Hãy kiểm tra kết nối rồi thử lại."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:111
-#: src/features/files/FilesWorkspace.tsx:583
+#: src/features/files/FilesWorkspace.tsx:592
 msgid "files.error.not-found"
-msgstr ""
+msgstr "Tệp đó không còn nữa."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:113
 msgid "files.error.profile-required"
-msgstr ""
+msgstr "Hãy hoàn tất hồ sơ trước khi tải tệp lên."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:105
 msgid "files.error.quota"
-msgstr ""
+msgstr "Bộ nhớ của bạn đã đầy. Hãy xóa những tệp không còn cần, rồi thử lại."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:112
 msgid "files.error.rate-limited"
-msgstr ""
+msgstr "Bạn tải lên quá nhiều trong thời gian ngắn. Hãy đợi một lát rồi thử lại."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:110
 msgid "files.error.rejected"
-msgstr ""
+msgstr "Hệ thống không nhận ảnh này."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:106
 msgid "files.error.size"
-msgstr ""
+msgstr "Ảnh này lớn hơn mức gói của bạn cho phép."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:107
 msgid "files.error.type"
-msgstr ""
+msgstr "Hãy chọn ảnh PNG, JPEG hoặc WebP."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:114
 msgid "files.error.unavailable"
-msgstr ""
+msgstr "Hiện chưa thể tải lên. Hãy thử lại sau."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:17
 msgid "files.kind.epub"
-msgstr ""
+msgstr "EPUB"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:18
 msgid "files.kind.image"
-msgstr ""
+msgstr "Ảnh"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:16
 msgid "files.kind.pdf"
-msgstr ""
+msgstr "PDF"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:154
+#: src/features/files/FilesWorkspace.tsx:163
 msgid "files.page.kicker"
-msgstr ""
+msgstr "Tệp nguồn"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:155
+#: src/features/files/FilesWorkspace.tsx:164
 msgid "files.page.kicker-flow"
-msgstr ""
+msgstr "Quy trình tải lên"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:161
+#: src/features/files/FilesWorkspace.tsx:170
 msgid "files.page.lead"
-msgstr ""
+msgstr "Chọn tệp PDF, EPUB hoặc ảnh, rồi theo dõi trạng thái của tệp trong lúc tệp được đưa vào kệ học của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:158
+#: src/features/files/FilesWorkspace.tsx:167
 msgid "files.page.title"
-msgstr ""
+msgstr "Thêm một <0>nguồn học.</0>"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:34
 msgid "files.phase.canceled"
-msgstr ""
+msgstr "Đã hủy"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:41
 msgid "files.phase.partial"
-msgstr ""
+msgstr "Kết quả một phần"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:39
 msgid "files.phase.processing"
-msgstr ""
+msgstr "Đang xử lý"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:38
 msgid "files.phase.quota-exceeded"
-msgstr ""
+msgstr "Bộ nhớ đầy"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:32
 msgid "files.phase.rejected"
-msgstr ""
+msgstr "Cần xem lại"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:40
 msgid "files.phase.results"
-msgstr ""
+msgstr "Sẵn sàng gắn"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:35
 msgid "files.phase.retry"
-msgstr ""
+msgstr "Thử lại"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:30
 msgid "files.phase.select"
-msgstr ""
+msgstr "Chọn tệp"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:36
 msgid "files.phase.upload-incomplete"
-msgstr ""
+msgstr "Tải lên chưa xong"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:37
 msgid "files.phase.upload-rejected"
-msgstr ""
+msgstr "Tải lên bị từ chối"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:33
 msgid "files.phase.uploading"
-msgstr ""
+msgstr "Đang tải lên"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:31
 msgid "files.phase.validating"
-msgstr ""
+msgstr "Đang kiểm tra"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:443
+#: src/features/files/FilesWorkspace.tsx:452
 msgid "files.quota.detail"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:448
-msgid "files.quota.detail-unknown"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:467
-msgid "files.quota.heading"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:459
-msgid "files.quota.label"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:479
-msgid "files.quota.manage"
-msgstr ""
+msgstr "Tệp này cần {needed}, trong khi chỉ còn trống {free} trên tổng {limit} của bạn. Hãy xóa những tệp không còn cần, rồi thử lại."
 
 #. js-lingui-explicit-id
 #: src/features/files/FilesWorkspace.tsx:457
+msgid "files.quota.detail-unknown"
+msgstr "Bạn đã dùng hết hạn mức lưu trữ. Hãy xóa những tệp không còn cần, rồi thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:476
+msgid "files.quota.heading"
+msgstr "Bộ nhớ của bạn đã đầy"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:468
+msgid "files.quota.label"
+msgstr "Bộ nhớ đầy"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:488
+msgid "files.quota.manage"
+msgstr "Quản lý tệp"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:466
 msgid "files.quota.subtitle"
-msgstr ""
+msgstr "{name} · hệ thống đã kiểm tra bộ nhớ"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:454
+#: src/features/files/FilesWorkspace.tsx:463
 msgid "files.quota.title"
-msgstr ""
+msgstr "Đã hết hạn mức lưu trữ"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:475
+#: src/features/files/FilesWorkspace.tsx:484
 msgid "files.rejected.another"
-msgstr ""
+msgstr "Chọn tệp khác"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:102
 msgid "files.rejected.default"
-msgstr ""
+msgstr "Hệ thống không nhận lần tải lên này. Hãy chọn tệp khác hoặc xem lại Tệp của tôi."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:97
 msgid "files.rejected.expired"
-msgstr ""
+msgstr "Quá trình tải lên kéo dài quá lâu. Hãy chọn lại tệp để thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:477
+msgid "files.rejected.heading"
+msgstr "Hệ thống không nhận tệp này"
 
 #. js-lingui-explicit-id
 #: src/features/files/FilesWorkspace.tsx:468
-msgid "files.rejected.heading"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:459
 msgid "files.rejected.label"
-msgstr ""
+msgstr "Bị từ chối"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:99
 msgid "files.rejected.profile-required"
-msgstr ""
+msgstr "Hãy hoàn tất hồ sơ trước khi tải tệp lên."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:98
 msgid "files.rejected.rate-limited"
-msgstr ""
+msgstr "Bạn tải lên quá nhiều trong thời gian ngắn. Hãy đợi một lát rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:480
+#: src/features/files/FilesWorkspace.tsx:489
 msgid "files.rejected.review"
-msgstr ""
+msgstr "Xem lại Tệp của tôi"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:94
 msgid "files.rejected.signature"
-msgstr ""
+msgstr "Nội dung tệp không khớp với loại tệp. Hãy chọn tệp khác hoặc xem lại Tệp của tôi."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:96
 msgid "files.rejected.size"
-msgstr ""
+msgstr "Tệp lớn hơn mức gói của bạn cho phép. Hãy chọn tệp nhỏ hơn."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:458
+#: src/features/files/FilesWorkspace.tsx:467
 msgid "files.rejected.subtitle"
-msgstr ""
+msgstr "{name} · hệ thống đã kiểm tra"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:455
+#: src/features/files/FilesWorkspace.tsx:464
 msgid "files.rejected.title"
-msgstr ""
+msgstr "Tải lên bị từ chối"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:95
 msgid "files.rejected.type"
-msgstr ""
+msgstr "Loại tệp này không được chấp nhận. Hãy chọn tệp khác hoặc xem lại Tệp của tôi."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:634
+#: src/features/files/FilesWorkspace.tsx:643
 msgid "files.result.another"
-msgstr ""
+msgstr "Tải tệp khác"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:630
+#: src/features/files/FilesWorkspace.tsx:639
 msgid "files.result.attach"
-msgstr ""
+msgstr "Gắn nguồn"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:568
+#: src/features/files/FilesWorkspace.tsx:577
 msgid "files.result.attach-failed"
-msgstr ""
+msgstr "Không gắn được tệp. Hãy thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:620
+#: src/features/files/FilesWorkspace.tsx:629
 msgid "files.result.attach-note"
-msgstr ""
+msgstr "Tệp đã gắn sẽ hiện cùng khóa học đó trong Tệp của tôi."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:614
+#: src/features/files/FilesWorkspace.tsx:623
 msgid "files.result.attach-to"
-msgstr ""
+msgstr "Gắn vào"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:564
+#: src/features/files/FilesWorkspace.tsx:573
 msgid "files.result.attached"
-msgstr ""
+msgstr "Đã gắn vào {course}."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:547
+#: src/features/files/FilesWorkspace.tsx:556
 msgid "files.result.complete"
-msgstr ""
+msgstr "Hoàn tất"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:565
+#: src/features/files/FilesWorkspace.tsx:574
 msgid "files.result.detached"
-msgstr ""
+msgstr "Chưa gắn với khóa học nào."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:616
+#: src/features/files/FilesWorkspace.tsx:625
 msgid "files.result.no-course"
-msgstr ""
+msgstr "Không có khóa học"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:626
+#: src/features/files/FilesWorkspace.tsx:635
 msgid "files.result.open"
-msgstr ""
+msgstr "Mở tệp"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:584
+#: src/features/files/FilesWorkspace.tsx:593
 msgid "files.result.open-failed"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:539
-msgid "files.result.partial"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:541
-msgid "files.result.partial-label"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:542
-msgid "files.result.partial-status"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:540
-msgid "files.result.partial-subtitle"
-msgstr ""
+msgstr "Không mở được tệp. Hãy thử lại."
 
 #. js-lingui-explicit-id
 #: src/features/files/FilesWorkspace.tsx:548
-msgid "files.result.partial-value"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:546
-#: src/features/files/FilesWorkspace.tsx:550
-msgid "files.result.pending"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:527
-msgid "files.result.processing"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:529
-msgid "files.result.processing-label"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:530
-msgid "files.result.processing-status"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:528
-msgid "files.result.processing-subtitle"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:533
-msgid "files.result.ready"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:535
-msgid "files.result.ready-label"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:536
-msgid "files.result.ready-status"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:534
-msgid "files.result.ready-subtitle"
-msgstr ""
+msgid "files.result.partial"
+msgstr "Đã lưu với kết quả một phần"
 
 #. js-lingui-explicit-id
 #: src/features/files/FilesWorkspace.tsx:550
-msgid "files.result.record"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:552
-msgid "files.result.size"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:550
-msgid "files.result.stored"
-msgstr ""
+msgid "files.result.partial-label"
+msgstr "Một phần"
 
 #. js-lingui-explicit-id
 #: src/features/files/FilesWorkspace.tsx:551
+msgid "files.result.partial-status"
+msgstr "Một phần"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:549
+msgid "files.result.partial-subtitle"
+msgstr "Tệp đã được lưu; một số bước kiểm tra chưa hoàn tất."
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:557
+msgid "files.result.partial-value"
+msgstr "Một phần"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:555
+#: src/features/files/FilesWorkspace.tsx:559
+msgid "files.result.pending"
+msgstr "Đang chờ"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:536
+msgid "files.result.processing"
+msgstr "Đang kiểm tra tệp"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:538
+msgid "files.result.processing-label"
+msgstr "Đang xử lý"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:539
+msgid "files.result.processing-status"
+msgstr "Đang chờ"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:537
+msgid "files.result.processing-subtitle"
+msgstr "Hệ thống đang xác nhận lần tải lên."
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:542
+msgid "files.result.ready"
+msgstr "Sẵn sàng gắn"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:544
+msgid "files.result.ready-label"
+msgstr "Sẵn sàng"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:545
+msgid "files.result.ready-status"
+msgstr "Sẵn sàng"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:543
+msgid "files.result.ready-subtitle"
+msgstr "Gắn tệp vào một khóa học hoặc mở tệp từ Tệp của tôi."
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:559
+msgid "files.result.record"
+msgstr "Bản ghi tệp"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:561
+msgid "files.result.size"
+msgstr "Dung lượng"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:559
+msgid "files.result.stored"
+msgstr "Đã lưu"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:560
 msgid "files.result.verification"
-msgstr ""
+msgstr "Xác minh"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:261
+#: src/features/files/FilesWorkspace.tsx:270
 msgid "files.select.browse"
-msgstr ""
+msgstr "Duyệt tệp"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:256
+#: src/features/files/FilesWorkspace.tsx:265
 msgid "files.select.drop-detail"
-msgstr ""
+msgstr "Tệp PDF, EPUB và ảnh đều qua cùng các bước kiểm tra. Thả tệp vào đây hoặc duyệt trên thiết bị."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:255
+#: src/features/files/FilesWorkspace.tsx:264
 msgid "files.select.drop-title"
-msgstr ""
+msgstr "Chọn một nguồn"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:258
-#: src/features/files/FilesWorkspace.tsx:311
+#: src/features/files/FilesWorkspace.tsx:267
+#: src/features/files/FilesWorkspace.tsx:320
 msgid "files.select.image-note"
-msgstr ""
+msgstr "Ảnh được thu nhỏ ngay trên trình duyệt và lưu dưới dạng WebP."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:143
+#: src/features/files/FilesWorkspace.tsx:152
 msgid "files.select.input"
-msgstr ""
+msgstr "Chọn tệp PDF, EPUB hoặc ảnh"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:245
+#: src/features/files/FilesWorkspace.tsx:254
 msgid "files.select.subtitle"
-msgstr ""
+msgstr "Các bước kiểm tra nhanh chạy ở đây trước; hệ thống xác nhận tệp sau khi tệp được gửi tới."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:244
+#: src/features/files/FilesWorkspace.tsx:253
 msgid "files.select.title"
-msgstr ""
+msgstr "Chọn một tệp"
 
 #. js-lingui-explicit-id
 #: src/features/files/FilesSettingsSection.tsx:32
 msgid "files.settings.error"
-msgstr ""
+msgstr "Không tải được dung lượng đã dùng."
 
 #. js-lingui-explicit-id
 #: src/features/files/FilesSettingsSection.tsx:39
 msgid "files.settings.loading"
-msgstr ""
+msgstr "Đang tải dung lượng đã dùng…"
 
 #. js-lingui-explicit-id
 #: src/features/files/FilesSettingsSection.tsx:68
 msgid "files.settings.note"
-msgstr ""
+msgstr "Tệp bạn tải lên được tính vào dung lượng lưu trữ của gói. Xóa tệp sẽ giải phóng dung lượng."
 
 #. js-lingui-explicit-id
 #: src/features/files/FilesSettingsSection.tsx:57
 msgid "files.settings.open"
-msgstr ""
+msgstr "Mở Tệp của tôi"
 
 #. js-lingui-explicit-id
 #: src/features/files/FilesSettingsSection.tsx:53
 msgid "files.settings.retry"
-msgstr ""
+msgstr "Thử lại"
 
 #. js-lingui-explicit-id
 #: src/features/files/FilesSettingsSection.tsx:48
 msgid "files.settings.row"
-msgstr ""
+msgstr "Tệp của tôi"
 
 #. js-lingui-explicit-id
 #: src/features/files/FilesSettingsSection.tsx:34
 msgid "files.settings.summary"
-msgstr ""
+msgstr "{count, plural, one {# tệp} other {# tệp}} · đã dùng {used} trên {limit}"
 
 #. js-lingui-explicit-id
 #: src/features/files/FilesSettingsSection.tsx:43
 msgid "files.settings.title"
-msgstr ""
+msgstr "Lưu trữ và tệp"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:699
+#: src/features/files/FilesWorkspace.tsx:708
 msgid "files.shelf.all-courses"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:670
-msgid "files.shelf.count"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:716
-msgid "files.shelf.delete"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:690
-msgid "files.shelf.empty-detail"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:689
-msgid "files.shelf.empty-title"
-msgstr ""
+msgstr "Tất cả khóa học"
 
 #. js-lingui-explicit-id
 #: src/features/files/FilesWorkspace.tsx:679
-msgid "files.shelf.error-detail"
-msgstr ""
+msgid "files.shelf.count"
+msgstr "{count, plural, one {# tệp} other {# tệp}}"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:678
-msgid "files.shelf.error-title"
-msgstr ""
+#: src/features/files/FilesWorkspace.tsx:725
+msgid "files.shelf.delete"
+msgstr "Xóa {name}"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:699
+msgid "files.shelf.empty-detail"
+msgstr "Tải lên một tệp PDF, EPUB hoặc ảnh để bắt đầu kệ nguồn của bạn."
 
 #. js-lingui-explicit-id
 #: src/features/files/FilesWorkspace.tsx:698
+msgid "files.shelf.empty-title"
+msgstr "Chưa có tệp nào"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:688
+msgid "files.shelf.error-detail"
+msgstr "Hãy kiểm tra kết nối, rồi tải lại danh sách."
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:687
+msgid "files.shelf.error-title"
+msgstr "Không tải được Tệp của tôi"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:707
 msgid "files.shelf.files"
-msgstr ""
+msgstr "Tệp"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:665
+#: src/features/files/FilesWorkspace.tsx:674
 msgid "files.shelf.kicker"
-msgstr ""
+msgstr "Thư viện"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:685
+#: src/features/files/FilesWorkspace.tsx:694
 msgid "files.shelf.loading"
-msgstr ""
+msgstr "Đang tải tệp của bạn…"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:728
+#: src/features/files/FilesWorkspace.tsx:737
 msgid "files.shelf.manage"
-msgstr ""
+msgstr "Quản lý tất cả tệp"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:659
+#: src/features/files/FilesWorkspace.tsx:668
 msgid "files.shelf.no-course"
-msgstr ""
+msgstr "Không có khóa học"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:681
+#: src/features/files/FilesWorkspace.tsx:690
 msgid "files.shelf.retry"
-msgstr ""
+msgstr "Tải lại danh sách"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:666
+#: src/features/files/FilesWorkspace.tsx:675
 msgid "files.shelf.title"
-msgstr ""
+msgstr "Tệp của tôi"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:692
+#: src/features/files/FilesWorkspace.tsx:701
 msgid "files.shelf.upload"
-msgstr ""
+msgstr "Tải lên một nguồn"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:24
 msgid "files.status.partial"
-msgstr ""
+msgstr "Một phần"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:23
 msgid "files.status.ready"
-msgstr ""
+msgstr "Sẵn sàng"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:25
 msgid "files.status.rejected"
-msgstr ""
+msgstr "Bị từ chối"
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:22
 msgid "files.status.uploading"
-msgstr ""
+msgstr "Đang tải lên"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:426
+#: src/features/files/FilesWorkspace.tsx:435
 msgid "files.transfer.cancel"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:367
-msgid "files.transfer.canceled"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:371
-msgid "files.transfer.canceled-helper"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:368
-msgid "files.transfer.canceled-label"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:370
-msgid "files.transfer.canceled-note"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:369
-msgid "files.transfer.canceled-status"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:381
-msgid "files.transfer.incomplete"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:382
-msgid "files.transfer.incomplete-label"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:384
-msgid "files.transfer.incomplete-note"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:383
-msgid "files.transfer.incomplete-status"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:378
-#: src/features/files/FilesWorkspace.tsx:385
-msgid "files.transfer.kept-helper"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:409
-msgid "files.transfer.progress"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:506
-msgid "files.transfer.resized"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:374
-msgid "files.transfer.retry"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:430
-msgid "files.transfer.retry-action"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:375
-msgid "files.transfer.retry-label"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:377
-msgid "files.transfer.retry-note"
-msgstr ""
+msgstr "Hủy tải lên"
 
 #. js-lingui-explicit-id
 #: src/features/files/FilesWorkspace.tsx:376
+msgid "files.transfer.canceled"
+msgstr "Đã hủy tải lên"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:380
+msgid "files.transfer.canceled-helper"
+msgstr "Không còn dữ liệu nào đang được gửi"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:377
+msgid "files.transfer.canceled-label"
+msgstr "Đã hủy"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:379
+msgid "files.transfer.canceled-note"
+msgstr "Quá trình tải lên đã dừng và chưa có gì được lưu. Thử lại sẽ bắt đầu một lần tải mới."
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:378
+msgid "files.transfer.canceled-status"
+msgstr "Đã dừng tải lên"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:390
+msgid "files.transfer.incomplete"
+msgstr "Tải lên chưa xong"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:391
+msgid "files.transfer.incomplete-label"
+msgstr "Chưa xong"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:393
+msgid "files.transfer.incomplete-note"
+msgstr "Việc truyền tệp đã kết thúc nhưng hệ thống chưa xác nhận tệp. Thử lại sẽ bắt đầu một lần tải mới."
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:392
+msgid "files.transfer.incomplete-status"
+msgstr "Chưa xác nhận hoàn tất"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:387
+#: src/features/files/FilesWorkspace.tsx:394
+msgid "files.transfer.kept-helper"
+msgstr "Vẫn giữ tệp đã chọn"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:418
+msgid "files.transfer.progress"
+msgstr "Tiến độ tải lên"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:515
+msgid "files.transfer.resized"
+msgstr "đã thu nhỏ sang WebP"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:383
+msgid "files.transfer.retry"
+msgstr "Thử tải lên lại"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:439
+msgid "files.transfer.retry-action"
+msgstr "Thử tải lại"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:384
+msgid "files.transfer.retry-label"
+msgstr "Thử lại"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:386
+msgid "files.transfer.retry-note"
+msgstr "Kết nối bị ngắt trước khi tải lên xong. Thử lại sẽ bắt đầu một lần tải mới."
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:385
 msgid "files.transfer.retry-status"
-msgstr ""
+msgstr "Quá trình tải lên bị gián đoạn"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:389
+#: src/features/files/FilesWorkspace.tsx:398
 msgid "files.transfer.sizes"
-msgstr ""
+msgstr "{sent} trên {total}"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:360
+#: src/features/files/FilesWorkspace.tsx:369
 msgid "files.transfer.uploading"
-msgstr ""
+msgstr "Đang tải nguồn lên"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:364
+#: src/features/files/FilesWorkspace.tsx:373
 msgid "files.transfer.uploading-helper"
-msgstr ""
+msgstr "Cần có kết nối mạng"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:361
+#: src/features/files/FilesWorkspace.tsx:370
 msgid "files.transfer.uploading-label"
-msgstr ""
+msgstr "Đang tiến hành"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:363
+#: src/features/files/FilesWorkspace.tsx:372
 msgid "files.transfer.uploading-note"
-msgstr ""
+msgstr "Hãy giữ trang này mở trong lúc tải tệp lên. Hệ thống sẽ xác nhận tệp sau khi truyền xong."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:362
+#: src/features/files/FilesWorkspace.tsx:371
 msgid "files.transfer.uploading-status"
-msgstr ""
+msgstr "Đang gửi dữ liệu"
 
 #. js-lingui-explicit-id
 #: src/features/files/StorageUsageMeter.tsx:29
 msgid "files.usage.label"
-msgstr ""
+msgstr "Dung lượng đã dùng"
 
 #. js-lingui-explicit-id
 #: src/features/files/StorageUsageMeter.tsx:61
 msgid "files.usage.limit"
-msgstr ""
+msgstr "Giới hạn"
 
 #. js-lingui-explicit-id
 #: src/features/files/StorageUsageMeter.tsx:57
 msgid "files.usage.reserved"
-msgstr ""
+msgstr "Đang giữ chỗ"
 
 #. js-lingui-explicit-id
 #: src/features/files/StorageUsageMeter.tsx:36
 msgid "files.usage.source"
-msgstr ""
+msgstr "từ tài khoản của bạn"
 
 #. js-lingui-explicit-id
 #: src/features/files/StorageUsageMeter.tsx:53
 msgid "files.usage.used"
-msgstr ""
+msgstr "Đã dùng"
 
 #. js-lingui-explicit-id
 #: src/features/files/StorageUsageMeter.tsx:30
 msgid "files.usage.value"
-msgstr ""
+msgstr "Đã dùng {used} trên {limit}"

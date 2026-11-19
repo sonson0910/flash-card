@@ -160,7 +160,7 @@ landing pages and sitemap for `https://sonflash.app` from the landing catalogs; 
 checks their canonical and reciprocal language links. For release-grade evidence, run it from a clean
 checkout and bind it to the exact 40- or 64-character source revision.
 
-Browser commands build into `.e2e-build` and run Auth, Firestore and Functions together,
+Browser commands build into `.e2e-build` and run Auth, Firestore, Functions and Storage together,
 leaving the production `dist` artifact intact. The runner temporarily disables emulator
 App Check and uses invalid AI-provider keys; it restores any existing Functions local
 parameter file (or removes one it created) and refuses to replace an existing local secret

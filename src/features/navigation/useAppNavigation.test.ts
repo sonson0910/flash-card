@@ -5,11 +5,13 @@ const hookRuntime = vi.hoisted(() => ({
   refCursor: 0,
   states: [] as unknown[],
   refs: [] as Array<{ current: unknown }>,
+  effects: [] as Array<() => unknown>,
 }));
 
 vi.mock('react', () => ({
   useCallback: <T extends (...args: never[]) => unknown>(callback: T) => callback,
-  useEffect: () => undefined,
+  // Effects are collected, not run; a test that needs one (the popstate listener) runs it itself.
+  useEffect: (effect: () => unknown) => { hookRuntime.effects.push(effect); },
   useRef: <T,>(initial: T) => {
     const index = hookRuntime.refCursor++;
     if (!(index in hookRuntime.refs)) hookRuntime.refs[index] = { current: initial };
@@ -54,13 +56,15 @@ describe('useAppNavigation', () => {
     hookRuntime.refCursor = 0;
     hookRuntime.states = [];
     hookRuntime.refs = [];
+    hookRuntime.effects = [];
     vi.clearAllMocks();
   });
 
-  const render = () => {
+  const render = (options?: Parameters<typeof useAppNavigation>[0]) => {
     hookRuntime.stateCursor = 0;
     hookRuntime.refCursor = 0;
-    return useAppNavigation();
+    hookRuntime.effects = [];
+    return useAppNavigation(options);
   };
 
   it('keeps every view mode paired with its accessible heading', () => {
@@ -72,6 +76,7 @@ describe('useAppNavigation', () => {
       progress: 'Learning progress',
       settings: 'Settings and appearance',
       'web-words': 'Words saved from the web',
+      files: 'My files',
       study: 'Study session',
       quiz: 'Vocabulary quiz',
       spelling: 'Spelling practice',
@@ -80,7 +85,7 @@ describe('useAppNavigation', () => {
       match: 'Word match',
       shadowing: 'Shadowing practice',
     });
-    expect(new Set(Object.values(APP_VIEW_HEADINGS).map(heading => heading.id)).size).toBe(14);
+    expect(new Set(Object.values(APP_VIEW_HEADINGS).map(heading => heading.id)).size).toBe(15);
 
     const navigation = render();
     expect(navigation.viewMode).toBe('landing');
@@ -149,6 +154,47 @@ describe('useAppNavigation', () => {
     const opened = render();
     expect(opened.viewMode).toBe('settings');
     expect(opened.settingsSection).toBe('reminders');
+  });
+
+  it('routes My files as its own view and keeps the storage settings section linkable', () => {
+    expect(readAppViewMode('/?view=files')).toBe('files');
+    expect(readAppViewMode('/vi/?view=files&locale=vi')).toBe('files');
+    expect(readSettingsSectionParam('/?view=settings&section=files')).toBe('files');
+    expect(createAppViewLocation('/?view=settings&section=files&locale=en', 'files')).toBe('/?view=files&locale=en');
+    expect(createAppViewLocation('/?view=files', 'settings', { settingsSection: 'files' })).toBe('/?view=settings&section=files');
+  });
+
+  it('opens My files from the storage settings section and walks back and forward through the browser', () => {
+    const history = ['/?view=settings&section=files'];
+    let index = 0;
+    let popState: (() => void) | null = null;
+    const viewBrowser = {
+      getCurrentUrl: () => `https://sonflash.invalid${history[index]}`,
+      pushState: vi.fn((location: string) => { history.splice(index + 1, Infinity, location); index += 1; }),
+      listenPopState: (listener: () => void) => { popState = listener; return () => { popState = null; }; },
+    };
+    const moveInHistory = (step: number) => { index += step; popState?.(); };
+
+    const settings = render({ viewBrowser });
+    expect(settings.viewMode).toBe('settings');
+    expect(settings.settingsSection).toBe('files');
+    hookRuntime.effects[0]();
+
+    settings.setViewMode('files');
+    expect(viewBrowser.pushState).toHaveBeenLastCalledWith('/?view=files');
+    const files = render({ viewBrowser });
+    expect(files.viewMode).toBe('files');
+    expect(files.viewFocusIntent).toBe(1);
+
+    moveInHistory(-1);
+    const back = render({ viewBrowser });
+    expect(back.viewMode).toBe('settings');
+    expect(back.settingsSection).toBe('files');
+    expect(back.viewFocusIntent).toBe(2);
+
+    moveInHistory(1);
+    expect(render({ viewBrowser }).viewMode).toBe('files');
+    expect(viewBrowser.pushState).toHaveBeenCalledTimes(1);
   });
 
   it('defaults to dark mode and safely reads an explicit stored preference', () => {

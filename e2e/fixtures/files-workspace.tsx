@@ -167,7 +167,7 @@ function FilesFixture() {
   const [ready, setReady] = useState(false);
   const surface = params.get('surface') ?? 'board';
   useEffect(() => {
-    void Promise.all([loadCatalog(locale, 'shell'), ...(surface === 'card-edit' ? [loadCatalog(locale, 'library')] : [])]).then(() => setReady(true));
+    void Promise.all([loadCatalog(locale, 'shell'), loadCatalog(locale, 'files'), ...(surface === 'card-edit' ? [loadCatalog(locale, 'library')] : [])]).then(() => setReady(true));
   }, [locale, surface]);
   if (!ready) return null;
   return (

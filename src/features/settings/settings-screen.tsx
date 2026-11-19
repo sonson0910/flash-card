@@ -1,6 +1,6 @@
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { Bell, Check, Database, Languages, Monitor, Moon, Palette, Play, Sun, Vibrate, Volume2, type LucideIcon } from 'lucide-react';
+import { Bell, Check, Database, HardDrive, Languages, Monitor, Moon, Palette, Play, Sun, Vibrate, Volume2, type LucideIcon } from 'lucide-react';
 import { lazy, Suspense, useEffect, useLayoutEffect, useState, type ReactNode, type RefObject } from 'react';
 import { Lumi } from '../../components/lumi/Lumi';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
@@ -11,6 +11,7 @@ import { useTheme } from '../theme/ThemeProvider';
 import { useFocusModePreference } from './focus-mode-preference';
 import { applyLumiEnabled, readLumiEnabled } from './lumi-preference';
 import { DEFAULT_SETTINGS_SECTION, type SettingsSectionId } from './settings-sections';
+import type { FilePort } from '../files/filePort';
 import './settings-theme.css';
 import './settings-screen.css';
 
@@ -22,6 +23,9 @@ const ReminderSettingsSection = lazy(() => import('../reminders/ReminderSettings
 const AccountDataSection = lazy(() => Promise.all([
   import('../account/AccountDataSection'), loadCatalog(getActiveUiLocale(), 'account'),
 ]).then(([module]) => ({ default: module.AccountDataSection })));
+const FilesSettingsSection = lazy(() => Promise.all([
+  import('../files/FilesSettingsSection'), loadCatalog(getActiveUiLocale(), 'files'),
+]).then(([module]) => ({ default: module.FilesSettingsSection })));
 
 export { SETTINGS_SECTIONS, type SettingsSectionId } from './settings-sections';
 
@@ -36,6 +40,10 @@ export interface SettingsScreenProps {
   readonly section?: SettingsSectionId;
   readonly onSelectSection?: (section: SettingsSectionId) => void;
   readonly initialSection?: SettingsSectionId;
+  /** The signed-in learner's file service for the storage section; null while there is no account to read. */
+  readonly filePort?: FilePort | null;
+  /** Opens the My files page from the storage section. */
+  readonly onOpenFiles?: () => void;
 }
 
 type ThemeCard = 'midnight' | 'paper' | 'crystal';
@@ -178,11 +186,21 @@ function DataSection({ headingRef }: { readonly headingRef?: RefObject<HTMLHeadi
   </section>;
 }
 
+function FilesSection({ headingRef, filePort, onOpenFiles }: { readonly headingRef?: RefObject<HTMLHeadingElement | null>; readonly filePort: FilePort | null; readonly onOpenFiles?: () => void }) {
+  return <div className="ss-single">
+    <PageHeading headingRef={headingRef} subtitle={<Trans {...msg({ context: 'settings.files.description', message: 'Your uploads and the storage they use.' })} />}>
+      <Trans {...msg({ context: 'settings.files.title', message: 'Storage & <0>files</0>' })} components={{ 0: <em /> }} />
+    </PageHeading>
+    {filePort && onOpenFiles && <Suspense fallback={null}><FilesSettingsSection port={filePort} onOpenFiles={onOpenFiles} /></Suspense>}
+  </div>;
+}
+
 const MENU: ReadonlyArray<{ readonly id: SettingsSectionId; readonly icon: LucideIcon }> = [
   { id: 'appearance', icon: Palette },
   { id: 'language', icon: Languages },
   { id: 'reminders', icon: Bell },
   { id: 'sounds', icon: Volume2 },
+  { id: 'files', icon: HardDrive },
   { id: 'data', icon: Database },
 ];
 
@@ -191,10 +209,11 @@ function MenuLabel({ id }: { readonly id: SettingsSectionId }) {
   if (id === 'language') return <Trans {...msg({ context: 'settings.menu.language', message: 'Language & courses' })} />;
   if (id === 'reminders') return <Trans {...msg({ context: 'settings.menu.reminders', message: 'Reminders' })} />;
   if (id === 'sounds') return <Trans {...msg({ context: 'settings.menu.sounds', message: 'Sounds & haptics' })} />;
+  if (id === 'files') return <Trans {...msg({ context: 'settings.menu.files', message: 'Storage & files' })} />;
   return <Trans {...msg({ context: 'settings.menu.data', message: 'Data & export' })} />;
 }
 
-export default function SettingsScreen({ headingRef, focusIntent = 0, section: controlledSection, onSelectSection, initialSection }: SettingsScreenProps) {
+export default function SettingsScreen({ headingRef, focusIntent = 0, section: controlledSection, onSelectSection, initialSection, filePort = null, onOpenFiles }: SettingsScreenProps) {
   const { _ } = useLingui();
   const [localSection, setLocalSection] = useState<SettingsSectionId>(() => initialSection ?? DEFAULT_SETTINGS_SECTION);
   const section = controlledSection ?? localSection;
@@ -229,6 +248,7 @@ export default function SettingsScreen({ headingRef, focusIntent = 0, section: c
       {section === 'language' && <Suspense fallback={null}><CourseSettingsSection heading={<PageHeading headingRef={headingRef} subtitle={<Trans {...msg({ context: 'settings.language.description', message: 'The app speaks one language. Each course teaches another.' })} />}><Trans {...msg({ context: 'settings.language.title', message: 'Language & <0>courses</0>' })} components={{ 0: <em /> }} /></PageHeading>} /></Suspense>}
       {section === 'reminders' && <Suspense fallback={null}><ReminderSettingsSection heading={<PageHeading headingRef={headingRef} subtitle={<Trans {...msg({ context: 'settings.reminders.description', message: 'We remind you once a day, only when cards are waiting.' })} />}><Trans {...msg({ context: 'settings.reminders.page-title', message: 'A nudge, <0>not a nag.</0>' })} components={{ 0: <em /> }} /></PageHeading>} footer={soundsBlock} /></Suspense>}
       {section === 'sounds' && <SoundsSection headingRef={headingRef} />}
+      {section === 'files' && <FilesSection headingRef={headingRef} filePort={filePort} onOpenFiles={onOpenFiles} />}
       {section === 'data' && <DataSection headingRef={headingRef} />}
     </div>
   </div>;

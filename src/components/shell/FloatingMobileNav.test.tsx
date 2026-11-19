@@ -72,4 +72,13 @@ describe('FloatingMobileNav', () => {
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
     expect(html).toMatch(/aria-current="page"[^>]*><span class="claude-mobile-nav-icon"[^]*?>Vocabulary<\/span>/);
   });
+
+  it('highlights Vocabulary while My files is open', () => {
+    const html = renderToStaticMarkup(<I18nProvider i18n={i18n}>
+      <FloatingMobileNav activeView="files" onSelectView={vi.fn()} />
+    </I18nProvider>);
+
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(html).toMatch(/aria-current="page"[^>]*><span class="claude-mobile-nav-icon"[^]*?>Vocabulary<\/span>/);
+  });
 });

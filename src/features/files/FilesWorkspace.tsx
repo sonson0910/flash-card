@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type DragEvent, type ReactNode, type RefObject } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type DragEvent, type ReactNode, type RefObject } from 'react';
 import { Trans, useLingui } from '@lingui/react';
 import { msg } from '@lingui/core/macro';
 import { AlertTriangle, BookOpen, FileText, ImageIcon, Trash2, UploadCloud } from 'lucide-react';
@@ -28,6 +28,10 @@ export interface FilesWorkspaceProps {
   readonly onManageFiles?: () => void;
   /** Polling and resizing overrides for tests and fixture pages. */
   readonly sessionOptions?: Pick<UploadSessionOptions, 'pollIntervalMs' | 'pollAttempts' | 'resize'>;
+  /** The app shell's view heading: the page title takes it and the focus after a view change. */
+  readonly headingRef?: RefObject<HTMLHeadingElement | null>;
+  /** Grows with each navigation into the page; a positive value focuses the page title on mount. */
+  readonly focusIntent?: number;
 }
 
 type Tone = 'neutral' | 'info' | 'warn' | 'danger' | 'ok';
@@ -66,8 +70,11 @@ const useUploadSession = (port: FilePort, options: Omit<UploadSessionOptions, 'p
  * device checks, the transfer and the service's verdict, then attach it to a course. Mount it on
  * a signed-in route with the `files` catalog loaded and a port from `createFirebaseFilePort`.
  */
-export function FilesWorkspace({ port, courses = [], defaultCourseId = null, onManageFiles, sessionOptions }: FilesWorkspaceProps) {
+export function FilesWorkspace({ port, courses = [], defaultCourseId = null, onManageFiles, sessionOptions, headingRef, focusIntent = 0 }: FilesWorkspaceProps) {
   const library = useFileLibrary(port);
+  useLayoutEffect(() => {
+    if (focusIntent > 0) headingRef?.current?.focus({ preventScroll: true });
+  }, [focusIntent, headingRef]);
   const listing = library.state.listing;
   const session = useUploadSession(port, {
     ...sessionOptions,
@@ -87,6 +94,7 @@ export function FilesWorkspace({ port, courses = [], defaultCourseId = null, onM
       onDelete={library.remove}
       onOpen={fileId => port.downloadUrl(fileId)}
       onManageFiles={onManageFiles}
+      headingRef={headingRef}
     />
   );
 }
@@ -102,9 +110,10 @@ export interface FilesWorkspaceViewProps {
   readonly onDelete: (fileId: string) => Promise<void>;
   readonly onOpen: (fileId: string) => Promise<string>;
   readonly onManageFiles?: () => void;
+  readonly headingRef?: RefObject<HTMLHeadingElement | null>;
 }
 
-export function FilesWorkspaceView({ upload, session, library, courses, defaultCourseId, onRetryList, onDelete, onOpen, onManageFiles }: FilesWorkspaceViewProps) {
+export function FilesWorkspaceView({ upload, session, library, courses, defaultCourseId, onRetryList, onDelete, onOpen, onManageFiles, headingRef }: FilesWorkspaceViewProps) {
   const { _ } = useLingui();
   const inputRef = useRef<HTMLInputElement>(null);
   const filesHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -154,7 +163,7 @@ export function FilesWorkspaceView({ upload, session, library, courses, defaultC
                 <Trans {...msg({ id: 'files.page.kicker', message: 'Source files' })} />
                 <span className="sf-files__kicker-accent"><Trans {...msg({ id: 'files.page.kicker-flow', message: 'Upload flow' })} /></span>
               </p>
-              <h1 id={titleId} className="sf-files__title">
+              <h1 id={titleId} ref={headingRef} tabIndex={-1} className="sf-files__title">
                 <Trans {...msg({ id: 'files.page.title', message: 'Bring in a <0>source.</0>' })} components={{ 0: <em /> }} />
               </h1>
               <p className="sf-files__lead">

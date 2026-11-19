@@ -29,6 +29,7 @@ const areas = {
   billing: ['src/features/billing', 'src/features/plan'],
   account: ['src/features/account'],
   settings: ['src/features/settings', 'src/features/reminders'],
+  files: ['src/features/files'],
 } as const;
 
 export default {

@@ -69,6 +69,27 @@ describe('app shell navigation', () => {
     expect(html).toContain('<span class="claude-level-label">Lv</span> 7');
   });
 
+  it('highlights Vocabulary while My files is open', () => {
+    const html = renderNavigation(
+      <DesktopNavigation
+        viewMode="files"
+        syncIdentity={{ status: 'authenticated', displayName: 'Learner', email: 'learner@example.com', photoUrl: null }}
+        syncStatus={{ isOnline: true, error: null, cloudUnavailable: false }}
+        isDarkMode={false}
+        libraryCountLabel="8 WORDS"
+        onOpenToday={vi.fn()}
+        onOpenLibrary={vi.fn()}
+        onOpenCatalog={vi.fn()}
+        onOpenProgress={vi.fn()}
+        onSignIn={vi.fn()}
+        onSignOut={vi.fn()}
+      />,
+    );
+
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(html).toMatch(/aria-current="page" class="claude-nav-item"><span>Vocabulary<\/span>/);
+  });
+
   it('renders desktop navigation from a vendor-neutral view model', () => {
     const html = renderNavigation(
       <DesktopNavigation
