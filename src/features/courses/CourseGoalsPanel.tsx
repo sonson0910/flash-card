@@ -2,6 +2,9 @@ import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { Pause, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { IELTS_GOAL_KIND } from '../../../functions/src/course-profile-contract';
+import { IeltsBandPicker } from '../examProgress/IeltsBandPicker';
+import { LatestExamScoreEditor } from '../examProgress/LatestExamScoreEditor';
 import { useCourseSession } from './CourseGate';
 import type { Course, CourseGoal } from './courseModel';
 import { goalKindLabel, goalKindsFor } from './courseGoalCatalog';
@@ -10,7 +13,7 @@ const rowClass = 'flex min-h-11 w-full items-center gap-2 rounded-xl border bord
 const iconButtonClass = 'grid size-11 shrink-0 place-items-center rounded-lg text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2';
 const goalFieldClass = 'mt-1 block w-full min-h-11 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-2 text-sm text-[var(--sf-text)]';
 
-function GoalRow({ course, goal, pending }: { readonly course: Course; readonly goal: CourseGoal; readonly pending: boolean }) {
+function GoalRow({ ownerId, course, goal, pending }: { readonly ownerId: string | null; readonly course: Course; readonly goal: CourseGoal; readonly pending: boolean }) {
   const { _ } = useLingui();
   const { actions } = useCourseSession();
   const label = goalKindLabel(course.targetLanguage, goal.kind);
@@ -19,6 +22,7 @@ function GoalRow({ course, goal, pending }: { readonly course: Course; readonly 
   const [level, setLevel] = useState(goal.level ?? '');
   const [targetDate, setTargetDate] = useState(goal.targetDate ?? '');
   const togglePause = () => void actions.updateGoal(course.id, goal.id, { status: goal.status === 'paused' ? 'active' : 'paused' });
+  const ielts = goal.kind === IELTS_GOAL_KIND;
   return <li className={`${rowClass} flex-wrap`}>
     <span className="min-w-0 flex-1">
       <span className="block font-bold text-[var(--sf-text)]">{label ? _(label) : goal.kind}</span>
@@ -47,10 +51,12 @@ function GoalRow({ course, goal, pending }: { readonly course: Course; readonly 
         if (result.ok) setEditing(false);
       }).finally(() => setSaving(false));
     }}>
-      <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.goal.add.level-label', message: 'Level or target (optional)' })} />
-        <input className={goalFieldClass}
-          value={level} onChange={event => setLevel(event.target.value)} disabled={pending || saving} maxLength={32} />
-      </label>
+      {ielts
+        ? <IeltsBandPicker value={level || null} onChange={setLevel} disabled={pending || saving} />
+        : <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.goal.add.level-label', message: 'Level or target (optional)' })} />
+          <input className={goalFieldClass}
+            value={level} onChange={event => setLevel(event.target.value)} disabled={pending || saving} maxLength={32} />
+        </label>}
       <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.goal.add.date-label', message: 'Exam or target date (optional)' })} />
         <input type="date" className={goalFieldClass}
           value={targetDate} onChange={event => setTargetDate(event.target.value)} disabled={pending || saving} />
@@ -60,6 +66,9 @@ function GoalRow({ course, goal, pending }: { readonly course: Course; readonly 
         <button type="submit" disabled={pending || saving} className="min-h-11 flex-1 rounded-xl bg-[var(--sf-brand)] px-3 text-sm font-bold text-[var(--sf-on-brand)] disabled:opacity-60"><Trans {...msg({ context: 'course.goal.edit.save', message: 'Save goal' })} /></button>
       </div>
     </form>}
+    {ielts && !editing && ownerId && <div className="w-full pt-2">
+      <LatestExamScoreEditor ownerId={ownerId} courseId={course.id} goalId={goal.id} />
+    </div>}
   </li>;
 }
 
@@ -86,14 +95,16 @@ function AddGoalForm({ course, pending }: { readonly course: Course; readonly pe
     }).finally(() => setSaving(false));
   }}>
     <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.goal.add.kind-label', message: 'Goal' })} />
-      <select disabled={pending || saving} className={goalFieldClass} value={kind} onChange={event => setKind(event.target.value)}>
+      <select disabled={pending || saving} className={goalFieldClass} value={kind} onChange={event => { setKind(event.target.value); setLevel(''); }}>
         {options.map(option => <option key={option.kind} value={option.kind}>{_(option.label)}</option>)}
       </select>
     </label>
-    <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.goal.add.level-label', message: 'Level or target (optional)' })} />
-      <input className={goalFieldClass}
-        value={level} onChange={event => setLevel(event.target.value)} disabled={pending || saving} placeholder={selected ? _(selected.levelHint) : ''} maxLength={32} />
-    </label>
+    {selected?.kind === IELTS_GOAL_KIND
+      ? <IeltsBandPicker value={level || null} onChange={setLevel} disabled={pending || saving} />
+      : <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.goal.add.level-label', message: 'Level or target (optional)' })} />
+        <input className={goalFieldClass}
+          value={level} onChange={event => setLevel(event.target.value)} disabled={pending || saving} placeholder={selected ? _(selected.levelHint) : ''} maxLength={32} />
+      </label>}
     <label className="block text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.goal.add.date-label', message: 'Exam or target date (optional)' })} />
       <input type="date" className={goalFieldClass}
         value={targetDate} onChange={event => setTargetDate(event.target.value)} disabled={pending || saving} />
@@ -108,10 +119,10 @@ function AddGoalForm({ course, pending }: { readonly course: Course; readonly pe
 export function CourseGoalsPanel({ course, onClose }: { readonly course: Course; readonly onClose: () => void }) {
   const { model } = useCourseSession();
   return <div className="claude-course-goals-panel">
-    <button type="button" onClick={onClose} className="mb-2 min-h-11 text-sm font-bold text-[var(--sf-brand-text)]">&larr; <Trans {...msg({ context: 'course.goals.back', message: 'Back to courses' })} /></button>
+    <button type="button" onClick={onClose} className="mb-2 min-h-11 text-sm font-bold text-[var(--sf-brand-text)]"><span aria-hidden="true">← </span><Trans {...msg({ context: 'course.goals.back', message: 'Back to courses' })} /></button>
     {course.goals.length === 0
       ? <p className="text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.goals.empty', message: 'No goals yet. Studying without one is fine too.' })} /></p>
-      : <ul className="space-y-2">{course.goals.map(goal => <GoalRow key={goal.id} course={course} goal={goal} pending={model.pending} />)}</ul>}
+      : <ul className="space-y-2">{course.goals.map(goal => <GoalRow key={goal.id} ownerId={model.ownerId ?? null} course={course} goal={goal} pending={model.pending} />)}</ul>}
     <AddGoalForm course={course} pending={model.pending} />
   </div>;
 }

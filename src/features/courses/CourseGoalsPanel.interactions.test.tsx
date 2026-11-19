@@ -4,6 +4,7 @@ import type { Course } from './courseModel';
 const hooks = vi.hoisted(() => ({ cursor: 0, states: [] as unknown[] }));
 const addGoal = vi.hoisted(() => vi.fn());
 const updateGoal = vi.hoisted(() => vi.fn());
+const session = vi.hoisted(() => ({ ownerId: 'owner-1' as string | null }));
 
 vi.mock('react', async importOriginal => {
   const actual = await importOriginal<typeof import('react')>();
@@ -27,10 +28,12 @@ vi.mock('@lingui/react', () => ({
 }));
 
 vi.mock('./CourseGate', () => ({
-  useCourseSession: () => ({ model: { pending: false }, actions: { addGoal, updateGoal, removeGoal: vi.fn() } }),
+  useCourseSession: () => ({ model: { pending: false, ownerId: session.ownerId }, actions: { addGoal, updateGoal, removeGoal: vi.fn() } }),
 }));
 
 import { CourseGoalsPanel } from './CourseGoalsPanel';
+import { IeltsBandPicker } from '../examProgress/IeltsBandPicker';
+import { LatestExamScoreEditor } from '../examProgress/LatestExamScoreEditor';
 
 type Tree = { type?: unknown; props?: Record<string, unknown> };
 
@@ -79,12 +82,40 @@ const renderAddForm = (currentCourse: Course): Tree => {
 
 const flush = () => new Promise(resolve => { setTimeout(resolve, 0); });
 
+/** IELTS goals take their level from the band picker; other kinds keep the free-text level field. */
+const bandPicker = (node: unknown): Tree => {
+  let picker: Tree | undefined;
+  walk(node, element => { if (element.type === IeltsBandPicker) picker = element; });
+  if (!picker) throw new Error('Band picker not found');
+  return picker;
+};
+const pickBand = (node: unknown, band: string) => (bandPicker(node).props?.onChange as (value: string) => void)(band);
+const change = (input: Tree, value: string) => (input.props?.onChange as (event: { target: { value: string } }) => void)({ target: { value } });
+const scoreEditors = (node: unknown): Tree[] => {
+  const found: Tree[] = [];
+  walk(node, element => { if (element.type === LatestExamScoreEditor) found.push(element); });
+  return found;
+};
+
 describe('existing course goal editing', () => {
   beforeEach(() => {
     hooks.cursor = 0;
     hooks.states = [];
+    session.ownerId = 'owner-1';
     addGoal.mockReset();
     updateGoal.mockReset();
+  });
+
+  it('offers the latest IELTS score beside an IELTS goal that is not being edited', () => {
+    let row = renderRow();
+    expect(scoreEditors(row).map(editor => editor.props)).toEqual([{ ownerId: 'owner-1', courseId: 'course-en', goalId: 'goal-ielts' }]);
+    (findAll(row, 'button')[0].props?.onClick as () => void)();
+    row = renderRow();
+    expect(scoreEditors(row)).toHaveLength(0);
+
+    hooks.states = [];
+    session.ownerId = null;
+    expect(scoreEditors(renderRow())).toHaveLength(0);
   });
 
   it('retains the draft after a failed save and allows retry with the same values', async () => {
@@ -95,9 +126,10 @@ describe('existing course goal editing', () => {
     let row = renderRow();
     (findAll(row, 'button')[0].props?.onClick as () => void)();
     row = renderRow();
-    const [levelInput, dateInput] = findAll(row, 'input');
-    (levelInput.props?.onChange as (event: { target: { value: string } }) => void)({ target: { value: ' 7.5 ' } });
-    (dateInput.props?.onChange as (event: { target: { value: string } }) => void)({ target: { value: '2027-01-15' } });
+    expect(bandPicker(row).props?.value).toBe('7.0');
+    pickBand(row, '7.5');
+    const [dateInput] = findAll(row, 'input');
+    change(dateInput, '2027-01-15');
     row = renderRow();
     const form = findAll(row, 'form')[0];
     (form.props?.onSubmit as (event: { preventDefault(): void }) => void)({ preventDefault: vi.fn() });
@@ -107,11 +139,13 @@ describe('existing course goal editing', () => {
     expect(findAll(row, 'form')).toHaveLength(1);
     expect(findAll(row, 'button').filter(button => button.props?.disabled)).toHaveLength(4);
     expect(findAll(row, 'input').every(input => input.props?.disabled)).toBe(true);
+    expect(bandPicker(row).props?.disabled).toBe(true);
 
     finishFirst({ ok: false });
     await flush();
     row = renderRow();
-    expect(findAll(row, 'input').map(input => input.props?.value)).toEqual([' 7.5 ', '2027-01-15']);
+    expect(bandPicker(row).props?.value).toBe('7.5');
+    expect(findAll(row, 'input').map(input => input.props?.value)).toEqual(['2027-01-15']);
     expect(findAll(row, 'button').find(button => button.props?.type === 'submit')?.props?.disabled).toBe(false);
 
     (findAll(row, 'form')[0].props?.onSubmit as (event: { preventDefault(): void }) => void)({ preventDefault: vi.fn() });
@@ -137,9 +171,8 @@ describe('adding course goals', () => {
     addGoal.mockResolvedValue({ ok: true });
 
     let form = renderAddForm(emptyCourse);
-    const [levelInput, dateInput] = findAll(form, 'input');
-    (levelInput.props?.onChange as (event: { target: { value: string } }) => void)({ target: { value: '7.5' } });
-    (dateInput.props?.onChange as (event: { target: { value: string } }) => void)({ target: { value: '2027-01-15' } });
+    pickBand(form, '7.5');
+    change(findAll(form, 'input')[0], '2027-01-15');
     form = renderAddForm(emptyCourse);
     (findAll(form, 'form')[0].props?.onSubmit as (event: { preventDefault(): void }) => void)({ preventDefault: vi.fn() });
     await flush();
@@ -164,19 +197,20 @@ describe('adding course goals', () => {
     addGoal.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
 
     let form = renderAddForm(emptyCourse);
-    const [levelInput, dateInput] = findAll(form, 'input');
-    (levelInput.props?.onChange as (event: { target: { value: string } }) => void)({ target: { value: '7.5' } });
-    (dateInput.props?.onChange as (event: { target: { value: string } }) => void)({ target: { value: '2027-01-15' } });
+    pickBand(form, '7.5');
+    change(findAll(form, 'input')[0], '2027-01-15');
     form = renderAddForm(emptyCourse);
     (findAll(form, 'form')[0].props?.onSubmit as (event: { preventDefault(): void }) => void)({ preventDefault: vi.fn() });
 
     form = renderAddForm(emptyCourse);
     expect([...findAll(form, 'select'), ...findAll(form, 'input'), ...findAll(form, 'button')].every(control => control.props?.disabled)).toBe(true);
+    expect(bandPicker(form).props?.disabled).toBe(true);
 
     finish({ ok: true });
     await flush();
     form = renderAddForm(emptyCourse);
-    expect(findAll(form, 'input').map(input => input.props?.value)).toEqual(['', '']);
+    expect(bandPicker(form).props?.value).toBeNull();
+    expect(findAll(form, 'input').map(input => input.props?.value)).toEqual(['']);
     expect(findAll(form, 'button')[0].props?.disabled).toBe(false);
   });
 
@@ -185,6 +219,7 @@ describe('adding course goals', () => {
 
     let form = renderAddForm(emptyCourse);
     (findAll(form, 'select')[0].props?.onChange as (event: { target: { value: string } }) => void)({ target: { value: 'business' } });
+    form = renderAddForm(emptyCourse);
     const [levelInput, dateInput] = findAll(form, 'input');
     (levelInput.props?.onChange as (event: { target: { value: string } }) => void)({ target: { value: 'B2' } });
     (dateInput.props?.onChange as (event: { target: { value: string } }) => void)({ target: { value: '2027-01-15' } });
