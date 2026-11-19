@@ -154,6 +154,10 @@ html:not([data-theme-family='crystal']).dark .onb-dots > [data-state='current'] 
   padding: 24px 56px 40px;
 }
 
+@media (min-width: 640px) {
+  .onb-main[data-layout='start'] { justify-content: flex-start; padding-top: 72px; }
+}
+
 .onb-content { width: min(1120px, 100%); margin: 0 auto; }
 .onb-main[data-layout='center'] .onb-content { width: min(1180px, 100%); text-align: center; }
 
@@ -287,10 +291,12 @@ html:not([data-theme-family='crystal']) :is(.onb-option, .onboarding-journey__go
 }
 
 .onb-pace-card {
-  min-height: 176px;
-  justify-content: flex-end;
+  min-height: 150px;
+  align-items: center;
+  justify-content: center;
   padding: 22px 20px;
   border-radius: var(--onb-radius);
+  text-align: center;
 }
 
 .onb-pace-number {
@@ -304,6 +310,7 @@ html:not([data-theme-family='crystal']) :is(.onb-option, .onboarding-journey__go
 
 .onb-pace-card[aria-pressed='true'] .onb-pace-number { color: var(--onb-accent); }
 .onb-pace-card .onb-option-sub { margin-top: 8px; font-size: 13px; }
+.onb-pace-card .onb-mark { display: none; }
 
 /* Goal cards ----------------------------------------------------------------------------- */
 .onboarding-journey__goal-grid {
@@ -546,7 +553,7 @@ html[data-theme-family='crystal'] .onb-tag {
   height: 30px;
   align-items: center;
   padding: 0 16px;
-  background: var(--sf-brand);
+  background: color-mix(in srgb, var(--sf-brand) 85%, black);
   transform: skewX(-16deg);
 }
 
@@ -702,6 +709,10 @@ html[data-theme-family='crystal'] .onboarding-journey__goal-grid[data-goal-count
 }
 
 html[data-theme-family='crystal'] .onboarding-journey__goal-grid[data-goal-count='6'] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+html[data-theme-family='crystal'] .onboarding-journey__goal-card { min-width: 0; }
+html[data-theme-family='crystal'] .onb-goal-title { overflow-wrap: break-word; hyphens: auto; }
+html[data-theme-family='crystal'] .onboarding-journey__goal-grid[data-goal-count='5'] .onboarding-journey__goal-card { padding-inline: 18px; }
+html[data-theme-family='crystal'] .onboarding-journey__goal-grid[data-goal-count='5'] .onb-goal-title { font-size: 21px; }
 html[data-theme-family='crystal'] .onboarding-journey__goal-grid[data-goal-count='6'] .onboarding-journey__goal-card { min-height: 208px; }
 
 html[data-theme-family='crystal'] .onb-target-grid { margin-top: 28px; gap: 22px; }
@@ -734,9 +745,9 @@ html[data-theme-family='crystal'] .onb-mark {
   box-shadow: none;
 }
 
+html[data-theme-family='crystal'] .onb-mark[data-on='false'] { color: var(--sf-text-muted); }
 html[data-theme-family='crystal'] .onb-mark[data-on='true'] { background: var(--sf-reward); color: color-mix(in srgb, var(--sf-reward) 25%, black); }
 html[data-theme-family='crystal'] .onboarding-journey__goal-card .onb-mark { top: auto; right: 18px; bottom: 16px; }
-html[data-theme-family='crystal'] .onb-target-card .onb-option-tag + .onb-mark { top: auto; }
 
 html[data-theme-family='crystal'] .onb-primary {
   position: relative;
@@ -871,7 +882,7 @@ html[data-theme-family='crystal'] .onb-pace-grid { margin-inline: 0; }
   html[data-theme-family='crystal'] .onb-target-card { padding: 14px 52px 14px 16px; }
   html[data-theme-family='crystal'] .onb-target-card .onb-glyph { display: none; }
   html[data-theme-family='crystal'] .onb-target-card .onb-option-name { margin-top: 0; font-size: 22px; }
-  html[data-theme-family='crystal'] .onb-target-card .onb-option-tag { top: 14px; right: 16px; }
+  html[data-theme-family='crystal'] .onb-target-card .onb-option-tag { position: static; margin-top: 6px; }
 
   .onboarding-journey__goal-grid,
   .onboarding-journey__goal-grid[data-goal-count],
@@ -914,8 +925,9 @@ html[data-theme-family='crystal'] .onb-pace-grid { margin-inline: 0; }
     transform: translateY(-50%);
   }
 
-  .onb-mark[data-on='true'],
-  html[data-theme-family='crystal'] .onb-mark[data-on='true'] { border-color: transparent; background: var(--onb-primary-bg); color: var(--onb-primary-text); }
+  .onb-mark[data-on='false'] > svg { display: none; }
+  .onb-mark[data-on='true'] { border-color: transparent; background: var(--onb-primary-bg); color: var(--onb-primary-text); }
+  html[data-theme-family='crystal'] .onb-mark[data-on='true'] { border-color: transparent; background: var(--sf-reward); color: color-mix(in srgb, var(--sf-reward) 25%, black); }
   .onb-goal-fields { margin-inline: 0; grid-template-columns: minmax(0, 1fr); }
 
   .onb-pace-grid { margin-top: 24px; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }

@@ -57,7 +57,7 @@ const NoSpecificGoalIcon = Sparkles;
 const goalCardClass = 'onboarding-journey__goal-card crystal-chamfer';
 
 function SelectionMark({ on }: { readonly on: boolean }) {
-  return <span className="onb-mark" data-on={on} aria-hidden="true">{on && <Check size={14} strokeWidth={3} />}</span>;
+  return <span className="onb-mark" data-on={on} aria-hidden="true"><Check size={14} strokeWidth={3} /></span>;
 }
 
 function PrimaryLabel({ children }: { readonly children: ReactNode }) {
@@ -398,7 +398,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
           <span className="onb-wordmark">Son<em>Flash</em></span>
         </span>
         <span className="onb-tag" aria-hidden="true"><span><Trans {...msg({ context: 'onboarding.header.tag', message: 'Hello · let’s begin' })} /></span></span>
-        <div className="onb-progress" role="progressbar" aria-valuemin={1} aria-valuemax={6} aria-valuenow={stepIndex} aria-valuetext={`${stepIndex} / 6`}>
+        <div className="onb-progress" role="progressbar" aria-label={_(msg({ context: 'onboarding.progress.label', message: 'Setup progress' }))} aria-valuemin={1} aria-valuemax={6} aria-valuenow={stepIndex} aria-valuetext={`${stepIndex} / 6`}>
           <span className="onb-dots" aria-hidden="true">{ONBOARDING_STEP_ORDER.map((id, index) => <span key={id} data-state={index + 1 < stepIndex ? 'done' : index + 1 === stepIndex ? 'current' : 'upcoming'} />)}</span>
           <span className="onb-count" aria-hidden="true"><b>{stepIndex}</b><span> / 6</span></span>
         </div>

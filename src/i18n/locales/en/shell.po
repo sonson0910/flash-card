@@ -1535,6 +1535,11 @@ msgctxt "shell.share.cancel"
 msgid "Cancel"
 msgstr "Cancel"
 
+#: src/features/onboarding/OnboardingJourney.tsx:401
+msgctxt "onboarding.progress.label"
+msgid "Setup progress"
+msgstr "Setup progress"
+
 #: src/components/AppOverlays.tsx:144
 msgctxt "shell.share.empty-title"
 msgid "No shared deck to show"
