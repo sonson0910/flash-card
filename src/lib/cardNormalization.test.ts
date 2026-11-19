@@ -257,6 +257,14 @@ describe('normalizeCardData', () => {
     expect(card.reviewHistory).toEqual([]);
   });
 
+  it('keeps a photo the learner uploaded to their own files and drops any other storage object', () => {
+    const own = 'https://firebasestorage.googleapis.com/v0/b/encoded-hangout-433912-h2.firebasestorage.app/o/users%2Fuser-1%2Ffiles%2FAbCdEfGhIjKlMnOpQrSt?alt=media&token=0b0f1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d';
+    const base = { word: 'safe', translation: 'an toàn', explanation: '', phonetic: '', emoji: '', category: 'General', audioUrl: null };
+    expect(normalizeCardData({ ...base, imageUrl: own }, 'own-photo').imageUrl).toBe(own);
+    expect(normalizeCardData({ ...base, imageUrl: own.replace('encoded-hangout-433912-h2.firebasestorage.app', 'other-project.appspot.com') }, 'other-bucket').imageUrl).toBeNull();
+    expect(normalizeCardData({ ...base, imageUrl: own.replace('%2Ffiles%2F', '%2Fprivate%2F') }, 'other-folder').imageUrl).toBeNull();
+  });
+
   it('bounds every persisted field and removes malformed scheduling data', () => {
     const card = normalizeCardData({
       id: 'x'.repeat(300),

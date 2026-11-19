@@ -84,6 +84,15 @@ vi.mock('../../lib/images', () => ({
   getDisplayImageUrl: (url: string) => url,
 }));
 
+vi.mock('../files/imageResize', async original => ({
+  ...(await original<typeof import('../files/imageResize')>()),
+  resizeImageForUpload: async (blob: Blob) => ({ blob: new Blob([await blob.arrayBuffer()], { type: 'image/webp' }), contentType: 'image/webp', width: 10, height: 10 }),
+}));
+
+import { normalizeCardData } from '../../lib/cardNormalization';
+import { isSupportedImageUrl, ownStorageImageOwner } from '../../lib/mediaUrlPolicy';
+import { createCardImageUploader } from '../files/fileLibrary';
+import { createMemoryFilePort } from '../files/memoryFileAdapter';
 import { EDIT_CARD_FIELDS } from './editCardModel';
 import { EditCardDialog } from './EditCardDialog';
 
@@ -964,6 +973,27 @@ describe('EditCardDialog', () => {
       view = render(props);
       expect(findAllByType(view.tree, 'img').some(image => String(image.props?.src).startsWith('https://firebasestorage.googleapis.com/'))).toBe(true);
       expect(findByProp(view.tree, 'data-edit-image-remove')).not.toBeNull();
+    });
+
+    it('saves a photo from the uploader the hosts pass, and the card keeps it once stored', async () => {
+      const port = createMemoryFilePort({ limits: { tier: 'free', limitBytes: 4_096, maxFileBytes: 2_048 } });
+      port.downloadUrl = async fileId =>
+        `https://firebasestorage.googleapis.com/v0/b/encoded-hangout-433912-h2.firebasestorage.app/o/users%2Fuser-1%2Ffiles%2F${fileId}?alt=media&token=0b0f1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d`;
+      const onSave = vi.fn(async (): Promise<LearningStateOutcome> => ({ status: 'missing-card' }));
+      const props = { card, open: true, onOpenChange: vi.fn(), onSave, imageUpload: createCardImageUploader(port) };
+      pick(render(props).tree);
+      await vi.waitFor(() => {
+        expect(findAllByType(render(props).tree, 'img').some(image => String(image.props?.src).startsWith('https://firebasestorage.googleapis.com/'))).toBe(true);
+      }, { timeout: 8_000, interval: 50 });
+      await render(props).submit({ preventDefault: vi.fn() });
+      expect(onSave).toHaveBeenCalledTimes(1);
+      const [, patch] = onSave.mock.calls[0] as unknown as [string, Partial<CardData>];
+      const [stored] = (await port.list()).files;
+      expect(stored).toMatchObject({ purpose: 'card-image', status: 'ready' });
+      expect(patch).toMatchObject({ imageUrl: expect.stringContaining(`%2Ffiles%2F${stored!.id}?alt=media`), imageSearchQuery: '' });
+      expect(isSupportedImageUrl(patch.imageUrl)).toBe(true);
+      expect(ownStorageImageOwner(patch.imageUrl)).toBe('user-1');
+      expect(normalizeCardData({ ...card, ...patch }, card.id).imageUrl).toBe(patch.imageUrl);
     });
 
     it('cancels quietly and keeps the previous photo', async () => {
