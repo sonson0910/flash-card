@@ -368,6 +368,40 @@ describe('gamification persistence', () => {
     }
   });
 
+  it.each(['streakV1', 'achievementsV1', 'studyTimeV1', 'wordWeeksV1'])(
+    'accepts the verified display field %s during a legacy save and never writes it, even when it is malformed',
+    async field => {
+      for (const value of [{ coverageStartedOn: '2026-08-09', future: { nested: [1, 2] } }, 'corrupt', null]) {
+        const stats = {
+          streak: 2, xp: 100, lastActive: 'Sun Aug 09 2026', appliedXpOperationIds: [], xpStreamSchemaVersion: 2,
+          verifiedSchemaVersion: 1, verifiedXp: 10, verifiedStreak: 2, lastVerifiedStudyDay: '2026-08-09', rewardTimeZone: 'UTC',
+          dailyGoalsV1: { coverageStartedOn: '2026-08-09', days: {} },
+          [field]: value,
+        };
+        const test = harness({ 'users/owner/profile/stats': stats, 'users/owner/profile/xp_history': {} });
+        await expect(applyGamificationForOwner(test.database, 'owner', request())).resolves.toMatchObject({ appliedOperationIds: ['xp2:client-a:1'] });
+        expect(test.writes[0]?.path).toBe('users/owner/profile/stats');
+        expect(test.writes[0]?.options).toEqual({ merge: true });
+        expect(test.writes[0]?.data).not.toHaveProperty(field);
+      }
+    },
+  );
+
+  it('accepts all four verified display fields together but still rejects an unknown stats key', async () => {
+    const stats = {
+      streak: 2, xp: 100, lastActive: 'Sun Aug 09 2026', appliedXpOperationIds: [], xpStreamSchemaVersion: 2,
+      verifiedSchemaVersion: 1, verifiedXp: 10, verifiedStreak: 2, lastVerifiedStudyDay: '2026-08-09', rewardTimeZone: 'UTC',
+      streakV1: {}, achievementsV1: {}, studyTimeV1: {}, wordWeeksV1: {},
+    };
+    const accepted = harness({ 'users/owner/profile/stats': stats, 'users/owner/profile/xp_history': {} });
+    await expect(applyGamificationForOwner(accepted.database, 'owner', request())).resolves.toMatchObject({ appliedOperationIds: ['xp2:client-a:1'] });
+
+    const unknown = harness({ 'users/owner/profile/stats': { ...stats, streakV2: {} }, 'users/owner/profile/xp_history': {} });
+    await expect(applyGamificationForOwner(unknown.database, 'owner', request()))
+      .rejects.toBeInstanceOf(GamificationMigrationRequiredError);
+    expect(unknown.writes).toEqual([]);
+  });
+
   it('preserves server-verified stats and history during a legacy save', async () => {
     const test = harness({
       'users/owner/profile/stats': {

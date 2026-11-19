@@ -26,6 +26,9 @@ import {
   useVerifiedGamificationState,
   verifiedGamificationFromDocuments,
 } from './verifiedGamificationClient';
+import {
+  achievementsFixture, stateFromFixture, streakFixtures, studyTimeFixture, wordWeeksFixture,
+} from './testing/verifiedStatsFixtures';
 
 const installMinimalReactDom = () => {
   const documentLike: Record<string, unknown> = {
@@ -222,6 +225,54 @@ describe('verified gamification client', () => {
     }
   });
 
+  it('reads the four verified display records from the stats document', () => {
+    for (const fixture of [streakFixtures.repairInProgress, achievementsFixture, studyTimeFixture, wordWeeksFixture]) {
+      const state = stateFromFixture(fixture);
+      const stats = fixture.stats as Record<string, unknown>;
+      if (stats.streakV1) expect(state.streakState).toEqual(stats.streakV1);
+      if (stats.achievementsV1) expect(state.achievements).toEqual(stats.achievementsV1);
+      if (stats.studyTimeV1) expect(state.studyTime).toEqual(stats.studyTimeV1);
+      if (stats.wordWeeksV1) expect(state.wordWeeks).toEqual(stats.wordWeeksV1);
+    }
+    expect(verifiedGamificationFromDocuments({}, {}, {})).not.toHaveProperty('streakState');
+  });
+
+  it('reads the streak record field by field, so one bad field falls back instead of hiding the record', () => {
+    const stored = streakFixtures.repairInProgress.stats.streakV1 as Record<string, unknown>;
+    const state = verifiedGamificationFromDocuments({
+      streakV1: {
+        ...stored, freezes: 9, best: -3, refilledWeek: '2026-11-18', days: { '2026-11-18': 'studied', bad: 'studied', '2026-11-17': 'skipped' },
+        milestones: { 7: null, 14: 'yesterday', 90: '2026-11-01' }, repair: { ...(stored.repair as object), cardsNeeded: 0 },
+      },
+    }, {}, {});
+    expect(state.streakState).toMatchObject({
+      coverageStartedOn: '2026-11-02', freezes: 2, best: 0, refilledWeek: null,
+      days: { '2026-11-18': 'studied' }, milestones: { 7: null }, repair: null,
+    });
+    for (const unusable of ['corrupt', { ...stored, coverageStartedOn: 'today' }]) {
+      expect(verifiedGamificationFromDocuments({ streakV1: unusable }, {}, {})).not.toHaveProperty('streakState');
+    }
+  });
+
+  it('ignores malformed achievement, study time and word week maps until the server rewrites them', () => {
+    const achievements = achievementsFixture.stats.achievementsV1 as Record<string, unknown>;
+    const studyTime = studyTimeFixture.stats.studyTimeV1 as Record<string, unknown>;
+    const wordWeeks = wordWeeksFixture.stats.wordWeeksV1 as Record<string, unknown>;
+    const state = verifiedGamificationFromDocuments({
+      achievementsV1: { ...achievements, counters: { ...(achievements.counters as object), activeDays: 1.5 } },
+      studyTimeV1: { ...studyTime, totalMs: -1 },
+      wordWeeksV1: { ...wordWeeks, wordOfWeekByLanguage: { en: { '2026-11-17': { cardId: 'word-immediate', reviews: 4 } } } },
+    }, {}, {});
+    expect(state).not.toHaveProperty('achievements');
+    expect(state).not.toHaveProperty('studyTime');
+    expect(state).not.toHaveProperty('wordWeeks');
+    // A badge record with a bad date is dropped; the rest of the record still shows.
+    const kept = verifiedGamificationFromDocuments({
+      achievementsV1: { ...achievements, badges: { ...(achievements.badges as object), 'xp-500': { on: 'never', exact: true } } },
+    }, {}, {});
+    expect(Object.keys(kept.achievements?.badges ?? {})).toHaveLength(5);
+  });
+
   it('hydrates an equipped frame only when the account owns it', () => {
     expect(verifiedGamificationFromDocuments({}, {}, {
       ownedFrameIds: ['crimson-wing'], equippedFrameId: 'crimson-wing',
@@ -306,8 +357,10 @@ describe('verified gamification client', () => {
     });
     expect(awarded).toMatchObject({ xp: 14_401, level: 13, streak: 30, xpHistory: { '2026-09-27': 2 } });
     expect(awarded.rewards).toMatchObject({
-      unlockedBadgeIds: ['web-wanderer'], ownedFrameIds: ['crimson-wing'], ownedTitleIds: ['word-collector'], hintTokens: 1, streakFreezes: 1,
+      unlockedBadgeIds: ['web-wanderer'], ownedFrameIds: ['crimson-wing'], ownedTitleIds: ['word-collector'], hintTokens: 1,
     });
+    // The 30-day freeze is held in the stats streak record, which the stats snapshot delivers.
+    expect(awarded.rewards.streakFreezes).toBe(0);
     expect(acceptAuthoritativeGamificationOutcome(awarded, {
       xp: 14_401, level: 13, streak: 30, studyDay: '2026-09-27', events: ['streak', 'levelup'],
     })).toEqual(awarded);
@@ -324,7 +377,7 @@ describe('verified gamification client', () => {
       xp: 14_401, level: 13, streak: 30, studyDay: '2026-09-27', events: ['streak', 'levelup'],
     }]);
     expect(state.xpHistory).toEqual({ '2026-09-26': 14_399, '2026-09-27': 2 });
-    expect(state.rewards).toMatchObject({ hintTokens: 1, streakFreezes: 1, ownedFrameIds: ['crimson-wing'] });
+    expect(state.rewards).toMatchObject({ hintTokens: 1, streakFreezes: 0, ownedFrameIds: ['crimson-wing'] });
   });
 
   it('replays out-of-order outcomes by cumulative XP and deduplicates pending responses', () => {

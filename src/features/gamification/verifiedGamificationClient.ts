@@ -12,6 +12,10 @@ import {
   classifyProtectedFunctionError,
   ProtectedFunctionError,
 } from '../../lib/protectedFunctionsCapability';
+import { parseAchievements, type AchievementsStateV1 } from '../../../functions/src/achievement-rules';
+import { parseStreakState, type StreakChange, type StreakStateV1 } from '../../../functions/src/streak-rules';
+import { parseStudyTime, type StudyTimeV1 } from '../../../functions/src/study-time-rules';
+import { parseWordWeeks, type WordWeeksV1 } from '../../../functions/src/word-week-rules';
 
 export type CeremonyEvent = 'tierup' | 'streak' | 'levelup';
 export const EQUIP_OWNED_FRAME_CALLABLE = 'equipOwnedFrame';
@@ -27,6 +31,10 @@ export interface VerifiedGamificationOutcome extends AuthoritativeGamification {
   readonly events?: readonly CeremonyEvent[];
   readonly rewardTimeZone?: string;
   readonly reviewActivity?: ReviewActivitySnapshot;
+  /** What a review changed in the streak record; absent when nothing worth showing changed. */
+  readonly streakChange?: StreakChange;
+  /** Study time the server credited for this review or practice session. */
+  readonly studyTimeMs?: number;
 }
 
 export interface ReviewGamificationOutcome {
@@ -92,6 +100,14 @@ export interface VerifiedGamificationState extends AuthoritativeGamification {
   readonly lastStudyDay?: string;
   /** Absent until the server has counted, or when the stored map is malformed. */
   readonly dailyGoals?: DailyGoalCounts;
+  /** Freezes, repair, milestones and best streak; absent until the server writes the record. */
+  readonly streakState?: StreakStateV1;
+  /** Badge and title dates; absent until the server records them, or while the map is malformed. */
+  readonly achievements?: AchievementsStateV1;
+  /** Account-wide study time; absent until the server credits some, or while the map is malformed. */
+  readonly studyTime?: StudyTimeV1;
+  /** Weekly word counts per course language; absent until the server counts, or while malformed. */
+  readonly wordWeeks?: WordWeeksV1;
 }
 
 export interface UseVerifiedGamificationOptions {
@@ -226,6 +242,10 @@ export function verifiedGamificationFromDocuments(
   const stats = isRecord(statsValue) ? statsValue : {};
   const xp = counter(stats.verifiedXp);
   const dailyGoals = dailyGoalCounts(stats.dailyGoalsV1);
+  const streakState = parseStreakState(stats.streakV1);
+  const achievements = parseAchievements(stats.achievementsV1);
+  const studyTime = parseStudyTime(stats.studyTimeV1);
+  const wordWeeks = parseWordWeeks(stats.wordWeeksV1);
   return {
     xp,
     level: levelForXp(xp),
@@ -236,6 +256,10 @@ export function verifiedGamificationFromDocuments(
     rewardTimeZone: timeZone(stats.rewardTimeZone),
     ...(localDay(stats.lastVerifiedStudyDay) ? { lastStudyDay: stats.lastVerifiedStudyDay } : {}),
     ...(dailyGoals ? { dailyGoals } : {}),
+    ...(streakState ? { streakState } : {}),
+    ...(achievements ? { achievements } : {}),
+    ...(studyTime ? { studyTime } : {}),
+    ...(wordWeeks ? { wordWeeks } : {}),
     legacyHistory: {
       label: 'legacy', xp: counter(stats.xp), streak: counter(stats.streak), history: history(historyValue, false),
     },
@@ -279,10 +303,8 @@ export function acceptAuthoritativeGamificationOutcome(
     } : {}),
     rewards: {
       ...rewards,
-      ...(grantsStreak ? {
-        unlockedBadgeIds: add(rewards.unlockedBadgeIds, 'web-wanderer'),
-        streakFreezes: Math.min(rewards.streakFreezes + 1, 1),
-      } : {}),
+      // The freeze the 30-day milestone grants is held in the stats record the server streams back.
+      ...(grantsStreak ? { unlockedBadgeIds: add(rewards.unlockedBadgeIds, 'web-wanderer') } : {}),
       ...(grantsLevel ? {
         ownedFrameIds: add(rewards.ownedFrameIds, 'crimson-wing'),
         ownedTitleIds: add(rewards.ownedTitleIds, 'word-collector'),
