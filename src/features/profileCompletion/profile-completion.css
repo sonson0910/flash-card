@@ -552,6 +552,8 @@
 
     .profile-gate__form { margin-top: 0; }
     .profile-gate__fields { grid-template-columns: minmax(0, 1fr); gap: 14px; }
-    .profile-gate__footer { padding: 4px 16px 12px; }
+    /* The return line takes its own row when it does not fit beside the links, instead of both breaking mid-phrase. */
+    .profile-gate__footer { flex-wrap: wrap; gap: 0 12px; padding: 4px 16px 12px; }
+    .profile-gate__footer-links { flex-wrap: nowrap; white-space: nowrap; }
   }
 }
