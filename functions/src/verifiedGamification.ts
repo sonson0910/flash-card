@@ -2,6 +2,7 @@ import type { DocumentData, DocumentReference, Firestore, Transaction } from 'fi
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
 import { InputValidationError } from './inputValidation.js';
+import { CREATE_CARD_XP, REVIEW_CARD_XP } from './xp-rules.js';
 
 const VERIFIED_SCHEMA_VERSION = 1;
 const STREAK_REWARD_RECEIPT = 'streak-30-v1';
@@ -10,6 +11,8 @@ const CRIMSON_WING_FRAME = 'crimson-wing';
 const MAX_REVIEW_ACTIVITY_DAYS = 182;
 const MAX_REVIEW_ACTIVITY_LANGUAGES = 16;
 const MAX_REVIEW_ACTIVITY_COUNTER = Number.MAX_SAFE_INTEGER;
+const DAILY_GOALS_FIELD = 'dailyGoalsV1';
+const DAILY_GOALS_DAYS = 8;
 
 type ActionKind = 'review' | 'create' | 'quiz' | 'spelling' | 'match';
 type RewardEvent = 'streak' | 'levelup';
@@ -194,11 +197,69 @@ const previousDay = (day: string): string => {
   return new Date(Date.UTC(year, month - 1, date - 1)).toISOString().slice(0, 10);
 };
 
+const dayOffset = (day: string, offset: number): string => {
+  const [year, month, date] = day.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, date + offset)).toISOString().slice(0, 10);
+};
+
+type DailyGoalCounters = { studiedCards: number; matchWins: number };
+type DailyGoals = { coverageStartedOn: string; days: Record<string, DailyGoalCounters> };
+
+const isPlainMap = (value: unknown): value is Record<string, unknown> => isRecord(value)
+  && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+
+const isCount = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) >= 0;
+
+// Daily goal progress per study day: cards that earned review XP and completed Word Matches.
+// The map is display-only and written only here, so a malformed stored value starts over
+// (coverage restarts today) instead of failing the learner's action.
+const storedDailyGoals = (value: unknown): DailyGoals | undefined => {
+  if (!isPlainMap(value) || Object.keys(value).length !== 2
+    || !isLocalDay(value.coverageStartedOn) || !isPlainMap(value.days)) return undefined;
+  const days: Record<string, DailyGoalCounters> = {};
+  for (const [day, counters] of Object.entries(value.days)) {
+    if (!isLocalDay(day) || !isPlainMap(counters) || Object.keys(counters).length !== 2
+      || !isCount(counters.studiedCards) || !isCount(counters.matchWins)) return undefined;
+    days[day] = { studiedCards: counters.studiedCards, matchWins: counters.matchWins };
+  }
+  return { coverageStartedOn: value.coverageStartedOn, days };
+};
+
+const nextDailyGoals = (stored: unknown, studyDay: string, studiedCards: number, matchWins: number): DailyGoals => {
+  const previous = storedDailyGoals(stored);
+  const days = { ...(previous?.days ?? {}) };
+  const today = days[studyDay] ?? { studiedCards: 0, matchWins: 0 };
+  days[studyDay] = {
+    studiedCards: Math.min(today.studiedCards + studiedCards, Number.MAX_SAFE_INTEGER),
+    matchWins: Math.min(today.matchWins + matchWins, Number.MAX_SAFE_INTEGER),
+  };
+  const latestDay = Object.keys(days).reduce((latest, day) => day > latest ? day : latest, studyDay);
+  const windowStart = dayOffset(latestDay, 1 - DAILY_GOALS_DAYS);
+  return {
+    coverageStartedOn: previous?.coverageStartedOn ?? studyDay,
+    days: Object.fromEntries(Object.entries(days).filter(([day]) => day >= windowStart)),
+  };
+};
+
+// set(..., { merge: true }) merges nested maps key by key, so a stored key that the new value
+// no longer has would survive the write. Delete each such key; a stored non-map is overwritten.
+const replacingMergePatch = (stored: unknown, next: Record<string, unknown>): DocumentData => {
+  const storedMap = isPlainMap(stored) ? stored : {};
+  const patch: DocumentData = {};
+  for (const key of Object.keys(storedMap)) {
+    if (!Object.hasOwn(next, key)) patch[key] = FieldValue.delete();
+  }
+  for (const [key, value] of Object.entries(next)) {
+    patch[key] = isPlainMap(value) ? replacingMergePatch(storedMap[key], value) : value;
+  }
+  return patch;
+};
+
 const levelForXp = (xp: number) => Math.floor(Math.sqrt(xp / 100)) + 1;
 
 const xpFor = (action: VerifiedGamificationAction): number => {
-  if (action.kind === 'review') return 2;
-  if (action.kind === 'create') return 10;
+  if (action.kind === 'review') return REVIEW_CARD_XP;
+  if (action.kind === 'create') return CREATE_CARD_XP;
   if (!Number.isSafeInteger(action.resultXp) || action.resultXp! < 0) {
     throw new InputValidationError('Verified result XP is invalid.');
   }
@@ -242,7 +303,7 @@ export async function prepareVerifiedGamification(
   if (awardSnapshot?.exists) {
     const award = awardSnapshot.data();
     if (!isRecord(award) || award.schemaVersion !== VERIFIED_SCHEMA_VERSION || award.ownerId !== ownerId
-      || award.cardId !== action.cardId || award.studyDay !== studyDay || award.xpAwarded !== 2
+      || award.cardId !== action.cardId || award.studyDay !== studyDay || award.xpAwarded !== REVIEW_CARD_XP
       || !isReceiptTime(award.expiresAt)) {
       throw new InputValidationError('Stored review XP award is invalid.');
     }
@@ -252,6 +313,12 @@ export async function prepareVerifiedGamification(
   const activity = action.kind === 'review' && storedTimeZone
     ? nextReviewActivity(stats.reviewActivityV1, action.targetLanguage, studyDay, action.rating ?? '')
     : undefined;
+  const dailyGoals = nextDailyGoals(
+    stats[DAILY_GOALS_FIELD],
+    studyDay,
+    action.kind === 'review' && hasXpAward ? 1 : 0,
+    action.kind === 'match' ? 1 : 0,
+  );
   const xp = counter(stats.verifiedXp);
   const nextXp = xp + xpAwarded;
   if (!Number.isSafeInteger(nextXp)) throw new InputValidationError('Verified XP exceeds its limit.');
@@ -312,6 +379,7 @@ export async function prepareVerifiedGamification(
         || action.receivedAt.getTime() > lastVerifiedReviewAt.toMillis())
         ? { lastVerifiedReviewAt: Timestamp.fromDate(action.receivedAt) } : {}),
       ...(activity ? { reviewActivityV1: activity } : {}),
+      [DAILY_GOALS_FIELD]: replacingMergePatch(stats[DAILY_GOALS_FIELD], dailyGoals),
     },
     ...(hasXpAward ? { historyRef: refs.history, historyPatch: { verifiedByDayV1: { [studyDay]: FieldValue.increment(xpAwarded) } } } : {}),
     hasXpAward,

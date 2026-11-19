@@ -89,6 +89,51 @@ msgid "Add to today"
 msgstr "Add to today"
 
 #. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:31
+msgid "daily-goals.goal.keep-streak"
+msgstr "Keep your {days}-day streak"
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:32
+msgid "daily-goals.goal.start-streak"
+msgstr "Start a streak"
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:27
+msgid "daily-goals.goal.study-cards"
+msgstr "{count, plural, one {Study # card} other {Study # cards}}"
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:29
+msgid "daily-goals.goal.win-match"
+msgstr "Win a word match"
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:94
+msgid "daily-goals.heading"
+msgstr "Daily goals"
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:61
+msgid "daily-goals.not-counted"
+msgstr "Not counted yet today"
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:49
+msgid "daily-goals.progress-value"
+msgstr "{done} of {target}"
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:98
+msgid "daily-goals.resets-in"
+msgstr "Resets in {hours} h {minutes} min"
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:39
+msgid "daily-goals.xp"
+msgstr "+{xp} XP"
+
+#. js-lingui-explicit-id
 #: src/features/dailyLearning/LessonScreen.tsx:92
 msgid "daily.lesson.answer-feedback"
 msgstr "Answer feedback"
@@ -472,6 +517,120 @@ msgstr "Load more"
 msgctxt "webWords.status.signed-out"
 msgid "Sign in to see words you saved from the web."
 msgstr "Sign in to see words you saved from the web."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:131
+#: src/features/examProgress/IeltsGoalPanel.tsx:159
+msgid "exam-progress.add-latest"
+msgstr "Add your latest score"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:45
+msgid "exam-progress.band-pair.spoken"
+msgstr "from {latest} to {target}"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:127
+msgid "exam-progress.band.by-date"
+msgstr "by {date}"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:119
+#: src/features/examProgress/IeltsGoalPanel.tsx:154
+msgid "exam-progress.band.label"
+msgstr "Your score to your target"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:124
+msgid "exam-progress.band.target"
+msgstr "Band {target}"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:120
+msgid "exam-progress.band.target-label"
+msgstr "Your target"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:168
+msgid "exam-progress.bar.label"
+msgstr "IELTS path words mastered"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:137
+msgid "exam-progress.classic.footnote"
+msgstr "Based on words you've mastered in SonFlash. Not an IELTS score or a prediction."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:76
+msgid "exam-progress.classic.heading"
+msgstr "Toward your IELTS goal"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:102
+msgid "exam-progress.classic.summary"
+msgstr "You've mastered {mastered} of the {total, plural, one {# word} other {# words}} in the SonFlash IELTS path."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:106
+msgid "exam-progress.classic.week"
+msgstr "{count, plural, one {+# word this week.} other {+# words this week.}}"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:179
+msgid "exam-progress.crystal.exam-days"
+msgstr "{days, plural, one {Exam in # day.} other {Exam in # days.}}"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:183
+msgid "exam-progress.crystal.footnote"
+msgstr "Vocabulary progress, not an IELTS score."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:147
+msgid "exam-progress.crystal.heading"
+msgstr "IELTS goal"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:178
+msgid "exam-progress.crystal.pace"
+msgstr "{weeks, plural, one {At this pace, the rest takes about # week.} other {At this pace, the rest takes about # weeks.}}"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:177
+msgid "exam-progress.crystal.summary"
+msgstr "{mastered} of {total} IELTS path words are mastered in your deck."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:158
+msgid "exam-progress.crystal.target"
+msgstr "Target {target}"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:63
+msgid "exam-progress.not-started"
+msgstr "Start the SonFlash IELTS path to see your progress here."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:65
+msgid "exam-progress.open-path"
+msgstr "Open the IELTS path"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:82
+msgid "exam-progress.ring.label"
+msgstr "{percent}% of the SonFlash IELTS path mastered"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:98
+#: src/features/examProgress/IeltsGoalPanel.tsx:172
+msgid "exam-progress.ring.percent"
+msgstr "{percent}%"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:114
+#: src/features/examProgress/IeltsGoalPanel.tsx:150
+msgid "exam-progress.set-target"
+msgstr "Set a target band"
 
 #: src/features/webWords/WebWordsPage.tsx:257
 msgctxt "webWords.feedback.some-scheduled-normal-review"

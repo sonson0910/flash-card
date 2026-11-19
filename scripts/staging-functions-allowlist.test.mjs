@@ -39,7 +39,7 @@ describe('staging Functions deployment', () => {
       'sweepPushReminders', 'sweepWeeklyDigests',
       'createStarterCards', 'renameCardHeadword', 'bulkMutateCards', 'clearLibraryCardsPage',
       'createCourse', 'updateCourse', 'archiveCourse', 'reopenCourse', 'setActiveCourse',
-      'addGoal', 'updateGoal', 'removeGoal',
+      'addGoal', 'updateGoal', 'removeGoal', 'setLatestExamScore',
     ].sort());
     const indexSource = fs.readFileSync('functions/src/index.ts', 'utf8');
     const exportedEndpoints = Array.from(

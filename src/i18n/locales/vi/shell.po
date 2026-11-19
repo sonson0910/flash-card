@@ -460,6 +460,11 @@ msgid "Collection"
 msgstr "Bộ sưu tập"
 
 #. js-lingui-explicit-id
+#: src/features/examProgress/IeltsBandPicker.tsx:28
+msgid "exam-band-picker.legend"
+msgstr "Band mục tiêu"
+
+#. js-lingui-explicit-id
 #: src/app/AppRuntime.tsx:256
 msgid "extension.import.course-mismatch-confirm"
 msgstr "Từ này được lưu cho một ngôn ngữ khác với khoá học hiện tại của bạn. Chuyển sang (hoặc tạo) khoá học phù hợp để lưu từ này?"
@@ -561,6 +566,76 @@ msgstr "Bản sao của bạn"
 msgctxt "course.goal.no-detail"
 msgid "No level or date set"
 msgstr "Chưa đặt trình độ hoặc ngày"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:163
+msgid "latest-score-editor.clear"
+msgstr "Xóa điểm"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:169
+msgid "latest-score-editor.cleared"
+msgstr "Đã xóa điểm."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:162
+msgid "latest-score-editor.clearing"
+msgstr "Đang xóa…"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:123
+msgid "latest-score-editor.error.failed"
+msgstr "Chưa lưu được điểm. Hãy kiểm tra kết nối rồi thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:118
+msgid "latest-score-editor.error.goal-missing"
+msgstr "Mục tiêu này không còn nữa nên điểm chưa được lưu."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:122
+msgid "latest-score-editor.error.invalid"
+msgstr "Hãy chọn một band từ 4.0 đến 9.0."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:120
+msgid "latest-score-editor.error.rate-limited"
+msgstr "Bạn thay đổi quá nhiều lần liên tiếp. Đợi một chút rồi thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:140
+msgid "latest-score-editor.hint"
+msgstr "Không bắt buộc. Chọn band tổng của bài thi IELTS gần nhất của bạn."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:136
+msgid "latest-score-editor.legend"
+msgstr "Điểm IELTS gần nhất của bạn"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:129
+msgid "latest-score-editor.loading"
+msgstr "Đang tải điểm gần nhất của bạn…"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:157
+msgid "latest-score-editor.save"
+msgstr "Lưu điểm"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:170
+msgid "latest-score-editor.saved"
+msgstr "Đã lưu điểm: {score}."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:156
+msgid "latest-score-editor.saving"
+msgstr "Đang lưu…"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:144
+msgid "latest-score-editor.unreadable"
+msgstr "Chưa tải được điểm đã lưu. Lưu điểm mới sẽ thay thế điểm cũ."
 
 #: src/features/onboarding/OnboardingJourney.tsx:243
 msgctxt "settings.course.script"

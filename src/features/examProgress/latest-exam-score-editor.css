@@ -1,0 +1,25 @@
+/* Latest IELTS score editor: band picker, save, clear, and its pending and error states. */
+.latest-score-editor { display: flex; min-width: 0; flex-direction: column; gap: 10px; color: var(--sf-text); }
+.latest-score-editor__hint,
+.latest-score-editor__notice { margin: 0; color: var(--sf-text-muted); font-size: 13px; line-height: 1.45; }
+.latest-score-editor__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.latest-score-editor__save,
+.latest-score-editor__clear { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 0 18px; border-radius: var(--sf-button-radius, 999px); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.latest-score-editor__save { border: 0; background: var(--sf-brand); color: var(--sf-on-brand); }
+.latest-score-editor__save:hover:not(:disabled) { background: var(--sf-brand-hover); color: var(--sf-on-brand-hover); }
+.latest-score-editor__clear { border: 1px solid var(--sf-border); background: transparent; color: var(--sf-text); }
+.latest-score-editor__clear:hover:not(:disabled) { border-color: var(--sf-text-muted); }
+.latest-score-editor__save:disabled,
+.latest-score-editor__clear:disabled { cursor: not-allowed; opacity: .55; }
+.latest-score-editor__status { min-height: 1.25rem; margin: 0; color: var(--sf-text-muted); font-size: 13px; }
+.latest-score-editor__error { margin: 0; color: var(--sf-danger); font-size: 13px; font-weight: 600; }
+
+:root[data-theme-family="crystal"] .latest-score-editor__save,
+:root[data-theme-family="crystal"] .latest-score-editor__clear { border-radius: 0; clip-path: var(--nk-chamfer-sm); font-family: var(--sf-font-display); font-style: italic; font-weight: 900; letter-spacing: .04em; }
+:root[data-theme-family="crystal"] .latest-score-editor__save { background: linear-gradient(180deg, #e0173f, #a30c2d); color: #fff; }
+:root[data-theme-family="crystal"] .latest-score-editor__save:hover:not(:disabled) { background: linear-gradient(180deg, #c40f35, #8a0a26); color: #fff; }
+:root[data-theme-family="crystal"] .latest-score-editor__clear { border: 0; box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); }
+/* The chamfer clips an outside outline, so Crystal buttons draw their focus ring inside. */
+:root[data-theme-family="crystal"] .latest-score-editor__save:focus-visible,
+:root[data-theme-family="crystal"] .latest-score-editor__clear:focus-visible { outline: 2px solid var(--sf-text); outline-offset: -5px; }
+:root[data-theme-family="crystal"] .latest-score-editor__save:focus-visible { outline-color: #fff; }

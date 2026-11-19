@@ -35,7 +35,8 @@ const isCounter = (value: unknown): value is number => (
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 );
 
-const validProjection = (
+/** Validates one server-owned projection; invalid, stale and other-language documents read as null. */
+export const validCatalogProgressProjection = (
   id: string,
   value: unknown,
   ownerId: string,
@@ -79,7 +80,7 @@ export async function readCatalogProgressProjection(
   }
   const statuses = new Map<string, CatalogLearningStatus>();
   snapshot.docs.forEach(document => {
-    const projection = validProjection(document.id, document.data(), ownerId, targetLanguage, libraryEpoch);
+    const projection = validCatalogProgressProjection(document.id, document.data(), ownerId, targetLanguage, libraryEpoch);
     if (projection) statuses.set(projection.lexemeId, projection.status === 'mastered' ? 'mastered' : 'started');
   });
   return statuses;

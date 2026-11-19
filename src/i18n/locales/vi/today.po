@@ -89,6 +89,51 @@ msgid "Add to today"
 msgstr "Thêm vào hôm nay"
 
 #. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:31
+msgid "daily-goals.goal.keep-streak"
+msgstr "Giữ chuỗi {days} ngày"
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:32
+msgid "daily-goals.goal.start-streak"
+msgstr "Bắt đầu một chuỗi"
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:27
+msgid "daily-goals.goal.study-cards"
+msgstr "{count, plural, other {Học # thẻ}}"
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:29
+msgid "daily-goals.goal.win-match"
+msgstr "Thắng một ván Ghép từ"
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:94
+msgid "daily-goals.heading"
+msgstr "Mục tiêu hôm nay"
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:61
+msgid "daily-goals.not-counted"
+msgstr "Hôm nay chưa được tính"
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:49
+msgid "daily-goals.progress-value"
+msgstr "{done} trên {target}"
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:98
+msgid "daily-goals.resets-in"
+msgstr "Làm mới sau {hours} giờ {minutes} phút"
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:39
+msgid "daily-goals.xp"
+msgstr "+{xp} XP"
+
+#. js-lingui-explicit-id
 #: src/features/dailyLearning/LessonScreen.tsx:92
 msgid "daily.lesson.answer-feedback"
 msgstr "Phản hồi câu trả lời"
@@ -472,6 +517,120 @@ msgstr "Tải thêm"
 msgctxt "webWords.status.signed-out"
 msgid "Sign in to see words you saved from the web."
 msgstr "Đăng nhập để xem các từ bạn đã lưu từ web."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:131
+#: src/features/examProgress/IeltsGoalPanel.tsx:159
+msgid "exam-progress.add-latest"
+msgstr "Thêm điểm gần nhất"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:45
+msgid "exam-progress.band-pair.spoken"
+msgstr "từ {latest} lên {target}"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:127
+msgid "exam-progress.band.by-date"
+msgstr "trước {date}"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:119
+#: src/features/examProgress/IeltsGoalPanel.tsx:154
+msgid "exam-progress.band.label"
+msgstr "Điểm của bạn so với mục tiêu"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:124
+msgid "exam-progress.band.target"
+msgstr "Band {target}"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:120
+msgid "exam-progress.band.target-label"
+msgstr "Mục tiêu của bạn"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:168
+msgid "exam-progress.bar.label"
+msgstr "Số từ đã thành thạo trong lộ trình IELTS"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:137
+msgid "exam-progress.classic.footnote"
+msgstr "Dựa trên các từ bạn đã thành thạo trong SonFlash. Không phải điểm IELTS hay dự đoán."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:76
+msgid "exam-progress.classic.heading"
+msgstr "Hướng tới mục tiêu IELTS"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:102
+msgid "exam-progress.classic.summary"
+msgstr "Bạn đã thành thạo {mastered} trên {total, plural, other {# từ}} trong lộ trình IELTS của SonFlash."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:106
+msgid "exam-progress.classic.week"
+msgstr "{count, plural, other {+# từ tuần này.}}"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:179
+msgid "exam-progress.crystal.exam-days"
+msgstr "{days, plural, other {Còn # ngày đến kỳ thi.}}"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:183
+msgid "exam-progress.crystal.footnote"
+msgstr "Tiến độ từ vựng, không phải điểm IELTS."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:147
+msgid "exam-progress.crystal.heading"
+msgstr "Mục tiêu IELTS"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:178
+msgid "exam-progress.crystal.pace"
+msgstr "{weeks, plural, other {Với tốc độ này, phần còn lại mất khoảng # tuần.}}"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:177
+msgid "exam-progress.crystal.summary"
+msgstr "Bạn đã thành thạo {mastered} trên {total} từ của lộ trình IELTS trong bộ thẻ."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:158
+msgid "exam-progress.crystal.target"
+msgstr "Mục tiêu {target}"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:63
+msgid "exam-progress.not-started"
+msgstr "Bắt đầu lộ trình IELTS của SonFlash để xem tiến độ tại đây."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:65
+msgid "exam-progress.open-path"
+msgstr "Mở lộ trình IELTS"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:82
+msgid "exam-progress.ring.label"
+msgstr "Đã thành thạo {percent}% lộ trình IELTS của SonFlash"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:98
+#: src/features/examProgress/IeltsGoalPanel.tsx:172
+msgid "exam-progress.ring.percent"
+msgstr "{percent}%"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:114
+#: src/features/examProgress/IeltsGoalPanel.tsx:150
+msgid "exam-progress.set-target"
+msgstr "Đặt band mục tiêu"
 
 #: src/features/webWords/WebWordsPage.tsx:257
 msgctxt "webWords.feedback.some-scheduled-normal-review"

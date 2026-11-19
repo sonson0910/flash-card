@@ -89,6 +89,51 @@ msgid "Add to today"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:31
+msgid "daily-goals.goal.keep-streak"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:32
+msgid "daily-goals.goal.start-streak"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:27
+msgid "daily-goals.goal.study-cards"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:29
+msgid "daily-goals.goal.win-match"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:94
+msgid "daily-goals.heading"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:61
+msgid "daily-goals.not-counted"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:49
+msgid "daily-goals.progress-value"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:98
+msgid "daily-goals.resets-in"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:39
+msgid "daily-goals.xp"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/features/dailyLearning/LessonScreen.tsx:92
 msgid "daily.lesson.answer-feedback"
 msgstr ""
@@ -471,6 +516,120 @@ msgstr ""
 #: src/features/webWords/WebWordsPage.tsx:193
 msgctxt "webWords.status.signed-out"
 msgid "Sign in to see words you saved from the web."
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:131
+#: src/features/examProgress/IeltsGoalPanel.tsx:159
+msgid "exam-progress.add-latest"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:45
+msgid "exam-progress.band-pair.spoken"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:127
+msgid "exam-progress.band.by-date"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:119
+#: src/features/examProgress/IeltsGoalPanel.tsx:154
+msgid "exam-progress.band.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:124
+msgid "exam-progress.band.target"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:120
+msgid "exam-progress.band.target-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:168
+msgid "exam-progress.bar.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:137
+msgid "exam-progress.classic.footnote"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:76
+msgid "exam-progress.classic.heading"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:102
+msgid "exam-progress.classic.summary"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:106
+msgid "exam-progress.classic.week"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:179
+msgid "exam-progress.crystal.exam-days"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:183
+msgid "exam-progress.crystal.footnote"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:147
+msgid "exam-progress.crystal.heading"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:178
+msgid "exam-progress.crystal.pace"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:177
+msgid "exam-progress.crystal.summary"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:158
+msgid "exam-progress.crystal.target"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:63
+msgid "exam-progress.not-started"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:65
+msgid "exam-progress.open-path"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:82
+msgid "exam-progress.ring.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:98
+#: src/features/examProgress/IeltsGoalPanel.tsx:172
+msgid "exam-progress.ring.percent"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/IeltsGoalPanel.tsx:114
+#: src/features/examProgress/IeltsGoalPanel.tsx:150
+msgid "exam-progress.set-target"
 msgstr ""
 
 #: src/features/webWords/WebWordsPage.tsx:257

@@ -67,6 +67,20 @@ export interface ReviewActivitySnapshot extends ReviewActivity {
   readonly targetLanguage: string;
 }
 
+/** Server-counted daily goal progress for one study day. */
+export interface DailyGoalDayCounts {
+  /** Distinct cards whose review earned XP that day. */
+  readonly studiedCards: number;
+  /** Completed Word Match sessions that day. */
+  readonly matchWins: number;
+}
+
+/** The server's per-day counters; days before `coverageStartedOn` were never counted. */
+export interface DailyGoalCounts {
+  readonly coverageStartedOn: string;
+  readonly days: Readonly<Record<string, DailyGoalDayCounts>>;
+}
+
 export interface VerifiedGamificationState extends AuthoritativeGamification {
   readonly studyDay?: string;
   readonly xpHistory: Readonly<Record<string, number>>;
@@ -74,6 +88,10 @@ export interface VerifiedGamificationState extends AuthoritativeGamification {
   readonly legacyHistory: LegacyGamificationHistory;
   readonly reviewActivityByLanguage: Readonly<Record<string, ReviewActivity>>;
   readonly rewardTimeZone?: string;
+  /** The last study day with a verified review; the streak is still open on that day and the next. */
+  readonly lastStudyDay?: string;
+  /** Absent until the server has counted, or when the stored map is malformed. */
+  readonly dailyGoals?: DailyGoalCounts;
 }
 
 export interface UseVerifiedGamificationOptions {
@@ -164,6 +182,23 @@ const reviewActivitySnapshot = (value: unknown): ReviewActivitySnapshot | undefi
   return activity ? { targetLanguage: value.targetLanguage, ...activity } : undefined;
 };
 
+// Mirrors the server: the map is valid as a whole or not used at all, because the server
+// resets a malformed map on its next write.
+const dailyGoalCounts = (value: unknown): DailyGoalCounts | undefined => {
+  if (!isRecord(value) || Object.keys(value).length !== 2 || !localDay(value.coverageStartedOn) || !isRecord(value.days)) {
+    return undefined;
+  }
+  const days: Record<string, DailyGoalDayCounts> = {};
+  for (const [day, counts] of Object.entries(value.days)) {
+    if (!localDay(day) || !isRecord(counts) || Object.keys(counts).length !== 2) return undefined;
+    const studiedCards = activityCounter(counts.studiedCards);
+    const matchWins = activityCounter(counts.matchWins);
+    if (studiedCards === undefined || matchWins === undefined) return undefined;
+    days[day] = { studiedCards, matchWins };
+  }
+  return { coverageStartedOn: value.coverageStartedOn, days };
+};
+
 const levelForXp = (xp: number) => Math.floor(Math.sqrt(xp / 100)) + 1;
 
 const inventory = (value: unknown): RewardInventory => {
@@ -190,6 +225,7 @@ export function verifiedGamificationFromDocuments(
 ): VerifiedGamificationState {
   const stats = isRecord(statsValue) ? statsValue : {};
   const xp = counter(stats.verifiedXp);
+  const dailyGoals = dailyGoalCounts(stats.dailyGoalsV1);
   return {
     xp,
     level: levelForXp(xp),
@@ -198,6 +234,8 @@ export function verifiedGamificationFromDocuments(
     rewards: inventory(rewardsValue),
     reviewActivityByLanguage: reviewActivity(stats.reviewActivityV1),
     rewardTimeZone: timeZone(stats.rewardTimeZone),
+    ...(localDay(stats.lastVerifiedStudyDay) ? { lastStudyDay: stats.lastVerifiedStudyDay } : {}),
+    ...(dailyGoals ? { dailyGoals } : {}),
     legacyHistory: {
       label: 'legacy', xp: counter(stats.xp), streak: counter(stats.streak), history: history(historyValue, false),
     },

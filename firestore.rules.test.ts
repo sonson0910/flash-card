@@ -2389,6 +2389,29 @@ describe('Firestore security rules', () => {
     await assertFails(setDoc(doc(owner, 'users/owner/profile/courses'), { courses: [], activeCourseId: null }));
   });
 
+  it('lets only the owner read reported exam scores and denies every client write', async () => {
+    const scores = {
+      schemaVersion: 1,
+      goals: { 'goal-ielts': { courseId: 'course-en', band: '6.5', updatedAt: '2026-11-19T00:00:00.000Z' } },
+    };
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'users/owner/profile/exam_scores'), scores);
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const intruder = testEnvironment.authenticatedContext('intruder').firestore();
+    const signedOut = testEnvironment.unauthenticatedContext().firestore();
+    const ownerRef = doc(owner, 'users/owner/profile/exam_scores');
+
+    await assertSucceeds(getDoc(ownerRef));
+    await assertFails(getDoc(doc(intruder, 'users/owner/profile/exam_scores')));
+    await assertFails(getDoc(doc(signedOut, 'users/owner/profile/exam_scores')));
+    await assertFails(setDoc(ownerRef, { ...scores, goals: {} }));
+    await assertFails(updateDoc(ownerRef, { 'goals.goal-ielts.band': '9.0' }));
+    await assertFails(deleteDoc(ownerRef));
+    await assertFails(setDoc(doc(intruder, 'users/intruder/profile/exam_scores'), scores));
+    await assertFails(setDoc(doc(intruder, 'users/owner/profile/exam_scores'), scores));
+  });
+
   it('keeps language metadata independent from plain identity while preserving immutability', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const cardId = 'course-ko-plain-card';

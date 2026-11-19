@@ -1,0 +1,122 @@
+import { IELTS_GOAL_KIND, parseIeltsBand } from '../../../functions/src/course-profile-contract';
+
+/**
+ * Real counts for the reviewed SonFlash IELTS word path. Nothing here estimates an exam band:
+ * the band pair is the learner's own latest score and target, both entered by the learner.
+ */
+export interface IeltsPathCounts {
+  /** Distinct lexemes on the IELTS path of the active catalog release. */
+  readonly total: number;
+  /** Path lexemes with a valid progress projection (active or mastered). */
+  readonly started: number;
+  /** Path lexemes whose projection is mastered. */
+  readonly mastered: number;
+  /** Path lexemes mastered in the last 7 days; null when the read could not cover the whole week. */
+  readonly masteredLast7: number | null;
+  /** Path lexemes mastered in the last 28 days; null when the read reached its limit. */
+  readonly masteredLast28: number | null;
+}
+
+export interface IeltsGoalFacts {
+  readonly kind: string;
+  /** The goal's stored level. Free text that is not a band counts as no target. */
+  readonly level: string | null;
+  readonly targetDate: string | null;
+}
+
+export interface IeltsGoalModelInput {
+  readonly counts: IeltsPathCounts;
+  readonly goal: IeltsGoalFacts;
+  /** The learner's latest reported IELTS score, canonical ("6.5"), or null. */
+  readonly latestScore: string | null;
+  /** Today's study day ("2026-11-19"). */
+  readonly today: string;
+  /** First day of verified review history for English, or null when there is none. */
+  readonly verifiedHistoryStartedOn: string | null;
+}
+
+export type IeltsGoalState = 'not-started' | 'started' | 'in-progress' | 'complete';
+
+export interface IeltsGoalModel {
+  readonly state: IeltsGoalState;
+  readonly total: number;
+  readonly started: number;
+  readonly mastered: number;
+  /** round(100 · mastered / total); the ring and the sentence both read `mastered` and `total`. */
+  readonly percent: number;
+  /** Shown only when above zero. */
+  readonly masteredThisWeek: number | null;
+  /** About how many weeks the rest of the path takes at the last 28 days' pace, when that is known. */
+  readonly weeksLeft: number | null;
+  readonly targetBand: string | null;
+  /** Shown only beside a target band. */
+  readonly latestScore: string | null;
+  /** The goal's exam date when it is still ahead. */
+  readonly examDate: string | null;
+  readonly daysToExam: number | null;
+  /** True when the exam falls in the current study year, so its date can leave the year out. */
+  readonly examThisYear: boolean;
+}
+
+export const MIN_PACE_HISTORY_DAYS = 14;
+export const MIN_PACE_MASTERED_WORDS = 3;
+export const MAX_PACE_WEEKS = 104;
+
+const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const DAY_MS = 86_400_000;
+
+const dayNumber = (day: string): number | null => {
+  if (!DAY_PATTERN.test(day)) return null;
+  const [year, month, date] = day.split('-').map(Number);
+  const value = Date.UTC(year, month - 1, date);
+  return Number.isNaN(value) ? null : value / DAY_MS;
+};
+
+/** Whole calendar days from `from` to `to`; null when either is not a calendar day. */
+export const daysBetween = (from: string, to: string): number | null => {
+  const start = dayNumber(from);
+  const end = dayNumber(to);
+  return start === null || end === null ? null : end - start;
+};
+
+const safeCount = (value: number): number => (Number.isSafeInteger(value) && value > 0 ? value : 0);
+
+const paceWeeks = (input: IeltsGoalModelInput, remaining: number): number | null => {
+  const last28 = input.counts.masteredLast28;
+  if (remaining <= 0 || last28 === null || last28 < MIN_PACE_MASTERED_WORDS || !input.verifiedHistoryStartedOn) return null;
+  const historyDays = daysBetween(input.verifiedHistoryStartedOn, input.today);
+  if (historyDays === null || historyDays + 1 < MIN_PACE_HISTORY_DAYS) return null;
+  const weeks = Math.ceil(remaining / (last28 / 4));
+  return weeks <= MAX_PACE_WEEKS ? weeks : null;
+};
+
+/** Null when the goal is not an IELTS goal or the path has no words, so the panel is omitted. */
+export const buildIeltsGoalModel = (input: IeltsGoalModelInput): IeltsGoalModel | null => {
+  if (input.goal.kind !== IELTS_GOAL_KIND) return null;
+  const total = safeCount(input.counts.total);
+  if (total === 0) return null;
+  const mastered = Math.min(safeCount(input.counts.mastered), total);
+  const started = Math.min(Math.max(safeCount(input.counts.started), mastered), total);
+  const state: IeltsGoalState = started === 0 ? 'not-started'
+    : mastered === 0 ? 'started'
+      : mastered === total ? 'complete' : 'in-progress';
+  const targetBand = parseIeltsBand(input.goal.level);
+  const latestScore = targetBand === null ? null : parseIeltsBand(input.latestScore);
+  const daysToExam = input.goal.targetDate ? daysBetween(input.today, input.goal.targetDate) : null;
+  const futureExam = daysToExam !== null && daysToExam > 0;
+  const week = input.counts.masteredLast7;
+  return {
+    state,
+    total,
+    started,
+    mastered,
+    percent: Math.round((100 * mastered) / total),
+    masteredThisWeek: week === null ? null : safeCount(week),
+    weeksLeft: paceWeeks(input, total - mastered),
+    targetBand,
+    latestScore,
+    examDate: futureExam ? input.goal.targetDate : null,
+    daysToExam: futureExam ? daysToExam : null,
+    examThisYear: futureExam && input.goal.targetDate!.slice(0, 4) === input.today.slice(0, 4),
+  };
+};

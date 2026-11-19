@@ -3,6 +3,7 @@ import type { DocumentSnapshot, Firestore, Transaction } from 'firebase-admin/fi
 import { FieldValue } from 'firebase-admin/firestore';
 import { InputValidationError } from './inputValidation.js';
 import { commitVerifiedGamification, prepareVerifiedGamification, type VerifiedGamificationOutcome } from './verifiedGamification.js';
+import { MATCH_WIN_XP, PRACTICE_CORRECT_ANSWER_XP } from './xp-rules.js';
 
 const SESSION_SCHEMA_VERSION = 1;
 const MAX_CARDS = 50;
@@ -256,14 +257,14 @@ const score = (game: PracticeSessionGame, cards: SessionCard[], answers: Practic
       return pair && pair.word.toLocaleLowerCase('en-US') === card.word.toLocaleLowerCase('en-US')
         && pair.translation.toLocaleLowerCase('en-US') === card.translation.toLocaleLowerCase('en-US');
     })) throw new InputValidationError('Practice match completion is invalid.');
-    return { correct: cards.length, total: cards.length, awardedXp: 20 };
+    return { correct: cards.length, total: cards.length, awardedXp: MATCH_WIN_XP };
   }
   if (!('responses' in answers) || Object.keys(answers.responses).length !== cards.length
     || !cards.every(card => Object.hasOwn(answers.responses, card.cardId))) throw new InputValidationError('Practice answers do not match the session.');
   const correct = cards.filter(card => game === 'quiz'
     ? answers.responses[card.cardId].trim().toLocaleLowerCase('en-US') === card.translation.trim().toLocaleLowerCase('en-US')
     : normalizeSpellingAnswer(answers.responses[card.cardId], card.targetLanguage) === normalizeSpellingAnswer(card.word, card.targetLanguage)).length;
-  return { correct, total: cards.length, awardedXp: correct * 5 };
+  return { correct, total: cards.length, awardedXp: correct * PRACTICE_CORRECT_ANSWER_XP };
 };
 
 const completionResult = (data: Record<string, unknown>): CompletePracticeSessionV1Response | null => {

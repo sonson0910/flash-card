@@ -350,6 +350,24 @@ describe('gamification persistence', () => {
     expect(nullCoverage.writes).toEqual([]);
   });
 
+  it('leaves the server daily goal counters alone during a legacy save, even when they are malformed', async () => {
+    for (const dailyGoalsV1 of [
+      { coverageStartedOn: '2026-08-09', days: { '2026-08-09': { studiedCards: 3, matchWins: 1 } } },
+      'corrupt',
+    ]) {
+      const test = harness({
+        'users/owner/profile/stats': {
+          streak: 2, xp: 100, lastActive: 'Sun Aug 09 2026', appliedXpOperationIds: [], xpStreamSchemaVersion: 2,
+          verifiedSchemaVersion: 1, verifiedXp: 10, verifiedStreak: 2, lastVerifiedStudyDay: '2026-08-09', rewardTimeZone: 'UTC',
+          dailyGoalsV1,
+        },
+        'users/owner/profile/xp_history': {},
+      });
+      await expect(applyGamificationForOwner(test.database, 'owner', request())).resolves.toMatchObject({ appliedOperationIds: ['xp2:client-a:1'] });
+      expect(test.writes[0]?.data).not.toHaveProperty('dailyGoalsV1');
+    }
+  });
+
   it('preserves server-verified stats and history during a legacy save', async () => {
     const test = harness({
       'users/owner/profile/stats': {

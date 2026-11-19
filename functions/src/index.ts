@@ -167,6 +167,7 @@ import {
   type CourseProfileMutationName,
   type CourseProfileMutationRequest,
 } from './course-profile-persistence.js';
+import { parseSetLatestExamScoreRequest, setLatestExamScore as storeLatestExamScore } from './exam-score-persistence.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 const analyticsPseudonymKey = defineSecret('ANALYTICS_PSEUDONYM_KEY');
@@ -2105,3 +2106,39 @@ export const setActiveCourse = courseProfileCallable('setActiveCourse');
 export const addGoal = courseProfileCallable('addGoal');
 export const updateGoal = courseProfileCallable('updateGoal');
 export const removeGoal = courseProfileCallable('removeGoal');
+
+// Stores or clears the latest IELTS score a learner reports for one of their IELTS goals. The
+// score is personal data: it is never logged, and errors name only the field.
+export const setLatestExamScore = onCall({
+  region: REGION,
+  secrets: [analyticsPseudonymKey],
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = await requireUser(request.auth);
+  const parsedRequest = (() => {
+    try {
+      return parseSetLatestExamScoreRequest(request.data);
+    } catch (error) {
+      if (error instanceof CourseProfileValidationError) throw new HttpsError('invalid-argument', error.message);
+      throw error;
+    }
+  })();
+  if (parsedRequest.ownerId !== userId) {
+    throw new HttpsError('permission-denied', 'Course profile request owner does not match the authenticated owner.');
+  }
+  await consumeBudget(userId, 'course-profile', MAX_COURSE_PROFILE_MUTATIONS_PER_HOUR,
+    'Course profile update limit reached. Try again later.');
+  try {
+    return { latestScore: await storeLatestExamScore(database, userId, parsedRequest) };
+  } catch (error) {
+    const mapped = toCourseProfileHttpsError(error);
+    if (mapped) throw mapped;
+    console.error('Latest exam score update failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'The latest exam score could not be saved.');
+  }
+});

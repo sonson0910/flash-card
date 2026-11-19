@@ -460,6 +460,11 @@ msgid "Collection"
 msgstr "Collection"
 
 #. js-lingui-explicit-id
+#: src/features/examProgress/IeltsBandPicker.tsx:28
+msgid "exam-band-picker.legend"
+msgstr "Target band"
+
+#. js-lingui-explicit-id
 #: src/app/AppRuntime.tsx:256
 msgid "extension.import.course-mismatch-confirm"
 msgstr "This word was saved for a different language than your active course. Switch to (or create) the matching course to save it?"
@@ -561,6 +566,76 @@ msgstr "Your copy"
 msgctxt "course.goal.no-detail"
 msgid "No level or date set"
 msgstr "No level or date set"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:163
+msgid "latest-score-editor.clear"
+msgstr "Clear score"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:169
+msgid "latest-score-editor.cleared"
+msgstr "Score cleared."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:162
+msgid "latest-score-editor.clearing"
+msgstr "Clearing…"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:123
+msgid "latest-score-editor.error.failed"
+msgstr "Your score could not be saved. Check your connection and try again."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:118
+msgid "latest-score-editor.error.goal-missing"
+msgstr "This goal no longer exists, so the score was not saved."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:122
+msgid "latest-score-editor.error.invalid"
+msgstr "Choose a band from 4.0 to 9.0."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:120
+msgid "latest-score-editor.error.rate-limited"
+msgstr "Too many changes at once. Wait a moment and try again."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:140
+msgid "latest-score-editor.hint"
+msgstr "Optional. Choose the overall band from your most recent IELTS test."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:136
+msgid "latest-score-editor.legend"
+msgstr "Your latest IELTS score"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:129
+msgid "latest-score-editor.loading"
+msgstr "Loading your latest score…"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:157
+msgid "latest-score-editor.save"
+msgstr "Save score"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:170
+msgid "latest-score-editor.saved"
+msgstr "Score saved: {score}."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:156
+msgid "latest-score-editor.saving"
+msgstr "Saving…"
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:144
+msgid "latest-score-editor.unreadable"
+msgstr "Your saved score could not be loaded. Saving a new one replaces it."
 
 #: src/features/onboarding/OnboardingJourney.tsx:243
 msgctxt "settings.course.script"

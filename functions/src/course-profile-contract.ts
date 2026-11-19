@@ -392,6 +392,49 @@ export const normalizeUpdateCourseInput = (value: unknown): UpdateCourseInput =>
   };
 };
 
+export const IELTS_GOAL_KIND = 'ielts';
+export const IELTS_TARGET_BANDS = Object.freeze(
+  Array.from({ length: 11 }, (_, index) => (4 + index / 2).toFixed(1)),
+);
+
+/**
+ * Reads an IELTS target band from goal text. Accepts the spellings learners type
+ * ("7", "7.0", "6,5", "band 7", "IELTS 6.5") and returns the canonical band ("7.0",
+ * "6.5") when it is 4.0 to 9.0 in half steps; any other text is not a band.
+ */
+export const parseIeltsBand = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null;
+  const match = /^(?:ielts\s*)?(?:band\s*)?(\d)(?:[.,]([05]))?$/i.exec(value.normalize('NFKC').trim());
+  if (!match) return null;
+  const band = `${match[1]}.${match[2] ?? '0'}`;
+  return IELTS_TARGET_BANDS.includes(band) ? band : null;
+};
+
+const IELTS_BAND_RULE = 'must be an IELTS band from 4.0 to 9.0 in half steps';
+
+/** IELTS goals store their level as a canonical band; other goal kinds keep free text. */
+export const goalLevelForKind = (kind: string, level: string | null, path = 'goal.level'): string | null => {
+  if (kind !== IELTS_GOAL_KIND || level === null) return level;
+  const band = parseIeltsBand(level);
+  if (band === null) fail(path, IELTS_BAND_RULE);
+  return band;
+};
+
+/**
+ * The level an update stores on an existing goal. A level resent unchanged is kept even when
+ * it is not a band, so editing only the date of a goal saved before band validation still works.
+ */
+export const updatedGoalLevel = (
+  goal: Pick<CourseGoal, 'kind' | 'level'>,
+  level: string | null,
+  path = 'goal.level',
+): string | null => {
+  if (goal.kind === IELTS_GOAL_KIND && level !== null && level === goal.level && parseIeltsBand(level) === null) {
+    return level;
+  }
+  return goalLevelForKind(goal.kind, level, path);
+};
+
 export const normalizeUpdateGoalInput = (value: unknown): UpdateGoalInput => {
   const record = optionalRecordAt(value, 'goal', ['level', 'targetDate', 'status']);
   return {
@@ -412,10 +455,11 @@ export function normalizeCreateGoalInput(
   path = 'goal',
 ): CreateGoalInput {
   const record = optionalRecordAt(value, path, ['kind', 'level', 'targetDate']);
+  const kind = textAt(record.kind, `${path}.kind`, MAX_GOAL_KIND_LENGTH);
   return {
-    kind: textAt(record.kind, `${path}.kind`, MAX_GOAL_KIND_LENGTH),
+    kind,
     level: hasOwn(record, 'level')
-      ? nullableTextAt(record.level, `${path}.level`, MAX_GOAL_LEVEL_LENGTH)
+      ? goalLevelForKind(kind, nullableTextAt(record.level, `${path}.level`, MAX_GOAL_LEVEL_LENGTH), `${path}.level`)
       : null,
     targetDate: hasOwn(record, 'targetDate')
       ? calendarDateAt(record.targetDate, `${path}.targetDate`)

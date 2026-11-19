@@ -6,12 +6,16 @@ const areas = {
     'src/features/library/libraryViewModel.ts',
     'src/components/RecoverableActionFeedback.tsx', 'src/components/ui/UndoToast.tsx',
     'src/features/courses', 'src/features/onboarding', 'src/features/offlineApp/OfflineReadiness.tsx',
+    'src/features/examProgress/IeltsBandPicker.tsx', 'src/features/examProgress/LatestExamScoreEditor.tsx',
   ],
   components: [
     'src/components/*.tsx', 'src/components/flashcard', 'src/components/motion', 'src/components/study', 'src/components/ui',
     'src/features/cardReport',
   ],
-  today: ['src/features/dailyLearning', 'src/features/webWords'],
+  today: [
+    'src/features/dailyLearning', 'src/features/webWords',
+    'src/features/dailyGoals', 'src/features/examProgress/IeltsGoalPanel.tsx',
+  ],
   practice: ['src/features/practice', 'src/features/languagePacks/LanguagePracticeDrill.tsx'],
   rewards: ['src/features/rewards/AnimeReveal.tsx'],
   library: [

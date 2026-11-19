@@ -205,6 +205,23 @@ describe('verified gamification client', () => {
     expect(state.rewards.ownedTitleIds).toEqual(['word-collector']);
   });
 
+  it('reads the server daily goal counters and last study day, ignoring a malformed map', () => {
+    const counts = { coverageStartedOn: '2026-09-20', days: { '2026-09-27': { studiedCards: 4, matchWins: 1 } } };
+    expect(verifiedGamificationFromDocuments({ dailyGoalsV1: counts, lastVerifiedStudyDay: '2026-09-27' }, {}, {}))
+      .toMatchObject({ dailyGoals: counts, lastStudyDay: '2026-09-27' });
+    for (const malformed of [
+      'corrupt',
+      { ...counts, extra: 1 },
+      { coverageStartedOn: '2026-02-30', days: {} },
+      { coverageStartedOn: '2026-09-20', days: { '2026-09-27': { studiedCards: -1, matchWins: 0 } } },
+      { coverageStartedOn: '2026-09-20', days: { '2026-09-27': { studiedCards: 1, matchWins: 0, bonus: 2 } } },
+    ]) {
+      const state = verifiedGamificationFromDocuments({ dailyGoalsV1: malformed, lastVerifiedStudyDay: null }, {}, {});
+      expect(state).not.toHaveProperty('dailyGoals');
+      expect(state).not.toHaveProperty('lastStudyDay');
+    }
+  });
+
   it('hydrates an equipped frame only when the account owns it', () => {
     expect(verifiedGamificationFromDocuments({}, {}, {
       ownedFrameIds: ['crimson-wing'], equippedFrameId: 'crimson-wing',

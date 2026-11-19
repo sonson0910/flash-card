@@ -16,6 +16,7 @@ import {
   parseCourseProfile,
   parseCourseRecord,
   parseGoalRecord,
+  updatedGoalLevel,
   type Course,
   type CourseGoal,
   type CourseProfile,
@@ -374,7 +375,7 @@ const updateGoal = (
     ...course,
     goals: course.goals.map(goal => goal.id !== goalId ? goal : parseGoalRecord({
       ...goal,
-      ...(input.level === undefined ? {} : { level: input.level }),
+      ...(input.level === undefined ? {} : { level: updatedGoalLevel(goal, input.level) }),
       ...(input.targetDate === undefined ? {} : { targetDate: input.targetDate }),
       ...(input.status === undefined ? {} : { status: input.status }),
     })),

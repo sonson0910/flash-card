@@ -7,8 +7,12 @@ import {
   parseCourseProfileMutationRequest,
 } from '../src/course-profile-persistence.js';
 import {
+  CourseProfileValidationError,
   createLegacyCourseProfile,
+  IELTS_TARGET_BANDS,
+  normalizeCreateCourseInput,
   parseCourseProfile,
+  parseIeltsBand,
 } from '../src/course-profile-contract.js';
 
 const snapshot = (exists: boolean, data?: DocumentData): DocumentSnapshot => ({
@@ -325,5 +329,81 @@ describe('course profile persistence', () => {
       ...createLegacyCourseProfile(),
       activeCourseId: null,
     })).toThrow(/when one exists/);
+  });
+});
+
+describe('IELTS target band', () => {
+  const withGoal = (kind: string, level: string | null) => {
+    const legacy = createLegacyCourseProfile();
+    return {
+      ...legacy,
+      courses: [{
+        ...legacy.courses[0],
+        goals: [{ id: 'goal-1', kind, level, targetDate: '2027-01-15', status: 'active', createdAt: '2026-09-01T00:00:00.000Z' }],
+      }],
+    };
+  };
+  const update = (input: Record<string, unknown>) => parseCourseProfileMutationRequest('updateGoal', {
+    ownerId: 'owner', courseId: 'legacy-en-vi', goalId: 'goal-1', input,
+  });
+
+  it('reads common spellings as canonical half-step bands from 4.0 to 9.0', () => {
+    expect(IELTS_TARGET_BANDS).toEqual(['4.0', '4.5', '5.0', '5.5', '6.0', '6.5', '7.0', '7.5', '8.0', '8.5', '9.0']);
+    expect(['7', '7.0', ' 7 ', 'band 7', 'Band 7.0', 'IELTS 7', 'ielts band 7'].map(parseIeltsBand)).toEqual(Array(7).fill('7.0'));
+    expect(['6.5', '6,5', 'band 6,5', 'BAND6.5'].map(parseIeltsBand)).toEqual(Array(4).fill('6.5'));
+    expect(['4', '9', '9.0'].map(parseIeltsBand)).toEqual(['4.0', '9.0', '9.0']);
+    expect(['3.5', '9.5', '10', '6.3', '6.25', 'about 7', 'B2', '', '7.', '.5'].map(parseIeltsBand)).toEqual(Array(10).fill(null));
+    expect(parseIeltsBand(7)).toBeNull();
+    expect(parseIeltsBand(null)).toBeNull();
+  });
+
+  it('stores the canonical band when an IELTS goal is created and keeps free text for other kinds', async () => {
+    const test = harness(createLegacyCourseProfile());
+    const add = (kind: string, level: string) => applyCourseProfileMutation(test.database, 'owner', parseCourseProfileMutationRequest('addGoal', {
+      ownerId: 'owner', courseId: 'legacy-en-vi', input: { kind, level, targetDate: null },
+    }), { createId: deterministicIds(), now });
+    await add('ielts', 'band 6,5');
+    const result = await add('toeic', 'about 750');
+    expect(result.courses[0]?.goals.map(goal => [goal.kind, goal.level])).toEqual([['ielts', '6.5'], ['toeic', 'about 750']]);
+    expect(normalizeCreateCourseInput({
+      targetLanguage: 'en', nativeLanguage: 'vi', goals: [{ kind: 'ielts', level: '7' }],
+    }).goals[0]?.level).toBe('7.0');
+  });
+
+  it('rejects a level that is not a band on a new IELTS goal before writing', async () => {
+    expect(() => parseCourseProfileMutationRequest('addGoal', {
+      ownerId: 'owner', courseId: 'legacy-en-vi', input: { kind: 'ielts', level: 'about 7' },
+    })).toThrow(CourseProfileValidationError);
+    expect(() => normalizeCreateCourseInput({
+      targetLanguage: 'en', nativeLanguage: 'vi', goals: [{ kind: 'ielts', level: '9.5' }],
+    })).toThrow(/course\.goals\[0\]\.level: must be an IELTS band/);
+    expect(() => parseCourseProfileMutationRequest('addGoal', {
+      ownerId: 'owner', courseId: 'legacy-en-vi', input: { kind: 'ielts', level: null },
+    })).not.toThrow();
+  });
+
+  it('validates and canonicalizes a changed IELTS level on update', async () => {
+    const test = harness(withGoal('ielts', '6.5'));
+    const result = await applyCourseProfileMutation(test.database, 'owner', update({ level: 'band 7' }));
+    expect(result.courses[0]?.goals[0]?.level).toBe('7.0');
+    await expect(applyCourseProfileMutation(test.database, 'owner', update({ level: 'about 8' })))
+      .rejects.toBeInstanceOf(CourseProfileValidationError);
+    expect(test.writes).toHaveLength(1);
+  });
+
+  it('keeps loading a stored free-text IELTS level and accepts it resent unchanged with a date edit', async () => {
+    const stored = withGoal('ielts', 'about 7');
+    expect(parseCourseProfile(stored).courses[0]?.goals[0]?.level).toBe('about 7');
+    const test = harness(stored);
+    const result = await applyCourseProfileMutation(test.database, 'owner', update({ level: 'about 7', targetDate: '2027-02-01' }));
+    expect(result.courses[0]?.goals[0]).toMatchObject({ level: 'about 7', targetDate: '2027-02-01' });
+    const legacyBand = await applyCourseProfileMutation(harness(withGoal('ielts', '7')).database, 'owner', update({ level: '7' }));
+    expect(legacyBand.courses[0]?.goals[0]?.level).toBe('7.0');
+  });
+
+  it('leaves the level of other goal kinds as free text on update', async () => {
+    const test = harness(withGoal('toeic', '750'));
+    const result = await applyCourseProfileMutation(test.database, 'owner', update({ level: 'about 800' }));
+    expect(result.courses[0]?.goals[0]?.level).toBe('about 800');
   });
 });

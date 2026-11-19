@@ -1,0 +1,97 @@
+/* IELTS goal panel: the classic RecapNext ring card and the Crystal Star AnimeRecap chamfered panel. */
+.ielts-goal-panel {
+  --ig-track: color-mix(in srgb, var(--sf-text) 10%, transparent);
+  --ig-ring: var(--sf-brand);
+  --ig-good: var(--sf-success);
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 24px 26px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-card-radius, 20px);
+  background: var(--sf-surface);
+  box-shadow: var(--sf-panel-shadow);
+  color: var(--sf-text);
+}
+.ielts-goal-panel__heading { margin: 0; color: var(--sf-text-muted); font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+.ielts-goal-panel__progress { display: flex; align-items: center; gap: 18px; margin-top: 14px; }
+.ielts-goal-ring { position: relative; width: 104px; height: 104px; flex-shrink: 0; }
+.ielts-goal-ring svg { display: block; transform: rotate(-90deg); }
+.ielts-goal-ring__track { stroke: var(--ig-track); }
+.ielts-goal-ring__value { stroke: var(--ig-ring); }
+.ielts-goal-ring__percent { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 30px; font-variant-numeric: tabular-nums; }
+.ielts-goal-panel__summary { margin: 0; color: var(--sf-text); font-size: 14.5px; line-height: 1.5; }
+.ielts-goal-panel__week { color: var(--ig-good); }
+.ielts-goal-panel__prompt { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 14px; }
+.ielts-goal-panel__prompt p { flex: 1 1 14rem; margin: 0; color: var(--sf-text); font-size: 14.5px; line-height: 1.5; }
+.ielts-goal-panel__button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 0 18px; border: 0; border-radius: var(--sf-button-radius, 999px); background: var(--sf-brand); color: var(--sf-on-brand); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.ielts-goal-panel__button:hover { background: var(--sf-brand-hover); color: var(--sf-on-brand-hover); }
+.ielts-goal-band { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--sf-border); }
+.ielts-goal-band__label { color: var(--sf-text-muted); font-size: 13px; }
+.ielts-goal-band__pair { margin-left: auto; }
+.ielts-goal-band__values { display: inline-flex; align-items: center; gap: 12px; }
+.ielts-goal-band__latest { color: var(--sf-text-muted); font-family: var(--sf-font-display); font-size: 28px; line-height: 1; }
+.ielts-goal-band__arrow { color: var(--sf-text-muted); }
+.ielts-goal-band__target { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 36px; line-height: 1; }
+.ielts-goal-band__label + .ielts-goal-band__target { margin-left: auto; font-size: 28px; }
+.ielts-goal-band__date { color: var(--sf-text-muted); font-size: 12px; }
+.ielts-goal-panel__link { display: inline-flex; min-height: 44px; align-items: center; padding: 0 2px; border: 0; background: none; color: var(--sf-brand-text); font: inherit; font-size: 13.5px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.ielts-goal-panel__link:hover { text-decoration-thickness: 2px; }
+.ielts-goal-panel__footnote { margin: 12px 0 0; color: var(--sf-text-muted); font-size: 12px; line-height: 1.45; }
+:root[data-theme-family="classic"].dark .ielts-goal-ring__value { filter: drop-shadow(0 0 6px rgb(40 211 244 / .7)); }
+:root[data-theme-family="classic"].dark .ielts-goal-band__target { text-shadow: 0 0 24px rgb(40 211 244 / .45); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ielts-goal-ring__value { transition: stroke-dasharray 600ms cubic-bezier(.2, .8, .2, 1); }
+  .ielts-goal-bar__fill { transition: width 600ms cubic-bezier(.2, .8, .2, 1); }
+}
+
+/* Crystal Star. */
+:root[data-theme-family="crystal"] .ielts-goal-panel {
+  --ig-holo: #08687f;
+  --ig-strong: #081329;
+  --ig-muted: #3f5272;
+  --ig-dim: #4f6283;
+  --ig-edge: rgb(26 167 201 / .45);
+  --ig-track: rgb(13 40 80 / .12);
+  padding: 16px 22px 18px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer);
+  background: var(--sf-surface-glass);
+  box-shadow: inset 0 0 0 1px var(--ig-edge);
+}
+:root[data-theme-family="crystal"].dark .ielts-goal-panel {
+  --ig-holo: #5ef2ff;
+  --ig-strong: #fff;
+  --ig-muted: #aab3c5;
+  --ig-dim: #8f99ad;
+  --ig-edge: rgb(94 242 255 / .4);
+  --ig-track: rgb(255 255 255 / .1);
+}
+:root[data-theme-family="crystal"] .ielts-goal-panel__heading { color: var(--ig-holo); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; }
+:root[data-theme-family="crystal"] .ielts-goal-band { align-items: baseline; margin-top: 8px; padding-top: 0; border-top: 0; }
+:root[data-theme-family="crystal"] .ielts-goal-band__pair { margin-left: 0; }
+:root[data-theme-family="crystal"] .ielts-goal-band__values { align-items: baseline; }
+:root[data-theme-family="crystal"] .ielts-goal-band__latest { color: var(--ig-dim); font-size: 40px; font-style: italic; font-weight: 900; }
+:root[data-theme-family="crystal"] .ielts-goal-band__arrow { width: 20px; color: var(--ig-holo); }
+:root[data-theme-family="crystal"] .ielts-goal-band__target { color: var(--ig-strong); font-family: var(--sf-font-display); font-size: 48px; font-style: italic; font-weight: 900; filter: drop-shadow(0 0 14px rgb(94 242 255 / .6)); }
+:root[data-theme-family="crystal"] .ielts-goal-band__label { flex-basis: 100%; color: var(--ig-muted); font-size: 12.5px; letter-spacing: .04em; }
+:root[data-theme-family="crystal"] .ielts-goal-band__label + .ielts-goal-band__target { margin-left: 0; }
+:root[data-theme-family="crystal"] .ielts-goal-panel__link { color: var(--ig-holo); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .04em; }
+:root[data-theme-family="crystal"] .ielts-goal-bar { position: relative; height: 12px; margin-top: 10px; overflow: hidden; transform: skewX(-24deg); background: var(--ig-track); }
+:root[data-theme-family="crystal"] .ielts-goal-bar__fill { position: absolute; inset: 0 auto 0 0; display: block; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(94 242 255 / .6); }
+:root[data-theme-family="crystal"] .ielts-goal-panel__summary,
+:root[data-theme-family="crystal"] .ielts-goal-panel__prompt p { margin-top: 10px; color: var(--ig-muted); font-size: 13px; line-height: 1.45; }
+:root[data-theme-family="crystal"] .ielts-goal-panel__button { border-radius: 0; clip-path: var(--nk-chamfer-sm); background: linear-gradient(180deg, #e0173f, #a30c2d); color: #fff; font-family: var(--sf-font-display); font-style: italic; font-weight: 900; letter-spacing: .04em; }
+:root[data-theme-family="crystal"] .ielts-goal-panel__button:hover { background: linear-gradient(180deg, #c40f35, #8a0a26); color: #fff; }
+/* The chamfer clips an outside outline, so Crystal buttons draw their focus ring inside. */
+:root[data-theme-family="crystal"] .ielts-goal-panel__button:focus-visible { outline: 2px solid #fff; outline-offset: -5px; }
+:root[data-theme-family="crystal"] .ielts-goal-panel__footnote { margin-top: 8px; color: var(--ig-muted); font-size: 12px; }
+
+@media (max-width: 420px) {
+  .ielts-goal-panel { padding: 18px; }
+  .ielts-goal-panel__progress { align-items: flex-start; }
+  .ielts-goal-ring { width: 84px; height: 84px; }
+  .ielts-goal-ring svg { width: 84px; height: 84px; }
+  .ielts-goal-ring__percent { font-size: 24px; }
+}
