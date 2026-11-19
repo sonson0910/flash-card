@@ -6,8 +6,18 @@ import { analyticsPseudonym, purchaseIntentOfferId } from '../src/analyticsEvent
 import { PILOT_CONFIG_DEFAULTS } from '../src/pilotConfig.js';
 import { clearPilotConfigCacheForTest } from '../src/pilotConfig.js';
 import { budgetDocumentId } from '../src/rateLimiter.js';
+import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION } from '../src/account-profile-contract.js';
 
 const describeWithEmulator = process.env.FIRESTORE_EMULATOR_HOST ? describe : describe.skip;
+
+/** The offer and the intent are learner endpoints: the account completes its profile first, as in the app. */
+const completeProfile = async (uid: string) => {
+  const { completeAccountProfile } = await import('../src/index.js');
+  await completeAccountProfile.run({ auth: { uid }, data: {
+    ownerId: uid, birthYear: 1990, uiLocale: 'vi', nativeLanguage: 'vi',
+    consent: { accepted: true, termsVersion: CURRENT_TERMS_VERSION, privacyVersion: CURRENT_PRIVACY_VERSION },
+  } } as never);
+};
 
 describeWithEmulator('purchase intent callables', () => {
   it('rejects an offer captured for another account before writing B\'s event or budget', async () => {
@@ -19,6 +29,7 @@ describeWithEmulator('purchase intent callables', () => {
     clearPilotConfigCacheForTest();
     const expectedOwnerId = `intent-a-${randomUUID()}`;
     const authenticatedUid = `intent-b-${randomUUID()}`;
+    await completeProfile(authenticatedUid);
 
     await expect(recordPurchaseIntent.run({ auth: { uid: authenticatedUid }, data: {
       trigger: 'menu', expectedOwnerId,
@@ -42,6 +53,7 @@ describeWithEmulator('purchase intent callables', () => {
     });
     clearPilotConfigCacheForTest();
     const uid = `intent-disabled-${randomUUID()}`;
+    await completeProfile(uid);
 
     await expect(recordPurchaseIntent.run({ auth: { uid }, data: { trigger: 'menu' } } as never))
       .rejects.toMatchObject({ code: 'failed-precondition', details: { reason: 'intent-unavailable' } });
@@ -60,6 +72,7 @@ describeWithEmulator('purchase intent callables', () => {
     const { getPilotOffer, recordPurchaseIntent } = await import('../src/index.js');
     const database = getFirestore(getApp(), 'ai-studio-945b4052-4462-4668-8936-277f09f07a37');
     const uid = `intent-version-${randomUUID()}`;
+    await completeProfile(uid);
     const request = { auth: { uid }, data: {} } as never;
     const budgetRef = database.collection('_functionRateLimitBudgets')
       .doc(budgetDocumentId(uid, 'purchase-intent'));
@@ -107,6 +120,10 @@ describeWithEmulator('purchase intent callables', () => {
     const uid = `intent-${randomUUID()}`;
     const request = { auth: { uid }, data: {} } as never;
     await expect(getPilotOffer.run({ data: {} } as never)).rejects.toMatchObject({ code: 'unauthenticated' });
+    await expect(getPilotOffer.run(request)).rejects.toMatchObject({
+      code: 'failed-precondition', details: { reason: 'account-profile-required' },
+    });
+    await completeProfile(uid);
     const offer = await getPilotOffer.run(request);
     expect(offer).toMatchObject({
       proMonthlyAiCards: 1_000, displayPriceVnd: 85_320, proDurationDays: 30, intentEligibility: 'eligible',
@@ -140,6 +157,7 @@ describeWithEmulator('purchase intent callables', () => {
     await database.collection('_serviceConfig').doc('pilot').set(PILOT_CONFIG_DEFAULTS);
     clearPilotConfigCacheForTest();
     const uid = `intent-pro-${randomUUID()}`;
+    await completeProfile(uid);
     const owner = database.collection('users').doc(uid);
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 86_400_000);

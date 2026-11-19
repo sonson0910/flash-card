@@ -180,6 +180,10 @@ Clearing a marker is a manual operator step, for example after a learner reports
 
 Account export includes the marker and the profile record; account deletion removes both.
 
+The server also requires the profile record for every callable that creates or changes learner content, grants rewards or spends provider money (`requireProfiledUser` in `functions/src/index.ts`; the classified list is in `functions/test/accountProfileGuardCallables.test.ts`). A restricted account never has the record. Without it such a call is refused with `failed-precondition` and the reason `account-profile-required`; the profile step, account data export and deletion, and the session clean-up calls stay open.
+
+Rollout: between the Functions deploy and the Hosting deploy, and in any browser still running a cached older bundle, those calls are refused until the page reloads and the learner completes the profile step.
+
 ## App Check provider switch (one-time)
 
 reCAPTCHA Enterprise bills each assessment beyond the free tier. reCAPTCHA v3 has no assessment fee. The sealed web target in `firebase-applet-config.json` binds `appCheckProvider` and `appCheckSiteKey` together. Both currently use Enterprise. A build environment override cannot change that pair.

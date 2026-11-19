@@ -6,6 +6,7 @@ import { LEGACY_SHARED_DECK_OPERATION_COMPATIBILITY_END } from '../src/inputVali
 vi.mock('../src/accountData.js', async importOriginal => ({
   ...await importOriginal<typeof import('../src/accountData.js')>(),
   isAccountDeleting: vi.fn(async () => false),
+  readAccountAccess: vi.fn(async () => ({ deleting: false, profiled: true })),
 }));
 
 describe('shared deck callable rollout', () => {

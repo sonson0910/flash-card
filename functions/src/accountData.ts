@@ -1,5 +1,6 @@
 import type { Auth } from 'firebase-admin/auth';
 import { FieldValue, type DocumentData, type Firestore, type Query } from 'firebase-admin/firestore';
+import { ACCOUNT_PROFILE_DOCUMENT_ID } from './account-profile-contract.js';
 import { analyticsPseudonym } from './analyticsEvents.js';
 import { budgetDocumentId } from './rateLimiter.js';
 import {
@@ -64,6 +65,21 @@ export const tombstoneRef = (database: Firestore, uid: string, key: string) =>
 
 export async function isAccountDeleting(database: Firestore, uid: string, key: string): Promise<boolean> {
   return (await tombstoneRef(database, uid, key).get()).exists;
+}
+
+/**
+ * Reads the deletion tombstone and the completed account profile record in one round trip. A restricted
+ * account has an age restriction marker and never a record, so the record alone answers both cases.
+ */
+export async function readAccountAccess(database: Firestore, uid: string, key: string): Promise<{
+  readonly deleting: boolean;
+  readonly profiled: boolean;
+}> {
+  const [tombstone, profile] = await database.getAll(
+    tombstoneRef(database, uid, key),
+    database.collection('users').doc(uid).collection('profile').doc(ACCOUNT_PROFILE_DOCUMENT_ID),
+  );
+  return { deleting: Boolean(tombstone?.exists), profiled: Boolean(profile?.exists) };
 }
 
 async function deleteQuery(database: Firestore, query: Query): Promise<void> {

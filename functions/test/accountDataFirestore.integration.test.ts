@@ -190,6 +190,36 @@ describeWithEmulator('account export and deletion', () => {
     }
   }, 30_000);
 
+  it('refuses learner endpoints until the profile is complete, and always for a restricted account', async () => {
+    process.env.ANALYTICS_PSEUDONYM_KEY = key;
+    const { completeAccountProfile, createCourse, getPilotOffer } = await import('../src/index.js');
+    const adult = `guard-${randomUUID()}`;
+    const minor = `guard-restricted-${randomUUID()}`;
+    const currentYear = new Date().getUTCFullYear();
+    const request = (ownerId: string, birthYear: number) => ({
+      ownerId, birthYear, uiLocale: 'en', nativeLanguage: 'en',
+      consent: { accepted: true, termsVersion: CURRENT_TERMS_VERSION, privacyVersion: CURRENT_PRIVACY_VERSION },
+    });
+    const profileRequired = { code: 'failed-precondition', details: { reason: 'account-profile-required' } };
+
+    await expect(getPilotOffer.run({ auth: { uid: adult }, data: {} } as never)).rejects.toMatchObject(profileRequired);
+    await completeAccountProfile.run({ auth: { uid: adult }, data: request(adult, currentYear - 30) } as never);
+    await expect(getPilotOffer.run({ auth: { uid: adult }, data: {} } as never))
+      .resolves.toMatchObject({ intentEligibility: expect.any(String) });
+
+    await completeAccountProfile.run({ auth: { uid: minor }, data: request(minor, currentYear - 12) } as never);
+    await expect(createCourse.run({ auth: { uid: minor }, data: {} } as never)).rejects.toMatchObject(profileRequired);
+    await expect(getPilotOffer.run({ auth: { uid: minor }, data: {} } as never)).rejects.toMatchObject(profileRequired);
+    expect((await database.collection('users').doc(minor).listCollections()).map(collection => collection.id))
+      .toEqual(['profile']);
+
+    for (const uid of [adult, minor]) {
+      const { auth } = fakeAuth();
+      expect(await beginAccountDeletion(database, auth, uid, key, now)).toBe('waiting');
+      await expect(getPilotOffer.run({ auth: { uid }, data: {} } as never)).rejects.toMatchObject({ code: 'permission-denied' });
+    }
+  }, 30_000);
+
   it('resumes after Auth deletion failed and after the Auth user is gone', async () => {
     const uid = `resume-${randomUUID()}`;
     const pid = analyticsPseudonym(uid, key);

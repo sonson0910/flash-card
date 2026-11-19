@@ -10,7 +10,10 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { createAiGenerationConfig } from './aiGeneration.js';
 import { collectStructuredWordStream } from './progressiveJsonFields.js';
 import { buildTutorPrompt, loadTutorCard, parseCardTutorRequest, TutorCardNotFoundError } from './cardTutor.js';
-import { beginAccountDeletion, exportAccountData, finalizeDueDeletions, isAccountDeleting } from './accountData.js';
+import {
+  beginAccountDeletion, exportAccountData, finalizeDueDeletions, isAccountDeleting, readAccountAccess,
+} from './accountData.js';
+import { createAccountProfileGuard } from './account-profile-guard.js';
 import { AiCallTimeoutError, AiSpendLimitError, runMeteredGemini } from './aiCostLedger.js';
 import { loadPilotConfig } from './pilotConfig.js';
 import {
@@ -262,6 +265,27 @@ const requireUser = async (auth: { uid: string } | undefined): Promise<string> =
   return auth.uid;
 };
 
+const accountProfileGuard = createAccountProfileGuard({
+  isDeleting: uid => isAccountDeleting(database, uid, analyticsPseudonymKey.value()),
+  readAccess: uid => readAccountAccess(database, uid, analyticsPseudonymKey.value()),
+});
+
+/**
+ * `requireUser` plus a completed account profile, for every endpoint that creates or changes learner
+ * content, grants rewards or spends provider money. A restricted account never holds the record, so it is
+ * refused here too. Only the profile step itself, the account data export and deletion, and the calls that
+ * end or clean up a session keep plain `requireUser`.
+ */
+const requireProfiledUser = async (auth: { uid: string } | undefined): Promise<string> => {
+  if (!auth?.uid) throw new HttpsError('unauthenticated', 'Sign in is required.');
+  const access = await accountProfileGuard.check(auth.uid);
+  if (access === 'deleting') throw new HttpsError('permission-denied', 'This account is being deleted.');
+  if (access === 'profile-required') {
+    throw new HttpsError('failed-precondition', 'Complete your account profile first.', { reason: 'account-profile-required' });
+  }
+  return auth.uid;
+};
+
 export const toGamificationHttpsError = (error: unknown): HttpsError | null => {
   if (error instanceof GamificationStreamLimitError) {
     return new HttpsError('resource-exhausted', error.message);
@@ -366,7 +390,7 @@ export const saveGamification = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseGamificationSaveRequest(request.data));
   await consumeBudget(
     userId,
@@ -393,7 +417,7 @@ export const updateLibraryFacets = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseLibraryFacetMutationRequest(request.data));
   if (input.ownerId !== userId) {
     throw new HttpsError('permission-denied', 'Library facet request owner does not match the authenticated owner.');
@@ -624,7 +648,7 @@ export const generateVocabulary = onCall({
   memory: '256MiB',
   maxInstances: 1,
 }, async (request, response) => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseVocabularyRequest(request.data));
   if (request.data?.expectedOwnerId && request.data.expectedOwnerId !== userId) {
     throw new HttpsError('permission-denied', 'The AI account changed.');
@@ -1038,7 +1062,7 @@ export const askCardTutor = onCall({
   memory: '256MiB',
   maxInstances: 1,
 }, async (request, response) => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCardTutorRequest(request.data));
   if (request.data?.expectedOwnerId && request.data.expectedOwnerId !== userId) {
     throw new HttpsError('permission-denied', 'The AI account changed.');
@@ -1109,7 +1133,7 @@ export const findVocabularyImage = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseImageRequest(request.data));
   await consumeBudget(
     userId,
@@ -1202,7 +1226,7 @@ export const assessPronunciation = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   let input;
   try {
     input = parsePronunciationAssessmentRequest(request.data);
@@ -1239,7 +1263,7 @@ export const createCard = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCreateCardRequest(request.data));
   if (input.expectedOwnerId !== userId) {
     throw new HttpsError('permission-denied', 'Create request owner does not match the authenticated owner.');
@@ -1290,7 +1314,7 @@ export const createCardV2 = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCreateCardV2Request(request.data));
   if (input.expectedOwnerId !== userId) {
     throw new HttpsError('permission-denied', 'Create request owner does not match the authenticated owner.');
@@ -1329,7 +1353,7 @@ export const startPracticeSessionV1 = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseStartPracticeSessionV1Request(request.data));
   await consumeBudget(userId, 'practice-session-start', MAX_PRACTICE_SESSION_STARTS_PER_HOUR,
     'Practice session limit reached. Try again later.');
@@ -1352,7 +1376,7 @@ export const completePracticeSessionV1 = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCompletePracticeSessionV1Request(request.data));
   await consumeBudget(userId, 'practice-session-complete', MAX_PRACTICE_SESSION_COMPLETIONS_PER_HOUR,
     'Practice completion limit reached. Try again later.');
@@ -1375,7 +1399,7 @@ export const equipOwnedFrame = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const frameId = parseOrInvalidArgument(() => {
     const data = request.data;
     if (!data || typeof data !== 'object' || Array.isArray(data)
@@ -1405,7 +1429,7 @@ export const createStarterCards = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCreateStarterCardsRequest(request.data));
   await consumeBudget(userId, 'card-create', MAX_CARD_CREATIONS_PER_HOUR,
     'Card creation limit reached. Try again later.');
@@ -1456,7 +1480,7 @@ export const renameCardHeadword = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseRenameCardHeadwordRequest(request.data));
   await consumeBudget(userId, 'card-headword-rename', MAX_CARD_HEADWORD_RENAMES_PER_HOUR,
     'Card rename limit reached. Try again later.');
@@ -1486,7 +1510,7 @@ export const reportCard = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCardReportRequest(request.data));
   await consumeBudget(userId, 'card-report', 30, 'Card report limit reached. Try again later.');
   try {
@@ -1511,7 +1535,7 @@ export const getPilotOffer = onCall({
   region: REGION, secrets: [analyticsPseudonymKey], enforceAppCheck,
   timeoutSeconds: 15, memory: '256MiB', maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const config = await loadPilotConfig(database);
   let intentEligibility: 'eligible' | 'already-pro' | 'unavailable' = 'unavailable';
   if (config.analyticsEnabled) {
@@ -1627,7 +1651,7 @@ export const recordPurchaseIntent = onCall({
   region: REGION, secrets: [analyticsPseudonymKey], enforceAppCheck,
   timeoutSeconds: 15, memory: '256MiB', maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parsePurchaseIntentRequest(request.data));
   if (input.expectedOwnerId !== undefined && input.expectedOwnerId !== userId) {
     throw new HttpsError('permission-denied', 'The signed-in account changed.');
@@ -1689,7 +1713,7 @@ export const createReviewCardHandler = (
   strict: boolean,
   dependencies: ReviewCardHandlerDependencies = reviewCardDependencies,
 ) => async (request: CallableRequest<unknown>) => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseReviewRequest(request.data));
   if (input.expectedOwnerId !== userId) {
     throw new HttpsError('permission-denied', 'Review request owner does not match the authenticated owner.');
@@ -1739,7 +1763,7 @@ export const updateReminderSettings = onCall({
   region: REGION, secrets: [analyticsPseudonymKey], enforceAppCheck,
   timeoutSeconds: 15, memory: '256MiB', maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseReminderSettingsRequest(request.data));
   if (input.expectedOwnerId && input.expectedOwnerId !== userId) {
     throw new HttpsError('permission-denied', 'The reminder account changed.');
@@ -1867,7 +1891,7 @@ export const bulkMutateCards = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseBulkCardMutationRequest(request.data));
   await consumeBudget(userId, 'bulk-card-mutation', MAX_BULK_CARD_MUTATIONS_PER_HOUR,
     'Bulk card update limit reached. Try again later.');
@@ -1896,7 +1920,7 @@ export const clearLibraryCardsPage = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseClearLibraryPageRequest(request.data));
   if (input.expectedOwnerId !== userId) {
     throw new HttpsError('permission-denied', 'Clear library request owner does not match the authenticated owner.');
@@ -1979,13 +2003,13 @@ const createSharedDeckForOwner = async (
 };
 
 export const createSharedDeck = onCall(createSharedDeckOptions, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCreateSharedDeckRequest(request.data));
   return createSharedDeckForOwner(userId, input);
 });
 
 export const createSharedDeckV2 = onCall(createSharedDeckOptions, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCreateSharedDeckRequest(request.data));
   if (!sharedDeckRequestOwnerMatches(input.expectedOwnerId, userId)) {
     throw new HttpsError('permission-denied', 'Shared-deck request owner does not match the authenticated owner.');
@@ -2001,7 +2025,7 @@ export const revokeSharedDeck = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const { shareId } = parseOrInvalidArgument(() => parseRevokeSharedDeckRequest(request.data));
   await consumeBudget(
     userId,
@@ -2035,7 +2059,7 @@ export const migrateLegacyLibrary = onCall({
   memory: '512MiB',
   maxInstances: 1,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseLegacyLibraryMigrationRequest(request.data));
   await consumeBudget(
     userId,
@@ -2093,7 +2117,7 @@ const courseProfileCallable = (operation: CourseProfileMutationName) => onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = await requireUser(request.auth);
+  const userId = await requireProfiledUser(request.auth);
   const parsedRequest = parseCourseProfileMutationOrInvalidArgument(operation, request.data);
   if (parsedRequest.ownerId !== userId) {
     throw new HttpsError(

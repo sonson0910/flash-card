@@ -49,6 +49,8 @@ vi.mock('../src/rateLimiter.js', async importOriginal => ({
 vi.mock('../src/accountData.js', async importOriginal => ({
   ...await importOriginal<typeof import('../src/accountData.js')>(),
   isAccountDeleting: (...args: unknown[]) => isAccountDeleting(...args),
+  // The owners here completed the account profile; the deletion answer still comes from the mock above.
+  readAccountAccess: async (...args: unknown[]) => ({ deleting: await isAccountDeleting(...args), profiled: true }),
 }));
 
 type Callable = { run(request: unknown): Promise<unknown> };
