@@ -18,8 +18,8 @@ export { APP_VIEW_HEADINGS } from './app-view-headings';
  * `shellNavigationView` (`src/components/shell/shellTypes.ts`), and exclude it
  * from `shouldShowViewHeading` when the view renders its own `<h1>`.
  */
-export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'settings' | 'web-words' | 'study' | 'quiz' | 'story' | 'spelling' | 'language-drill' | 'match' | 'shadowing';
-const ROUTED_VIEW = /^(landing|today|catalog|library|progress|settings|web-words)$/;
+export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'settings' | 'web-words' | 'files' | 'study' | 'quiz' | 'story' | 'spelling' | 'language-drill' | 'match' | 'shadowing';
+const ROUTED_VIEW = /^(landing|today|catalog|library|progress|settings|web-words|files)$/;
 /** Older links opened web words as `?webWords=1` on top of another view; they still open it. */
 const LEGACY_WEB_WORDS_PARAM = 'webWords';
 /** The view a sub-view returns to (`?view=web-words&from=today`). */

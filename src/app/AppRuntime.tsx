@@ -28,6 +28,7 @@ import { activeCourseNativeLanguage, activeCourseTargetLanguage, languageProfile
 import type { CourseTargetLanguage } from '../features/courses/courseModel';
 import { goalKindLabel } from '../features/courses/courseGoalCatalog';
 import { createSharedDeckCoursePort, resolveShareCourseAction } from '../features/sharing/shareCourseMatching';
+import { createFirebaseFilePort } from '../features/files/firebaseFileAdapter';
 import { OnboardingGate } from '../features/onboarding/OnboardingGate';
 import { AccountProfileProvider } from '../features/profileCompletion/AccountProfileContext';
 import { ProfileCompletionGate } from '../features/profileCompletion/ProfileCompletionGate';
@@ -42,6 +43,7 @@ import {
   dismissQueuedCeremony,
   equipCeremonyFrame,
   extensionCapturePreview,
+  fileCourseOptions,
   latestStatsRefresh,
   libraryInsightsPhase,
   overlayLearningProps,
@@ -290,6 +292,15 @@ export default function AppRuntime({
   });
   const undoOwnerRef = useRef<string | null | undefined>(undefined);
   const currentOwnerId = library.model.user?.uid ?? null;
+  // One file service per signed-in owner, so the settings section and the My files page each list once per open.
+  const filePort = useMemo(
+    () => (currentOwnerId && isFirebaseConfigured ? createFirebaseFilePort({ ownerId: currentOwnerId }) : null),
+    [currentOwnerId],
+  );
+  const fileCourses = useMemo(
+    () => fileCourseOptions(currentCourseSession?.model.profile?.courses ?? [], _),
+    [currentCourseSession, _],
+  );
   const openWeeklyRecap = useCallback(() => {
     if (!currentOwnerId) return;
     setWeeklyRecapRequest({ ownerId: currentOwnerId, requestId: ++nextStatsRefreshRequestId.current, targetLanguage });
@@ -609,6 +620,9 @@ export default function AppRuntime({
               openSettings={openSettings}
               webWordsReturnView={webWordsReturnView}
               returnFromWebWords={() => setViewMode(webWordsReturnView)}
+              filePort={filePort}
+              fileCourses={fileCourses}
+              activeCourseId={activeCourse?.id ?? null}
               openMorePractice={openPractice}
               onPracticePhrase={handlePracticePhrase}
               onListenScopeChange={handleListenScopeChange}

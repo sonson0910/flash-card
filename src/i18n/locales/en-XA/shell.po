@@ -125,7 +125,7 @@ msgctxt "onboarding.trial.state.known"
 msgid "Got it"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:124
+#: src/app/AppViewStage.tsx:135
 msgctxt "shell.loading.today"
 msgid "Preparing today’s learning plan…"
 msgstr ""
@@ -386,7 +386,7 @@ msgctxt "onboarding.aha.skip"
 msgid "Skip for now"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:132
+#: src/app/AppViewStage.tsx:143
 msgctxt "shell.loading.settings"
 msgid "Preparing appearance settings…"
 msgstr ""
@@ -705,7 +705,7 @@ msgid "exam-band-picker.legend"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:266
+#: src/app/AppRuntime.tsx:268
 msgid "extension.import.course-mismatch-confirm"
 msgstr ""
 
@@ -759,7 +759,7 @@ msgctxt "onboarding.trial.again"
 msgid "Forgot"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:133
+#: src/app/AppViewStage.tsx:144
 msgctxt "shell.loading.web-words"
 msgid "Preparing your web words…"
 msgstr ""
@@ -836,7 +836,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr ""
 
-#: src/app/AppRuntime.tsx:589
+#: src/app/AppRuntime.tsx:600
 #: src/components/shell/CourseSwitcherControl.tsx:123
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -1110,6 +1110,11 @@ msgstr ""
 #: src/features/courses/ManageCoursesDialog.tsx:195
 msgctxt "course.manage.lumi.due"
 msgid "{count, plural, one {# card is due right now.} other {# cards are due right now.}}"
+msgstr ""
+
+#: src/app/AppViewStage.tsx:145
+msgctxt "shell.loading.files"
+msgid "Preparing your files…"
 msgstr ""
 
 #: src/components/AppOverlays.tsx:390
@@ -1421,22 +1426,22 @@ msgid "Loading library"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/app-runtime-shared.ts:81
+#: src/app/app-runtime-shared.ts:83
 msgid "rewards.reveal.level.frame"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/app-runtime-shared.ts:83
+#: src/app/app-runtime-shared.ts:85
 msgid "rewards.reveal.level.hint"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/app-runtime-shared.ts:82
+#: src/app/app-runtime-shared.ts:84
 msgid "rewards.reveal.level.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/app-runtime-shared.ts:56
+#: src/app/app-runtime-shared.ts:58
 msgid "rewards.reveal.streak.badge"
 msgstr ""
 
@@ -1445,7 +1450,7 @@ msgctxt "course.create.submit"
 msgid "Create course"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:116
+#: src/app/AppViewStage.tsx:127
 msgctxt "shell.loading.paths"
 msgid "Preparing learning paths…"
 msgstr ""
@@ -1641,12 +1646,17 @@ msgid "shell.heading.catalog"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:11
+msgid "shell.heading.files"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/features/navigation/app-view-headings.ts:4
 msgid "shell.heading.landing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:14
+#: src/features/navigation/app-view-headings.ts:15
 msgid "shell.heading.language-drill"
 msgstr ""
 
@@ -1656,7 +1666,7 @@ msgid "shell.heading.library"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:16
+#: src/features/navigation/app-view-headings.ts:17
 msgid "shell.heading.match"
 msgstr ""
 
@@ -1666,7 +1676,7 @@ msgid "shell.heading.progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:12
+#: src/features/navigation/app-view-headings.ts:13
 msgid "shell.heading.quiz"
 msgstr ""
 
@@ -1676,22 +1686,22 @@ msgid "shell.heading.settings"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:17
+#: src/features/navigation/app-view-headings.ts:18
 msgid "shell.heading.shadowing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:13
+#: src/features/navigation/app-view-headings.ts:14
 msgid "shell.heading.spelling"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:15
+#: src/features/navigation/app-view-headings.ts:16
 msgid "shell.heading.story"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:11
+#: src/features/navigation/app-view-headings.ts:12
 msgid "shell.heading.study"
 msgstr ""
 
@@ -1716,7 +1726,7 @@ msgid "shell.language.open"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:578
+#: src/app/AppRuntime.tsx:589
 msgid "shell.learning-workspace"
 msgstr ""
 
@@ -2009,7 +2019,7 @@ msgid "shell.sync.paused-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:447
+#: src/app/AppRuntime.tsx:458
 msgid "shell.sync.retry-failed"
 msgstr ""
 
@@ -2096,7 +2106,7 @@ msgctxt "onboarding.lumi.reminder.body"
 msgid "Pick a time and SonFlash will remind you to review."
 msgstr ""
 
-#: src/app/AppRuntime.tsx:590
+#: src/app/AppRuntime.tsx:601
 #: src/components/shell/CourseSwitcherControl.tsx:125
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -2212,7 +2222,7 @@ msgctxt "course.goal.edit.cancel"
 msgid "Cancel"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:131
+#: src/app/AppViewStage.tsx:142
 msgctxt "shell.loading.progress"
 msgid "Preparing learning progress…"
 msgstr ""
@@ -2258,7 +2268,7 @@ msgctxt "onboarding.lumi.target.body"
 msgid "Pick one language for now. You can add more from the course switcher."
 msgstr ""
 
-#: src/app/AppRuntime.tsx:592
+#: src/app/AppRuntime.tsx:603
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr ""
@@ -2359,7 +2369,7 @@ msgid "Manage shared link"
 msgstr ""
 
 #: src/app/AppDeferredViews.tsx:23
-#: src/app/AppRuntime.tsx:82
+#: src/app/AppRuntime.tsx:84
 msgctxt "shell.opening-dialog"
 msgid "Opening dialog"
 msgstr ""
