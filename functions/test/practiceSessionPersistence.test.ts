@@ -17,7 +17,24 @@ const harness = (documents: Record<string, DocumentData>) => {
   const reads: string[] = [];
   const writes: Array<{ path: string; data: DocumentData }> = [];
   const document = (path: string) => ({ path, collection: (name: string) => collection(`${path}/${name}`) }) as unknown as DocumentReference;
-  const collection = (path: string) => ({ doc: (id: string) => document(`${path}/${id}`) });
+  // Count queries outside the transaction, over the stored direct children of a collection.
+  const matches = (data: DocumentData, field: string, operator: string, value: unknown) => (
+    operator === '>' ? Number(data[field]) > Number(value) : data[field] === value
+  );
+  const collection = (path: string) => ({
+    doc: (id: string) => document(`${path}/${id}`),
+    where: (field: string, operator: string, value: unknown) => ({
+      count: () => ({
+        get: async () => ({
+          data: () => ({
+            count: [...values.entries()].filter(([key, data]) => (
+              key.startsWith(`${path}/`) && !key.slice(path.length + 1).includes('/') && matches(data, field, operator, value)
+            )).length,
+          }),
+        }),
+      }),
+    }),
+  });
   const transaction = {
     get: vi.fn(async (reference: DocumentReference) => {
       reads.push(reference.path);
@@ -120,6 +137,8 @@ describe('practice session persistence', () => {
     expect(test.writes.map(write => write.path)).toEqual([
       'users/owner/profile/stats', 'users/owner/profile/xp_history', 'users/owner/practice_sessions/practice-1',
     ]);
+    // The correct answers count toward the spelling badge in the same stats write.
+    expect(test.writes[0].data.achievementsV1).toMatchObject({ counters: { spellingCorrect: 2, activeDays: 1, bestDayXp: 10 } });
   });
 
   it('accepts legacy spelling answer keys without a target language', async () => {
@@ -171,8 +190,9 @@ describe('practice session persistence', () => {
       sessionId: 'practice-1', completionId: 'complete-1', timeZone: 'UTC', answers: { responses: { 'card-1': 'hello' } },
     }, new Date('2026-09-27T10:01:00.000Z'));
     expect(result.outcome).toMatchObject({ xp: 14400, level: 13, events: ['levelup'] });
+    // The first verified action after the stats records were added also reads XP history, once.
     expect(test.reads).toEqual([
-      'users/owner/practice_sessions/practice-1', 'users/owner/profile/stats', 'users/owner/profile/rewards',
+      'users/owner/practice_sessions/practice-1', 'users/owner/profile/stats', 'users/owner/profile/rewards', 'users/owner/profile/xp_history',
     ]);
     expect(test.writes.map(write => write.path)).toEqual([
       'users/owner/profile/stats', 'users/owner/profile/xp_history', 'users/owner/profile/rewards', 'users/owner/practice_sessions/practice-1',

@@ -124,8 +124,24 @@ const harness = (card = baseCard(), fenced = false, cardPathId = 'word-focus') =
       return transaction;
     }),
   } as unknown as Transaction;
+  // Count queries outside the transaction, over the stored direct children of a collection.
+  const matches = (data: DocumentData, field: string, operator: string, value: unknown) => (
+    operator === '>' ? Number(data[field]) > Number(value) : data[field] === value
+  );
   const nestedCollection = (path: string) => ({
     doc: (documentId: string) => nestedDoc(`${path}/${documentId}`),
+    where: (field: string, operator: string, value: unknown) => ({
+      count: () => ({
+        get: async () => ({
+          data: () => ({
+            count: [...values.entries()].filter(([key, stored]) => (
+              key.startsWith(`${path}/`) && !key.slice(path.length + 1).includes('/') && stored.exists
+              && matches(stored.data() ?? {}, field, operator, value)
+            )).length,
+          }),
+        }),
+      }),
+    }),
   });
   const nestedDoc = (path: string) => ({
     path,
@@ -385,6 +401,33 @@ describe('review persistence', () => {
       });
       expect(test.writes.filter(write => write.path === 'users/owner/profile/stats')).toHaveLength(1);
       expect(test.writes.filter(write => write.path === 'users/owner/profile/xp_history')).toHaveLength(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('tells the achievements record whether a card is reviewed or rated Easy for the first time', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-27T12:00:00.000Z'));
+    try {
+      const reviewEasy = async (stored: ReturnType<typeof baseCard>) => {
+        const test = harness(stored);
+        test.values.set('users/owner/profile/stats', snapshot(true, {
+          rewardTimeZone: 'UTC', verifiedXp: 10, verifiedStreak: 1, lastVerifiedStudyDay: '2026-09-26',
+        }));
+        await applyReviewForOwner(test.database, 'owner', reviewRequest({
+          rating: 'easy', fields: scheduleReviewTransition(stored, 'easy', new Date('2026-08-24T00:00:00.000Z')),
+        }));
+        return test.writes.find(write => write.path === 'users/owner/profile/stats')?.data.achievementsV1.counters;
+      };
+      // Never reviewed: the card counts and its first Easy counts.
+      expect(await reviewEasy(baseCard())).toMatchObject({ reviewedCards: 1, masteredWords: 1 });
+      // Rated Easy before and later demoted: already counted on both.
+      const demoted = {
+        ...baseCard([{ rating: 'easy', reviewedAt: '2026-08-20T00:00:00.000Z', scheduledDays: 4, elapsedDays: 0 }]),
+        reviews: 1, difficulty: 'good',
+      };
+      expect(await reviewEasy(demoted)).toMatchObject({ reviewedCards: 1, masteredWords: 0 });
     } finally {
       vi.useRealTimers();
     }

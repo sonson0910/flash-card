@@ -1,6 +1,8 @@
 import type { DocumentData, DocumentReference, Firestore, Transaction } from 'firebase-admin/firestore';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
+import { parseAchievementRecords, parseAchievements } from './achievement-rules.js';
+import { backfilledAchievements, evaluateAchievements, isLateHour, loadAchievementBaseline } from './achievements.js';
 import { InputValidationError } from './inputValidation.js';
 import {
   STREAK_MILESTONE_XP, STREAK_REWARD_RUN, advanceStreak, initialStreakState, isStreakChangeWorthShowing, parseStreakState,
@@ -18,6 +20,8 @@ const MAX_REVIEW_ACTIVITY_COUNTER = Number.MAX_SAFE_INTEGER;
 const DAILY_GOALS_FIELD = 'dailyGoalsV1';
 const DAILY_GOALS_DAYS = 8;
 const STREAK_FIELD = 'streakV1';
+const ACHIEVEMENTS_FIELD = 'achievementsV1';
+const WEB_WANDERER_BADGE = 'web-wanderer';
 
 type ActionKind = 'review' | 'create' | 'quiz' | 'spelling' | 'match';
 type RewardEvent = 'streak' | 'levelup';
@@ -30,6 +34,15 @@ export type VerifiedGamificationAction = {
   rating?: 'again' | 'hard' | 'good' | 'easy';
   resultXp?: number;
   cardId?: string;
+  /** Facts about the reviewed card that only the review path holds. */
+  reviewedCard?: {
+    /** The card had never been reviewed. */
+    firstReview: boolean;
+    /** Rated Easy for the first time: not Easy now and no Easy in its history. */
+    firstEasy: boolean;
+  };
+  /** Correct answers of a verified spelling session. */
+  correctAnswers?: number;
 };
 
 export type VerifiedGamificationOutcome = {
@@ -364,6 +377,23 @@ export async function prepareVerifiedGamification(
     });
     if (Object.hasOwn(legacyRewards, 'streakFreezes')) rewardsPatch.streakFreezes = FieldValue.delete();
   }
+  // Achievements are recorded from the first evaluation on. That one evaluation reads a baseline;
+  // an unusable stored record is rebuilt the same way, keeping every valid badge and title record.
+  let achievementsBase = parseAchievements(stats[ACHIEVEMENTS_FIELD]);
+  let achievementsRebuilt = false;
+  let webWandererHeld = false;
+  if (!achievementsBase) {
+    if (stats[ACHIEVEMENTS_FIELD] !== undefined) console.warn('Stored achievements record was unusable and is rebuilt.');
+    const baseline = await loadAchievementBaseline(database, transaction, ownerId, statsSnapshot.exists ? refs.history : undefined);
+    if (baseline) {
+      const heldRewards = statsSnapshot.exists ? await readRewards() : {};
+      webWandererHeld = (isRecord(heldRewards.receipts) && heldRewards.receipts[STREAK_REWARD_RECEIPT] === true)
+        || (Array.isArray(heldRewards.unlockedBadgeIds) && heldRewards.unlockedBadgeIds.includes(WEB_WANDERER_BADGE));
+      const storedVersion = isRecord(stats[ACHIEVEMENTS_FIELD]) ? counter(stats[ACHIEVEMENTS_FIELD].catalogVersion) : 0;
+      achievementsBase = backfilledAchievements(studyDay, baseline, parseAchievementRecords(stats[ACHIEVEMENTS_FIELD]), storedVersion);
+      achievementsRebuilt = true;
+    }
+  }
   const isReview = action.kind === 'review';
   const streakInput = {
     state: streakState, run: streak, lastStudyDay: lastDay, today: studyDay,
@@ -390,7 +420,7 @@ export async function prepareVerifiedGamification(
   if (grantsStreakReward) {
     events.push('streak');
     rewardReceiptsPatch[STREAK_REWARD_RECEIPT] = true;
-    rewardsPatch.unlockedBadgeIds = Array.from(new Set([...(Array.isArray(rewards.unlockedBadgeIds) ? rewards.unlockedBadgeIds : []), 'web-wanderer']));
+    rewardsPatch.unlockedBadgeIds = Array.from(new Set([...(Array.isArray(rewards.unlockedBadgeIds) ? rewards.unlockedBadgeIds : []), WEB_WANDERER_BADGE]));
   }
   if (levelThreshold && receipts[LEVEL_REWARD_RECEIPT] !== true) {
     events.push('levelup');
@@ -400,6 +430,21 @@ export async function prepareVerifiedGamification(
     rewardsPatch.ownedTitleIds = Array.from(new Set([...(Array.isArray(rewards.ownedTitleIds) ? rewards.ownedTitleIds : []), 'word-collector']));
   }
   const grantsReceipt = Object.keys(rewardReceiptsPatch).length > 0;
+  const heldStreak = webWandererHeld ? STREAK_REWARD_RUN : 0;
+  const achievements = achievementsBase ? evaluateAchievements({
+    stored: achievementsBase,
+    rebuilt: achievementsRebuilt,
+    signals: {
+      studyDay,
+      xpGained,
+      firstReview: isReview && action.reviewedCard?.firstReview === true,
+      firstEasy: isReview && action.reviewedCard?.firstEasy === true,
+      lateReview: isReview && xpAwarded > 0 && isLateHour(action.receivedAt, timeZone),
+      correctAnswers: action.kind === 'spelling' && isCount(action.correctAnswers) ? action.correctAnswers : 0,
+    },
+    before: { verifiedXp: xp, streak: Math.max(streak, streakState.best, heldStreak) },
+    after: { verifiedXp: nextXp, streak: Math.max(nextStreak, streakAdvance.state.best, heldStreak) },
+  }) : undefined;
   const streakChange: StreakChange | undefined = isReview && isStreakChangeWorthShowing(streakAdvance.change)
     ? { ...streakAdvance.change, ...(milestoneXp > 0 ? { milestoneXp } : {}) }
     : undefined;
@@ -429,6 +474,7 @@ export async function prepareVerifiedGamification(
       ...(activity ? { reviewActivityV1: activity } : {}),
       [DAILY_GOALS_FIELD]: replacingMergePatch(stats[DAILY_GOALS_FIELD], dailyGoals),
       [STREAK_FIELD]: replacingMergePatch(stats[STREAK_FIELD], { ...streakAdvance.state }),
+      ...(achievements?.patch ? { [ACHIEVEMENTS_FIELD]: achievements.patch } : {}),
     },
     ...(xpGained > 0 ? { historyRef: refs.history, historyPatch: { verifiedByDayV1: { [studyDay]: FieldValue.increment(xpGained) } } } : {}),
     hasXpAward,

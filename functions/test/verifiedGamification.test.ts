@@ -7,9 +7,10 @@ import { CREATE_CARD_XP, MATCH_WIN_XP, REVIEW_CARD_XP } from '../src/xp-rules.js
 
 const snapshot = (exists: boolean, data: DocumentData = {}): DocumentSnapshot => ({ exists, data: () => data } as DocumentSnapshot);
 
-const harness = (documents: Record<string, DocumentData> = {}) => {
+const harness = (documents: Record<string, DocumentData> = {}, counts: Record<string, number> = {}) => {
   const values = new Map(Object.entries(documents));
   const reads: string[] = [];
+  const queries: string[] = [];
   const writes: Array<{ path: string; data: DocumentData }> = [];
   const transaction = {
     get: vi.fn(async (reference: DocumentReference) => {
@@ -27,12 +28,23 @@ const harness = (documents: Record<string, DocumentData> = {}) => {
     }),
   } as unknown as Transaction;
   const document = (path: string) => ({ path, collection: (name: string) => collection(`${path}/${name}`) }) as unknown as DocumentReference;
-  const collection = (path: string) => ({ doc: (id: string) => document(`${path}/${id}`) });
+  const collection = (path: string) => ({
+    doc: (id: string) => document(`${path}/${id}`),
+    where: (field: string, operator: string, value: unknown) => ({
+      count: () => ({
+        get: async () => {
+          const query = `${path} where ${field} ${operator} ${String(value)}`;
+          queries.push(query);
+          return { data: () => ({ count: counts[query] ?? 0 }) };
+        },
+      }),
+    }),
+  });
   const database = {
     collection: (name: string) => collection(name),
     runTransaction: vi.fn(async (callback: (value: Transaction) => Promise<unknown>) => callback(transaction)),
   } as unknown as Firestore;
-  return { database, transaction, reads, writes };
+  return { database, transaction, reads, writes, queries };
 };
 
 const awardPath = (cardId: string, studyDay: string) => `users/owner/review_xp_awards/${reviewXpAwardId(cardId, studyDay)}`;
@@ -42,6 +54,26 @@ const settledStreak = (overrides: Record<string, unknown> = {}) => ({
   coverageStartedOn: '2026-03-01', freezes: 0, refilledWeek: '2026-03-02', best: 5, bestCountedFrom: '2026-02-20',
   days: {}, milestones: {}, repair: null, lastRepairedOn: null, ...overrides,
 });
+
+// The achievements record of an account whose first evaluation has already happened.
+const settledAchievements = (overrides: Record<string, unknown> = {}) => ({
+  catalogVersion: 1,
+  recordingStartedOn: '2026-03-01',
+  counters: {
+    activeDays: 3, lastXpDay: '2026-03-07', lastXpDayXp: 4, bestDayXp: 20,
+    reviewedCards: 12, masteredWords: 2, lateReviews: 0, spellingCorrect: 0,
+  },
+  badges: {
+    'first-review': { on: '2026-03-01', exact: false },
+    'active-days-3': { on: '2026-03-01', exact: false },
+    'reviewed-10': { on: '2026-03-01', exact: false },
+  },
+  titles: {},
+  ...overrides,
+});
+
+const reviewedQuery = 'users/owner/cards where reviews > 0';
+const masteredQuery = 'users/owner/cards where difficulty == easy';
 
 const isDeleteSentinel = (value: unknown) => value instanceof FieldValue && value.isEqual(FieldValue.delete());
 
@@ -90,7 +122,7 @@ describe('verified gamification', () => {
     const newer = Timestamp.fromDate(new Date('2026-03-08T11:00:00.000Z'));
     const test = harness({ 'users/owner/profile/stats': {
       verifiedXp: 4, verifiedStreak: 1, lastVerifiedStudyDay: '2026-03-08', rewardTimeZone: 'UTC',
-      lastVerifiedReviewAt: newer, streakV1: settledStreak(),
+      lastVerifiedReviewAt: newer, streakV1: settledStreak(), achievementsV1: settledAchievements(),
     } });
     const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({ timeZone: 'UTC' }));
     expect(prepared.statsPatch).not.toHaveProperty('lastVerifiedReviewAt');
@@ -246,8 +278,11 @@ describe('verified gamification', () => {
       xp: 14_501, level: 13, streak: 30, xpAwarded: 2, events: ['streak', 'levelup'],
       streakChange: { freezesUsed: 0, freezesEarned: 1, milestone: 30, milestoneXp: 100 },
     });
-    // The legacy freeze fold and both thresholds share one rewards read.
-    expect(test.reads).toEqual(['users/owner/profile/stats', awardPath('word-focus', '2026-03-08'), 'users/owner/profile/rewards']);
+    // The legacy freeze fold, the achievements baseline and both thresholds share one rewards read.
+    expect(test.reads).toEqual([
+      'users/owner/profile/stats', awardPath('word-focus', '2026-03-08'), 'users/owner/profile/rewards', 'users/owner/profile/xp_history',
+    ]);
+    expect(test.queries).toEqual([reviewedQuery, masteredQuery]);
     commitVerifiedGamification(test.transaction, prepared);
     expect(test.writes.map(write => write.path)).toEqual(['users/owner/profile/stats', 'users/owner/profile/xp_history', awardPath('word-focus', '2026-03-08'), 'users/owner/profile/rewards']);
     expect(test.writes[1].data.verifiedByDayV1['2026-03-08'].isEqual(FieldValue.increment(102))).toBe(true);
@@ -257,6 +292,16 @@ describe('verified gamification', () => {
     expect(isDeleteSentinel(test.writes[3].data.streakFreezes)).toBe(true);
     expect(test.writes[0].data.streakV1).toMatchObject({
       freezes: 2, best: 30, milestones: { 7: null, 14: null, 30: '2026-03-08' }, days: { '2026-03-08': 'studied' },
+    });
+    // Met only by this review: the 30-day badge and level 13 are exact; 7 days and level 5 were met before.
+    expect(test.writes[0].data.achievementsV1).toMatchObject({
+      recordingStartedOn: '2026-03-08',
+      badges: {
+        'streak-7': { on: '2026-03-08', exact: false },
+        'web-wanderer': { on: '2026-03-08', exact: true },
+        'xp-500': { on: '2026-03-08', exact: false },
+      },
+      titles: { 'word-keeper': { on: '2026-03-08', exact: false }, 'word-collector': { on: '2026-03-08', exact: true } },
     });
   });
 
@@ -310,6 +355,7 @@ describe('verified gamification', () => {
       const result = await run({
         [statsPath]: {
           verifiedXp: 40, verifiedStreak: 3, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC',
+          achievementsV1: settledAchievements(),
           reviewActivityV1: {
             coverageStartedOnByLanguage: { en: '2026-03-01', ko: '2026-03-04' },
             daysByLanguage: {
@@ -335,7 +381,9 @@ describe('verified gamification', () => {
 
     it('does not write the rewards document when the folded account has no legacy freeze', async () => {
       const result = await run({
-        [statsPath]: { verifiedXp: 40, verifiedStreak: 1, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC' },
+        [statsPath]: {
+          verifiedXp: 40, verifiedStreak: 1, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC', achievementsV1: settledAchievements(),
+        },
         [rewardsPath]: { hintTokens: 1 },
       });
       expect(result.reads).toEqual([statsPath, awardPath('word-focus', '2026-03-08'), rewardsPath]);
@@ -344,7 +392,7 @@ describe('verified gamification', () => {
 
     it('adds no read or write to a review once the record exists', async () => {
       const result = await run({ [statsPath]: {
-        verifiedXp: 40, verifiedStreak: 5, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC', streakV1: settledStreak(),
+        verifiedXp: 40, verifiedStreak: 5, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC', streakV1: settledStreak(), achievementsV1: settledAchievements(),
       } });
       expect(result.reads).toEqual([statsPath, awardPath('word-focus', '2026-03-08')]);
       expect(result.writes.map(write => write.path)).toEqual([statsPath, 'users/owner/profile/xp_history', awardPath('word-focus', '2026-03-08')]);
@@ -357,6 +405,7 @@ describe('verified gamification', () => {
       try {
         const result = await run({ [statsPath]: {
           verifiedXp: 40, verifiedStreak: 5, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC', streakV1: 'corrupt',
+          achievementsV1: settledAchievements(),
         }, [rewardsPath]: { streakFreezes: 1 } });
         expect(result.reads).toEqual([statsPath, awardPath('word-focus', '2026-03-08')]);
         expect(result.prepared.outcome).toMatchObject({ streak: 6 });
@@ -370,7 +419,7 @@ describe('verified gamification', () => {
     it('spends one held freeze per missed day and keeps the run', async () => {
       const result = await run({ [statsPath]: {
         verifiedXp: 40, verifiedStreak: 9, lastVerifiedStudyDay: '2026-03-05', rewardTimeZone: 'UTC',
-        streakV1: settledStreak({ freezes: 2, best: 9, days: { '2026-03-05': 'studied' } }),
+        streakV1: settledStreak({ freezes: 2, best: 9, days: { '2026-03-05': 'studied' } }), achievementsV1: settledAchievements(),
       } });
       expect(result.prepared.outcome).toMatchObject({ streak: 10, streakChange: { freezesUsed: 2, freezesEarned: 0 } });
       expect(result.streakV1).toMatchObject({
@@ -381,7 +430,7 @@ describe('verified gamification', () => {
     it('ends a run the freezes cannot bridge and opens a repair that the returning review starts', async () => {
       const result = await run({ [statsPath]: {
         verifiedXp: 40, verifiedStreak: 23, lastVerifiedStudyDay: '2026-03-04', rewardTimeZone: 'UTC',
-        streakV1: settledStreak({ freezes: 1, best: 23 }),
+        streakV1: settledStreak({ freezes: 1, best: 23 }), achievementsV1: settledAchievements(),
       } });
       expect(result.prepared.outcome).toMatchObject({ streak: 1, streakChange: { freezesUsed: 1, freezesEarned: 0, repairOffered: true } });
       // The freeze covered 5 March; the run ended on 6 March, so the repair can finish until 8 March ends.
@@ -397,7 +446,7 @@ describe('verified gamification', () => {
         streakV1: settledStreak({
           best: 26, days: { '2026-03-04': 'studied', '2026-03-07': 'studied' },
           repair: { runLength: 26, lastStudiedOn: '2026-03-04', endedOn: '2026-03-05', deadline: '2026-03-07', cardsDone: 19, cardsNeeded: 20 },
-        }),
+        }), achievementsV1: settledAchievements(),
       } }, utc('2026-03-07T20:00:00.000Z'));
       // Back on the deadline day: finishing on 7 March repairs 5 and 6 March and restores 26 + 1.
       expect(result.prepared.outcome).toMatchObject({ streak: 27, streakChange: { freezesUsed: 0, freezesEarned: 0, repaired: true } });
@@ -411,7 +460,7 @@ describe('verified gamification', () => {
         streakV1: settledStreak({
           best: 26, days: { '2026-03-07': 'studied' },
           repair: { runLength: 26, lastStudiedOn: '2026-03-05', endedOn: '2026-03-06', deadline: '2026-03-08', cardsDone: 19, cardsNeeded: 20 },
-        }),
+        }), achievementsV1: settledAchievements(),
       } });
       // The run continues to 2 on 8 March, then the repair restores 26 + 2 = 28 and earns the freeze at 28.
       expect(crossing.prepared.outcome).toMatchObject({ streak: 28, streakChange: { freezesUsed: 0, freezesEarned: 1, repaired: true } });
@@ -423,7 +472,7 @@ describe('verified gamification', () => {
       const result = await run({
         [statsPath]: {
           verifiedXp: 40, verifiedStreak: 2, lastVerifiedStudyDay: '2026-03-08', rewardTimeZone: 'UTC',
-          streakV1: settledStreak({ repair, days: { '2026-03-07': 'studied', '2026-03-08': 'studied' } }),
+          streakV1: settledStreak({ repair, days: { '2026-03-07': 'studied', '2026-03-08': 'studied' } }), achievementsV1: settledAchievements(),
         },
         [awardPath('word-focus', '2026-03-08')]: {
           schemaVersion: 1, ownerId: 'owner', cardId: 'word-focus', studyDay: '2026-03-08', xpAwarded: 2, expiresAt: new Date('2026-03-15T00:00:00.000Z'),
@@ -437,12 +486,12 @@ describe('verified gamification', () => {
     it('tops freezes up on the first review of a week, once', async () => {
       const stats = {
         verifiedXp: 40, verifiedStreak: 3, lastVerifiedStudyDay: '2026-03-08', rewardTimeZone: 'UTC',
-        streakV1: settledStreak({ freezes: 0, refilledWeek: '2026-03-02' }),
+        streakV1: settledStreak({ freezes: 0, refilledWeek: '2026-03-02' }), achievementsV1: settledAchievements(),
       };
       const monday = await run({ [statsPath]: stats }, utc('2026-03-09T08:00:00.000Z'));
       expect(monday.prepared.outcome).toMatchObject({ streak: 4, streakChange: { freezesUsed: 0, freezesEarned: 0, freezesRefilled: 2 } });
       expect(monday.streakV1).toMatchObject({ freezes: 2, refilledWeek: '2026-03-09' });
-      const again = await run({ [statsPath]: { ...stats, lastVerifiedStudyDay: '2026-03-09', streakV1: settledStreak({ freezes: 1, refilledWeek: '2026-03-09' }) } }, action({
+      const again = await run({ [statsPath]: { ...stats, lastVerifiedStudyDay: '2026-03-09', streakV1: settledStreak({ freezes: 1, refilledWeek: '2026-03-09' }), achievementsV1: settledAchievements() } }, action({
         timeZone: 'UTC', cardId: 'another-card', receivedAt: new Date('2026-03-09T09:00:00.000Z'),
       }));
       expect(again.streakV1).toMatchObject({ freezes: 1, refilledWeek: '2026-03-09' });
@@ -454,7 +503,7 @@ describe('verified gamification', () => {
         verifiedXp: 40, verifiedStreak: 1, lastVerifiedStudyDay: '2026-03-06', rewardTimeZone: 'UTC',
         streakV1: settledStreak({
           repair: { runLength: 9, lastStudiedOn: '2026-03-03', endedOn: '2026-03-05', deadline: '2026-03-07', cardsDone: 4, cardsNeeded: 20 },
-        }),
+        }), achievementsV1: settledAchievements(),
       } }, action({ kind: 'create', timeZone: 'UTC' }));
       expect(result.prepared.outcome).toMatchObject({ streak: 1 });
       expect(result.streakV1).toMatchObject({ repair: null });
@@ -464,7 +513,7 @@ describe('verified gamification', () => {
       const result = await run({
         [statsPath]: {
           verifiedXp: 900, verifiedStreak: 29, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC',
-          streakV1: settledStreak({ best: 29, milestones: { 7: null, 14: null } }),
+          streakV1: settledStreak({ best: 29, milestones: { 7: null, 14: null } }), achievementsV1: settledAchievements(),
         },
         [rewardsPath]: { receipts: { 'streak-30-v1': true } },
       });
@@ -479,7 +528,7 @@ describe('verified gamification', () => {
       ]));
       const result = await run({ [statsPath]: {
         verifiedXp: 40, verifiedStreak: 14, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC',
-        streakV1: settledStreak({ best: 14, days, milestones: { 7: '2026-02-28', 14: '2026-03-07' } }),
+        streakV1: settledStreak({ best: 14, days, milestones: { 7: '2026-02-28', 14: '2026-03-07' } }), achievementsV1: settledAchievements(),
       } });
       const marks = result.streakV1.days as Record<string, unknown>;
       expect(isDeleteSentinel(marks['2026-02-22'])).toBe(true);
@@ -496,7 +545,7 @@ describe('verified gamification', () => {
     const counters = (studiedCards: number, matchWins: number) => ({ studiedCards, matchWins });
     const stored = (dailyGoalsV1: unknown) => ({ 'users/owner/profile/stats': {
       verifiedXp: 40, verifiedStreak: 1, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC', dailyGoalsV1,
-      streakV1: settledStreak(),
+      streakV1: settledStreak(), achievementsV1: settledAchievements(),
     } });
 
     it('grants the XP amounts from the shared rules', async () => {
@@ -591,5 +640,157 @@ describe('verified gamification', () => {
         expect(isDelete(path.split('.').reduce<unknown>((node, key) => (node as Record<string, unknown>)[key], patch))).toBe(true);
       }
     });
+  });
+});
+
+describe('achievements record', () => {
+  const statsPath = 'users/owner/profile/stats';
+  const rewardsPath = 'users/owner/profile/rewards';
+  const historyPath = 'users/owner/profile/xp_history';
+  const award = awardPath('word-focus', '2026-03-08');
+  const run = async (
+    documents: Record<string, DocumentData>,
+    verifiedAction: Parameters<typeof prepareVerifiedGamification>[3] = action({ timeZone: 'UTC' }),
+    counts: Record<string, number> = {},
+  ) => {
+    const test = harness(documents, counts);
+    const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', verifiedAction);
+    return { ...test, prepared, achievementsV1: prepared.statsPatch.achievementsV1 as Record<string, unknown> | undefined };
+  };
+  const settled = (overrides: Record<string, unknown> = {}) => ({
+    verifiedXp: 40, verifiedStreak: 5, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC',
+    streakV1: settledStreak(), achievementsV1: settledAchievements(), ...overrides,
+  });
+
+  it('starts a new account from the two card counts without reading history or rewards', async () => {
+    const result = await run({}, action({ reviewedCard: { firstReview: true, firstEasy: false } }));
+    expect(result.reads).toEqual([statsPath, award]);
+    expect(result.queries).toEqual([reviewedQuery, masteredQuery]);
+    expect(result.achievementsV1).toEqual({
+      catalogVersion: 1,
+      recordingStartedOn: '2026-03-08',
+      counters: {
+        activeDays: 1, lastXpDay: '2026-03-08', lastXpDayXp: 2, bestDayXp: 2,
+        reviewedCards: 1, masteredWords: 0, lateReviews: 0, spellingCorrect: 0,
+      },
+      badges: { 'first-review': { on: '2026-03-08', exact: true } },
+    });
+  });
+
+  it('reads the baseline of an existing account once and then never again', async () => {
+    const first = await run({
+      [statsPath]: settled({ verifiedXp: 620, verifiedStreak: 3, achievementsV1: undefined }),
+      [historyPath]: { verifiedByDayV1: { '2026-03-01': 130, '2026-03-05': 40, '2026-03-07': 20 } },
+      // A 30-day badge from before the receipt existed.
+      [rewardsPath]: { unlockedBadgeIds: ['web-wanderer'] },
+    }, undefined, { [reviewedQuery]: 37, [masteredQuery]: 12 });
+    expect(first.reads).toEqual([statsPath, award, historyPath, rewardsPath]);
+    expect(first.queries).toEqual([reviewedQuery, masteredQuery]);
+    const byFirstDay = { on: '2026-03-08', exact: false };
+    expect(first.achievementsV1).toEqual({
+      catalogVersion: 1,
+      recordingStartedOn: '2026-03-08',
+      counters: {
+        activeDays: 4, lastXpDay: '2026-03-08', lastXpDayXp: 2, bestDayXp: 130,
+        reviewedCards: 37, masteredWords: 12, lateReviews: 0, spellingCorrect: 0,
+      },
+      badges: Object.fromEntries(['first-review', 'active-days-3', 'reviewed-10', 'day-xp-100', 'streak-7', 'xp-500', 'web-wanderer']
+        .map(id => [id, byFirstDay])),
+    });
+    commitVerifiedGamification(first.transaction, first.prepared);
+    // The rewards document is read but never written.
+    expect(first.writes.map(write => write.path)).toEqual([statsPath, historyPath, award]);
+
+    const next = await run({ [statsPath]: settled({ verifiedXp: 622, achievementsV1: first.achievementsV1 }) },
+      action({ timeZone: 'UTC', cardId: 'word-next' }));
+    expect(next.reads).toEqual([statsPath, awardPath('word-next', '2026-03-08')]);
+    expect(next.queries).toEqual([]);
+    expect(next.achievementsV1).toEqual({ counters: { lastXpDayXp: 4 } });
+  });
+
+  it('adds no read or query once the record exists and writes only the changed leaves', async () => {
+    const result = await run({ [statsPath]: settled() });
+    expect(result.reads).toEqual([statsPath, award]);
+    expect(result.queries).toEqual([]);
+    expect(result.achievementsV1).toEqual({ counters: { activeDays: 4, lastXpDay: '2026-03-08', lastXpDayXp: 2 } });
+  });
+
+  it('counts a late review only when it earns XP', async () => {
+    const late = action({ timeZone: 'UTC', receivedAt: new Date('2026-03-08T23:30:00.000Z') });
+    expect((await run({ [statsPath]: settled() }, late)).achievementsV1)
+      .toMatchObject({ counters: { lateReviews: 1 } });
+    // The card already earned its XP today.
+    const noXp = await run({ [statsPath]: settled(), [award]: {
+      schemaVersion: 1, ownerId: 'owner', cardId: 'word-focus', studyDay: '2026-03-08', xpAwarded: 2, expiresAt: new Date('2026-03-15T00:00:00.000Z'),
+    } }, late);
+    expect(noXp.prepared.outcome.xpAwarded).toBe(0);
+    expect(noXp.achievementsV1).toBeUndefined();
+  });
+
+  it('counts first reviews and first Easy ratings from the review path', async () => {
+    const result = await run({ [statsPath]: settled() }, action({
+      timeZone: 'UTC', rating: 'easy', reviewedCard: { firstReview: true, firstEasy: true },
+    }));
+    expect(result.achievementsV1).toMatchObject({ counters: { reviewedCards: 13, masteredWords: 3 } });
+  });
+
+  it('counts correct answers from spelling but not from a quiz', async () => {
+    const practice = (kind: 'spelling' | 'quiz') => ({
+      kind, receivedAt: new Date('2026-03-08T10:30:00.000Z'), timeZone: 'UTC', resultXp: 6, correctAnswers: 3,
+    });
+    expect((await run({ [statsPath]: settled() }, practice('spelling'))).achievementsV1)
+      .toMatchObject({ counters: { spellingCorrect: 3 } });
+    expect((await run({ [statsPath]: settled() }, practice('quiz'))).achievementsV1?.counters)
+      .not.toHaveProperty('spellingCorrect');
+  });
+
+  it('rebuilds an unusable record from the baseline and keeps its valid badge and title records', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const result = await run({
+        [statsPath]: settled({
+          achievementsV1: {
+            catalogVersion: 2, recordingStartedOn: 'soon', counters: 'lost',
+            badges: {
+              'xp-500': { on: '2026-02-01', exact: true },
+              'from-a-newer-catalog': { on: '2026-02-03', exact: true },
+              'mastered-50': { on: 'never', exact: true },
+            },
+            titles: { 'word-keeper': { on: '2026-02-02', exact: false } },
+          },
+        }),
+      }, undefined, { [reviewedQuery]: 2 });
+      expect(result.reads).toEqual([statsPath, award, historyPath, rewardsPath]);
+      expect(result.achievementsV1).toEqual({
+        catalogVersion: 2,
+        recordingStartedOn: '2026-03-08',
+        counters: {
+          activeDays: 1, lastXpDay: '2026-03-08', lastXpDayXp: 2, bestDayXp: 2,
+          reviewedCards: 2, masteredWords: 0, lateReviews: 0, spellingCorrect: 0,
+        },
+        badges: {
+          'xp-500': { on: '2026-02-01', exact: true },
+          'from-a-newer-catalog': { on: '2026-02-03', exact: true },
+          'first-review': { on: '2026-03-08', exact: false },
+        },
+        titles: { 'word-keeper': { on: '2026-02-02', exact: false } },
+      });
+      expect(warn).toHaveBeenCalledWith('Stored achievements record was unusable and is rebuilt.');
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('skips the record without failing the action when the card counts are unavailable', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const result = await run({}, undefined, { [masteredQuery]: -1 });
+      expect(result.prepared.outcome).toMatchObject({ xp: 2, streak: 1 });
+      expect(result.achievementsV1).toBeUndefined();
+      expect(result.prepared.statsPatch).not.toHaveProperty('achievementsV1');
+      expect(warn).toHaveBeenCalledWith('Achievement baseline counts are unavailable; recording starts on a later action.');
+    } finally {
+      warn.mockRestore();
+    }
   });
 });

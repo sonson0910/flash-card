@@ -310,7 +310,7 @@ export async function completePracticeSessionV1(
     if (data.game !== 'quiz' && data.game !== 'spelling' && data.game !== 'match') throw new InputValidationError('Practice session game is invalid.');
     const result = score(data.game, sessionCards(data), parsed.answers);
     const prepared = await prepareVerifiedGamification(database, transaction, ownerId, {
-      kind: data.game, receivedAt: now, timeZone: parsed.timeZone, resultXp: result.awardedXp,
+      kind: data.game, receivedAt: now, timeZone: parsed.timeZone, resultXp: result.awardedXp, correctAnswers: result.correct,
     });
     const response: CompletePracticeSessionV1Response = { sessionId: parsed.sessionId, ...result, outcome: commitVerifiedGamification(transaction, prepared) };
     transaction.set(reference, {

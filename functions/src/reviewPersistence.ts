@@ -445,6 +445,11 @@ export async function applyReviewForOwner(
           kind: 'review', receivedAt: receivedAt!, timeZone: request.timeZone ?? reminderTimeZone,
           targetLanguage: typeof candidate.language === 'string' ? candidate.language : undefined, rating: request.rating,
           cardId: request.cardId,
+          reviewedCard: {
+            firstReview: Number(stored.reviews ?? 0) === 0,
+            firstEasy: request.rating === 'easy' && stored.difficulty !== 'easy'
+              && !previousHistory.some(entry => entry?.rating === 'easy'),
+          },
         });
         gamification = preparedGamification.outcome;
       } catch (error) {
