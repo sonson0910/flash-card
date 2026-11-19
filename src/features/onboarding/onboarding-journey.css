@@ -1060,6 +1060,8 @@ html[data-theme-family='crystal'] .onb-countdown-unit { color: var(--sf-brand-te
 html[data-theme-family='crystal'] .onb-weeks > span { border-radius: 0; transform: skewX(-20deg); }
 html[data-theme-family='crystal'] .onb-projection { clip-path: var(--nk-chamfer-sm); }
 html[data-theme-family='crystal'] .onb-projection-number { font-style: italic; font-weight: 900; }
+/* Crystal's gold is paler than Classic's; on the light glass it needs more of the text colour to reach 3:1. */
+html[data-theme-family='crystal']:not(.dark) .onb-projection-number { color: color-mix(in srgb, var(--sf-reward) 50%, var(--sf-text)); }
 html[data-theme-family='crystal'] .onb-trial-known { background: var(--onb-primary-bg); color: white; font-family: var(--sf-font-display); font-style: italic; font-weight: 900; text-transform: uppercase; }
 html[data-theme-family='crystal'] .onb-trial-again { border: 0; background: var(--sf-surface-glass); box-shadow: inset 0 0 0 1px var(--onb-panel-edge); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; text-transform: uppercase; }
 html[data-theme-family='crystal'] .onb-trial-word { border: 0; box-shadow: inset 0 0 0 1px var(--onb-panel-edge); }
