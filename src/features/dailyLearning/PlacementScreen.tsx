@@ -2,34 +2,86 @@ import type { ReactNode } from 'react';
 import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
-import { CircleHelp, Compass, X } from 'lucide-react';
+import { Check, CircleHelp, Play, X } from 'lucide-react';
 import { Lumi } from '../../components/lumi/Lumi';
 import { ThemeMenu } from '../../components/shell/ThemeMenu';
 import { useTheme } from '../theme/ThemeProvider';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import type { PlacementScreenActions, PlacementScreenModel } from './dailyLearningPresentation';
+import type { PlacementConfidence, PlacementTier } from './placementEngine';
 import './lesson-placement-canvas.css';
 
-interface PlacementScreenProps { readonly model: PlacementScreenModel; readonly actions: PlacementScreenActions; }
+/** The running estimate from the placement engine; absent until enough answers exist to evaluate. */
+interface PlacementEstimate { readonly tier: PlacementTier; readonly confidence: PlacementConfidence; }
 
-const primaryClass = 'placement-primary brand-action min-h-11 rounded-2xl bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition duration-200 hover:bg-[var(--sf-brand-hover)] active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none';
-const buttonClass = 'placement-control min-h-11 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-5 py-2.5 font-bold text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] transition duration-200 hover:border-[var(--sf-brand)] hover:bg-[var(--sf-surface-raised)] active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none';
+/** Optional facts a caller can attach to a question; the screen renders only what it receives. */
+type PlacementQuestionExtras = { readonly word?: string; readonly phonetic?: string; readonly estimate?: PlacementEstimate; readonly canPlayAudio?: boolean };
+type PlacementModel = PlacementScreenModel & PlacementQuestionExtras;
+type PlacementActions = PlacementScreenActions & { readonly markUnsure?: () => void; readonly playAudio?: () => void };
+
+interface PlacementScreenProps { readonly model: PlacementModel; readonly actions: PlacementActions; }
+
 const confidenceLabels = {
   low: msg({ id: 'daily.placement.confidence.low', message: 'Low confidence' }),
   medium: msg({ id: 'daily.placement.confidence.medium', message: 'Medium confidence' }),
   high: msg({ id: 'daily.placement.confidence.high', message: 'High confidence' }),
 };
+const confidenceSteps: Record<PlacementConfidence, number> = { low: 1, medium: 2, high: 3 };
 
-function Shell({ children, model, actions }: { readonly children: ReactNode; readonly model: PlacementScreenModel; readonly actions: PlacementScreenActions }) {
+// Highest tier first, as the ladder reads from the top. Tiers come from the placement engine; the
+// check is too short to support exam bands, so no CEFR code is ever shown.
+const ladder: readonly { readonly tier: PlacementTier; readonly rung: number; readonly label: ReturnType<typeof msg>; readonly note: ReturnType<typeof msg> }[] = [
+  { tier: 'advanced', rung: 3, label: msg({ id: 'today.placement.advanced', message: 'Advanced' }), note: msg({ id: 'daily.placement.tier.advanced.note', message: 'Nuance and academic writing' }) },
+  { tier: 'core', rung: 2, label: msg({ id: 'today.placement.core', message: 'Core' }), note: msg({ id: 'daily.placement.tier.core.note', message: 'Work, study and opinions' }) },
+  { tier: 'foundation', rung: 1, label: msg({ id: 'today.placement.foundation', message: 'Foundation' }), note: msg({ id: 'daily.placement.tier.foundation.note', message: 'Everyday words and short texts' }) },
+];
+const tierRank: Record<PlacementTier, number> = { foundation: 1, core: 2, advanced: 3 };
+
+function PlacementLadder({ estimate, mode }: { readonly estimate?: PlacementEstimate; readonly mode: 'estimate' | 'result' | 'preview' }) {
+  const { _ } = useLingui();
+  const title = mode === 'result'
+    ? _(msg({ id: 'daily.placement.ladder.result-title', message: 'Where you start' }))
+    : _(msg({ id: 'daily.placement.ladder.title', message: 'Your estimate so far' }));
+  const note = mode === 'preview'
+    ? _(msg({ id: 'daily.placement.ladder.preview-note', message: 'Three tiers. The check suggests one.' }))
+    : estimate
+      ? _(msg({ id: 'daily.placement.ladder.note', message: 'Sharpens with every answer' }))
+      : _(msg({ id: 'daily.placement.ladder.pending-note', message: 'An estimate appears after six answers' }));
+  const steps = estimate ? confidenceSteps[estimate.confidence] : 0;
+  return <aside className="placement-ladder" aria-labelledby="placement-ladder-title">
+    <p id="placement-ladder-title" className="placement-ladder-title">{title}</p>
+    <p className="placement-ladder-note">{note}</p>
+    <ol className="placement-rungs">
+      {ladder.map(rung => {
+        const state = !estimate ? 'idle' : rung.tier === estimate.tier ? 'likely' : tierRank[rung.tier] < tierRank[estimate.tier] ? 'below' : 'above';
+        return <li key={rung.tier} className="placement-rung" data-rung-state={state}>
+          <span className="placement-rung-code" aria-hidden="true">{rung.rung}</span>
+          <span className="placement-rung-copy"><span className="placement-rung-name">{_(rung.label)}</span><span className="placement-rung-note">{_(rung.note)}</span></span>
+          {state === 'likely' && <span className="placement-rung-flag">{mode === 'result' ? _(msg({ id: 'daily.placement.ladder.recommended', message: 'Recommended' })) : _(msg({ id: 'daily.placement.ladder.likely', message: 'Likely' }))}</span>}
+          {state === 'below' && <Check size={14} strokeWidth={2.5} className="placement-rung-check" aria-hidden="true" />}
+        </li>;
+      })}
+    </ol>
+    {mode !== 'preview' && <div className="placement-confidence">
+      <span className="placement-confidence-track" aria-hidden="true">{[1, 2, 3].map(step => <span key={step} data-filled={step <= steps ? 'true' : 'false'} />)}</span>
+      <span className="placement-confidence-label">{estimate ? _(confidenceLabels[estimate.confidence]) : _(msg({ id: 'daily.placement.ladder.no-confidence', message: 'Not enough answers yet' }))}</span>
+    </div>}
+  </aside>;
+}
+
+function Shell({ children, model, actions, crystal }: { readonly children: ReactNode; readonly model: PlacementModel; readonly actions: PlacementActions; readonly crystal: boolean }) {
   const { _ } = useLingui();
   return <section aria-labelledby="daily-placement-heading" className="daily-canvas placement-canvas" data-session-shell="placement" data-learning-canvas="placement" data-placement-status={model.status}>
-    <header className="placement-header">
-      <div className="placement-header-start">
-        <button type="button" onClick={actions.exit} aria-label={i18n._(msg({ id: 'daily.placement.exit', message: 'Exit placement check' }).id)} className={`${buttonClass} placement-exit shrink-0`}><X size={17} aria-hidden="true" /></button>
-        <div className="placement-heading-copy min-w-0"><h1 id="daily-placement-heading" ref={model.headingRef} tabIndex={-1} className="placement-title text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl">{_(msg({ id: 'daily.placement.title', message: 'Placement check' }))}</h1></div>
-      </div>
-      {model.status === 'question' && <Progress current={model.current} total={model.total} />}
-      <div className="placement-header-actions ml-auto flex items-center gap-2"><ThemeMenu /></div>
+    {crystal && <><span className="lesson-shard lesson-shard--left crystal-wing crystal-ornament" aria-hidden="true" /><span className="lesson-shard lesson-shard--right crystal-wing crystal-ornament" aria-hidden="true" /></>}
+    <header className="placement-header lesson-topbar">
+      <button type="button" onClick={actions.exit} aria-label={i18n._(msg({ id: 'daily.placement.exit', message: 'Exit placement check' }).id)} className="lesson-round placement-exit"><X size={18} aria-hidden="true" /></button>
+      <div className="lesson-topbar-title min-w-0"><h1 id="daily-placement-heading" ref={model.headingRef} tabIndex={-1} className="lesson-title placement-title">
+        <span className="placement-title-kicker" aria-hidden="true">{_(msg({ id: 'daily.placement.title-kicker', message: 'Level check' }))}<span className="lesson-title-sep"> // </span></span>
+        <span>{_(msg({ id: 'daily.placement.title', message: 'Placement check' }))}</span>
+      </h1></div>
+      {model.status === 'question' ? <><Progress current={model.current} total={model.total} /><span className="lesson-count placement-count font-mono tabular-nums" aria-hidden="true"><strong>{model.current}</strong><span> / {model.total}</span></span></> : <span className="placement-progress-spacer" aria-hidden="true" />}
+      {model.status === 'question' && <button type="button" onClick={actions.exit} className="lesson-link placement-skip">{_(msg({ id: 'daily.placement.skip', message: 'Skip placement' }))}</button>}
+      <div className="lesson-topbar-actions"><ThemeMenu /></div>
     </header>
     {children}
   </section>;
@@ -39,42 +91,61 @@ function Progress({ current, total }: { readonly current: number; readonly total
   const { _ } = useLingui();
   const safeTotal = Math.max(1, total);
   const safeCurrent = Math.min(safeTotal, Math.max(0, current));
-  const percentage = safeCurrent / safeTotal * 100;
-  return <div className="placement-progress" role="progressbar" aria-label={i18n._(msg({ id: 'daily.placement.progress-label', message: 'Placement progress' }).id)} aria-valuemin={0} aria-valuemax={safeTotal} aria-valuenow={safeCurrent}>
-    <div className="placement-progress-copy flex justify-between gap-4 text-sm font-bold"><span>{_({ ...msg({ id: 'daily.placement.question-progress', message: 'Question {current} of {total}' }), values: { current: safeCurrent, total: safeTotal } })}</span><span className="tabular-nums text-[var(--sf-text-muted)]">{Math.round(percentage)}%</span></div>
-    <div className="placement-progress-track mt-2 h-2 overflow-hidden rounded-full bg-[var(--sf-surface-muted)]"><div className="h-full w-full origin-left rounded-full bg-[var(--sf-brand)] transition-transform duration-200 motion-reduce:transition-none" style={{ transform: `scaleX(${percentage / 100})` }} /></div>
+  return <div className="placement-progress lesson-progress" role="progressbar" aria-label={i18n._(msg({ id: 'daily.placement.progress-label', message: 'Placement progress' }).id)} aria-valuemin={0} aria-valuemax={safeTotal} aria-valuenow={safeCurrent}>
+    <span className="lesson-segments" aria-hidden="true">{Array.from({ length: safeTotal }, (_, index) => <span key={index} data-segment-state={index < safeCurrent - 1 ? 'complete' : index === safeCurrent - 1 ? 'current' : 'upcoming'} />)}</span>
+    <span className="placement-progress-copy sr-only">{_({ ...msg({ id: 'daily.placement.question-progress', message: 'Question {current} of {total}' }), values: { current: safeCurrent, total: safeTotal } })}</span>
   </div>;
 }
 
-function Question({ model, actions, showLumi }: { readonly model: Extract<PlacementScreenModel, { status: 'question' }>; readonly actions: PlacementScreenActions; readonly showLumi: boolean }) {
+function LumiNote({ show, pose, children }: { readonly show: boolean; readonly pose: 'hint' | 'happy'; readonly children: ReactNode }) {
   const { _ } = useLingui();
+  if (!show) return null;
+  return <aside className="placement-lumi" aria-label={i18n._(msg({ id: 'daily.placement.lumi-label', message: 'Lumi’s note' }).id)}>
+    <Lumi pose={pose} size={168} className="crystal-ornament placement-lumi-figure" />
+    <div className="lesson-lumi-bubble"><p className="lesson-lumi-label">{_(msg({ id: 'daily.placement.lumi-label', message: 'Lumi’s note' }))}</p><p className="lesson-lumi-copy">{children}</p></div>
+  </aside>;
+}
+
+function Headline({ id }: { readonly id?: string }) {
+  const { _ } = useLingui();
+  return <h2 id={id} className="placement-question-title">
+    {_(msg({ id: 'daily.placement.headline.lead', message: 'Find your' }))}{' '}<em className="placement-accent">{_(msg({ id: 'daily.placement.headline.accent', message: 'starting level.' }))}</em>
+  </h2>;
+}
+
+function Question({ model, actions, showLumi }: { readonly model: Extract<PlacementModel, { status: 'question' }>; readonly actions: PlacementActions; readonly showLumi: boolean }) {
+  const { _ } = useLingui();
+  const lumiCopy = _(msg({ id: 'daily.placement.lumi-copy', message: 'There is no score here. Choose what feels most familiar.' }));
   return <>
     <div className="placement-layout">
-      <main className="placement-question-card">
+      <div className="placement-question-card">
         <p className="placement-card-kicker">{_({ ...msg({ id: 'daily.placement.question-progress', message: 'Question {current} of {total}' }), values: { current: model.current, total: model.total } })}</p>
-        <h2 className="placement-question-title">{_(msg({ id: 'daily.placement.intro-title', message: 'Find your starting level.' }))}</h2>
-        <p className="placement-question-note">{_(msg({ id: 'daily.placement.lumi-copy', message: 'There is no score here. Choose what feels most familiar.' }))}</p>
-        <div className="placement-word-block relative">
-          <h3 className="placement-word mt-3 text-balance text-3xl font-black tracking-tight sm:text-5xl" lang={model.promptLanguage}>{model.prompt}</h3>
+        <Headline />
+        <p className="placement-question-note">{_(msg({ id: 'daily.placement.question-note', message: 'No score, no pressure. Your answers only shape where your learning starts.' }))}</p>
+        <div className="placement-word-block">
+          <span className="placement-word-mark" aria-hidden="true"><CircleHelp size={18} /></span>
+          <h3 className="placement-word" lang={model.promptLanguage}>{model.word ?? model.prompt}</h3>
+          {model.word && model.phonetic && <span className="placement-phonetic font-mono">{model.phonetic}</span>}
+          {model.canPlayAudio && actions.playAudio && <button type="button" onClick={actions.playAudio} className="placement-play" aria-label={i18n._(msg({ id: 'daily.lesson.play-audio', message: 'Play audio' }).id)}><Play size={12} fill="currentColor" aria-hidden="true" /></button>}
         </div>
-        <fieldset className="mt-6">
-          <legend className="placement-field-label font-display text-sm font-black uppercase tracking-[.12em] text-[var(--sf-text-muted)]">{_(msg({ id: 'daily.placement.choose-answer', message: 'Choose one answer' }))}</legend>
-          <div className="placement-choice-grid mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <fieldset className="placement-choices">
+          <legend className="placement-field-label">{model.word ? model.prompt : _(msg({ id: 'daily.placement.choose-answer', message: 'Choose one answer' }))}</legend>
+          <div className="placement-choice-grid">
             {model.options.map((option, index) => {
               const selected = model.selectedId === option.id;
-              return <button key={option.id} type="button" lang={option.language} aria-pressed={selected} onClick={() => actions.chooseAnswer(option.id)} className={`${buttonClass} placement-choice min-h-16 text-left ${selected ? 'placement-choice--selected border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_12%,var(--sf-surface))] shadow-[inset_4px_0_0_var(--sf-brand),var(--sf-panel-shadow)]' : ''}`}><span className="placement-choice-index mr-3 inline-flex size-7 items-center justify-center rounded-full border border-current/20 bg-[var(--sf-surface-raised)] text-xs font-black" aria-hidden="true">{String.fromCharCode(65 + index)}</span><span>{option.label}</span></button>;
+              return <button key={option.id} type="button" lang={option.language} aria-pressed={selected} onClick={() => actions.chooseAnswer(option.id)} className="placement-choice lesson-choice" data-selected={selected ? 'true' : 'false'}><span className="lesson-choice-index font-mono" aria-hidden="true">{index + 1}</span><span className="min-w-0">{option.label}</span></button>;
             })}
           </div>
         </fieldset>
-        <div className="placement-action-row mt-6"><button type="button" disabled={!model.selectedId} onClick={actions.submitAnswer} className={`${primaryClass} placement-submit w-full sm:w-auto`}>{_(msg({ id: 'daily.placement.submit', message: 'Submit answer' }))}</button></div>
-      </main>
-      <aside className="placement-guidance crystal-chamfer border border-[var(--sf-border)] surface-glass p-5 shadow-[var(--sf-panel-shadow)]">
-        <p className="placement-guidance-kicker font-display text-xs font-black uppercase tracking-[.14em] text-[var(--sf-brand-text)]">{_(msg({ id: 'daily.placement.diagnostic', message: 'Diagnostic' }))}</p>
-        {showLumi && <Lumi pose="hint" size={104} className="crystal-ornament placement-lumi mx-auto" />}
-        <p className="mt-3 text-lg font-black">{_(msg({ id: 'daily.placement.lumi-label', message: 'Lumi’s note' }))}</p>
-        <p className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]">{_(msg({ id: 'daily.placement.lumi-copy', message: 'There is no score here. Choose what feels most familiar.' }))}</p>
-      </aside>
+        <div className="placement-action-row">
+          <button type="button" disabled={!model.selectedId} onClick={actions.submitAnswer} className="lesson-primary placement-submit">{_(msg({ id: 'daily.placement.submit', message: 'Submit answer' }))}</button>
+          {actions.markUnsure && <button type="button" onClick={actions.markUnsure} className="lesson-link">{_(msg({ id: 'daily.placement.unsure', message: 'I’m not sure' }))}</button>}
+        </div>
+        {!showLumi && <p className="placement-guidance-copy">{lumiCopy}</p>}
+      </div>
+      <PlacementLadder estimate={model.estimate} mode="estimate" />
     </div>
+    <LumiNote show={showLumi} pose="hint">{lumiCopy}</LumiNote>
     <p className="sr-only" role="status">{model.message}</p>
   </>;
 }
@@ -82,50 +153,61 @@ function Question({ model, actions, showLumi }: { readonly model: Extract<Placem
 export function PlacementScreen({ model, actions }: PlacementScreenProps) {
   const { _ } = useLingui();
   const { family } = useTheme();
-  const showLumi = family === 'crystal' && readLumiEnabled();
-  if (model.status === 'loading') return <Shell model={model} actions={actions}><div aria-busy="true" className="placement-status-panel skeleton-sheen mt-6 min-h-52 rounded-[28px] border border-[var(--sf-border)]" role="status"><span className="sr-only">{model.message}</span></div></Shell>;
-  if (model.status === 'intro') return <Shell model={model} actions={actions}>
-    <div className="placement-intro-panel crystal-chamfer relative mt-6 overflow-hidden rounded-[28px] border border-[var(--sf-border)] surface-glass p-6 shadow-[var(--sf-panel-shadow)] sm:p-8">
-      <Compass className="placement-intro-mark absolute right-6 top-6 text-[var(--sf-brand-text)] opacity-30" size={80} aria-hidden="true" />
-      <p className="placement-panel-kicker premium-kicker uppercase tracking-[.14em]">{_(msg({ id: 'daily.placement.diagnostic', message: 'Diagnostic' }))}</p>
-      <h2 className="mt-2 max-w-xl text-3xl font-black tracking-tight">{_(msg({ id: 'daily.placement.intro-title', message: 'Find your starting level.' }))}</h2>
-      <p className="mt-3 max-w-2xl text-pretty leading-7 text-[var(--sf-text-muted)]">{model.message}</p>
-      <p className="placement-count-note mt-4 max-w-2xl rounded-2xl bg-[var(--sf-surface-muted)] p-4 text-sm leading-6"><strong>{_({ ...msg({ id: 'daily.placement.eligible-count', message: '{count, plural, one {# eligible word} other {# eligible words}}' }), values: { count: model.eligibleCount } })}</strong>{' '}{_(msg({ id: 'daily.placement.intro-note', message: 'are available. This check is diagnostic and does not change learning history.' }))}</p>
-      <div className="placement-action-row mt-6 flex flex-wrap gap-3"><button type="button" onClick={actions.start} className={primaryClass}>{_(msg({ id: 'daily.placement.start', message: 'Start placement check' }))}</button><button type="button" onClick={actions.exit} className={buttonClass}>{_(msg({ id: 'daily.placement.back-to-today', message: 'Back to Today' }))}</button></div>
+  const crystal = family === 'crystal';
+  const showLumi = crystal && readLumiEnabled();
+  const backToToday = <button type="button" onClick={actions.exit} className="lesson-secondary">{_(msg({ id: 'daily.placement.back-to-today', message: 'Back to Today' }))}</button>;
+  if (model.status === 'loading') return <Shell model={model} actions={actions} crystal={crystal}><div className="placement-layout"><div aria-busy="true" className="placement-status-panel skeleton-sheen" role="status"><span className="sr-only">{model.message}</span></div></div></Shell>;
+  if (model.status === 'intro') return <Shell model={model} actions={actions} crystal={crystal}>
+    <div className="placement-layout">
+      <div className="placement-question-card placement-intro-panel">
+        <p className="placement-card-kicker">{_(msg({ id: 'daily.placement.diagnostic', message: 'Diagnostic' }))}</p>
+        <Headline />
+        <p className="placement-question-note">{model.message}</p>
+        <p className="placement-count-note"><strong>{_({ ...msg({ id: 'daily.placement.eligible-count', message: '{count, plural, one {# eligible word} other {# eligible words}}' }), values: { count: model.eligibleCount } })}</strong>{' '}{_(msg({ id: 'daily.placement.intro-note', message: 'are available. This check is diagnostic and does not change learning history.' }))}</p>
+        <div className="placement-action-row"><button type="button" onClick={actions.start} className="lesson-primary">{_(msg({ id: 'daily.placement.start', message: 'Start placement check' }))}</button>{backToToday}</div>
+      </div>
+      <PlacementLadder mode="preview" />
+    </div>
+    <LumiNote show={showLumi} pose="hint">{_(msg({ id: 'daily.placement.lumi-copy', message: 'There is no score here. Choose what feels most familiar.' }))}</LumiNote>
+  </Shell>;
+  if (model.status === 'question') return <Shell model={model} actions={actions} crystal={crystal}><Question model={model} actions={actions} showLumi={showLumi} /></Shell>;
+  if (model.status === 'insufficient') return <Shell model={model} actions={actions} crystal={crystal}>
+    <div className="placement-layout">
+      <div className="placement-question-card">
+        <div className="placement-status-panel placement-insufficient" role="status">
+          <CircleHelp size={28} className="placement-status-icon" aria-hidden="true" />
+          <h2 className="placement-status-title">{_(msg({ id: 'daily.placement.insufficient-title', message: 'Not enough evidence' }))}</h2>
+          <p className="placement-question-note">{model.message}</p>
+          <p className="placement-status-count tabular-nums">{_({ ...msg({ id: 'daily.placement.insufficient-count', message: '{eligible} of {required} eligible words' }), values: { eligible: model.eligibleCount, required: model.requiredCount } })}</p>
+          <p className="placement-guidance-copy">{_(msg({ id: 'daily.placement.insufficient-note', message: 'No learning path has been inferred.' }))}</p>
+        </div>
+        <div className="placement-action-row"><button type="button" onClick={actions.openPaths} className="lesson-primary">{_(msg({ id: 'daily.placement.open-paths', message: 'Open Paths' }))}</button>{backToToday}</div>
+      </div>
     </div>
   </Shell>;
-  if (model.status === 'question') return <Shell model={model} actions={actions}><Question model={model} actions={actions} showLumi={showLumi} /></Shell>;
-  if (model.status === 'insufficient') return <Shell model={model} actions={actions}>
-    <div className="placement-status-panel placement-insufficient crystal-chamfer mt-6 rounded-[28px] border border-[var(--sf-reward)] bg-[color-mix(in_srgb,var(--sf-reward)_10%,var(--sf-surface))] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8 [--sf-chamfer-edge:var(--sf-reward)]" role="status">
-      <CircleHelp size={28} className="text-[var(--sf-reward)]" aria-hidden="true" />
-      <h2 className="mt-3 text-2xl font-black tracking-tight">{_(msg({ id: 'daily.placement.insufficient-title', message: 'Not enough evidence' }))}</h2>
-      <p className="mt-3 text-[var(--sf-text-muted)]">{model.message}</p>
-      <p className="mt-4 font-bold tabular-nums">{_({ ...msg({ id: 'daily.placement.insufficient-count', message: '{eligible} of {required} eligible words' }), values: { eligible: model.eligibleCount, required: model.requiredCount } })}</p>
-      <p className="mt-2 text-sm text-[var(--sf-text-muted)]">{_(msg({ id: 'daily.placement.insufficient-note', message: 'No learning path has been inferred.' }))}</p>
-    </div>
-    <div className="placement-action-row mt-5 flex flex-wrap gap-3"><button type="button" onClick={actions.openPaths} className={primaryClass}>{_(msg({ id: 'daily.placement.open-paths', message: 'Open Paths' }))}</button><button type="button" onClick={actions.exit} className={buttonClass}>{_(msg({ id: 'daily.placement.back-to-today', message: 'Back to Today' }))}</button></div>
-  </Shell>;
-  if (model.status === 'error') return <Shell model={model} actions={actions}>
-    <div className="placement-status-panel placement-error crystal-chamfer mt-6 rounded-[28px] border border-[var(--sf-danger)] bg-[color-mix(in_srgb,var(--sf-danger)_10%,var(--sf-surface))] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8 [--sf-chamfer-edge:var(--sf-danger)]" role="alert">
-      <h2 className="text-2xl font-black tracking-tight">{_(msg({ id: 'daily.placement.error-title', message: 'Placement check needs attention' }))}</h2>
-      <p className="mt-3 text-[var(--sf-text-muted)]">{model.message}</p>
-      <button type="button" onClick={actions.retry} className={`${primaryClass} mt-5`}>{_(msg({ id: 'daily.placement.retry', message: 'Try again' }))}</button>
-    </div>
-  </Shell>;
-  return <Shell model={model} actions={actions}>
-    <div className="placement-result-layout mt-6">
-      <div className="placement-result-panel crystal-chamfer relative overflow-hidden rounded-[28px] border border-[var(--sf-border)] surface-glass p-6 shadow-[var(--sf-panel-shadow)] sm:p-8" role="status">
-        <span className="placement-result-flare crystal-flare absolute -right-20 -top-20 size-44 opacity-25" aria-hidden="true" />
-        <div className="relative">
-          <p className="premium-kicker uppercase tracking-[.14em]">{_(msg({ id: 'daily.placement.result-kicker', message: 'Recommended path' }))}</p>
-          <h2 className="placement-result-title mt-2 text-4xl font-black tracking-tight">{model.recommendationLabel}</h2>
-          <div className="placement-result-facts mt-4 flex flex-wrap gap-2 text-sm font-bold"><span className="placement-fact rounded-full bg-[var(--sf-surface-muted)] px-3 py-2">{_(confidenceLabels[model.confidence])}</span><span className="placement-fact rounded-full bg-[var(--sf-surface-muted)] px-3 py-2 tabular-nums">{_({ ...msg({ id: 'daily.placement.correct-count', message: '{correct} of {answered} correct' }), values: { correct: model.correctCount, answered: model.answeredCount } })}</span></div>
-          <p className="mt-5 max-w-2xl text-pretty leading-7">{model.message}</p>
-          <p className="mt-4 max-w-2xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">{_(msg({ id: 'daily.placement.result-note', message: 'This is a diagnostic guide, not an official exam score. It does not change your review history, mastery, XP, or path access.' }))}</p>
+  if (model.status === 'error') return <Shell model={model} actions={actions} crystal={crystal}>
+    <div className="placement-layout">
+      <div className="placement-question-card">
+        <div className="placement-status-panel placement-error" role="alert">
+          <h2 className="placement-status-title">{_(msg({ id: 'daily.placement.error-title', message: 'Placement check needs attention' }))}</h2>
+          <p className="placement-question-note">{model.message}</p>
+          <button type="button" onClick={actions.retry} className="lesson-primary mt-5">{_(msg({ id: 'daily.placement.retry', message: 'Try again' }))}</button>
         </div>
       </div>
-      <div className="placement-result-summary crystal-chamfer mt-4 border border-[var(--sf-border)] surface-glass p-5"><p className="placement-guidance-kicker font-display text-xs font-black uppercase tracking-[.14em] text-[var(--sf-brand-text)]">{_(msg({ id: 'daily.placement.diagnostic', message: 'Diagnostic' }))}</p><p className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]">{_(msg({ id: 'daily.placement.lumi-copy', message: 'There is no score here. Choose what feels most familiar.' }))}</p></div>
     </div>
-    <div className="placement-action-row mt-5 flex flex-wrap gap-3"><button type="button" onClick={actions.openPaths} className={primaryClass}>{_(msg({ id: 'daily.placement.open-paths', message: 'Open Paths' }))}</button><button type="button" onClick={actions.exit} className={buttonClass}>{_(msg({ id: 'daily.placement.back-to-today', message: 'Back to Today' }))}</button></div>
+  </Shell>;
+  return <Shell model={model} actions={actions} crystal={crystal}>
+    <div className="placement-layout placement-result-layout">
+      <div className="placement-question-card placement-result-panel" role="status">
+        <p className="placement-card-kicker">{_(msg({ id: 'daily.placement.result-kicker', message: 'Recommended path' }))}</p>
+        <h2 className="placement-question-title placement-result-title"><em className="placement-accent">{model.recommendationLabel}</em></h2>
+        <div className="placement-result-facts"><span className="placement-fact">{_(confidenceLabels[model.confidence])}</span><span className="placement-fact tabular-nums">{_({ ...msg({ id: 'daily.placement.correct-count', message: '{correct} of {answered} correct' }), values: { correct: model.correctCount, answered: model.answeredCount } })}</span></div>
+        <p className="placement-result-message">{model.message}</p>
+        <p className="placement-guidance-copy">{_(msg({ id: 'daily.placement.result-note', message: 'This is a diagnostic guide, not an official exam score. It does not change your review history, mastery, XP, or path access.' }))}</p>
+        <div className="placement-action-row"><button type="button" onClick={actions.openPaths} className="lesson-primary">{_(msg({ id: 'daily.placement.open-paths', message: 'Open Paths' }))}</button>{backToToday}</div>
+      </div>
+      <PlacementLadder estimate={{ tier: model.recommendation, confidence: model.confidence }} mode="result" />
+    </div>
+    <LumiNote show={showLumi} pose="happy">{_(msg({ id: 'today.placement.result', message: 'Your answers suggest starting here.' }))}</LumiNote>
   </Shell>;
 }
