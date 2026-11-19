@@ -210,7 +210,7 @@
   .profile-gate__checkbox:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 3px; }
   .profile-gate__checkbox[aria-invalid='true'] { border-color: var(--sf-danger); }
 
-  .profile-gate__hint { margin: 2px 0 0; color: var(--sf-brand-text); font-size: 12px; }
+  .profile-gate__hint { margin: 2px 0 0; color: var(--sf-danger); font-size: 12px; }
 
   .profile-gate__link { border-radius: 4px; color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
   .profile-gate__link:hover { color: var(--sf-brand-text); }
