@@ -139,9 +139,9 @@ export function CardAiAssistantModal({
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[110] bg-slate-950/75 backdrop-blur-xs" />
+        <Dialog.Overlay className="fixed inset-0 z-[110] bg-[var(--sf-scrim)] backdrop-blur-xs" />
         <Dialog.Content
-          className="fixed left-1/2 top-1/2 z-[111] max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl outline-none sm:p-7"
+          className="fixed left-1/2 top-1/2 z-[111] max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] p-6 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] sm:p-7 [html[data-theme-family=crystal]_&]:rounded-none [html[data-theme-family=crystal]_&]:crystal-chamfer"
           aria-describedby={`ai-assistant-description-${card.id}`}
           onCloseAutoFocus={event => {
             event.preventDefault();
@@ -150,7 +150,7 @@ export function CardAiAssistantModal({
         >
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
+              <div className="flex size-10 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--sf-brand)_15%,transparent)] text-[var(--sf-brand-text)]">
                 <Bot size={22} />
               </div>
               <div>
@@ -188,9 +188,9 @@ export function CardAiAssistantModal({
                     type="button"
                     disabled={isLoading}
                     onClick={() => void askAi(preset.prompt, _(preset.label.id))}
-                    className="flex items-center gap-1.5 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2 text-xs font-semibold text-[var(--sf-text)] transition-colors hover:border-cyan-400 hover:text-cyan-600 dark:hover:text-cyan-300 disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2 text-xs font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] hover:text-[var(--sf-brand-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:opacity-50 motion-reduce:transition-none"
                   >
-                    <Sparkles size={13} className="text-cyan-500" />
+                    <Sparkles size={13} className="text-[var(--sf-brand-text)]" aria-hidden="true" />
                     <span>{_(preset.label.id)}</span>
                   </button>
                 ))}
@@ -201,20 +201,20 @@ export function CardAiAssistantModal({
               <div className="mt-4 max-h-72 space-y-3 overflow-y-auto" aria-live="polite">
                 {turns.map((turn, index) => (
                   <div key={index} className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-sm">
-                    <p className="mb-2.5 flex items-center gap-1.5 border-b border-[var(--sf-border)] pb-2 text-xs font-bold text-cyan-600 dark:text-cyan-300">
+                    <p className="mb-2.5 flex items-center gap-1.5 border-b border-[var(--sf-border)] pb-2 text-xs font-bold text-[var(--sf-brand-text)]">
                       <span><Trans {...msg({ context: 'flashcard.ai.question', message: 'Q:' })} /></span> {turn.label || turn.question}
                     </p>
                     <p className="whitespace-pre-line text-xs leading-relaxed sm:text-sm">{turn.answer}</p>
                   </div>
                 ))}
                 {(isLoading || error) && <div className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-sm">
-                  <p className="mb-2.5 border-b border-[var(--sf-border)] pb-2 text-xs font-bold text-cyan-600 dark:text-cyan-300">{activeQuestion}</p>
+                  <p className="mb-2.5 border-b border-[var(--sf-border)] pb-2 text-xs font-bold text-[var(--sf-brand-text)]">{activeQuestion}</p>
                   {isLoading ? (
                   <div className="flex items-center gap-2 py-3 text-xs font-bold text-[var(--sf-text-muted)]">
                     <Loader2 size={16} className="animate-spin text-[var(--sf-brand)]" />
                     <span><Trans {...msg({ context: 'flashcard.ai.formulating', message: 'AI is formulating an answer…' })} /></span>
                   </div>
-                  ) : <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">{error}</p>}
+                  ) : <p className="text-xs font-semibold text-[var(--sf-danger)]">{error}</p>}
                 </div>}
               </div>
             )}
@@ -229,12 +229,12 @@ export function CardAiAssistantModal({
                 maxLength={300}
                 placeholder={i18n._(msg({ id: 'flashcard.ai.placeholder', message: 'Ask anything about “{word}”…' }).id, { word: card.word })}
                 disabled={isLoading}
-                className="min-h-11 flex-1 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 text-xs text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none"
+                className="min-h-11 flex-1 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 text-xs text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
               />
               <button
                 type="submit"
                 disabled={!customQuery.trim() || isLoading}
-                className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--sf-brand)] font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 cursor-pointer"
+                className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--sf-brand)] font-extrabold text-[var(--sf-on-brand)] shadow-md transition-[filter,transform] hover:brightness-110 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:opacity-50 cursor-pointer motion-reduce:transition-none"
                 aria-label={_(msg({ id: 'flashcard.ai.send', message: 'Send question' }))}
               >
                 <Send size={16} />

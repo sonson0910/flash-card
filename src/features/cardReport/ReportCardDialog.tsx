@@ -49,7 +49,7 @@ export function ReportCardDialog({ cardId, cardWord, open, onOpenChange }: Repor
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="crystal-starfield fixed inset-0 z-[100] bg-[var(--sf-scrim)] backdrop-blur-sm" />
-        <Dialog.Content className="crystal-chamfer fixed left-1/2 top-1/2 z-[101] w-[min(92vw,30rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-2xl outline-none">
+        <Dialog.Content className="crystal-chamfer fixed left-1/2 top-1/2 z-[101] w-[min(92vw,30rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]">
           <div className="flex items-start justify-between gap-4 border-b border-[var(--sf-border)] px-5 py-5 sm:px-7">
             <div>
               <p className="premium-kicker text-[11px] uppercase tracking-[.14em]"><Trans {...msg({ context: 'cardReport.kicker', message: 'Card quality' })} /></p>
@@ -58,13 +58,13 @@ export function ReportCardDialog({ cardId, cardWord, open, onOpenChange }: Repor
                 <Trans {...msg({ context: 'cardReport.description', message: 'Reporting “{cardWord}”. The card content and your note will be sent to the operator for review.' })} values={{ cardWord }} />
               </Dialog.Description>
             </div>
-            <Dialog.Close aria-label={_(msg({ id: 'cardReport.dialog.close', message: 'Close' }))} className="liquid-control flex size-10 shrink-0 items-center justify-center rounded-full text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
-              <X size={18} />
+            <Dialog.Close aria-label={_(msg({ id: 'cardReport.dialog.close', message: 'Close' }))} className="liquid-control flex size-11 shrink-0 items-center justify-center rounded-full text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+              <X size={18} aria-hidden="true" />
             </Dialog.Close>
           </div>
 
           {submitted ? (
-            <div className="m-5 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm font-semibold text-emerald-700 dark:text-emerald-200 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm" role="status">
+            <div className="m-5 rounded-2xl border border-[color-mix(in_srgb,var(--sf-success)_45%,transparent)] bg-[color-mix(in_srgb,var(--sf-success)_10%,var(--sf-surface))] p-4 text-sm font-semibold text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm" role="status">
               <Trans {...msg({ context: 'cardReport.submitted', message: 'Thank you. Your report has been sent for review.' })} />
             </div>
           ) : (
@@ -75,31 +75,31 @@ export function ReportCardDialog({ cardId, cardWord, open, onOpenChange }: Repor
                   id={`card-report-reason-${cardId}`}
                   value={reason}
                   onChange={event => setReason(event.target.value as CardReportReason)}
-                  className="mt-1.5 min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 text-sm text-[var(--sf-text)] outline-none focus-visible:border-[var(--sf-brand)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--sf-brand)_24%,transparent)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                  className="mt-1.5 min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 text-sm text-[var(--sf-text)] focus-visible:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
                 >
                   {CARD_REPORT_REASONS.map(value => <option key={value} value={value}>{_(reasonLabels[value])}</option>)}
                 </select>
               </label>
               <label className="block text-sm font-bold" htmlFor={`card-report-note-${cardId}`}>
-                <Trans {...msg({ context: 'cardReport.note.label', message: 'Note' })} /> <span className="font-normal text-slate-500">(<Trans {...msg({ context: 'cardReport.note.optional', message: 'optional' })} />)</span>
+                <Trans {...msg({ context: 'cardReport.note.label', message: 'Note' })} /> <span className="font-normal text-[var(--sf-text-muted)]">(<Trans {...msg({ context: 'cardReport.note.optional', message: 'optional' })} />)</span>
                 <textarea
                   id={`card-report-note-${cardId}`}
                   value={note}
                   onChange={event => setNote(event.target.value.slice(0, 280))}
                   maxLength={280}
                   rows={3}
-                  className="mt-1.5 w-full resize-y rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 py-2 text-sm font-normal text-[var(--sf-text)] outline-none focus-visible:border-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                  className="mt-1.5 w-full resize-y rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 py-2 text-sm font-normal text-[var(--sf-text)] focus-visible:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
                   placeholder={_(msg({ id: 'cardReport.note.placeholder', message: 'Briefly describe the issue…' }))}
                 />
                 <span className="mt-1 block text-right text-xs font-normal text-[var(--sf-text-muted)]">{note.length}/280</span>
               </label>
               {error && <p className="rounded-xl border border-[var(--sf-danger)] bg-[color-mix(in_srgb,var(--sf-danger)_10%,var(--sf-surface))] p-3 text-sm font-semibold text-[var(--sf-danger)]" role="alert">{error}</p>}
               <p className="flex gap-2 text-xs text-[var(--sf-text-muted)]">
-                <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+                <AlertTriangle size={15} className="mt-0.5 shrink-0" aria-hidden="true" />
                 <Trans {...msg({ context: 'cardReport.privacy-hint', message: 'Don\'t include personal information or private content in the note.' })} />
               </p>
-              <button type="submit" disabled={submitting} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 font-bold text-[var(--sf-on-brand)] shadow-md hover:bg-[var(--sf-brand-hover)] disabled:opacity-60 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
-                {submitting && <Loader2 size={16} className="animate-spin" />}
+              <button type="submit" disabled={submitting} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 font-bold text-[var(--sf-on-brand)] shadow-md transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:opacity-60 motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+                {submitting && <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />}
                 {submitting ? <Trans {...msg({ context: 'cardReport.submit.busy', message: 'Sending…' })} /> : <Trans {...msg({ context: 'cardReport.submit', message: 'Send report' })} />}
               </button>
             </form>
