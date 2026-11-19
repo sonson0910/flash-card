@@ -10,7 +10,8 @@ const runtime = vi.hoisted(() => ({
   cleanups: [] as Array<() => void>,
 }));
 
-vi.mock('react', () => ({
+vi.mock('react', async importOriginal => ({
+  ...await importOriginal<typeof import('react')>(),
   useState: <T,>(initial: T) => {
     const index = runtime.cursor++;
     if (!(index in runtime.states)) runtime.states[index] = initial;

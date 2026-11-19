@@ -3,13 +3,15 @@
    presentation without changing interaction selectors. */
 .practice-board {
   --practice-line: color-mix(in srgb, var(--sf-border) 86%, transparent);
+}
+.practice-board:not(.practice-stage) {
   position: relative;
   isolation: isolate;
   width: min(100%, 960px);
   min-height: min(720px, 100dvh);
   padding-inline: clamp(12px, 3vw, 32px);
 }
-.practice-board::before {
+.practice-board:not(.practice-stage)::before {
   position: absolute;
   z-index: -1;
   inset: 72px 0 auto;
@@ -21,8 +23,6 @@
   pointer-events: none;
 }
 .practice-board > div:first-child > button:first-child,
-.practice-board--match > div:first-child > button,
-.practice-board--shadowing > div:first-child > button,
 .practice-board--study > div:first-child > button {
   border-color: var(--practice-line);
   box-shadow: inset 0 1px rgb(255 255 255 / .12);
@@ -30,91 +30,6 @@
 .practice-board :is(article, aside, [role='status']) {
   border-color: var(--practice-line);
 }
-.practice-board--quiz [aria-labelledby='quiz-question-heading'] > :not(.absolute),
-.practice-board--spelling [aria-labelledby='spelling-question-heading'] {
-  border-radius: 24px;
-}
-.practice-board--quiz [data-quiz-question-panel] {
-  min-height: 260px;
-  border: 1px solid var(--practice-line);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--sf-surface-glass) 92%, transparent), color-mix(in srgb, var(--sf-brand) 6%, var(--sf-surface)));
-  box-shadow: var(--sf-panel-shadow), inset 0 1px rgb(255 255 255 / .18);
-}
-.practice-board--quiz [aria-labelledby='quiz-question-heading'] button:not([data-color-role]),
-.practice-board--spelling form button:not([data-color-role]) {
-  border-color: var(--practice-line);
-  box-shadow: 0 6px 18px -15px var(--sf-shadow), inset 0 1px rgb(255 255 255 / .12);
-}
-.practice-board--spelling [aria-labelledby='spelling-question-heading'] {
-  min-height: 430px;
-  background: linear-gradient(145deg, var(--sf-surface-glass), color-mix(in srgb, var(--sf-brand) 5%, var(--sf-surface)));
-}
-.practice-board--spelling input {
-  border-color: var(--practice-line) !important;
-  background: color-mix(in srgb, var(--sf-surface) 86%, transparent) !important;
-  box-shadow: inset 0 1px 2px rgb(0 0 0 / .05);
-}
-.practice-board--story article {
-  min-height: 430px;
-  background: linear-gradient(145deg, var(--sf-surface-glass), color-mix(in srgb, var(--sf-brand) 4%, var(--sf-surface)));
-}
-.practice-board--story article p { font-family: var(--sf-font-display, Georgia, serif); }
-.practice-board--story aside { position: sticky; top: 16px; }
-.practice-board--match > div:first-child,
-.practice-board--shadowing > div:first-child { border-bottom: 1px solid var(--practice-line); padding-bottom: 14px; }
-.practice-board--match button[lang] {
-  min-height: 64px;
-  border-radius: 14px;
-  background: linear-gradient(145deg, var(--sf-surface-glass), color-mix(in srgb, var(--sf-surface) 88%, transparent));
-}
-.practice-board--match button[lang]:hover { transform: translateY(-1px); box-shadow: 0 13px 22px -20px var(--sf-shadow); }
-.practice-board--match .rounded-full.border-4 { box-shadow: 0 16px 40px -26px var(--sf-shadow), inset 0 1px rgb(255 255 255 / .18); }
-.practice-board--shadowing h2 { font-family: var(--sf-font-display, Georgia, serif); }
-.practice-board--shadowing [data-shadowing-header] { position: relative; margin-bottom: 40px; }
-.practice-board--shadowing [data-shadowing-progress] {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  display: flex;
-  width: min(18rem, calc(100% - 6rem));
-  gap: 4px;
-  margin-top: 8px;
-  pointer-events: none;
-  transform: translateX(-50%);
-}
-.practice-board--shadowing [data-shadowing-progress] > i {
-  flex: 1;
-  min-width: 0;
-  height: 4px;
-  border-radius: 9999px;
-  background: var(--sf-brand);
-  opacity: .2;
-}
-.practice-board--shadowing [data-shadowing-progress] > i[data-complete] { opacity: 1; }
-@media (min-width: 1024px) {
-  .practice-board--shadowing [data-shadowing-header] { margin-bottom: 28px; }
-  .practice-board--shadowing [data-shadowing-progress] {
-    position: static;
-    flex: 0 1 20rem;
-    width: 100%;
-    max-width: 30vw;
-    min-width: 0;
-    margin: 0 auto;
-    transform: none;
-  }
-}
-:root[data-theme-family='crystal'] .practice-board--shadowing [data-shadowing-progress] > i {
-  height: 10px;
-  border-radius: 0;
-  transform: skewX(-30deg);
-}
-.practice-board--shadowing section > div.border-y {
-  border: 1px solid var(--practice-line);
-  border-radius: 20px;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--sf-surface-glass) 90%, transparent), color-mix(in srgb, var(--sf-brand) 4%, var(--sf-surface)));
-  box-shadow: inset 0 1px rgb(255 255 255 / .12);
-}
-.practice-board--shadowing button.size-20 { box-shadow: 0 16px 36px -15px var(--sf-shadow), 0 0 0 8px color-mix(in srgb, var(--sf-brand) 10%, transparent); }
 .practice-board--study [data-study-header] { max-width: 960px; min-height: 44px; }
 .practice-board--study [data-study-progress] { max-width: 460px; }
 .practice-board--study [data-study-progress-segments] > span { height: 6px; min-width: 0; flex: 1; transform: skewX(-24deg); background: color-mix(in srgb, var(--sf-border) 82%, transparent); }
@@ -124,10 +39,6 @@
 .practice-board--study [data-active-recall] { height: min(clamp(300px, 60dvh, 480px), max(300px, calc(100dvh - 340px))); }
 .practice-board--study [data-study-card] h2 { max-width: 100%; overflow-wrap: anywhere; }
 .practice-board--study [data-study-rating] { max-width: 460px; scroll-margin-bottom: 8px; }
-.practice-rating-board { border-color: var(--practice-line, var(--sf-border)) !important; }
-.practice-rating-board[data-review-state='ready'] { background: color-mix(in srgb, var(--sf-surface-glass) 92%, var(--sf-brand) 8%); }
-.practice-rating-board button { min-width: 0; border-radius: 14px; }
-.practice-rating-board button > span:last-child { overflow-wrap: anywhere; }
 /* Session recap: a full-screen page built to the classic RecapScreen board and the Crystal AnimeRecap
    board. Values come from canvas/src/tokens.js and anime-tokens.js. Small text uses the nearest tone
    that keeps AA on the page where the board's own tone falls just short. */
@@ -426,26 +337,18 @@ button.practice-recap-chip:hover { filter: brightness(1.08); }
 }
 :root[data-motion="reduced"] .practice-recap-confetti { display: none; }
 :root[data-motion="reduced"] .practice-recap-card-foil { animation: none; }
-:root[data-theme-family='crystal'] .practice-board::before {
-  background: radial-gradient(ellipse at 50% 10%, rgb(255 42 77 / .17), transparent 64%), radial-gradient(ellipse at 72% 48%, rgb(68 141 255 / .13), transparent 70%);
+:root[data-theme-family='crystal'] .practice-board:not(.practice-stage)::before {
+  background: radial-gradient(ellipse at 50% 10%, color-mix(in srgb, var(--sf-brand) 17%, transparent), transparent 64%), radial-gradient(ellipse at 72% 48%, rgb(68 141 255 / .13), transparent 70%);
 }
 :root[data-theme-family='crystal'] .practice-board :is(h1, h2, h3) { font-family: var(--sf-font-display, Kanit, sans-serif); font-style: italic; }
-:root[data-theme-family='crystal'] .practice-board :is(article, aside, [aria-labelledby$='question-heading'], .practice-rating-board) { clip-path: var(--sf-chamfer, none); }
+:root[data-theme-family='crystal'] .practice-board:not(.practice-stage) :is(article, aside, [aria-labelledby$='question-heading']),
+:root[data-theme-family='crystal'] .practice-board :is(article, aside, [aria-labelledby$='question-heading']) { clip-path: var(--sf-chamfer, none); }
 @media (max-width: 640px) {
-  .practice-board { min-height: auto; padding-inline: 12px; }
-  .practice-board::before { inset-inline: 0; top: 36px; height: 230px; }
-  .practice-board--quiz [data-quiz-question-panel] { min-height: 210px; }
-  .practice-board--spelling [aria-labelledby='spelling-question-heading'] { min-height: 360px; }
-  .practice-board--story article { min-height: auto; }
-  .practice-board--story aside { position: static; }
-  .practice-board--match button[lang] { min-height: 56px; }
-  .practice-board--shadowing section > div.border-y { border-radius: 16px; }
+  .practice-board:not(.practice-stage) { min-height: auto; padding-inline: 12px; }
+  .practice-board:not(.practice-stage)::before { inset-inline: 0; top: 36px; height: 230px; }
   .practice-board--study [data-study-header] { gap: 10px; }
   .practice-board--study [data-study-progress-segments] > span { height: 4px; }
   .practice-board--study [data-study-recall-mode] { margin-bottom: 12px; }
-  .practice-rating-board { gap: 8px; padding: 10px; margin-bottom: 8px; }
-  .practice-rating-board > p { font-size: 13px; }
-  .practice-rating-board button { min-height: 56px; padding-inline: 4px; font-size: 11px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .practice-board *, .practice-board *::before, .practice-board *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }

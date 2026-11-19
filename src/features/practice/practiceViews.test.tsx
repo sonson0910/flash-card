@@ -134,7 +134,8 @@ const installMinimalReactDom = () => {
     focus() { this.ownerDocument.activeElement = this; }
     click() {
       const propsKey = Object.keys(this).find((key) => key.startsWith("__reactProps$"));
-      (propsKey ? (this as unknown as Record<string, { onClick?: () => void }>)[propsKey]?.onClick : undefined)?.();
+      const event = { currentTarget: this, target: this, preventDefault() {}, stopPropagation() {} };
+      (propsKey ? (this as unknown as Record<string, { onClick?: (event: unknown) => void }>)[propsKey]?.onClick : undefined)?.(event);
     }
     get textContent(): string { return this.childNodes.map((child) => child.textContent).join(""); }
     set textContent(value: string) {
@@ -516,11 +517,37 @@ describe("practice view accessibility contracts", () => {
     expect(questionHtml).toContain('aria-valuemax="1"');
     expect(questionHtml).toContain('aria-valuenow="1"');
     expect(questionHtml).toMatch(
-      /<button[^>]*class="[^"]*min-h-11[^"]*"[^>]*>.*?Exit<\/button>/s,
+      /<button[^>]*class="[^"]*min-h-11[^"]*"[^>]*>.*?Exit(<\/span>)?<\/button>/s,
     );
     expect(resultsHtml).toContain('aria-labelledby="spelling-results-heading"');
     expect(resultsHtml).toContain('id="spelling-results-heading"');
     expect(resultsHtml).toContain('tabindex="-1"');
+  });
+
+  it("mirrors the real spelling input in letter tiles and keeps the textbox as the answer field", () => {
+    const actions = { onInput: vi.fn(), onCheck: vi.fn(), onReveal: vi.fn(), onSkip: vi.fn(), onNext: vi.fn(), onRestart: vi.fn(), onClose: vi.fn() };
+    const typingHtml = renderToStaticMarkup(
+      <SpellingView cards={[quizQuestion.card]} currentIndex={0} input="hel" checked={false} correct={false} score={0} showResults={false} {...actions} />,
+    );
+    const wrongHtml = renderToStaticMarkup(
+      <SpellingView cards={[quizQuestion.card]} currentIndex={0} input="helo" checked correct={false} score={0} showResults={false} {...actions} />,
+    );
+
+    expect(typingHtml).toMatch(/<ol[^>]*aria-hidden="true"[^>]*lang="en"/);
+    expect(typingHtml.match(/data-state="typed"/g)).toHaveLength(3);
+    expect(typingHtml.match(/data-state="empty"/g)).toHaveLength(2);
+    expect(typingHtml).toMatch(/<input(?=[^>]*name="spelling-answer")(?=[^>]*value="hel")(?=[^>]*aria-label="Type the English word")/);
+    expect(typingHtml).toMatch(/<button[^>]*type="submit"[^>]*>Check/);
+    expect(typingHtml).toContain(">Reveal</button>");
+    expect(typingHtml).toContain(">Skip</button>");
+    expect(typingHtml).toContain('aria-pressed="true"');
+    expect(typingHtml).toContain("0.75× slow");
+
+    expect(wrongHtml.match(/data-state="correct"/g)?.length).toBeGreaterThanOrEqual(4);
+    expect(wrongHtml).toMatch(/data-state="missing"[^>]*>l</);
+    expect(wrongHtml).toContain("Missing letter");
+    expect(wrongHtml).not.toContain(">Reveal</button>");
+    expect(wrongHtml).toMatch(/<input[^>]*disabled=""/);
   });
 
   it("renders story generation as busy status and the result with a labelled heading", () => {
@@ -545,6 +572,72 @@ describe("practice view accessibility contracts", () => {
     expect(storyHtml).toContain('Check understanding');
     expect(storyHtml).toContain('Grammar transformation:');
     expect(storyHtml).toContain('This draft stays on this screen and is not submitted.');
+  });
+
+  it("opens a card word's meaning from the story text and the word list, one at a time", async () => {
+    const storyCards: CardData[] = [
+      { id: "context", word: "context", translation: "bối cảnh", explanation: "", phonetic: "/ˈkɒntekst/", partOfSpeech: "noun", emoji: "", category: "General", audioUrl: null, imageUrl: null },
+      { id: "adapt", word: "adapt", translation: "thích nghi", explanation: "", phonetic: "", emoji: "", category: "General", audioUrl: null, imageUrl: null },
+    ];
+    const onReviewCards = vi.fn();
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    type Node = typeof container;
+    const all = (node: Node, match: (element: Node) => boolean): Node[] => [
+      ...(match(node) ? [node] : []),
+      ...node.childNodes.filter((child): child is Node => child.nodeType === 1).flatMap(child => all(child, match)),
+    ];
+    const dialogs = () => all(container, element => element.getAttribute("role") === "dialog");
+    const words = () => all(container, element => element.getAttribute("data-story-word") !== null);
+
+    try {
+      await act(async () => {
+        root.render(
+          <StoryView
+            story={{ story: "Learners adapt to context. Context helps.", translation: "Người học thích nghi với bối cảnh.", language: "en", translationLanguage: "vi", cards: storyCards }}
+            loading={false}
+            onGenerate={vi.fn()}
+            onClose={vi.fn()}
+            onReviewCards={onReviewCards}
+          />,
+        );
+      });
+      // The story text comes first, then one row per card in the word list.
+      const [inTextAdapt, ...rest] = words();
+      const inText = [inTextAdapt!, ...rest.slice(0, 2)];
+      const rows = rest.slice(2);
+      expect(inText.map(word => word.textContent)).toEqual(["adapt", "context", "Context"]);
+      expect(rows.map(row => row.textContent)).toEqual(["contextbối cảnh", "adaptthích nghi"]);
+      expect(inText.every(word => word.getAttribute("aria-expanded") === "false")).toBe(true);
+      expect(dialogs()).toHaveLength(0);
+
+      await act(async () => { inText[1]!.click(); });
+      expect(inText[1]!.getAttribute("aria-expanded")).toBe("true");
+      expect(dialogs()).toHaveLength(1);
+      expect(dialogs()[0]!.getAttribute("aria-label")).toBe("context");
+      expect(dialogs()[0]!.textContent).toContain("bối cảnh");
+      expect(inText[1]!.getAttribute("aria-controls")).toBe(dialogs()[0]!.getAttribute("id"));
+
+      await act(async () => { inText[2]!.click(); });
+      expect(inText[1]!.getAttribute("aria-expanded")).toBe("false");
+      expect(inText[2]!.getAttribute("aria-expanded")).toBe("true");
+      expect(dialogs()).toHaveLength(1);
+
+      await act(async () => { findButton(dialogs()[0]!, "Review now")!.click(); });
+      expect(onReviewCards).toHaveBeenCalledWith([storyCards[0]]);
+
+      await act(async () => { inText[2]!.click(); });
+      expect(inText[2]!.getAttribute("aria-expanded")).toBe("false");
+      expect(dialogs()).toHaveLength(0);
+
+      await act(async () => { rows[1]!.click(); });
+      expect(rows[1]!.getAttribute("aria-expanded")).toBe("true");
+      expect(dialogs().map(dialog => dialog.getAttribute("aria-label"))).toEqual(["adapt"]);
+      expect(dialogs()[0]!.textContent).toContain("thích nghi");
+    } finally {
+      await act(async () => { root.unmount(); });
+      vi.unstubAllGlobals();
+    }
   });
 
   it('checks comprehension and grammar answers locally with simple normalization', () => {

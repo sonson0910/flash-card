@@ -65,6 +65,9 @@ const snapshotCard = (cards: readonly CardData[], snapshot: PracticeSessionCard)
   return { ...card, word: snapshot.word, translation: snapshot.translation };
 };
 
+/** Recorded for a word the learner revealed or skipped without typing anything. */
+export const SPELLING_GIVE_UP_RESPONSE = '\u2014';
+
 const quizQuestionsFromChallenge = (cards: readonly CardData[], challenge: PracticeSessionChallenge): QuizQuestion[] => {
   if (challenge.kind !== 'quiz') throw new Error('The practice session returned the wrong challenge.');
   return challenge.questions.map(question => {
@@ -148,6 +151,7 @@ export function usePracticeGames({
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [answeredCorrectly, setAnsweredCorrectly] = useState<boolean | null>(null);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizOutcomes, setQuizOutcomes] = useState<boolean[]>([]);
   const [showQuizResults, setShowQuizResults] = useState(false);
   const [quizCompletionSaving, setQuizCompletionSaving] = useState(false);
   const [spellingCards, setSpellingCards] = useState<CardData[]>([]);
@@ -156,13 +160,14 @@ export function usePracticeGames({
   const [spellingChecked, setSpellingChecked] = useState(false);
   const [spellingCorrect, setSpellingCorrect] = useState(false);
   const [spellingScore, setSpellingScore] = useState(0);
+  const [spellingOutcomes, setSpellingOutcomes] = useState<boolean[]>([]);
   const [showSpellingResults, setShowSpellingResults] = useState(false);
   const [spellingCompletionSaving, setSpellingCompletionSaving] = useState(false);
   const [languageDrillCards, setLanguageDrillCards] = useState<CardData[]>([]);
   const [currentLanguageDrillIndex, setCurrentLanguageDrillIndex] = useState(0);
   const [languageDrillCorrect, setLanguageDrillCorrect] = useState(0);
   const [showLanguageDrillResults, setShowLanguageDrillResults] = useState(false);
-  const [story, setStory] = useState<((StoryInfo | PlainStoryInfo) & { language: string; translationLanguage: string }) | null>(null);
+  const [story, setStory] = useState<((StoryInfo | PlainStoryInfo) & { language: string; translationLanguage: string; cards: CardData[] }) | null>(null);
   const [storyError, setStoryError] = useState<string | null>(null);
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
   const [isStartingQuiz, setIsStartingQuiz] = useState(false);
@@ -173,6 +178,7 @@ export function usePracticeGames({
     setSelectedAnswer(null);
     setAnsweredCorrectly(null);
     setQuizScore(0);
+    setQuizOutcomes([]);
     setShowQuizResults(false);
     setQuizCompletionSaving(false);
   };
@@ -183,6 +189,7 @@ export function usePracticeGames({
     setSpellingChecked(false);
     setSpellingCorrect(false);
     setSpellingScore(0);
+    setSpellingOutcomes([]);
     setShowSpellingResults(false);
     setSpellingCompletionSaving(false);
   };
@@ -377,6 +384,7 @@ export function usePracticeGames({
     const correct = isQuizAnswerCorrect(question, option);
     setSelectedAnswer(option);
     setAnsweredCorrectly(correct);
+    setQuizOutcomes(previous => { const next = [...previous]; next[currentQuizIndex] = correct; return next; });
     if (correct) {
       setQuizScore(previous => previous + 1);
       playCorrectSound();
@@ -456,6 +464,7 @@ export function usePracticeGames({
     const correct = normalizeAnswer(spellingInput) === normalizeAnswer(card.word);
     setSpellingCorrect(correct);
     setSpellingChecked(true);
+    setSpellingOutcomes(previous => { const next = [...previous]; next[currentSpellingIndex] = correct; return next; });
     if (correct) {
       setSpellingScore(previous => previous + 1);
       playCorrectSound();
@@ -468,6 +477,27 @@ export function usePracticeGames({
       card,
       lifecycle.currentToken(),
     );
+  };
+
+  /** Gives up on the current word: it is recorded as missed and its spelling is shown. */
+  const revealSpelling = () => {
+    if (!isCurrentPracticePair() || !lifecycle.isActive('spelling')) return false;
+    if (spellingChecked || spellingAnswerLockedRef.current) return false;
+    const card = spellingCards[currentSpellingIndex];
+    if (!card) return false;
+    spellingAnswerLockedRef.current = true;
+    setSpellingCorrect(false);
+    setSpellingChecked(true);
+    setSpellingOutcomes(previous => { const next = [...previous]; next[currentSpellingIndex] = false; return next; });
+    // The session needs a non-empty response for every card; this one never matches a word, even
+    // when the learner had typed the right spelling before giving up.
+    if (spellingSessionRef.current) spellingSessionRef.current.responses[card.id] = SPELLING_GIVE_UP_RESPONSE;
+    return true;
+  };
+
+  /** Moves past the current word without an answer; it counts as missed. */
+  const skipSpelling = () => {
+    if (revealSpelling()) nextSpelling();
   };
 
   const nextSpelling = () => {
@@ -533,6 +563,7 @@ export function usePracticeGames({
           ...generated,
           language: targetLanguage,
           translationLanguage,
+          cards: selected,
         };
       },
       () => {
@@ -685,12 +716,12 @@ export function usePracticeGames({
   };
 
   return {
-    quizQuestions, currentQuizIndex, selectedAnswer, answeredCorrectly, quizScore, showQuizResults, quizCompletionSaving,
+    quizQuestions, currentQuizIndex, selectedAnswer, answeredCorrectly, quizScore, quizOutcomes, showQuizResults, quizCompletionSaving,
     spellingCards, currentSpellingIndex, spellingInput, setSpellingInput, spellingChecked, spellingCorrect,
-    spellingScore, showSpellingResults, spellingCompletionSaving, story, storyError, isGeneratingStory,
+    spellingScore, spellingOutcomes, showSpellingResults, spellingCompletionSaving, story, storyError, isGeneratingStory,
     languageDrillCards, currentLanguageDrillIndex, languageDrillCorrect, showLanguageDrillResults,
     isStartingQuiz, isStartingSpelling,
-    startQuiz, selectQuizAnswer, nextQuizQuestion, startSpelling, checkSpelling, nextSpelling, startLanguageDrill, completeLanguageDrill, generateStory, startMatch, restartMatch, completeMatch, startShadowing, clearPairGames,
+    startQuiz, selectQuizAnswer, nextQuizQuestion, startSpelling, checkSpelling, revealSpelling, skipSpelling, nextSpelling, startLanguageDrill, completeLanguageDrill, generateStory, startMatch, restartMatch, completeMatch, startShadowing, clearPairGames,
     clearQuiz, clearSpelling, clearLanguageDrill, clearStory, reset,
   };
 }

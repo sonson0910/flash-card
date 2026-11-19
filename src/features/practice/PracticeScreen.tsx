@@ -91,6 +91,7 @@ export function PracticeScreen({
           selectedAnswer={quiz.selectedAnswer}
           answeredCorrectly={quiz.answeredCorrectly}
           score={quiz.quizScore}
+          outcomes={quiz.quizOutcomes}
           showResults={quiz.showQuizResults}
           savingResult={quiz.quizCompletionSaving}
           onSelect={quiz.selectQuizAnswer}
@@ -112,11 +113,14 @@ export function PracticeScreen({
           checked={quiz.spellingChecked}
           correct={quiz.spellingCorrect}
           score={quiz.spellingScore}
+          outcomes={quiz.spellingOutcomes}
           showResults={quiz.showSpellingResults}
           savingResult={quiz.spellingCompletionSaving}
           onInput={quiz.setSpellingInput}
           onLearnFirst={() => { const card = quiz.spellingCards[quiz.currentSpellingIndex]; if (card) void commands.startStudy({ cards: [card], introduce: true }); }}
           onCheck={quiz.checkSpelling}
+          onReveal={quiz.revealSpelling}
+          onSkip={quiz.skipSpelling}
           onNext={quiz.nextSpelling}
           onRestart={commands.startSpelling}
           onClose={commands.close}
@@ -175,7 +179,7 @@ export function PracticeScreen({
   if (mode === 'story') {
     return (
       <Suspense fallback={<PracticeFallback label={<Trans {...msg({ context: 'practice.loading.story', message: 'Loading story' })} />} />}>
-        <StoryView story={quiz.story} loading={quiz.isGeneratingStory} error={quiz.storyError} onGenerate={commands.generateStory} onClose={commands.close} />
+        <StoryView story={quiz.story} loading={quiz.isGeneratingStory} error={quiz.storyError} onGenerate={commands.generateStory} onClose={commands.close} onReviewCards={cards => void commands.startStudy({ cards })} />
       </Suspense>
     );
   }

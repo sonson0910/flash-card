@@ -85,7 +85,7 @@ vi.mock('../../lib/gemini', () => ({
   generateStoryContext: gemini.generateStoryContext,
 }));
 
-import { shuffleQuizOptions, usePracticeGames } from './usePracticeGames';
+import { SPELLING_GIVE_UP_RESPONSE, shuffleQuizOptions, usePracticeGames } from './usePracticeGames';
 
 const storyResult = {
   title: 'A short story',
@@ -618,6 +618,45 @@ describe('usePracticeGames', () => {
     expect(dependencies.practiceSessionService.complete).not.toHaveBeenCalled();
     expect(render().spellingScore).toBe(1);
     expect(render().currentSpellingIndex).toBe(1);
+  });
+
+  it('records a revealed spelling word as missed even when the typed answer was right', async () => {
+    const { render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    await render().startSpelling();
+    let games = render();
+    games.setSpellingInput(games.spellingCards[0].word);
+    games = render();
+
+    expect(games.revealSpelling()).toBe(true);
+    games = render();
+    expect(games.revealSpelling()).toBe(false);
+    games.checkSpelling({ preventDefault: vi.fn() } as never);
+    games = render();
+
+    expect(games.spellingChecked).toBe(true);
+    expect(games.spellingCorrect).toBe(false);
+    expect(games.spellingScore).toBe(0);
+    expect(games.spellingOutcomes).toEqual([false]);
+    games.nextSpelling();
+    expect(render().currentSpellingIndex).toBe(1);
+  });
+
+  it('skips every spelling word as missed and completes the run with give-up responses', async () => {
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    await render().startSpelling();
+    let games = render();
+    const total = games.spellingCards.length;
+    for (let index = 0; index < total; index += 1) {
+      games.skipSpelling();
+      games = render();
+    }
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(games.spellingScore).toBe(0);
+    expect(games.spellingOutcomes).toEqual(Array.from({ length: total }, () => false));
+    const [request] = dependencies.practiceSessionService.complete.mock.calls[0];
+    expect(Object.values((request.answers as { responses: Record<string, string> }).responses)).toEqual(Array.from({ length: total }, () => SPELLING_GIVE_UP_RESPONSE));
   });
 
   it('forwards the stable completion ID with the server outcome', async () => {
