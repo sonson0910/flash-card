@@ -331,6 +331,12 @@ export type PlacementScreenModel =
       readonly promptLanguage?: string;
       readonly selectedId: string | null;
       readonly options: readonly LessonChoicePresentation[];
+      /** The word being asked about; `prompt` is then the question about it. */
+      readonly word?: string;
+      readonly phonetic?: string;
+      readonly canPlayAudio?: boolean;
+      /** The running estimate; absent until there are enough answers to evaluate. */
+      readonly estimate?: { readonly tier: 'foundation' | 'core' | 'advanced'; readonly confidence: 'low' | 'medium' | 'high' };
     }
   | {
       readonly headingRef?: RefObject<HTMLHeadingElement | null>;
@@ -362,6 +368,9 @@ export interface PlacementScreenActions {
   readonly retry: () => void;
   readonly openPaths: () => void;
   readonly exit: () => void;
+  /** Counts the current question as not known and moves on. */
+  readonly markUnsure?: () => void;
+  readonly playAudio?: () => void;
 }
 
 export interface ProgressScreenModel {

@@ -46,7 +46,7 @@ function TopBar({ model, actions, title }: LessonScreenProps & { readonly title:
   const total = Math.max(1, model.progress.total);
   const current = Math.min(total, Math.max(0, model.progress.current));
   return <>
-    <div className="lesson-topbar">
+    <header className="lesson-topbar">
       <button type="button" onClick={actions.exit} aria-label={i18n._(msg({ id: 'daily.lesson.exit', message: 'Exit lesson' }).id)} className="lesson-round lesson-exit"><X size={18} aria-hidden="true" /></button>
       <div className="lesson-topbar-title min-w-0">{title}</div>
       <div className="lesson-progress" role="progressbar" aria-label={i18n._(msg({ id: 'daily.lesson.progress-label', message: 'Lesson progress' }).id)} aria-valuemin={0} aria-valuemax={total} aria-valuenow={current}>
@@ -55,7 +55,7 @@ function TopBar({ model, actions, title }: LessonScreenProps & { readonly title:
       </div>
       <span className="lesson-count font-mono tabular-nums" aria-hidden="true"><strong>{current}</strong><span> / {total}</span></span>
       <div className="lesson-topbar-actions"><ThemeMenu /></div>
-    </div>
+    </header>
   </>;
 }
 
@@ -275,7 +275,7 @@ export function LessonScreen({ model, actions }: LessonScreenProps) {
     ? <label htmlFor="daily-lesson-answer" className="lesson-instruction">{model.answer.label}</label>
     : <span className="lesson-instruction" aria-hidden="true">{model.answer.kind === 'choice' ? _(msg({ id: 'daily.lesson.choose-answer', message: 'Choose one answer' })) : _(msg({ id: 'daily.lesson.build-sentence', message: 'Build the sentence' }))}</span>;
   const submitButton = answering && <button type="submit" onPointerDown={() => { pointerSubmit.current = true; setTimeout(() => { pointerSubmit.current = false; }, 0); }} disabled={!model.canSubmit} className="lesson-primary lesson-submit">
-    {_(msg({ id: 'daily.lesson.submit', message: 'Submit answer' }))}<kbd className="lesson-kbd font-mono" aria-hidden="true">{_(msg({ id: 'daily.lesson.enter-key', message: 'Enter' }))}</kbd>
+    {_(msg({ id: 'daily.lesson.check', message: 'Check' }))}<kbd className="lesson-kbd font-mono" aria-hidden="true">{_(msg({ id: 'daily.lesson.enter-key', message: 'Enter' }))}</kbd>
   </button>;
   const canAskForGuidance = Boolean(model.card && actions.requestGuidance && (model.status === 'answering' || model.status === 'feedback'));
   const showAudio = model.mode === 'listening' && model.canPlayAudio;

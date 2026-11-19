@@ -507,7 +507,7 @@ describe('LessonScreen', () => {
 
       expect(html).toContain('Take your time. One clear answer at a time.');
       expect(html).not.toContain('data-lumi-pose=');
-      expect(html).toContain('Submit answer');
+      expect(html).toContain('Check<kbd');
       expect(html).toContain('Switch light and dark mode');
     } finally {
       vi.unstubAllGlobals();
@@ -532,7 +532,7 @@ describe('LessonScreen', () => {
     expect(html).toContain('phân bổ');
     expect(html).toContain('I don&#x27;t know this yet');
     expect(html).toContain('I already know it — test me');
-    expect(html).not.toContain('Submit answer');
+    expect(html).not.toContain('Check<kbd');
   });
 
   it('renders introduction audio only when the card has usable audio', () => {
@@ -580,7 +580,7 @@ describe('LessonScreen', () => {
 
     expect(html).toContain('Question 1 of 10');
     expect(html).toContain('aria-pressed="false"');
-    expect(html).toContain('Submit answer');
+    expect(html).toContain('Check<kbd');
     expect(html).not.toContain('Correct answer');
     expect(html).not.toContain('Not quite');
     expect(html).not.toContain('Again');
@@ -718,7 +718,7 @@ describe('PlacementScreen', () => {
 
       expect(html).toContain('There is no score here. Choose what feels most familiar.');
       expect(html).not.toContain('data-lumi-pose=');
-      expect(html).toContain('Submit answer');
+      expect(html).toContain('Next question</button>');
     } finally {
       vi.unstubAllGlobals();
     }

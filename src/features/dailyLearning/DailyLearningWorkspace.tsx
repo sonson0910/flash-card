@@ -1209,25 +1209,51 @@ export default function DailyLearningWorkspace({
       headingRef, status: 'intro', message: _(msg({ id: 'today.placement.intro', message: 'Check your current vocabulary evidence in 6–12 questions.' })),
       eligibleCount: readyCheck?.items.length ?? 0,
     };
-    else model = {
-      headingRef, status: 'question', message: i18n._(msg({ id: 'today.question.progress', message: 'Question {current} of {total}.' }).id, { current: placementIndex + 1, total: readyCheck.items.length }),
-      current: placementIndex + 1, total: readyCheck.items.length, prompt: question.prompt,
-      promptLanguage: promptLanguageFor(question, item.card, i18n.locale), selectedId: placementChoice,
-      options: question.options.map(option => ({ id: option, label: option, language: item.card.translationLanguage || 'vi' })),
+    else {
+      // The running estimate needs as many answers as the final result; before that the ladder says so.
+      const running = evaluatePlacement(readyCheck, placementAnswers);
+      const phonetic = item.card.phonetic?.trim();
+      model = {
+        headingRef, status: 'question', message: i18n._(msg({ id: 'today.question.progress', message: 'Question {current} of {total}.' }).id, { current: placementIndex + 1, total: readyCheck.items.length }),
+        current: placementIndex + 1, total: readyCheck.items.length,
+        word: question.prompt, prompt: _(msg({ id: 'daily.placement.meaning-question', message: 'What does it mean?' })),
+        ...(phonetic ? { phonetic } : {}),
+        canPlayAudio: Boolean(item.card.audioUrl),
+        ...(running.status === 'complete' ? { estimate: { tier: running.recommendation, confidence: running.confidence } } : {}),
+        promptLanguage: promptLanguageFor(question, item.card, i18n.locale), selectedId: placementChoice,
+        options: question.options.map(option => ({ id: option, label: option, language: item.card.translationLanguage || 'vi' })),
+      };
+    }
+    const recordPlacementAnswer = (correct: boolean) => {
+      if (!readyCheck || !item || question?.mode !== 'recognition') return;
+      cancelLessonAudio();
+      const answers = { ...placementAnswers, [item.card.id]: correct };
+      setPlacementAnswers(answers);
+      if (placementIndex + 1 >= readyCheck.items.length) setPlacementResult(evaluatePlacement(readyCheck, answers));
+      else { setPlacementIndex(index => index + 1); setPlacementChoice(null); }
+      setHeadingFocusIntent(intent => intent + 1);
     };
     return <Suspense fallback={interactionFallback}><PlacementScreen model={model} actions={{
       start: () => { setPlacementCheck(availablePlacement); setPlacementIndex(0); setPlacementChoice(null); setPlacementAnswers({}); setPlacementResult(null); setHeadingFocusIntent(intent => intent + 1); },
       chooseAnswer: setPlacementChoice,
       submitAnswer: () => {
-        if (!readyCheck || !item || !placementChoice || question?.mode !== 'recognition') return;
-        const answers = { ...placementAnswers, [item.card.id]: placementChoice === question.answer };
-        setPlacementAnswers(answers);
-        if (placementIndex + 1 >= readyCheck.items.length) setPlacementResult(evaluatePlacement(readyCheck, answers));
-        else { setPlacementIndex(index => index + 1); setPlacementChoice(null); }
-        setHeadingFocusIntent(intent => intent + 1);
+        if (!placementChoice || question?.mode !== 'recognition') return;
+        recordPlacementAnswer(placementChoice === question.answer);
+      },
+      // An unsure answer counts as a word the learner does not know yet.
+      markUnsure: () => recordPlacementAnswer(false),
+      playAudio: () => {
+        cancelLessonAudio();
+        const url = item?.card.audioUrl;
+        if (!url) return;
+        const audio = new Audio(url);
+        lessonAudioRef.current = audio;
+        void audio.play().catch(() => {
+          if (lessonAudioRef.current === audio) lessonAudioRef.current = null;
+        });
       },
       retry: () => void load(), openPaths,
-      exit: () => { setPlacementIndex(-1); setPlacementResult(null); navigateLesson(null); },
+      exit: () => { cancelLessonAudio(); setPlacementIndex(-1); setPlacementResult(null); navigateLesson(null); },
     }} /></Suspense>;
   }
 

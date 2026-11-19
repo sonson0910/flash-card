@@ -115,7 +115,7 @@ test(dailyPlanTest, async ({ page, signIn }) => {
   await expect(page.getByText('Correct answer:')).toHaveCount(0);
 
   await page.getByRole('group', { name: 'Choose one answer' }).getByRole('button').first().click();
-  await page.getByRole('button', { name: 'Submit answer' }).click();
+  await page.getByRole('button', { name: 'Check', exact: true }).click();
   await expect(page.getByText('Correct answer:')).toBeVisible();
   await page.getByRole('button', { name: /Good/ }).press('Enter');
   // Advancing waits on the reviewCardV2 callable round-trip (no optimistic
@@ -230,11 +230,11 @@ test('placement is diagnostic and Progress is a real URL-backed lazy workspace',
   await expect(page.getByText(/does not change learning history/i)).toBeVisible();
   await page.getByRole('button', { name: 'Start placement check' }).click();
   await expect(page.getByRole('button', { name: 'Exit placement check' })).toBeVisible();
-  await expect(page.getByRole('group', { name: 'Choose one answer' }).getByRole('button').first()).toHaveAttribute('lang', 'vi');
+  await expect(page.getByRole('group', { name: 'What does it mean?' }).getByRole('button').first()).toHaveAttribute('lang', 'vi');
   const placementAxe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(placementAxe.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([]);
-  await page.getByRole('group', { name: 'Choose one answer' }).getByRole('button').first().click();
-  await page.getByRole('button', { name: 'Submit answer' }).click();
+  await page.getByRole('group', { name: 'What does it mean?' }).getByRole('button').first().click();
+  await page.getByRole('button', { name: 'Next question', exact: true }).click();
   await expect(page.getByRole('progressbar', { name: 'Placement progress' }).getByText('Question 2 of 12', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { level: 1, name: 'Placement check' })).toBeFocused();
 
