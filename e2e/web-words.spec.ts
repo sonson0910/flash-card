@@ -119,7 +119,8 @@ test.describe('WebWords page', () => {
     await expect(strip).toContainText(/saved words? ·/);
 
     await strip.getByRole('button', { name: 'See all with their sentences' }).click();
-    await expect(page).toHaveURL(/[?&]view=web-words&from=today(?:&|$)/);
+    await expect(page).toHaveURL(/[?&]view=web-words(?:&|$)/);
+    await expect(page).toHaveURL(/[?&]from=today(?:&|$)/);
     const workspace = page.getByRole('region', { name: 'Web words' });
     await expect(workspace).toBeVisible();
     await expect(page.locator('nav.app-navigation [aria-current="page"]')).toHaveText('Vocabulary');
@@ -179,7 +180,7 @@ test.describe('WebWords page', () => {
       .toEqual(expectedFreshLogicalIds);
   });
 
-  test('puts a newly added word at the front of an already-started session\'s new stage, never duplicating it', async ({
+  test('queues a word added during a started session without touching it, never duplicating it, and leads the next session with it', async ({
     page, seedCards, signIn, blockExternalNetwork, testUser,
   }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -206,29 +207,33 @@ test.describe('WebWords page', () => {
         startedAt: new Date().toISOString(),
       }));
     }, { sessionKey: `sonflash:daily-session:${testUser.uid}`, ownerId: testUser.uid });
-    // Older links layered `webWords=1` on another view; they still open the web words view.
+    // Older links layered `webWords=1` on another view; they now open the web words view in its
+    // place, so the session is not mounted while the learner picks words.
     await page.goto('/?view=today&lesson=session&webWords=1&locale=en');
     const workspace = page.getByRole('region', { name: 'Web words' });
-    await expect(workspace).toBeVisible();
     await expect(workspace.getByRole('heading', { level: 1, name: 'Words you met on the web' })).toBeVisible();
     await workspace.getByRole('checkbox', { name: /lucid/i }).check();
     await workspace.getByRole('button', { name: 'Add to today' }).click();
-    await expect(workspace.getByText("Added to today's new words.")).toBeVisible();
+    await expect(workspace.getByText(/were not added to today's new-word stage/i)).toBeVisible();
 
-    const pointer = await readSessionPointer(page, testUser.uid);
-    expect(pointer?.freshLogicalIds).toHaveLength(2);
-    expect(pointer?.freshLogicalIds[0]).toBe('lucid');
-    expect(pointer?.freshLogicalIds[1]).toBe('already-fresh');
+    const pendingKey = `sonflash:pending-fresh-priority:${testUser.uid}:en:vi`;
+    const readPending = () => page.evaluate(key => JSON.parse(sessionStorage.getItem(key) ?? '[]') as string[], pendingKey);
+    expect((await readSessionPointer(page, testUser.uid))?.freshLogicalIds).toEqual(['already-fresh']);
+    expect(await readPending()).toEqual(['lucid']);
 
-    // Adding the same word again must not duplicate its entry in the pointer.
+    // Adding the same word again must not duplicate its queue entry.
     await workspace.getByRole('checkbox', { name: /lucid/i }).check();
     await workspace.getByRole('button', { name: 'Add to today' }).click();
-    const pointerAfterRepeat = await readSessionPointer(page, testUser.uid);
-    expect(pointerAfterRepeat?.freshLogicalIds).toHaveLength(2);
+    expect(await readPending()).toEqual(['lucid']);
     await page.keyboard.press('Escape');
     await expect(workspace).toBeHidden();
     await expect(page).toHaveURL(/[?&]view=today(?:&|$)/);
     await expect(page).not.toHaveURL(/webWords=|lesson=/);
+
+    // The next session leads its new-word stage with the queued word, once.
+    await page.getByRole('button', { name: "Start today's session" }).click();
+    await expect.poll(() => readSessionPointer(page, testUser.uid).then(pointer => pointer?.freshLogicalIds))
+      .toEqual(['lucid', 'already-fresh']);
   });
 
   test('opens from a link as a sub-view of Vocabulary', async ({ page, seedCards, signIn, blockExternalNetwork }) => {
