@@ -188,14 +188,19 @@ for (const theme of [
         const bounds = element.getBoundingClientRect();
         const row = element.closest('label')!.getBoundingClientRect();
         const target = document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
-        return { width: bounds.width, height: bounds.height, rowHeight: row.height, reachable: target === element, appearance: getComputedStyle(element).appearance };
+        return { width: bounds.width, height: bounds.height, rowHeight: row.height, reachable: target === element, appearance: getComputedStyle(element).appearance, compact: Boolean(element.closest('.ss-sound-tile')) };
       });
       expect(switchGeometry.rowHeight).toBeGreaterThanOrEqual(44);
       expect(switchGeometry.reachable).toBe(true);
       expect(switchGeometry.appearance).toBe('none');
       if (theme.family === 'classic') {
-        expect(switchGeometry.width).toBe(42);
-        expect(switchGeometry.height).toBe(24);
+        // Study-sound tiles use the board's compact track; preference rows keep the full one.
+        expect([switchGeometry.width, switchGeometry.height]).toEqual(switchGeometry.compact ? [36, 20] : [42, 24]);
+        const rowSwitch = await stage.getByRole('switch').first().evaluate(element => {
+          const bounds = element.getBoundingClientRect();
+          return [bounds.width, bounds.height];
+        });
+        expect(rowSwitch).toEqual([42, 24]);
       }
       await page.screenshot({ path: test.info().outputPath(`settings-controls-${theme.family}-${theme.mode}-${locale}-${width}.png`) });
       const result = await new AxeBuilder({ page }).withRules(['color-contrast', 'aria-required-attr', 'button-name', 'landmark-one-main']).analyze();

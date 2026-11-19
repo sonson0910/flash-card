@@ -171,7 +171,10 @@ for (const theme of themes) for (const viewport of viewports) {
         expect(activeCourseBox.y, 'active course stays above course preferences on desktop').toBeLessThan(coursePreferencesBox.y);
       } else {
         expect(activeCourseBox.y, 'active course stays before language controls on mobile').toBeLessThan(courseLanguageBox.y);
-        expect(courseLanguageBox.y, 'language controls stay before preferences on mobile').toBeLessThan(coursePreferencesBox.y);
+        // Course preferences live inside the active course card, so the card carries them ahead of the language controls.
+        expect(coursePreferencesBox.y, 'course preferences stay inside the active course card on mobile').toBeGreaterThan(activeCourseBox.y);
+        expect(coursePreferencesBox.y + coursePreferencesBox.height, 'course preferences stay inside the active course card on mobile').toBeLessThanOrEqual(activeCourseBox.y + activeCourseBox.height);
+        expect(coursePreferencesBox.y + coursePreferencesBox.height, 'course preferences come before the language controls on mobile').toBeLessThanOrEqual(courseLanguageBox.y);
       }
     }
     for (const control of await settings.locator('select').all()) {
