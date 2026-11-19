@@ -17,17 +17,30 @@ export interface AccountProfileGate {
   readonly retry: () => void;
 }
 
+export interface AccountProfileGateOptions {
+  /**
+   * True while Auth has lost the session but the app keeps the owner. The owner-only reads are denied
+   * then, so the gate stops listening and starts again once the learner has signed in again.
+   */
+  readonly sessionLost?: boolean;
+  readonly port?: AccountProfilePort | null;
+}
+
+/** How long the gate waits for a confirmed answer before it offers a retry instead of an endless loading panel. */
+export const ACCOUNT_PROFILE_ANSWER_TIMEOUT_MS = 15_000;
+
 type OwnedState =
   | { readonly ownerId: string; readonly kind: 'state'; readonly state: AccountProfileState }
   | { readonly ownerId: string; readonly kind: 'error' };
 
-// Clients never delete the record or the marker, so once the server decided, a late snapshot that still
-// shows neither document (for example a metadata-only change racing the callable) must not reopen the form.
+const isDecided = (owned: OwnedState): boolean => owned.kind === 'state' && owned.state.status !== 'required';
+
+// Clients never delete the record or the marker, so once the server decided for this owner nothing the
+// listener reports later may take the decision back: neither a late snapshot that still shows neither
+// document (a metadata-only change racing the callable) nor a read error (Auth dropping the session
+// denies the owner-only reads while the shell keeps the owner and offers to sign in again).
 const keepDecided = (previous: OwnedState | null, next: OwnedState): OwnedState =>
-  previous?.ownerId === next.ownerId && previous.kind === 'state' && previous.state.status !== 'required'
-    && next.kind === 'state' && next.state.status === 'required'
-    ? previous
-    : next;
+  previous?.ownerId === next.ownerId && isDecided(previous) && !isDecided(next) ? previous : next;
 
 let defaultPort: AccountProfilePort | null = null;
 const firebasePort = (): AccountProfilePort | null => {
@@ -38,38 +51,57 @@ const firebasePort = (): AccountProfilePort | null => {
 
 /**
  * Follows the signed-in owner's account profile. The state is keyed by owner so a switch of account
- * never shows the previous owner's profile or restriction, even for one render.
+ * never shows the previous owner's profile or restriction, even for one render, and it is forgotten
+ * whenever the owner changes, sign-out included, so the next sign-in reads the server again.
  */
 export function useAccountProfileGate(
   ownerId: string | null,
-  port: AccountProfilePort | null = firebasePort(),
+  { sessionLost = false, port = firebasePort() }: AccountProfileGateOptions = {},
 ): AccountProfileGate {
   const [owned, setOwned] = useState<OwnedState | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const ownerRef = useRef(ownerId);
-  ownerRef.current = ownerId;
+  // A new object for every owner change, so a request sent for an earlier sign-in of the same
+  // account cannot publish into a later one.
+  const scopeRef = useRef({ ownerId });
+  if (scopeRef.current.ownerId !== ownerId) scopeRef.current = { ownerId };
+
+  useEffect(() => () => setOwned(null), [ownerId]);
 
   useEffect(() => {
-    if (!ownerId) return undefined;
+    if (!ownerId || sessionLost) return undefined;
     if (!port) {
       setOwned({ ownerId, kind: 'error' });
       return undefined;
     }
-    return port.subscribe(
+    const timer = setTimeout(() => {
+      setOwned(previous => previous?.ownerId === ownerId ? previous : { ownerId, kind: 'error' });
+    }, ACCOUNT_PROFILE_ANSWER_TIMEOUT_MS);
+    const stop = port.subscribe(
       ownerId,
-      state => setOwned(previous => keepDecided(previous, { ownerId, kind: 'state', state })),
-      () => setOwned({ ownerId, kind: 'error' }),
+      state => {
+        clearTimeout(timer);
+        setOwned(previous => keepDecided(previous, { ownerId, kind: 'state', state }));
+      },
+      () => {
+        clearTimeout(timer);
+        setOwned(previous => keepDecided(previous, { ownerId, kind: 'error' }));
+      },
     );
-  }, [attempt, ownerId, port]);
+    return () => {
+      clearTimeout(timer);
+      stop();
+    };
+  }, [attempt, ownerId, port, sessionLost]);
 
   const submit = useCallback<AccountProfileGate['submit']>(async request => {
-    const requestOwner = ownerRef.current;
+    const scope = scopeRef.current;
+    const requestOwner = scope.ownerId;
     if (!port || !requestOwner) throw new Error('Sign in is required.');
     const response = await port.complete({ ...request, ownerId: requestOwner });
     const state: AccountProfileState = response.status === 'complete'
       ? { status: 'complete', profile: response.profile }
       : { status: 'restricted', restrictedAt: response.restrictedAt };
-    if (ownerRef.current === requestOwner) {
+    if (scopeRef.current === scope) {
       setOwned(previous => keepDecided(previous, { ownerId: requestOwner, kind: 'state', state }));
     }
     return state;

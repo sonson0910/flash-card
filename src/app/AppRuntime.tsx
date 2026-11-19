@@ -164,7 +164,9 @@ export default function AppRuntime({
   const identityOwnerRef = useRef(identityOwnerId);
   identityOwnerRef.current = identityOwnerId;
   // A signed-in owner reaches the app only after the server holds a completed account profile.
-  const accountProfile = useAccountProfileGate(identityOwnerId);
+  const accountProfile = useAccountProfileGate(identityOwnerId, {
+    sessionLost: identitySession.authenticationRecovery === 'session-lost',
+  });
   const [storedError, setStoredError] = useState<string | null>(null);
   const [error, setError] = useOwnerScopedMessage(identityOwnerId, identityOwnerRef, storedError, setStoredError);
   const [isRetryingSync, setIsRetryingSync] = useState(false);

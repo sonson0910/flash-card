@@ -6,7 +6,7 @@ import type { AccountProfileError, AccountProfilePort, AccountProfileState } fro
 
 vi.mock('../../lib/firebase', () => ({ app: null, db: null, getSonFlashFunctions: vi.fn() }));
 
-const { useAccountProfileGate } = await import('./useAccountProfileGate');
+const { ACCOUNT_PROFILE_ANSWER_TIMEOUT_MS, useAccountProfileGate } = await import('./useAccountProfileGate');
 
 const profile = {
   birthYear: 1990,
@@ -28,15 +28,17 @@ type Listener = { onState: (state: AccountProfileState) => void; onError: (error
 
 const fakePort = () => {
   const listeners = new Map<string, Listener>();
+  const subscriptions: string[] = [];
   const port: AccountProfilePort & { complete: ReturnType<typeof vi.fn> } = {
     subscribe: (ownerId, onState, onError) => {
       const listener = { onState, onError, stopped: false };
       listeners.set(ownerId, listener);
+      subscriptions.push(ownerId);
       return () => { listener.stopped = true; };
     },
     complete: vi.fn(async () => ({ status: 'complete' as const, profile })),
   };
-  return { port, listeners };
+  return { port, listeners, subscriptions };
 };
 
 const installMinimalReactDom = () => {
@@ -63,18 +65,20 @@ let root: Root | null = null;
 afterEach(() => {
   act(() => root?.unmount());
   root = null;
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
 const mountGate = async (ownerId: string | null, port: AccountProfilePort | null) => {
   const seen: { current: ReturnType<typeof useAccountProfileGate> | null } = { current: null };
-  function Probe({ owner }: { owner: string | null }) {
-    seen.current = useAccountProfileGate(owner, port);
+  function Probe({ owner, sessionLost }: { owner: string | null; sessionLost: boolean }) {
+    seen.current = useAccountProfileGate(owner, { port, sessionLost });
     return null;
   }
   root = createRoot(installMinimalReactDom());
-  await act(async () => root!.render(<Probe owner={ownerId} />));
-  const rerender = async (owner: string | null) => act(async () => root!.render(<Probe owner={owner} />));
+  await act(async () => root!.render(<Probe owner={ownerId} sessionLost={false} />));
+  const rerender = async (owner: string | null, sessionLost = false) =>
+    act(async () => root!.render(<Probe owner={owner} sessionLost={sessionLost} />));
   return { seen, rerender };
 };
 
@@ -144,5 +148,95 @@ describe('useAccountProfileGate', () => {
   it('fails closed when cloud access is not configured', async () => {
     const { seen } = await mountGate('owner-a', null);
     expect(seen.current?.status).toBe('error');
+  });
+
+  it('keeps a completed profile when the listener later fails, as when Auth drops the session', async () => {
+    const { port, listeners } = fakePort();
+    const { seen } = await mountGate('owner-a', port);
+    await act(async () => listeners.get('owner-a')!.onState({ status: 'complete', profile }));
+
+    await act(async () => listeners.get('owner-a')!.onError(new Error('permission-denied') as AccountProfileError));
+    expect(seen.current).toMatchObject({ status: 'complete', profile });
+  });
+
+  it('keeps a restriction when the listener later fails', async () => {
+    const { port, listeners } = fakePort();
+    const { seen } = await mountGate('owner-a', port);
+    await act(async () => listeners.get('owner-a')!.onState({ status: 'restricted', restrictedAt: '2026-11-19T08:30:00.000Z' }));
+
+    await act(async () => listeners.get('owner-a')!.onError(new Error('permission-denied') as AccountProfileError));
+    expect(seen.current).toMatchObject({ status: 'restricted', restrictedAt: '2026-11-19T08:30:00.000Z' });
+  });
+
+  it('stops listening while the session is lost and listens again after the learner signs in again', async () => {
+    const { port, listeners, subscriptions } = fakePort();
+    const { seen, rerender } = await mountGate('owner-a', port);
+    const first = listeners.get('owner-a')!;
+    await act(async () => first.onState({ status: 'complete', profile }));
+
+    await rerender('owner-a', true);
+    expect(first.stopped).toBe(true);
+    expect(subscriptions).toEqual(['owner-a']);
+    expect(seen.current?.status).toBe('complete');
+
+    await rerender('owner-a', false);
+    expect(subscriptions).toEqual(['owner-a', 'owner-a']);
+    const second = listeners.get('owner-a')!;
+    expect(second).not.toBe(first);
+    expect(second.stopped).toBe(false);
+    expect(seen.current?.status).toBe('complete');
+  });
+
+  it('reads the server again after sign-out, so a cleared restriction no longer shows', async () => {
+    const { port, listeners } = fakePort();
+    const { seen, rerender } = await mountGate('owner-a', port);
+    await act(async () => listeners.get('owner-a')!.onState({ status: 'restricted', restrictedAt: '2026-11-19T08:30:00.000Z' }));
+
+    await rerender(null);
+    expect(seen.current?.status).toBe('signed-out');
+    await rerender('owner-a');
+    expect(seen.current?.status).toBe('loading');
+    await act(async () => listeners.get('owner-a')!.onState({ status: 'required' }));
+    expect(seen.current?.status).toBe('required');
+  });
+
+  it('does not publish a submit result into a later sign-in of the same account', async () => {
+    const { port, listeners } = fakePort();
+    let resolve!: (value: unknown) => void;
+    port.complete.mockImplementationOnce(() => new Promise(next => { resolve = next; }));
+    const { seen, rerender } = await mountGate('owner-a', port);
+    await act(async () => listeners.get('owner-a')!.onState({ status: 'required' }));
+    let pending!: Promise<unknown>;
+    await act(async () => { pending = seen.current!.submit({ ...submission, birthYear: 2012 }); });
+
+    await rerender(null);
+    await rerender('owner-a');
+    await act(async () => {
+      resolve({ status: 'restricted', restrictedAt: '2026-11-19T08:30:00.000Z' });
+      await pending;
+    });
+    expect(seen.current?.status).toBe('loading');
+  });
+
+  it('offers a retry when no confirmed answer arrives in time, and a later answer still wins', async () => {
+    vi.useFakeTimers();
+    const { port, listeners } = fakePort();
+    const { seen } = await mountGate('owner-a', port);
+    await act(async () => { vi.advanceTimersByTime(ACCOUNT_PROFILE_ANSWER_TIMEOUT_MS - 1); });
+    expect(seen.current?.status).toBe('loading');
+    await act(async () => { vi.advanceTimersByTime(1); });
+    expect(seen.current?.status).toBe('error');
+
+    await act(async () => listeners.get('owner-a')!.onState({ status: 'complete', profile }));
+    expect(seen.current?.status).toBe('complete');
+  });
+
+  it('never times out once an answer arrived', async () => {
+    vi.useFakeTimers();
+    const { port, listeners } = fakePort();
+    const { seen } = await mountGate('owner-a', port);
+    await act(async () => listeners.get('owner-a')!.onState({ status: 'required' }));
+    await act(async () => { vi.advanceTimersByTime(ACCOUNT_PROFILE_ANSWER_TIMEOUT_MS * 2); });
+    expect(seen.current?.status).toBe('required');
   });
 });
