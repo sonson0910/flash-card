@@ -210,4 +210,4 @@ Card creation now always writes an explicit `language` field so course-scoped qu
 
 ### Offline typography
 
-The immutable offline shell retains its 4 MiB ceiling. CJK course web fonts load on demand and are excluded from eager shell caching; offline Japanese, Korean and Chinese text uses installed system glyphs. The collector retains all lesson code and translations; exceeding the ceiling fails the build.
+The immutable offline shell has a 6 MiB ceiling (raised from 4 MiB on 2026-11-19, when the four-theme redesign added about 0.5 MiB of styles). CJK course web fonts load on demand and are excluded from eager shell caching; offline Japanese, Korean and Chinese text uses installed system glyphs. The collector retains all lesson code and translations; exceeding the ceiling fails the build.

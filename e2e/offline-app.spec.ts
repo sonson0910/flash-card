@@ -125,7 +125,7 @@ test('a prepared shell recovers the cached learner workspace during an app-serve
     await signIn(page, `${fixture.origin}/?view=library&locale=en`);
     await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
     await expect(page.getByText('resilient', { exact: true }).first()).toBeVisible();
-    await expect(page.getByText('app files, up to 4 MiB', { exact: true })).toBeVisible();
+    await expect(page.getByText('app files, up to 6 MiB', { exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: 'Prepare offline', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Available offline', exact: true })).toBeDisabled();

@@ -149,7 +149,7 @@ describe('OfflineReadiness', () => {
     const html = renderToStaticMarkup(<OfflineReadiness production serviceWorker={undefined} />);
 
     expect(html).toContain('Prepare offline');
-    expect(html).toContain('app files, up to 4 MiB');
+    expect(html).toContain('app files, up to 6 MiB');
     expect(html).toContain('aria-live="polite"');
     expect(html).toContain('aria-busy="false"');
   });
@@ -432,7 +432,7 @@ describe('OfflineReadiness', () => {
     />);
 
     expect(html).toContain('Available offline');
-    expect(html).not.toContain('app files, up to 4 MiB');
+    expect(html).not.toContain('app files, up to 6 MiB');
   });
 
   it('advises reopening after a waiting update instead of forcing activation', () => {
