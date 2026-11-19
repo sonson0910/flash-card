@@ -62,6 +62,12 @@ describe('SessionRecapModal', () => {
     expect(html).toContain('Moved from Learning to Mastered');
     expect(html).toContain('+1 level');
     expect(html).toContain('aria-label="10 remembered, 2 to revisit"');
+    // Each result group in the definition list holds only dt and dd elements.
+    const groups = html.match(/<div class="practice-recap-stat"[^>]*>.*?<\/dd><\/div>/g) ?? [];
+    expect(groups).toHaveLength(4);
+    for (const group of groups) {
+      expect(group.replace(/<dd[^>]*>.*?<\/dd>|<dt[^>]*>.*?<\/dt>/g, '')).toMatch(/^<div[^>]*><\/div>$/);
+    }
     expect(html).toContain('+1 today');
     expect(html).toContain('Tomorrow');
     expect(html).toContain('Checking cards due…');

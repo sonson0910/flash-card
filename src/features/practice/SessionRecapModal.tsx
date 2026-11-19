@@ -137,7 +137,8 @@ function StatTile({ label, value, children, tone }: { label: ReactNode; value: R
     <div className="practice-recap-stat" data-tone={tone}>
       <dt>{label}</dt>
       <dd className="practice-recap-stat-value">{value}</dd>
-      {children}
+      {/* A definition list group may only hold dt and dd, so the detail line or meter sits in its own dd. */}
+      {children && <dd>{children}</dd>}
     </div>
   );
 }
