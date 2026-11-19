@@ -309,11 +309,13 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   background: linear-gradient(180deg, var(--sf-scrim), transparent 35%, transparent 60%, color-mix(in srgb, var(--sf-brand-hover) 35%, transparent));
 }
 
+/* Long categories wrap inside the chip rather than being cut off. */
 .flashcard-category-chip {
-  height: 30px;
-  padding: 0 12px 0 10px;
+  min-height: 30px;
+  padding: 6px 12px 6px 10px;
   border: 1px solid color-mix(in srgb, var(--sf-text) 16%, transparent);
-  border-radius: 999px;
+  border-radius: 15px;
+  line-height: 16px;
   background: color-mix(in srgb, var(--sf-surface) 58%, transparent);
   color: var(--sf-text);
   font-size: 12px;
@@ -334,16 +336,24 @@ html[data-motion="reduced"] .flashcard-hover-wings {
 /* Cards without a photo: a short header for the chip or ribbon, and the
    first glyph of the headword as a faint watermark behind the text. */
 .flashcard-face[data-card-look] .flashcard-art[data-card-art-kind="glyph"] {
-  height: 72px;
+  height: auto;
+  min-height: 72px;
   margin: 0;
   border-radius: 0;
   clip-path: none;
   overflow: visible;
 }
 
+/* The empty picture layer would take the header's full height in the flex column. */
 .flashcard-face[data-card-look] .flashcard-art[data-card-art-kind="glyph"] .flashcard-art-image {
-  -webkit-mask-image: none;
-  mask-image: none;
+  display: none;
+}
+
+.flashcard-face[data-card-look] .flashcard-art[data-card-art-kind="glyph"] .flashcard-category-chip {
+  position: relative;
+  top: auto;
+  left: auto;
+  margin: 18px 0 6px 18px;
 }
 
 .flashcard-face[data-card-look="paper"] .flashcard-art[data-card-art-kind="glyph"] .flashcard-category-chip {

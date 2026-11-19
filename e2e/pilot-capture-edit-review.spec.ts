@@ -50,6 +50,8 @@ test('an AI card can be edited, bookmarked and reviewed from the local queue', a
   await introduction.getByRole('button', { name: 'I’ve reviewed it — start recall' }).click();
   await page.getByRole('button', { name: 'Reveal answer' }).click();
   await expect(page.locator('[data-study-rating]')).toBeVisible();
+  // The answer side keeps editing under its "Explore more" tools.
+  await page.locator('[data-study-card] [data-card-disclosure="learning-tools"] summary').click();
   await page.getByRole('button', { name: 'Edit card' }).click();
   const studyDialog = page.getByRole('dialog', { name: 'Edit card' });
   await studyDialog.getByRole('textbox', { name: 'Translation', exact: true }).fill('dẫn đường');

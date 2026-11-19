@@ -136,6 +136,8 @@ test('study timer pauses for the card editor and resumes from the elapsed time',
 
   await beginFreshCardRecall(page);
   await page.getByRole('button', { name: 'Reveal answer' }).click();
+  // The answer side keeps editing under its "Explore more" tools.
+  await page.locator('[data-study-card] [data-card-disclosure="learning-tools"] summary').click();
   await page.getByRole('button', { name: 'Edit card' }).first().click();
   await expect(page.getByRole('dialog', { name: 'Edit card' })).toBeVisible();
   await expect(page.locator('[data-study-session]')).toHaveAttribute('data-study-paused', 'true');

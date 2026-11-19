@@ -120,7 +120,7 @@ export function CardFront({
         {(look === 'aurora' || (look === 'paper' && !supportedImageUrl)) && data.category && (
           <span className="flashcard-category-chip absolute left-[18px] top-[18px] z-20 inline-flex max-w-[calc(100%-9rem)] items-center gap-[7px]">
             <span className="size-1.5 shrink-0 rounded-full bg-[var(--flashcard-accent)]" aria-hidden="true" />
-            <span lang={language} className="truncate">{data.category}</span>
+            <span lang={language} className="min-w-0 [overflow-wrap:anywhere]">{data.category}</span>
           </span>
         )}
         {look === 'crystal' && (
