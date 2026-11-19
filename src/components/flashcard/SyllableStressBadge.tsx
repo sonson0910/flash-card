@@ -1,15 +1,11 @@
-import { Volume2 } from 'lucide-react';
 import { msg } from '@lingui/core/macro';
-import { Trans, useLingui } from '@lingui/react';
-
-
-
+import { useLingui } from '@lingui/react';
 import { voiceForActiveCourseCard } from '../../lib/courseVoicePreference';
 import { speechLocaleFor } from '../../lib/speechLocale';
 import { resolveLanguagePackId } from '../../features/languagePacks/registry';
 import { useCourseSession } from '../../features/courses/CourseGate';
 import type { CardData } from '../../types/card';
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { Fragment, useEffect, useMemo, useRef } from 'react';
 import { parseSyllables, type SyllablePart } from '../../lib/syllableParser';
 import { triggerHaptic } from '../../lib/haptics';
 import { playWordAudio, type WordAudioPlayback } from '../../lib/audio';
@@ -55,48 +51,34 @@ export const SyllableStressBadge = React.memo(function SyllableStressBadge({
 
   return (
     <div
-      className={`mt-2 flex flex-wrap items-center gap-1.5 ${className}`}
+      data-syllable-line
+      className={`flashcard-syllables flex flex-wrap items-center ${className}`}
       aria-label={i18n._(msg({ id: 'flashcard.syllables.breakdown', message: 'Syllable breakdown for {word}' }).id, { word })}
       title={_(msg({ id: 'flashcard.syllables.help', message: 'Syllables & Stress. Tap a syllable to hear its pronunciation.' }))}
     >
-      <span className={`text-[10px] font-black uppercase tracking-[0.14em] mr-0.5 ${onDarkSurface ? 'text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}>
-        <Trans {...msg({ context: 'flashcard.syllables', message: 'Syllables:' })} />
-      </span>
-      <div className="flex flex-wrap items-center gap-1.5">
-        {analysis.syllables.map((syl, idx) => {
-          const isStressed = syl.isPrimaryStress;
-          return (
+      {analysis.syllables.map((syl, idx) => {
+        const isStressed = syl.isPrimaryStress;
+        return (
+          <Fragment key={`${syl.text}-${idx}`}>
+            {idx > 0 && <span className="-mx-1.5 text-[13px] text-[var(--sf-text-muted)]" aria-hidden="true">·</span>}
             <button
-              key={`${syl.text}-${idx}`}
               type="button"
               data-card-control
+              data-syllable-stressed={isStressed ? 'true' : undefined}
               onPointerDown={e => e.stopPropagation()}
               onClick={e => speakSyllable(e, syl)}
-              className={`group relative flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs transition-all duration-200 cursor-pointer hover:border-cyan-400/40 active:scale-95 ${onDarkSurface ? 'border-white/20 bg-white/10 hover:bg-white/15' : 'border-slate-200/80 bg-slate-100/70 dark:border-white/10 dark:bg-white/5 hover:bg-white/10'} ${
+              className={`touch-manipulation inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-1 text-[13px] transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--sf-brand)] ${
                 isStressed
-                  ? onDarkSurface ? 'text-cyan-200 font-extrabold' : 'text-cyan-600 dark:text-cyan-300 font-extrabold'
-                  : onDarkSurface ? 'text-slate-100 font-medium' : 'text-slate-600 dark:text-slate-400 font-medium'
+                  ? 'font-bold text-[var(--sf-brand-text)]'
+                  : onDarkSurface ? 'opacity-75 hover:opacity-100' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
               }`}
               title={isStressed ? i18n._(msg({ id: 'flashcard.syllables.primary-stress', message: 'Primary stress: {syllable}' }).id, { syllable: syl.text }) : i18n._(msg({ id: 'flashcard.syllables.item', message: 'Syllable: {syllable}' }).id, { syllable: syl.text })}
             >
-              <span className="inline-flex items-center">
-                {isStressed && (
-                  <span
-                    className="mr-1 inline-block size-1.5 rounded-full bg-cyan-500 dark:bg-cyan-300 shadow-[0_0_8px_currentColor] animate-pulse"
-                    aria-hidden="true"
-                  />
-                )}
-                <span lang={targetLanguage} className={isStressed ? 'drop-shadow-[0_0_8px_rgba(6,182,212,0.85)]' : undefined}>{syl.text}</span>
-              </span>
-              <Volume2
-                size={10}
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-cyan-700 dark:text-cyan-300 shrink-0"
-                aria-hidden="true"
-              />
+              <span lang={targetLanguage}>{syl.text}</span>
             </button>
-          );
-        })}
-      </div>
+          </Fragment>
+        );
+      })}
     </div>
   );
 });

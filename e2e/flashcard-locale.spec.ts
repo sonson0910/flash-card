@@ -20,10 +20,11 @@ const card = {
   customDeck: null,
 };
 
+// The default classic light card names the tier as a study status.
 for (const locale of [
-  { query: 'en', document: 'en', tier: 'Bud' },
-  { query: 'vi', document: 'vi', tier: 'Nụ' },
-  { query: 'pseudo', document: 'en-XA', tier: /\[Bud/ },
+  { query: 'en', document: 'en', tier: 'New' },
+  { query: 'vi', document: 'vi', tier: 'Mới' },
+  { query: 'pseudo', document: 'en-XA', tier: /\[New/ },
 ] as const) {
   test(`card languages and tier label render with ${locale.query} UI locale`, async ({ page, seedCards, seedCourseProfile, signIn }) => {
     // The card's content language is 'ja', but Library/Today/practice queries
@@ -71,13 +72,13 @@ test('changing the UI locale updates a mounted card while content languages stay
   await page.locator('.library-word-open').click();
 
   const shell = page.locator('.flashcard-shell');
-  await expect(shell.locator('[data-card-tier-label]')).toHaveText('Bud');
+  await expect(shell.locator('[data-card-tier-label]')).toHaveText('New');
   const other = await context.newPage();
   await other.goto('/?view=landing');
   await other.evaluate(() => localStorage.setItem('sonflash_ui_locale', 'vi'));
   await other.close();
   await expect(page.locator('html')).toHaveAttribute('lang', 'vi');
-  await expect(shell.locator('[data-card-tier-label]')).toHaveText('Nụ');
+  await expect(shell.locator('[data-card-tier-label]')).toHaveText('Mới');
   await expect(shell.locator('[data-card-headword] h2')).toHaveAttribute('lang', 'ja');
   await expect(shell.locator('[data-card-headword] h2')).toHaveText('りんご');
 });

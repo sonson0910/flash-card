@@ -1,3 +1,4 @@
+import './flashcard-canvas.css';
 import { ImageOff } from 'lucide-react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
@@ -48,7 +49,7 @@ export function CardImage({ src, alt, priority = false, onUnavailable }: CardIma
     <div className="relative w-full h-full">
       {!loaded && !failed && (
         <div className="absolute inset-0 z-10 overflow-hidden bg-[var(--sf-surface-raised)]" role="status" aria-label={_(msg({ id: 'flashcard.image.loading', message: 'Loading image' }))}>
-          <div className="absolute -left-10 top-1/3 h-20 w-[calc(100%+5rem)] rotate-[-8deg] bg-white/35 blur-2xl dark:bg-white/5" />
+          <div className="absolute -left-10 top-1/3 h-20 w-[calc(100%+5rem)] rotate-[-8deg] bg-[color-mix(in_srgb,var(--sf-text)_8%,transparent)] blur-2xl" />
         </div>
       )}
       {failed ? (
@@ -73,7 +74,7 @@ export function CardImage({ src, alt, priority = false, onUnavailable }: CardIma
             referrerPolicy="no-referrer"
           />
           {/* Subtle dark tint overlay for enhanced text contrast and luxury mood */}
-          <div className="pointer-events-none absolute inset-0 bg-slate-950/25 dark:bg-black/40 transition-colors" aria-hidden="true" />
+          <div className="flashcard-image-tint pointer-events-none absolute inset-0" aria-hidden="true" />
         </div>
       )}
     </div>

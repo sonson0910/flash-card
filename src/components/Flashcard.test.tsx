@@ -83,8 +83,10 @@ describe('Flashcard mobile controls', () => {
   it('groups pronunciation controls with the front action dock', () => {
     const source = cardSurfaceSource;
 
-    expect(source).toContain('mt-4 flex flex-wrap items-center gap-1 border-t');
-    expect(source).toContain('flex items-center rounded-full border border-slate-200/90 bg-slate-100/90 p-1');
+    expect(source).toContain('data-card-actions className="flashcard-actions mt-auto flex flex-wrap items-center gap-1.5"');
+    expect(source).toContain('flashcard-action flashcard-action-speed touch-manipulation');
+    expect(source).toContain("msg({ context: 'flashcard.say-it', message: 'Say it' })");
+    expect(source).toContain("msg({ context: 'flashcard.quiz-me', message: 'Quiz me' })");
   });
 
   it('uses the active course voice for synchronous fallback speech', () => {
@@ -131,7 +133,7 @@ describe('Flashcard mobile controls', () => {
     expect(learningTools).toBeGreaterThan(memoryHook);
     expect(html).not.toContain('data-card-disclosure="explanation"');
     expect(html).not.toContain('data-card-disclosure="memory-hook"');
-    expect(html).toContain('Keep your focus on the task.');
+    expect(html).toContain('Keep your <span data-example-word="true" class="flashcard-back-example-word">focus</span> on the task.');
     expect(html).toContain('Hãy giữ sự tập trung vào nhiệm vụ.');
     expect(html).toContain('noun');
     expect(html).toContain('/ˈfəʊkəs/');
@@ -207,12 +209,9 @@ describe('Flashcard mobile controls', () => {
     );
 
     expect(html).toContain('data-return-to-english="true"');
-    expect(html).toContain('group/back relative z-20 flex min-h-[60px] w-full');
-    expect(html).toContain('items-center justify-center gap-2');
-    expect(html).toContain('bg-transparent');
+    expect(html).toContain('flashcard-back-return group/back relative z-20 flex w-full shrink-0');
     expect(html).toContain('data-return-hover-edge="true"');
-    expect(html).toContain('border-t border-cyan-500/20');
-    expect(html).toContain('from-cyan-500/10 via-cyan-400/55 to-cyan-500/10 opacity-75');
+    expect(html).toContain('<span>Back to English</span>');
     expect(html).not.toContain('Return to “focus”');
   });
 
@@ -235,17 +234,12 @@ describe('Flashcard mobile controls', () => {
 
     expect(html).not.toContain('data-color-role="primary"');
     expect(html).toContain('data-reveal-meaning="true"');
-    expect(html).toContain('group/flip relative z-20 flex min-h-[60px] w-full');
-    expect(html).toContain('items-center justify-center gap-2');
-    expect(html).toContain('bg-transparent');
-    expect(html).toContain('border-t border-cyan-500/20');
+    expect(html).toContain('flashcard-reveal group/flip relative z-20 flex min-h-[58px] w-full');
     expect(html).toContain('data-reveal-hover-edge="true"');
-    expect(html).toContain('from-cyan-500/10 via-cyan-400/55 to-cyan-500/10 opacity-75');
-    expect(html).toContain('transition-opacity duration-200 group-hover/flip:opacity-100');
-    expect(html).toContain('data-reveal-translate-icon="true"');
+    expect(html).toContain('>Reveal meaning</span>');
+    expect(html).toContain('<kbd class="flashcard-kbd relative font-mono" aria-hidden="true">Space</kbd>');
     expect(html).not.toContain('group-hover/flip:translate-x-0.5');
     expect(html).not.toContain('flashcard-reveal-button');
-    expect(html).toContain('text-[10px] font-black uppercase tracking-[0.14em]');
     expect(html).not.toContain('box-border flex-shrink-0 overflow-hidden rounded-b-[31px]');
     expect(html).not.toContain('Flip to the Vietnamese side');
     expect(html).toContain('aria-label="flashcard.reveal-meaning-label"');
