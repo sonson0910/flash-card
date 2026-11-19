@@ -3,7 +3,7 @@ import { msg } from '@lingui/core/macro';
 import { describe, expect, it } from 'vitest';
 import { activateCatalogLocale, loadCatalog, setActiveUiLocale } from './loadCatalog';
 
-const areas = ['landing', 'shell', 'components', 'today', 'practice', 'rewards', 'library', 'catalog', 'progress', 'billing', 'account', 'settings'];
+const areas = ['landing', 'shell', 'components', 'today', 'practice', 'rewards', 'library', 'catalog', 'progress', 'billing', 'account', 'settings', 'files'];
 const cardCount = msg({ context: 'shell.share.cards-count', message: '{count, plural, one {# card} other {# cards}}' });
 
 describe('lazy locale catalogs', () => {

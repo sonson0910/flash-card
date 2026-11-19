@@ -69,5 +69,8 @@ export const migratedFiles = [
   'src/features/library/WordExtractorModal.tsx',
   'src/features/library/libraryPresentation.ts',
   'src/features/settings/settings-screen.tsx',
+  'src/features/files/FilesWorkspace.tsx',
+  'src/features/files/FilesSettingsSection.tsx',
+  'src/features/files/StorageUsageMeter.tsx',
   'src/features/profileCompletion/ProfileCompletionGate.tsx',
 ] as const;
