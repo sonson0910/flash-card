@@ -24,22 +24,40 @@ test('mobile shell switches language and theme without reloading', async ({ page
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   const shell = page.locator('[data-shell-layer="primary"]');
   await expect(shell).toBeVisible();
+  // MobileToday keeps only the brand, streak and avatar in the header: theme and language live in the account menu.
+  const accountTrigger = shell.getByRole('button', { name: 'Manage library' });
+  await expect(shell.getByRole('button', { name: 'Choose language' })).toBeHidden();
+  await accountTrigger.click();
+  const preferences = shell.getByRole('group', { name: 'Theme and language' });
+  await expect(preferences).toBeVisible();
 
-  await shell.getByRole('button', { name: 'Choose language' }).click();
+  // Escape closes a popover opened inside the account menu before the menu itself.
+  await preferences.getByRole('button', { name: 'Choose language' }).click();
   const english = page.getByRole('menuitemradio', { name: 'English' });
   await expect(english).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(english).toBeHidden();
+  await expect(preferences).toBeVisible();
+
+  await preferences.getByRole('button', { name: 'Choose language' }).click();
   await page.getByRole('menuitemradio', { name: 'Tiếng Việt' }).click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'vi');
   await expect(page.getByRole('heading', { name: 'Thư viện từ vựng' })).toBeAttached();
 
-  const themeTrigger = shell.getByRole('button', { name: 'Chọn giao diện' });
+  const viPreferences = shell.getByRole('group', { name: 'Giao diện và ngôn ngữ' });
+  if (!await viPreferences.isVisible()) await shell.getByRole('button', { name: 'Quản lý thư viện' }).click();
+  const themeTrigger = viPreferences.getByRole('button', { name: 'Chọn giao diện' });
   await themeTrigger.click();
   await expect(page.getByRole('menuitemradio', { name: 'Midnight Aurora' })).toBeFocused();
   await page.getByRole('menuitemradio', { name: 'Crystal Star: Ban ngày' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme-family', 'crystal');
   await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
-  await shell.getByRole('button', { name: 'Chuyển giữa chế độ sáng và tối' }).click();
+  if (!await viPreferences.isVisible()) await shell.getByRole('button', { name: 'Quản lý thư viện' }).click();
+  await viPreferences.getByRole('button', { name: 'Chuyển giữa chế độ sáng và tối' }).click();
   await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+  await page.keyboard.press('Escape');
+  await expect(viPreferences).toBeHidden();
+  await expect(shell.getByRole('button', { name: 'Quản lý thư viện' })).toBeFocused();
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('lang', 'vi');
   await expect(page.locator('html')).toHaveAttribute('data-theme-family', 'crystal');
