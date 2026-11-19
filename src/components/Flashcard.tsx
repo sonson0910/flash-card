@@ -22,6 +22,7 @@ import { CardAiAssistantModal } from './flashcard/CardAiAssistantModal';
 import { CardBack } from './flashcard/CardBack';
 import { CardEffectsLayer, useCardEffects } from './flashcard/CardEffectsLayer';
 import { CardFront } from './flashcard/CardFront';
+import { useCardLook } from './flashcard/cardLook';
 import { useFlashcardAudio } from './flashcard/useFlashcardAudio';
 import { useFlashcardSpeechMatch } from './flashcard/useFlashcardSpeechMatch';
 import { useZenGlassMode } from '../lib/useZenGlassMode';
@@ -36,11 +37,11 @@ const EditCardDialog = lazy(() => Promise.all([
   import('../features/cardEdit/EditCardDialog'), loadCatalog(getActiveUiLocale(), 'library'),
 ]).then(([module]) => ({ default: module.EditCardDialog })));
 const HangulBreakdown = lazy(() => import('./flashcard/HangulBreakdown').then(module => ({ default: module.HangulBreakdown })));
-const detailsWidePanelClass = 'flex w-full flex-col items-start rounded-[24px] border border-slate-200 bg-white/90 p-4 text-left shadow-sm backdrop-blur-2xl dark:border-white/12 dark:bg-slate-950/20';
-const detailsSplitPanelClass = 'flex flex-col items-start rounded-[24px] border border-slate-200 bg-white/90 p-4 text-left shadow-sm backdrop-blur-2xl dark:border-white/12 dark:bg-slate-950/20';
-const detailsSectionHeaderClass = 'mb-2.5 flex w-full items-center gap-2 border-b border-slate-200/80 pb-2.5 dark:border-white/10';
-const detailsSectionIconClass = 'flex size-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/10 dark:bg-white/10 dark:text-cyan-300';
-const detailsSectionTitleClass = 'text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200';
+const detailsWidePanelClass = 'flex w-full flex-col items-start rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left shadow-sm [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
+const detailsSplitPanelClass = 'flex flex-col items-start rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left shadow-sm [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
+const detailsSectionHeaderClass = 'mb-2.5 flex w-full items-center gap-2 border-b border-[var(--sf-border)] pb-2.5';
+const detailsSectionIconClass = 'flex size-7 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-muted)] text-[var(--sf-brand-text)]';
+const detailsSectionTitleClass = 'text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--sf-text-muted)]';
 const detailsChipListClass = 'flex flex-wrap gap-1.5';
 
 gsap.registerPlugin(useGSAP);
@@ -326,13 +327,14 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
     : (data.nextReviewDate || (data.reviews ?? 0) > 0 || (data.difficulty && data.difficulty !== 'unrated'))
       ? 'learning' : 'new';
   const hasHangulReviewPanel = editorContext?.kind === 'review' && /^ko(?:-|$)/i.test(data.language ?? '');
+  const cardLook = useCardLook();
 
   return (
     <div className="relative mx-auto w-full max-w-[960px]">
     <div
       ref={shellRef}
       className={`flashcard-shell group relative mx-auto w-full touch-pan-y overflow-visible rounded-[32px] bg-transparent transition-[max-width,height] duration-300 ${
-        isZenMode ? 'h-[460px] sm:h-[480px] max-w-[700px] [@media(max-height:500px)]:h-[320px]' : 'h-[clamp(560px,72dvh,610px)] max-w-[580px] [@media(max-height:500px)]:h-[320px]'
+        isZenMode ? 'h-[460px] sm:h-[480px] max-w-[700px] [@media(max-height:500px)]:h-[320px]' : 'h-[clamp(560px,72dvh,620px)] max-w-[460px] [@media(max-height:500px)]:h-[320px]'
       }`}
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
@@ -343,6 +345,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
       data-card-tier={cardTier}
       data-flip-animation={reduceMotion ? 'reduced' : 'spatial'}
       data-card-mode={isZenMode ? 'zen' : 'standard'}
+      data-card-look={cardLook}
       data-card-hovered={isHovered ? 'true' : 'false'}
       data-card-blind={isBlindMode ? 'true' : 'false'}
       data-card-effects="tilt spotlight aura flip star blind audio tier-rim hover-wings"
@@ -357,8 +360,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
         }}
       >
         <AlertDialog.Portal>
-          <AlertDialog.Overlay className="fixed inset-0 z-[110] bg-slate-950/72" />
-          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[111] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl outline-none" onClick={event => event.stopPropagation()} onCloseAutoFocus={event => {
+          <AlertDialog.Overlay className="fixed inset-0 z-[110] bg-[var(--sf-scrim)] backdrop-blur-xs" />
+          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[111] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:crystal-chamfer" onClick={event => event.stopPropagation()} onCloseAutoFocus={event => {
             event.preventDefault();
             if (!deleteConfirmedRef.current) deleteButtonRef.current?.focus();
             deleteConfirmedRef.current = false;
@@ -370,7 +373,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
               <AlertDialog.Action onClick={() => {
                 deleteConfirmedRef.current = true;
                 void onDelete?.(data.id);
-              }} className="min-h-11 rounded-xl bg-rose-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-rose-800"><Trans {...msg({ id: 'flashcard.delete.confirm', message: 'Delete card' })} /></AlertDialog.Action>
+              }} className="min-h-11 rounded-xl bg-[var(--sf-danger)] px-4 py-2 text-sm font-semibold text-[var(--sf-on-brand)] transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-danger)]"><Trans {...msg({ id: 'flashcard.delete.confirm', message: 'Delete card' })} /></AlertDialog.Action>
             </div>
           </AlertDialog.Content>
         </AlertDialog.Portal>
@@ -380,9 +383,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
         setShowLearningDetails(open);
       }}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-[110] bg-slate-950/75 backdrop-blur-xs" />
+          <Dialog.Overlay className="fixed inset-0 z-[110] bg-[var(--sf-scrim)] backdrop-blur-xs" />
           <Dialog.Content
-            className="flashcard-panel flashcard-details-dialog fixed left-1/2 top-1/2 z-[111] max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] p-6 text-slate-900 outline-none sm:p-7 dark:text-white"
+            className="flashcard-panel flashcard-details-dialog fixed left-1/2 top-1/2 z-[111] max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] sm:p-7 [html[data-theme-family=crystal]_&]:crystal-chamfer"
             aria-describedby={`learning-details-description-${data.id}`}
             onCloseAutoFocus={event => {
               event.preventDefault();
@@ -397,44 +400,44 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
             }}
           >
             {/* Header: Synchronized with Flashcard Front */}
-            <div className="flex items-start justify-between gap-4 border-b border-slate-200/80 pb-4 dark:border-white/10">
+            <div className="flex items-start justify-between gap-4 border-b border-[var(--sf-border)] pb-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
-                  <span lang={data.partOfSpeech ? targetLanguage : undefined} className="rounded-full border border-cyan-300/60 bg-cyan-50 px-2.5 py-0.5 font-bold capitalize text-cyan-800 dark:border-cyan-300/30 dark:bg-cyan-300/10 dark:text-cyan-300">
+                  <span lang={data.partOfSpeech ? targetLanguage : undefined} className="rounded-full border border-[color-mix(in_srgb,var(--sf-brand)_35%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,transparent)] text-[var(--sf-brand-text)] px-2.5 py-0.5 font-bold capitalize">
                     {data.partOfSpeech || <Trans {...msg({ context: 'flashcard.details.vocabulary', message: 'Vocabulary' })} />}
                   </span>
-                  <span lang={targetLanguage} className="rounded-full border border-slate-200 bg-slate-100/90 px-2.5 py-0.5 font-bold text-slate-700 dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+                  <span lang={targetLanguage} className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-muted)] px-2.5 py-0.5 font-bold text-[var(--sf-text-muted)]">
                     {data.category}
                   </span>
                   {data.cefrLevel && (
-                    <span className={`rounded-full border px-2.5 py-0.5 font-black uppercase shadow-xs ${
+                    <span className={`rounded-full border px-2.5 py-0.5 font-bold uppercase ${
                       data.cefrLevel.toUpperCase().startsWith('A')
-                        ? 'border-emerald-300/70 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-300'
+                        ? 'border-[color-mix(in_srgb,var(--sf-success)_40%,transparent)] bg-[color-mix(in_srgb,var(--sf-success)_10%,transparent)] text-[var(--sf-success)]'
                         : data.cefrLevel.toUpperCase().startsWith('B')
-                          ? 'border-cyan-300/70 bg-cyan-50 text-cyan-800 dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-300'
-                          : 'border-indigo-300/70 bg-indigo-50 text-indigo-800 dark:border-indigo-400/30 dark:bg-indigo-500/10 dark:text-indigo-300'
+                          ? 'border-[color-mix(in_srgb,var(--sf-brand)_40%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,transparent)] text-[var(--sf-brand-text)]'
+                          : 'border-[color-mix(in_srgb,var(--sf-second)_45%,transparent)] bg-[color-mix(in_srgb,var(--sf-second)_12%,transparent)] text-[var(--sf-text)]'
                     }`}>
                       <Trans {...msg({ context: 'flashcard.cefr-level', message: 'CEFR {level}' })} values={{ level: data.cefrLevel }} />
                     </span>
                   )}
                   {data.register && (
-                    <span lang={targetLanguage} className="rounded-full border border-slate-200 bg-slate-100/90 px-2.5 py-0.5 font-bold capitalize text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+                    <span lang={targetLanguage} className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-muted)] px-2.5 py-0.5 font-bold capitalize text-[var(--sf-text-muted)]">
                       {data.register}
                     </span>
                   )}
                 </div>
 
-                <Dialog.Title lang={targetLanguage} className="mt-2.5 break-words text-balance text-3xl font-black tracking-[-0.04em] text-transparent bg-clip-text bg-gradient-to-br from-slate-900 via-slate-800 to-cyan-900 drop-shadow-xs sm:text-4xl dark:from-white dark:via-slate-100 dark:to-cyan-100">
+                <Dialog.Title lang={targetLanguage} className="mt-2.5 break-words text-balance font-serif text-3xl font-medium tracking-[-0.02em] text-[var(--sf-text)] sm:text-4xl">
                   {data.word}
                 </Dialog.Title>
 
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span lang={targetLanguage} className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300 bg-cyan-50 px-3 py-0.5 font-mono text-xs font-bold text-cyan-800 shadow-xs ring-1 ring-cyan-400/20 backdrop-blur-md dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-300">
-                    <AudioLines size={13} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
+                  <span lang={targetLanguage} className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--sf-brand)_35%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,transparent)] text-[var(--sf-brand-text)] px-3 py-0.5 font-mono text-xs font-medium">
+                    <AudioLines size={13} className="shrink-0" aria-hidden="true" />
                     <span>{data.phonetic || '/.../'}</span>
                   </span>
                   {data.translation && (
-                    <Dialog.Description id={`learning-details-description-${data.id}`} lang={translationLanguage} className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+                    <Dialog.Description id={`learning-details-description-${data.id}`} lang={translationLanguage} className="text-sm font-semibold text-[var(--sf-text-muted)]">
                       · {data.translation}
                     </Dialog.Description>
                   )}
@@ -442,10 +445,10 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
               </div>
 
               <Dialog.Close
-                className="liquid-control flex size-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100/90 text-slate-700 transition-all hover:bg-slate-200 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 cursor-pointer"
+                className="liquid-control flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-muted)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
                 aria-label={_(msg({ id: 'flashcard.details.close', message: 'Close learning details' }))}
               >
-                <X size={17} />
+                <X size={17} aria-hidden="true" />
               </Dialog.Close>
             </div>
 
@@ -464,11 +467,11 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
                       </p>
                     </div>
                   </div>
-                  <p lang={targetLanguage} className="text-sm font-semibold leading-relaxed text-slate-900 dark:text-white">
+                  <p lang={targetLanguage} className="font-serif text-base italic leading-relaxed text-[var(--sf-text)]">
                     “{data.exampleSentence}”
                   </p>
                   {data.exampleTranslation && (
-                    <p lang={translationLanguage} className="mt-1.5 text-xs font-medium leading-relaxed text-slate-500 dark:text-slate-300">
+                    <p lang={translationLanguage} className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--sf-text-muted)]">
                       {data.exampleTranslation}
                     </p>
                   )}
@@ -493,7 +496,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
                       <span
                         key={colloc}
                         lang={targetLanguage}
-                        className="rounded-full border border-slate-200 bg-slate-100/90 px-3 py-1 text-xs font-bold text-slate-800 shadow-xs dark:border-white/15 dark:bg-white/10 dark:text-slate-200"
+                        className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-muted)] px-3 py-1 text-xs font-bold text-[var(--sf-text)]"
                       >
                         {colloc}
                       </span>
@@ -508,7 +511,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
                   {data.synonyms && data.synonyms.length > 0 && (
                     <div className={detailsSplitPanelClass}>
                       <div className={detailsSectionHeaderClass}>
-                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-cyan-300 bg-cyan-50 text-xs font-black text-cyan-700 dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-300">
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--sf-brand)_35%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,transparent)] text-[var(--sf-brand-text)] text-xs font-bold" aria-hidden="true">
                           ≈
                         </span>
                         <p className={detailsSectionTitleClass}>
@@ -520,7 +523,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
                           <span
                             key={syn}
                             lang={targetLanguage}
-                            className="rounded-full border border-cyan-300/60 bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800 dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-300"
+                            className="rounded-full border border-[color-mix(in_srgb,var(--sf-brand)_35%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,transparent)] text-[var(--sf-brand-text)] px-2.5 py-1 text-xs font-bold"
                           >
                             {syn}
                           </span>
@@ -531,7 +534,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
                   {data.antonyms && data.antonyms.length > 0 && (
                     <div className={detailsSplitPanelClass}>
                       <div className={detailsSectionHeaderClass}>
-                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-xs font-black text-slate-700 dark:border-white/10 dark:bg-white/10 dark:text-slate-300">
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-muted)] text-xs font-bold text-[var(--sf-text-muted)]" aria-hidden="true">
                           ≠
                         </span>
                         <p className={detailsSectionTitleClass}>
@@ -543,7 +546,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
                           <span
                             key={ant}
                             lang={targetLanguage}
-                            className="rounded-full border border-slate-200 bg-slate-100/90 px-2.5 py-1 text-xs font-bold text-slate-700 dark:border-white/15 dark:bg-white/10 dark:text-slate-300"
+                            className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-muted)] px-2.5 py-1 text-xs font-bold text-[var(--sf-text-muted)]"
                           >
                             {ant}
                           </span>
@@ -556,16 +559,16 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
 
               {/* Common Mistake / Usage Note */}
               {data.commonMistake && (
-                <div className="flex w-full flex-col items-start rounded-[24px] border border-amber-300/80 bg-amber-50/90 p-4 text-left shadow-sm backdrop-blur-2xl dark:border-amber-400/30 dark:bg-amber-500/10">
-                  <div className="mb-2.5 flex w-full items-center gap-2 border-b border-amber-200/80 pb-2.5 dark:border-amber-400/20">
-                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs font-black text-amber-900 dark:bg-amber-400/20 dark:text-amber-300">
+                <div className="flex w-full flex-col items-start rounded-[24px] border border-[color-mix(in_srgb,var(--sf-reward)_45%,transparent)] bg-[color-mix(in_srgb,var(--sf-reward)_10%,transparent)] p-4 text-left [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+                  <div className="mb-2.5 flex w-full items-center gap-2 border-b border-[color-mix(in_srgb,var(--sf-reward)_30%,transparent)] pb-2.5">
+                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--sf-reward)_25%,transparent)] text-xs font-bold text-[var(--sf-text)]" aria-hidden="true">
                       ⚠️
                     </span>
-                    <p className="text-[10px] font-black uppercase tracking-[0.17em] text-amber-900 dark:text-amber-200">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--sf-text)]">
                       <Trans {...msg({ context: 'flashcard.details.common-mistake', message: 'Common Mistake' })} />
                     </p>
                   </div>
-                  <p lang={targetLanguage} className="text-xs font-semibold leading-relaxed text-amber-950 dark:text-amber-100">
+                  <p lang={targetLanguage} className="text-xs font-semibold leading-relaxed text-[var(--sf-text)]">
                     {data.commonMistake}
                   </p>
                 </div>
@@ -596,26 +599,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
           <EditCardDialog card={data} open={showEditDialog} onOpenChange={setEditDialogOpen} onSave={onUpdateCard} onDelete={onEditDelete} context={editorContext} />
         </Suspense>
       )}
-      {onDelete && (
-        <button
-          ref={deleteButtonRef}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteConfirmedRef.current = false; setShowConfirmDelete(true); }}
-          className={`absolute left-4 top-4 z-[45] flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/35 bg-slate-950/48 text-white shadow-lg backdrop-blur-2xl transition-[transform,opacity,background-color,border-color,color] duration-200 hover:border-rose-400/80 hover:bg-rose-600/90 hover:text-white lg:scale-95 lg:opacity-0 lg:group-hover:scale-100 lg:group-hover:opacity-100 lg:group-focus-within:scale-100 lg:group-focus-within:opacity-100 ${isFlipAnimating ? '!pointer-events-none !opacity-0' : ''}`}
-          title={_(msg({ id: 'flashcard.delete.confirm', message: 'Delete card' }))}
-          aria-label={_(msg({ id: 'flashcard.delete.confirm', message: 'Delete card' }))}
-        >
-          <Trash2 size={15} />
-        </button>
-      )}
-      {onEditDelete && onUpdateCard && !isFlipped && (
-        <button type="button" data-card-control onPointerDown={event => event.stopPropagation()}
-          onClick={event => { event.stopPropagation(); setEditDialogOpen(true); }}
-          className="absolute left-16 top-4 z-[45] flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/35 bg-slate-950/48 text-white shadow-lg backdrop-blur-2xl"
-          title={_(msg({ id: 'flashcard.edit', message: 'Edit card' }))} aria-label={_(msg({ id: 'flashcard.edit', message: 'Edit card' }))}><Pencil size={16} /></button>
-      )}
-
-      {(onToggleBookmark || !isFlipped) && (
+      {(onToggleBookmark || !isFlipped || onDelete) && (
         <div data-card-top-controls className={`absolute right-4 top-4 z-[45] flex flex-row-reverse items-center gap-2 transition-opacity duration-150 ${isFlipAnimating ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
           {onToggleBookmark && (
             <button
@@ -640,17 +624,14 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
                 }
                 onToggleBookmark(data.id);
               }}
-              className={`flashcard-reward-button flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 transition-[transform,background-color,border-color,color] duration-200 ${
-                data.bookmarked
-                  ? 'border border-[var(--sf-reward)] bg-[var(--sf-reward)] text-slate-950 shadow-lg shadow-amber-500/15'
-                  : 'border border-white/35 bg-slate-950/48 text-white shadow-lg backdrop-blur-2xl hover:border-amber-300/70 hover:text-amber-300'
-              }`}
+              data-selected={data.bookmarked ? 'true' : 'false'}
+              className="flashcard-chrome-button flashcard-reward-button flex min-h-11 min-w-11 items-center justify-center p-2 transition-[transform,background-color,border-color,color] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
               title={data.bookmarked ? _(msg({ id: 'flashcard.star.remove', message: 'Remove star' })) : _(msg({ id: 'flashcard.star.add', message: 'Star this word' }))}
               aria-label={data.bookmarked ? _(msg({ id: 'flashcard.star.remove', message: 'Remove star' })) : _(msg({ id: 'flashcard.star.add', message: 'Star this word' }))}
               aria-pressed={data.bookmarked}
             >
               <span className={data.bookmarked ? 'flashcard-star-selected' : undefined}>
-                <Star size={15} className={data.bookmarked ? 'fill-slate-900' : ''} />
+                <Star size={17} className={data.bookmarked ? 'fill-current' : ''} aria-hidden="true" />
               </span>
             </button>
           )}
@@ -662,12 +643,34 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
                 event.stopPropagation();
                 setIsBlindMode(value => !value);
               }}
-              className={`flex min-h-11 min-w-11 items-center justify-center rounded-full border p-2 shadow-lg backdrop-blur-2xl transition-colors ${isBlindMode ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'border-white/35 bg-slate-950/48 text-white hover:bg-slate-950/72'}`}
+              data-selected={isBlindMode ? 'true' : 'false'}
+              className="flashcard-chrome-button flex min-h-11 min-w-11 items-center justify-center p-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
               title={isBlindMode ? _(msg({ id: 'flashcard.hints.show', message: 'Show hints' })) : _(msg({ id: 'flashcard.hints.hide', message: 'Hide hints' }))}
               aria-label={isBlindMode ? _(msg({ id: 'flashcard.hints.reveal', message: 'Reveal image and definition' })) : _(msg({ id: 'flashcard.hints.hide-content', message: 'Hide image and definition' }))}
               aria-pressed={isBlindMode}
             >
-              {isBlindMode ? <EyeOff size={15} /> : <Eye size={15} />}
+              {isBlindMode ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+            </button>
+          )}
+
+          {onEditDelete && onUpdateCard && !isFlipped && (
+            <button type="button" data-card-control onPointerDown={event => event.stopPropagation()}
+              onClick={event => { event.stopPropagation(); setEditDialogOpen(true); }}
+              className="flashcard-chrome-button flex min-h-11 min-w-11 items-center justify-center p-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+              title={_(msg({ id: 'flashcard.edit', message: 'Edit card' }))} aria-label={_(msg({ id: 'flashcard.edit', message: 'Edit card' }))}><Pencil size={16} aria-hidden="true" /></button>
+          )}
+
+          {onDelete && (
+            <button
+              ref={deleteButtonRef}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteConfirmedRef.current = false; setShowConfirmDelete(true); }}
+              data-card-danger
+              className="flashcard-chrome-button flex min-h-11 min-w-11 items-center justify-center p-2 transition-[transform,opacity,background-color,border-color,color] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] lg:scale-95 lg:opacity-0 lg:group-hover:scale-100 lg:group-hover:opacity-100 lg:group-focus-within:scale-100 lg:group-focus-within:opacity-100"
+              title={_(msg({ id: 'flashcard.delete.confirm', message: 'Delete card' }))}
+              aria-label={_(msg({ id: 'flashcard.delete.confirm', message: 'Delete card' }))}
+            >
+              <Trash2 size={15} aria-hidden="true" />
             </button>
           )}
         </div>
@@ -731,7 +734,6 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
           spotlightRef={spotlightRef}
           spotlightBackground={spotlightBackground}
           isHovered={isHovered}
-          canDelete={Boolean(onDelete)}
           onUpdateCard={onUpdateCard}
           setShowReportDialog={setShowReportDialog}
           setShowEditDialog={setEditDialogOpen}

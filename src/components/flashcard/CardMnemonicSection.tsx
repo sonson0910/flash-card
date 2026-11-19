@@ -1,4 +1,4 @@
-import { Brain, Lightbulb, Loader2, RefreshCw } from 'lucide-react';
+import { Lightbulb, Loader2, RefreshCw } from 'lucide-react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import React, { useState } from 'react';
@@ -48,19 +48,19 @@ export const CardMnemonicSection = React.memo(function CardMnemonicSection({
   return (
     <div className={`w-full ${className}`}>
       {card.mnemonic ? (
-        <div className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-3 text-left dark:border-amber-400/20 dark:bg-amber-400/[0.08]">
+        <div className="flashcard-hook-panel p-3 text-left">
           <div className="flex items-start gap-2.5">
-            <Lightbulb size={16} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
-            <div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-800 dark:text-amber-300"><Trans {...msg({ context: 'flashcard.mnemonic.title', message: 'AI Mnemonic · Memory Hook' })} /></p><RichVietnameseExplanation value={card.mnemonic} /></div>
-            <button type="button" data-card-control disabled={isGenerating} onPointerDown={event => event.stopPropagation()} onClick={handleGenerateMnemonic} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-amber-900 hover:bg-amber-200 disabled:opacity-50 dark:text-amber-200 dark:hover:bg-amber-400/25" aria-label={_(msg({ id: 'flashcard.mnemonic.generate', message: 'Generate a new mnemonic' }))}>{isGenerating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}</button>
+            <Lightbulb size={16} className="flashcard-hook-icon mt-0.5 shrink-0" aria-hidden="true" />
+            <div className="min-w-0 flex-1"><p className="flashcard-hook-title text-[11px] font-bold uppercase tracking-[0.12em]"><Trans {...msg({ context: 'flashcard.mnemonic.title', message: 'AI Mnemonic · Memory Hook' })} /></p><RichVietnameseExplanation value={card.mnemonic} /></div>
+            <button type="button" data-card-control disabled={isGenerating} onPointerDown={event => event.stopPropagation()} onClick={handleGenerateMnemonic} className="flashcard-hook-refresh flex min-h-11 min-w-11 items-center justify-center rounded-full disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]" aria-label={_(msg({ id: 'flashcard.mnemonic.generate', message: 'Generate a new mnemonic' }))}>{isGenerating ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <RefreshCw size={14} aria-hidden="true" />}</button>
           </div>
         </div>
       ) : (
         <>
-          <button type="button" data-card-control data-mnemonic-generate disabled={isGenerating} onPointerDown={event => event.stopPropagation()} onClick={handleGenerateMnemonic} className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-amber-300/80 px-4 text-xs font-bold text-amber-900 transition-colors hover:bg-amber-100 disabled:opacity-60 dark:border-amber-400/30 dark:text-amber-200 dark:hover:bg-amber-400/15">
-            {isGenerating ? <><Loader2 size={14} className="animate-spin" /><span><Trans {...msg({ context: 'flashcard.mnemonic.generating', message: 'Generating memory hint…' })} /></span></> : <><Brain size={14} /><span><Trans {...msg({ id: 'flashcard.memory-hook', message: 'Memory hook' })} /></span></>}
+          <button type="button" data-card-control data-mnemonic-generate disabled={isGenerating} onPointerDown={event => event.stopPropagation()} onClick={handleGenerateMnemonic} className="flashcard-back-tool flashcard-hook-button flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 transition-[background-color,box-shadow] duration-200 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]">
+            {isGenerating ? <><Loader2 size={15} className="animate-spin" aria-hidden="true" /><span className="truncate"><Trans {...msg({ context: 'flashcard.mnemonic.generating', message: 'Generating memory hint…' })} /></span></> : <><Lightbulb size={15} className="flashcard-hook-icon shrink-0" aria-hidden="true" /><span className="truncate"><Trans {...msg({ id: 'flashcard.memory-hook', message: 'Memory hook' })} /></span></>}
           </button>
-          {error && <p className="mt-2 text-xs font-medium text-rose-600 dark:text-rose-300">{error}</p>}
+          {error && <p className="mt-2 text-xs font-medium text-[var(--sf-danger)]" role="alert">{error}</p>}
         </>
       )}
     </div>

@@ -42,10 +42,12 @@ const viewports = [
   { name: 'mobile', width: 390, height: 844 },
 ] as const;
 
+// Classic cards name the tier as a study status; Crystal Star shows its grade ribbon.
 const cardTiers = [
-  { name: 'learning', difficulty: 'good', label: 'Bloom' },
-  { name: 'mastered', difficulty: 'easy', label: 'Star' },
+  { name: 'learning', difficulty: 'good', label: { classic: 'Learning', crystal: 'Bloom' } },
+  { name: 'mastered', difficulty: 'easy', label: { classic: 'Mastered', crystal: 'Star' } },
 ] as const;
+const newTierLabel = { classic: 'New', crystal: 'Bud' } as const;
 
 async function expectNoBlockingViolations(page: Page) {
   const results = await new AxeBuilder({ page })
@@ -165,7 +167,7 @@ for (const theme of themes) {
       else await expect(root).not.toHaveClass(/\bdark\b/);
 
       await expect(shell).toHaveAttribute('data-card-side', 'front');
-      await expect(shell.locator('[data-card-tier-label]')).toHaveText('Bud');
+      await expect(shell.locator('[data-card-tier-label]')).toHaveText(newTierLabel[theme.family]);
       await expect(shell.locator('.flashcard-face')).toBeVisible();
       await expectPaintedSurface(shell.locator('.flashcard-face'));
       await expectCardPhotoReady(shell);
@@ -214,7 +216,7 @@ for (const tier of cardTiers) {
         const shell = page.getByRole('group', { name: /luminous flashcard/i });
         await expect(shell).toHaveAttribute('data-card-side', 'front');
         await expect(shell).toHaveAttribute('data-card-tier', tier.name);
-        await expect(shell.locator('[data-card-tier-label]')).toHaveText(tier.label);
+        await expect(shell.locator('[data-card-tier-label]')).toHaveText(tier.label[theme.family]);
         await expect(shell.getByText('New card', { exact: true })).toHaveCount(0);
         await expectCardPhotoReady(shell);
         await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-${tier.name}-front.png`, {
@@ -257,7 +259,7 @@ for (const state of canvasCardStates) {
           const spotlight = shell.locator('[data-card-effect="spotlight"]');
           await expect(shell).toHaveAttribute('data-card-tier', 'new');
           await expect(shell).toHaveAttribute('data-card-side', 'front');
-          await expect(shell.getByText('New card', { exact: true })).toBeVisible();
+          await expect(shell.locator('[data-card-tier-label]')).toHaveText(newTierLabel[theme.family]);
           const box = await shell.boundingBox();
           if (!box) throw new Error('Flashcard shell is not measurable');
           await page.mouse.move(box.x + box.width * 0.28, box.y + box.height * 0.3);
