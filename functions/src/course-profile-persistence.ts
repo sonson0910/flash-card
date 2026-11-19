@@ -430,6 +430,22 @@ const readStoredProfile = (snapshot: { exists: boolean; data(): DocumentData | u
   }
 };
 
+/**
+ * An account with no stored profile reads as the implicit English course every account had
+ * before courses existed. Nobody chose that course, so the first create for its language takes
+ * its place instead of failing on it: the learner's own language pair, goals and preferences
+ * become the stored course, in the same single read and single write.
+ */
+const unchosenCourseReplaced = (
+  stored: boolean,
+  profile: CourseProfile,
+  request: CourseProfileMutationRequest,
+): CourseProfile => {
+  if (stored || request.operation !== 'createCourse') return profile;
+  const courses = profile.courses.filter(course => course.targetLanguage !== request.input.targetLanguage);
+  return courses.length === profile.courses.length ? profile : { courses, activeCourseId: null };
+};
+
 export const applyCourseProfileMutation = async (
   database: Firestore,
   authenticatedOwnerId: string,
@@ -445,7 +461,7 @@ export const applyCourseProfileMutation = async (
   const reference = profileReference(database, ownerId);
   return database.runTransaction(async (transaction: Transaction) => {
     const snapshot = await transaction.get(reference);
-    const current = readStoredProfile(snapshot);
+    const current = unchosenCourseReplaced(snapshot.exists, readStoredProfile(snapshot), request);
     const next = applyMutation(current, request, factory, clock);
     transaction.set(reference, next as unknown as DocumentData);
     return next;
