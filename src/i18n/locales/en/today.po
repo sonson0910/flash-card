@@ -339,9 +339,9 @@ msgid "daily.lesson.submit"
 msgstr "Submit answer"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:205
+#: src/features/dailyLearning/LessonScreen.tsx:186
 msgid "daily.lesson.title"
-msgstr "Lesson"
+msgstr "Today’s lesson"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/LessonScreen.tsx:78
@@ -2057,3 +2057,148 @@ msgstr "Adaptive suggestion"
 msgctxt "webWords.feedback.scheduled-normal-review"
 msgid "These cards already follow their normal review schedule."
 msgstr "These cards already follow their normal review schedule."
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:278
+msgid "daily.lesson.enter-key"
+msgstr "Enter"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:29
+msgid "daily.lesson.stage.active-recall"
+msgstr "Active recall"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:31
+msgid "daily.lesson.stage.cloze"
+msgstr "Cloze"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:30
+msgid "daily.lesson.stage.listening"
+msgstr "Listening"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:28
+msgid "daily.lesson.stage.recognition"
+msgstr "Recognition"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:33
+msgid "daily.lesson.stage.sentence-building"
+msgstr "Sentence building"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:32
+msgid "daily.lesson.stage.spelling"
+msgstr "Spelling"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:64
+msgid "daily.lesson.stages-label"
+msgstr "Exercise types"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:112
+msgid "daily.placement.headline.accent"
+msgstr "starting level."
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:112
+msgid "daily.placement.headline.lead"
+msgstr "Find your"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:60
+msgid "daily.placement.ladder.likely"
+msgstr "Likely"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:67
+msgid "daily.placement.ladder.no-confidence"
+msgstr "Not enough answers yet"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:48
+msgid "daily.placement.ladder.note"
+msgstr "Sharpens with every answer"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:49
+msgid "daily.placement.ladder.pending-note"
+msgstr "An estimate appears after six answers"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:46
+msgid "daily.placement.ladder.preview-note"
+msgstr "Three tiers. The check suggests one."
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:60
+msgid "daily.placement.ladder.recommended"
+msgstr "Recommended"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:43
+msgid "daily.placement.ladder.result-title"
+msgstr "Where you start"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:44
+msgid "daily.placement.ladder.title"
+msgstr "Your estimate so far"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:124
+msgid "daily.placement.question-note"
+msgstr "No score, no pressure. Your answers only shape where your learning starts."
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:83
+msgid "daily.placement.skip"
+msgstr "Skip placement"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:34
+msgid "daily.placement.tier.advanced.note"
+msgstr "Nuance and academic writing"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:35
+msgid "daily.placement.tier.core.note"
+msgstr "Work, study and opinions"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:36
+msgid "daily.placement.tier.foundation.note"
+msgstr "Everyday words and short texts"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:79
+msgid "daily.placement.title-kicker"
+msgstr "Level check"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:142
+msgid "daily.placement.unsure"
+msgstr "I’m not sure"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayScreen.tsx:267
+msgid "today.streak.description"
+msgstr "You have studied for {count, plural, one {# day in a row} other {# days in a row}}. Keep choosing the next helpful study step."
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayScreen.tsx:266
+msgid "today.streak.title"
+msgstr "Your study rhythm"
+
+#: src/features/dailyLearning/SessionBridge.tsx:51
+msgctxt "session.bridge.combo"
+msgid "Combo"
+msgstr "Combo"
+
+#: src/features/dailyLearning/SessionBridge.tsx:69
+msgctxt "session.bridge.up-next"
+msgid "Up next"
+msgstr "Up next"

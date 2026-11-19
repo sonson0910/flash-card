@@ -1806,3 +1806,168 @@ msgstr "Đang thêm {count} thẻ vào bộ thẻ mới…"
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr "Cài đặt giao diện"
+
+#: src/features/onboarding/OnboardingJourney.tsx:289
+msgctxt "onboarding.goal.heading"
+msgid "Have an exam or <0>goal in mind?</0>"
+msgstr "Bạn có kỳ thi hay <0>mục tiêu nào không?</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:75
+msgctxt "onboarding.eyebrow.reminder"
+msgid "Reminders"
+msgstr "Nhắc nhở"
+
+#: src/features/onboarding/OnboardingJourney.tsx:87
+msgctxt "onboarding.lumi.language.title"
+msgid "Hi, I’m Lumi!"
+msgstr "Chào bạn, mình là Lumi!"
+
+#: src/features/onboarding/OnboardingJourney.tsx:251
+msgctxt "onboarding.language.switch-note"
+msgid "The app switches to {language} right away."
+msgstr "Ứng dụng chuyển sang {language} ngay lập tức."
+
+#: src/features/onboarding/OnboardingJourney.tsx:294
+msgctxt "onboarding.goal.none.description"
+msgid "Learn at your own pace and set a goal whenever you like."
+msgstr "Học theo nhịp của bạn và đặt mục tiêu bất cứ lúc nào."
+
+#: src/features/onboarding/OnboardingJourney.tsx:78
+msgctxt "onboarding.eyebrow.step"
+msgid "Step {step} of {total}"
+msgstr "Bước {step}/{total}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:87
+msgctxt "onboarding.lumi.language.body"
+msgid "Pick the language you read best. Every meaning and explanation will be written in it."
+msgstr "Chọn ngôn ngữ bạn đọc tốt nhất. Mọi nghĩa và giải thích sẽ được viết bằng ngôn ngữ đó."
+
+#: src/features/onboarding/OnboardingJourney.tsx:73
+msgctxt "onboarding.eyebrow.pace"
+msgid "Daily pace"
+msgstr "Nhịp học mỗi ngày"
+
+#: src/features/onboarding/OnboardingJourney.tsx:70
+msgctxt "onboarding.eyebrow.language"
+msgid "Your language"
+msgstr "Ngôn ngữ của bạn"
+
+#: src/features/onboarding/OnboardingJourney.tsx:332
+msgctxt "onboarding.pace.heading"
+msgid "How many cards <0>a day?</0>"
+msgstr "Mỗi ngày học <0>bao nhiêu thẻ?</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:90
+msgctxt "onboarding.lumi.pace.body"
+msgid "Start small. You can change this later."
+msgstr "Bắt đầu nhẹ nhàng thôi. Bạn có thể đổi lại sau."
+
+#: src/features/onboarding/OnboardingJourney.tsx:92
+msgctxt "onboarding.lumi.reminder.title"
+msgid "Want a nudge?"
+msgstr "Cần mình nhắc không?"
+
+#: src/features/onboarding/OnboardingJourney.tsx:260
+msgctxt "onboarding.target.subtitle"
+msgid "Each language is its own course, with its own cards and goals. You can add another later."
+msgstr "Mỗi ngôn ngữ là một khóa học riêng, với thẻ và mục tiêu riêng. Bạn có thể thêm ngôn ngữ khác sau."
+
+#: src/features/onboarding/OnboardingJourney.tsx:259
+msgctxt "onboarding.target.heading"
+msgid "What are you <0>learning?</0>"
+msgstr "Bạn đang <0>học gì?</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:90
+msgctxt "onboarding.lumi.pace.title"
+msgid "How fast shall we go?"
+msgstr "Mình học nhanh cỡ nào nhé?"
+
+#: src/features/onboarding/OnboardingJourney.tsx:91
+msgctxt "onboarding.lumi.aha.body"
+msgid "Five common words, so you can start right away."
+msgstr "Năm từ thông dụng để bạn bắt đầu ngay."
+
+#: src/features/onboarding/OnboardingJourney.tsx:89
+msgctxt "onboarding.lumi.goal.title"
+msgid "Got a goal in mind?"
+msgstr "Bạn có mục tiêu chưa?"
+
+#: src/features/onboarding/OnboardingJourney.tsx:74
+msgctxt "onboarding.eyebrow.aha"
+msgid "First cards"
+msgstr "Những thẻ đầu tiên"
+
+#: src/features/onboarding/OnboardingJourney.tsx:97
+msgctxt "onboarding.lumi.kicker"
+msgid "Lumi · online"
+msgstr "Lumi · trực tuyến"
+
+#: src/features/onboarding/OnboardingJourney.tsx:72
+msgctxt "onboarding.eyebrow.goal"
+msgid "Your goal"
+msgstr "Mục tiêu của bạn"
+
+#: src/features/onboarding/OnboardingJourney.tsx:71
+msgctxt "onboarding.eyebrow.target"
+msgid "What to learn"
+msgstr "Học gì"
+
+#: src/features/onboarding/OnboardingJourney.tsx:89
+msgctxt "onboarding.lumi.goal.body"
+msgid "Choose a path and your cards will follow it."
+msgstr "Chọn một hướng đi và thẻ của bạn sẽ bám theo nó."
+
+#: src/features/onboarding/OnboardingJourney.tsx:88
+msgctxt "onboarding.lumi.target.title"
+msgid "What shall we learn?"
+msgstr "Mình học gì đây?"
+
+#: src/features/onboarding/OnboardingJourney.tsx:95
+msgctxt "onboarding.lumi.label"
+msgid "Lumi"
+msgstr "Lumi"
+
+#: src/features/onboarding/OnboardingJourney.tsx:92
+msgctxt "onboarding.lumi.reminder.body"
+msgid "Pick a time and SonFlash will remind you to review."
+msgstr "Chọn một giờ và SonFlash sẽ nhắc bạn ôn tập."
+
+#: src/features/onboarding/OnboardingJourney.tsx:239
+msgctxt "onboarding.language.heading"
+msgid "Choose your <0>language</0>"
+msgstr "Chọn <0>ngôn ngữ</0> của bạn"
+
+#: src/features/onboarding/OnboardingJourney.tsx:347
+msgctxt "onboarding.aha.heading"
+msgid "Let's add your <0>first cards</0>"
+msgstr "Thêm <0>những thẻ đầu tiên</0> nhé"
+
+#: src/features/onboarding/OnboardingJourney.tsx:323
+msgctxt "onboarding.goal.selected"
+msgid "Selected: <0>{goal}</0>"
+msgstr "Đã chọn: <0>{goal}</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:400
+msgctxt "onboarding.header.tag"
+msgid "Hello · let’s begin"
+msgstr "Xin chào · bắt đầu thôi"
+
+#: src/features/onboarding/OnboardingJourney.tsx:378
+msgctxt "onboarding.reminder.heading"
+msgid "Daily <0>reminders</0>"
+msgstr "<0>Nhắc nhở</0> hằng ngày"
+
+#: src/features/onboarding/OnboardingJourney.tsx:91
+msgctxt "onboarding.lumi.aha.title"
+msgid "Ready for your first cards?"
+msgstr "Sẵn sàng cho những thẻ đầu tiên chưa?"
+
+#: src/features/onboarding/OnboardingJourney.tsx:88
+msgctxt "onboarding.lumi.target.body"
+msgid "Pick one language for now. You can add more from the course switcher."
+msgstr "Chọn một ngôn ngữ trước đã. Bạn có thể thêm ngôn ngữ khác trong trình chuyển khóa học."
+
+#: src/features/onboarding/OnboardingJourney.tsx:401
+msgctxt "onboarding.progress.label"
+msgid "Setup progress"
+msgstr "Tiến độ thiết lập"

@@ -1806,3 +1806,168 @@ msgstr "Adding {count} cards to your new deck…"
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr "Appearance settings"
+
+#: src/features/onboarding/OnboardingJourney.tsx:289
+msgctxt "onboarding.goal.heading"
+msgid "Have an exam or <0>goal in mind?</0>"
+msgstr "Have an exam or <0>goal in mind?</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:75
+msgctxt "onboarding.eyebrow.reminder"
+msgid "Reminders"
+msgstr "Reminders"
+
+#: src/features/onboarding/OnboardingJourney.tsx:87
+msgctxt "onboarding.lumi.language.title"
+msgid "Hi, I’m Lumi!"
+msgstr "Hi, I’m Lumi!"
+
+#: src/features/onboarding/OnboardingJourney.tsx:251
+msgctxt "onboarding.language.switch-note"
+msgid "The app switches to {language} right away."
+msgstr "The app switches to {language} right away."
+
+#: src/features/onboarding/OnboardingJourney.tsx:294
+msgctxt "onboarding.goal.none.description"
+msgid "Learn at your own pace and set a goal whenever you like."
+msgstr "Learn at your own pace and set a goal whenever you like."
+
+#: src/features/onboarding/OnboardingJourney.tsx:78
+msgctxt "onboarding.eyebrow.step"
+msgid "Step {step} of {total}"
+msgstr "Step {step} of {total}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:87
+msgctxt "onboarding.lumi.language.body"
+msgid "Pick the language you read best. Every meaning and explanation will be written in it."
+msgstr "Pick the language you read best. Every meaning and explanation will be written in it."
+
+#: src/features/onboarding/OnboardingJourney.tsx:73
+msgctxt "onboarding.eyebrow.pace"
+msgid "Daily pace"
+msgstr "Daily pace"
+
+#: src/features/onboarding/OnboardingJourney.tsx:70
+msgctxt "onboarding.eyebrow.language"
+msgid "Your language"
+msgstr "Your language"
+
+#: src/features/onboarding/OnboardingJourney.tsx:332
+msgctxt "onboarding.pace.heading"
+msgid "How many cards <0>a day?</0>"
+msgstr "How many cards <0>a day?</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:90
+msgctxt "onboarding.lumi.pace.body"
+msgid "Start small. You can change this later."
+msgstr "Start small. You can change this later."
+
+#: src/features/onboarding/OnboardingJourney.tsx:92
+msgctxt "onboarding.lumi.reminder.title"
+msgid "Want a nudge?"
+msgstr "Want a nudge?"
+
+#: src/features/onboarding/OnboardingJourney.tsx:260
+msgctxt "onboarding.target.subtitle"
+msgid "Each language is its own course, with its own cards and goals. You can add another later."
+msgstr "Each language is its own course, with its own cards and goals. You can add another later."
+
+#: src/features/onboarding/OnboardingJourney.tsx:259
+msgctxt "onboarding.target.heading"
+msgid "What are you <0>learning?</0>"
+msgstr "What are you <0>learning?</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:90
+msgctxt "onboarding.lumi.pace.title"
+msgid "How fast shall we go?"
+msgstr "How fast shall we go?"
+
+#: src/features/onboarding/OnboardingJourney.tsx:91
+msgctxt "onboarding.lumi.aha.body"
+msgid "Five common words, so you can start right away."
+msgstr "Five common words, so you can start right away."
+
+#: src/features/onboarding/OnboardingJourney.tsx:89
+msgctxt "onboarding.lumi.goal.title"
+msgid "Got a goal in mind?"
+msgstr "Got a goal in mind?"
+
+#: src/features/onboarding/OnboardingJourney.tsx:74
+msgctxt "onboarding.eyebrow.aha"
+msgid "First cards"
+msgstr "First cards"
+
+#: src/features/onboarding/OnboardingJourney.tsx:97
+msgctxt "onboarding.lumi.kicker"
+msgid "Lumi · online"
+msgstr "Lumi · online"
+
+#: src/features/onboarding/OnboardingJourney.tsx:72
+msgctxt "onboarding.eyebrow.goal"
+msgid "Your goal"
+msgstr "Your goal"
+
+#: src/features/onboarding/OnboardingJourney.tsx:71
+msgctxt "onboarding.eyebrow.target"
+msgid "What to learn"
+msgstr "What to learn"
+
+#: src/features/onboarding/OnboardingJourney.tsx:89
+msgctxt "onboarding.lumi.goal.body"
+msgid "Choose a path and your cards will follow it."
+msgstr "Choose a path and your cards will follow it."
+
+#: src/features/onboarding/OnboardingJourney.tsx:88
+msgctxt "onboarding.lumi.target.title"
+msgid "What shall we learn?"
+msgstr "What shall we learn?"
+
+#: src/features/onboarding/OnboardingJourney.tsx:95
+msgctxt "onboarding.lumi.label"
+msgid "Lumi"
+msgstr "Lumi"
+
+#: src/features/onboarding/OnboardingJourney.tsx:92
+msgctxt "onboarding.lumi.reminder.body"
+msgid "Pick a time and SonFlash will remind you to review."
+msgstr "Pick a time and SonFlash will remind you to review."
+
+#: src/features/onboarding/OnboardingJourney.tsx:239
+msgctxt "onboarding.language.heading"
+msgid "Choose your <0>language</0>"
+msgstr "Choose your <0>language</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:347
+msgctxt "onboarding.aha.heading"
+msgid "Let's add your <0>first cards</0>"
+msgstr "Let's add your <0>first cards</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:323
+msgctxt "onboarding.goal.selected"
+msgid "Selected: <0>{goal}</0>"
+msgstr "Selected: <0>{goal}</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:400
+msgctxt "onboarding.header.tag"
+msgid "Hello · let’s begin"
+msgstr "Hello · let’s begin"
+
+#: src/features/onboarding/OnboardingJourney.tsx:378
+msgctxt "onboarding.reminder.heading"
+msgid "Daily <0>reminders</0>"
+msgstr "Daily <0>reminders</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:91
+msgctxt "onboarding.lumi.aha.title"
+msgid "Ready for your first cards?"
+msgstr "Ready for your first cards?"
+
+#: src/features/onboarding/OnboardingJourney.tsx:88
+msgctxt "onboarding.lumi.target.body"
+msgid "Pick one language for now. You can add more from the course switcher."
+msgstr "Pick one language for now. You can add more from the course switcher."
+
+#: src/features/onboarding/OnboardingJourney.tsx:401
+msgctxt "onboarding.progress.label"
+msgid "Setup progress"
+msgstr "Setup progress"

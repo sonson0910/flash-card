@@ -2057,3 +2057,148 @@ msgstr ""
 msgctxt "webWords.feedback.scheduled-normal-review"
 msgid "These cards already follow their normal review schedule."
 msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:278
+msgid "daily.lesson.enter-key"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:29
+msgid "daily.lesson.stage.active-recall"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:31
+msgid "daily.lesson.stage.cloze"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:30
+msgid "daily.lesson.stage.listening"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:28
+msgid "daily.lesson.stage.recognition"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:33
+msgid "daily.lesson.stage.sentence-building"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:32
+msgid "daily.lesson.stage.spelling"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:64
+msgid "daily.lesson.stages-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:112
+msgid "daily.placement.headline.accent"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:112
+msgid "daily.placement.headline.lead"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:60
+msgid "daily.placement.ladder.likely"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:67
+msgid "daily.placement.ladder.no-confidence"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:48
+msgid "daily.placement.ladder.note"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:49
+msgid "daily.placement.ladder.pending-note"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:46
+msgid "daily.placement.ladder.preview-note"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:60
+msgid "daily.placement.ladder.recommended"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:43
+msgid "daily.placement.ladder.result-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:44
+msgid "daily.placement.ladder.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:124
+msgid "daily.placement.question-note"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:83
+msgid "daily.placement.skip"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:34
+msgid "daily.placement.tier.advanced.note"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:35
+msgid "daily.placement.tier.core.note"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:36
+msgid "daily.placement.tier.foundation.note"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:79
+msgid "daily.placement.title-kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:142
+msgid "daily.placement.unsure"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayScreen.tsx:267
+msgid "today.streak.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayScreen.tsx:266
+msgid "today.streak.title"
+msgstr ""
+
+#: src/features/dailyLearning/SessionBridge.tsx:51
+msgctxt "session.bridge.combo"
+msgid "Combo"
+msgstr ""
+
+#: src/features/dailyLearning/SessionBridge.tsx:69
+msgctxt "session.bridge.up-next"
+msgid "Up next"
+msgstr ""
