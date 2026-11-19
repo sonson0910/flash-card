@@ -332,7 +332,7 @@ test('popup keeps its designed width and reflows fallback layouts', () => {
 test('uses the Canvas-sized popup shell and keeps support controls behind disclosure', () => {
   assert.match(popupHtmlSource, /<details class="popup-utilities">/);
   assert.match(popupHtmlSource, /class="brand-name">\s*<span>Son<\/span><em>Flash<\/em>/);
-  assert.match(popupHtmlSource, /id="selection"[^>]*rows="2"/);
+  assert.match(popupHtmlSource, /id="selection"[^>]*rows="1"/);
   assert.match(popupCssSource, /\.shell\s*\{[^}]*height:\s*640px/);
   assert.match(popupCssSource, /\[data-theme-family="crystal"\] body::before/);
   assert.match(popupCssSource, /\[data-theme-family="crystal"\] textarea::placeholder/);
@@ -769,7 +769,7 @@ test('shows the loading state as a busy spinner while a quick-add runs, then a d
   assert.equal(popup.elements.get('status').dataset.tone, 'success');
   assert.equal(popup.elements.get('result-card').hidden, false);
   assert.equal(popup.elements.get('result-card').dataset.status, 'created');
-  assert.equal(popup.elements.get('result-badge').textContent, 'ĐÃ LƯU FLASHCARD');
+  assert.equal(popup.elements.get('result-badge').textContent, 'Đã lưu flashcard');
   assert.equal(popup.elements.get('state-card').hidden, true);
 });
 
@@ -784,8 +784,8 @@ test('shows a distinct duplicate badge for a word that already existed, never th
   });
 
   assert.equal(popup.elements.get('result-card').dataset.status, 'existing');
-  assert.equal(popup.elements.get('result-badge').textContent, 'ĐÃ CÓ TRONG THƯ VIỆN');
-  assert.notEqual(popup.elements.get('result-badge').textContent, 'ĐÃ LƯU FLASHCARD');
+  assert.equal(popup.elements.get('result-badge').textContent, 'Đã có trong thư viện');
+  assert.notEqual(popup.elements.get('result-badge').textContent, 'Đã lưu flashcard');
 });
 
 test('shows a sign-in state card with a working sign-in action when auth is required', async () => {

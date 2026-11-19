@@ -11,6 +11,8 @@ const expectedFiles = [
   '_locales/en/messages.json',
   '_locales/vi/messages.json',
   'app-bridge.js',
+  'assets/crystal-wings.svg',
+  'assets/lumi-hint.webp',
   'background-core.js',
   'background-ui.js',
   'background.js',

@@ -120,8 +120,8 @@ const speechSupported = () => Boolean(
 );
 
 const RESULT_BADGE_KEYS = {
-  created: ['resultBadgeCreated', 'ĐÃ LƯU FLASHCARD'],
-  existing: ['resultBadgeExisting', 'ĐÃ CÓ TRONG THƯ VIỆN'],
+  created: ['resultBadgeCreated', 'Đã lưu flashcard'],
+  existing: ['resultBadgeExisting', 'Đã có trong thư viện'],
 };
 
 const TARGET_LANGUAGE_LABELS = {
@@ -208,7 +208,7 @@ const renderResultCard = ({ word = '', translation = '', phonetic = '', explanat
   else delete resultCard.dataset.status;
   if (resultBadge) {
     const [key, fallback] = RESULT_BADGE_KEYS[status] || [];
-    resultBadge.textContent = key ? t(key, undefined, fallback) : t('resultBadge', undefined, 'KẾT QUẢ');
+    resultBadge.textContent = key ? t(key, undefined, fallback) : t('resultBadge', undefined, 'Kết quả');
   }
   if (resultWord) resultWord.textContent = word;
   if (resultTranslation) resultTranslation.textContent = translation;
@@ -301,10 +301,10 @@ const renderSelectionIconSite = state => {
     return;
   }
   if (selectionIconSite?.enabled === true) {
-    selectionIconToggle.textContent = t('floatingIconOn', undefined, 'Tắt');
+    selectionIconToggle.textContent = t('floatingIconOn', undefined, 'Bật');
     setSelectionIconStatus(t('floatingIconStatusOn', undefined, 'Đã cấp quyền và bật trên website này.'));
   } else {
-    selectionIconToggle.textContent = t('floatingIconOff', undefined, 'Bật');
+    selectionIconToggle.textContent = t('floatingIconOff', undefined, 'Tắt');
     setSelectionIconStatus(t('floatingIconStatusOff', undefined, 'Tắt mặc định; cần cấp quyền cho website này.'));
   }
 };

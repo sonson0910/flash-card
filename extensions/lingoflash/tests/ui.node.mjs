@@ -284,6 +284,19 @@ const renderBubbleForToneAssertions = payload => {
   return { result, nodes };
 };
 
+test('themes the bubble from the saved family and scheme, resolving system to the page preference', () => {
+  const crystal = renderBubbleForToneAssertions({ status: 'created', text: 'resilient', translation: 'bền bỉ', themeFamily: 'crystal', colorScheme: 'dark' });
+  const crystalFrame = crystal.nodes.find(node => node.className === 'frame');
+  assert.equal(crystal.result?.ok, true);
+  assert.equal(crystalFrame?.dataset?.family, 'crystal');
+  assert.equal(crystalFrame?.dataset?.scheme, 'dark');
+
+  const system = renderBubbleForToneAssertions({ status: 'created', text: 'resilient', translation: 'bền bỉ', colorScheme: 'system' });
+  const systemFrame = system.nodes.find(node => node.className === 'frame');
+  assert.equal(systemFrame?.dataset?.family, 'classic');
+  assert.equal(systemFrame?.dataset?.scheme, 'light');
+});
+
 test('gives a duplicate (existing) card a distinct amber badge tone, never the created tone', () => {
   const { result, nodes } = renderBubbleForToneAssertions({ status: 'existing', text: 'resilient', translation: 'bền bỉ' });
   const badge = nodes.find(node => node.className === 'ok');
