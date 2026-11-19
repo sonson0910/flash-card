@@ -135,6 +135,10 @@
 
 /* Panels */
 .stats-canvas { display: grid; gap: 20px; }
+/* The board's activity column fills the row beside a fixed 400px mastery column. */
+@media (min-width: 1024px) {
+  .stats-canvas.stats-canvas--primary { grid-template-columns: minmax(0, 1fr) 400px; }
+}
 .stats-grid { gap: 20px; }
 .stats-panel {
   position: relative;

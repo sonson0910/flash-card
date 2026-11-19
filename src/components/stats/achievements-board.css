@@ -198,12 +198,15 @@
   --ach-feature-bg: linear-gradient(180deg, #121624 0%, #080a12 100%);
   --ach-hex: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
   --ach-chip-cut: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  --ach-holo-text: var(--st-holo-text);
   overflow-x: clip;
 }
 :root[data-theme-family='crystal']:not(.dark) .achievements-board--crystal {
   --ach-metal: linear-gradient(180deg, #0d1a33 0%, #0d1a33 45%, #b30f33 62%, #ff2a4d 100%);
   --ach-beam: rgb(255 255 255 / .5);
   --ach-feature-bg: linear-gradient(180deg, #f2faff 0%, #d9eeff 100%);
+  /* The canvas holo text is a little light for 12px labels on the pale panels; this keeps AA. */
+  --ach-holo-text: #08708a;
 }
 .ach-crystal {
   display: grid;
@@ -214,7 +217,7 @@
   padding-top: 4px;
 }
 .ach-main-head { grid-area: head; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 22px; min-width: 0; }
-.ach-side { grid-area: side; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.ach-side { grid-area: side; position: relative; z-index: 1; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .ach-main-body { grid-area: body; display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 22px; min-width: 0; }
 
 .achievements-board--crystal .ach-title {
@@ -294,7 +297,7 @@
 .ach-emblem-bar > span { display: block; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / .7); }
 
 .ach-bloom-card { padding: 18px 22px; }
-.ach-side-title { margin: 0; font-family: var(--st-display); font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--st-holo-text); }
+.ach-side-title { margin: 0; font-family: var(--st-display); font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--ach-holo-text); }
 .ach-bloom-list { margin: 12px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
 .ach-bloom-list > li { display: flex; align-items: center; gap: 12px; }
 .ach-grade {
@@ -324,7 +327,7 @@
 .ach-lumi-card { flex-grow: 1; padding: 18px 22px; display: flex; align-items: flex-end; gap: 12px; }
 .ach-lumi-figure { width: 124px; height: 124px; flex-shrink: 0; object-fit: contain; }
 .ach-lumi-copy { margin: 0; padding-bottom: 8px; min-width: 0; }
-.ach-lumi-name { display: block; font-family: var(--st-display); font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--st-holo-text); }
+.ach-lumi-name { display: block; font-family: var(--st-display); font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ach-holo-text); }
 .ach-lumi-message { display: block; margin-top: 4px; font-weight: 800; font-size: 14.5px; line-height: 1.4; color: var(--st-title); }
 .ach-lumi-badge { color: var(--st-crimson-text); }
 
@@ -386,7 +389,7 @@
 .achievements-board--crystal .ach-badge {
   --ach-rim: var(--st-rim-new);
   --ach-glow: rgb(94 242 255 / .35);
-  --ach-tier-text: var(--st-holo-text);
+  --ach-tier-text: var(--ach-holo-text);
   position: relative;
   isolation: isolate;
   min-height: 168px;
@@ -503,4 +506,6 @@
   .ach-side { grid-template-columns: minmax(0, 1fr); }
   .ach-lumi-figure { width: 96px; height: 96px; }
   .achievements-board--crystal .ach-grid { grid-template-columns: minmax(0, 1fr); }
+  .achievements-board--crystal .ach-badge { min-height: 132px; }
+  .ach-feature-wrap { min-height: 380px; }
 }
