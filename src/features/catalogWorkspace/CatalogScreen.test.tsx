@@ -152,12 +152,12 @@ describe('CatalogScreen', () => {
     expect(html).toContain('IELTS');
     expect(html).toContain('Your current path');
     expect(html).toContain('24 started');
-    expect(html).toContain('8 mastered');
+    expect(html).toMatch(/8 of [\d,]+ words mastered/);
     expect(html).toContain('In progress');
     expect(html).toContain('Locked');
     expect(html).toContain('Foundation · A1–A2 · Selected');
-    expect(html).toContain('relative flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2');
-    expect(html).toContain('min-w-0 break-words text-xl font-black tracking-tight');
+    expect(html).toContain('class="paths-book-name">IELTS</span>');
+    expect(html).toContain('class="paths-hero-title-accent">Foundation</em>');
     expect(html).toContain('a careful study of something');
     expect(html).toContain('Báo cáo cung cấp phân tích');
     expect(html).toContain('detailed analysis');
@@ -218,7 +218,7 @@ describe('CatalogScreen', () => {
     }} actions={actions} />);
 
     expect(html).toContain('class="catalog-feature-continue');
-    expect(html).toContain('>Continue</button>');
+    expect(html).toContain('>Continue unit 1</span></button>');
   });
 
   it('requires an armed confirmation before the selected unit can continue', () => {

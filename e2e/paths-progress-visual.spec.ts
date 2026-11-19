@@ -586,7 +586,7 @@ test('approved reviewed catalog selects all 45 real units without horizontal cli
       const selections = viewport.name === 'desktop' ? 15 : 1;
       for (let unitIndex = 0; unitIndex < selections; unitIndex += 1) {
         const unit = units.nth(unitIndex);
-        if (viewport.name === 'desktop') reviewedUnitTitles.add((await unit.locator('span.font-black').innerText()).trim());
+        if (viewport.name === 'desktop') reviewedUnitTitles.add((await unit.locator('span.paths-unit-title').innerText()).trim());
         await unit.click();
         await expect(unit).toHaveAttribute('aria-pressed', 'true');
       }
