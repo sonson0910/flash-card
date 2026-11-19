@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
 import {
+  addTags,
   buildCategoryFacetDelta,
   canEditPartOfSpeech,
   createEditCardDraft,
@@ -9,7 +10,10 @@ import {
   EditCardDraftError,
   isEditCardDraftDirty,
   isSuccessfulEditCardSave,
+  meaningChipLabel,
+  meaningSuggestions,
   previewEditCard,
+  tagSuggestions,
 } from './editCardModel';
 
 const card = { id: 'card-1', word: 'lead', translation: 'chì', explanation: 'A metal.', origin: 'ai', nextReviewDate: '2026-09-24' } as CardData;
@@ -251,6 +255,135 @@ describe('deck and starred in the card draft', () => {
 
     draft.starred = true;
     expect(previewEditCard(openedCard, draft)).toMatchObject({ customDeck: null, bookmarked: true });
+  });
+});
+
+describe('tags and difficulty label in the card draft', () => {
+  it('starts from the stored tags and label, with no label as an empty choice', () => {
+    expect(createEditCardDraft({ ...card, tags: ['news', 'B2'], learnerDifficulty: 'hard' }))
+      .toMatchObject({ tags: ['news', 'B2'], learnerDifficulty: 'hard' });
+    expect(createEditCardDraft({ ...card, learnerDifficulty: null })).toMatchObject({ tags: [], learnerDifficulty: '' });
+    expect(createEditCardDraft(card)).toMatchObject({ tags: [], learnerDifficulty: '' });
+  });
+
+  it('never reads the review rating as the learner label', () => {
+    expect(createEditCardDraft({ ...card, difficulty: 'hard' })).toMatchObject({ learnerDifficulty: '' });
+  });
+
+  it('patches tags only when the stored list changed, keeping the learner order', () => {
+    const openedCard = { ...card, tags: ['news', 'B2'] };
+    const draft = createEditCardDraft(openedCard);
+    expect(editCardPatch(openedCard, draft)).toEqual({});
+
+    draft.tags = ['news', 'B2', 'travel'];
+    expect(editCardPatch(openedCard, draft)).toEqual({ tags: ['news', 'B2', 'travel'] });
+
+    draft.tags = ['B2', 'news'];
+    expect(editCardPatch(openedCard, draft)).toEqual({ tags: ['B2', 'news'] });
+
+    draft.tags = [];
+    expect(editCardPatch(openedCard, draft)).toEqual({ tags: [] });
+  });
+
+  it('treats a card without tags and an empty draft list as unchanged', () => {
+    const draft = createEditCardDraft(card);
+    expect(editCardPatch(card, draft)).toEqual({});
+    expect(isEditCardDraftDirty(card, draft)).toBe(false);
+  });
+
+  it('patches the label as the chosen value and clears it to null', () => {
+    const openedCard = { ...card, learnerDifficulty: 'easy' as const };
+    const draft = createEditCardDraft(openedCard);
+    draft.learnerDifficulty = 'medium';
+    expect(editCardPatch(openedCard, draft)).toEqual({ learnerDifficulty: 'medium' });
+    draft.learnerDifficulty = '';
+    expect(editCardPatch(openedCard, draft)).toEqual({ learnerDifficulty: null });
+
+    const unlabelled = createEditCardDraft(card);
+    expect(editCardPatch(card, unlabelled)).toEqual({});
+  });
+
+  it('never touches scheduling when the label changes', () => {
+    const openedCard = { ...card, difficulty: 'easy' as const, reviews: 4 };
+    const draft = createEditCardDraft(openedCard);
+    draft.learnerDifficulty = 'hard';
+    const patch = editCardPatch(openedCard, draft);
+    expect(patch).toEqual({ learnerDifficulty: 'hard' });
+    for (const field of ['fsrs', 'difficulty', 'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'reviewHistory']) {
+      expect(patch).not.toHaveProperty(field);
+    }
+  });
+
+  it('marks tag and label changes dirty and previews them', () => {
+    const openedCard = { ...card, tags: ['news'] };
+    const draft = createEditCardDraft(openedCard);
+    draft.tags = ['news', 'B2'];
+    expect(isEditCardDraftDirty(openedCard, draft)).toBe(true);
+    draft.tags = ['news'];
+    expect(isEditCardDraftDirty(openedCard, draft)).toBe(false);
+    draft.learnerDifficulty = 'medium';
+    expect(isEditCardDraftDirty(openedCard, draft)).toBe(true);
+    expect(previewEditCard(openedCard, draft)).toMatchObject({ tags: ['news'], learnerDifficulty: 'medium' });
+  });
+});
+
+describe('addTags', () => {
+  it('adds a typed tag in its stored form', () => {
+    expect(addTags(['news'], '  phrasal   verbs ')).toEqual({ tags: ['news', 'phrasal verbs'], rejected: null, leftover: '' });
+  });
+
+  it('splits pasted text on commas and skips empty pieces', () => {
+    expect(addTags([], 'news, B2,, travel ,')).toEqual({ tags: ['news', 'B2', 'travel'], rejected: null, leftover: '' });
+  });
+
+  it('refuses a tag the card already has in any letter case', () => {
+    expect(addTags(['News'], 'news')).toEqual({ tags: ['News'], rejected: 'duplicate', leftover: '' });
+  });
+
+  it('stops at 8 tags', () => {
+    const full = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+    expect(addTags(full, 'h, i')).toEqual({ tags: [...full, 'h'], rejected: 'limit', leftover: '' });
+  });
+
+  it('counts the 32-character bound in characters and keeps a longer tag for editing', () => {
+    expect(addTags([], '📚'.repeat(32)).tags).toEqual(['📚'.repeat(32)]);
+    expect(addTags(['news'], `${'x'.repeat(33)}, B2`)).toEqual({ tags: ['news', 'B2'], rejected: 'too-long', leftover: 'x'.repeat(33) });
+  });
+});
+
+describe('tagSuggestions', () => {
+  it('offers the card category and CEFR level that are not tags yet', () => {
+    expect(tagSuggestions({ category: 'Travel', cefrLevel: 'B2' }, [])).toEqual(['Travel', 'B2']);
+    expect(tagSuggestions({ category: 'Travel', cefrLevel: 'B2' }, ['travel'])).toEqual(['B2']);
+  });
+
+  it('offers nothing for the empty-category fallback, a missing level, or a full tag list', () => {
+    expect(tagSuggestions({ category: 'Other', cefrLevel: undefined }, [])).toEqual([]);
+    expect(tagSuggestions({ category: '', cefrLevel: '' }, [])).toEqual([]);
+    expect(tagSuggestions({ category: 'Travel', cefrLevel: 'B2' }, ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'])).toEqual([]);
+  });
+
+  it('offers one suggestion when category and level match each other', () => {
+    expect(tagSuggestions({ category: 'B2', cefrLevel: 'b2' }, [])).toEqual(['B2']);
+  });
+});
+
+describe('meaningSuggestions', () => {
+  it('lists the AI alternatives that differ from the draft meaning', () => {
+    const aiCard = { translationAlternatives: ['dẫn dắt', 'chì; kim loại nặng', 'Dẫn đầu'] };
+    expect(meaningSuggestions(aiCard, 'dẫn đầu')).toEqual(['dẫn dắt', 'chì; kim loại nặng']);
+    expect(meaningSuggestions(aiCard, '  DẪN DẮT ')).toEqual(['chì; kim loại nặng', 'Dẫn đầu']);
+  });
+
+  it('offers nothing for a card without alternatives', () => {
+    expect(meaningSuggestions({}, 'chì')).toEqual([]);
+    expect(meaningSuggestions({ translationAlternatives: ['chì'] }, 'chì')).toEqual([]);
+  });
+
+  it('labels a chip with the text up to its first semicolon', () => {
+    expect(meaningChipLabel('chì; kim loại nặng')).toBe('chì');
+    expect(meaningChipLabel('dẫn dắt')).toBe('dẫn dắt');
+    expect(meaningChipLabel('; only detail')).toBe('; only detail');
   });
 });
 

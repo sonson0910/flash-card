@@ -2,10 +2,11 @@ import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { AlertTriangle, Check, ChevronDown, ImageOff, Loader2, Search, Star, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, ImageOff, Loader2, Plus, Search, Star, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { LearningStateOutcome } from '../learning/learningStateController';
-import type { CardData } from '../../types/card';
+import type { CardData, LearnerDifficulty } from '../../types/card';
+import { LEARNER_DIFFICULTIES, MAX_CARD_TAG_LENGTH, MAX_CARD_TAGS } from '../../lib/cardNormalization';
 import {
   cardEditCloudAvailable,
   CardHeadwordRenameError,
@@ -18,6 +19,7 @@ import { splitStressedWord } from '../library/libraryCardFace';
 import '../library/library-dialog-overlays.css';
 import './edit-card-sheet.css';
 import {
+  addTags,
   canEditPartOfSpeech,
   createEditCardDraft,
   editCardPatch,
@@ -28,7 +30,11 @@ import {
   MAX_CATEGORY_LENGTH,
   MAX_HEADWORD_LENGTH,
   MAX_PART_OF_SPEECH_LENGTH,
+  meaningChipLabel,
+  meaningSuggestions,
   previewEditCard,
+  tagSuggestions,
+  type AddTagRejection,
   type EditableCardField,
   type EditCardDraft,
 } from './editCardModel';
@@ -73,6 +79,19 @@ const fieldLabels = {
   phonetic: null,
   mnemonic: msg({ id: 'flashcard.memory-hook', message: 'Memory hook' }),
 } satisfies Record<EditableCardField, ReturnType<typeof msg> | null>;
+
+const learnerDifficultyLabels = {
+  easy: msg({ id: 'library.edit-card.difficulty-easy', message: 'Easy' }),
+  medium: msg({ id: 'library.edit-card.difficulty-medium', message: 'Medium' }),
+  hard: msg({ id: 'library.edit-card.difficulty-hard', message: 'Hard' }),
+} satisfies Record<LearnerDifficulty, ReturnType<typeof msg>>;
+
+// The review rating the scheduler last recorded, shown beside the learner's own label.
+const lastReviewLabels = {
+  easy: msg({ id: 'library.edit-card.last-review-easy', message: 'Last review: Easy' }),
+  good: msg({ id: 'library.edit-card.last-review-good', message: 'Last review: Good' }),
+  hard: msg({ id: 'library.edit-card.last-review-hard', message: 'Last review: Hard' }),
+};
 
 const isNativeField = (key: EditableCardField) =>
   key !== 'explanation' && key !== 'exampleSentence' && key !== 'phonetic';
@@ -127,6 +146,10 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
   const firstFieldRef = useRef<HTMLTextAreaElement | null>(null);
   const wasOpenRef = useRef(open);
   const cardIdRef = useRef(card.id);
+  // Text typed into the tag input that is not a tag yet, and why the last entry was refused.
+  const [tagInput, setTagInput] = useState('');
+  const [tagNotice, setTagNotice] = useState<AddTagRejection | null>(null);
+  const tagInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const reopened = open && !wasOpenRef.current;
@@ -146,6 +169,8 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
       imageUploadTaskRef.current = null;
       setImageUploadProgress(undefined);
       setImageUploadFailure(null);
+      setTagInput('');
+      setTagNotice(null);
     }
     if (!open) {
       imageUploadTaskRef.current?.cancel();
@@ -415,12 +440,11 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
     </button>
   );
 
-  const textField = (key: Exclude<EditableCardField, 'phonetic'>, rows = 1) => (
+  const textField = (key: Exclude<EditableCardField, 'phonetic' | 'translation'>, rows = 1) => (
     <label key={key} className={`edit-sheet-field edit-sheet-field--${key}`}>
       <span className="edit-sheet-label">{_(fieldLabels[key])}</span>
       <textarea
         data-edit-field={key}
-        ref={key === 'translation' ? firstFieldRef : undefined}
         value={draft[key]}
         lang={isNativeField(key) ? nativeLanguage : targetLanguage}
         dir="auto"
@@ -430,6 +454,198 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
         className="edit-sheet-input edit-sheet-textarea"
       />
     </label>
+  );
+
+  // Meanings the AI offered when it created the card. Picking one only changes the draft.
+  const meaningChoices = meaningSuggestions(openedCard, draft.translation);
+  const meaningField = (rows = 1) => (
+    <div key="translation" className="edit-sheet-field edit-sheet-field--translation">
+      <span className="edit-sheet-label-row">
+        <label htmlFor="edit-card-translation" className="edit-sheet-label">{_(fieldLabels.translation)}</label>
+        {meaningChoices.length > 0 && (
+          <span data-edit-ai-suggested className="edit-sheet-ai-badge">
+            <Trans {...msg({ id: 'library.edit-card.ai-suggested', message: 'AI suggested' })} />
+          </span>
+        )}
+      </span>
+      <textarea
+        id="edit-card-translation"
+        data-edit-field="translation"
+        ref={firstFieldRef}
+        value={draft.translation}
+        lang={nativeLanguage}
+        dir="auto"
+        maxLength={fieldMaxLength.translation}
+        rows={rows}
+        onChange={event => updateDraft('translation', event.target.value)}
+        className="edit-sheet-input edit-sheet-textarea"
+      />
+      {meaningChoices.length > 0 && (
+        <div className="edit-sheet-meaning-choices">
+          {meaningChoices.map(meaning => (
+            <button
+              key={meaning}
+              type="button"
+              data-edit-meaning-choice
+              lang={nativeLanguage}
+              aria-label={_({ ...msg({ id: 'library.edit-card.use-meaning', message: 'Use meaning: {meaning}' }), values: { meaning } })}
+              onClick={() => updateDraft('translation', meaning)}
+              className="edit-sheet-meaning-choice"
+            >
+              {meaningChipLabel(meaning)}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const tagLimitReached = draft.tags.length >= MAX_CARD_TAGS;
+  const suggestedTags = tagSuggestions({ category: draft.category.trim(), cefrLevel: openedCard.cefrLevel }, draft.tags);
+  const addTagText = (raw: string) => {
+    const result = addTags(draft.tags, raw);
+    if (result.tags.length !== draft.tags.length) updateDraft('tags', result.tags);
+    setTagInput(result.leftover);
+    setTagNotice(result.rejected);
+  };
+  const removeTag = (tag: string) => {
+    updateDraft('tags', draft.tags.filter(existing => existing !== tag));
+    setTagNotice(null);
+    tagInputRef.current?.focus();
+  };
+  const tagNoticeMessage = tagNotice === 'duplicate'
+    ? _(msg({ id: 'library.edit-card.tag-duplicate', message: 'Already added' }))
+    : tagNotice === 'too-long'
+      ? _({ ...msg({ id: 'library.edit-card.tag-too-long', message: 'Tags can be up to {max} characters' }), values: { max: MAX_CARD_TAG_LENGTH } })
+      : tagNotice === 'limit'
+        ? _({ ...msg({ id: 'library.edit-card.tag-limit', message: 'Up to {max} tags' }), values: { max: MAX_CARD_TAGS } })
+        : '';
+  const tagsField = (
+    <div className="edit-sheet-field edit-sheet-field--tags">
+      <span id="edit-card-tags-label" className="edit-sheet-label"><Trans {...msg({ id: 'library.edit-card.tags', message: 'Tags' })} /></span>
+      <div className="edit-sheet-input edit-sheet-tags" onClick={event => { if (event.target === event.currentTarget) tagInputRef.current?.focus(); }}>
+        {draft.tags.length > 0 && (
+          <ul aria-labelledby="edit-card-tags-label" className="edit-sheet-tag-list">
+            {draft.tags.map(tag => (
+              <li key={tag} className="edit-sheet-tag">
+                <span className="edit-sheet-tag-text">{tag}</span>
+                <button
+                  type="button"
+                  data-edit-tag-remove={tag}
+                  aria-label={_({ ...msg({ id: 'library.edit-card.remove-tag', message: 'Remove tag {tag}' }), values: { tag } })}
+                  onClick={() => removeTag(tag)}
+                  className="edit-sheet-tag-remove"
+                >
+                  <X size={12} aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <input
+          ref={tagInputRef}
+          data-edit-tag-input
+          aria-label={_(msg({ id: 'library.edit-card.add-tag', message: 'Add tag' }))}
+          aria-describedby={tagLimitReached && tagNotice !== 'limit' ? 'edit-card-tags-limit' : undefined}
+          aria-disabled={tagLimitReached || undefined}
+          readOnly={tagLimitReached}
+          value={tagInput}
+          placeholder={draft.tags.length ? undefined : _(msg({ id: 'library.edit-card.add-tag-placeholder', message: 'Add a tag' }))}
+          onChange={event => {
+            const { value } = event.target;
+            if (value.includes(',')) addTagText(value);
+            else {
+              setTagInput(value);
+              setTagNotice(null);
+            }
+          }}
+          onKeyDown={event => {
+            if (event.nativeEvent.isComposing) return;
+            if (event.key === 'Enter' && tagInput.trim()) {
+              event.preventDefault();
+              addTagText(tagInput);
+            } else if (event.key === 'Backspace' && !tagInput && draft.tags.length > 0) {
+              event.preventDefault();
+              removeTag(draft.tags[draft.tags.length - 1]!);
+            }
+          }}
+          onBlur={() => { if (tagInput.trim()) addTagText(tagInput); }}
+          className="edit-sheet-tag-input"
+        />
+      </div>
+      {tagLimitReached && tagNotice !== 'limit' && (
+        <p id="edit-card-tags-limit" className="edit-sheet-hint">
+          <Trans {...msg({ id: 'library.edit-card.tag-limit', message: 'Up to {max} tags' })} values={{ max: MAX_CARD_TAGS }} />
+        </p>
+      )}
+      <p data-edit-tag-notice aria-live="polite" className="edit-sheet-hint edit-sheet-tag-notice">{tagNoticeMessage}</p>
+      {suggestedTags.length > 0 && (
+        <div data-edit-tag-suggestions className="edit-sheet-tag-suggestions">
+          <span><Trans {...msg({ id: 'library.edit-card.tags-from-card', message: 'From this card:' })} /></span>
+          {suggestedTags.map(tag => (
+            <button
+              key={tag}
+              type="button"
+              data-edit-tag-suggestion={tag}
+              aria-label={_({ ...msg({ id: 'library.edit-card.add-suggested-tag', message: 'Add tag {tag}' }), values: { tag } })}
+              onClick={() => {
+                addTagText(tag);
+                tagInputRef.current?.focus();
+              }}
+              className="edit-sheet-tag-suggestion"
+            >
+              <Plus size={12} aria-hidden="true" />
+              {tag}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // The learner's own label. Native radios give the group arrow-key movement;
+  // the scheduler never reads this value.
+  const lastReviewRating = typeof reviewCount === 'number' && reviewCount > 0
+    && (openedCard.difficulty === 'easy' || openedCard.difficulty === 'good' || openedCard.difficulty === 'hard')
+    ? openedCard.difficulty
+    : null;
+  const difficultyField = (
+    <fieldset data-edit-difficulty className="edit-sheet-difficulty">
+      <legend className="edit-sheet-label edit-sheet-difficulty-legend"><Trans {...msg({ id: 'library.edit-card.difficulty', message: 'Difficulty' })} /></legend>
+      <div className="edit-sheet-difficulty-row">
+        <div className="edit-sheet-segmented">
+          {LEARNER_DIFFICULTIES.map(value => (
+            <label key={value} data-difficulty={value} data-selected={draft.learnerDifficulty === value || undefined} className="edit-sheet-segment">
+              <input
+                type="radio"
+                name="edit-card-learner-difficulty"
+                value={value}
+                checked={draft.learnerDifficulty === value}
+                onChange={() => updateDraft('learnerDifficulty', value)}
+                className="edit-sheet-segment-input"
+              />
+              <span aria-hidden="true" className="edit-sheet-segment-dot" />
+              <span>{_(learnerDifficultyLabels[value])}</span>
+            </label>
+          ))}
+        </div>
+        {draft.learnerDifficulty && (
+          <button
+            type="button"
+            data-edit-difficulty-clear
+            aria-label={_(msg({ id: 'library.edit-card.difficulty-clear-label', message: 'Clear difficulty' }))}
+            onClick={() => updateDraft('learnerDifficulty', '')}
+            className="edit-sheet-link-button"
+          >
+            <Trans {...msg({ id: 'library.edit-card.difficulty-clear', message: 'Clear' })} />
+          </button>
+        )}
+      </div>
+      <p className="edit-sheet-hint edit-sheet-difficulty-hint">
+        <Trans {...msg({ id: 'library.edit-card.difficulty-helper', message: 'Your own label. It does not change when this card is due.' })} />
+        {lastReviewRating && <> {_(lastReviewLabels[lastReviewRating])}</>}
+      </p>
+    </fieldset>
   );
 
   const phoneticInput = (inline: boolean) => (
@@ -712,10 +928,13 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                 {isReview ? (
                   <>
                     {wordField}
-                    {textField('translation', 3)}
+                    {meaningField(3)}
                     {textField('exampleSentence')}
                     {imageField}
-                    {deckField}
+                    <div className="edit-sheet-pair edit-sheet-pair--deck-tags">
+                      {deckField}
+                      {tagsField}
+                    </div>
                     <div className="edit-sheet-pair">
                       {categoryField}
                       {partOfSpeechField}
@@ -737,7 +956,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                   <div className="edit-sheet-grid">
                     {wordField}
                     {partOfSpeechField}
-                    {textField('translation')}
+                    {meaningField()}
                     <label className="edit-sheet-field edit-sheet-field--phonetic">
                       <span className="edit-sheet-label">{_(msg({ id: 'library.edit-card.phonetic', message: 'IPA' }))}</span>
                       {phoneticInput(false)}
@@ -750,7 +969,9 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                     {imageField}
                     {deckField}
                     {categoryField}
+                    {tagsField}
                     <div className="edit-sheet-flags">
+                      {difficultyField}
                       {starredToggle}
                     </div>
                   </div>

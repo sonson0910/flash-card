@@ -1160,3 +1160,372 @@
     transition: none;
   }
 }
+
+/* Phones stack the dialog fields with the sheet's rhythm; wider screens use the grid above. */
+@media (max-width: 767.98px) {
+  .edit-sheet-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+}
+
+.edit-sheet-label-row {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+/* Generated content is disclosed next to the field it fills. */
+.edit-sheet-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: color-mix(in srgb, var(--sf-brand) 14%, transparent);
+  color: var(--sf-brand-text);
+  font-size: .6875rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+.edit-sheet-meaning-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.edit-sheet-meaning-choice,
+.edit-sheet-tag-suggestion {
+  display: inline-flex;
+  min-height: 44px;
+  max-width: 100%;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--es-input-border);
+  border-radius: 10px;
+  padding: 0 12px;
+  background: transparent;
+  color: var(--sf-text);
+  font: inherit;
+  font-size: .8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+
+.edit-sheet-meaning-choice:hover,
+.edit-sheet-tag-suggestion:hover {
+  border-color: color-mix(in srgb, var(--sf-brand) 55%, transparent);
+  background: color-mix(in srgb, var(--sf-brand) 8%, transparent);
+}
+
+.edit-sheet-meaning-choice:focus-visible,
+.edit-sheet-tag-suggestion:focus-visible,
+.edit-sheet-tag-remove:focus-visible {
+  outline: 2px solid var(--es-focus);
+  outline-offset: 2px;
+}
+
+/* Tags: chips and the add-tag input share one input frame. */
+.edit-sheet-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  cursor: text;
+}
+
+.edit-sheet-tags:has(.edit-sheet-tag-input:focus-visible) {
+  border-color: var(--es-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--es-focus) 14%, transparent);
+}
+
+.edit-sheet-tag-list {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.edit-sheet-tag {
+  position: relative;
+  display: inline-flex;
+  min-height: 30px;
+  max-width: 100%;
+  align-items: center;
+  border: 1px solid var(--es-input-border);
+  border-radius: 999px;
+  padding-left: 10px;
+  background: color-mix(in srgb, var(--sf-text) 6%, transparent);
+  color: var(--sf-text);
+  font-size: .75rem;
+  font-weight: 600;
+  cursor: default;
+}
+
+.edit-sheet-tag-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit-sheet-tag-remove {
+  position: relative;
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  padding: 0;
+  background: transparent;
+  color: var(--sf-text-muted);
+  cursor: pointer;
+}
+
+/* A 44px hit area around the small remove mark. */
+.edit-sheet-tag-remove::before {
+  position: absolute;
+  inset: -8px;
+  content: '';
+}
+
+.edit-sheet-tag-remove:hover {
+  color: var(--sf-danger);
+}
+
+.edit-sheet-tag-input {
+  min-width: 4rem;
+  min-height: 30px;
+  flex: 1 1 4rem;
+  border: 0;
+  padding: 0 4px;
+  background: transparent;
+  color: var(--sf-text);
+  font: inherit;
+  font-size: .875rem;
+  outline: 0;
+}
+
+.edit-sheet-tag-input::placeholder {
+  color: var(--es-text-3);
+}
+
+.edit-sheet-tag-input[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* The live region stays mounted so the first message is announced; empty, it takes no room. */
+.edit-sheet-tag-notice:empty {
+  margin-top: -7px;
+}
+
+.edit-sheet-tag-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  color: var(--sf-text-muted);
+  font-size: .75rem;
+}
+
+.edit-sheet-tag-suggestion {
+  border-style: dashed;
+  color: var(--sf-text-muted);
+  font-size: .75rem;
+}
+
+/* Difficulty: the learner's own label as a segmented radio group. */
+.edit-sheet-difficulty {
+  min-width: 0;
+  flex: 1 1 18rem;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.edit-sheet-difficulty-legend {
+  float: left;
+  margin-right: 12px;
+  padding: 0;
+  line-height: 44px;
+}
+
+.edit-sheet-difficulty-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.edit-sheet-segmented {
+  display: inline-flex;
+  border: 1px solid var(--es-input-border);
+  border-radius: 12px;
+  padding: 2px;
+  background: var(--es-input-bg);
+}
+
+.edit-sheet-segment {
+  position: relative;
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 7px;
+  border-radius: 9px;
+  padding: 0 12px;
+  color: var(--sf-text-muted);
+  font-size: .8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.edit-sheet-segment-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.edit-sheet-segment-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--es-dot, currentColor);
+}
+
+.edit-sheet-segment[data-difficulty="easy"] { --es-dot: var(--sf-success); }
+.edit-sheet-segment[data-difficulty="medium"] { --es-dot: var(--sf-brand); }
+.edit-sheet-segment[data-difficulty="hard"] { --es-dot: var(--sf-rating-hard); }
+
+.edit-sheet-segment:hover {
+  color: var(--sf-text);
+}
+
+.edit-sheet-segment[data-selected] {
+  background: color-mix(in srgb, var(--sf-text) 10%, transparent);
+  color: var(--sf-text);
+}
+
+.edit-sheet-segment:has(.edit-sheet-segment-input:focus-visible) {
+  outline: 2px solid var(--es-focus);
+  outline-offset: -2px;
+}
+
+.edit-sheet-difficulty-hint {
+  clear: both;
+  margin-top: 6px;
+}
+
+:root[data-theme-family="crystal"] :is(.edit-sheet-ai-badge, .edit-sheet-meaning-choice, .edit-sheet-tag-suggestion, .edit-sheet-segmented, .edit-sheet-segment) {
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+}
+
+:root[data-theme-family="crystal"] .edit-sheet-ai-badge {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-second) 85%, #fff), var(--sf-second));
+  color: var(--sf-on-brand);
+  font-family: var(--sf-font-display);
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+:root[data-theme-family="crystal"] :is(.edit-sheet-meaning-choice, .edit-sheet-tag-suggestion, .edit-sheet-segment) {
+  font-family: var(--sf-font-display);
+  font-style: italic;
+  font-weight: 700;
+}
+
+:root[data-theme-family="crystal"] .edit-sheet-meaning-choice:hover {
+  border-color: transparent;
+  background: var(--sf-brand);
+  color: var(--sf-on-brand);
+}
+
+/* Crystal chips: a chamfered frame drawn behind the chip so the remove mark keeps its full hit area. */
+:root[data-theme-family="crystal"] .edit-sheet-tag {
+  isolation: isolate;
+  border-color: transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--sf-second);
+  font-family: var(--sf-font-display);
+  font-style: italic;
+  font-weight: 700;
+}
+
+:root[data-theme-family="crystal"] .edit-sheet-tag:nth-child(even) {
+  color: var(--sf-brand-text);
+}
+
+/* The holo cyan is a light-on-dark hue; on the light panel the tag text leans toward the ink. */
+:root[data-theme-family="crystal"]:not(.dark) .edit-sheet-tag:nth-child(odd) {
+  color: color-mix(in srgb, var(--sf-second) 30%, var(--sf-text));
+}
+
+:root[data-theme-family="crystal"] .edit-sheet-tag::after {
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border: 1px solid currentColor;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  content: '';
+  pointer-events: none;
+}
+
+:root[data-theme-family="crystal"] .edit-sheet-tag-remove {
+  border-radius: 0;
+  color: inherit;
+}
+
+/* The chamfer clips anything drawn outside the box, so focus rings sit inside. */
+:root[data-theme-family="crystal"] :is(.edit-sheet-meaning-choice, .edit-sheet-tag-suggestion):focus-visible {
+  outline-offset: -4px;
+}
+
+:root[data-theme-family="crystal"] .edit-sheet-segment:has(.edit-sheet-segment-input:focus-visible) {
+  outline-offset: -4px;
+}
+
+:root[data-theme-family="crystal"] .edit-sheet-segment[data-selected] {
+  background: color-mix(in srgb, var(--sf-second) 18%, transparent);
+}
+
+@media (min-width: 768px) {
+  .edit-sheet-grid > .edit-sheet-field--tags {
+    align-self: start;
+  }
+}
+
+/* Deck and Tags share a row on the review sheet; narrow phones stack them. */
+@media (max-width: 479.98px) {
+  .edit-sheet-pair--deck-tags {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edit-sheet-meaning-choice,
+  .edit-sheet-tag-suggestion,
+  .edit-sheet-segment {
+    transition: none;
+  }
+}
