@@ -35,6 +35,13 @@ describe('account profile form', () => {
     expect(birthYearProblem(value, now)).toBe(problem);
   });
 
+  it('takes the current year at UTC+14 like the server, so a new-year year is not reported as future', () => {
+    expect(birthYearProblem('2027', new Date('2026-12-31T09:59:59.999Z'))).toBe('future');
+    expect(birthYearProblem('2027', new Date('2026-12-31T10:00:00.000Z'))).toBeNull();
+    expect(birthYearProblem('1906', new Date('2026-12-31T09:59:59.999Z'))).toBeNull();
+    expect(birthYearProblem('1906', new Date('2026-12-31T10:00:00.000Z'))).toBe('implausible');
+  });
+
   it('defaults the native language the way course onboarding does', () => {
     expect(defaultNativeLanguageFor('en')).toBe('en');
     expect(defaultNativeLanguageFor('vi')).toBe('vi');

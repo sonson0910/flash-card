@@ -4,6 +4,7 @@ import {
   AccountProfileValidationError,
   CURRENT_PRIVACY_VERSION,
   CURRENT_TERMS_VERSION,
+  accountAgeCurrentYear,
   evaluateBirthYear,
   parseAccountProfileRecord,
   parseAgeRestrictionMarker,
@@ -111,7 +112,7 @@ describe('account profile request contract', () => {
 describe('account age rule', () => {
   const now = clock();
 
-  it('allows a learner when the current UTC year minus the birth year is at least 18', () => {
+  it('allows a learner when the current year minus the birth year is at least 18', () => {
     expect(evaluateBirthYear(2008, now)).toBe('allowed');
     expect(evaluateBirthYear(1990, now)).toBe('allowed');
     expect(evaluateBirthYear(1906, now)).toBe('allowed');
@@ -127,9 +128,18 @@ describe('account age rule', () => {
     expect(() => evaluateBirthYear(1905, now)).toThrow(AccountProfileValidationError);
   });
 
-  it('uses the UTC year, not the server time zone', () => {
-    expect(evaluateBirthYear(2008, new Date('2025-12-31T23:59:59.000Z'))).toBe('restricted');
-    expect(evaluateBirthYear(2008, new Date('2026-01-01T00:00:00.000Z'))).toBe('allowed');
+  it('counts the new year once it has started at UTC+14, whatever the server time zone', () => {
+    expect(evaluateBirthYear(2009, new Date('2026-12-31T09:59:59.999Z'))).toBe('restricted');
+    expect(evaluateBirthYear(2008, new Date('2026-12-31T09:59:59.999Z'))).toBe('allowed');
+    expect(evaluateBirthYear(2009, new Date('2026-12-31T10:00:00.000Z'))).toBe('allowed');
+    expect(() => evaluateBirthYear(2027, new Date('2026-12-31T09:59:59.999Z'))).toThrow(AccountProfileValidationError);
+    expect(evaluateBirthYear(2027, new Date('2026-12-31T10:00:00.000Z'))).toBe('restricted');
+  });
+
+  it('applies the same year on both sides of the UTC new year', () => {
+    expect(accountAgeCurrentYear(new Date('2026-12-31T09:59:59.999Z'))).toBe(2026);
+    expect(accountAgeCurrentYear(new Date('2026-12-31T10:00:00.000Z'))).toBe(2027);
+    expect(accountAgeCurrentYear(new Date('2027-01-01T00:00:00.000Z'))).toBe(2027);
   });
 });
 

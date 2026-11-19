@@ -169,7 +169,7 @@ The final 10-23 decision records continue/fix/change ICP with the plan's metrics
 
 ## Age-restricted accounts
 
-Every signed-in account completes a one-time profile step before the app opens. The `completeAccountProfile` callable applies the age rule on the server: allowed when the current UTC year minus the birth year is at least 18. When the rule fails, the callable creates `users/{uid}/profile/age_restriction` holding only `restrictedAt`; the birth year is not stored, no profile record, course or card is created, and every later sign-in shows the restricted screen without asking again.
+Every signed-in account completes a one-time profile step before the app opens. The `completeAccountProfile` callable applies the age rule on the server: allowed when the current year minus the birth year is at least 18, where the current year is read at UTC+14, the earliest time zone, so a new year counts as soon as it has started anywhere and the server's own time zone never holds a learner back. When the rule fails, the callable creates `users/{uid}/profile/age_restriction` holding only `restrictedAt`; the birth year is not stored, no profile record, course or card is created, and every later sign-in shows the restricted screen without asking again.
 
 Clearing a marker is a manual operator step, for example after a learner reports a mistyped year from their sign-in address and the owner approves:
 

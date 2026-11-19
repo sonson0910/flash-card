@@ -131,12 +131,21 @@ export const parseCompleteAccountProfileRequest = (value: unknown): CompleteAcco
   };
 };
 
+const EARLIEST_UTC_OFFSET_MS = 14 * 60 * 60 * 1_000;
+
+/**
+ * The current year in the earliest time zone (UTC+14). No learner's local year is ahead of it, so a new
+ * year that has started anywhere counts at once and nobody is held back by the server's own time zone.
+ */
+export const accountAgeCurrentYear = (now: Date): number =>
+  new Date(now.getTime() + EARLIEST_UTC_OFFSET_MS).getUTCFullYear();
+
 /**
  * The account age rule. A birth year cannot separate 17 from 18 inside the birthday year; the
- * "18 or older" statement in the consent covers that gap. The year comes from the server clock in UTC.
+ * "18 or older" statement in the consent covers that gap. The year is the server clock's year at UTC+14.
  */
 export const evaluateBirthYear = (birthYear: number, now: Date): BirthYearOutcome => {
-  const currentYear = now.getUTCFullYear();
+  const currentYear = accountAgeCurrentYear(now);
   if (birthYear > currentYear) fail('request.birthYear', 'must not be in the future');
   if (currentYear - birthYear > MAXIMUM_PLAUSIBLE_AGE_YEARS) fail('request.birthYear', 'is not a plausible birth year');
   return currentYear - birthYear >= MINIMUM_ACCOUNT_AGE_YEARS ? 'allowed' : 'restricted';

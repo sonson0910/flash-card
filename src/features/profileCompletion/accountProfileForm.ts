@@ -4,6 +4,7 @@ import {
   CURRENT_PRIVACY_VERSION,
   CURRENT_TERMS_VERSION,
   MAXIMUM_PLAUSIBLE_AGE_YEARS,
+  accountAgeCurrentYear,
   type AccountUiLocale,
   type CompleteAccountProfileRequest,
 } from '../../../functions/src/account-profile-contract';
@@ -18,7 +19,7 @@ export type BirthYearProblem = 'format' | 'future' | 'implausible';
 export const birthYearProblem = (value: string, now: Date): BirthYearProblem | null => {
   if (!/^\d{4}$/.test(value)) return 'format';
   const year = Number(value);
-  const currentYear = now.getUTCFullYear();
+  const currentYear = accountAgeCurrentYear(now);
   if (year > currentYear) return 'future';
   if (currentYear - year > MAXIMUM_PLAUSIBLE_AGE_YEARS) return 'implausible';
   return null;
